@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -22,24 +23,44 @@ from test_build_system_helpers import get_snapshot
 from test_build_system_helpers import replace_in_file
 from test_build_system_helpers import run_idf_py
 
+_tools_dir = str(Path(EXT_IDF_PATH) / 'tools')
+if _tools_dir not in sys.path:
+    sys.path.insert(0, _tools_dir)
+from idf_py_actions.help_custom_targets_skip import CMAKE_CUSTOM_TARGETS_HELP_PANEL_TITLE  # noqa: E402
+
 
 def _parse_idf_py_help_cmake_custom_target_names(stdout: str) -> list[str]:
-    """Return target names listed under the ``CMake Custom Targets`` heading in ``idf.py --help`` output."""
+    """Parse CMake Custom Targets listed in ``idf.py --help`` in rich-click format.
+    Custom "plain-slim" rich-click theme is used to minimize the formatting impact.
+    Parsing starts from the line containing ``CMAKE_CUSTOM_TARGETS_HELP_PANEL_TITLE``.
+
+    - Piped outputs may use ``| … |`` table rows instead on some architectures (Unix/Windows).
+    - CI may still wrap lines in CSI SGR sequences (``ESC [ … m``).
+    """
     lines = stdout.splitlines()
-    for i, line in enumerate(lines):
-        if line.strip() != 'CMake Custom Targets:':
-            continue
-        names: list[str] = []
-        for j in range(i + 1, len(lines)):
-            raw = lines[j]
-            stripped = raw.strip()
-            if not stripped:
-                continue
-            if not raw.startswith((' ', '\t')):
+    idx = next((i for i, line in enumerate(lines) if CMAKE_CUSTOM_TARGETS_HELP_PANEL_TITLE in line), None)
+    if idx is None:
+        return []
+
+    _SGR_ESCAPE_RE = re.compile(r'\x1b\[[0-9;:]*m')
+    names: list[str] = []
+    for raw in lines[idx + 1 :]:
+        line = _SGR_ESCAPE_RE.sub('', raw)
+        stripped = line.strip()
+        if not stripped:
+            if names:
                 break
+            continue
+        if stripped.startswith('|'):
+            cells = [c.strip() for c in stripped.split('|') if c.strip()]
+            if cells:
+                names.append(cells[0].split(None, 1)[0])
+            continue
+        if line[:1].isspace():
             names.append(stripped.split(None, 1)[0])
-        return names
-    return []
+            continue
+        break
+    return names
 
 
 def get_subdirs_absolute_paths(path: Path) -> list[str]:
@@ -227,7 +248,7 @@ def test_fallback_to_build_system_target(idf_py: IdfPyFunc, test_app_copy: Path)
 def test_idf_py_help_without_build_dir_has_no_cmake_custom_targets_section(idf_py: IdfPyFunc) -> None:
     """With no configured build directory, root help must not advertise CMake custom targets."""
     ret = idf_py('--help')
-    assert 'CMake Custom Targets' not in ret.stdout
+    assert CMAKE_CUSTOM_TARGETS_HELP_PANEL_TITLE not in ret.stdout
 
 
 @pytest.mark.buildv2_skip(
@@ -240,7 +261,7 @@ def test_idf_py_help_after_configure_with_no_custom_targets_has_no_section(idf_p
     """After configure, if the project defines no custom targets, `idf.py --help` must not show the section."""
     idf_py('reconfigure')
     ret = idf_py('--help')
-    assert 'CMake Custom Targets' not in ret.stdout
+    assert CMAKE_CUSTOM_TARGETS_HELP_PANEL_TITLE not in ret.stdout
 
 
 @pytest.mark.buildv2_skip(
@@ -249,7 +270,9 @@ def test_idf_py_help_after_configure_with_no_custom_targets_has_no_section(idf_p
     'tools/idf_py_actions/help_custom_targets_skip.py was designed around v1 hard-coded names.'
 )
 @pytest.mark.usefixtures('test_app_copy')
-def test_idf_py_help_lists_cmake_custom_targets_after_configure(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+def test_idf_py_help_lists_cmake_custom_targets_after_configure(
+    idf_py: IdfPyFunc, test_app_copy: Path, default_idf_env: EnvDict
+) -> None:
     """After configure, project-only phony targets should appear under CMake Custom Targets in idf.py --help."""
     tgt = 'idf_py_help_visible_custom_tgt'
     append_to_file(
@@ -257,8 +280,9 @@ def test_idf_py_help_lists_cmake_custom_targets_after_configure(idf_py: IdfPyFun
         f'add_custom_target({tgt} COMMAND ${{CMAKE_COMMAND}} -E echo "ok")\n',
     )
     idf_py('reconfigure')
-    ret = idf_py('--help')
-    assert 'CMake Custom Targets' in ret.stdout
+    env = {**default_idf_env, 'RICH_CLICK_THEME': 'plain-slim'}
+    ret = run_idf_py('--help', env=env)
+    assert CMAKE_CUSTOM_TARGETS_HELP_PANEL_TITLE in ret.stdout
     assert tgt in ret.stdout
 
     tools_dir = str(Path(EXT_IDF_PATH) / 'tools')
@@ -268,6 +292,7 @@ def test_idf_py_help_lists_cmake_custom_targets_after_configure(idf_py: IdfPyFun
     from idf_py_actions.help_custom_targets_skip import help_phony_name_passes_shape_policy  # noqa: E402
 
     names = _parse_idf_py_help_cmake_custom_target_names(ret.stdout)
+    assert tgt in names, f'{tgt} not found in the CMake custom target printed in stdout'
     for n in names:
         assert help_phony_name_passes_shape_policy(n), (
             f'Target {n!r} in CMake Custom Targets violates shape policy (prefix/suffix/substring/path). '
@@ -288,7 +313,9 @@ def test_idf_py_help_lists_cmake_custom_targets_after_configure(idf_py: IdfPyFun
 
 
 @pytest.mark.usefixtures('test_app_copy')
-def test_idf_py_help_splits_multi_output_ninja_phony_targets(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+def test_idf_py_help_splits_multi_output_ninja_phony_targets(
+    idf_py: IdfPyFunc, test_app_copy: Path, default_idf_env: EnvDict
+) -> None:
     """Multi-output Ninja `build ...: phony` lines must yield separate target names (not a single whitespace string)."""
     a = 'idf_py_help_multi_out_a'
     b = 'idf_py_help_multi_out_b'
@@ -297,7 +324,8 @@ def test_idf_py_help_splits_multi_output_ninja_phony_targets(idf_py: IdfPyFunc, 
 
     # Inject a multi-output phony line directly into build.ninja and verify help parsing splits it.
     append_to_file(test_app_copy / 'build' / 'build.ninja', f'\nbuild {a} {b} {c}: phony\n')
-    ret = idf_py('--help')
+    env = {**default_idf_env, 'RICH_CLICK_THEME': 'plain-slim'}
+    ret = run_idf_py('--help', env=env)
 
     names = _parse_idf_py_help_cmake_custom_target_names(ret.stdout)
     assert a in names
