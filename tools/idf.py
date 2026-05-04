@@ -165,6 +165,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
     from rich_click import RichHelpConfiguration
     from rich_click import RichHelpFormatter
     from rich_click.rich_click import MAX_WIDTH
+    from rich_click.rich_context import RichContext
 
     class Deprecation:
         """Construct deprecation notice for help messages"""
@@ -466,6 +467,72 @@ def init_cli(verbose_output: list | None = None) -> Any:
                 return None
 
             return super().get_help_record(ctx)
+
+    def _emit_cmake_custom_targets_help_panel(formatter: RichHelpFormatter, targets: list[tuple[str, str]]) -> None:
+        """Render CMake phony targets as an extra rich-click-looking panel.
+        They are not Click commands/options, so the ordinary help machinery does not list them.
+        """
+        import rich.box
+        from rich.box import Box
+        from rich.panel import Panel
+        from rich.table import Table
+        from rich.text import Text
+
+        # Rich-click adds these boxes on top of rich.box; recreate them locally with the
+        # same eight-line layout so the public rich API is enough.
+        # Otherwise rich-click internal modules would be needed (which can change over time).
+        _RICH_CLICK_EXTRA_BOXES: dict[str, Box] = {
+            'BLANK': Box('    \n' * 8),
+            'HORIZONTALS_TOP': Box(' ── \n' + '    \n' * 7),
+            'HORIZONTALS_DOUBLE_TOP': Box(' ══ \n' + '    \n' * 7),
+        }
+
+        def _resolve_panel_box(raw: Any) -> Box:
+            if isinstance(raw, Box):
+                return raw
+            if isinstance(raw, str):
+                if raw in _RICH_CLICK_EXTRA_BOXES:
+                    return _RICH_CLICK_EXTRA_BOXES[raw]
+                box = getattr(rich.box, raw, None)
+                if isinstance(box, Box):
+                    return box
+            return rich.box.ROUNDED
+
+        cfg = formatter.config
+        panel_box = _resolve_panel_box(cfg.style_commands_panel_box)
+        t_styles = {
+            'show_lines': cfg.style_commands_table_show_lines,
+            'leading': cfg.style_commands_table_leading,
+            'box': None,
+            'border_style': cfg.style_commands_table_border_style,
+            'row_styles': cfg.style_commands_table_row_styles,
+            'pad_edge': cfg.style_commands_table_pad_edge,
+            'padding': cfg.style_commands_table_padding,
+            'expand': cfg.style_commands_table_expand,
+        }
+        table = Table(show_header=False, highlight=False, **t_styles)
+        ratio = cfg.style_commands_table_column_width_ratio
+        r0, r1 = (None, None) if ratio is None else ratio
+        table.add_column(style=cfg.style_command, no_wrap=True, ratio=r0)
+        table.add_column(no_wrap=False, ratio=r1)
+        for name, desc in targets:
+            desc_cell = Text(desc, style=cfg.style_helptext) if desc else Text()
+            table.add_row(Text(name, style=cfg.style_command), desc_cell)
+
+        title = Text(
+            _help_custom_targets.CMAKE_CUSTOM_TARGETS_HELP_PANEL_TITLE,
+            style=cfg.style_commands_panel_title_style,
+        )
+        panel = Panel(
+            table,
+            border_style=cfg.style_commands_panel_border,
+            title_align=cfg.align_commands_panel,
+            box=panel_box,
+            padding=cfg.style_commands_panel_padding,
+            style=cfg.style_commands_panel_style,
+            title=title,
+        )
+        formatter.console.print(panel, highlight=False)
 
     class CLI(click.RichGroup):
         """Action list contains all actions with options available for CLI"""
@@ -892,13 +959,13 @@ def init_cli(verbose_output: list | None = None) -> Any:
 
             return [(n, '') for n in sorted(found, key=str.lower)]
 
-        def format_help(self, ctx: click.core.Context, formatter: click.HelpFormatter) -> None:
-            """Override to append custom CMake targets section."""
+        def format_help(self, ctx: RichContext, formatter: RichHelpFormatter) -> None:
+            """Append CMake custom targets using the same Rich console as the rest of rich-click help."""
             super().format_help(ctx, formatter)
             targets = self._get_custom_targets()
-            if targets:
-                with formatter.section('CMake Custom Targets'):
-                    formatter.write_dl(list(targets))
+            if not targets:
+                return
+            _emit_cmake_custom_targets_help_panel(formatter, targets)
 
     def load_cli_extension_from_dir(ext_dir: str) -> Any | None:
         """Load extension 'idf_ext.py' from directory and return the action_extensions function"""
