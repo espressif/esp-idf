@@ -27,7 +27,9 @@
 
 #include "sdkconfig.h"
 #include "mbedtls/mbedtls_config.h"
+#ifndef CONFIG_IDF_TARGET_LINUX
 #include "soc/soc_caps.h"
+#endif // !CONFIG_IDF_TARGET_LINUX
 
 /**
  * \name SECTION: System support
