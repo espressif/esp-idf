@@ -1,17 +1,18 @@
 cmake_minimum_required(VERSION 3.16)
-project(esp-idf C CXX ASM)
+project(stack_handler C)
 
-if(CMAKE_CURRENT_LIST_DIR STREQUAL CMAKE_SOURCE_DIR)
-    message(FATAL_ERROR "Current directory '${CMAKE_CURRENT_LIST_DIR}' is not buildable. "
-    "Change directories to one of the example projects in '${CMAKE_CURRENT_LIST_DIR}/examples' and try "
-    "again.")
-endif()
+# Require C11
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 
-# Variables compile_options, c_compile_options, cxx_compile_options, compile_definitions, link_options shall
-# not be unset as they may already contain flags, set by toolchain-TARGET.cmake files.
+add_executable(stack_handler stack_handler.c)
 
-# Add the following build specifications here, since these seem to be dependent
-# on config values on the root Kconfig.
+# Enable warnings
+target_compile_options(stack_handler PRIVATE
+    -Wall
+    -Wextra
+    -Wpedantic
+)
 
 if(NOT BOOTLOADER_BUILD)
 
