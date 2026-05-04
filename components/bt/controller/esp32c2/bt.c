@@ -956,11 +956,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     }
 
     os_msys_init();
-#if CONFIG_BT_NIMBLE_ENABLED
-    // ble_npl_eventq_init() need to use npl function in rom and must be called after esp_bt_controller_init()
-    /* Initialize default event queue */
-    ble_npl_eventq_init(nimble_port_get_dflt_eventq());
-#endif
+
     esp_phy_modem_init();
     periph_module_enable(PERIPH_BT_MODULE);
     periph_module_reset(PERIPH_BT_MODULE);
@@ -1043,9 +1039,7 @@ controller_init_err:
 modem_deint:
     esp_phy_modem_deinit();
     periph_module_disable(PERIPH_BT_MODULE);
-#if CONFIG_BT_NIMBLE_ENABLED
-    ble_npl_eventq_deinit(nimble_port_get_dflt_eventq());
-#endif // CONFIG_BT_NIMBLE_ENABLED
+
 free_mem:
     os_msys_buf_free();
     npl_freertos_mempool_deinit();
@@ -1072,10 +1066,6 @@ esp_err_t esp_bt_controller_deinit(void)
 
     periph_module_disable(PERIPH_BT_MODULE);
 
-#if CONFIG_BT_NIMBLE_ENABLED
-    /* De-initialize default event queue */
-    ble_npl_eventq_deinit(nimble_port_get_dflt_eventq());
-#endif
     os_msys_buf_free();
 
     esp_unregister_npl_funcs();
