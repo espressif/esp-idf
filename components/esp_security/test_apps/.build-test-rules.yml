@@ -3,9 +3,5 @@
 components/esp_security/test_apps/crypto_drivers:
   enable:
     - if: ((SOC_HMAC_SUPPORTED == 1) or (SOC_DIG_SIGN_SUPPORTED == 1)) or (SOC_KEY_MANAGER_SUPPORTED == 1)
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: p4 rev3 migration # TODO: IDF-14418
   depends_components:
     - esp_security

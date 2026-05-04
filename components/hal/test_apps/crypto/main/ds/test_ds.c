@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,7 @@ const static char *TAG = "test_ds";
 #include "rom/hmac.h"
 
 #if SOC_KEY_MANAGER_DS_KEY_DEPLOY
+#include "hal/key_mgr_hal.h"
 #include "hal/key_mgr_ll.h"
 #endif
 
@@ -94,11 +95,15 @@ static esp_err_t esp_ds_start_sign(const void *message, const esp_ds_data_t *dat
 #if SOC_KEY_MANAGER_DS_KEY_DEPLOY
     if (key_id == HMAC_KEY_KM) {
         if (!key_mgr_ll_is_supported()) {
-            HAL_ASSERT(false && "Key manager is not supported");
+            ds_disable_release();
+            assert(false && "Key manager is not supported");
         }
-
+        key_mgr_hal_set_key_usage(ESP_KEY_MGR_DS_KEY, ESP_KEY_MGR_USE_OWN_KEY);
         ds_hal_set_key_source(DS_KEY_SOURCE_KEY_MGR);
     } else {
+        if (key_mgr_ll_is_supported()) {
+            key_mgr_hal_set_key_usage(ESP_KEY_MGR_DS_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
+        }
         ds_hal_set_key_source(DS_KEY_SOURCE_EFUSE);
 #endif
         hmac_hal_start();

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@
 #include "esp_efuse.h"
 #include "hal/key_mgr_types.h"
 #include "hal/key_mgr_hal.h"
+#include "hal/key_mgr_ll.h"
 #include "hal/huk_types.h"
 #include "hal/huk_hal.h"
 #include "rom/key_mgr.h"
@@ -350,6 +351,10 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
 
 esp_err_t esp_key_mgr_deploy_key_in_aes_mode(const esp_key_mgr_aes_key_config_t *key_config, esp_key_mgr_key_recovery_info_t *key_recovery_info)
 {
+    if (!key_mgr_ll_is_supported()) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
     if (key_config == NULL || key_recovery_info == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -498,6 +503,10 @@ static esp_err_t key_mgr_recover_key(key_recovery_config_t *config)
 
 esp_err_t esp_key_mgr_activate_key(esp_key_mgr_key_recovery_info_t *key_recovery_info)
 {
+    if (!key_mgr_ll_is_supported()) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
     if (key_recovery_info == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -681,6 +690,10 @@ static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
 esp_err_t esp_key_mgr_deploy_key_in_ecdh0_mode(const esp_key_mgr_ecdh0_key_config_t *key_config,
                                                esp_key_mgr_key_recovery_info_t *key_info, esp_key_mgr_ecdh0_info_t *ecdh0_key_info)
 {
+    if (!key_mgr_ll_is_supported()) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
     if (key_config == NULL || key_info == NULL || ecdh0_key_info == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -846,6 +859,10 @@ static esp_err_t key_mgr_deploy_key_random_mode(random_deploy_config_t *config)
 
 esp_err_t esp_key_mgr_deploy_key_in_random_mode(const esp_key_mgr_random_key_config_t *key_config, esp_key_mgr_key_recovery_info_t *key_recovery_info)
 {
+    if (!key_mgr_ll_is_supported()) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
     if (key_config == NULL || key_recovery_info == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
