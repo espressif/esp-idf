@@ -24,6 +24,13 @@
 #include "esp_flash.h"
 #include "key_manager_test_cases.h"
 #include "esp_log.h"
+#include "esp_crypto_periph_clk.h"
+
+/* Runtime-verification helpers for ECDH0 deployments (ecc_point_multiply
+ * wrapper, ECDSA pubkey reconstruction, flash-XTS reference, HMAC).
+ * See km_ecdh0_verify.h for details. */
+#include "km_ecdh0_verify.h"
+#include "ecc_impl.h"  /* for P192_LEN / P256_LEN / P384_LEN */
 
 #if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
 #include "hal/ecdsa_types.h"
@@ -48,8 +55,14 @@ const esp_partition_t *get_test_storage_partition(void)
     }
     return result;
 }
+#endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY */
 
-static void test_xts_aes_key_aes_mode(test_data_aes_mode_t *test_data)
+#if SOC_KEY_MANAGER_FE_KEY_DEPLOY
+/* Common XTS-AES verify body. Used by both the AES-mode and ECDH1-mode XTS
+ * tests, which carry their own struct types but share the same plaintext +
+ * expected-ciphertext layout. */
+static void verify_xts_aes_test_data(const uint8_t *plaintext_data,
+                                     const test_xts_data_t *xts_test_data)
 {
     const esp_partition_t *partition = get_test_storage_partition();
     ESP_ERROR_CHECK(esp_partition_erase_range(partition, 0, partition->size));
@@ -57,17 +70,27 @@ static void test_xts_aes_key_aes_mode(test_data_aes_mode_t *test_data)
     uint8_t read_data[128];
     for (int i = 0; i < TEST_COUNT; i++) {
         memset(read_data, 0, sizeof(read_data));
-        uint32_t address = test_data->xts_test_data[i].data_offset;
-        uint32_t data_size = test_data->xts_test_data[i].data_size;
+        uint32_t address = xts_test_data[i].data_offset;
+        uint32_t data_size = xts_test_data[i].data_size;
 
-        ESP_ERROR_CHECK(esp_flash_write_encrypted(NULL, address, test_data->plaintext_data, data_size));
+        ESP_ERROR_CHECK(esp_flash_write_encrypted(NULL, address, plaintext_data, data_size));
         ESP_ERROR_CHECK(esp_flash_read(NULL, read_data, address, data_size));
 
-        TEST_ASSERT_EQUAL_HEX8_ARRAY(test_data->xts_test_data[i].ciphertext, read_data, data_size);
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(xts_test_data[i].ciphertext, read_data, data_size);
     }
 }
 
-static void test_xts_aes_key_ecdh0_mode(test_data_ecdh0_mode_t *test_data)
+static void test_xts_aes_key_aes_mode(test_data_aes_mode_t *test_data)
+{
+    verify_xts_aes_test_data(test_data->plaintext_data, test_data->xts_test_data);
+}
+
+/* Verify the ECDH0-deployed XTS key by writing plaintext through the HW
+ * flash-encrypt path and comparing the readback against the ciphertext we
+ * compute in software with mbedtls_xts under the derived key material.
+ */
+static void test_xts_aes_key_ecdh0_mode(test_data_ecdh0_mode_t *test_data,
+                                        const uint8_t *derived_key, size_t key_bits)
 {
     const esp_partition_t *partition = get_test_storage_partition();
     ESP_ERROR_CHECK(esp_partition_erase_range(partition, 0, partition->size));
@@ -76,12 +99,13 @@ static void test_xts_aes_key_ecdh0_mode(test_data_ecdh0_mode_t *test_data)
     uint32_t address = partition->address;
     uint32_t data_size = 32;
 
-    ESP_LOG_BUFFER_HEXDUMP("Plaintext data", test_data->plaintext_data, data_size, ESP_LOG_DEBUG);
-
     ESP_ERROR_CHECK(esp_flash_write_encrypted(NULL, address, test_data->plaintext_data, data_size));
     ESP_ERROR_CHECK(esp_flash_read(NULL, read_data, address, data_size));
 
-    ESP_LOG_BUFFER_HEXDUMP("Encrypted data", read_data, data_size, ESP_LOG_DEBUG);
+    uint8_t expected[32];
+    km_verify_flash_xts_encrypt(derived_key, key_bits, address,
+                                test_data->plaintext_data, data_size, expected);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, read_data, data_size);
 }
 
 #if SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128 || SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_256
@@ -135,7 +159,24 @@ static void key_mgr_test_xts_aes_key_ecdh0_mode(esp_key_mgr_key_len_t key_len)
 #endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_256 */
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_activate_key(&key_recovery_info));
-    test_xts_aes_key_ecdh0_mode(&test_data_ecdh0);
+
+    /* Reconstruct the deployed XTS key from k1 and the exported k2*G, then
+     * assert the HW flash ciphertext matches what mbedtls_xts produces with
+     * that key.
+     */
+    uint8_t derived_key[64];
+    size_t key_bits = 256;
+    km_verify_compute_x_be(test_data_ecdh0.k1[0], sizeof(test_data_ecdh0.k1[0]),
+                           ecdh0_info.k2_G[0], derived_key);
+#if SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_256
+    if (key_len == ESP_KEY_MGR_XTS_AES_LEN_256) {
+        km_verify_compute_x_be(test_data_ecdh0.k1[1], sizeof(test_data_ecdh0.k1[1]),
+                               ecdh0_info.k2_G[1], derived_key + 32);
+        key_bits = 512;
+    }
+#endif
+    test_xts_aes_key_ecdh0_mode(&test_data_ecdh0, derived_key, key_bits);
+
     TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deactivate_key(key_recovery_info.key_type));
 }
 #endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128 || SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_256 */
@@ -354,6 +395,39 @@ static void key_mgr_test_ecdsa_key_ecdh0_mode(esp_key_mgr_key_len_t key_len)
 #endif
     TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_activate_key(&key_recovery_info));
 
+#if SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
+    /* Reconstruct the scalar the KM should have deployed from k1 and the
+     * exported k2*G, then compute scalar*G on the target curve in software
+     * and assert the ECDSA peripheral's exported pubkey matches byte-for-byte.
+     */
+    uint8_t x_be_stage0[32];
+    km_verify_compute_x_be(test_data_ecdh0.k1[0], sizeof(test_data_ecdh0.k1[0]),
+                           ecdh0_info.k2_G[0], x_be_stage0);
+
+    if (key_len == ESP_KEY_MGR_ECDSA_LEN_256) {
+        uint8_t pub_x_le[32], pub_y_le[32];
+        km_verify_ecdsa_pubkey_from_scalar(P256_LEN, x_be_stage0, 32, pub_x_le, pub_y_le);
+        test_ecdsa_export_pubkey(ECDSA_CURVE_SECP256R1, pub_x_le, pub_y_le, 1);
+    } else if (key_len == ESP_KEY_MGR_ECDSA_LEN_192) {
+        uint8_t pub_x_le[24], pub_y_le[24];
+        km_verify_ecdsa_pubkey_from_scalar(P192_LEN, x_be_stage0 + 8, 24, pub_x_le, pub_y_le);
+        test_ecdsa_export_pubkey(ECDSA_CURVE_SECP192R1, pub_x_le, pub_y_le, 1);
+    }
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+    else if (key_len == ESP_KEY_MGR_ECDSA_LEN_384) {
+        uint8_t x_be_stage1[32];
+        km_verify_compute_x_be(test_data_ecdh0.k1[1], sizeof(test_data_ecdh0.k1[1]),
+                               ecdh0_info.k2_G[1], x_be_stage1);
+        uint8_t scalar_be[48];
+        memcpy(scalar_be, x_be_stage0 + 16, 16);
+        memcpy(scalar_be + 16, x_be_stage1, 32);
+        uint8_t pub_x_le[48], pub_y_le[48];
+        km_verify_ecdsa_pubkey_from_scalar(P384_LEN, scalar_be, 48, pub_x_le, pub_y_le);
+        test_ecdsa_export_pubkey(ECDSA_CURVE_SECP384R1, pub_x_le, pub_y_le, 1);
+    }
+#endif
+#endif /* SOC_ECDSA_SUPPORT_EXPORT_PUBKEY */
+
 #if SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
     key_mgr_test_ecdsa_key(key_len, ECDSA_K_TYPE_DETERMINISITIC);
 #endif
@@ -402,11 +476,28 @@ static void key_mgr_test_hmac_key_aes_mode(test_data_aes_mode_t *test_data)
     TEST_ASSERT_EQUAL_HEX8_ARRAY(test_data->hmac_test_data.hmac_result, hmac, sizeof(test_data->hmac_test_data.hmac_result));
 }
 
-static void key_mgr_test_hmac_key_ecdh0_mode(const uint8_t *message, size_t message_len)
+/* Verify the ECDH0-deployed HMAC output. k2*G is exported via ecdh0_info, so
+ * the test can reconstruct x(k1 * k2*G) using the ECC peripheral, then compute
+ * HMAC(x_le, message) in software and compare against the hardware HMAC. */
+static void key_mgr_test_hmac_key_ecdh0_mode(const uint8_t *k1_be, size_t k1_len,
+                                             const uint8_t *k2_G_km,
+                                             const uint8_t *message, size_t message_len)
 {
-    uint8_t hmac[32] = {0};
-    TEST_ASSERT_EQUAL(ESP_OK, hmac_calculate(HMAC_KEY_KM, message, message_len, hmac));
-    // We cannot verify the result here as the HMAC key deployed is unknown.
+    uint8_t x_be[32];
+    km_verify_compute_x_be(k1_be, k1_len, k2_G_km, x_be);
+
+    /* HMAC peripheral reads the key slot in LE order, whereas the mbedtls needs it in BE.*/
+    uint8_t x_le[32];
+    for (int i = 0; i < 32; ++i) {
+        x_le[i] = x_be[31 - i];
+    }
+
+    uint8_t expected_mac[32];
+    km_verify_hmac_sha256(x_le, sizeof(x_le), message, message_len, expected_mac);
+
+    uint8_t hw_mac[32] = { 0 };
+    TEST_ASSERT_EQUAL(ESP_OK, hmac_calculate(HMAC_KEY_KM, message, message_len, hw_mac));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_mac, hw_mac, sizeof(hw_mac));
 }
 
 static void key_mgr_test_hmac_key_aes_random_mode(const uint8_t *message, size_t message_len)
@@ -447,7 +538,10 @@ static void key_mgr_test_hmac_ecdh0_mode(void)
     ESP_LOG_BUFFER_HEXDUMP("K2_G", ecdh0_info.k2_G[0], KEY_MGR_ECDH0_INFO_SIZE, ESP_LOG_DEBUG);
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_activate_key(&key_recovery_info));
-    key_mgr_test_hmac_key_ecdh0_mode(test_data_hmac.hmac_test_data.message, sizeof(test_data_hmac.hmac_test_data.message));
+    key_mgr_test_hmac_key_ecdh0_mode(test_data_ecdh0.k1[0], sizeof(test_data_ecdh0.k1[0]),
+                                     ecdh0_info.k2_G[0],
+                                     test_data_hmac.hmac_test_data.message,
+                                     sizeof(test_data_hmac.hmac_test_data.message));
     TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deactivate_key(key_recovery_info.key_type));
 }
 
@@ -514,7 +608,7 @@ TEST_SETUP(key_manager)
         TEST_IGNORE_MESSAGE("Key Manager not supported on this chip");
     }
     test_utils_record_free_mem();
-    TEST_ESP_OK(test_utils_set_leak_level(800, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL));
+    TEST_ESP_OK(test_utils_set_leak_level(900, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL));
 }
 
 TEST_TEAR_DOWN(key_manager)

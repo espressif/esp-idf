@@ -23,6 +23,7 @@ endif()
 
 if(CONFIG_CRYPTO_IS_KEY_MANAGER_SUPPORTED)
    list(APPEND srcs "key_manager/test_key_manager.c"
+                    "key_manager/km_ecdh0_verify.c"
                     "$ENV{IDF_PATH}/components/esp_security/src/esp_key_mgr.c")
    list(APPEND priv_include_dirs "$ENV{IDF_PATH}/components/esp_security/include")
 endif()
