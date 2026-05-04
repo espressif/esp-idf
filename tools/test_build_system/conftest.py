@@ -44,6 +44,12 @@ def _create_idf_copy_via_worktree(path_from: Path, path_to: Path) -> str:
     appear as empty directories. We copy submodule content from the source
     repo (which has them already checked out) instead of running git submodule
     update (which can fail due to auth issues on CI).
+
+    After copying submodules, remove the worktree's top-level ``.git`` file so
+    the result matches the old ``shutil.copytree`` behavior (no git repo at
+    ``IDF_PATH``). Otherwise CMake's ``git_submodule_check`` runs inside the
+    copy, sees missing submodule gitlinks, and tries ``git submodule update``,
+    which fails because submodule directories already contain copied files.
     """
     import uuid
 
@@ -70,17 +76,23 @@ def _create_idf_copy_via_worktree(path_from: Path, path_to: Path) -> str:
             # Copy the submodule content
             shutil.copytree(src_submodule, dst_submodule, symlinks=True, ignore=shutil.ignore_patterns('.git'))
 
+    # Match old shutil-based idf_copy: no top-level .git (see docstring above).
+    (path_to / '.git').unlink(missing_ok=True)
+
     return branch_name
 
 
 def _cleanup_worktree(path_from: Path, path_to: Path, branch_name: str) -> None:
-    """Remove git worktree and its temporary branch."""
+    """Remove worktree checkout directory and metadata; delete the temporary branch."""
     logging.debug(f'removing git worktree at {path_to}')
-    # Remove the worktree
+    # ``git worktree remove`` does not work once we deleted ``path_to/.git``;
+    # remove the directory and prune orphaned worktree metadata from the source repo.
+    shutil.rmtree(path_to, ignore_errors=True)
     subprocess.run(
-        ['git', 'worktree', 'remove', '--force', str(path_to)],
+        ['git', 'worktree', 'prune'],
         cwd=path_from,
-        check=False,  # Don't fail if already removed
+        capture_output=False,
+        check=False,
     )
     # Delete the temporary branch
     subprocess.run(
