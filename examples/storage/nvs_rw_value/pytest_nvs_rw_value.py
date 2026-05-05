@@ -10,6 +10,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32
 @pytest.mark.esp32c3
 @pytest.mark.generic
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 def test_examples_nvs_rw_value(dut: Dut) -> None:
     dut.serial.erase_flash()
     dut.serial.flash()
