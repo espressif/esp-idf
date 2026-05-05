@@ -27,10 +27,7 @@ idf_component_register(SRCS "${srcs}"
 
 
 if(NOT ${IDF_TARGET} STREQUAL "linux")
-# Increase link multiplicity to get some lwip symbols correctly resolved by the linker
-# due to cyclic dependencies present in IDF for lwip/esp_netif/mbedtls
 idf_component_get_property(lwip lwip COMPONENT_LIB)
-set_property(TARGET ${lwip} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 5)
 else()
     # For linux target, define ESP_TLS_WITH_LWIP if LWIP is enabled in the build
     if(CONFIG_LWIP_ENABLE)
