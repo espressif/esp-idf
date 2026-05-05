@@ -21,5 +21,7 @@ def test_examples_spiffs(dut: Dut) -> None:
         rb'example: SPIFFS unmounted',
     )
 
-    for msg in message_list:
-        dut.expect(re.compile(msg), timeout=60)
+    # First boot format + remount can exceed 60s on CI UART runners; keep startup fail-fast.
+    dut.expect(re.compile(message_list[0]), timeout=30)
+    for msg in message_list[1:]:
+        dut.expect(re.compile(msg), timeout=120)
