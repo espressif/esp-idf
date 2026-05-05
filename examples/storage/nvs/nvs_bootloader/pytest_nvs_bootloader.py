@@ -6,6 +6,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='s31 bringup on this module is not done')
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_nvs_bootloader_example(dut: Dut) -> None:
     # Expect to read hooks messages and data from NVS partition
