@@ -1,0 +1,11 @@
+# sdkconfig.debug_helpers is also appended from CMakeLists.txt.
+# ESP32-P4 bootloader starts at 0x2000 and can exceed the default 0x6000 limit.
+CONFIG_PARTITION_TABLE_OFFSET=0x9000
+
+# Match issue setup: USB-Serial-JTAG is the primary console.
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+
+# Match issue setup: no secondary console.
+CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
+
+CONFIG_ESP_SYSTEM_USE_FRAME_POINTER=y
