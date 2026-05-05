@@ -114,11 +114,8 @@ idf_build_set_property(COMPILE_OPTIONS "-fno-stack-protector" APPEND)
 # Bootloader Linker script
 # ---------------------------------------------------------------------------
 set(LD_DEFAULT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/main/ld/${IDF_TARGET}")
-if(CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
-    idf_build_set_property(BOOTLOADER_LINKER_SCRIPT "${LD_DEFAULT_PATH}/bootloader.rev0_2.ld.in" APPEND)
-else()
-    idf_build_set_property(BOOTLOADER_LINKER_SCRIPT "${LD_DEFAULT_PATH}/bootloader.ld.in" APPEND)
-endif()
+idf_build_set_property(BOOTLOADER_LINKER_SCRIPT "${LD_DEFAULT_PATH}/bootloader.memory.ld.in" APPEND)
+idf_build_set_property(BOOTLOADER_LINKER_SCRIPT "${LD_DEFAULT_PATH}/bootloader.sections.ld.in" APPEND)
 
 # ---------------------------------------------------------------------------
 # Build the bootloader ELF
