@@ -107,6 +107,12 @@ EAT: Claim Table
     * - Client ID
       - Relying Party identification
       -
+    * - Chip ID
+      - SoC chip identifier
+      -
+    * - UEID
+      - Universal Entity Identifiers, factory-burnt in eFuse
+      - Device MAC address and the Optional Unique ID from eFuse
     * - Device ID
       - Device identification (should be unique)
       - SHA256 digest of the device MAC address
@@ -176,9 +182,14 @@ Sample EAT in JSON format
       "key_id": "tee_att_key0"
     },
     "eat": {
-      "auth_challenge":"dcb9b53143ad6b081dad1a05c7ebda4e314d388762215799cf24ed52e9387678"
+      "auth_challenge":"dcb9b53143ad6b081dad1a05c7ebda4e314d388762215799cf24ed52e9387678",
       "client_id": 262974944,
+      "chip_id": 13,
       "device_ver": 1,
+      "ueid": {
+        "mac": "d885ac67c978",
+        "optional_id": "94fa4d7e305682714d48e7bbd710c961"
+      },
       "device_id": "e8cddb2a7f9a5a7c61735d6dda26e4bd153c6d772a9be6f26bd321dfe25e0ac8",
       "instance_id": "1adba85e0df997fd961f25a9e312430cef162b5c69466cd5b172f1e65ac7360c",
       "psa_cert_ref": "0716053550477-10100",
