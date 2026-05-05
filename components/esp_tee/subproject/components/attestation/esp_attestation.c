@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,49 +50,23 @@ static void free_sw_claim_list(void)
     }
 }
 
-static esp_err_t fetch_device_id(uint8_t *devid_buf)
+static esp_err_t fetch_ueids(esp_att_token_cfg_t *cfg)
 {
-    if (devid_buf == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    uint8_t mac_addr[6] = {0};
-    esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_MAC, mac_addr, sizeof(mac_addr) * 8);
+    /* UEID: raw eFuse MAC */
+    esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_MAC, cfg->ueid_mac,
+                                              ESP_ATT_EAT_UEID_MAC_SZ * 8);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to read MAC from eFuse!");
-        goto exit;
+        return err;
     }
 
-    mbedtls_sha256_context ctx;
-    mbedtls_sha256_init(&ctx);
-
-    int ret = mbedtls_sha256_starts(&ctx, false);
-    if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
-        err = ESP_FAIL;
-        goto exit;
+    /* UEID: 128-bit OPTIONAL_UNIQUE_ID */
+    err = esp_efuse_read_field_blob(ESP_EFUSE_OPTIONAL_UNIQUE_ID, cfg->ueid_opt_id,
+                                    ESP_ATT_EAT_UEID_OPT_ID_SZ * 8);
+    if (err != ESP_OK) {
+        return err;
     }
 
-    ret = mbedtls_sha256_update(&ctx, (const unsigned char *)mac_addr, sizeof(mac_addr));
-    if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
-        err = ESP_FAIL;
-        goto exit;
-    }
-
-    uint8_t digest[SHA256_DIGEST_SZ] = {0};
-    ret = mbedtls_sha256_finish(&ctx, digest);
-    if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
-        err = ESP_FAIL;
-        goto exit;
-    }
-
-    memcpy(devid_buf, digest, SHA256_DIGEST_SZ);
-    mbedtls_sha256_free(&ctx);
-
-exit:
-    return err;
+    return ESP_OK;
 }
 
 static esp_err_t populate_att_token_cfg(esp_att_token_cfg_t *cfg, const esp_att_ecdsa_keypair_t *keypair)
@@ -101,10 +75,17 @@ static esp_err_t populate_att_token_cfg(esp_att_token_cfg_t *cfg, const esp_att_
         return ESP_ERR_INVALID_ARG;
     }
 
-    esp_err_t err = fetch_device_id(cfg->device_id);
+    esp_err_t err = fetch_ueids(cfg);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to get the device ID!");
+        ESP_LOGE(TAG, "Failed to get the UEIDs!");
         return err;
+    }
+
+    /* Device ID = SHA-256 of the MAC */
+    int ret = mbedtls_sha256(cfg->ueid_mac, sizeof(cfg->ueid_mac), cfg->device_id, 0);
+    if (ret != 0) {
+        ESP_LOGE(TAG, "Failed to derive the device ID!");
+        return ESP_FAIL;
     }
 
     err = esp_att_utils_ecdsa_get_pubkey_digest(keypair, cfg->instance_id, sizeof(cfg->instance_id));
@@ -113,6 +94,10 @@ static esp_err_t populate_att_token_cfg(esp_att_token_cfg_t *cfg, const esp_att_
         return err;
     }
 
+    /* Chip ID read from the ROM */
+    extern const uint32_t _rom_chip_id;
+    cfg->chip_id = _rom_chip_id;
+    /* Chip revision read from eFuse */
     cfg->device_ver = efuse_hal_chip_revision();
     /* TODO: Decide what all fields we need here */
     cfg->device_stat = 0xA5;
