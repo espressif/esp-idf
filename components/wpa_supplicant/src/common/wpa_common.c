@@ -358,10 +358,10 @@ static int rsn_key_mgmt_to_bitfield(const u8 *s)
 	if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_802_1X_SUITE_B_192)
 		return WPA_KEY_MGMT_IEEE8021X_SUITE_B_192;
 #endif
-#ifdef CONFIG_OWE_STA
+#if defined(CONFIG_OWE_STA) || defined(CONFIG_OWE_SOFTAP)
 	if(RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_OWE)
 		return WPA_KEY_MGMT_OWE;
-#endif /* CONFIG_OWE_STA */
+#endif /* CONFIG_OWE_STA || CONFIG_OWE_SOFTAP */
 #ifdef CONFIG_DPP
         if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_DPP)
                 return WPA_KEY_MGMT_DPP;

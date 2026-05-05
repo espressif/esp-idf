@@ -793,7 +793,7 @@ int wpa_auth_pmksa_add2(struct wpa_authenticator *wpa_auth, const u8 *addr,
 
     struct rsn_pmksa_cache_entry *entry;
 
-    wpa_hexdump_key(MSG_DEBUG, "RSN: Cache PMK (3)", pmk, PMK_LEN);
+    wpa_hexdump_key(MSG_DEBUG, "RSN: Cache PMK (3)", pmk, pmk_len);
     entry = pmksa_cache_auth_add(wpa_auth->pmksa, pmk, pmk_len, pmkid,
                              NULL, 0, wpa_auth->addr, addr, session_timeout,
                              NULL, akmp);

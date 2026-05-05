@@ -507,14 +507,21 @@ bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid,
 #ifdef CONFIG_OWE_SOFTAP
             uint8_t owe_enabled = esp_wifi_ap_get_owe_config_internal();
             if (status == WLAN_STATUS_SUCCESS &&
-                    hapd->conf->wpa_key_mgmt & WPA_KEY_MGMT_OWE &&
+                    (hapd->conf->wpa_key_mgmt & WPA_KEY_MGMT_OWE) &&
                     sta->wpa_sm->wpa_key_mgmt == WPA_KEY_MGMT_OWE &&
-                    assoc_req->owe_dh && owe_enabled) {
-                status = owe_process_assoc_req(hapd, sta, assoc_req->owe_dh, assoc_req->owe_ie_len);
-                if (status == WLAN_STATUS_UNSPECIFIED_FAILURE) {
-                    *reason = wpa_status_to_reason_code(status);
-                    wpa_printf(MSG_ERROR, "OWE : Failed to process assoc req status %d", status);
-                    return false;
+                    owe_enabled) {
+                if (!assoc_req->owe_dh || assoc_req->owe_ie_len == 0) {
+                    wpa_printf(MSG_ERROR,
+                               "OWE: Association request missing DH Parameter element");
+                    status = WLAN_STATUS_AKMP_NOT_VALID;
+                } else {
+                    status = owe_process_assoc_req(hapd, sta, assoc_req->owe_dh,
+                                                   assoc_req->owe_ie_len);
+                    if (status != WLAN_STATUS_SUCCESS) {
+                        wpa_printf(MSG_ERROR,
+                                   "OWE: Failed to process assoc req status %d",
+                                   status);
+                    }
                 }
             }
 #endif /* CONFIG_OWE_SOFTAP */
