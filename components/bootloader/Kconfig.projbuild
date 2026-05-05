@@ -558,21 +558,12 @@ menu "Security features"
         depends on SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
         default SECURE_BOOT_ECDSA_KEY_LEN_256_BITS
         help
-            Select the ECDSA key size. Three key sizes are supported depending upon on the target:
+            Select the ECDSA key size. Two key sizes are supported depending on the target:
 
-            - 192 bit key using NISTP192 curve (Legacy, not recommended)
             - 256 bit key using NISTP256 curve (Recommended)
             - 384 bit key using NISTP384 curve (Recommended)
 
-            The advantage of using 384 and 256 bit keys is the extra randomness which makes it difficult to be
-            bruteforced compared to 192 bit key.
             At present, both key sizes are practically implausible to bruteforce.
-
-        config SECURE_BOOT_ECDSA_KEY_LEN_192_BITS
-            bool "Using ECC curve NISTP192 (Legacy, not recommended)"
-            depends on SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
-            help
-                This legacy option is not recommended for new designs. Prefer NISTP256 or NISTP384.
 
         config SECURE_BOOT_ECDSA_KEY_LEN_256_BITS
             bool "Using ECC curve NISTP256 (Recommended)"
@@ -708,7 +699,7 @@ menu "Security features"
 
             Key file is an ECDSA private key (NIST256p curve) in PEM format for Secure Boot V1.
             Key file is an RSA private key in PEM format for Secure Boot V2 (RSA scheme).
-            Key file is an ECDSA private key (NIST 192p, 256p or 384p) in PEM format for Secure Boot V2 (ECDSA scheme).
+            Key file is an ECDSA private key (256p or 384p) in PEM format for Secure Boot V2 (ECDSA scheme).
 
             Path is evaluated relative to the project directory.
 

@@ -151,6 +151,7 @@ BluFi（基于 BLE 的 Wi-Fi 配网）功能受到 ESP-IDF v6.0 中 Mbed TLS v4.
 - 在 ESP-IDF v6.0 中，用于安全启动的 ECDSA 应为 NISTP256/NISTP384 曲线。
 - 对旧版 NISTP192 的支持已弃用，仅当通过 ``CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_192_BITS`` 显式启用时方可使用。
 - 对旧版 NISTP192 的支持可能会在下一个 ESP-IDF 版本中被移除，因此强烈建议迁移至 NISTP256/NISTP384。
+- 从 Mbed TLS 4.1 开始，已移除对旧版 NISTP192 的支持。
 
 **已移除的废弃 API**
 

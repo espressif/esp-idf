@@ -22,7 +22,7 @@ if(NOT ${IDF_TARGET} STREQUAL "linux")
     set(priv_requires soc esp_hw_support)
     if(NOT BOOTLOADER_BUILD)
         list(APPEND priv_requires esp_pm esp_driver_dma)
-        set(requires esp_security)
+        set(requires esp_security esp_hal_security)
     endif()
 endif()
 
@@ -33,6 +33,7 @@ set(mbedtls_include_dirs
     "mbedtls/library"
     "mbedtls/tf-psa-crypto/core"
     "mbedtls/tf-psa-crypto/drivers/builtin/src/"
+    "mbedtls/tf-psa-crypto/extras"
     )
 
 if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL)
@@ -44,6 +45,7 @@ if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
     list(APPEND mbedtls_include_dirs "esp_crt_bundle/include")
 endif()
 
+
 list(APPEND mbedtls_include_dirs "${COMPONENT_DIR}/port/psa_driver/include")
 
 idf_component_register(SRCS "${mbedtls_srcs}"
@@ -54,6 +56,7 @@ idf_component_register(SRCS "${mbedtls_srcs}"
 
 # Add MBEDTLS_MAJOR_VERSION definition to the component library
 target_compile_definitions(${COMPONENT_LIB} INTERFACE MBEDTLS_MAJOR_VERSION=4)
+target_compile_definitions(${COMPONENT_LIB} INTERFACE __STDC_WANT_LIB_EXT1__=0)
 
 # Set the type of mbedtls component library
 set(linkage_type PUBLIC)
@@ -177,8 +180,15 @@ if(CONFIG_MBEDTLS_SSL_PROTO_GMTSSL1_1)
     set_property(TARGET mbedx509 PROPERTY SOURCES ${src_x509})
 endif()
 
-# Core libraries from the mbedTLS project
-set(mbedtls_targets mbedtls mbedx509 tfpsacrypto builtin)
+# Core libraries from the mbedTLS project, including 3rd-party (everest,
+# p256-m) and the new tf-psa-crypto sub-libs introduced in 4.1
+# (extras, platform, utilities). All of these need MBEDTLS_CONFIG_FILE
+# and the optimization flags applied uniformly; previously the loop ran
+# before the 3rd-party / new targets were appended, leaving them at the
+# default ESP-IDF -Og without esp_config.h.
+set(mbedtls_compile_targets mbedtls mbedx509 tfpsacrypto builtin
+                    everest p256-m extras platform utilities)
+set(mbedtls_link_targets mbedtls mbedx509 tfpsacrypto)
 
 add_library(mbed-builtin ALIAS builtin)
 set_target_properties(builtin PROPERTIES OUTPUT_NAME "mbed-builtin")
@@ -186,7 +196,10 @@ set_target_properties(builtin PROPERTIES OUTPUT_NAME "mbed-builtin")
 target_include_directories(tfpsacrypto PUBLIC "port/include")
 
 message(STATUS "Setting up mbedtls configuration")
-foreach(target ${mbedtls_targets})
+foreach(target ${mbedtls_compile_targets})
+    if(NOT TARGET ${target})
+        continue()
+    endif()
     target_compile_definitions(${target} PUBLIC -DMBEDTLS_CONFIG_FILE="mbedtls/esp_config.h")
     set_config_files_compile_definitions(${target})
     target_compile_definitions(${target} PUBLIC MBEDTLS_MAJOR_VERSION=4)
@@ -200,9 +213,6 @@ foreach(target ${mbedtls_targets})
     endif()
 endforeach()
 
-# 3rd party libraries from the mbedTLS project
-list(APPEND mbedtls_targets everest p256m)
-
 set(mbedtls_target_sources "${COMPONENT_DIR}/port/mbedtls_debug.c"
                            "${COMPONENT_DIR}/port/esp_platform_time.c"
                            "${COMPONENT_DIR}/port/esp_timing.c")
@@ -212,8 +222,8 @@ list(APPEND mbedtls_target_sources "${COMPONENT_DIR}/port/esp_psa_crypto_init.c"
 # Only compile esp_psa_its.c if nvs_flash component is available
 if(NOT ${IDF_TARGET} STREQUAL "linux")
     if(IDF_BUILD_V2)
-    # For v2: conditionally compile source and link only if nvs_flash target exists
-    target_sources(
+        # For v2: conditionally compile source and link only if nvs_flash target exists
+        target_sources(
         tfpsacrypto PRIVATE
         "$<$<TARGET_EXISTS:idf::nvs_flash>:${COMPONENT_DIR}/port/psa_crypto_storage/esp_psa_its.c>"
         )
@@ -270,12 +280,30 @@ endif()
 
 # Add port files to mbedtls targets
 target_sources(mbedtls PRIVATE ${mbedtls_target_sources})
+target_compile_definitions(mbedtls PUBLIC __STDC_WANT_LIB_EXT1__=0)
 
 if(NOT ${IDF_TARGET} STREQUAL "linux")
-    target_link_libraries(tfpsacrypto PUBLIC idf::esp_security)
+    # All tf-psa-crypto internal targets need esp_security includes because
+    # the public PSA crypto header chain (psa/crypto.h -> crypto_struct.h ->
+    # crypto_driver_contexts_composites.h) includes ESP driver context headers
+    # that depend on esp_security headers (e.g., esp_ds.h).
+    target_link_libraries(tfpsacrypto PRIVATE idf::esp_security)
     target_link_libraries(builtin PRIVATE idf::esp_security)
-    target_link_libraries(p256m PRIVATE idf::esp_security)
+    target_link_libraries(p256-m PRIVATE idf::esp_security)
+    target_link_libraries(extras PRIVATE idf::esp_security)
+    target_link_libraries(platform PRIVATE idf::esp_security)
+    target_link_libraries(utilities PRIVATE idf::esp_security)
+    target_link_libraries(mbedtls PRIVATE idf::esp_security)
+    target_link_libraries(mbedx509 PRIVATE idf::esp_security)
+
 endif()
+
+# Workaround: CMake 4.x Unix Makefiles generator fails to create build-order
+# dependencies for STATIC library targets consumed via $<TARGET_OBJECTS:> when
+# they are also linked via target_link_libraries in the same target. This
+# ensures builtin/everest/p256-m are compiled before tfpsacrypto archives
+# their objects into libtfpsacrypto.a.
+add_dependencies(tfpsacrypto builtin everest p256-m extras platform utilities)
 
 # Choose peripheral type
 
@@ -377,11 +405,11 @@ if(CONFIG_SOC_HMAC_SUPPORTED)
 endif()
 
 if(CONFIG_SOC_DIG_SIGN_SUPPORTED AND CONFIG_MBEDTLS_HARDWARE_RSA_DS_PERIPHERAL)
-target_sources(tfpsacrypto PRIVATE
+    target_sources(tfpsacrypto PRIVATE
                 "${COMPONENT_DIR}/port/psa_driver/esp_rsa_ds/psa_crypto_driver_esp_rsa_ds.c"
                 "${COMPONENT_DIR}/port/psa_driver/esp_rsa_ds/psa_crypto_driver_esp_rsa_ds_utilities.c"
 )
-target_link_libraries(tfpsacrypto PRIVATE idf::efuse)
+    target_link_libraries(tfpsacrypto PRIVATE idf::efuse)
 endif()
 
 if(CONFIG_SOC_HMAC_SUPPORTED)
@@ -479,7 +507,7 @@ if(CONFIG_PM_ENABLE)
     target_link_libraries(tfpsacrypto PRIVATE idf::esp_pm)
 endif()
 
-target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${mbedtls_targets})
+target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${mbedtls_link_targets})
 
 # Ensure PSA crypto initialization is included in the build.
 # On macOS (Mach-O), C symbols have a leading underscore prefix.

@@ -277,7 +277,7 @@
 
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECC
 #ifdef CONFIG_MBEDTLS_ECC_OTHER_CURVES_SOFT_FALLBACK
-    /* Use hardware accelerator for SECP192R1 and SECP256R1 curves,
+    /* Use hardware accelerator for SECP256R1 curves,
      * software implementation for rest of the curves
      */
     #define MBEDTLS_ECP_MUL_ALT_SOFT_FALLBACK
@@ -525,63 +525,53 @@
 #endif
 
 /**
- * \def MBEDTLS_ECP_DP_SECP192R1_ENABLED
  *
  * MBEDTLS_ECP_XXXX_ENABLED: Enables specific curves within the Elliptic Curve
  * module.  By default all supported curves are enabled.
  *
  * Comment macros to disable the curve and functions for it
  */
-/* Short Weierstrass curves (supporting ECP, ECDH, ECDSA) */
+/* Short Weierstrass curves (supporting ECDH, ECDSA) */
 #ifdef CONFIG_MBEDTLS_ECP_DP_SECP256R1_ENABLED
-#define MBEDTLS_ECP_DP_SECP256R1_ENABLED
+#define PSA_WANT_ECC_SECP_R1_256 1
 #else
-#undef MBEDTLS_ECP_DP_SECP256R1_ENABLED
+#undef PSA_WANT_ECC_SECP_R1_256
 #endif
 #ifdef CONFIG_MBEDTLS_ECP_DP_SECP384R1_ENABLED
-#define MBEDTLS_ECP_DP_SECP384R1_ENABLED
+#define PSA_WANT_ECC_SECP_R1_384 1
 #else
-#undef MBEDTLS_ECP_DP_SECP384R1_ENABLED
 #undef PSA_WANT_ECC_SECP_R1_384
 #endif
-#ifdef CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_192_BITS
-#define PSA_WANT_ECC_SECP_R1_192 1
-#else
-#undef PSA_WANT_ECC_SECP_R1_192
-#endif
 #ifdef CONFIG_MBEDTLS_ECP_DP_SECP521R1_ENABLED
-#define MBEDTLS_ECP_DP_SECP521R1_ENABLED
+#define PSA_WANT_ECC_SECP_R1_521 1
 #else
-#undef MBEDTLS_ECP_DP_SECP521R1_ENABLED
+#undef PSA_WANT_ECC_SECP_R1_521
 #endif
 #ifdef CONFIG_MBEDTLS_ECP_DP_SECP256K1_ENABLED
-#define MBEDTLS_ECP_DP_SECP256K1_ENABLED
+#define PSA_WANT_ECC_SECP_K1_256 1
 #else
-#undef MBEDTLS_ECP_DP_SECP256K1_ENABLED
+#undef PSA_WANT_ECC_SECP_K1_256
 #endif
 #ifdef CONFIG_MBEDTLS_ECP_DP_BP256R1_ENABLED
-#define MBEDTLS_ECP_DP_BP256R1_ENABLED
+#define PSA_WANT_ECC_BRAINPOOL_P_R1_256 1
 #else
-#undef MBEDTLS_ECP_DP_BP256R1_ENABLED
+#undef PSA_WANT_ECC_BRAINPOOL_P_R1_256
 #endif
 #ifdef CONFIG_MBEDTLS_ECP_DP_BP384R1_ENABLED
-#define MBEDTLS_ECP_DP_BP384R1_ENABLED
+#define PSA_WANT_ECC_BRAINPOOL_P_R1_384 1
 #else
-#undef MBEDTLS_ECP_DP_BP384R1_ENABLED
+#undef PSA_WANT_ECC_BRAINPOOL_P_R1_384
 #endif
 #ifdef CONFIG_MBEDTLS_ECP_DP_BP512R1_ENABLED
-#define MBEDTLS_ECP_DP_BP512R1_ENABLED
+#define PSA_WANT_ECC_BRAINPOOL_P_R1_512 1
 #else
-#undef MBEDTLS_ECP_DP_BP512R1_ENABLED
+#undef PSA_WANT_ECC_BRAINPOOL_P_R1_512
 #endif
-/* Montgomery curves (supporting ECP) */
+/* Montgomery curves */
 #ifdef CONFIG_MBEDTLS_ECP_DP_CURVE25519_ENABLED
-#define MBEDTLS_ECP_DP_CURVE25519_ENABLED
+#define PSA_WANT_ECC_MONTGOMERY_255 1
 #else
-#undef MBEDTLS_ECP_DP_CURVE25519_ENABLED
-#endif
-#ifdef MBEDTLS_ECP_DP_CURVE448_ENABLED
-#undef MBEDTLS_ECP_DP_CURVE448_ENABLED
+#undef PSA_WANT_ECC_MONTGOMERY_255
 #endif
 
 /**
@@ -1836,29 +1826,7 @@
 #undef MBEDTLS_BASE64_C
 #endif
 
-/**
- * \def MBEDTLS_BIGNUM_C
- *
- * Enable the multi-precision integer library.
- *
- * Module:  library/bignum.c
- *          library/bignum_core.c
- *          library/bignum_mod.c
- *          library/bignum_mod_raw.c
- * Caller:  library/dhm.c
- *          library/ecp.c
- *          library/ecdsa.c
- *          library/rsa.c
- *          library/rsa_alt_helpers.c
- *          library/ssl_tls.c
- *
- * This module is required for RSA, DHM and ECC (ECDH, ECDSA) support.
- */
-#ifdef CONFIG_MBEDTLS_BIGNUM_C
-#define MBEDTLS_BIGNUM_C
-#else
-#undef MBEDTLS_BIGNUM_C
-#endif
+/* MBEDTLS_BIGNUM_C is deprecated in mbedtls 4.x - PSA handles bignum internally */
 
 /**
  * \def MBEDTLS_CAMELLIA_C
@@ -2120,9 +2088,9 @@
  * Requires: MBEDTLS_ECP_C
  */
 #ifdef CONFIG_MBEDTLS_ECDH_C
-#define MBEDTLS_ECDH_C
+#define PSA_WANT_ALG_ECDH 1
 #else
-#undef MBEDTLS_ECDH_C
+#undef PSA_WANT_ALG_ECDH
 #endif
 
 /**
@@ -2141,51 +2109,26 @@
  *           short Weierstrass curve.
  */
 #ifdef CONFIG_MBEDTLS_ECDSA_C
-#define MBEDTLS_ECDSA_C
+#define PSA_WANT_ALG_ECDSA 1
 #else
-#undef MBEDTLS_ECDSA_C
+#undef PSA_WANT_ALG_ECDSA
 #endif
 
-/**
- * \def MBEDTLS_ECJPAKE_C
- *
- * Enable the elliptic curve J-PAKE library.
- *
- * \warning This is currently experimental. EC J-PAKE support is based on the
- * Thread v1.0.0 specification; incompatible changes to the specification
- * might still happen. For this reason, this is disabled by default.
- *
- * Module:  library/ecjpake.c
- * Caller:
- *
- * This module is used by the following key exchanges:
- *      ECJPAKE
- *
- * Requires: MBEDTLS_ECP_C and MBEDTLS_MD_C
- *
- */
-#ifdef CONFIG_MBEDTLS_ECJPAKE_C
-#define MBEDTLS_ECJPAKE_C
-#else
-#undef MBEDTLS_ECJPAKE_C
-#endif
-
-/**
- * \def MBEDTLS_ECP_C
- *
- * Enable the elliptic curve over GF(p) library.
- *
- * Module:  library/ecp.c
- * Caller:  library/ecdh.c
- *          library/ecdsa.c
- *          library/ecjpake.c
- *
- * Requires: MBEDTLS_BIGNUM_C and at least one MBEDTLS_ECP_DP_XXX_ENABLED
- */
+/* MBEDTLS_ECP_C is deprecated in mbedtls 4.x - use PSA ECC key types instead */
 #ifdef CONFIG_MBEDTLS_ECP_C
-#define MBEDTLS_ECP_C
+#define PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC 1
+#define PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT 1
+#define PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT 1
+#define PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE 1
+#define PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE 1
+#define PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY 1
 #else
-#undef MBEDTLS_ECP_C
+#undef PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
+#undef PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
+#undef PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
+#undef PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+#undef PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE
+#undef PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
 #endif
 
 /**
@@ -2563,10 +2506,16 @@
  * Requires: MBEDTLS_BIGNUM_C, MBEDTLS_OID_C
  */
 #ifdef CONFIG_MBEDTLS_RSA_C
-#define PSA_WANT_KEY_TYPE_RSA_KEY_PAIR 1
+#define PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC 1
+#define PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT 1
+#define PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT 1
+#define PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE 1
 #define PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY 1
 #else
-#undef PSA_WANT_KEY_TYPE_RSA_KEY_PAIR
+#undef PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC
+#undef PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT
+#undef PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT
+#undef PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE
 #undef PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY
 #endif
 

@@ -392,8 +392,7 @@ menu "mbedTLS"
         config MBEDTLS_X509_CREATE_C
             bool "X.509 certificate creation"
             default n
-            depends on MBEDTLS_BIGNUM_C && \
-                MBEDTLS_PK_WRITE_C && MBEDTLS_MD_C
+            depends on MBEDTLS_PK_WRITE_C && MBEDTLS_MD_C
             help
                 Support for creating X.509 certificates and CSRs.
 
@@ -729,7 +728,7 @@ menu "mbedTLS"
 
             config MBEDTLS_KEY_EXCHANGE_ECJPAKE
                 bool "Enable ECJPAKE based ciphersuite modes"
-                depends on MBEDTLS_ECJPAKE_C && MBEDTLS_ECP_DP_SECP256R1_ENABLED
+                depends on MBEDTLS_ECP_DP_SECP256R1_ENABLED
                 default n
                 help
                     Enable to support ciphersuites with prefix TLS-ECJPAKE-WITH-
@@ -978,21 +977,9 @@ menu "mbedTLS"
     endmenu
 
     menu "Asymmetric Ciphers"
-        config MBEDTLS_BIGNUM_C
-            bool "Enable multiple precision integer (bignum) support"
-            default y
-            help
-                Enable support for multiple precision integer (bignum) operations.
-
-                This is required for RSA, DSA, DHM, ECDH and ECDSA.
-
-                If you don't need any of these algorithms, you can disable this option
-                to save code size.
-
         config MBEDTLS_RSA_C
             bool "RSA public key cryptosystem"
             default y
-            select MBEDTLS_BIGNUM_C
             help
                 Enable RSA. Needed to use RSA-xxx TLS ciphersuites.
 
@@ -1091,7 +1078,6 @@ menu "mbedTLS"
             config MBEDTLS_DHM_C
                 bool "Diffie-Hellman-Merkle key exchange (DHM)"
                 default n
-                select MBEDTLS_BIGNUM_C
                 depends on MBEDTLS_ECP_C
                 help
                         Enable DHM. Needed to use DHE-xxx TLS ciphersuites.
@@ -1106,13 +1092,6 @@ menu "mbedTLS"
                 default y
                 help
                         Enable ECDH. Needed to use ECDHE-xxx TLS ciphersuites.
-
-            config MBEDTLS_ECJPAKE_C
-                bool "Elliptic curve J-PAKE"
-                depends on MBEDTLS_ECP_C
-                default n
-                help
-                        Enable ECJPAKE. Needed to use ECJPAKE-xxx TLS ciphersuites.
 
             config MBEDTLS_ECDSA_C
                 bool "Elliptic Curve DSA"
@@ -1354,7 +1333,7 @@ menu "mbedTLS"
         config MBEDTLS_HARDWARE_MPI
             bool "Enable hardware MPI (bignum) acceleration"
             default y
-            depends on !SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST && SOC_MPI_SUPPORTED && MBEDTLS_BIGNUM_C
+            depends on !SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST && SOC_MPI_SUPPORTED
             help
                 Enable hardware accelerated multiple precision integer operations.
 
@@ -1586,7 +1565,7 @@ menu "mbedTLS"
             bool "Enable PKCS number 7"
             default y
             depends on MBEDTLS_ASN1_PARSE_C && MBEDTLS_PK_PARSE_C && \
-                MBEDTLS_X509_CRT_PARSE_C && MBEDTLS_X509_CRL_PARSE_C && MBEDTLS_BIGNUM_C && MBEDTLS_MD_C
+                MBEDTLS_X509_CRT_PARSE_C && MBEDTLS_X509_CRL_PARSE_C && MBEDTLS_MD_C
             help
                 Enable PKCS number 7 core for using PKCS number 7-formatted signatures.
 

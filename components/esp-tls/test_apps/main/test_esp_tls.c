@@ -135,7 +135,6 @@ TEST_CASE("esp_tls_server session create delete", "[esp-tls]")
     TEST_ASSERT_LESS_THAN_INT(0, ret);
     // free the allocated memory.
     esp_tls_server_session_delete(tls);
-
 }
 #endif /* CONFIG_ESP_TLS_USING_MBEDTLS */
 
