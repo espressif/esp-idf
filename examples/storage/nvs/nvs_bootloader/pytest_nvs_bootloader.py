@@ -8,6 +8,10 @@ from pytest_embedded_idf.utils import idf_parametrize
 @pytest.mark.generic
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_nvs_bootloader_example(dut: Dut) -> None:
+    # Full bootloader hook logs must be visible before app output. On some targets (e.g. ESP32-H2)
+    # the default post-flash boot can finish before the serial capture window aligns; reset once
+    # so expectations always match output from a captured cold boot.
+    dut.serial.hard_reset()
     # Expect to read hooks messages and data from NVS partition
     dut.expect_exact('Before reading from NVS partition')
     dut.expect_exact('Result data. Return code: ESP_OK')
