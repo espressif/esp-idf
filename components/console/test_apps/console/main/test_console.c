@@ -37,6 +37,26 @@ typedef struct {
 
 static esp_console_repl_t *s_repl = NULL;
 
+/* Shared state for the repl config limits test */
+static int s_cmd_captured_argc;
+static char s_cmd_captured_last_arg[32];
+
+static int do_capture_args_cmd(int argc, char **argv)
+{
+    s_cmd_captured_argc = argc;
+    if (argc > 1) {
+        strncpy(s_cmd_captured_last_arg, argv[argc - 1], sizeof(s_cmd_captured_last_arg) - 1);
+        s_cmd_captured_last_arg[sizeof(s_cmd_captured_last_arg) - 1] = '\0';
+    }
+    return 0;
+}
+
+static const esp_console_cmd_t s_capture_args_cmd = {
+    .command = "capture",
+    .help = "Capture argc and last arg for testing",
+    .func = do_capture_args_cmd,
+};
+
 static int do_hello_cmd_with_context(void *context, int argc, char **argv)
 {
     cmd_context_t *cmd_context = (cmd_context_t *)context;
@@ -442,3 +462,50 @@ TEST_CASE("esp console repl custom_uart test", "[console][ignore]")
     printf("ByeBye\r\n");
 }
 #endif // !CONFIG_IDF_TARGET_LINUX
+
+TEST_CASE("esp console repl config respects max_cmdline_args and max_cmdline_length", "[console][ignore]")
+{
+    set_leak_threshold(248);
+
+    /*
+     * Use small limits to make truncation observable:
+     *  - max_cmdline_args = 4: split_argv stops when argc reaches argv_size-1 = 3,
+     *    so "capture arg1 arg2 arg3" drops "arg3" and the command receives argc == 3.
+     *  - max_cmdline_length = 20: strlcpy copies at most 19 chars, so the 20-char
+     *    input "capture longarg12345" is truncated to "capture longarg1234" and the
+     *    last argument received by the command is "longarg1234".
+     */
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    repl_config.max_cmdline_args = 4;
+    repl_config.max_cmdline_length = 20;
+    TEST_ESP_OK(esp_console_new_repl_stdio(&repl_config, &s_repl));
+
+    TEST_ESP_OK(esp_console_cmd_register(&s_capture_args_cmd));
+
+    /* --- Verify max_cmdline_args ---
+     * Input has 4 tokens (command + 3 args). The limit allows at most
+     * argv_size-1 = 3 tokens, so the last token ("arg3") is dropped.
+     */
+    s_cmd_captured_argc = -1;
+    int ret;
+    TEST_ESP_OK(esp_console_run("capture arg1 arg2 arg3", &ret));
+    TEST_ASSERT_EQUAL(0, ret);
+    TEST_ASSERT_EQUAL(3, s_cmd_captured_argc);
+
+    /* --- Verify max_cmdline_length ---
+     * "capture longarg12345" is exactly 20 chars. strlcpy(buf, input, 20)
+     * retains at most 19 chars, yielding "capture longarg1234".
+     * The command therefore receives "longarg1234" as its only argument.
+     */
+    s_cmd_captured_argc = -1;
+    memset(s_cmd_captured_last_arg, 0, sizeof(s_cmd_captured_last_arg));
+    TEST_ESP_OK(esp_console_run("capture longarg12345", &ret));
+    TEST_ASSERT_EQUAL(0, ret);
+    TEST_ASSERT_EQUAL(2, s_cmd_captured_argc);
+    TEST_ASSERT_EQUAL_STRING("longarg1234", s_cmd_captured_last_arg);
+
+    /* Start and immediately stop the REPL for a clean teardown */
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+    vTaskDelay(pdMS_TO_TICKS(100));
+    TEST_ESP_OK(esp_console_stop_repl(s_repl));
+}
