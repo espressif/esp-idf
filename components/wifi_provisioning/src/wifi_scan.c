@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <esp_log.h>
@@ -73,6 +65,13 @@ static esp_err_t cmd_scan_start_handler(WiFiScanPayload *req,
     }
 
     resp_scan_start__init(resp_payload);
+
+    if (req->payload_case != WI_FI_SCAN_PAYLOAD__PAYLOAD_CMD_SCAN_START || !req->cmd_scan_start) {
+        ESP_LOGE(TAG, "Invalid scan start command");
+        resp->resp_scan_start = resp_payload;
+        return ESP_ERR_INVALID_ARG;
+    }
+
     resp->status = (h->scan_start(req->cmd_scan_start->blocking,
                                   req->cmd_scan_start->passive,
                                   req->cmd_scan_start->group_channels,
@@ -131,6 +130,20 @@ static esp_err_t cmd_scan_result_handler(WiFiScanPayload *req,
     }
     resp_scan_result__init(resp_payload);
 
+    if (req->payload_case != WI_FI_SCAN_PAYLOAD__PAYLOAD_CMD_SCAN_RESULT || !req->cmd_scan_result) {
+        ESP_LOGE(TAG, "Invalid scan result command");
+        resp->resp_scan_result = resp_payload;
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (req->cmd_scan_result->start_index >= CONFIG_WIFI_PROV_SCAN_MAX_ENTRIES ||
+            req->cmd_scan_result->count >
+            CONFIG_WIFI_PROV_SCAN_MAX_ENTRIES - req->cmd_scan_result->start_index) {
+        ESP_LOGE(TAG, "Scan result count/start_index out of bounds");
+        resp->resp_scan_result = resp_payload;
+        return ESP_ERR_INVALID_ARG;
+    }
+
     resp->status = STATUS__Success;
     resp->payload_case = WI_FI_SCAN_PAYLOAD__PAYLOAD_RESP_SCAN_RESULT;
     resp->resp_scan_result = resp_payload;
@@ -149,10 +162,13 @@ static esp_err_t cmd_scan_result_handler(WiFiScanPayload *req,
     /* If req->cmd_scan_result->count is 0, the below loop will
      * be skipped.
      */
-    for (uint16_t i = 0; i < req->cmd_scan_result->count; i++) {
-        err = h->scan_result(i + req->cmd_scan_result->start_index,
-                             &scan_result, &h->ctx);
+    for (uint32_t i = 0; i < req->cmd_scan_result->count; i++) {
+        /* start_index and count are validated above to sum to at most
+         * CONFIG_WIFI_PROV_SCAN_MAX_ENTRIES (max 255), so this cast is safe. */
+        uint16_t result_index = (uint16_t)(i + req->cmd_scan_result->start_index);
+        err = h->scan_result(result_index, &scan_result, &h->ctx);
         if (err != ESP_OK) {
+            resp_payload->n_entries = i;
             resp->status = STATUS__InternalError;
             break;
         }
@@ -160,6 +176,8 @@ static esp_err_t cmd_scan_result_handler(WiFiScanPayload *req,
         results[i] = (WiFiScanResult *) malloc(sizeof(WiFiScanResult));
         if (!results[i]) {
             ESP_LOGE(TAG, "Failed to allocate memory for result entry");
+            resp_payload->n_entries = i;
+            resp->status = STATUS__InternalError;
             return ESP_ERR_NO_MEM;
         }
         wi_fi_scan_result__init(results[i]);
@@ -168,6 +186,9 @@ static esp_err_t cmd_scan_result_handler(WiFiScanPayload *req,
         results[i]->ssid.data = (uint8_t *) strndup(scan_result.ssid, 32);
         if (!results[i]->ssid.data) {
             ESP_LOGE(TAG, "Failed to allocate memory for scan result entry SSID");
+            results[i]->ssid.len = 0;
+            resp_payload->n_entries = i + 1;
+            resp->status = STATUS__InternalError;
             return ESP_ERR_NO_MEM;
         }
 
@@ -179,6 +200,9 @@ static esp_err_t cmd_scan_result_handler(WiFiScanPayload *req,
         results[i]->bssid.data = malloc(results[i]->bssid.len);
         if (!results[i]->bssid.data) {
             ESP_LOGE(TAG, "Failed to allocate memory for scan result entry BSSID");
+            results[i]->bssid.len = 0;
+            resp_payload->n_entries = i + 1;
+            resp->status = STATUS__InternalError;
             return ESP_ERR_NO_MEM;
         }
         memcpy(results[i]->bssid.data, scan_result.bssid, results[i]->bssid.len);
@@ -215,7 +239,7 @@ static void wifi_prov_scan_cmd_cleanup(WiFiScanPayload *resp, void *priv_data)
             {
                 if (!resp->resp_scan_result) return;
                 if (resp->resp_scan_result->entries) {
-                    for (uint16_t i = 0; i < resp->resp_scan_result->n_entries; i++) {
+                    for (uint32_t i = 0; i < resp->resp_scan_result->n_entries; i++) {
                         if (!resp->resp_scan_result->entries[i]) continue;
                         free(resp->resp_scan_result->entries[i]->ssid.data);
                         free(resp->resp_scan_result->entries[i]->bssid.data);
@@ -269,14 +293,18 @@ esp_err_t wifi_prov_scan_handler(uint32_t session_id, const uint8_t *inbuf, ssiz
     }
 
     wi_fi_scan_payload__init(&resp);
+    /* Validate req->msg before arithmetic to avoid signed overflow on attacker-controlled
+     * wire values. For unknown commands the dispatcher returns ESP_FAIL without calling
+     * any handler, so nothing is allocated and resp.msg = 0 is safe for cleanup. */
+    if (lookup_cmd_handler(req->msg) >= 0) {
+        resp.msg = req->msg + 1;
+    }
     ret = wifi_prov_scan_cmd_dispatcher(req, &resp, priv_data);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Command dispatcher error %d", ret);
         ret = ESP_FAIL;
         goto exit;
     }
-
-    resp.msg = req->msg + 1; /* Response is request + 1 */
     *outlen = wi_fi_scan_payload__get_packed_size(&resp);
     if (*outlen <= 0) {
         ESP_LOGE(TAG, "Invalid encoding for response");
