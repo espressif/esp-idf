@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,14 +7,18 @@
 #pragma once
 
 #include "esp_err.h"
+#include "soc/soc_caps.h"
+#include "esp_bit_defs.h"
 #include "esp_intr_alloc.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define DAC_DMA_EOF_INTR        0x01
-#define DAC_DMA_TEOF_INTR       0x02
+// one node in the descriptor chain is finished
+#define DAC_DMA_DONE_INTR       BIT(0)
+// all nodes in the descriptor chain are finished
+#define DAC_DMA_TEOF_INTR       BIT(1)
 
 /**
  * @brief Initialize DAC DMA peripheral
@@ -61,20 +65,12 @@ void dac_dma_periph_enable(void);
 void dac_dma_periph_disable(void);
 
 /**
- * @brief Whether the TX_EOF interrupt is triggered
+ * @brief Get the mask of the triggered interrupt
  *
  * @return
- *      - uint32_t  Mask of the triggered interrupt: DAC_DMA_EOF_INTR, DAC_DMA_EOF_INTR
+ *      - uint32_t  Mask of the triggered interrupt: DAC_DMA_DONE_INTR, DAC_DMA_TEOF_INTR
  */
-uint32_t dac_dma_periph_intr_is_triggered(void);
-
-/**
- * @brief Get the descriptor that just finished sending data
- *
- * @return
- *      - uint32_t  The address of the EOF descriptor
- */
-uint32_t dac_dma_periph_intr_get_eof_desc(void);
+uint32_t dac_dma_periph_intr_get_mask(void);
 
 /**
  * @brief Start a DMA transaction
@@ -82,7 +78,20 @@ uint32_t dac_dma_periph_intr_get_eof_desc(void);
  *
  * @param[in]   desc_addr   Descriptor address
  */
-void dac_dma_periph_dma_trans_start(uint32_t desc_addr);
+void dac_dma_periph_trans_start(uintptr_t desc_addr);
+
+/**
+ * @brief Stop the current DMA transaction immediately
+ */
+void dac_dma_periph_trans_stop(void);
+
+#if !SOC_IS(ESP32)
+/**
+ * @brief Append the newly linked DMA descriptors to the current transaction
+ * @note  The caller should link new descriptors to the current tail before calling this function.
+ */
+void dac_dma_periph_trans_append(void);
+#endif
 
 #ifdef __cplusplus
 }

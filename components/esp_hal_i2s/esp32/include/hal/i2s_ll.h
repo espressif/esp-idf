@@ -46,6 +46,7 @@ extern "C" {
 #define I2S_LL_BCK_MAX_PRESCALE   (64)
 
 #define I2S_LL_EVENT_RX_EOF         BIT(9)
+#define I2S_LL_EVENT_TX_DONE        BIT(11)
 #define I2S_LL_EVENT_TX_EOF         BIT(12)
 #define I2S_LL_EVENT_RX_DSCR_ERR    BIT(13)
 #define I2S_LL_EVENT_TX_DSCR_ERR    BIT(14)
@@ -542,6 +543,7 @@ static inline void i2s_ll_rx_reset_dma(i2s_dev_t *hw)
  *
  * @param hw Peripheral I2S hardware instance address.
  */
+__attribute__((always_inline))
 static inline void i2s_ll_start_out_link(i2s_dev_t *hw)
 {
     hw->out_link.start = 1;
@@ -553,6 +555,7 @@ static inline void i2s_ll_start_out_link(i2s_dev_t *hw)
  * @param hw Peripheral I2S hardware instance address.
  * @param val value to set out link address
  */
+__attribute__((always_inline))
 static inline void i2s_ll_set_out_link_addr(i2s_dev_t *hw, uint32_t val)
 {
     hw->out_link.addr = val;
@@ -584,6 +587,7 @@ static inline void i2s_ll_rx_start(i2s_dev_t *hw)
  * @param hw Peripheral I2S hardware instance address.
  * @param link_addr DMA descriptor link address.
  */
+__attribute__((always_inline))
 static inline void i2s_ll_tx_start_link(i2s_dev_t *hw, uint32_t link_addr)
 {
     i2s_ll_set_out_link_addr(hw, link_addr);
