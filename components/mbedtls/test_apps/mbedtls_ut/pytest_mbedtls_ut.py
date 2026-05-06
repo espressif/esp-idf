@@ -118,18 +118,19 @@ def test_mbedtls_hmac_opaque(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='efuse_hmac_key')
 
 
-# TODO: IDF-15012
-# @pytest.mark.generic
-# @pytest.mark.parametrize(
-#     'config',
-#     [
-#         'rom_impl',
-#     ],
-#     indirect=True,
-# )
-# @idf_parametrize('target', ['esp32c2'], indirect=['target'])
-# def test_mbedtls_rom_impl_esp32c2(dut: Dut) -> None:
-#     dut.run_all_single_board_cases()
+@pytest.mark.esp32c2_rev2
+@pytest.mark.xtal_26mhz
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config, baud',
+    [
+        ('rom_impl', '74880'),
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c2'], indirect=['target'])
+def test_mbedtls_rom_impl_esp32c2(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
 
 
 @pytest.mark.generic
