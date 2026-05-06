@@ -235,6 +235,14 @@ config SOC_PPA_SUPPORTED
     bool
     default y
 
+config SOC_LIGHT_SLEEP_SUPPORTED
+    bool
+    default y
+
+config SOC_DEEP_SLEEP_SUPPORTED
+    bool
+    default y
+
 config SOC_MODEM_CLOCK_SUPPORTED
     bool
     default y
@@ -300,6 +308,10 @@ config SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT
     default y
 
 config SOC_XTAL_SUPPORT_40M
+    bool
+    default y
+
+config SOC_XTAL_CLOCK_PATH_DEPENDS_ON_TOP_DOMAIN
     bool
     default y
 
@@ -443,6 +455,10 @@ config SOC_GPIO_SUPPORT_ETM
     bool
     default y
 
+config SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
+    bool
+    default y
+
 config SOC_LP_IO_HAS_INDEPENDENT_WAKEUP_SOURCE
     bool
     default y
@@ -459,13 +475,9 @@ config SOC_GPIO_OUT_RANGE_MAX
     int
     default 61
 
-config SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK
+config SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_MASK
     int
     default 0
-
-config SOC_GPIO_DEEP_SLEEP_WAKE_SUPPORTED_PIN_CNT
-    int
-    default 8
 
 config SOC_GPIO_SUPPORT_FORCE_HOLD
     bool
@@ -712,10 +724,6 @@ config SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP
     default y
 
 config SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR
-    bool
-    default y
-
-config SOC_MSPI_HAS_INDEPENT_IOMUX
     bool
     default y
 

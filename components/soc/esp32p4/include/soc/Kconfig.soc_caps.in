@@ -1171,6 +1171,10 @@ config SOC_USB_FSLS_PHY_NUM
     int
     default 1
 
+config SOC_USB_OTG_NEED_SOFTWARE_SUSPEND_BEFORE_SLEEP
+    bool
+    default y
+
 config SOC_USB_UTMI_PHY_NUM
     int
     default 1

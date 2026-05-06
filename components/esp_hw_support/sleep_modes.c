@@ -146,6 +146,10 @@
 #include "esp32p4/rom/rtc.h"
 #include "hal/gpio_ll.h"
 #include "hal/clk_gate_ll.h"
+#elif CONFIG_IDF_TARGET_ESP32S31
+#include "esp32s31/rom/rtc.h"
+#include "hal/gpio_ll.h"
+#include "hal/clk_gate_ll.h"
 #endif
 
 #if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
@@ -245,6 +249,9 @@
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US           (324)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US        (240)
 #define LDO_POWER_TAKEOVER_PREPARATION_TIME_US  (185)
+#elif CONFIG_IDF_TARGET_ESP32S31
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US           (324)
+#define DEFAULT_HARDWARE_OUT_OVERHEAD_US        (240)
 #endif
 
 // Actually costs 80us, using the fastest slow clock 150K calculation takes about 16 ticks
@@ -694,7 +701,7 @@ static SLEEP_FN_ATTR void misc_modules_sleep_prepare(uint32_t sleep_flags, bool 
         // Only avoid USJ pad leakage here, USB OTG pad leakage is prevented through USB Host driver.
         sleep_console_usj_pad_backup_and_disable();
 #endif
-#if SOC_USB_OTG_SUPPORTED && SOC_PM_SUPPORT_CNNT_PD
+#if SOC_USB_OTG_SUPPORTED && SOC_PM_SUPPORT_CNNT_PD && SOC_USB_OTG_NEED_SOFTWARE_SUSPEND_BEFORE_SLEEP
         if (!(sleep_flags & PMU_SLEEP_PD_CNNT)) {
             sleep_usb_otg_phy_backup_and_disable();
         }
@@ -715,7 +722,11 @@ static SLEEP_FN_ATTR void misc_modules_sleep_prepare(uint32_t sleep_flags, bool 
     /* When using SPIRAM on the ESP32-C5, we need to use Cache_WriteBack_All to protect SPIRAM data
         because the cache powers down when we power down the CPU */
     if(sleep_flags & PMU_SLEEP_PD_CPU) {
+ #if SOC_SHARED_IDCACHE_SUPPORTED || CONFIG_IDF_TARGET_ESP32H4
         Cache_WriteBack_All();
+#else
+        Cache_WriteBack_All(CACHE_MAP_L1_DCACHE);
+#endif
     }
 #endif
 #if ADC_LL_ANA_CALI_REG_PD_WORKAROUND
@@ -762,7 +773,7 @@ static SLEEP_FN_ATTR void misc_modules_wake_prepare(uint32_t sleep_flags)
 #if SOC_USB_SERIAL_JTAG_SUPPORTED && !SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP
     sleep_console_usj_pad_restore();
 #endif
-#if SOC_USB_OTG_SUPPORTED && SOC_PM_SUPPORT_CNNT_PD
+#if SOC_USB_OTG_SUPPORTED && SOC_PM_SUPPORT_CNNT_PD && SOC_USB_OTG_NEED_SOFTWARE_SUSPEND_BEFORE_SLEEP
     if (!(sleep_flags & PMU_SLEEP_PD_CNNT)) {
         sleep_usb_otg_phy_restore();
     }

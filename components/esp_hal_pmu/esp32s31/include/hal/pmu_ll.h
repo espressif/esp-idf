@@ -795,6 +795,7 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_ext1_get_wakeup_status(void)
 FORCE_INLINE_ATTR void pmu_ll_ext1_clear_wakeup_status(void)
 {
     REG_SET_BIT(PMU_EXT_WAKEUP_CNTL_REG, PMU_EXT_WAKEUP_STATUS_CLR);
+    REG_CLR_BIT(PMU_EXT_WAKEUP_CNTL_REG, PMU_EXT_WAKEUP_STATUS_CLR);
 }
 
 /**

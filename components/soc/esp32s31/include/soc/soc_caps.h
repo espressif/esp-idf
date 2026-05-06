@@ -97,8 +97,8 @@
 #define SOC_TOUCH_SENSOR_SUPPORTED      1
 // #define SOC_RNG_SUPPORTED               1      // TODO: [ESP32S31] IDF-14632
 #define SOC_PPA_SUPPORTED               1
-// #define SOC_LIGHT_SLEEP_SUPPORTED       1      // TODO: [ESP32S31] IDF-14645
-// #define SOC_DEEP_SLEEP_SUPPORTED        1      // TODO: [ESP32S31] IDF-14643
+#define SOC_LIGHT_SLEEP_SUPPORTED       1
+#define SOC_DEEP_SLEEP_SUPPORTED        1
 #define SOC_MODEM_CLOCK_SUPPORTED       1
 // #define SOC_PM_SUPPORTED                1      // TODO: [ESP32S31] IDF-14648
 #define SOC_BITSCRAMBLER_SUPPORTED      1
@@ -122,7 +122,8 @@
 #define SOC_BT_SUPPORTED                 1
 #define SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT 1
 /*-------------------------- XTAL CAPS ---------------------------------------*/
-#define SOC_XTAL_SUPPORT_40M            1
+#define SOC_XTAL_SUPPORT_40M                        1
+#define SOC_XTAL_CLOCK_PATH_DEPENDS_ON_TOP_DOMAIN   1
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
 /*!< SAR ADC Module*/
@@ -185,7 +186,7 @@
 #define SOC_GPIO_SUPPORT_ETM          1
 
 // GPIO0~7 on ESP32S31 can support chip deep sleep wakeup
-// #define SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP  (1) // TODO: [ESP32S31] IDF-14643
+#define SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP  (1)
 #define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP           SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 #define SOC_LP_IO_HAS_INDEPENDENT_WAKEUP_SOURCE     (1)
 
@@ -198,8 +199,7 @@
 #define SOC_GPIO_IN_RANGE_MAX           61
 #define SOC_GPIO_OUT_RANGE_MAX          61
 
-#define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | 0xFF)
-#define SOC_GPIO_DEEP_SLEEP_WAKE_SUPPORTED_PIN_CNT      (8)
+#define SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_MASK      (0ULL | 0xFF)
 
 // digital I/O pad powered by VDD3V3_CPU or VDD_SPI(GPIO_NUM_8~GPIO_NUM_61, excluding GPIO29/41 which are not bonded)
 #define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK (SOC_GPIO_VALID_GPIO_MASK & ~((1ULL << SOC_RTCIO_PIN_COUNT) - 1))
@@ -298,7 +298,6 @@
 #define SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP          (1)
 #define SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR        (1)
 
-#define SOC_MSPI_HAS_INDEPENT_IOMUX               1
 #define SOC_MEMSPI_IS_INDEPENDENT                 1
 
 #define SOC_MEMSPI_ENCRYPTION_ALIGNMENT           16    /*!< 16-byte alignment restriction to mem addr and size if encryption is enabled */
