@@ -38,6 +38,20 @@ const regdma_entries_config_t intr_matrix_regs_retention[] = {
 };
 _Static_assert(ARRAY_SIZE(intr_matrix_regs_retention) == INT_MTX_RETENTION_LINK_LEN, "Inconsistent INT_MTX retention link length definitions");
 
+#define L1_CACHE_ACS_FAIL_INR_CLR       (CACHE_L1_ICACHE0_FAIL_INT_CLR | CACHE_L1_ICACHE1_FAIL_INT_CLR | CACHE_L1_ICACHE2_FAIL_INT_CLR | CACHE_L1_ICACHE3_FAIL_INT_CLR |CACHE_L1_DCACHE_FAIL_INT_CLR)
+#define L1_CACHE_ACS_FAIL_INR_CLR_M     (CACHE_L1_ICACHE0_FAIL_INT_CLR_M | CACHE_L1_ICACHE1_FAIL_INT_CLR_M | CACHE_L1_ICACHE2_FAIL_INT_CLR_M | CACHE_L1_ICACHE3_FAIL_INT_CLR_M |CACHE_L1_DCACHE_FAIL_INT_CLR_M)
+
+#define N_REGS_CACHE_0()     (((CACHE_L1_CACHE_ATOMIC_CONF_REG - CACHE_L1_ICACHE_CTRL_REG) / 4) + 1)
+#define N_REGS_CACHE_1()     (((CACHE_L1_CACHE_ACS_FAIL_INT_ENA_REG - CACHE_L1_CACHE_ACS_FAIL_CTRL_REG) / 4) + 1)
+
+const regdma_entries_config_t cache_regs_retention[] = {
+    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_CACHE_LINK(0x1), CACHE_L1_ICACHE_CTRL_REG,             CACHE_L1_ICACHE_CTRL_REG,           N_REGS_CACHE_0(),               0, 1), .owner = ENTRY(0) | ENTRY(2)},
+    [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_CACHE_LINK(0x2), CACHE_L1_CACHE_ACS_FAIL_CTRL_REG,     CACHE_L1_CACHE_ACS_FAIL_CTRL_REG,   N_REGS_CACHE_1(),               0, 1), .owner = ENTRY(0) | ENTRY(2)},
+    [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_CACHE_LINK(0x3), CACHE_TRACE_ENA_REG,                  CACHE_TRACE_ENA_REG,                1,                              0, 1), .owner = ENTRY(0) | ENTRY(2)},
+    [3] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CACHE_LINK(0x0),      CACHE_L1_CACHE_ACS_FAIL_INT_CLR_REG,  L1_CACHE_ACS_FAIL_INR_CLR,          L1_CACHE_ACS_FAIL_INR_CLR_M,    1, 1), .owner = ENTRY(0) | ENTRY(2) },
+};
+_Static_assert(ARRAY_SIZE(cache_regs_retention) == CACHE_RETENTION_LINK_LEN, "Inconsistent L2 CACHE retention link length definitions");
+
 #if SOC_APM_SUPPORTED
 /* TEE APM Registers Context */
 #define N_REGS_TEE_0()    (((TEE_M87_MODE_CTRL_REG                  - TEE_M0_MODE_CTRL_REG)                / 4) + 1)
@@ -132,11 +146,22 @@ _Static_assert(ARRAY_SIZE(flash_spimem_regs_retention) == SPIMEM_FLASH_RETENTION
 #define N_REGS_SPI1_S_MEM_2()     (((SPI1_MEM_S_TIMING_CALI_REG - SPI1_MEM_S_TIMING_CALI_REG)   / 4) + 1)
 
 const regdma_entries_config_t psram_spimem_regs_retention[SPIMEM_PSRAM_RETENTION_LINK_LEN] = {
-    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x00),     SPI_MEM_S_CTRL_REG,              SPI_MEM_S_CTRL_REG,              N_REGS_SPI0_S_MEM_0(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }, /* spi0_mem */
-    [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x01),     SPI_MEM_S_DDR_REG,               SPI_MEM_S_DDR_REG,               N_REGS_SPI0_S_MEM_1(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
-    [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x02),     SPI1_MEM_S_CMD_REG,              SPI1_MEM_S_CMD_REG,              N_REGS_SPI1_S_MEM_0(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
-    [3] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x03),     SPI1_MEM_S_DDR_REG,              SPI1_MEM_S_DDR_REG,              N_REGS_SPI1_S_MEM_1(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
-    [4] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x04),     SPI1_MEM_S_TIMING_CALI_REG,      SPI1_MEM_S_TIMING_CALI_REG,      N_REGS_SPI1_S_MEM_2(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
+    [0]  = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_SPIMEM_LINK(0x07),      HP_SYS_CLKRST_PSRAM_CTRL0_REG,   HP_SYS_CLKRST_REG_PSRAM_CORE_CLK_EN, HP_SYS_CLKRST_REG_PSRAM_CORE_CLK_EN_M, 1, 0), .owner = ENTRY(0) | ENTRY(2) }, // Enable PSRAM mspi core clock on restore
+    [1]  = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_SPIMEM_LINK(0x08),      HP_SYS_CLKRST_PSRAM_CTRL0_REG,   HP_SYS_CLKRST_REG_PSRAM_SYS_CLK_EN,  HP_SYS_CLKRST_REG_PSRAM_SYS_CLK_EN_M,  1, 0), .owner = ENTRY(0) | ENTRY(2) }, // Enable PSRAM mspi core clock on restore
+    [2]  = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x09), SPI_MEM_S_CTRL_REG,              SPI_MEM_S_CTRL_REG,                  N_REGS_SPI0_S_MEM_0(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }, /* spi0_mem */
+    [3]  = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x0a), SPI_MEM_S_MISC_REG,              SPI_MEM_S_MISC_REG,                  N_REGS_SPI0_S_MEM_1(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
+    [4]  = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x0b), SPI_MEM_S_INT_ENA_REG,           SPI_MEM_S_INT_ENA_REG,               N_REGS_SPI0_S_MEM_2(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
+    [5]  = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x0c), SPI_MEM_S_ECC_CTRL_REG,          SPI_MEM_S_ECC_CTRL_REG,              N_REGS_SPI0_S_MEM_3(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
+    [6]  = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x0d), SPI_MEM_S_MMU_POWER_CTRL_REG,    SPI_MEM_S_MMU_POWER_CTRL_REG,        N_REGS_SPI0_S_MEM_4(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
+    [7]  = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x0e), SPI1_MEM_S_CMD_REG,              SPI1_MEM_S_CMD_REG,                  N_REGS_SPI1_S_MEM_0(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }, /* spi1_mem */
+    [8]  = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x0f), SPI1_MEM_S_FLASH_WAITI_CTRL_REG, SPI1_MEM_S_FLASH_WAITI_CTRL_REG,     N_REGS_SPI1_S_MEM_1(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
+    [9]  = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x10), SPI1_MEM_S_INT_ENA_REG,          SPI1_MEM_S_INT_ENA_REG,              N_REGS_SPI1_S_MEM_2(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
+    [10] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x11), SPI1_MEM_S_TIMING_CALI_REG,      SPI1_MEM_S_TIMING_CALI_REG,          N_REGS_SPI1_S_MEM_3(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
+    [11] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x12), SPI1_MEM_S_CLOCK_GATE_REG,       SPI1_MEM_S_CLOCK_GATE_REG,           N_REGS_SPI1_S_MEM_4(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
+    [12] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_SPIMEM_LINK(0x13),      HP_SYS_CLKRST_PSRAM_CTRL0_REG,   0,                                   HP_SYS_CLKRST_REG_PSRAM_CORE_CLK_EN_M, 0, 1), .owner = ENTRY(0) | ENTRY(2) }, // Disable PSRAM mspi core clock on backup
+    [13] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_SPIMEM_LINK(0x14),      HP_SYS_CLKRST_PSRAM_CTRL0_REG,   0,                                   HP_SYS_CLKRST_REG_PSRAM_SYS_CLK_EN_M,  0, 1), .owner = ENTRY(0) | ENTRY(2) }, // Disable PSRAM mspi core clock on backup
+    /* PSRAM MSPI IOMUX */
+    [14] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SPIMEM_LINK(0x15), IOMUX_MSPI_PIN_PSRAM_D_PIN0_REG, IOMUX_MSPI_PIN_PSRAM_D_PIN0_REG,     N_REGS_MSPI1_IOMUX(),  0, 0), .owner = ENTRY(0) | ENTRY(2) },
 };
 
 _Static_assert(ARRAY_SIZE(psram_spimem_regs_retention) == SPIMEM_PSRAM_RETENTION_LINK_LEN, "Inconsistent PSRAM SPI Mem retention link length definitions");

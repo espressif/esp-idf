@@ -34,7 +34,8 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_hp_system_retention_in
 static __attribute__((unused)) esp_err_t sleep_sys_periph_tee_apm_retention_init(void *arg)
 {
 /* TBD for ESP32P4 IDF-10020. */
-#ifndef CONFIG_IDF_TARGET_ESP32P4
+/* TBD for ESP32S31 IDF-14620. */
+#if  !defined(CONFIG_IDF_TARGET_ESP32P4) && !defined(CONFIG_IDF_TARGET_ESP32S31)
     esp_err_t err = sleep_retention_entries_create(tee_apm_regs_retention, ARRAY_SIZE(tee_apm_regs_retention), REGDMA_LINK_PRI_NON_CRITICAL_TEE_APM, SLEEP_RETENTION_MODULE_SYS_PERIPH);
     if (err == ESP_OK) {
         err = sleep_retention_entries_create(tee_apm_highpri_regs_retention, ARRAY_SIZE(tee_apm_highpri_regs_retention), REGDMA_LINK_PRI_CRITICAL_TEE_APM, SLEEP_RETENTION_MODULE_SYS_PERIPH);
@@ -74,7 +75,7 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_flash_spimem_retention
     return ESP_OK;
 }
 
-#if CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32P4
+#if CONFIG_SPIRAM && SOC_PSRAM_MEMSPI_IS_INDEPENDENT
 /* TODO: PM-205, In the ESP32C5, Flash and PSRAM use the same set of SPIMEM hardware, while in P4, Flash and PSRAM each have their own SPIMEM hardware.
  * It’s necessary to confirm whether the ESP32C5 can independently manage SPIMEM retention for Flash and PSRAM in software. */
 static __attribute__((unused)) esp_err_t sleep_sys_periph_psram_spimem_retention_init(void *arg)
@@ -99,7 +100,7 @@ esp_err_t sleep_sys_periph_cache_retention_init(void)
 {
     esp_err_t err = sleep_retention_entries_create(cache_regs_retention, ARRAY_SIZE(cache_regs_retention), REGDMA_LINK_PRI_SYS_PERIPH_HIGH, SLEEP_RETENTION_MODULE_SYS_PERIPH);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for digital peripherals (Cache) retention");
-    ESP_LOGI(TAG, "L2 Cache sleep retention initialization");
+    ESP_LOGD(TAG, "L2 Cache sleep retention initialization");
     return ESP_OK;
 }
 #endif
@@ -109,7 +110,7 @@ esp_err_t sleep_pau_retention_init(void)
 {
     esp_err_t err = sleep_retention_entries_create(pau_regs_retention, ARRAY_SIZE(pau_regs_retention), REGDMA_LINK_PRI_SYS_PERIPH_LOW, SLEEP_RETENTION_MODULE_SYS_PERIPH);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for system (PAU) retention");
-    ESP_LOGI(TAG, "PAU sleep retention initialization");
+    ESP_LOGD(TAG, "PAU sleep retention initialization");
     return ESP_OK;
 }
 #endif
@@ -119,7 +120,7 @@ esp_err_t sleep_pvt_retention_init(void)
 {
     esp_err_t err = sleep_retention_entries_create(pvt_regs_retention, ARRAY_SIZE(pvt_regs_retention), REGDMA_LINK_PRI_SYS_PERIPH_LOW, SLEEP_RETENTION_MODULE_SYS_PERIPH);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for system (PVT) retention");
-    ESP_LOGI(TAG, "PVT sleep retention initialization");
+    ESP_LOGD(TAG, "PVT sleep retention initialization");
     return ESP_OK;
 }
 #endif
@@ -147,7 +148,7 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_retention_init(void *a
     if(err) goto error;
     err = sleep_sys_periph_flash_spimem_retention_init(arg);
     if(err) goto error;
-#if CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32P4
+#if CONFIG_SPIRAM && SOC_PSRAM_MEMSPI_IS_INDEPENDENT
     err = sleep_sys_periph_psram_spimem_retention_init(arg);
     if(err) goto error;
 #endif

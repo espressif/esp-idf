@@ -26,6 +26,16 @@ extern "C"
 extern const regdma_entries_config_t intr_matrix_regs_retention[INT_MTX_RETENTION_LINK_LEN];
 
 /**
+ * @brief Provide access to cache configuration registers retention
+ * context definition.
+ *
+ * This is an internal function of the sleep retention driver, and is not
+ * useful for external use.
+ */
+#define CACHE_RETENTION_LINK_LEN 4
+extern const regdma_entries_config_t cache_regs_retention[CACHE_RETENTION_LINK_LEN];
+
+/**
  * @brief Provide access to tee apm configuration registers retention
  * context definition.
  *
