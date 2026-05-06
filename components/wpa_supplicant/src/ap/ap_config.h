@@ -395,9 +395,21 @@ const u8 * hostapd_get_psk(const struct hostapd_bss_config *conf,
 			   const u8 *addr, const u8 *prev_psk);
 int hostapd_setup_wpa_psk(struct hostapd_bss_config *conf);
 struct sta_info;
-bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, u8 *wpa_ie,
-        u8 wpa_ie_len, u8 *rsnxe, uint16_t rsnxe_len,
-        bool *pmf_enable, int subtype, uint8_t *pairwise_cipher, uint8_t *reason, uint8_t *rsn_selection_ie);
+
+struct hostap_assoc_sta_req {
+	u8 *wpa_ie;
+	u8 wpa_ie_len;
+	u8 *rsnxe;
+	u16 rsnxe_len;
+	int subtype;
+	u8 *rsn_selection_ie;
+	u8 *owe_dh;
+	u8 owe_ie_len;
+};
+
+bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid,
+			  const struct hostap_assoc_sta_req *assoc_req,
+			  bool *pmf_enable, u8 *pairwise_cipher, u8 *reason);
 bool wpa_ap_remove(u8* bssid);
 
 #endif /* HOSTAPD_CONFIG_H */

@@ -358,10 +358,10 @@ static int rsn_key_mgmt_to_bitfield(const u8 *s)
 	if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_802_1X_SUITE_B_192)
 		return WPA_KEY_MGMT_IEEE8021X_SUITE_B_192;
 #endif
-#ifdef CONFIG_OWE_STA
+#if defined(CONFIG_OWE_STA) || defined(CONFIG_OWE_SOFTAP)
 	if(RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_OWE)
 		return WPA_KEY_MGMT_OWE;
-#endif /* CONFIG_OWE_STA */
+#endif /* CONFIG_OWE_STA || CONFIG_OWE_SOFTAP */
 #ifdef CONFIG_DPP
         if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_DPP)
                 return WPA_KEY_MGMT_DPP;
@@ -987,7 +987,7 @@ int wpa_eapol_key_mic(const u8 *key, size_t key_len, int akmp, int ver,
 			os_memcpy(mic, hash, 24);
 			break;
 #endif /* CONFIG_SUITEB192 */
-#ifdef CONFIG_OWE_STA
+#if defined(CONFIG_OWE_STA) || defined(CONFIG_OWE_SOFTAP)
 		case WPA_KEY_MGMT_OWE:
 			wpa_printf(MSG_DEBUG,
 			"WPA: EAPOL-Key MIC using HMAC-SHA%u (AKM-defined - OWE)",
@@ -1003,7 +1003,7 @@ int wpa_eapol_key_mic(const u8 *key, size_t key_len, int akmp, int ver,
                         os_memcpy(mic, hash, key_len);
                         break;
 
-#endif /* CONFIG_OWE_STA */
+#endif /* CONFIG_OWE_STA || CONFIG_OWE_SOFTAP */
 #ifdef CONFIG_DPP
                 case WPA_KEY_MGMT_DPP:
                         wpa_printf(MSG_DEBUG,

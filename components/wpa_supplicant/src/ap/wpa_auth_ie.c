@@ -234,6 +234,13 @@ static u8 * rsne_write_data(u8 *buf, size_t len, u8 *pos, int group,
 		num_suites++;
 	}
 #endif /* CONFIG_SAE */
+#ifdef CONFIG_OWE_SOFTAP
+	if (key_mgmt & WPA_KEY_MGMT_OWE) {
+		RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_OWE);
+		pos += RSN_SELECTOR_LEN;
+		num_suites++;
+	}
+#endif /* CONFIG_OWE_SOFTAP */
 
 #ifdef CONFIG_RSN_TESTING
 	if (rsn_testing) {
@@ -611,6 +618,10 @@ wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 			selector = RSN_AUTH_KEY_MGMT_UNSPEC_802_1X;
 		else if (data.key_mgmt & WPA_KEY_MGMT_PSK)
 			selector = RSN_AUTH_KEY_MGMT_PSK_OVER_802_1X;
+#ifdef CONFIG_OWE_SOFTAP
+		else if (data.key_mgmt & WPA_KEY_MGMT_OWE)
+			selector = RSN_AUTH_KEY_MGMT_OWE;
+#endif /* CONFIG_OWE_SOFTAP */
 
 		selector = wpa_cipher_to_suite(WPA_PROTO_RSN,
 					       data.pairwise_cipher);
@@ -692,6 +703,10 @@ wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 #endif /* CONFIG_SAE */
 	else if (key_mgmt & WPA_KEY_MGMT_IEEE8021X)
 		sm->wpa_key_mgmt = WPA_KEY_MGMT_IEEE8021X;
+#ifdef CONFIG_OWE_SOFTAP
+	else if (key_mgmt & WPA_KEY_MGMT_OWE)
+		sm->wpa_key_mgmt = WPA_KEY_MGMT_OWE;
+#endif /* CONFIG_OWE_SOFTAP */
 	else
 		sm->wpa_key_mgmt = WPA_KEY_MGMT_PSK;
 
@@ -810,6 +825,12 @@ wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 		os_memcpy(wpa_auth->dot11RSNAPMKIDUsed, pmkid, PMKID_LEN);
 	}
 
+#ifdef CONFIG_OWE_SOFTAP
+	if (sm->wpa_key_mgmt == WPA_KEY_MGMT_OWE && !sm->pmksa) {
+		wpa_printf(MSG_DEBUG, "No PMKSA cache entry found for OWE");
+	}
+#endif /* CONFIG_OWE_SOFTAP */
+
 #ifdef CONFIG_SAE
 	if ((sm->wpa_key_mgmt == WPA_KEY_MGMT_SAE || sm->wpa_key_mgmt == WPA_KEY_MGMT_SAE_EXT_KEY) && data.num_pmkid &&
 		!sm->pmksa) {
@@ -847,3 +868,18 @@ int wpa_auth_uses_mfp(struct wpa_state_machine *sm)
 {
 	return sm ? sm->mgmt_frame_prot : 0;
 }
+
+#ifdef CONFIG_OWE_SOFTAP
+uint8_t *wpa_auth_write_assoc_resp_owe(struct hostapd_data *hapd, struct wpa_state_machine *sm,
+				   u8 *pos, size_t max_len)
+
+{
+	int res;
+
+	res = wpa_write_rsn_ie(&hapd->wpa_auth->conf, pos, max_len,
+			       sm->pmksa ? sm->pmksa->pmkid : NULL);
+	if (res < 0)
+		return pos;
+	return pos + res;
+}
+#endif /* CONFIG_OWE_SOFTAP */

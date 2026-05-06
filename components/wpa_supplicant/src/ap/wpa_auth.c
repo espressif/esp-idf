@@ -136,8 +136,9 @@ static inline const u8 * wpa_auth_get_psk(struct wpa_authenticator *wpa_auth,
         return NULL;
     }
 
-#ifdef CONFIG_SAE
+#if defined(CONFIG_SAE) || defined(CONFIG_OWE_SOFTAP)
     struct sta_info *sta = ap_get_sta(hapd, addr);
+#ifdef CONFIG_SAE
     if (sta && sta->auth_alg == WLAN_AUTH_SAE) {
         if (!sta->sae || prev_psk)
             return NULL;
@@ -149,6 +150,24 @@ static inline const u8 * wpa_auth_get_psk(struct wpa_authenticator *wpa_auth,
         return NULL;
     }
 #endif /*CONFIG_SAE*/
+
+#ifdef CONFIG_OWE_SOFTAP
+    if ((hapd->conf->wpa_key_mgmt & WPA_KEY_MGMT_OWE) &&
+        sta && sta->owe_pmk) {
+        return sta->owe_pmk;
+    }
+
+    if ((hapd->conf->wpa_key_mgmt & WPA_KEY_MGMT_OWE) && sta) {
+        struct rsn_pmksa_cache_entry *sa;
+
+        sa = wpa_auth_sta_get_pmksa(sta->wpa_sm);
+        if (sa && sa->akmp == WPA_KEY_MGMT_OWE) {
+            return sa->pmk;
+        }
+     }
+
+#endif /* CONFIG_OWE_SOFTAP */
+#endif /* defined(CONFIG_SAE) || defined(CONFIG_OWE_SOFTAP) */
 
     return (u8*)hostapd_get_psk(hapd->conf, addr, prev_psk);
 }
@@ -1030,6 +1049,12 @@ void wpa_auth_add_sae_pmkid(struct wpa_state_machine *sm, const u8 *pmkid)
     sm->pmkid_set = 1;
 }
 
+struct rsn_pmksa_cache_entry *
+wpa_auth_sta_get_pmksa(struct wpa_state_machine *sm)
+{
+        return sm ? sm->pmksa : NULL;
+}
+
 static int wpa_gmk_to_gtk(const u8 *gmk, const char *label, const u8 *addr,
               const u8 *gnonce, u8 *gtk, size_t gtk_len)
 {
@@ -1465,7 +1490,8 @@ SM_STATE(WPA_PTK, INITIALIZE)
     wpa_remove_ptk(sm);
     wpa_auth_set_eapol(sm->wpa_auth, sm->addr, WPA_EAPOL_portValid, 0);
     sm->TimeoutCtr = 0;
-    if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt)) {
+    if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt) ||
+	sm->wpa_key_mgmt == WPA_KEY_MGMT_OWE) {
         wpa_auth_set_eapol(sm->wpa_auth, sm->addr,
                    WPA_EAPOL_authorized, 0);
     }
@@ -1624,6 +1650,9 @@ SM_STATE(WPA_PTK, INITPSK)
     psk = wpa_auth_get_psk(sm->wpa_auth, sm->addr, NULL);
     if (psk) {
         memcpy(sm->PMK, psk, PMK_LEN);
+#ifdef CONFIG_OWE_SOFTAP
+        sm->pmk_len = PMK_LEN;
+#endif
 #ifdef CONFIG_IEEE80211R_AP
         memcpy(sm->xxkey, psk, PMK_LEN);
         sm->xxkey_len = PMK_LEN;
@@ -1662,6 +1691,7 @@ SM_STATE(WPA_PTK, PTKSTART)
      */
     if (sm->wpa == WPA_VERSION_WPA2 &&
         (wpa_key_mgmt_wpa_ieee8021x(sm->wpa_key_mgmt) ||
+        (sm->wpa_key_mgmt == WPA_KEY_MGMT_OWE && sm->pmksa) ||
         wpa_key_mgmt_sae(sm->wpa_key_mgmt))) {
         pmkid = buf;
         pmkid_len = 2 + RSN_SELECTOR_LEN + PMKID_LEN;
@@ -2246,7 +2276,8 @@ SM_STEP(WPA_PTK)
             wpa_auth_get_eapol(sm->wpa_auth, sm->addr,
                        WPA_EAPOL_keyRun) > 0)
             SM_ENTER(WPA_PTK, INITPMK);
-        else if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt)
+        else if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt) ||
+		(sm->wpa_key_mgmt == WPA_KEY_MGMT_OWE)
              /* FIX: && 802.1X::keyRun */)
             SM_ENTER(WPA_PTK, INITPSK);
         break;
