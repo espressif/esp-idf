@@ -1118,14 +1118,18 @@ static esp_err_t ieee802154_sleep_init(void)
 {
     esp_err_t err = ESP_OK;
 #if CONFIG_PM_ENABLE
-    sleep_retention_module_init_param_t init_param = { .cbs = { .create = { .handle = ieee802154_sleep_retention_init, .arg = NULL } } };
+    sleep_retention_module_init_param_t init_param = {
+        .cbs = { .create = { .handle = ieee802154_sleep_retention_init, .arg = NULL } },
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH
+    };
     init_param.depends.bitmap[SLEEP_RETENTION_MODULE_BT_BB >> 5] |= BIT(SLEEP_RETENTION_MODULE_BT_BB % 32);
     init_param.depends.bitmap[SLEEP_RETENTION_MODULE_CLOCK_MODEM >> 5] |= BIT(SLEEP_RETENTION_MODULE_CLOCK_MODEM % 32);
     err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_802154_MAC, &init_param);
-    if (err == ESP_OK) {
-        err = sleep_retention_module_allocate(SLEEP_RETENTION_MODULE_802154_MAC);
-    }
-    ESP_RETURN_ON_ERROR(err, IEEE802154_TAG, "failed to create sleep retention linked list for ieee802154 mac retention");
+    ESP_RETURN_ON_ERROR(err, IEEE802154_TAG, "ieee802154 sleep retention init error");
+    err = sleep_retention_module_allocate(SLEEP_RETENTION_MODULE_802154_MAC);
+    ESP_RETURN_ON_ERROR(err, IEEE802154_TAG, "ieee802154 sleep retention allocate error");
+    err = sleep_retention_module_attach(SLEEP_RETENTION_MODULE_802154_MAC);
+    ESP_RETURN_ON_ERROR(err, IEEE802154_TAG, "ieee802154 sleep retention attach error");
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
     sleep_modem_register_mac_bb_module_prepare_callback(sleep_modem_mac_bb_power_down_prepare,
                                                    sleep_modem_mac_bb_power_up_prepare);
@@ -1138,10 +1142,12 @@ static esp_err_t ieee802154_sleep_deinit(void)
 {
     esp_err_t err = ESP_OK;
 #if CONFIG_PM_ENABLE
+    err = sleep_retention_module_detach(SLEEP_RETENTION_MODULE_802154_MAC);
+    ESP_RETURN_ON_ERROR(err, IEEE802154_TAG, "ieee802154 sleep retention detach error");
     err = sleep_retention_module_free(SLEEP_RETENTION_MODULE_802154_MAC);
-    if (err == ESP_OK) {
-        err = sleep_retention_module_deinit(SLEEP_RETENTION_MODULE_802154_MAC);
-    }
+    ESP_RETURN_ON_ERROR(err, IEEE802154_TAG, "ieee802154 sleep retention free error");
+    err = sleep_retention_module_deinit(SLEEP_RETENTION_MODULE_802154_MAC);
+    ESP_RETURN_ON_ERROR(err, IEEE802154_TAG, "ieee802154 sleep retention deinit error");
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
     sleep_modem_unregister_mac_bb_module_prepare_callback(sleep_modem_mac_bb_power_down_prepare,
                                                      sleep_modem_mac_bb_power_up_prepare);
