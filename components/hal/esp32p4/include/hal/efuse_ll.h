@@ -11,6 +11,7 @@
 #include "soc/efuse_periph.h"
 #include "hal/assert.h"
 #include "rom/efuse.h"
+#include "hal/ecdsa_ll.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -93,7 +94,7 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_ver_pkg(
 
 __attribute__((always_inline)) static inline void efuse_ll_set_ecdsa_key_blk(int efuse_blk)
 {
-    EFUSE.conf.cfg_ecdsa_blk = efuse_blk;
+    ecdsa_ll_set_ecdsa_key_blk((ecdsa_curve_t)0, efuse_blk);
 }
 
 /******************* eFuse control functions *************************/

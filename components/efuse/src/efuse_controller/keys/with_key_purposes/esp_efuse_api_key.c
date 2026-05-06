@@ -177,7 +177,7 @@ esp_efuse_purpose_t esp_efuse_get_key_purpose(esp_efuse_block_t block)
     }
     unsigned idx = block - EFUSE_BLK_KEY0;
     uint8_t value = 0;
-    esp_err_t err = esp_efuse_read_field_blob(s_table[idx].keypurpose, &value, s_table[idx].keypurpose[0]->bit_count);
+    esp_err_t err = esp_efuse_read_field_blob(s_table[idx].keypurpose, &value, esp_efuse_get_field_size(s_table[idx].keypurpose));
     if (err != ESP_OK) {
         return ESP_EFUSE_KEY_PURPOSE_MAX;
     }
@@ -190,7 +190,7 @@ esp_err_t esp_efuse_set_key_purpose(esp_efuse_block_t block, esp_efuse_purpose_t
         return ESP_ERR_INVALID_ARG;
     }
     unsigned idx = block - EFUSE_BLK_KEY0;
-    return esp_efuse_write_field_blob(s_table[idx].keypurpose, &purpose, s_table[idx].keypurpose[0]->bit_count);
+    return esp_efuse_write_field_blob(s_table[idx].keypurpose, &purpose, esp_efuse_get_field_size(s_table[idx].keypurpose));
 }
 
 bool esp_efuse_get_keypurpose_dis_write(esp_efuse_block_t block)
