@@ -192,7 +192,7 @@ TCL 语言中为变量赋值的语法是:
     * - ``ESP_RTOS``
       - 设置成 ``none`` 可以关闭 OpenOCD 对 RTOS 的支持，这样的话，你将无法在 GDB 中查看到线程列表。这个功能在调试 FreeRTOS 本身的时候会很有用，可以单步调试调度器的代码。
     * - ``ESP_FLASH_SIZE``
-      - 设置成 ``0`` 可以关闭对 flash 断点的支持。如果设置为 ``0``，GDB 连接时不会复位目标。
+      - 设置成 ``0`` 可以关闭对 flash 断点的支持。如果设置为 ``0``，GDB 连接时不会复位目标芯片。
     * - ``ESP_SEMIHOST_BASEDIR``
       - 设置 semihosting 在主机端的默认目录。
     * - ``ESP_ONLYCPU``
@@ -246,18 +246,18 @@ JTAG 管脚是否能用于其他功能
 
 .. _jtag-debugging-security-features:
 
-JTAG 与 flash 加密和安全引导
+JTAG 与 flash 加密和安全启动
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-默认情况下，开启了 flash 加密和（或者）安全引导后，系统在首次启动时，引导加载程序会烧写 eFuse 的某个比特，从而将 JTAG 永久关闭。
+默认情况下，开启了 flash 加密和（或者）安全启动后，系统在首次启动时，引导加载程序会烧写 eFuse 的某个比特，从而将 JTAG 永久关闭。
 
 .. only:: SOC_HMAC_SUPPORTED
 
     请注意，一旦 JTAG 被永久禁用，就无法重新启用以访问 JTAG。但是我们也提供了暂时禁用 (soft disable) JTAG 的选项。有关如何暂时禁用以及重新启用 JTAG，请参考 :ref:`hmac_for_enabling_jtag`。
 
-Kconfig 配置项 :ref:`CONFIG_SECURE_BOOT_ALLOW_JTAG` 可以改变这个默认行为，使得用户即使开启了安全引导或者 flash 加密，仍会保留 JTAG 的功能。
+Kconfig 配置项 :ref:`CONFIG_SECURE_BOOT_ALLOW_JTAG` 可以改变这个默认行为，使得用户即使开启了安全启动或者 flash 加密，仍会保留 JTAG 的功能。
 
-然而，为了设置 :ref:`软件断点 <jtag-debugging-tip-where-breakpoints>`，OpenOCD 可能会尝试自动读写 flash。设置软件断点会改变被签名程序的摘要并使签名失效。这意味着如果启用了安全引导、设置了软件断点，然后进行复位，签名验证将在启动时失败。
+然而，为了设置 :ref:`软件断点 <jtag-debugging-tip-where-breakpoints>`，OpenOCD 可能会尝试自动读写 flash。设置软件断点会改变被签名程序的摘要并使签名失效。这意味着如果启用了安全启动、设置了软件断点，然后进行复位，启动时的签名验证将会失败。
 
 关闭 JTAG 的软件断点功能，可以在启动 OpenOCD 时在命令行额外加一项配置参数 ``-c 'set ESP_FLASH_SIZE 0'``，请参考 :ref:`jtag-debugging-tip-openocd-config-vars`。
 

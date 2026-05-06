@@ -192,7 +192,7 @@ It is important to set the variable before including the ESP-specific configurat
     * - ``ESP_RTOS``
       - Set to ``none`` to disable RTOS support. In this case, thread list will not be available in GDB. Can be useful when debugging FreeRTOS itself, and stepping through the scheduler code.
     * - ``ESP_FLASH_SIZE``
-      - Set to ``0`` to disable Flash breakpoints support. If set to ``0``, target will not be reset when GDB connects.
+      - Set to ``0`` to disable flash breakpoints support. If set to ``0``, target will not be reset when GDB connects.
     * - ``ESP_SEMIHOST_BASEDIR``
       - Set to the path (on the host) which will be the default directory for semihosting functions.
     * - ``ESP_ONLYCPU``
