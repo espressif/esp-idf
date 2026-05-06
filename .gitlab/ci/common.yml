@@ -268,7 +268,11 @@ variables:
     - source tools/ci/utils.sh
     - source tools/ci/configure_ci_environment.sh
     - *show_ccache_statistics
-    - *upload_failed_job_log_artifacts
+    - run_cmd idf-ci gitlab upload-artifacts --type junit
+    - |
+      if [ $CI_JOB_STATUS = "failed" ]; then
+        run_cmd idf-ci gitlab upload-artifacts --type log
+      fi
 
 .brew-macos-settings:
   variables:
