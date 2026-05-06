@@ -99,6 +99,7 @@
  */
 
 #include "xtensa_rtos.h"
+#include "xtensa/xtensa_zol_macros.h"
 #include "esp_private/panic_reason.h"
 #include "sdkconfig.h"
 #include "soc/soc.h"
@@ -904,22 +905,13 @@ _xt_syscall_exc:
     #endif
 
     /*
-    Grab the interruptee's PC and skip over the 'syscall' instruction.
-    If it's at the end of a zero-overhead loop and it's not on the last
-    iteration, decrement loop counter and skip to beginning of loop.
+    Adjust EPC to point to next instruction, so when we return to user code
+       it will be at the instruction after the 'syscall' that caused the exception.
     */
     rsr     a2, EPC_1                       /* a2 = PC of 'syscall' */
     addi    a3, a2, 3                       /* ++PC                 */
-    #if XCHAL_HAVE_LOOPS
-    rsr     a0, LEND                        /* if (PC == LEND       */
-    bne     a3, a0, 1f
-    rsr     a0, LCOUNT                      /*     && LCOUNT != 0)  */
-    beqz    a0, 1f                          /* {                    */
-    addi    a0, a0, -1                      /*   --LCOUNT           */
-    rsr     a3, LBEG                        /*   PC = LBEG          */
-    wsr     a0, LCOUNT                      /* }                    */
-    #endif
-1:  wsr     a3, EPC_1                       /* update PC            */
+    XT_ZOL_EPC_LCOUNT_RESTORE a3, a0        /* If faulted at LEND, rewinds loop and leaves adjusted PC in a3 */
+    wsr     a3, EPC_1                        /* update PC to next instruction */
 
     /* Restore interruptee's context and return from exception. */
     #ifdef __XTENSA_CALL0_ABI__
