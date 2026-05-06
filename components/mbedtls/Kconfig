@@ -1620,8 +1620,7 @@ menu "mbedTLS"
 
     config MBEDTLS_USE_CRYPTO_ROM_IMPL
         bool "Use ROM implementation of the crypto algorithm"
-        # TODO: IDF-15012
-        depends on ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB && !MBEDTLS_VER_4_X_SUPPORT
+        depends on ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
         default "n"
         select MBEDTLS_SHA512_C
         select MBEDTLS_AES_C
@@ -1635,12 +1634,11 @@ menu "mbedTLS"
             Enable this flag to use mbedtls crypto algorithm from ROM instead of ESP-IDF.
 
             This configuration option saves flash footprint in the application binary.
-            Note that the version of mbedtls crypto algorithm library in ROM(ECO1~ECO3) is v2.16.12,
-            and the version of mbedtls crypto algorithm library in ROM(ECO4) is v3.6.0.
-            We have done the security analysis of the mbedtls revision in ROM (ECO1~ECO4)
-            and ensured that affected symbols have been patched (removed). If in the future
-            mbedtls revisions there are security issues that also affects the version in
-            ROM (ECO1~ECO4) then we shall patch the relevant symbols. This would increase
-            the flash footprint and hence care must be taken to keep some reserved space
-            for the application binary in flash layout.
+            It is available for ESP32-C2 rev2.0 and later, where the ECO4 ROM contains
+            the mbedtls crypto algorithm library v3.6.0.
+            We have done the security analysis of the mbedtls revision in ROM and ensured
+            that affected symbols have been patched (removed). If future mbedtls revisions
+            include security issues that also affect the version in ROM, then we shall patch
+            the relevant symbols. This would increase the flash footprint and hence care must
+            be taken to keep some reserved space for the application binary in flash layout.
 endmenu  # mbedTLS
