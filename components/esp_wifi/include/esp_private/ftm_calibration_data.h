@@ -227,6 +227,38 @@
 #define EST_PHY_RESP_FTM_COMP_40_40U_MHZ_DIS     626 //  Disconnected Responder in 40MHz (Ch 1)  using 40MHz FTM
 #define EST_PHY_RESP_FTM_COMP_40_40D_MHZ         629 //  Connected Responder    in 40MHz (Ch 11) using 40MHz FTM
 #define EST_PHY_RESP_FTM_COMP_40_40D_MHZ_DIS     629 //  Disconnected Responder in 40MHz (Ch 11) using 40MHz FTM
+#elif CONFIG_IDF_TARGET_ESP32S31
+//TODO: Dummy values, remove or update when FTM loopback and auto-calibration is verified
+// 20 MHz FTM in 20MHz PHY - Initiator Values
+#define EST_PHY_INIT_FTM_COMP_20_20U_MHZ         859 // Connected Initiator     in 20MHz (Ch 1)  using 20MHz FTM
+#define EST_PHY_INIT_FTM_COMP_20_20U_MHZ_DIS     859 // Disconnected Initiator  in 20MHz (Ch 1)  using 20MHz FTM
+#define EST_PHY_INIT_FTM_COMP_20_20D_MHZ         869 // Connected Initiator     in 20MHz (Ch 11) using 20MHz FTM
+#define EST_PHY_INIT_FTM_COMP_20_20D_MHZ_DIS     869 // Disconnected Initiator  in 20MHz (Ch 11) using 20MHz FTM
+// 20 MHz FTM in 20MHz PHY - Responder Values
+#define EST_PHY_RESP_FTM_COMP_20_20U_MHZ         867 // Connected Responder     in 20MHz (Ch 1)  using 20MHz FTM
+#define EST_PHY_RESP_FTM_COMP_20_20U_MHZ_DIS     867 // Disconnected Responder  in 20MHz (Ch 1)  using 20MHz FTM
+#define EST_PHY_RESP_FTM_COMP_20_20D_MHZ         857 // Connected Responder     in 20MHz (Ch 11) using 20MHz FTM
+#define EST_PHY_RESP_FTM_COMP_20_20D_MHZ_DIS     857 // Disconnected Responder  in 20MHz (Ch 11) using 20MHz FTM
+// 20 MHz FTM in 40MHz PHY - Initiator Values
+#define EST_PHY_INIT_FTM_COMP_20_40U_MHZ         746 // Connected Initiator     in 40MHz (Ch 1)  using 20MHz FTM
+#define EST_PHY_INIT_FTM_COMP_20_40U_MHZ_DIS     744 // Disconnected Initiator  in 40MHz (Ch 1)  using 20MHz FTM
+#define EST_PHY_INIT_FTM_COMP_20_40D_MHZ         758 // Connected Initiator     in 40MHz (Ch 11) using 20MHz FTM
+#define EST_PHY_INIT_FTM_COMP_20_40D_MHZ_DIS     755 // Disconnected Initiator  in 40MHz (Ch 11) using 20MHz FTM
+// 20 MHz FTM in 40MHz PHY - Responder Values
+#define EST_PHY_RESP_FTM_COMP_20_40U_MHZ         754 //  Connected Responder    in 40MHz (Ch 1)  using 20MHz FTM
+#define EST_PHY_RESP_FTM_COMP_20_40U_MHZ_DIS     753 //  Disconnected Responder in 40MHz (Ch 1)  using 20MHz FTM
+#define EST_PHY_RESP_FTM_COMP_20_40D_MHZ         744 //  Connected Responder    in 40MHz (Ch 11) using 20MHz FTM
+#define EST_PHY_RESP_FTM_COMP_20_40D_MHZ_DIS     744 //  Disconnected Responder in 40MHz (Ch 11) using 20MHz FTM
+// 40 MHz FTM in 40MHz PHY - Initiator Values
+#define EST_PHY_INIT_FTM_COMP_40_40U_MHZ         931 // Connected Initiator     in 40MHz (Ch 1)  using 40MHz FTM
+#define EST_PHY_INIT_FTM_COMP_40_40U_MHZ_DIS     931 // Disconnected Initiator  in 40MHz (Ch 1)  using 40MHz FTM
+#define EST_PHY_INIT_FTM_COMP_40_40D_MHZ         931 // Connected Initiator     in 40MHz (Ch 11) using 40MHz FTM
+#define EST_PHY_INIT_FTM_COMP_40_40D_MHZ_DIS     931 // Disconnected Initiator  in 40MHz (Ch 11) using 40MHz FTM
+// 40 MHz FTM in 40MHz PHY - Responder Values
+#define EST_PHY_RESP_FTM_COMP_40_40U_MHZ         566 //  Connected Responder    in 40MHz (Ch 1)  using 40MHz FTM
+#define EST_PHY_RESP_FTM_COMP_40_40U_MHZ_DIS     566 //  Disconnected Responder in 40MHz (Ch 1)  using 40MHz FTM
+#define EST_PHY_RESP_FTM_COMP_40_40D_MHZ         567 //  Connected Responder    in 40MHz (Ch 11) using 40MHz FTM
+#define EST_PHY_RESP_FTM_COMP_40_40D_MHZ_DIS     567 //  Disconnected Responder in 40MHz (Ch 11) using 40MHz FTM
 #endif
 
 /********************************************** 5 GHz Values *******************************************************/
