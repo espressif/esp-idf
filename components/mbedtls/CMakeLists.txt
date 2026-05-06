@@ -8,6 +8,7 @@ if(esp_tee_build)
 elseif(BOOTLOADER_BUILD)   # TODO: IDF-11673
     if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER)
         set(include_dirs "${COMPONENT_DIR}/mbedtls/include"
+                         "${COMPONENT_DIR}/mbedtls/tf-psa-crypto/drivers/builtin/include"
                          "port/mbedtls_rom")
         set(srcs "port/mbedtls_rom/mbedtls_rom_osi_bootloader.c")
     endif()

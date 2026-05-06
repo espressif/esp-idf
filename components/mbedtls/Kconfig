@@ -1601,8 +1601,7 @@ menu "mbedTLS"
 
     config MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER
         bool "Use ROM implementation of the crypto algorithm in the bootloader"
-        # TODO: IDF-15012
-        depends on ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB && !MBEDTLS_VER_4_X_SUPPORT
+        depends on ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB && ESP32C2_REV_MIN_200
         default "n"
         select MBEDTLS_AES_C
         help
@@ -1613,7 +1612,7 @@ menu "mbedTLS"
 
     config MBEDTLS_USE_CRYPTO_ROM_IMPL
         bool "Use ROM implementation of the crypto algorithm"
-        depends on ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
+        depends on ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB && ESP32C2_REV_MIN_200
         default "n"
         select MBEDTLS_SHA512_C
         select MBEDTLS_AES_C

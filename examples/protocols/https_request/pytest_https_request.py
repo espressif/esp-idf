@@ -389,6 +389,7 @@ def test_examples_protocol_https_request(dut: Dut) -> None:
 
 
 @pytest.mark.wifi_ap
+@pytest.mark.esp32c2_rev2
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'config, baud',
