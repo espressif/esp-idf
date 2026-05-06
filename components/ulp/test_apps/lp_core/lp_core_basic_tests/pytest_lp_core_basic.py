@@ -79,6 +79,7 @@ def test_lp_core_multi_device(case_tester: CaseTester) -> None:
     indirect=True,
 )
 @idf_parametrize('target', soc_filtered_targets('SOC_ULP_LP_UART_SUPPORTED == 1'), indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='TODO IDF-15572 Enable ULP multi device tests for ESP32-S31')
 def test_lp_uart_multi_device(case_tester: CaseTester) -> None:
     uart_cases = [case for case in case_tester.test_menu if 'uart' in case.groups and 'wakeup' not in case.groups]
     for case in uart_cases:

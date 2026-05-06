@@ -13,6 +13,7 @@
 extern "C" {
 #endif
 
+#if SOC_DEEP_SLEEP_SUPPORTED
 /**
  * @brief Initialize and configure the LP UART wakeup mode.
  *
@@ -28,6 +29,7 @@ extern "C" {
  * @return esp_err_t    ESP_OK when successful
  */
 esp_err_t lp_core_uart_wakeup_setup(const uart_wakeup_cfg_t *cfg);
+#endif /* SOC_DEEP_SLEEP_SUPPORTED */
 
 /**
  * @brief Clear LP UART rx tx buffer.

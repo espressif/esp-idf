@@ -95,7 +95,7 @@ examples/system/ulp/lp_core/lp_touch:
 
 examples/system/ulp/lp_core/lp_uart/lp_uart_char_seq_wakeup:
   disable:
-    - if: (SOC_ULP_LP_UART_SUPPORTED != 1)
+    - if: (SOC_ULP_LP_UART_SUPPORTED != 1) or (SOC_DEEP_SLEEP_SUPPORTED != 1)
   <<: *ulp_default_depends
   depends_components+:
     - esp_hal_uart

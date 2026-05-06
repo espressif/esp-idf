@@ -24,6 +24,7 @@ To run this example, you should have an ESP based development board that support
 | ESP32-C6                | GPIO4  | GPIO5  |
 | ESP32-C5                | GPIO4  | GPIO5  |
 | ESP32-P4                | GPIO15 | GPIO14 |
+| ESP32-S31               | GPIO7  | GPIO6  |
 | Host machine            | Tx     | Rx     |
 
 ### Build and Flash

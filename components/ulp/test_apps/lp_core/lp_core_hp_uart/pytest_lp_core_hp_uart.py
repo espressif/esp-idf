@@ -17,9 +17,6 @@ def test_lp_core_hp_uart_print(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.temp_skip_ci(
-    targets=['esp32s31'], reason='TODO IDF-15567 investigate esp32s31.default.test_lp_core_panic failure'
-)
 @idf_parametrize('target', soc_filtered_targets('SOC_LP_CORE_SUPPORTED == 1'), indirect=['target'])
 def test_lp_core_panic(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
