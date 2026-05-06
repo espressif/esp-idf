@@ -1,0 +1,17 @@
+# PM frequency options: one file per target (see test_freqs[] in
+# components/esp_pm/test_apps/esp_pm/main/test_pm.c)
+
+menu "Example Configuration"
+
+    orsource "Kconfig.$IDF_TARGET.supported_freq"
+
+    config EXAMPLE_PM_LIGHT_SLEEP_ENABLE
+        bool "Enable automatic light sleep when idle"
+        default y if FREERTOS_USE_TICKLESS_IDLE
+        default n
+        help
+            When enabled (and tickless idle is enabled), the chip may enter light
+            sleep when no PM lock prevents it. Effective only if Component config
+            -> FreeRTOS -> Tickless idle support is enabled.
+
+endmenu

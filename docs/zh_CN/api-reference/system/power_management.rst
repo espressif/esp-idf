@@ -134,6 +134,11 @@ ESP-IDF 使用预测性时间补偿机制来实现自动 Light-sleep。系统会
 
 要启用性能分析功能（单个锁的计时信息），请在 menuconfig 中启用 :ref:`CONFIG_PM_PROFILING` 选项。
 
+应用示例
+-------------------
+
+:example:`lowpower/power_management` 示例演示了动态调频、自动 Light-sleep 与电源管理锁。
+
 动态调频和外设驱动
 ------------------------------------------------
 

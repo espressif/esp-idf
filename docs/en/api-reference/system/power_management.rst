@@ -134,6 +134,11 @@ These functions are particularly useful for:
 
 To enable profiling features (timing information for individual locks), enable the :ref:`CONFIG_PM_PROFILING` option in menuconfig.
 
+Application Example
+-------------------
+
+The :example:`lowpower/power_management` example demonstrates dynamic frequency scaling, automatic Light-sleep, and power management locks.
+
 Dynamic Frequency Scaling and Peripheral Drivers
 ------------------------------------------------
 

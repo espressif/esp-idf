@@ -59,7 +59,7 @@ def test_wifi_power_save(dut: Dut) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32c6'], indirect=['target'])
+@idf_parametrize('target', ['esp32c6', 'esp32c5', 'esp32c61'], indirect=['target'])
 def test_wifi_power_save_pd_top(dut: Dut) -> None:
     _run_test(dut)
 
