@@ -34,6 +34,7 @@ typedef struct {
     gpio_num_t              src_chan0_gpio;     /*!< The GPIO number of source channel 0 signal */
     gpio_num_t              ext_ref_gpio;       /*!< The GPIO number of external reference signal, only valid when `ref_src` is set to `ANA_CMPR_REF_SRC_EXTERNAL` */
     uint8_t                 resample_limit;     /*!< Unit-wide consecutive sample count required to update channel status */
+    bool                    en_capture_timer;   /*!< Enable channel capture timer at unit creation. */
 } ana_cmpr_config_t;
 
 /**
@@ -111,6 +112,41 @@ typedef struct {
  *      - ESP_ERR_INVALID_ARG   NULL pointer of the parameters
  */
 esp_err_t ana_cmpr_set_debounce(ana_cmpr_handle_t cmpr, const ana_cmpr_debounce_config_t *dbc_cfg);
+
+/**
+ * @brief Get capture timestamps of a source channel
+ *
+ * @note Returned timestamp values are measured in PAD_COMP_CLK cycles
+ * @note Convert ticks to time by first querying comparator clock resolution with
+ *       `ana_cmpr_get_clock_resolution_hz()`.
+ *       For example, `time_us = ticks * 1000000 / resolution_hz`.
+ *
+ * @param[in]  cmpr         The handle of analog comparator unit
+ * @param[in]  src_chan_id  The source channel index
+ * @param[out] current      Timestamp of the latest cross event, in PAD_COMP_CLK cycles.
+ *                          Can be NULL if not needed.
+ * @param[out] previous     Timestamp of the previous cross event, in PAD_COMP_CLK cycles.
+ *                          Can be NULL if not needed.
+ * @return
+ *      - ESP_OK                Get capture timestamps success
+ *      - ESP_ERR_INVALID_ARG   Both output pointers are NULL, or invalid channel id
+ *      - ESP_ERR_NOT_SUPPORTED Hardware doesn't support capture timer
+ */
+esp_err_t ana_cmpr_get_capture_timestamps(ana_cmpr_handle_t cmpr, int src_chan_id, uint32_t *current, uint32_t *previous);
+
+/**
+ * @brief Get clock resolution of the analog comparator unit
+ *
+ * @note Returned value is in Hz and corresponds to the PAD_COMP_CLK domain.
+ *       This clock is shared by features like debounce filtering and capture timestamps.
+ *
+ * @param[in]  cmpr             The handle of analog comparator unit
+ * @param[out] resolution_hz    Comparator clock resolution in Hz
+ * @return
+ *      - ESP_OK                Get comparator clock resolution success
+ *      - ESP_ERR_INVALID_ARG   NULL pointer of the parameters
+ */
+esp_err_t ana_cmpr_get_clock_resolution_hz(ana_cmpr_handle_t cmpr, uint32_t *resolution_hz);
 
 /**
  * @brief Analog comparator source channel configuration

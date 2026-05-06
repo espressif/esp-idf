@@ -272,6 +272,7 @@ static esp_err_t _ana_cmpr_init_default_channels(ana_cmpr_handle_t cmpr, const a
 #endif  // !ANALOG_CMPR_LL_SUPPORT(EDGE_SPECIFIC_INTR_MASK)
 #if ANALOG_CMPR_LL_GET(IP_VERSION) > 1
     analog_cmpr_ll_set_resample_limit(cmpr->dev, config->resample_limit);
+    analog_cmpr_ll_enable_capture_timer(cmpr->dev, config->en_capture_timer);
 #endif
     _ana_cmpr_refresh_masks(cmpr);
 
@@ -569,6 +570,32 @@ esp_err_t ana_cmpr_get_output_level(ana_cmpr_handle_t cmpr, int src_chan_id, boo
 #else
     return ESP_ERR_NOT_SUPPORTED;
 #endif
+}
+
+esp_err_t ana_cmpr_get_capture_timestamps(ana_cmpr_handle_t cmpr, int src_chan_id, uint32_t *current, uint32_t *previous)
+{
+    ESP_RETURN_ON_FALSE(cmpr, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(current || previous, ESP_ERR_INVALID_ARG, TAG, "both current and previous are NULL");
+#if ANALOG_CMPR_LL_GET(IP_VERSION) > 1
+    ESP_RETURN_ON_FALSE(_ana_cmpr_is_src_chan_id_valid(src_chan_id), ESP_ERR_INVALID_ARG, TAG, "invalid source channel id %d", src_chan_id);
+
+    if (current) {
+        *current = analog_cmpr_ll_get_current_capture_time(cmpr->dev, src_chan_id);
+    }
+    if (previous) {
+        *previous = analog_cmpr_ll_get_previous_capture_time(cmpr->dev, src_chan_id);
+    }
+    return ESP_OK;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
+
+esp_err_t ana_cmpr_get_clock_resolution_hz(ana_cmpr_handle_t cmpr, uint32_t *resolution_hz)
+{
+    ESP_RETURN_ON_FALSE(cmpr && resolution_hz, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    *resolution_hz = cmpr->src_clk_freq_hz;
+    return ESP_OK;
 }
 
 esp_err_t ana_cmpr_register_event_callbacks(ana_cmpr_handle_t cmpr, const ana_cmpr_event_callbacks_t *cbs, void *user_data)
