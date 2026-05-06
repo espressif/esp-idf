@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,14 +8,37 @@
  Test for LoadStore exception handlers. This test performs unaligned load and store in 32bit aligned addresses
 */
 
+#include "sdkconfig.h"
+
+#if CONFIG_IDF_TARGET_ARCH_XTENSA && CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+
 #include <esp_types.h>
 #include <stdio.h>
 #include <esp_heap_caps.h>
-#include "sdkconfig.h"
+#include "esp_attr.h"
 #include "esp_random.h"
+#include "esp_intr_alloc.h"
+#include "xtensa_api.h"
+#include "esp_rom_sys.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include <string.h>
 #include "unity.h"
+#include "esp_log_buffer.h"
 
-#if CONFIG_IDF_TARGET_ARCH_XTENSA && CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+#define SW_ISR_NUM_L1  7    // CPU interrupt number for internal SW0 (level 1)
+#define SW_ISR_NUM_L3  29   // CPU interrupt number for internal SW1 (level 3)
+
+typedef struct {
+    uint8_t  b8;
+    uint16_t b16;
+    uint8_t  b8_2;
+    uint32_t b32;
+} iram_data_t;
+
+static volatile iram_data_t *s_iram;
+static volatile int isr_hits;
+
 TEST_CASE("LoadStore Exception handler", "[freertos]")
 {
     int32_t val0 = 0xDEADBEEF;
@@ -124,5 +147,132 @@ TEST_CASE("LoadStore Exception handler", "[freertos]")
 
     TEST_ASSERT_TRUE(heap_caps_check_integrity_all(true));
     heap_caps_free(arr);
+}
+
+static void IRAM_ATTR level_isr(void *arg)
+{
+    const int cpu_intr_num = *(const int *)arg;
+
+    // Clear the SW interrupt source
+    xt_set_intclear(1 << cpu_intr_num);
+
+    // Schedule another pending level interrupt while still inside this ISR
+    // to keep dispatch_c_isr in the interrupt loop handling. The pending
+    // interrupt will be handled after this ISR returns.
+    if (isr_hits == 0) {
+        xt_set_intset(1 << cpu_intr_num);
+    }
+
+    // 8/16-bit accesses to s_iram will trigger LoadStore/Alignment exceptions which changes the EXCSAVE_1 value
+    s_iram->b16++;
+    s_iram->b8 = 0x5A;
+    s_iram->b8_2 = 0xA5;
+
+    isr_hits++;
+}
+
+static void run_sw_isr_level(int int_level)
+{
+    memset((void *)s_iram, 0, sizeof(iram_data_t));
+    isr_hits = 0;
+
+    intr_handle_t handle;
+    int cpu_intr_num = (int_level == 1) ? SW_ISR_NUM_L1 : SW_ISR_NUM_L3;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_intr_alloc((int_level == 1) ? ETS_INTERNAL_SW0_INTR_SOURCE : ETS_INTERNAL_SW1_INTR_SOURCE,
+                                             (int_level == 1) ? ESP_INTR_FLAG_LEVEL1 : ESP_INTR_FLAG_LEVEL3,
+                                             level_isr,
+                                             (void *)&cpu_intr_num,
+                                             &handle));
+
+    // Trigger the first interrupt; ISR will queue one more while running
+    xt_set_intset(1 << cpu_intr_num);
+
+    // Wait for the ISR to be invoked twice
+    TickType_t start = xTaskGetTickCount();
+    while (isr_hits < 2 && (xTaskGetTickCount() - start) < pdMS_TO_TICKS(500)) {
+        vTaskDelay(1);
+    }
+
+    TEST_ASSERT_EQUAL(2, isr_hits);
+    TEST_ASSERT_EQUAL_HEX8(0x5A, s_iram->b8);
+    TEST_ASSERT_EQUAL_HEX8(0xA5, s_iram->b8_2);
+    TEST_ASSERT_EQUAL_UINT16(2, s_iram->b16);
+    TEST_ASSERT_EQUAL_UINT32(0, s_iram->b32);
+
+    esp_intr_free(handle);
+}
+
+TEST_CASE("LoadStore: 8/16-bit field access in IRAM from ISRs when pending interrupts are present", "[freertos]")
+{
+    s_iram = heap_caps_calloc(1, sizeof(*s_iram), MALLOC_CAP_IRAM_8BIT);
+    TEST_ASSERT_NOT_NULL(s_iram);
+
+    esp_rom_printf("Running test in level-1 ISR...\n");
+    run_sw_isr_level(1);
+    esp_rom_printf("test passed\n");
+
+    esp_rom_printf("Running test in level-3 ISR...\n");
+    run_sw_isr_level(3);
+    esp_rom_printf("test passed\n");
+
+    heap_caps_free((void *)s_iram);
+    vTaskDelay(pdMS_TO_TICKS(100)); // Wait for memory to be freed, to avoid affecting other tests.
+}
+
+TEST_CASE("LoadStore: zero-overhead loop continues after IRAM 8-bit store", "[freertos]")
+{
+    const unsigned len = 32;
+
+    uint8_t *dst = heap_caps_calloc(len, 1, MALLOC_CAP_IRAM_8BIT);
+    TEST_ASSERT_NOT_NULL(dst);
+
+    uint8_t *src = heap_caps_calloc(len, 1, MALLOC_CAP_IRAM_8BIT);
+    TEST_ASSERT_NOT_NULL(src);
+
+    for (unsigned i = 0; i < len; i++) {
+        src[i] = i + 1;
+        dst[i] = 0xCC;
+    }
+
+    ESP_LOG_BUFFER_HEX("dst before", dst, len);
+    ESP_LOG_BUFFER_HEX("src       ", src, len);
+
+    /*
+    * Use Xtensa zero-overhead loop where the final instruction (LEND)
+    * is an 8-bit store into IRAM. With CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+    * each store triggers the LoadStoreError handler. The handler must mimic
+    * the loop hardware to keep iterating; otherwise the loop exits after one
+    * iteration. This assembly below performs a simple byte copy from src to dst,
+    * and the test verifies that all bytes are copied correctly,
+    * indicating that the loop continued to execute after each store exception.
+    */
+    uint32_t tmp_val;
+    uint8_t *dst_it = dst;
+    uint8_t *src_it = src;
+    unsigned cnt = len;
+    __asm__ volatile(
+        "addi       %0, %0, -1\n"   /* dst-- */
+        "addi       %1, %1, -1\n"   /* src-- */
+        "loopnez    %2, .endLoop\n"
+        "addi       %1, %1, 1\n"   /* src++ */
+        "l8ui       %3, %1, 0\n"   /* tmp_val = src[] */
+        "addi       %0, %0, 1\n"   /* dst++ */
+        "s8i        %3, %0, 0\n"   /* dst[] = tmp_val, LEND: store is last in loop body */
+        ".endLoop:\n"
+        : "+r"(dst_it), "+r"(src_it), "+r"(cnt), "=&r"(tmp_val)
+        :
+        : "memory"
+    );
+
+    ESP_LOG_BUFFER_HEX("dst  after", dst, len);
+
+    for (unsigned i = 0; i < len; i++) {
+        TEST_ASSERT_EQUAL_HEX8(src[i], dst[i]);
+    }
+
+    heap_caps_free(dst);
+    heap_caps_free(src);
+
+    vTaskDelay(pdMS_TO_TICKS(100)); // Wait for free to complete before running other tests.
 }
 #endif // CONFIG_IDF_TARGET_ARCH_XTENSA && CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
