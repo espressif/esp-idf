@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table_v3.0.h"
 
-// md5_digest_table d471a4221faaafb88f091d4549ecac55
+// md5_digest_table 123e655d603c452435b3df33fa0b32f5
 // This file was generated from the file esp_efuse_table_v3.0.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table_v3.0.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -683,16 +683,17 @@ static const esp_efuse_desc_t RD_DIS_USB_OTG11_EXCHG_PINS[] = {
     {EFUSE_BLK0, 38, 1}, 	 // [] rd_dis of USB_OTG11_EXCHG_PINS,
 };
 
-static const esp_efuse_desc_t RECOVERY_BOOTLOADER_FLASH_SECTOR_0_1[] = {
-    {EFUSE_BLK0, 39, 2}, 	 // [] Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled,
+static const esp_efuse_desc_t RECOVERY_BOOTLOADER_FLASH_SECTOR[] = {
+    {EFUSE_BLK0, 39, 2}, 	 // [] 2 bits. Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled,
+    {EFUSE_BLK0, 42, 1}, 	 // [] 1 bit. Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled,
+    {EFUSE_BLK0, 53, 4}, 	 // [] 4 bits. Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled,
+    {EFUSE_BLK0, 63, 1}, 	 // [] 1 bit. Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled,
+    {EFUSE_BLK0, 64, 3}, 	 // [] 3 bits. Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled,
+    {EFUSE_BLK0, 67, 1}, 	 // [] 1 bit. Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled,
 };
 
 static const esp_efuse_desc_t DIS_USB_JTAG[] = {
     {EFUSE_BLK0, 41, 1}, 	 // [] Set this bit to disable function of usb switch to jtag in module of usb device,
-};
-
-static const esp_efuse_desc_t RECOVERY_BOOTLOADER_FLASH_SECTOR_2_2[] = {
-    {EFUSE_BLK0, 42, 1}, 	 // [] Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled,
 };
 
 static const esp_efuse_desc_t DIS_FORCE_DOWNLOAD[] = {
@@ -723,28 +724,12 @@ static const esp_efuse_desc_t DIS_DOWNLOAD_MANUAL_ENCRYPT[] = {
     {EFUSE_BLK0, 52, 1}, 	 // [] Set this bit to disable flash manual encrypt function (except in SPI boot mode),
 };
 
-static const esp_efuse_desc_t RECOVERY_BOOTLOADER_FLASH_SECTOR_3_6[] = {
-    {EFUSE_BLK0, 53, 4}, 	 // [] Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled,
-};
-
 static const esp_efuse_desc_t USB_PHY_SEL[] = {
     {EFUSE_BLK0, 57, 1}, 	 // [] 0: intphy(gpio24/25) <---> usb_device 1: intphy(26/27) <---> usb_otg11.1: intphy(gpio26/27) <---> usb_device 1: intphy(24/25) <---> usb_otg11,
 };
 
 static const esp_efuse_desc_t HUK_GEN_STATE[] = {
     {EFUSE_BLK0, 58, 5}, 	 // [] Set the bits to control validation of HUK generate mode. Odd of 1 is invalid; even of 1 is valid,
-};
-
-static const esp_efuse_desc_t RECOVERY_BOOTLOADER_FLASH_SECTOR_7_7[] = {
-    {EFUSE_BLK0, 63, 1}, 	 // [] Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled,
-};
-
-static const esp_efuse_desc_t RECOVERY_BOOTLOADER_FLASH_SECTOR_8_10[] = {
-    {EFUSE_BLK0, 64, 3}, 	 // [] Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled,
-};
-
-static const esp_efuse_desc_t RECOVERY_BOOTLOADER_FLASH_SECTOR_11_11[] = {
-    {EFUSE_BLK0, 67, 1}, 	 // [] Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled,
 };
 
 static const esp_efuse_desc_t KM_RND_SWITCH_CYCLE[] = {
@@ -2061,18 +2046,18 @@ const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_USB_OTG11_EXCHG_PINS[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_0_1[] = {
-    &RECOVERY_BOOTLOADER_FLASH_SECTOR_0_1[0],    		// [] Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled
+const esp_efuse_desc_t* ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR[] = {
+    &RECOVERY_BOOTLOADER_FLASH_SECTOR[0],    		// [] 2 bits. Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled
+    &RECOVERY_BOOTLOADER_FLASH_SECTOR[1],    		// [] 1 bit. Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled
+    &RECOVERY_BOOTLOADER_FLASH_SECTOR[2],    		// [] 4 bits. Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled
+    &RECOVERY_BOOTLOADER_FLASH_SECTOR[3],    		// [] 1 bit. Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled
+    &RECOVERY_BOOTLOADER_FLASH_SECTOR[4],    		// [] 3 bits. Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled
+    &RECOVERY_BOOTLOADER_FLASH_SECTOR[5],    		// [] 1 bit. Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_JTAG[] = {
     &DIS_USB_JTAG[0],    		// [] Set this bit to disable function of usb switch to jtag in module of usb device
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_2_2[] = {
-    &RECOVERY_BOOTLOADER_FLASH_SECTOR_2_2[0],    		// [] Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled
     NULL
 };
 
@@ -2111,11 +2096,6 @@ const esp_efuse_desc_t* ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_3_6[] = {
-    &RECOVERY_BOOTLOADER_FLASH_SECTOR_3_6[0],    		// [] Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled
-    NULL
-};
-
 const esp_efuse_desc_t* ESP_EFUSE_USB_PHY_SEL[] = {
     &USB_PHY_SEL[0],    		// [] 0: intphy(gpio24/25) <---> usb_device 1: intphy(26/27) <---> usb_otg11.1: intphy(gpio26/27) <---> usb_device 1: intphy(24/25) <---> usb_otg11
     NULL
@@ -2123,21 +2103,6 @@ const esp_efuse_desc_t* ESP_EFUSE_USB_PHY_SEL[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_HUK_GEN_STATE[] = {
     &HUK_GEN_STATE[0],    		// [] Set the bits to control validation of HUK generate mode. Odd of 1 is invalid; even of 1 is valid
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_7_7[] = {
-    &RECOVERY_BOOTLOADER_FLASH_SECTOR_7_7[0],    		// [] Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_8_10[] = {
-    &RECOVERY_BOOTLOADER_FLASH_SECTOR_8_10[0],    		// [] Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_11_11[] = {
-    &RECOVERY_BOOTLOADER_FLASH_SECTOR_11_11[0],    		// [] Represents the starting flash sector (flash sector size is 0x1000) of the recovery bootloader used by the ROM bootloader If the primary bootloader fails. 0 and 0xFFF - this feature is disabled
     NULL
 };
 

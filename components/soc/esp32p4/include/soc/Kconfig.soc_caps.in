@@ -1627,6 +1627,10 @@ config SOC_PSRAM_ENCRYPTION_PAGE_CONFIGURABLE
     bool
     default y
 
+config SOC_RECOVERY_BOOTLOADER_SUPPORTED
+    bool
+    default y
+
 config SOC_UART_NUM
     int
     default 6

@@ -160,6 +160,11 @@ esp_err_t esp_efuse_enable_ecdsa_p192_curve_mode(void)
 #if SOC_RECOVERY_BOOTLOADER_SUPPORTED
 esp_err_t esp_efuse_set_recovery_bootloader_offset(const uint32_t offset)
 {
+#if CONFIG_IDF_TARGET_ESP32P4 && !EFUSE_LL_HAS_RECOVERY_BOOTLOADER
+    // esp32p4 with version < 3.0 does not have recovery bootloader feature.
+    ESP_LOGE(TAG, "Recovery bootloader eFuse field is not available for this chip revision");
+    return ESP_ERR_NOT_SUPPORTED;
+#else
     // The eFuse field stores the sector number instead of the full address to conserve eFuse bits.
     if (efuse_ll_get_recovery_bootloader_sector() == 0) {
         ESP_LOGI(TAG, "Recovery bootloader offset has not been set yet.");
@@ -185,6 +190,7 @@ esp_err_t esp_efuse_set_recovery_bootloader_offset(const uint32_t offset)
 
     ESP_LOGI(TAG, "Recovery bootloader offset in eFuse = 0x%" PRIx32, programmed_offset);
     return ESP_OK;
+#endif
 }
 #endif // SOC_RECOVERY_BOOTLOADER_SUPPORTED
 

@@ -1,0 +1,2 @@
+# ESP32S31 supports the Recovery bootloader feature in ROM
+CONFIG_IDF_TARGET="esp32s31"

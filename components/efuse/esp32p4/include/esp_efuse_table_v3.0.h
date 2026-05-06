@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@ extern "C" {
 
 #include "esp_efuse.h"
 
-// md5_digest_table d471a4221faaafb88f091d4549ecac55
+// md5_digest_table 123e655d603c452435b3df33fa0b32f5
 // This file was generated from the file esp_efuse_table_v3.0.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table_v3.0.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -208,9 +208,8 @@ extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC2_CH5_ATTEN0_INITCODE_DIFF[];
 extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_TEMPERATURE_SENSOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_USB_DEVICE_EXCHG_PINS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_USB_OTG11_EXCHG_PINS[];
-extern const esp_efuse_desc_t* ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_0_1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_JTAG[];
-extern const esp_efuse_desc_t* ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_2_2[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_FORCE_DOWNLOAD[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SPI_DOWNLOAD_MSPI_DIS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_TWAI[];
@@ -218,12 +217,8 @@ extern const esp_efuse_desc_t* ESP_EFUSE_JTAG_SEL_ENABLE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SOFT_DIS_JTAG[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_PAD_JTAG[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT[];
-extern const esp_efuse_desc_t* ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_3_6[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USB_PHY_SEL[];
 extern const esp_efuse_desc_t* ESP_EFUSE_HUK_GEN_STATE[];
-extern const esp_efuse_desc_t* ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_7_7[];
-extern const esp_efuse_desc_t* ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_8_10[];
-extern const esp_efuse_desc_t* ESP_EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_11_11[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KM_RND_SWITCH_CYCLE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KM_DEPLOY_ONLY_ONCE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_FORCE_USE_KEY_MANAGER_KEY[];
