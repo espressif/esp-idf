@@ -413,6 +413,8 @@ static void s_configure_psram_ecc(void)
 
 esp_err_t esp_psram_impl_enable(void)
 {
+    psram_ctrlr_ll_enable_power(true);
+
 #if PSRAM_CTRLR_LL_DEDICATED_LDO
     esp_psram_power_cfg_t config = {
         .voltage_mv = CONFIG_SPIRAM_LDO_VOLTAGE_DOMAIN,

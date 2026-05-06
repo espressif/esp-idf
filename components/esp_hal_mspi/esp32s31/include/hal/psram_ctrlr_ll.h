@@ -18,6 +18,7 @@
 #include "hal/assert.h"
 #include "hal/misc.h"
 #include "hal/config.h"
+#include "soc/pmu_reg.h"
 #include "soc/spi_mem_s_struct.h"
 #include "soc/spi_mem_s_reg.h"
 #include "soc/spi1_mem_s_reg.h"
@@ -60,6 +61,21 @@ extern "C" {
 
 #define PSRAM_CTRLR_LL_INTR_EVENT_SUPPORTED      1
 #define PSRAM_CTRLR_LL_DEDICATED_LDO             1
+
+/**
+ * @brief Enable PSRAM power
+ *
+ * @param en           enable / disable
+ */
+__attribute__((always_inline))
+static inline void psram_ctrlr_ll_enable_power(bool en)
+{
+    if (en) {
+        REG_SET_BIT(PMU_PSRAM_CFG_REG, PMU_PSRAM_XPD);
+    } else {
+        REG_CLR_BIT(PMU_PSRAM_CFG_REG, PMU_PSRAM_XPD);
+    }
+}
 
 /**
  * @brief Set PSRAM write cmd
