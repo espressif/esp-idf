@@ -44,6 +44,43 @@ DAC channels can convert digital data continuously via the DMA. There are three 
     2. Cyclical writing: A piece of data can be converted cyclically without blocking, and no more operation is needed after the data are loaded into the DMA buffer. But note that the inputted buffer size is limited by the number of descriptors and the DMA buffer size. It is usually used to transport short signals that need to be repeated, e.g., a sine wave. To achieve cyclical writing, call :cpp:func:`dac_continuous_write_cyclically` after the DAC continuous mode is enabled. Refer to :example:`peripherals/dac/dac_continuous/signal_generator` for examples.
     3. Asynchronous writing: Data can be transmitted asynchronously based on the event callback. :cpp:member:`dac_event_callbacks_t::on_convert_done` must be registered to use asynchronous mode. Users can get the :cpp:type:`dac_event_data_t` in the callback which contains the DMA buffer address and length, allowing them to load the data into the buffer directly. To use the asynchronous writing, call :cpp:func:`dac_continuous_register_event_callback` to register the :cpp:member:`dac_event_callbacks_t::on_convert_done` before enabling, and then :cpp:func:`dac_continuous_start_async_writing` to start the asynchronous writing. Note that once the asynchronous writing is started, the callback function will be triggered continuously. Call :cpp:func:`dac_continuous_write_asynchronously` to load the data either in a separate task or in the callback directly. Refer to :example:`peripherals/dac/dac_continuous/dac_audio` for examples.
 
+The following diagram illustrates the life cycle of the DAC continuous driver and the state transitions associated with each API:
+
+.. mermaid::
+
+    flowchart TD
+        NC(["Idle (Initial State)"]) -->|"new_channels()"| REG[Registered]
+        REG -->|"del_channels()"| NC
+        REG -->|"enable()"| EN[Enabled]
+        EN -->|"disable()"| REG
+
+        EN -->|"start_async_writing()"| ASYNC[Async Writing]
+        ASYNC -->|"stop_async_writing()"| EN
+
+        EN -->|"write_cyclically()"| CYCLIC[Cyclic Writing]
+        CYCLIC -->|"stop_cyclically()"| EN
+
+        EN -->|"write()"| SYNC[Sync Writing]
+        SYNC -->|"write()"| SYNC
+        SYNC -->|"on transmission complete"| EN
+
+        subgraph REG_APIS [Registered State APIs]
+            REGCB["register_event_callbacks()"]
+        end
+
+        subgraph ASYNC_APIS [Async Writing State APIs]
+            AWRITE["write_asynchronously()"]
+        end
+
+        REG -. can call .-> REGCB
+        ASYNC -. when receiving a callback .-> AWRITE
+
+.. note::
+
+    - For brevity, the prefix ``dac_continuous_`` is omitted from all function names in the diagram.
+    - For backward compatibility, calling :cpp:func:`dac_continuous_stop_cyclically` to exit cyclic writing is optional — any API that transitions away from the Enabled state will automatically stop an ongoing cyclic conversion. However, explicitly calling :cpp:func:`dac_continuous_stop_cyclically` is recommended.
+    - Sync writing requires no explicit exit — any API that transitions away from the Enabled state will automatically stop the ongoing sync writing immediately (the data not yet converted is discarded).
+
 .. only:: esp32
 
     On ESP32, the DAC digital controller can be connected internally to the I2S0 and use its DMA for continuous conversion. Although the DAC only needs 8-bit data for conversion, it has to be the left-shifted 8 bits (i.e., the high 8 bits in a 16-bit slot) to satisfy the I2S communication format. By default, the driver helps to expand the data to 16-bit wide automatically. To expand manually, please disable :ref:`CONFIG_DAC_DMA_AUTO_16BIT_ALIGN` in the menuconfig.

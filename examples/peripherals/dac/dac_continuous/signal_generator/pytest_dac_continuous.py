@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
@@ -7,18 +7,18 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 def test_dac_continuous_output(dut: Dut, mode: str, chan0_io: str, chan1_io: str) -> None:
     dut.expect('dac continuous: --------------------------------------------------', timeout=10)
-    dut.expect('dac continuous: DAC continuous output by {}'.format(mode), timeout=10)
-    dut.expect('dac continuous: DAC channel 0 io: GPIO_NUM_{}'.format(chan0_io), timeout=10)
-    dut.expect('dac continuous: DAC channel 1 io: GPIO_NUM_{}'.format(chan1_io), timeout=10)
+    dut.expect(f'dac continuous: DAC continuous output by {mode}', timeout=10)
+    dut.expect(f'dac continuous: DAC channel 0 io: GPIO_NUM_{chan0_io}', timeout=10)
+    dut.expect(f'dac continuous: DAC channel 1 io: GPIO_NUM_{chan1_io}', timeout=10)
     dut.expect('dac continuous: Waveform: SINE -> TRIANGLE -> SAWTOOTH -> SQUARE', timeout=10)
     dut.expect('dac continuous: DAC conversion frequency \\(Hz\\): ([0-9]+)', timeout=10)
     dut.expect('dac continuous: DAC wave frequency \\(Hz\\): ([0-9]+)', timeout=10)
     dut.expect('dac continuous: --------------------------------------------------', timeout=10)
     dut.expect(r'DAC channel 0 value:( +)(\d+)(.*)DAC channel 1 value:( +)(\d+)', timeout=10)
-    dut.expect(r'dac continuous\({}\): triangle wave start'.format(mode), timeout=20)
-    dut.expect(r'dac continuous\({}\): sawtooth wave start'.format(mode), timeout=20)
-    dut.expect(r'dac continuous\({}\): square wave start'.format(mode), timeout=20)
-    dut.expect(r'dac continuous\({}\): sine wave start'.format(mode), timeout=20)
+    dut.expect(rf'dac continuous\({mode}\): sine wave start', timeout=20)
+    dut.expect(rf'dac continuous\({mode}\): triangle wave start', timeout=20)
+    dut.expect(rf'dac continuous\({mode}\): sawtooth wave start', timeout=20)
+    dut.expect(rf'dac continuous\({mode}\): square wave start', timeout=20)
 
 
 @pytest.mark.generic

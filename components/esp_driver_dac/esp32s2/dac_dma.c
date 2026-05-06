@@ -147,7 +147,7 @@ esp_err_t dac_dma_periph_init(uint32_t freq_hz, bool is_alternate, bool is_apll)
     ESP_GOTO_ON_ERROR(spicommon_dma_chan_alloc(DAC_DMA_PERIPH_SPI_HOST, SPI_DMA_CH_AUTO, 0),
                       err, TAG, "Failed to allocate dma peripheral channel");
     s_ddp->dma_chan = spi_bus_get_dma_ctx(DAC_DMA_PERIPH_SPI_HOST)->rx_dma_chan.chan_id;
-    spi_ll_enable_intr(s_ddp->periph_dev, SPI_LL_INTR_OUT_EOF | SPI_LL_INTR_OUT_TOTAL_EOF);
+    spi_ll_enable_intr(s_ddp->periph_dev, SPI_LL_INTR_OUT_DONE | SPI_LL_INTR_OUT_TOTAL_EOF);
     dac_ll_digi_set_convert_mode(is_alternate);
     return ret;
 err:
@@ -163,7 +163,7 @@ esp_err_t dac_dma_periph_deinit(void)
         ESP_RETURN_ON_ERROR(spicommon_dma_chan_free(DAC_DMA_PERIPH_SPI_HOST), TAG, "Failed to free dma peripheral channel");
     }
     ESP_RETURN_ON_FALSE(spicommon_periph_free(DAC_DMA_PERIPH_SPI_HOST), ESP_FAIL, TAG, "Failed to release DAC DMA peripheral");
-    spi_ll_disable_intr(s_ddp->periph_dev, SPI_LL_INTR_OUT_EOF | SPI_LL_INTR_OUT_TOTAL_EOF);
+    spi_ll_disable_intr(s_ddp->periph_dev, SPI_LL_INTR_OUT_DONE | SPI_LL_INTR_OUT_TOTAL_EOF);
     adc_apb_periph_free();
     if (s_ddp) {
         if (s_ddp->use_apll) {
@@ -200,24 +200,29 @@ void dac_dma_periph_disable(void)
     dac_ll_digi_trigger_output(false);
 }
 
-uint32_t IRAM_ATTR dac_dma_periph_intr_is_triggered(void)
+uint32_t IRAM_ATTR dac_dma_periph_intr_get_mask(void)
 {
     uint32_t ret = 0;
-    ret |= spi_ll_get_intr(s_ddp->periph_dev, SPI_LL_INTR_OUT_EOF) ? DAC_DMA_EOF_INTR : 0;
+    ret |= spi_ll_get_intr(s_ddp->periph_dev, SPI_LL_INTR_OUT_DONE) ? DAC_DMA_DONE_INTR : 0;
     ret |= spi_ll_get_intr(s_ddp->periph_dev, SPI_LL_INTR_OUT_TOTAL_EOF) ? DAC_DMA_TEOF_INTR : 0;
-    spi_ll_clear_intr(s_ddp->periph_dev, SPI_LL_INTR_OUT_EOF);
+    spi_ll_clear_intr(s_ddp->periph_dev, SPI_LL_INTR_OUT_DONE);
     spi_ll_clear_intr(s_ddp->periph_dev, SPI_LL_INTR_OUT_TOTAL_EOF);
     return ret;
 }
 
-uint32_t IRAM_ATTR dac_dma_periph_intr_get_eof_desc(void)
-{
-    return spi_dma_ll_get_out_eof_desc_addr(s_ddp->periph_dev, s_ddp->dma_chan);
-}
-
-void dac_dma_periph_dma_trans_start(uint32_t desc_addr)
+void IRAM_ATTR dac_dma_periph_trans_start(uintptr_t desc_addr)
 {
     spi_dma_ll_tx_reset(s_ddp->periph_dev, s_ddp->dma_chan);
     spi_ll_dma_tx_fifo_reset(s_ddp->periph_dev);
     spi_dma_ll_tx_start(s_ddp->periph_dev, s_ddp->dma_chan, (lldesc_t *)desc_addr);
+}
+
+void dac_dma_periph_trans_stop(void)
+{
+    spi_dma_ll_tx_stop(s_ddp->periph_dev, s_ddp->dma_chan);
+}
+
+void dac_dma_periph_trans_append(void)
+{
+    spi_dma_ll_tx_restart(s_ddp->periph_dev, s_ddp->dma_chan);
 }

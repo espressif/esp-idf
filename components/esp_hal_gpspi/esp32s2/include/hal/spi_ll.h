@@ -86,6 +86,7 @@ typedef enum {
     SPI_LL_INTR_CMD9 =          BIT(12),    ///< Has received CMD9 command. Only available in slave HD.
     SPI_LL_INTR_CMDA =          BIT(13),    ///< Has received CMDA command. Only available in slave HD.
     SPI_LL_INTR_SEG_DONE =      BIT(14),
+    SPI_LL_INTR_OUT_DONE =      BIT(15),    ///< DMA out_done triggered
 } spi_ll_intr_t;
 
 ///< Flags for conditions under which the transaction length should be recorded
@@ -356,6 +357,7 @@ static inline void spi_ll_cpu_rx_fifo_reset(spi_dev_t *hw)
  *
  * @param hw Beginning address of the peripheral registers.
  */
+__attribute__((always_inline))
 static inline void spi_ll_dma_tx_fifo_reset(spi_dev_t *hw)
 {
     hw->dma_conf.val |= SPI_LL_DMA_FIFO_RST_MASK;
@@ -369,6 +371,7 @@ static inline void spi_ll_dma_tx_fifo_reset(spi_dev_t *hw)
  *
  * @param hw Beginning address of the peripheral registers.
  */
+__attribute__((always_inline))
 static inline void spi_ll_dma_rx_fifo_reset(spi_dev_t *hw)
 {
     hw->dma_conf.val |= SPI_LL_DMA_FIFO_RST_MASK;
@@ -1126,7 +1129,8 @@ static inline uint32_t spi_ll_slave_get_rcv_bitlen(spi_dev_t *hw)
     item(SPI_LL_INTR_CMD7,          dma_int_ena.cmd7,               dma_int_raw.cmd7,               dma_int_clr.cmd7=1) \
     item(SPI_LL_INTR_CMD8,          dma_int_ena.cmd8,               dma_int_raw.cmd8,               dma_int_clr.cmd8=1) \
     item(SPI_LL_INTR_CMD9,          dma_int_ena.cmd9,               dma_int_raw.cmd9,               dma_int_clr.cmd9=1) \
-    item(SPI_LL_INTR_CMDA,          dma_int_ena.cmda,               dma_int_raw.cmda,               dma_int_clr.cmda=1)
+    item(SPI_LL_INTR_CMDA,          dma_int_ena.cmda,               dma_int_raw.cmda,               dma_int_clr.cmda=1) \
+    item(SPI_LL_INTR_OUT_DONE,      dma_int_ena.out_done,           dma_int_raw.out_done,           dma_int_clr.out_done=1)
 
 __attribute__((always_inline))
 static inline void spi_ll_enable_intr(spi_dev_t *hw, spi_ll_intr_t intr_mask)
