@@ -689,18 +689,12 @@ config WIFI_RMT_MBO_SUPPORT
         Select this option to enable WiFi Multiband operation certification support.
 
 config WIFI_RMT_ENABLE_ROAMING_APP
-    bool "Advanced support for Wi-Fi Roaming (Experimental)"
-    depends on IDF_EXPERIMENTAL_FEATURES
+    bool "Advanced support for Wi-Fi Roaming"
     default n
     help
         Enable Espressif's roaming app to allow for efficient Wi-Fi roaming.
         This includes configurable periodic environment scans, maintaining a cache of the
         best APs, handling low rssi events etc.
-
-        Risk Warning
-        Please note that this feature is still experimental and enabling this potentially can
-        lead to unpredictable scanning, connection and roaming attempts.
-        We are still working on tuning and optimising this feature to ensure reliable and stable use.
 
 menu "Configure roaming App"
     depends on WIFI_RMT_ENABLE_ROAMING_APP

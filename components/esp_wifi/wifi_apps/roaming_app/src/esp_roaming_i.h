@@ -89,17 +89,6 @@ extern "C" {
 
 #define MAX_NEIGHBOR_LEN 512
 
-#define IS_PSK(authmode) \
-    (((authmode == WIFI_AUTH_WPA_PSK) || (authmode == WIFI_AUTH_WPA2_PSK) || \
-    (authmode == WIFI_AUTH_WPA_WPA2_PSK) || (authmode == WIFI_AUTH_WPA3_PSK) || \
-    (authmode == WIFI_AUTH_WPA2_WPA3_PSK) || (authmode == WIFI_AUTH_WAPI_PSK) ? 1 : 0))
-
-#define OWE_COMPATIBLE(curr_auth, cand_auth) \
-    ((((curr_auth == WIFI_AUTH_OPEN) || (curr_auth == WIFI_AUTH_OWE)) && ((cand_auth == WIFI_AUTH_OPEN) || (cand_auth == WIFI_AUTH_OWE)))? 1 : 0)
-
-#define PSK_COMPATIBLE(curr_auth, cand_auth) \
-    ((IS_PSK(curr_auth) && IS_PSK(cand_auth)) ? 1 : 0)
-
 struct scanned_ap_info {
     uint16_t current_count;
     struct timeval time;
@@ -118,10 +107,14 @@ struct roam_bss_info {
 
 struct roaming_app {
     struct roam_config config;
+    bool app_active;
     bool scan_ongoing;
+    bool sta_connected;
+    bool connect_hint_active;
     int8_t current_rssi_threshold;
     char *btm_neighbor_list;
-    struct timeval last_roamed_time;
+    struct timeval last_roam_attempt_time;
+    struct timeval last_roam_success_time;
     struct scanned_ap_info scanned_aps;
     struct roam_bss_info current_bss;
 
@@ -144,6 +137,7 @@ struct roaming_app {
 #if CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST
     struct blacklist_entry {
         uint8_t bssid[ETH_ALEN];
+        bool manual;
 #if CONFIG_ESP_WIFI_ROAMING_AUTO_BLACKLISTING
         uint8_t failures;
 #endif
