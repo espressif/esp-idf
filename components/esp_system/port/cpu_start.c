@@ -572,6 +572,9 @@ MSPI_INIT_ATTR void sys_rtc_init(const soc_reset_reason_t *rst_reas)
 #if CONFIG_IDF_TARGET_ESP32P4
 #define RWDT_RESET           RESET_REASON_CORE_RWDT
 #define MWDT_RESET           RESET_REASON_CORE_MWDT
+#elif CONFIG_IDF_TARGET_ESP32S31
+#define RWDT_RESET           RESET_REASON_CORE_RWDT
+#define MWDT_RESET           RESET_REASON_CORE_MWDT0
 #else
 #define RWDT_RESET           RESET_REASON_CORE_RTC_WDT
 #define MWDT_RESET           RESET_REASON_CORE_MWDT0
