@@ -3126,6 +3126,7 @@ def action_uninstall(args: Any) -> None:
             else:
                 tool_name, tool_version = tool_spec.split('@', 1)
             tool_obj = tools_info_for_platform[tool_name]
+            archive_version = None
             if tool_version is None:
                 tool_version = tool_obj.get_preferred_installed_version()
             # mypy-checks
@@ -3133,9 +3134,8 @@ def action_uninstall(args: Any) -> None:
                 archive_version = tool_obj.versions[tool_version].get_download_for_platform(CURRENT_PLATFORM)
             if archive_version is not None:
                 archive_version_url = archive_version.url
-
-            archive = os.path.basename(archive_version_url)
-            used_archives.append(archive)
+                archive = os.path.basename(archive_version_url)
+                used_archives.append(archive)
 
         downloaded_archives = os.listdir(dist_path)
         for archive in downloaded_archives:
