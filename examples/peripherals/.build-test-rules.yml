@@ -28,12 +28,22 @@ examples/peripherals/adc/oneshot_read:
       reason: no runners for esp32h4 ADC test
   <<: *adc_dependencies
 
-examples/peripherals/analog_comparator:
+examples/peripherals/analog_comparator/auto_scan:
   disable:
-    - if: SOC_ANA_CMPR_SUPPORTED != 1
+    - if: SOC_ANA_CMPR_SUPPORT_AUTO_SCAN != 1
   depends_components:
     - esp_driver_gpio
     - esp_driver_ana_cmpr
+    - esp_hal_ana_cmpr
+    - soc
+
+examples/peripherals/analog_comparator/etm_periodic_scan:
+  disable:
+    - if: SOC_ANA_CMPR_SUPPORT_ETM_SCAN != 1
+  depends_components:
+    - esp_driver_gpio
+    - esp_driver_ana_cmpr
+    - esp_driver_gptimer
     - esp_hal_ana_cmpr
     - soc
 

@@ -50,6 +50,7 @@ typedef enum {
  *
  * @note The exact hysteresis voltage is hardware-dependent. The level-to-voltage
  *       mapping on ESP32-H4 is approximately:
+ *       - LEVEL0: ~0V
  *       - LEVEL1: ~0.04V
  *       - LEVEL2: ~0.08V
  *       - LEVEL3: ~0.12V
@@ -75,7 +76,16 @@ typedef enum {
 typedef enum {
     ANA_CMPR_EVENT_POS_CROSS,        /*!< Positive cross event when the source signal becomes higher than the reference signal */
     ANA_CMPR_EVENT_NEG_CROSS,        /*!< Negative cross event when the source signal becomes lower than the reference signal */
+    ANA_CMPR_EVENT_MAX,              /*!< The max number of events, not a real event */
 } ana_cmpr_event_type_t;
+
+/**
+ * @brief Analog Comparator ETM Tasks for each unit
+ */
+typedef enum {
+    ANA_CMPR_TASK_START,  /*!< Start the comparison */
+    ANA_CMPR_TASK_MAX,    /*!< The max number of tasks, not a real task */
+} ana_cmpr_task_type_t;
 
 #if SOC_ANA_CMPR_SUPPORTED
 /**

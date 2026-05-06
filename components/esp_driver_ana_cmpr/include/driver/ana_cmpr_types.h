@@ -10,6 +10,7 @@
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
 #include "hal/ana_cmpr_types.h"
+#include "hal/gpio_types.h"
 
 #ifdef __cplusplus
 extern "C" {

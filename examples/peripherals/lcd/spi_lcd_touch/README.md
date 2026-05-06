@@ -149,8 +149,6 @@ I (557) main_task: Returned from app_main()
 ### Documentation Links
 
 -   [ESP-IDF SPI LCD Documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/lcd/spi_lcd.html)
--   [LVGL Documentation](https://docs.lvgl.io/master/)
--   [ESP Component Registry](https://components.espressif.com/)
 
 ## Troubleshooting
 

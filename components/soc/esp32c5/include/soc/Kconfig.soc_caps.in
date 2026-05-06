@@ -647,6 +647,10 @@ config SOC_ANA_CMPR_SUPPORT_ETM
     bool
     default y
 
+config SOC_ANA_CMPR_SUPPORT_AUTO_SCAN
+    bool
+    default y
+
 config SOC_I2C_NUM
     int
     default 2

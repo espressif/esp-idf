@@ -8,12 +8,7 @@
 
 const ana_cmpr_periph_t ana_cmpr_periph[1] = {
     [0] = {
-        .pad_gpios = {
-            ANA_CMPR0_PAD0_GPIO,
-            ANA_CMPR0_PAD1_GPIO,
-            ANA_CMPR0_PAD2_GPIO,
-            ANA_CMPR0_PAD3_GPIO,
-        },
+        .pad_gpios = {0, 1, 2, 3},
         .intr_src = ETS_ZERO_DET_INTR_SOURCE,
         .module_name = "ANA_CMPR_U0",
     },

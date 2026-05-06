@@ -10,7 +10,6 @@
 #include "soc/soc_caps.h"
 #include "soc/interrupts.h"
 #if SOC_ANA_CMPR_SUPPORTED
-#include "soc/ana_cmpr_pins.h"
 #include "hal/ana_cmpr_ll.h"
 #endif
 
@@ -22,8 +21,8 @@ extern "C" {
 typedef struct {
     union {
         struct {
-            const int ext_ref_gpio; // External reference GPIO number
             const int src_gpio;     // Source GPIO number
+            const int ext_ref_gpio; // External reference GPIO number
         };
         const int pad_gpios[ANALOG_CMPR_LL_GET(PAD_NUM)]; // Array of GPIO numbers for the pads, indexed by pad number
     };

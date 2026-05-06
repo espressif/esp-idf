@@ -146,6 +146,9 @@
 /*-------------------------- APB BACKUP DMA CAPS -------------------------------*/
 #define SOC_APB_BACKUP_DMA              (0)
 
+/*-------------------------- Analog Comparator CAPS -------------------------------*/
+#define SOC_ANA_CMPR_SUPPORT_AUTO_SCAN         (1)
+
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
 

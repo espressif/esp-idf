@@ -222,7 +222,10 @@ Kconfig Options
 Application Example
 -------------------
 
-* :example:`peripherals/analog_comparator` shows the basic usage of the analog comparator, and other potential usages like hysteresis comparator and SPWM generator.
+.. list::
+
+    :SOC_ANA_CMPR_SUPPORT_AUTO_SCAN: - :example:`peripherals/analog_comparator/auto_scan` shows auto scan based threshold detection with internal or external reference. After enabling the comparator, hardware scans continuously and updates output in real time, while the example demonstrates interrupt-based or ETM-based monitor GPIO control depending on target capabilities.
+    :SOC_ANA_CMPR_SUPPORT_ETM_SCAN: - :example:`peripherals/analog_comparator/etm_periodic_scan` shows how to use GPTimer and ETM to trigger periodic comparator scans and drive a monitor GPIO from comparator crossing events.
 
 API Reference
 -------------

@@ -7,11 +7,14 @@
 #pragma once
 
 #include <stdbool.h>
+#include <sys/param.h>
 #include "hal/misc.h"
 #include "hal/assert.h"
 #include "hal/ana_cmpr_types.h"
 #include "soc/zero_det_struct.h"
+#include "soc/zero_det_reg.h"
 #include "soc/pcr_struct.h"
+#include "soc/soc_etm_struct.h"
 #include "soc/soc_etm_source.h"
 
 #ifdef __cplusplus
@@ -19,7 +22,7 @@ extern "C" {
 #endif
 
 // the analog comparator on this target is also called zero detector
-typedef zero_dev_t analog_cmpr_dev_t;
+typedef zero_det_dev_t analog_cmpr_dev_t;
 
 #define ANALOG_CMPR_LL_GET(_attr) ANALOG_CMPR_LL_ ## _attr
 #define ANALOG_CMPR_LL_SUPPORT(_feat) ANALOG_CMPR_LL_SUPPORT_ ## _feat
@@ -37,7 +40,7 @@ typedef zero_dev_t analog_cmpr_dev_t;
 #define ANALOG_CMPR_LL_SRC_CHANNEL_NUM 3
 
 // Can detect positive/negative/any cross type
-#define ANALOG_CMPR_LL_SUPPORT_EDGE_TYPE  1
+#define ANALOG_CMPR_LL_SUPPORT_EDGE_SPECIFIC_INTR_MASK  1
 
 #define ANALOG_CMPR_LL_GET_HW(unit)     (&ZERO_DET)
 
@@ -47,6 +50,10 @@ typedef zero_dev_t analog_cmpr_dev_t;
 #define ANALOG_CMPR_LL_ALL_INTR_MASK(unit)                 0x1FF
 
 #define ANALOG_CMPR_LL_ETM_SOURCE(unit, src_chan, type)    (ZERO_DET_EVT_CHANNEL_1_POS + (src_chan) + ((type) * ANALOG_CMPR_LL_SRC_CHANNEL_NUM))
+#define ANALOG_CMPR_LL_ETM_TASK(unit, type)                (ZERO_DET_TASK_START)
+
+#define ANALOG_CMPR_LL_MAX_ETM_DELAY_CYCLES                ZERO_DET_DELAY_EVENT_TIME
+#define ANALOG_CMPR_LL_MAX_POLL_PERIOD_CYCLES              ZERO_DET_COMP_POLL_PERIOD
 
 /**
  * @brief Enable the bus clock for Analog Comparator module
@@ -88,20 +95,20 @@ static inline void analog_cmpr_ll_reset_core(int unit_id)
  */
 static inline void analog_cmpr_ll_set_clk_src(int unit_id, ana_cmpr_clk_src_t clk_src)
 {
-    // switch (clk_src) {
-    // case ANA_CMPR_CLK_SRC_XTAL:
-    //     PCR.zero_det_clk_conf.zero_det_func_clk_sel = 0;
-    //     break;
-    // case ANA_CMPR_CLK_SRC_RC_FAST:
-    //     PCR.zero_det_clk_conf.zero_det_func_clk_sel = 1;
-    //     break;
-    // case ANA_CMPR_CLK_SRC_PLL_F48M:
-    //     PCR.zero_det_clk_conf.zero_det_func_clk_sel = 2;
-    //     break;
-    // default:
-    //     HAL_ASSERT(false);
-    //     break;
-    // }
+    switch (clk_src) {
+    case ANA_CMPR_CLK_SRC_XTAL:
+        PCR.zero_det_clk_conf.zero_det_func_clk_sel = 0;
+        break;
+    case ANA_CMPR_CLK_SRC_RC_FAST:
+        PCR.zero_det_clk_conf.zero_det_func_clk_sel = 1;
+        break;
+    case ANA_CMPR_CLK_SRC_PLL_F48M:
+        PCR.zero_det_clk_conf.zero_det_func_clk_sel = 2;
+        break;
+    default:
+        HAL_ASSERT(false);
+        break;
+    }
 }
 
 /**
@@ -214,7 +221,8 @@ static inline void analog_cmpr_ll_set_ref_source(analog_cmpr_dev_t *hw, ana_cmpr
 __attribute__((always_inline))
 static inline void analog_cmpr_ll_set_cross_debounce_cycle(analog_cmpr_dev_t *hw, uint32_t cycle)
 {
-    hw->det_filter_cnt.det_filter_cnt = cycle;
+    // the value must be greater than or equal to 1
+    hw->det_filter_cnt.det_filter_cnt = MAX(cycle, 1);
 }
 
 /**
@@ -224,6 +232,7 @@ static inline void analog_cmpr_ll_set_cross_debounce_cycle(analog_cmpr_dev_t *hw
  * @param mask Interrupt mask
  * @param enable True to enable, False to disable
  */
+__attribute__((always_inline))
 static inline void analog_cmpr_ll_enable_intr(analog_cmpr_dev_t *hw, uint32_t mask, bool enable)
 {
     uint32_t val = hw->det_int_ena.val;
@@ -309,6 +318,7 @@ static inline void analog_cmpr_ll_set_src_pad(analog_cmpr_dev_t *hw, uint32_t sr
  * @param hw Analog comparator register base address
  * @param poll_mask Channel mask (bit0..bit2 => CH1..CH3)
  */
+__attribute__((always_inline))
 static inline void analog_cmpr_ll_set_scan_mask(analog_cmpr_dev_t *hw, uint32_t poll_mask)
 {
     hw->det_conf.det_comp_poll_mask = poll_mask & 0x7;
@@ -326,6 +336,23 @@ static inline void analog_cmpr_ll_set_scan_mode(analog_cmpr_dev_t *hw, ana_cmpr_
 }
 
 /**
+ * @brief Start a scan to detect the cross event
+ *
+ * @param dev Analog comparator register base address
+ */
+__attribute__((always_inline))
+static inline void analog_cmpr_ll_start_scan(analog_cmpr_dev_t *dev)
+{
+    (void)dev;
+    // enable ETM register clock
+    PCR.etm_conf.etm_clk_en = 1;
+    while (PCR.etm_conf.etm_ready == 0) {
+    }
+    // use reg_etm_date[31] register to trigger analog comparator to start
+    SOC_ETM.etm_date.val |= 1UL << 31;
+}
+
+/**
  * @brief Set channel switch wait cycles
  *
  * @param hw Analog comparator register base address
@@ -333,7 +360,8 @@ static inline void analog_cmpr_ll_set_scan_mode(analog_cmpr_dev_t *hw, ana_cmpr_
  */
 static inline void analog_cmpr_ll_set_poll_period(analog_cmpr_dev_t *hw, uint32_t period_cycles)
 {
-    hw->det_poll_period.det_comp_poll_period = period_cycles & 0xFFFF;
+    // the value must be greater than or equal to 1
+    hw->det_poll_period.det_comp_poll_period = MAX(period_cycles, 1);
 }
 
 /**
@@ -344,7 +372,7 @@ static inline void analog_cmpr_ll_set_poll_period(analog_cmpr_dev_t *hw, uint32_
  * @param hw Analog comparator register base address
  * @param limit_cnt The resample limit count
  */
-static inline void analog_cmpr_ll_set_resample_limit(analog_cmpr_dev_t *hw, uint32_t limit_cnt)
+static inline void analog_cmpr_ll_set_resample_limit(analog_cmpr_dev_t *hw, uint8_t limit_cnt)
 {
     hw->det_conf.det_limit_cnt = limit_cnt;
 }
@@ -357,17 +385,18 @@ static inline void analog_cmpr_ll_set_resample_limit(analog_cmpr_dev_t *hw, uint
  */
 static inline void analog_cmpr_ll_set_etm_delay_cycles(analog_cmpr_dev_t *hw, uint32_t delay_cycles)
 {
-    hw->det_delay_event_time.det_delay_event_time = delay_cycles & 0xFFFF;
+    // the value must be greater than or equal to 1
+    hw->det_delay_event_time.det_delay_event_time = MAX(delay_cycles, 1);
 }
 
 /**
- * @brief Enable per-channel delayed ETM event timer
+ * @brief Enable per-channel ETM event
  *
  * @param hw Analog comparator register base address
  * @param src_chan Source channel id (0..2)
  * @param enable true to enable, false to disable
  */
-static inline void analog_cmpr_ll_enable_channel_etm_delay(analog_cmpr_dev_t *hw, uint32_t src_chan, bool enable)
+static inline void analog_cmpr_ll_enable_channel_etm(analog_cmpr_dev_t *hw, uint32_t src_chan, bool enable)
 {
     switch (src_chan) {
     case 0:
@@ -399,6 +428,7 @@ static inline void analog_cmpr_ll_enable_capture_timer(analog_cmpr_dev_t *hw, bo
  * @param hw Analog comparator register base address
  * @param hys_level Hysteresis level enum
  */
+__attribute__((always_inline))
 static inline void analog_cmpr_ll_set_ref_hys_level(analog_cmpr_dev_t *hw, ana_cmpr_ref_hys_t hys_level)
 {
     switch (hys_level) {
@@ -411,8 +441,11 @@ static inline void analog_cmpr_ll_set_ref_hys_level(analog_cmpr_dev_t *hw, ana_c
     case ANA_CMPR_REF_HYS_LEVEL2:
         hw->det_pad_comp_cfg.det_pad_comp_hys = 2;
         break;
-    default:
+    case ANA_CMPR_REF_HYS_LEVEL3:
         hw->det_pad_comp_cfg.det_pad_comp_hys = 4;
+        break;
+    default:
+        HAL_ASSERT(false);
         break;
     }
     hw->det_pad_comp_cfg.det_pad_comp_hys_en = hys_level != ANA_CMPR_REF_HYS_LEVEL0;
@@ -446,19 +479,7 @@ static inline bool analog_cmpr_ll_get_compare_result(analog_cmpr_dev_t *hw, uint
  */
 static inline uint32_t analog_cmpr_ll_get_current_capture_time(analog_cmpr_dev_t *hw, uint32_t src_chan)
 {
-    uint32_t reg_val = 0;
-    switch (src_chan) {
-    case 0:
-        reg_val = hw->det_channel_1_timer0.det_channel_1_timer0;
-        break;
-    case 1:
-        reg_val = hw->det_channel_2_timer0.det_channel_2_timer0;
-        break;
-    default:
-        reg_val = hw->det_channel_3_timer0.det_channel_3_timer0;
-        break;
-    }
-    return reg_val;
+    return hw->det_channel_timers[src_chan][0].det_channel_timer;
 }
 
 /**
@@ -470,19 +491,7 @@ static inline uint32_t analog_cmpr_ll_get_current_capture_time(analog_cmpr_dev_t
  */
 static inline uint32_t analog_cmpr_ll_get_previous_capture_time(analog_cmpr_dev_t *hw, uint32_t src_chan)
 {
-    uint32_t reg_val = 0;
-    switch (src_chan) {
-    case 0:
-        reg_val = hw->det_channel_1_timer1.det_channel_1_timer1;
-        break;
-    case 1:
-        reg_val = hw->det_channel_2_timer1.det_channel_2_timer1;
-        break;
-    default:
-        reg_val = hw->det_channel_3_timer1.det_channel_3_timer1;
-        break;
-    }
-    return reg_val;
+    return hw->det_channel_timers[src_chan][1].det_channel_timer;
 }
 
 #ifdef __cplusplus

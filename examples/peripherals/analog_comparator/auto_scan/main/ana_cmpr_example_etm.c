@@ -7,36 +7,52 @@
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "driver/ana_cmpr_etm.h"
+#include "driver/gpio_etm.h"
+#include "esp_etm.h"
 #include "ana_cmpr_example_main.h"
 
-static bool example_ana_cmpr_on_cross_callback(ana_cmpr_handle_t cmpr,
-                                               const ana_cmpr_cross_event_data_t *edata,
-                                               void *user_ctx)
+static void example_etm_bind_ana_cmpr_event_with_gpio_task(ana_cmpr_handle_t cmpr)
 {
-#if CONFIG_EXAMPLE_HYSTERESIS_COMPARATOR
-    static ana_cmpr_internal_ref_config_t ref_cfg = {
-        .ref_volt = ANA_CMPR_REF_VOLT_70_PCT_VDD,
+    /* Allocate the analog comparator positive & negative cross events */
+    esp_etm_event_handle_t cmpr_pos_evt = NULL;
+    esp_etm_event_handle_t cmpr_neg_evt = NULL;
+    ana_cmpr_etm_event_config_t evt_cfg = {
+        .event_type = ANA_CMPR_EVENT_POS_CROSS,
     };
-    bool is_70p = ref_cfg.ref_volt == ANA_CMPR_REF_VOLT_70_PCT_VDD;
-    /* Toggle the GPIO, monitor the gpio on an oscilloscope. */
-    gpio_set_level(EXAMPLE_MONITOR_GPIO_NUM, is_70p);
-    /* Set the internal reference voltage to 30% VDD and 70 %VDD alternately */
-    ana_cmpr_set_internal_reference(cmpr, &ref_cfg);
-    ref_cfg.ref_volt = is_70p ? ANA_CMPR_REF_VOLT_30_PCT_VDD : ANA_CMPR_REF_VOLT_70_PCT_VDD;
-#else
-    static int lvl = 0;
-    /* Toggle the GPIO, monitor the gpio on a oscilloscope. */
-    gpio_set_level(EXAMPLE_MONITOR_GPIO_NUM, lvl);
-    lvl = !lvl;
-#endif
-    return false;
+    ESP_ERROR_CHECK(ana_cmpr_new_etm_event(cmpr, &evt_cfg, &cmpr_pos_evt));
+    evt_cfg.event_type = ANA_CMPR_EVENT_NEG_CROSS;
+    ESP_ERROR_CHECK(ana_cmpr_new_etm_event(cmpr, &evt_cfg, &cmpr_neg_evt));
+
+    /* Allocate the GPIO set & clear tasks */
+    esp_etm_task_handle_t gpio_set_task = NULL;
+    esp_etm_task_handle_t gpio_clr_task = NULL;
+    gpio_etm_task_config_t task_cfg = {};
+    task_cfg.actions[0] = GPIO_ETM_TASK_ACTION_SET;
+    task_cfg.actions[1] = GPIO_ETM_TASK_ACTION_CLR;
+    ESP_ERROR_CHECK(gpio_new_etm_task(&task_cfg, &gpio_set_task, &gpio_clr_task));
+    /* Bind different tasks to the same GPIO */
+    ESP_ERROR_CHECK(gpio_etm_task_add_gpio(gpio_set_task, EXAMPLE_MONITOR_GPIO_NUM));
+    ESP_ERROR_CHECK(gpio_etm_task_add_gpio(gpio_clr_task, EXAMPLE_MONITOR_GPIO_NUM));
+
+    /* Allocate the Event Task Matrix channels */
+    esp_etm_channel_handle_t etm_pos_handle = NULL;
+    esp_etm_channel_handle_t etm_neg_handle = NULL;
+    esp_etm_channel_config_t etm_cfg = {};
+    ESP_ERROR_CHECK(esp_etm_new_channel(&etm_cfg, &etm_pos_handle));
+    ESP_ERROR_CHECK(esp_etm_new_channel(&etm_cfg, &etm_neg_handle));
+    /* Bind the events and tasks */
+    ESP_ERROR_CHECK(esp_etm_channel_connect(etm_pos_handle, cmpr_pos_evt, gpio_set_task));
+    ESP_ERROR_CHECK(esp_etm_channel_connect(etm_neg_handle, cmpr_neg_evt, gpio_clr_task));
+    /* Enable the ETM channels */
+    ESP_ERROR_CHECK(esp_etm_channel_enable(etm_pos_handle));
+    ESP_ERROR_CHECK(esp_etm_channel_enable(etm_neg_handle));
 }
 
-static void example_init_analog_comparator_intr(void)
+static void example_init_analog_comparator_etm(void)
 {
     ana_cmpr_handle_t cmpr = NULL;
-    int src_gpio =  -1;
-    ESP_ERROR_CHECK(ana_cmpr_get_gpio(EXAMPLE_ANA_CMPR_UNIT, ANA_CMPR_SOURCE_CHAN, &src_gpio));
+    gpio_num_t src_gpio =  -1;
 
 #if CONFIG_EXAMPLE_REF_FROM_INTERNAL
     /* Step 1: Allocate the new analog comparator unit */
@@ -47,16 +63,12 @@ static void example_init_analog_comparator_intr(void)
         .cross_type = ANA_CMPR_CROSS_ANY,
     };
     ESP_ERROR_CHECK(ana_cmpr_new_unit(&config, &cmpr));
+    ESP_ERROR_CHECK(ana_cmpr_get_channel_gpio(cmpr, ANA_CMPR_SOURCE_CHAN, 0, &src_gpio));
 
     /* Step 1.1: As we are using the internal reference source, we need to configure the internal reference */
     ana_cmpr_internal_ref_config_t ref_cfg = {
-#if CONFIG_EXAMPLE_HYSTERESIS_COMPARATOR
-        /* Set the initial internal reference voltage to 70% VDD, it will be updated in the callback every time the interrupt triggered */
-        .ref_volt = ANA_CMPR_REF_VOLT_70_PCT_VDD
-#else
         /* Set the internal reference voltage to 50% VDD */
         .ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD,
-#endif // CONFIG_EXAMPLE_HYSTERESIS_COMPARATOR
     };
     ESP_ERROR_CHECK(ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
     ESP_LOGI(TAG, "Allocate Analog Comparator with internal reference voltage: %d%% * VDD, source from GPIO %d", (int)ref_cfg.ref_volt * 10, src_gpio);
@@ -69,8 +81,9 @@ static void example_init_analog_comparator_intr(void)
         .cross_type = ANA_CMPR_CROSS_ANY,
     };
     ESP_ERROR_CHECK(ana_cmpr_new_unit(&config, &cmpr));
-    int ext_ref_gpio = -1;
-    ESP_ERROR_CHECK(ana_cmpr_get_gpio(EXAMPLE_ANA_CMPR_UNIT, ANA_CMPR_EXT_REF_CHAN, &ext_ref_gpio));
+    ESP_ERROR_CHECK(ana_cmpr_get_channel_gpio(cmpr, ANA_CMPR_SOURCE_CHAN, 0, &src_gpio));
+    gpio_num_t ext_ref_gpio = -1;
+    ESP_ERROR_CHECK(ana_cmpr_get_channel_gpio(cmpr, ANA_CMPR_EXT_REF_CHAN, 0, &ext_ref_gpio));
     ESP_LOGI(TAG, "Allocate Analog Comparator with external reference from GPIO %d, source from GPIO %d", ext_ref_gpio, src_gpio);
 #endif // CONFIG_EXAMPLE_REF_FROM_INTERNAL
 
@@ -90,21 +103,19 @@ static void example_init_analog_comparator_intr(void)
     };
     ESP_ERROR_CHECK(ana_cmpr_set_debounce(cmpr, &dbc_cfg));
 
-    /* Step 3: Register the event callbacks */
-    ana_cmpr_event_callbacks_t cbs = {
-        .on_cross = example_ana_cmpr_on_cross_callback,
-    };
-    ESP_ERROR_CHECK(ana_cmpr_register_event_callbacks(cmpr, &cbs, NULL));
+    /* Step 3: Connect the analog comparator events and gpio tasks via ETM channels */
+    example_etm_bind_ana_cmpr_event_with_gpio_task(cmpr);
+    ESP_LOGI(TAG, "Connected analog comparator events and GPIO tasks");
 
     /* Step 4: Enable the analog comparator unit */
     ESP_ERROR_CHECK(ana_cmpr_enable(cmpr));
     ESP_LOGI(TAG, "Analog comparator enabled");
 }
 
-void example_analog_comparator_intr_app(void)
+void example_analog_comparator_etm_app(void)
 {
     /* Initialize GPIO to monitor the comparator cross event */
     example_init_monitor_gpio();
     /* Initialize Analog Comparator */
-    example_init_analog_comparator_intr();
+    example_init_analog_comparator_etm();
 }
