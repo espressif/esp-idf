@@ -160,7 +160,7 @@ config SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
 config SPIRAM_ENC_EXEMPT
     bool "Reserve a PSRAM region exempt from encryption"
     default n
-    depends on SPIRAM && SECURE_FLASH_ENC_ENABLED && SOC_PSRAM_ENCRYPTION_PAGE_CONFIGURABLE
+    depends on SPIRAM && SOC_PSRAM_ENCRYPTION_PAGE_CONFIGURABLE
     help
         !!! SECURITY WARNING !!!
 
