@@ -491,10 +491,26 @@ By default, :cpp:func:`esp_deep_sleep_start` and :cpp:func:`esp_light_sleep_star
 
     In {IDF_TARGET_NAME}, there is only RTC FAST memory, so if some variables in the program are marked by ``RTC_DATA_ATTR``, ``RTC_SLOW_ATTR`` or ``RTC_FAST_ATTR`` attributes, all of them go to RTC FAST memory. It will be kept powered on by default. This can be overridden using :cpp:func:`esp_sleep_pd_config` function, if desired.
 
+.. _spi_flash_power_down_dpd:
+
+Flash Entering Deep Power-Down Mode
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For Light-sleep, ESP-IDF recommends lowering SPI Flash sleep current using **Deep Power-Down (DPD)** first: enable :ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` so the SPI Flash enters its deep power-down command mode while the supply rail remains on. Current draw is typically very low (often below 1 µA for many SPI Flash devices), without the wake-up delay of fully cycling the SPI Flash supply.
+
+In almost all use cases, DPD offers better overall trade-offs than cutting SPI Flash supply power—both safer for execution and still very low power.
+
+.. note::
+    **Mutually exclusive strategies:** Power-down SPI Flash during Light-sleep (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` or ``esp_sleep_pd_config(ESP_PD_DOMAIN_VDDSDIO, ESP_PD_OPTION_OFF)``) **cannot be combined** with DPD. Kconfig exposes :ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` only when :ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` is disabled.
+
+.. warning::
+
+    Before using this feature, check the datasheet of the SPI Flash device used on your chip to ensure it supports the Deep Power-Down mode.
+
 .. _spi_flash_power_down:
 
 Power-down of Flash
-^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 By default, to avoid potential issues, :cpp:func:`esp_light_sleep_start` function does **not** power down SPI Flash. To be more specific, it takes time to power down the SPI Flash and during this period the system may be woken up, which then actually powers up the SPI Flash before this SPI Flash could be powered down completely. As a result, there is a chance that the SPI Flash may not work properly.
 
@@ -524,26 +540,15 @@ However, for those who have fully understood the risk and are still willing to p
         - ESP-IDF does not provide any mechanism that can power down the SPI Flash in all conditions when Light-sleep.
         - :cpp:func:`esp_deep_sleep_start` function forces power down SPI Flash regardless of user configuration.
 
-.. _spi_flash_power_down_dpd:
-
-Flash Entering Deep Power-Down Mode
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-In addition to reducing power consumption by completely powering off the SPI Flash, you can further lower SPI Flash power usage during sleep by enabling the Kconfig option :ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`. Compared with fully cutting off the SPI Flash power, this feature avoids the extra delay caused by re-powering the SPI Flash when the chip wakes up from sleep, while still achieving extremely low power consumption. Most SPI Flash draw less than 1 µA when entering Deep Power-Down (DPD) mode.
-
-In almost all use cases, using DPD mode provides better overall benefits than fully powering off the SPI Flash, offering both improved safety and lower power consumption.
-
-.. warning::
-
-    Before using this feature, check the datasheet of the SPI Flash device used on your chip to ensure it supports the Deep Power-Down mode.
+.. _spi_flash_sleep_strategy_recommendations:
 
 Flash Sleep Strategy Recommendations
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In sleep scenarios, the SPI Flash handling method directly affects system safety, and power consumption. Different application scenarios prioritize these factors differently, so it is important to choose an appropriate SPI Flash sleep strategy.
 
 Keep Flash Powered On
-"""""""""""""""""""""
+"""""""""""""""""""""""""""""
 
 The standby power consumption of different SPI Flash varies. In ESP series chips, the standby power consumption of SPI Flash is typically below 30 µA. In the following scenarios, it is recommended to keep the SPI Flash powered on:
 
@@ -555,33 +560,37 @@ The standby power consumption of different SPI Flash varies. In ESP series chips
 
 In the above cases, keeping the SPI Flash powered on is the most conservative and safest choice, but note that its standby power consumption is relatively high (about 10-30 µA).
 
-Power Down Flash
-""""""""""""""""
-
-You can refer to :ref:`spi_flash_power_down` to power down the SPI Flash during sleep. After the following conditions are met or after thorough evaluation, you may consider this strategy:
-
-1. The application has strict requirements for extremely low power consumption.
-
-2. Wake-up sources are controllable, typically only RTC timer wake-up sources are enabled.
-
-3. It can be ensured that the actual sleep time is greater than the time required for the SPI Flash to completely power down. For ESP series chips other than ESP32-C5 and ESP32-C61, the time required for the SPI Flash to completely power down may be greater than 300ms; while for ESP32-C5 and ESP32-C61, due to the fast discharge feature, the time required is greater than 5ms. If parallel capacitors exist in the SPI Flash power supply circuit, longer sleep time may be required.
-
-4. If the sleep time is too short, the power consumption during the SPI Flash power-on and power-down processes may exceed the power consumption when keeping it powered on.
-
-5. There is sufficient control over SPI Flash power supply and IO states to avoid SPI Flash leakage due to pin pull-up during sleep.
-
-Since the SPI Flash power-down process is greatly affected by hardware design, IO impedance characteristics, power supply, and environmental factors, ESP-IDF cannot guarantee that the SPI Flash will be safely powered down in Light-sleep mode. Therefore, this method is only suitable for scenarios with controllable risks and thorough verification.
-
 Flash Entering Deep Power-Down (DPD) Mode
-""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""
 
-In the vast majority of application scenarios, it is recommended to prioritize using the Deep Power-Down (DPD) mode of the SPI Flash to reduce sleep power consumption. For power figures, timings, and how to enable this feature, see :ref:`spi_flash_power_down_dpd` above instead of duplicating them here. DPD mode is suitable for the following scenarios:
+When standby power is still too high, prefer **Deep Power-Down** via :ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`; see :ref:`spi_flash_power_down_dpd` for figures, timings, and how to enable it.
+
+DPD mode is suitable for the following scenarios:
 
 1. Significant reduction in SPI Flash power consumption during sleep is needed, but the risk of SPI Flash re-powering should be avoided.
 
 2. Sleep duration is short or unpredictable, for example, when asynchronous wake-up sources exist (GPIO, UART, etc.).
 
 3. SPI Flash chip used explicitly supports Deep Power-Down mode.
+
+.. only:: not SOC_PM_FLASH_KEEP_POWER_IN_LSLP
+
+    Power Down Flash
+    """"""""""""""""""""
+
+    You can refer to :ref:`spi_flash_power_down` to power down the SPI Flash during sleep. After the following conditions are met or after thorough evaluation, you may consider this strategy:
+
+    1. The application has strict requirements for extremely low power consumption.
+
+    2. Wake-up sources are controllable, typically only RTC timer wake-up sources are enabled.
+
+    3. It can be ensured that the actual sleep time is greater than the time required for the SPI Flash to completely power down. For ESP series chips, the time required for the SPI Flash to completely power down may be greater than 300ms. If parallel capacitors exist in the SPI Flash power supply circuit, longer sleep time may be required.
+
+    4. If the sleep time is too short, the power consumption during the SPI Flash power-on and power-down processes may exceed the power consumption when keeping it powered on.
+
+    5. There is sufficient control over SPI Flash power supply and IO states to avoid SPI Flash leakage due to pin pull-up during sleep.
+
+    Since the SPI Flash power-down process is greatly affected by hardware design, IO impedance characteristics, power supply, and environmental factors, ESP-IDF cannot guarantee that the SPI Flash will be safely powered down in Light-sleep mode. Therefore, this method is only suitable for scenarios with controllable risks and thorough verification.
 
 Configuring IOs (Deep-sleep Only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -491,10 +491,26 @@ RTC 外设和内存断电
 
     {IDF_TARGET_NAME} 中只有 RTC 高速内存，因此，如果程序中的某些值被标记为 ``RTC_DATA_ATTR``、``RTC_SLOW_ATTR`` 或 ``RTC_FAST_ATTR`` 属性，那么所有这些值都将被存入 RTC 高速内存，默认情况下保持供电。如有需要，也可以使用函数 :cpp:func:`esp_sleep_pd_config` 对其进行修改。
 
+.. _spi_flash_power_down_dpd:
+
+SPI Flash 进入 deep power-down 模式
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+为降低 Light-sleep 期间 SPI Flash 的功耗，ESP-IDF **优先推荐**采用 **Deep Power-Down（DPD）**：通过启用配置项 :ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`，令 SPI Flash 在供电保持开启的前提下进入器件内部的深度休眠指令状态。多数 SPI Flash 在 DPD 下电流可降至极低水平（常低于 1 µA），同时可避免反复上下电带来的唤醒延迟。
+
+在几乎所有应用场景中，相较彻底切断 SPI Flash 供电，DPD 在安全性与功耗之间通常是更好的折中。
+
+.. note::
+    **两种方式互斥：** Light-sleep 下的 SPI Flash **断电**（:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` 或通过 ``esp_sleep_pd_config`` 将 ``ESP_PD_DOMAIN_VDDSDIO`` 置为关闭）与 **DPD** **不可同时使用**， 在 menuconfig 中仅能在禁用 :ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` 后再启用 :ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`。
+
+.. warning::
+
+    使用该功能前需要查阅使用芯片所搭载的 SPI Flash 的技术手册是否支持 deep power-down 模式。
+
 .. _spi_flash_power_down:
 
 SPI Flash 断电
-^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^
 
 默认情况下，调用函数 :cpp:func:`esp_light_sleep_start` 后，SPI Flash **不会** 断电，因为在 sleep 过程中断电 SPI Flash 存在风险。具体而言，SPI Flash 断电需要时间，但是在此期间，系统有可能被唤醒，导致 SPI Flash 重新被上电。此时，断电尚未完成又重新上电的硬件行为有可能导致 SPI Flash 无法正常工作。
 
@@ -524,18 +540,7 @@ SPI Flash 断电
         - Light-sleep 模式下，ESP-IDF 没有提供保证 SPI Flash 一定会被断电的机制。
         - 不管用户的配置如何，函数 :cpp:func:`esp_deep_sleep_start` 都会强制断电 SPI Flash
 
-.. _spi_flash_power_down_dpd:
-
-SPI Flash 进入 deep power-down 模式
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-除了通过让 SPI Flash 完全断电来降低芯片功耗之外，还可以通过启用 Kconfig 配置项 :ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`，进一步减少休眠期间 SPI Flash 的功耗。与直接对 SPI Flash 断电相比，该功能能够避免芯片从休眠唤醒时 SPI Flash 重新上电所带来的额外延迟，同时也能保持极低的功耗。大多数 SPI Flash 在进入 Deep Power-Down（DPD）模式后电流消耗低于 1 µA。
-
-在几乎所有应用场景中，使用 DPD 模式都比直接断电 SPI Flash 更具优势，兼顾了安全性与低功耗表现。
-
-.. warning::
-
-    使用该功能前需要查阅使用芯片所搭载的 SPI Flash 的技术手册是否支持 deep power-down 模式。
+.. _spi_flash_sleep_strategy_recommendations:
 
 SPI Flash 休眠策略选择建议
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -543,7 +548,7 @@ SPI Flash 休眠策略选择建议
 在休眠场景下，SPI Flash 的处理方式直接影响系统的安全性、功耗。不同应用场景对这些因素的侧重不同，因此需要选择合适的 SPI Flash 休眠策略。
 
 SPI Flash 不掉电
-"""""""""""""
+""""""""""""""""""""
 
 不同 SPI Flash 的待机功耗不一致，在 ESP 系列芯片中，SPI Flash 的待机功耗通常低于 30 µA，在以下场景中，建议保持 SPI Flash 不掉电：
 
@@ -555,33 +560,37 @@ SPI Flash 不掉电
 
 在上述情况下，保持 SPI Flash 供电是最保守、也是最安全的选择，但需要注意其待机功耗相对较高 (约 10-30 µA)。
 
-SPI Flash 掉电
-"""""""""""
-
-可以参考 :ref:`spi_flash_power_down` 实现在休眠中掉电 SPI Flash。在以下条件满足或经过充分评估后，可以考虑该策略：
-
-1. 应用对极低功耗有严格要求。
-
-2. 唤醒源可控，通常仅启用 RTC timer 唤醒源。
-
-3. 能够确保实际睡眠时间大于 SPI Flash 彻底断电所需时间。对于除 ESP32-C5 和 ESP32-C61 之外的 ESP 系列芯片，SPI Flash 彻底断电所需时间可能大于 300ms；而对于 ESP32-C5 和 ESP32-C61，由于支持快速放电功能，彻底断电所需时间大于 5ms。如果 SPI Flash 供电电路中存在并联电容，可能需要更长的睡眠时间。
-
-4. 如果休眠时间过短，SPI Flash 上电和下电过程所消耗的功耗可能会超过保持供电时的功耗。
-
-5. 对 SPI Flash 供电及 IO 状态有充分控制，休眠时避免因为管脚上拉导致 SPI Flash 漏电。
-
-由于 SPI Flash 的断电过程受硬件设计、IO 阻抗特性、供电以及环境因素影响较大，ESP-IDF 无法保证在 Light-sleep 模式下 SPI Flash 一定能够安全断电，因此该方式仅适用于风险可控且经过充分验证的场景。
-
 SPI Flash 进入 deep power-down（DPD）模式
 """"""""""""""""""""""""""""""""""""""""""
 
-在绝大多数应用场景中，推荐优先使用 SPI Flash 的 Deep Power-Down（DPD）模式来降低休眠功耗。功耗数据、时序及如何启用该功能请直接参见上文 :ref:`spi_flash_power_down_dpd`，此处不再重复。DPD 模式适用于以下场景：
+若待机功耗仍偏高，应优先采用 **Deep Power-Down（DPD）**，通过 :ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` 降低休眠电流；功耗数据、时序及启用方式参见前文 :ref:`spi_flash_power_down_dpd`。
+
+DPD 模式适用于以下场景：
 
 1. 需要显著降低休眠期间 SPI Flash 的功耗，但又希望避免 SPI Flash 重新上电的风险。
 
 2. 休眠时间较短或不可预测，例如存在异步唤醒源（GPIO、UART 等）。
 
 3. 使用的 SPI Flash 芯片明确支持 Deep Power-Down 模式。
+
+.. only:: not SOC_PM_FLASH_KEEP_POWER_IN_LSLP
+
+    SPI Flash 掉电
+    """""""""""""""""
+
+    可以参考 :ref:`spi_flash_power_down` 实现在休眠中掉电 SPI Flash。在以下条件满足或经过充分评估后，可以考虑该策略：
+
+    1. 应用对极低功耗有严格要求。
+
+    2. 唤醒源可控，通常仅启用 RTC timer 唤醒源。
+
+    3. 能够确保实际睡眠时间大于 SPI Flash 彻底断电所需时间。对于 ESP 系列芯片，SPI Flash 彻底断电所需时间可能大于 300ms。如果 SPI Flash 供电电路中存在并联电容，可能需要更长的睡眠时间。
+
+    4. 如果休眠时间过短，SPI Flash 上电和下电过程所消耗的功耗可能会超过保持供电时的功耗。
+
+    5. 对 SPI Flash 供电及 IO 状态有充分控制，休眠时避免因为管脚上拉导致 SPI Flash 漏电。
+
+    由于 SPI Flash 的断电过程受硬件设计、IO 阻抗特性、供电以及环境因素影响较大，ESP-IDF 无法保证在 Light-sleep 模式下 SPI Flash 一定能够安全断电，因此该方式仅适用于风险可控且经过充分验证的场景。
 
 配置 IO（仅适用于 Deep-sleep）
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
