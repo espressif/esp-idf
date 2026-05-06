@@ -402,6 +402,7 @@
 
 // /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 #define SOC_MODEM_CLOCK_IS_INDEPENDENT            (1)
+#define SOC_MODEM_APB_CLOCK_IS_INDEPENDENT        (1)
 #define SOC_MODEM_CLOCK_SOC_PLL_SOURCE_CG_SUPPORTED (1)
 #define SOC_MODEM_CLOCK_WIFI_BB_80X1_AS_APB       (1)
 

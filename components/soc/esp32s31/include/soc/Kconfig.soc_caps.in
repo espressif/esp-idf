@@ -975,6 +975,10 @@ config SOC_MODEM_CLOCK_IS_INDEPENDENT
     bool
     default y
 
+config SOC_MODEM_APB_CLOCK_IS_INDEPENDENT
+    bool
+    default y
+
 config SOC_MODEM_CLOCK_SOC_PLL_SOURCE_CG_SUPPORTED
     bool
     default y

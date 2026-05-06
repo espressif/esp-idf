@@ -82,27 +82,6 @@
 #elif CONFIG_IDF_TARGET_ESP32S2
 /* Minimal divider at which REF_CLK_FREQ can be obtained */
 #define REF_CLK_DIV_MIN 2
-#elif CONFIG_IDF_TARGET_ESP32S3
-/* Minimal divider at which REF_CLK_FREQ can be obtained */
-#define REF_CLK_DIV_MIN 2         // TODO: IDF-5660
-#elif CONFIG_IDF_TARGET_ESP32C3
-#define REF_CLK_DIV_MIN 2
-#elif CONFIG_IDF_TARGET_ESP32C2
-#define REF_CLK_DIV_MIN 2
-#elif CONFIG_IDF_TARGET_ESP32C6
-#define REF_CLK_DIV_MIN 2
-#elif CONFIG_IDF_TARGET_ESP32C61
-#define REF_CLK_DIV_MIN 2
-#elif CONFIG_IDF_TARGET_ESP32C5
-#define REF_CLK_DIV_MIN 2
-#elif CONFIG_IDF_TARGET_ESP32H2
-#define REF_CLK_DIV_MIN 2
-#elif CONFIG_IDF_TARGET_ESP32H21
-#define REF_CLK_DIV_MIN 2
-#elif CONFIG_IDF_TARGET_ESP32P4
-#define REF_CLK_DIV_MIN 2
-#elif CONFIG_IDF_TARGET_ESP32H4
-#define REF_CLK_DIV_MIN 2
 #endif
 
 #ifdef CONFIG_PM_PROFILING
@@ -451,11 +430,13 @@ esp_err_t esp_pm_configure(const void* vconfig)
         return ESP_ERR_INVALID_ARG;
     }
 
+#ifdef REF_CLK_DIV_MIN
     int xtal_freq_mhz = esp_clk_xtal_freq() / MHZ;
     if (min_freq_mhz < xtal_freq_mhz && min_freq_mhz * MHZ / REF_CLK_FREQ < REF_CLK_DIV_MIN) {
         ESP_LOGW(TAG, "min_freq_mhz should be >= %d", REF_CLK_FREQ * REF_CLK_DIV_MIN / MHZ);
         return ESP_ERR_INVALID_ARG;
     }
+#endif
 
     if (!rtc_clk_cpu_freq_mhz_to_config(max_freq_mhz, &freq_config)) {
         ESP_LOGW(TAG, "invalid max_freq_mhz value (%d)", max_freq_mhz);
@@ -479,7 +460,7 @@ esp_err_t esp_pm_configure(const void* vconfig)
     /* Maximum SOC APB clock frequency is 40 MHz, maximum Modem (WiFi,
      * Bluetooth, etc..) APB clock frequency is 80 MHz */
     int apb_clk_freq = esp_clk_apb_freq() / MHZ;
-#if (CONFIG_ESP_WIFI_ENABLED || CONFIG_BT_ENABLED || CONFIG_IEEE802154_ENABLED) && SOC_PHY_SUPPORTED
+#if (CONFIG_ESP_WIFI_ENABLED || CONFIG_BT_ENABLED || CONFIG_IEEE802154_ENABLED) && SOC_PHY_SUPPORTED && !SOC_MODEM_APB_CLOCK_IS_INDEPENDENT
     apb_clk_freq = MAX(apb_clk_freq, MODEM_REQUIRED_MIN_APB_CLK_FREQ / MHZ);
 #endif
     int apb_max_freq = MIN(max_freq_mhz, apb_clk_freq); /* CPU frequency in APB_MAX mode */

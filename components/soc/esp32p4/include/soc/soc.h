@@ -133,7 +133,6 @@
 
 //Periheral Clock {{
 #define  APB_CLK_FREQ                                ( 90*1000000 )
-#define  REF_CLK_FREQ                                ( 1000000 )
 //}}
 
 /* Overall memory map */
