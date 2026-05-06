@@ -360,7 +360,6 @@ endif
 if WIFI_RMT_ENABLE_ROAMING_APP
     config ESP_WIFI_ENABLE_ROAMING_APP # ignore: multiple-definition
         bool
-        depends on IDF_EXPERIMENTAL_FEATURES
         default WIFI_RMT_ENABLE_ROAMING_APP
 endif
 

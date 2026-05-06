@@ -1,6 +1,8 @@
 **Introduction**
 
-The advanced Wi-Fi roaming app has been written with the intention of simplifying the process of developing applications that will function in a network environment that allows for roaming between the service areas of multiple compatible APs.  It gathers basic approaches about how different roaming mechanisms and APIs can be integrated for an efficient solution to roaming and bundles into an easy to user yet highly configurable module.
+The advanced Wi-Fi roaming app has been written with the intention of simplifying the process of developing applications that will function in a network environment that allows for roaming between the service areas of multiple compatible APs. It gathers basic approaches about how different roaming mechanisms and APIs can be integrated for an efficient solution to roaming and bundles into an easy to use yet highly configurable module.
+
+For runtime flow and configuration details, see [ROAMING_FLOW.md](ROAMING_FLOW.md).
 
 **How to use:**
 
@@ -9,26 +11,26 @@ To enable the roaming app in the menuconfig, please navigate to Component Settin
 
 **Configuring the advanced Wi-Fi roaming app :**
 
-After enabling the roaming app in the menuconfig, this roaming app can be configured to best suit your application requirements and the network environment. The configurations are classified into Roaming Triggers (better understood as “Under what conditions to roam?”), Roaming methods (better understood as “How to Roam’), and then some additional configurations such as scanning parameters, backoff times, periodic neighbor report requests etc.
+After enabling the roaming app in the menuconfig, this roaming app can be configured to best suit your application requirements and the network environment. The configurations are classified into Roaming Triggers (better understood as “Under what conditions to roam?”), Roaming methods (better understood as “How to roam?”), and then some additional configurations such as scanning parameters, backoff times, periodic neighbor report requests, blacklisting, etc.
 
 
 **Roaming Triggers: (Roaming Module Settings --> Roaming Triggers)**
 
-There are broadly two different Roaming triggers you can choose from:
+There are broadly two different roaming triggers you can choose from:
 
 1) Low RSSI triggered roaming :
 
 If enabled, in this method the roaming app sets a Wi-Fi Threshold (configured by “Wi-Fi RSSI threshold to trigger roaming”), which when reached by the connection to the current AP, triggers a check for a better AP and if found will trigger roaming.
 
-Every time the threshold is reached, a new threshold needs to be set at an even lower rssi threshold since  if we fail to find a better AP the first time the RSSI threshold is reached there will be no further attempts to find better APs leading to possible disconnection as the only avenue for finding a better AP. The offset by which the next RSSI threshold can be set is decided by “Wi-Fi RSSI threshold to trigger roaming” which defaults to 5.
+Every time the threshold is reached, a new threshold needs to be set at an even lower RSSI threshold since if we fail to find a better AP the first time the RSSI threshold is reached there will be no further attempts to find better APs, leading to possible disconnection as the only avenue for finding a better AP. The offset by which the next RSSI threshold can be set is decided by “Offset by which to reset the RSSI Threshold after attempt to roam” which defaults to 5.
 
-Also please note that if the AP we connect to, upon connecting itself has a worse RSSI than the threshold set in the configuration, the new RSSI threshold is set to the current RSSI - offset. Additionally, the RSSI threshold gets reset to the configured value if the RSSI ever goes below the configured threshold by the offset amount.
+Also please note that if the AP we connect to, upon connecting, itself has a worse RSSI than the threshold set in the configuration, the new RSSI threshold is set to the current RSSI - offset. Additionally, the RSSI threshold gets reset to the configured value if the RSSI later improves above the configured threshold.
 
 2) Periodic Scan based roaming:
 
-Unlike Low RSSI triggered roaming, which is a bit reactive to the changing network environment, periodic scanning-based roaming (enabled by “Conduct periodic scans to check if a better AP is available”) allows for a more active approach to ensuring that you are connected to the best AP in the network. You can also decide the threshold after which you want to conduct the periodic scans with a default of –20dbm. (Configured by “Threshold at which to begin periodic scanning for a better AP”)
+Unlike Low RSSI triggered roaming, which is a bit reactive to the changing network environment, periodic scanning-based roaming (enabled by “Conduct periodic scans to check if a better AP is available”) allows for a more active approach to ensuring that you are connected to the best AP in the network. You can also decide the threshold after which you want to conduct the periodic scans with a default of -50 dBm. (Configured by “Threshold at which to begin periodic scanning for a better AP”)
 
-The intervals at which this periodic scan will take place can also be configured through “Time intervals at which station will initiate a scan”. This defaults to 30 seconds.The RSSI difference between a candidate AP and the current AP, which can be considered as acceptable to initiate roaming can also be configured as the “RSSI difference b/w current AP and a candidate AP to initiate roaming”
+The intervals at which this periodic scan will take place can also be configured through “Time intervals at which station will initiate a scan”. This defaults to 30 seconds. The RSSI difference between a candidate AP and the current AP, which can be considered as acceptable to initiate roaming, can also be configured as the “RSSI difference b/w current AP and a candidate AP to initiate roaming”
 
 **Please note that at least one of the two Roaming Triggers needs to be enabled.**
 
@@ -39,9 +41,9 @@ Currently 2 methods of roaming are supported by the roaming app. (Roaming App Se
 
 1) Network Assisted Roaming:
 
-Enabled by “Support Network Assisted Roaming using 802.11v”, this method primarily uses the BSS transition Management mechanisms outlined in IEEE 802.11v. It uses Candidates received from neighbor report requests (if enabled, explained later.) and scanning results to Send BSS transition Management Queries to the AP it is currently associated to. Depending on the current radio environment and vendor implementation on the side of the AP, this could then lead to BSS Transition Management Requests and corresponding BSS Transition Management responses which could lead to a seamless transition from one AP to another. For a better understanding of the mechanisms involved and the general implementation please look up the IEEE 802.11v specification and upstream wpa_supplicant’s implementation.
+Enabled by “Support Network Assisted Roaming using 802.11v”, this method primarily uses the BSS transition Management mechanisms outlined in IEEE 802.11v. It uses candidates received from neighbor report requests (if enabled, explained later) and scanning results to send BSS transition Management Queries to the AP it is currently associated to. Depending on the current radio environment and vendor implementation on the side of the AP, this could then lead to BSS Transition Management Requests and corresponding BSS Transition Management responses which could lead to a seamless transition from one AP to another. For a better understanding of the mechanisms involved and the general implementation please look up the IEEE 802.11v specification and upstream wpa_supplicant’s implementation.
 
-Please note that for this to work as expected, the APs should support 802.11k & 802.11v and be setup in a network where they are aware of each other.
+Please note that for this to work as expected, the APs should be setup in a network where they are aware of each other. If the network is expected to preserve IP configuration across a roaming event, `Skip IP renew after roaming` can also be enabled. This is relevant only when the roam keeps the same IP state, such as 802.11r or BTM-based roaming.
 
 2) Legacy Roaming approach.
 
@@ -58,7 +60,7 @@ The scan configuration allows for configuring the parameters for the scans that 
 
 The minimum and maximum active scanning duration for each channel in milliseconds can be configured through “Minimum duration of active scan time for a station” & “Maximum duration of active scan time for a station”. If connected, the “Home channel dwell time between scanning consecutive channels” configuration decides for how long the station will return to the home channel for Tx of various frames in the buffer, and Rx of frames buffered by the AP.
 
-Additionally, if channels of operation of the APs that the application designed will work with is known, you can provide this information as an ordered list of comma-separated channels. (configured using “Preferred channel list for scanning”) (for e.g. 1,6,9,11) Only those channels will be scanned in the order mentioned. Keeping in mind that network discovery/scanning is the process that takes up most of the time in roaming as well connecting to an AP, providing such a list could significantly increase the efficiency of the roaming app and process.
+Additionally, if channels of operation of the APs that the application is designed to work with are known, you can provide this information as a comma-separated list of channels. (configured using “Preferred channel list for scanning”) (for e.g. 1,6,9,11) Only those channels will be scanned, but the list is treated as a filter and not as an ordered scan sequence. Keeping in mind that network discovery/scanning is the process that takes up most of the time in roaming as well as connecting to an AP, providing such a list could significantly increase the efficiency of the roaming app and process.
 
 This module can trigger scans due to several reasons. The configuration “Scan results expiry window” decides the duration for which different modules will use the most recent scan results instead of triggering a new scan of their own.
 
@@ -73,17 +75,28 @@ Successive roaming attempts by multiple roaming triggers simultaneously could le
 Neighbor Report requests are a part of the IEEE 802.11k specification, and hence the intended network would need to support and be setup in a way to support its mechanisms. Periodic neighbor report requests provide vital information about the network and other APs in the vicinity that are candidate APs of the same network. This can be enabled using “Send Periodic Neighbor Report requests for updating the internal list”. The frequency of these requests is controlled by “Time interval between Periodic Neighbor report Requests”. There can also be a RSSI threshold (“Threshold for sending periodic neighbor report requests”) after which you wish to consider sending these requests however this is set by default to -20.
 
 
+**Blacklist and security behavior:**
+
+`Enable BSSID blacklisting` allows the app to skip specific BSSIDs during candidate selection. Entries can be added manually through `esp_wifi_blacklist_add()` and `esp_wifi_blacklist_remove()`.
+
+If `Enable automatic BSSID blacklisting` is enabled, a BSSID is blacklisted after repeated connection or authentication failures. Blacklisted entries are removed again after `Blacklist timeout (in seconds)`.
+
+The roaming logic also honors AP-advertised transition disable policy while selecting candidates and prevents roaming to candidates that do not meet the authmode threshold set by `wifi_config_t.sta`.
+
+
 **Notes :**
 
 1) Advanced roaming support is disabled by default.
 
-2) When enabling the advanced roaming support , it is expected that the bssid to connect to is not specifically set by the application. This would defeat the purpose of roaming between different APs of the network. Hence if the BSSID is set (in  wifi_config_t.sta) , it will be unset at the first disconnection/connection.
+2) When enabling the advanced roaming support, it is expected that the BSSID to connect to is not specifically set by the application. This would defeat the purpose of roaming between different APs of the network. The roaming app may temporarily set BSSID/channel hints for a directed reconnect, but these hints are cleared again so normal roaming can continue.
 
-3) For roaming to work as expected, the APs between which the station is expected to roam must have the same or compatible authmode.  These include :
+3) For roaming to work as expected, the APs between which the station is expected to roam must have the same or compatible authmode. These include :
 
    Open <--> OWE
 
-   PSK based authmodes  <--> PSK based authmodes (Does not include WEP)
+   PSK based authmodes <--> PSK based authmodes (Does not include WEP)
+
+   `WAPI_PSK` <--> legacy WPA/WPA2 PSK authmodes
 
    Enterprise <--> Enterprise.
 
