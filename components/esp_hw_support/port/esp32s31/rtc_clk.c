@@ -230,13 +230,14 @@ static void rtc_clk_cpu_freq_to_cpll_mhz(int cpu_freq_mhz, hal_utils_clk_div_t *
      *
      * Current available configurations:
      * CPLL    ->     CPU_CLK   ->     MEM_CLK
-     *                          ->     SYS_CLK   ->     APB_CLK
+     *                          ->     SYS_CLK              ->         APB_CLK
      * 320    div1      320    div2      160
-     *                         div4      80     div2      40
+     *                         div3      320/3(106.67)     div2      320/6(53.33)
      * 320    div2      160    div1      160
-     *                         div2      80     div2      40
+     *                         div2      80                div2      40
      * 320    div4      80     div1      80
-     *                         div1      80     div2      40
+     *                         div1      80                div2      40
+     * 320    div6      53.33  div1      53.33             div1      53.33
      */
     uint32_t mem_divider = 1;
     uint32_t sys_divider = 1;
@@ -244,7 +245,7 @@ static void rtc_clk_cpu_freq_to_cpll_mhz(int cpu_freq_mhz, hal_utils_clk_div_t *
     switch (cpu_freq_mhz) {
     case 320:
         mem_divider = 2;
-        sys_divider = 4;
+        sys_divider = 3;
         apb_divider = 2;
         break;
     case 160:
@@ -256,6 +257,11 @@ static void rtc_clk_cpu_freq_to_cpll_mhz(int cpu_freq_mhz, hal_utils_clk_div_t *
         mem_divider = 1;
         sys_divider = 1;
         apb_divider = 2;
+        break;
+    case 53:
+        mem_divider = 1;
+        sys_divider = 1;
+        apb_divider = 1;
         break;
     default:
         // Unsupported configuration
@@ -291,6 +297,11 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *ou
         }
         source_freq_mhz = xtal_freq;
         source = SOC_CPU_CLK_SRC_XTAL;
+    } else if (freq_mhz == 53) {
+        real_freq_mhz = freq_mhz;
+        source = SOC_CPU_CLK_SRC_CPLL;
+        source_freq_mhz = CLK_LL_PLL_320M_FREQ_MHZ;
+        divider.integer = 6;
     } else if (freq_mhz == 80) {
         real_freq_mhz = freq_mhz;
         source = SOC_CPU_CLK_SRC_CPLL;
