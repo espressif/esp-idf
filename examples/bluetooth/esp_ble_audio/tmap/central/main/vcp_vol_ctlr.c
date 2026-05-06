@@ -13,6 +13,12 @@
 #include "tmap_central.h"
 
 static esp_ble_audio_vcp_vol_ctlr_t *vcp_vol_ctlr;
+/* VCS control-point writes carry a change counter that must match the server's.
+ * After discovery the local counter is 0 while the server may have incremented it
+ * during a previous session (e.g. before the central rebooted). Read the state
+ * first to sync the counter, then issue the demo mute from the state callback.
+ */
+static bool initial_state_read_pending;
 
 static void vcs_discover_cb(esp_ble_audio_vcp_vol_ctlr_t *vol_ctlr, int err,
                             uint8_t vocs_count, uint8_t aics_count)
@@ -22,11 +28,13 @@ static void vcs_discover_cb(esp_ble_audio_vcp_vol_ctlr_t *vol_ctlr, int err,
         return;
     }
 
-    ESP_LOGI(TAG, "VCP discovery done, %p %p", vol_ctlr, vcp_vol_ctlr);
+    ESP_LOGI(TAG, "VCP discovery done");
 
-    err = esp_ble_audio_vcp_vol_ctlr_mute(vol_ctlr);
+    initial_state_read_pending = true;
+    err = esp_ble_audio_vcp_vol_ctlr_read_state(vol_ctlr);
     if (err) {
-        ESP_LOGE(TAG, "Failed to send mute command, err %d", err);
+        ESP_LOGE(TAG, "Failed to read VCS state, err %d", err);
+        initial_state_read_pending = false;
     }
 }
 
@@ -44,8 +52,19 @@ static void vcs_state_cb(esp_ble_audio_vcp_vol_ctlr_t *vol_ctlr,
 {
     if (err) {
         ESP_LOGE(TAG, "VCP state cb failed, err %d", err);
-    } else {
-        ESP_LOGI(TAG, "VCP state cb done, volume %u mute %u", volume, mute);
+        initial_state_read_pending = false;
+        return;
+    }
+
+    ESP_LOGI(TAG, "VCP state cb done, volume %u mute %u", volume, mute);
+
+    if (initial_state_read_pending) {
+        initial_state_read_pending = false;
+
+        err = esp_ble_audio_vcp_vol_ctlr_mute(vol_ctlr);
+        if (err) {
+            ESP_LOGE(TAG, "Failed to send mute command, err %d", err);
+        }
     }
 }
 

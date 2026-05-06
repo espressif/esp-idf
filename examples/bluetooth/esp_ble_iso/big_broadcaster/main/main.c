@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
@@ -73,20 +74,21 @@ static void iso_connected_cb(esp_ble_iso_chan_t *chan)
         .pid = ESP_BLE_ISO_DATA_PATH_HCI,
         .format = ESP_BLE_ISO_CODING_FORMAT_TRANSPARENT,
     };
+    int chan_idx = bis_chan_index_get(chan);
     esp_err_t err;
 
-    ESP_LOGI(TAG, "ISO channel %p connected", chan);
+    ESP_LOGI(TAG, "[BIS #%d] Connected", chan_idx);
 
     err = esp_ble_iso_setup_data_path(chan, ESP_BLE_ISO_DATA_PATH_DIR_INPUT, &data_path);
     if (err) {
-        ESP_LOGE(TAG, "Failed to setup ISO data path, err %d", err);
+        ESP_LOGE(TAG, "[BIS #%d] Failed to setup data path, err %d", chan_idx, err);
         return;
     }
 
     connected_bis_count++;
 
     if (connected_bis_count < BIS_ISO_CHAN_COUNT) {
-        ESP_LOGI(TAG, "Waiting for all BIS channels (%u/%u)",
+        ESP_LOGI(TAG, "Waiting for remaining BIS channels (%u/%u)",
                  connected_bis_count, BIS_ISO_CHAN_COUNT);
         return;
     }
@@ -100,7 +102,7 @@ static void iso_connected_cb(esp_ble_iso_chan_t *chan)
 
         err = example_iso_tx_scheduler_start(&chan_tx[i].scheduler, BIG_SDU_INTERVAL_US);
         if (err) {
-            ESP_LOGE(TAG, "Failed to start tx scheduler[%u], err %d", i, err);
+            ESP_LOGE(TAG, "[BIS #%zu] Scheduler start failed, err %d", i, err);
             continue;
         }
 
@@ -110,7 +112,8 @@ static void iso_connected_cb(esp_ble_iso_chan_t *chan)
 
 static void iso_disconnected_cb(esp_ble_iso_chan_t *chan, uint8_t reason)
 {
-    ESP_LOGI(TAG, "ISO channel %p disconnected, reason 0x%02x", chan, reason);
+    ESP_LOGI(TAG, "[BIS #%d] Disconnected, reason 0x%02x",
+             bis_chan_index_get(chan), reason);
 
     if (connected_bis_count > 0) {
         connected_bis_count--;
@@ -124,7 +127,7 @@ static void iso_disconnected_cb(esp_ble_iso_chan_t *chan, uint8_t reason)
         for (size_t i = 0; i < BIS_ISO_CHAN_COUNT; i++) {
             err = example_iso_tx_scheduler_stop(&chan_tx[i].scheduler);
             if (err) {
-                ESP_LOGE(TAG, "Failed to stop tx scheduler[%u], err %d", i, err);
+                ESP_LOGE(TAG, "[BIS #%zu] Scheduler stop failed, err %d", i, err);
             }
         }
 
@@ -135,14 +138,16 @@ static void iso_disconnected_cb(esp_ble_iso_chan_t *chan, uint8_t reason)
 static void iso_sent_cb(esp_ble_iso_chan_t *chan, void *user_data)
 {
     int chan_idx = bis_chan_index_get(chan);
+    char name[24];
 
     if (chan_idx < 0) {
-        ESP_LOGW(TAG, "Unknown BIS channel %p", chan);
+        ESP_LOGW(TAG, "Unknown BIS channel");
         return;
     }
 
+    snprintf(name, sizeof(name), "BIS #%d", chan_idx);
     example_iso_tx_scheduler_on_sent(&chan_tx[chan_idx].scheduler,
-                                     user_data, TAG, "chan", chan);
+                                     user_data, TAG, name);
 }
 
 static esp_ble_iso_chan_ops_t iso_ops = {
@@ -281,7 +286,7 @@ static int ext_adv_start(void)
         return err;
     }
 
-    ESP_LOGI(TAG, "Extended adv instance %u started", ADV_HANDLE);
+    ESP_LOGI(TAG, "Advertising started (handle %u)", ADV_HANDLE);
 
     return 0;
 }
@@ -334,7 +339,7 @@ static void iso_chan_send(int chan_idx)
     }
 
     if (bis_iso_chan[chan_idx].iso == NULL) {
-        ESP_LOGW(TAG, "No channel to transmit data, %u", chan_idx);
+        ESP_LOGW(TAG, "[BIS #%d] No channel to transmit", chan_idx);
         return;
     }
 
@@ -347,8 +352,7 @@ static void iso_chan_send(int chan_idx)
                                 sizeof(chan_tx[chan_idx].data),
                                 chan_tx[chan_idx].seq_num);
     if (err) {
-        ESP_LOGD(TAG, "Failed to transmit data on channel 0x%04x",
-                 bis_iso_chan[chan_idx].iso->handle);
+        ESP_LOGD(TAG, "[BIS #%d] send failed, err %d", chan_idx, err);
         return;
     }
 
@@ -397,7 +401,7 @@ void app_main(void)
                                             tx_scheduler_cb,
                                             &chan_tx[i]);
         if (err) {
-            ESP_LOGE(TAG, "Failed to init tx scheduler[%u], err %d", i, err);
+            ESP_LOGE(TAG, "[BIS #%zu] Scheduler init failed, err %d", i, err);
             return;
         }
     }

@@ -134,7 +134,7 @@ static void ext_adv_start(void)
         return;
     }
 
-    ESP_LOGI(TAG, "Extended adv instance %u started", ADV_HANDLE);
+    ESP_LOGI(TAG, "Advertising started (handle %u)", ADV_HANDLE);
 }
 
 esp_ble_audio_cap_stream_t *stream_alloc(esp_ble_audio_dir_t dir)
@@ -248,7 +248,7 @@ static void pa_sync(esp_ble_audio_gap_app_event_t *event)
 
 static void pa_sync_lost(esp_ble_audio_gap_app_event_t *event)
 {
-    ESP_LOGI(TAG, "PA sync lost: sync_handle 0x%04x reason 0x%02x",
+    ESP_LOGI(TAG, "PA sync lost: sync_handle %u reason 0x%02x",
              event->pa_sync_lost.sync_handle, event->pa_sync_lost.reason);
 
     broadcast_pa_lost(event);
@@ -258,24 +258,22 @@ static void pa_sync_lost(esp_ble_audio_gap_app_event_t *event)
 static void acl_connect(esp_ble_audio_gap_app_event_t *event)
 {
     if (event->acl_connect.status) {
-        ESP_LOGE(TAG, "connection failed, status %d", event->acl_connect.status);
+        ESP_LOGE(TAG, "Connection failed, status %d", event->acl_connect.status);
         return;
     }
 
-    ESP_LOGI(TAG, "Conn established:");
-    ESP_LOGI(TAG, "conn_handle 0x%04x status 0x%02x role %u peer %02x:%02x:%02x:%02x:%02x:%02x",
-             event->acl_connect.conn_handle, event->acl_connect.status,
-             event->acl_connect.role, event->acl_connect.dst.val[5],
-             event->acl_connect.dst.val[4], event->acl_connect.dst.val[3],
-             event->acl_connect.dst.val[2], event->acl_connect.dst.val[1],
-             event->acl_connect.dst.val[0]);
+    ESP_LOGI(TAG, "Connected: handle %u role %u peer %02x:%02x:%02x:%02x:%02x:%02x",
+             event->acl_connect.conn_handle, event->acl_connect.role,
+             event->acl_connect.dst.val[5], event->acl_connect.dst.val[4],
+             event->acl_connect.dst.val[3], event->acl_connect.dst.val[2],
+             event->acl_connect.dst.val[1], event->acl_connect.dst.val[0]);
 
     peer.conn_handle = event->acl_connect.conn_handle;
 }
 
 static void acl_disconnect(esp_ble_audio_gap_app_event_t *event)
 {
-    ESP_LOGI(TAG, "Conn terminated: conn_handle 0x%04x reason 0x%02x",
+    ESP_LOGI(TAG, "Disconnected: handle %u reason 0x%02x",
              event->acl_disconnect.conn_handle, event->acl_disconnect.reason);
 
     peer.conn_handle = CONN_HANDLE_INIT;
@@ -312,10 +310,11 @@ static void iso_gap_app_cb(esp_ble_audio_gap_app_event_t *event)
 
 static void gatt_mtu_change(esp_ble_audio_gatt_app_event_t *event)
 {
+    uint16_t conn_handle = event->gatt_mtu_change.conn_handle;
     int err;
 
-    ESP_LOGI(TAG, "gatt mtu change, conn_handle %u, mtu %u",
-             event->gatt_mtu_change.conn_handle, event->gatt_mtu_change.mtu);
+    ESP_LOGI(TAG, "MTU updated: handle %u mtu %u",
+             conn_handle, event->gatt_mtu_change.mtu);
 
     if (event->gatt_mtu_change.mtu < ESP_BLE_AUDIO_ATT_MTU_MIN) {
         ESP_LOGW(TAG, "Invalid new mtu %u, shall be at least %u",
@@ -327,19 +326,19 @@ static void gatt_mtu_change(esp_ble_audio_gatt_app_event_t *event)
      * - The device is a Peripheral (Link Layer role);
      * - The device works as a GATT client.
      */
-    err = esp_ble_audio_gattc_disc_start(event->gatt_mtu_change.conn_handle);
+    err = esp_ble_audio_gattc_disc_start(conn_handle);
     if (err) {
         ESP_LOGE(TAG, "Failed to start svc disc, err %d", err);
         return;
     }
 
-    ESP_LOGI(TAG, "Start discovering gatt services");
+    ESP_LOGI(TAG, "Service discovery started: handle %u", conn_handle);
 }
 
 static void gattc_disc_cmpl(esp_ble_audio_gatt_app_event_t *event)
 {
-    ESP_LOGI(TAG, "gattc disc cmpl, status %u, conn_handle %u",
-             event->gattc_disc_cmpl.status, event->gattc_disc_cmpl.conn_handle);
+    ESP_LOGI(TAG, "Service discovery complete: handle %u",
+             event->gattc_disc_cmpl.conn_handle);
 }
 
 static void iso_gatt_app_cb(esp_ble_audio_gatt_app_event_t *event)

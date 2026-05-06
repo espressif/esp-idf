@@ -23,6 +23,8 @@
 
 #include "common/host.h"
 
+#include "nimble/hs_error.h"
+
 _Static_assert(CONFIG_BT_NIMBLE_L2CAP_COC_MAX_NUM && "At least one L2CAP coc shall be supported");
 
 #define OTS_L2CAP_BUF_COUNT     (3 * CONFIG_BT_NIMBLE_L2CAP_COC_MAX_NUM)
@@ -206,7 +208,7 @@ int bt_le_nimble_l2cap_chan_connect(uint16_t conn_handle)
         LOG_ERR("[N]L2capConnectFail[%d]", rc);
 
         os_mbuf_free_chain(sdu_rx);
-        return rc;
+        return nimble_err_to_errno(rc);
     }
 
     return 0;
@@ -230,7 +232,7 @@ int bt_le_nimble_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
     rc = ble_l2cap_disconnect(ots_chan);
     if (rc) {
         LOG_ERR("[N]L2capDisconnectFail[%d]", rc);
-        return rc;
+        return nimble_err_to_errno(rc);
     }
 
     return 0;
@@ -268,16 +270,20 @@ int bt_le_nimble_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf
     rc = ble_l2cap_send(ots_chan, sdu_tx);
     if (rc) {
         if (rc == BLE_HS_ESTALLED) {
-            /* TODO:
-             * Wait for the BLE_L2CAP_EVENT_COC_TX_UNSTALLED event and continue.
+            /* sdu is queued in tx->sdus[0]; NimBLE will continue on
+             * BLE_L2CAP_EVENT_COC_TX_UNSTALLED. Do NOT free here.
              */
             LOG_WRN("[N]MoreCreditsForL2capSend");
+        } else if (rc == BLE_HS_EBADDATA || rc == BLE_HS_EBUSY) {
+            /* sdu was rejected before being queued; caller still owns it. */
+            LOG_ERR("[N]L2capSendFail[%d]", rc);
+            os_mbuf_free_chain(sdu_tx);
         } else {
+            /* Internal error inside continue_tx; NimBLE already freed sdu. */
             LOG_ERR("[N]L2capSendFail[%d]", rc);
         }
 
-        os_mbuf_free_chain(sdu_tx);
-        return rc;
+        return nimble_err_to_errno(rc);
     }
 
     return 0;

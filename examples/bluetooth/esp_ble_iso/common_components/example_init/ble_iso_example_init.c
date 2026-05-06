@@ -21,7 +21,7 @@
 #include "services/gap/ble_svc_gap.h"
 #include "services/gatt/ble_svc_gatt.h"
 
-#define TAG "INIT"
+#define TAG "EXAMPLE_INIT"
 
 static SemaphoreHandle_t example_iso_sem;
 
@@ -74,15 +74,13 @@ esp_err_t bluetooth_init(void)
     ble_hs_cfg.reset_cb = example_iso_on_reset;
     ble_hs_cfg.sync_cb = example_iso_on_sync;
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
-#if 0
     ble_hs_cfg.gatts_register_cb = NULL;
-    ble_hs_cfg.sm_our_key_dist = 1;
-    ble_hs_cfg.sm_their_key_dist = 1;
+    ble_hs_cfg.sm_our_key_dist = BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID;
+    ble_hs_cfg.sm_their_key_dist = BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID;
     ble_hs_cfg.sm_sc = 1;
     ble_hs_cfg.sm_mitm = 0;
     ble_hs_cfg.sm_bonding = 1;
     ble_hs_cfg.sm_io_cap = BLE_SM_IO_CAP_NO_IO;
-#endif
 
     /* XXX Need to have template for store */
     ble_store_config_init();

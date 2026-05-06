@@ -106,7 +106,7 @@ static int ext_scan_start(void)
         return err;
     }
 
-    ESP_LOGI(TAG, "Extended scan started");
+    ESP_LOGI(TAG, "Scanning for broadcast source...");
     return 0;
 }
 
@@ -147,7 +147,7 @@ int check_start_scan(void)
 
 static void broadcast_stream_started_cb(esp_ble_audio_bap_stream_t *stream)
 {
-    ESP_LOGI(TAG, "Broadcast stream %p started", stream);
+    ESP_LOGI(TAG, "[SNK #0] Stream started");
 
     example_audio_rx_metrics_reset(&rx_metrics);
 
@@ -157,13 +157,18 @@ static void broadcast_stream_started_cb(esp_ble_audio_bap_stream_t *stream)
 
 static void broadcast_stream_stopped_cb(esp_ble_audio_bap_stream_t *stream, uint8_t reason)
 {
-    ESP_LOGI(TAG, "Broadcast stream %p stopped, reason 0x%02x", stream, reason);
+    ESP_LOGI(TAG, "[SNK #0] Stream stopped, reason 0x%02x", reason);
 
     atomic_clear_bit(flags, FLAG_BROADCAST_SYNCING);
     atomic_clear_bit(flags, FLAG_BROADCAST_SYNCED);
 
 #if CONFIG_EXAMPLE_SCAN_SELF
-    check_start_scan();
+    /* Defer the scan restart to broadcast_pa_lost(): if PA is still
+     * synced the broadcaster may just be switching streams, and a
+     * premature scan would race the controller's PA-loss timeout. */
+    if (atomic_test_bit(flags, FLAG_PA_SYNCED) == false) {
+        check_start_scan();
+    }
 #endif /* CONFIG_EXAMPLE_SCAN_SELF */
 }
 
@@ -171,9 +176,8 @@ static void broadcast_stream_recv_cb(esp_ble_audio_bap_stream_t *stream,
                                      const esp_ble_iso_recv_info_t *info,
                                      const uint8_t *data, uint16_t len)
 {
-
     rx_metrics.last_sdu_len = len;
-    example_audio_rx_metrics_on_recv(info, &rx_metrics, TAG, "stream", stream);
+    example_audio_rx_metrics_on_recv(info, &rx_metrics, TAG, "SNK #0");
 }
 
 static int create_broadcast_sink(void)
@@ -355,7 +359,7 @@ static int pa_sync_req_cb(esp_ble_conn_t *conn,
 {
     int err;
 
-    ESP_LOGI(TAG, "Received request to sync to PA (PAST %savailble): %u",
+    ESP_LOGI(TAG, "Received request to sync to PA (PAST %savailable): %u",
              past_available ? "" : "not ", recv_state->pa_sync_state);
 
     broadcast_sink.recv_state = recv_state;
@@ -409,7 +413,7 @@ static void broadcast_code_cb(esp_ble_conn_t *conn,
                               const esp_ble_audio_bap_scan_delegator_recv_state_t *recv_state,
                               const uint8_t broadcast_code[ESP_BLE_ISO_BROADCAST_CODE_SIZE])
 {
-    ESP_LOGI(TAG, "Broadcast code received for %p", recv_state);
+    ESP_LOGI(TAG, "Broadcast code received (src_id %u)", recv_state->src_id);
 
     broadcast_sink.recv_state = recv_state;
 
@@ -437,7 +441,8 @@ static int bis_sync_req_cb(esp_ble_conn_t *conn,
     const uint32_t new_bis_sync_req = get_req_bis_sync(bis_sync_req);
     esp_err_t err;
 
-    ESP_LOGI(TAG, "BIS sync request received for %p: 0x%08lx", recv_state, bis_sync_req[0]);
+    ESP_LOGI(TAG, "BIS sync request received (src_id %u): 0x%08lx",
+             recv_state->src_id, bis_sync_req[0]);
 
     if (new_bis_sync_req != ESP_BLE_AUDIO_BAP_BIS_SYNC_NO_PREF &&
             __builtin_popcount(new_bis_sync_req) > 1) {
@@ -702,6 +707,8 @@ int cap_acceptor_broadcast_init(void)
 
         cbs_registered = true;
     }
+
+    ESP_LOGI(TAG, "CAP acceptor broadcast initialized");
 
     return 0;
 }

@@ -24,6 +24,8 @@
 
 #include "common/host.h"
 
+#include "nimble/hs_error.h"
+
 struct gatt_nrp_node {
     uint8_t type;
 
@@ -703,7 +705,9 @@ static int gatt_nrp_insert(struct bt_conn *conn, uint8_t type, void *params)
         LOG_DBG("[N]GattNrpAppend[%p]", nrp_node);
         sys_slist_append(&nrp->list, &nrp_node->node);
     } else {
-        LOG_ERR("[N]GattNrpInsertFail[%d]", rc);
+        if (rc != BLE_HS_ENOTCONN) {
+            LOG_ERR("[N]GattNrpInsertFail[%d]", rc);
+        }
         free(nrp_node);
     }
 
@@ -746,7 +750,8 @@ int bt_le_nimble_gatt_nrp_insert(struct bt_conn *conn, uint8_t type, void *param
     } else {
         rc = gatt_nrp_insert(conn, type, params);
     }
-    return rc;
+
+    return nimble_err_to_errno(rc);
 }
 
 int bt_le_nimble_gatt_nrp_remove(struct bt_conn *conn, uint8_t type, void *params)

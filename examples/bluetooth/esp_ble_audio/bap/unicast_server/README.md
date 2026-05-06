@@ -5,57 +5,105 @@
 
 (See the README.md file in the upper level `examples` directory for more information about examples.)
 
-This example demonstrates the **Basic Audio Profile (BAP) Unicast Server** functionality. It starts connectable extended advertising with the ASCS (Audio Stream Control Service) UUID and service data (targeted announcement, sink and source audio contexts), then waits for a BAP Unicast Client to connect. After connection, the server responds to client requests: codec configuration, QoS, enable, and start. The server starts sink (RX) streams when the client enables them; source (TX) streams are started by the client. The server receives audio on sink streams and can send on source streams. Run it together with the [unicast_client](../unicast_client) example on another device as the client.
+## Overview
 
-The implementation uses the NimBLE host stack with ISO and BAP support, ESP-BLE-ISO, and ESP-BLE-AUDIO APIs (PACS, BAP unicast server register and callbacks, stream start, stream recv). It is intended for chips that support BLE 5.2 ISO and LE Audio (e.g. ESP32-H4). PACS advertises sink and source capabilities with LC3 (any frequency, 10 ms frame, up to 2 channels, various contexts). The number of sink and source ASEs is set via `CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT` and `CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT`.
+This example implements a **BAP Unicast Server** on top of the NimBLE host stack. It registers PACS sink and source capabilities (LC3, any frequency, 10 ms frame duration, 2-channel support, 40-120 octets per frame, up to 2 frames per SDU) and a hard-coded location/context set (front-left + front-right; UNSPECIFIED | CONVERSATIONAL | MEDIA), then starts connectable extended advertising on 1M/2M PHY whose payload carries the Flags AD, the ASCS UUID, the targeted unicast announcement service data with sink/source contexts, and the device name `BAP Unicast Server`.
+
+The unicast server callbacks (`config`, `reconfig`, `qos`, `enable`, `start`, `metadata`, `disable`, `stop`, `release`) react to ASCS PDUs from a peer client. `config_cb` allocates a free `sink_streams[]`/`source_streams[]` slot and returns a fixed `qos_pref` (unframed PDUs, 2M PHY preference, RTN 2, 10 ms max latency, 20-40 ms presentation delay). `enable_cb` decodes the codec config to sample rate, frame duration, and frame-blocks-per-SDU before accepting the request. Reconfig is rejected unconditionally.
+
+The stream ops handle ISO data: when the client enables a sink ASE, `stream_enabled_cb` calls `esp_ble_audio_bap_stream_start` so the server starts sink streams locally (the client starts source streams). Inbound ISO SDUs flow through `stream_recv_cb` into `example_audio_rx_metrics_on_recv`, which logs RX metrics periodically.
 
 ## Requirements
 
-* A board with Bluetooth LE 5.2, ISO, and LE Audio support (e.g. ESP32-H4)
-* Another device running the [unicast_client](../unicast_client) example, which scans for ASCS and connects to this server
+* A board with BLE 5.2, ISO, and LE Audio support (e.g. ESP32-H4, ESP32-S31)
+* Peer device running the paired example
 
-## How to Use Example
+## Configuration
 
-Before project configuration and build, set the correct chip target:
+Open menuconfig:
+
+```bash
+idf.py menuconfig
+```
+
+No build-time options — runtime defaults are baked into source.
+
+### Security & Pairing
+
+This example inherits a Just-Works pairing model (LE Secure Connections, no MITM) with bonding enabled from the shared init at `../common_components/example_init/ble_audio_example_init.c`.
+
+## Build & Flash
 
 ```bash
 idf.py set-target esp32h4
-```
-
-### Build and Flash
-
-Run the following to build, flash and monitor:
-
-```bash
 idf.py -p PORT flash monitor
 ```
 
-(To exit the serial monitor, type ``Ctrl-]``.)
-
-See the [Getting Started Guide](https://idf.espressif.com/) for full steps to configure and use ESP-IDF.
+(Exit serial monitor with `Ctrl-]`.)
 
 ## Example Flow
 
-1. **Initialization**: NVS, Bluetooth stack, and LE Audio common layer (`esp_ble_audio_common_init`) with GAP and GATT callbacks. Register PACS (sink and source PAC and location), register the BAP unicast server (sink and source ASE counts), register unicast server callbacks (config, reconfig, QoS, enable, start, metadata, disable, stop, release), register PACS capabilities (LC3 sink and source), register stream callbacks for sink and source streams, set PACS location and supported/available contexts, then start the audio stack and set the device name.
-2. **Advertising**: Start connectable extended advertising with flags, ASCS UUID, ASCS service data (targeted, sink/source contexts), and device name `bap_unicast_server`.
-3. **Client connection**: When a client connects, ACL and optional security change are handled. On MTU exchange the server may start GATT service discovery (as needed for the stack).
-4. **ASCS operations**: The client discovers ASEs, then sends codec config, QoS, enable, and start. The server allocates a stream per config (sink or source), returns QoS preference, validates enable (codec params), and on start resets stream counters. For sink streams, when the client enables the stream the server calls `esp_ble_audio_bap_stream_start`; for source streams the client starts them.
-5. **Streaming**: When a sink stream is started, received ISO SDUs are delivered in the stream recv callback; the example counts valid, error, and lost packets and logs periodically. Source streams can send audio when started by the client.
+1. `app_main` initializes NVS, NimBLE, and the LE Audio common layer, then calls `esp_ble_audio_pacs_register` with `snk_pac/snk_loc/src_pac/src_loc` all true.
+2. It registers the unicast server (`esp_ble_audio_bap_unicast_server_register` with `CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT` / `CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT`) and its callback table, registers sink and source PACS capabilities, and attaches `stream_ops` to every preallocated stream slot.
+3. PACS location is set per direction (`SINK_LOCATION` / `SOURCE_LOCATION`) and supported plus available contexts are pushed for sink and source.
+4. `esp_ble_audio_common_start` and `ble_svc_gap_device_name_set("BAP Unicast Server")` run, then `ext_adv_start` builds `ext_adv_data` with Flags, ASCS UUID, ASCS service data (targeted announcement + contexts), and the device name; it configures and starts the extended advertising set on `ADV_HANDLE` 0.
+5. On `ESP_BLE_AUDIO_GAP_EVENT_ACL_CONNECT` the connection is logged; after the peer client triggers MTU exchange the server logs the new MTU and calls `esp_ble_audio_gattc_disc_start`.
+6. ASCS callbacks fire as the client drives the state machine: `config_cb` allocates a stream and returns the QoS preference, `qos_cb` records `max_sdu`, `enable_cb` validates the codec, `metadata_cb` parses metadata, and `disable`/`stop`/`release` log their requests.
+7. `stream_enabled_cb` auto-starts sink streams server-side; `stream_started_cb` resets TX or RX counters depending on direction; `stream_recv_cb` updates per-stream RX metrics on every ISO SDU.
+8. On disconnect `acl_disconnect` logs the reason and restarts `ext_adv_start`.
 
-## Example Output
+## Expected Log
 
-```
-I (xxx) BAP_USR: Extended adv instance 0 started
-I (xxx) BAP_USR: connection established, status 0
-I (xxx) BAP_USR: ASE Codec Config: conn 0x... ep 0x... dir ...
-I (xxx) BAP_USR: Stream 0x... enabled
-I (xxx) BAP_USR: Stream 0x... started
-I (xxx) BAP_USR: Received 1000(1000/0/0) ISO data packets (stream 0x...)
-...
-```
+TAG: `BAP_USR`.
 
-If the client disconnects:
+Startup and advertising:
 
 ```
-I (xxx) BAP_USR: connection disconnected, reason 0x...
+I (xxx) BAP_USR: PACS: locations and contexts set
+I (xxx) BAP_USR: Advertising started (handle 0)
 ```
+
+Client connects:
+
+```
+I (xxx) BAP_USR: Connected: handle ... role ... peer ...
+I (xxx) BAP_USR: MTU updated: handle ... mtu ...
+I (xxx) BAP_USR: Service discovery started: handle ...
+I (xxx) BAP_USR: Service discovery complete: handle ... status ...
+```
+
+ASCS operations:
+
+```
+I (xxx) BAP_USR: [SNK #...] Config request
+I (xxx) BAP_USR: [SNK #...] QoS request:
+I (xxx) BAP_USR: [SNK #...] Enable request: ... Hz, ... us, ... block(s)/SDU
+I (xxx) BAP_USR: [SNK #...] Stream enabled
+I (xxx) BAP_USR: [SNK #...] Stream started
+I (xxx) BAP_USR: [SRC #...] Config request
+I (xxx) BAP_USR: [SRC #...] QoS request:
+I (xxx) BAP_USR: [SRC #...] Enable request: ... Hz, ... us, ... block(s)/SDU
+I (xxx) BAP_USR: [SRC #...] Stream enabled
+I (xxx) BAP_USR: [SRC #...] Stream started
+```
+
+Teardown:
+
+```
+I (xxx) BAP_USR: [SNK #...] Disable request
+I (xxx) BAP_USR: [SNK #...] Stop request
+I (xxx) BAP_USR: [SNK #...] Stream stopped, reason 0x...
+I (xxx) BAP_USR: [SNK #...] Release request
+I (xxx) BAP_USR: Disconnected: handle ... reason 0x...
+```
+
+## Peer Pairing
+
+Run [unicast_client](../unicast_client/) on a second board.
+
+1. Server boots and starts connectable extended advertising with the ASCS UUID and `BAP Unicast Server` name.
+2. Client boots and scans; on matching the name and ASCS service data it cancels scanning and issues `ble_gap_connect`.
+3. After ACL is up the client initiates pairing/security; both sides log `Connected:` and the client logs `Security:`.
+4. Client exchanges MTU and runs GATT discovery, then discovers sink ASEs followed by source ASEs on the server.
+5. Client drives ASCS Config -> QoS -> Enable -> ISO Connect on every ASE; the server returns its QoS preference and accepts each operation.
+6. Client starts source streams; server auto-starts each sink stream from `stream_enabled_cb`, after which the client's TX scheduler feeds SDUs and the server's `stream_recv_cb` accumulates RX metrics.

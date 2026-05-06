@@ -1261,7 +1261,7 @@ int bt_media_proxy_ctrl_get_search_results_id_safe(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-uint8_t bt_media_proxy_ctrl_get_content_ctrl_id_safe(struct media_player *player);
+int bt_media_proxy_ctrl_get_content_ctrl_id_safe(struct media_player *player);
 
 /**
  * @brief Available calls in a player, that the media proxy can call

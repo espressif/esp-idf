@@ -47,6 +47,28 @@ static struct peer_config {
 
 static example_audio_rx_metrics_t rx_metrics;
 
+static const char *dir_str(esp_ble_audio_dir_t dir)
+{
+    return dir == ESP_BLE_AUDIO_DIR_SINK ? "SNK" : "SRC";
+}
+
+static const char *stream_dir_str(const esp_ble_audio_bap_stream_t *stream)
+{
+    if (stream == &peer.sink_stream.bap_stream) {
+        return "SNK";
+    } else if (stream == &peer.source_stream.bap_stream) {
+        return "SRC";
+    }
+    return "???";
+}
+
+static int stream_index(const esp_ble_audio_bap_stream_t *stream)
+{
+    /* Only one sink and one source per peer in this example. */
+    (void)stream;
+    return 0;
+}
+
 static bool is_tx_stream(esp_ble_audio_bap_stream_t *stream)
 {
     esp_ble_audio_bap_ep_info_t ep_info = {0};
@@ -64,19 +86,22 @@ static bool is_tx_stream(esp_ble_audio_bap_stream_t *stream)
 static void unicast_stream_configured_cb(esp_ble_audio_bap_stream_t *stream,
                                          const esp_ble_audio_bap_qos_cfg_pref_t *pref)
 {
-    ESP_LOGI(TAG, "Unicast stream %p configured", stream);
+    ESP_LOGI(TAG, "[%s #%d] Stream configured, QoS preference:",
+             stream_dir_str(stream), stream_index(stream));
 
-    example_print_qos_pref(pref);
+    example_print_qos_pref(TAG, pref);
 }
 
 static void unicast_stream_qos_set_cb(esp_ble_audio_bap_stream_t *stream)
 {
-    ESP_LOGI(TAG, "Unicast stream %p QoS set", stream);
+    ESP_LOGI(TAG, "[%s #%d] QoS set",
+             stream_dir_str(stream), stream_index(stream));
 }
 
 static void unicast_stream_enabled_cb(esp_ble_audio_bap_stream_t *stream)
 {
-    ESP_LOGI(TAG, "Unicast stream %p enabled", stream);
+    ESP_LOGI(TAG, "[%s #%d] Stream enabled",
+             stream_dir_str(stream), stream_index(stream));
 }
 
 static void unicast_stream_started_cb(esp_ble_audio_bap_stream_t *stream)
@@ -84,35 +109,40 @@ static void unicast_stream_started_cb(esp_ble_audio_bap_stream_t *stream)
     esp_ble_audio_cap_stream_t *cap_stream;
     int err;
 
-    ESP_LOGI(TAG, "Unicast stream %p started", stream);
+    ESP_LOGI(TAG, "[%s #%d] Stream started",
+             stream_dir_str(stream), stream_index(stream));
 
     example_audio_rx_metrics_reset(&rx_metrics);
 
     if (is_tx_stream(stream)) {
         cap_stream = CONTAINER_OF(stream, esp_ble_audio_cap_stream_t, bap_stream);
 
-        err = cap_initiator_tx_register_stream(cap_stream);
+        err = cap_initiator_tx_register_stream(cap_stream, false);
         if (err) {
-            ESP_LOGE(TAG, "Failed to register stream %p for TX, err %d", stream, err);
+            ESP_LOGE(TAG, "[%s #%d] Failed to register TX, err %d",
+                     stream_dir_str(stream), stream_index(stream), err);
         }
     }
 }
 
 static void unicast_stream_metadata_updated_cb(esp_ble_audio_bap_stream_t *stream)
 {
-    ESP_LOGI(TAG, "Unicast stream %p metadata updated", stream);
+    ESP_LOGI(TAG, "[%s #%d] Metadata updated",
+             stream_dir_str(stream), stream_index(stream));
 }
 
 static void unicast_stream_disabled_cb(esp_ble_audio_bap_stream_t *stream)
 {
-    ESP_LOGI(TAG, "Unicast stream %p disabled", stream);
+    ESP_LOGI(TAG, "[%s #%d] Stream disabled",
+             stream_dir_str(stream), stream_index(stream));
 }
 
 static void unicast_stream_stopped_cb(esp_ble_audio_bap_stream_t *stream, uint8_t reason)
 {
     esp_ble_audio_cap_stream_t *cap_stream;
 
-    ESP_LOGI(TAG, "Unicast stream %p stopped, reason 0x%02x", stream, reason);
+    ESP_LOGI(TAG, "[%s #%d] Stream stopped, reason 0x%02x",
+             stream_dir_str(stream), stream_index(stream), reason);
 
     if (is_tx_stream(stream)) {
         cap_stream = CONTAINER_OF(stream, esp_ble_audio_cap_stream_t, bap_stream);
@@ -125,7 +155,8 @@ static void unicast_stream_disconnected_cb(esp_ble_audio_bap_stream_t *stream, u
 {
     esp_ble_audio_cap_stream_t *cap_stream;
 
-    ESP_LOGI(TAG, "Unicast stream %p disconnected, reason 0x%02x", stream, reason);
+    ESP_LOGI(TAG, "[%s #%d] ISO disconnected, reason 0x%02x",
+             stream_dir_str(stream), stream_index(stream), reason);
 
     if (is_tx_stream(stream)) {
         cap_stream = CONTAINER_OF(stream, esp_ble_audio_cap_stream_t, bap_stream);
@@ -136,19 +167,20 @@ static void unicast_stream_disconnected_cb(esp_ble_audio_bap_stream_t *stream, u
 
 static void unicast_stream_released_cb(esp_ble_audio_bap_stream_t *stream)
 {
-    if (stream == &peer.source_stream.bap_stream) {
-        ESP_LOGI(TAG, "Unicast source stream %p released", stream);
-    } else if (stream == &peer.sink_stream.bap_stream) {
-        ESP_LOGI(TAG, "Unicast sink stream %p released", stream);
-    }
+    ESP_LOGI(TAG, "[%s #%d] Stream released",
+             stream_dir_str(stream), stream_index(stream));
 }
 
 static void unicast_stream_recv_cb(esp_ble_audio_bap_stream_t *stream,
                                    const esp_ble_iso_recv_info_t *info,
                                    const uint8_t *data, uint16_t len)
 {
+    char name[24];
+
+    snprintf(name, sizeof(name), "%s #%d",
+             stream_dir_str(stream), stream_index(stream));
     rx_metrics.last_sdu_len = len;
-    example_audio_rx_metrics_on_recv(info, &rx_metrics, TAG, "stream", stream);
+    example_audio_rx_metrics_on_recv(info, &rx_metrics, TAG, name);
 }
 
 static void unicast_stream_sent_cb(esp_ble_audio_bap_stream_t *stream, void *user_data)
@@ -357,7 +389,7 @@ static void pac_record_cb(esp_ble_conn_t *conn,
                           esp_ble_audio_dir_t dir,
                           const esp_ble_audio_codec_cap_t *codec_cap)
 {
-    example_print_codec_cap(codec_cap);
+    example_print_codec_cap(TAG, codec_cap);
 }
 
 static void endpoint_cb(esp_ble_conn_t *conn,
@@ -366,12 +398,12 @@ static void endpoint_cb(esp_ble_conn_t *conn,
 {
     if (dir == ESP_BLE_AUDIO_DIR_SOURCE) {
         if (peer.source_ep == NULL) {
-            ESP_LOGI(TAG, "Source ep: %p", ep);
+            ESP_LOGI(TAG, "[%s] Endpoint discovered", dir_str(dir));
             peer.source_ep = ep;
         }
     } else if (dir == ESP_BLE_AUDIO_DIR_SINK) {
         if (peer.sink_ep == NULL) {
-            ESP_LOGI(TAG, "Sink ep: %p", ep);
+            ESP_LOGI(TAG, "[%s] Endpoint discovered", dir_str(dir));
             peer.sink_ep = ep;
         }
     }
@@ -398,7 +430,7 @@ static void unicast_discovery_complete_cb(esp_ble_conn_t *conn, int err,
             return;
         }
 
-        ESP_LOGI(TAG, "Found CAS with CSIS %p", csis_inst);
+        ESP_LOGI(TAG, "Found CAS with CSIS");
 
         /* TODO: Do set member discovery */
     } else {
@@ -529,30 +561,28 @@ static void acl_connect(esp_ble_audio_gap_app_event_t *event)
     int err;
 
     if (event->acl_connect.status) {
-        ESP_LOGE(TAG, "connection failed, status %d", event->acl_connect.status);
+        ESP_LOGE(TAG, "Connection failed, status %d", event->acl_connect.status);
         return;
     }
 
-    ESP_LOGI(TAG, "Conn established:");
-    ESP_LOGI(TAG, "conn_handle 0x%04x status 0x%02x role %u peer %02x:%02x:%02x:%02x:%02x:%02x",
-             event->acl_connect.conn_handle, event->acl_connect.status,
-             event->acl_connect.role, event->acl_connect.dst.val[5],
-             event->acl_connect.dst.val[4], event->acl_connect.dst.val[3],
-             event->acl_connect.dst.val[2], event->acl_connect.dst.val[1],
-             event->acl_connect.dst.val[0]);
+    ESP_LOGI(TAG, "Connected: handle %u role %u peer %02x:%02x:%02x:%02x:%02x:%02x",
+             event->acl_connect.conn_handle, event->acl_connect.role,
+             event->acl_connect.dst.val[5], event->acl_connect.dst.val[4],
+             event->acl_connect.dst.val[3], event->acl_connect.dst.val[2],
+             event->acl_connect.dst.val[1], event->acl_connect.dst.val[0]);
+
+    peer.conn_handle = event->acl_connect.conn_handle;
 
     err = pairing_start(event->acl_connect.conn_handle);
     if (err) {
         ESP_LOGE(TAG, "Failed to initiate security, err %d", err);
         return;
     }
-
-    peer.conn_handle = event->acl_connect.conn_handle;
 }
 
 static void acl_disconnect(esp_ble_audio_gap_app_event_t *event)
 {
-    ESP_LOGI(TAG, "Conn terminated: conn_handle 0x%04x reason 0x%02x",
+    ESP_LOGI(TAG, "Disconnected: handle %u reason 0x%02x",
              event->acl_disconnect.conn_handle, event->acl_disconnect.reason);
 
     peer.conn_handle = CONN_HANDLE_INIT;
@@ -573,19 +603,13 @@ static void security_change(esp_ble_iso_gap_app_event_t *event)
     int err;
 
     if (event->security_change.status) {
-        ESP_LOGE(TAG, "security change failed, status %d", event->security_change.status);
+        ESP_LOGE(TAG, "Security change failed, status %d", event->security_change.status);
         return;
     }
 
-    ESP_LOGI(TAG, "Security change:");
-    ESP_LOGI(TAG, "conn_handle 0x%04x status 0x%02x role %u sec_level %u bonded %u "
-             "peer %02x:%02x:%02x:%02x:%02x:%02x",
-             event->security_change.conn_handle, event->security_change.status,
-             event->security_change.role, event->security_change.sec_level,
-             event->security_change.bonded, event->security_change.dst.val[5],
-             event->security_change.dst.val[4], event->security_change.dst.val[3],
-             event->security_change.dst.val[2], event->security_change.dst.val[1],
-             event->security_change.dst.val[0]);
+    ESP_LOGI(TAG, "Security: handle %u level %u bonded %u",
+             event->security_change.conn_handle, event->security_change.sec_level,
+             event->security_change.bonded);
 
     err = exchange_mtu(event->security_change.conn_handle);
     if (err) {
@@ -616,10 +640,11 @@ void cap_initiator_unicast_gap_cb(esp_ble_audio_gap_app_event_t *event)
 
 static void gatt_mtu_change(esp_ble_audio_gatt_app_event_t *event)
 {
+    uint16_t conn_handle = event->gatt_mtu_change.conn_handle;
     int err;
 
-    ESP_LOGI(TAG, "gatt mtu change, conn_handle %u, mtu %u",
-             event->gatt_mtu_change.conn_handle, event->gatt_mtu_change.mtu);
+    ESP_LOGI(TAG, "MTU updated: handle %u mtu %u",
+             conn_handle, event->gatt_mtu_change.mtu);
 
     if (event->gatt_mtu_change.mtu < ESP_BLE_AUDIO_ATT_MTU_MIN) {
         ESP_LOGW(TAG, "Invalid new mtu %u, shall be at least %u",
@@ -627,13 +652,13 @@ static void gatt_mtu_change(esp_ble_audio_gatt_app_event_t *event)
         return;
     }
 
-    err = esp_ble_audio_gattc_disc_start(event->gatt_mtu_change.conn_handle);
+    err = esp_ble_audio_gattc_disc_start(conn_handle);
     if (err) {
         ESP_LOGE(TAG, "Failed to start svc disc, err %d", err);
         return;
     }
 
-    ESP_LOGI(TAG, "Start discovering gatt services");
+    ESP_LOGI(TAG, "Service discovery started: handle %u", conn_handle);
 
     /* Note:
      * MTU exchanged event may arrived after discover completed event.
@@ -647,8 +672,8 @@ static void gatt_mtu_change(esp_ble_audio_gatt_app_event_t *event)
 
 static void gattc_disc_cmpl(esp_ble_audio_gatt_app_event_t *event)
 {
-    ESP_LOGI(TAG, "gattc disc cmpl, status %u, conn_handle %u",
-             event->gattc_disc_cmpl.status, event->gattc_disc_cmpl.conn_handle);
+    ESP_LOGI(TAG, "Service discovery complete: handle %u",
+             event->gattc_disc_cmpl.conn_handle);
 
     if (event->gattc_disc_cmpl.status) {
         ESP_LOGE(TAG, "gattc disc failed, status %u", event->gattc_disc_cmpl.status);
@@ -702,7 +727,7 @@ int cap_initiator_unicast_start(void)
         return err;
     }
 
-    ESP_LOGI(TAG, "Extended scan started");
+    ESP_LOGI(TAG, "Scanning for CAP Acceptor...");
     return 0;
 }
 

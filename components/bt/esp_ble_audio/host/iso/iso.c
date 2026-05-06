@@ -454,6 +454,8 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
         bt_iso_cleanup_acl(chan->iso);
 
         if (conn_type == BT_ISO_CHAN_TYPE_PERIPHERAL) {
+            /* Release iso conn slot back to the pool. */
+            chan->iso->type = BT_CONN_TYPE_NONE;
             bt_conn_unref(chan->iso);
             chan->iso = NULL;
 #if defined(CONFIG_BT_ISO_CENTRAL)
@@ -1745,6 +1747,8 @@ static void cleanup_cig(struct bt_iso_cig *cig)
 
     SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&cig->cis_channels, cis, tmp, node) {
         if (cis->iso != NULL) {
+            /* Release iso conn slot back to the pool. */
+            cis->iso->type = BT_CONN_TYPE_NONE;
             bt_conn_unref(cis->iso);
             cis->iso = NULL;
         }
@@ -2403,6 +2407,8 @@ static void cleanup_big(struct bt_iso_big *big)
 
     SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&big->bis_channels, bis, tmp, node) {
         if (bis->iso != NULL) {
+            /* Release iso conn slot back to the pool. */
+            bis->iso->type = BT_CONN_TYPE_NONE;
             bt_conn_unref(bis->iso);
             bis->iso = NULL;
         }

@@ -11,7 +11,7 @@
 
 #include "sdkconfig.h"
 
-#include "nimble/gatt/gatt.h"
+#include "nimble/gatt.h"
 
 #ifdef __cplusplus
 extern "C" {

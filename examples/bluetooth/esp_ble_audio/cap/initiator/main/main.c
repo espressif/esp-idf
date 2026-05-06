@@ -68,7 +68,16 @@ void app_main(void)
         return;
     }
 
+    /* Match the GAP device name to the role this build was compiled for, so
+     * the name advertised in GAP reads matches the local-name field embedded
+     * in extended advertising (broadcast mode uses "CAP Broadcast Source",
+     * which is what the acceptor's self-scan path matches against).
+     */
+#if CONFIG_EXAMPLE_BROADCAST
+    err = ble_svc_gap_device_name_set("CAP Broadcast Source");
+#else
     err = ble_svc_gap_device_name_set("CAP Initiator");
+#endif
     if (err) {
         ESP_LOGE(TAG, "Failed to set device name, err %d", err);
         return;

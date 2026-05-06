@@ -275,7 +275,7 @@ struct bt_conn *bt_conn_new(struct bt_conn *conns, size_t size)
     for (size_t i = 0; i < size; i++) {
         struct bt_conn *conn = &conns[i];
 
-        if (conn->type == 0) {
+        if (conn->type == BT_CONN_TYPE_NONE) {
             (void)memset(conn, 0, sizeof(struct bt_conn));
             return conn;
         }
@@ -460,12 +460,6 @@ static void iso_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
     case BT_CONN_INITIATING:
         break;
     case BT_CONN_DISCONNECT_COMPLETE:
-        conn->type = 0;
-        /* Note:
-         * The bt_iso_disconnected is not called here, the ISO
-         * disconnected callback will be called by the ISO layer.
-         */
-        /* bt_iso_disconnected(conn); */
         break;
     default:
         break;

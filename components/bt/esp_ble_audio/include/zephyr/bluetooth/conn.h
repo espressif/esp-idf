@@ -35,6 +35,8 @@ struct bt_conn;
 
 /** Connection Type */
 enum __packed bt_conn_type {
+    /** No Connection Type (free slot marker) */
+    BT_CONN_TYPE_NONE = 0,
     /** LE Connection Type */
     BT_CONN_TYPE_LE = BIT(0),
     /** ISO Connection Type */

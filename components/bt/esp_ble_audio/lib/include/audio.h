@@ -24,9 +24,6 @@ extern int lib_ext_structs_check(const uint16_t *ext_structs, size_t size_struct
 extern int lib_ext_cfgs_set(const struct lib_ext_cfgs *ext_cfgs, size_t size_cfgs);
 extern int lib_ext_funcs_set(const struct lib_ext_funcs *ext_funcs, size_t size_funcs);
 extern int lib_funcs_set(const struct lib_funcs *funcs, size_t size_funcs);
-#if 0
-extern void lib_dymem_size_init(void);
-#endif
 extern const char *lib_ext_commit_get(void);
 
 struct bt_aics;

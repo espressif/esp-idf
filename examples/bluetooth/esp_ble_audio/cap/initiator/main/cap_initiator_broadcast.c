@@ -38,13 +38,13 @@ static void broadcast_stream_started_cb(esp_ble_audio_bap_stream_t *stream)
     esp_ble_audio_cap_stream_t *cap_stream;
     int err;
 
-    ESP_LOGI(TAG, "Broadcast stream %p started", stream);
+    ESP_LOGI(TAG, "[SRC #0] Stream started");
 
     cap_stream = CONTAINER_OF(stream, esp_ble_audio_cap_stream_t, bap_stream);
 
-    err = cap_initiator_tx_register_stream(cap_stream);
+    err = cap_initiator_tx_register_stream(cap_stream, true);
     if (err) {
-        ESP_LOGE(TAG, "Failed to register stream %p for TX, err %d", stream, err);
+        ESP_LOGE(TAG, "[SRC #0] Failed to register TX, err %d", err);
     }
 }
 
@@ -52,7 +52,7 @@ static void broadcast_stream_stopped_cb(esp_ble_audio_bap_stream_t *stream, uint
 {
     esp_ble_audio_cap_stream_t *cap_stream;
 
-    ESP_LOGI(TAG, "Broadcast stream %p stopped, reason 0x%02x", stream, reason);
+    ESP_LOGI(TAG, "[SRC #0] Stream stopped, reason 0x%02x", reason);
 
     cap_stream = CONTAINER_OF(stream, esp_ble_audio_cap_stream_t, bap_stream);
 
@@ -63,7 +63,7 @@ static void broadcast_stream_disconnected_cb(esp_ble_audio_bap_stream_t *stream,
 {
     esp_ble_audio_cap_stream_t *cap_stream;
 
-    ESP_LOGI(TAG, "Broadcast stream %p disconnected, reason 0x%02x", stream, reason);
+    ESP_LOGI(TAG, "[SRC #0] ISO disconnected, reason 0x%02x", reason);
 
     cap_stream = CONTAINER_OF(stream, esp_ble_audio_cap_stream_t, bap_stream);
 
@@ -248,7 +248,7 @@ static int ext_adv_start(void)
         goto end;
     }
 
-    ESP_LOGI(TAG, "Extended adv instance %u started", ADV_HANDLE);
+    ESP_LOGI(TAG, "Advertising started (handle %u)", ADV_HANDLE);
 
 end:
     if (ext_data) {

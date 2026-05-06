@@ -86,17 +86,17 @@ static void broadcast_started_cb(esp_ble_audio_bap_stream_t *stream)
 {
     esp_err_t err;
 
-    ESP_LOGI(TAG, "Stream %p started", stream);
+    ESP_LOGI(TAG, "[SRC #0] Stream started");
 
     if (stream->qos == NULL || stream->qos->sdu == 0) {
-        ESP_LOGE(TAG, "Invalid stream qos");
+        ESP_LOGE(TAG, "[SRC #0] Invalid stream qos");
         return;
     }
 
     if (iso_data == NULL) {
         iso_data = calloc(1, stream->qos->sdu);
         if (iso_data == NULL) {
-            ESP_LOGE(TAG, "Failed to alloc TX buffer, SDU %u", stream->qos->sdu);
+            ESP_LOGE(TAG, "[SRC #0] Failed to alloc TX buffer, SDU %u", stream->qos->sdu);
             return;
         }
     }
@@ -107,7 +107,7 @@ static void broadcast_started_cb(esp_ble_audio_bap_stream_t *stream)
     /* Note: esp timer is not accurate enough */
     err = example_audio_tx_scheduler_start(&tx_scheduler, stream->qos->interval);
     if (err) {
-        ESP_LOGE(TAG, "Failed to start tx scheduler, err %d", err);
+        ESP_LOGE(TAG, "[SRC #0] Scheduler start failed, err %d", err);
         return;
     }
 
@@ -118,11 +118,11 @@ static void broadcast_stopped_cb(esp_ble_audio_bap_stream_t *stream, uint8_t rea
 {
     esp_err_t err;
 
-    ESP_LOGI(TAG, "Stream %p stopped, reason 0x%02x", stream, reason);
+    ESP_LOGI(TAG, "[SRC #0] Stream stopped, reason 0x%02x", reason);
 
     err = example_audio_tx_scheduler_stop(&tx_scheduler);
     if (err) {
-        ESP_LOGE(TAG, "Failed to stop tx scheduler, err %d", err);
+        ESP_LOGE(TAG, "[SRC #0] Scheduler stop failed, err %d", err);
     }
 
     if (iso_data != NULL) {
@@ -135,11 +135,11 @@ static void broadcast_disconnected_cb(esp_ble_audio_bap_stream_t *stream, uint8_
 {
     esp_err_t err;
 
-    ESP_LOGI(TAG, "Stream %p disconnected, reason 0x%02x", stream, reason);
+    ESP_LOGI(TAG, "[SRC #0] ISO disconnected, reason 0x%02x", reason);
 
     err = example_audio_tx_scheduler_stop(&tx_scheduler);
     if (err) {
-        ESP_LOGE(TAG, "Failed to stop tx scheduler, err %d", err);
+        ESP_LOGE(TAG, "[SRC #0] Scheduler stop failed, err %d", err);
     }
 
     if (iso_data != NULL) {
@@ -150,7 +150,7 @@ static void broadcast_disconnected_cb(esp_ble_audio_bap_stream_t *stream, uint8_
 
 static void broadcast_sent_cb(esp_ble_audio_bap_stream_t *stream, void *user_data)
 {
-    example_audio_tx_scheduler_on_sent(&tx_scheduler, user_data, TAG, "stream", stream);
+    example_audio_tx_scheduler_on_sent(&tx_scheduler, user_data, TAG, "SRC #0");
 }
 
 static esp_ble_audio_bap_stream_ops_t broadcast_stream_ops = {
@@ -335,7 +335,7 @@ static int ext_adv_start(void)
         goto end;
     }
 
-    ESP_LOGI(TAG, "Extended adv instance %u started", ADV_HANDLE);
+    ESP_LOGI(TAG, "Advertising started (handle %u)", ADV_HANDLE);
 
 end:
     if (ext_data) {
@@ -349,23 +349,26 @@ end:
 
 static int ext_adv_stop(void)
 {
+    int ret = 0;
     int err;
 
     err = ble_gap_periodic_adv_stop(ADV_HANDLE);
     if (err) {
         ESP_LOGE(TAG, "Failed to stop per advertising, err %d", err);
+        ret = err;
     }
 
     err = ble_gap_ext_adv_stop(ADV_HANDLE);
     if (err) {
         ESP_LOGE(TAG, "Failed to stop ext advertising, err %d", err);
+        ret = err;
     }
 
-    if (err == 0) {
-        ESP_LOGI(TAG, "Extended adv instance %u stopped", ADV_HANDLE);
+    if (ret == 0) {
+        ESP_LOGI(TAG, "Advertising stopped (handle %u)", ADV_HANDLE);
     }
 
-    return err;
+    return ret;
 }
 
 int cap_initiator_setup(void)

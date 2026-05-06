@@ -17,7 +17,10 @@
 
 #include "esp_ble_iso_common_api.h"
 
-#define TAG "UTILS"
+/* Packet count between throughput summary logs.
+ * At 10 ms SDU interval this is ~60 s; at 7.5 ms ~45 s.
+ */
+#define LOG_INTERVAL_PACKETS    6000
 
 int example_iso_gap_event_cb(struct ble_gap_event *event, void *arg)
 {
@@ -94,8 +97,7 @@ int example_iso_tx_scheduler_stop(example_iso_tx_scheduler_t *scheduler)
 void example_iso_tx_scheduler_on_sent(example_iso_tx_scheduler_t *scheduler,
                                       const esp_ble_iso_tx_cb_info_t *info,
                                       const char *tag,
-                                      const char *obj_name,
-                                      const void *obj)
+                                      const char *obj_name)
 {
     size_t drift_count = 0;
 
@@ -111,9 +113,9 @@ void example_iso_tx_scheduler_on_sent(example_iso_tx_scheduler_t *scheduler,
     scheduler->drift += drift_count;
     scheduler->count++;
 
-    if (scheduler->count % 1000 == 0) {
-        ESP_LOGI(tag, "Transmitted %u ISO data packets (%s %p)",
-                 scheduler->count, (obj_name ? obj_name : ""), obj);
+    if (scheduler->count % LOG_INTERVAL_PACKETS == 0) {
+        ESP_LOGI(tag, "[%s] TX: %u packets",
+                 obj_name ? obj_name : "ISO", scheduler->count);
     }
 }
 
@@ -132,8 +134,7 @@ void example_iso_rx_metrics_reset(example_iso_rx_metrics_t *metrics)
 void example_iso_rx_metrics_on_recv(const esp_ble_iso_recv_info_t *info,
                                     example_iso_rx_metrics_t *metrics,
                                     const char *tag,
-                                    const char *obj_name,
-                                    const void *obj)
+                                    const char *obj_name)
 {
     assert(info);
     assert(metrics);
@@ -155,8 +156,8 @@ void example_iso_rx_metrics_on_recv(const esp_ble_iso_recv_info_t *info,
 
     metrics->recv_count++;
 
-    if (metrics->recv_count % 1000 == 0) {
-        ESP_LOGI(tag, "Received %u ISO data packets (%s %p)",
-                 metrics->recv_count, (obj_name ? obj_name : ""), obj);
+    if (metrics->recv_count % LOG_INTERVAL_PACKETS == 0) {
+        ESP_LOGI(tag, "[%s] RX: %u packets",
+                 obj_name ? obj_name : "ISO", metrics->recv_count);
     }
 }

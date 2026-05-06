@@ -5,54 +5,92 @@
 
 (See the README.md file in the upper level `examples` directory for more information about examples.)
 
-This example implements the **Telephone and Media Audio Profile (TMAP) Broadcast Media Sender (BMS)** role. The BMS acts as a BAP Broadcast Source: it starts non-connectable extended advertising and periodic advertising. Extended advertising includes the **TMAS (Telephone and Media Audio Service)** UUID with the **BMS** role and the Broadcast Audio Announcement service (broadcast ID and device name); periodic advertising carries the BASE (Broadcast Audio Source Endpoint). After creating the broadcast source and starting the BIG, it sends broadcast audio on the BIS at the configured interval. TMAP BMR receivers (e.g. the [bmr](../bmr) example) that scan for both TMAS BMS and Broadcast Audio will discover and sync to this source.
+## Overview
 
-The implementation uses the NimBLE host stack with ISO and BAP support, ESP-BLE-AUDIO (TMAP BMS role, CAP initiator broadcast). It creates a single subgroup with one stream using the LC3 48_2_1 broadcast preset (48 kHz, stereo, media context). A periodic TX scheduler (based on `k_work_delayable`) drives ISO SDU transmission in the ISO task context; the stream sent callback logs packet counts and drift. All parameters (broadcast ID, broadcast code, device name) are hardcoded in the source and can be changed by editing the source code constants.
+This example implements the **Telephony and Media Audio Profile (TMAP) Broadcast Media Sender (BMS)** role. The device acts as a non-connectable BAP Broadcast Source: extended advertising carries the TMAS service UUID with the BMS role flag, the Broadcast Audio Announcement service with a 24-bit broadcast ID (`0x123456`), and the complete local name (`"TMAP Broadcast Source"`); periodic advertising carries the encoded BASE.
+
+The implementation runs on the **NimBLE** host stack and uses the ESP-BLE-AUDIO library for the TMAP role registration and the CAP initiator broadcast pieces. A single subgroup with one stream is configured from the LC3 `48_2_1` broadcast preset (front-left location, media context). After the broadcast source is created and the BIG is started, a periodic TX scheduler (`example_audio_tx_scheduler_*`) drives ISO SDU transmission at the stream's QoS interval, and a sent callback tracks packet counts and drift.
 
 ## Requirements
 
-* A board with Bluetooth LE 5.2, ISO, and LE Audio support (e.g. ESP32-H4)
-* Optionally, a TMAP BMR or BAP Broadcast Sink (e.g. the [bmr](../bmr) example) to receive the broadcast stream
+* A board with BLE 5.2, ISO, and LE Audio support (e.g. ESP32-H4, ESP32-S31)
+* Peer device running the paired example
 
-## How to Use Example
+## Configuration
 
-Before project configuration and build, set the correct chip target:
+```bash
+idf.py menuconfig
+```
+
+No build-time options — runtime defaults are baked into source.
+
+### Security & Pairing
+
+NimBLE host security is inherited from `../../common_components/example_init/ble_audio_example_init.c`: LE Secure Connections with bonding enabled, no MITM, **Just-Works** pairing (`BLE_SM_IO_CAP_NO_IO`). The BMS broadcast itself is non-connectable and unencrypted, so these settings only apply if a peer ever opens an ATT connection.
+
+## Build & Flash
 
 ```bash
 idf.py set-target esp32h4
-```
-
-### Build and Flash
-
-Run the following to build, flash and monitor:
-
-```bash
 idf.py -p PORT flash monitor
 ```
 
-(To exit the serial monitor, type ``Ctrl-]``.)
-
-See the [Getting Started Guide](https://idf.espressif.com/) for full steps to configure and use ESP-IDF.
+(Exit serial monitor with `Ctrl-]`.)
 
 ## Example Flow
 
-1. **Initialization**: NVS, Bluetooth stack, and LE Audio common layer (`esp_ble_audio_common_init`). Register TMAP role BMS (`esp_ble_audio_tmap_register(ESP_BLE_AUDIO_TMAP_ROLE_BMS)`). Initialize CAP initiator broadcast: register stream ops (started, stopped, sent), create broadcast audio TX scheduler.
-2. **Setup**: Create the broadcast source with one subgroup and one stream (LC3 48_2_1 preset), build extended adv data (TMAS + BMS role, Broadcast Audio UUID + broadcast ID, device name) and periodic adv data (BASE). Start periodic and extended advertising, add the ext adv to the BIG, then start the broadcast audio. The stream started callback starts the periodic TX scheduler and sends the first SDU.
-3. **Streaming**: The TX scheduler, based on `k_work_delayable`, fires at the stream QoS interval in the ISO task context and sends ISO SDUs; the sent callback counts packets and logs periodically. Drift and untransmitted packets are reported in the callback. Note that the scheduler timer resolution is in milliseconds, which may not match the exact SDU interval for all configurations.
-4. **Optional**: `cap_initiator_update` updates broadcast metadata; `cap_initiator_stop` stops and deletes the broadcast source.
+1. Initialize NVS, the Bluetooth controller/host, and the LE Audio common layer (no GAP/GATT app callbacks).
+2. Register the TMAP role as `ESP_BLE_AUDIO_TMAP_ROLE_BMS` and initialize the CAP initiator (register stream ops, init TX scheduler).
+3. Start the audio stack, then build the create params (1 subgroup × 1 stream, LC3 48_2_1 preset, sequential packing, no encryption) and create the broadcast source.
+4. Configure and start non-connectable extended advertising (TMAS+BMS role, Broadcast Audio + broadcast ID `0x123456`, device name) and periodic advertising carrying the BASE.
+5. Add the advertising handle to the BIG and start broadcast audio; on stream-started, allocate the SDU buffer and arm the TX scheduler at `qos->interval`.
+6. The scheduler callback fills SDUs with the rolling sequence number and calls `esp_ble_audio_cap_stream_send`; the sent callback updates RX-side metrics via `example_audio_tx_scheduler_on_sent`.
+7. `cap_initiator_update` and `cap_initiator_stop` are exposed for runtime metadata refresh and teardown.
 
-## Example Output
+## Expected Log
 
+TAG is `TMAP_BMS`.
+
+Init:
+```
+I (xxx) TMAP_BMS: CAP initiator initialized
+```
+
+Setup:
 ```
 I (xxx) TMAP_BMS: Creating broadcast source
-I (xxx) TMAP_BMS: Extended adv instance 0 started
-I (xxx) TMAP_BMS: Stream 0x... started
-I (xxx) TMAP_BMS: Transmitted 1000 ISO data packets (stream 0x...)
-...
+I (xxx) TMAP_BMS: Advertising started (handle 0)
+I (xxx) TMAP_BMS: CAP initiator setup
 ```
 
-If the controller reports drift or untransmitted packets:
+Streaming:
+```
+I (xxx) TMAP_BMS: [SRC #0] Stream started
+```
+(Subsequent per-packet metrics are emitted by `example_audio_tx_scheduler_on_sent` under the `SRC #0` label.)
 
+Stop / teardown:
 ```
-W (xxx) TMAP_BMS: ISO data packets ... drifted and ... not txd
+I (xxx) TMAP_BMS: [SRC #0] Stream stopped, reason 0x..
+I (xxx) TMAP_BMS: [SRC #0] ISO disconnected, reason 0x..
+I (xxx) TMAP_BMS: Advertising stopped (handle 0)
 ```
+
+Errors (representative):
+```
+E (xxx) TMAP_BMS: Failed to create broadcast source, err ..
+E (xxx) TMAP_BMS: Failed to start broadcast source, err ..
+E (xxx) TMAP_BMS: [SRC #0] Invalid stream qos
+E (xxx) TMAP_BMS: [SRC #0] Failed to alloc TX buffer, SDU ..
+```
+
+## Peer Pairing
+
+Run [bmr](../bmr/) on a second board.
+
+1. Flash and boot the BMR peer; it starts scanning for TMAP BMS advertisers.
+2. Boot this BMS; it advertises with TMAS BMS role and broadcast ID `0x123456` and starts periodic advertising carrying the BASE.
+3. The BMR matches the TMAS BMS role plus Broadcast Audio UUID, creates a PA sync, and waits for the BASE.
+4. After BASE is received the BMR creates a broadcast sink and syncs to the BIG using the BIS index bitfield.
+5. The BMS stream-started callback fires; its TX scheduler begins emitting SDUs that the BMR receives in its stream `recv` callback.
+6. Stopping or power-cycling the BMS triggers PA sync loss on the BMR, which deletes the sink and resumes scanning.

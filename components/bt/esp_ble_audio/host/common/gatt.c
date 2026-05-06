@@ -279,7 +279,15 @@ static void foreach_attr_type_dyndb(uint16_t start_handle,
 
     SYS_SLIST_FOR_EACH_CONTAINER(&gatt_db, svc, node) {
 #if 0
-        /* Note: this check is not suitable for our Hosts */
+        /* Upstream Zephyr's "skip current service if next->attrs[0].handle
+         * <= start_handle" optimization assumes gatt_db is sorted by
+         * handle ascending. bt_gatt_service_register() here uses
+         * sys_slist_append() (registration order, not handle order), and
+         * NimBLE assigns handles internally, so that invariant doesn't
+         * hold -- this optimization would skip services that should be
+         * searched. Re-enable only after switching service registration
+         * to insert by handle.
+         */
         struct bt_gatt_service *next;
 
         next = SYS_SLIST_PEEK_NEXT_CONTAINER(svc, node);
@@ -1029,6 +1037,35 @@ static struct gattc_sub *gattc_sub_add(struct bt_conn *conn)
     return sub;
 }
 
+static void gattc_sub_clear(struct bt_conn *conn)
+{
+    struct bt_gatt_subscribe_params *tmp = NULL;
+    struct gattc_sub *sub = NULL;
+
+    sub = gattc_sub_find(conn);
+    if (sub == NULL) {
+        return;
+    }
+
+    LOG_DBG("GattcSubClear[%s]", bt_addr_le_str(&sub->peer));
+
+    /* Reset each entry's handles and NOTIFY/INDICATE value so any state read
+     * from the params struct after disconnect reflects "not subscribed / no
+     * valid handles", then drop the nodes from the list. Dropping the nodes
+     * is what actually unblocks resubscription: bt_gatt_subscribe() rejects
+     * a params pointer that's still linked (tmp == params → -EALREADY), so
+     * without the list reset the CCCD write would never be reissued to the
+     * peer.
+     */
+    SYS_SLIST_FOR_EACH_CONTAINER(&sub->list, tmp, node) {
+        tmp->value_handle = 0;
+        tmp->ccc_handle = 0;
+        tmp->end_handle = 0;
+        tmp->value = 0;
+    }
+    sys_slist_init(&sub->list);
+}
+
 _IDF_ONLY
 struct gattc_sub *bt_gattc_sub_find(struct bt_conn *conn)
 {
@@ -1109,34 +1146,33 @@ int bt_gatt_subscribe(struct bt_conn *conn, struct bt_gatt_subscribe_params *par
     assert(params->ccc_handle == BT_GATT_AUTO_DISCOVER_CCC_HANDLE ||
            (params->end_handle && params->disc_params));
 
-    LOG_DBG("GattcSub[%04x][%u][%u][%u]",
-            params->value, params->value_handle, params->ccc_handle, params->end_handle);
+    LOG_DBG("GattcSub[%u][%u][%u][%04x]",
+            params->value_handle, params->ccc_handle, params->end_handle, params->value);
 
+    /* Failures that return before sys_slist_append() reset
+     * params->value_handle, mirroring gattc_sub_clear() on
+     * disconnect, so callers gating retries on `value_handle == 0`
+     * can resubscribe.
+     */
     if (conn->state != BT_CONN_CONNECTED) {
         LOG_ERR("NotConn[%d]", __LINE__);
+        params->value_handle = 0; /* unlinked: clear retry guard */
         return -ENOTCONN;
     }
 
     sub = gattc_sub_add(conn);
     if (sub == NULL) {
+        params->value_handle = 0; /* unlinked: clear retry guard */
         return -ENOMEM;
     }
-
-#if 0
-    if (params->disc_params &&
-            params->disc_params->func == gattc_ccc_discover_cb) {
-        /* Already in progress */
-        LOG_ERR("GattcSubAlreadyInProgress[%u][%u][%u]",
-                params->ccc_handle, params->value_handle, params->end_handle);
-        return -EBUSY;
-    }
-#endif
 
     /* Lookup existing subscriptions */
     SYS_SLIST_FOR_EACH_CONTAINER(&sub->list, tmp, node) {
         /* Fail if entry already exists */
         if (tmp == params) {
-            LOG_WRN("GattcSubExist[%u][%04x]", params->ccc_handle, params->value);
+            LOG_WRN("GattcSubExist[%u][%u][%04x]",
+                    params->value_handle, params->ccc_handle, params->value);
+            /* live on sub->list: keep value_handle intact */
             return -EALREADY;
         }
 
@@ -1150,12 +1186,16 @@ int bt_gatt_subscribe(struct bt_conn *conn, struct bt_gatt_subscribe_params *par
         }
     }
 
+    LOG_INF("GattcHasSub[%u][%u][%u]",
+            params->value_handle, params->ccc_handle, has_subscription);
+
     /* Skip write if already subscribed */
     if (has_subscription == false) {
         if (params->ccc_handle == BT_GATT_AUTO_DISCOVER_CCC_HANDLE) {
             int err = gattc_ccc_discover(conn, params);
             if (err) {
                 LOG_ERR("DiscCccFail[%d]", err);
+                params->value_handle = 0; /* unlinked: clear retry guard */
                 return err;
             }
         } else {
@@ -1238,7 +1278,13 @@ int bt_gatt_unsubscribe(struct bt_conn *conn, struct bt_gatt_subscribe_params *p
 
         err = gattc_write_ccc(conn, params);
         if (err) {
-            LOG_ERR("WrCccFail[%d]", err);
+            /* -ENOTCONN is expected on the disconnect race: upper layer saw the
+             * conn as still connected but the peer was already gone by the time
+             * the write was issued. Not a real failure.
+             */
+            if (err != -ENOTCONN) {
+                LOG_ERR("WrCccFail[%d]", err);
+            }
             return err;
         }
     }
@@ -1345,17 +1391,35 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
 _LIB_ONLY
 void bt_le_acl_conn_disconnected_gatt_listener(uint16_t conn_handle)
 {
+    struct bt_conn *conn;
+
     LOG_DBG("AclConnDisconnectedGattListener[%u]", conn_handle);
 
     bt_le_nimble_gatt_nrp_clear(conn_handle);
 
-    /* Note:
-     * If the connection is disconnected, currently we will not delete
-     * the gatt client database.
-     * Hence after the connection is re-established, there is no need
-     * to re-discover the gatt client database which can save time.
-     * And the unsubscribe -> re-subscribe procedure is not needed.
+    /* Drop the cached GATT client database so the next connection runs a
+     * fresh discovery. This keeps the client resilient when the peer's
+     * bonding is lost (e.g., server reboot without persisted bonds) or its
+     * GATT structure changes across reconnects.
+     *
+     * TODO: preserve the cached DB across reconnects to the same bonded
+     * peer, and invalidate it only on a Service Changed indication. That
+     * saves the rediscovery round-trip but requires honoring CCCD caching
+     * and Service Changed handling end-to-end.
      */
+    bt_le_nimble_gattc_db_remove(conn_handle);
+
+    /* The cached DB is dropped above, so the app will rediscover and call
+     * bt_gatt_subscribe() again on reconnect with the BAP library's reused
+     * `bt_gatt_subscribe_params` pointers. Drop those nodes from the
+     * tracking list (and zero their value) so the duplicate check in
+     * bt_gatt_subscribe() doesn't short-circuit with -EALREADY, which
+     * would otherwise skip the CCCD write and starve notifications.
+     */
+    conn = bt_le_acl_conn_find(conn_handle);
+    if (conn) {
+        gattc_sub_clear(conn);
+    }
 }
 
 void bt_le_gatt_handle_event(uint8_t *data, size_t data_len)

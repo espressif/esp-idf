@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
@@ -55,27 +56,54 @@ static void iso_connected_cb(esp_ble_iso_chan_t *chan)
         .pid    = ESP_BLE_ISO_DATA_PATH_HCI,
         .format = ESP_BLE_ISO_CODING_FORMAT_TRANSPARENT,
     };
+    int chan_idx = bis_chan_index_get(chan);
     esp_err_t err;
 
-    ESP_LOGI(TAG, "ISO channel %p connected", chan);
+    ESP_LOGI(TAG, "[BIS #%d] Connected", chan_idx);
+
+    /* New BIS session — reset RX counters so milestones reflect
+     * this session only. Matches the session-start reset pattern
+     * used by cis_peripheral and the audio examples.
+     */
+    if (chan_idx >= 0) {
+        example_iso_rx_metrics_reset(&rx_metrics[chan_idx]);
+    }
 
     err = esp_ble_iso_setup_data_path(chan, ESP_BLE_ISO_DATA_PATH_DIR_OUTPUT, &data_path);
     if (err) {
-        ESP_LOGE(TAG, "Failed to setup ISO data path, err %d", err);
+        ESP_LOGE(TAG, "[BIS #%d] Failed to setup data path, err %d", chan_idx, err);
         return;
     }
 }
 
 static void iso_disconnected_cb(esp_ble_iso_chan_t *chan, uint8_t reason)
 {
-    ESP_LOGI(TAG, "ISO channel %p disconnected, reason 0x%02x", chan, reason);
+    /* Common BIS disconnect reasons during broadcaster restart:
+     *
+     *   0x08  CONN_TIMEOUT        - no subevent received within
+     *                               BIG_Sync_Timeout (broadcaster is gone
+     *                               or out of range). This is the common
+     *                               case.
+     *
+     *   0x3D  TERM_DUE_TO_MIC_FAIL - packets arrived but MIC check
+     *                               failed repeatedly. Only possible on
+     *                               encrypted BIGs; typically means the
+     *                               broadcaster restarted with a new
+     *                               session before we timed out, so the
+     *                               old session key no longer decrypts.
+     *
+     *                               !!! LOW PROBABILITY !!!
+     *                               Requires the broadcaster to come
+     *                               back on air within the BIG_Sync_
+     *                               Timeout window — a narrow race.
+     *
+     * Both are normal: receiver will drop PA sync and re-discover.
+     */
+    ESP_LOGI(TAG, "[BIS #%d] Disconnected, reason 0x%02x",
+             bis_chan_index_get(chan), reason);
 
     big_synced = false;
     out_big = NULL;
-
-    for (size_t i = 0; i < BIS_ISO_CHAN_COUNT; i++) {
-        example_iso_rx_metrics_reset(&rx_metrics[i]);
-    }
 }
 
 static void iso_recv_cb(esp_ble_iso_chan_t *chan,
@@ -83,14 +111,16 @@ static void iso_recv_cb(esp_ble_iso_chan_t *chan,
                         const uint8_t *data, uint16_t len)
 {
     int chan_idx = bis_chan_index_get(chan);
+    char name[24];
 
     if (chan_idx < 0) {
-        ESP_LOGW(TAG, "Unknown BIS channel %p", chan);
+        ESP_LOGW(TAG, "Unknown BIS channel");
         return;
     }
 
+    snprintf(name, sizeof(name), "BIS #%d", chan_idx);
     rx_metrics[chan_idx].last_sdu_len = len;
-    example_iso_rx_metrics_on_recv(info, &rx_metrics[chan_idx], TAG, "chan", chan);
+    example_iso_rx_metrics_on_recv(info, &rx_metrics[chan_idx], TAG, name);
 }
 
 static esp_ble_iso_chan_ops_t iso_ops = {
@@ -150,7 +180,7 @@ static void ext_scan_start(void)
         return;
     }
 
-    ESP_LOGI(TAG, "Extended scan started");
+    ESP_LOGI(TAG, "Scanning for broadcaster...");
 }
 
 static int pa_sync_create(uint8_t addr_type, uint8_t addr[6], uint8_t sid)
@@ -213,26 +243,33 @@ static void ext_scan_recv(esp_ble_iso_gap_app_event_t *event)
 
 static void pa_sync(esp_ble_iso_gap_app_event_t *event)
 {
+    int err;
+
     if (event->pa_sync.status) {
         ESP_LOGE(TAG, "PA sync failed, status %d", event->pa_sync.status);
         per_adv_synced = false;
         return;
     }
 
-    ESP_LOGI(TAG, "PA sync established:");
-    ESP_LOGI(TAG, "sync_handle 0x%04x status 0x%02x addr %02x:%02x:%02x:%02x:%02x:%02x "
-             "sid %u adv_phy %u per_adv_itvl 0x%04x adv_ca %u",
-             event->pa_sync.sync_handle, event->pa_sync.status,
+    ESP_LOGI(TAG, "PA synced: handle %u sid %u phy %u peer %02x:%02x:%02x:%02x:%02x:%02x",
+             event->pa_sync.sync_handle, event->pa_sync.sid, event->pa_sync.adv_phy,
              event->pa_sync.addr.val[5], event->pa_sync.addr.val[4],
              event->pa_sync.addr.val[3], event->pa_sync.addr.val[2],
-             event->pa_sync.addr.val[1], event->pa_sync.addr.val[0],
-             event->pa_sync.sid, event->pa_sync.adv_phy,
-             event->pa_sync.per_adv_itvl, event->pa_sync.adv_ca);
+             event->pa_sync.addr.val[1], event->pa_sync.addr.val[0]);
+
+    /* PA sync is established; the BIGInfo report will arrive via the
+     * PA sync channel, so the extended scanner is no longer needed.
+     * Stop it now — pa_sync_lost() will restart it on loss.
+     */
+    err = ble_gap_disc_cancel();
+    if (err) {
+        ESP_LOGW(TAG, "Failed to stop scanning, err %d", err);
+    }
 }
 
 static void pa_sync_lost(esp_ble_iso_gap_app_event_t *event)
 {
-    ESP_LOGI(TAG, "PA sync lost: sync_handle 0x%04x reason 0x%02x",
+    ESP_LOGI(TAG, "PA sync lost: sync_handle %u reason 0x%02x",
              event->pa_sync_lost.sync_handle, event->pa_sync_lost.reason);
 
     per_adv_synced = false;

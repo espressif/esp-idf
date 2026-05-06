@@ -77,6 +77,41 @@ static esp_ble_audio_bap_stream_t *stream_alloc(void)
     return NULL;
 }
 
+static const char *dir_str(esp_ble_audio_dir_t dir)
+{
+    return dir == ESP_BLE_AUDIO_DIR_SINK ? "SNK" : "SRC";
+}
+
+static bool stream_is_sink(const esp_ble_audio_bap_stream_t *stream)
+{
+    for (size_t i = 0; i < ARRAY_SIZE(sink_streams); i++) {
+        if (sink_streams[i].stream == stream) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static const char *stream_dir_str(const esp_ble_audio_bap_stream_t *stream)
+{
+    return stream_is_sink(stream) ? "SNK" : "SRC";
+}
+
+static int stream_index(const esp_ble_audio_bap_stream_t *stream)
+{
+    for (size_t i = 0; i < ARRAY_SIZE(sink_streams); i++) {
+        if (sink_streams[i].stream == stream) {
+            return (int)i;
+        }
+    }
+    for (size_t i = 0; i < ARRAY_SIZE(source_streams); i++) {
+        if (source_streams[i].stream == stream) {
+            return (int)i;
+        }
+    }
+    return -1;
+}
+
 static int config_cb(esp_ble_conn_t *conn,
                      const esp_ble_audio_bap_ep_t *ep,
                      esp_ble_audio_dir_t dir,
@@ -87,20 +122,18 @@ static int config_cb(esp_ble_conn_t *conn,
 {
     bool stream_exist = false;
 
-    ESP_LOGI(TAG, "Config: conn %p ep %p dir %u", conn, ep, dir);
+    ESP_LOGI(TAG, "[%s] Config request:", dir_str(dir));
 
-    example_print_codec_cfg(codec_cfg);
+    example_print_codec_cfg(TAG, codec_cfg);
 
     *stream = stream_alloc();
     if (*stream == NULL) {
-        ESP_LOGE(TAG, "No streams available");
+        ESP_LOGE(TAG, "[%s] No streams available", dir_str(dir));
 
         *rsp = ESP_BLE_AUDIO_BAP_ASCS_RSP(ESP_BLE_AUDIO_BAP_ASCS_RSP_CODE_NO_MEM,
                                           ESP_BLE_AUDIO_BAP_ASCS_REASON_NONE);
         return -ENOMEM;
     }
-
-    ESP_LOGI(TAG, "Config stream %p", *stream);
 
     if (dir == ESP_BLE_AUDIO_DIR_SINK) {
         for (size_t i = 0; i < ARRAY_SIZE(sink_streams); i++) {
@@ -112,7 +145,7 @@ static int config_cb(esp_ble_conn_t *conn,
 
         if (stream_exist == false) {
             if (configured_sink_stream_count >= ARRAY_SIZE(sink_streams)) {
-                ESP_LOGE(TAG, "No more sink stream available");
+                ESP_LOGE(TAG, "[SNK] No more sink stream available");
 
                 *rsp = ESP_BLE_AUDIO_BAP_ASCS_RSP(ESP_BLE_AUDIO_BAP_ASCS_RSP_CODE_NO_MEM,
                                                   ESP_BLE_AUDIO_BAP_ASCS_REASON_NONE);
@@ -131,7 +164,7 @@ static int config_cb(esp_ble_conn_t *conn,
 
         if (stream_exist == false) {
             if (configured_source_stream_count >= ARRAY_SIZE(source_streams)) {
-                ESP_LOGE(TAG, "No more source stream available");
+                ESP_LOGE(TAG, "[SRC] No more source stream available");
 
                 *rsp = ESP_BLE_AUDIO_BAP_ASCS_RSP(ESP_BLE_AUDIO_BAP_ASCS_RSP_CODE_NO_MEM,
                                                   ESP_BLE_AUDIO_BAP_ASCS_REASON_NONE);
@@ -155,9 +188,10 @@ static int reconfig_cb(esp_ble_audio_bap_stream_t *stream,
                        esp_ble_audio_bap_qos_cfg_pref_t *const pref,
                        esp_ble_audio_bap_ascs_rsp_t *rsp)
 {
-    ESP_LOGI(TAG, "Reconfig: stream %p", stream);
+    ESP_LOGI(TAG, "[%s #%d] Reconfig request:",
+             dir_str(dir), stream_index(stream));
 
-    example_print_codec_cfg(codec_cfg);
+    example_print_codec_cfg(TAG, codec_cfg);
 
     *pref = qos_pref;
 
@@ -168,9 +202,10 @@ static int qos_cb(esp_ble_audio_bap_stream_t *stream,
                   const esp_ble_audio_bap_qos_cfg_t *qos,
                   esp_ble_audio_bap_ascs_rsp_t *rsp)
 {
-    ESP_LOGI(TAG, "QoS: stream %p qos %p", stream, qos);
+    ESP_LOGI(TAG, "[%s #%d] QoS request:",
+             stream_dir_str(stream), stream_index(stream));
 
-    example_print_qos(qos);
+    example_print_qos(TAG, qos);
 
     return 0;
 }
@@ -179,14 +214,16 @@ static int enable_cb(esp_ble_audio_bap_stream_t *stream,
                      const uint8_t meta[], size_t meta_len,
                      esp_ble_audio_bap_ascs_rsp_t *rsp)
 {
-    ESP_LOGI(TAG, "Enable: stream %p meta_len %u", stream, meta_len);
+    ESP_LOGI(TAG, "[%s #%d] Enable request (meta_len %u)",
+             stream_dir_str(stream), stream_index(stream), meta_len);
     return 0;
 }
 
 static int start_cb(esp_ble_audio_bap_stream_t *stream,
                     esp_ble_audio_bap_ascs_rsp_t *rsp)
 {
-    ESP_LOGI(TAG, "Start: stream %p", stream);
+    ESP_LOGI(TAG, "[%s #%d] Start request",
+             stream_dir_str(stream), stream_index(stream));
     return 0;
 }
 
@@ -265,7 +302,8 @@ static int metadata_cb(esp_ble_audio_bap_stream_t *stream,
     };
     esp_err_t err;
 
-    ESP_LOGI(TAG, "Metadata: stream %p meta_len %u", stream, meta_len);
+    ESP_LOGI(TAG, "[%s #%d] Metadata request (meta_len %u)",
+             stream_dir_str(stream), stream_index(stream), meta_len);
 
     err = esp_ble_audio_data_parse(meta, meta_len, data_func_cb, &func_param);
     if (err) {
@@ -291,21 +329,24 @@ static int metadata_cb(esp_ble_audio_bap_stream_t *stream,
 static int disable_cb(esp_ble_audio_bap_stream_t *stream,
                       esp_ble_audio_bap_ascs_rsp_t *rsp)
 {
-    ESP_LOGI(TAG, "Disable: stream %p", stream);
+    ESP_LOGI(TAG, "[%s #%d] Disable request",
+             stream_dir_str(stream), stream_index(stream));
     return 0;
 }
 
 static int stop_cb(esp_ble_audio_bap_stream_t *stream,
                    esp_ble_audio_bap_ascs_rsp_t *rsp)
 {
-    ESP_LOGI(TAG, "Stop: stream %p", stream);
+    ESP_LOGI(TAG, "[%s #%d] Stop request",
+             stream_dir_str(stream), stream_index(stream));
     return 0;
 }
 
 static int release_cb(esp_ble_audio_bap_stream_t *stream,
                       esp_ble_audio_bap_ascs_rsp_t *rsp)
 {
-    ESP_LOGI(TAG, "Release: stream %p", stream);
+    ESP_LOGI(TAG, "[%s #%d] Release request",
+             stream_dir_str(stream), stream_index(stream));
 
     for (size_t i = 0; i < ARRAY_SIZE(sink_streams); i++) {
         if (sink_streams[i].stream == stream) {
@@ -327,7 +368,7 @@ static int release_cb(esp_ble_audio_bap_stream_t *stream,
         }
     }
 
-    ESP_LOGW(TAG, "Stream %p not found", stream);
+    ESP_LOGW(TAG, "Stream not found");
     return -ENODEV;
 }
 
@@ -348,7 +389,8 @@ static void stream_enabled(esp_ble_audio_bap_stream_t *stream)
     esp_ble_audio_bap_ep_info_t ep_info = {0};
     int err;
 
-    ESP_LOGI(TAG, "Stream %p enabled", stream);
+    ESP_LOGI(TAG, "[%s #%d] Stream enabled",
+             stream_dir_str(stream), stream_index(stream));
 
     err = esp_ble_audio_bap_ep_get_info(stream->ep, &ep_info);
     if (err) {
@@ -361,7 +403,8 @@ static void stream_enabled(esp_ble_audio_bap_stream_t *stream)
         /* Automatically do the receiver start ready operation */
         err = esp_ble_audio_bap_stream_start(stream);
         if (err) {
-            ESP_LOGE(TAG, "Failed to start stream %p, err %d", stream, err);
+            ESP_LOGE(TAG, "[SNK #%d] Failed to start stream, err %d",
+                     stream_index(stream), err);
             return;
         }
     }
@@ -369,7 +412,8 @@ static void stream_enabled(esp_ble_audio_bap_stream_t *stream)
 
 static void stream_started(esp_ble_audio_bap_stream_t *stream)
 {
-    ESP_LOGI(TAG, "Stream %p started", stream);
+    ESP_LOGI(TAG, "[%s #%d] Stream started",
+             stream_dir_str(stream), stream_index(stream));
 
     for (size_t i = 0; i < ARRAY_SIZE(sink_streams); i++) {
         if (sink_streams[i].stream == stream) {
@@ -381,7 +425,8 @@ static void stream_started(esp_ble_audio_bap_stream_t *stream)
 
 static void stream_stopped(esp_ble_audio_bap_stream_t *stream, uint8_t reason)
 {
-    ESP_LOGI(TAG, "Stream %p stopped, reason 0x%02x", stream, reason);
+    ESP_LOGI(TAG, "[%s #%d] Stream stopped, reason 0x%02x",
+             stream_dir_str(stream), stream_index(stream), reason);
 }
 
 static void stream_recv(esp_ble_audio_bap_stream_t *stream,
@@ -394,10 +439,12 @@ static void stream_recv(esp_ble_audio_bap_stream_t *stream,
             struct audio_sink *sink_stream = CONTAINER_OF(&sink_streams[i].stream,
                                                           struct audio_sink,
                                                           stream);
+            char name[24];
 
+            snprintf(name, sizeof(name), "SNK #%zu", i);
             sink_stream->rx_metrics.last_sdu_len = len;
             example_audio_rx_metrics_on_recv(info, &sink_stream->rx_metrics,
-                                             TAG, "stream", stream);
+                                             TAG, name);
             break;
         }
     }

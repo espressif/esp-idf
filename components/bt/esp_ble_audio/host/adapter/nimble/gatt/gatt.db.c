@@ -662,18 +662,33 @@ static int gattc_db_find_inc_svcs_cb_safe(uint16_t conn_handle,
     if (error->status) {
         if (error->status == BLE_HS_EDONE ||
             error->status == BLE_HS_EINVAL) {
-            /* If a service of the remote GATT server:
-             * - Has an included service;
-             * - Only have 2 attributes, i.e. Service declaration and
-             *   Include declaration;
-             * - Not the last service within the remote GATT database;
+            /* BLE_HS_EINVAL here is benign noise from NimBLE iteration,
+             * not a real failure. Root cause:
              *
-             * These will cause BLE_HS_EINVAL returned while finding
-             * included services, mark the included service discovery
-             * as completed to prevent the discovery state machine from
-             * stalling.
+             * In ble_gattc_find_inc_svcs_rx_complete (ble_gattc.c), the
+             * end-of-procedure check is `prev_handle == 0xffff` only. If
+             * the last include attribute lands on the parent service's
+             * end_handle (e.g. a service with just decl + include), then
+             * prev_handle is bumped to end_handle and the resume path
+             * calls ble_att_clt_tx_read_type with [end+1, end] -- which
+             * fails its `start > end` guard with BLE_HS_EINVAL and prints
+             *   E NimBLE: ble_att_clt_tx_read_type rc=3 <end+1> <end>
              *
-             * Mark the included service discovery as completed.
+             * The proper upstream fix would be in ble_gattc.c:
+             *
+             *   -    if (proc->find_inc_svcs.prev_handle == 0xffff) {
+             *   +    if (proc->find_inc_svcs.prev_handle == 0xffff ||
+             *   +        proc->find_inc_svcs.prev_handle >=
+             *   +            proc->find_inc_svcs.end_handle) {
+             *            // Procedure complete.
+             *            ble_gattc_find_inc_svcs_cb(proc, BLE_HS_EDONE, 0, NULL);
+             *            return BLE_HS_EDONE;
+             *        }
+             *
+             * We keep NimBLE untouched and absorb the EINVAL here.
+             *
+             * Mark the included service discovery as completed so the
+             * state machine moves on instead of stalling.
              */
             asvc->inc_svc_disc = 1;
 
@@ -1432,7 +1447,10 @@ void bt_le_nimble_gattc_db_remove(uint16_t conn_handle)
 
     adb = gattc_db_find(conn_handle);
     if (adb == NULL) {
-        LOG_WRN("[N]GattcDbNotFoundToRemove[%u]", conn_handle);
+        /* Legitimate when the conn never ran auto-disc (e.g. pairing failed
+         * or the app doesn't use GATT). Idempotent remove, not an error.
+         */
+        LOG_DBG("[N]GattcDbNotFoundToRemove[%u]", conn_handle);
         return;
     }
 

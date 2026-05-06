@@ -8,6 +8,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <errno.h>
 
 #include "tmap_bmr.h"
@@ -34,9 +35,11 @@ static uint8_t codec_data[] =
     ESP_BLE_AUDIO_CODEC_CAP_LC3_DATA(
         ESP_BLE_AUDIO_CODEC_CAP_FREQ_48KHZ,             /* Sampling frequency 48kHz */
         ESP_BLE_AUDIO_CODEC_CAP_DURATION_10,            /* Frame duration 10ms */
-        ESP_BLE_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1),  /* Supported channels 1 */
-        40,                                             /* Minimum 40 octets per frame */
-        60,                                             /* Maximum 60 octets per frame */
+        ESP_BLE_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1),  /* Supported channels 1 (mono) */
+        /* SDU size range covers the 48_2_1 LC3 broadcast preset (100 octets/frame)
+         * that the paired BMS sends. */
+        100,                                            /* Minimum 100 octets per frame */
+        100,                                            /* Maximum 100 octets per frame */
         1);                                             /* Maximum 1 codec frame per SDU */
 
 static uint8_t codec_meta[] =
@@ -54,25 +57,38 @@ static uint32_t bis_index_bitfield;
 
 static example_audio_rx_metrics_t rx_metrics;
 
+static int stream_index(const esp_ble_audio_bap_stream_t *stream)
+{
+    for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
+        if (&streams[i] == stream) {
+            return (int)i;
+        }
+    }
+    return -1;
+}
+
 static void stream_started_cb(esp_ble_audio_bap_stream_t *stream)
 {
-    ESP_LOGI(TAG, "Stream %p started", stream);
+    ESP_LOGI(TAG, "[SNK #%d] Stream started", stream_index(stream));
 
     example_audio_rx_metrics_reset(&rx_metrics);
 }
 
 static void stream_stopped_cb(esp_ble_audio_bap_stream_t *stream, uint8_t reason)
 {
-    ESP_LOGI(TAG, "Stream %p stopped, reason 0x%02x", stream, reason);
+    ESP_LOGI(TAG, "[SNK #%d] Stream stopped, reason 0x%02x",
+             stream_index(stream), reason);
 }
 
 static void stream_recv_cb(esp_ble_audio_bap_stream_t *stream,
                            const esp_ble_iso_recv_info_t *info,
                            const uint8_t *data, uint16_t len)
 {
+    char name[24];
 
+    snprintf(name, sizeof(name), "SNK #%d", stream_index(stream));
     rx_metrics.last_sdu_len = len;
-    example_audio_rx_metrics_on_recv(info, &rx_metrics, TAG, "stream", stream);
+    example_audio_rx_metrics_on_recv(info, &rx_metrics, TAG, name);
 }
 
 static esp_ble_audio_bap_stream_ops_t stream_ops = {
@@ -190,8 +206,6 @@ static bool scan_check_and_sync_broadcast(uint8_t type, const uint8_t *data,
     tmap_role = sys_get_le16(data + sizeof(uuid_val));
 
     if (tmap_role & ESP_BLE_AUDIO_TMAP_ROLE_BMS) {
-        ESP_LOGI(TAG, "Found TMAP BMS");
-
         tmap_bms_found = true;
         return true;
     }
@@ -221,6 +235,9 @@ void bap_broadcast_scan_recv(esp_ble_audio_gap_app_event_t *event)
     if (broadcast_id != ESP_BLE_AUDIO_BAP_INVALID_BROADCAST_ID &&
             tmap_bms_found &&
             pa_syncing == false) {
+        ESP_LOGI(TAG, "Found TMAP BMS, starting PA sync (broadcast ID 0x%06lx)",
+                 broadcast_id);
+
         addr.type = event->ext_scan_recv.addr.type;
         memcpy(addr.a.val, event->ext_scan_recv.addr.val, sizeof(addr.a.val));
 
@@ -300,7 +317,7 @@ int bap_broadcast_sink_scan(void)
         return err;
     }
 
-    ESP_LOGI(TAG, "Extended scan started");
+    ESP_LOGI(TAG, "Scanning for broadcaster...");
     return 0;
 }
 
