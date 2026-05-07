@@ -37,6 +37,21 @@ uint32_t mspi_timing_get_psram_low_speed_freq_mhz(void);
 void mspi_timing_enter_high_speed_mode(bool control_spi1);
 
 /**
+ * @brief Switch MSPI to low speed while suspending external memory cache to avoid in-flight cache line fills across the
+ * clock change.
+ *
+ * @note Early init only. Not safe for general runtime use: does not coordinate with other cores or freeze cache.
+ */
+void mspi_timing_enter_low_speed_early(void);
+
+/**
+ * @brief Switch MSPI to high speed while suspending external memory cache.
+ *
+ * @note Same usage constraints as @ref mspi_timing_enter_low_speed_early.
+ */
+void mspi_timing_enter_high_speed_early(void);
+
+/**
  * @brief Switch MSPI into low speed mode / high speed mode.
  * @note This API is cache safe, it will freeze both D$ and I$ and restore them after MSPI is switched
  * @note For some of the MSPI high frequency settings (e.g. 80M DDR mode Flash or PSRAM), timing tuning is required.

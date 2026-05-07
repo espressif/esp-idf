@@ -280,8 +280,8 @@ esp_err_t esp_psram_impl_enable(void)
     psram_set_cs_timing();
 
 #if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
-    //enter MSPI slow mode to init PSRAM device registers
-    mspi_timing_enter_low_speed_mode(true);
+    //enter MSPI slow mode to init PSRAM device registers (early init: see mspi_timing_enter_low_speed_early)
+    mspi_timing_enter_low_speed_early();
 #endif // SOC_SPI_MEM_SUPPORT_TIMING_TUNING
 
     uint32_t psram_id = 0;
@@ -330,7 +330,7 @@ esp_err_t esp_psram_impl_enable(void)
     //Configure SPI0 PSRAM related SPI Phases
     config_psram_spi_phases();
     //Back to the high speed mode. Flash/PSRAM clocks are set to the clock that user selected. SPI0/1 registers are all set correctly
-    mspi_timing_enter_high_speed_mode(true);
+    mspi_timing_enter_high_speed_early();
 #else
     s_config_psram_clock();
     //Configure SPI0 PSRAM related SPI Phases
