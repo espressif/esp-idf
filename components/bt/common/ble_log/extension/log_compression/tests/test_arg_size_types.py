@@ -10,13 +10,15 @@ import re
 import shutil
 import tempfile
 import unittest
+from typing import List
+from typing import Optional
 
 import test_utils  # noqa: F401 — must be first to set up sys.path
 from ble_log_compress import ARG_SIZE_TYPE
 from test_utils import PipelineContext
 
 
-def _extract_size_types_from_macro(macro_str: str) -> list[int] | None:
+def _extract_size_types_from_macro(macro_str: str) -> Optional[List[int]]:
     """Extract size type values from a generated macro string."""
     m = re.search(r'ble_log_compressed_hex_print\(\d+,\d+, (\d+)(?:, (.+?))?(?:,\s*[a-zA-Z_])', macro_str)
     if not m:
