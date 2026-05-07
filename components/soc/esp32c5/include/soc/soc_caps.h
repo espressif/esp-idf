@@ -603,6 +603,8 @@
 
 #define SOC_RCC_IS_INDEPENDENT                    1       /*!< Reset and Clock Control is independent, thanks to the PCR registers */
 
+#define SOC_CLK_ROOT_CLK_SWITCH_PROTECT           1       /*!< Need to bypass root clock auto gating during 240M/160M PLL switch */
+
 #define SOC_CLK_ANA_I2C_MST_DEPENDS_ON_MODEM_APB  (1)     /*!< Analog I2C master clock depends on  CLK_160M_REF on clock tree */
 
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/

@@ -676,9 +676,6 @@ static SLEEP_FN_ATTR void misc_modules_sleep_prepare(uint32_t sleep_flags, bool 
         }
 #endif
 #if CONFIG_MAC_BB_PD
-# if CONFIG_IDF_TARGET_ESP32C5
-        clk_ll_soc_root_clk_auto_gating_bypass(false);
-# endif
         mac_bb_power_down_cb_execute();
 #endif
 #if CONFIG_IDF_TARGET_ESP32
@@ -752,9 +749,6 @@ static SLEEP_FN_ATTR void misc_modules_wake_prepare(uint32_t sleep_flags)
 #endif
 #if CONFIG_MAC_BB_PD
     mac_bb_power_up_cb_execute();
-# if CONFIG_IDF_TARGET_ESP32C5
-    clk_ll_soc_root_clk_auto_gating_bypass(true);
-# endif
 #endif
 #if ADC_LL_ANA_CALI_REG_PD_WORKAROUND
     adc_hal_i2c_saradc_reg_restore();

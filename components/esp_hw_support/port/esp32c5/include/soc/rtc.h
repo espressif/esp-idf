@@ -296,6 +296,16 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config);
  */
 void rtc_clk_cpu_freq_set_config_fast(const rtc_cpu_freq_config_t *config);
 
+#if SOC_CLK_ROOT_CLK_SWITCH_PROTECT
+/**
+ * @brief Enable/disable root clock auto gating bypass for 240M/160M PLL switch
+ * @param new_config  Target cpu frequency config
+ * @param old_config  Current cpu frequency config
+ * @param enable     true to enable, false to disable
+ */
+void rtc_clk_root_clk_switch_protect(const rtc_cpu_freq_config_t *new_config, const rtc_cpu_freq_config_t *old_config, bool enable);
+#endif
+
 /**
  * @brief Get the currently used CPU frequency configuration
  * @param[out] out_config  Output, CPU frequency configuration structure
