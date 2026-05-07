@@ -28,7 +28,7 @@ This custom bootloader will clear the monitor and show all the bootable partitio
 Please select a partition to boot.
 
 FOUND 3 BOOT PARTITIONS:
-     default
+     main
      hello_world
      console
 ```
@@ -66,4 +66,3 @@ Below is a short explanation of the files in the project folder.
 As stated in the `README.md` file in the upper level, when the bootloader components are named `main`, it overrides the whole second stage bootloader code.
 
 Please note that this example also relies on the `hello_world` and `console` examples, before building, make sure these two examples have a clean environment and a valid `sdkconfig`.
-
