@@ -23,24 +23,32 @@
 ::
 
     user-name@computer-name:~/esp/esp-idf$ openocd -f board/esp32s31-builtin.cfg
-    Open On-Chip Debugger  v0.10.0-esp32-20210902 (2021-10-05-23:44)
+    Open On-Chip Debugger v0.12.0-esp32-20260424 (2026-04-24-15:13)
     Licensed under GNU GPL v2
     For bug reports, read
-      https://openocd.org/doc/doxygen/bugs.html
-    debug_level: 2
-
-    Info : only one transport option; autoselect 'jtag'
-    Warn : Transport "jtag" was already selected
+      http://openocd.org/doc/doxygen/bugs.html
+    Info : esp_usb_jtag: VID set to 0x303a and PID to 0x1001
+    Info : esp_usb_jtag: capabilities descriptor set to 0x2000
     Info : Listening on port 6666 for tcl connections
     Info : Listening on port 4444 for telnet connections
-    Info : esp_usb_jtag: Device found. Base speed 40000KHz, div range 1 to 255
-    Info : clock speed 40000 kHz
-    Info : JTAG tap: esp32s31.cpu0 tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
-    Info : JTAG tap: esp32s31.cpu1 tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
-    Info : esp32s31.cpu0: Debug controller was reset.
-    Info : esp32s31.cpu0: Core was reset.
-    Info : esp32s31.cpu1: Debug controller was reset.
-    Info : esp32s31.cpu1: Core was reset.
+    Info : esp_usb_jtag: serial (30:ED:A0:ED:77:E4)
+    Info : esp_usb_jtag: Device found. Base speed 24000KHz, div range 1 to 255
+    Info : clock speed 24000 kHz
+    Info : JTAG tap: esp32s31.tap0 tap/device found: 0x00003c25 (mfg: 0x612 (Espressif Systems), part: 0x0003, ver: 0x0)
+    Info : JTAG tap: esp32s31.tap1 tap/device found: 0x00020c25 (mfg: 0x612 (Espressif Systems), part: 0x0020, ver: 0x0)
+    Info : [esp32s31.hp.cpu0] datacount=1 progbufsize=2
+    Info : [esp32s31.hp.cpu0] Core 0 made part of halt group 1.
+    Info : [esp32s31.hp.cpu0] Examined RISC-V core
+    Info : [esp32s31.hp.cpu0]  XLEN=32, misa=0x40943127
+    Info : [esp32s31.hp.cpu0] Chip revision v0.0
+    Info : [esp32s31.hp.cpu0] Examination succeed
+    Info : [esp32s31.hp.cpu1] datacount=1 progbufsize=2
+    Info : [esp32s31.hp.cpu1] Core 1 made part of halt group 1.
+    Info : [esp32s31.hp.cpu1] Examined RISC-V core
+    Info : [esp32s31.hp.cpu1]  XLEN=32, misa=0x40943127
+    Info : [esp32s31.hp.cpu1] Chip revision v0.0
+    Info : [esp32s31.hp.cpu1] Examination succeed
+    Info : [esp32s31.hp.cpu0] starting gdb server on 3333
     Info : Listening on port 3333 for gdb connections
 
 .. |run-openocd-cfg-file-err| replace:: ``Can't find board/esp32s31-builtin.cfg``
@@ -99,7 +107,7 @@
       - Board configuration file for ESP32-S31 for via externally connected FTDI-based probe like ESP-Prog, includes target and adapter configuration.
     * - ``target/esp32s31.cfg``
       - ESP32-S31 target configuration file. Can be used together with one of the ``interface/`` configuration files.
-    * - ``interface/ftdi/esp_usb_jtag.cfg``
+    * - ``interface/esp_usb_jtag.cfg``
       - JTAG adapter configuration file for ESP32-S31 builtin USB JTAG.
     * - ``interface/ftdi/esp_ftdi.cfg``
       - JTAG adapter configuration file for ESP-Prog debug adapter board.
@@ -120,17 +128,17 @@
 
     * - ESP32-S31 Pin
       - JTAG Signal
-    * - MTDO / GPIO40
+    * - MTDO / GPIO54
       - TDO
-    * - MTDI / GPIO41
+    * - MTDI / GPIO56
       - TDI
-    * - MTCK / GPIO39
+    * - MTCK / GPIO55
       - TCK
-    * - MTMS / GPIO42
+    * - MTMS / GPIO57
       - TMS
 
-.. |jtag-sel-gpio| replace:: GPIO3
-.. |jtag-gpio-list| replace:: GPIO39-GPIO42
+.. |jtag-sel-gpio| replace:: GPIO37
+.. |jtag-gpio-list| replace:: GPIO54-GPIO57
 
 ---
 
@@ -154,7 +162,7 @@
 
 ::
 
-    xtensa-esp32s31-elf-gdb -ex "set remotelogfile gdb_log.txt" <all other options>
+    riscv32-esp-elf-gdb -ex "set remotelogfile gdb_log.txt" <all other options>
 
 ---
 
@@ -167,6 +175,6 @@
 
 .. devkit-hw-config
 
-* Out of the box, ESP32-S31 doesn't need any additional hardware configuration for JTAG debugging. However if you are experiencing issues, check that switches 2-5 of the "JTAG" DIP switch block are in "ON" position.
+* Out of the box, ESP32-S31 doesn't need any additional hardware configuration for JTAG debugging.
 
 ---

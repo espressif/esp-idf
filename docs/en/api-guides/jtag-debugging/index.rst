@@ -184,7 +184,7 @@ Open a terminal and set it up for using the ESP-IDF as described in the :ref:`se
    :start-after: run-openocd
    :end-before: ---
 
-{IDF_TARGET_FTDI_CONFIG:default="Not Updated!", esp32s3="board/esp32s3-ftdi.cfg", esp32c3="board/esp32c3-ftdi.cfg", esp32c6="board/esp32c6-ftdi.cfg", esp32h2="board/esp32h2-ftdi.cfg", esp32h21="board/esp32h21-ftdi.cfg", esp32h4="board/esp32h4-ftdi.cfg", esp32p4="board/esp32p4-ftdi.cfg", esp32c5="board/esp32c5-ftdi.cfg", esp32c61="board/esp32c61-ftdi.cfg"}
+{IDF_TARGET_FTDI_CONFIG:default="Not Updated!", esp32s3="board/esp32s3-ftdi.cfg", esp32c3="board/esp32c3-ftdi.cfg", esp32c6="board/esp32c6-ftdi.cfg", esp32h2="board/esp32h2-ftdi.cfg", esp32h21="board/esp32h21-ftdi.cfg", esp32h4="board/esp32h4-ftdi.cfg", esp32p4="board/esp32p4-ftdi.cfg", esp32c5="board/esp32c5-ftdi.cfg", esp32c61="board/esp32c61-ftdi.cfg", esp32s31="board/esp32s31-ftdi.cfg}
 
 .. note::
 
@@ -221,7 +221,7 @@ Another option is to write application image to flash using OpenOCD via JTAG wit
 
 OpenOCD flashing command ``program_esp`` has the following format:
 
-``program_esp <image_file> <offset> [verify] [reset] [exit] [compress] [encrypt] [no_clock_boost] [restore_clock] [no_skip_loaded]``
+``program_esp <image_file> <offset> [verify] [reset] [exit] [compress] [encrypt] [no_clock_boost] [restore_clock] [no_skip_loaded] [force]``
 
  - ``image_file`` - Path to program image file.
  - ``offset`` - Offset in flash bank to write image.
@@ -233,6 +233,7 @@ OpenOCD flashing command ``program_esp`` has the following format:
  - ``no_clock_boost`` - Optional. Disable setting target clock frequency to its maximum possible value before programming. Clock boost is enabled by default.
  - ``restore_clock`` - Optional. Restore clock frequency to its initial value after programming. Disabled by default.
  - ``no_skip_loaded`` - Optional. Do not check whether the binary is already loaded before flashing. Disabled by default.
+ - ``force`` - Optional. Disable checks for target compatibility with the chip type and revision range detected from the image file. Checks are enabled by default.
 
 Alternative Method: Using ``program_esp_bins``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -256,7 +257,7 @@ Command Format
 
 The OpenOCD flashing command ``program_esp_bins`` has the following format:
 
-``program_esp_bins <build_dir> <json_file> [verify] [reset] [exit] [compress] [no_clock_boost] [restore_clock] [no_skip_loaded]``
+``program_esp_bins <build_dir> <json_file> [verify] [reset] [exit] [compress] [no_clock_boost] [restore_clock] [no_skip_loaded] [force]``
 
  - ``build_dir`` - Path to the build directory containing the ``flasher_args.json`` file.
  - ``json_file`` - Name of the JSON file containing flash configuration (typically ``flasher_args.json``).
