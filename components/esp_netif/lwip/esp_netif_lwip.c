@@ -1464,7 +1464,7 @@ esp_err_t esp_netif_receive(esp_netif_t *esp_netif, void *buffer, size_t len, vo
 }
 
 #if CONFIG_LWIP_IPV4
-static esp_err_t esp_netif_start_ip_lost_timer(esp_netif_t *esp_netif);
+static esp_err_t esp_netif_start_ip_lost_timer(esp_netif_t *esp_netif, bool renew);
 
 //
 // DHCP:
@@ -1527,7 +1527,7 @@ static void esp_netif_internal_dhcpc_cb(struct netif *netif)
         }
     } else {
         if (!ip4_addr_cmp(&ip_info->ip, IP4_ADDR_ANY4)) {
-            esp_netif_start_ip_lost_timer(esp_netif);
+            esp_netif_start_ip_lost_timer(esp_netif, false);
             if (esp_netif->flags & ESP_NETIF_DHCP_CLIENT && esp_netif->dhcpc_status == ESP_NETIF_DHCP_STARTED) {
                 // Only for active DHCP client (in case of static IP, we keep the last configure value in ip_info)
                 // synchronize lwip netif with esp_netif setting ip_info to 0,
@@ -1577,7 +1577,7 @@ static void esp_netif_ip_lost_timer(void *arg)
     }
 }
 
-static esp_err_t esp_netif_start_ip_lost_timer(esp_netif_t *esp_netif)
+static esp_err_t esp_netif_start_ip_lost_timer(esp_netif_t *esp_netif, bool renew)
 {
     esp_netif_ip_info_t *ip_info_old = esp_netif->ip_info;
     struct netif *netif = esp_netif->lwip_netif;
@@ -1587,7 +1587,12 @@ static esp_err_t esp_netif_start_ip_lost_timer(esp_netif_t *esp_netif)
 #if CONFIG_ESP_NETIF_LOST_IP_TIMER_ENABLE
     if ( netif && (CONFIG_ESP_NETIF_IP_LOST_TIMER_INTERVAL > 0)) {
         if (esp_netif->timer_running) {
-            sys_untimeout(esp_netif_ip_lost_timer, (void *)esp_netif);
+            if (renew) {
+                sys_untimeout(esp_netif_ip_lost_timer, (void *)esp_netif);
+            } else{
+                ESP_LOGD(TAG, "if%p start ip lost tmr: already started", esp_netif);
+                return ESP_OK;
+            }
         }
         esp_netif->timer_running = true;
         sys_timeout(CONFIG_ESP_NETIF_IP_LOST_TIMER_INTERVAL * 1000, esp_netif_ip_lost_timer, (void *)esp_netif);
@@ -1619,7 +1624,7 @@ static esp_err_t esp_netif_dhcpc_stop_api(esp_netif_api_msg_t *msg)
         if (p_netif != NULL) {
             dhcp_stop(p_netif);
             esp_netif_reset_ip_info(esp_netif);
-            esp_netif_start_ip_lost_timer(esp_netif);
+            esp_netif_start_ip_lost_timer(esp_netif, false);
         } else {
             ESP_LOGD(TAG, "dhcp client if not ready");
             return ESP_ERR_ESP_NETIF_IF_NOT_READY;
@@ -1682,7 +1687,7 @@ static esp_err_t esp_netif_dhcpc_start_api(esp_netif_api_msg_t *msg)
             ip_addr_set_zero(&p_netif->ip_addr);
             ip_addr_set_zero(&p_netif->netmask);
             ip_addr_set_zero(&p_netif->gw);
-            esp_netif_start_ip_lost_timer(esp_netif);
+            esp_netif_start_ip_lost_timer(esp_netif, true);
         } else {
             ESP_LOGD(TAG, "dhcp client re init");
             esp_netif->dhcpc_status = ESP_NETIF_DHCP_INIT;
@@ -1933,7 +1938,7 @@ static esp_err_t esp_netif_down_api(esp_netif_api_msg_t *msg)
 
     if (esp_netif->flags & ESP_NETIF_DHCP_CLIENT) {
 #if CONFIG_LWIP_IPV4
-        esp_netif_start_ip_lost_timer(esp_netif);
+        esp_netif_start_ip_lost_timer(esp_netif, false);
 #endif
     }
 
