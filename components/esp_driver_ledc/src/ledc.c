@@ -18,6 +18,7 @@
 #include "hal/ledc_hal.h"
 #include "driver/ledc.h"
 #include "esp_private/esp_sleep_internal.h"
+#include "esp_sleep.h"
 #include "esp_private/periph_ctrl.h"
 #include "driver/gpio.h"
 #include "esp_private/gpio.h"
@@ -877,6 +878,9 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
     LEDC_ARG_CHECK(ledc_conf->sleep_mode < LEDC_SLEEP_MODE_INVALID, "sleep_mode");
 #if !SOC_LEDC_SUPPORT_SLEEP_RETENTION
     ESP_RETURN_ON_FALSE(ledc_conf->sleep_mode != LEDC_SLEEP_MODE_NO_ALIVE_ALLOW_PD, ESP_ERR_NOT_SUPPORTED, LEDC_TAG, "register back up is not supported");
+#if SOC_PM_SUPPORT_TOP_PD
+    esp_sleep_pd_config(ESP_PD_DOMAIN_TOP, ESP_PD_OPTION_ON); //IDF-15643
+#endif
 #endif
 
     esp_err_t ret = ESP_OK;

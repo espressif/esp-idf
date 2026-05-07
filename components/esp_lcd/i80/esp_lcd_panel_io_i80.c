@@ -11,6 +11,7 @@
 #include "hal/cache_ll.h"
 #include "hal/cache_hal.h"
 #include "esp_private/sleep_retention.h"
+#include "esp_sleep.h"
 
 // Use retention link only when the target supports sleep retention is enabled
 #define I80_USE_RETENTION_LINK  (SOC_LCDCAM_LCD_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
@@ -128,6 +129,9 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
                         TAG, "invalid bus width:%d", bus_config->bus_width);
 #if !SOC_LCDCAM_LCD_SUPPORT_SLEEP_RETENTION
     ESP_RETURN_ON_FALSE(bus_config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "register back up is not supported");
+#if SOC_PM_SUPPORT_TOP_PD
+    esp_sleep_pd_config(ESP_PD_DOMAIN_TOP, ESP_PD_OPTION_ON); //IDF-15652
+#endif
 #endif // SOC_LCDCAM_LCD_SUPPORT_SLEEP_RETENTION
 
     // allocate i80 bus memory

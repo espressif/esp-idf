@@ -28,6 +28,7 @@
 
 #include "gdma_priv.h"
 #include "esp_memory_utils.h"
+#include "esp_sleep.h"
 
 #define GDMA_INVALID_PERIPH_TRIG  (0x3F)
 #define SEARCH_REQUEST_RX_CHANNEL (1 << 0)
@@ -87,11 +88,15 @@ static esp_err_t do_allocate_gdma_channel(const gdma_channel_search_info_t *sear
                             TAG, "invalid interrupt priority:%d", config->intr_priority);
     }
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_GDMA_SUPPORT_SLEEP_RETENTION
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#if SOC_GDMA_SUPPORT_SLEEP_RETENTION
     // retention module is per GDMA pair, before we allocate the pair object, some common registers are already configured in "hal_init"
     // if a light sleep happens and powers off the gdma module, those registers will get lost
     // to work around it, we can acquire a power lock first, before any register configuration
     sleep_retention_power_lock_acquire();
+#else
+    esp_sleep_pd_config(ESP_PD_DOMAIN_TOP, ESP_PD_OPTION_ON); //IDF-15640
+#endif
 #endif
 
     // Determine search code based on which channels are requested
@@ -237,8 +242,12 @@ err:
         free(alloc_rx_channel);
     }
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_GDMA_SUPPORT_SLEEP_RETENTION
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#if SOC_GDMA_SUPPORT_SLEEP_RETENTION
     sleep_retention_power_lock_release();
+#else
+    esp_sleep_pd_config(ESP_PD_DOMAIN_TOP, ESP_PD_OPTION_AUTO); //IDF-15640
+#endif
 #endif
     return ret;
 }
@@ -874,9 +883,13 @@ static esp_err_t gdma_del_tx_channel(gdma_channel_t *dma_channel)
     free(tx_chan);
     ESP_LOGV(TAG, "del tx channel (%d,%d)", group_id, pair_id);
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_GDMA_SUPPORT_SLEEP_RETENTION
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#if SOC_GDMA_SUPPORT_SLEEP_RETENTION
     // release sleep retention lock
     gdma_release_sleep_retention(pair);
+#else
+    esp_sleep_pd_config(ESP_PD_DOMAIN_TOP, ESP_PD_OPTION_AUTO); //IDF-15640
+#endif
 #endif
     // release pair handle (will free pair if both channels are deleted)
     gdma_try_free_pair_handle(pair);
@@ -909,9 +922,13 @@ static esp_err_t gdma_del_rx_channel(gdma_channel_t *dma_channel)
     free(rx_chan);
     ESP_LOGV(TAG, "del rx channel (%d,%d)", group_id, pair_id);
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_GDMA_SUPPORT_SLEEP_RETENTION
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#if SOC_GDMA_SUPPORT_SLEEP_RETENTION
     // release sleep retention lock
     gdma_release_sleep_retention(pair);
+#else
+    esp_sleep_pd_config(ESP_PD_DOMAIN_TOP, ESP_PD_OPTION_AUTO); //IDF-15640
+#endif
 #endif
     // release pair handle (will free pair if both channels are deleted)
     gdma_try_free_pair_handle(pair);

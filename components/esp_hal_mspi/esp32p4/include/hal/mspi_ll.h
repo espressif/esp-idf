@@ -802,7 +802,7 @@ static inline void mspi_ll_unhold_all_flash_pins(void)
  * Sets all PSRAM pins (pin_group0, dqs0, pin_group1, dqs1) to hold status
  */
 __attribute__((always_inline))
-static inline void mspi_ll_hold_all_psram_pins(void)
+static inline void mspi_ll_psram_hold_all_pins(void)
 {
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300 // Only rev3+ chips support mspi pad holding.
     LP_SYS.ded_pad_rtc_hold_ctrl.ded_pad_rtc_hold_ctrl |= 0x3FFFFC0;
@@ -814,7 +814,7 @@ static inline void mspi_ll_hold_all_psram_pins(void)
  * Releases hold status for all PSRAM pins (pin_group0, dqs0, pin_group1, dqs1)
  */
 __attribute__((always_inline))
-static inline void mspi_ll_unhold_all_psram_pins(void)
+static inline void mspi_ll_psram_unhold_all_pins(void)
 {
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300 // Only rev3+ chips support mspi pad holding.
     LP_SYS.ded_pad_rtc_hold_ctrl.ded_pad_rtc_hold_ctrl &= ~0x3FFFFC0;

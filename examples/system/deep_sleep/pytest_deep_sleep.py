@@ -12,7 +12,6 @@ from pytest_embedded_idf.utils import idf_parametrize
 @idf_parametrize(
     'config,target', [('esp32_singlecore', 'esp32'), ('basic', 'supported_targets')], indirect=['config', 'target']
 )
-@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='s31 bringup on this module is not done')
 def test_deep_sleep(dut: Dut) -> None:
     dut.expect_exact('Enabling timer wakeup, 20s', timeout=10)
     dut.expect_exact('Not a deep sleep reset')

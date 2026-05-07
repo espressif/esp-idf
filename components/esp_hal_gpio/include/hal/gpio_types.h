@@ -157,17 +157,17 @@ typedef enum {
  * @brief Structure that contains the configuration of an IO
  */
 typedef struct {
-    uint32_t fun_sel;               /*!< Value of IOMUX function selection */
-    uint32_t sig_out;               /*!< Index of the outputting peripheral signal */
-    gpio_drive_cap_t drv;           /*!< Value of drive strength */
-    bool pu;                        /*!< Status of pull-up enabled or not */
-    bool pd;                        /*!< Status of pull-down enabled or not */
-    bool ie;                        /*!< Status of input enabled or not */
-    bool oe;                        /*!< Status of output enabled or not */
-    bool oe_ctrl_by_periph;         /*!< True if use output enable signal from peripheral, otherwise False */
-    bool oe_inv;                    /*!< Whether the output enable signal is inversed or not */
-    bool od;                        /*!< Status of open-drain enabled or not */
-    bool slp_sel;                   /*!< Status of pin sleep mode enabled or not */
+    gpio_drive_cap_t drv;             /*!< Value of drive strength */
+    uint32_t fun_sel             : 8; /*!< Value of IOMUX function selection */
+    uint32_t sig_out             : 16;/*!< Index of the outputting peripheral signal */
+    uint32_t pu                  : 1; /*!< Status of pull-up enabled or not */
+    uint32_t pd                  : 1; /*!< Status of pull-down enabled or not */
+    uint32_t ie                  : 1; /*!< Status of input enabled or not */
+    uint32_t oe                  : 1; /*!< Status of output enabled or not */
+    uint32_t oe_ctrl_by_periph   : 1; /*!< True if use output enable signal from peripheral, otherwise False */
+    uint32_t oe_inv              : 1; /*!< Whether the output enable signal is inversed or not */
+    uint32_t od                  : 1; /*!< Status of open-drain enabled or not */
+    uint32_t slp_sel             : 1; /*!< Status of pin sleep mode enabled or not */
 } gpio_io_config_t;
 
 #ifdef __cplusplus

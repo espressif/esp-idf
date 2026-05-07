@@ -10,11 +10,11 @@
 extern "C" {
 #endif
 
-#define PMU_SDIO_WAKEUP_EN              BIT(0)
-#define PMU_LP_CORE_WAKEUP_EN           BIT(1)
+#define PMU_LP_CORE_WAKEUP_HP_EN        BIT(0)
+#define PMU_HP_CORE_WAKEUP_LP_EN        BIT(1)
 #define PMU_GPIO_WAKEUP_EN              BIT(2)
 #define PMU_USB_WAKEUP_EN               BIT(3)
-#define PMU_UART4_WAKEUP_EN             BIT(4)
+#define PMU_INTERRUPT_WAKEUP            BIT(4)
 #define PMU_UART3_WAKEUP_EN             BIT(5)
 #define PMU_UART2_WAKEUP_EN             BIT(6)
 #define PMU_UART1_WAKEUP_EN             BIT(7)
@@ -25,14 +25,13 @@ extern "C" {
 #define PMU_EXT1_WAKEUP_EN              BIT(12)
 #define PMU_RTC_TIMER_WAKEUP_EN         BIT(13)
 #define PMU_BOD_WAKEUP_EN               BIT(14)
-#define PMU_VBAT_UNDERVOLT_WAKEUP_EN    BIT(15)
 #define PMU_LP_CORE_TRAP_WAKEUP_EN      BIT(16)
 #define PMU_ETM_WAKEUP_EN               BIT(17)
 #define PMU_LP_TIMER1_WAKEUP_EN         BIT(18)
-#define PMU_LP_I2S_WAKEUP_EN            BIT(19)
 #define PMU_WIFI_SOC_WAKEUP_EN          BIT(22)
 #define PMU_WIFI_BEACON_WAKEUP_EN       BIT(23)
-#define PMU_BLE_SOC_WAKEUP_EN           BIT(24)
+#define PMU_MODEM_WAKEUP_PROTECT        BIT(24)
+#define PMU_BLE_SOC_WAKEUP_EN           BIT(25)
 
 
 // BIT order in PLL control registers in PMU

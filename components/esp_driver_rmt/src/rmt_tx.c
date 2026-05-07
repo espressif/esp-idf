@@ -11,6 +11,7 @@
 #include "driver/gpio.h"
 #include "driver/rmt_tx.h"
 #include "rmt_private.h"
+#include "esp_sleep.h"
 
 struct rmt_sync_manager_t {
     rmt_group_t *group;    // which group the synchro belongs to
@@ -273,6 +274,9 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
 
 #if !SOC_RMT_SUPPORT_SLEEP_RETENTION
     ESP_RETURN_ON_FALSE(config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
+#if SOC_PM_SUPPORT_TOP_PD
+    esp_sleep_pd_config(ESP_PD_DOMAIN_TOP, ESP_PD_OPTION_ON); //IDF-15646
+#endif
 #endif // SOC_RMT_SUPPORT_SLEEP_RETENTION
 
     // allocate channel memory from internal memory because it contains atomic variable

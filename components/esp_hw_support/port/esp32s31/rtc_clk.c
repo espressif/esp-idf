@@ -15,6 +15,7 @@
 #include "esp_private/rtc_clk.h"
 #include "esp_hw_log.h"
 #include "esp_rom_sys.h"
+#include "esp_sleep.h"
 #include "hal/clk_tree_ll.h"
 #include "esp_private/sleep_event.h"
 #include "esp_private/regi2c_ctrl.h"
@@ -87,19 +88,13 @@ void rtc_clk_slow_src_set(soc_rtc_slow_clk_src_t clk_src)
 {
     clk_ll_rtc_slow_set_src(clk_src);
     esp_rom_delay_us(SOC_DELAY_RTC_SLOW_CLK_SWITCH);
-    // TODO: IDF-14645
-// #ifndef BOOTLOADER_BUILD
-//     if (clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
-//         esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL32K, ESP_PD_OPTION_ON);
-//     } else {
-//         esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL32K, ESP_PD_OPTION_AUTO);
-//     }
-//     if (clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K) {
-//         esp_sleep_pd_config(ESP_PD_DOMAIN_RC32K, ESP_PD_OPTION_ON);
-//     } else {
-//         esp_sleep_pd_config(ESP_PD_DOMAIN_RC32K, ESP_PD_OPTION_AUTO);
-//     }
-// #endif
+#ifndef BOOTLOADER_BUILD
+    if (clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
+        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL32K, ESP_PD_OPTION_ON);
+    } else {
+        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL32K, ESP_PD_OPTION_AUTO);
+    }
+#endif
 }
 
 soc_rtc_slow_clk_src_t rtc_clk_slow_src_get(void)

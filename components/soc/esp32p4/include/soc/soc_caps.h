@@ -432,6 +432,7 @@
 // USB OTG Caps
 #define SOC_USB_OTG_PERIPH_NUM          (2U)
 #define SOC_USB_FSLS_PHY_NUM            (1U)
+#define SOC_USB_OTG_NEED_SOFTWARE_SUSPEND_BEFORE_SLEEP (1)
 
 // USB PHY Caps
 #define SOC_USB_UTMI_PHY_NUM            (1U)
@@ -533,6 +534,7 @@
 #define SOC_MSPI_HAS_INDEPENT_IOMUX               1
 #define SOC_MEMSPI_IS_INDEPENDENT                 1
 #define SOC_MEMSPI_SUPPORT_CONTROL_DUMMY_OUT      1
+#define SOC_PSRAM_MEMSPI_IS_INDEPENDENT           1
 
 #define SOC_SPI_MEM_FLASH_SUPPORT_HPM                         (1) /*!< Support High Performance Mode */
 

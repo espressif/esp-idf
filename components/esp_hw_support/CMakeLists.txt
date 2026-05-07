@@ -66,6 +66,7 @@ if(NOT non_os_build)
     endif()
     if(CONFIG_SOC_LIGHT_SLEEP_SUPPORTED)
         list(APPEND srcs "sleep_modem.c"
+                         "sleep_cache.c"
                          "sleep_modes.c"
                          "sleep_uart.c"
                          "sleep_console.c"

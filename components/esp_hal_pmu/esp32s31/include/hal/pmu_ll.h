@@ -514,6 +514,25 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_memory_power_up(pmu_dev_t *hw, uint32_t fpu
     hw->power.mem_cntl.force_hp_mem_pu = fpu;
 }
 
+FORCE_INLINE_ATTR void pmu_ll_hp_set_memory_power_on_mask(pmu_dev_t *hw, uint32_t mem_mask)
+{
+    hw->power.mem_mask.mem0_mask = (mem_mask & BIT(0)) ? 0x1F : 0;
+    hw->power.mem_mask.mem1_mask = (mem_mask & BIT(1)) ? 0x1F : 0;
+    hw->power.mem_mask.mem2_mask = (mem_mask & BIT(2)) ? 0x1F : 0;
+    if (mem_mask & BIT(3)) {
+        hw->power.mem_cntl.force_hp_mem_pu |= (mem_mask & BIT(3));
+    } else {
+        hw->power.mem_cntl.force_hp_mem_pu &= ~(mem_mask & BIT(3));
+    }
+}
+
+FORCE_INLINE_ATTR void pmu_ll_hp_set_memory_power_off_mask(pmu_dev_t *hw, uint32_t mem0_pd_mask, uint32_t mem1_pd_mask, uint32_t mem2_pd_mask)
+{
+    hw->power.mem_mask.mem0_pd_mask = mem0_pd_mask;
+    hw->power.mem_mask.mem1_pd_mask = mem1_pd_mask;
+    hw->power.mem_mask.mem2_pd_mask = mem2_pd_mask;
+}
+
 FORCE_INLINE_ATTR void pmu_ll_hp_set_sleep_enable(pmu_dev_t *hw)
 {
     hw->wakeup.cntl0.sleep_req = 1;
@@ -755,12 +774,17 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_get_sysclk_sleep_select_state(pmu_dev_t *hw)
     return hw->clk_state0.sysclk_slp_sel;
 }
 
+FORCE_INLINE_ATTR void pmu_ll_set_rf_power_control(pmu_dev_t *hw, uint16_t val)
+{
+    hw->hp_ext.rf_pwc.xpd_rf_circuit = val;
+}
+
 /**
  * @brief Get ext1 wakeup source status
  * @return  The lower 8 bits of the returned value are the bitmap of
  *          the wakeup source status, bit 0~7 corresponds to LP_IO 0~7
  */
-static inline  uint32_t pmu_ll_ext1_get_wakeup_status(void)
+FORCE_INLINE_ATTR uint32_t pmu_ll_ext1_get_wakeup_status(void)
 {
     return REG_GET_FIELD(PMU_EXT_WAKEUP_ST_REG, PMU_EXT_WAKEUP_STATUS);
 }
@@ -768,9 +792,10 @@ static inline  uint32_t pmu_ll_ext1_get_wakeup_status(void)
 /**
  * @brief Clear the ext1 wakeup source status
  */
-static inline void pmu_ll_ext1_clear_wakeup_status(void)
+FORCE_INLINE_ATTR void pmu_ll_ext1_clear_wakeup_status(void)
 {
     REG_SET_BIT(PMU_EXT_WAKEUP_CNTL_REG, PMU_EXT_WAKEUP_STATUS_CLR);
+    REG_CLR_BIT(PMU_EXT_WAKEUP_CNTL_REG, PMU_EXT_WAKEUP_STATUS_CLR);
 }
 
 /**
@@ -779,7 +804,7 @@ static inline void pmu_ll_ext1_clear_wakeup_status(void)
  * @param level_mask 0: Wake the chip when all selected GPIOs go low
  *                   1: Wake the chip when any of the selected GPIOs go high
  */
-static inline  void pmu_ll_ext1_set_wakeup_pins(uint32_t io_mask, int level_mask)
+FORCE_INLINE_ATTR void pmu_ll_ext1_set_wakeup_pins(uint32_t io_mask, int level_mask)
 {
     REG_SET_FIELD(PMU_EXT_WAKEUP_SEL_REG, PMU_EXT_WAKEUP_SEL, io_mask);
     REG_SET_FIELD(PMU_EXT_WAKEUP_LV_REG, PMU_EXT_WAKEUP_LV, level_mask);
@@ -788,7 +813,7 @@ static inline  void pmu_ll_ext1_set_wakeup_pins(uint32_t io_mask, int level_mask
 /**
  * @brief Clear all ext1 wakup-source setting
  */
-static inline  void pmu_ll_ext1_clear_wakeup_pins(void)
+FORCE_INLINE_ATTR void pmu_ll_ext1_clear_wakeup_pins(void)
 {
     REG_SET_FIELD(PMU_EXT_WAKEUP_SEL_REG, PMU_EXT_WAKEUP_SEL, 0);
 }
@@ -798,7 +823,7 @@ static inline  void pmu_ll_ext1_clear_wakeup_pins(void)
  * @return  The lower 8 bits of the returned value are the bitmap of
  *          the wakeup source status, bit 0~7 corresponds to LP_IO 0~7
  */
-static inline  uint32_t pmu_ll_ext1_get_wakeup_pins(void)
+FORCE_INLINE_ATTR uint32_t pmu_ll_ext1_get_wakeup_pins(void)
 {
     return REG_GET_FIELD(PMU_EXT_WAKEUP_SEL_REG, PMU_EXT_WAKEUP_SEL);
 }

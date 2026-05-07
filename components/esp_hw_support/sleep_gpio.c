@@ -5,6 +5,7 @@
  */
 
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 #include <sys/lock.h>
 #include <sys/param.h>
@@ -27,6 +28,7 @@
 
 #include "hal/rtc_hal.h"
 
+#include "esp_private/esp_gpio_reserve.h"
 #include "esp_private/gpio.h"
 #include "esp_private/sleep_gpio.h"
 #include "esp_private/spi_flash_os.h"
@@ -173,17 +175,99 @@ void esp_sleep_enable_gpio_switch(bool enable)
 }
 #endif
 
-#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
-IRAM_ATTR void esp_sleep_isolate_digital_gpio(void)
+#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP || SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD
+IRAM_ATTR static void sleep_gpio_isolate_one_pin(gpio_num_t gpio_num)
 {
-    gpio_hal_context_t gpio_hal = {
-        .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
-    };
+#if SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD
+    gpio_io_config_t isolate_config = { .pu = 0, .pd = 0, .ie = 0, .oe = 0, .fun_sel = PIN_FUNC_GPIO };
+    gpio_ll_set_pad_config_for_sleep_isolate(gpio_num, &isolate_config);
+#else
+    gpio_hal_context_t gpio_hal = { .dev = GPIO_HAL_GET_HW(GPIO_PORT_0) };
+    gpio_hal_input_disable(&gpio_hal, gpio_num);
+    gpio_hal_output_disable(&gpio_hal, gpio_num);
+    gpio_hal_pullup_dis(&gpio_hal, gpio_num);
+    gpio_hal_pulldown_dis(&gpio_hal, gpio_num);
+    gpio_hal_func_sel(&gpio_hal, gpio_num, PIN_FUNC_GPIO);
+#endif
+}
 
+#if SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD
+typedef struct {
+    uint64_t backuped;
+    uint64_t pu;
+    uint64_t pd;
+    uint64_t ie;
+    uint64_t oe;
+    uint8_t fun_sel[GPIO_NUM_MAX];
+} gpio_isolate_backup_t;
+
+static DRAM_ATTR gpio_isolate_backup_t s_gpio_isolate_backup;
+
+IRAM_ATTR static void sleep_gpio_backup_one_pin(gpio_num_t gpio_num)
+{
+    gpio_hal_context_t gpio_hal = { .dev = GPIO_HAL_GET_HW(GPIO_PORT_0) };
+    gpio_io_config_t io_config;
+    gpio_ll_backup_pad_config_for_sleep_isolate(gpio_num, &io_config);
+    if (io_config.pu) {
+        s_gpio_isolate_backup.pu |= (1ULL << gpio_num);
+    }
+    if (io_config.pd) {
+        s_gpio_isolate_backup.pd |= (1ULL << gpio_num);
+    }
+    if (io_config.ie) {
+        s_gpio_isolate_backup.ie |= (1ULL << gpio_num);
+    }
+    if (gpio_ll_output_is_enabled(gpio_hal.dev, gpio_num)) {
+        s_gpio_isolate_backup.oe |= (1ULL << gpio_num);
+    }
+    s_gpio_isolate_backup.fun_sel[gpio_num] = (uint8_t)io_config.fun_sel;
+    s_gpio_isolate_backup.backuped |= (1ULL << gpio_num);
+}
+
+IRAM_ATTR void esp_sleep_isolate_mspi_gpio(void)
+{
+    DRAM_ATTR static const esp_mspi_io_t s_mspi_pins[] = {
+        ESP_MSPI_IO_CLK, ESP_MSPI_IO_Q, ESP_MSPI_IO_D, ESP_MSPI_IO_HD, ESP_MSPI_IO_WP
+    };
+    for (size_t i = 0; i < sizeof(s_mspi_pins) / sizeof(s_mspi_pins[0]); i++) {
+        gpio_num_t gpio_num = (gpio_num_t)esp_mspi_get_io(s_mspi_pins[i]);
+        sleep_gpio_backup_one_pin(gpio_num);
+#if CONFIG_ESP_SLEEP_MSPI_NEED_ALL_IO_PU && !SOC_MSPI_HAS_INDEPENT_IOMUX
+        gpio_hal_context_t gpio_hal = { .dev = GPIO_HAL_GET_HW(GPIO_PORT_0) };
+        gpio_hal_pullup_en(&gpio_hal, gpio_num);
+#else
+        sleep_gpio_isolate_one_pin(gpio_num);
+#endif
+    }
+}
+
+IRAM_ATTR void esp_sleep_restore_isolated_digital_gpio(void)
+{
+    uint64_t backuped = s_gpio_isolate_backup.backuped;
+    while (backuped) {
+        gpio_num_t gpio_num = (gpio_num_t)__builtin_ctzll(backuped);
+        gpio_io_config_t io_config = {
+            .pu = (s_gpio_isolate_backup.pu >> gpio_num) & 0x1,
+            .pd = (s_gpio_isolate_backup.pd >> gpio_num) & 0x1,
+            .ie = (s_gpio_isolate_backup.ie >> gpio_num) & 0x1,
+            .oe = (s_gpio_isolate_backup.oe >> gpio_num) & 0x1,
+            .fun_sel = (uint32_t)s_gpio_isolate_backup.fun_sel[gpio_num],
+        };
+        gpio_ll_set_pad_config_for_sleep_isolate(gpio_num, &io_config);
+        backuped &= backuped - 1;
+    }
+}
+#endif // SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD
+
+IRAM_ATTR void esp_sleep_isolate_digital_gpio(bool do_backup)
+{
+    gpio_hal_context_t gpio_hal = { .dev = GPIO_HAL_GET_HW(GPIO_PORT_0) };
+#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
     /* no need to do isolate if digital IOs are not being held in deep sleep */
     if (!gpio_hal_deep_sleep_hold_is_en(&gpio_hal)) {
         return;
     }
+#endif
 
     /**
      * there is a situation where we cannot isolate digital IO before deep sleep:
@@ -193,42 +277,61 @@ IRAM_ATTR void esp_sleep_isolate_digital_gpio(void)
      * the bottom current of deep sleep will be higher than light sleep, and there is no
      * reason to use deep sleep at this time.
      */
-    assert(esp_ptr_internal(&gpio_hal) && "If hold digital IO, the stack of the task calling esp_deep_sleep_start must be in internal ram!");
+    assert(esp_ptr_internal(esp_cpu_get_sp()) && "If hold digital IO, the stack of the task calling esp_deep_sleep_start must be in internal ram!");
 
-    /* isolate digital IO that is not held(keep the configuration of digital IOs held by users) */
-    for (gpio_num_t gpio_num = GPIO_NUM_0; gpio_num < GPIO_NUM_MAX; gpio_num++) {
-        if (GPIO_IS_VALID_DIGITAL_IO_PAD(gpio_num) && !gpio_hal_is_digital_io_hold(&gpio_hal, gpio_num)) {
-
-            bool is_mspi_io_pad = false;
-            esp_mspi_io_t mspi_ios[] = { ESP_MSPI_IO_CS0, ESP_MSPI_IO_CLK, ESP_MSPI_IO_Q, ESP_MSPI_IO_D, ESP_MSPI_IO_HD, ESP_MSPI_IO_WP };
-            for (int i = 0; i < sizeof(mspi_ios) / sizeof(mspi_ios[0]); i++) {
-                if (esp_mspi_get_io(mspi_ios[i]) == gpio_num) {
-                    is_mspi_io_pad = true;
-                    break;
-                }
-            }
-            // Ignore MSPI and default Console UART io pads, When the CPU executes
-            // the following instructions to configure the MSPI IO PAD, access on
-            // the MSPI signal lines (as CPU instruction execution and MSPI access
-            // operations are asynchronous) may cause the SoC to hang.
-            if (is_mspi_io_pad || gpio_num == U0RXD_GPIO_NUM || gpio_num == U0TXD_GPIO_NUM) {
-                continue;
-            }
-
-            /* disable I/O */
-            gpio_hal_input_disable(&gpio_hal, gpio_num);
-            gpio_hal_output_disable(&gpio_hal, gpio_num);
-
-            /* disable pull up/down */
-            gpio_hal_pullup_dis(&gpio_hal, gpio_num);
-            gpio_hal_pulldown_dis(&gpio_hal, gpio_num);
-
-            /* make pad work as gpio(otherwise, deep sleep bottom current will rise) */
-            gpio_hal_func_sel(&gpio_hal, gpio_num, PIN_FUNC_GPIO);
-        }
+    DRAM_ATTR static volatile uint64_t s_pad_mask = SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK;
+    uint64_t pad_mask = s_pad_mask;
+#if SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD
+    if (do_backup) {
+        s_gpio_isolate_backup.backuped = 0;
+        s_gpio_isolate_backup.pu = 0;
+        s_gpio_isolate_backup.pd = 0;
+        s_gpio_isolate_backup.ie = 0;
+        s_gpio_isolate_backup.oe = 0;
     }
+
+    uint64_t hold_mask = gpio_ll_get_digital_gpio_hold_mask(gpio_hal.dev);
+    gpio_io_config_t isolate_config = { .pu = 0, .pd = 0, .ie = 0, .oe = 0, .fun_sel = PIN_FUNC_GPIO };
+
+    while (pad_mask) {
+        gpio_num_t gpio_num = (gpio_num_t)__builtin_ctzll(pad_mask);
+        if (!(hold_mask & (1ULL << gpio_num)) &&
+            !esp_gpio_is_reserved(BIT64(gpio_num))) {
+            if (do_backup) {
+                gpio_io_config_t io_config;
+                gpio_ll_backup_pad_config_for_sleep_isolate(gpio_num, &io_config);
+                if (io_config.pu) {
+                    s_gpio_isolate_backup.pu |= (1ULL << gpio_num);
+                }
+                if (io_config.pd) {
+                    s_gpio_isolate_backup.pd |= (1ULL << gpio_num);
+                }
+                if (io_config.ie) {
+                    s_gpio_isolate_backup.ie |= (1ULL << gpio_num);
+                }
+                if (gpio_ll_output_is_enabled(gpio_hal.dev, gpio_num)) {
+                    s_gpio_isolate_backup.oe |= (1ULL << gpio_num);
+                }
+                s_gpio_isolate_backup.fun_sel[gpio_num] = (uint8_t)io_config.fun_sel;
+                s_gpio_isolate_backup.backuped |= (1ULL << gpio_num);
+            }
+            gpio_ll_set_pad_config_for_sleep_isolate(gpio_num, &isolate_config);
+        }
+        pad_mask &= pad_mask - 1;
+    }
+#else
+    (void)do_backup;
+    while (pad_mask) {
+        gpio_num_t gpio_num = (gpio_num_t)__builtin_ctzll(pad_mask);
+        if (!gpio_hal_is_digital_io_hold(&gpio_hal, gpio_num) &&
+            !esp_gpio_is_reserved(BIT64(gpio_num))) {
+            sleep_gpio_isolate_one_pin(gpio_num);
+        }
+        pad_mask &= pad_mask - 1;
+    }
+#endif
 }
-#endif //!SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+#endif //!SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP || SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD
 
 #if SOC_DEEP_SLEEP_SUPPORTED
 static void esp_deep_sleep_wakeup_io_reset(void)
@@ -250,10 +353,8 @@ static void esp_deep_sleep_wakeup_io_reset(void)
 #endif
 
 #if SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
+    gpio_hal_context_t gpio_hal = { .dev = GPIO_HAL_GET_HW(GPIO_PORT_0) };
     uint64_t dslp_io_mask = SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_MASK;
-    gpio_hal_context_t gpio_hal = {
-        .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
-    };
     while (dslp_io_mask) {
         int gpio_num = __builtin_ctzll(dslp_io_mask);
         bool wakeup_io_enabled = gpio_hal_wakeup_is_enabled_on_hp_periph_powerdown_sleep(&gpio_hal, gpio_num);

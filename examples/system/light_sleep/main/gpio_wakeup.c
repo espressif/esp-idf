@@ -21,6 +21,8 @@
 #define BOOT_BUTTON_NUM         35
 #elif CONFIG_IDF_TARGET_ESP32H21
 #define BOOT_BUTTON_NUM         14
+#elif CONFIG_IDF_TARGET_ESP32S31
+#define BOOT_BUTTON_NUM         61
 #else
 #define BOOT_BUTTON_NUM         0
 #endif

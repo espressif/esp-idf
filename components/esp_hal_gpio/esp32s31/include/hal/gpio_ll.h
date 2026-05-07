@@ -57,6 +57,7 @@ extern "C" {
  * @param gpio_num GPIO number
  * @param[out] io_config Pointer to the structure that saves the specific IO configuration
  */
+__attribute__((always_inline))
 static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num, gpio_io_config_t *io_config)
 {
     uint32_t bit_shift = (gpio_num < 32) ? gpio_num : (gpio_num - 32);
@@ -72,6 +73,79 @@ static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num, gpio
     io_config->fun_sel = IO_MUX.gpio[gpio_num].mcu_sel;
     io_config->sig_out = hw->func_out_sel_cfg[gpio_num].out_sel;
     io_config->slp_sel = IO_MUX.gpio[gpio_num].slp_sel;
+}
+
+/**
+ * @brief Get a 64-bit mask of all digital GPIOs that are currently held.
+ * Reads the two hold control registers once, avoiding per-pin register access.
+ *
+ * @param hw Peripheral GPIO hardware instance address (unused, hold regs are in LP_SYS).
+ * @return Bitmask where bit N is set if GPIO N is held. Only digital IO bits are meaningful.
+ */
+__attribute__((always_inline))
+static inline uint64_t gpio_ll_get_digital_gpio_hold_mask(gpio_dev_t *hw)
+{
+    (void)hw;
+    uint32_t hold0 = LP_SYS.hp_gpio_o_hold_ctrl0.hp_gpio_0_hold_ctrl0;
+    uint32_t hold1 = LP_SYS.hp_gpio_o_hold_ctrl1.hp_gpio_0_hold_ctrl1;
+    return ((uint64_t)hold0 << SOC_RTCIO_PIN_COUNT) |
+           ((uint64_t)hold1 << (32 + SOC_RTCIO_PIN_COUNT));
+}
+
+/**
+ * @brief Backup IOMUX pad configuration for sleep isolate.
+ * Only fills pu, pd, ie, fun_sel in io_config from a single IOMUX register read.
+ *
+ * @param gpio_num GPIO number
+ * @param[out] io_config Pointer to the IO configuration structure
+ */
+__attribute__((always_inline))
+static inline void gpio_ll_backup_pad_config_for_sleep_isolate(uint32_t gpio_num, gpio_io_config_t *io_config)
+{
+    uint32_t iomux_reg_val = IO_MUX.gpio[gpio_num].val;
+    io_config->pu = (iomux_reg_val & FUN_PU_M) >> FUN_PU_S;
+    io_config->pd = (iomux_reg_val & FUN_PD_M) >> FUN_PD_S;
+    io_config->ie = (iomux_reg_val & FUN_IE_M) >> FUN_IE_S;
+    io_config->fun_sel = (iomux_reg_val & MCU_SEL_M) >> MCU_SEL_S;
+}
+
+/**
+ * @brief Set pad configuration for sleep isolate with minimal register writes.
+ * Reads pu, pd, ie, oe, fun_sel from io_config and writes them to hardware registers
+ * in a single IOMUX read-modify-write plus one GPIO enable write.
+ *
+ * @param gpio_num GPIO number
+ * @param io_config Pointer to the IO configuration structure
+ */
+__attribute__((always_inline))
+static inline void gpio_ll_set_pad_config_for_sleep_isolate(uint32_t gpio_num, gpio_io_config_t *io_config)
+{
+    uint32_t iomux_reg_val = IO_MUX.gpio[gpio_num].val;
+    iomux_reg_val &= ~(FUN_PU_M | FUN_PD_M | FUN_IE_M | MCU_SEL_M);
+    if (io_config->pu) {
+        iomux_reg_val |= FUN_PU_M;
+    }
+    if (io_config->pd) {
+        iomux_reg_val |= FUN_PD_M;
+    }
+    if (io_config->ie) {
+        iomux_reg_val |= FUN_IE_M;
+    }
+    iomux_reg_val |= (io_config->fun_sel << MCU_SEL_S) & MCU_SEL_M;
+    IO_MUX.gpio[gpio_num].val = iomux_reg_val;
+    if (io_config->oe) {
+        if (gpio_num < 32) {
+            GPIO.enable_w1ts.enable_w1ts = (0x1 << gpio_num);
+        } else {
+            GPIO.enable1_w1ts.enable1_w1ts = (0x1 << (gpio_num - 32));
+        }
+    } else {
+        if (gpio_num < 32) {
+            GPIO.enable_w1tc.enable_w1tc = (0x1 << gpio_num);
+        } else {
+            GPIO.enable1_w1tc.enable1_w1tc = (0x1 << (gpio_num - 32));
+        }
+    }
 }
 
 /**
@@ -351,6 +425,23 @@ static inline void gpio_ll_output_enable(gpio_dev_t *hw, uint32_t gpio_num)
         hw->enable_w1ts.enable_w1ts = (0x1 << gpio_num);
     } else {
         hw->enable1_w1ts.enable1_w1ts = (0x1 << (gpio_num - 32));
+    }
+}
+
+/**
+  * @brief Check if GPIO output is enabled.
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param gpio_num GPIO number
+  * @return true if output is enabled, false otherwise
+  */
+__attribute__((always_inline))
+static inline bool gpio_ll_output_is_enabled(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    if (gpio_num < 32) {
+        return (hw->enable.val >> gpio_num) & 0x1;
+    } else {
+        return (hw->enable1.val >> (gpio_num - 32)) & 0x1;
     }
 }
 

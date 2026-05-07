@@ -94,13 +94,14 @@
 #define SOC_WDT_SUPPORTED               1
 #define SOC_RTC_WDT_SUPPORTED           1
 #define SOC_SPI_FLASH_SUPPORTED         1         // TODO: [ESP32S31] IDF-14777
+#define SOC_SPI_FLASH_HAS_DEDICATED_LDO 1
 #define SOC_TOUCH_SENSOR_SUPPORTED      1
 // #define SOC_RNG_SUPPORTED               1      // TODO: [ESP32S31] IDF-14632
 #define SOC_PPA_SUPPORTED               1
-// #define SOC_LIGHT_SLEEP_SUPPORTED       1      // TODO: [ESP32S31] IDF-14645
-// #define SOC_DEEP_SLEEP_SUPPORTED        1      // TODO: [ESP32S31] IDF-14643
+#define SOC_LIGHT_SLEEP_SUPPORTED       1
+#define SOC_DEEP_SLEEP_SUPPORTED        1
 #define SOC_MODEM_CLOCK_SUPPORTED       1
-// #define SOC_PM_SUPPORTED                1      // TODO: [ESP32S31] IDF-14648
+#define SOC_PM_SUPPORTED                1
 #define SOC_BITSCRAMBLER_SUPPORTED      1
 #define SOC_SIMD_INSTRUCTION_SUPPORTED  1
 #define SOC_CORDIC_SUPPORTED            1
@@ -122,7 +123,8 @@
 #define SOC_BT_SUPPORTED                 1
 #define SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT 1
 /*-------------------------- XTAL CAPS ---------------------------------------*/
-#define SOC_XTAL_SUPPORT_40M            1
+#define SOC_XTAL_SUPPORT_40M                        1
+#define SOC_XTAL_CLOCK_PATH_DEPENDS_ON_TOP_DOMAIN   1
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
 /*!< SAR ADC Module*/
@@ -184,9 +186,7 @@
 // GPIO peripheral has the ETM extension
 #define SOC_GPIO_SUPPORT_ETM          1
 
-// GPIO0~7 on ESP32S31 can support chip deep sleep wakeup
-// #define SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP  (1) // TODO: [ESP32S31] IDF-14643
-#define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP           SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
+#define SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD        (1)
 #define SOC_LP_IO_HAS_INDEPENDENT_WAKEUP_SOURCE     (1)
 
 // LP IO peripherals have independent clock gating to manage
@@ -197,9 +197,6 @@
 
 #define SOC_GPIO_IN_RANGE_MAX           61
 #define SOC_GPIO_OUT_RANGE_MAX          61
-
-#define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | 0xFF)
-#define SOC_GPIO_DEEP_SLEEP_WAKE_SUPPORTED_PIN_CNT      (8)
 
 // digital I/O pad powered by VDD3V3_CPU or VDD_SPI(GPIO_NUM_8~GPIO_NUM_61, excluding GPIO29/41 which are not bonded)
 #define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK (SOC_GPIO_VALID_GPIO_MASK & ~((1ULL << SOC_RTCIO_PIN_COUNT) - 1))
@@ -298,8 +295,9 @@
 #define SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP          (1)
 #define SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR        (1)
 
-#define SOC_MSPI_HAS_INDEPENT_IOMUX               1
+#define SOC_PSRAM_HAS_DEDICATED_LDO               1
 #define SOC_MEMSPI_IS_INDEPENDENT                 1
+#define SOC_PSRAM_MEMSPI_IS_INDEPENDENT           1
 
 #define SOC_MEMSPI_ENCRYPTION_ALIGNMENT           16    /*!< 16-byte alignment restriction to mem addr and size if encryption is enabled */
 
@@ -403,6 +401,7 @@
 
 // /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 #define SOC_MODEM_CLOCK_IS_INDEPENDENT            (1)
+#define SOC_MODEM_APB_CLOCK_IS_INDEPENDENT        (1)
 #define SOC_MODEM_CLOCK_SOC_PLL_SOURCE_CG_SUPPORTED (1)
 #define SOC_MODEM_CLOCK_WIFI_BB_80X1_AS_APB       (1)
 
@@ -441,12 +440,12 @@
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
 #define SOC_PM_SUPPORT_BEACON_WAKEUP    (1)
 #define SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP    (1)     /*!<Supports waking up from touch pad trigger */
-// #define SOC_PM_SUPPORT_CPU_PD           (1) // TODO: [ESP32S31] IDF-14647
+#define SOC_PM_SUPPORT_CPU_PD           (1)
 #define SOC_PM_SUPPORT_XTAL32K_PD       (1)
 #define SOC_PM_SUPPORT_RC32K_PD         (1)
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
 #define SOC_PM_SUPPORT_VDDSDIO_PD       (1)
-// #define SOC_PM_SUPPORT_TOP_PD           (1)  // TODO: [ESP32S31] IDF-14647
+#define SOC_PM_SUPPORT_TOP_PD           (1)
 #define SOC_PM_SUPPORT_HP_AON_PD        (1)
 #define SOC_PM_SUPPORT_CNNT_PD          (1)
 #define SOC_PM_SUPPORT_RTC_PERIPH_PD    (1)
@@ -458,6 +457,7 @@
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 
 #define SOC_PM_CPU_RETENTION_BY_SW          (1)
+#define SOC_PM_FPU_RETENTION_BY_SW          (1)
 #define SOC_PM_CACHE_RETENTION_BY_PAU       (1)
 #define SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN (1)
 

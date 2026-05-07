@@ -28,6 +28,7 @@
 #include "esp_private/gpio.h"
 #include "esp_private/esp_gpio_reserve.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_sleep.h"
 #include "esp_private/sleep_retention.h"
 #include "esp_clk_tree.h"
 #include "esp_rom_gpio.h"
@@ -1067,6 +1068,9 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     bool allow_pd __attribute__((unused)) = (uart_config->flags.allow_pd || uart_config->flags.backup_before_sleep);
 #if !SOC_UART_SUPPORT_SLEEP_RETENTION
     ESP_RETURN_ON_FALSE(allow_pd == 0, ESP_ERR_NOT_SUPPORTED, UART_TAG, "not able to power down in light sleep");
+#if SOC_PM_SUPPORT_TOP_PD
+    esp_sleep_pd_config(ESP_PD_DOMAIN_TOP, ESP_PD_OPTION_ON); //IDF-15650
+#endif
 #endif
 
     uart_module_enable(uart_num);

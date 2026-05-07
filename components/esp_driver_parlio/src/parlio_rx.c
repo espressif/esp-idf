@@ -10,6 +10,7 @@
 #include "driver/gpio.h"
 #include "driver/parlio_rx.h"
 #include "parlio_priv.h"
+#include "esp_sleep.h"
 
 #define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
 
@@ -614,6 +615,9 @@ esp_err_t parlio_new_rx_unit(const parlio_rx_unit_config_t *config, parlio_rx_un
 
 #if !SOC_PARLIO_SUPPORT_SLEEP_RETENTION
     ESP_RETURN_ON_FALSE(config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "register back up is not supported");
+#if SOC_PM_SUPPORT_TOP_PD
+    esp_sleep_pd_config(ESP_PD_DOMAIN_TOP, ESP_PD_OPTION_ON); //IDF-15645
+#endif
 #endif // SOC_PARLIO_SUPPORT_SLEEP_RETENTION
 
     /* Allocate unit memory */

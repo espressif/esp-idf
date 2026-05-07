@@ -9,6 +9,7 @@
 #include "driver/gptimer.h"
 #include "gptimer_priv.h"
 #include "esp_memory_utils.h"
+#include "esp_sleep.h"
 
 static void gptimer_default_isr(void *args);
 
@@ -155,6 +156,10 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
 #if GPTIMER_USE_RETENTION_LINK
         gptimer_create_retention_module(timer);
 #endif // GPTIMER_USE_RETENTION_LINK
+    } else {
+#if !SOC_TIMER_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+        esp_sleep_pd_config(ESP_PD_DOMAIN_TOP, ESP_PD_OPTION_ON); //IDF-15641
+#endif
     }
 
     // initialize HAL layer

@@ -24,6 +24,7 @@
 #include "soc/rtc_wdt_reg.h"
 #include "hal/rwdt_ll.h"
 #endif
+#include "hal/gpio_ll.h"
 #include "soc/pmu_reg.h"
 #include "hal/regi2c_ctrl_ll.h"
 #include "hal/modem_lpcon_ll.h"
@@ -35,8 +36,13 @@ ESP_LOG_ATTR_TAG(TAG, "boot.esp32s31");
 
 static inline void bootloader_hardware_init(void)
 {
-    /* Disable RF pll by default */
-    REG_SET_FIELD(PMU_RF_PWC_REG, PMU_XPD_RF_CIRCUIT, 0xFFFF);
+    /* GPIO 41 is not bonded out to the package, Isolate it to suppress
+     * floating leakage.*/
+    gpio_ll_input_disable(&GPIO, 41);
+    gpio_ll_output_disable(&GPIO, 41);
+    gpio_ll_pullup_dis(&GPIO, 41);
+    gpio_ll_pulldown_dis(&GPIO, 41);
+    gpio_ll_func_sel(&GPIO, 41, PIN_FUNC_GPIO);
 
     modem_lpcon_ll_enable_bus_clock(true);
 

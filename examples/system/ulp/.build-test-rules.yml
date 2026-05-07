@@ -61,7 +61,7 @@ examples/system/ulp/lp_core/lp_adc:
 
 examples/system/ulp/lp_core/lp_i2c:
   enable:
-    - if: SOC_LP_CORE_SUPPORT_I2C == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1
+    - if: SOC_LP_CORE_SUPPORT_I2C == 1 and (SOC_DEEP_SLEEP_SUPPORTED == 1 and SOC_LP_CORE_SUPPORTED == 1)
   <<: *ulp_default_depends
   depends_components+:
     - esp_hal_i2c

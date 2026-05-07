@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,7 @@ extern "C" {
 #endif
 
 #define PMU_SDIO_WAKEUP_EN              BIT(0)
-#define PMU_LP_CORE_WAKEUP_EN           BIT(1)
+#define PMU_LP_CORE_WAKEUP_HP_EN        BIT(1)
 #define PMU_GPIO_WAKEUP_EN              BIT(2)
 #define PMU_USB_WAKEUP_EN               BIT(3)
 #define PMU_UART4_WAKEUP_EN             BIT(4)
@@ -30,6 +30,8 @@ extern "C" {
 #define PMU_ETM_WAKEUP_EN               BIT(17)
 #define PMU_LP_TIMER1_WAKEUP_EN         BIT(18)
 #define PMU_LP_I2S_WAKEUP_EN            BIT(19)
+
+#define PMU_INTERRUPT_WAKEUP            BIT(23)
 
 // BIT order in PLL control registers in PMU
 #define PMU_CPLL_CTRL                   BIT(0)

@@ -37,6 +37,7 @@ entries:
         rtc_sleep:rtc_sleep_pd (noflash)
     if IDF_TARGET_ESP32S3 = y || IDF_TARGET_ESP32C2 = y || IDF_TARGET_ESP32C3 = y:
         rtc_sleep:rtc_sleep_pu (noflash)
+    sleep_cache (noflash)
     if SOC_PMU_SUPPORTED = y:
         if SPIRAM_FLASH_LOAD_TO_PSRAM = y:
             pmu_init (noflash)
@@ -46,7 +47,7 @@ entries:
             if SOC_PM_SLEEP_CLK_ICG_USE_REGDMA = y && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP != y:
                 pmu_sleep_clock_icg:pmu_sleep_clock_icg_config (noflash)
             sleep_mspi (noflash)
-            if PM_SLP_IRAM_OPT = y && IDF_TARGET_ESP32P4 != y:
+            if PM_SLP_IRAM_OPT = y && IDF_TARGET_ESP32S31 != y:
                 pmu_param:get_act_lp_dbias (noflash)
                 if IDF_TARGET_ESP32H4 || IDF_TARGET_ESP32H21 = y:
                     pmu_param:get_act_hp_drvb (noflash)
@@ -85,6 +86,8 @@ entries:
         sleep_modes: esp_sleep_enable_vbat_under_volt_wakeup (noflash)
         sleep_modes: esp_sleep_sub_mode_config (noflash)
         sleep_modes: esp_sleep_sub_mode_force_disable (noflash)
+    if (SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP = n || SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD = y):
+        esp_gpio_reserve (noflash)
 
 [mapping:hal_gpio_pm]
 archive: libesp_hal_gpio.a

@@ -82,6 +82,10 @@ entries:
         if ESP_SLEEP_SET_FLASH_DPD = y:
             spi_flash_dpd_enable (noflash)
 
+        if SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD = y:
+            flash_ops: esp_mspi_get_io (noflash)
+            flash_ops: s_mspi_io_num_default (noflash)
+
 [mapping:spi_flash_hal]
 archive: libesp_hal_mspi.a
 entries:

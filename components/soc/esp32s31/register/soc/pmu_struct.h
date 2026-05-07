@@ -55,14 +55,20 @@ typedef union {
 
 typedef union {
     struct {
-        uint32_t reserved0    : 19;
-        uint32_t xpd_xtalx2   : 1;
-        uint32_t i2c_iso_en   : 1;
-        uint32_t i2c_retention: 1;
-        uint32_t xpd_bb_i2c   : 1;
-        uint32_t xpd_pll_i2c  : 4;
-        uint32_t xpd_pll      : 4;
-        uint32_t reserved1    : 1;
+        uint32_t reserved0      : 19;
+        uint32_t xpd_xtalx2     : 1;
+        uint32_t i2c_iso_en     : 1;
+        uint32_t i2c_retention  : 1;
+        uint32_t xpd_bb_i2c     : 1;
+        uint32_t xpd_cpll_i2c   : 1;
+        uint32_t xpd_bbpll_i2c  : 1;
+        uint32_t xpd_apll_i2c   : 1;
+        uint32_t xpd_mpll_i2c   : 1;
+        uint32_t xpd_cpll       : 1;
+        uint32_t xpd_bbpll      : 1;
+        uint32_t xpd_apll       : 1;
+        uint32_t xpd_mpll       : 1;
+        uint32_t reserved1      : 1;
     };
     uint32_t val;
 } pmu_hp_clk_power_reg_t;

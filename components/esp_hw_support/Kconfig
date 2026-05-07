@@ -82,7 +82,7 @@ menu "Hardware Settings"
             select PM_SLP_IRAM_OPT
             select ESP_PERIPH_CTRL_FUNC_IN_IRAM
             select ESP_REGI2C_CTRL_FUNC_IN_IRAM
-            depends on !SPIRAM || ESP_LDO_RESERVE_PSRAM
+            depends on !SPIRAM || ESP_LDO_RESERVE_PSRAM || SOC_PSRAM_HAS_DEDICATED_LDO
             depends on !(IDF_TARGET_ESP32P4 && (ESP32P4_REV_MIN_FULL < 100))
             default n
             help
