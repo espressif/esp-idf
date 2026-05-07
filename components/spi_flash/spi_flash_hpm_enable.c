@@ -383,9 +383,9 @@ const spi_flash_hpm_info_t __attribute__((weak)) spi_flash_hpm_enable_list[] = {
     { "command",    spi_flash_hpm_probe_chip_with_cmd,     spi_flash_hpm_chip_hpm_requirement_check_with_cmd,        spi_flash_enable_high_performance_send_cmd,       spi_flash_high_performance_check_hpf_bit_5,  spi_flash_hpm_get_dummy_generic },
 #if CONFIG_SPI_FLASH_HPM_DC_ON
     { "dummy sr3-bit01",   spi_flash_hpm_probe_chip_with_dummy,     spi_flash_hpm_chip_hpm_requirement_check_with_dummy,    spi_flash_turn_high_performance_reconfig_dummy,   spi_flash_high_performance_check_dummy_sr,  spi_flash_hpm_get_dummy_xmc},
+    { "dummy sr3-bit3_4", spi_flash_hpm_probe_chip_with_dummy_bit3_4, spi_flash_hpm_chip_hpm_requirement_check_with_dummy_bit3_4, spi_flash_turn_high_performance_dummy_bit3_4, spi_flash_high_performance_check_dummy_bit3_4, spi_flash_hpm_get_dummy_xmc},
 #endif //CONFIG_SPI_FLASH_HPM_DC_ON
     { "write sr3-bit5", spi_flash_hpm_probe_chip_with_write_hpf_bit_5, spi_flash_hpm_chip_hpm_requirement_check_with_write_hpf_bit_5, spi_flash_turn_high_performance_write_hpf_bit_5, spi_flash_high_performance_check_hpf_bit_5, spi_flash_hpm_get_dummy_generic},
-    { "dummy sr3-bit3_4", spi_flash_hpm_probe_chip_with_dummy_bit3_4, spi_flash_hpm_chip_hpm_requirement_check_with_dummy_bit3_4, spi_flash_turn_high_performance_dummy_bit3_4, spi_flash_high_performance_check_dummy_bit3_4, spi_flash_hpm_get_dummy_xmc},
     { "noting-to-do", spi_flash_hpm_probe_chip_with_doing_nothing, spi_flash_hpm_chip_hpm_requirement_check_with_doing_nothing, NULL, NULL, spi_flash_hpm_get_dummy_generic},
     // default: do nothing, but keep the dummy get function. The first item with NULL as its probe will be the fallback.
     { "NULL",  NULL,                        NULL,              NULL,                            NULL,                             spi_flash_hpm_get_dummy_generic},
