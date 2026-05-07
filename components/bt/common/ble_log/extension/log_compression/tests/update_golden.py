@@ -16,6 +16,8 @@ import shutil
 import sys
 import tempfile
 from pathlib import Path
+from typing import List
+from typing import Optional
 
 TESTS_DIR = Path(__file__).resolve().parent
 SCRIPTS_DIR = TESTS_DIR.parent / 'scripts'
@@ -39,7 +41,7 @@ BLUEDROID_TAGS = [
 ]
 
 
-def run_pipeline(fixture_files: list[str], output_name: str, tags_with_preserve: list[str] | None = None) -> None:
+def run_pipeline(fixture_files: List[str], output_name: str, tags_with_preserve: Optional[List[str]] = None) -> None:
     """Run compression on fixture files and save the generated header as a golden file."""
     tags_with_preserve = tags_with_preserve or ['APPL_TRACE_ERROR', 'APPL_TRACE_WARNING']
 
