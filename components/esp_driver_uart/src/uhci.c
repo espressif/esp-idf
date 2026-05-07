@@ -496,7 +496,7 @@ esp_err_t uhci_new_controller(const uhci_controller_config_t *config, uhci_contr
     }
 
     atomic_init(&uhci_ctrl->tx_dir.tx_fsm, UHCI_TX_FSM_ENABLE);
-    atomic_init(&uhci_ctrl->rx_dir.rx_fsm, UHCI_TX_FSM_ENABLE);
+    atomic_init(&uhci_ctrl->rx_dir.rx_fsm, UHCI_RX_FSM_ENABLE);
 
     // Auto search a free controller
     bool ctrl_found = false;
