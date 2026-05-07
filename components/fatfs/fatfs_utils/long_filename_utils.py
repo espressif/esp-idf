@@ -1,10 +1,10 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-from typing import List
 
 from .entry import Entry
 from .exceptions import NoFreeClusterException
-from .utils import build_name, convert_to_utf16_and_pad
+from .utils import build_name
+from .utils import convert_to_utf16_and_pad
 
 #  File name with long filenames support can be as long as memory allows. It is split into entries
 #  holding 13 characters of the filename, thus the number of required entries is ceil(len(long_name) / 13).
@@ -27,7 +27,7 @@ def get_required_lfn_entries_count(lfn_full_name: str) -> int:
     return entries_count
 
 
-def split_name_to_lfn_entries(name: str, entries: int) -> List[str]:
+def split_name_to_lfn_entries(name: str, entries: int) -> list[str]:
     """
     If the filename is longer than 8 (name) + 3 (extension) characters,
     generator uses long name structure and splits the name into suitable amount of blocks.
@@ -35,10 +35,10 @@ def split_name_to_lfn_entries(name: str, entries: int) -> List[str]:
     E.g. 'thisisverylongfilenama.txt' would be split to ['THISISVERYLON', 'GFILENAMA.TXT'],
     in case of 'thisisverylongfilenamax.txt' - ['THISISVERYLON', 'GFILENAMAX.TX', 'T']
     """
-    return [name[i * Entry.CHARS_PER_ENTRY:(i + 1) * Entry.CHARS_PER_ENTRY] for i in range(entries)]
+    return [name[i * Entry.CHARS_PER_ENTRY : (i + 1) * Entry.CHARS_PER_ENTRY] for i in range(entries)]
 
 
-def split_name_to_lfn_entry_blocks(name: str) -> List[bytes]:
+def split_name_to_lfn_entry_blocks(name: str) -> list[bytes]:
     """
     Filename is divided into three blocks in every long file name entry. Sizes of the blocks are defined
     by LDIR_Name1_SIZE, LDIR_Name2_SIZE and LDIR_Name3_SIZE, thus every block contains LDIR_Name{X}_SIZE * 2 bytes.
@@ -53,25 +53,28 @@ def split_name_to_lfn_entry_blocks(name: str) -> List[bytes]:
     Notice that since every character is coded using 2 bytes be must add 0x00 to ASCII symbols ('G' -> 'G\x00', etc.),
     since character 'T' ends in the first block, we must add '\x00\x00' after 'T\x00'.
     """
-    max_entry_size: int = Entry.LDIR_Name1_SIZE + Entry.LDIR_Name2_SIZE + Entry.LDIR_Name2_SIZE
+    max_entry_size: int = Entry.LDIR_Name1_SIZE + Entry.LDIR_Name2_SIZE + Entry.LDIR_Name3_SIZE
     assert len(name) <= max_entry_size
-    blocks_: List[bytes] = [
-        convert_to_utf16_and_pad(content=name[:Entry.LDIR_Name1_SIZE],
-                                 expected_size=Entry.LDIR_Name1_SIZE),
-        convert_to_utf16_and_pad(content=name[Entry.LDIR_Name1_SIZE:Entry.LDIR_Name1_SIZE + Entry.LDIR_Name2_SIZE],
-                                 expected_size=Entry.LDIR_Name2_SIZE),
-        convert_to_utf16_and_pad(content=name[Entry.LDIR_Name1_SIZE + Entry.LDIR_Name2_SIZE:],
-                                 expected_size=Entry.LDIR_Name3_SIZE)
+    blocks_: list[bytes] = [
+        convert_to_utf16_and_pad(content=name[: Entry.LDIR_Name1_SIZE], expected_size=Entry.LDIR_Name1_SIZE),
+        convert_to_utf16_and_pad(
+            content=name[Entry.LDIR_Name1_SIZE : Entry.LDIR_Name1_SIZE + Entry.LDIR_Name2_SIZE],
+            expected_size=Entry.LDIR_Name2_SIZE,
+        ),
+        convert_to_utf16_and_pad(
+            content=name[Entry.LDIR_Name1_SIZE + Entry.LDIR_Name2_SIZE :], expected_size=Entry.LDIR_Name3_SIZE
+        ),
     ]
     return blocks_
 
 
 def build_lfn_unique_entry_name_order(entities: list, lfn_entry_name: str) -> int:
     """
-    The short entry contains only the first 6 characters of the file name,
-    and we have to distinguish it from other names within the directory starting with the same 6 characters.
-    To make it unique, we add its order in relation to other names such that lfn_entry_name[:6] == other[:6].
-    The order is specified by the character, starting with chr(1).
+    The short entry contains only the first characters of the file name plus a '~' suffix
+    with hexadecimal sequence number, matching the gen_numname() algorithm in ff.c.
+
+    For seq <= 5 the suffix is the decimal-looking hex digit (e.g. ~1 .. ~5).
+    For seq > 5 a CRC hash is used instead (handled by build_lfn_short_entry_name).
 
     E.g. the file in directory 'thisisverylongfilenama.txt' will be named 'THISIS~1TXT' in its short entry.
     If we add another file 'thisisverylongfilenamax.txt' its name in the short entry will be 'THISIS~2TXT'.
