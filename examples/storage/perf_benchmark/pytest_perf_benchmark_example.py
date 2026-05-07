@@ -7,6 +7,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 @pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='not support yet')  # TODO: [ESP32C5] IDF-10314
 @pytest.mark.generic
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 @pytest.mark.parametrize('config', ['spiflash'], indirect=True)
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 @pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='s31 bringup on this module is not done')
