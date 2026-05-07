@@ -146,6 +146,7 @@ struct roaming_app {
     uint8_t bssid_blacklist_count;
 #endif
     bool allow_reconnect;
+    struct cand_bss *pending_roam_bss;
 };
 
 #ifdef __cplusplus

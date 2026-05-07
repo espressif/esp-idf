@@ -1481,10 +1481,25 @@ void roaming_app_trigger_roam(struct cand_bss *bss)
 
     gettimeofday(&now, NULL);
     ESP_LOGD(ROAMING_TAG, "Processing trigger roaming request.");
+    if (g_roaming_app.pending_roam_bss) {
+        eloop_cancel_timeout(roaming_app_trigger_roam_internal_handler, NULL, g_roaming_app.pending_roam_bss);
+        os_free(g_roaming_app.pending_roam_bss);
+        g_roaming_app.pending_roam_bss = NULL;
+    }
     if (g_roaming_app.sta_connected && roaming_app_roam_backoff_active(&now, 0)) {
-        ESP_LOGD(ROAMING_TAG, "Ignoring request as time difference to last roam attempt is %ld",
-                 time_diff_sec(&now, &g_roaming_app.last_roam_attempt_time));
-        goto free_bss;
+        const struct timeval *anchor = roaming_app_get_backoff_anchor();
+        long elapsed_sec = time_diff_sec(&now, anchor);
+        long remaining_sec = (long)g_roaming_app.config.backoff_time - elapsed_sec;
+        ESP_LOGD(ROAMING_TAG,
+                 "Deferring roam during backoff (elapsed %ld s since anchor), reschedule in %ld s",
+                 elapsed_sec, remaining_sec);
+        if (eloop_register_timeout((unsigned int)remaining_sec, 0,
+                                   roaming_app_trigger_roam_internal_handler, NULL, (void *)bss)) {
+            ESP_LOGE(ROAMING_TAG, "Could not register roaming event.");
+            goto free_bss;
+        }
+        g_roaming_app.pending_roam_bss = bss;
+        return;
     }
 #if NETWORK_ASSISTED_ROAMING_ENABLED
     if (g_roaming_app.sta_connected && g_roaming_app.config.btm_roaming_enabled && g_roaming_app.current_bss.btm_support) {
@@ -1532,6 +1547,9 @@ static void roaming_app_trigger_roam_internal_handler(void *ctx, void *data)
     if (!data) {
         ESP_LOGE(ROAMING_TAG, "No data received for roaming event");
     } else {
+        if (g_roaming_app.pending_roam_bss == data) {
+            g_roaming_app.pending_roam_bss = NULL;
+        }
         roaming_app_trigger_roam((struct cand_bss *)data);
     }
 }
@@ -2158,6 +2176,10 @@ static void roaming_app_cancel_pending_events(void)
     eloop_cancel_timeout(roaming_app_connected_event_handler, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
     eloop_cancel_timeout(roaming_app_disconnected_event_handler, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
     eloop_cancel_timeout(roaming_app_trigger_roam_internal_handler, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
+    if (g_roaming_app.pending_roam_bss) {
+        os_free(g_roaming_app.pending_roam_bss);
+        g_roaming_app.pending_roam_bss = NULL;
+    }
     eloop_cancel_timeout(enable_reconnect, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
     eloop_cancel_timeout(disable_reconnect, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
 #if LOW_RSSI_ROAMING_ENABLED
