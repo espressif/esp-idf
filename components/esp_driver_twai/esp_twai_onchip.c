@@ -356,23 +356,12 @@ static esp_err_t _node_register_callbacks(twai_node_handle_t node, const twai_ev
     return ESP_OK;
 }
 
-static esp_err_t _node_check_timing_valid(twai_onchip_ctx_t *twai_ctx, const twai_timing_advanced_config_t *timing)
-{
-    if (timing) {
-        ESP_RETURN_ON_FALSE(twai_hal_check_brp_validation(twai_ctx->hal, timing->brp), ESP_ERR_INVALID_ARG, TAG, "invalid brp");
-        ESP_RETURN_ON_FALSE((timing->tseg_1 >= TWAI_LL_TSEG1_MIN) && (timing->tseg_1 <= TWAI_LL_TSEG1_MAX), ESP_ERR_INVALID_ARG, TAG, "invalid tseg1");
-        ESP_RETURN_ON_FALSE((timing->tseg_2 >= TWAI_LL_TSEG2_MIN) && (timing->tseg_2 <= TWAI_LL_TSEG2_MAX), ESP_ERR_INVALID_ARG, TAG, "invalid tseg_2");
-        ESP_RETURN_ON_FALSE((timing->sjw >= 1) && (timing->sjw <= TWAI_LL_SJW_MAX), ESP_ERR_INVALID_ARG, TAG, "invalid swj");
-    }
-    return ESP_OK;
-}
-
 static esp_err_t _node_set_bit_timing(twai_node_handle_t node, const twai_timing_advanced_config_t *timing, const twai_timing_advanced_config_t *timing_fd)
 {
     twai_onchip_ctx_t *twai_ctx = __containerof(node, twai_onchip_ctx_t, api_base);
     ESP_RETURN_ON_FALSE(atomic_load(&twai_ctx->state) == TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "config timing must when node stopped");
-    ESP_RETURN_ON_ERROR(_node_check_timing_valid(twai_ctx, timing), TAG, "invalid param");
-    ESP_RETURN_ON_ERROR(_node_check_timing_valid(twai_ctx, timing_fd), TAG, "invalid fd param");
+    ESP_RETURN_ON_FALSE(twai_hal_check_timing_valid(twai_ctx->hal, timing, false), ESP_ERR_INVALID_ARG, TAG, "invalid param");
+    ESP_RETURN_ON_FALSE(twai_hal_check_timing_valid(twai_ctx->hal, timing_fd, true), ESP_ERR_INVALID_ARG, TAG, "invalid fd param");
 
     if (timing) {
         twai_hal_configure_timing(twai_ctx->hal, timing);
@@ -414,6 +403,10 @@ static esp_err_t _node_calc_set_bit_timing(twai_node_handle_t node, const twai_t
 #if SOC_HAS(TWAI_FD)
     twai_timing_advanced_config_t timing_adv_fd = {};
     if (timing_fd->bitrate) {
+        hw_const.brp_max = TWAI_LL_BRP_MAX_FD;
+        hw_const.tseg1_max = TWAI_LL_TSEG1_MAX_FD;
+        hw_const.tseg2_max = TWAI_LL_TSEG2_MAX_FD;
+        hw_const.sjw_max = TWAI_LL_SJW_MAX_FD;
         real_baud = twai_node_timing_calc_param(twai_ctx->src_freq_hz, timing_fd, &hw_const, &timing_adv_fd);
         ESP_LOGD(TAG, "timing_fd: src %ld brp %ld prop %d seg1 %d seg2 %d sjw %d ssp %d", twai_ctx->src_freq_hz, timing_adv_fd.brp, timing_adv_fd.prop_seg, timing_adv_fd.tseg_1, timing_adv_fd.tseg_2, timing_adv_fd.sjw, timing_adv_fd.ssp_offset);
         ESP_RETURN_ON_FALSE(real_baud, ESP_ERR_INVALID_ARG, TAG, "bitrate can't achieve!");

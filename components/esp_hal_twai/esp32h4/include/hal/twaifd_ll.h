@@ -21,9 +21,15 @@
 #define TWAI_LL_TSEG1_MIN               0
 #define TWAI_LL_TSEG2_MIN               1
 #define TWAI_LL_BRP_MAX                 TWAIFD_BRP
+#define TWAI_LL_PROP_MAX                TWAIFD_PROP
 #define TWAI_LL_TSEG1_MAX               TWAIFD_PH1
 #define TWAI_LL_TSEG2_MAX               TWAIFD_PH2
 #define TWAI_LL_SJW_MAX                 TWAIFD_SJW
+#define TWAI_LL_BRP_MAX_FD              TWAIFD_BRP_FD
+#define TWAI_LL_PROP_MAX_FD             TWAIFD_PROP_FD
+#define TWAI_LL_TSEG1_MAX_FD            TWAIFD_PH1_FD
+#define TWAI_LL_TSEG2_MAX_FD            TWAIFD_PH2_FD
+#define TWAI_LL_SJW_MAX_FD              TWAIFD_SJW_FD
 #define TWAI_LL_TIMER_DIV_MAX           TWAIFD_TIMER_STEP
 
 #define TWAIFD_IDENTIFIER_BASE_S        18      // Start bit of std_id in IDENTIFIER_W of TX buffer or RX buffer
@@ -309,17 +315,6 @@ static inline void twaifd_ll_clr_intr_status(twaifd_dev_t *hw, uint32_t intr_mas
 }
 
 /* ------------------------ Bus Timing Registers --------------------------- */
-/**
- * @brief Check if the brp value valid
- *
- * @param brp Bit rate prescaler value
- * @return true or False
- */
-static inline bool twaifd_ll_check_brp_validation(uint32_t brp)
-{
-    return (brp >= TWAI_LL_BRP_MIN) && (brp <= TWAI_LL_BRP_MAX);
-}
-
 /**
  * @brief Set bus timing nominal bit rate
  *
