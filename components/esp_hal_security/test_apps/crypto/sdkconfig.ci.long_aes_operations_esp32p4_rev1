@@ -1,0 +1,8 @@
+#
+# Example Configuration
+#
+CONFIG_IDF_TARGET="esp32p4"
+CONFIG_ESP32P4_SELECTS_REV_LESS_V3=y
+
+CONFIG_CRYPTO_TESTAPP_USE_AES_INTERRUPT=y
+# end of Example Configuration

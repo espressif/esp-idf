@@ -604,6 +604,9 @@ TEST_GROUP(key_manager);
 
 TEST_SETUP(key_manager)
 {
+    if (!key_mgr_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("Key Manager not supported on this chip");
+    }
     test_utils_record_free_mem();
     TEST_ESP_OK(test_utils_set_leak_level(900, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL));
 }
