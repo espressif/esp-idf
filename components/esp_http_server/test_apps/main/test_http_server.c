@@ -12,6 +12,10 @@
 #include <net/if.h>
 #include "esp_log.h"
 
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+#include "../../src/esp_httpd_priv.h"
+#endif
+
 #include "unity.h"
 #include "test_utils.h"
 
@@ -48,6 +52,25 @@ static httpd_uri_t handler_limit_ws_uri(char *path, const char *subprotocol)
         .supported_subprotocol = subprotocol,
     };
     return uri;
+}
+
+static int ws_recv_fail_handler_calls;
+
+static int ws_recv_fail_override(httpd_handle_t hd, int sockfd, char *buf, size_t buf_len, int flags)
+{
+    (void)hd;
+    (void)sockfd;
+    (void)buf;
+    (void)buf_len;
+    (void)flags;
+    return HTTPD_SOCK_ERR_FAIL;
+}
+
+static esp_err_t ws_counting_handler(httpd_req_t *req)
+{
+    (void)req;
+    ws_recv_fail_handler_calls++;
+    return ESP_OK;
 }
 #endif /* CONFIG_HTTPD_WS_SUPPORT */
 
@@ -401,6 +424,38 @@ TEST_CASE("httpd_resp_set_type rejects CRLF in content type", "[HTTP SERVER][sec
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
                       httpd_resp_set_type(&fake_req, "text/html\nX-Injected: pwned"));
 }
+
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+TEST_CASE("WS recv failure marks close without dispatching handler", "[HTTP SERVER][websocket]")
+{
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    struct httpd_data hd = {0};
+    struct sock_db session = {0};
+
+    hd.config = config;
+    hd.hd_req_aux.resp_hdrs = calloc(config.max_resp_headers, sizeof(*hd.hd_req_aux.resp_hdrs));
+    TEST_ASSERT_NOT_NULL(hd.hd_req_aux.resp_hdrs);
+
+    session.fd = 123;
+    session.handle = (httpd_handle_t) &hd;
+    session.recv_fn = ws_recv_fail_override;
+    session.ws_handshake_done = true;
+    session.ws_handler = ws_counting_handler;
+    session.ws_control_frames = false;
+    session.ws_close = false;
+
+    ws_recv_fail_handler_calls = 0;
+
+    esp_err_t ret = httpd_req_new(&hd, &session);
+
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+    TEST_ASSERT_EQUAL(0, ws_recv_fail_handler_calls);
+    TEST_ASSERT_TRUE(session.ws_close);
+    TEST_ASSERT_EQUAL(HTTPD_WS_TYPE_CLOSE, hd.hd_req_aux.ws_type);
+
+    free(hd.hd_req_aux.resp_hdrs);
+}
+#endif /* CONFIG_HTTPD_WS_SUPPORT */
 
 void app_main(void)
 {
