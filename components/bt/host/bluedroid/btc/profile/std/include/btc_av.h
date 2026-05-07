@@ -287,6 +287,17 @@ void btc_av_clear_remote_suspend_flag(void);
  ******************************************************************************/
 uint8_t btc_av_get_service_id(void);
 
+#if (BTC_AV_SRC_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         btc_av_report_all_snk_codec_caps
+**
+** Description      Report all sink codec capabilities to the application.
+**
+*******************************************************************************/
+void btc_av_report_all_snk_codec_caps(tBTA_AV_HNDL hndl, esp_a2d_sep_mcc_t *sep_mcc, UINT8 sep_num);
+#endif /* BTC_AV_SRC_INCLUDED */
+
 #endif  ///BTC_AV_INCLUDED == TRUE
 
 /*******************************************************************************

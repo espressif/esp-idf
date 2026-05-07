@@ -18,6 +18,10 @@
 enum {
     BTC_SV_AV_AA_SBC_INDEX = 0,
     BTC_SV_AV_AA_SBC_SINK_INDEX,
+#if (BTC_AV_CODEC_AAC_INCLUDED == TRUE)
+    BTC_SV_AV_AA_M24_INDEX,
+    BTC_SV_AV_AA_M24_SINK_INDEX,
+#endif
     BTC_SV_AV_AA_SEP_INDEX  /* Last index */
 };
 
@@ -65,7 +69,10 @@ typedef struct {
 typedef struct {
     /* Connected peer information */
     tBTA_AV_CO_PEER peers[BTA_AV_NUM_STRS];
-    tBTC_AV_CODEC_INFO codec_caps;
+#if (BTC_AV_EXT_CODEC == TRUE)
+    UINT8 cur_seid;                         /* current stream endpoint id */
+    tBTC_AV_CODEC_INFO codec_caps[BTA_AV_MAX_SEPS];
+#endif
     /* Current codec configuration - access to this variable must be protected */
     tBTC_AV_CODEC_INFO codec_cfg;
     tBTC_AV_CODEC_INFO codec_pref_cfg;      /* preferred media codec configuration for source */
@@ -277,12 +284,23 @@ BOOLEAN bta_av_co_get_remote_bitpool_pref(UINT8 *min, UINT8 *max);
  **
  ** Function         bta_av_co_get_peer_sink_caps
  **
- ** Description      Get the sink codec capabilities of the peer
+ ** Description      Get currently selected sink codec capabilities of the peer
  **
  ** Returns          TRUE if sink capabilities are available, FALSE otherwise
  **
  *******************************************************************************/
 BOOLEAN bta_av_co_get_peer_sink_caps(tBTA_AV_HNDL hndl, UINT8 *p_codec_caps, UINT8 *p_codec_type);
+
+/*******************************************************************************
+ **
+ ** Function         bta_av_co_get_cur_codec_type
+ **
+ ** Description      Get current codec type
+ **
+ ** Returns          codec type
+ **
+ *******************************************************************************/
+UINT8 bta_av_co_get_cur_codec_type(void);
 
 #endif  ///BTA_AV_INCLUDED == TRUE
 

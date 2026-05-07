@@ -17,6 +17,7 @@
 #include "common/bt_defs.h"
 #include "osi/allocator.h"
 #include "stack/btu.h"
+#include "stack/a2d_m24.h"
 #include "bta/bta_av_api.h"
 #include "btc/btc_dm.h"
 #include "btc/btc_common.h"
@@ -80,6 +81,8 @@ typedef enum {
 
 #define BTC_AV_SBC_CIE_OFFSET       3
 #define BTC_AV_SBC_CIE_LEN          4
+#define BTC_AV_M24_CIE_OFFSET       3
+#define BTC_AV_M24_CIE_LEN          6
 
 /*****************************************************************************
 **  Local type definitions
@@ -94,7 +97,9 @@ typedef struct {
     UINT8 flags;
     tBTA_AV_EDR edr;
     UINT8   peer_sep;  /* sep type of peer device */
-    tBTC_AV_CODEC_INFO codec_caps;
+#if (BTC_AV_EXT_CODEC == TRUE)
+    tBTC_AV_CODEC_INFO codec_caps[BTA_AV_MAX_SEPS];
+#endif
 #if BTC_AV_SRC_INCLUDED
     tBTC_AV_CODEC_INFO pref_mcc;  /* preferred media codec configuration */
     osi_alarm_t *tle_av_open_on_rc;
@@ -183,6 +188,7 @@ static void btc_av_event_free_data(btc_msg_t *msg);
 extern tBTA_AV_CO_FUNCTS bta_av_a2d_cos;
 extern tBTA_AVRC_CO_FUNCTS bta_avrc_cos;
 extern tA2D_SBC_CIE btc_av_sbc_default_config;
+extern tA2D_M24_CIE btc_av_m24_default_config;
 /*****************************************************************************
 ** Local helper functions
 ******************************************************************************/
@@ -271,6 +277,20 @@ static void btc_initiate_av_open_tmr_hdlr(void *arg)
     } else {
         BTC_TRACE_ERROR("%s No connected RC peers", __FUNCTION__);
     }
+}
+
+void btc_av_report_all_snk_codec_caps(tBTA_AV_HNDL hndl, esp_a2d_sep_mcc_t *sep_mcc, UINT8 sep_num)
+{
+    esp_a2d_cb_param_t param;
+
+    if (sep_mcc == NULL || sep_num == 0) {
+        return;
+    }
+    memset(&param, 0, sizeof(param));
+    param.a2d_report_snk_all_codec_caps_stat.conn_hdl = hndl;
+    param.a2d_report_snk_all_codec_caps_stat.sep_mcc = sep_mcc;
+    param.a2d_report_snk_all_codec_caps_stat.sep_num = sep_num;
+    btc_a2d_cb_to_app(ESP_A2D_REPORT_SNK_ALL_CODEC_CAPS_EVT, &param);
 }
 #endif /* BTC_AV_SRC_INCLUDED */
 
@@ -548,7 +568,7 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *p_data)
 
                 if (bta_av_co_get_peer_sink_caps(btc_av_cb.bta_handle, codec_caps, &codec_type)) {
                     switch (codec_type) {
-                        /* Currently only supports SBC */
+                        /* Currently only support SBC/AAC */
                         case BTA_AV_CODEC_SBC: {
                             param.a2d_report_snk_codec_caps_stat.conn_hdl = btc_av_cb.bta_handle;
                             param.a2d_report_snk_codec_caps_stat.mcc.type = ESP_A2D_MCT_SBC;
@@ -556,6 +576,15 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *p_data)
                             btc_a2d_cb_to_app(ESP_A2D_REPORT_SNK_CODEC_CAPS_EVT, &param);
                             break;
                         }
+#if (BTC_AV_CODEC_AAC_INCLUDED == TRUE)
+                        case BTA_AV_CODEC_M24: {
+                            param.a2d_report_snk_codec_caps_stat.conn_hdl = btc_av_cb.bta_handle;
+                            param.a2d_report_snk_codec_caps_stat.mcc.type = ESP_A2D_MCT_M24;
+                            memcpy(&param.a2d_report_snk_codec_caps_stat.mcc.cie, (uint8_t *)codec_caps + BTC_AV_M24_CIE_OFFSET, BTC_AV_M24_CIE_LEN);
+                            btc_a2d_cb_to_app(ESP_A2D_REPORT_SNK_CODEC_CAPS_EVT, &param);
+                            break;
+                        }
+#endif
 
                         default: {
                             BTC_TRACE_WARNING("Unsupported codec type %d", codec_type);
@@ -862,6 +891,13 @@ static BOOLEAN btc_av_state_opened_handler(btc_sm_event_t event, void *p_data)
         btc_sm_change_state(btc_av_cb.sm_handle, BTC_AV_STATE_IDLE);
         break;
     }
+
+    case BTC_AV_CONFIG_EVT: {
+        param.audio_cfg.conn_hdl = btc_av_cb.bta_handle;
+        memcpy(param.audio_cfg.remote_bda, &btc_av_cb.peer_bda, sizeof(esp_bd_addr_t));
+        memcpy(&param.audio_cfg.mcc, p_data, sizeof(esp_a2d_mcc_t));
+        btc_a2d_cb_to_app(ESP_A2D_AUDIO_CFG_EVT, &param);
+    } break;
 
     case BTA_AV_RECONFIG_EVT:
         if ((btc_av_cb.flags & BTC_AV_FLAG_PENDING_START) &&
@@ -1203,6 +1239,14 @@ static bt_status_t btc_av_init(int service_id)
     memset((void *)btc_av_cb_ptr, 0, sizeof(btc_av_cb_t));
 #endif
 
+#if (BTC_AV_EXT_CODEC == TRUE)
+    UINT8 index;
+    for (index = 0; index < BTA_AV_MAX_SEPS; index++) {
+        btc_av_cb.codec_caps[index].id = BTC_AV_CODEC_NONE;
+        memset(btc_av_cb.codec_caps[index].info, 0, AVDT_CODEC_SIZE);
+    }
+#endif
+
     if (btc_av_cb.sm_handle == NULL) {
         btc_av_cb.service_id = service_id;
         bool stat = false;
@@ -1435,7 +1479,6 @@ static void bte_av_media_sink_callback(tBTA_AV_EVT event, tBTA_AV_MEDIA *p_data)
     btc_sm_state_t state;
     UINT8 que_len;
     tA2D_STATUS a2d_status;
-    tA2D_SBC_CIE sbc_cie;
 
     if (event == BTA_AV_MEDIA_DATA_EVT) { /* Switch to BTC_MEDIA context */
         state = btc_sm_get_state(btc_av_cb.sm_handle);
@@ -1454,23 +1497,50 @@ static void bte_av_media_sink_callback(tBTA_AV_EVT event, tBTA_AV_MEDIA *p_data)
         /* send a command to BT Media Task */
         btc_a2dp_sink_reset_decoder((UINT8 *)p_data);
 #endif
+        UINT8 *p_codec = (UINT8 *)p_data;
 
-        /* currently only supports SBC */
-        a2d_status = A2D_ParsSbcInfo(&sbc_cie, (UINT8 *)p_data, FALSE);
-        if (a2d_status == A2D_SUCCESS) {
-            btc_msg_t msg;
-            btc_av_args_t arg;
+        if (p_codec[BTA_AV_CODEC_TYPE_IDX] == A2D_MEDIA_CT_SBC) {
+            tA2D_SBC_CIE sbc_cie;
+            a2d_status = A2D_ParsSbcInfo(&sbc_cie, p_codec, FALSE);
+            if (a2d_status == A2D_SUCCESS) {
+                btc_msg_t msg;
+                btc_av_args_t arg;
 
-            msg.sig = BTC_SIG_API_CB;
-            msg.pid = BTC_PID_A2DP;
-            msg.act = BTC_AV_CONFIG_EVT;
+                msg.sig = BTC_SIG_API_CB;
+                msg.pid = BTC_PID_A2DP;
+                msg.act = BTC_AV_CONFIG_EVT;
 
-            memset(&arg, 0, sizeof(btc_av_args_t));
-            arg.mcc.type = ESP_A2D_MCT_SBC;
-            memcpy(&arg.mcc.cie.sbc_info, (uint8_t *)p_data + BTC_AV_SBC_CIE_OFFSET, BTC_AV_SBC_CIE_LEN);
-            btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL, NULL);
-        } else {
-            BTC_TRACE_ERROR("ERROR dump_codec_info A2D_ParsSbcInfo fail:%d\n", a2d_status);
+                memset(&arg, 0, sizeof(btc_av_args_t));
+                arg.mcc.type = ESP_A2D_MCT_SBC;
+                memcpy(&arg.mcc.cie.sbc_info, p_codec + BTC_AV_SBC_CIE_OFFSET, BTC_AV_SBC_CIE_LEN);
+                btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL, NULL);
+            } else {
+                BTC_TRACE_ERROR("A2D_ParsSbcInfo fail:%d", a2d_status);
+            }
+        }
+#if (BTC_AV_CODEC_AAC_INCLUDED == TRUE)
+        else if (p_codec[BTA_AV_CODEC_TYPE_IDX] == A2D_MEDIA_CT_M24) {
+            tA2D_M24_CIE m24_cie;
+            a2d_status = A2D_ParsM24Info(&m24_cie, p_codec, FALSE);
+            if (a2d_status == A2D_SUCCESS) {
+                btc_msg_t msg;
+                btc_av_args_t arg;
+
+                msg.sig = BTC_SIG_API_CB;
+                msg.pid = BTC_PID_A2DP;
+                msg.act = BTC_AV_CONFIG_EVT;
+
+                memset(&arg, 0, sizeof(btc_av_args_t));
+                arg.mcc.type = ESP_A2D_MCT_M24;
+                memcpy(&arg.mcc.cie.m24_info, p_codec + BTC_AV_M24_CIE_OFFSET, BTC_AV_M24_CIE_LEN);
+                btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL, NULL);
+            } else {
+                BTC_TRACE_ERROR("A2D_ParsM24Info fail:%d", a2d_status);
+            }
+        }
+#endif
+        else {
+            BTC_TRACE_ERROR("bte_av_media_sink_callback: unsup_codec 0x%02x", p_codec[BTA_AV_CODEC_TYPE_IDX]);
         }
     }
     UNUSED(que_len);
@@ -1488,25 +1558,52 @@ static void bte_av_media_sink_callback(tBTA_AV_EVT event, tBTA_AV_MEDIA *p_data)
 static void bte_av_media_source_callback(tBTA_AV_EVT event, tBTA_AV_MEDIA *p_data)
 {
     tA2D_STATUS a2d_status;
-    tA2D_SBC_CIE sbc_cie;
 
     if (event == BTA_AV_MEDIA_CFG_EVT) {
-        /* currently only supports SBC */
-        a2d_status = A2D_ParsSbcInfo(&sbc_cie, (UINT8 *)p_data, FALSE);
-        if (a2d_status == A2D_SUCCESS) {
-            btc_msg_t msg;
-            btc_av_args_t arg;
+        UINT8 *p_codec = (UINT8 *)p_data;
 
-            msg.sig = BTC_SIG_API_CB;
-            msg.pid = BTC_PID_A2DP;
-            msg.act = BTC_AV_CONFIG_EVT;
+        if (p_codec[BTA_AV_CODEC_TYPE_IDX] == A2D_MEDIA_CT_SBC) {
+            tA2D_SBC_CIE sbc_cie;
+            a2d_status = A2D_ParsSbcInfo(&sbc_cie, p_codec, FALSE);
+            if (a2d_status == A2D_SUCCESS) {
+                btc_msg_t msg;
+                btc_av_args_t arg;
 
-            memset(&arg, 0, sizeof(btc_av_args_t));
-            arg.mcc.type = ESP_A2D_MCT_SBC;
-            memcpy(&arg.mcc.cie.sbc_info, (uint8_t *)p_data + BTC_AV_SBC_CIE_OFFSET, BTC_AV_SBC_CIE_LEN);
-            btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL, NULL);
-        } else {
-            BTC_TRACE_ERROR("A2D_ParsSbcInfo fail:%d\n", a2d_status);
+                msg.sig = BTC_SIG_API_CB;
+                msg.pid = BTC_PID_A2DP;
+                msg.act = BTC_AV_CONFIG_EVT;
+
+                memset(&arg, 0, sizeof(btc_av_args_t));
+                arg.mcc.type = ESP_A2D_MCT_SBC;
+                memcpy(&arg.mcc.cie.sbc_info, p_codec + BTC_AV_SBC_CIE_OFFSET, BTC_AV_SBC_CIE_LEN);
+                btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL, NULL);
+            } else {
+                BTC_TRACE_ERROR("A2D_ParsSbcInfo fail:%d", a2d_status);
+            }
+        }
+#if (BTC_AV_CODEC_AAC_INCLUDED == TRUE)
+        else if (p_codec[BTA_AV_CODEC_TYPE_IDX] == A2D_MEDIA_CT_M24) {
+            tA2D_M24_CIE m24_cie;
+            a2d_status = A2D_ParsM24Info(&m24_cie, p_codec, FALSE);
+            if (a2d_status == A2D_SUCCESS) {
+                btc_msg_t msg;
+                btc_av_args_t arg;
+
+                msg.sig = BTC_SIG_API_CB;
+                msg.pid = BTC_PID_A2DP;
+                msg.act = BTC_AV_CONFIG_EVT;
+
+                memset(&arg, 0, sizeof(btc_av_args_t));
+                arg.mcc.type = ESP_A2D_MCT_M24;
+                memcpy(&arg.mcc.cie.m24_info, p_codec + BTC_AV_M24_CIE_OFFSET, BTC_AV_M24_CIE_LEN);
+                btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL, NULL);
+            } else {
+                BTC_TRACE_ERROR("A2D_ParsM24Info fail:%d", a2d_status);
+            }
+        }
+#endif
+        else {
+            BTC_TRACE_WARNING("bte_av_media_source_callback: unsup_codec 0x%02x", p_codec[BTA_AV_CODEC_TYPE_IDX]);
         }
     }
 }
@@ -1523,13 +1620,14 @@ static void bte_av_media_source_callback(tBTA_AV_EVT event, tBTA_AV_MEDIA *p_dat
 
 tBTC_AV_CODEC_INFO *btc_av_codec_cap_get(void)
 {
-    return &btc_av_cb.codec_caps;
+    return btc_av_cb.codec_caps;
 }
 
 static void btc_av_reg_sep(uint8_t tsep, uint8_t seid, esp_a2d_mcc_t *mcc)
 {
     tBTA_AV_DATA_CBACK *p_data_cback = NULL;
     esp_a2d_cb_param_t param;
+    tBTA_AV_CODEC codec_type = ESP_A2D_MCT_NON_A2DP;
 
     param.a2d_sep_reg_stat.seid = seid;
     if (btc_av_cb.sm_handle == NULL || btc_sm_get_state(btc_av_cb.sm_handle) != BTC_AV_STATE_IDLE) {
@@ -1539,24 +1637,40 @@ static void btc_av_reg_sep(uint8_t tsep, uint8_t seid, esp_a2d_mcc_t *mcc)
         return;
     }
 
-    if (mcc->type == ESP_A2D_MCT_SBC) {
-        A2D_BldSbcInfo(A2D_MEDIA_TYPE_AUDIO, (tA2D_SBC_CIE *)&btc_av_sbc_default_config, btc_av_cb.codec_caps.info);
-        /* overwrite sbc cie */
-        memcpy(btc_av_cb.codec_caps.info + A2D_SBC_CIE_OFF, &mcc->cie, A2D_SBC_CIE_LEN);
-
-        if (tsep == AVDT_TSEP_SNK) {
-            p_data_cback = bte_av_media_sink_callback;
-        }
-        else {
-            p_data_cback = bte_av_media_source_callback;
-        }
-        BTA_AvRegSEP(BTA_AV_CHNL_AUDIO, seid, tsep, BTA_AV_CODEC_SBC, btc_av_cb.codec_caps.info, p_data_cback);
+    if (tsep == AVDT_TSEP_SNK) {
+        p_data_cback = bte_av_media_sink_callback;
     }
     else {
-        param.a2d_sep_reg_stat.reg_state = ESP_A2D_SEP_REG_UNSUPPORTED;
-        btc_a2d_cb_to_app(ESP_A2D_SEP_REG_STATE_EVT, &param);
-        BTC_TRACE_WARNING("%s: unsupported codec type %d", __func__, mcc->type);
+        p_data_cback = bte_av_media_source_callback;
     }
+
+    switch (mcc->type) {
+        case ESP_A2D_MCT_SBC: {
+            codec_type = BTA_AV_CODEC_SBC;
+            btc_av_cb.codec_caps[seid].id = BTC_AV_CODEC_SBC;
+            A2D_BldSbcInfo(A2D_MEDIA_TYPE_AUDIO, (tA2D_SBC_CIE *)&btc_av_sbc_default_config, btc_av_cb.codec_caps[seid].info);
+            /* overwrite sbc cie */
+            memcpy(btc_av_cb.codec_caps[seid].info + A2D_SBC_CIE_OFF, &mcc->cie, A2D_SBC_CIE_LEN);
+            break;
+        }
+#if (BTC_AV_CODEC_AAC_INCLUDED == TRUE)
+        case ESP_A2D_MCT_M24: {
+            codec_type = BTA_AV_CODEC_M24;
+            btc_av_cb.codec_caps[seid].id = BTC_AV_CODEC_M24;
+            A2D_BldM24Info(A2D_MEDIA_TYPE_AUDIO, (tA2D_M24_CIE *)&btc_av_m24_default_config, btc_av_cb.codec_caps[seid].info);
+            /* overwrite m24 cie */
+            memcpy(btc_av_cb.codec_caps[seid].info + A2D_M24_CIE_OFF, &mcc->cie, A2D_M24_CIE_LEN);
+            break;
+        }
+#endif
+        default: {
+            param.a2d_sep_reg_stat.reg_state = ESP_A2D_SEP_REG_UNSUPPORTED;
+            btc_a2d_cb_to_app(ESP_A2D_SEP_REG_STATE_EVT, &param);
+            BTC_TRACE_WARNING("%s: unsupported codec type %d", __func__, mcc->type);
+            return;
+        }
+    }
+    BTA_AvRegSEP(BTA_AV_CHNL_AUDIO, seid, tsep, codec_type, btc_av_cb.codec_caps[seid].info, p_data_cback);
 }
 
 #endif
@@ -2009,26 +2123,7 @@ static void btc_a2d_src_set_pref_mcc(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_mcc_t 
                 if (A2D_BldSbcInfo(A2D_MEDIA_TYPE_AUDIO, (tA2D_SBC_CIE *)&btc_av_sbc_default_config, btc_av_cb.pref_mcc.info) == A2D_SUCCESS) {
                     /* overwrite sbc cie */
                     memcpy(btc_av_cb.pref_mcc.info + A2D_SBC_CIE_OFF, &pref_mcc->cie, A2D_SBC_CIE_LEN);
-
-                    /* Note: Return value only indicates if the config is supported and reconfig is initiated.
-                     * Actual success/failure will be reported via ESP_A2D_SRC_SET_PREF_MCC_EVT
-                     * when BTA_AV_RECONFIG_EVT is received. */
-                    if (!btc_a2dp_source_set_pref_mcc(conn_hdl, &btc_av_cb.pref_mcc)) {
-                        param.a2d_set_pref_mcc_stat.set_status = ESP_BT_STATUS_UNSUPPORTED;
-                        param.a2d_set_pref_mcc_stat.conn_hdl = btc_av_cb.bta_handle;
-                        BTC_TRACE_DEBUG("btc_a2d_src_set_pref_mcc bad params");
-                        btc_a2d_cb_to_app(ESP_A2D_SRC_SET_PREF_MCC_EVT, &param);
-                    } else {
-                        /* Check if reconfig was actually initiated */
-                        if (!bta_av_co_audio_pref_mcc_reconfig_initiated(conn_hdl)) {
-                            /* Configuration unchanged, no reconfig needed.
-                             * Preferred config is already in use, notify success immediately. */
-                            param.a2d_set_pref_mcc_stat.set_status = ESP_BT_STATUS_SUCCESS;
-                            param.a2d_set_pref_mcc_stat.conn_hdl = btc_av_cb.bta_handle;
-                            BTC_TRACE_DEBUG("btc_a2d_src_set_pref_mcc already active");
-                            btc_a2d_cb_to_app(ESP_A2D_SRC_SET_PREF_MCC_EVT, &param);
-                        }
-                    }
+                    goto set_pref_mcc;
                 } else {
                     param.a2d_set_pref_mcc_stat.set_status = ESP_BT_STATUS_FAIL;
                     param.a2d_set_pref_mcc_stat.conn_hdl = btc_av_cb.bta_handle;
@@ -2037,6 +2132,22 @@ static void btc_a2d_src_set_pref_mcc(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_mcc_t 
                 }
                 break;
             }
+#if (BTC_AV_CODEC_AAC_INCLUDED == TRUE)
+            case ESP_A2D_MCT_M24: {
+                btc_av_cb.pref_mcc.id = BTC_AV_CODEC_M24;
+                if (A2D_BldM24Info(A2D_MEDIA_TYPE_AUDIO, (tA2D_M24_CIE *)&btc_av_m24_default_config, btc_av_cb.pref_mcc.info) == A2D_SUCCESS) {
+                    /* overwrite m24 cie */
+                    memcpy(btc_av_cb.pref_mcc.info + A2D_M24_CIE_OFF, &pref_mcc->cie, A2D_M24_CIE_LEN);
+                    goto set_pref_mcc;
+                } else {
+                    param.a2d_set_pref_mcc_stat.set_status = ESP_BT_STATUS_FAIL;
+                    param.a2d_set_pref_mcc_stat.conn_hdl = btc_av_cb.bta_handle;
+                    BTC_TRACE_DEBUG("btc_a2d_src_set_pref_mcc build M24 info failed");
+                    btc_a2d_cb_to_app(ESP_A2D_SRC_SET_PREF_MCC_EVT, &param);
+                }
+                break;
+            }
+#endif
 
             default: {
                 param.a2d_set_pref_mcc_stat.set_status = ESP_BT_STATUS_UNSUPPORTED;
@@ -2044,6 +2155,28 @@ static void btc_a2d_src_set_pref_mcc(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_mcc_t 
                 BTC_TRACE_DEBUG("btc_a2d_src_set_pref_mcc bad codec type %d", pref_mcc->type);
                 btc_a2d_cb_to_app(ESP_A2D_SRC_SET_PREF_MCC_EVT, &param);
                 break;
+            }
+        }
+        return;
+
+set_pref_mcc:
+        /* Note: Return value only indicates if the config is supported and reconfig is initiated.
+         * Actual success/failure will be reported via ESP_A2D_SRC_SET_PREF_MCC_EVT
+         * when BTA_AV_RECONFIG_EVT is received. */
+        if (!btc_a2dp_source_set_pref_mcc(conn_hdl, &btc_av_cb.pref_mcc)) {
+            param.a2d_set_pref_mcc_stat.set_status = ESP_BT_STATUS_UNSUPPORTED;
+            param.a2d_set_pref_mcc_stat.conn_hdl = btc_av_cb.bta_handle;
+            BTC_TRACE_DEBUG("btc_a2d_src_set_pref_mcc bad params");
+            btc_a2d_cb_to_app(ESP_A2D_SRC_SET_PREF_MCC_EVT, &param);
+        } else {
+            /* Check if reconfig was actually initiated */
+            if (!bta_av_co_audio_pref_mcc_reconfig_initiated(conn_hdl)) {
+                /* Configuration unchanged, no reconfig needed.
+                 * Preferred config is already in use, notify success immediately. */
+                param.a2d_set_pref_mcc_stat.set_status = ESP_BT_STATUS_SUCCESS;
+                param.a2d_set_pref_mcc_stat.conn_hdl = btc_av_cb.bta_handle;
+                BTC_TRACE_DEBUG("btc_a2d_src_set_pref_mcc already active");
+                btc_a2d_cb_to_app(ESP_A2D_SRC_SET_PREF_MCC_EVT, &param);
             }
         }
     }
@@ -2070,7 +2203,23 @@ bt_status_t btc_a2d_src_audio_data_send(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_aud
         return BT_STATUS_FAIL;
     }
     BT_HDR *p_buf = (BT_HDR *)audio_buf;
-    assert(audio_buf->data - (UINT8 *)(p_buf + 1) >= BTC_AUDIO_BUFF_OFFSET);
+    uint8_t buf_offset = BTC_AUDIO_BUFF_OFFSET;
+    UINT8 codec_id = bta_av_co_get_cur_codec_type();
+
+    switch (codec_id) {
+        case BTC_AV_CODEC_SBC:
+            break;
+#if (BTC_AV_CODEC_AAC_INCLUDED == TRUE)
+        case BTC_AV_CODEC_M24:
+            buf_offset -= BTA_AV_SBC_HDR_SIZE;
+            break;
+#endif
+
+        default:
+            return BT_STATUS_UNSUPPORTED;
+    }
+
+    assert(audio_buf->data - (UINT8 *)(p_buf + 1) >= buf_offset);
     /* since p_buf and audio_buf point to the same memory, backup those value before modify p_buf */
     uint16_t number_frame = audio_buf->number_frame;
     uint16_t data_len = audio_buf->data_len;
@@ -2113,7 +2262,8 @@ uint16_t btc_a2d_conn_handle_get(void)
 
 void btc_av_audio_buff_alloc(uint16_t size, uint8_t **pp_buff, uint8_t **pp_data)
 {
-    /* todo */
+    uint8_t buf_offset = BTC_AUDIO_BUFF_OFFSET;
+
     if (pp_buff == NULL || pp_data == NULL) {
         return;
     }
@@ -2121,10 +2271,27 @@ void btc_av_audio_buff_alloc(uint16_t size, uint8_t **pp_buff, uint8_t **pp_data
     *pp_buff = NULL;
     *pp_data = NULL;
 
-    BT_HDR *p_buf= (BT_HDR *)osi_calloc(sizeof(BT_HDR) + BTC_AUDIO_BUFF_OFFSET + size);
+#if (BTC_AV_EXT_CODEC == TRUE)
+    UINT8 codec_id = bta_av_co_get_cur_codec_type();
+
+    switch (codec_id) {
+        case BTC_AV_CODEC_SBC:
+            break;
+#if (BTC_AV_CODEC_AAC_INCLUDED == TRUE)
+        case BTC_AV_CODEC_M24:
+            buf_offset -= BTA_AV_SBC_HDR_SIZE;
+            break;
+#endif
+
+        default:
+            return;
+    }
+#endif
+    /* todo */
+    BT_HDR *p_buf= (BT_HDR *)osi_calloc(sizeof(BT_HDR) + buf_offset + size);
     if (p_buf != NULL) {
         *pp_buff = (uint8_t *)p_buf;
-        *pp_data = (uint8_t *)(p_buf + 1) + BTC_AUDIO_BUFF_OFFSET;
+        *pp_data = (uint8_t *)(p_buf + 1) + buf_offset;
     }
 }
 

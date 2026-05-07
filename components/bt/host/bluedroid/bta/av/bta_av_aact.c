@@ -1330,9 +1330,12 @@ void bta_av_setconfig_rsp (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
             p_scb->avdt_version = AVDT_VERSION_SYNC;
         }
 
-
-        if (p_scb->codec_type == BTA_AV_CODEC_SBC || num > 1) {
-            /* if SBC is used by the SNK as INT, discover req is not sent in bta_av_config_ind.
+        if (p_scb->codec_type == BTA_AV_CODEC_SBC || num > 1
+#if (BTA_AV_CODEC_AAC_INCLUDED == TRUE)
+            || p_scb->codec_type == BTA_AV_CODEC_M24
+#endif
+            ) {
+            /* if SBC/AAC is used by the SNK as INT, discover req is not sent in bta_av_config_ind.
                        * call cfg_res now */
             /* this is called in A2DP SRC path only, In case of SINK we don't need it  */
             if (local_sep == AVDT_TSEP_SRC) {
@@ -1340,7 +1343,7 @@ void bta_av_setconfig_rsp (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
                                       UUID_SERVCLASS_AUDIO_SOURCE);
             }
         } else {
-            /* we do not know the peer device and it is using non-SBC codec
+            /* we do not know the peer device and it is using non-SBC/AAC codec
              * we need to know all the SEPs on SNK */
             bta_av_discover_req(p_scb, NULL);
             return;
@@ -2216,9 +2219,8 @@ void bta_av_reconfig (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
 
             /* drop the buffers queued in L2CAP */
             L2CA_FlushChannel (p_scb->l2c_cid, L2CAP_FLUSH_CHANS_ALL);
-
-            AVDT_CloseReq(p_scb->avdt_handle);
         }
+        AVDT_CloseReq(p_scb->avdt_handle);
     }
 }
 
@@ -2684,6 +2686,11 @@ void bta_av_rcfg_str_ok (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     p_scb->role &= ~BTA_AV_ROLE_START_INT;
 
     {
+        if (p_scb->seps[p_scb->sep_idx].p_app_data_cback) {
+            /* report codec configuration after successful reconfig */
+            p_scb->seps[p_scb->sep_idx].p_app_data_cback(BTA_AV_MEDIA_CFG_EVT,
+                    (tBTA_AV_MEDIA *)p_scb->cfg.codec_info);
+        }
         /* reconfigure success  */
         evt.status = BTA_AV_SUCCESS;
         evt.chnl   = p_scb->chnl;
