@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -719,7 +719,19 @@ esp_err_t esp_netif_dhcps_stop(esp_netif_t *esp_netif);
  */
 esp_err_t esp_netif_dhcps_get_clients_by_mac(esp_netif_t *esp_netif, int num, esp_netif_pair_mac_ip_t *mac_ip_pair);
 
-
+/**
+ * @brief  Populate IP addresses of client from the lwIP ARP cache on this interface
+ *
+ * Walks the ARP table and fills in ip when the Ethernet address matches and the entry belongs to esp_netif.
+ *
+ * @param[in] esp_netif Handle to esp-netif instance
+ * @param[in,out] mac_ip_pair MAC/IP pair to fill in the IP
+ * @return
+ *      - ESP_OK on success (including when nothing was found in ARP)
+ *      - ESP_ERR_ESP_NETIF_INVALID_PARAMS on invalid params
+ *      - ESP_ERR_NOT_SUPPORTED if ARP is disabled in lwIP
+ */
+esp_err_t esp_netif_arp_get_client_by_mac(esp_netif_t *esp_netif, esp_netif_pair_mac_ip_t *mac_ip_pair);
 
 /**
  * @brief  Set DNS Server information
