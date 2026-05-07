@@ -159,6 +159,9 @@ typedef struct wifi_osi_funcs_t {
 #if CONFIG_IDF_TARGET_ESP32S31
     int (* _coex_configure_preemption_end_cb)(bool is_register, int(*cb)(uint32_t));
 #endif
+#if CONFIG_SOC_WIFI_HE_SUPPORT
+    bool (*_wifi_disable_ac_ax)(void);
+#endif
     int32_t _magic;
 } wifi_osi_funcs_t;
 
