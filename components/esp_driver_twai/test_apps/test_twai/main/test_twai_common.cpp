@@ -165,9 +165,9 @@ TEST_CASE("twai baudrate measurement", "[twai]")
     uint32_t source_freq = 0;
     for (size_t i = 0; i < sizeof(twai_available_clk_srcs) / sizeof(twai_available_clk_srcs[0]); i++) {
         TEST_ESP_OK(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)twai_available_clk_srcs[i], ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &source_freq));
-        printf("Test clock source %d frequency: %ld Hz\n", twai_available_clk_srcs[i], source_freq);
-        test_twai_baudrate_correctness(twai_available_clk_srcs[i], 200000);
+        printf("\nTest clock source %d frequency: %ld Hz\n", twai_available_clk_srcs[i], source_freq);
 
+        test_twai_baudrate_correctness(twai_available_clk_srcs[i], 200000);
         test_twai_baudrate_correctness(twai_available_clk_srcs[i], 1000000);
     }
 }
