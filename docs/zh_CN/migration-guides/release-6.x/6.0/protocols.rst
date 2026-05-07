@@ -158,5 +158,5 @@ ESP-MQTT
   - 移除了 ``examples/protocols/mqtt/ssl*`` 路径下的旧版 MQTT TLS 示例。
   - 新增参考示例：
 
-    - ``examples/protocols/mqtt``：基于 TLS 的 MQTT。
-    - ``examples/protocols/mqtt5``：基于 TLS 的 MQTT v5.0。
+    - :example:`protocols/mqtt`：基于 TLS 的 MQTT。
+    - :example:`protocols/mqtt5`：基于 TLS 的 MQTT v5.0。

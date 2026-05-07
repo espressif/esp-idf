@@ -93,7 +93,7 @@ The :doc:`Ethernet driver </api-reference/network/esp_eth>` shows the same BSD s
 
 - :example:`ethernet/basic` for driver bring-up, ``esp_netif``, DHCP, and basic IP connectivity.
 - :example:`ethernet/iperf` for TCP/UDP throughput measurement on Ethernet.
-- :example:`ethernet/ptp` for IEEE 1588 / PTP time synchronization over Ethernet.
+- :example:`ethernet/ptp` for IEEE 1588/PTP time synchronization over Ethernet.
 
 Supported Functions
 ^^^^^^^^^^^^^^^^^^^
