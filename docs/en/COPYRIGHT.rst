@@ -57,6 +57,8 @@ These third party libraries can be included into the application (firmware) prod
 
 * :component:`BLE Audio <bt/esp_ble_audio>` is adapted from Zephyr Project, Copyright (C) 2017-2018 Intel Corporation and licensed under Apache License 2.0.
 
+* :component:`BLE ISO <bt/esp_ble_iso>` is adapted from Zephyr Project, Copyright (C) 2017-2018 Intel Corporation and licensed under Apache License 2.0.
+
 * `mynewt-nimble`_, Copyright (C) 2015-2018 The Apache Software Foundation, is licensed under Apache License 2.0 as described in :component_file:`LICENSE file <bt/host/nimble/nimble/LICENSE>`.
 
 * `TLSF allocator <https://github.com/espressif/tlsf>`_, Copyright (C) 2006-2016 Matthew Conte, and licensed under the BSD 3-clause license.

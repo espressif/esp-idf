@@ -55,30 +55,30 @@ INPUT = \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_sensor_model_api.h \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_time_scene_model_api.h \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/v1.1/api/models/include/esp_ble_mesh_mbt_model_api.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/audio/include/esp_ble_audio_aics_api.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/audio/include/esp_ble_audio_bap_api.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/audio/include/esp_ble_audio_bap_lc3_preset_defs.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/audio/include/esp_ble_audio_cap_api.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/audio/include/esp_ble_audio_ccp_api.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/audio/include/esp_ble_audio_codec_api.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/audio/include/esp_ble_audio_common_api.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/audio/include/esp_ble_audio_csip_api.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/audio/include/esp_ble_audio_defs.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/audio/include/esp_ble_audio_gmap_api.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/audio/include/esp_ble_audio_gmap_lc3_preset_defs.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/audio/include/esp_ble_audio_has_api.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/audio/include/esp_ble_audio_lc3_defs.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/audio/include/esp_ble_audio_mcc_api.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/audio/include/esp_ble_audio_mcs_defs.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/audio/include/esp_ble_audio_media_proxy_api.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/audio/include/esp_ble_audio_micp_api.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/audio/include/esp_ble_audio_pacs_api.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/audio/include/esp_ble_audio_pbp_api.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/audio/include/esp_ble_audio_tbs_api.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/audio/include/esp_ble_audio_tmap_api.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/audio/include/esp_ble_audio_vcp_api.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/audio/include/esp_ble_audio_vocs_api.h \
-    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/iso/include/esp_ble_iso_common_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_aics_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_bap_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_bap_lc3_preset_defs.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_cap_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_ccp_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_codec_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_common_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_csip_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_defs.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_gmap_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_gmap_lc3_preset_defs.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_has_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_lc3_defs.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_mcc_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_mcs_defs.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_media_proxy_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_micp_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_pacs_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_pbp_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_tbs_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_tmap_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_vcp_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_vocs_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_iso/api/include/esp_ble_iso_common_api.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_a2dp_api.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_avrc_api.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_bt_defs.h \

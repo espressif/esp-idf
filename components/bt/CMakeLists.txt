@@ -59,11 +59,15 @@ if(CONFIG_IDF_DOC_BUILD OR CONFIG_BT_ENABLED)
     list(APPEND srcs ${ble_mesh_srcs})
     list(APPEND include_dirs ${ble_mesh_include_dirs})
 
+    # BLE ISO (host shim + ISO transport, reusable by BLE Audio / HID-over-ISO / etc.)
+    add_subdirectory(esp_ble_iso)
+    list(APPEND srcs ${ble_iso_srcs})
+    list(APPEND include_dirs ${ble_iso_include_dirs})
+
     # BLE Audio
     add_subdirectory(esp_ble_audio)
     list(APPEND srcs ${ble_audio_srcs})
     list(APPEND include_dirs ${ble_audio_include_dirs})
-    list(APPEND priv_include_dirs ${ble_audio_priv_include_dirs})
 
     # When log compression is enabled, selected logs are replaced
     # by auto-generated macros that emit pre-encoded data.

@@ -111,7 +111,7 @@ menu "Bluetooth"
 
     menu "BLE ISO Options"
         depends on BT_ENABLED && SOC_BLE_ISO_SUPPORTED
-        source "$IDF_PATH/components/bt/esp_ble_audio/host/iso/Kconfig.iso.in"
+        source "$IDF_PATH/components/bt/esp_ble_iso/Kconfig.in"
     endmenu
 
     menu "BLE Audio Options"
