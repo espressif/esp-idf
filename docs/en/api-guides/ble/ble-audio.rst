@@ -302,7 +302,7 @@ PBP depends entirely on BAP for the underlying broadcast transport; it does not 
 
 
 Profile and Service Dependency Reference
------------------------------------------
+----------------------------------------
 
 The following tables summarize the dependencies between profiles and services in the ESP-IDF LE Audio implementation.
 

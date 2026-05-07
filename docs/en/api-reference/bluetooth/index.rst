@@ -90,7 +90,7 @@ For additional details and API reference from the upstream documentation, refer 
 ----
 
 Examples and Tutorials
----------------------------
+----------------------
 
 Explore examples and tutorials in the ESP-IDF examples directory:
 

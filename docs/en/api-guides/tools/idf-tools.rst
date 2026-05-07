@@ -60,7 +60,9 @@ To use Espressif's download server, set the environment variable ``IDF_GITHUB_AS
 
 Any mirror server can be used provided the URL matches the ``github.com`` download URL format. For any GitHub asset URL that the install process downloads, it will replace ``https://github.com`` with ``https://${IDF_GITHUB_ASSETS}``.
 
-.. note:: The Espressif download server currently does not mirror everything from GitHub, but only files attached as Assets to some releases, as well as source archives for some releases.
+.. note::
+
+    The Espressif download server currently does not mirror everything from GitHub, but only files attached as Assets to some releases, as well as source archives for some releases.
 
 .. _idf-tools-py:
 

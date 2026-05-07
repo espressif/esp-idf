@@ -253,6 +253,7 @@ By default, failure to initialize external RAM will cause the ESP-IDF startup to
 
         On {IDF_TARGET_NAME}, PSRAM encryption can use an independent encryption key. If the PSRAM encryption key is not programmed, the flash encryption key will be used as the PSRAM encryption key.
 
+
 .. only:: esp32
 
     .. include:: inc/external-ram-esp32-notes.rst

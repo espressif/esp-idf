@@ -45,6 +45,8 @@
 - ``python_env`` —  与工具无关；虚拟 Python 环境安装在其子目录中。注意，设置 ``IDF_PYTHON_ENV_PATH`` 环境变量可以将 Python 环境目录放置到其他位置。
 
   - ``idf_version.txt`` — 位于 ``python_env`` 目录下每个特定 Python 环境的子目录中，记录了该 Python 环境所对应的 ESP-IDF 版本。版本信息的存储格式如 ``5.3`` ，表示 ESP-IDF 版本 ``v5.3``。
+
+- ``root_managed_components`` — 由 ``idf-component-manager`` 管理的目录，用于存放全局安装的组件。
 - ``espidf.constraints.*.txt`` — 每个 ESP-IDF 版本都有的约束文件，包含 Python 包版本要求。
 
 GitHub 资源镜像
@@ -58,7 +60,9 @@ GitHub 资源镜像
 
 只要 URL 与 ``github.com`` 的下载 URL 格式匹配，任何镜像服务器均可使用，安装过程中下载的 GitHub 资源 URL 将把 ``https://github.com`` 替换为 ``https://${IDF_GITHUB_ASSETS}``。
 
-.. note:: 目前，乐鑫下载服务器不会镜像 GitHub 上的所有内容，只镜像部分发布版本的附件资源文件及源文件。
+.. note::
+
+    目前，乐鑫下载服务器不会镜像 GitHub 上的所有内容，只镜像部分发布版本的附件资源文件及源文件。
 
 .. _idf-tools-py:
 

@@ -1276,6 +1276,7 @@ The command ``idf.py decrypt-flash-data`` can be used with the same options (and
 
     On {IDF_TARGET_NAME}, PSRAM encryption can use an independent encryption key. If the PSRAM encryption key is not programmed, the flash encryption key will be used as the PSRAM encryption key.
 
+
 Technical Details
 -----------------
 
