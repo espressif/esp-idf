@@ -9,49 +9,6 @@
     IDF_CCACHE_ENABLE: "1"
   dependencies: # set dependencies to null to avoid missing artifacts issue
 
-######################
-# build_template_app #
-######################
-.build_template_app_template:
-  extends:
-    - .build_template
-  artifacts:
-    paths:
-      - log_template_app/*
-      - size_info.txt
-      - build_template_app/**/size*.json
-    expire_in: 1 week
-    when: always
-  script:
-    # Set the variable for 'esp-idf-template' testing
-    - ESP_IDF_TEMPLATE_GIT=${ESP_IDF_TEMPLATE_GIT:-"https://github.com/espressif/esp-idf-template.git"}
-    - retry_failed git clone ${ESP_IDF_TEMPLATE_GIT}
-    # Try to use the same branch name for esp-idf-template that we're
-    # using on esp-idf. If it doesn't exist then just stick to the default branch
-    - python $CHECKOUT_REF_SCRIPT esp-idf-template esp-idf-template
-    - export PATH="$IDF_PATH/tools:$PATH"
-    # Only do the default cmake build for each target, remaining part are done in the build_template_app job
-    - tools/ci/build_template_app.sh ${BUILD_COMMAND_ARGS}
-
-# Build at least one project for each target at earliest stage to reduce build cost for obvious failing commits
-fast_template_app:
-  extends:
-    - .build_template_app_template
-    - .rules:build
-  stage: pre_check
-  tags: [fast_run, shiny]
-  variables:
-    BUILD_COMMAND_ARGS: "-p"
-
-# This job builds template app with permutations of targets and optimization levels
-build_template_app:
-  extends:
-    - .build_template_app_template
-    - .rules:build
-  stage: host_test
-  needs:
-    - job: fast_template_app
-      artifacts: false
 
 ########################################
 # Clang Build Apps Without Tests Cases #
@@ -61,7 +18,7 @@ build_template_app:
     - .build_template
     - .rules:build
   needs:
-    - job: fast_template_app
+    - job: fast_build_check
       artifacts: false
     - pipeline_variables
   artifacts:
@@ -152,7 +109,7 @@ generate_build_child_pipeline:
 build_child_pipeline:
   stage: build
   needs:
-    - job: fast_template_app
+    - job: fast_build_check
       optional: true
       artifacts: false
     - pipeline_variables

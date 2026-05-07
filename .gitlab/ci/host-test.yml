@@ -13,7 +13,7 @@
     - job: upload-submodules-cache
       optional: true
       artifacts: false
-    - job: fast_template_app
+    - job: fast_build_check
       optional: true
       artifacts: false
   artifacts:
@@ -438,7 +438,7 @@ test_pytest_macos:
     - .rules:build:check
   dependencies: # set dependencies to null to avoid missing artifacts issue
   needs:
-    - job: fast_template_app
+    - job: fast_build_check
       artifacts: false
       optional: true
   artifacts:

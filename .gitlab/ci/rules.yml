@@ -52,7 +52,6 @@
   - "tools/ci/esp_err_to_name_exceptions.txt"
   - "tools/ci/test_build_system*.sh"
   - "tools/ci/test_build_system*.py"
-  - "tools/ci/build_template_app.sh"
   - "tools/test_build_system/**/*"
 
 .patterns-host_test_ldgen: &patterns-host_test_ldgen
