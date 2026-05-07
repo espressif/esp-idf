@@ -176,6 +176,13 @@ esp_err_t esp_att_generate_token(const uint32_t nonce, const uint32_t client_id,
     }
 
     esp_att_ecdsa_keypair_t keypair = {};
+    mbedtls_sha256_context ctx;
+    mbedtls_sha256_init(&ctx);
+    char *hdr_json = NULL;
+    char *eat_json = NULL;
+    char *pubkey_json = NULL;
+    char *sign_json = NULL;
+
     err = esp_att_utils_ecdsa_gen_keypair_secp256r1(&keypair);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to generate ECDSA key-pair!");
@@ -196,13 +203,10 @@ esp_err_t esp_att_generate_token(const uint32_t nonce, const uint32_t client_id,
 
     memset(token_buf, 0x00, token_buf_size);
 
-    mbedtls_sha256_context ctx;
-    mbedtls_sha256_init(&ctx);
-
     int ret = mbedtls_sha256_starts(&ctx, false);
     if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
-        return ESP_FAIL;
+        err = ESP_FAIL;
+        goto exit;
     }
 
     json_gen_str_t jstr;
@@ -211,79 +215,83 @@ esp_err_t esp_att_generate_token(const uint32_t nonce, const uint32_t client_id,
 
     /* Pushing the Header object */
     const esp_att_token_hdr_t tk_hdr = {};
-    char *hdr_json = NULL;
     int hdr_len = -1;
     /* NOTE: Token header is not yet configurable */
     err = esp_att_utils_header_to_json(&tk_hdr, &hdr_json, &hdr_len);
-    if (err != ESP_OK || hdr_json == NULL || hdr_len <= 0) {
+    if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to format the token header as JSON!");
-        return err;
+        goto exit;
     }
     json_gen_push_object_str(&jstr, "header", hdr_json);
 
     ret = mbedtls_sha256_update(&ctx, (const unsigned char *)hdr_json, hdr_len - 1);
     if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
-        return ESP_FAIL;
+        err = ESP_FAIL;
+        goto exit;
     }
     free(hdr_json);
+    hdr_json = NULL;
 
     /* Pushing the EAT object */
-    char *eat_json = NULL;
     int eat_len = -1;
     err = esp_att_utils_eat_data_to_json(&sw_claim_data, &cfg, &eat_json, &eat_len);
-    if (err != ESP_OK || eat_json == NULL || eat_len <= 0) {
+    if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to format the EAT data to JSON!");
-        return err;
+        goto exit;
     }
     json_gen_push_object_str(&jstr, "eat", eat_json);
 
     ret = mbedtls_sha256_update(&ctx, (const unsigned char *)eat_json, eat_len - 1);
     if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
-        return ESP_FAIL;
+        err = ESP_FAIL;
+        goto exit;
     }
     free(eat_json);
+    eat_json = NULL;
 
-    char *pubkey_json = NULL;
     int pubkey_len = -1;
     err = esp_att_utils_pubkey_to_json(&keypair, &pubkey_json, &pubkey_len);
-    if (err != ESP_OK || pubkey_json == NULL || pubkey_len <= 0) {
+    if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to format the public key data to JSON!");
-        return err;
+        goto exit;
     }
     json_gen_push_object_str(&jstr, "public_key", pubkey_json);
 
     ret = mbedtls_sha256_update(&ctx, (const unsigned char *)pubkey_json, pubkey_len - 1);
     if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
-        return ESP_FAIL;
+        err = ESP_FAIL;
+        goto exit;
     }
     free(pubkey_json);
+    pubkey_json = NULL;
 
     uint8_t digest[SHA256_DIGEST_SZ] = {0};
     ret = mbedtls_sha256_finish(&ctx, digest);
     if (ret != 0) {
-        mbedtls_sha256_free(&ctx);
-        return ESP_FAIL;
+        err = ESP_FAIL;
+        goto exit;
     }
-    mbedtls_sha256_free(&ctx);
 
-    char *sign_json = NULL;
     int sign_len = -1;
     err = esp_att_utils_sign_to_json(&keypair, digest, sizeof(digest), &sign_json, &sign_len);
-    if (err != ESP_OK || sign_json == NULL || sign_len <= 0) {
+    if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to format the token signature to JSON!");
-        return err;
+        goto exit;
     }
     json_gen_push_object_str(&jstr, "sign", sign_json);
     free(sign_json);
+    sign_json = NULL;
 
     json_gen_end_object(&jstr);
     *token_len = json_gen_str_end(&jstr);
     err = ESP_OK;
 
 exit:
+    mbedtls_sha256_free(&ctx);
+    free(hdr_json);
+    free(eat_json);
+    free(pubkey_json);
+    free(sign_json);
     free_sw_claim_list();
     return err;
 }

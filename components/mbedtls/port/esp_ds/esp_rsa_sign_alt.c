@@ -311,6 +311,7 @@ int esp_ds_rsa_sign( void *ctx,
                             &esp_ds_ctx);
     if (ds_r != ESP_OK) {
         ESP_LOGE(TAG, "Error in esp_ds_start_sign, returned %d ", ds_r);
+        memset(signature, 0, sig_len);
         heap_caps_free(signature);
         return -1;
     }
@@ -322,6 +323,7 @@ int esp_ds_rsa_sign( void *ctx,
         } else {
             ESP_LOGE(TAG, "Error in esp_ds_finish_sign, returned %d ", ds_r);
         }
+        memset(signature, 0, sig_len);
         heap_caps_free(signature);
         return -1;
     }
@@ -329,6 +331,7 @@ int esp_ds_rsa_sign( void *ctx,
     for (unsigned int i = 0; i < (data_len); i++) {
         ((uint32_t *)sig)[i] = SWAP_INT32(((uint32_t *)signature)[(data_len) - (i + 1)]);
     }
+    memset(signature, 0, sig_len);
     heap_caps_free(signature);
     return 0;
 }

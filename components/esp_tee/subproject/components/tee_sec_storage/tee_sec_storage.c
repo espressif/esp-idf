@@ -22,6 +22,7 @@
 #include "mbedtls/ecdsa.h"
 #include "mbedtls/error.h"
 #include "esp_hmac_pbkdf2.h"
+#include "mbedtls/platform_util.h"
 
 #include "esp_rom_sys.h"
 #include "nvs.h"
@@ -148,6 +149,7 @@ static esp_err_t compute_nvs_keys_with_hmac(hmac_key_id_t hmac_key_id, nvs_sec_c
     err |= esp_hmac_calculate(hmac_key_id, tkey_seed, sizeof(tkey_seed), (uint8_t *)cfg->tky);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to calculate seed HMAC");
+        mbedtls_platform_zeroize(cfg, sizeof(nvs_sec_cfg_t));
         return ESP_FAIL;
     }
     ESP_FAULT_ASSERT(err == ESP_OK);
@@ -245,20 +247,24 @@ esp_err_t esp_tee_sec_storage_clear_key(const char *key_id)
 
     esp_err_t err = secure_storage_read(key_id, (void *)&keyctx, &keyctx_len);
     if (err != ESP_OK) {
-        return err;
+        goto cleanup;
     }
 
     if (keyctx.flags & SEC_STORAGE_FLAG_WRITE_ONCE) {
         ESP_LOGE(TAG, "Key is write-once only and cannot be cleared!");
-        return ESP_ERR_INVALID_STATE;
+        err = ESP_ERR_INVALID_STATE;
+        goto cleanup;
     }
 
     err = nvs_erase_key(tee_nvs_hdl, key_id);
     if (err != ESP_OK) {
-        return err;
+        goto cleanup;
     }
 
     err = nvs_commit(tee_nvs_hdl);
+
+cleanup:
+    mbedtls_platform_zeroize(&keyctx, sizeof(keyctx));
     return err;
 }
 
@@ -353,6 +359,7 @@ esp_err_t esp_tee_sec_storage_gen_key(const esp_tee_sec_storage_key_cfg_t *cfg)
         return ESP_ERR_INVALID_STATE;
     }
 
+    esp_err_t err;
     sec_stg_key_t keyctx = {
         .type = cfg->type,
         .flags = cfg->flags,
@@ -365,21 +372,28 @@ esp_err_t esp_tee_sec_storage_gen_key(const esp_tee_sec_storage_key_cfg_t *cfg)
 #endif
         if (generate_ecdsa_key(&keyctx, cfg->type) != 0) {
             ESP_LOGE(TAG, "Failed to generate ECDSA keypair");
-            return ESP_FAIL;
+            err = ESP_FAIL;
+            goto cleanup;
         }
         break;
     case ESP_SEC_STG_KEY_AES256:
         if (generate_aes256_key(&keyctx) != 0) {
             ESP_LOGE(TAG, "Failed to generate AES key");
-            return ESP_FAIL;
+            err = ESP_FAIL;
+            goto cleanup;
         }
         break;
     default:
         ESP_LOGE(TAG, "Unsupported key-type!");
-        return ESP_ERR_NOT_SUPPORTED;
+        err = ESP_ERR_NOT_SUPPORTED;
+        goto cleanup;
     }
 
-    return secure_storage_write(cfg->id, (void *)&keyctx, sizeof(keyctx));
+    err = secure_storage_write(cfg->id, (void *)&keyctx, sizeof(keyctx));
+
+cleanup:
+    mbedtls_platform_zeroize(&keyctx, sizeof(keyctx));
+    return err;
 }
 
 esp_err_t esp_tee_sec_storage_ecdsa_sign(const esp_tee_sec_storage_key_cfg_t *cfg, const uint8_t *hash, size_t hlen, esp_tee_sec_storage_ecdsa_sign_t *out_sign)
@@ -403,16 +417,6 @@ esp_err_t esp_tee_sec_storage_ecdsa_sign(const esp_tee_sec_storage_key_cfg_t *cf
 
     sec_stg_key_t keyctx;
     size_t keyctx_len = sizeof(keyctx);
-    err = secure_storage_read(cfg->id, (void *)&keyctx, &keyctx_len);
-    if (err != ESP_OK) {
-        return err;
-    }
-
-    if (keyctx.type != cfg->type) {
-        ESP_LOGE(TAG, "Key type mismatch");
-        return ESP_ERR_INVALID_STATE;
-    }
-
     mbedtls_mpi r, s;
     mbedtls_ecp_keypair priv_key;
     mbedtls_ecdsa_context sign_ctx;
@@ -421,6 +425,18 @@ esp_err_t esp_tee_sec_storage_ecdsa_sign(const esp_tee_sec_storage_key_cfg_t *cf
     mbedtls_mpi_init(&s);
     mbedtls_ecp_keypair_init(&priv_key);
     mbedtls_ecdsa_init(&sign_ctx);
+
+    err = secure_storage_read(cfg->id, (void *)&keyctx, &keyctx_len);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to fetch key from storage");
+        goto exit;
+    }
+
+    if (keyctx.type != cfg->type) {
+        ESP_LOGE(TAG, "Key type mismatch");
+        err = ESP_ERR_INVALID_STATE;
+        goto exit;
+    }
 
     size_t key_len = 0;
     int ret = -1;
@@ -475,6 +491,7 @@ exit:
     mbedtls_ecp_keypair_free(&priv_key);
     mbedtls_mpi_free(&s);
     mbedtls_mpi_free(&r);
+    mbedtls_platform_zeroize(&keyctx, sizeof(keyctx));
 
     return err;
 }
@@ -515,18 +532,22 @@ esp_err_t esp_tee_sec_storage_ecdsa_get_pubkey(const esp_tee_sec_storage_key_cfg
     err = secure_storage_read(cfg->id, (void *)&keyctx, &keyctx_len);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to read key from secure storage");
-        return err;
+        goto cleanup;
     }
 
     if (keyctx.type != cfg->type) {
         ESP_LOGE(TAG, "Key type mismatch");
-        return ESP_ERR_INVALID_STATE;
+        err = ESP_ERR_INVALID_STATE;
+        goto cleanup;
     }
 
     memcpy(out_pubkey->pub_x, pub_key_src, pub_key_len);
     memcpy(out_pubkey->pub_y, pub_key_src + pub_key_len, pub_key_len);
+    err = ESP_OK;
 
-    return ESP_OK;
+cleanup:
+    mbedtls_platform_zeroize(&keyctx, sizeof(keyctx));
+    return err;
 }
 
 static esp_err_t tee_sec_storage_crypt_common(const char *key_id, const uint8_t *input, size_t len, const uint8_t *aad,
@@ -550,18 +571,20 @@ static esp_err_t tee_sec_storage_crypt_common(const char *key_id, const uint8_t 
 
     sec_stg_key_t keyctx;
     size_t keyctx_len = sizeof(keyctx);
+    mbedtls_gcm_context gcm;
+    mbedtls_gcm_init(&gcm);
+
     err = secure_storage_read(key_id, (void *)&keyctx, &keyctx_len);
     if (err != ESP_OK) {
-        return err;
+        ESP_LOGE(TAG, "Failed to fetch key from storage");
+        goto exit;
     }
 
     if (keyctx.type != ESP_SEC_STG_KEY_AES256) {
         ESP_LOGE(TAG, "Key type mismatch");
-        return ESP_ERR_INVALID_STATE;
+        err = ESP_ERR_INVALID_STATE;
+        goto exit;
     }
-
-    mbedtls_gcm_context gcm;
-    mbedtls_gcm_init(&gcm);
 
     int ret = mbedtls_gcm_setkey(&gcm, MBEDTLS_CIPHER_ID_AES, keyctx.aes256.key, AES256_KEY_BITS);
     if (ret != 0) {
@@ -595,6 +618,7 @@ static esp_err_t tee_sec_storage_crypt_common(const char *key_id, const uint8_t 
 
 exit:
     mbedtls_gcm_free(&gcm);
+    mbedtls_platform_zeroize(&keyctx, sizeof(keyctx));
     return err;
 }
 
@@ -743,7 +767,7 @@ esp_err_t esp_tee_sec_storage_ecdsa_sign_pbkdf2(const esp_tee_sec_storage_pbkdf2
 
 exit:
     if (derived_key) {
-        memset(derived_key, 0x00, key_len);
+        mbedtls_platform_zeroize(derived_key, key_len);
         free(derived_key);
     }
     mbedtls_ecp_keypair_free(&keypair);
