@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -20,11 +20,17 @@
  */
 typedef void (* spp_task_cb_t) (uint16_t event, void *param);
 
+/**
+ * @brief     parameter deep-free function
+ */
+typedef void (* spp_task_free_cb_t) (void *p_param);
+
 /* message to be sent */
 typedef struct {
     uint16_t             sig;      /*!< signal to spp_task_task */
     uint16_t             event;    /*!< message event id */
     spp_task_cb_t        cb;       /*!< context switch callback */
+    spp_task_free_cb_t   free_cb;  /*!< parameter deep-free function */
     void                 *param;   /*!< parameter area needs to be last */
 } spp_task_msg_t;
 
@@ -36,7 +42,8 @@ typedef void (* spp_task_copy_cb_t) (spp_task_msg_t *msg, void *p_dest, void *p_
 /**
  * @brief     work dispatcher for the application task
  */
-bool spp_task_work_dispatch(spp_task_cb_t p_cback, uint16_t event, void *p_params, int param_len, spp_task_copy_cb_t p_copy_cback);
+bool spp_task_work_dispatch(spp_task_cb_t p_cback, uint16_t event, void *p_params, int param_len,
+                            spp_task_copy_cb_t p_copy_cback, spp_task_free_cb_t p_free_cback);
 
 void spp_task_task_start_up(void);
 

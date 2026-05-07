@@ -207,7 +207,7 @@ void app_main(void)
     bt_app_task_start_up();
 
     /* Bluetooth device name, connection mode and profile set up */
-    bt_app_work_dispatch(bt_hf_client_hdl_stack_evt, BT_APP_EVT_STACK_UP, NULL, 0, NULL);
+    bt_app_work_dispatch(bt_hf_client_hdl_stack_evt, BT_APP_EVT_STACK_UP, NULL, 0, NULL, NULL);
 
 #if CONFIG_BT_HFP_AUDIO_DATA_PATH_PCM
     /* configure the PCM interface and PINs used */

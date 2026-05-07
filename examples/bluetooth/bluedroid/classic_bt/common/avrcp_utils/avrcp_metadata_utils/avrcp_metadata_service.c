@@ -34,6 +34,10 @@ static avrc_metadata_srv_cb_t s_avrc_metadata_srv_cb;
 
 static void avrc_metadata_srv_copy_metadata(avrc_metadata_srv_param_t *p_dest, avrc_metadata_srv_param_t *p_src)
 {
+    if (p_src->attr_length < 0) {
+        ESP_LOGE(RC_MD_SRV_TAG, "Invalid attribute length: %d", p_src->attr_length);
+        return;
+    }
     p_dest->attr_id = p_src->attr_id;
     p_dest->attr_length = p_src->attr_length;
 

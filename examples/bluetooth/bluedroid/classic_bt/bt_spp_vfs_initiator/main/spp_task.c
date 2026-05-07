@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -21,7 +21,8 @@ static void spp_task_work_dispatched(spp_task_msg_t *msg);
 static QueueHandle_t spp_task_task_queue = NULL;
 static TaskHandle_t spp_task_task_handle = NULL;
 
-bool spp_task_work_dispatch(spp_task_cb_t p_cback, uint16_t event, void *p_params, int param_len, spp_task_copy_cb_t p_copy_cback)
+bool spp_task_work_dispatch(spp_task_cb_t p_cback, uint16_t event, void *p_params, int param_len,
+                            spp_task_copy_cb_t p_copy_cback, spp_task_free_cb_t p_free_cback)
 {
     ESP_LOGD(SPP_TASK_TAG, "%s event 0x%x, param len %d", __func__, event, param_len);
 
@@ -31,6 +32,7 @@ bool spp_task_work_dispatch(spp_task_cb_t p_cback, uint16_t event, void *p_param
     msg.sig = SPP_TASK_SIG_WORK_DISPATCH;
     msg.event = event;
     msg.cb = p_cback;
+    msg.free_cb = p_free_cback;
 
     if (param_len == 0) {
         return spp_task_send_msg(&msg);
@@ -41,7 +43,14 @@ bool spp_task_work_dispatch(spp_task_cb_t p_cback, uint16_t event, void *p_param
             if (p_copy_cback) {
                 p_copy_cback(&msg, msg.param, p_params);
             }
-            return spp_task_send_msg(&msg);
+            if (!spp_task_send_msg(&msg)) {
+                if (p_free_cback) {
+                    p_free_cback(msg.param);
+                }
+                free(msg.param);
+                return false;
+            }
+            return true;
         }
     }
 
@@ -84,6 +93,9 @@ static void spp_task_task_handler(void *arg)
             }
 
             if (msg.param) {
+                if (msg.free_cb) {
+                    msg.free_cb(msg.param);
+                }
                 free(msg.param);
             }
         }
@@ -104,6 +116,15 @@ void spp_task_task_shut_down(void)
         spp_task_task_handle = NULL;
     }
     if (spp_task_task_queue) {
+        spp_task_msg_t msg;
+        while (xQueueReceive(spp_task_task_queue, &msg, 0) == pdTRUE) {
+            if (msg.param) {
+                if (msg.free_cb) {
+                    msg.free_cb(msg.param);
+                }
+                free(msg.param);
+            }
+        }
         vQueueDelete(spp_task_task_queue);
         spp_task_task_queue = NULL;
     }

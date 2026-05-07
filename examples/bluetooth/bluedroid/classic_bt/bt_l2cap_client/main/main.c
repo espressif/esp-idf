@@ -257,7 +257,7 @@ static void esp_bt_l2cap_cb(esp_bt_l2cap_cb_event_t event, esp_bt_l2cap_cb_param
     case ESP_BT_L2CAP_START_EVT:
     case ESP_BT_L2CAP_SRV_STOP_EVT:
     case ESP_BT_L2CAP_VFS_REGISTER_EVT: {
-        bt_app_work_dispatch(esp_hdl_bt_l2cap_cb_evt, event, param, sizeof(esp_bt_l2cap_cb_param_t), NULL);
+        bt_app_work_dispatch(esp_hdl_bt_l2cap_cb_evt, event, param, sizeof(esp_bt_l2cap_cb_param_t), NULL, NULL);
         break;
     }
     default:
@@ -324,7 +324,7 @@ static void esp_sdp_cb(esp_sdp_cb_event_t event, esp_sdp_cb_param_t *param)
     case ESP_SDP_SEARCH_COMP_EVT:
     case ESP_SDP_CREATE_RECORD_COMP_EVT:
     case ESP_SDP_REMOVE_RECORD_COMP_EVT: {
-        bt_app_work_dispatch(esp_hdl_sdp_cb_evt, event, param, sizeof(esp_sdp_cb_param_t), NULL);
+        bt_app_work_dispatch(esp_hdl_sdp_cb_evt, event, param, sizeof(esp_sdp_cb_param_t), NULL, NULL);
         break;
     }
     default:
@@ -359,7 +359,7 @@ static void esp_hdl_sdp_cb_evt(uint16_t event, void *p_param)
         break;
     case ESP_SDP_SEARCH_COMP_EVT:
         ESP_LOGI(SDP_TAG, "ESP_SDP_SEARCH_COMP_EVT: status:%d", sdp_param->search.status);
-        if (sdp_param->search.status == ESP_SDP_SUCCESS) {
+        if (sdp_param->search.status == ESP_SDP_SUCCESS && sdp_param->search.record_count > 0 && sdp_param->search.records) {
             ESP_LOGI(SDP_TAG, "Remote device address: %s", bda2str(sdp_param->search.remote_addr, bda_str, sizeof(bda_str)));
             ESP_LOGI(SDP_TAG, "Remote device record count: %d", sdp_param->search.record_count);
             ESP_LOGI(SDP_TAG, "Remote device rfcomm channel number: %"PRId32, sdp_param->search.records->hdr.rfcomm_channel_number);

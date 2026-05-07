@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -33,11 +33,17 @@ static avrc_abs_vol_srv_cb_t s_avrc_abs_vol_srv_cb;
 
 void avrc_abs_vol_srv_open(void)
 {
-    memset(&s_avrc_abs_vol_srv_cb, 0, sizeof(avrc_abs_vol_srv_cb_t));
+    if (s_avrc_abs_vol_srv_cb.volume_lock) {
+        _lock_close(&s_avrc_abs_vol_srv_cb.volume_lock);
+    }
+    _lock_init(&s_avrc_abs_vol_srv_cb.volume_lock);
+    s_avrc_abs_vol_srv_cb.volume = 0;
+    s_avrc_abs_vol_srv_cb.volume_notify = false;
 }
 
 void avrc_abs_vol_srv_close(void)
 {
+    _lock_close(&s_avrc_abs_vol_srv_cb.volume_lock);
     memset(&s_avrc_abs_vol_srv_cb, 0, sizeof(avrc_abs_vol_srv_cb_t));
 }
 
