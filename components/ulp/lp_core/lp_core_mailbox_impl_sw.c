@@ -26,6 +26,10 @@ typedef struct {
 /* The structure above is defined by the ULP */
 extern lp_core_mailbox_impl_sw_t ulp_g_lp_core_mailbox_impl_sw_ctx;
 
+void lp_core_mailbox_impl_init(void)
+{
+}
+
 lp_core_mailbox_ctx_t lp_core_mailbox_impl_get_context(void)
 {
     /* Make sure the LP core initialized the spinlock */

@@ -1,10 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// The LL layer for ESP32-P4 LP Mailbox register operations
+// The LL layer for ESP32-S31 LP Mailbox register operations
 
 #pragma once
 
@@ -13,10 +13,14 @@
 #include "soc/soc.h"
 #include "soc/lp_mailbox_struct.h"
 #include "soc/lp_mailbox_reg.h"
+#include "soc/lp_peri_clkrst_struct.h"
 #include "hal/misc.h"
 #include "esp_attr.h"
 
 #define LP_MAILBOX_LL_MSG_COUNT     16U
+
+typedef mb_dev_t lp_mb_dev_t;
+extern lp_mb_dev_t LP_MAILBOX;
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,6 +33,7 @@ extern "C" {
  */
 FORCE_INLINE_ATTR void lp_mailbox_ll_enable_clock(lp_mb_dev_t *dev)
 {
+    LP_PERI_CLKRST.mailbox.lp_mailbox_clk_en = 1;
     dev->reg_clk_en.reg_clk_en = 1;
 }
 
@@ -39,9 +44,9 @@ FORCE_INLINE_ATTR void lp_mailbox_ll_enable_clock(lp_mb_dev_t *dev)
  */
 FORCE_INLINE_ATTR void lp_mailbox_ll_reset_register(lp_mb_dev_t *dev)
 {
-    (void) dev;
+    LP_PERI_CLKRST.mailbox.lp_mailbox_rst_en = 1;
+    LP_PERI_CLKRST.mailbox.lp_mailbox_rst_en = 0;
 }
-
 
 /**
  * @brief Get a message (32-bit value) from the LP mailbox.
@@ -54,7 +59,7 @@ FORCE_INLINE_ATTR void lp_mailbox_ll_reset_register(lp_mb_dev_t *dev)
 FORCE_INLINE_ATTR uint32_t lp_mailbox_ll_get_message(lp_mb_dev_t *dev, int index)
 {
     if (index < LP_MAILBOX_LL_MSG_COUNT) {
-        return (&dev->message_0.val)[index];
+        return (&dev->massege_0.val)[index];
     }
     return 0;
 }
@@ -72,7 +77,7 @@ FORCE_INLINE_ATTR uint32_t lp_mailbox_ll_get_message(lp_mb_dev_t *dev, int index
 FORCE_INLINE_ATTR void lp_mailbox_ll_set_message(lp_mb_dev_t *dev, int index, uint32_t val)
 {
     if (index < LP_MAILBOX_LL_MSG_COUNT) {
-        (&dev->message_0.val)[index] = val;
+        (&dev->massege_0.val)[index] = val;
     }
 }
 
