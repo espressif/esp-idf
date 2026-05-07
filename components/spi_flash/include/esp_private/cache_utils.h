@@ -81,6 +81,22 @@ bool spi_flash_cache_enabled(void);
  */
 void spi_flash_enable_cache(uint32_t cpuid);
 
+/**
+ * @brief Suspend the Cache access to external memory, will disable branch predictor if supported.
+ *
+ * @param cpuid        the core number to enable the cache for, meaning less on shared cache.
+ * @param saved_state Cache status hold by hal (Used only on ROM impl. in idf, this param unused)
+ */
+void spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state);
+
+/**
+ * @brief Resume the Cache access to external memory, will enable branch predictor if supported.
+ *
+ * @param cpuid        the core number to enable the cache for, meaning less on shared cache.
+ * @param saved_state Cache status hold by hal (Used only on ROM impl. in idf, this param unused)
+ */
+void spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state);
+
 #ifdef __cplusplus
 }
 #endif

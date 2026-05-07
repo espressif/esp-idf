@@ -16,6 +16,7 @@
 #include "hal/spi_flash_hal.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
+#include "esp_private/cache_utils.h"
 #include "esp_private/mspi_timing_tuning.h"
 #include "mspi_timing_config.h"
 #include "mspi_timing_by_mspi_delay.h"
@@ -320,9 +321,9 @@ void mspi_timing_flash_tuning(void)
 {
     /**
      * set MSPI related regs to 20mhz configuration, to get reference data from FLASH
-     * see detailed comments in this function (`mspi_timing_enter_low_speed_mode`)
+     * see detailed comments in this function (`mspi_timing_enter_low_speed_early`)
      */
-    mspi_timing_enter_low_speed_mode(true);
+    mspi_timing_enter_low_speed_early();
 
 #if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY
     mspi_tuning_cfg_drv_t drv = {
@@ -349,7 +350,7 @@ void mspi_timing_flash_tuning(void)
 
     s_do_tuning(reference_data, &timing_configs, true);
 
-    mspi_timing_enter_high_speed_mode(true);
+    mspi_timing_enter_high_speed_early();
 }
 #else
 void mspi_timing_flash_tuning(void)
@@ -367,9 +368,9 @@ void mspi_timing_psram_tuning(void)
 {
     /**
      * set MSPI related regs to 20mhz configuration, to write reference data to PSRAM
-     * see detailed comments in this function (`mspi_timing_enter_low_speed_mode`)
+     * see detailed comments in this function (`mspi_timing_enter_low_speed_early`)
      */
-    mspi_timing_enter_low_speed_mode(true);
+    mspi_timing_enter_low_speed_early();
 
 #if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY
     // write data into psram, used to do timing tuning test.
@@ -399,7 +400,7 @@ void mspi_timing_psram_tuning(void)
     //Get required config, and set them to PSRAM related registers
     s_do_tuning(reference_data, &timing_configs, false);
 
-    mspi_timing_enter_high_speed_mode(true);
+    mspi_timing_enter_high_speed_early();
 }
 
 #else
@@ -497,6 +498,25 @@ void mspi_timing_change_speed_mode_cache_safe(bool switch_down)
 #if SOC_CACHE_FREEZE_SUPPORTED
     cache_hal_unfreeze(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #endif  //#if SOC_CACHE_FREEZE_SUPPORTED
+}
+
+/*------------------------------------------------------------------------------
+ * Early-init MSPI speed switch (see mspi_timing_tuning.h)
+ *----------------------------------------------------------------------------*/
+void mspi_timing_enter_low_speed_early(void)
+{
+    uint32_t cache_state = 0;
+    spi_flash_disable_cache(0, &cache_state);
+    mspi_timing_enter_low_speed_mode(true);
+    spi_flash_restore_cache(0, cache_state);
+}
+
+void mspi_timing_enter_high_speed_early(void)
+{
+    uint32_t cache_state = 0;
+    spi_flash_disable_cache(0, &cache_state);
+    mspi_timing_enter_high_speed_mode(true);
+    spi_flash_restore_cache(0, cache_state);
 }
 
 /*------------------------------------------------------------------------------
