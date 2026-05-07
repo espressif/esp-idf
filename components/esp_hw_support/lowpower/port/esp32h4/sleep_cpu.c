@@ -479,6 +479,7 @@ esp_err_t sleep_cpu_configure(bool light_sleep_enable)
 #if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
 static IRAM_ATTR void smp_core_do_retention(void)
 {
+    esp_cpu_branch_prediction_disable();
     uint8_t core_id = esp_cpu_get_core_id();
 
     if (core_id == 0) {
@@ -550,6 +551,7 @@ static IRAM_ATTR void smp_core_do_retention(void)
         ;
     }
     atomic_store(&s_smp_retention_state[core_id], SMP_IDLE);
+    esp_cpu_branch_prediction_enable();
 }
 
 
