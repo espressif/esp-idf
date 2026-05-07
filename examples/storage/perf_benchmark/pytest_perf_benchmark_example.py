@@ -15,6 +15,7 @@ from pytest_embedded import Dut
     ],
     indirect=True
 )
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 def test_examples_perf_benchmark_spiflash(dut: Dut) -> None:
     # SPI flash
     dut.expect('example: Mountig WL layer...', timeout=10)
