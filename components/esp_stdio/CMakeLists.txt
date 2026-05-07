@@ -35,8 +35,7 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
-                       PRIV_INCLUDE_DIRS ${priv_includes}
-                       REQUIRES vfs)
+                       PRIV_INCLUDE_DIRS ${priv_includes})
 
 if(CONFIG_VFS_SUPPORT_IO)
     # The public header esp_stdio.h includes VFS types when VFS is enabled.

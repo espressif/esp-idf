@@ -43,6 +43,7 @@ esp_err_t esp_stdio_install_io_driver(void)
     if (esp_stdio_has_user_primary()) {
         return ESP_OK;
     }
+#endif // CONFIG_VFS_SUPPORT_IO
 
     /* No user primary — proceed with Kconfig default HW init */
     esp_err_t ret = ESP_FAIL;
@@ -79,6 +80,7 @@ esp_err_t esp_stdio_uninstall_io_driver(void)
     if (esp_stdio_has_user_primary()) {
         return ESP_OK;
     }
+#endif // CONFIG_VFS_SUPPORT_IO
 
     esp_err_t ret = ESP_FAIL;
 #if CONFIG_IDF_TARGET_LINUX

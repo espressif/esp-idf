@@ -7,7 +7,6 @@
 
 #include "esp_err.h"
 #include "esp_stdio_cli_config.h"
-#include "esp_vfs_common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,14 +33,6 @@ typedef struct {
 
 /** @brief Opaque handle representing a registered console I/O backend. */
 typedef struct esp_stdio_entry *esp_stdio_handle_t;
-
-/**
- * @brief Register the default console VFS backends from Kconfig.
- *
- * Called from startup code.  Sets up the primary and any Kconfig-selected
- * auxiliary sinks, and mounts them under /dev/console.
- */
-esp_err_t esp_stdio_register(void);
 
 /**
  * @brief Register a VFS backend as a write-only auxiliary sink in the console mux.
