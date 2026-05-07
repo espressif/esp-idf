@@ -183,6 +183,13 @@ esp_err_t esp_att_generate_token(const uint8_t *auth_challenge, size_t challenge
     }
 
     esp_att_ecdsa_keypair_t keypair = {};
+    psa_hash_operation_t hash_op = PSA_HASH_OPERATION_INIT;
+    psa_status_t status;
+    char *hdr_json = NULL;
+    char *eat_json = NULL;
+    char *pubkey_json = NULL;
+    char *sign_json = NULL;
+
     err = esp_att_utils_ecdsa_gen_keypair_secp256r1(&keypair);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to generate ECDSA key-pair!");
@@ -206,10 +213,10 @@ esp_err_t esp_att_generate_token(const uint8_t *auth_challenge, size_t challenge
 
     memset(token_buf, 0x00, token_buf_size);
 
-    psa_hash_operation_t hash_op = PSA_HASH_OPERATION_INIT;
-    psa_status_t status = psa_hash_setup(&hash_op, PSA_ALG_SHA_256);
+    status = psa_hash_setup(&hash_op, PSA_ALG_SHA_256);
     if (status != PSA_SUCCESS) {
-        return ESP_FAIL;
+        err = ESP_FAIL;
+        goto exit;
     }
 
     json_gen_str_t jstr;
@@ -218,79 +225,84 @@ esp_err_t esp_att_generate_token(const uint8_t *auth_challenge, size_t challenge
 
     /* Pushing the Header object */
     const esp_att_token_hdr_t tk_hdr = {};
-    char *hdr_json = NULL;
     int hdr_len = -1;
     /* NOTE: Token header is not yet configurable */
     err = esp_att_utils_header_to_json(&tk_hdr, &hdr_json, &hdr_len);
-    if (err != ESP_OK || hdr_json == NULL || hdr_len <= 0) {
+    if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to format the token header as JSON!");
-        return err;
+        goto exit;
     }
     json_gen_push_object_str(&jstr, "header", hdr_json);
 
     status = psa_hash_update(&hash_op, (const unsigned char *)hdr_json, hdr_len - 1);
     if (status != PSA_SUCCESS) {
-        psa_hash_abort(&hash_op);
-        return ESP_FAIL;
+        err = ESP_FAIL;
+        goto exit;
     }
     free(hdr_json);
+    hdr_json = NULL;
 
     /* Pushing the EAT object */
-    char *eat_json = NULL;
     int eat_len = -1;
     err = esp_att_utils_eat_data_to_json(&sw_claim_data, &cfg, &eat_json, &eat_len);
-    if (err != ESP_OK || eat_json == NULL || eat_len <= 0) {
+    if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to format the EAT data to JSON!");
-        return err;
+        goto exit;
     }
     json_gen_push_object_str(&jstr, "eat", eat_json);
 
     status = psa_hash_update(&hash_op, (const unsigned char *)eat_json, eat_len - 1);
     if (status != PSA_SUCCESS) {
-        psa_hash_abort(&hash_op);
-        return ESP_FAIL;
+        err = ESP_FAIL;
+        goto exit;
     }
     free(eat_json);
+    eat_json = NULL;
 
-    char *pubkey_json = NULL;
     int pubkey_len = -1;
     err = esp_att_utils_pubkey_to_json(&keypair, &pubkey_json, &pubkey_len);
-    if (err != ESP_OK || pubkey_json == NULL || pubkey_len <= 0) {
+    if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to format the public key data to JSON!");
-        return err;
+        goto exit;
     }
     json_gen_push_object_str(&jstr, "public_key", pubkey_json);
 
     status = psa_hash_update(&hash_op, (const unsigned char *)pubkey_json, pubkey_len - 1);
     if (status != PSA_SUCCESS) {
-        psa_hash_abort(&hash_op);
-        return ESP_FAIL;
+        err = ESP_FAIL;
+        goto exit;
     }
     free(pubkey_json);
+    pubkey_json = NULL;
 
     uint8_t digest[SHA256_DIGEST_SZ] = {0};
     size_t digest_len = 0;
     status = psa_hash_finish(&hash_op, digest, sizeof(digest), &digest_len);
     if (status != PSA_SUCCESS) {
-        psa_hash_abort(&hash_op);
-        return ESP_FAIL;
+        err = ESP_FAIL;
+        goto exit;
     }
 
-    char *sign_json = NULL;
     int sign_len = -1;
     err = esp_att_utils_sign_to_json(&keypair, digest, sizeof(digest), &sign_json, &sign_len);
-    if (err != ESP_OK || sign_json == NULL || sign_len <= 0) {
+    if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to format the token signature to JSON!");
-        return err;
+        goto exit;
     }
     json_gen_push_object_str(&jstr, "sign", sign_json);
     free(sign_json);
+    sign_json = NULL;
 
     json_gen_end_object(&jstr);
     *token_size = json_gen_str_end(&jstr);
     err = ESP_OK;
 
 exit:
+    psa_hash_abort(&hash_op);
+    free(hdr_json);
+    free(eat_json);
+    free(pubkey_json);
+    free(sign_json);
     free_sw_claim_list();
     return err;
 }

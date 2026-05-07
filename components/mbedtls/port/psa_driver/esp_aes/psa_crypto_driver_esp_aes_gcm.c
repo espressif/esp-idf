@@ -50,6 +50,7 @@ static psa_status_t esp_crypto_aes_gcm_setup(
     status = mbedtls_to_psa_error(esp_aes_gcm_setkey(ctx, 2, key_buffer, key_buffer_size * 8));
 
     if (status != PSA_SUCCESS) {
+        esp_aes_gcm_free(ctx);
         free(ctx);
         goto exit;
     }
