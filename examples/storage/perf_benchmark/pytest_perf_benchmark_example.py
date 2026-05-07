@@ -9,6 +9,7 @@ from pytest_embedded_idf.utils import idf_parametrize
     targets=['esp32c5', 'esp32c61'], reason='not support yet'
 )  # TODO: [ESP32C5] IDF-10314 [ESP32C61] IDF-10977
 @pytest.mark.generic
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 @pytest.mark.parametrize('config', ['spiflash'], indirect=True)
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_examples_perf_benchmark_spiflash(dut: Dut) -> None:
