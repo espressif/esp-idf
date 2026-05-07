@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,19 +31,19 @@ esp_err_t esp_bluedroid_enable(void)
     future_t **future_p;
 
     if (s_bt_host_state == ESP_BLUEDROID_STATUS_UNINITIALIZED) {
-        LOG_ERROR("Bludroid not initialised\n");
+        LOG_ERROR("Bluedroid not initialised");
         return ESP_ERR_INVALID_STATE;
     }
 
     if (s_bt_host_state == ESP_BLUEDROID_STATUS_ENABLED) {
-        LOG_ERROR("Bluedroid already enabled\n");
+        LOG_ERROR("Bluedroid already enabled");
         return ESP_ERR_INVALID_STATE;
     }
 
     future_p = btc_main_get_future_p(BTC_MAIN_ENABLE_FUTURE);
     *future_p = future_new();
     if (*future_p == NULL) {
-        LOG_ERROR("Bluedroid enable failed\n");
+        LOG_ERROR("Bluedroid enable failed");
         return ESP_ERR_NO_MEM;
     }
 
@@ -53,12 +53,13 @@ esp_err_t esp_bluedroid_enable(void)
 
     if (btc_transfer_context(&msg, NULL, 0, NULL, NULL) != BT_STATUS_SUCCESS) {
         future_free(*future_p);
-        LOG_ERROR("Bluedroid enable failed\n");
+        *future_p = NULL;
+        LOG_ERROR("Bluedroid enable failed");
         return ESP_FAIL;
     }
 
     if (future_await(*future_p) == FUTURE_FAIL) {
-        LOG_ERROR("Bluedroid enable failed\n");
+        LOG_ERROR("Bluedroid enable failed");
         return ESP_FAIL;
     }
 
@@ -72,7 +73,7 @@ esp_err_t esp_bluedroid_disable(void)
     future_t **future_p;
 
     if (s_bt_host_state != ESP_BLUEDROID_STATUS_ENABLED) {
-        LOG_ERROR("Bluedroid already disabled\n");
+        LOG_ERROR("Bluedroid already disabled");
         return ESP_ERR_INVALID_STATE;
     }
 
@@ -81,7 +82,7 @@ esp_err_t esp_bluedroid_disable(void)
     future_p = btc_main_get_future_p(BTC_MAIN_DISABLE_FUTURE);
     *future_p = future_new();
     if (*future_p == NULL) {
-        LOG_ERROR("Bluedroid disable failed\n");
+        LOG_ERROR("Bluedroid disable failed");
         s_bt_host_state = ESP_BLUEDROID_STATUS_ENABLED;
         return ESP_ERR_NO_MEM;
     }
@@ -91,14 +92,15 @@ esp_err_t esp_bluedroid_disable(void)
     msg.act = BTC_MAIN_ACT_DISABLE;
 
     if (btc_transfer_context(&msg, NULL, 0, NULL, NULL) != BT_STATUS_SUCCESS) {
-        LOG_ERROR("Bluedroid disable failed\n");
+        LOG_ERROR("Bluedroid disable failed");
         future_free(*future_p);
+        *future_p = NULL;
         s_bt_host_state = ESP_BLUEDROID_STATUS_ENABLED;
         return ESP_FAIL;
     }
 
     if (future_await(*future_p) == FUTURE_FAIL) {
-        LOG_ERROR("Bluedroid disable failed\n");
+        LOG_ERROR("Bluedroid disable failed");
         s_bt_host_state = ESP_BLUEDROID_STATUS_ENABLED;
         return ESP_FAIL;
     }
@@ -126,28 +128,28 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
 
     if (cfg->sc_en) {
 #if (SC_MODE_INCLUDED == FALSE)
-        LOG_ERROR("Secure Connections should not be enabled when target controller is ESP32.\n");
-        LOG_ERROR("It may trigger unresolved bugs in the controller.\n");
+        LOG_ERROR("Secure Connections should not be enabled when target controller is ESP32.");
+        LOG_ERROR("It may trigger unresolved bugs in the controller.");
         return ESP_ERR_INVALID_ARG;
 #endif // SC_MODE_INCLUDED
 
         if (!cfg->ssp_en) {
-            LOG_ERROR("secure simple pairing should be enabled when secure connection host support is enabled\n");
+            LOG_ERROR("secure simple pairing should be enabled when secure connection host support is enabled");
             return ESP_ERR_INVALID_ARG;
         }
 
-        LOG_WARN("Please make sure to clear the bond list before enabling the secure connection host support\n");
+        LOG_WARN("Please make sure to clear the bond list before enabling the secure connection host support");
     }
 
 #if (BT_CONTROLLER_INCLUDED == TRUE)
     if (esp_bt_controller_get_status() != ESP_BT_CONTROLLER_STATUS_ENABLED) {
-        LOG_ERROR("Controller not initialised\n");
+        LOG_ERROR("Controller not initialised");
         return ESP_ERR_INVALID_STATE;
     }
 #endif
 
     if (s_bt_host_state != ESP_BLUEDROID_STATUS_UNINITIALIZED) {
-        LOG_ERROR("Bluedroid already initialised\n");
+        LOG_ERROR("Bluedroid already initialised");
         return ESP_ERR_INVALID_STATE;
     }
 
@@ -205,6 +207,7 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
     if (btc_transfer_context(&msg, NULL, 0, NULL, NULL) != BT_STATUS_SUCCESS) {
         LOG_ERROR("Bluedroid Initialize Fail");
         future_free(*future_p);
+        *future_p = NULL;
         btc_deinit();
         bluedroid_config_deinit();
 #if HEAP_MEMORY_STATS
@@ -240,20 +243,20 @@ esp_err_t esp_bluedroid_deinit(void)
     future_t **future_p;
 
     if (s_bt_host_state == ESP_BLUEDROID_STATUS_UNINITIALIZED) {
-        LOG_ERROR("Bluedroid already de-initialised\n");
+        LOG_ERROR("Bluedroid already de-initialised");
         return ESP_ERR_INVALID_STATE;
     }
 
     if (s_bt_host_state == ESP_BLUEDROID_STATUS_ENABLED ||
         s_bt_host_state == ESP_BLUEDROID_STATUS_DISABLING) {
-        LOG_ERROR("Bludroid still enabled or stopping, disable first\n");
+        LOG_ERROR("Bluedroid still enabled or stopping, disable first");
         return ESP_ERR_INVALID_STATE;
     }
 
     future_p = btc_main_get_future_p(BTC_MAIN_DEINIT_FUTURE);
     *future_p = future_new();
     if (*future_p == NULL) {
-        LOG_ERROR("Bluedroid de-initialise failed\n");
+        LOG_ERROR("Bluedroid de-initialise failed");
         return ESP_ERR_NO_MEM;
     }
 
@@ -262,13 +265,14 @@ esp_err_t esp_bluedroid_deinit(void)
     msg.act = BTC_MAIN_ACT_DEINIT;
 
     if (btc_transfer_context(&msg, NULL, 0, NULL, NULL) != BT_STATUS_SUCCESS) {
-        LOG_ERROR("Bluedroid de-initialise failed\n");
+        LOG_ERROR("Bluedroid de-initialise failed");
         future_free(*future_p);
+        *future_p = NULL;
         return ESP_FAIL;
     }
 
     if (future_await(*future_p) == FUTURE_FAIL) {
-        LOG_ERROR("Bluedroid de-initialise failed\n");
+        LOG_ERROR("Bluedroid de-initialise failed");
         return ESP_FAIL;
     }
 

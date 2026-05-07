@@ -24,7 +24,6 @@
  ******************************************************************************/
 
 #include <string.h>
-#include "stack/bt_types.h"
 #include "common/bt_target.h"
 #include "stack/bt_types.h"
 #include "stack/hcimsgs.h"
@@ -405,10 +404,13 @@ static void btm_pkt_stat_nums_update(uint16_t sco_inx, uint8_t pkt_status)
 *******************************************************************************/
 static void btm_pkt_stat_send_nums_update(uint16_t sco_inx, uint8_t pkt_status)
 {
-    tSCO_CONN   *p_ccb = &btm_cb.sco_cb.sco_db[sco_inx];
-    p_ccb->pkt_stat_nums.tx_total++;
-    if (pkt_status != BTM_SUCCESS && pkt_status != BTM_NO_RESOURCES && pkt_status != BTM_SCO_BAD_LENGTH) {
-        p_ccb->pkt_stat_nums.tx_discarded++;
+    tSCO_CONN *p_ccb = NULL;
+    if (sco_inx < BTM_MAX_SCO_LINKS) {
+        p_ccb = &btm_cb.sco_cb.sco_db[sco_inx];
+        p_ccb->pkt_stat_nums.tx_total++;
+        if (pkt_status != BTM_SUCCESS && pkt_status != BTM_NO_RESOURCES && pkt_status != BTM_SCO_BAD_LENGTH) {
+            p_ccb->pkt_stat_nums.tx_discarded++;
+        }
     }
 }
 
@@ -461,6 +463,7 @@ void  btm_route_sco_data(BT_HDR *p_msg)
 #if BTM_SCO_HCI_INCLUDED == TRUE
     UINT16      sco_inx, handle;
     UINT8       *p = (UINT8 *)(p_msg + 1) + p_msg->offset;
+    UINT16      len = p_msg->len;
     UINT8       pkt_size = 0;
     UINT8       pkt_status = 0;
 
@@ -470,12 +473,12 @@ void  btm_route_sco_data(BT_HDR *p_msg)
     handle   = HCID_GET_HANDLE (handle);
 
     STREAM_TO_UINT8 (pkt_size, p);
+    UNUSED(len);
     UNUSED(pkt_size);
     if ((sco_inx = btm_find_scb_by_handle(handle)) != BTM_MAX_SCO_LINKS ) {
         /* send data callback */
-        if (!btm_cb.sco_cb.p_data_cb )
+        if (!btm_cb.sco_cb.p_data_cb) {
             /* if no data callback registered,  just free the buffer  */
-        {
             osi_free (p_msg);
         } else {
             btm_pkt_stat_nums_update(sco_inx, pkt_status);
@@ -484,7 +487,7 @@ void  btm_route_sco_data(BT_HDR *p_msg)
     } else { /* no mapping handle SCO connection is active, free the buffer */
         osi_free (p_msg);
     }
-    BTM_TRACE_DEBUG ("SCO: hdl %x, len %d, pkt_sz %d\n", handle, p_msg->len, pkt_size);
+    BTM_TRACE_DEBUG ("SCO: hdl %x, len %d, pkt_sz %d\n", handle, len, pkt_size);
 #else
     osi_free(p_msg);
 #endif
@@ -516,12 +519,13 @@ tBTM_STATUS BTM_WriteScoData (UINT16 sco_inx, BT_HDR *p_buf)
 {
     APPL_TRACE_DEBUG("%s", __FUNCTION__);
 #if (BTM_SCO_HCI_INCLUDED == TRUE) && (BTM_MAX_SCO_LINKS>0)
-    tSCO_CONN   *p_ccb = &btm_cb.sco_cb.sco_db[sco_inx];
+    tSCO_CONN   *p_ccb = NULL;
     UINT8   *p;
     tBTM_STATUS     status = BTM_SUCCESS;
 
     if (sco_inx < BTM_MAX_SCO_LINKS && btm_cb.sco_cb.p_data_cb &&
-            p_ccb->state == SCO_ST_CONNECTED) {
+            btm_cb.sco_cb.sco_db[sco_inx].state == SCO_ST_CONNECTED) {
+        p_ccb = &btm_cb.sco_cb.sco_db[sco_inx];
         /* Ensure we have enough space in the buffer for the SCO and HCI headers */
         if (p_buf->offset < HCI_SCO_PREAMBLE_SIZE) {
             BTM_TRACE_ERROR ("BTM SCO - cannot send buffer, offset: %d", p_buf->offset);
@@ -557,8 +561,12 @@ tBTM_STATUS BTM_WriteScoData (UINT16 sco_inx, BT_HDR *p_buf)
             }
         }
     } else {
-        BTM_TRACE_WARNING ("BTM_WriteScoData, invalid sco index: %d at state [%d]",
-                           sco_inx, btm_cb.sco_cb.sco_db[sco_inx].state);
+        if (sco_inx < BTM_MAX_SCO_LINKS) {
+            BTM_TRACE_WARNING ("BTM_WriteScoData, invalid sco index: %d at state [%d]",
+                               sco_inx, btm_cb.sco_cb.sco_db[sco_inx].state);
+        } else {
+            BTM_TRACE_WARNING ("BTM_WriteScoData, invalid sco index: %d", sco_inx);
+        }
         status = BTM_UNKNOWN_ADDR;
     }
 
@@ -566,7 +574,9 @@ tBTM_STATUS BTM_WriteScoData (UINT16 sco_inx, BT_HDR *p_buf)
         BTM_TRACE_WARNING ("stat %d", status);
         osi_free(p_buf);
     }
-    btm_pkt_stat_send_nums_update(sco_inx, status);
+    if (sco_inx < BTM_MAX_SCO_LINKS) {
+        btm_pkt_stat_send_nums_update(sco_inx, status);
+    }
     return (status);
 
 #else
@@ -722,8 +732,13 @@ void btm_accept_sco_link(UINT16 sco_inx, tBTM_ESCO_PARAMS *p_setup,
 ** Returns          void
 **
 *******************************************************************************/
-void btm_reject_sco_link( UINT16 sco_inx )
+void btm_reject_sco_link( UINT16 sco_inx)
 {
+    if (sco_inx >= BTM_MAX_SCO_LINKS) {
+        BTM_TRACE_ERROR("btm_reject_sco_link: Invalid sco_inx(%d)", sco_inx);
+        return;
+    }
+
     btm_esco_conn_rsp(sco_inx, HCI_ERR_HOST_REJECT_RESOURCES,
                       btm_cb.sco_cb.sco_db[sco_inx].esco.data.bd_addr, NULL);
 }
@@ -1373,10 +1388,12 @@ tBTM_STATUS BTM_SetScoPacketTypes (UINT16 sco_inx, UINT16 pkt_types)
 UINT16 BTM_ReadScoPacketTypes (UINT16 sco_inx)
 {
 #if (BTM_MAX_SCO_LINKS>0)
-    tSCO_CONN *p = &btm_cb.sco_cb.sco_db[sco_inx];
+    tSCO_CONN *p = NULL;
 
     /* Validity check */
-    if ((sco_inx < BTM_MAX_SCO_LINKS) && (p->state == SCO_ST_CONNECTED)) {
+    if ((sco_inx < BTM_MAX_SCO_LINKS) &&
+        ((p = &btm_cb.sco_cb.sco_db[sco_inx]) != NULL) &&
+        (p->state == SCO_ST_CONNECTED)) {
         return (p->esco.setup.packet_types);
     } else {
         return (0);
@@ -1425,10 +1442,12 @@ UINT16 BTM_ReadDeviceScoPacketTypes (void)
 UINT16 BTM_ReadScoHandle (UINT16 sco_inx)
 {
 #if (BTM_MAX_SCO_LINKS>0)
-    tSCO_CONN   *p = &btm_cb.sco_cb.sco_db[sco_inx];
+    tSCO_CONN   *p = NULL;;
 
     /* Validity check */
-    if ((sco_inx < BTM_MAX_SCO_LINKS) && (p->state == SCO_ST_CONNECTED)) {
+    if ((sco_inx < BTM_MAX_SCO_LINKS) &&
+        ((p = &btm_cb.sco_cb.sco_db[sco_inx]) != NULL) &&
+        (p->state == SCO_ST_CONNECTED)) {
         return (p->hci_handle);
     } else {
         return (BTM_INVALID_HCI_HANDLE);
@@ -1451,10 +1470,11 @@ UINT16 BTM_ReadScoHandle (UINT16 sco_inx)
 UINT8 *BTM_ReadScoBdAddr (UINT16 sco_inx)
 {
 #if (BTM_MAX_SCO_LINKS>0)
-    tSCO_CONN   *p = &btm_cb.sco_cb.sco_db[sco_inx];
+    tSCO_CONN   *p = NULL;
 
     /* Validity check */
-    if ((sco_inx < BTM_MAX_SCO_LINKS) && (p->rem_bd_known)) {
+    if ((sco_inx < BTM_MAX_SCO_LINKS) &&
+        ((p = &btm_cb.sco_cb.sco_db[sco_inx]) != NULL) && (p->rem_bd_known)) {
         return (p->esco.data.bd_addr);
     } else {
         return (NULL);
@@ -1538,7 +1558,9 @@ tBTM_STATUS BTM_RegForEScoEvts (UINT16 sco_inx, tBTM_ESCO_CBACK *p_esco_cback)
 {
 #if (BTM_MAX_SCO_LINKS>0)
     if (!btm_cb.sco_cb.esco_supported) {
-        btm_cb.sco_cb.sco_db[sco_inx].esco.p_esco_cback = NULL;
+        if (sco_inx < BTM_MAX_SCO_LINKS) {
+            btm_cb.sco_cb.sco_db[sco_inx].esco.p_esco_cback = NULL;
+        }
         return (BTM_MODE_UNSUPPORTED);
     }
 
