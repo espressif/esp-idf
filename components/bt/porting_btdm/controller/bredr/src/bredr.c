@@ -129,22 +129,7 @@ extern const sleep_retention_entries_config_t *r_bredr_mac_retention_link_get(ui
 
 static uint32_t esp_random_wrapper(void)
 {
-    // TODO: use esp_random
-    // return (int)esp_random();
-
-    static bool first = true;
-
-    if (first) {
-        uint8_t mac[6];
-        uint32_t seed;
-
-        first = false;
-        btdm_osal_read_efuse_mac(mac);
-        seed = (mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5];
-        srand(seed);
-    }
-
-    return rand();
+    return esp_random();
 }
 typedef struct bredr_ecc_ops {
     int (*ecc256_gen_key_pair)(uint8_t *public, uint8_t *priv);
