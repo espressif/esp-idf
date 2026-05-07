@@ -39,6 +39,16 @@ RUN : \
   && update-alternatives --install /usr/bin/python python /usr/bin/python3 10 \
   && :
 
+ARG IDF_INSTALL_TARGETS=all
+
+# install build essential needed for linux target apps, which is a preview target so it is installed with "all" only
+RUN if [ "$IDF_INSTALL_TARGETS" = "all" ]; then \
+    apt-get update \
+    && apt-get install -y build-essential \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/* ; \
+  fi
+
 # To build the image for a branch or a tag of IDF, pass --build-arg IDF_CLONE_BRANCH_OR_TAG=name.
 # To build the image with a specific commit ID of IDF, pass --build-arg IDF_CHECKOUT_REF=commit-id.
 # It is possible to combine both, e.g.:
@@ -53,20 +63,12 @@ ARG IDF_CLONE_BRANCH_OR_TAG=master
 ARG IDF_CHECKOUT_REF=
 ARG IDF_CLONE_SHALLOW=
 ARG IDF_CLONE_SHALLOW_DEPTH=1
-ARG IDF_INSTALL_TARGETS=all
 ARG IDF_GITHUB_ASSETS=
+ARG PIP_INDEX_URL=
 
 ENV IDF_PATH=/opt/esp/idf
 ENV IDF_TOOLS_PATH=/opt/esp
 ENV IDF_GITHUB_ASSETS=${IDF_GITHUB_ASSETS}
-
-# install build essential needed for linux target apps, which is a preview target so it is installed with "all" only
-RUN if [ "$IDF_INSTALL_TARGETS" = "all" ]; then \
-    apt-get update \
-    && apt-get install -y build-essential \
-    && apt-get autoremove -y \
-    && rm -rf /var/lib/apt/lists/* ; \
-  fi
 
 RUN echo IDF_CHECKOUT_REF=$IDF_CHECKOUT_REF IDF_CLONE_BRANCH_OR_TAG=$IDF_CLONE_BRANCH_OR_TAG && \
     git clone --recursive \
