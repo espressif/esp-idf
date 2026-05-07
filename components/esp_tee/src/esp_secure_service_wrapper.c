@@ -491,6 +491,16 @@ void IRAM_ATTR __wrap_mspi_timing_enter_high_speed_mode(bool control_spi1)
     esp_tee_service_call(2, SS_MSPI_TIMING_ENTER_HIGH_SPEED_MODE, control_spi1);
 }
 
+void IRAM_ATTR __wrap_mspi_timing_enter_low_speed_early(void)
+{
+    esp_tee_service_call(1, SS_MSPI_TIMING_ENTER_LOW_SPEED_EARLY);
+}
+
+void IRAM_ATTR __wrap_mspi_timing_enter_high_speed_early(void)
+{
+    esp_tee_service_call(1, SS_MSPI_TIMING_ENTER_HIGH_SPEED_EARLY);
+}
+
 void IRAM_ATTR __wrap_mspi_timing_change_speed_mode_cache_safe(bool switch_down)
 {
     esp_tee_service_call(2, SS_MSPI_TIMING_CHANGE_SPEED_MODE_CACHE_SAFE, switch_down);

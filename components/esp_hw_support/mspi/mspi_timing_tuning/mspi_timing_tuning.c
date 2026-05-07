@@ -21,6 +21,7 @@
 #include "hal/cache_ll.h"
 #include "hal/cache_hal.h"
 #endif
+#include "esp_private/cache_utils.h"
 #include "esp_private/mspi_timing_tuning.h"
 #include "esp_private/mspi_timing_config.h"
 #include "esp_private/mspi_timing_by_mspi_delay.h"
@@ -352,10 +353,10 @@ void mspi_timing_flash_tuning(void)
 {
     /**
      * set MSPI related regs to 20mhz configuration, to get reference data from FLASH
-     * see detailed comments in this function (`mspi_timing_enter_low_speed_mode`)
+     * see detailed comments in this function (`mspi_timing_enter_low_speed_early`)
      */
     ESP_EARLY_LOGI(TAG, "Enter flash timing tuning");
-    mspi_timing_enter_low_speed_mode(true);
+    mspi_timing_enter_low_speed_early();
 
 #if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY || SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY
     mspi_tuning_cfg_drv_t drv = {
@@ -383,7 +384,7 @@ void mspi_timing_flash_tuning(void)
 
     s_do_tuning(reference_data, &timing_configs, true);
 
-    mspi_timing_enter_high_speed_mode(true);
+    mspi_timing_enter_high_speed_early();
 }
 #else
 void mspi_timing_flash_tuning(void)
@@ -401,10 +402,10 @@ void mspi_timing_psram_tuning(void)
 {
     /**
      * set MSPI related regs to 20mhz configuration, to write reference data to PSRAM
-     * see detailed comments in this function (`mspi_timing_enter_low_speed_mode`)
+     * see detailed comments in this function (`mspi_timing_enter_low_speed_early`)
      */
     ESP_EARLY_LOGI(TAG, "Enter psram timing tuning");
-    mspi_timing_enter_low_speed_mode(true);
+    mspi_timing_enter_low_speed_early();
 
     // write data into psram, used to do timing tuning test.
     uint8_t reference_data[MSPI_TIMING_TEST_DATA_LEN];
@@ -467,7 +468,7 @@ void mspi_timing_psram_tuning(void)
     s_do_tuning(reference_data, &timing_configs, false);
 #endif
 
-    mspi_timing_enter_high_speed_mode(true);
+    mspi_timing_enter_high_speed_early();
 }
 
 #else
@@ -616,6 +617,53 @@ void mspi_timing_change_speed_mode_cache_safe(bool switch_down)
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE && !CONFIG_FREERTOS_UNICORE
     esp_ipc_isr_release_other_cpu();
 #endif
+}
+
+
+/*------------------------------------------------------------------------------
+ * Early-init MSPI speed switch (see mspi_timing_tuning.h)
+ *----------------------------------------------------------------------------*/
+#if ESP_TEE_BUILD
+#include "riscv/rv_utils.h"
+extern void rom_spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state);
+extern void rom_spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state);
+
+static void disable_cache(uint32_t cpuid, uint32_t *saved_state)
+{
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    rv_utils_dis_branch_predictor();
+#endif
+    rom_spi_flash_disable_cache(cpuid, saved_state);
+}
+
+static void restore_cache(uint32_t cpuid, uint32_t saved_state)
+{
+    rom_spi_flash_restore_cache(cpuid, saved_state);
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    rv_utils_en_branch_predictor();
+#endif
+}
+#else // ESP_TEE_BUILD
+
+#define disable_cache(cpuid, saved_state) spi_flash_disable_cache(cpuid, saved_state)
+#define restore_cache(cpuid, saved_state) spi_flash_restore_cache(cpuid, saved_state)
+
+#endif
+
+void mspi_timing_enter_low_speed_early(void)
+{
+    uint32_t cache_state = 0;
+    disable_cache(0, &cache_state);
+    mspi_timing_enter_low_speed_mode(true);
+    restore_cache(0, cache_state);
+}
+
+void mspi_timing_enter_high_speed_early(void)
+{
+    uint32_t cache_state = 0;
+    disable_cache(0, &cache_state);
+    mspi_timing_enter_high_speed_mode(true);
+    restore_cache(0, cache_state);
 }
 
 /*------------------------------------------------------------------------------

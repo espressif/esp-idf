@@ -552,6 +552,16 @@ void _ss_mspi_timing_enter_high_speed_mode(bool control_spi1)
     mspi_timing_enter_high_speed_mode(control_spi1);
 }
 
+void _ss_mspi_timing_enter_low_speed_early(void)
+{
+    mspi_timing_enter_low_speed_early();
+}
+
+void _ss_mspi_timing_enter_high_speed_early(void)
+{
+    mspi_timing_enter_high_speed_early();
+}
+
 void _ss_mspi_timing_change_speed_mode_cache_safe(bool switch_down)
 {
     mspi_timing_change_speed_mode_cache_safe(switch_down);
