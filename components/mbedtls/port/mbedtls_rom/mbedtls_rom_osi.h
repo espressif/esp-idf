@@ -31,7 +31,6 @@
 extern "C" {
 #endif
 
-#ifndef BOOTLOADER_BUILD
 #if (!defined(CONFIG_MBEDTLS_THREADING_C))
 #error CONFIG_MBEDTLS_THREADING_C
 #endif
@@ -40,9 +39,6 @@ typedef void (*_rom_mbedtls_threading_set_alt_t)(void (*mutex_init)(mbedtls_thre
                                           void (*mutex_free)(mbedtls_threading_mutex_t *),
                                           int (*mutex_lock)(mbedtls_threading_mutex_t *),
                                           int (*mutex_unlock)(mbedtls_threading_mutex_t *));
-#else /* BOOTLOADER_BUILD */
-typedef void mbedtls_threading_mutex_t;
-#endif /* BOOTLOADER_BUILD */
 
 typedef struct mbedtls_rom_eco4_funcs {
     // aes module
@@ -302,10 +298,6 @@ typedef struct mbedtls_rom_eco4_funcs {
 #if (defined(MBEDTLS_PLATFORM_ZEROIZE_ALT))
 #error "MBEDTLS_PLATFORM_ZEROIZE_ALT"
 #endif
-
-#if BOOTLOADER_BUILD
-void mbedtls_rom_osi_functions_init_bootloader(void);
-#endif /* BOOTLOADER_BUILD */
 
 #ifdef __cplusplus
 }
