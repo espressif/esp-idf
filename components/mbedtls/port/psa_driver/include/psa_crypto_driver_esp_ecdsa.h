@@ -116,13 +116,21 @@ psa_status_t esp_ecdsa_opaque_export_public_key(
 /**
  * @brief Get the key buffer size for an ESP ECDSA opaque key
  *
+ * Inspects the user-provided import data to determine the key source
+ * (eFuse or TEE) and returns the size of the corresponding internal
+ * storage struct.
+ *
+ * @param attributes        Key attributes (used to determine persistence)
  * @param key_type          Key type
- * @param key_bits          Key size in bits
+ * @param data              Import data (esp_ecdsa_opaque_key_t)
+ * @param data_length       Length of import data
  * @return size_t           Required buffer size
  */
 size_t esp_ecdsa_opaque_size_function(
+    const psa_key_attributes_t *attributes,
     psa_key_type_t key_type,
-    size_t key_bits);
+    const uint8_t *data,
+    size_t data_length);
 
 /**
  * @brief Verify a hash using ESP ECDSA transparent driver

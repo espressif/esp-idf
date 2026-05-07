@@ -72,12 +72,13 @@ typedef struct {
 /* The buffers are stored in the little-endian format */
 typedef struct {
     psa_algorithm_t alg;
-    const esp_ecdsa_opaque_key_t *opaque_key;
-    uint8_t r[MAX_ECDSA_COMPONENT_LEN];
+    const uint8_t *key_buffer;          /**< Pointer to the per-source storage struct in key slot */
+    uint8_t r[MAX_ECDSA_COMPONENT_LEN]; /**< Must be 4-byte aligned for ECDSA HAL MMIO reads */
     uint8_t s[MAX_ECDSA_COMPONENT_LEN];
     uint8_t sha[MAX_ECDSA_SHA_LEN];
     size_t sha_len;
     size_t key_len;
+    bool is_persistent;                 /**< Cached persistence flag for use in complete */
 } esp_ecdsa_opaque_sign_hash_operation_t;
 #endif /* !(__DOXYGEN__) */
 #endif /* ESP_ECDSA_DRIVER_ENABLED */
