@@ -145,25 +145,20 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
         build_target('help', ctx, args)
 
     def menuconfig(target_name: str, ctx: Context, args: PropertyDict, style: str) -> None:
-        """
-        Menuconfig target is build_target extended with the style argument for setting the value for the environment
-        variable.
-        """
-        if sys.platform != 'win32':
-            try:
-                import curses  # noqa: F401
-            except ImportError:
-                raise FatalError(
-                    '\n'.join(
-                        [
-                            '',
-                            "menuconfig failed to import the standard Python 'curses' library.",
-                            'Please re-run the install script which might be able to fix the issue.',
-                        ]
-                    )
-                )
-        os.environ['MENUCONFIG_STYLE'] = style
+        """Run the menuconfig configuration tool."""
         args.no_hints = True
+        if style == 'dark':
+            style = 'textual-dark'
+        elif style == 'light':
+            style = 'textual-light'
+
+        # Compatibility with legacy names
+        if style in ['aquatic', 'monochrome', 'default']:
+            print('NOTE: Legacy menuconfig styles are deprecated. Using dark style instead.')
+            style = 'textual-dark'
+
+        if style:
+            os.environ['MENUCONFIG_STYLE'] = style
         build_target(target_name, ctx, args)
 
     def save_defconfig(target_name: str, ctx: Context, args: PropertyDict, add_menu_labels: bool) -> None:
@@ -615,17 +610,15 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
                     {
                         'names': ['--style', '--color-scheme', 'style'],
                         'help': (
-                            'Menuconfig style.\n'
+                            'Menuconfig color scheme.\n'
                             'The built-in styles include:\n\n'
-                            '- default - a yellowish theme,\n\n'
-                            '- monochrome -  a black and white theme, or\n\n'
-                            '- aquatic - a blue theme.\n\n'
-                            'It is possible to customize these themes further'
-                            ' as it is described in the Color schemes section of the kconfiglib documentation.\n'
-                            'The default value is "aquatic".'
+                            '- dark (default)\n\n'
+                            '- light\n\n'
+                            'More styles can be found in menuconfig TUI under [p]alette - Themes.\n\n'
+                            'Legacy names are still accepted, but will map to default style.'
                         ),
                         'envvar': 'MENUCONFIG_STYLE',
-                        'default': 'aquatic',
+                        'default': '',
                     }
                 ],
             },

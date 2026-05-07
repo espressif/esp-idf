@@ -294,8 +294,6 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     __check_python_package_min_version(
         ${python} esp-idf-kconfig "${MENUCONFIG_INLINE_MIN_KCONFIG_VERSION}" MENUCONFIG_INLINE_SUPPORTED)
 
-    set(TERM_CHECK_CMD ${python} ${idf_path}/tools/check_term.py)
-
     if(NOT ${ARG_CREATE_MENUCONFIG_TARGET})
         return()
     endif()
@@ -313,7 +311,6 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
             # This is not necessary under normal circumstances, but if the files are manually removed,
             # it may be possible to regenerate them.
             COMMAND ${prepare_kconfig_files_command}
-            COMMAND ${TERM_CHECK_CMD}
             COMMAND ${CMAKE_COMMAND} -E env
             "COMPONENT_KCONFIGS_SOURCE_FILE=${kconfigs_path}"
             "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=${kconfigs_projbuild_path}"
@@ -344,8 +341,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
             --env "IDF_INIT_VERSION=${idf_init_version}"
             --env "KCONFIG_REPORT_VERBOSITY=quiet"
             --dont-write-deprecated
-            --output config ${sdkconfig}
-            COMMAND ${TERM_CHECK_CMD}
+            --output config ${sdkconfig} # Do NOT regenerate the rest of the config files!
             COMMAND ${CMAKE_COMMAND} -E env
             "COMPONENT_KCONFIGS_SOURCE_FILE=${kconfigs_path}"
             "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=${kconfigs_projbuild_path}"
@@ -357,6 +353,8 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
             "IDF_MINIMAL_BUILD=${idf_minimal_build}"
             ${MENUCONFIG_CMD} ${root_kconfig}
             USES_TERMINAL
+            # additional run of kconfgen ensures that the deprecated options will be inserted into config files
+            # (for backward compatibility)
             COMMAND ${kconfgen_basecommand}
             --env "IDF_TARGET=${idf_target}"
             --env "IDF_TOOLCHAIN=${idf_toolchain}"
