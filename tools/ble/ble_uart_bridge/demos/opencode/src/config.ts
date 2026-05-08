@@ -34,8 +34,15 @@ export const DEBUG = process.env.OPENCODE_BLE_DEBUG === "1"
 /** HTTP base URL of the local BLE daemon that bridges OpenCode to the BLE device. */
 export const BLE_DAEMON_URL = process.env.OPENCODE_BLE_DAEMON_URL ?? "http://127.0.0.1:8888"
 
+const DEFAULT_DECISION_TIMEOUT_SECONDS = 60
+
+function parseDecisionTimeoutSeconds(value: string | undefined): number {
+  const parsed = Number(value ?? String(DEFAULT_DECISION_TIMEOUT_SECONDS))
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_DECISION_TIMEOUT_SECONDS
+}
+
 /** Maximum time to wait for a user decision from the BLE device. */
-export const DECISION_TIMEOUT_SECONDS = Number(process.env.OPENCODE_BLE_DECISION_TIMEOUT_SECONDS ?? "60")
+export const DECISION_TIMEOUT_SECONDS = parseDecisionTimeoutSeconds(process.env.OPENCODE_BLE_DECISION_TIMEOUT_SECONDS)
 
 /** Message used when later prompts are skipped after an earlier same-session reject. */
 export const CONCURRENT_REJECT_MESSAGE = "Another concurrent permission request was rejected"
