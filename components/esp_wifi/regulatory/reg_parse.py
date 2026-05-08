@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: 2008 Johannes Berg <johannes@sipsolutions.net>
 # SPDX-FileCopyrightText: 2008 Michael Green <Michael.Green@Atheros.com>
 #
-# SPDX-FileContributor: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileContributor: 2025-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 # Copyright (c) 2008, Luis R. Rodriguez <mcgrof@gmail.com>
@@ -707,9 +707,25 @@ class DBParser:
 class Regdomain:
     def __init__(self) -> None:
         self.regdomain_countries: dict[bytes, int] = {}
-        self.typical_regulatory: dict[str, list] = {}
+        self.typical_regulatory: dict[str, tuple[Permission, ...]] = {}
         self.regdomain_countries_2g: dict[bytes, int] = {}
-        self.typical_regulatory_2g: dict[str, list] = {}
+        self.typical_regulatory_2g: dict[str, tuple[Permission, ...]] = {}
+
+    @staticmethod
+    def _permission_cmp_key(permission: Permission) -> tuple[int, int, int, int, int]:
+        """Return reduced fields aligned with generated C rule granularity."""
+        max_eirp = int(permission.power.max_eirp) if permission.power else 0
+        return (
+            int(permission.freqband.start),
+            int(permission.freqband.end),
+            int(permission.freqband.maxbw),
+            max_eirp,
+            permission.dfs,
+        )
+
+    def _permissions_cmp_key(self, permissions: tuple[Permission, ...]) -> tuple[tuple[int, int, int, int, int], ...]:
+        """Build a reduced comparison key from a country's permission set."""
+        return tuple(self._permission_cmp_key(permission) for permission in permissions)
 
     def build_typical_regdomains(self, countries: dict[bytes, Country]) -> None:
         """Populate typical regulatory domains based on country permissions."""
@@ -731,26 +747,32 @@ class Regdomain:
         """Simplify country permissions by building typical regdomains."""
         self.build_typical_regdomains(countries)
         perm_list = list(self.typical_regulatory.values())
+        perm_key_to_index = {self._permissions_cmp_key(permissions): idx for idx, permissions in enumerate(perm_list)}
 
         for cn, country in countries.items():
             cn_str = cn.decode('utf-8')
             permissions = country.permissions
-            if permissions not in perm_list:
+            permissions_key = self._permissions_cmp_key(permissions)
+            if permissions_key not in perm_key_to_index:
                 self.typical_regulatory[cn_str] = permissions
                 perm_list.append(permissions)
-            self.regdomain_countries[cn] = perm_list.index(permissions)
+                perm_key_to_index[permissions_key] = len(perm_list) - 1
+            self.regdomain_countries[cn] = perm_key_to_index[permissions_key]
 
     def simplify_countries_2g(self, countries: dict[bytes, Country]) -> None:
         """Simplify country permissions by building typical regdomains."""
         self.build_typical_regdomains_2g(countries)
 
         perm_list = list(self.typical_regulatory_2g.values())
+        perm_key_to_index = {self._permissions_cmp_key(permissions): idx for idx, permissions in enumerate(perm_list)}
 
         for cn, country in countries.items():
             cn_str = cn.decode('utf-8')
             permissions = country.permissions_2g
+            permissions_key = self._permissions_cmp_key(permissions)
 
-            if permissions not in perm_list:
+            if permissions_key not in perm_key_to_index:
                 self.typical_regulatory_2g[cn_str] = permissions
                 perm_list.append(permissions)
-            self.regdomain_countries_2g[cn] = perm_list.index(permissions)
+                perm_key_to_index[permissions_key] = len(perm_list) - 1
+            self.regdomain_countries_2g[cn] = perm_key_to_index[permissions_key]
