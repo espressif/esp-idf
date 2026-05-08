@@ -716,6 +716,7 @@ static SLEEP_FN_ATTR void misc_modules_wake_prepare(uint32_t sleep_flags)
 #if CONFIG_ESP_ENABLE_PVT && SOC_PVT_EN_WITH_SLEEP
     pvt_func_enable(true);
 #endif
+
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_WDT_SUPPORTED
     if (sleep_flags & PMU_SLEEP_PD_TOP) {
         // There is no driver to manage the flashboot watchdog, and it is definitely be in off state when

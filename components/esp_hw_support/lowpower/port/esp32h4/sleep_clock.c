@@ -33,7 +33,7 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
     #undef N_REGS_PCR
 }
 
-#if CONFIG_MAC_BB_PD || CONFIG_BT_LE_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE || SOC_PM_MODEM_CLK_CONF_RETENTION
+#if CONFIG_MAC_BB_PD || CONFIG_BT_CTRL_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE || SOC_PM_MODEM_CLK_CONF_RETENTION
 esp_err_t sleep_clock_modem_retention_init(void *arg)
 {
     #define N_REGS_SYSCON() (((MODEM_SYSCON_MEM_RF2_CONF_REG - MODEM_SYSCON_TEST_CONF_REG) / 4) + 1)
@@ -120,7 +120,7 @@ ESP_SYSTEM_INIT_FN(sleep_clock_startup_init, SECONDARY, BIT(0), 106)
     };
     sleep_retention_module_init(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM, &init_param);
 
-#if CONFIG_MAC_BB_PD || CONFIG_BT_LE_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE || SOC_PM_MODEM_CLK_CONF_RETENTION
+#if CONFIG_MAC_BB_PD || CONFIG_BT_CTRL_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE || SOC_PM_MODEM_CLK_CONF_RETENTION
     init_param = (sleep_retention_module_init_param_t) {
         .cbs       = { .create = { .handle = sleep_clock_modem_retention_init, .arg = NULL } },
 #if !SOC_PM_MODEM_CLK_CONF_RETENTION
