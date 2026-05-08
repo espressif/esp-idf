@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -105,6 +105,7 @@ static bool uhci_gdma_rx_callback_done(gdma_channel_handle_t dma_chan, gdma_even
 {
     bool need_yield = false;
     uhci_controller_handle_t uhci_ctrl = (uhci_controller_handle_t) user_data;
+    size_t cache_line = uhci_ctrl->rx_dir.cache_line;
     // If the data is not all received, handle it in not normal_eof block. Otherwise, in eof block.
     if (!event_data->flags.normal_eof) {
         size_t rx_size = uhci_ctrl->rx_dir.buffer_size_per_desc_node[uhci_ctrl->rx_dir.node_index];
@@ -114,9 +115,14 @@ static bool uhci_gdma_rx_callback_done(gdma_channel_handle_t dma_chan, gdma_even
             .flags.totally_received = false,
         };
 
-        bool need_cache_sync = esp_ptr_internal(uhci_ctrl->rx_dir.buffer_pointers[uhci_ctrl->rx_dir.node_index]) ? (uhci_ctrl->int_mem_cache_line_size > 0) : (uhci_ctrl->ext_mem_cache_line_size > 0);
-        if (need_cache_sync) {
-            esp_cache_msync(uhci_ctrl->rx_dir.buffer_pointers[uhci_ctrl->rx_dir.node_index], rx_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+        // DMA just finished writing the node's buffer. Because the descriptor link is circular,
+        // the same buffer region gets overwritten on every loop. On targets where the buffer is
+        // backed by a cache, the cache is not snooped by DMA, so the CPU must invalidate the range
+        // before reading, otherwise it will return stale data from a previous loop.
+        if (cache_line > 0) {
+            // The per-node buffer base is aligned to cache_line (see uhci_receive), and rx_size here
+            // equals buffer_size_per_desc_node[] which is also a multiple of cache_line.
+            esp_cache_msync(evt_data.data, rx_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
         }
         if (uhci_ctrl->rx_dir.on_rx_trans_event) {
             need_yield |= uhci_ctrl->rx_dir.on_rx_trans_event(uhci_ctrl, &evt_data, uhci_ctrl->user_data);
@@ -136,14 +142,19 @@ static bool uhci_gdma_rx_callback_done(gdma_channel_handle_t dma_chan, gdma_even
             .flags.totally_received = true,
         };
 
-        bool need_cache_sync = esp_ptr_internal(uhci_ctrl->rx_dir.buffer_pointers[uhci_ctrl->rx_dir.node_index]) ? (uhci_ctrl->int_mem_cache_line_size > 0) : (uhci_ctrl->ext_mem_cache_line_size > 0);
-        size_t m2c_size = UHCI_ALIGN_UP(rx_size, uhci_ctrl->rx_dir.cache_line);
-        if (need_cache_sync) {
-            esp_cache_msync(uhci_ctrl->rx_dir.buffer_pointers[uhci_ctrl->rx_dir.node_index], m2c_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
-        }
         // release power manager lock
         if (uhci_ctrl->pm_lock) {
             esp_pm_lock_release(uhci_ctrl->pm_lock);
+        }
+
+        // Same reasoning as the partial branch. rx_size here may not be a multiple of cache_line
+        // because transfer can end mid-buffer on a UART idle EOF, so round up to the next cache
+        // line (esp_cache_msync's M2C direction requires aligned size and doesn't accept the
+        // UNALIGNED flag). The extra bytes still belong to the user buffer so invalidating them
+        // is harmless.
+        if (cache_line > 0) {
+            size_t sync_size = (rx_size + cache_line - 1) & ~(cache_line - 1);
+            esp_cache_msync(evt_data.data, sync_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
         }
         if (uhci_ctrl->rx_dir.on_rx_trans_event) {
             need_yield |= uhci_ctrl->rx_dir.on_rx_trans_event(uhci_ctrl, &evt_data, uhci_ctrl->user_data);
@@ -307,13 +318,13 @@ esp_err_t uhci_receive(uhci_controller_handle_t uhci_ctrl, uint8_t *read_buffer,
 
     size_t node_count = uhci_ctrl->rx_dir.rx_num_dma_nodes;
 
-    // Initialize the mount configurations for each DMA node, making sure every no
+    // Initialize the mount configurations for each DMA node, making sure every node is properly aligned.
     size_t usable_size = (max_alignment_needed == 0) ? buffer_size : (buffer_size / max_alignment_needed) * max_alignment_needed;
     size_t base_size = (max_alignment_needed == 0) ? usable_size / node_count : (usable_size / node_count / max_alignment_needed) * max_alignment_needed;
     size_t remaining_size = usable_size - (base_size * node_count);
 
     gdma_buffer_mount_config_t mount_configs[node_count];
-    memset(mount_configs, 0, node_count);
+    memset(mount_configs, 0, node_count * sizeof(gdma_buffer_mount_config_t));
 
     for (size_t i = 0; i < node_count; i++) {
         uhci_ctrl->rx_dir.buffer_size_per_desc_node[i] = base_size;
@@ -344,6 +355,13 @@ esp_err_t uhci_receive(uhci_controller_handle_t uhci_ctrl, uint8_t *read_buffer,
     }
 
     gdma_link_mount_buffers(uhci_ctrl->rx_dir.dma_link, 0, mount_configs, node_count, NULL);
+
+    // Invalidate cache before DMA starts to ensure no dirty cache lines.
+    // All DMA nodes (mount_configs) share the same contiguous user buffer, so checking mount_configs[0].buffer is sufficient.
+    bool need_cache_sync = esp_ptr_internal(mount_configs[0].buffer) ? (uhci_ctrl->int_mem_cache_line_size > 0) : (uhci_ctrl->ext_mem_cache_line_size > 0);
+    if (need_cache_sync) {
+        ESP_RETURN_ON_ERROR(esp_cache_msync(mount_configs[0].buffer, usable_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C), TAG, "cache sync failed");
+    }
 
     gdma_reset(uhci_ctrl->rx_dir.dma_chan);
     gdma_start(uhci_ctrl->rx_dir.dma_chan, gdma_link_get_head_addr(uhci_ctrl->rx_dir.dma_link));
