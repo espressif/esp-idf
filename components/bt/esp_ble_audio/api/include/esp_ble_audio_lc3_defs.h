@@ -53,6 +53,13 @@ extern "C" {
     ESP_BLE_AUDIO_CODEC_CAP(ESP_BLE_ISO_CODING_FORMAT_LC3, 0x0000, 0x0000, _data, _meta)
 
 /**
+ * @brief   Variant of ESP_BLE_AUDIO_CODEC_CAP_LC3 with explicit LVT content lengths.
+ */
+#define ESP_BLE_AUDIO_CODEC_CAP_LC3_LEN(_data, _data_len, _meta, _meta_len) \
+    ESP_BLE_AUDIO_CODEC_CAP_LEN(ESP_BLE_ISO_CODING_FORMAT_LC3, 0x0000, 0x0000, \
+                                _data, _data_len, _meta, _meta_len)
+
+/**
  * @brief   Helper to declare LC3 codec data configuration.
  *
  * @param   _freq           Sampling frequency.
@@ -81,6 +88,13 @@ extern "C" {
  */
 #define ESP_BLE_AUDIO_CODEC_CFG_LC3(_data, _meta) \
     ESP_BLE_AUDIO_CODEC_CFG(ESP_BLE_ISO_CODING_FORMAT_LC3, 0x0000, 0x0000, _data, _meta)
+
+/**
+ * @brief   Variant of ESP_BLE_AUDIO_CODEC_CFG_LC3 with explicit LVT content lengths.
+ */
+#define ESP_BLE_AUDIO_CODEC_CFG_LC3_LEN(_data, _data_len, _meta, _meta_len) \
+    ESP_BLE_AUDIO_CODEC_CFG_LEN(ESP_BLE_ISO_CODING_FORMAT_LC3, 0x0000, 0x0000, \
+                                _data, _data_len, _meta, _meta_len)
 
 #ifdef __cplusplus
 }

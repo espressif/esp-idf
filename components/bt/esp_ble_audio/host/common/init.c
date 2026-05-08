@@ -178,7 +178,7 @@ static const uint16_t ext_structs[] = {
     sizeof(struct bt_bond_info),
 };
 
-#define LEA_VERSION     (0x20260430)
+#define LEA_VERSION     (0x20260512)
 
 struct lib_ext_cfgs {
     /* BLE */
@@ -971,6 +971,12 @@ struct lib_ext_funcs {
     void (*_log_wrn)(const char *format, ...);
     void (*_log_err)(const char *format, ...);
 
+    /* Fatal assert: log + abort with tag/info/file/line/func context.
+     * Mirrors lib-side lib_ext_funcs._assert in init.h. ABI must match.
+     */
+    void (*_assert)(const char *tag, size_t info,
+                    const char *file, int line, const char *func);
+
     /* Memory */
     void *(*_malloc)(size_t size);
     void *(*_calloc)(size_t n, size_t size);
@@ -1180,11 +1186,29 @@ static void log_error(const char *format, ...)
 #endif /* (CONFIG_BT_AUDIO_LOG_LEVEL >= BT_ISO_LOG_ERROR) */
 }
 
+/* Fatal assert handler registered into lib_ext_funcs._assert.
+ * Always logged (no LOG_LEVEL gate) — this is the last message before
+ * abort, and the user needs the context to diagnose.
+ */
+static void assert_fatal(const char *tag, size_t info,
+                         const char *file, int line, const char *func)
+{
+    esp_log_write(ESP_LOG_ERROR, LEA_TAG,
+                  BT_ISO_LOG_COLOR_E
+                  "E (%lu) %s: LibAssert[%s][info=%u][%s:%d][%s]"
+                  BT_ISO_LOG_RESET_COLOR "\n",
+                  esp_log_timestamp(), LEA_TAG,
+                  tag, (unsigned)info, file, line, func);
+    abort();
+}
+
 static const struct lib_ext_funcs ext_funcs = {
     ._log_dbg = (void *)log_debug,
     ._log_inf = (void *)log_info,
     ._log_wrn = (void *)log_warn,
     ._log_err = (void *)log_error,
+
+    ._assert = (void *)assert_fatal,
 
     ._malloc = (void *)malloc,
     ._calloc = (void *)calloc,

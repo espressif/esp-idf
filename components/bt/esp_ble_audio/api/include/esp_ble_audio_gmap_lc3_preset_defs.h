@@ -31,19 +31,26 @@ extern "C" {
  * @param   _rtn            Maximum number of retransmissions.
  * @param   _latency        Maximum latency in milliseconds.
  * @param   _pd             Presentation delay in microseconds.
+ *
+ * Backing buffers are sized to `CONFIG_BT_AUDIO_CODEC_CFG_MAX_*_SIZE` so
+ * the preset is safe to mutate via `esp_ble_audio_codec_cfg_*_set_*`.
  */
 #define ESP_BLE_AUDIO_GMAP_LC3_PRESET_DEFINE(_name, _freq, _duration, _loc, _len, \
                                              _frames_per_sdu, _stream_context, \
                                              _interval, _sdu, _rtn, _latency, _pd) \
-    static uint8_t codec_cfg_data_##_name[] = \
+    static uint8_t codec_cfg_data_##_name[CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE] = \
         ESP_BLE_AUDIO_CODEC_CFG_LC3_DATA(_freq, _duration, _loc, _len, _frames_per_sdu); \
-    static uint8_t codec_cfg_meta_##_name[] = \
+    static uint8_t codec_cfg_meta_##_name[CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE] = \
         ESP_BLE_AUDIO_CODEC_CFG_LC3_META(_stream_context); \
     static esp_ble_audio_bap_lc3_preset_t _name = \
-        ESP_BLE_AUDIO_BAP_LC3_PRESET(ESP_BLE_AUDIO_CODEC_CFG_LC3(codec_cfg_data_##_name, \
-                                                                 codec_cfg_meta_##_name), \
-                                     ESP_BLE_AUDIO_BAP_QOS_CFG_UNFRAMED(_interval, _sdu, _rtn, \
-                                                                        _latency, _pd));
+        ESP_BLE_AUDIO_BAP_LC3_PRESET( \
+            ESP_BLE_AUDIO_CODEC_CFG_LC3_LEN( \
+                codec_cfg_data_##_name, \
+                sizeof((uint8_t[])ESP_BLE_AUDIO_CODEC_CFG_LC3_DATA(_freq, _duration, _loc, \
+                                                                   _len, _frames_per_sdu)), \
+                codec_cfg_meta_##_name, \
+                sizeof((uint8_t[])ESP_BLE_AUDIO_CODEC_CFG_LC3_META(_stream_context))), \
+            ESP_BLE_AUDIO_BAP_QOS_CFG_UNFRAMED(_interval, _sdu, _rtn, _latency, _pd));
 
 /**
  * @brief   Gaming Reliable (GR) preset at 32kHz, 7.5ms frame duration.

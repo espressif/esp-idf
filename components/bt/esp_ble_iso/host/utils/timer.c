@@ -28,8 +28,6 @@ static void iso_timer_cb(void *arg)
     struct k_work *work = arg;
     int err;
 
-    LOG_DBG("IsoTimerCb[%p]", work);
-
     assert(work);
     assert(work->timer);
     assert(work->handler);
@@ -309,8 +307,6 @@ k_timeout_t k_work_delayable_remaining_get(struct k_work_delayable *dwork)
 void bt_le_timer_handle_event(void *arg)
 {
     struct k_work *work = arg;
-
-    LOG_DBG("HdlTimerEvt[%p]", work);
 
     k_work_submit_safe(work);
 }

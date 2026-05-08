@@ -67,12 +67,23 @@ static inline int k_mutex_lock(struct k_mutex *mutex, uint32_t timeout)
     assert(mutex);
     assert(mutex->handle);
 
-    if (xSemaphoreTakeRecursive(mutex->handle, timeout) != pdTRUE) {
-        K_MUTEX_LOG_ERR("LockFail");
-        return -EIO;
+    if (xSemaphoreTakeRecursive(mutex->handle, timeout) == pdTRUE) {
+        return 0;
     }
 
-    return 0;
+#if !CONFIG_BT_ISO_NO_LOG && (CONFIG_BT_ISO_LOG_LEVEL >= BT_ISO_LOG_ERROR)
+    /* On timeout, dump who timed out and who is currently holding the
+     * mutex so the caller's log makes wedge diagnosis a one-look job
+     * instead of a multi-task scavenger hunt.
+     */
+    TaskHandle_t holder = xSemaphoreGetMutexHolder(mutex->handle);
+    K_MUTEX_LOG_ERR("LockFail[self=%s][holder=%s]",
+                    pcTaskGetName(NULL),
+                    holder ? pcTaskGetName(holder) : "<none>");
+#else
+    K_MUTEX_LOG_ERR("LockFail");
+#endif
+    return -EIO;
 }
 
 static inline int k_mutex_unlock(struct k_mutex *mutex)

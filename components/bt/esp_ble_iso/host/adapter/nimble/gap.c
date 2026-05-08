@@ -245,7 +245,7 @@ int bt_le_nimble_scan_start(const struct bt_le_scan_param *param, ble_gap_event_
     scan_param.filter_duplicates = 0;
 
     return nimble_err_to_errno(ble_gap_disc(BLE_OWN_ADDR_PUBLIC, BLE_HS_FOREVER,
-                                        &scan_param, cb, NULL));
+                                            &scan_param, cb, NULL));
 }
 
 int bt_le_nimble_scan_stop(void)
