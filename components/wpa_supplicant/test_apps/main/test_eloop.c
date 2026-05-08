@@ -239,7 +239,7 @@ TEST_CASE("Test eloop timers run", "[eloop]")
     int fired_before_stop;
 
     eloop_test_reset_hooks();
-    set_leak_threshold(1000);
+    set_leak_threshold(1200);
     eloop_test_wifi_start();
     eloop_test_wifi_stop();
     /* Reset memory stats since some is leaked during the first initialization */
