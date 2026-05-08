@@ -183,7 +183,7 @@ def changeDeviceRole(dut: IdfDut, role: str) -> None:
 
 def getDataset(dut: IdfDut) -> str:
     execute_command(dut, 'dataset active -x')
-    dut_data = dut.expect(r'\n(\w+)\r', timeout=5)[1].decode()
+    dut_data = dut.expect(r'\n([0-9A-Fa-f]+)\r', timeout=5)[1].decode()
     return str(dut_data)
 
 
