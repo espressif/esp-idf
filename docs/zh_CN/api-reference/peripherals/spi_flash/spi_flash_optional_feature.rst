@@ -34,15 +34,13 @@ flash 的可选功能
 自动挂起和恢复
 --------------
 
-目前仅有 ESP32-S3、ESP32-C2、ESP32-C3、ESP32-C6 及 ESP32-H2 支持此功能。
-
-未来 ESP32-P4 可能会添加此功能。
+乐鑫芯片除 ESP32、ESP32-S2 外，均支持此功能。
 
 .. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
     支持此功能的 flash 芯片列表：
 
-    1. XM25QxxC 系列
+    1. XM25QxxD 系列
     2. GD25QxxE 系列
     3. FM25Q32
 
