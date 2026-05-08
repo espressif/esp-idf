@@ -76,6 +76,7 @@ volatile unsigned port_xSchedulerRunning[portNUM_PROCESSORS] = {0}; // Indicates
 unsigned port_interruptNesting[portNUM_PROCESSORS] = {0};  // Interrupt nesting level. Increased/decreased in portasm.c, _frxt_int_enter/_frxt_int_exit
 BaseType_t port_uxCriticalNesting[portNUM_PROCESSORS] = {0};
 BaseType_t port_uxOldInterruptState[portNUM_PROCESSORS] = {0};
+volatile unsigned port_uxCoreStartupDone[portNUM_PROCESSORS] = {0};  // Indicates whether the core has completed its startup sequence
 
 /*
 *******************************************************************************
@@ -110,7 +111,10 @@ BaseType_t xPortStartScheduler( void )
     /* Setup the hardware to generate the tick. */
     vPortSetupTimer();
 
-    port_xSchedulerRunning[xPortGetCoreID()] = 1;
+    /* Initialize all kernel state tracking variables */
+    BaseType_t coreID = xPortGetCoreID();
+    port_xSchedulerRunning[coreID] = 1;
+    port_uxCoreStartupDone[coreID] = 0;
 
     // Windows contain references to the startup stack which will be reclaimed by the main task
     // Spill the windows to create a clean environment to ensure we do not carry over any such references

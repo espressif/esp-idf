@@ -24,6 +24,7 @@
     .global pxCurrentTCBs
     .global vTaskSwitchContext
     .global xPortSwitchFlag
+    .global port_uxCoreStartupDone
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
     .global xIsrStackBottom
     .global esp_hw_stack_guard_monitor_stop
@@ -857,6 +858,13 @@ restore_stack_pointer:
     lw      sp, 0(a0)
 #endif /* ( configNUM_CORES > 1 ) */
 
+#if ( configNUM_CORES > 1 )
+    /* Indicate that this CPU has completed startup */
+    la      t1, port_uxCoreStartupDone      /* t1 = &port_uxCoreStartupDone */
+    add     t1, t1, s0                      /* t1 = &port_uxCoreStartupDone[coreID] // s0 contains coreID * 4 */
+    li      a1, 1                           /* a1 = 1 */
+    sw      a1, 0(t1)                       /* port_uxCoreStartupDone[coreID] = 1 */
+#endif /* ( configNUM_CORES > 1 ) */
 
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
     /* esp_hw_stack_guard_set_bounds(pxCurrentTCBs[0]->pxStack,

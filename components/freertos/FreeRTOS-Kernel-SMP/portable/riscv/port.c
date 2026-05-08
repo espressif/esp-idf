@@ -63,6 +63,9 @@ _Static_assert(offsetof( StaticTask_t, pxDummy8 ) == PORT_OFFSET_PX_END_OF_STACK
 
 BaseType_t uxSchedulerRunning = 0;  // Duplicate of xSchedulerRunning, accessible to port files
 volatile UBaseType_t uxInterruptNesting = 0;
+#if configNUM_CORES > 1
+volatile unsigned port_uxCoreStartupDone[portNUM_PROCESSORS] = {0};  // Indicates whether the core has completed its startup sequence
+#endif
 portMUX_TYPE port_xTaskLock = portMUX_INITIALIZER_UNLOCKED;
 portMUX_TYPE port_xISRLock = portMUX_INITIALIZER_UNLOCKED;
 volatile BaseType_t xPortSwitchFlag = 0;
@@ -291,7 +294,9 @@ BaseType_t xPortStartScheduler(void)
     uxInterruptNesting = 0;
     port_uxCriticalNestingIDF = 0;
     uxSchedulerRunning = 0;
-
+#if configNUM_CORES > 1
+    port_uxCoreStartupDone[xPortGetCoreID()] = 0;
+#endif
     /* Setup the hardware to generate the tick. */
     vPortSetupTimer();
 

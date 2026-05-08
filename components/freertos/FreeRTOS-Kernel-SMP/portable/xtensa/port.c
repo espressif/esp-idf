@@ -76,6 +76,7 @@ const DRAM_ATTR uint32_t offset_uxCoreAffinityMask = offsetof(StaticTask_t, uxDu
 
 volatile unsigned port_xSchedulerRunning[portNUM_PROCESSORS] = {0}; // Indicates whether scheduler is running on a per-core basis
 unsigned int port_interruptNesting[portNUM_PROCESSORS] = {0};  // Interrupt nesting level. Increased/decreased in portasm.c, _frxt_int_enter/_frxt_int_exit
+volatile unsigned port_uxCoreStartupDone[portNUM_PROCESSORS] = {0};  // Indicates whether the core has completed its startup sequence
 #if ( configNUMBER_OF_CORES > 1 )
 //FreeRTOS SMP Locks
 portMUX_TYPE port_xTaskLock = portMUX_INITIALIZER_UNLOCKED;
@@ -333,7 +334,10 @@ BaseType_t xPortStartScheduler( void )
     /* Setup the hardware to generate the tick. */
     vPortSetupTimer();
 
-    port_xSchedulerRunning[xPortGetCoreID()] = 1;
+        /* Initialize all kernel state tracking variables */
+    BaseType_t coreID = xPortGetCoreID();
+    port_xSchedulerRunning[coreID] = 1;
+    port_uxCoreStartupDone[coreID] = 0;
 
 #if configNUM_CORES > 1
     // Workaround for non-thread safe multi-core OS startup (see IDF-4524)
