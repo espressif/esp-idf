@@ -76,6 +76,8 @@ SOURCE_ENUM_MAP = {
     'BLE_HOST': 0,
     'BLE_MESH': 1,
     'BLE_MESH_LIB': 2,
+    'BLE_ISO': 3,
+    'BLE_AUDIO_LIB': 4,
 }
 
 # Functions that require hex formatting

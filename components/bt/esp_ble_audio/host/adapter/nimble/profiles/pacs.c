@@ -27,6 +27,8 @@
 
 #include "../../../lib/include/audio.h"
 
+LOG_MODULE_REGISTER(LEA_PACS, CONFIG_BT_ISO_LOG_LEVEL);
+
 #if CONFIG_BT_PAC_SNK
 static uint16_t pacs_snk_handle;
 #if CONFIG_BT_PAC_SNK_LOC

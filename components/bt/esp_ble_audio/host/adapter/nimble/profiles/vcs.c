@@ -29,6 +29,8 @@
 
 #include "../../../lib/include/audio.h"
 
+LOG_MODULE_REGISTER(LEA_VCS, CONFIG_BT_ISO_LOG_LEVEL);
+
 #define VOCS_INST_COUNT     CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT
 
 #define INC_VOCS_CHR_COUNT  (4 + 1)

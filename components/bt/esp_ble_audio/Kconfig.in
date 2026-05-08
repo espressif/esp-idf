@@ -100,21 +100,33 @@ menu "OTS Options"
 endmenu
 
 config BT_AUDIO_NO_LOG
-    bool "Disable BLE Audio Debug Log"
+    bool "Disable BLE Audio Lib Debug Log"
     default n
     help
-        Select this to save the BLE Audio related rodata code size. Enabling
-        this option will disable the output of BLE Audio debug log.
+        Select this to save rodata code size by disabling the debug log
+        emitted by the BLE Audio prebuilt library (printed with the
+        "LEA_LIB" tag).
 
-menu "BLE Audio Debug Log Level"
+        Note: this option does NOT affect logs from the BLE Audio IDF
+        source files (esp_ble_audio component, "LEA_*" tags) - those
+        are controlled by BT_ISO_NO_LOG / BT_ISO_LOG_LEVEL under the
+        "BLE ISO Options" menu.
+
+menu "BLE Audio Lib Debug Log Level"
     depends on !BT_AUDIO_NO_LOG
 
     choice BT_AUDIO_LOG_LEVEL
-        prompt "LE_AUDIO_LOG_LEVEL"
+        prompt "BLE_AUDIO_LIB_LOG_LEVEL"
         default BT_AUDIO_LOG_LEVEL_WARNING
         depends on !BT_AUDIO_NO_LOG
         help
-            Define BLE Audio trace level.
+            Define the trace level of the BLE Audio prebuilt library
+            (logs printed with the "LEA_LIB" tag).
+
+            Note: logs from the BLE Audio IDF source files
+            (esp_ble_audio component, "LEA_*" tags) are controlled
+            separately by BT_ISO_LOG_LEVEL under the "BLE ISO Options"
+            menu.
 
         config BT_AUDIO_LOG_LEVEL_NONE
             bool "NONE"

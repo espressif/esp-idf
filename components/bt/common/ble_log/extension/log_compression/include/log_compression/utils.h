@@ -10,8 +10,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifndef CONCAT
 #define CONCAT(a, b) a##b
+#endif
+
+#ifndef _CONCAT
 #define _CONCAT(a, b) CONCAT(a, b)
+#endif
 
 #define _0 0
 #define _1 1
@@ -27,8 +32,10 @@
 #define __COUNT_ARGS(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _n, X...) _n
 #define COUNT_ARGS(X...) __COUNT_ARGS(, ##X, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
 
+#ifndef FOR_EACH_IDX
 #define FOR_EACH_IDX(macro, name, len, ...) \
     _CONCAT(_FOR_EACH_, COUNT_ARGS(__VA_ARGS__))(macro, name, len, __VA_ARGS__)
+#endif
 
 #define _FOR_EACH_0(m, n, l, ...)
 #define _FOR_EACH_1(m, n, l, i1, ...) m(n, l, i1)
@@ -50,6 +57,8 @@ enum {
     BLE_COMPRESSED_LOG_OUT_SOURCE_HOST,
     BLE_COMPRESSED_LOG_OUT_SOURCE_MESH,
     BLE_COMPRESSED_LOG_OUT_SOURCE_MESH_LIB,
+    BLE_COMPRESSED_LOG_OUT_SOURCE_ISO,
+    BLE_COMPRESSED_LOG_OUT_SOURCE_AUDIO_LIB,
 };
 
 enum {

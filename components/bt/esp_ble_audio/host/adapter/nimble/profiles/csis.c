@@ -31,6 +31,8 @@
 
 #include "../../../lib/include/audio.h"
 
+LOG_MODULE_REGISTER(LEA_CSIS, CONFIG_BT_ISO_LOG_LEVEL);
+
 #define CSIS_SVC_COUNT      CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT
 
 #define CSIS_CHR_COUNT      (4 + 1)

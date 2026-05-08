@@ -21,6 +21,8 @@
 #include "common/app/gap.h"
 #include "common/app/gatt.h"
 
+LOG_MODULE_REGISTER(ISO_TASK, CONFIG_BT_ISO_LOG_LEVEL);
+
 static QueueHandle_t iso_queue_handle;
 
 static TaskHandle_t iso_task_handle;

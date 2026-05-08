@@ -21,6 +21,8 @@
 
 #include "common/host.h"
 
+LOG_MODULE_REGISTER(ISO_HCI, CONFIG_BT_ISO_LOG_LEVEL);
+
 struct cmd_data {
     /** HCI status of the command completion */
     uint8_t  status;

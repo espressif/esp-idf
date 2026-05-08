@@ -50,6 +50,16 @@ INIT_BUFFER_MGMT(mesh, LOG_CP_MAX_LOG_BUFFER_USED_SIMU);
 char * mesh_last_task_handle = NULL;
 #endif
 
+#if CONFIG_BLE_ISO_COMPRESSED_LOG_ENABLE
+/* The BLE_ISO buffer is shared by every source compiled into the unified
+ * ISO channel: esp_ble_iso, esp_ble_audio (and future ISO consumers, e.g.
+ * HID-over-ISO), as well as the AUDIO_LIB runtime callback (prebuilt
+ * libble_audio.a, source code 5) — they all funnel here. */
+DECLARE_BUFFERS(iso, CONFIG_BLE_ISO_COMPRESSED_LOG_BUFFER_LEN, LOG_CP_MAX_LOG_BUFFER_USED_SIMU);
+INIT_BUFFER_MGMT(iso, LOG_CP_MAX_LOG_BUFFER_USED_SIMU);
+char * iso_last_task_handle = NULL;
+#endif
+
 #if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE && CONFIG_BT_BLUEDROID_ENABLED
 DECLARE_BUFFERS(host, CONFIG_BLE_HOST_COMPRESSED_LOG_BUFFER_LEN, LOG_CP_MAX_LOG_BUFFER_USED_SIMU);
 INIT_BUFFER_MGMT(host, LOG_CP_MAX_LOG_BUFFER_USED_SIMU);
@@ -78,6 +88,13 @@ int ble_compressed_log_cb_get(uint8_t source, ble_cp_log_buffer_mgmt_t **mgmt)
     case BLE_COMPRESSED_LOG_OUT_SOURCE_MESH_LIB:
         buffer_mgmt = BUF_MGMT_NAME(mesh);
         last_handle = &mesh_last_task_handle;
+        break;
+#endif
+#if CONFIG_BLE_ISO_COMPRESSED_LOG_ENABLE
+    case BLE_COMPRESSED_LOG_OUT_SOURCE_ISO:
+    case BLE_COMPRESSED_LOG_OUT_SOURCE_AUDIO_LIB:
+        buffer_mgmt = BUF_MGMT_NAME(iso);
+        last_handle = &iso_last_task_handle;
         break;
 #endif
 #if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE && (CONFIG_BT_BLUEDROID_ENABLED || CONFIG_BT_NIMBLE_ENABLED)

@@ -44,7 +44,7 @@
 #warning "FreeRTOS with 1ms tick rate is strongly recommended for running ISO."
 #endif /* CONFIG_FREERTOS_HZ < 1000 */
 
-LOG_MODULE_REGISTER(bt_iso, CONFIG_BT_ISO_LOG_LEVEL);
+LOG_MODULE_REGISTER(ISO_CORE, CONFIG_BT_ISO_LOG_LEVEL);
 
 #if defined(CONFIG_BT_DEBUG_ISO_DATA)
 #define BT_ISO_DATA_DBG(fmt, ...) LOG_DBG(fmt, ##__VA_ARGS__)

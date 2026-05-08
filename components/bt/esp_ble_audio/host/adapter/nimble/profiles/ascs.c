@@ -29,6 +29,8 @@
 
 #include "../../../lib/include/audio.h"
 
+LOG_MODULE_REGISTER(LEA_ASCS, CONFIG_BT_ISO_LOG_LEVEL);
+
 static const ble_uuid16_t ascs_uuid_ase_cp = BLE_UUID16_INIT(BT_UUID_ASCS_ASE_CP_VAL);
 static const ble_uuid16_t ascs_uuid_ase_snk = BLE_UUID16_INIT(BT_UUID_ASCS_ASE_SNK_VAL);
 static const ble_uuid16_t ascs_uuid_ase_src = BLE_UUID16_INIT(BT_UUID_ASCS_ASE_SRC_VAL);

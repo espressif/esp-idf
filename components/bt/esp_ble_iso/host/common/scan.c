@@ -20,6 +20,8 @@
 
 #include "common/host.h"
 
+LOG_MODULE_REGISTER(ISO_SCAN, CONFIG_BT_ISO_LOG_LEVEL);
+
 static sys_slist_t scan_cbs = SYS_SLIST_STATIC_INIT(&scan_cbs);
 
 _LIB_ONLY

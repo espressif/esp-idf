@@ -26,6 +26,8 @@
 
 #include "nimble/hs_error.h"
 
+LOG_MODULE_REGISTER(ISO_NGRP, CONFIG_BT_ISO_LOG_LEVEL);
+
 struct gatt_nrp_node {
     uint8_t type;
 

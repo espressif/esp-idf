@@ -21,7 +21,7 @@
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
+LOG_MODULE_REGISTER(LEA_OTS, CONFIG_BT_ISO_LOG_LEVEL);
 
 #define OACP_PROC_TYPE_SIZE 1
 

@@ -25,6 +25,8 @@
 
 #include "nimble/hs_error.h"
 
+LOG_MODULE_REGISTER(ISO_N2CAP, CONFIG_BT_ISO_LOG_LEVEL);
+
 _Static_assert(CONFIG_BT_NIMBLE_L2CAP_COC_MAX_NUM && "At least one L2CAP coc shall be supported");
 
 #define OTS_L2CAP_BUF_COUNT     (3 * CONFIG_BT_NIMBLE_L2CAP_COC_MAX_NUM)

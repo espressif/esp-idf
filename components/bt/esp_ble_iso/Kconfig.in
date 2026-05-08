@@ -98,21 +98,35 @@ if BT_ISO
     endif # BT_ISO_BROADCAST
 
     config BT_ISO_NO_LOG
-        bool "Disable ISO Debug Log"
+        bool "Disable BLE ISO Debug Log"
         default n
         help
-            Select this to save the ISO related rodata code size. Enabling
-            this option will disable the output of ISO debug log.
+            Select this to save rodata code size by disabling the debug
+            log emitted by the BLE ISO IDF source files (printed with
+            "ISO_*" tags).
 
-    menu "ISO Debug Log Level"
+            Note: this option also gates logs from the BLE Audio IDF
+            source files (esp_ble_audio component, with "LEA_*" tags)
+            because they share the same log header. Logs from the BLE
+            Audio prebuilt library are gated separately by
+            BT_AUDIO_NO_LOG.
+
+    menu "BLE ISO Debug Log Level"
         depends on !BT_ISO_NO_LOG
 
         choice BT_ISO_LOG_LEVEL
-            prompt "ISO_LOG_LEVEL"
+            prompt "BLE_ISO_LOG_LEVEL"
             default BT_ISO_LOG_LEVEL_WARNING
             depends on !BT_ISO_NO_LOG
             help
-                Define ISO trace level.
+                Define the trace level of the BLE ISO IDF source files
+                (logs printed with "ISO_*" tags).
+
+                Note: this level also applies to the BLE Audio IDF
+                source files (esp_ble_audio component, "LEA_*" tags)
+                because they share the same log header. The trace
+                level of the BLE Audio prebuilt library is configured
+                separately by BT_AUDIO_LOG_LEVEL.
 
             config BT_ISO_LOG_LEVEL_NONE
                 bool "NONE"

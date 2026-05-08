@@ -51,13 +51,24 @@ static inline void k_mutex_delete(struct k_mutex *mutex)
     mutex->handle = NULL;
 }
 
+/* Inline log helper with a fixed tag. These functions are inlined into many
+ * translation units (including api/ wrappers), and not all of them call
+ * LOG_MODULE_REGISTER, so we cannot reference the per-TU __iso_log_tag
+ * here. Use a hardcoded "ISO_MUTEX" tag instead, keeping the same level
+ * gating. */
+#if CONFIG_BT_ISO_NO_LOG || (CONFIG_BT_ISO_LOG_LEVEL < BT_ISO_LOG_ERROR)
+#define K_MUTEX_LOG_ERR(fmt, args...)
+#else
+#define K_MUTEX_LOG_ERR(fmt, args...)   BT_ISO_LOGE("ISO_MUTEX", fmt, ## args)
+#endif
+
 static inline int k_mutex_lock(struct k_mutex *mutex, uint32_t timeout)
 {
     assert(mutex);
     assert(mutex->handle);
 
     if (xSemaphoreTakeRecursive(mutex->handle, timeout) != pdTRUE) {
-        LOG_ERR("KMutexLockFail");
+        K_MUTEX_LOG_ERR("LockFail");
         return -EIO;
     }
 
@@ -70,7 +81,7 @@ static inline int k_mutex_unlock(struct k_mutex *mutex)
     assert(mutex->handle);
 
     if (xSemaphoreGiveRecursive(mutex->handle) != pdTRUE) {
-        LOG_ERR("KMutexUnlockFail");
+        K_MUTEX_LOG_ERR("UnlockFail");
         return -EIO;
     }
 

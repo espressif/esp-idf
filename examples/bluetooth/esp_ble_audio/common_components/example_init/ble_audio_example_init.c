@@ -10,6 +10,10 @@
 #include "esp_log.h"
 #include "sdkconfig.h"
 
+#if CONFIG_BLE_LOG_ENABLED
+#include "ble_log.h"
+#endif
+
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 
@@ -221,18 +225,33 @@ esp_err_t bluetooth_init(void)
 {
     esp_err_t ret;
 
+    /* When controller log is disabled (or running in v1 mode), the
+     * automatic ble_log_init() inside esp_bt_controller_init() is skipped.
+     * Init manually here so HOST/ISO/AUDIO compressed logs aren't dropped
+     * during NimBLE bring-up. The function is idempotent.
+     *
+     * TODO: Remove this block (and the ble_log_flush() below) once
+     *       ble_log_init() is decoupled from the controller log path and
+     *       owns its own initialization independently. */
+#if CONFIG_BLE_LOG_ENABLED && \
+    !(CONFIG_BT_LE_CONTROLLER_LOG_ENABLED && CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2)
+    if (!ble_log_init()) {
+        ESP_LOGE(TAG, "Failed to init ble_log");
+        return ESP_FAIL;
+    }
+#endif
+
     example_audio_sem = xSemaphoreCreateBinary();
     if (example_audio_sem == NULL) {
         ESP_LOGE(TAG, "Failed to create audio semaphore");
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto err_log;
     }
 
     ret = nimble_port_init();
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to init nimble %d ", ret);
-        vSemaphoreDelete(example_audio_sem);
-        example_audio_sem = NULL;
-        return ret;
+        goto err_sem;
     }
 
     /* Initialize the NimBLE host configuration */
@@ -254,5 +273,27 @@ esp_err_t bluetooth_init(void)
 
     xSemaphoreTake(example_audio_sem, portMAX_DELAY);
 
+    /* Drain startup-phase log buffers and emit a FLUSH boundary so the
+     * parser resets stats here — the example's runtime logs start clean.
+     *
+     * TODO: Remove together with the manual ble_log_init() above once
+     *       ble_log_init() is decoupled from the controller log path. */
+#if CONFIG_BLE_LOG_ENABLED
+    ble_log_flush();
+#endif
+
     return ESP_OK;
+
+err_sem:
+    vSemaphoreDelete(example_audio_sem);
+    example_audio_sem = NULL;
+err_log:
+    /* Mirror the manual ble_log_init() block above — same Kconfig gate so
+     * we only deinit what we initialized; the controller-owned path is
+     * left alone. */
+#if CONFIG_BLE_LOG_ENABLED && \
+    !(CONFIG_BT_LE_CONTROLLER_LOG_ENABLED && CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2)
+    ble_log_deinit();
+#endif
+    return ret;
 }

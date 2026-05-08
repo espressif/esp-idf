@@ -21,6 +21,8 @@
 
 #include "../../../lib/include/audio.h"
 
+LOG_MODULE_REGISTER(LEA_CAS, CONFIG_BT_ISO_LOG_LEVEL);
+
 #if CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER
 extern struct ble_gatt_svc_def *cas_get_included_csis(void *csis_svc_p);
 

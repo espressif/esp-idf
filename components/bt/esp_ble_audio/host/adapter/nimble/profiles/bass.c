@@ -29,6 +29,8 @@
 
 #include "../../../lib/include/audio.h"
 
+LOG_MODULE_REGISTER(LEA_BASS, CONFIG_BT_ISO_LOG_LEVEL);
+
 static const ble_uuid16_t bass_uuid_control_point = BLE_UUID16_INIT(BT_UUID_BASS_CONTROL_POINT_VAL);
 static const ble_uuid16_t bass_uuid_recv_state = BLE_UUID16_INIT(BT_UUID_BASS_RECV_STATE_VAL);
 

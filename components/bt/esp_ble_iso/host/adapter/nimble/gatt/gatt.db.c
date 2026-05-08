@@ -24,6 +24,8 @@
 
 #include "common/host.h"
 
+LOG_MODULE_REGISTER(ISO_NGDB, CONFIG_BT_ISO_LOG_LEVEL);
+
 static int gattc_db_find_inc_svcs_cb_safe(uint16_t conn_handle,
                                           const struct ble_gatt_error *error,
                                           const struct ble_gatt_svc *svc,
