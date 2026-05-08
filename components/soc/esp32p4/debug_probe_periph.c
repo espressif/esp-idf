@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #include "soc/gpio_sig_map.h"
+#include "soc/lp_gpio_sig_map.h"
 #include "soc/debug_probe_periph.h"
 
 const debug_probe_signal_conn_t debug_probe_periph_signals = {
@@ -27,6 +28,26 @@ const debug_probe_signal_conn_t debug_probe_periph_signals = {
                 [13] = HP_PROBE_TOP_OUT13_IDX,
                 [14] = HP_PROBE_TOP_OUT14_IDX,
                 [15] = HP_PROBE_TOP_OUT15_IDX,
+            }
+        },
+        [1] = {
+            .out_sig = {
+                [0] = LP_PROBE_TOP_OUT0_IDX,
+                [1] = LP_PROBE_TOP_OUT1_IDX,
+                [2] = LP_PROBE_TOP_OUT2_IDX,
+                [3] = LP_PROBE_TOP_OUT3_IDX,
+                [4] = LP_PROBE_TOP_OUT4_IDX,
+                [5] = LP_PROBE_TOP_OUT5_IDX,
+                [6] = LP_PROBE_TOP_OUT6_IDX,
+                [7] = LP_PROBE_TOP_OUT7_IDX,
+                [8] = LP_PROBE_TOP_OUT8_IDX,
+                [9] = LP_PROBE_TOP_OUT9_IDX,
+                [10] = LP_PROBE_TOP_OUT10_IDX,
+                [11] = LP_PROBE_TOP_OUT11_IDX,
+                [12] = LP_PROBE_TOP_OUT12_IDX,
+                [13] = LP_PROBE_TOP_OUT13_IDX,
+                [14] = LP_PROBE_TOP_OUT14_IDX,
+                [15] = LP_PROBE_TOP_OUT15_IDX,
             }
         }
     }

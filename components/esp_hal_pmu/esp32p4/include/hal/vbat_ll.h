@@ -28,6 +28,8 @@ typedef enum {
 #define VBAT_LL_CHARGER_MASK   (BIT(27)|BIT(28))
 #define VBAT_LL_DETECT_MASK    (BIT(30))
 
+#define VBAT_LL_LP_SLEEP_PROBE_ID   (9)
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,10 @@
 #include "soc/soc_caps.h"
 #include "soc/debug_probe_periph.h"
 #include "soc/io_mux_reg.h"
+#if SOC_DEBUG_PROBE_NUM_UNIT >= 2 && SOC_LP_GPIO_MATRIX_SUPPORTED
+#include "driver/rtc_io.h"
+#include "driver/lp_io.h"
+#endif
 #include "hal/debug_probe_ll.h"
 #include "esp_private/debug_probe.h"
 #include "esp_private/gpio.h"
@@ -28,9 +32,10 @@ typedef struct debug_probe_unit_t debug_probe_unit_t;
 typedef struct debug_probe_channel_t debug_probe_channel_t;
 
 struct debug_probe_unit_t {
-    int unit_id; // unit id
+    debug_probe_unit_id_t unit_id; // unit id
     debug_probe_channel_t *channels[DEBUG_PROBE_LL_CHANNELS_PER_UNIT]; // channels installed in this unit
     uint64_t pin_bit_mask; // bit-mask of the GPIOs used by this unit
+    uint32_t probe_out_inv_mask;   // bit i set = invert i-th probe signal
 };
 
 struct debug_probe_channel_t {
@@ -45,9 +50,31 @@ typedef struct debug_probe_platform_t {
 
 static debug_probe_platform_t s_platform; // singleton platform
 
+static esp_err_t connect_probe_out_to_pin(debug_probe_unit_id_t unit_id, int pin, unsigned sig_idx, bool out_inv)
+{
+    if (unit_id == DEBUG_PROBE_UNIT_HP) {
+        esp_err_t ret = gpio_func_sel((gpio_num_t)pin, PIN_FUNC_GPIO);
+        if (ret != ESP_OK) {
+            return ret;
+        }
+        esp_rom_gpio_connect_out_signal(pin, debug_probe_periph_signals.units[0].out_sig[sig_idx], out_inv, false);
+        return ESP_OK;
+    }
+#if SOC_DEBUG_PROBE_NUM_UNIT >= 2
+    if (!rtc_gpio_is_valid_gpio((gpio_num_t)pin)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    esp_err_t ret = rtc_gpio_init((gpio_num_t)pin);
+    return (ret == ESP_OK) ? lp_gpio_connect_out_signal((gpio_num_t)pin,
+            debug_probe_periph_signals.units[1].out_sig[sig_idx], out_inv, false) : ret;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
+
 static esp_err_t debug_probe_unit_destroy(debug_probe_unit_t *unit)
 {
-    int unit_id = unit->unit_id;
+    debug_probe_unit_id_t unit_id = unit->unit_id;
 
     // remove the unit from the platform
     _lock_acquire(&s_platform.mutex);
@@ -57,6 +84,13 @@ static esp_err_t debug_probe_unit_destroy(debug_probe_unit_t *unit)
     // disable the probe output
     debug_probe_ll_enable_unit(unit_id, false);
     esp_gpio_revoke(unit->pin_bit_mask);
+#if SOC_DEBUG_PROBE_NUM_UNIT >= 2
+    if (unit_id == DEBUG_PROBE_UNIT_LP) {
+        for (uint64_t m = unit->pin_bit_mask; m; m &= m - 1) {
+            rtc_gpio_deinit((gpio_num_t)(__builtin_ffsll(m) - 1));
+        }
+    }
+#endif
     // free the memory
     free(unit);
     return ESP_OK;
@@ -65,21 +99,20 @@ static esp_err_t debug_probe_unit_destroy(debug_probe_unit_t *unit)
 esp_err_t debug_probe_new_unit(const debug_probe_unit_config_t *config, debug_probe_unit_handle_t *out_handle)
 {
     debug_probe_unit_t *unit = NULL;
-    int unit_id = -1;
-    ESP_RETURN_ON_FALSE(config && out_handle, ESP_ERR_INVALID_ARG, TAG, "invalid args");
+    debug_probe_unit_id_t unit_id = config->unit_id;
+    ESP_RETURN_ON_FALSE(config && out_handle && unit_id < SOC_DEBUG_PROBE_NUM_UNIT, ESP_ERR_INVALID_ARG, TAG, "invalid args");
 
-    // search for a free unit slot
+    /* Check the requested unit slot is free (unit_id from config->unit_id) */
     _lock_acquire(&s_platform.mutex);
-    for (int i = 0; i < SOC_DEBUG_PROBE_NUM_UNIT; i++) {
-        if (s_platform.units[i] == NULL) {
-            unit_id = i;
-            unit = calloc(1, sizeof(debug_probe_unit_t));
-            s_platform.units[i] = unit;
-            break;
-        }
+    if (s_platform.units[unit_id] != NULL) {
+        _lock_release(&s_platform.mutex);
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_FOUND, TAG, "unit slot in use");
+    }
+    unit = calloc(1, sizeof(debug_probe_unit_t));
+    if (unit) {
+        s_platform.units[unit_id] = unit;
     }
     _lock_release(&s_platform.mutex);
-    ESP_RETURN_ON_FALSE(unit_id >= 0, ESP_ERR_NOT_FOUND, TAG, "no free unit slot");
     ESP_RETURN_ON_FALSE(unit, ESP_ERR_NO_MEM, TAG, "no mem for unit");
     unit->unit_id = unit_id;
 
@@ -97,21 +130,32 @@ esp_err_t debug_probe_new_unit(const debug_probe_unit_config_t *config, debug_pr
     }
 
     // connect the probe output signals to the GPIOs
+    esp_err_t ret = ESP_OK;
     for (int i = 0; i < SOC_DEBUG_PROBE_MAX_OUTPUT_WIDTH; i++) {
-        if (config->probe_out_gpio_nums[i] >= 0) {
-            gpio_func_sel(config->probe_out_gpio_nums[i], PIN_FUNC_GPIO);
-            esp_rom_gpio_connect_out_signal(config->probe_out_gpio_nums[i],
-                                            debug_probe_periph_signals.units[unit_id].out_sig[i],
-                                            false, false);
+        int pin = config->probe_out_gpio_nums[i];
+        if (pin >= 0) {
+            bool out_inv = !!(config->probe_out_inv_mask & BIT(i));
+            ret = connect_probe_out_to_pin(unit_id, pin, (unsigned)i, out_inv);
+            if (ret != ESP_OK) {
+                ESP_LOGE(TAG, "Probe out pin %d failed: %s", pin, esp_err_to_name(ret));
+                break;
+            }
         }
     }
+    if (ret != ESP_OK) {
+        unit->pin_bit_mask = pin_bit_mask;
+        (void)debug_probe_unit_destroy(unit);
+        return ret;
+    }
+
     unit->pin_bit_mask = pin_bit_mask;
+    unit->probe_out_inv_mask = config->probe_out_inv_mask;
 
     // enable the probe unit
     debug_probe_ll_enable_unit(unit_id, true);
 
     *out_handle = unit;
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t debug_probe_del_unit(debug_probe_unit_handle_t unit)
@@ -134,7 +178,7 @@ esp_err_t debug_probe_del_unit(debug_probe_unit_handle_t unit)
 static esp_err_t debug_probe_channel_destroy(debug_probe_channel_t *chan)
 {
     debug_probe_unit_t *unit = chan->unit;
-    int unit_id = unit->unit_id;
+    debug_probe_unit_id_t unit_id = unit->unit_id;
     int chan_id = chan->chan_id;
 
     // remove the channel from the unit
@@ -154,7 +198,7 @@ esp_err_t debug_probe_new_channel(debug_probe_unit_handle_t unit, const debug_pr
     debug_probe_channel_t *chan = NULL;
     int chan_id = -1;
     ESP_RETURN_ON_FALSE(unit && config && out_handle, ESP_ERR_INVALID_ARG, TAG, "invalid args");
-    int unit_id = unit->unit_id;
+    debug_probe_unit_id_t unit_id = unit->unit_id;
 
     // search for a free channel slot
     _lock_acquire(&s_platform.mutex);
@@ -173,7 +217,10 @@ esp_err_t debug_probe_new_channel(debug_probe_unit_handle_t unit, const debug_pr
     chan->unit = unit;
 
     // one channel can only monitor one target module
-    debug_probe_ll_channel_set_target_module(unit_id, chan_id, config->target_module);
+    uint8_t target_module = (unit_id == DEBUG_PROBE_UNIT_HP)
+                      ? (uint8_t)config->target_module.hp_target
+                      : (uint8_t)config->target_module.lp_target;
+    debug_probe_ll_channel_set_target_module(unit_id, chan_id, target_module);
     debug_probe_ll_enable_channel(unit_id, chan_id, true);
 
     *out_handle = chan;
@@ -189,9 +236,10 @@ esp_err_t debug_probe_del_channel(debug_probe_channel_handle_t chan)
 esp_err_t debug_probe_chan_add_signal_by_byte(debug_probe_channel_handle_t chan, uint8_t byte_idx, uint8_t sig_group)
 {
     ESP_RETURN_ON_FALSE(chan, ESP_ERR_INVALID_ARG, TAG, "invalid args");
-    ESP_RETURN_ON_FALSE(byte_idx < 4, ESP_ERR_INVALID_ARG, TAG, "byte_idx out of range");
-    ESP_RETURN_ON_FALSE(sig_group < 16, ESP_ERR_INVALID_ARG, TAG, "sig_group out of range");
     debug_probe_unit_t *unit = chan->unit;
+    ESP_RETURN_ON_FALSE(byte_idx < ((unit->unit_id == DEBUG_PROBE_UNIT_LP) ? 2 : 4),
+                        ESP_ERR_INVALID_ARG, TAG, "byte_idx out of range");
+    ESP_RETURN_ON_FALSE(sig_group < 16, ESP_ERR_INVALID_ARG, TAG, "sig_group out of range");
     debug_probe_ll_channel_add_signal_group(unit->unit_id, chan->chan_id, byte_idx, sig_group);
     return ESP_OK;
 }
@@ -199,18 +247,25 @@ esp_err_t debug_probe_chan_add_signal_by_byte(debug_probe_channel_handle_t chan,
 esp_err_t debug_probe_unit_merge16(debug_probe_unit_handle_t unit, debug_probe_channel_handle_t chan0, debug_probe_split_u16_t split_of_chan0,
                                    debug_probe_channel_handle_t chan1, debug_probe_split_u16_t split_of_chan1)
 {
-    ESP_RETURN_ON_FALSE(unit && chan0 && chan1, ESP_ERR_INVALID_ARG, TAG, "invalid args");
-    ESP_RETURN_ON_FALSE(chan0->unit == unit && chan1->unit == unit, ESP_ERR_INVALID_ARG, TAG, "chan not belong to unit");
-    int unit_id = unit->unit_id;
+    ESP_RETURN_ON_FALSE(unit && chan0, ESP_ERR_INVALID_ARG, TAG, "invalid args");
+    ESP_RETURN_ON_FALSE(chan0->unit == unit, ESP_ERR_INVALID_ARG, TAG, "chan0 not belong to unit");
+    if (chan1 != NULL) {
+        ESP_RETURN_ON_FALSE(chan1->unit == unit, ESP_ERR_INVALID_ARG, TAG, "chan1 not belong to unit");
+    }
+    debug_probe_unit_id_t unit_id = unit->unit_id;
+
     debug_probe_ll_set_lower16_output(unit_id, chan0->chan_id, split_of_chan0);
-    debug_probe_ll_set_upper16_output(unit_id, chan1->chan_id, split_of_chan1);
+    if (chan1 != NULL) {
+        debug_probe_ll_set_upper16_output(unit_id, chan1->chan_id, split_of_chan1);
+    }
     return ESP_OK;
 }
 
 esp_err_t debug_probe_unit_read(debug_probe_unit_handle_t unit, uint32_t *value)
 {
     ESP_RETURN_ON_FALSE(unit && value, ESP_ERR_INVALID_ARG, TAG, "invalid args");
-    int unit_id = unit->unit_id;
-    *value = debug_probe_ll_read_output(unit_id);
+    debug_probe_unit_id_t unit_id = unit->unit_id;
+    uint32_t raw = debug_probe_ll_read_output(unit_id);
+    *value = raw ^ unit->probe_out_inv_mask;
     return ESP_OK;
 }

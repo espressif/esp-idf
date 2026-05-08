@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include "hal/vbat_hal.h"
 #include "freertos/FreeRTOS.h"
 #include "sdkconfig.h"
+#include "esp_private/debug_probe.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/startup_internal.h"
 #include "esp_private/rtc_ctrl.h"
@@ -46,6 +47,10 @@
 #define VBAT_CHARGER_HYSTERESIS_THRESHOLD_HIGH  (VBAT_CHARGER_HYSTERESIS_THRESHOLD_LOW + (VBAT_CHARGER_FILTER_TIME_US * SOC_CLK_RC_FAST_FREQ_APPROX) / MHZ)
 #endif
 
+#if CONFIG_ESP_VBAT_CONTROL_MAIN_POWER_IN_DSLP
+#define ESP_3V3_CTRL_PIN        CONFIG_ESP_VBAT_MAIN_POWER_CTRL_PIN
+#endif
+
 #if CONFIG_ESP_VBAT_USE_RECHARGEABLE_BATTERY
 #if (VBAT_CHARGER_RESISTOR_VALUE < 1000 || VBAT_CHARGER_RESISTOR_VALUE > 4500 || VBAT_CHARGER_RESISTOR_VALUE % 500 != 0)
 #error "vbat charger resistor (ESP_VBAT_CHARGER_CIRCUIT_RESISTOR_VAL) must be between 1000 and 4500 ohms and must be a multiple of 500."
@@ -54,7 +59,7 @@
 #if (VBAT_BROWNOUT_DET_LVL >= VBAT_CHARGE_DET_LVL_LOW)
 #error "vbat charger low threshold is equal or lower than vbat brownout threshold, please put vbat brownout threshold lower than vbat charger low threshold"
 #endif
-#endif
+#endif // CONFIG_ESP_VBAT_INIT_AUTO
 
 ESP_LOG_ATTR_TAG(TAG, "VBAT");
 #endif
@@ -171,6 +176,29 @@ esp_err_t esp_vbat_init(void)
     esp_sleep_sub_mode_force_disable(ESP_SLEEP_VBAT_POWER_DEEPSLEEP_MODE);
     esp_sleep_sub_mode_config(ESP_SLEEP_VBAT_POWER_DEEPSLEEP_MODE, true);
     esp_sleep_enable_vbat_under_volt_wakeup();
+
+#if CONFIG_ESP_VBAT_CONTROL_MAIN_POWER_IN_DSLP
+    if (esp_reset_reason() != ESP_RST_DEEPSLEEP) {
+        debug_probe_unit_handle_t lp_probe_hdl;
+        debug_probe_unit_config_t unit_config = {
+            .unit_id = DEBUG_PROBE_UNIT_LP,
+            .probe_out_gpio_nums = DEBUG_PROBE_GPIO_NUMS_NONE,
+        };
+        debug_probe_channel_config_t chan_config = {0};
+        debug_probe_channel_handle_t lp_probe_channel_hdl;
+        chan_config.target_module.lp_target = DEBUG_PROBE_TARGET_LP_PMU;
+        unit_config.probe_out_gpio_nums[VBAT_LL_LP_SLEEP_PROBE_ID] = ESP_3V3_CTRL_PIN;
+#if !CONFIG_ESP_VBAT_MAIN_POWER_CTRL_PIN_INV
+        unit_config.probe_out_inv_mask |= BIT(VBAT_LL_LP_SLEEP_PROBE_ID);
+#endif
+        ESP_ERROR_CHECK(debug_probe_new_unit(&unit_config, &lp_probe_hdl));
+        ESP_ERROR_CHECK(debug_probe_new_channel(lp_probe_hdl, &chan_config, &lp_probe_channel_hdl));
+        ESP_ERROR_CHECK(debug_probe_chan_add_signal_by_byte(lp_probe_channel_hdl, 1, DEBUG_PROBE_TARGET_LP_PMU));
+        ESP_ERROR_CHECK(debug_probe_unit_merge16(lp_probe_hdl, lp_probe_channel_hdl, DEBUG_PROBE_SPLIT_UPPER16, NULL, 0));
+    }
+    // The LP Probe & LP IOMUX pathways depend on the LP_PERIPH power domain.
+    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+#endif
     return ESP_OK;
 }
 #endif

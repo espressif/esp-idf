@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,7 +30,9 @@ typedef struct debug_probe_channel_t *debug_probe_channel_handle_t;
  * @brief Configuration for a debug probe unit
  */
 typedef struct {
-    gpio_num_t probe_out_gpio_nums[DEBUG_PROBE_MAX_OUTPUT_WIDTH]; ///< GPIO numbers for probe output
+    debug_probe_unit_id_t unit_id;                                  ///< DEBUG_PROBE_UNIT_HP or DEBUG_PROBE_UNIT_LP
+    gpio_num_t probe_out_gpio_nums[DEBUG_PROBE_MAX_OUTPUT_WIDTH];   ///< GPIO numbers for probe output
+    uint32_t probe_out_inv_mask;                                    ///< Bit mask: bit i set = invert output for i-th probe signal (default 0 = no inversion)
 } debug_probe_unit_config_t;
 
 /**
@@ -60,9 +62,13 @@ esp_err_t debug_probe_del_unit(debug_probe_unit_handle_t unit);
 
 /**
  * @brief Configuration for a debug probe channel
+ * @note Use hp_target for HP unit, lp_target for LP unit
  */
 typedef struct {
-    debug_probe_target_t target_module; ///< Target module of the debug probe channel
+    union {
+        debug_probe_target_t hp_target;    ///< Target when unit is HP
+        debug_probe_target_lp_t lp_target; ///< Target when unit is LP
+    } target_module;
 } debug_probe_channel_config_t;
 
 /**
@@ -103,7 +109,7 @@ esp_err_t debug_probe_del_channel(debug_probe_channel_handle_t chan);
  * @note You can save up to 32 signals in a channel, but in the end, only the part of them (e.g. upper or lower 16 signals) can be output to the GPIO pads.
  *
  * @param[in] chan Handle of the debug probe channel
- * @param[in] byte_idx Byte index of the signals, ranges from 0 to 3
+ * @param[in] byte_idx Byte index (HP: 0-3, LP: 0-1)
  * @param[in] sig_group Signal group of the signal, ranges from 0 to 15
  * @return
  *      - ESP_OK on success
@@ -128,8 +134,8 @@ esp_err_t debug_probe_chan_add_signal_by_byte(debug_probe_channel_handle_t chan,
  * @param[in] unit Handle of the debug probe unit
  * @param[in] chan0 Handle of the debug probe channel 0, whose output will be merged to the lower 16 signals of the unit output
  * @param[in] split_of_chan0 Part of the channel 0 output to be merged
- * @param[in] chan1 Handle of the debug probe channel 1, whose output will be merged to the upper 16 signals of the unit output
- * @param[in] split_of_chan1 Part of the channel 1 output to be merged
+ * @param[in] chan1 Handle of the debug probe channel 1 for upper 16 bits; can be NULL to ignore upper16
+ * @param[in] split_of_chan1 Part of the channel 1 output (ignored when chan1 is NULL)
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_ARG if the parameters are invalid
