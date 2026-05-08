@@ -457,9 +457,6 @@ esp_err_t gpio_config_as_analog(gpio_num_t gpio_num)
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
     if (rtc_gpio_is_valid_gpio(gpio_num)) {
         rtc_gpio_deinit(gpio_num);
-        rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED);
-        rtc_gpio_pullup_dis(gpio_num);
-        rtc_gpio_pulldown_dis(gpio_num);
     }
 #endif
     return ESP_OK;
