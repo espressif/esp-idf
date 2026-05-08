@@ -23,29 +23,62 @@
 static void ap_sta_delayed_1x_auth_fail_cb(void *eloop_ctx, void *timeout_ctx);
 void hostapd_wps_eap_completed(struct hostapd_data *hapd);
 
+/*
+ * CAUTION: cb is invoked while HOSTAPD_STA_LIST_LOCK is held.
+ * The mutex is non-recursive (os_mutex_create), so cb must NEVER
+ * call ap_get_sta, ap_free_sta, ap_sta_add, or any other function
+ * that acquires HOSTAPD_STA_LIST_LOCK — doing so will deadlock.
+ * Use the lock-free variants (e.g. ap_get_sta_internal) if needed.
+ */
 int ap_for_each_sta(struct hostapd_data *hapd,
 		    int (*cb)(struct hostapd_data *hapd, struct sta_info *sta,
 			      void *ctx),
 		    void *ctx)
 {
 	struct sta_info *sta;
+	int ret;
 
+	HOSTAPD_STA_LIST_LOCK(hapd);
 	for (sta = hapd->sta_list; sta; sta = sta->next) {
-		if (cb(hapd, sta, ctx))
-			return 1;
+		if (cb(hapd, sta, ctx)) {
+			ret = 1;
+			HOSTAPD_STA_LIST_UNLOCK(hapd);
+			return ret;
+		}
 	}
+	HOSTAPD_STA_LIST_UNLOCK(hapd);
 
 	return 0;
 }
 
 
+/**
+ * ap_get_sta - Look up a station by MAC address
+ * @hapd: hostapd data structure
+ * @sta: MAC address to look up
+ * Returns: Pointer to sta_info structure, or NULL if not found
+ *
+ * This function acquires and releases HOSTAPD_STA_LIST_LOCK internally.
+ * The returned pointer is NOT protected after the lock is released.
+ * Use-after-free can occur if the station is freed by another task
+ * (via ap_free_sta) between the unlock here and the caller's use.
+ *
+ * For safe access to sta fields, callers should either:
+ * - Use ap_get_sta_internal() while holding HOSTAPD_STA_LIST_LOCK, OR
+ * - Take sta->lock immediately after (for SAE stations), OR
+ * - Copy needed data while lock is still held
+ *
+ * Note: This is particularly important for wpa3_task callers.
+ */
 struct sta_info * ap_get_sta(struct hostapd_data *hapd, const u8 *sta)
 {
 	struct sta_info *s;
 
+	HOSTAPD_STA_LIST_LOCK(hapd);
 	s = hapd->sta_hash[STA_HASH(sta)];
 	while (s != NULL && os_memcmp(s->addr, sta, 6) != 0)
 		s = s->hnext;
+	HOSTAPD_STA_LIST_UNLOCK(hapd);
 	return s;
 }
 
@@ -67,6 +100,17 @@ static void ap_sta_list_del(struct hostapd_data *hapd, struct sta_info *sta)
 			   "list.", MAC2STR(sta->addr));
 	} else
 		tmp->next = sta->next;
+}
+
+/* Caller MUST hold HOSTAPD_STA_LIST_LOCK (see sta_info.h). */
+struct sta_info * ap_get_sta_internal(struct hostapd_data *hapd, const u8 *sta)
+{
+	struct sta_info *s;
+
+	s = hapd->sta_hash[STA_HASH(sta)];
+	while (s != NULL && os_memcmp(s->addr, sta, 6) != 0)
+		s = s->hnext;
+	return s;
 }
 
 
@@ -100,10 +144,12 @@ static void ap_sta_hash_del(struct hostapd_data *hapd, struct sta_info *sta)
 
 void ap_free_sta(struct hostapd_data *hapd, struct sta_info *sta)
 {
+	HOSTAPD_STA_LIST_LOCK(hapd);
 	ap_sta_hash_del(hapd, sta);
 	ap_sta_list_del(hapd, sta);
 
 	hapd->num_sta--;
+	HOSTAPD_STA_LIST_UNLOCK(hapd);
 
 #ifdef CONFIG_SAE
 	sae_clear_data(sta->sae);
@@ -113,10 +159,12 @@ void ap_free_sta(struct hostapd_data *hapd, struct sta_info *sta)
 		os_mutex_delete(sta->lock);
 		sta->lock = NULL;
 	}
+#ifdef ESP_SUPPLICANT
 	if (sta->sae_data) {
 		wpabuf_free(sta->sae_data);
 		sta->sae_data = NULL;
 	}
+#endif /* ESP_SUPPLICANT */
 #endif /* CONFIG_SAE */
 	wpa_auth_sta_deinit(sta->wpa_sm);
 #ifdef CONFIG_WPS_REGISTRAR
@@ -136,18 +184,28 @@ void ap_free_sta(struct hostapd_data *hapd, struct sta_info *sta)
 }
 
 
+/* Called during teardown after WPA3 task is stopped, so sta->lock is always available. */
 void hostapd_free_stas(struct hostapd_data *hapd)
 {
-	struct sta_info *sta, *prev;
+	struct sta_info *sta;
 
-	sta = hapd->sta_list;
-
-	while (sta) {
-		prev = sta;
-		sta = sta->next;
-		wpa_printf(MSG_DEBUG, "Removing station " MACSTR,
-			   MAC2STR(prev->addr));
-		ap_free_sta(hapd, prev);
+	while (1) {
+		HOSTAPD_STA_LIST_LOCK(hapd);
+		sta = hapd->sta_list;
+		if (!sta) {
+			HOSTAPD_STA_LIST_UNLOCK(hapd);
+			break;
+		}
+#ifdef CONFIG_SAE
+		if (sta->lock) {
+			os_semphr_take(sta->lock, OS_BLOCK);
+			HOSTAPD_STA_LIST_UNLOCK(hapd);
+			ap_free_sta(hapd, sta);
+			continue;
+		}
+#endif /* CONFIG_SAE */
+		HOSTAPD_STA_LIST_UNLOCK(hapd);
+		ap_free_sta(hapd, sta);
 	}
 }
 
@@ -156,35 +214,48 @@ struct sta_info * ap_sta_add(struct hostapd_data *hapd, const u8 *addr)
 {
 	struct sta_info *sta;
 
-	sta = ap_get_sta(hapd, addr);
-	if (sta)
+	HOSTAPD_STA_LIST_LOCK(hapd);
+	sta = ap_get_sta_internal(hapd, addr);
+	if (sta) {
+		HOSTAPD_STA_LIST_UNLOCK(hapd);
 		return sta;
+	}
 
 	wpa_printf(MSG_DEBUG, "  New STA");
 	if (hapd->num_sta >= hapd->conf->max_num_sta) {
-		/* FIX: might try to remove some old STAs first? */
 		wpa_printf(MSG_DEBUG, "no more room for new STAs (%d/%d)",
 			   hapd->num_sta, hapd->conf->max_num_sta);
+		HOSTAPD_STA_LIST_UNLOCK(hapd);
 		return NULL;
 	}
 
 	sta = os_zalloc(sizeof(struct sta_info));
 	if (sta == NULL) {
 		wpa_printf(MSG_ERROR, "malloc failed");
+		HOSTAPD_STA_LIST_UNLOCK(hapd);
 		return NULL;
 	}
 
 	/* initialize STA info data */
 	os_memcpy(sta->addr, addr, ETH_ALEN);
-	sta->next = hapd->sta_list;
 #ifdef CONFIG_SAE
-	sta->sae_commit_processing = false;
-	sta->remove_pending = false;
+	atomic_init(&sta->sae_commit_processing, false);
+	atomic_init(&sta->remove_pending, false);
 	sta->lock = os_semphr_create(1, 1);
+	if (!sta->lock) {
+		wpa_printf(MSG_ERROR, "Failed to create sta->lock for " MACSTR,
+			   MAC2STR(addr));
+		HOSTAPD_STA_LIST_UNLOCK(hapd);
+		os_free(sta);
+		return NULL;
+	}
 #endif /* CONFIG_SAE */
+	sta->next = hapd->sta_list;
 	hapd->sta_list = sta;
 	hapd->num_sta++;
 	ap_sta_hash_add(hapd, sta);
+	HOSTAPD_STA_LIST_UNLOCK(hapd);
+
 	return sta;
 }
 

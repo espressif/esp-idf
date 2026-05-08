@@ -510,12 +510,12 @@ int eloop_register_timeout_blocking(eloop_blocking_timeout_handler handler,
 #endif
     int ret;
 
-    if (current_task_is_wifi_task()) {
-        assert(false);
+    if (!eloop_is_running()) {
         return -1;
     }
 
-    if (!eloop_is_running()) {
+    if (current_task_is_wifi_task()) {
+        assert(false);
         return -1;
     }
 
