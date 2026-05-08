@@ -2,6 +2,16 @@
 #include "ld.common"
 
 #if CONFIG_SOC_RTC_MEM_SUPPORTED
+#if CONFIG_ULP_COPROC_ENABLED
+#define RTC_SLOW_SEGMENT_FIT_ERROR \
+    "RTC_SLOW segment data does not fit. CONFIG_ULP_COPROC_RESERVE_MEM may be too large for the remaining LP/RTC RAM; lower it or shrink application .rtc.* usage."
+#define RTC_FAST_SEGMENT_FIT_ERROR \
+    "RTC_FAST segment data does not fit. CONFIG_ULP_COPROC_RESERVE_MEM may be too large for the remaining LP/RTC RAM; lower it or shrink application .rtc.* usage."
+#else
+#define RTC_SLOW_SEGMENT_FIT_ERROR "RTC_SLOW segment data does not fit."
+#define RTC_FAST_SEGMENT_FIT_ERROR "RTC_FAST segment data does not fit."
+#endif
+
   /**
    * RTC fast memory holds RTC wake stub code,
    * including from any source file named rtc_wake_stub*.c
@@ -155,9 +165,9 @@
                         ? (_rtc_force_fast_end - _rtc_fast_start)
                         : (_rtc_noinit_end - _rtc_fast_start);
   ASSERT((_rtc_slow_length <= LENGTH(rtc_slow_seg)),
-          "RTC_SLOW segment data does not fit.")
+          RTC_SLOW_SEGMENT_FIT_ERROR)
   ASSERT((_rtc_fast_length <= LENGTH(rtc_data_seg)),
-          "RTC_FAST segment data does not fit.")
+          RTC_FAST_SEGMENT_FIT_ERROR)
 
 #if CONFIG_P4_REV3_MSPI_CRASH_AFTER_POWER_UP_WORKAROUND
   .rtc.p4_rev3_mspi_workaround :

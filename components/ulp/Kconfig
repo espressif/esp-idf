@@ -35,10 +35,20 @@ menu "Ultra Low Power (ULP) Co-processor"
         default 4096 if !IDF_TARGET_ESP32
         range 32 8176 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
         range 32 16352 if IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32C6
+        range 32 32744 if IDF_TARGET_ESP32S31
         range 32 31088 if IDF_TARGET_ESP32P4 # Some memory are reserved for ROM/RTC reserved
         help
             Bytes of memory to reserve for ULP Co-processor firmware & data.
             Data is reserved at the beginning of RTC slow memory.
+
+            The target-specific maximum only accounts for fixed LP/RTC reservations
+            such as retained RTC data, LP ROM, and secure-boot digest storage.
+            On targets where the application RTC sections also live in LP/RTC RAM,
+            this reservation shares the same memory pool with .rtc.text,
+            RTC_DATA_ATTR, RTC_NOINIT_ATTR, RTC_SLOW_ATTR, and related sections.
+            Setting this value close to the maximum may therefore still leave too
+            little LP/RTC RAM for the rest of the application and cause link-time
+            errors.
 
 
     menu "ULP RISC-V Settings"
