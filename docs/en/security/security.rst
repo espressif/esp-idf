@@ -175,7 +175,7 @@ Flash Encryption Best Practices
             * - High
               - 72.4 %
 
-        .. [#] The above performance numbers have been calculated using the AES performance test of the mbedtls test application :component_file:`test_psa_aes_perf.c <mbedtls/test_apps/main/test_psa_aes_perf.c>`.
+        .. [#] The above performance numbers have been calculated using the AES performance test of the mbedtls test application :component_file:`test_psa_aes_perf.c <mbedtls/test_apps/mbedtls_ut/main/test_psa_aes_perf.c>`.
 
         Considering the above performance impact, ESP-IDF by-default does not enable the pseudo-round function to avoid any performance-related degrade. But it is recommended to enable the pseudo-round function for better security.
 
