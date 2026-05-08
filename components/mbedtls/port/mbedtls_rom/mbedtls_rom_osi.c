@@ -17,7 +17,8 @@
 #define MBEDTLS_ERR_THREADING_BAD_INPUT_DATA MBEDTLS_ERR_THREADING_USAGE_ERROR
 #endif
 
-_Static_assert(sizeof(mbedtls_rom_eco4_funcs_t) == 221 * sizeof(void (*)(void)),
+#define MBEDTLS_ROM_ECO4_FUNC_COUNT 221
+_Static_assert(sizeof(mbedtls_rom_eco4_funcs_t) == MBEDTLS_ROM_ECO4_FUNC_COUNT * sizeof(void (*)(void)),
                "mbedtls_rom_eco4_funcs_t layout must match ROM");
 
 #define ROM_TABLE_FN(table_type, field, fn) ((__typeof__(((table_type *)0)->field))(fn))
@@ -46,64 +47,266 @@ extern void rom_mbedtls_threading_set_alt(void (*mutex_init)(mbedtls_threading_m
                                           int (*mutex_lock)(mbedtls_threading_mutex_t *),
                                           int (*mutex_unlock)(mbedtls_threading_mutex_t *));
 
-static void mbedtls_rom_mutex_init( mbedtls_threading_mutex_t *mutex )
-{
-    if (mutex == NULL) {
-        return;
-    }
-
 #if defined(MBEDTLS_THREADING_ALT)
-    mutex->mutex = xSemaphoreCreateMutex();
-    assert(mutex->mutex != NULL);
+static int mbedtls_rom_platform_mutex_init(mbedtls_platform_mutex_t *mutex);
+static void mbedtls_rom_platform_mutex_free(mbedtls_platform_mutex_t *mutex);
+static int mbedtls_rom_platform_mutex_lock(mbedtls_platform_mutex_t *mutex);
+static int mbedtls_rom_platform_mutex_unlock(mbedtls_platform_mutex_t *mutex);
+#endif
+
+static void mbedtls_rom_mutex_init(mbedtls_threading_mutex_t *mutex)
+{
+#if defined(MBEDTLS_THREADING_ALT)
+    int ret = mbedtls_rom_platform_mutex_init(&mutex->MBEDTLS_PRIVATE(mutex));
+    mutex->MBEDTLS_PRIVATE(initialized) = (ret == 0);
 #else
     mbedtls_mutex_init(mutex);
 #endif
 }
 
-static void mbedtls_rom_mutex_free( mbedtls_threading_mutex_t *mutex )
+static void mbedtls_rom_mutex_free(mbedtls_threading_mutex_t *mutex)
 {
-    if (mutex == NULL) {
+#if defined(MBEDTLS_THREADING_ALT)
+    if (!mutex->MBEDTLS_PRIVATE(initialized)) {
         return;
     }
-
-#if defined(MBEDTLS_THREADING_ALT)
-    vSemaphoreDelete(mutex->mutex);
+    mbedtls_rom_platform_mutex_free(&mutex->MBEDTLS_PRIVATE(mutex));
+    mutex->MBEDTLS_PRIVATE(initialized) = 0;
 #else
     mbedtls_mutex_free(mutex);
 #endif
 }
 
-static int mbedtls_rom_mutex_lock( mbedtls_threading_mutex_t *mutex )
+static int mbedtls_rom_mutex_lock(mbedtls_threading_mutex_t *mutex)
 {
-    if (mutex == NULL) {
-        return MBEDTLS_ERR_THREADING_BAD_INPUT_DATA;
-    }
-
 #if defined(MBEDTLS_THREADING_ALT)
-    if (xSemaphoreTake(mutex->mutex, portMAX_DELAY) != pdTRUE) {
-        return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
+    if (!mutex->MBEDTLS_PRIVATE(initialized)) {
+        return MBEDTLS_ERR_THREADING_USAGE_ERROR;
     }
-    return 0;
+    return mbedtls_rom_platform_mutex_lock(&mutex->MBEDTLS_PRIVATE(mutex));
 #else
     return mbedtls_mutex_lock(mutex);
 #endif
 }
 
-static int mbedtls_rom_mutex_unlock( mbedtls_threading_mutex_t *mutex )
+static int mbedtls_rom_mutex_unlock(mbedtls_threading_mutex_t *mutex)
+{
+#if defined(MBEDTLS_THREADING_ALT)
+    if (!mutex->MBEDTLS_PRIVATE(initialized)) {
+        return MBEDTLS_ERR_THREADING_USAGE_ERROR;
+    }
+    return mbedtls_rom_platform_mutex_unlock(&mutex->MBEDTLS_PRIVATE(mutex));
+#else
+    return mbedtls_mutex_unlock(mutex);
+#endif
+}
+
+#if defined(MBEDTLS_THREADING_ALT)
+static int mbedtls_rom_platform_mutex_init(mbedtls_platform_mutex_t *mutex)
 {
     if (mutex == NULL) {
         return MBEDTLS_ERR_THREADING_BAD_INPUT_DATA;
     }
 
-#if defined(MBEDTLS_THREADING_ALT)
+    mutex->mutex = xSemaphoreCreateMutex();
+    mutex->is_valid = (mutex->mutex != NULL);
+    assert(mutex->is_valid);
+    return mutex->is_valid ? 0 : MBEDTLS_ERR_THREADING_MUTEX_ERROR;
+}
+
+static void mbedtls_rom_platform_mutex_free(mbedtls_platform_mutex_t *mutex)
+{
+    if (mutex == NULL || !mutex->is_valid) {
+        return;
+    }
+
+    vSemaphoreDelete(mutex->mutex);
+    mutex->mutex = NULL;
+    mutex->is_valid = 0;
+}
+
+static int mbedtls_rom_platform_mutex_lock(mbedtls_platform_mutex_t *mutex)
+{
+    if (mutex == NULL || !mutex->is_valid) {
+        return MBEDTLS_ERR_THREADING_BAD_INPUT_DATA;
+    }
+
+    if (xSemaphoreTake(mutex->mutex, portMAX_DELAY) != pdTRUE) {
+        return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
+    }
+    return 0;
+}
+
+static int mbedtls_rom_platform_mutex_unlock(mbedtls_platform_mutex_t *mutex)
+{
+    if (mutex == NULL || !mutex->is_valid) {
+        return MBEDTLS_ERR_THREADING_BAD_INPUT_DATA;
+    }
+
     if (xSemaphoreGive(mutex->mutex) != pdTRUE) {
         return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
     }
     return 0;
-#else
-    return mbedtls_mutex_unlock(mutex);
-#endif
 }
+
+typedef struct mbedtls_rom_cond_waiter {
+    SemaphoreHandle_t semaphore;
+    struct mbedtls_rom_cond_waiter *next;
+} mbedtls_rom_cond_waiter_t;
+
+static void mbedtls_rom_cond_remove_waiter(mbedtls_platform_condition_variable_t *cond,
+                                           mbedtls_rom_cond_waiter_t *waiter)
+{
+    mbedtls_rom_cond_waiter_t **current = &cond->waiters;
+
+    while (*current != NULL) {
+        if (*current == waiter) {
+            *current = waiter->next;
+            waiter->next = NULL;
+            return;
+        }
+        current = &(*current)->next;
+    }
+}
+
+static int mbedtls_rom_cond_init(mbedtls_platform_condition_variable_t *cond)
+{
+    if (cond == NULL) {
+        return MBEDTLS_ERR_THREADING_BAD_INPUT_DATA;
+    }
+
+    cond->mutex = xSemaphoreCreateMutex();
+    cond->waiters = NULL;
+    cond->is_valid = (cond->mutex != NULL);
+    return cond->is_valid ? 0 : MBEDTLS_ERR_THREADING_MUTEX_ERROR;
+}
+
+static void mbedtls_rom_cond_free(mbedtls_platform_condition_variable_t *cond)
+{
+    if (cond == NULL || !cond->is_valid) {
+        return;
+    }
+
+    vSemaphoreDelete(cond->mutex);
+    cond->mutex = NULL;
+    cond->waiters = NULL;
+    cond->is_valid = 0;
+}
+
+static int mbedtls_rom_cond_signal(mbedtls_platform_condition_variable_t *cond)
+{
+    mbedtls_rom_cond_waiter_t *waiter;
+
+    if (cond == NULL || !cond->is_valid) {
+        return MBEDTLS_ERR_THREADING_BAD_INPUT_DATA;
+    }
+
+    if (xSemaphoreTake(cond->mutex, portMAX_DELAY) != pdTRUE) {
+        return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
+    }
+
+    waiter = cond->waiters;
+    if (waiter != NULL) {
+        cond->waiters = waiter->next;
+        waiter->next = NULL;
+        if (xSemaphoreGive(waiter->semaphore) != pdTRUE) {
+            (void) xSemaphoreGive(cond->mutex);
+            return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
+        }
+    }
+
+    if (xSemaphoreGive(cond->mutex) != pdTRUE) {
+        return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
+    }
+
+    return 0;
+}
+
+static int mbedtls_rom_cond_broadcast(mbedtls_platform_condition_variable_t *cond)
+{
+    mbedtls_rom_cond_waiter_t *waiter;
+
+    if (cond == NULL || !cond->is_valid) {
+        return MBEDTLS_ERR_THREADING_BAD_INPUT_DATA;
+    }
+
+    if (xSemaphoreTake(cond->mutex, portMAX_DELAY) != pdTRUE) {
+        return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
+    }
+
+    waiter = cond->waiters;
+    cond->waiters = NULL;
+
+    while (waiter != NULL) {
+        mbedtls_rom_cond_waiter_t *next = waiter->next;
+        waiter->next = NULL;
+        if (xSemaphoreGive(waiter->semaphore) != pdTRUE) {
+            (void) xSemaphoreGive(cond->mutex);
+            return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
+        }
+        waiter = next;
+    }
+
+    return (xSemaphoreGive(cond->mutex) == pdTRUE) ? 0 : MBEDTLS_ERR_THREADING_MUTEX_ERROR;
+}
+
+static int mbedtls_rom_cond_wait(mbedtls_platform_condition_variable_t *cond,
+                                 mbedtls_platform_mutex_t *mutex)
+{
+    int ret;
+    mbedtls_rom_cond_waiter_t waiter = { 0 };
+
+    if (cond == NULL || mutex == NULL || !cond->is_valid) {
+        return MBEDTLS_ERR_THREADING_BAD_INPUT_DATA;
+    }
+
+    waiter.semaphore = xSemaphoreCreateBinary();
+    if (waiter.semaphore == NULL) {
+        return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
+    }
+
+    if (xSemaphoreTake(cond->mutex, portMAX_DELAY) != pdTRUE) {
+        vSemaphoreDelete(waiter.semaphore);
+        return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
+    }
+
+    waiter.next = cond->waiters;
+    cond->waiters = &waiter;
+
+    if (xSemaphoreGive(cond->mutex) != pdTRUE) {
+        cond->waiters = waiter.next;
+        waiter.next = NULL;
+        vSemaphoreDelete(waiter.semaphore);
+        return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
+    }
+
+    ret = mbedtls_rom_platform_mutex_unlock(mutex);
+    if (ret != 0) {
+        if (xSemaphoreTake(cond->mutex, portMAX_DELAY) == pdTRUE) {
+            mbedtls_rom_cond_remove_waiter(cond, &waiter);
+            (void) xSemaphoreGive(cond->mutex);
+        }
+        vSemaphoreDelete(waiter.semaphore);
+        return ret;
+    }
+
+    if (xSemaphoreTake(waiter.semaphore, portMAX_DELAY) != pdTRUE) {
+        if (xSemaphoreTake(cond->mutex, portMAX_DELAY) == pdTRUE) {
+            mbedtls_rom_cond_remove_waiter(cond, &waiter);
+            (void) xSemaphoreGive(cond->mutex);
+        }
+        vSemaphoreDelete(waiter.semaphore);
+        (void) mbedtls_rom_platform_mutex_lock(mutex);
+        return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
+    }
+
+    vSemaphoreDelete(waiter.semaphore);
+    ret = mbedtls_rom_platform_mutex_lock(mutex);
+    /* The wakeup has already been consumed, so a re-lock failure is unrecoverable. */
+    assert(ret == 0);
+    return ret;
+}
+#endif
 
 /* This structure can be automatically generated by the script with rom.mbedtls.ld. */
 static const mbedtls_rom_eco4_funcs_t mbedtls_rom_eco4_funcs_table = {
@@ -337,7 +540,15 @@ __attribute__((constructor)) void mbedtls_rom_osi_functions_init(void)
     extern void *mbedtls_rom_osi_funcs_ptr;
 
 #if defined(MBEDTLS_THREADING_ALT)
-    mbedtls_threading_set_alt(mbedtls_rom_mutex_init, mbedtls_rom_mutex_free, mbedtls_rom_mutex_lock, mbedtls_rom_mutex_unlock);
+    mbedtls_threading_set_alt(mbedtls_rom_platform_mutex_init,
+                              mbedtls_rom_platform_mutex_free,
+                              mbedtls_rom_platform_mutex_lock,
+                              mbedtls_rom_platform_mutex_unlock,
+                              mbedtls_rom_cond_init,
+                              mbedtls_rom_cond_free,
+                              mbedtls_rom_cond_signal,
+                              mbedtls_rom_cond_broadcast,
+                              mbedtls_rom_cond_wait);
 #endif
 
     /* Initialize the rom function mbedtls_threading_set_alt on chip rev2.0 with rom eco4 */
