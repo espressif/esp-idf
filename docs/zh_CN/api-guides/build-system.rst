@@ -941,7 +941,7 @@ CMake 文件可以使用 ``IDF_TARGET`` 变量来获取当前的硬件目标。
 有些组件的源文件可能并不是由组件本身提供，而必须从另外的文件生成。假设组件需要一个头文件，该文件由 BMP 文件转换后（使用 bmp2h 工具）的二进制数据组成，然后将头文件包含在名为 graphics_lib.c 的文件中::
 
     add_custom_command(OUTPUT logo.h
-         COMMAND bmp2h -i ${COMPONENT_DIR}/logo.bmp -o log.h
+         COMMAND bmp2h -i ${COMPONENT_DIR}/logo.bmp -o logo.h
          DEPENDS ${COMPONENT_DIR}/logo.bmp
          VERBATIM)
 
