@@ -215,3 +215,141 @@ TEST_CASE("ana_cmpr trigger scan and get output level", "[ana_cmpr]")
     TEST_ESP_OK(ana_cmpr_del_unit(cmpr));
 #endif
 }
+
+TEST_CASE("ana_cmpr trigger scan step mode", "[ana_cmpr]")
+{
+#if ANALOG_CMPR_LL_GET(IP_VERSION) <= 1
+    TEST_IGNORE_MESSAGE("not supported on old IP version");
+#else
+    ana_cmpr_handle_t cmpr = NULL;
+    ana_cmpr_config_t config = {
+        .unit = TEST_ANA_CMPR_UNIT_ID,
+        .clk_src = ANA_CMPR_CLK_SRC_DEFAULT,
+        .ref_src = ANA_CMPR_REF_SRC_INTERNAL,
+        .cross_type = ANA_CMPR_CROSS_ANY,
+        .resample_limit = 3,
+        .src_chan0_gpio = ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[0],
+    };
+    TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
+
+    ana_cmpr_src_chan_config_t src_cfg = {
+        .cross_type = ANA_CMPR_CROSS_ANY,
+    };
+    for (int i = 1; i < ANALOG_CMPR_LL_GET(SRC_CHANNEL_NUM); i++) {
+        src_cfg.gpio_num = ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[i];
+        TEST_ESP_OK(ana_cmpr_add_src_chan(cmpr, i, &src_cfg));
+    }
+
+    ana_cmpr_internal_ref_config_t ref_cfg = {
+        .ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD,
+    };
+    TEST_ESP_OK(ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
+
+    ana_cmpr_scan_config_t scan_cfg = {
+        .scan_mode = ANA_CMPR_SCAN_MODE_STEP, // use step scan mode, each trigger only updates one channel's output
+        .poll_period_us = 2,
+    };
+    TEST_ESP_OK(ana_cmpr_set_scan_config(cmpr, &scan_cfg));
+
+    gpio_num_t src_chan_ios[ANALOG_CMPR_LL_GET(SRC_CHANNEL_NUM)] = {0};
+    for (int i = 0; i < ANALOG_CMPR_LL_GET(SRC_CHANNEL_NUM); i++) {
+        src_chan_ios[i] = test_init_src_chan_gpio(cmpr, i, 0);
+    }
+
+    TEST_ESP_OK(ana_cmpr_enable(cmpr));
+
+    // Prime one full step-scan round so all output latches reflect low level.
+    for (int i = 0; i < ANALOG_CMPR_LL_GET(SRC_CHANNEL_NUM); i++) {
+        TEST_ESP_OK(ana_cmpr_trigger_scan(cmpr));
+    }
+    vTaskDelay(pdMS_TO_TICKS(10));
+    for (int i = 0; i < ANALOG_CMPR_LL_GET(SRC_CHANNEL_NUM); i++) {
+        bool out_level = true;
+        TEST_ESP_OK(ana_cmpr_get_output_level(cmpr, i, &out_level));
+        TEST_ASSERT_EQUAL(false, out_level);
+    }
+
+    // Raise all channels at once. In STEP mode, each trigger should update only one channel.
+    for (int i = 0; i < ANALOG_CMPR_LL_GET(SRC_CHANNEL_NUM); i++) {
+        gpio_set_level(src_chan_ios[i], 1);
+    }
+
+    for (int trigger_idx = 1; trigger_idx <= ANALOG_CMPR_LL_GET(SRC_CHANNEL_NUM); trigger_idx++) {
+        TEST_ESP_OK(ana_cmpr_trigger_scan(cmpr));
+        vTaskDelay(pdMS_TO_TICKS(10));
+
+        int high_count = 0;
+        for (int chan = 0; chan < ANALOG_CMPR_LL_GET(SRC_CHANNEL_NUM); chan++) {
+            bool out_level = false;
+            TEST_ESP_OK(ana_cmpr_get_output_level(cmpr, chan, &out_level));
+            if (out_level) {
+                high_count++;
+            }
+        }
+        TEST_ASSERT_EQUAL_INT(trigger_idx, high_count);
+    }
+
+    TEST_ESP_OK(ana_cmpr_disable(cmpr));
+    TEST_ESP_OK(ana_cmpr_del_unit(cmpr));
+#endif
+}
+
+TEST_CASE("ana_cmpr capture timestamps", "[ana_cmpr]")
+{
+#if ANALOG_CMPR_LL_GET(IP_VERSION) <= 1
+    TEST_IGNORE_MESSAGE("not supported on old IP version");
+#else
+    ana_cmpr_handle_t cmpr = NULL;
+    ana_cmpr_config_t config = {
+        .unit = TEST_ANA_CMPR_UNIT_ID,
+        .clk_src = ANA_CMPR_CLK_SRC_DEFAULT,
+        .ref_src = ANA_CMPR_REF_SRC_INTERNAL,
+        .cross_type = ANA_CMPR_CROSS_ANY,
+        .resample_limit = 3,
+        .src_chan0_gpio = ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[0],
+        .en_capture_timer = true,
+    };
+    TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
+
+    uint32_t resolution_hz = 0;
+    TEST_ESP_OK(ana_cmpr_get_clock_resolution_hz(cmpr, &resolution_hz));
+    TEST_ASSERT_GREATER_THAN_UINT32(0, resolution_hz);
+
+    ana_cmpr_internal_ref_config_t ref_cfg = {
+        .ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD,
+    };
+    TEST_ESP_OK(ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
+
+    ana_cmpr_scan_config_t scan_cfg = {
+        .scan_mode = ANA_CMPR_SCAN_MODE_FULL,
+        .poll_period_us = 2,
+    };
+    TEST_ESP_OK(ana_cmpr_set_scan_config(cmpr, &scan_cfg));
+
+    gpio_num_t src_chan_io = test_init_src_chan_gpio(cmpr, 0, 0);
+    TEST_ESP_OK(ana_cmpr_enable(cmpr));
+
+    // Generate two crosses so both current and previous timestamps can be observed.
+    gpio_set_level(src_chan_io, 1);
+    TEST_ESP_OK(ana_cmpr_trigger_scan(cmpr));
+    esp_rom_delay_us(100);
+    gpio_set_level(src_chan_io, 0);
+    TEST_ESP_OK(ana_cmpr_trigger_scan(cmpr));
+    esp_rom_delay_us(100);
+
+    uint32_t current = 0;
+    uint32_t previous = 0;
+    TEST_ESP_OK(ana_cmpr_get_capture_timestamps(cmpr, 0, &current, &previous));
+    TEST_ASSERT_GREATER_THAN_UINT32(0, previous);
+    TEST_ASSERT_GREATER_THAN_UINT32(previous, current);
+    uint32_t delta_ticks = current - previous;
+    uint32_t delta_us = (uint32_t)(((uint64_t)delta_ticks * 1000000U) / resolution_hz);
+    printf("ana_cmpr capture timestamps: current=%" PRIu32 ", previous=%" PRIu32 ", delta_ticks=%" PRIu32 ", delta_us=%" PRIu32 "\r\n",
+           current, previous, delta_ticks, delta_us);
+    // We insert ~100 us delay between two trigger_scan() calls.
+    TEST_ASSERT_UINT_WITHIN(20, 100, delta_us);
+
+    TEST_ESP_OK(ana_cmpr_disable(cmpr));
+    TEST_ESP_OK(ana_cmpr_del_unit(cmpr));
+#endif
+}

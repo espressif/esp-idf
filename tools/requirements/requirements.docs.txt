@@ -7,3 +7,4 @@
 
 esp-docs
 linuxdoc
+sphinxcontrib-mermaid
