@@ -16,6 +16,7 @@ BLE UART Bridge is a host-side utility for talking to ESP-IDF applications that 
   - [Core](#core)
   - [Console](#console)
   - [Daemon](#daemon)
+- [Demos](#demos) - example integrations built on the daemon
 - [Choosing Core, Console, or Daemon](#choosing-core-console-or-daemon)
 - [Profile compatibility](#profile-compatibility)
 - [Dependencies](#dependencies)
@@ -162,6 +163,8 @@ tools/ble/ble_uart_bridge/
 │   ├── Quick-Start-BLE-UART-Daemon.md
 │   ├── Profile-Compatibility.md
 │   └── PORTING.md
+├── demos/
+│   └── opencode/
 └── src/
     ├── core/
     ├── console/
@@ -219,11 +222,23 @@ Main responsibilities:
 - Expose local HTTP endpoints for status, request/response, and fire-and-forget calls.
 - Encode requests as newline-delimited JSON messages over BLE UART.
 - Correlate device responses by request ID.
+- Attempt to reconnect on demand before sending after a BLE disconnect.
 - Provide a small JSONL RPC-style envelope as an example protocol.
 
 The daemon protocol is intentionally small. It is not a full RPC framework. It demonstrates a portable pattern that users can copy into firmware or extend in their own application protocol.
 
 By default, the daemon binds to `127.0.0.1`. Keep it on a loopback address unless you add your own network access control, because the daemon exposes unauthenticated HTTP endpoints that can send data to the BLE device.
+
+## Demos
+
+The `demos/` directory contains example integrations that build on BLE UART
+Bridge components.
+
+- [BLE UART Bridge Demo - OpenCode Integration](demos/opencode/README.md) shows
+  how an OpenCode plugin can forward session status and permission requests to a
+  BLE device through the daemon. It also includes a firmware-side protocol
+  reference for devices, such as the planned `esp-vocat` / MiaoBan (喵伴)
+  example in `esp-iot-solution`.
 
 ## Choosing Core, Console, or Daemon
 
@@ -259,7 +274,7 @@ The tool depends on:
 
 - Custom GATT UUIDs require constructing `BLEUARTProfile` in Python code.
 - Daemon mode is single-flight for request/response calls: it processes one `/request` at a time. `/notify` sends without waiting for a device response.
-- Daemon mode does not automatically reconnect after a BLE disconnect; restart the daemon after the device starts advertising again.
+- Daemon startup requires the initial BLE connection to succeed. After a later BLE disconnect, `/request` or `/notify` attempts one reconnect before sending and returns HTTP 503 if the device is still unavailable. After three consecutive reconnect failures, the daemon exits.
 - Daemon `/request` and `/notify` limit `op` to 64 characters and JSON-encoded `data` to 4096 bytes.
 - The JSONL RPC protocol is a demonstration envelope, not a complete RPC framework.
 - Unmatched device messages are logged as unsolicited messages and are not exposed as a streaming API.
@@ -269,5 +284,6 @@ The tool depends on:
 
 - [Quick-Start-BLE-UART-Console.md](docs/Quick-Start-BLE-UART-Console.md)
 - [Quick-Start-BLE-UART-Daemon.md](docs/Quick-Start-BLE-UART-Daemon.md)
+- [BLE UART Bridge Demo - OpenCode Integration](demos/opencode/README.md)
 - [Profile-Compatibility.md](docs/Profile-Compatibility.md)
 - [PORTING.md](docs/PORTING.md)

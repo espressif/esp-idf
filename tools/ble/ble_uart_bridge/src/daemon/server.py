@@ -20,6 +20,8 @@ from .models import MAX_REQUEST_DATA_BYTES
 from .models import BLEUARTNotifyPayload
 from .models import BLEUARTRequestPayload
 
+MAX_RECONNECT_FAILURES = 3
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -31,6 +33,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     loop = asyncio.get_running_loop()
     app.state.rx_buffer = bytearray()
     app.state.pending_requests = {}
+    app.state.reconnect_failures = 0
+    app.state.max_reconnect_failures = MAX_RECONNECT_FAILURES
+    app.state.daemon_state = 'running'
 
     def _handle_rx_data(data: bytes) -> None:
         for message in drain_jsonl_messages(app.state.rx_buffer, data):
@@ -64,6 +69,40 @@ def _request_data_size(data: object) -> int:
     return len(json.dumps(data).encode())
 
 
+def _record_ble_transport_success() -> None:
+    app.state.reconnect_failures = 0
+
+
+def _request_daemon_exit() -> None:
+    app.state.daemon_state = 'exiting'
+    logger.error('Maximum BLE UART transport failures reached; stopping daemon')
+    server = getattr(app.state, 'uvicorn_server', None)
+    if server is None:
+        logger.warning('Uvicorn server handle is unavailable; daemon exit cannot be requested')
+        return
+    server.should_exit = True
+
+
+def _record_ble_transport_failure(reason: str) -> None:
+    app.state.reconnect_failures += 1
+    logger.warning(
+        f'BLE UART transport failure: {reason} ({app.state.reconnect_failures}/{app.state.max_reconnect_failures})'
+    )
+    if app.state.reconnect_failures >= app.state.max_reconnect_failures:
+        _request_daemon_exit()
+
+
+async def _ensure_connected(bridge: BLEUARTBridge) -> None:
+    if bridge.is_connected:
+        return
+
+    logger.info('BLE UART device is disconnected; attempting to reconnect...')
+    if not await bridge.connect():
+        _record_ble_transport_failure('reconnect failed')
+        raise HTTPException(status_code=503, detail='BLE device is disconnected and reconnect failed')
+    _record_ble_transport_success()
+
+
 @app.get('/status')
 async def status() -> dict:
     bridge: BLEUARTBridge | None = getattr(app.state, 'bridge', None)
@@ -77,6 +116,9 @@ async def status() -> dict:
         'single_flight': True,
         'max_request_data_bytes': MAX_REQUEST_DATA_BYTES,
         'protocol': f'esp-jsonl-rpc-lite-v{PROTOCOL_VERSION}',
+        'reconnect_failures': getattr(app.state, 'reconnect_failures', 0),
+        'max_reconnect_failures': getattr(app.state, 'max_reconnect_failures', MAX_RECONNECT_FAILURES),
+        'daemon_state': getattr(app.state, 'daemon_state', 'running'),
     }
 
 
@@ -87,6 +129,8 @@ async def request(payload: BLEUARTRequestPayload) -> dict:
 
     # Request with coroutine lock
     async with app.state.request_lock:
+        await _ensure_connected(app.state.bridge)
+
         request_id = uuid4().hex
         response_future = asyncio.get_running_loop().create_future()
         app.state.pending_requests[request_id] = response_future
@@ -98,7 +142,9 @@ async def request(payload: BLEUARTRequestPayload) -> dict:
                 with_response=True,
             )
             if not success:
-                raise HTTPException(status_code=500, detail='Failed to send data to device')
+                _record_ble_transport_failure('request write failed')
+                raise HTTPException(status_code=503, detail='Failed to send data to device')
+            _record_ble_transport_success()
 
             # Wait for BLE device to respond
             try:
@@ -118,11 +164,15 @@ async def notify(payload: BLEUARTNotifyPayload) -> dict:
     if _request_data_size(payload.data) > MAX_REQUEST_DATA_BYTES:
         raise HTTPException(status_code=413, detail=f'Request data exceeds {MAX_REQUEST_DATA_BYTES} bytes')
 
+    await _ensure_connected(app.state.bridge)
+
     success = await app.state.bridge.send(
         encode_jsonl_request('', payload.op, payload.data),
         with_response=False,
     )
     if not success:
-        raise HTTPException(status_code=500, detail='Failed to send data to device')
+        _record_ble_transport_failure('notification write failed')
+        raise HTTPException(status_code=503, detail='Failed to send data to device')
+    _record_ble_transport_success()
 
     return {'ok': True}
