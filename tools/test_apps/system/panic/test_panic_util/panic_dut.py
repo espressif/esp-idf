@@ -72,6 +72,8 @@ class PanicTestDut(IdfDut):
         return self.target in ['esp32', 'esp32s3', 'esp32p4']
 
     def run_test_func(self, test_func_name: str) -> None:
+        if self.target == 'esp32p4' and not self.app.sdkconfig.get('ESP32P4_SELECTS_REV_LESS_V3'):
+            self.write('\n')
         self.expect_exact('Enter test name:')
         self.write(test_func_name)
         self.expect_exact('Got test name: ' + test_func_name)
