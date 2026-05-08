@@ -91,9 +91,17 @@ void twai_hal_configure(twai_hal_context_t *hal_ctx, const twai_timing_config_t 
     twai_ll_set_clkout(hal_ctx->dev, clkout_divider);
 }
 
-bool twai_hal_check_brp_validation(twai_hal_context_t *hal_ctx, uint32_t brp)
+bool twai_hal_check_timing_valid(twai_hal_context_t *hal_ctx, const twai_timing_advanced_config_t *t_config, bool is_fd)
 {
-    return twai_ll_check_brp_validation(brp);
+    (void) is_fd;
+    bool valid = true;
+    if (t_config) {
+        valid &= twai_ll_check_brp_validation(t_config->brp);
+        valid &= (t_config->sjw >= 1) && (t_config->sjw <= TWAI_LL_SJW_MAX);
+        valid &= (t_config->tseg_1 >= TWAI_LL_TSEG1_MIN) && (t_config->tseg_1 <= TWAI_LL_TSEG1_MAX);
+        valid &= (t_config->tseg_2 >= TWAI_LL_TSEG2_MIN) && (t_config->tseg_2 <= TWAI_LL_TSEG2_MAX);
+    }
+    return valid;
 }
 
 void twai_hal_configure_timing(twai_hal_context_t *hal_ctx, const twai_timing_advanced_config_t *t_config)
