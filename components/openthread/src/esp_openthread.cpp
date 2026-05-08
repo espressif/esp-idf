@@ -312,11 +312,13 @@ esp_err_t esp_openthread_start(const esp_openthread_config_t *config)
 esp_err_t esp_openthread_stop(void)
 {
     ESP_RETURN_ON_FALSE(s_ot_syn_semaphore != NULL, ESP_ERR_INVALID_STATE, OT_PLAT_LOG_TAG, "OpenThread is not initialized");
+#if (CONFIG_OPENTHREAD_FTD || CONFIG_OPENTHREAD_MTD)
     esp_openthread_lock_acquire(portMAX_DELAY);
     otInstance *instance = esp_openthread_get_instance();
     bool is_thread_not_active = (otThreadGetDeviceRole(instance) == OT_DEVICE_ROLE_DISABLED && otIp6IsEnabled(instance) == false);
     esp_openthread_lock_release();
     ESP_RETURN_ON_FALSE(is_thread_not_active, ESP_ERR_INVALID_STATE, OT_PLAT_LOG_TAG, "Thread interface is still active");
+#endif
     esp_openthread_mainloop_exit();
     xSemaphoreTake(s_ot_syn_semaphore, portMAX_DELAY);
     vTaskDelete(s_ot_task_handle);
