@@ -98,13 +98,13 @@ static const uint32_t spi_regs_map[4] = {0x31ff, 0x33fffc0, 0x0, 0x0};
                                                SPI_RETENTION_REGS_CNT, 0, 0, \
                                                spi_regs_map[0], spi_regs_map[1], \
                                                spi_regs_map[2], spi_regs_map[3]), \
-            .owner = ENTRY(0) }, \
+            .owner = ENTRY(0) | ENTRY(2)}, \
     /* Additional interrupt setting is required by idf SPI drivers after register recovered */ \
     [1] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_GPSPI_LINK(1), \
                                             SPI_DMA_INT_SET_REG(num), \
                                             SPI_TRANS_DONE_INT_SET | SPI_DMA_SEG_TRANS_DONE_INT_SET | SPI_SLV_CMD7_INT_SET | SPI_SLV_CMD8_INT_SET , \
                                             UINT32_MAX, 1, 0), \
-            .owner = ENTRY(0) }, \
+            .owner = ENTRY(0) | ENTRY(2)}, \
 }
 
 static const regdma_entries_config_t spi2_regs_retention[] = SPI_REG_RETENTION_ENTRIES(2);   // '2' for GPSPI2

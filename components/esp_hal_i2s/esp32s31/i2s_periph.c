@@ -92,7 +92,7 @@ static const uint32_t i2s_regs_map[4] = {0x123fff, 0x0, 0x0, 0x0};
                 I2S_RETENTION_REGS_CNT, 0, 0, \
                 i2s_regs_map[0], i2s_regs_map[1], \
                 i2s_regs_map[2], i2s_regs_map[3]), \
-            .owner = ENTRY(0)}, \
+            .owner = ENTRY(0) | ENTRY(2)}, \
 };
 
 static const regdma_entries_config_t i2s0_regs_retention[] = I2S_SLEEP_RETENTION_ENTRIES(0);
