@@ -43,7 +43,7 @@ jobs:
           . $IDF_PATH/export.sh
           cd examples/openthread/ot_br
           idf.py set-target ${{ inputs.br_target }}
-          idf.py build
+          idf.py build -- -DCMAKE_C_FLAGS="-Wno-error=format -Wno-error=format-extra-args"
 
       - name: Upload OTBR binaries
         uses: actions/upload-artifact@v4
