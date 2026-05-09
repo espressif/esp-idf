@@ -204,7 +204,6 @@ static inline void periph_ll_clk_gate_set_default(soc_reset_reason_t rst_reason,
     if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_CHIP_BROWN_OUT) \
             || (rst_reason == RESET_REASON_SYS_RTC_WDT) || (rst_reason == RESET_REASON_SYS_SUPER_WDT)) {
         LPPERI.clk_en.val = 0;
-        LPPERI.clk_en.lp_io_ck_en = 1;  // TODO: PM-699
         LPPERI.clk_en.efuse_ck_en = 1;  // keep efuse clock enabled
         LP_CLKRST.lp_clk_po_en.val = 0;
     }

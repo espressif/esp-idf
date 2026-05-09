@@ -624,6 +624,11 @@ FORCE_INLINE_ATTR void pmu_ll_hp_enable_sw_intr(pmu_dev_t *hw, bool enable)
     hw->hp_ext.int_ena.sw = enable;
 }
 
+FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_wakeup_enable(pmu_dev_t *hw)
+{
+    return hw->wakeup.cntl2;
+}
+
 FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_wakeup_cause(pmu_dev_t *hw)
 {
     return hw->wakeup.status0;

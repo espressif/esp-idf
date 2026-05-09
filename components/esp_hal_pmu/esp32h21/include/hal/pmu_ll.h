@@ -600,6 +600,11 @@ FORCE_INLINE_ATTR void pmu_ll_hp_clear_reject_intr_status(pmu_dev_t *hw)
     hw->hp_ext.int_clr.soc_sleep_reject = 1;
 }
 
+FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_wakeup_enable(pmu_dev_t *hw)
+{
+    return hw->wakeup.cntl2;
+}
+
 FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_wakeup_cause(pmu_dev_t *hw)
 {
     return hw->wakeup.status0;
