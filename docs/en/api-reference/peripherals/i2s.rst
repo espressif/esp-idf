@@ -77,6 +77,12 @@ Clock Terminology
 
     Normally, MCLK should be the multiple of ``sample rate`` and BCLK at the same time. The field :cpp:member:`i2s_std_clk_config_t::mclk_multiple` indicates the multiple of MCLK to the ``sample rate``. In most cases, ``I2S_MCLK_MULTIPLE_256`` should be enough. However, if ``slot_bit_width`` is set to ``I2S_SLOT_BIT_WIDTH_24BIT``, to keep MCLK a multiple to the BCLK, :cpp:member:`i2s_std_clk_config_t::mclk_multiple` should be set to multiples that are divisible by 3 such as ``I2S_MCLK_MULTIPLE_384``. Otherwise, WS will be inaccurate.
 
+.. only:: esp32
+
+    .. note::
+
+        On ESP32, the MCLK pin must use GPIO0, GPIO1, or GPIO3. The other clock pins (e.g., BCLK, WS) can use any valid GPIO. Note that GPIO0 is generally not recommended for other functions because it is a strapping pin.
+
 .. _i2s-communication-mode:
 
 I2S Communication Mode
