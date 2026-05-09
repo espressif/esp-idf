@@ -8,6 +8,7 @@ BLE UART Bridge is a host-side utility for talking to ESP-IDF applications that 
 ## Table of contents
 
 - [Quick Start](#quick-start) - install dependencies and run the first commands
+- [Linux troubleshooting](#linux-troubleshooting) - reset the host Bluetooth service when Linux connections fail
 - [CLI overview](#cli-overview) - command list and common Console/Daemon workflows
   - [Typical Console workflow](#typical-console-workflow)
   - [Typical Daemon workflow](#typical-daemon-workflow)
@@ -41,7 +42,7 @@ cd tools/ble/ble_uart_bridge
 python -m pip install -r requirements.txt
 ```
 
-List nearby BLE UART devices:
+List nearby BLE devices:
 
 ```bash
 python main.py list-devices
@@ -78,6 +79,15 @@ python main.py daemon-notify --op set_led --json '{"state": true}'
 ```
 
 For Daemon details, the HTTP API, and the JSONL RPC protocol, see [Quick-Start-BLE-UART-Daemon.md](docs/Quick-Start-BLE-UART-Daemon.md).
+
+## Linux troubleshooting
+
+On Linux, the host Bluetooth stack can occasionally get into a stale state. Symptoms may include repeated connection failures, pairing getting stuck, or successful connection without discovering the expected BLE UART service or characteristics. When this happens, reset the system Bluetooth service, then retry `list-devices`, `connection-check`, `console`, or `daemon`:
+
+```bash
+sudo systemctl stop bluetooth
+sudo systemctl start bluetooth
+```
 
 ## CLI overview
 
@@ -179,7 +189,7 @@ Use it when you want to write your own Python script or tool on top of BLE UART 
 
 Main responsibilities:
 
-- Scan for BLE UART devices.
+- Scan for nearby BLE devices.
 - Check whether a target device can be connected.
 - Connect and disconnect with a BLE UART GATT profile.
 - Subscribe to device-to-host notifications.

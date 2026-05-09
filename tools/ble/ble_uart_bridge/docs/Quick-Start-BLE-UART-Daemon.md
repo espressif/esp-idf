@@ -432,6 +432,14 @@ while the daemon waits for a response that never arrives.
 - The BLE device is disconnected or not advertising.
 - The daemon tried to reconnect before sending the request or notification, but
   the reconnect attempt failed.
+- On Linux, reset the system Bluetooth service if reconnects keep failing,
+  pairing gets stuck, or service discovery cannot find the BLE UART service or
+  characteristics:
+
+  ```bash
+  sudo systemctl stop bluetooth
+  sudo systemctl start bluetooth
+  ```
 - Restore the BLE device and retry the same command; the daemon does not replay
   failed requests automatically.
 - After three consecutive BLE transport failures, the daemon exits. Restart it
