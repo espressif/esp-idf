@@ -473,7 +473,7 @@
 #define SOC_PM_RETENTION_MODULE_NUM         (64)
 
 /*-------------------------- LP_CORE CAPS ------------------------------------*/
-// #define SOC_LP_MAILBOX_SUPPORTED                 (1) // TODO: [ESP32S31] IDF-14637
+#define SOC_LP_MAILBOX_SUPPORTED                    (1) /*!< LP Core supports LP-mailbox */
 #define SOC_LP_CORE_SUPPORT_ETM                     (1) /*!< LP Core supports ETM wakeup */
 #define SOC_LP_CORE_CONFIGURABLE_BOOT_ADDR          (1) /*!< LP Core has no LP ROM; HP must write the reset_vector address (LP_RAM_BASE+0x80) to LP_SYS.lp_core_boot_addr before triggering LP wake */
 //#define SOC_LP_CORE_SUPPORT_I2C                     (1) /*!< LP Core supports I2C */ TODO IDF-14635

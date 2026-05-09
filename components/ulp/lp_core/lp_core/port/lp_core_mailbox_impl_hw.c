@@ -16,6 +16,12 @@
 /* Implementation agnostic interrupt handler */
 static void (*s_intr_handler)(void);
 
+void lp_core_mailbox_impl_init(void)
+{
+    lp_mailbox_ll_enable_clock(&LP_MAILBOX);
+    lp_mailbox_ll_reset_register(&LP_MAILBOX);
+}
+
 void LP_CORE_ISR_ATTR ulp_lp_core_mailbox_intr_handler(void)
 {
     if (s_intr_handler) {

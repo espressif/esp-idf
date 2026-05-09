@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,11 @@
 
 #include "ulp_lp_core_mailbox_impl_shared.h"
 #include "hal/lp_mailbox_ll.h"
+
+void lp_core_mailbox_impl_init(void)
+{
+    lp_mailbox_ll_enable_clock(&LP_MAILBOX);
+}
 
 /* Mailbox hardware controller, used as a context */
 lp_core_mailbox_ctx_t lp_core_mailbox_impl_get_context(void)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,14 @@ lp_core_mailbox_impl_sw_t g_lp_core_mailbox_impl_sw_ctx;
 /* Implementation agnostic interrupt handler */
 static void (*s_intr_handler)(void);
 
+void lp_core_mailbox_impl_init(void)
+{
+    /* This structure must be initialized by the LP core */
+    memset(&g_lp_core_mailbox_impl_sw_ctx, 0, sizeof(g_lp_core_mailbox_impl_sw_ctx));
+    ulp_lp_core_spinlock_init(&g_lp_core_mailbox_impl_sw_ctx.lock);
+    ulp_lp_core_sw_intr_from_hp_enable(false);
+}
+
 void LP_CORE_ISR_ATTR ulp_lp_core_sw_intr_handler(void)
 {
     if (s_intr_handler) {
@@ -39,10 +47,6 @@ void LP_CORE_ISR_ATTR ulp_lp_core_sw_intr_handler(void)
 
 lp_core_mailbox_ctx_t lp_core_mailbox_impl_get_context(void)
 {
-    /* This structure must be initialized by the LP core */
-    memset(&g_lp_core_mailbox_impl_sw_ctx, 0, sizeof(g_lp_core_mailbox_impl_sw_ctx));
-    ulp_lp_core_spinlock_init(&g_lp_core_mailbox_impl_sw_ctx.lock);
-    ulp_lp_core_sw_intr_from_hp_enable(false);
     return (lp_core_mailbox_ctx_t) &g_lp_core_mailbox_impl_sw_ctx;
 }
 

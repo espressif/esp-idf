@@ -72,9 +72,7 @@ examples/system/ulp/lp_core/lp_i2c:
 
 examples/system/ulp/lp_core/lp_mailbox:
   enable:
-    - if: SOC_LP_CORE_SUPPORTED == 1 and IDF_TARGET not in ["esp32s31"]
-      temporary: true
-      reason: ESP32-S31 not supported yet   # TODO: [ESP32S31] IDF-14637
+    - if: SOC_LP_CORE_SUPPORTED == 1
   <<: *ulp_default_depends
 
 examples/system/ulp/lp_core/lp_spi:

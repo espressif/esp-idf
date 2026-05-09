@@ -162,6 +162,7 @@ esp_err_t lp_core_mailbox_init(lp_mailbox_t *mailbox, lp_mailbox_config_t *confi
         return ESP_ERR_INVALID_ARG;
     }
 
+    lp_core_mailbox_impl_init();
     lp_core_mailbox_ctx_t context = lp_core_mailbox_impl_get_context();
     if (context == NULL) {
         /* Invalid state! LP core didn't initialize the spinlock? (SW backend) */
