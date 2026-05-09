@@ -90,7 +90,7 @@ export async function replyToOpenCodePermission(
     return
   }
 
-  if (typeof client._client?.post === "function" && message !== undefined) {
+  if (typeof client._client?.post === "function") {
     // In TUI/plugin runtime, serverUrl can be a phantom URL: a plain
     // fetch(serverUrl) may fail or hit the wrong OpenCode instance. The
     // injected HeyAPI client uses OpenCode's in-process app.fetch() binding,
@@ -112,7 +112,7 @@ export async function replyToOpenCodePermission(
     return
   }
 
-  if (serverUrl !== undefined && directory !== undefined && message !== undefined) {
+  if (serverUrl !== undefined && directory !== undefined) {
     debugLog("using OpenCode raw v2 permission.reply endpoint")
     try {
       const response = await fetch(new URL(`/permission/${encodeURIComponent(requestID)}/reply`, serverUrl), {
@@ -126,7 +126,11 @@ export async function replyToOpenCodePermission(
       if (!response.ok) {
         throw new Error(`HTTP ${response.status} ${await response.text()}`)
       }
-      debugLog("OpenCode permission response completed", await response.json())
+      try {
+        debugLog("OpenCode permission response completed", await response.json())
+      } catch {
+        debugLog("OpenCode permission response completed (non-JSON body)")
+      }
       return
     } catch (error) {
       debugLog("OpenCode raw v2 permission.reply failed, trying fallback", { error: String(error) })
