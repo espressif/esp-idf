@@ -25,6 +25,7 @@
 #include "hal/rwdt_ll.h"
 #endif
 #include "hal/gpio_ll.h"
+#include "hal/brownout_ll.h"
 #include "soc/pmu_reg.h"
 #include "hal/regi2c_ctrl_ll.h"
 #include "hal/modem_lpcon_ll.h"
@@ -92,6 +93,12 @@ bool bootloader_check_if_wdt_reset(int cpu, soc_reset_reason_t reset_reason)
     return false;
 }
 
+static inline void bootloader_ana_reset_config(void)
+{
+    //Enable BOD reset
+    brownout_ll_ana_reset_enable(true);
+}
+
 #if SOC_RTC_WDT_SUPPORTED
 static void bootloader_super_wdt_auto_feed(void)
 {
@@ -106,6 +113,7 @@ esp_err_t bootloader_init(void)
     esp_err_t ret = ESP_OK;
 
     bootloader_hardware_init();       // TODO: IDF-14696
+    bootloader_ana_reset_config();
 #if SOC_RTC_WDT_SUPPORTED
     bootloader_super_wdt_auto_feed();
 #endif

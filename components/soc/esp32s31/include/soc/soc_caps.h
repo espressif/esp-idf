@@ -74,7 +74,7 @@
 #define SOC_ECC_EXTENDED_MODES_SUPPORTED   1
 // #define SOC_FLASH_ENC_SUPPORTED         1         // TODO: [ESP32S31] IDF-14628
 // #define SOC_SECURE_BOOT_SUPPORTED       1      // TODO: [ESP32S31] IDF-14629
-// #define SOC_BOD_SUPPORTED               1      // TODO: [ESP32S31] IDF-14658
+#define SOC_BOD_SUPPORTED               1
 // #define SOC_APM_SUPPORTED               1      // TODO: [ESP32S31] IDF-14620
 #define SOC_PAU_SUPPORTED                  1
 #define SOC_PMU_SUPPORTED                  1
