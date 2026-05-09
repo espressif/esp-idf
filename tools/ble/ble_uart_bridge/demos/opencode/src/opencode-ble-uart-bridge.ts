@@ -71,22 +71,32 @@ async function notifyStateChange(
 export const BLEDeviceBridgePlugin: Plugin = async ({ client, serverUrl, directory }) => {
   const openCodeClient = client as OpenCodePermissionClient
   let bleState: BLEPluginState = "unknown"
+  let bleStateRefreshGeneration = 0
   const connectedSessionNotifications = new Set<string>()
 
   async function refreshBLEState(notifyConnected: boolean): Promise<BLEPluginState> {
+    const generation = ++bleStateRefreshGeneration
     try {
       const status = await getDaemonStatus()
+      if (generation !== bleStateRefreshGeneration) {
+        return bleState
+      }
       const nextState = stateFromStatus(status)
-      if (nextState !== bleState && (nextState !== "connected" || notifyConnected)) {
+      const shouldNotify = nextState !== bleState && (nextState !== "connected" || notifyConnected)
+      bleState = nextState
+      if (shouldNotify) {
         await notifyStateChange(openCodeClient, nextState, status)
       }
-      bleState = nextState
     } catch (error) {
-      if (bleState !== "disabled") {
+      if (generation !== bleStateRefreshGeneration) {
+        return bleState
+      }
+      const shouldNotify = bleState !== "disabled"
+      bleState = "disabled"
+      if (shouldNotify) {
         await notifyStateChange(openCodeClient, "disabled")
         await appLogBestEffort(openCodeClient, "warn", "BLE UART daemon status check failed", { error: String(error) })
       }
-      bleState = "disabled"
     }
     return bleState
   }
@@ -116,60 +126,67 @@ export const BLEDeviceBridgePlugin: Plugin = async ({ client, serverUrl, directo
         // await this async IIFE from the OpenCode event callback; otherwise a
         // slow or unavailable BLE daemon could block OpenCode's own event loop.
         void (async () => {
-          const previousState = bleState
-          const state = await refreshBLEState(true)
-          if (
-            properties.status.type === "busy" &&
-            state === "connected" &&
-            previousState === "connected" &&
-            !connectedSessionNotifications.has(properties.sessionID)
-          ) {
-            connectedSessionNotifications.add(properties.sessionID)
-            await showToastBestEffort(
-              openCodeClient,
-              "success",
-              "OpenCode BLE UART Bridge",
-              "BLE UART device is connected for this OpenCode session.",
-            )
-          }
-          if (state === "disabled") {
-            return
-          }
+          try {
+            const previousState = bleState
+            const state = await refreshBLEState(true)
+            if (
+              properties.status.type === "busy" &&
+              state === "connected" &&
+              previousState === "connected" &&
+              !connectedSessionNotifications.has(properties.sessionID)
+            ) {
+              connectedSessionNotifications.add(properties.sessionID)
+              await showToastBestEffort(
+                openCodeClient,
+                "success",
+                "OpenCode BLE UART Bridge",
+                "BLE UART device is connected for this OpenCode session.",
+              )
+            }
+            if (state === "disabled") {
+              return
+            }
 
-          if (
-            // If the session became idle while a BLE permission prompt is
-            // active, mark that prompt as externally resolved and ask the BLE
-            // daemon to dismiss it. This prevents an old prompt from being
-            // answered after OpenCode no longer needs the decision. Only idle
-            // triggers this cancellation: busy/retry are normal activity
-            // transitions and should not dismiss an actively displayed prompt.
-            statusShouldCancelPendingPermission(properties.status) &&
-            markActiveBLEPermissionsExternallyResolved(properties.sessionID)
-          ) {
+            if (
+              // If the session became idle while a BLE permission prompt is
+              // active, mark that prompt as externally resolved and ask the BLE
+              // daemon to dismiss it. This prevents an old prompt from being
+              // answered after OpenCode no longer needs the decision. Only idle
+              // triggers this cancellation: busy/retry are normal activity
+              // transitions and should not dismiss an actively displayed prompt.
+              statusShouldCancelPendingPermission(properties.status) &&
+              markActiveBLEPermissionsExternallyResolved(properties.sessionID)
+            ) {
+              try {
+                // OpenCode does not emit a permission-specific cancellation event
+                // when a user answers the same prompt in the TUI. This best-effort
+                // notification tells the daemon the BLE prompt is stale before the
+                // following idle status also clears the device UI.
+                await notifyBLE("permission.cancel", buildPermissionCancelPayload(properties.sessionID))
+              } catch (error) {
+                await appLogBestEffort(openCodeClient, "warn", "Failed to cancel stale BLE permission on device", {
+                  error: String(error),
+                })
+                await refreshBLEState(false)
+              }
+            }
+
             try {
-              // OpenCode does not emit a permission-specific cancellation event
-              // when a user answers the same prompt in the TUI. This best-effort
-              // notification tells the daemon the BLE prompt is stale before the
-              // following idle status also clears the device UI.
-              await notifyBLE("permission.cancel", buildPermissionCancelPayload(properties.sessionID))
+              // Always forward the latest session status, even if there was no
+              // stale permission prompt to cancel. This keeps the BLE device's
+              // display synchronized with OpenCode.
+              await notifyBLE("session.status", buildSessionStatusPayload(properties.sessionID, properties.status))
             } catch (error) {
-              await appLogBestEffort(openCodeClient, "warn", "Failed to cancel stale BLE permission on device", {
+              await appLogBestEffort(openCodeClient, "warn", "Failed to forward session status to BLE device", {
                 error: String(error),
               })
               await refreshBLEState(false)
             }
-          }
-
-          try {
-            // Always forward the latest session status, even if there was no
-            // stale permission prompt to cancel. This keeps the BLE device's
-            // display synchronized with OpenCode.
-            await notifyBLE("session.status", buildSessionStatusPayload(properties.sessionID, properties.status))
           } catch (error) {
-            await appLogBestEffort(openCodeClient, "warn", "Failed to forward session status to BLE device", {
+            await appLogBestEffort(openCodeClient, "warn", "session.status handler failed", {
               error: String(error),
             })
-            await refreshBLEState(false)
+            debugLog("session.status handler failed", { error: String(error) })
           }
         })()
       }
