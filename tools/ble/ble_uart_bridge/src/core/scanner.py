@@ -11,12 +11,11 @@ from bleak.backends.scanner import AdvertisementData
 from loguru import logger
 
 from .constants import DEFAULT_SCAN_TIMEOUT
-from .constants import NUS_SERVICE_UUID
 from .models import DeviceInfo
 from .probe import has_accessible_bluetooth
 
 
-async def scan_devices(timeout: float = DEFAULT_SCAN_TIMEOUT, service_uuid: str = NUS_SERVICE_UUID) -> list[DeviceInfo]:
+async def scan_devices(timeout: float = DEFAULT_SCAN_TIMEOUT) -> list[DeviceInfo]:
     """List available devices discovered by Bleak."""
 
     # Check if there's any available bluetooth device before scanning (Bleak limitation)
@@ -40,8 +39,8 @@ async def scan_devices(timeout: float = DEFAULT_SCAN_TIMEOUT, service_uuid: str 
             logger.success(f'Found: {device_id}, with name {device_info.name}, rssi={device_info.rssi}')
         devices_seen[device_id] = device_info
 
-    logger.info(f'Scanning for devices with BLE UART service in {timeout}s...')
-    async with BleakScanner(detection_callback=on_detect, service_uuids=[service_uuid]):
+    logger.info(f'Scanning for nearby BLE devices in {timeout}s...')
+    async with BleakScanner(detection_callback=on_detect):
         await asyncio.sleep(timeout)
 
     # Synthesis
