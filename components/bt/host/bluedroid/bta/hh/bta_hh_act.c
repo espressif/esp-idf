@@ -104,7 +104,9 @@ void bta_hh_api_enable(tBTA_HH_DATA *p_data)
 #endif
     {
         /* signal BTA call back event */
-        (* bta_hh_cb.p_cback)(BTA_HH_ENABLE_EVT, (tBTA_HH *)&status);
+        if (bta_hh_cb.p_cback) {
+            (* bta_hh_cb.p_cback)(BTA_HH_ENABLE_EVT, (tBTA_HH *)&status);
+        }
     }
 }
 /*******************************************************************************
@@ -754,7 +756,7 @@ void bta_hh_ctrl_dat_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
     /* fall through */
     case BTA_HH_SET_RPT_EVT:
     /* fall through */
-    case BTA_HH_SET_IDLE_EVT :
+    case BTA_HH_SET_IDLE_EVT:
     /* fall through */
     default:
 #if BTA_HH_DEBUG
@@ -1192,6 +1194,8 @@ static void bta_hh_cback (UINT8 dev_handle, BD_ADDR addr, UINT8 event,
         p_buf->p_data     = pdata;
 
         bta_sys_sendmsg(p_buf);
+    } else {
+        utl_freebuf((void **)&pdata);
     }
 
 }

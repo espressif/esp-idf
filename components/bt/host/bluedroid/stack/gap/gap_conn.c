@@ -130,7 +130,6 @@ UINT16 GAP_ConnOpen (const char *p_serv_name, UINT8 service_id, BOOLEAN is_serve
 {
     tGAP_CCB    *p_ccb;
     UINT16       cid;
-    //tBT_UUID    bt_uuid = {2, {GAP_PROTOCOL_ID}};
 
     GAP_TRACE_EVENT ("GAP_CONN - Open Request");
 
@@ -149,6 +148,7 @@ UINT16 GAP_ConnOpen (const char *p_serv_name, UINT8 service_id, BOOLEAN is_serve
         memcpy (&p_ccb->rem_dev_address[0], p_rem_bda, BD_ADDR_LEN);
     } else if (!is_server) {
         /* remote addr is not specified and is not a server -> bad */
+        gap_release_ccb (p_ccb);
         return (GAP_INVALID_HANDLE);
     }
 
@@ -234,7 +234,7 @@ UINT16 GAP_ConnOpen (const char *p_serv_name, UINT8 service_id, BOOLEAN is_serve
         }
 
         /* Check if L2CAP started the connection process */
-        if (p_rem_bda && ((cid = L2CA_CONNECT_REQ (p_ccb->psm, p_rem_bda, &p_ccb->ertm_info, &bt_uuid)) != 0)) {
+        if (p_rem_bda && ((cid = L2CA_CONNECT_REQ (p_ccb->psm, p_rem_bda, &p_ccb->ertm_info, NULL)) != 0)) {
             p_ccb->connection_id = cid;
             return (p_ccb->gap_handle);
         } else {
@@ -304,14 +304,18 @@ UINT16 GAP_ConnReadData (UINT16 gap_handle, UINT8 *p_data, UINT16 max_len, UINT1
     if (!p_ccb) {
         return (GAP_ERR_BAD_HANDLE);
     }
+    if (!p_len) {
+        return (GAP_ERR_ILL_PARM);
+    }
 
     *p_len = 0;
 
+    osi_mutex_global_lock();
+
     if (fixed_queue_is_empty(p_ccb->rx_queue)) {
+        osi_mutex_global_unlock();
         return (GAP_NO_DATA_AVAIL);
 	}
-
-    osi_mutex_global_lock();
 
     while (max_len) {
         BT_HDR *p_buf = fixed_queue_try_peek_first(p_ccb->rx_queue);
@@ -359,19 +363,19 @@ UINT16 GAP_ConnReadData (UINT16 gap_handle, UINT8 *p_data, UINT16 max_len, UINT1
 int GAP_GetRxQueueCnt (UINT16 handle, UINT32 *p_rx_queue_count)
 {
     tGAP_CCB    *p_ccb;
-    int         rc = BT_PASS;
+    int         rc = GAP_INVALID_HANDLE;
+
+    if (!p_rx_queue_count) {
+        return GAP_ERR_ILL_PARM;
+    }
 
     /* Check that handle is valid */
-    if (handle < GAP_MAX_CONNECTIONS) {
-        p_ccb = &gap_cb.conn.ccb_pool[handle];
-
+    p_ccb = gap_find_ccb_by_handle (handle);
+    if (p_ccb) {
         if (p_ccb->con_state == GAP_CCB_STATE_CONNECTED) {
             *p_rx_queue_count = p_ccb->rx_queue_size;
-        } else {
-            rc = GAP_INVALID_HANDLE;
+            rc = BT_PASS;
         }
-    } else {
-        rc = GAP_INVALID_HANDLE;
     }
 
     GAP_TRACE_EVENT ("GAP_GetRxQueueCnt - rc = 0x%04x, rx_queue_count=%d",
@@ -721,7 +725,6 @@ static void gap_connect_ind (BD_ADDR  bd_addr, UINT16 l2cap_cid, UINT16 psm, UIN
 {
     UINT16       xx;
     tGAP_CCB     *p_ccb;
-    //tBT_UUID    bt_uuid = {2, {GAP_PROTOCOL_ID}};
 
     /* See if we have a CCB listening for the connection */
     for (xx = 0, p_ccb = gap_cb.conn.ccb_pool; xx < GAP_MAX_CONNECTIONS; xx++, p_ccb++) {
@@ -751,7 +754,7 @@ static void gap_connect_ind (BD_ADDR  bd_addr, UINT16 l2cap_cid, UINT16 psm, UIN
     p_ccb->connection_id = l2cap_cid;
 
     /* Send response to the L2CAP layer. */
-    L2CA_CONNECT_RSP (bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_OK, L2CAP_CONN_OK, &p_ccb->ertm_info, &bt_uuid);
+    L2CA_CONNECT_RSP (bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_OK, L2CAP_CONN_OK, &p_ccb->ertm_info, NULL);
 
     GAP_TRACE_EVENT("GAP_CONN - Rcvd L2CAP conn ind, CID: 0x%x", p_ccb->connection_id);
 

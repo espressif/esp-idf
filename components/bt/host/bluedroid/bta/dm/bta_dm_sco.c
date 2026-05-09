@@ -20,7 +20,7 @@
  *
  *  This file contains the down sampling utility to convert PCM samples in
  *  16k/32k/48k/44.1k/22050/11025 sampling rate into 8K/16bits samples
- *  required for SCO channel format. One API function isprovided and only
+ *  required for SCO channel format. One API function is provided and only
  *  possible to be used when transmitting SCO data is sent via HCI
  *  interface.
  *
@@ -76,10 +76,12 @@ static tBTA_DM_PCM_RESAMPLE_CB* p_bta_dm_pcm_cb;
 
 
 #define CHECK_SATURATION16(x)                                           \
+        do {                                                            \
             if (x > 32767)                                              \
                 x = 32767;                                              \
             else if (x < -32768)                                        \
-                x = -32768;
+                x = -32768;                                             \
+        } while (0);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -630,8 +632,10 @@ void BTA_DmPcmInitSamples (UINT32 src_sps, UINT32 bits, UINT32 n_channels)
 **
 *******************************************************************************/
 void BTA_DmPcmDeinitSamples(void) {
-    osi_free(p_bta_dm_pcm_cb);
-    p_bta_dm_pcm_cb = NULL;
+    if (p_bta_dm_pcm_cb) {
+        osi_free(p_bta_dm_pcm_cb);
+        p_bta_dm_pcm_cb = NULL;
+    }
 }
 
 /**************************************************************************************

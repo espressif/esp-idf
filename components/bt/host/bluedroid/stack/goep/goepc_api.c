@@ -84,7 +84,7 @@ UINT16 GOEPC_Open(tOBEX_SVR_INFO *svr, tGOEPC_EVT_CBACK callback, UINT16 *out_ha
 
         p_ccb = goepc_allocate_ccb();
         if (p_ccb == NULL) {
-            ret =  GOEP_NO_RESOURCES;
+            ret = GOEP_NO_RESOURCES;
             break;
         }
 

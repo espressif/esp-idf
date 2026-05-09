@@ -95,6 +95,10 @@ const tBTA_JV_ACTION bta_jv_action[] = {
 *******************************************************************************/
 BOOLEAN bta_jv_sm_execute(BT_HDR *p_msg)
 {
+    if (!p_msg) {
+        return FALSE;
+    }
+
     BOOLEAN ret = FALSE;
     UINT16 action = (p_msg->event & 0x00ff);
     /* execute action functions */

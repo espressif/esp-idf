@@ -33,7 +33,6 @@
 #include "l2c_int.h"
 #include "btm_int.h"
 #include "stack/btu.h"
-#include "stack/hcimsgs.h"
 #include "osi/allocator.h"
 
 #if (L2CAP_COC_INCLUDED == TRUE)
@@ -121,7 +120,6 @@ void l2c_csm_execute (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
 *******************************************************************************/
 static void l2c_csm_closed (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
 {
-    tL2C_CONN_INFO          *p_ci = (tL2C_CONN_INFO *)p_data;
     UINT16                  local_cid = p_ccb->local_cid;
     tL2CA_DISCONNECT_IND_CB *disconnect_ind;
     tL2CA_CONNECT_CFM_CB    *connect_cfm;
@@ -168,6 +166,7 @@ static void l2c_csm_closed (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
         break;
 
     case L2CEVT_LP_CONNECT_CFM_NEG:                     /* Link failed          */
+        tL2C_CONN_INFO *p_ci = (tL2C_CONN_INFO *)p_data;
         /* Disconnect unless ACL collision and upper layer wants to handle it */
         if (p_ci->status != HCI_ERR_CONNECTION_EXISTS
                 || !btm_acl_notif_conn_collision(p_ccb->p_lcb->remote_bd_addr)) {

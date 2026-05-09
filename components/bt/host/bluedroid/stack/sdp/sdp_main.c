@@ -28,7 +28,6 @@
 
 #include "common/bt_target.h"
 #include "osi/allocator.h"
-#include "stack/l2cdefs.h"
 #include "stack/hcidefs.h"
 #include "stack/hcimsgs.h"
 
@@ -138,6 +137,10 @@ void sdp_init (void)
 {
 #if SDP_DYNAMIC_MEMORY
     sdp_cb_ptr = (tSDP_CB *)osi_malloc(sizeof(tSDP_CB));
+    if (!sdp_cb_ptr) {
+        ESP_LOGE("BT_SDP", "SDP control block malloc failed\n");
+        return;
+    }
 #endif /* #if SDP_DYNAMIC_MEMORY */
     /* Clears all structures and local SDP database (if Server is enabled) */
     memset (&sdp_cb, 0, sizeof (tSDP_CB));
@@ -208,8 +211,10 @@ void sdp_deinit (void)
 {
     list_free(sdp_cb.server_db.p_record_list);
 #if SDP_DYNAMIC_MEMORY
-    osi_free(sdp_cb_ptr);
-    sdp_cb_ptr = NULL;
+    if (sdp_cb_ptr) {
+        osi_free(sdp_cb_ptr);
+        sdp_cb_ptr = NULL;
+    }
 #endif /* #if SDP_DYNAMIC_MEMORY */
 }
 
@@ -403,7 +408,7 @@ static void sdp_config_ind (UINT16 l2cap_cid, tL2CAP_CFG_INFO *p_cfg)
     p_cfg->mtu_present      = FALSE;
     p_cfg->result           = L2CAP_CFG_OK;
 
-    /* Check peer config request against our rfcomm configuration */
+    /* Check peer config request against our sdp configuration */
     if (p_cfg->fcr_present) {
         /* Reject the window size if it is bigger than we want it to be */
         if (p_cfg->fcr.mode != L2CAP_FCR_BASIC_MODE) {
