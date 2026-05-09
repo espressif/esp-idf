@@ -42,8 +42,9 @@ jobs:
         run: |
           . $IDF_PATH/export.sh
           cd examples/openthread/ot_br
+          echo 'CONFIG_COMPILER_DISABLE_DEFAULT_ERRORS=y' >> sdkconfig.defaults
           idf.py set-target ${{ inputs.br_target }}
-          idf.py build -- -DCMAKE_C_FLAGS="-Wno-error=format -Wno-error=format-extra-args"
+          idf.py build
 
       - name: Upload OTBR binaries
         uses: actions/upload-artifact@v4
