@@ -55,6 +55,17 @@ export type DaemonResponse = {
   response?: unknown
 }
 
+/** Status payload returned by the BLE UART daemon `/status` endpoint. */
+export type DaemonStatus = {
+  device_id?: string
+  connection_state?: "DISCONNECTED" | "CONNECTING" | "CONNECTED" | string
+  is_connected?: boolean
+  pending_requests?: number
+  reconnect_failures?: number
+  max_reconnect_failures?: number
+  daemon_state?: "running" | "exiting" | string
+}
+
 /**
  * Partial OpenCode client surface used by this demo.
  *
@@ -77,6 +88,16 @@ export type OpenCodePermissionClient = {
         level: "debug" | "info" | "warn" | "error"
         message: string
         extra?: Record<string, unknown>
+      }
+    }) => Promise<unknown>
+  }
+  tui?: {
+    showToast?: (input: {
+      body: {
+        title?: string
+        message: string
+        variant: "info" | "success" | "warning" | "error"
+        duration?: number
       }
     }) => Promise<unknown>
   }
