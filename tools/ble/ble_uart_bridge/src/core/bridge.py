@@ -9,6 +9,8 @@ from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.service import BleakGATTService
 from bleak.backends.service import BleakGATTServiceCollection
+from bleak.exc import BleakGATTProtocolError
+from bleak.exc import BleakGATTProtocolErrorCode
 from loguru import logger
 
 from .constants import BLE_WRITE_WITH_RESPONSE_MAX_SIZE
@@ -89,7 +91,7 @@ class BLEUARTBridge:
             self.reset()
             return
         except Exception as e:
-            logger.exception(e)
+            logger.error(e)
             self.reset()
             return
 
@@ -146,7 +148,7 @@ class BLEUARTBridge:
                 await self._cleanup_connection_locked()
                 raise
             except Exception as e:
-                logger.exception(e)
+                logger.error(e)
                 await self._cleanup_connection_locked()
                 return False
 
@@ -165,7 +167,7 @@ class BLEUARTBridge:
                 await self._cleanup_connection_locked()
                 raise
             except Exception as e:
-                logger.exception(e)
+                logger.error(e)
                 await self._cleanup_connection_locked()
                 return False
 
@@ -183,8 +185,18 @@ class BLEUARTBridge:
             except asyncio.CancelledError:
                 await self._cleanup_connection_locked()
                 raise
+            except BleakGATTProtocolError as e:
+                if e.code != BleakGATTProtocolErrorCode.INSUFFICIENT_AUTHENTICATION:
+                    logger.error(e)
+                    await self._cleanup_connection_locked()
+                    return False
+
+                # For insufficient authentication exception, try pairing
+                logger.warning('Please try to pair device in system Bluetooth settings first!')
+                await self._cleanup_connection_locked()
+                return False
             except Exception as e:
-                logger.exception(e)
+                logger.error(e)
                 await self._cleanup_connection_locked()
                 return False
 
@@ -246,7 +258,7 @@ class BLEUARTBridge:
                 await self._cleanup_connection()
                 return False
             except Exception as e:
-                logger.exception(e)
+                logger.error(e)
                 await self._cleanup_connection()
                 return False
             return True
