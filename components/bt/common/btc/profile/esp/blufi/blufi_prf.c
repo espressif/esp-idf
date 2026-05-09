@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -93,6 +93,9 @@ void btc_blufi_report_error(esp_blufi_error_state_t state)
     btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL, NULL);
 }
 
+/* FALSE POSITIVE: blufi_env is a single-connection global by design.
+ * The GAP layer rejects new connections while is_connected==true,
+ * so concurrent multi-connection access to this state never occurs. */
 void btc_blufi_recv_handler(uint8_t *data, int len)
 {
     if (len < sizeof(struct blufi_hdr)) {
@@ -129,12 +132,21 @@ void btc_blufi_recv_handler(uint8_t *data, int len)
 
     blufi_env.recv_seq++;
 
+#define BLUFI_RESET_AGGR_BUF() do {                    \
+        if (blufi_env.aggr_buf) {                      \
+            osi_free(blufi_env.aggr_buf);              \
+            blufi_env.aggr_buf = NULL;                 \
+        }                                              \
+        blufi_env.offset = 0;                          \
+    } while (0)
+
     // first step, decrypt
     if (BLUFI_FC_IS_ENC(hdr->fc)
             && (blufi_env.cbs && blufi_env.cbs->decrypt_func)) {
         ret = blufi_env.cbs->decrypt_func(hdr->seq, hdr->data, hdr->data_len);
         if (ret != hdr->data_len) { /* enc must be success and enc len must equal to plain len */
             BTC_TRACE_ERROR("%s decrypt error %d\n", __func__, ret);
+            BLUFI_RESET_AGGR_BUF();
             btc_blufi_report_error(ESP_BLUFI_DECRYPT_ERROR);
             return;
         }
@@ -147,6 +159,7 @@ void btc_blufi_recv_handler(uint8_t *data, int len)
         checksum_pkt = hdr->data[hdr->data_len] | (((uint16_t) hdr->data[hdr->data_len + 1]) << 8);
         if (checksum != checksum_pkt) {
             BTC_TRACE_ERROR("%s checksum error %04x, pkt %04x\n", __func__, checksum, checksum_pkt);
+            BLUFI_RESET_AGGR_BUF();
             btc_blufi_report_error(ESP_BLUFI_CHECKSUM_ERROR);
             return;
         }
@@ -157,6 +170,11 @@ void btc_blufi_recv_handler(uint8_t *data, int len)
     }
 
     if (BLUFI_FC_IS_FRAG(hdr->fc)) {
+        if(hdr->data_len<2) {
+           BTC_TRACE_ERROR("%s: Invalid fragment data length: %d", __func__, hdr->data_len);
+           btc_blufi_report_error(ESP_BLUFI_DATA_FORMAT_ERROR);
+           return;
+        }
         if (blufi_env.offset == 0) {
             /*
             blufi_env.aggr_buf should be NULL if blufi_env.offset is 0.
@@ -165,7 +183,14 @@ void btc_blufi_recv_handler(uint8_t *data, int len)
             */
             if (blufi_env.aggr_buf) {
                 BTC_TRACE_ERROR("%s msg error, blufi_env.aggr_buf is not freed\n", __func__);
+                osi_free(blufi_env.aggr_buf);
+                blufi_env.aggr_buf = NULL;
                 btc_blufi_report_error(ESP_BLUFI_MSG_STATE_ERROR);
+                return;
+            }
+            if (hdr->data_len < 2) {
+                BTC_TRACE_ERROR("%s frag header too short: data_len=%d\n", __func__, hdr->data_len);
+                btc_blufi_report_error(ESP_BLUFI_DATA_FORMAT_ERROR);
                 return;
             }
             blufi_env.total_len = hdr->data[0] | (((uint16_t) hdr->data[1]) << 8);
@@ -181,6 +206,7 @@ void btc_blufi_recv_handler(uint8_t *data, int len)
             blufi_env.offset += (hdr->data_len - 2);
         } else {
             BTC_TRACE_ERROR("%s payload is longer than packet length, len %d \n", __func__, blufi_env.total_len);
+            BLUFI_RESET_AGGR_BUF();
             btc_blufi_report_error(ESP_BLUFI_DATA_FORMAT_ERROR);
             return;
         }
@@ -190,12 +216,14 @@ void btc_blufi_recv_handler(uint8_t *data, int len)
             /* blufi_env.aggr_buf should not be NULL */
             if (blufi_env.aggr_buf == NULL) {
                 BTC_TRACE_ERROR("%s buffer is NULL\n", __func__);
+                blufi_env.offset = 0;
                 btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
                 return;
             }
             /* payload length should be equal to total_len */
             if ((blufi_env.offset + hdr->data_len) != blufi_env.total_len) {
                 BTC_TRACE_ERROR("%s payload is longer than packet length, len %d \n", __func__, blufi_env.total_len);
+                BLUFI_RESET_AGGR_BUF();
                 btc_blufi_report_error(ESP_BLUFI_DATA_FORMAT_ERROR);
                 return;
             }
@@ -211,6 +239,9 @@ void btc_blufi_recv_handler(uint8_t *data, int len)
         }
     }
 }
+/* Known limitation: this function runs in the BTC task (app-initiated sends)
+ * AND in the NimBLE task (via recv_handler), racing on send_seq/frag_size.
+ * portENTER_CRITICAL cannot protect here;  */
 void btc_blufi_send_encap(uint8_t type, uint8_t *data, int total_data_len)
 {
     struct blufi_hdr *hdr = NULL;

@@ -90,6 +90,82 @@ I (50557) HID_DEV_DEMO: Send the volume
 ...
 ```
 
+## NimBLE Logging Scheme
+
+The following are verbatim NimBLE log excerpts from `logs.txt` for each device role.
+
+### Media Mode
+
+```text
+I (496) HID_DEV_DEMO: setting ble device
+I (496) HID_DEV_DEMO: BLE Host Task Started
+I (506) HID_DEV_BLE: START
+I (506) NimBLE: GAP procedure initiated: advertise;
+I (35886) ESP_HID_GAP: connection established; status=0
+I (35896) HID_DEV_BLE: CONNECT
+I (35946) ESP_HID_GAP: mtu update event; conn_handle=0 cid=4 mtu=256
+I (36476) ESP_HID_GAP: PASSKEY_ACTION_EVENT started
+I (36476) ESP_HID_GAP: Enter passkey 123456on the peer side
+I (37896) ESP_HID_GAP: subscribe event; conn_handle=0 attr_handle=37 reason=1 prevn=0 curn=1 previ=0 curi=0
+I (40936) NimBLE: encryption change event; status=0
+I (40946) HID_DEV_DEMO: Send the volume
+I (40946) NimBLE: GATT procedure initiated: notify;
+I (40946) NimBLE: att_handle=37
+I (40946) NimBLE: notify_tx event; conn_handle=0 attr_handle=37 status=0 is_indication=0
+```
+
+### Keyboard Mode
+
+```text
+I (436) HID_DEV_DEMO: setting ble device
+I (436) HID_DEV_DEMO: BLE Host Task Started
+I (436) HID_DEV_BLE: START
+I (446) NimBLE: GAP procedure initiated: advertise;
+I (11526) ESP_HID_GAP: connection established; status=0
+I (11526) HID_DEV_BLE: CONNECT
+I (11576) ESP_HID_GAP: mtu update event; conn_handle=0 cid=4 mtu=256
+I (12116) ESP_HID_GAP: PASSKEY_ACTION_EVENT started
+I (12116) ESP_HID_GAP: Enter passkey 123456on the peer side
+I (13826) ESP_HID_GAP: subscribe event; conn_handle=0 attr_handle=37 reason=1 prevn=0 curn=1 previ=0 curi=0
+I (16576) NimBLE: encryption change event; status=0
+########################################################################
+BT hid keyboard demo usage:
+########################################################################
+I (22306) NimBLE: GATT procedure initiated: notify;
+I (22306) NimBLE: att_handle=37
+I (22306) NimBLE: notify_tx event; conn_handle=0 attr_handle=37 status=0 is_indication=0
+```
+
+### Mouse Mode
+
+```text
+I (446) HID_DEV_DEMO: setting ble device
+I (446) HID_DEV_DEMO: BLE Host Task Started
+I (456) HID_DEV_BLE: START
+I (456) NimBLE: GAP procedure initiated: advertise;
+I (10556) ESP_HID_GAP: connection established; status=0
+I (10556) HID_DEV_BLE: CONNECT
+I (10606) ESP_HID_GAP: mtu update event; conn_handle=0 cid=4 mtu=256
+I (11136) ESP_HID_GAP: PASSKEY_ACTION_EVENT started
+I (11136) ESP_HID_GAP: Enter passkey 123456on the peer side
+I (12656) ESP_HID_GAP: subscribe event; conn_handle=0 attr_handle=37 reason=1 prevn=0 curn=1 previ=0 curi=0
+I (15606) NimBLE: encryption change event; status=0
+########################################################################
+BT hid mouse demo usage:
+You can input these value to simulate mouse: 'q', 'w', 'e', 'a', 's', 'd', 'h'
+q -- click the left key
+w -- move up
+e -- click the right key
+a -- move left
+s -- move down
+d -- move right
+h -- show the help
+########################################################################
+I (18166) NimBLE: GATT procedure initiated: notify;
+I (18166) NimBLE: att_handle=37
+I (18166) NimBLE: notify_tx event; conn_handle=0 attr_handle=37 status=0 is_indication=0
+```
+
 ## Troubleshooting
 
 1. When using NimBLE stack, some iOS devices do not show the volume pop up. To fix this, please set CONFIG_BT_NIMBLE_SM_LVL to value 2. iOS needs Authenticated Pairing with Encryption to show up the pop ups.
