@@ -3,18 +3,63 @@
 
 import type { Plugin } from "@opencode-ai/plugin"
 
-import { isDaemonAvailable, notifyBLE } from "./ble-daemon-client"
-import { appLog, appLogBestEffort, debugLog } from "./logging"
+import { getDaemonStatus, notifyBLE } from "./ble-daemon-client"
+import { DEFAULT_REJECT_MESSAGE } from "./config"
+import { appLog, appLogBestEffort, debugLog, showToastBestEffort } from "./logging"
+import { replyToOpenCodePermission } from "./opencode-permission-reply"
 import { buildPermissionCancelPayload, buildSessionStatusPayload } from "./permission-payload"
 import {
   enqueuePermissionRequest,
   markActiveBLEPermissionsExternallyResolved,
   statusShouldCancelPendingPermission,
 } from "./permission-queue"
-import type { OpenCodePermissionClient, PermissionEventProperties } from "./types"
+import type { DaemonStatus, OpenCodePermissionClient, PermissionEventProperties } from "./types"
 
 export { notifyBLE, sendRequestToBLE } from "./ble-daemon-client"
 export { buildPermissionPayload } from "./permission-payload"
+
+type BLEPluginState = "unknown" | "connected" | "degraded" | "disabled"
+
+function stateFromStatus(status: DaemonStatus): BLEPluginState {
+  if (status.daemon_state === "exiting") {
+    return "disabled"
+  }
+  if (status.is_connected === true) {
+    return "connected"
+  }
+  return "degraded"
+}
+
+function stateMessage(state: BLEPluginState, status?: DaemonStatus): string {
+  if (state === "connected") {
+    return `BLE UART device connected${status?.device_id ? `: ${status.device_id}` : ""}`
+  }
+  if (state === "degraded") {
+    const attempts =
+      status?.reconnect_failures !== undefined && status.max_reconnect_failures !== undefined
+        ? ` (${status.reconnect_failures}/${status.max_reconnect_failures} reconnect failures)`
+        : ""
+    return `BLE UART daemon is reachable, but the device is disconnected${attempts}. The next BLE send will try to reconnect.`
+  }
+  if (status?.daemon_state === "exiting") {
+    return "BLE UART daemon is exiting after repeated reconnect failures. BLE forwarding is disabled."
+  }
+  return "BLE UART daemon is unreachable. BLE forwarding is disabled until the daemon is available."
+}
+
+async function notifyStateChange(
+  client: OpenCodePermissionClient,
+  state: BLEPluginState,
+  status?: DaemonStatus,
+): Promise<void> {
+  const variant = state === "connected" ? "success" : state === "degraded" ? "warning" : "error"
+  const message = stateMessage(state, status)
+  await showToastBestEffort(client, variant, "OpenCode BLE UART Bridge", message)
+  await appLogBestEffort(client, variant === "error" ? "error" : variant === "warning" ? "warn" : "info", message, {
+    state,
+    status,
+  })
+}
 
 /**
  * OpenCode plugin entry point for the BLE device bridge demo.
@@ -24,9 +69,29 @@ export { buildPermissionPayload } from "./permission-payload"
  * callback for session and permission events.
  */
 export const BLEDeviceBridgePlugin: Plugin = async ({ client, serverUrl, directory }) => {
-  if (!(await isDaemonAvailable())) {
-    return {}
+  const openCodeClient = client as OpenCodePermissionClient
+  let bleState: BLEPluginState = "unknown"
+  const connectedSessionNotifications = new Set<string>()
+
+  async function refreshBLEState(notifyConnected: boolean): Promise<BLEPluginState> {
+    try {
+      const status = await getDaemonStatus()
+      const nextState = stateFromStatus(status)
+      if (nextState !== bleState && (nextState !== "connected" || notifyConnected)) {
+        await notifyStateChange(openCodeClient, nextState, status)
+      }
+      bleState = nextState
+    } catch (error) {
+      if (bleState !== "disabled") {
+        await notifyStateChange(openCodeClient, "disabled")
+        await appLogBestEffort(openCodeClient, "warn", "BLE UART daemon status check failed", { error: String(error) })
+      }
+      bleState = "disabled"
+    }
+    return bleState
   }
+
+  await refreshBLEState(false)
 
   return {
     /**
@@ -51,6 +116,26 @@ export const BLEDeviceBridgePlugin: Plugin = async ({ client, serverUrl, directo
         // await this async IIFE from the OpenCode event callback; otherwise a
         // slow or unavailable BLE daemon could block OpenCode's own event loop.
         void (async () => {
+          const previousState = bleState
+          const state = await refreshBLEState(true)
+          if (
+            properties.status.type === "busy" &&
+            state === "connected" &&
+            previousState === "connected" &&
+            !connectedSessionNotifications.has(properties.sessionID)
+          ) {
+            connectedSessionNotifications.add(properties.sessionID)
+            await showToastBestEffort(
+              openCodeClient,
+              "success",
+              "OpenCode BLE UART Bridge",
+              "BLE UART device is connected for this OpenCode session.",
+            )
+          }
+          if (state === "disabled") {
+            return
+          }
+
           if (
             // If the session became idle while a BLE permission prompt is
             // active, mark that prompt as externally resolved and ask the BLE
@@ -68,7 +153,10 @@ export const BLEDeviceBridgePlugin: Plugin = async ({ client, serverUrl, directo
               // following idle status also clears the device UI.
               await notifyBLE("permission.cancel", buildPermissionCancelPayload(properties.sessionID))
             } catch (error) {
-              console.warn("Failed to cancel stale BLE permission on device", error)
+              await appLogBestEffort(openCodeClient, "warn", "Failed to cancel stale BLE permission on device", {
+                error: String(error),
+              })
+              await refreshBLEState(false)
             }
           }
 
@@ -78,7 +166,10 @@ export const BLEDeviceBridgePlugin: Plugin = async ({ client, serverUrl, directo
             // display synchronized with OpenCode.
             await notifyBLE("session.status", buildSessionStatusPayload(properties.sessionID, properties.status))
           } catch (error) {
-            console.warn("Failed to forward session status to BLE device", error)
+            await appLogBestEffort(openCodeClient, "warn", "Failed to forward session status to BLE device", {
+              error: String(error),
+            })
+            await refreshBLEState(false)
           }
         })()
       }
@@ -96,15 +187,27 @@ export const BLEDeviceBridgePlugin: Plugin = async ({ client, serverUrl, directo
           title: permission.title,
         }
         debugLog("received permission.asked", permissionSummary)
-        await appLogBestEffort(client as OpenCodePermissionClient, "info", "received permission.asked", permissionSummary)
+        await appLogBestEffort(openCodeClient, "info", "received permission.asked", permissionSummary)
 
         try {
+          const state = await refreshBLEState(true)
+          if (state === "disabled") {
+            await replyToOpenCodePermission(
+              openCodeClient,
+              permission,
+              "reject",
+              DEFAULT_REJECT_MESSAGE,
+              serverUrl,
+              directory,
+            )
+            return
+          }
           // Permission handling is awaited because OpenCode needs an explicit
           // reply before it can continue the tool or command that requested
           // permission. The queue itself serializes BLE prompts.
-          await enqueuePermissionRequest(client as OpenCodePermissionClient, permission, serverUrl, directory)
+          await enqueuePermissionRequest(openCodeClient, permission, serverUrl, directory)
         } catch (error) {
-          await appLog(client as OpenCodePermissionClient, "error", "Failed to reply to OpenCode permission request", {
+          await appLog(openCodeClient, "error", "Failed to reply to OpenCode permission request", {
             error: String(error),
           })
           throw error
