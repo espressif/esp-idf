@@ -149,12 +149,15 @@ const esp_phy_init_data_t phy_init_data= { {
 
 const char __attribute__((section(".rodata"))) phy_init_magic_post[] = PHY_INIT_MAGIC;
 
-#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_MAC_BB_PD
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && (CONFIG_MAC_BB_PD || CONFIG_ESP_PHY_HW_SWITCH_RF)
 
 #include "esp_private/sleep_retention.h"
 
 static const char* TAG = "phy_sleep";
 
+#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && (CONFIG_MAC_BB_PD || CONFIG_ESP_PHY_HW_SWITCH_RF)
+
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_MAC_BB_PD
 static esp_err_t sleep_retention_wifi_bb_init(void *arg)
 {
     #define N_REGS_WIFI_AGC()           (130)
