@@ -1,0 +1,86 @@
+name: Build OTBR & RCP Binaries
+
+on:
+  workflow_dispatch:
+    inputs:
+      br_target:
+        description: 'Border Router target SoC'
+        required: true
+        default: 'esp32c6'
+        type: choice
+        options:
+          - esp32
+          - esp32c2
+          - esp32c3
+          - esp32c5
+          - esp32c6
+          - esp32s2
+          - esp32s3
+      rcp_target:
+        description: 'Radio Co-Processor target SoC'
+        required: true
+        default: 'esp32h2'
+        type: choice
+        options:
+          - esp32h2
+          - esp32c6
+          - esp32c5
+
+jobs:
+  build-otbr:
+    name: Build OTBR (${{ inputs.br_target }})
+    runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build OTBR
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          cd examples/openthread/ot_br
+          idf.py set-target ${{ inputs.br_target }}
+          idf.py build
+
+      - name: Upload OTBR binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: esp32-otbr-binaries
+          path: |
+            examples/openthread/ot_br/build/esp_ot_br.bin
+            examples/openthread/ot_br/build/bootloader/bootloader.bin
+            examples/openthread/ot_br/build/partition_table/partition-table.bin
+            examples/openthread/ot_br/build/flasher_args.json
+          retention-days: 30
+
+  build-rcp:
+    name: Build RCP (${{ inputs.rcp_target }})
+    runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build RCP
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          cd examples/openthread/ot_rcp
+          idf.py set-target ${{ inputs.rcp_target }}
+          idf.py build
+
+      - name: Upload RCP binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: esp32-radio-binaries
+          path: |
+            examples/openthread/ot_rcp/build/esp_ot_rcp.bin
+            examples/openthread/ot_rcp/build/bootloader/bootloader.bin
+            examples/openthread/ot_rcp/build/partition_table/partition-table.bin
+            examples/openthread/ot_rcp/build/flasher_args.json
+          retention-days: 30
