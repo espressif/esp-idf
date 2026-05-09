@@ -112,8 +112,7 @@ extern int bredr_ctrl_feat_bcst_enc_en(void);
 extern int bredr_ctrl_feat_pca_en(void);
 extern int bredr_ctrl_feat_cpb_rx_en(void);
 extern int bredr_ctrl_feat_cpb_tx_en(void);
-extern int bredr_ctrl_feat_vs_basic_en(void);
-extern int bredr_ctrl_feat_vs_sec_ctrl_en(void);
+extern int bredr_ctrl_feat_dtm_en(void);
 extern int bredr_ctrl_feat_test_en(void);
 extern int bredr_ctrl_feat_lk_store_en(void);
 extern int bredr_ctrl_feat_coex_en(void);
@@ -658,22 +657,6 @@ static int bredr_ctrl_setup_callback(void)
         }
 #endif /* UC_BR_EDR_CPB_TX_LINK_NB */
 
-#if UC_BR_EDR_BASIC_VENDOR
-        ret = bredr_ctrl_feat_vs_basic_en();
-        if (ret != 0) {
-            ESP_LOGE(BREDR_LOG_TAG, "bredr_ctrl_feat_vs_basic_en failed, ret:%d", ret);
-            break;
-        }
-#endif /* UC_BR_EDR_BASIC_VENDOR */
-
-#if UC_BR_EDR_LEGACY_AUTH_VENDOR_EVT
-        ret = bredr_ctrl_feat_vs_sec_ctrl_en();
-        if (ret != 0) {
-            ESP_LOGE(BREDR_LOG_TAG, "bredr_ctrl_feat_vs_clk_ctrl_en failed, ret:%d", ret);
-            break;
-        }
-#endif /* UC_BR_EDR_LEGACY_AUTH_VENDOR_EVT */
-
 #if UC_BR_EDR_TEST_MODE_EN
         ret = bredr_ctrl_feat_test_en();
         if (ret != 0) {
@@ -689,6 +672,14 @@ static int bredr_ctrl_setup_callback(void)
             break;
         }
 #endif /* UC_BR_EDR_LK_STORE_EN */
+
+#if UC_BR_EDR_DTM_EN
+        ret = bredr_ctrl_feat_dtm_en();
+        if (ret != 0) {
+            ESP_LOGE(BREDR_LOG_TAG, "bredr_ctrl_feat_dtm_en failed, ret:%d", ret);
+            break;
+        }
+#endif /* UC_BR_EDR_DTM_EN */
 
 #if CONFIG_SW_COEXIST_ENABLE
         ret = bredr_ctrl_feat_coex_en();
