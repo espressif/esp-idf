@@ -48,6 +48,8 @@ Call :cpp:func:`spi_slave_hd_init` to initialize the SPI bus as well as the peri
 
 The :cpp:type:`spi_bus_config_t` specifies how the bus should be initialized, while :cpp:type:`spi_slave_hd_slot_config_t` specifies how the SPI Slave driver should work.
 
+To use 3-wire mode, also known as single I/O (SIO) mode, set :c:macro:`SPI_SLAVE_HD_3WIRE_MODE` in :cpp:member:`spi_slave_hd_slot_config_t::flags`. In this mode, MOSI is used for both input and output data, so :cpp:member:`spi_bus_config_t::mosi_io_num` must be set to an output-capable GPIO. The MISO line is not used and :cpp:member:`spi_bus_config_t::miso_io_num` can be set to ``-1``. The master should use the 1-bit SPI Slave HD commands in this mode. Commands with DIO/QIO masks will select 2-line or 4-line data phases in hardware and are not compatible with 3-wire mode, resulting in data errors.
+
 Enable/Disable Driver (Optional)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

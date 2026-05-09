@@ -48,6 +48,8 @@ SPI 从机半双工模式
 
 结构体 :cpp:type:`spi_bus_config_t` 指定了总线的初始化方式，结构体 :cpp:type:`spi_slave_hd_slot_config_t` 指定了 SPI 从机驱动程序的运行方式。
 
+如需使用 3-wire 模式，也称 single I/O (SIO) 模式，请在 :cpp:member:`spi_slave_hd_slot_config_t::flags` 中设置 :c:macro:`SPI_SLAVE_HD_3WIRE_MODE`。该模式下，MOSI 同时用于输入和输出数据，因此 :cpp:member:`spi_bus_config_t::mosi_io_num` 必须设置为支持输出的 GPIO。MISO 信号线不会使用，:cpp:member:`spi_bus_config_t::miso_io_num` 可以设置为 ``-1``。在该模式下，主设备应使用 1-bit SPI Slave HD 命令。带有 DIO/QIO 等 mask 的命令会使硬件选择 2 线或 4 线数据阶段，与 3-wire 模式不兼容，导致数据出错。
+
 启用/禁用从机驱动（可选）
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 

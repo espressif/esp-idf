@@ -755,8 +755,8 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
     } else {
         //Use GPIO matrix
         if (bus_config->mosi_io_num >= 0) {
-            int in_sig  = spi_periph_signal[host].spid_in; // always connect input in case sio mode device is used
-            int out_sig = ((flags & SPICOMMON_BUSFLAG_MASTER) || (temp_flag & SPICOMMON_BUSFLAG_DUAL)) ? spi_periph_signal[host].spid_out : -1;
+            int in_sig  = spi_periph_signal[host].spid_in; // always connect input in case sio master is used
+            int out_sig = spi_periph_signal[host].spid_out;// always connect output in case sio slave is used, output capability is checked in slave hd driver
             s_spi_common_bus_via_gpio(bus_config->mosi_io_num, in_sig, out_sig, &gpio_reserv);
         }
         if (bus_config->miso_io_num >= 0) {

@@ -34,6 +34,7 @@ void spi_slave_hd_hal_init(spi_slave_hd_hal_context_t *hal, const spi_slave_hd_h
     spi_ll_set_dummy(hw, hal_config->dummy_bits);
     spi_ll_set_rx_lsbfirst(hw, hal_config->rx_lsbfirst);
     spi_ll_set_tx_lsbfirst(hw, hal_config->tx_lsbfirst);
+    spi_ll_set_sio_mode(hw, hal_config->three_wire_mode);
     spi_ll_slave_set_mode(hw, hal_config->mode, (hal_config->dma_enabled));
 
     spi_ll_disable_intr(hw, UINT32_MAX);
