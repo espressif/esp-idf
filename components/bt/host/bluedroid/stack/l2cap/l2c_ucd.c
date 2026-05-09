@@ -90,6 +90,12 @@ static void l2c_ucd_data_ind_cback (BD_ADDR rem_bda, BT_HDR *p_buf)
 
     L2CAP_TRACE_DEBUG ("L2CAP - l2c_ucd_data_ind_cback");
 
+    if (p_buf->len < L2CAP_UCD_OVERHEAD) {
+        L2CAP_TRACE_ERROR ("L2CAP - data not enough for l2c_ucd_data_ind_cback %d", p_buf->len);
+        osi_free (p_buf);
+        return;
+    }
+
     p = (UINT8 *)(p_buf + 1) + p_buf->offset;
     STREAM_TO_UINT16(psm, p)
 
@@ -185,7 +191,7 @@ static void l2c_ucd_config_cfm_cback (UINT16 cid, tL2CAP_CFG_INFO *p_cfg)
 **
 **  Parameters:     tL2CAP_UCD_CB_INFO
 **
-**  Return value:   TRUE if successs
+**  Return value:   TRUE if success
 **
 *******************************************************************************/
 BOOLEAN L2CA_UcdRegister ( UINT16 psm, tL2CAP_UCD_CB_INFO *p_cb_info )
@@ -242,12 +248,12 @@ BOOLEAN L2CA_UcdRegister ( UINT16 psm, tL2CAP_UCD_CB_INFO *p_cb_info )
 **
 **  Parameters:     PSM
 **
-**  Return value:   TRUE if successs
+**  Return value:   TRUE if success
 **
 *******************************************************************************/
 BOOLEAN L2CA_UcdDeregister_In_CCB_List (void *p_ccb_node, void * context)
 {
-    p_ccb = (tL2C_CCB *)p_ccb_node;
+    tL2C_CCB *p_ccb = (tL2C_CCB *)p_ccb_node;
     if (( p_ccb->in_use )
             && ( p_ccb->local_cid == L2CAP_CONNECTIONLESS_CID )) {
         l2cu_release_ccb (p_ccb);
@@ -257,7 +263,6 @@ BOOLEAN L2CA_UcdDeregister_In_CCB_List (void *p_ccb_node, void * context)
 
 BOOLEAN L2CA_UcdDeregister ( UINT16 psm )
 {
-    tL2C_CCB    *p_ccb;
     tL2C_RCB    *p_rcb;
     UINT16      xx;
 
@@ -301,7 +306,7 @@ BOOLEAN L2CA_UcdDeregister ( UINT16 psm )
 **                              L2CAP_UCD_INFO_TYPE_MTU
 **
 **
-**  Return value:   TRUE if successs
+**  Return value:   TRUE if success
 **
 *******************************************************************************/
 BOOLEAN L2CA_UcdDiscover ( UINT16 psm, BD_ADDR rem_bda, UINT8 info_type )
@@ -450,7 +455,7 @@ UINT16 L2CA_UcdDataWrite (UINT16 psm, BD_ADDR rem_bda, BT_HDR *p_buf, UINT16 fla
 **  Parameters:     BD Addr
 **                  Timeout in second
 **
-**  Return value:   TRUE if successs
+**  Return value:   TRUE if success
 **
 *******************************************************************************/
 BOOLEAN L2CA_UcdSetIdleTimeout ( BD_ADDR rem_bda, UINT16 timeout )
@@ -517,7 +522,7 @@ BOOLEAN L2CA_UCDSetTxPriority ( BD_ADDR rem_bda, tL2CAP_CHNL_PRIORITY priority )
 **
 **  Parameters:     BD_ADDR of remote device
 **
-**  Return value:   TRUE if successs
+**  Return value:   TRUE if success
 **
 *******************************************************************************/
 static BOOLEAN l2c_ucd_connect ( BD_ADDR rem_bda )
@@ -597,7 +602,7 @@ static BOOLEAN l2c_ucd_connect ( BD_ADDR rem_bda )
 void l2c_ucd_delete_sec_pending_q(tL2C_LCB  *p_lcb)
 {
     /* clean up any security pending UCD */
-    while (p_lcb->ucd_out_sec_pending_q.p_first) {
+    while (!fixed_queue_is_empty(p_lcb->ucd_out_sec_pending_q)) {
         osi_free(fixed_queue_dequeue(p_lcb->ucd_out_sec_pending_q, 0));
 	}
     fixed_queue_free(p_lcb->ucd_out_sec_pending_q, NULL);
@@ -606,7 +611,7 @@ void l2c_ucd_delete_sec_pending_q(tL2C_LCB  *p_lcb)
     while (! fixed_queue_is_empty(p_lcb->ucd_in_sec_pending_q)) {
         osi_free(fixed_queue_dequeue(p_lcb->ucd_in_sec_pending_q, 0));
 	}
-    fixed_queue_free(p_lcb->ucd_in_sec_pending_q);
+    fixed_queue_free(p_lcb->ucd_in_sec_pending_q, NULL);
     p_lcb->ucd_in_sec_pending_q = NULL;
 }
 
@@ -797,7 +802,7 @@ BOOLEAN l2c_ucd_check_pending_in_sec_q(tL2C_CCB  *p_ccb)
 *******************************************************************************/
 void l2c_ucd_send_pending_in_sec_q(tL2C_CCB  *p_ccb)
 {
-    BT_HDR *p_buf = (BT_HDR*)fixed_queue_dequeue(p_ccb->p_lcb->ucd_in_sec_pending_q, 0)
+    BT_HDR *p_buf = (BT_HDR*)fixed_queue_dequeue(p_ccb->p_lcb->ucd_in_sec_pending_q, 0);
 
     if (p_buf != NULL) {
         p_ccb->p_rcb->ucd.cb_info.pL2CA_UCD_Data_Cb(p_ccb->p_lcb->remote_bd_addr, (BT_HDR *)p_buf);

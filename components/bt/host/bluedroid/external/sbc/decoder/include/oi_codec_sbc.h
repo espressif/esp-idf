@@ -447,7 +447,7 @@ OI_UINT16 OI_CODEC_SBC_CalculatePcmBytes(OI_CODEC_SBC_COMMON_CONTEXT *common);
  * @return  pointer to text string containing codec version text
  *
  */
-OI_CHAR *OI_CODEC_Version(void);
+const OI_CHAR *OI_CODEC_Version(void);
 
 
 /**
@@ -457,11 +457,13 @@ OI_CHAR *OI_CODEC_Version(void);
 @{
 */
 
+#ifdef OI_DEBUG
 extern const OI_CHAR *const OI_CODEC_SBC_FreqText[];
 extern const OI_CHAR *const OI_CODEC_SBC_ModeText[];
 extern const OI_CHAR *const OI_CODEC_SBC_SubbandsText[];
 extern const OI_CHAR *const OI_CODEC_SBC_BlocksText[];
 extern const OI_CHAR *const OI_CODEC_SBC_AllocText[];
+#endif
 
 /**
 @}

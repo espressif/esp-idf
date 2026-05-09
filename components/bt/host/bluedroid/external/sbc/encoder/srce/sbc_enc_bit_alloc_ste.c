@@ -43,11 +43,11 @@ extern const SINT16 sbc_enc_as16Offset8[4][8];
 
 void sbc_enc_bit_alloc_ste(SBC_ENC_PARAMS *pstrCodecParams)
 {
-    /* CAUTIOM -> mips optim for arm 32 require to use SINT32 instead of SINT16 */
+    /* CAUTION -> mips optim for arm 32 require to use SINT32 instead of SINT16 */
     /* Do not change variable type or name */
     SINT32 s32MaxBitNeed;   /*to store the max bits needed per sb*/
     SINT32 s32BitCount;     /*the used number of bits*/
-    SINT32 s32SliceCount;   /*to store hwo many slices can be put in bitpool*/
+    SINT32 s32SliceCount;   /*to store how many slices can be put in bitpool*/
     SINT32 s32BitSlice;     /*number of bitslices in bitpool*/
     SINT32 s32Sb;           /*counter for sub-band*/
     SINT32 s32Ch;           /*counter for channel*/
@@ -64,7 +64,7 @@ void sbc_enc_bit_alloc_ste(SBC_ENC_PARAMS *pstrCodecParams)
         ps16BitNeed   = pstrCodecParams->as16ScaleFactor;
         s32MaxBitNeed = pstrCodecParams->s16MaxBitNeed;
     } else {
-        ps16BitNeed   = pstrCodecParams->s16ScartchMemForBitAlloc;
+        ps16BitNeed   = pstrCodecParams->s16ScratchMemForBitAlloc;
         pas16ScaleFactor = pstrCodecParams->as16ScaleFactor;
         s32MaxBitNeed = 0;
         ps16GenBufPtr = ps16BitNeed;

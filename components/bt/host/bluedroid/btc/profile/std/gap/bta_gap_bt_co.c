@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,9 +11,15 @@
 #if (BTC_GAP_BT_INCLUDED == TRUE)
 void btc_gap_bt_config_eir_cmpl_callback (uint8_t status, uint8_t eir_type_num, uint8_t *eir_type)
 {
-    esp_bt_gap_cb_param_t param;
+    esp_bt_gap_cb_param_t param = {0};
+    btc_msg_t msg = {0};
     bt_status_t ret;
-    btc_msg_t msg;
+
+    if (!eir_type || (eir_type_num > ESP_BT_EIR_TYPE_MAX_NUM)) {
+        BTC_TRACE_ERROR("%s invalid params", __func__);
+        return;
+    }
+
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_GAP_BT;
     msg.act = BTC_GAP_BT_CONFIG_EIR_DATA_EVT;
@@ -26,7 +32,7 @@ void btc_gap_bt_config_eir_cmpl_callback (uint8_t status, uint8_t eir_type_num, 
                                sizeof(esp_bt_gap_cb_param_t), NULL, NULL);
 
     if (ret != BT_STATUS_SUCCESS) {
-        BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
+        BTC_TRACE_ERROR("%s btc_transfer_context failed", __func__);
     }
 }
 #endif /// (BTC_GAP_BT_INCLUDED == TRUE)

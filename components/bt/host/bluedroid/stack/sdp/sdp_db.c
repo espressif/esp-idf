@@ -68,15 +68,15 @@ tSDP_RECORD *sdp_db_service_search (tSDP_RECORD *p_rec, tSDP_UUID_SEQ *p_seq)
 
     /* If NULL, start at the beginning, else start at the first specified record */
     if (!p_rec) {
-	p_node = list_begin(sdp_cb.server_db.p_record_list);
+    p_node = list_begin(sdp_cb.server_db.p_record_list);
     } else {
-	/* get node in the record list with given p_rec */
+    /* get node in the record list with given p_rec */
         p_node = list_get_node(sdp_cb.server_db.p_record_list, p_rec);
-	if (p_node == NULL) {
-	    return NULL;
-	}
-	/* get next node */
-	p_node = list_next(p_node);
+    if (p_node == NULL) {
+        return NULL;
+    }
+    /* get next node */
+    p_node = list_next(p_node);
     }
 
     /* Look through the records. The spec says that a match occurs if */
@@ -178,8 +178,8 @@ tSDP_RECORD *sdp_db_find_record (UINT32 handle)
 
     /* Look through the records for the caller's handle */
     for(p_node = list_begin(sdp_cb.server_db.p_record_list); p_node; p_node = list_next(p_node)) {
-	p_rec = list_node(p_node);
-    	if (p_rec->record_handle == handle) {
+    p_rec = list_node(p_node);
+        if (p_rec->record_handle == handle) {
             return (p_rec);
         }
     }
@@ -360,9 +360,7 @@ BOOLEAN SDP_DeleteRecord (UINT32 handle)
     if (handle == 0 || sdp_cb.server_db.num_records == 0) {
         /* Delete all records in the database */
         sdp_cb.server_db.num_records = 0;
-        for (p_node = list_begin(sdp_cb.server_db.p_record_list); p_node; p_node = list_next(p_node)) {
-            list_remove(sdp_cb.server_db.p_record_list, p_node);
-        }
+        list_clear(sdp_cb.server_db.p_record_list);
         /* require new DI record to be created in SDP_SetLocalDiRecord */
         sdp_cb.server_db.di_primary_handle = 0;
 
@@ -448,7 +446,7 @@ BOOLEAN SDP_AddAttribute (UINT32 handle, UINT16 attr_id, UINT8 attr_type,
 
     /* Find the record in the database */
     for(p_node = list_begin(sdp_cb.server_db.p_record_list); p_node; p_node = list_next(p_node)) {
-	p_rec= list_node(p_node);
+    p_rec= list_node(p_node);
         if (p_rec->record_handle == handle) {
             tSDP_ATTRIBUTE  *p_attr = &p_rec->attribute[0];
 
@@ -488,27 +486,24 @@ BOOLEAN SDP_AddAttribute (UINT32 handle, UINT16 attr_id, UINT8 attr_type,
             p_attr->type = attr_type;
             p_attr->len  = attr_len;
 
-            if (p_rec->free_pad_ptr + attr_len >= SDP_MAX_PAD_LEN) {
+            if (p_rec->free_pad_ptr + attr_len > SDP_MAX_PAD_LEN) {
                 /* do truncate only for text string type descriptor */
                 if (attr_type == TEXT_STR_DESC_TYPE) {
                     SDP_TRACE_WARNING("SDP_AddAttribute: attr_len:%d too long. truncate to (%d)\n",
                                       attr_len, SDP_MAX_PAD_LEN - p_rec->free_pad_ptr );
 
                     attr_len = SDP_MAX_PAD_LEN - p_rec->free_pad_ptr;
-                    p_val[SDP_MAX_PAD_LEN - p_rec->free_pad_ptr] = '\0';
-                    p_val[SDP_MAX_PAD_LEN - p_rec->free_pad_ptr + 1] = '\0';
                 } else {
                     attr_len = 0;
                 }
             }
 
-            if ((attr_len > 0) && (p_val != 0)) {
+            if (attr_len > 0) {
                 p_attr->len  = attr_len;
                 memcpy (&p_rec->attr_pad[p_rec->free_pad_ptr], p_val, (size_t)attr_len);
                 p_attr->value_ptr = &p_rec->attr_pad[p_rec->free_pad_ptr];
                 p_rec->free_pad_ptr += attr_len;
-            } else if ((attr_len == 0 && p_attr->len != 0) || /* if truncate to 0 length, simply don't add */
-                       p_val == 0) {
+            } else if (attr_len == 0 && p_attr->len != 0) { /* if truncate to 0 length, simply don't add */
                 SDP_TRACE_ERROR("SDP_AddAttribute fail, length exceed maximum: ID %d: attr_len:%d \n",
                                 attr_id, attr_len );
                 p_attr->id   = p_attr->type = p_attr->len  = 0;
@@ -893,7 +888,7 @@ BOOLEAN SDP_DeleteAttribute (UINT32 handle, UINT16 attr_id)
 
     /* Find the record in the database */
     for(p_node = list_begin(sdp_cb.server_db.p_record_list); p_node; p_node = list_next(p_node)) {
-	p_rec= list_node(p_node);
+    p_rec= list_node(p_node);
         if (p_rec->record_handle == handle) {
             tSDP_ATTRIBUTE  *p_attr = &p_rec->attribute[0];
 
