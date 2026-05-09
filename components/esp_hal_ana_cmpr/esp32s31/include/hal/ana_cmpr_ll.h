@@ -370,6 +370,7 @@ static inline void analog_cmpr_ll_set_poll_period(analog_cmpr_dev_t *hw, uint32_
  */
 static inline void analog_cmpr_ll_set_resample_limit(analog_cmpr_dev_t *hw, uint8_t limit_cnt)
 {
+    limit_cnt = MAX(limit_cnt, 1);
     hw->conf.limit_cnt = limit_cnt;
 }
 

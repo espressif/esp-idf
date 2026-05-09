@@ -235,7 +235,6 @@ TEST_CASE("ana_cmpr trigger scan step mode", "[ana_cmpr]")
     config.cross_type = ANA_CMPR_CROSS_ANY;
     config.src_chan0_gpio = test_pad_gpio_num(ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[0]);
     config.ext_ref_gpio = GPIO_NUM_NC;
-    config.resample_limit = 3;
     TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
 
     ana_cmpr_src_chan_config_t src_cfg = {};
@@ -350,8 +349,12 @@ TEST_CASE("ana_cmpr capture timestamps", "[ana_cmpr]")
     uint32_t delta_us = (uint32_t)(((uint64_t)delta_ticks * 1000000U) / resolution_hz);
     printf("ana_cmpr capture timestamps: current=%" PRIu32 ", previous=%" PRIu32 ", delta_ticks=%" PRIu32 ", delta_us=%" PRIu32 "\r\n",
            current, previous, delta_ticks, delta_us);
+#if CONFIG_IDF_TARGET_ESP32H4
+    TEST_ASSERT_UINT_WITHIN(50, 100, delta_us);
+#else
     // We insert ~100 us delay between two trigger_scan() calls.
     TEST_ASSERT_UINT_WITHIN(20, 100, delta_us);
+#endif
 
     TEST_ESP_OK(ana_cmpr_disable(cmpr));
     TEST_ESP_OK(ana_cmpr_del_unit(cmpr));

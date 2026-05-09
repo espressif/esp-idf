@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-S31 |
-| ----------------- | --------- |
+| Supported Targets | ESP32-H4 | ESP32-S31 |
+| ----------------- | -------- | --------- |
 
 # Analog Comparator ETM Periodic Scan Example
 
