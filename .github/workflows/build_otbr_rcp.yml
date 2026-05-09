@@ -42,8 +42,14 @@ jobs:
         run: |
           . $IDF_PATH/export.sh
           cd examples/openthread/ot_br
-          echo 'CONFIG_COMPILER_DISABLE_DEFAULT_ERRORS=y' >> sdkconfig.defaults
           idf.py set-target ${{ inputs.br_target }}
+          # Patch managed component format string bugs (upstream issue)
+          sed -i 's/otCliOutputFormat("i:%d\\n", cfg.interval)/otCliOutputFormat("i:%lu\\n", (unsigned long)cfg.interval)/' \
+            managed_components/espressif__esp_ot_cli_extension/src/esp_ot_iperf.c
+          sed -i 's/otCliOutputFormat("t:%d\\n", cfg.time)/otCliOutputFormat("t:%lu\\n", (unsigned long)cfg.time)/' \
+            managed_components/espressif__esp_ot_cli_extension/src/esp_ot_iperf.c
+          sed -i 's/otCliOutputFormat("None password\\n", password_str)/otCliOutputFormat("None password\\n")/' \
+            managed_components/espressif__esp_ot_cli_extension/src/esp_ot_wifi_cmd.c
           idf.py build
 
       - name: Upload OTBR binaries
