@@ -480,3 +480,33 @@ TEST_CASE("Output 8M clock to GPIO25", "[ignore]")
     pull_out_clk(RTC_IO_DEBUG_SEL0_8M);
 }
 #endif
+
+#if !CONFIG_RTC_CLK_FUNC_IN_IRAM
+static void do_restart(void)
+{
+    esp_restart();
+}
+
+#if CONFIG_FREERTOS_NUMBER_OF_CORES > 1
+static void do_restart_from_app_cpu(void)
+{
+    xTaskCreatePinnedToCore((TaskFunction_t) &do_restart, "restart", 2048, NULL, 5, NULL, 1);
+    vTaskDelay(2);
+}
+#endif
+
+static void check_reset_reason_sw(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_SW, esp_reset_reason());
+}
+
+TEST_CASE_MULTIPLE_STAGES("test rtc_clk in flash after restart", "[rtc_clk]",
+                          do_restart,
+                          check_reset_reason_sw);
+
+#if CONFIG_FREERTOS_NUMBER_OF_CORES > 1
+TEST_CASE_MULTIPLE_STAGES("test rtc_clk in flash after restart from APP CPU", "[rtc_clk]",
+                          do_restart_from_app_cpu,
+                          check_reset_reason_sw);
+#endif
+#endif
