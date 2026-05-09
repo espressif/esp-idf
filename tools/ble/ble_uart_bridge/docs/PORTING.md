@@ -242,14 +242,9 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-For custom service UUID discovery:
-
-```python
-devices = await scan_devices(
-    timeout=5.0,
-    service_uuid="00000000-0000-0000-0000-000000000001",
-)
-```
+`scan_devices()` performs an unfiltered BLE scan. If your script needs to
+restrict results to a specific profile, filter or connect-verify devices in
+your application code.
 
 ## Error handling guidance
 
