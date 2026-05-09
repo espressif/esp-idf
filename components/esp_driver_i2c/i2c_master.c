@@ -828,7 +828,10 @@ static void i2c_master_isr_handler_default(void *arg)
         }
         xSemaphoreGiveFromISR(i2c_master->bus_lock_mux, &HPTaskAwoken);
         if (i2c_dev == NULL) {
-            return;
+            // HPTaskAwoken may have been set by xQueueSendFromISR / xSemaphoreTakeFromISR /
+            // xSemaphoreGiveFromISR above; fall through to the yield check at the end of
+            // the ISR rather than returning directly.
+            goto out;
         }
         i2c_master_event_data_t evt = {
             .event = i2c_master->event,
@@ -866,6 +869,7 @@ static void i2c_master_isr_handler_default(void *arg)
         xSemaphoreGiveFromISR(i2c_master->cmd_semphr, &HPTaskAwoken);
     }
 
+out:
     if (HPTaskAwoken == pdTRUE) {
         portYIELD_FROM_ISR();
     }
