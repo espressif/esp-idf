@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -96,7 +96,7 @@ TEST_CASE("parallel_tx_unit_trans_done_event", "[parlio_tx]")
         .trans_queue_depth = 8,
         .max_transfer_size = 128,
         .bit_pack_order = PARLIO_BIT_PACK_ORDER_LSB,
-        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .shift_edge = PARLIO_SHIFT_EDGE_POS,
     };
     TEST_ESP_OK(parlio_new_tx_unit(&config, &tx_unit));
     TEST_ESP_OK(parlio_tx_unit_enable(tx_unit));
@@ -148,7 +148,7 @@ TEST_CASE("parallel_tx_unit_enable_disable", "[parlio_tx]")
         .trans_queue_depth = 4,
         .max_transfer_size = 256,
         .bit_pack_order = PARLIO_BIT_PACK_ORDER_LSB,
-        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .shift_edge = PARLIO_SHIFT_EDGE_POS,
     };
     TEST_ESP_OK(parlio_new_tx_unit(&config, &tx_unit));
     TEST_ESP_OK(parlio_tx_unit_enable(tx_unit));
@@ -209,7 +209,7 @@ TEST_CASE("parallel_tx_unit_idle_value", "[parlio_tx]")
         .trans_queue_depth = 4,
         .max_transfer_size = 64,
         .bit_pack_order = PARLIO_BIT_PACK_ORDER_LSB,
-        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .shift_edge = PARLIO_SHIFT_EDGE_POS,
     };
     TEST_ESP_OK(parlio_new_tx_unit(&config, &tx_unit));
     TEST_ESP_OK(parlio_tx_unit_enable(tx_unit));
@@ -261,7 +261,7 @@ TEST_CASE("parallel_tx_clock_gating", "[paralio_tx]")
         .trans_queue_depth = 4,
         .max_transfer_size = 64,
         .bit_pack_order = PARLIO_BIT_PACK_ORDER_MSB,
-        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .shift_edge = PARLIO_SHIFT_EDGE_POS,
         .flags.clk_gate_en = true, // enable clock gating, controlled by the level of TEST_DATA7_GPIO
     };
     TEST_ESP_OK(parlio_new_tx_unit(&config, &tx_unit));
@@ -381,7 +381,7 @@ TEST_CASE("parallel tx unit use external non-free running clock", "[parlio_tx]")
         .trans_queue_depth = 8,
         .max_transfer_size = 256,
         .bit_pack_order = PARLIO_BIT_PACK_ORDER_LSB,
-        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .shift_edge = PARLIO_SHIFT_EDGE_POS,
     };
 
     uint8_t test_round = 50;
