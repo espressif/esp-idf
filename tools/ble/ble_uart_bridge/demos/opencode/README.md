@@ -42,7 +42,7 @@ flowchart LR
     OC -->|permission.asked| Plugin
     Plugin -->|POST /notify| Daemon[ble_uart_bridge daemon]
     Plugin -->|POST /request| Daemon
-    Daemon -->|BLE NUS JSONL| Device[BLE device UI]
+    Daemon -->|BLE UART JSONL| Device[BLE device UI]
     Device -->|once / reject| Daemon
     Daemon -->|HTTP response| Plugin
     Plugin -->|SDK permission reply| OC
@@ -54,7 +54,7 @@ flowchart LR
 
    The intended firmware companion is an `esp-vocat` example for the MiaoBan
    (喵伴) device, planned for the `esp-iot-solution` repository. Until that
-   example is available, use any device that implements Nordic UART Service and
+   example is available, use any device that implements the default BLE UART-over-GATT UUIDs and
    the JSONL request/response envelope described in
    [Firmware protocol reference](#firmware-protocol-reference).
 
@@ -235,7 +235,7 @@ permission requests can be approved once with `once` or denied with `reject`.
 - The BLE daemon endpoint is configured by `OPENCODE_BLE_DAEMON_URL`, defaulting
   to `http://127.0.0.1:8888`.
 - The BLE daemon supports both `POST /notify` and `POST /request`.
-- The BLE device implements Nordic UART Service.
+- The BLE device implements the default BLE UART-over-GATT UUID layout.
 - The BLE device understands JSON messages described in
   [Firmware protocol reference](#firmware-protocol-reference).
 - Permission decisions from the current single-key device are: `once`, `reject`.

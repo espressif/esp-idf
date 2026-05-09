@@ -8,9 +8,9 @@ BLE UART Bridge works with BLE GATT profiles that provide a UART-like data path:
 - one characteristic that the host writes to
 - one characteristic that the device uses to notify data back to the host
 
-The default profile is compatible with the Nordic UART Service (NUS), but NUS is not the only possible BLE UART-style profile.
+The default profile matches the widely used BLE UART-over-GATT UUID set (service `6E400001-…`, RX/TX characteristics), but that layout is not the only possible BLE UART-style profile.
 
-## Default NUS-compatible profile
+## Default BLE-UART-compatible profile
 
 The built-in default profile uses these UUIDs:
 
@@ -20,7 +20,7 @@ The built-in default profile uses these UUIDs:
 | RX, host to device | `6E400002-B5A3-F393-E0A9-E50E24DCCA9E` |
 | TX, device to host | `6E400003-B5A3-F393-E0A9-E50E24DCCA9E` |
 
-Use the default profile when the device advertises a NUS-compatible service.
+Use the default profile when the device advertises a service using those UUIDs.
 
 ## ESP-IDF BLE SPP examples
 
@@ -31,7 +31,7 @@ ESP-IDF includes BLE SPP examples that implement Espressif BLE UART-like vendor-
 - `examples/bluetooth/bluedroid/ble/ble_spp_server`
 - `examples/bluetooth/bluedroid/ble/ble_spp_client`
 
-BLE SPP over BLE is not a Bluetooth SIG standard profile. It is a vendor-specific GATT design that emulates a serial link, similar in purpose to NUS.
+BLE SPP over BLE is not a Bluetooth SIG standard profile. It is a vendor-specific GATT design that emulates a serial link, similar in purpose to the default BLE UART layout above.
 
 ESP-IDF BLE SPP examples may define more characteristics than BLE UART Bridge needs, such as data, command, and status characteristics. To use BLE UART Bridge with such a profile, map only the UART-like data path into `BLEUARTProfile`.
 

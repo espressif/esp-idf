@@ -5,8 +5,8 @@
  *
  * BLE UART — turnkey serial-over-BLE peripheral.
  *
- * Implements the de-facto Nordic UART Service (NUS) GATT layout
- * (RX write, TX notify) on top of either NimBLE or Bluedroid; the
+ * Implements the de-facto BLE UART-over-GATT layout (RX write, TX notify;
+ * fixed 128-bit UUIDs below) on top of either NimBLE or Bluedroid; the
  * backend is picked at compile time via CONFIG_BT_NIMBLE_ENABLED /
  * CONFIG_BT_BLUEDROID_ENABLED.
  *
@@ -21,13 +21,13 @@
  * Run-forever apps only need install + open. close / uninstall is
  * for apps that need to power BLE off at runtime.
  *
- * GATT layout (UUIDs fixed by the NUS spec):
+ * GATT layout (UUIDs are the widely used fixed 128-bit values):
  *
  *     Service: 6e400001-b5a3-f393-e0a9-e50e24dcca9e
  *     RX     : 6e400002-b5a3-f393-e0a9-e50e24dcca9e   write
  *     TX     : 6e400003-b5a3-f393-e0a9-e50e24dcca9e   notify
  *
- * See PORTING.md for the integration guide.
+ * See PORTING.md in this component directory for the integration guide.
  */
 
 #pragma once
@@ -89,7 +89,7 @@ typedef struct {
 
 /* ----- Lifecycle ------------------------------------------------------ */
 
-/** Bring up host stack + Security Manager + SIG services + NUS GATT
+/** Bring up host stack + Security Manager + SIG services + BLE UART GATT
  *  service. Caller must have already called nvs_flash_init().
  *  cfg->device_name is copied; doesn't need to outlive the call.
  *  Single-shot until ble_uart_uninstall(); a second call returns
@@ -145,7 +145,7 @@ bool ble_uart_is_subscribed(void);
 
 /* ----- Service UUID -------------------------------------------------- */
 
-/** The NUS service UUID, exposed for custom advertising payloads.
+/** The BLE UART service UUID, exposed for custom advertising payloads.
  *  The two characteristic UUIDs are private to the backend. */
 extern const ble_uart_uuid128_t ble_uart_service_uuid;
 

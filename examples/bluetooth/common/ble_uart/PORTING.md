@@ -1,7 +1,20 @@
 # BLE UART Porting & API Guide
 
+This document lives in **`examples/bluetooth/common/ble_uart/`** next to the
+`ble_uart` component sources (`ble_uart.h`, backend `.c` files).
+
+**Reference application:** use the **`examples/bluetooth/ble_uart_service`**
+example as the working template. Its root `CMakeLists.txt` appends this
+directory to **`EXTRA_COMPONENT_DIRS`** so `main` can `REQUIRES ble_uart`;
+`main/main.c` initializes NVS and a MAC-derived GAP name, calls
+`ble_uart_install()` / `ble_uart_open()` with the default encrypted UART-over-BLE echo
+path, and the tree ships `sdkconfig.defaults` plus the Bluedroid overlay
+(`sdkconfig.bluedroid`). Clone or diff that project when adapting to a new
+target or host stack.
+
 A complete guide to integrating `ble_uart` into any ESP-IDF project.
-**Two or three files plus 5 steps of glue code** are enough to bring an
+**Either** `EXTRA_COMPONENT_DIRS` pointing at this component **or** a few
+copied source files **plus** the glue steps below are enough to bring an
 encrypted BLE serial peripheral up in a fresh project — the same
 `ble_uart.h` API works on top of either NimBLE or Bluedroid; pick the
 host with a Kconfig knob.
@@ -18,7 +31,7 @@ flagged inline.
 
 | Capability | Description |
 | --- | --- |
-| Standard Nordic UART Service GATT (RX/TX) | Interoperates with every generic BLE-serial tool (nRF Connect, Web Bluetooth, custom scripts) |
+| Widely used BLE UART-over-GATT (RX/TX) | Interoperates with every generic BLE-serial tool (mobile GATT clients, Web Bluetooth, custom scripts) |
 | LE Secure Connections + Bonding pairing | Single switch; when enabled, a fresh 6-digit passkey is printed to UART |
 | Auto-reconnect | After a bonded central disconnects, advertising restarts immediately and the LTK is reused — no passkey prompt |
 | Raw byte pass-through | RX is delivered via a callback; TX is exposed as `ble_uart_tx` |
@@ -44,26 +57,45 @@ is entirely up to you**.
 
 ## 3. File Inventory
 
-Files to copy into the target project — pick the backend you want and
-copy that pair plus the public header:
+Canonical sources live under **`$IDF_PATH/examples/bluetooth/common/ble_uart/`**
+(component name `ble_uart`): `ble_uart.h`, `ble_uart_nimble.c`,
+`ble_uart_bluedroid.c`, `CMakeLists.txt`, and `Kconfig` (prefix + RX scratch;
+`menuconfig → Component configuration → BLE UART library`). When reusing
+outside this tree, copy the whole `common/ble_uart/` directory or at least
+merge `Kconfig` into your component so the same `CONFIG_BLE_UART_*` symbols
+exist.
+
+**Option A — depend on the in-tree component (no copy):** add the component
+directory to **`EXTRA_COMPONENT_DIRS` in the project root `CMakeLists.txt`
+before `include($ENV{IDF_PATH}/tools/cmake/project.cmake)` / `project()`**,
+then use `REQUIRES ble_uart` from `main/CMakeLists.txt` (see
+`examples/bluetooth/ble_uart_service/CMakeLists.txt`). This ensures the
+`ble_uart` target exists when CMake expands `main`'s requirements.
+
+Kconfig options appear under
+`menuconfig → Component configuration → BLE UART library`.
+
+> A `main/idf_component.yml` path dependency alone is **not** sufficient if
+> `main/CMakeLists.txt` lists `REQUIRES ble_uart`: the early requirement scan
+> runs before the component manager injects that dependency, so CMake fails
+> with *unknown component `ble_uart`*. Prefer `EXTRA_COMPONENT_DIRS` (as in the
+> reference example) or copy the sources into a normal project component.
+
+**Option B — copy into your project:** pick the backend you want and
+copy that pair plus the public header (or copy both backends; each `.c`
+gates on its Kconfig symbol):
 
 ```
 your_project/main/
-├── ble_uart.h              ← copy this  (stack-agnostic public API, ~260 lines)
-├── ble_uart_nimble.c       ← if you'll set CONFIG_BT_NIMBLE_ENABLED=y    (~670 lines)
-└── ble_uart_bluedroid.c    ← if you'll set CONFIG_BT_BLUEDROID_ENABLED=y (~900 lines)
+├── ble_uart.h              ← copy from .../common/ble_uart/
+├── ble_uart_nimble.c       ← if you'll set CONFIG_BT_NIMBLE_ENABLED=y
+└── ble_uart_bluedroid.c    ← if you'll set CONFIG_BT_BLUEDROID_ENABLED=y
 ```
 
-You can also copy *both* `ble_uart_nimble.c` and `ble_uart_bluedroid.c`
-unchanged — each `.c` file gates its body on the matching Kconfig
-symbol, so the inactive one compiles to nothing. This is what the
-example itself does, and it lets you flip stacks without changing the
-source list.
-
-Optional: `Kconfig.projbuild` defines `BLE_UART_DEVICE_NAME_PREFIX`
-and `BLE_UART_RX_SCRATCH_SIZE`. Copy it too if you want either to be
-tunable from `menuconfig`; otherwise hard-code the name in your
-source and rely on the 1024-byte fallback for RX scratch.
+Optional: copy `Kconfig` from `common/ble_uart/` into your component (or merge
+its symbols into your own `Kconfig`) if you want `BLE_UART_*` in `menuconfig`;
+otherwise hard-code the device name and rely on the 1024-byte fallback for RX
+scratch.
 
 ---
 
@@ -75,11 +107,12 @@ Assume you already have an ESP-IDF project (`my_project/`).
 
 ```bash
 cd my_project/main
+BLE_UART_SRC="$IDF_PATH/examples/bluetooth/common/ble_uart"
 # Stack-agnostic public header — always.
-cp /path/to/ble_uart_service/main/ble_uart.h .
+cp "$BLE_UART_SRC/ble_uart.h" .
 # Pick one (or copy both — the inactive one compiles to nothing).
-cp /path/to/ble_uart_service/main/ble_uart_nimble.c .
-cp /path/to/ble_uart_service/main/ble_uart_bluedroid.c .
+cp "$BLE_UART_SRC/ble_uart_nimble.c" .
+cp "$BLE_UART_SRC/ble_uart_bluedroid.c" .
 ```
 
 ### 4.2 Edit `main/CMakeLists.txt`
@@ -116,6 +149,22 @@ the central must support it.
 
 **Bluedroid backend (drop-in alternative):**
 
+Use the **`examples/bluetooth/ble_uart_service/sdkconfig.bluedroid`** file as
+the authoritative Kconfig overlay: it enables the host stack, SMP, GATTS
+(service-table API), and the BLE-only advertising knobs that
+`ble_uart_bluedroid.c` expects. Either merge those lines into your own
+`sdkconfig.defaults`, or pass them as a second defaults file:
+
+```bash
+idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.bluedroid" reconfigure
+```
+
+(Paths are relative to the example project root; copy `sdkconfig.bluedroid`
+into your tree if you are not starting from `ble_uart_service`.)
+
+A minimal inline sketch (may drift from IDF defaults — **diff against
+`sdkconfig.bluedroid` after each IDF upgrade**):
+
 ```ini
 CONFIG_BT_ENABLED=y
 CONFIG_BT_NIMBLE_ENABLED=n
@@ -124,8 +173,8 @@ CONFIG_BT_BLUEDROID_ENABLED=y
 # LE Secure Connections + bonding (Bluedroid persists LTKs by default)
 CONFIG_BT_BLE_SMP_ENABLE=y
 
-# Optional: bigger MTU
-CONFIG_BT_GATT_MAX_MTU_SIZE=512
+# Optional: bigger MTU (when supported by your IDF target / menuconfig)
+# CONFIG_BT_GATT_MAX_MTU_SIZE=512
 
 # BLE-only feature set (saves flash on classic-BT-capable parts)
 CONFIG_BT_BLE_42_FEATURES_SUPPORTED=y
@@ -201,7 +250,7 @@ I (xxx) ble_uart: registered service svc_handle=40 rx=42 tx=44 cccd=45
 I (xxx) ble_uart: advertising started
 ```
 
-nRF Connect on a phone discovers `MyDevice`; connect, enter the
+A phone GATT client app discovers `MyDevice`; connect, enter the
 passkey, subscribe to TX, write to RX, and you will see the echo come
 back.
 
@@ -337,7 +386,7 @@ returns `ENOTCONN` to tell you.
 extern const ble_uart_uuid128_t ble_uart_service_uuid;
 ```
 
-Always `6e400001-b5a3-f393-e0a9-e50e24dcca9e` (the NUS standard). It is
+Always `6e400001-b5a3-f393-e0a9-e50e24dcca9e` (the de-facto BLE UART service UUID). It is
 already inserted into the scan response, so the **application normally
 does not touch it**. You only need it if you take over advertising
 yourself (see 6.3).
@@ -403,7 +452,7 @@ Effect:
 - GATT characteristics drop the `_ENC | _AUTHEN` flags.
 - Any central can read/write — no pairing required.
 - No passkey prompt.
-- Data is sniffable by any nearby nRF dongle.
+- Data is sniffable by any nearby BLE sniffer or compromised radio in range.
 
 **Do not ship this in production firmware.**
 
@@ -439,7 +488,10 @@ ble_uart_open();
 
 ### 6.4 Configuring the device-name prefix via Kconfig
 
-Copy `Kconfig.projbuild` into `main/`, then:
+If you use the shared `ble_uart` component, options are already in
+`menuconfig → Component configuration → BLE UART library`. If you copied only
+the `.c` / `.h` files into `main/`, copy `Kconfig` from `common/ble_uart/` as
+well (or merge its symbols into your own `Kconfig.projbuild`), then:
 
 ```c
 char name[24];
@@ -453,8 +505,8 @@ ble_uart_install(&(ble_uart_config_t){
 });
 ```
 
-Edit the default through `menuconfig → BLE UART Example → BLE device
-name prefix`.
+Edit the default through `menuconfig → Component configuration → BLE UART
+library → BLE device name prefix`.
 
 ### 6.5 Pushing data proactively
 
@@ -538,16 +590,17 @@ If you **build directly on top of this example**:
 | --- | --- |
 | `main.c` echo template | Replace with your own `on_rx` body |
 | `sdkconfig.defaults` | Reuse as-is |
-| `Kconfig.projbuild` | Reuse as-is |
+| `sdkconfig.bluedroid` | Only if you switch to Bluedroid host — reuse as-is (see §4.3); omit for default NimBLE |
+| Root `CMakeLists.txt` (`EXTRA_COMPONENT_DIRS` → `../common/ble_uart`) | Reuse as-is (or follow §3 option B) |
 | `CMakeLists.txt` (root + main) | Reuse as-is |
 
 If you **start from an empty project**:
 
 | What you need to do | Source |
 | --- | --- |
-| Copy `ble_uart.h` + at least one of `ble_uart_nimble.c` / `ble_uart_bluedroid.c` into `main/` | This example |
+| Add `EXTRA_COMPONENT_DIRS` for `examples/bluetooth/common/ble_uart` in root `CMakeLists.txt`, **or** copy `ble_uart.h` + at least one of `ble_uart_nimble.c` / `ble_uart_bluedroid.c` into `main/` | §3 of this guide |
 | Copy the key lines of `sdkconfig.defaults` | §4.3 of this guide |
-| Add SRC + REQUIRES to `main/CMakeLists.txt` | §4.2 of this guide |
+| Add `REQUIRES ble_uart nvs_flash` (after `EXTRA_COMPONENT_DIRS`) **or** SRC + `REQUIRES bt nvs_flash` (copied sources) to `main/CMakeLists.txt` | §4.2 of this guide |
 | Write `install` + `open` in `app_main` | §4.4 of this guide |
 
 ---
@@ -591,8 +644,21 @@ extern const ble_uart_uuid128_t ble_uart_service_uuid;
 
 ## 12. Minimal Project Template (ready to flash)
 
-A complete flashable project takes 7 files (the inactive backend `.c`
-compiles to nothing, so it costs you nothing to ship both):
+A complete flashable project takes a handful of files. The inactive
+backend `.c` compiles to nothing if you ship both.
+
+**Using the shared component (fewer copies):**
+
+```
+my_ble_uart_project/
+├── CMakeLists.txt              ← EXTRA_COMPONENT_DIRS → …/common/ble_uart (before project())
+├── sdkconfig.defaults
+└── main/
+    ├── CMakeLists.txt          ← REQUIRES ble_uart nvs_flash; SRCS main.c only
+    └── main.c
+```
+
+**Copying sources into `main/` (classic layout):**
 
 ```
 my_ble_uart_project/
@@ -600,20 +666,28 @@ my_ble_uart_project/
 ├── sdkconfig.defaults
 └── main/
     ├── CMakeLists.txt
-    ├── ble_uart.h              ← copied from this example
-    ├── ble_uart_nimble.c       ← copied from this example
-    ├── ble_uart_bluedroid.c    ← copied from this example (optional)
+    ├── ble_uart.h              ← from $IDF_PATH/examples/bluetooth/common/ble_uart/
+    ├── ble_uart_nimble.c
+    ├── ble_uart_bluedroid.c    ← optional second backend
     └── main.c
 ```
 
-**Root `CMakeLists.txt`**:
+**Root `CMakeLists.txt`** (shared `ble_uart` via `EXTRA_COMPONENT_DIRS`):
 ```cmake
 cmake_minimum_required(VERSION 3.16)
+list(APPEND EXTRA_COMPONENT_DIRS "${CMAKE_CURRENT_LIST_DIR}/../path/to/common/ble_uart")
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(my_ble_uart)
 ```
 
-**`main/CMakeLists.txt`**:
+**`main/CMakeLists.txt`** (shared component — no `.c` copies in `main/`):
+```cmake
+idf_component_register(SRCS "main.c"
+                       INCLUDE_DIRS "."
+                       REQUIRES ble_uart nvs_flash)
+```
+
+**`main/CMakeLists.txt`** (classic copy layout — both backends in `main/`):
 ```cmake
 idf_component_register(SRCS "main.c"
                             "ble_uart_nimble.c"
@@ -632,6 +706,11 @@ CONFIG_BT_NIMBLE_SM_SC=y
 CONFIG_BT_NIMBLE_NVS_PERSIST=y
 CONFIG_BT_NIMBLE_ATT_PREFERRED_MTU=512
 ```
+
+**Bluedroid host instead of NimBLE:** copy
+`examples/bluetooth/ble_uart_service/sdkconfig.bluedroid` next to your
+`sdkconfig.defaults` and pass
+`-D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.bluedroid"` (see §4.3).
 
 **`main/main.c`** — copy the §4.4 template verbatim.
 

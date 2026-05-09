@@ -62,7 +62,7 @@ Open an interactive BLE UART Console:
 python main.py console DEVICE_ID
 ```
 
-For Console options such as line endings, hex mode, and write-with-response, see [Quick-Start-BLE-UART-Console.md](docs/Quick-Start-BLE-UART-Console.md). If you need firmware to test against, use the [BLE UART Service example](../../../examples/bluetooth/ble_uart_service) as an Echo Server: it advertises the default Nordic UART Service profile and echoes RX writes back through TX notifications.
+For Console options such as line endings, hex mode, and write-with-response, see [Quick-Start-BLE-UART-Console.md](docs/Quick-Start-BLE-UART-Console.md). If you need firmware to test against, use the [BLE UART Service example](../../../examples/bluetooth/ble_uart_service) as an Echo Server: it advertises the default BLE UART-over-GATT UUIDs and echoes RX writes back through TX notifications.
 
 Run the BLE UART Daemon:
 
@@ -194,7 +194,7 @@ Main responsibilities:
 - Connect and disconnect with a BLE UART GATT profile.
 - Subscribe to device-to-host notifications.
 - Send host-to-device data as `str`, `bytes`, or `bytearray`.
-- Support a default NUS profile and user-defined BLE UART profiles.
+- Support a default BLE-UART UUID profile and user-defined BLE UART profiles.
 
 Important APIs:
 
@@ -262,7 +262,7 @@ Use Core when your business logic lives in Python. Use Console when you only nee
 
 ## Profile compatibility
 
-The default profile is compatible with the Nordic UART Service (NUS):
+The default profile uses the widely deployed BLE UART-over-GATT UUID set:
 
 - Service UUID: `6E400001-B5A3-F393-E0A9-E50E24DCCA9E`
 - RX characteristic UUID, host to device: `6E400002-B5A3-F393-E0A9-E50E24DCCA9E`

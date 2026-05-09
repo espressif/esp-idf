@@ -21,7 +21,7 @@ The Console is useful when you want to type data into a BLE UART device and insp
 
    On Windows, run `export.bat` or `export.ps1` from the ESP-IDF root directory before installing `requirements.txt`. If you use your own Python virtual environment instead, activate it before installing `requirements.txt`.
 
-3. A BLE device advertising the BLE UART service. By default the tool scans for Nordic UART Service UUIDs. For a known-compatible test target, build and flash the [BLE UART Service example](../../../../examples/bluetooth/ble_uart_service), which acts as an Echo Server by echoing RX writes back through TX notifications.
+3. A BLE device advertising the BLE UART service. By default the tool scans for the de-facto BLE UART-over-GATT UUIDs (`6E400001-…` / `…02` / `…03`). For a known-compatible test target, build and flash the [BLE UART Service example](../../../../examples/bluetooth/ble_uart_service), which acts as an Echo Server by echoing RX writes back through TX notifications.
 
 ## Find a device
 

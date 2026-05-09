@@ -204,7 +204,7 @@ static void build_attr_table(bool encrypted)
         },
     };
 
-    /* [TX value] — NUS spec is notify-only, so the prop above doesn't
+    /* [TX value] — TX characteristic is notify-only, so the prop above doesn't
      * advertise READ; perm only matters if a client tries READ anyway. */
     s_nus_db[NUS_IDX_TX_VAL] = (esp_gatts_attr_db_t){
         .attr_control = {ESP_GATT_AUTO_RSP},
@@ -251,7 +251,7 @@ static esp_ble_adv_data_t s_adv_data = {
     .flag = (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT),
 };
 
-/* Scan response = NUS UUID. Splitting it off the primary payload
+/* Scan response = 128-bit UART service UUID. Splitting it off the primary payload
  * leaves room for name + tx_pwr in the 31-byte primary. */
 static esp_ble_adv_data_t s_scan_rsp_data = {
     .set_scan_rsp        = true,

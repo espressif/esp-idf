@@ -2,12 +2,13 @@
 # from the default NimBLE backend to Bluedroid. Use it like:
 #
 #   idf.py -B build_bd \
-#       -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci.bluedroid" \
+#       -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.bluedroid" \
 #       reconfigure
 #   idf.py -B build_bd build flash monitor
 #
-# When this overlay wins, main/CMakeLists.txt links ble_uart_bluedroid.c
-# instead of ble_uart_nimble.c. The public ble_uart.h API is identical
+# When this overlay wins, the ble_uart component compiles
+# ble_uart_bluedroid.c instead of ble_uart_nimble.c (each backend is
+# gated on CONFIG_BT_*_ENABLED). The public ble_uart.h API is identical
 # either way.
 
 CONFIG_BT_ENABLED=y
