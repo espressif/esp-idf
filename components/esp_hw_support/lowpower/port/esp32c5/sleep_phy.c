@@ -25,6 +25,7 @@
 
 #define FECOEX_SET_FREQ_SET_CHAN_REG    (0x600a001c)
 #define FECOEX_SET_CHAN_EN              (BIT(17))
+#define FECOEX_SET_FREQ_RESETN          (BIT(30))
 #define FECOEX_SET_FREQ_SET_CHAN_ST_REG (0x600a0028)
 #define FECOEX_SET_CHAN_DONE            (BIT(8))
 #define FECOEX_AGC_CONF_REG             (0x600a7030)
@@ -55,44 +56,47 @@ static esp_err_t sleep_phy_retention_init(void *arg)
     static sleep_retention_entries_config_t phy_modem_config[] = {
         [0]  = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x00), MODEM_LPCON_CLK_CONF_REG,         MODEM_LPCON_CLK_I2C_MST_EN, MODEM_LPCON_CLK_I2C_MST_EN_M, 1, 0), .owner = PHY_ENTRY() }, /* I2C MST enable */
 
+        /* Reset SET_FREQ fsm */
+        [1]  = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x01), FECOEX_SET_FREQ_SET_CHAN_REG,     0,    FECOEX_SET_FREQ_RESETN,                         1, 0), .owner = PHY_ENTRY() },
         /* PMU or software to trigger enable RF PHY */
-        [1]  = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x01), I2C_ANA_MST_ANA_CONF0_REG,        0x8,                       0xc,        1, 0), .owner = PHY_ENTRY() }, /* BBPLL calibration enable */
-        [2]  = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x02), PMU_RF_PWR_REG,                   0xf3800000,                0xf3800000, 1, 0), .owner = PHY_ENTRY() },
-        [3]  = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x03), SARADC_TSENS_REG,                 SARADC_TSENS_PU,           0x400000,   1, 0), .owner = PHY_ENTRY() },
-        [4]  = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x04), I2C_ANA_MST_I2C_BURST_CONF_REG,   0,                         0xffffffff, 1, 0), .owner = PHY_ENTRY() },
-        [5]  = { .config = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x05), I2C_ANA_MST_I2C_BURST_STATUS_REG, I2C_ANA_MST_BURST_DONE,    0x1,        1, 0), .owner = PHY_ENTRY() },
-        [6]  = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x06), FECOEX_SET_FREQ_SET_CHAN_REG,     FECOEX_SET_CHAN_EN,        0x20000,    1, 0), .owner = PHY_ENTRY() },
-        [7]  = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x07), FECOEX_SET_FREQ_SET_CHAN_REG,     0,                         0x20000,    1, 0), .owner = PHY_ENTRY() },
-        [8]  = { .config = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x08), FECOEX_SET_FREQ_SET_CHAN_ST_REG,  FECOEX_SET_CHAN_DONE,      0x100,      1, 0), .owner = PHY_ENTRY() },
-        [9]  = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x09), MODEM_SYSCON_WIFI_BB_CFG_REG,     BIT(1),                    0x2,        1, 0), .owner = PHY_ENTRY() },
-        [10] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x0a), FECOEX_AGC_CONF_REG,              0,                         0x20000000, 1, 0), .owner = PHY_ENTRY() },
+        [2]  = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x02), I2C_ANA_MST_ANA_CONF0_REG,        0x8,                       0xc,        1, 0), .owner = PHY_ENTRY() }, /* BBPLL calibration enable */
+        [3]  = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x03), PMU_RF_PWR_REG,                   0xf3800000,                0xf3800000, 1, 0), .owner = PHY_ENTRY() },
+        [4]  = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x04), SARADC_TSENS_REG,                 SARADC_TSENS_PU,           0x400000,   1, 0), .owner = PHY_ENTRY() },
+        [5]  = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x05), I2C_ANA_MST_I2C_BURST_CONF_REG,   0,                         0xffffffff, 1, 0), .owner = PHY_ENTRY() },
+        [6]  = { .config = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x06), I2C_ANA_MST_I2C_BURST_STATUS_REG, I2C_ANA_MST_BURST_DONE,    0x1,        1, 0), .owner = PHY_ENTRY() },
+        [7]  = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x07), FECOEX_SET_FREQ_SET_CHAN_REG,     FECOEX_SET_FREQ_RESETN,    FECOEX_SET_FREQ_RESETN,    1, 0), .owner = PHY_ENTRY() },\
+        [8]  = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x08), FECOEX_SET_FREQ_SET_CHAN_REG,     FECOEX_SET_CHAN_EN,        0x20000,    1, 0), .owner = PHY_ENTRY() },
+        [9]  = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x09), FECOEX_SET_FREQ_SET_CHAN_REG,     0,                         0x20000,    1, 0), .owner = PHY_ENTRY() },
+        [10]  = { .config = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x0a), FECOEX_SET_FREQ_SET_CHAN_ST_REG,  FECOEX_SET_CHAN_DONE,      0x100,      1, 0), .owner = PHY_ENTRY() },
+        [11]  = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x0b), MODEM_SYSCON_WIFI_BB_CFG_REG,     BIT(1),                    0x2,        1, 0), .owner = PHY_ENTRY() },
+        [12] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x0c), FECOEX_AGC_CONF_REG,              0,                         0x20000000, 1, 0), .owner = PHY_ENTRY() },
 
         /* PMU to trigger enable RXBLOCK */
-        [11] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x0b), WDEVTXQ_BLOCK,                    0,                         0x1000,     1, 0), .owner = PHY_ENTRY() },
+        [13] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x0d), WDEVTXQ_BLOCK,                    0,                         0x1000,     1, 0), .owner = PHY_ENTRY() },
 
         /* PMU or software to trigger disable RF PHY */
-        [12] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x0c), FECOEX_AGC_CONF_REG,              FECOEX_AGC_DIS,            0x20000000, 0, 1), .owner = PHY_ENTRY() },
-        [13] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x0d), MODEM_SYSCON_WIFI_BB_CFG_REG,     0,                         0x2,        0, 1), .owner = PHY_ENTRY() },
-        [14] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x0e), FECOEX_SET_FREQ_SET_CHAN_REG,     0,                         0x20000,    0, 1), .owner = PHY_ENTRY() },
-        [15] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x0f), I2C_ANA_MST_I2C_BURST_CONF_REG,   0,                         0xffffffff, 0, 1), .owner = PHY_ENTRY() },
-        [16] = { .config = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x10), I2C_ANA_MST_I2C_BURST_STATUS_REG, I2C_ANA_MST_BURST_DONE,    0x1,        0, 1), .owner = PHY_ENTRY() },
-        [17] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x11), SARADC_TSENS_REG,                 0,                         0x400000,   0, 1), .owner = PHY_ENTRY() },
-        [18] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x12), PMU_RF_PWR_REG,                   0,                         0xf3800000, 0, 1), .owner = PHY_ENTRY() },
-        [19] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x13), I2C_ANA_MST_ANA_CONF0_REG,        0x4,                       0xc,        0, 1), .owner = PHY_ENTRY() }, /* BBPLL calibration disable */
+        [14] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x0e), FECOEX_AGC_CONF_REG,              FECOEX_AGC_DIS,            0x20000000, 0, 1), .owner = PHY_ENTRY() },
+        [15] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x0f), MODEM_SYSCON_WIFI_BB_CFG_REG,     0,                         0x2,        0, 1), .owner = PHY_ENTRY() },
+        [16] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x10), FECOEX_SET_FREQ_SET_CHAN_REG,     0,                         0x20000,    0, 1), .owner = PHY_ENTRY() },
+        [17] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x11), I2C_ANA_MST_I2C_BURST_CONF_REG,   0,                         0xffffffff, 0, 1), .owner = PHY_ENTRY() },
+        [18] = { .config = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x12), I2C_ANA_MST_I2C_BURST_STATUS_REG, I2C_ANA_MST_BURST_DONE,    0x1,        0, 1), .owner = PHY_ENTRY() },
+        [19] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x13), SARADC_TSENS_REG,                 0,                         0x400000,   0, 1), .owner = PHY_ENTRY() },
+        [20] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x14), PMU_RF_PWR_REG,                   0,                         0xf3800000, 0, 1), .owner = PHY_ENTRY() },
+        [21] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x15), I2C_ANA_MST_ANA_CONF0_REG,        0x4,                       0xc,        0, 1), .owner = PHY_ENTRY() }, /* BBPLL calibration disable */
 
-        [20] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x14), MODEM_LPCON_CLK_CONF_REG,         0,                         MODEM_LPCON_CLK_I2C_MST_EN_M,       0, 1), .owner = PHY_ENTRY() }, /* I2C MST disable */
+        [22] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x16), MODEM_LPCON_CLK_CONF_REG,         0,                         MODEM_LPCON_CLK_I2C_MST_EN_M,       0, 1), .owner = PHY_ENTRY() }, /* I2C MST disable */
 
         /* PMU to trigger disable RXBLOCK */
-        [21] = { .config = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x15), WDEVTXQ_BLOCK,                    0,                         0x6000,     0, 1), .owner = PHY_ENTRY() },
-        [22] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x16), WDEVTXQ_BLOCK,                    WDEV_RXBLOCK,              0x1000,     0, 1), .owner = PHY_ENTRY() },
         [23] = { .config = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x17), WDEVTXQ_BLOCK,                    0,                         0x6000,     0, 1), .owner = PHY_ENTRY() },
+        [24] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x18), WDEVTXQ_BLOCK,                    WDEV_RXBLOCK,              0x1000,     0, 1), .owner = PHY_ENTRY() },
+        [25] = { .config = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x19), WDEVTXQ_BLOCK,                    0,                         0x6000,     0, 1), .owner = PHY_ENTRY() },
 
-        [24] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x18), PMU_SLP_WAKEUP_CNTL7_REG,         0x200000,                  0xffff0000, 1, 0), .owner = PHY_ENTRY() },
-        [25] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x19), PMU_SLP_WAKEUP_CNTL7_REG,         0x9730000,                 0xffff0000, 0, 1), .owner = PHY_ENTRY() }
+        [26] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x1a), PMU_SLP_WAKEUP_CNTL7_REG,         0x200000,                  0xffff0000, 1, 0), .owner = PHY_ENTRY() },
+        [27] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x1b), PMU_SLP_WAKEUP_CNTL7_REG,         0x9730000,                 0xffff0000, 0, 1), .owner = PHY_ENTRY() }
     };
     extern uint32_t phy_ana_i2c_master_burst_rf_onoff(bool on);
-    phy_modem_config[4].config.write_wait.value  = phy_ana_i2c_master_burst_rf_onoff(true);
-    phy_modem_config[15].config.write_wait.value = phy_ana_i2c_master_burst_rf_onoff(false);
+    phy_modem_config[5].config.write_wait.value  = phy_ana_i2c_master_burst_rf_onoff(true);
+    phy_modem_config[17].config.write_wait.value = phy_ana_i2c_master_burst_rf_onoff(false);
     esp_err_t err = sleep_retention_entries_create(phy_modem_config, ARRAY_SIZE(phy_modem_config), 7, SLEEP_RETENTION_MODULE_MODEM_PHY);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate modem phy link");
     return ESP_OK;
@@ -109,8 +113,8 @@ esp_err_t sleep_phy_link_init(void **link_context)
     if (err == ESP_OK) {
         err = sleep_retention_module_allocate(SLEEP_RETENTION_MODULE_MODEM_PHY);
         if (err == ESP_OK) {
-            const int id_array[] = { REGDMA_PHY_LINK(0x00), REGDMA_PHY_LINK(0x14),                                              /* I2C MST CLK entries */
-                                     REGDMA_PHY_LINK(0x0b), REGDMA_PHY_LINK(0x15), REGDMA_PHY_LINK(0x16), REGDMA_PHY_LINK(0x17) /* WiFi Related entries */
+            const int id_array[] = { REGDMA_PHY_LINK(0x00), REGDMA_PHY_LINK(0x16),                                              /* I2C MST CLK entries */
+                                     REGDMA_PHY_LINK(0x0d), REGDMA_PHY_LINK(0x17), REGDMA_PHY_LINK(0x18), REGDMA_PHY_LINK(0x19) /* WiFi Related entries */
                                     };
             static DRAM_ATTR sleep_phy_link_context_t phy_link_context;
 
