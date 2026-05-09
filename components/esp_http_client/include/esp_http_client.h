@@ -572,6 +572,18 @@ esp_err_t esp_http_client_get_user_data(esp_http_client_handle_t client, void **
 esp_err_t esp_http_client_set_user_data(esp_http_client_handle_t client, void *data);
 
 /**
+ * @brief      Set the event handler for the client
+ *
+ * @param[in]  client  The esp_http_client handle
+ * @param[in]  event_handler     The event handler
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_ERR_INVALID_ARG
+ */
+esp_err_t esp_http_client_set_event_handler(esp_http_client_handle_t client, http_event_handle_cb event_handler);
+
+/**
  * @brief      Get HTTP client session errno
  *
  * @param[in]  client  The esp_http_client handle
