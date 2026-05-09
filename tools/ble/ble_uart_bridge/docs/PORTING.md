@@ -141,7 +141,7 @@ await bridge.send(b"\x01\x02", with_response=True)
 
 ## Use a custom BLE UART profile
 
-The default profile uses Nordic UART Service UUIDs. For custom firmware, create a `BLEUARTProfile`:
+The default profile uses the de-facto BLE UART-over-GATT UUIDs. For custom firmware, create a `BLEUARTProfile`:
 
 ```python
 from src.core import BLEUARTBridge

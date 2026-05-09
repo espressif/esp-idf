@@ -1,0 +1,3 @@
+dependencies:
+  ble_uart:
+    path: ${IDF_PATH}/examples/bluetooth/common/ble_uart
