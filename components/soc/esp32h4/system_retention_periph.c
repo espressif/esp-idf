@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -19,10 +19,10 @@
 #include "soc/clic_reg.h"
 
 /* Interrupt Matrix Registers Context */
-#define N_REGS_INTR_MATRIX(i)    (((INTERRUPT_CORE0_CLOCK_GATE_REG(i) - (DR_REG_INTERRUPT_CORE0_BASE + (i) * 0x1000)) / 4) + 1)
+#define N_REGS_INTR_MATRIX(i)    (((INTERRUPT_CORE0_CLOCK_GATE_REG(i) - INTERRUPT_CORE0_BT_MAC_INTR_MAP_REG(i)) / 4) + 1)
 const regdma_entries_config_t intr_matrix_regs_retention[] = {
-    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_INTMTX_LINK(0), DR_REG_INTERRUPT_CORE0_BASE, DR_REG_INTERRUPT_CORE0_BASE, N_REGS_INTR_MATRIX(0), 0, 0), .owner = ENTRY(0) | ENTRY(2) },  /* intr matrix */
-    [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_INTMTX_LINK(1), DR_REG_INTERRUPT_CORE1_BASE, DR_REG_INTERRUPT_CORE1_BASE, N_REGS_INTR_MATRIX(1), 0, 0), .owner = ENTRY(0) | ENTRY(2) }  /* intr matrix */
+    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_INTMTX_LINK(0), INTERRUPT_CORE0_BT_MAC_INTR_MAP_REG(0), INTERRUPT_CORE0_BT_MAC_INTR_MAP_REG(0), N_REGS_INTR_MATRIX(0), 0, 0), .owner = ENTRY(0) | ENTRY(2) },  /* intr matrix */
+    [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_INTMTX_LINK(1), INTERRUPT_CORE0_BT_MAC_INTR_MAP_REG(1), INTERRUPT_CORE0_BT_MAC_INTR_MAP_REG(1), N_REGS_INTR_MATRIX(1), 0, 0), .owner = ENTRY(0) | ENTRY(2) }  /* intr matrix */
 };
 _Static_assert(ARRAY_SIZE(intr_matrix_regs_retention) == INT_MTX_RETENTION_LINK_LEN, "Inconsistent INT_MTX retention link length definitions");
 
@@ -51,19 +51,53 @@ const regdma_entries_config_t tee_apm_highpri_regs_retention[] = {
 _Static_assert((ARRAY_SIZE(tee_apm_regs_retention) == TEE_APM_RETENTION_LINK_LEN) && (ARRAY_SIZE(tee_apm_highpri_regs_retention) == TEE_APM_HIGH_PRI_RETENTION_LINK_LEN), "Inconsistent TEE_APM retention link length definitions");
 
 /* IO MUX Registers Context */
-#define N_REGS_IOMUX_0()    (((PERIPHS_IO_MUX_U_PAD_GPIO39 - REG_IO_MUX_BASE) / 4) + 1)
-#define N_REGS_IOMUX_1()    (((GPIO_FUNC39_OUT_SEL_CFG_REG - GPIO_FUNC0_OUT_SEL_CFG_REG) / 4) + 1)
-#define N_REGS_IOMUX_2()    (((GPIO_FUNC189_IN_SEL_CFG_REG - GPIO_FUNC0_IN_SEL_CFG_REG) / 4) + 1)
-#define N_REGS_IOMUX_3()    (((GPIO_PIN39_REG - GPIO_PIN0_REG) / 4) + 1)
-#define N_REGS_IOMUX_4()    (((GPIO_STATUS1_REG - GPIO_OUT_REG) / 4) + 1)
+#define N_REGS_IOMUX_0()    (SOC_GPIO_PIN_COUNT)
+#define N_REGS_IOMUX_1()    (SOC_GPIO_PIN_COUNT)
+#define N_REGS_IOMUX_2()    (SOC_GPIO_PIN_COUNT)
+
+/*
+ * (1) Backup 87 x FUNCx_IN_SEL_CFG from GPIO_FUNC0_IN_SEL_CFG_REG (FUNC0, FUNC8..FUNC19, FUNC29..FUNC37, FUNC43..FUNC47, FUNC49..FUNC69, FUNC75..FUNC93, FUNC97..FUNC100, FUNC102..FUNC117).
+ *     Restore 87 x FUNCx_IN_SEL_CFG from GPIO_FUNC0_IN_SEL_CFG_REG (FUNC0, FUNC8..FUNC19, FUNC29..FUNC37, FUNC43..FUNC47, FUNC49..FUNC69, FUNC75..FUNC93, FUNC97..FUNC100, FUNC102..FUNC117).
+ */
+#define GPIO_IN_SEL_CFG_RETENTION_REGS_CNT0  87
+#define GPIO_IN_SEL_CFG_RETENTION_MAP_BASE0  GPIO_FUNC0_IN_SEL_CFG_REG
+static const uint32_t gpio_in_sel_cfg_regs_map0[4] = {0xE00FFF01, 0xFFFEF83F, 0x3FFFF83F, 0x003FFFDE};
+
+/*
+ * (2) Backup 25 x FUNCx_IN_SEL_CFG from GPIO_FUNC155_IN_SEL_CFG_REG (FUNC155..FUNC171, FUNC182..FUNC189).
+ *     Restore 25 x FUNCx_IN_SEL_CFG from GPIO_FUNC155_IN_SEL_CFG_REG (FUNC155..FUNC171, FUNC182..FUNC189).
+ *     gpio_in_sel_cfg_regs_map1 = 128-bit retention mask for this slice.
+ */
+#define GPIO_IN_SEL_CFG_RETENTION_REGS_CNT1  25
+#define GPIO_IN_SEL_CFG_RETENTION_MAP_BASE1  GPIO_FUNC155_IN_SEL_CFG_REG
+static const uint32_t gpio_in_sel_cfg_regs_map1[4] = {0xF801FFFF, 0x00000007, 0x0, 0x0};
+
+/*
+ * (3) Backup  6 words from GPIO_OUT_REG, GPIO_OUT1_REG, GPIO_ENABLE_REG, GPIO_ENABLE1_REG, GPIO_STATUS_REG, GPIO_STATUS_REG(GPIO0-31 and GPIO32-43).
+ *     Restore 6 words from GPIO_OUT_W1TS_REG, GPIO_OUT1_W1TS_REG, GPIO_ENABLE_W1TS_REG, GPIO_ENABLE1_W1TS_REG, GPIO_STATUS_W1TS_REG, GPIO_STATUS1_W1TS_REG.
+ */
+#define GPIO_RETENTION_REGS_CNT  6
+#define GPIO_BACKUP_MAP_BASE  GPIO_OUT_REG
+#define GPIO_RETENTION_MAP_BASE  GPIO_OUT_W1TS_REG
+static const uint32_t gpio_regs_map[4] = {0x90009009, 0x0, 0x0, 0x0};
+
 const regdma_entries_config_t iomux_regs_retention[] = {
-    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x00), REG_IO_MUX_BASE,            REG_IO_MUX_BASE,            N_REGS_IOMUX_0(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }, /* io_mux */
-    [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x01), GPIO_FUNC0_OUT_SEL_CFG_REG, GPIO_FUNC0_OUT_SEL_CFG_REG, N_REGS_IOMUX_1(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
-    [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x02), GPIO_FUNC0_IN_SEL_CFG_REG,  GPIO_FUNC0_IN_SEL_CFG_REG,  N_REGS_IOMUX_2(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
-    [3] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x03), GPIO_PIN0_REG,              GPIO_PIN0_REG,              N_REGS_IOMUX_3(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
-    [4] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x04), GPIO_OUT_REG,               GPIO_OUT_W1TS_REG,          N_REGS_IOMUX_4(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
-    [5] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x05), GPIO_ENABLE_REG,            GPIO_ENABLE_W1TS_REG,       1,                0, 0), .owner = ENTRY(0) | ENTRY(2) },
-    [6] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x06), GPIO_ENABLE1_REG,           GPIO_ENABLE1_W1TS_REG,      1,                0, 0), .owner = ENTRY(0) | ENTRY(2) },
+    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x00), IO_MUX_GPIO0_REG,           IO_MUX_GPIO0_REG,           N_REGS_IOMUX_0(), 0, 0),               .owner = ENTRY(0) | ENTRY(2) }, /* io_mux */
+    [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x01), GPIO_FUNC0_OUT_SEL_CFG_REG, GPIO_FUNC0_OUT_SEL_CFG_REG, N_REGS_IOMUX_1(), 0, 0),               .owner = ENTRY(0) | ENTRY(2) },
+    [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x02), GPIO_PIN0_REG,              GPIO_PIN0_REG,              N_REGS_IOMUX_2(), 0, 0),               .owner = ENTRY(0) | ENTRY(2) },
+
+    [3] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_IOMUX_LINK(0x03), GPIO_IN_SEL_CFG_RETENTION_MAP_BASE0, GPIO_IN_SEL_CFG_RETENTION_MAP_BASE0, GPIO_IN_SEL_CFG_RETENTION_REGS_CNT0, 0, 0,
+                                            gpio_in_sel_cfg_regs_map0[0], gpio_in_sel_cfg_regs_map0[1], gpio_in_sel_cfg_regs_map0[2], gpio_in_sel_cfg_regs_map0[3]), .owner = ENTRY(0) | ENTRY(2)
+    },
+    [4] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_IOMUX_LINK(0x04), GPIO_IN_SEL_CFG_RETENTION_MAP_BASE1, GPIO_IN_SEL_CFG_RETENTION_MAP_BASE1, GPIO_IN_SEL_CFG_RETENTION_REGS_CNT1, 0, 0,
+                                            gpio_in_sel_cfg_regs_map1[0], gpio_in_sel_cfg_regs_map1[1], gpio_in_sel_cfg_regs_map1[2], gpio_in_sel_cfg_regs_map1[3]), .owner = ENTRY(0) | ENTRY(2)
+    },
+    [5] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_IOMUX_LINK(0x05), GPIO_BACKUP_MAP_BASE,                GPIO_RETENTION_MAP_BASE,             GPIO_RETENTION_REGS_CNT,             0, 0,
+                                            gpio_regs_map[0], gpio_regs_map[1], gpio_regs_map[2], gpio_regs_map[3]),                                               .owner = ENTRY(0) | ENTRY(2)
+    }
 };
 _Static_assert(ARRAY_SIZE(iomux_regs_retention) == IOMUX_RETENTION_LINK_LEN, "Inconsistent IOMUX retention link length definitions");
 
