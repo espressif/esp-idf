@@ -1,4 +1,0 @@
-name: OT Border Router - Configure Wi-Fi
-command: idf.py -C examples/openthread/ot_br menuconfig
-description: Open menuconfig to configure OTBR settings including Wi-Fi SSID/password, auto-start, and radio interface (UART/SPI).
-tags: ["openthread", "otbr", "border-router", "config"]

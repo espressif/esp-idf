@@ -1,0 +1,98 @@
+
+
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!-- <meta name="viewport" content="width=device-width,initial-scale=1.0"> -->
+    <meta name="viewport" content="width=device-width,mximum-scale=1.0,user-scalable=1.0"/>
+    <meta name="description" content="WCH is an IC design company that designs chips based on self-developed professional interface IP and microprocessor IP. Its main products include USB/Bluetooth/Ethernet interface chips and connected/interconnected/wireless MCUs, which focus on connectivity, networking and control." />
+    <meta name="keywords"  content="RISC-V,full-stack MCU,USB,Bluetooth,Ethernet,WCH"/>
+    <link rel="icon" href="/favicon.ico">
+    <title>Nanjing Qinheng Microelectronics Co., Ltd.</title>
+    <script>
+      window._CONFIG = {};
+      // // 中文
+      // window._CONFIG['domianURL'] = 'https://www.wch.cn'  //191.168.111.189:8020  https://www.wch.cn
+      // window._CONFIG['pageTitle'] = ' - 南京沁恒微电子股份有限公司'//详情页标题
+
+      // 英文
+      window._CONFIG['domianURL'] =  'https://www.wch-ic.com'//'https://www.wch-ic.com'//'http://192.168.111.189:7060/'
+      window._CONFIG['pageTitle'] = ' - Nanjing Qinheng Microelectronics Co., Ltd.'//详情页标题
+      
+    </script>
+  <link href="/js/0.js" rel="prefetch"><link href="/js/1.js" rel="prefetch"><link href="/js/10.js" rel="prefetch"><link href="/js/11.js" rel="prefetch"><link href="/js/12.js" rel="prefetch"><link href="/js/13.js" rel="prefetch"><link href="/js/14.js" rel="prefetch"><link href="/js/15.js" rel="prefetch"><link href="/js/16.js" rel="prefetch"><link href="/js/17.js" rel="prefetch"><link href="/js/18.js" rel="prefetch"><link href="/js/19.js" rel="prefetch"><link href="/js/2.js" rel="prefetch"><link href="/js/20.js" rel="prefetch"><link href="/js/21.js" rel="prefetch"><link href="/js/22.js" rel="prefetch"><link href="/js/23.js" rel="prefetch"><link href="/js/24.js" rel="prefetch"><link href="/js/3.js" rel="prefetch"><link href="/js/4.js" rel="prefetch"><link href="/js/5.js" rel="prefetch"><link href="/js/6.js" rel="prefetch"><link href="/js/7.js" rel="prefetch"><link href="/js/8.js" rel="prefetch"><link href="/js/9.js" rel="prefetch"><link href="/js/app.js" rel="preload" as="script"><link href="/js/chunk-vendors.js" rel="preload" as="script"></head>
+  <!--英文版本 Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LEHMD5GL2E"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LEHMD5GL2E');
+</script> 
+  <style>
+    body{
+      margin:0px;
+    }
+  </style>
+  <body>
+    <noscript>
+      <strong>We're sorry but wch123 doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
+    </noscript>
+    <div id="app"></div>
+    <!-- built files will be auto injected -->
+  <script type="text/javascript" src="/js/chunk-vendors.js"></script><script type="text/javascript" src="/js/app.js"></script></body>
+  <script>
+    var ie = IEVersion();
+    console.log('ie====',ie)
+    if (ie ) {//原：8
+      alert("为了您的浏览体验，建议您使用最新版本的谷歌浏览器。")
+      // var r=alert("您当前浏览器版本过低，为了您的浏览体验，请升级浏览器或使用最新版本的谷歌浏览器。")
+      // if(r){
+      //   return
+      // }
+    }
+    function IEVersion() {
+      var userAgent = navigator.userAgent; //取得浏览器的userAgent字符串
+      var isIE = userAgent.indexOf(".NET") > -1 ; //判断是否IE<11浏览器
+      // var isEdge = userAgent.indexOf("Edge") > -1 && !isIE; //判断是否IE的Edge浏览器
+      // var isIE11 = userAgent.indexOf('Trident') > -1 && userAgent.indexOf("rv:11.0") > -1;
+      if (isIE) {
+        return true
+      //   var reIE = new RegExp("MSIE (\\d+\\.\\d+);");
+      //   reIE.test(userAgent);
+      //   var fIEVersion = parseFloat(RegExp["$1"]);
+      //   console.log(fIEVersion)
+      //   if (fIEVersion == 7) {
+      //     return 7;
+      //   } else if (fIEVersion == 8) {
+      //     return 8;
+      //   } else if (fIEVersion == 9) {
+      //     return 9;
+      //   } else if (fIEVersion == 10) {
+      //     return 10;
+      //   } else {
+      //     return 6;//IE版本<=7
+      //   }
+      // } else if (isEdge) {
+      //   return 'edge';//edge
+      // } else if (isIE11) {
+      //   return 11; //IE11
+      // } else {
+      //   return 15;//不是ie浏览器
+      // }
+    }else{
+      return false
+    }
+  
+    // screenResolution()
+    // function screenResolution(){
+    //   // console.log('分辨率宽度：',window.screen.width)
+    //   if(window.screen.width < 1360){
+    //     alert('您当前设备屏幕分辨率过低，为了您的浏览体验，请更换分辨率更高的设备。')
+    //   }
+    }
+  </script>
+</html>
+

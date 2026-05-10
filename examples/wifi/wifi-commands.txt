@@ -1,0 +1,17 @@
+# ESP32 WiFi Configuration Commands
+# Execute these commands in the ESP32 console (via monitor)
+
+# Priority 1: TP-Link_merge_MLO
+wifi_set_sta_config --ssid "TP-Link_merge_MLO" --password "S2s5s0S1" --priority 1
+
+# Priority 2: TP-Link_merge
+wifi_set_sta_config --ssid "TP-Link_merge" --password "S1s0s5S2" --priority 2
+
+# Priority 3: TP-Link_IoT_2.4
+wifi_set_sta_config --ssid "TP-Link_IoT_2.4" --password "T1t0t5T2" --priority 3
+
+# Priority 4: TP-Link_IoT_5G
+wifi_set_sta_config --ssid "TP-Link_IoT_5G" --password "T2t5t0t1" --priority 4
+
+# Trigger WiFi connection
+wifi_connect

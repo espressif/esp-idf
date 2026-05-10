@@ -1,0 +1,26 @@
+{
+  "total_networks": 4,
+  "timestamp": "2026-05-09 18:40:38",
+  "networks": [
+    {
+      "Password": "S2s5s0S1",
+      "SSID": "TP-Link_merge_MLO",
+      "Priority": 1
+    },
+    {
+      "Password": "S1s0s5S2",
+      "SSID": "TP-Link_merge",
+      "Priority": 2
+    },
+    {
+      "Password": "T1t0t5T2",
+      "SSID": "TP-Link_IoT_2.4",
+      "Priority": 3
+    },
+    {
+      "Password": "T2t5t0t1",
+      "SSID": "TP-Link_IoT_5G",
+      "Priority": 4
+    }
+  ]
+}

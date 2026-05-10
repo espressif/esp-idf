@@ -1,8 +1,0 @@
-name: OT Radio Co-Processor - Build
-command: idf.py -C examples/openthread/ot_rcp set-target {{target}} && idf.py -C examples/openthread/ot_rcp build
-description: Build the OpenThread Radio Co-Processor (RCP) firmware. Requires an 802.15.4 capable SoC (ESP32-H2, ESP32-C6, ESP32-C5).
-tags: ["openthread", "rcp", "radio", "build"]
-arguments:
-  - name: target
-    description: Target SoC for the radio co-processor (must support 802.15.4)
-    default_value: esp32h2

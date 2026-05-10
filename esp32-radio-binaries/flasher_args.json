@@ -1,0 +1,24 @@
+{
+    "write_flash_args" : [ "--flash-mode", "dio",
+                           "--flash-size", "2MB",
+                           "--flash-freq", "48m" ],
+    "flash_settings" : {
+        "flash_mode": "dio",
+        "flash_size": "2MB",
+        "flash_freq": "48m"
+    },
+    "flash_files" : {
+        "0x0" : "bootloader/bootloader.bin",
+        "0x8000" : "partition_table/partition-table.bin",
+        "0x10000" : "esp_ot_rcp.bin"
+    },
+    "bootloader" : { "offset" : "0x0", "file" : "bootloader/bootloader.bin", "encrypted" : "false" },
+    "partition-table" : { "offset" : "0x8000", "file" : "partition_table/partition-table.bin", "encrypted" : "false" },
+    "app" : { "offset" : "0x10000", "file" : "esp_ot_rcp.bin", "encrypted" : "false" },
+    "extra_esptool_args" : {
+        "after"  : "hard-reset",
+        "before" : "default-reset",
+        "stub"   : true,
+        "chip"   : "esp32h2"
+    }
+}

@@ -1,8 +1,0 @@
-name: OT Border Router - Flash
-command: idf.py -C examples/openthread/ot_br -p {{port}} flash monitor
-description: Flash the OpenThread Border Router firmware and open serial monitor. Press Ctrl-] to exit monitor.
-tags: ["openthread", "otbr", "border-router", "flash"]
-arguments:
-  - name: port
-    description: Serial port for the border router device (e.g. COM3, /dev/ttyUSB0)
-    default_value: COM3

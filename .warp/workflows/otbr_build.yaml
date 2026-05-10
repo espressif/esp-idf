@@ -1,8 +1,0 @@
-name: OT Border Router - Build
-command: idf.py -C examples/openthread/ot_br set-target {{target}} && idf.py -C examples/openthread/ot_br build
-description: Build the OpenThread Border Router firmware. Requires a Wi-Fi capable SoC (ESP32, ESP32-C2, ESP32-C3, ESP32-C5, ESP32-C6, ESP32-S2, ESP32-S3).
-tags: ["openthread", "otbr", "border-router", "build"]
-arguments:
-  - name: target
-    description: Target SoC for the border router (must support Wi-Fi)
-    default_value: esp32c6

@@ -1,0 +1,74 @@
+
+
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!-- <meta name="viewport" content="width=device-width,initial-scale=1.0"> -->
+    <meta name="viewport" content="width=device-width,mximum-scale=1.0,user-scalable=1.0"/>
+    <meta name="description" content="沁恒是一家基于自研专业接口IP、微处理器内核IP构建一体化芯片的集成电路设计企业。主要产品包括USB/蓝牙/以太网接口芯片和连接型/互联型/无线型MCU，产品侧重于连接、联网和控制。" />
+    <meta name="keywords"  content="RISC-V,全栈MCU,USB,蓝牙,以太网,WCH"/>
+    <link rel="icon" href="https://cdn.wch.cn/favicon.ico">
+    <title>Nanjing Qinheng Microelectronics Co., Ltd.</title>
+    <script>
+      window._CONFIG = {};
+      // // 中文
+      window._CONFIG['domianURL'] = 'https://api1.wch.cn'  //http://192.168.111.189:8020/  https://api1.wch.cn
+      window._CONFIG['pageTitle'] = ' - 南京沁恒微电子股份有限公司'//详情页标题
+
+      // 英文
+      // window._CONFIG['domianURL'] =  'https://www.wch-ic.com'//'https://www.wch-ic.com'//'http://192.168.111.189:7060/'
+      // window._CONFIG['pageTitle'] = ' - Nanjing Qinheng Microelectronics Co., Ltd.'//详情页标题
+      
+    </script>
+  <link href="https://cdn.wch.cn/js/0.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/1.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/10.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/11.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/12.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/13.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/14.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/15.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/16.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/17.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/18.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/19.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/2.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/20.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/21.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/22.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/23.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/3.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/4.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/5.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/6.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/7.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/8.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/9.chunk.js" rel="prefetch"><link href="https://cdn.wch.cn/js/app.js" rel="preload" as="script"><link href="https://cdn.wch.cn/js/chunk-vendors.chunk.js" rel="preload" as="script"></head>
+  <!--英文版本 Google tag (gtag.js) -->
+<!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-LEHMD5GL2E"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LEHMD5GL2E');
+</script>  -->
+  <style>
+    body{
+      margin:0px;
+    }
+  </style>
+  <body>
+    <noscript>
+      <strong>We're sorry but wch doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
+    </noscript>
+    <div id="app"></div>
+    <!-- built files will be auto injected -->
+  <script type="text/javascript" src="https://cdn.wch.cn/js/chunk-vendors.chunk.js"></script><script type="text/javascript" src="https://cdn.wch.cn/js/app.js"></script></body>
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?476de64673ee88369381e07016f7581b";
+      var s = document.getElementsByTagName("script")[0]; 
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script> 
+  <script>
+    var ie = IEVersion();
+    console.log('ie====',ie)
+    if (ie ) {//原：8
+      alert("为了您的浏览体验，建议您使用最新版本的谷歌浏览器。")
+    }
+    function IEVersion() {
+      var userAgent = navigator.userAgent; //取得浏览器的userAgent字符串
+      var isIE = userAgent.indexOf(".NET") > -1 ; //判断是否IE<11浏览器
+      // var isEdge = userAgent.indexOf("Edge") > -1 && !isIE; //判断是否IE的Edge浏览器
+      // var isIE11 = userAgent.indexOf('Trident') > -1 && userAgent.indexOf("rv:11.0") > -1;
+      if (isIE) {
+        return true
+    }else{
+      return false
+    }
+    }
+  </script>
+</html>
+

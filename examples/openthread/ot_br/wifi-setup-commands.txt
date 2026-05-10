@@ -1,0 +1,25 @@
+# OTBR Serial Console Commands
+# Generated: 2026-05-09 18:48:36
+# Paste these commands into OTBR serial console
+
+# Configure Priority 1: TP-Link_merge_MLO
+wifi_set_sta_config --ssid "TP-Link_merge_MLO" --password "S2s5s0S1" --priority 1
+
+# Configure Priority 2: TP-Link_merge
+wifi_set_sta_config --ssid "TP-Link_merge" --password "S1s0s5S2" --priority 2
+
+# Configure Priority 3: TP-Link_IoT_2.4
+wifi_set_sta_config --ssid "TP-Link_IoT_2.4" --password "T1t0t5T2" --priority 3
+
+# Configure Priority 4: TP-Link_IoT_5G
+wifi_set_sta_config --ssid "TP-Link_IoT_5G" --password "T2t5t0t1" --priority 4
+
+# Connect to WiFi
+wifi_connect
+
+# Check WiFi Status
+wifi_status
+
+# Disconnect WiFi
+wifi_disconnect
+

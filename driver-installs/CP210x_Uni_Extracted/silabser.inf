@@ -1,0 +1,266 @@
+;/*++
+;
+;Module Name:
+;
+;    SILABSER.INF
+;
+;    Copyright 2019, Silicon Laboratories Inc.
+;
+;Abstract:
+;    Installation INF for Silicon Labs CP210x device
+;
+;--*/
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=Ports
+ClassGuid={4D36E978-E325-11CE-BFC1-08002BE10318}
+Provider=%Provider%
+DriverVer = 12/10/2025,11.5.0.417
+CatalogFile = silabser.cat
+PnpLockDown=1
+
+; ================= Device section =====================
+
+[Manufacturer]
+%ManufacturerName%=SiLabsModelsSection, NTamd64.10.0...17134, NTarm.10.0...17134, NTarm64.10.0...17134, NTx86.10.0...17134
+
+; "Architecture must be specified in INF Models sections names" -- meaning lots of
+; cut'n'paste duplication in these next four per-Architecture ModelsSections
+;Models sections (one per CPU Architecture)
+;Models section for installation of x64 driver on Windows 10 and above
+[SiLabsModelsSection.NTamd64.10.0...17134]
+%USB\VID_10C4&PID_EA60.DeviceDesc%      =SiLabsDDInstallSection, USB\VID_10C4&PID_EA60
+%USB\VID_10C4&PID_EA63.DeviceDesc%      =SiLabsDDInstallSection, USB\VID_10C4&PID_EA63
+%USB\VID_10C4&PID_EA70&Mi_00.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA70&Mi_00
+%USB\VID_10C4&PID_EA70&Mi_01.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA70&Mi_01
+%USB\VID_10C4&PID_EA71&Mi_00.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA71&Mi_00
+%USB\VID_10C4&PID_EA71&Mi_01.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA71&Mi_01
+%USB\VID_10C4&PID_EA71&Mi_02.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA71&Mi_02
+%USB\VID_10C4&PID_EA71&Mi_03.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA71&Mi_03
+%USB\VID_10C4&PID_EA7A&Mi_00.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7A&Mi_00
+%USB\VID_10C4&PID_EA7A&Mi_01.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7A&Mi_01
+%USB\VID_10C4&PID_EA7B&Mi_00.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7B&Mi_00
+%USB\VID_10C4&PID_EA7B&Mi_01.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7B&Mi_01
+%USB\VID_10C4&PID_EA7B&Mi_02.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7B&Mi_02
+%USB\VID_10C4&PID_EA7B&Mi_03.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7B&Mi_03
+
+;Models section for installation of ARM (32-bit) driver on Windows 10 and above
+[SiLabsModelsSection.NTarm.10.0...17134]
+%USB\VID_10C4&PID_EA60.DeviceDesc%      =SiLabsDDInstallSection, USB\VID_10C4&PID_EA60
+%USB\VID_10C4&PID_EA63.DeviceDesc%      =SiLabsDDInstallSection, USB\VID_10C4&PID_EA63
+%USB\VID_10C4&PID_EA70&Mi_00.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA70&Mi_00
+%USB\VID_10C4&PID_EA70&Mi_01.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA70&Mi_01
+%USB\VID_10C4&PID_EA71&Mi_00.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA71&Mi_00
+%USB\VID_10C4&PID_EA71&Mi_01.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA71&Mi_01
+%USB\VID_10C4&PID_EA71&Mi_02.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA71&Mi_02
+%USB\VID_10C4&PID_EA71&Mi_03.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA71&Mi_03
+%USB\VID_10C4&PID_EA7A&Mi_00.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7A&Mi_00
+%USB\VID_10C4&PID_EA7A&Mi_01.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7A&Mi_01
+%USB\VID_10C4&PID_EA7B&Mi_00.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7B&Mi_00
+%USB\VID_10C4&PID_EA7B&Mi_01.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7B&Mi_01
+%USB\VID_10C4&PID_EA7B&Mi_02.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7B&Mi_02
+%USB\VID_10C4&PID_EA7B&Mi_03.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7B&Mi_03
+
+;Models section for installation of ARM (64-bit) driver on Windows 10 and above
+[SiLabsModelsSection.NTarm64.10.0...17134]
+%USB\VID_10C4&PID_EA60.DeviceDesc%      =SiLabsDDInstallSection, USB\VID_10C4&PID_EA60
+%USB\VID_10C4&PID_EA63.DeviceDesc%      =SiLabsDDInstallSection, USB\VID_10C4&PID_EA63
+%USB\VID_10C4&PID_EA70&Mi_00.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA70&Mi_00
+%USB\VID_10C4&PID_EA70&Mi_01.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA70&Mi_01
+%USB\VID_10C4&PID_EA71&Mi_00.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA71&Mi_00
+%USB\VID_10C4&PID_EA71&Mi_01.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA71&Mi_01
+%USB\VID_10C4&PID_EA71&Mi_02.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA71&Mi_02
+%USB\VID_10C4&PID_EA71&Mi_03.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA71&Mi_03
+%USB\VID_10C4&PID_EA7A&Mi_00.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7A&Mi_00
+%USB\VID_10C4&PID_EA7A&Mi_01.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7A&Mi_01
+%USB\VID_10C4&PID_EA7B&Mi_00.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7B&Mi_00
+%USB\VID_10C4&PID_EA7B&Mi_01.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7B&Mi_01
+%USB\VID_10C4&PID_EA7B&Mi_02.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7B&Mi_02
+%USB\VID_10C4&PID_EA7B&Mi_03.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7B&Mi_03
+
+;Models section for installation of x86 driver on Windows 10 and above
+[SiLabsModelsSection.NTx86.10.0...17134]
+%USB\VID_10C4&PID_EA60.DeviceDesc%      =SiLabsDDInstallSection, USB\VID_10C4&PID_EA60
+%USB\VID_10C4&PID_EA63.DeviceDesc%      =SiLabsDDInstallSection, USB\VID_10C4&PID_EA63
+%USB\VID_10C4&PID_EA70&Mi_00.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA70&Mi_00
+%USB\VID_10C4&PID_EA70&Mi_01.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA70&Mi_01
+%USB\VID_10C4&PID_EA71&Mi_00.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA71&Mi_00
+%USB\VID_10C4&PID_EA71&Mi_01.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA71&Mi_01
+%USB\VID_10C4&PID_EA71&Mi_02.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA71&Mi_02
+%USB\VID_10C4&PID_EA71&Mi_03.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA71&Mi_03
+%USB\VID_10C4&PID_EA7A&Mi_00.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7A&Mi_00
+%USB\VID_10C4&PID_EA7A&Mi_01.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7A&Mi_01
+%USB\VID_10C4&PID_EA7B&Mi_00.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7B&Mi_00
+%USB\VID_10C4&PID_EA7B&Mi_01.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7B&Mi_01
+%USB\VID_10C4&PID_EA7B&Mi_02.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7B&Mi_02
+%USB\VID_10C4&PID_EA7B&Mi_03.DeviceDesc%=SiLabsDDInstallSection, USB\VID_10C4&PID_EA7B&Mi_03
+
+
+;DDInstall section
+[SiLabsDDInstallSection]
+AddReg=silabser.AddReg
+CopyFiles=Silabser_CopyFiles_FileListSection
+FeatureScore=0x40
+
+
+;DDInstall.Services section
+[SiLabsDDInstallSection.Services]
+AddService = silabser,0x00000002,silabser.AddService
+
+
+[silabser.AddService]
+DisplayName    = %silabser.SvcDesc%
+ServiceType    = 1
+StartType      = 3
+ErrorControl   = 1
+ServiceBinary  = %12%\silabser.sys
+AddReg         = silabser.AddService.AddReg
+
+; Per-Service-level registry entries (the "parameters key")
+[silabser.AddService.AddReg]
+HKR, Parameters\Wdf, ForceLogsInMiniDump, 0x00010001, 1
+HKR, Parameters, DebugLevel, 0x00010001, 0
+HKR, Parameters, DebugFlag, 0x00010001, 0x1c01817
+;To disable the purge command
+;HKR, Parameters, DisableIoctlIOCTL_SERIAL_PURGE,0x00010001,1
+;To break on entry if requested in Parameters
+;HKR, Parameters, BreakOnEntry, 0x00010001,1
+;To disable the checking TxEmpty in Get Comm Status Ioctl, uncomment the following line:
+;HKR, Parameters, DisableTxEmptyCheckInGetCommStatusIoctl,0x00010001,1
+
+;To disable the checking TxEmpty in Ioctl Wait Mask, uncomment the following line:
+;HKR, Parameters, DisableTxEmptyCheckInIoctlWaitMask,0x00010001,1
+
+;To disable the checking remaining data in Tx queue, uncomment the following line:
+;HKR, Parameters, DisableTxEmptyCheckInClose,0x00010001,1
+
+;To disable purge In close, uncomment the following line:
+;HKR, Parameters, DisablePurgeInClose,0x00010001,1
+
+;Don't use polling to get Comm Status, uncomment the following line:
+;HKR, Parameters, DisableCommStatusPolling,0x00010001,1
+
+;To Skipping external naming, uncomment the following line:
+;HKR, Parameters, SerialSkipExternalNaming,0x00010001,1
+
+; common registry entries
+; Per-Driver-level registry entries (the "software key")
+[silabser.AddReg]
+HKR,,NTMPDriver,,silabser.sys
+HKR,,RateLimitPurgeMS, 0x10001, 0x64, 0x00, 0x00, 0x00
+;To override the default value for BaudRate/LineControl
+HKR,,OverrideDefaultPortSettings, 0x10001, 01,00,00,00
+HKR,,InitialBaudRate, 0x10001, 00,C2,01,00		;115200 initial baud rate
+HKR,,InitialLineControl,, "8N1"				;8-bits, No parity, 1 stop bit
+HKR,,PortSubClass,1,01
+HKR,,EnumPropPages32,,"MsPorts.dll,SerialPortPropPageProvider"
+;Prepare to hack ControlHandShake
+;HKR,,ControlHandShakeForcedSetBits,0x10001,01,00,00,00
+
+
+;DDInstall.HW section
+[SiLabsDDInstallSection.HW]
+AddReg=SiLabsDDInstallSection.HW.AddReg
+
+
+; Per-device-level registry entries (the "hardware key")
+[SiLabsDDInstallSection.HW.AddReg]
+;Amount of time the device must be idle before idling out
+HKR,,"SelectiveSuspendTimeout",0x00010001,10000
+;HKR,,"DisableHwAccessInModemStatusIoctls",0x00010001,1
+;To disable the purge command
+;HKR,,"DisableIoctlIOCTL_SERIAL_PURGE",0x00010001,1
+; Attention! The EnablePowerManagewment value is no longer supported.
+; To disable Selective Suspend, uncomment the following line:
+; HKR,,"DisableS0Idle",0x00010001,1
+; opt-in to DFx
+HKR,"WDF","WdfDirectedPowerTransitionEnable",0x00010001,1
+
+;To disable the checking TxEmpty in Get Comm Status Ioctl, uncomment the following line:
+;HKR,,"DisableTxEmptyCheckInGetCommStatusIoctl",0x00010001,1
+
+;To disable the checking TxEmpty in Ioctl Wait Mask, uncomment the following line:
+;HKR,,"DisableTxEmptyCheckInIoctlWaitMask",0x00010001,1
+
+;To disable the checking remaining data in Tx queue, uncomment the following line:
+;HKR,,"DisableTxEmptyCheckInClose",0x00010001,1
+
+;To disable purge In close, uncomment the following line:
+;HKR,,"DisablePurgeInClose",0x00010001,1
+
+;Don't use polling to get Comm Status, uncomment the following line:
+;HKR,,"DisableCommStatusPolling",0x00010001,1
+
+;To Skipping external naming, uncomment the following line:
+;HKR,,"SerialSkipExternalNaming",0x00010001,1
+
+;To allow device to idle with an open handle, uncomment the following line:
+;HKR,,"AllowIdleWhileOpen",0x00010001,1
+
+;To set the maximum time the close operation will wait for Tx queue to empty, uncomment the following line:
+;HKR,,"TxEmptyTimeoutOnCloseInMs",0x00010001,30000
+
+;To disable the port, uncomment the following line:
+;HKR,,"DisablePort",0x00010001,1
+
+;To obtain the polling interval to get information from the CP210x device, uncomment the following line:
+;HKR,,"EventMaskPollingInterval",0x00010001,80
+
+; To obtain the number of read requests that the framework will queue to receive data from the CP210x device, uncomment the following line:
+;HKR,,"ContinuousReaderNumPendingReads",0x00010001,1
+
+; To use of the custom 'dummy wait' code, uncomment the following line:
+;HKR,,"EnableCustomWait",0x00010001,1
+
+; To set DTR for serial, uncomment the following line:
+;HKR,,"SetDTROnOpen",0x00010001,1
+
+; To set RTS for serial, uncomment the following line:
+;HKR,,"SetRTSOnOpen",0x00010001,1
+
+
+[Silabser_CopyFiles_FileListSection]
+silabser.sys
+
+[SourceDisksNames]
+1=%Disk_Description%,"silabser.cat"
+
+[SourceDisksFiles.amd64]
+silabser.sys = 1,\x64
+[SourceDisksFiles.arm]
+silabser.sys = 1,\arm
+[SourceDisksFiles.arm64]
+silabser.sys = 1,\arm64
+[SourceDisksFiles.x86]
+silabser.sys = 1,\x86
+
+
+[DestinationDirs]
+Silabser_CopyFiles_FileListSection = 12 ; 13 = Driver package's Driver Store directory (%WINDIR%\System32\DriverStore\FileRepository); 12 = Drivers directory (%SystemRoot%\system32\drivers)) (make sure "ServiceBinary  =" matches usage of 12 vs. 13)
+
+
+;---------------------------------------------------------------;
+
+[Strings]
+; For provider, enter your Company Legal/Official/Long/Full Name
+Provider="Silicon Laboratories Inc."
+; For ManufacturerName, enter your Company "Colloquial" Name
+ManufacturerName="Silicon Labs"
+Disk_Description=                      "Silicon Labs CP210x USB to UART Bridge Installation Disk"
+USB\VID_10C4&PID_EA60.DeviceDesc=      "Silicon Labs CP210x USB to UART Bridge"
+USB\VID_10C4&PID_EA63.DeviceDesc=      "Silicon Labs CP210x USB to UART Bridge"
+USB\VID_10C4&PID_EA70&Mi_00.DeviceDesc="Silicon Labs Dual CP2105 USB to UART Bridge: Enhanced COM Port"
+USB\VID_10C4&PID_EA70&Mi_01.DeviceDesc="Silicon Labs Dual CP2105 USB to UART Bridge: Standard COM Port"
+USB\VID_10C4&PID_EA71&Mi_00.DeviceDesc="Silicon Labs Quad CP2108 USB to UART Bridge: Interface 0"
+USB\VID_10C4&PID_EA71&Mi_01.DeviceDesc="Silicon Labs Quad CP2108 USB to UART Bridge: Interface 1"
+USB\VID_10C4&PID_EA71&Mi_02.DeviceDesc="Silicon Labs Quad CP2108 USB to UART Bridge: Interface 2"
+USB\VID_10C4&PID_EA71&Mi_03.DeviceDesc="Silicon Labs Quad CP2108 USB to UART Bridge: Interface 3"
+USB\VID_10C4&PID_EA7A&Mi_00.DeviceDesc="Silicon Labs Dual CP2105 USB to UART Bridge: Enhanced COM Port"
+USB\VID_10C4&PID_EA7A&Mi_01.DeviceDesc="Silicon Labs Dual CP2105 USB to UART Bridge: Standard COM Port"
+USB\VID_10C4&PID_EA7B&Mi_00.DeviceDesc="Silicon Labs Quad CP2108 USB to UART Bridge: Interface 0"
+USB\VID_10C4&PID_EA7B&Mi_01.DeviceDesc="Silicon Labs Quad CP2108 USB to UART Bridge: Interface 1"
+USB\VID_10C4&PID_EA7B&Mi_02.DeviceDesc="Silicon Labs Quad CP2108 USB to UART Bridge: Interface 2"
+USB\VID_10C4&PID_EA7B&Mi_03.DeviceDesc="Silicon Labs Quad CP2108 USB to UART Bridge: Interface 3"
+
+silabser.SvcDesc="Silicon Labs CP210x USB to UART Bridge Driver"

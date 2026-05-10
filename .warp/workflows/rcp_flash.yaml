@@ -1,8 +1,0 @@
-name: OT Radio Co-Processor - Flash
-command: idf.py -C examples/openthread/ot_rcp -p {{port}} flash
-description: Flash the OpenThread Radio Co-Processor (RCP) firmware to an 802.15.4 device. The RCP works alongside the border router via UART.
-tags: ["openthread", "rcp", "radio", "flash"]
-arguments:
-  - name: port
-    description: Serial port for the RCP device (e.g. COM4, /dev/ttyUSB1)
-    default_value: COM4

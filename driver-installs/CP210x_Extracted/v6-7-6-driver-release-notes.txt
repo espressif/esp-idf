@@ -1,0 +1,343 @@
+RELEASE NOTES
+=============
+Silicon Labs Virtual COM Port (VCP) driver for Windows
+
+Package version: 6.7.6
+Release date:    2018-06-05
+
+This package contains a Virtual COM Port driver for Microsoft Windows
+for use with Silicon Labs VCP USB Serial Bridges.  These devices include
+the CP2102N, CP2102, CP2103, CP2104, CP2105, CP2108, CP2109.
+
+OS VERSIONS
+-----------
+This package provides the CP210x VCP driver for the following versions
+of Windows:
+
+- Windows 8.1   (x86 32/64 bit)
+- Windows 8     (x86 32/64 bit)
+- Windows 7     (x86 32/64 bit)
+
+CONTENTS
+--------
+The VCP driver package contains the following files and directories:
+- slabvcp.inf -- Driver information file
+- CP210xVCPInstaller_x64.exe -- 64-bit installer
+- CP210xVCPInstaller_x86.exe -- 32-bit installer
+- SLAB_License_Agreement_VCP_Windows.txt -- Software License
+- v6-7-6-driver-release-notes.txt -- this file
+
+Additional files needed by installer
+- dpinst.xml
+- slabvcp.cat
+- x64/
+- x86/
+
+INSTALLING
+----------
+The VCP driver is automatically installed by Windows Update for CP210x with
+alternate PID values of 0xEA63, 0xEA7A, and 0xEA7B.  These are not default
+values.
+
+Otherwise, unzip the .zip file and you will have a directory containing the
+driver installer files.
+
+### Prompted install ###
+
+If Windows prompts you to install a driver for a CP210x device
+(for example, if you plug a CP210x into your computer):
+
+1. Use the dialog to browse for the driver location
+2. Locate the driver folder (that you previously unzipped)
+3. Follow the instructions
+
+### Manual install ###
+
+1. Using Windows File Explorer, locate the driver folder
+   (that you previously unzipped)
+2. Determine if you have 32-bit or 64-bit Windows
+3. Double click to run the .exe file named CP210xVCPInstaller_xnn.exe
+   (where xnn is x64 for 64-bit and x86 is for 32-bit)
+4. Follow the instructions
+
+UNINSTALLING
+------------
+1. The device must be plugged in
+2. Run Device Manager
+3. Locate the device you want to uninstall
+4. Right click on the device and choose "uninstall"
+5. Follow the instructions
+
+SUPPORT
+-------
+For technical support please visit the Silicon Labs support site:
+
+https://www.silabs.com/support
+
+******************************************************************************
+    RELEASE NOTES FOR 6.7.6 (2018-06-05)
+
+Changes for VCP Driver
+==============================================================================
+MCUSW-326    | Clear DTR on CloseHandle().                                     
+
+
+
+MCUSW-134    | Fixed an issue with handling of IOCTL_SERIAL_SET_WAIT_MASK,
+             | IOCTL_SERIAL_WAIT_ON_MASK, with the SERIAL_EV_RXCHAR event
+             | and data arriving from the device into the driver. Previously,
+             | an indication of arriving data was made before making the data
+             | available, causing, in some conditions, subsequent requests
+             | for data after notification of data available to not deliver
+             | any data. 
+MCUSW-288    | Fix IOCTL_SERIAL_GET_PROPERTIES.                                
+MCUSW-291    | Fix IOCTL_SERIAL_GET_PROPERTIES/SERIAL_COMMPROP for CP210x-like 
+             | "Voice MB v2.0" device.                                         
+
+			 
+******************************************************************************
+    RELEASE NOTES FOR 6.7.5 (2017-10-13)
+
+Changes for VCP Driver
+==============================================================================
+MCUSW-17     | IOCTL_SERIAL_GET_STATUS TransmittedCount fixed.                 
+MCUSW-19     | CP210x_GET_CONFIG_DESCRIPTOR_IOCTL returned byte count fixed.   
+MCUSW-21     | Revert IOCTL_SERIAL_GET_COMMSTATUS behaviour to return cached   
+             | information (reverse slowdown reported with v6.7.4 in some      
+             | applications)                                                   
+             |                                                                 
+             | Improve windbg logging, w.r.t. doing less when logging is not   
+             | enabled (say, Release builds), or when particular subsystem is  
+             | not enabled for logging.                                        
+             |                                                                 
+MCUSW-110    | Windows 10 certified against RS2 (Creators Update).             
+MCUSW-207    | In a failed initialization, discard a reference to dynamically  
+             | allocated memory once memory has been freed.                    
+MCUSW-234    | timestamp SHA2 Signatures with SHA2 timestamps                  
+
+
+
+******************************************************************************
+    RELEASE NOTES FOR 6.7.4.261 (2017/01/30)
+
+- Device Guard compliant
+- CP210XFW-747: Add 3 new parallel PIDs one each for the single-, dual- &
+  quad-port CP210x devices (to be distributed via Windows Update)
+- CP210XFW-741: Fix driver to use correct interface string index for the
+  multi-interface CP210x devices (CP2105 & CP2108). Return iProduct string
+  for other CP210x devices.
+- CP210XFW-713: Add protection against IRP_MJ_CLOSE coming before
+  IRP_MJ_CLEANUP. In such case EvtFileCleanup callback was called with 0
+  FileObject, causeing a crash. Serenum is suspected of causing this, even
+  though there is no proof except that it's present, was introduced recently
+  and this crash was never registered before.
+- CP210XFW-691: Fixed race between timer activation and request cancelation
+  during processing of read rwquests.
+- Changed raw WDF read request timer to our wrapper.
+- CP210XFW-693: bugfix: WMI command "wmic path Win32_SerialPort get
+  Availability^, DeviceID^, Name" is unable to enumerate the port.
+- CP210XFW-686: EvtRequestCancel for wait mask IRP crashed because the
+  request was already completed. It didn't serialize well with other places
+  that can complete it. It looked like XOff IRP may have the same proble. This
+  patch is adding an extra check into *all* other EvtRequestCancel functions
+  to make sure this doesn't happen again.
+- Changed IOCTLs returning polled-cached MDMSTS to explicitly read the
+  status. Use reg value DisableHwAccessInModemStatusIoctls to revert this
+  new functionality to old behavior.
+- Improved debug prints.
+- SerialDbgPrintEx used 1K of stack for the string, reduced to 256.
+- Resolved many static Code Analysis warnings
+- Added accounting for data in chip's TX queue. Added translation of
+  COMM_STATUS::ulErrors into SERIAL_EV_BREAK and SERIAL_EV_ERR.
+- CP210XFW-549, CP210XFW-536, CP210XFW-546: Generate events for
+  IOCTL_SERIAL_SET_WAIT_MASK from COMM_STATUS::ulErrors. Can be disabled by
+  DisableCommStatusPolling reg value.
+- Added spinlock around ModemStatus change detection. Refactored modem
+  status event signalling to use common function.
+- Move passive level functions into the paged section.
+- MCUFW-740: Made device close operation wait for chip's Tx queue to empty.
+  Added registry settings DisableTxEmptyCheckInClose and
+  TxEmptyTimeoutOnCloseInMs.
+- Improve control transfer debug prints and clean up code, otherwise no
+  functional changes.
+- MCUFW-740: Fixed EV_TXEMPTY to account for bytes in chip's Tx queue.
+- MCUFW-740: New functions to sync access to comm error storage from
+  multiple threads.
+- Added DisableTxEmptyCheckInGetCommStatusIoctl reg value.
+- Refactor control request I/O. MCUFW-740: Fixed
+  IOCTL_SERIAL_GET_COMMSTATUS.
+- MCUFW-740: Made device close operation wait for chip's Tx queue to empty.
+  Added registry settings DisableTxEmptyCheckInClose and
+  TxEmptyTimeoutOnCloseInMs.
+- CP210XFW-648: Set a three second timeout on
+  WdfUsbTargetDeviceSendControlTransferSynchronously().
+
+******************************************************************************
+    RELEASE NOTES FOR 6.7.3 (2016/03/03)
+
+- Down-rev the verison of KMDF the driver uses (CP210XFW-591. Use version of
+  KMDF natively included on Windows release)
+- Bug fix of blue-screen system crash (CP210XFW-575. driver tries to clear a
+  Cancel Routine in a Request that doesn't have it.)
+
+******************************************************************************
+    RELEASE NOTES FOR 6.7.2 (2015/11/23)
+
+- Unified Windows 7, 8, 8.1 & 10 support (XP, Vista and Server 2003
+  available in version 6.7).
+- ARM support added for Windows 10 and Windows 10 IoT Core.
+- Silicon Labs-specific Serial Enumeration driver silabenm removed in favor
+  of the Windows "in-box" serenm.
+- UpperFilter Serial Enumeration driver not enabled by default
+- Updated to latest Microsoft build tools
+- Resolved /W4 compilation warnings
+- Resolved code analysis warnings
+- Added a registry value ControlHandShakeForcedSetBits that can force
+  certain bits in the ControlHandShake variable to always be set.
+- Add SAL-annotations to API header files.
+- Bugfix an invalid memory access on device stop.
+- Standardize branding Properties resources across all deliverables.
+- Digitally sign all signable deliverables.
+- Rewrote driver synchronization for data transmission paths.
+- Resolve bugs arising from extended stress test.
+- Added diagnostic variables to device extension.
+- Bugfix a Write IRP stuck forever cauding bugcheck 9f-4 if call to USB
+  returns with error.
+- Bugfix "packetized write" timeout may fail to act. And improved debug
+  prints.
+- New reg value DisableS0Idle (default: 0) to replace EnablePowerManagewment
+  (default: 0 which actually ment "enable"). Also, DisableS0Idle=1 now
+  forces AllowIdleWhileOpen to 0.
+- Driver ignores BreakOnEntry, DebugLevel and DebugFlag in registry.
+- New CP2108 bug workarounds - GET_LINE_CTL byte swap and tx_empty().
+- Fixed crash in read path.
+- Simplified, commented and synchronized with NEWSTUFF EvtIoStop and
+  EvtIoResume.
+- Fixed memory leak on device removal when multiple devices are present.
+- Bugfix Read IRP may never complete if other read IRPs are already waiting
+  when it arrives.
+- Add CP2102N part numbers. Hnadle new part numbers in
+  WriteLatch()/ReadLatch().
+- Resolve HCK INF warnings that became errors on HLK.
+- Bugfix: Potential invalid memory access on device stop.
+- Fixed possible memory overrun when writing CP2108 latch.
+- Cumulative collection of improvements (due to code analysis, application
+  of latest toolset, etc.) and bug fixes.
+
+******************************************************************************
+    RELEASE NOTES FOR 6.7.1 (2015/06/29)
+
+- Added certification for Windows 10 Preview (Note: Windows 10 only;
+  use v6.7 for Windows prior to Windows 10)
+
+******************************************************************************
+    RELEASE NOTES FOR 6.7 (2014/04/11)
+
+- Added vendor-specific commands to the driver that do not affect normal
+  operation with standard CP210x devices.
+- Modified write behavior to packetize data as a work around for a rare
+  USB 2.0 hub behavior seen only in Windows XP (x86).
+
+******************************************************************************
+    RELEASE NOTES FOR 6.6.1 (2013/10/24)
+
+- Added certification for Windows 8.1
+- Added support for CP2108 devices
+- Corrected bug where OS would hang on repetition of many rapid open/closes on
+  certain systems.
+
+******************************************************************************
+    RELEASE NOTES FOR 6.6
+
+- Moving installer format to DPInst
+- Supported under Windows 8
+- Corrected bug in total write timeout calculation
+- Corrected bug where EV_BREAK event could be misreported based on incoming
+  data
+- Corrected another BSOD corner case regarding write cancellation
+
+******************************************************************************
+    RELEASE NOTES FOR 6.5.3
+
+- Corrected BSOD corner case for a write cancellation
+- Corrected memory leak that occurs when a device is plugged/unplugged
+  rapidly enough to allow driver startup function to fail
+
+******************************************************************************
+    RELEASE NOTES FOR 6.5
+
+- Corrected BSOD corner case issue for handling control requests
+- Corrected issue where USB 3.0 hubs would deliver data to the driver out
+  of order
+
+******************************************************************************
+    RELEASE NOTES FOR 6.4
+
+- Corrected multiple BSOD issues by updating request handling for control
+  requests to the USB device, and the write completion method
+- Corrected device removal routine to also undo the COM port naming in the
+  registry at removal time instead of when the device is closed after the
+  removal.
+
+******************************************************************************
+    RELEASE NOTES FOR 6.3a
+
+- Updated to 3.2 DriverInstaller to correct a bug seen when updating from an
+  old driver installer version	
+
+******************************************************************************
+    RELEASE NOTES FOR 6.3
+
+- Corrected a bug introduced in 6.2 which caused BSOD during surprise removal.
+- Corrected a bug found in I/O cancellation corner case
+
+******************************************************************************
+    RELEASE NOTES FOR 6.2
+
+- Corrected return value for DeviceIoControl() and other COM API functions
+  once the device is removed to properly show ERROR_ACCESS_DENIED (0x05)
+  instead of ERROR_BAD_COMMAND in GetLastError()
+- Corrected bug in DTR/RTS reporting latency seen if you set DTR/RTS and ask
+  for it before the device has reported it to the host - now when it is
+  written it reads back immediately
+- Corrected several USB requests that were improperly defined as device
+  requests when they are actually interface requests - this doesn't exhibit
+  and bugs in current single interface devices but was changed to be complete
+  and correct
+- Added support for CP2104 and CP2105 devices	
+
+******************************************************************************
+    RELEASE NOTES FOR 6.1
+
+- Corrected a memory leak which could bog the system down after extended use
+  of a contiuously opened COM port, and conditionally yield bluescreens on
+  certain systems
+- Corrected a problem where an IO reqest would sometimes return a busy
+  status to user mode, instead the queue is restarted if necessary before
+  adding an IO request to the queue
+- Corrected a condition which would blue screen on cancelling write request
+  that hasn't been fully sent out USB
+- Corrected the Capabilites return value, which incorrectly reported that
+  timeouts are not supported
+- Corrected several Queue size return values, which affected behavior in the
+  MSCOMM control
+- Corrected DTR/RTS value on device insertion, visible when Serial
+  Enumeration is disabled
+- Corrected the ability to override Baud Rate and Line Control from the INF
+  file
+
+******************************************************************************
+    RELEASE NOTES FOR 6.0
+
+- Corrected multiple blue screens and driver hangs related to race
+  conditions in the driver
+- Corrected problem where driver hangs when 4 or more devices are connected
+  to a single transaction translator hub
+- Corrected bugs that prohibited serial enumeration
+- Corrected problem where IO requests were not completed/cancelled on a
+  close
+- Corrected problem with dialing out or PPP connections
+- Created IO queueing mechanism so that multiple reads, writes, etc. can be
+  queued and waited on
+
+

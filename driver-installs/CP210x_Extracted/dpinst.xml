@@ -1,0 +1,172 @@
+<?xml version="1.0" ?>
+<dpinst>
+<enableNotListedLanguages/>
+<language code="0x0401">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+<language code="0x0804">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+<language code="0x0404">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+<language code="0x0405">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+<language code="0x0406">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+<language code="0x0407">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+<language code="0x0408">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+<language code="0x0409">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+<language code="0x0C0A">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+<language code="0x040B">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+<language code="0x040C">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+<language code="0x040D">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+<language code="0x040E">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+<language code="0x0410">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+<language code="0x0411">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+<language code="0x0412">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+<language code="0x0414">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+<language code="0x0413">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+<language code="0x0415">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+<language code="0x0416">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+<language code="0x0816">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+<language code="0x0419">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+<language code="0x041D">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+<language code="0x041F">
+<dpinstTitle>CP210x USB to UART Bridge Driver Installer</dpinstTitle>
+<welcomeTitle>Welcome to the CP210x USB to UART Bridge Driver Installer</welcomeTitle>
+<welcomeIntro>This wizard will help you install the drivers for your CP210x USB to UART Bridge device.</welcomeIntro>
+<eula type="txt" path="SLAB_License_Agreement_VCP_Windows.txt"/>
+<finishTitle>Completing the Installation of the CP210x USB to UART Bridge Driver</finishTitle>
+</language>
+</dpinst>
