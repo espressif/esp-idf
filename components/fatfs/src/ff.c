@@ -3442,8 +3442,10 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 	if (SS(fs) > FF_MAX_SS || SS(fs) < FF_MIN_SS || (SS(fs) & (SS(fs) - 1))) return FR_DISK_ERR;
 #endif
 #if FF_USE_DYN_BUFFER
-	fs->win = ff_memalloc(SS(fs));		/* Allocate memory for sector buffer */
-	if (!fs->win) return FR_NOT_ENOUGH_CORE;
+    if (!fs->win) {
+        fs->win = ff_memalloc(SS(fs));		/* Allocate memory for sector buffer */
+        if (!fs->win) return FR_NOT_ENOUGH_CORE;
+    }
 #endif
 
 	/* Find an FAT volume on the hosting drive */
@@ -3689,8 +3691,10 @@ FRESULT f_mount (
 		ff_mutex_delete(vol);
 #endif
 #if FF_USE_DYN_BUFFER
-		if (cfs->fs_type)           /* Check if the buffer was ever allocated */
-			ff_memfree(cfs->win);   /* Deallocate buffer allocated for the filesystem object */
+        if (cfs->win) {           /* Check if the buffer was ever allocated */
+            ff_memfree(cfs->win);   /* Deallocate buffer allocated for the filesystem object */
+            cfs->win = NULL;
+        }
 #endif
 		cfs->fs_type = 0;		/* Invalidate the filesystem object to be unregistered */
 	}
@@ -3880,18 +3884,15 @@ FRESULT f_open (
 #if !FF_FS_READONLY
 #if !FF_FS_TINY
 #if FF_USE_DYN_BUFFER
-			fp->buf = NULL;
-			if (res == FR_OK) {
-				fp->buf = ff_memalloc(SS(fs));
-				if (!fp->buf) {
-					res = FR_NOT_ENOUGH_CORE;	/* Not enough memory */
-					goto fail;
-				}
-				memset(fp->buf, 0, SS(fs));	/* Clear sector buffer */
-			}
-#else
-			memset(fp->buf, 0, SS(fs));    /* Clear sector buffer */
+            if (!fp->buf) {
+                fp->buf = ff_memalloc(SS(fs));
+                if (!fp->buf) {
+                    res = FR_NOT_ENOUGH_CORE;	/* Not enough memory */
+                    goto fail;
+                }
+            }
 #endif
+            memset(fp->buf, 0, SS(fs));    /* Clear sector buffer */
 #endif
 			if ((mode & FA_SEEKEND) && fp->obj.objsize > 0) {	/* Seek to end of file if FA_OPEN_APPEND is specified */
 				fp->fptr = fp->obj.objsize;			/* Offset to seek */
@@ -4270,15 +4271,17 @@ FRESULT f_close (
 #else
 			fp->obj.fs = 0;	/* Invalidate file object */
 #endif
-#if !FF_FS_TINY && FF_USE_DYN_BUFFER
-			ff_memfree(fp->buf);
-			fp->buf = NULL;
-#endif
 #if FF_FS_REENTRANT
 			unlock_volume(fs, FR_OK);		/* Unlock volume */
 #endif
 		}
 	}
+#if !FF_FS_TINY && FF_USE_DYN_BUFFER
+    if (fp->buf) {
+        ff_memfree(fp->buf);
+        fp->buf = NULL;
+    }
+#endif
 	return res;
 }
 

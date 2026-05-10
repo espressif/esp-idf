@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -240,6 +240,14 @@ esp_err_t esp_vfs_fat_unregister_path(const char* base_path)
         return err;
     }
     _lock_close(&fat_ctx->lock);
+
+#if !FF_FS_TINY && FF_USE_DYN_BUFFER
+    for (size_t i = 0; i < fat_ctx->max_files; ++i) {
+        if (fat_ctx->files[i].buf != NULL) {
+            ff_memfree(fat_ctx->files[i].buf);
+        }
+    }
+#endif
     free(fat_ctx->flags);
     free(fat_ctx);
     s_fat_ctxs[ctx] = NULL;
