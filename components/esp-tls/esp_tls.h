@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -198,8 +198,14 @@ typedef struct esp_tls_cfg {
     const char *common_name;                /*!< If non-NULL, server certificate CN must match this name.
                                                  If NULL, server certificate CN must match hostname. */
 
-    bool skip_common_name;                  /*!< Skip any validation of server certificate CN field.
-                                                 This field should be set to false for SNI to function correctly. */
+    bool skip_common_name;                  /*!< When true, esp-tls skips the call to
+                                                 mbedtls_ssl_set_hostname(). This disables BOTH
+                                                 server-hostname matching against the certificate
+                                                 (CN/SAN) and Server Name Indication (SNI), not just
+                                                 the legacy CN field. Only set on loopback / debug
+                                                 clients that can tolerate the loss of hostname
+                                                 authentication. Must be false for SNI to function
+                                                 correctly. */
 
     tls_keep_alive_cfg_t *keep_alive_cfg;   /*!< Enable TCP keep-alive timeout for SSL connection */
 
