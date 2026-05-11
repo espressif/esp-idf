@@ -26,6 +26,10 @@ This example contains some build configurations. For each configuration, a few c
 - `sdkconfig.48m.esp32c5`: ESP32C5 uses main XTAL as low power clock in light sleep enabled.
 - `sdkconfig.defaults.esp32c61`: ESP32C61 uses 32kHz XTAL as low power clock in light sleep enabled.
 - `sdkconfig.40m.esp32c61`: ESP32C61 uses main XTAL as low power clock in light sleep enabled.
+- `sdkconfig.defaults.esp32s31`: ESP32S31 uses 32kHz XTAL as low power clock in light sleep enabled.
+- `sdkconfig.40m.esp32s31`: ESP32S31 uses main XTAL as low power clock in light sleep enabled.
+- `sdkconfig.defaults.esp32h4`: ESP32H4 uses 32kHz XTAL as low power clock in light sleep enabled.
+- `sdkconfig.32m.esp32h4`: ESP32H4 uses main XTAL as low power clock in light sleep enabled.
 
 ## How to use example
 

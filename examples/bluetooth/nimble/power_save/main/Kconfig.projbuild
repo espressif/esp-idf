@@ -2,10 +2,12 @@ menu "Example Configuration"
 
     choice EXAMPLE_MAX_CPU_FREQ
         prompt "Maximum CPU frequency"
-        default EXAMPLE_MAX_CPU_FREQ_160 if !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32C5
-        default EXAMPLE_MAX_CPU_FREQ_96 if IDF_TARGET_ESP32H2
+        default EXAMPLE_MAX_CPU_FREQ_160 if !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2 && \
+            !IDF_TARGET_ESP32C5 && !IDF_TARGET_ESP32H4 && !IDF_TARGET_ESP32S31
+        default EXAMPLE_MAX_CPU_FREQ_96 if IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32H4
         default EXAMPLE_MAX_CPU_FREQ_120 if IDF_TARGET_ESP32C2
         default EXAMPLE_MAX_CPU_FREQ_240 if IDF_TARGET_ESP32C5
+        default EXAMPLE_MAX_CPU_FREQ_320 if IDF_TARGET_ESP32S31
         depends on PM_ENABLE
         help
             Maximum CPU frequency to use for dynamic frequency scaling.
@@ -14,7 +16,7 @@ menu "Example Configuration"
             bool "80 MHz"
         config EXAMPLE_MAX_CPU_FREQ_96
             bool "96 MHz"
-            depends on IDF_TARGET_ESP32H2
+            depends on IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32H4
         config EXAMPLE_MAX_CPU_FREQ_160
             bool "160 MHz"
         config EXAMPLE_MAX_CPU_FREQ_120
@@ -23,6 +25,9 @@ menu "Example Configuration"
         config EXAMPLE_MAX_CPU_FREQ_240
             bool "240 MHz"
             depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C5
+        config EXAMPLE_MAX_CPU_FREQ_320
+            bool "320 MHz"
+            depends on IDF_TARGET_ESP32S31
     endchoice
 
     config EXAMPLE_MAX_CPU_FREQ_MHZ
@@ -32,12 +37,14 @@ menu "Example Configuration"
         default 120 if EXAMPLE_MAX_CPU_FREQ_120
         default 160 if EXAMPLE_MAX_CPU_FREQ_160
         default 240 if EXAMPLE_MAX_CPU_FREQ_240
+        default 320 if EXAMPLE_MAX_CPU_FREQ_320
 
     choice EXAMPLE_MIN_CPU_FREQ
         prompt "Minimum CPU frequency"
-        default EXAMPLE_MIN_CPU_FREQ_40M if !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32C5
+        default EXAMPLE_MIN_CPU_FREQ_40M if !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2 && \
+            !IDF_TARGET_ESP32C5 && !IDF_TARGET_ESP32H4
         default EXAMPLE_MIN_CPU_FREQ_48M if IDF_TARGET_ESP32C5
-        default EXAMPLE_MIN_CPU_FREQ_32M if IDF_TARGET_ESP32H2
+        default EXAMPLE_MIN_CPU_FREQ_32M if IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32H4
         default EXAMPLE_MIN_CPU_FREQ_26M if IDF_TARGET_ESP32C2
         depends on PM_ENABLE
         help
@@ -61,7 +68,7 @@ menu "Example Configuration"
             depends on XTAL_FREQ_40 || XTAL_FREQ_AUTO
         config EXAMPLE_MIN_CPU_FREQ_32M
             bool "32 MHz (use with 32MHz XTAL)"
-            depends on IDF_TARGET_ESP32H2
+            depends on IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32H4
             depends on XTAL_FREQ_32 || XTAL_FREQ_AUTO
         config EXAMPLE_MIN_CPU_FREQ_26M
             bool "26 MHz (use with 26MHz XTAL)"

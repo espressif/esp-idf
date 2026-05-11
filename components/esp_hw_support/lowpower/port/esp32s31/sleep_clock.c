@@ -43,7 +43,7 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
     #undef N_REGS_PCR
 }
 
-#if CONFIG_MAC_BB_PD || CONFIG_BTDM_CTRL_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE
+#if CONFIG_MAC_BB_PD || CONFIG_BT_CTRL_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE
 #include "rom/ets_sys.h"
 esp_err_t sleep_clock_modem_retention_init(void *arg)
 {
@@ -96,7 +96,7 @@ bool clock_domain_pd_allowed(void)
         mask.bitmap[SLEEP_RETENTION_MODULE_CLOCK_SYSTEM >> 5] |= BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM % 32);
     }
 
-    #if SOC_WIFI_SUPPORTED || SOC_BT_SUPPORTED || SOC_IEEE802154_SUPPORTED
+#if SOC_WIFI_SUPPORTED || SOC_BT_SUPPORTED || SOC_IEEE802154_SUPPORTED
     const sleep_retention_module_bitmap_t modem_modules = sleep_retention_module_bitmap_and(inited_modules, modem_clk_dep_modules);
     if (!sleep_retention_module_bitmap_eq(modem_modules, null_module)) {
         mask.bitmap[SLEEP_RETENTION_MODULE_CLOCK_MODEM >> 5] |= BIT(SLEEP_RETENTION_MODULE_CLOCK_MODEM % 32);
@@ -116,7 +116,7 @@ ESP_SYSTEM_INIT_FN(sleep_clock_startup_init, SECONDARY, BIT(0), 106)
     };
     sleep_retention_module_init(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM, &init_param);
 
-#if CONFIG_MAC_BB_PD || CONFIG_BTDM_CTRL_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE
+#if CONFIG_MAC_BB_PD || CONFIG_BT_CTRL_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE
     init_param = (sleep_retention_module_init_param_t) {
         .cbs       = { .create = { .handle = sleep_clock_modem_retention_init, .arg = NULL } },
         .attribute = SLEEP_RETENTION_MODULE_ATTR_PASSIVE

@@ -325,7 +325,7 @@ btdm_lp_init(void)
     if (rc != ESP_OK) {
         return -2;
     }
-    // rc = esp_pm_register_skip_light_sleep_callback(r_btdm_sleep_should_skip_light_sleep_check);
+    rc = esp_pm_register_skip_light_sleep_callback(r_btdm_sleep_should_skip_light_sleep_check);
     if (rc != ESP_OK) {
         return -3;
     }
@@ -340,7 +340,7 @@ void
 btdm_lp_deinit(void)
 {
 #if UC_BT_CTRL_SLEEP_ENABLE && CONFIG_FREERTOS_USE_TICKLESS_IDLE
-    // esp_pm_unregister_skip_light_sleep_callback(r_btdm_sleep_should_skip_light_sleep_check);
+    esp_pm_unregister_skip_light_sleep_callback(r_btdm_sleep_should_skip_light_sleep_check);
     esp_pm_unregister_inform_out_light_sleep_overhead_callback(r_btdm_sleep_wake_up_overhead_set);
     esp_sleep_disable_bt_wakeup();
     btdm_lp_modem_state_deinit();

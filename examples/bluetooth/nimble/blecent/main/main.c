@@ -31,32 +31,6 @@
 #include "host/ble_esp_gattc_cache.h"
 #endif
 
-#if CONFIG_EXAMPLE_USE_CI_ADDRESS
-#ifdef CONFIG_IDF_TARGET_ESP32
-#define TEST_CI_ADDRESS_CHIP_OFFSET (0)
-#elif CONFIG_IDF_TARGET_ESP32C2
-#define TEST_CI_ADDRESS_CHIP_OFFSET (1)
-#elif CONFIG_IDF_TARGET_ESP32C3
-#define TEST_CI_ADDRESS_CHIP_OFFSET (2)
-#elif CONFIG_IDF_TARGET_ESP32C6
-#define TEST_CI_ADDRESS_CHIP_OFFSET (3)
-#elif CONFIG_IDF_TARGET_ESP32C5
-#define TEST_CI_ADDRESS_CHIP_OFFSET (4)
-#elif CONFIG_IDF_TARGET_ESP32H2
-#define TEST_CI_ADDRESS_CHIP_OFFSET (5)
-#elif CONFIG_IDF_TARGET_ESP32P4
-#define TEST_CI_ADDRESS_CHIP_OFFSET (6)
-#elif CONFIG_IDF_TARGET_ESP32S3
-#define TEST_CI_ADDRESS_CHIP_OFFSET (7)
-#elif CONFIG_IDF_TARGET_ESP32C61
-#define TEST_CI_ADDRESS_CHIP_OFFSET (8)
-#elif CONFIG_IDF_TARGET_ESP32H4
-#define TEST_CI_ADDRESS_CHIP_OFFSET (9)
-#elif CONFIG_IDF_TARGET_ESP32S31
-#define TEST_CI_ADDRESS_CHIP_OFFSET (10)
-#endif
-#endif
-
 #if MYNEWT_VAL(BLE_GATTC)
 /*** The UUID of the service containing the subscribable characteristic ***/
 static const ble_uuid_t * remote_svc_uuid =
@@ -533,7 +507,7 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
 	addr_offset = (uint32_t *)&test_addr[1];
         *addr_offset = atoi(CONFIG_EXAMPLE_PEER_ADDR);
         test_addr[5] = 0xC3;
-        test_addr[0] = TEST_CI_ADDRESS_CHIP_OFFSET;
+        test_addr[0] = CONFIG_IDF_FIRMWARE_CHIP_ID;
 #endif
 	if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
 	    return 0;
@@ -610,7 +584,7 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
 	addr_offset = (uint32_t *)&test_addr[1];
         *addr_offset = atoi(CONFIG_EXAMPLE_PEER_ADDR);
         test_addr[5] = 0xC3;
-        test_addr[0] = TEST_CI_ADDRESS_CHIP_OFFSET;
+        test_addr[0] = CONFIG_IDF_FIRMWARE_CHIP_ID;
 #endif
 
 	if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
