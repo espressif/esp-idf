@@ -34,15 +34,13 @@ Some features are not supported on all ESP chips and flash chips. You can check 
 Auto Suspend & Resume
 ---------------------
 
-This feature is only supported on ESP32-S3, ESP32-C2, ESP32-C3, ESP32-C6, and ESP32-H2 for now.
-
-The support for ESP32-P4 may be added in the future.
+This feature is supported on all Espressif chips except ESP32 and ESP32-S2.
 
 .. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
     List of flash chips that support this feature:
 
-    1. XM25QxxC series
+    1. XM25QxxD series
     2. GD25QxxE series
     3. FM25Q32
 
