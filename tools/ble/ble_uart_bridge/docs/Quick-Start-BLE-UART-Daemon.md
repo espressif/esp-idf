@@ -159,6 +159,9 @@ Response fields:
 | `single_flight` | Whether the daemon serializes requests |
 | `max_request_data_bytes` | Maximum JSON-encoded `data` size accepted by `/request` and `/notify` |
 | `protocol` | Wire protocol name and version |
+| `reconnect_failures` | Consecutive BLE transport failures, including reconnect and write failures |
+| `max_reconnect_failures` | Maximum consecutive BLE transport failures before the daemon exits |
+| `daemon_state` | Daemon lifecycle state, such as `running` or `exiting` |
 
 ### `POST /request`
 
@@ -207,8 +210,8 @@ HTTP error behavior:
 | HTTP status | Meaning |
 | --- | --- |
 | `413` | Request data exceeds the daemon payload limit |
-| `500` | Failed to send data to the BLE device |
 | `502` | Device returned a protocol error or invalid response |
+| `503` | BLE device is disconnected and the reconnect attempt failed, or the BLE write failed |
 | `504` | Timed out waiting for the device response |
 
 ### `POST /notify`
@@ -257,7 +260,7 @@ HTTP error behavior:
 | HTTP status | Meaning |
 | --- | --- |
 | `413` | Request data exceeds the daemon payload limit |
-| `500` | Failed to send data to the BLE device |
+| `503` | BLE device is disconnected and the reconnect attempt failed, or the BLE write failed |
 
 ## BLE JSONL RPC protocol
 
@@ -394,7 +397,24 @@ This keeps the firmware-side example simple because the device only needs to han
 
 ## Disconnect behavior
 
-The daemon does not automatically reconnect after the BLE link is disconnected. If the device disconnects, stop and restart the daemon after the device starts advertising again.
+The daemon attempts an on-demand reconnect before each `/request` or `/notify`
+when it detects that the BLE link is disconnected. If reconnect succeeds, the
+HTTP call continues without restarting the daemon. If reconnect fails, the call
+returns HTTP `503`.
+
+The daemon does not run a background reconnect loop, so `GET /status` may show
+`DISCONNECTED` until the next `/request` or `/notify` triggers a reconnect
+attempt. Daemon startup still requires the initial BLE connection to succeed.
+
+The daemon records consecutive BLE transport failures, including failed
+on-demand reconnects and failed writes after a stale connection is detected. A
+successful reconnect or write clears the counter. After three consecutive BLE
+transport failures, the daemon returns HTTP `503` for the triggering call and
+then exits.
+
+If the BLE link drops after a `/request` has already been written to the device,
+the daemon does not replay the request. The HTTP call may time out with `504`
+while the daemon waits for a response that never arrives.
 
 ## Troubleshooting
 
@@ -404,7 +424,26 @@ The daemon does not automatically reconnect after the BLE link is disconnected. 
 - Confirm the device response contains the same `id` as the request.
 - Confirm the firmware handles the requested `op`.
 - Increase `--timeout` if the operation is slow.
-- Restart the daemon if the BLE link was disconnected.
+- If the BLE link was disconnected, make sure the device is advertising again;
+  the next `/request` or `/notify` will attempt to reconnect.
+
+### Daemon returns HTTP 503
+
+- The BLE device is disconnected or not advertising.
+- The daemon tried to reconnect before sending the request or notification, but
+  the reconnect attempt failed.
+- On Linux, reset the system Bluetooth service if reconnects keep failing,
+  pairing gets stuck, or service discovery cannot find the BLE UART service or
+  characteristics:
+
+  ```bash
+  sudo systemctl stop bluetooth
+  sudo systemctl start bluetooth
+  ```
+- Restore the BLE device and retry the same command; the daemon does not replay
+  failed requests automatically.
+- After three consecutive BLE transport failures, the daemon exits. Restart it
+  after the BLE device is advertising again.
 
 ### Daemon returns HTTP 502
 
