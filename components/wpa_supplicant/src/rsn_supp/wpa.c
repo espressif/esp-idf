@@ -656,9 +656,11 @@ void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
 #ifdef CONFIG_ESP_WIFI_ENTERPRISE_SUPPORT
     if (is_wpa2_enterprise_connection()) {
         wpa2_ent_eap_state_t state = eap_client_get_eap_state();
-        if (state != WPA2_ENT_EAP_STATE_SUCCESS) {
-            wpa_printf(MSG_INFO, "EAP not completed (state=%d)."
-               " Drop EAPOL message.", state);
+
+        if (state == WPA2_ENT_EAP_STATE_IN_PROGRESS || sm->pmk_len == 0) {
+            wpa_printf(MSG_INFO,
+                   "Drop EAPOL M1: EAP state=%d, pmk_len=%u.",
+                   state, (unsigned int) sm->pmk_len);
             return;
         }
     }
@@ -2391,6 +2393,7 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
         if (pmksa) {
             pmksa_cache_flush(sm->pmksa, NULL, pmksa->pmk, pmksa->pmk_len);
         }
+        wpa_sm_drop_sa(sm);
     }
 
 #ifdef CONFIG_IEEE80211W
