@@ -85,6 +85,20 @@ static httpd_uri_t handler_limit_ws_uri(char *path, const char *subprotocol)
 
 static int ws_recv_fail_handler_calls;
 
+typedef struct {
+    const uint8_t *data;
+    size_t len;
+    size_t offset;
+} ws_scripted_recv_ctx_t;
+
+typedef struct {
+    uint8_t data[32];
+    size_t len;
+} ws_send_capture_ctx_t;
+
+static ws_scripted_recv_ctx_t ws_scripted_recv_ctx;
+static ws_send_capture_ctx_t ws_send_capture_ctx;
+
 static int ws_recv_fail_override(httpd_handle_t hd, int sockfd, char *buf, size_t buf_len, int flags)
 {
     (void)hd;
@@ -93,6 +107,38 @@ static int ws_recv_fail_override(httpd_handle_t hd, int sockfd, char *buf, size_
     (void)buf_len;
     (void)flags;
     return HTTPD_SOCK_ERR_FAIL;
+}
+
+static int ws_scripted_recv_override(httpd_handle_t hd, int sockfd, char *buf, size_t buf_len, int flags)
+{
+    (void)hd;
+    (void)sockfd;
+    (void)flags;
+
+    size_t remaining = ws_scripted_recv_ctx.len - ws_scripted_recv_ctx.offset;
+    if (remaining == 0) {
+        return HTTPD_SOCK_ERR_FAIL;
+    }
+
+    size_t to_copy = remaining < buf_len ? remaining : buf_len;
+    memcpy(buf, ws_scripted_recv_ctx.data + ws_scripted_recv_ctx.offset, to_copy);
+    ws_scripted_recv_ctx.offset += to_copy;
+    return (int)to_copy;
+}
+
+static int ws_scripted_send_override(httpd_handle_t hd, int sockfd, const char *buf, size_t buf_len, int flags)
+{
+    (void)hd;
+    (void)sockfd;
+    (void)flags;
+
+    if (ws_send_capture_ctx.len + buf_len > sizeof(ws_send_capture_ctx.data)) {
+        return HTTPD_SOCK_ERR_FAIL;
+    }
+
+    memcpy(ws_send_capture_ctx.data + ws_send_capture_ctx.len, buf, buf_len);
+    ws_send_capture_ctx.len += buf_len;
+    return (int)buf_len;
 }
 
 static esp_err_t ws_counting_handler(httpd_req_t *req)
@@ -669,6 +715,159 @@ TEST_CASE("WS handshake invalid Sec-WebSocket-Key returns 400", "[HTTP SERVER][w
 }
 #endif /* CONFIG_HTTPD_WS_STRICTER_RFC6455 */
 
+#if CONFIG_HTTPD_WS_STRICT_RFC6455
+TEST_CASE("WS recv RSV bit set sends CLOSE 1002 and marks close", "[HTTP SERVER][websocket]")
+{
+    static const uint8_t ws_frame[] = { 0xC1 }; /* RSV1=1, FIN=1, opcode TEXT */
+    static const uint8_t expected_reply[] = { 0x88, 0x02, 0x03, 0xEA };
+
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    struct httpd_data hd = {0};
+    httpd_req_t req = {0};
+    struct httpd_req_aux aux = {0};
+    struct sock_db session = {0};
+
+    ws_scripted_recv_ctx = (ws_scripted_recv_ctx_t){ .data = ws_frame, .len = sizeof(ws_frame) };
+    memset(&ws_send_capture_ctx, 0, sizeof(ws_send_capture_ctx));
+
+    hd.config = config;
+    hd.config.max_open_sockets = 1;
+    hd.hd_sd = &session;
+    req.handle = &hd;
+    req.aux = &aux;
+    aux.sd = &session;
+    session.fd = 123;
+    session.handle = (httpd_handle_t)&hd;
+    session.recv_fn = ws_scripted_recv_override;
+    session.send_fn = ws_scripted_send_override;
+    session.ws_handshake_done = true;
+
+    TEST_ASSERT_EQUAL(ESP_FAIL, httpd_ws_get_frame_type(&req));
+    TEST_ASSERT_TRUE(session.ws_close);
+    TEST_ASSERT_EQUAL(sizeof(expected_reply), ws_send_capture_ctx.len);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(expected_reply, ws_send_capture_ctx.data, sizeof(expected_reply));
+}
+
+TEST_CASE("WS recv reserved non-control opcode sends CLOSE 1002", "[HTTP SERVER][websocket]")
+{
+    static const uint8_t ws_frame[] = { 0x83 }; /* FIN=1, opcode=0x3 (reserved) */
+
+    httpd_req_t req = {0};
+    struct httpd_req_aux aux = {0};
+    struct sock_db session = {0};
+
+    ws_scripted_recv_ctx = (ws_scripted_recv_ctx_t){ .data = ws_frame, .len = sizeof(ws_frame) };
+
+    req.aux = &aux;
+    aux.sd = &session;
+    session.fd = 123;
+    session.recv_fn = ws_scripted_recv_override;
+    session.ws_handshake_done = true;
+
+    TEST_ASSERT_EQUAL(ESP_FAIL, httpd_ws_get_frame_type(&req));
+    TEST_ASSERT_EQUAL(HTTPD_WS_TYPE_CLOSE, aux.ws_type);
+}
+
+TEST_CASE("WS recv reserved control opcode sends CLOSE 1002", "[HTTP SERVER][websocket]")
+{
+    static const uint8_t ws_frame[] = { 0x8B }; /* FIN=1, opcode=0xB (reserved) */
+
+    httpd_req_t req = {0};
+    struct httpd_req_aux aux = {0};
+    struct sock_db session = {0};
+
+    ws_scripted_recv_ctx = (ws_scripted_recv_ctx_t){ .data = ws_frame, .len = sizeof(ws_frame) };
+
+    req.aux = &aux;
+    aux.sd = &session;
+    session.fd = 123;
+    session.recv_fn = ws_scripted_recv_override;
+    session.ws_handshake_done = true;
+
+    TEST_ASSERT_EQUAL(ESP_FAIL, httpd_ws_get_frame_type(&req));
+    TEST_ASSERT_EQUAL(HTTPD_WS_TYPE_CLOSE, aux.ws_type);
+}
+
+TEST_CASE("WS recv fragmented control frame sends CLOSE 1002", "[HTTP SERVER][websocket]")
+{
+    static const uint8_t ws_frame[] = { 0x09 }; /* FIN=0, opcode=PING */
+
+    httpd_req_t req = {0};
+    struct httpd_req_aux aux = {0};
+    struct sock_db session = {0};
+
+    ws_scripted_recv_ctx = (ws_scripted_recv_ctx_t){ .data = ws_frame, .len = sizeof(ws_frame) };
+
+    req.aux = &aux;
+    aux.sd = &session;
+    session.fd = 123;
+    session.recv_fn = ws_scripted_recv_override;
+    session.ws_handshake_done = true;
+
+    TEST_ASSERT_EQUAL(ESP_FAIL, httpd_ws_get_frame_type(&req));
+    TEST_ASSERT_EQUAL(HTTPD_WS_TYPE_CLOSE, aux.ws_type);
+}
+#endif /* CONFIG_HTTPD_WS_STRICT_RFC6455 */
+
+#if CONFIG_HTTPD_WS_STRICT_RFC6455
+TEST_CASE("WS recv unmasked frame sends CLOSE 1002 and marks close", "[HTTP SERVER][websocket]")
+{
+    /* Second byte 0x02: MASK=0, payload len=2 */
+    static const uint8_t ws_frame[] = { 0x82, 0x02 };
+    static const uint8_t expected_reply[] = { 0x88, 0x02, 0x03, 0xEA };
+
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    struct httpd_data hd = {0};
+    httpd_req_t req = {0};
+    struct httpd_req_aux aux = {0};
+    struct sock_db session = {0};
+    httpd_ws_frame_t frame = {0};
+
+    ws_scripted_recv_ctx = (ws_scripted_recv_ctx_t){ .data = ws_frame, .len = sizeof(ws_frame) };
+    memset(&ws_send_capture_ctx, 0, sizeof(ws_send_capture_ctx));
+
+    hd.config = config;
+    hd.config.max_open_sockets = 1;
+    hd.hd_sd = &session;
+    req.handle = &hd;
+    req.aux = &aux;
+    aux.sd = &session;
+    aux.ws_type = HTTPD_WS_TYPE_BINARY;
+    aux.ws_final = true;
+    session.fd = 123;
+    session.handle = (httpd_handle_t)&hd;
+    session.recv_fn = ws_scripted_recv_override;
+    session.send_fn = ws_scripted_send_override;
+    session.ws_handshake_done = true;
+
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, httpd_ws_recv_frame(&req, &frame, 0));
+    TEST_ASSERT_TRUE(session.ws_close);
+    TEST_ASSERT_EQUAL(sizeof(expected_reply), ws_send_capture_ctx.len);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(expected_reply, ws_send_capture_ctx.data, sizeof(expected_reply));
+}
+
+TEST_CASE("WS recv control frame with payload > 125 sends CLOSE 1002", "[HTTP SERVER][websocket]")
+{
+    /* PING (0x89), MASK=1 (0x80), length=126 (0x7E) — invalid extended length for control */
+    static const uint8_t ws_frame[] = { 0x89, 0xFE };
+
+    httpd_req_t req = {0};
+    struct httpd_req_aux aux = {0};
+    struct sock_db session = {0};
+
+    ws_scripted_recv_ctx = (ws_scripted_recv_ctx_t){ .data = ws_frame, .len = sizeof(ws_frame) };
+
+    req.aux = &aux;
+    aux.sd = &session;
+    session.fd = 123;
+    session.recv_fn = ws_scripted_recv_override;
+    session.ws_handshake_done = true;
+    session.ws_control_frames = false;
+
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, httpd_ws_get_frame_type(&req));
+    TEST_ASSERT_EQUAL(HTTPD_WS_TYPE_CLOSE, aux.ws_type);
+}
+#endif /* CONFIG_HTTPD_WS_STRICT_RFC6455 */
 #endif /* CONFIG_HTTPD_WS_SUPPORT */
 
 /********* URL query / header pointer-accessor tests *********

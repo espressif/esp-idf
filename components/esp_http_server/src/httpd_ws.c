@@ -47,9 +47,17 @@ static const char *TAG="httpd_ws";
  */
 #define HTTPD_WS_CONTINUE       0x00U
 #define HTTPD_WS_FIN_BIT        0x80U
+#define HTTPD_WS_RSV1_BIT       0x40U
+#define HTTPD_WS_RSV2_BIT       0x20U
+#define HTTPD_WS_RSV3_BIT       0x10U
 #define HTTPD_WS_OPCODE_BITS    0x0fU
 #define HTTPD_WS_MASK_BIT       0x80U
 #define HTTPD_WS_LENGTH_BITS    0x7fU
+
+/* RFC 6455 §7.4 close status codes used for protocol-error Close frames */
+#define HTTPD_WS_CLOSE_CODE_PROTOCOL_ERROR 1002U
+#define HTTPD_WS_CLOSE_CODE_INVALID_UTF8  1007U
+#define HTTPD_WS_CLOSE_CODE_TOO_BIG       1009U
 
 /*
  * The magic GUID string used for handshake
@@ -345,6 +353,48 @@ static esp_err_t httpd_ws_check_req(httpd_req_t *req)
     return ESP_OK;
 }
 
+/* Send a Close frame with the given status code and mark the session as closing.
+ * Always returns ESP_FAIL so callers can write: return httpd_ws_fail_connection(...).
+ * RFC 6455 §7.1.7
+ */
+static esp_err_t httpd_ws_fail_connection(httpd_req_t *req, uint16_t close_code, bool send_close)
+{
+    if (!req || !req->aux) {
+        return ESP_FAIL;
+    }
+
+    struct httpd_req_aux *aux = req->aux;
+    if (!aux->sd) {
+        return ESP_FAIL;
+    }
+
+    aux->ws_final = true;
+    aux->ws_type = HTTPD_WS_TYPE_CLOSE;
+
+    bool already_closing = aux->sd->ws_close;
+    aux->sd->ws_close = true;
+
+    if (send_close && aux->sd->ws_handshake_done && !already_closing) {
+        uint8_t close_payload[2] = {
+            (uint8_t)(close_code >> 8U),
+            (uint8_t)(close_code & 0xffU),
+        };
+        httpd_ws_frame_t close_frame = {
+            .final = true,
+            .fragmented = false,
+            .type = HTTPD_WS_TYPE_CLOSE,
+            .payload = close_payload,
+            .len = sizeof(close_payload),
+        };
+        esp_err_t ret = httpd_ws_send_frame(req, &close_frame);
+        if (ret != ESP_OK) {
+            ESP_LOGW(TAG, LOG_FMT("Failed to send CLOSE frame with code %u"), close_code);
+        }
+    }
+
+    return ESP_FAIL;
+}
+
 static esp_err_t httpd_ws_unmask_payload(uint8_t *payload, size_t len, const uint8_t *mask_key, size_t mask_offset)
 {
     if (len < 1 || !payload) {
@@ -396,6 +446,17 @@ static esp_err_t httpd_ws_recv_frame_internal(httpd_req_t *req, httpd_ws_frame_t
 
         /* Interpret length */
         uint8_t init_len = second_byte & HTTPD_WS_LENGTH_BITS;
+
+#if CONFIG_HTTPD_WS_STRICT_RFC6455
+        /* RFC 6455 §5.5: control frames MUST have payload <= 125 bytes and
+         * therefore MUST NOT use the 16- or 64-bit extended length encodings.
+         */
+        if (frame->type >= HTTPD_WS_TYPE_CLOSE && init_len > 125) {
+            ESP_LOGE(TAG, LOG_FMT("Invalid control frame length encoding"));
+            return httpd_ws_fail_connection(req, HTTPD_WS_CLOSE_CODE_PROTOCOL_ERROR, true);
+        }
+#endif /* CONFIG_HTTPD_WS_STRICT_RFC6455 */
+
         if (init_len < 126) {
             /* Case 1: If length is 0-125, then this length bit is 7 bits */
             frame->len = init_len;
@@ -439,7 +500,10 @@ static esp_err_t httpd_ws_recv_frame_internal(httpd_req_t *req, httpd_ws_frame_t
         } else {
             /* If the WS frame from client to server is not masked, it should be rejected.
              * Please refer to RFC6455 Section 5.2 for more details. */
-            ESP_LOGW(TAG, LOG_FMT("WS frame is not properly masked."));
+            ESP_LOGE(TAG, LOG_FMT("WS frame is not properly masked."));
+#if CONFIG_HTTPD_WS_STRICT_RFC6455
+            httpd_ws_fail_connection(req, HTTPD_WS_CLOSE_CODE_PROTOCOL_ERROR, true);
+#endif /* CONFIG_HTTPD_WS_STRICT_RFC6455 */
             return ESP_ERR_INVALID_STATE;
         }
     }
@@ -606,6 +670,36 @@ esp_err_t httpd_ws_get_frame_type(httpd_req_t *req)
     /* Decode the FIN flag and Opcode from the byte */
     aux->ws_final = (first_byte & HTTPD_WS_FIN_BIT) != 0;
     aux->ws_type = (first_byte & HTTPD_WS_OPCODE_BITS);
+
+#if CONFIG_HTTPD_WS_STRICT_RFC6455
+    /* RFC 6455 §5.2: RSV bits MUST be 0 unless an extension has been negotiated.
+     * This implementation does not support extensions, so any set RSV bit is an error.
+     */
+    if (first_byte & (HTTPD_WS_RSV1_BIT | HTTPD_WS_RSV2_BIT | HTTPD_WS_RSV3_BIT)) {
+        ESP_LOGE(TAG, LOG_FMT("RSV1, RSV2 or RSV3 bits are set, closing connection"));
+        return httpd_ws_fail_connection(req, HTTPD_WS_CLOSE_CODE_PROTOCOL_ERROR, true);
+    }
+
+    /* RFC 6455 §5.2: opcodes 0x3–0x7 and 0xB–0xF are reserved and must not be used. */
+    switch (aux->ws_type) {
+    case HTTPD_WS_TYPE_CONTINUE:
+    case HTTPD_WS_TYPE_TEXT:
+    case HTTPD_WS_TYPE_BINARY:
+    case HTTPD_WS_TYPE_CLOSE:
+    case HTTPD_WS_TYPE_PING:
+    case HTTPD_WS_TYPE_PONG:
+        break;
+    default:
+        ESP_LOGE(TAG, LOG_FMT("Invalid WS frame type: 0x%02X"), aux->ws_type);
+        return httpd_ws_fail_connection(req, HTTPD_WS_CLOSE_CODE_PROTOCOL_ERROR, true);
+    }
+
+    /* RFC 6455 §5.5: control frames MUST NOT be fragmented (FIN bit must be set). */
+    if (aux->ws_type >= HTTPD_WS_TYPE_CLOSE && !aux->ws_final) {
+        ESP_LOGE(TAG, LOG_FMT("Invalid fragmented control frame: 0x%02X"), aux->ws_type);
+        return httpd_ws_fail_connection(req, HTTPD_WS_CLOSE_CODE_PROTOCOL_ERROR, true);
+    }
+#endif /* CONFIG_HTTPD_WS_STRICT_RFC6455 */
 
     /* If userspace requests control frames, do not deal with the control frames */
     if (!sd->ws_control_frames) {
