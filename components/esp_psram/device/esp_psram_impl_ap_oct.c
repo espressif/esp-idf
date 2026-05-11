@@ -483,7 +483,7 @@ esp_err_t esp_psram_impl_enable(void)
 
 uint8_t esp_psram_impl_get_cs_io(void)
 {
-    ESP_EARLY_LOGI(TAG, "psram CS IO is dedicated");
+    ESP_EARLY_LOGD(TAG, "psram CS IO is dedicated");
     return -1;
 }
 
