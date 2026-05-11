@@ -72,11 +72,11 @@ void bt_avrc_avc_tg_evt_hdl(uint16_t event, void *param)
             avrc_abs_vol_srv_open();
             xTaskCreate(volume_change_simulation, "vcsTask", 4 * 1024, NULL, 5, &s_vcs_task_hdl);
         } else {
-            avrc_abs_vol_srv_close();
             if (s_vcs_task_hdl) {
                 vTaskDelete(s_vcs_task_hdl);
                 s_vcs_task_hdl = NULL;
             }
+            avrc_abs_vol_srv_close();
             ESP_LOGI(BT_RC_TG_TAG, "Stop volume change simulation");
         }
         break;

@@ -67,7 +67,9 @@ static void audio_sink_srv_dac_task_handler(void *arg)
                     break;
                 }
 
-                dac_continuous_write(s_dac_cb.tx_chan, data, item_size, &bytes_written, -1);
+                if (s_dac_cb.chan_st == CHANNEL_STATUS_ENABLED) {
+                    dac_continuous_write(s_dac_cb.tx_chan, data, item_size, &bytes_written, -1);
+                }
                 vRingbufferReturnItem(s_dac_cb.ringbuf, (void *)data);
             }
         }
@@ -80,7 +82,10 @@ static void audio_sink_srv_dac_task_handler(void *arg)
 
 void audio_sink_srv_open(void)
 {
-    memset(&s_dac_cb, 0, sizeof(audio_sink_srv_dac_cb_t));
+    if (s_dac_cb.chan_st != CHANNEL_STATUS_IDLE) {
+        ESP_LOGW(AUDIO_SNK_SRV_DAC_TAG, "Service already opened");
+        return;
+    }
     dac_continuous_config_t cont_cfg = {
         .chan_mask = DAC_CHANNEL_MASK_ALL,
         .desc_num = 8,
@@ -91,7 +96,11 @@ void audio_sink_srv_open(void)
         .chan_mode = DAC_CHANNEL_MODE_ALTER,
     };
     /* Allocate continuous channels */
-    ESP_ERROR_CHECK(dac_continuous_new_channels(&cont_cfg, &s_dac_cb.tx_chan));
+    esp_err_t ret = dac_continuous_new_channels(&cont_cfg, &s_dac_cb.tx_chan);
+    if (ret != ESP_OK) {
+        ESP_LOGE(AUDIO_SNK_SRV_DAC_TAG, "Failed to create DAC channels: %s", esp_err_to_name(ret));
+        return;
+    }
     s_dac_cb.chan_st = CHANNEL_STATUS_OPENED;
 }
 
@@ -99,10 +108,6 @@ void audio_sink_srv_close(void)
 {
     audio_sink_srv_stop();
 
-    if (s_dac_cb.chan_st == CHANNEL_STATUS_OPENED) {
-        ESP_ERROR_CHECK(dac_continuous_del_channels(s_dac_cb.tx_chan));
-        s_dac_cb.chan_st = CHANNEL_STATUS_IDLE;
-    }
     if (s_dac_cb.write_task_handle) {
         vTaskDelete(s_dac_cb.write_task_handle);
         s_dac_cb.write_task_handle = NULL;
@@ -115,6 +120,10 @@ void audio_sink_srv_close(void)
         vSemaphoreDelete(s_dac_cb.write_semaphore);
         s_dac_cb.write_semaphore = NULL;
     }
+    if (s_dac_cb.chan_st == CHANNEL_STATUS_OPENED) {
+        ESP_ERROR_CHECK(dac_continuous_del_channels(s_dac_cb.tx_chan));
+        s_dac_cb.chan_st = CHANNEL_STATUS_IDLE;
+    }
     memset(&s_dac_cb, 0, sizeof(audio_sink_srv_dac_cb_t));
 }
 
@@ -125,19 +134,37 @@ void audio_sink_srv_start(void)
         return;
     }
     ESP_ERROR_CHECK(dac_continuous_enable(s_dac_cb.tx_chan));
-    s_dac_cb.chan_st = CHANNEL_STATUS_ENABLED;
 
     ESP_LOGI(AUDIO_SNK_SRV_DAC_TAG, "ringbuffer data empty! mode changed: RINGBUFFER_MODE_PREFETCHING");
     s_dac_cb.ringbuffer_mode = RINGBUFFER_MODE_PREFETCHING;
-    if ((s_dac_cb.write_semaphore = xSemaphoreCreateBinary()) == NULL) {
+    if ((s_dac_cb.write_semaphore == NULL) && ((s_dac_cb.write_semaphore = xSemaphoreCreateBinary()) == NULL)) {
         ESP_LOGE(AUDIO_SNK_SRV_DAC_TAG, "%s, Semaphore create failed", __func__);
-        return;
+        goto err_sem;
     }
-    if ((s_dac_cb.ringbuf = xRingbufferCreate(RINGBUF_HIGHEST_WATER_LEVEL, RINGBUF_TYPE_BYTEBUF)) == NULL) {
+    if ((s_dac_cb.ringbuf == NULL) &&
+        ((s_dac_cb.ringbuf = xRingbufferCreate(RINGBUF_HIGHEST_WATER_LEVEL, RINGBUF_TYPE_BYTEBUF)) == NULL)) {
         ESP_LOGE(AUDIO_SNK_SRV_DAC_TAG, "%s, ringbuffer create failed", __func__);
-        return;
+        goto err_rb;
     }
-    xTaskCreate(audio_sink_srv_dac_task_handler, "BtDACTask", 4 * 1024, NULL, configMAX_PRIORITIES - 3, &s_dac_cb.write_task_handle);
+
+    if (s_dac_cb.write_task_handle == NULL) {
+        if (xTaskCreate(audio_sink_srv_dac_task_handler, "BtDACTask", 4 * 1024, NULL,
+                        configMAX_PRIORITIES - 3, &s_dac_cb.write_task_handle) != pdPASS) {
+            ESP_LOGE(AUDIO_SNK_SRV_DAC_TAG, "%s, Task create failed", __func__);
+            goto err_task;
+        }
+    }
+    s_dac_cb.chan_st = CHANNEL_STATUS_ENABLED;
+    return;
+
+err_task:
+    vRingbufferDelete(s_dac_cb.ringbuf);
+    s_dac_cb.ringbuf = NULL;
+err_rb:
+    vSemaphoreDelete(s_dac_cb.write_semaphore);
+    s_dac_cb.write_semaphore = NULL;
+err_sem:
+    dac_continuous_disable(s_dac_cb.tx_chan);
 }
 
 void audio_sink_srv_stop(void)
@@ -151,6 +178,7 @@ void audio_sink_srv_stop(void)
 void audio_sink_srv_codec_info_update(esp_a2d_mcc_t *mcc)
 {
     ESP_LOGI(AUDIO_SNK_SRV_DAC_TAG, "A2DP audio stream configuration, codec type: %d", mcc->type);
+    audio_sink_srv_stop();
     /* for now only SBC stream is supported */
     if (mcc->type == ESP_A2D_MCT_SBC) {
         int sample_rate = 16000;
@@ -166,7 +194,10 @@ void audio_sink_srv_codec_info_update(esp_a2d_mcc_t *mcc)
         if (mcc->cie.sbc_info.ch_mode & ESP_A2D_SBC_CIE_CH_MODE_MONO) {
             ch_count = 1;
         }
-        dac_continuous_del_channels(s_dac_cb.tx_chan);
+        if (s_dac_cb.tx_chan) {
+            dac_continuous_del_channels(s_dac_cb.tx_chan);
+            s_dac_cb.tx_chan = NULL;
+        }
         dac_continuous_config_t cont_cfg = {
             .chan_mask = DAC_CHANNEL_MASK_ALL,
             .desc_num = 8,
@@ -177,7 +208,7 @@ void audio_sink_srv_codec_info_update(esp_a2d_mcc_t *mcc)
             .chan_mode = (ch_count == 1) ? DAC_CHANNEL_MODE_SIMUL : DAC_CHANNEL_MODE_ALTER,
         };
         /* Allocate continuous channels */
-        dac_continuous_new_channels(&cont_cfg, &s_dac_cb.tx_chan);
+        ESP_ERROR_CHECK(dac_continuous_new_channels(&cont_cfg, &s_dac_cb.tx_chan));
         ESP_LOGI(AUDIO_SNK_SRV_DAC_TAG, "Configure audio player: 0x%x-0x%x-0x%x-0x%x-0x%x-%d-%d",
                  mcc->cie.sbc_info.samp_freq,
                  mcc->cie.sbc_info.ch_mode,
@@ -194,6 +225,10 @@ size_t audio_sink_srv_data_output(const uint8_t *data, size_t size)
 {
     size_t item_size = 0;
     BaseType_t done = pdFALSE;
+
+    if (s_dac_cb.ringbuf == NULL) {
+        return 0;
+    }
 
     if (s_dac_cb.ringbuffer_mode == RINGBUFFER_MODE_DROPPING) {
         ESP_LOGW(AUDIO_SNK_SRV_DAC_TAG, "ringbuffer is full, drop this packet!");
