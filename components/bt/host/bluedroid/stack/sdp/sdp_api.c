@@ -72,8 +72,8 @@ BOOLEAN SDP_InitDiscoveryDb (tSDP_DISCOVERY_DB *p_db, UINT32 len, UINT16 num_uui
     /* verify the parameters */
     if (p_db == NULL || (sizeof (tSDP_DISCOVERY_DB) > len) ||
             num_attr > SDP_MAX_ATTR_FILTERS || num_uuid > SDP_MAX_UUID_FILTERS) {
-        SDP_TRACE_ERROR("SDP_InitDiscoveryDb Illegal param: p_db 0x%x, len %d, num_uuid %d, num_attr %d",
-                        (UINT32)p_db, len, num_uuid, num_attr);
+        SDP_TRACE_ERROR("SDP_InitDiscoveryDb Illegal param: p_db %p, len %d, num_uuid %d, num_attr %d",
+                        p_db, len, num_uuid, num_attr);
 
         return (FALSE);
     }
@@ -99,8 +99,9 @@ BOOLEAN SDP_InitDiscoveryDb (tSDP_DISCOVERY_DB *p_db, UINT32 len, UINT16 num_uui
     sdpu_sort_attr_list( num_attr, p_db );
 
     p_db->num_attr_filters = num_attr;
-#endif
     return (TRUE);
+#endif
+    return (FALSE);
 }
 
 
@@ -124,8 +125,9 @@ BOOLEAN SDP_CancelServiceSearch (tSDP_DISCOVERY_DB *p_db)
 
     sdp_disconnect (p_ccb, SDP_CANCEL);
     p_ccb->disc_state = SDP_DISC_WAIT_CANCEL;
-#endif
     return (TRUE);
+#endif
+    return (FALSE);
 }
 
 
@@ -429,7 +431,7 @@ BOOLEAN SDP_FindServiceUUIDInRec_128bit(tSDP_DISC_REC *p_rec, tBT_UUID *p_uuid)
             for (p_sattr = p_attr->attr_value.v.p_sub_attr; p_sattr; p_sattr = p_sattr->p_next_attr) {
                 if (SDP_DISC_ATTR_TYPE(p_sattr->attr_len_type) == UUID_DESC_TYPE) {
                     /* only support 128 bits UUID for now */
-                    if (SDP_DISC_ATTR_LEN(p_sattr->attr_len_type) == 16) {
+                    if (SDP_DISC_ATTR_LEN(p_sattr->attr_len_type) == LEN_UUID_128) {
                         p_uuid->len = LEN_UUID_128;
                         for (uint8_t i = 0; i != LEN_UUID_128; ++i) {
                             p_uuid->uu.uuid128[i] = p_sattr->attr_value.v.array[LEN_UUID_128 - i - 1];

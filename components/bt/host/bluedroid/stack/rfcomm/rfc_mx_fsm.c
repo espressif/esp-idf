@@ -119,6 +119,9 @@ void rfc_mx_sm_execute (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
         rfc_mx_sm_state_disc_wait_ua (p_mcb, event, p_data);
         break;
 
+    default:
+        RFCOMM_TRACE_DEBUG("invalid state:%d\n", p_mcb->state);
+        break;
     }
 }
 
@@ -215,7 +218,7 @@ void rfc_mx_sm_state_wait_conn_cnf (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
         return;
 
     /* There is some new timing so that Config Ind comes before security is completed
-       so we are still waiting fo the confirmation. */
+       so we are still waiting for the confirmation. */
     case RFC_MX_EVENT_CONF_IND:
         rfc_mx_conf_ind (p_mcb, (tL2CAP_CFG_INFO *)p_data);
         return;

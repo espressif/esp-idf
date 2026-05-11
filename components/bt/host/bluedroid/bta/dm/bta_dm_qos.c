@@ -33,7 +33,7 @@
 
 void bta_dm_set_qos(tBTA_DM_MSG *p_data)
 {
-    FLOW_SPEC p_flow = {
+    FLOW_SPEC flow = {
         .qos_flags = 0,                             /* TBD */
         .service_type = NO_TRAFFIC,                 /* service_type */
         .token_rate = 0,                            /* bytes/second */
@@ -43,7 +43,7 @@ void bta_dm_set_qos(tBTA_DM_MSG *p_data)
         .delay_variation = 0xFFFFFFFF               /* microseconds */
     };
 
-    tBTM_STATUS status = BTM_SetQoS (p_data->qos_set.bd_addr, &p_flow, p_data->qos_set.p_cb);
+    tBTM_STATUS status = BTM_SetQoS (p_data->qos_set.bd_addr, &flow, p_data->qos_set.p_cb);
 
     if(status != BTM_CMD_STARTED) {
         APPL_TRACE_ERROR("%s ERROR: 0x%x\n", __func__, status);

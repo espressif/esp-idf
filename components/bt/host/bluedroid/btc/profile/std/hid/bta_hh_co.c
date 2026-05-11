@@ -1,6 +1,6 @@
+#include <string.h>
 #include "btc_hh.h"
 #include "osi/allocator.h"
-#include "string.h"
 #if HID_HOST_INCLUDED == TRUE
 
 /*******************************************************************************
@@ -12,9 +12,9 @@
  *
  * Returns       void.
  ******************************************************************************/
-void bta_hh_co_open(uint8_t dev_handle, uint8_t sub_class, tBTA_HH_ATTR_MASK attr_mask, uint8_t app_id)
+void bta_hh_co_open(UINT8 dev_handle, UINT8 sub_class, tBTA_HH_ATTR_MASK attr_mask, UINT8 app_id)
 {
-    uint32_t i;
+    UINT32 i;
     btc_hh_device_t *p_dev = NULL;
 
     if (dev_handle == BTA_HH_INVALID_HANDLE) {
@@ -73,9 +73,9 @@ void bta_hh_co_open(uint8_t dev_handle, uint8_t sub_class, tBTA_HH_ATTR_MASK att
  *
  * Returns          void.
  ******************************************************************************/
-void bta_hh_co_close(uint8_t dev_handle, uint8_t app_id)
+void bta_hh_co_close(UINT8 dev_handle, UINT8 app_id)
 {
-    uint32_t i;
+    UINT32 i;
     btc_hh_device_t *p_dev = NULL;
 
     APPL_TRACE_WARNING("%s: dev_handle = %d, app_id = %d", __func__, dev_handle, app_id);
@@ -129,6 +129,10 @@ void bta_hh_co_data(UINT8 dev_handle, UINT8 *p_rpt, UINT16 len, tBTA_HH_PROTO_MO
                      __func__, dev_handle, sub_class, mode, ctry_code, app_id);
 
     do {
+        if ((p_rpt == NULL) || (len == 0)) {
+            ret = BTA_HH_ERR;
+            break;
+        }
         if ((p_buf = osi_malloc(sizeof(BT_HDR) + len)) == NULL) {
             APPL_TRACE_ERROR("%s malloc failed!", __func__);
             ret = BTA_HH_ERR_NO_RES;
