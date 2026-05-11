@@ -425,19 +425,12 @@
 #define UC_BT_BLE_HIGH_DUTY_ADV_INTERVAL FALSE
 #endif
 
-/* Controls whether the Bluedroid host enforces the Bluetooth Core
- * specification minimum BLE connection interval (0x0006 / 7.5 ms) during
- * host-side parameter validation.
- *
- *   - 1 : host-side lower bound is relaxed to 0x0001 (1.25 ms). The real
- *         lower bound is then enforced solely by the BLE controller.
- *   - 0 : host enforces the Bluetooth Core spec minimum (0x0006).
+/* When set to 1, the Bluedroid host's parameter validation no longer enforces
+ * a minimum BLE connection interval; the actual lower limit is then left to
+ * the controller. See BLE_CONN_INT_MIN_HOST_CHECK in common/bt_target.h.
  *
  * Do not turn this on manually in menuconfig unless you know the implications.
- * In normal IDF builds it follows the active Controller integration. The
- * actual minimum connection interval is defined by the Controller, not by the
- * Host; Controller configuration option names differ by chip and stack.
- * See common/bt_target.h (BLE_CONN_INT_MIN_HW). */
+ * In normal IDF builds it follows the active Controller integration. */
 #ifdef CONFIG_BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT
 #define UC_BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT      1
 #else
