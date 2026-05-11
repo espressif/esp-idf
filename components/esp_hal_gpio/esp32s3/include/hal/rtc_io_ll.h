@@ -81,8 +81,6 @@ static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
         }
         // 0: GPIO connected to digital GPIO module. 1: GPIO connected to analog RTC module.
         SET_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, (rtc_io_desc[rtcio_num].mux));
-        //0:RTC FUNCTION 1,2,3:Reserved
-        rtcio_ll_iomux_func_sel(rtcio_num, RTCIO_LL_PIN_FUNC);
     } else if (func == RTCIO_LL_FUNC_DIGITAL) {
         CLEAR_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, (rtc_io_desc[rtcio_num].mux));
         // USB Serial JTAG pad re-enable won't be done here (it requires both DM and DP pins not in rtc function)
