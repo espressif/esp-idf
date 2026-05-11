@@ -227,6 +227,7 @@
 // GPIO0~7 on ESP32C5 can support chip HP peripheral powerdown-ed sleep wakeup
 #define SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP  (1)
 #define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP           SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
+#define SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED          (1)
 // LP IO peripherals have independent clock gating to manage
 #define SOC_LP_IO_CLOCK_IS_INDEPENDENT      (1)
 

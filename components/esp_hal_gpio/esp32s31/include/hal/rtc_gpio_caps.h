@@ -7,5 +7,3 @@
 #pragma once
 
 #define RTC_GPIO_CAPS_GET(_attr) _RTC_GPIO_ ## _attr
-
-#define _RTC_GPIO_EDGE_WAKEUP_SUPPORTED      1

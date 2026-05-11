@@ -703,6 +703,10 @@ config SOC_LP_IO_CLOCK_IS_INDEPENDENT
     bool
     default y
 
+config SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED
+    bool
+    default y
+
 config SOC_GPIO_VALID_GPIO_MASK
     hex
     default 0x007FFFFFFFFFFFFF
