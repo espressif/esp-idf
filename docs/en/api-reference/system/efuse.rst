@@ -573,9 +573,9 @@ To get a dump for all eFuse registers.
 Deferred WR_DIS Burning
 -----------------------
 
-``WR_DIS`` (Write Disable) is a special eFuse field that implements permanent write-protection. Each bit in ``WR_DIS`` disables further programming of one (or more) associated eFuse fields. Once burned, the affected fields can no longer be modified.
+``WR_DIS`` (Write Disable) is a special eFuse field that implements permanent write-protection. Each bit in ``WR_DIS`` disables further programming of one (or more) associated eFuse fields. Once a ``WR_DIS`` bit is burned, its associated fields can no longer be modified.
 
-When burning staged data in BLOCK0, ``WR_DIS`` bits are burned separately after all other BLOCK0 data to ensure the retry mechanism of the burn function can recover from coding errors. This approach guarantees that write-protection is applied only after other BLOCK0 data is successfully burned.
+When burning staged data in BLOCK0, the ``WR_DIS`` bits are burned separately after all other BLOCK0 data to ensure the burn function can recover from coding errors via its retry mechanism. This approach guarantees that write-protection is applied only after other BLOCK0 data is successfully burned.
 
 Application Examples
 --------------------

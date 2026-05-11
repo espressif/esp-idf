@@ -434,8 +434,8 @@ Misc
 
 .. only:: SOC_CPU_HAS_PIE
 
-    PIE / AI Coprocessor Usage
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    PIE/AI Coprocessor Usage
+    ^^^^^^^^^^^^^^^^^^^^^^^^
 
     Like the Floating Point Unit (FPU), IDF FreeRTOS implements **Lazy Context Switching** for the PIE coprocessor. On a context switch, PIE registers remain untouched until a task executes a PIE instruction. Once a task uses the PIE coprocessor, it is **pinned to the current core**.
 
@@ -444,6 +444,7 @@ Misc
         .. note::
 
             On ESP32-S31, the PIE coprocessor is available **only on Core 1**. If a task executes a PIE instruction while running on Core 0, IDF FreeRTOS migrates the task to Core 1 and pins it there. This migration **overrides** any existing core affinity.
+
             Because of this migration, tasks must **not** use the PIE coprocessor within a critical section or ISR, as doing so will cause a runtime abort.
 
 

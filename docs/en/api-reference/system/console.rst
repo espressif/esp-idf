@@ -187,7 +187,7 @@ To establish a basic REPL environment, ``console`` component provides several us
 
 In a typical application, you only need to call :cpp:func:`esp_console_new_repl_stdio` to initialize the REPL environment, including driver install, basic console configuration, spawning a thread to do REPL task and register several useful commands (e.g., `help`).
 
-After that, you can register your own commands with :cpp:func:`esp_console_cmd_register`. The REPL environment keeps in init state until you call :cpp:func:`esp_console_start_repl`.
+After that, you can register your own commands with :cpp:func:`esp_console_cmd_register`. The REPL environment keeps in initialized state until you call :cpp:func:`esp_console_start_repl`.
 
 
 Application Examples

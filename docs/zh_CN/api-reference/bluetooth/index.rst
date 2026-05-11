@@ -90,12 +90,13 @@ ESP-IDF 默认的主机协议栈，支持经典蓝牙和低功耗蓝牙。
 ----
 
 示例与教程
-------------
+----------
 
 ESP-IDF 提供了丰富的示例代码和实践教程，路径见 examples 目录：
 
 - **Bluedroid**: :example:`bluetooth/bluedroid`
 - **NimBLE**: :example:`bluetooth/nimble`
+- **BLE UART 服务** （基于 NimBLE 或 Bluedroid 的即用型蓝牙串口透传外设，提供 BLE UART Service GATT 布局）：:example:`bluetooth/ble_uart_service`
 
 使用 Bluedroid 协议栈进行开发的分步示例教程：
 
