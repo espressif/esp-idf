@@ -12,7 +12,6 @@
 #include "twai_private.h"
 #include "hal/twai_periph.h"
 #include "hal/twai_hal.h"
-#include "esp_sleep.h"
 #if SOC_HAS(TWAI_FD)
 #include "hal/twaifd_ll.h"
 #endif
@@ -658,9 +657,6 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
     ESP_RETURN_ON_FALSE(!node_config->intr_priority || (BIT(node_config->intr_priority) & ESP_INTR_FLAG_LOWMED), ESP_ERR_INVALID_ARG, TAG, "Invalid intr_priority level");
 #if !SOC_TWAI_SUPPORT_SLEEP_RETENTION
     ESP_RETURN_ON_FALSE(!node_config->flags.sleep_allow_pd, ESP_ERR_NOT_SUPPORTED, TAG, "sleep retention is not supported on this target");
-#if SOC_PM_SUPPORT_TOP_PD
-    esp_sleep_pd_config(ESP_PD_DOMAIN_TOP, ESP_PD_OPTION_ON); //IDF-15649
-#endif
 #endif
     // Allocate TWAI node from internal memory because it contains atomic variable
     twai_onchip_ctx_t *node = heap_caps_calloc(1, sizeof(twai_onchip_ctx_t) + twai_hal_get_mem_requirment(), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);

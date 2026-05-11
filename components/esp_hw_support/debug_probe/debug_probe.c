@@ -16,10 +16,8 @@
 #include "soc/soc_caps.h"
 #include "soc/debug_probe_periph.h"
 #include "soc/io_mux_reg.h"
-#if SOC_DEBUG_PROBE_NUM_UNIT >= 2 && SOC_LP_GPIO_MATRIX_SUPPORTED
 #include "driver/rtc_io.h"
 #include "driver/lp_io.h"
-#endif
 #include "hal/debug_probe_ll.h"
 #include "esp_private/debug_probe.h"
 #include "esp_private/gpio.h"
@@ -50,26 +48,17 @@ typedef struct debug_probe_platform_t {
 
 static debug_probe_platform_t s_platform; // singleton platform
 
-static esp_err_t connect_probe_out_to_pin(debug_probe_unit_id_t unit_id, int pin, unsigned sig_idx, bool out_inv)
+static esp_err_t connect_probe_out_to_pin(debug_probe_unit_id_t unit_id, int pin, int sig_idx, bool out_inv)
 {
+    uint32_t sig_index = debug_probe_periph_signals.units[unit_id].out_sig[sig_idx];
     if (unit_id == DEBUG_PROBE_UNIT_HP) {
-        esp_err_t ret = gpio_func_sel((gpio_num_t)pin, PIN_FUNC_GPIO);
-        if (ret != ESP_OK) {
-            return ret;
-        }
-        esp_rom_gpio_connect_out_signal(pin, debug_probe_periph_signals.units[0].out_sig[sig_idx], out_inv, false);
-        return ESP_OK;
+        return gpio_matrix_output(pin, sig_index, out_inv, false);
+    } else if (unit_id == DEBUG_PROBE_UNIT_LP) {
+        ESP_RETURN_ON_ERROR(rtc_gpio_init(pin), TAG, "init RTC GPIO %d failed", pin);
+        return lp_gpio_matrix_output(pin, sig_index, out_inv, false);
+    } else {
+        return ESP_ERR_NOT_SUPPORTED;
     }
-#if SOC_DEBUG_PROBE_NUM_UNIT >= 2
-    if (!rtc_gpio_is_valid_gpio((gpio_num_t)pin)) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    esp_err_t ret = rtc_gpio_init((gpio_num_t)pin);
-    return (ret == ESP_OK) ? lp_gpio_connect_out_signal((gpio_num_t)pin,
-            debug_probe_periph_signals.units[1].out_sig[sig_idx], out_inv, false) : ret;
-#else
-    return ESP_ERR_NOT_SUPPORTED;
-#endif
 }
 
 static esp_err_t debug_probe_unit_destroy(debug_probe_unit_t *unit)
@@ -84,13 +73,11 @@ static esp_err_t debug_probe_unit_destroy(debug_probe_unit_t *unit)
     // disable the probe output
     debug_probe_ll_enable_unit(unit_id, false);
     esp_gpio_revoke(unit->pin_bit_mask);
-#if SOC_DEBUG_PROBE_NUM_UNIT >= 2
     if (unit_id == DEBUG_PROBE_UNIT_LP) {
         for (uint64_t m = unit->pin_bit_mask; m; m &= m - 1) {
             rtc_gpio_deinit((gpio_num_t)(__builtin_ffsll(m) - 1));
         }
     }
-#endif
     // free the memory
     free(unit);
     return ESP_OK;
@@ -135,7 +122,7 @@ esp_err_t debug_probe_new_unit(const debug_probe_unit_config_t *config, debug_pr
         int pin = config->probe_out_gpio_nums[i];
         if (pin >= 0) {
             bool out_inv = !!(config->probe_out_inv_mask & BIT(i));
-            ret = connect_probe_out_to_pin(unit_id, pin, (unsigned)i, out_inv);
+            ret = connect_probe_out_to_pin(unit_id, pin, i, out_inv);
             if (ret != ESP_OK) {
                 ESP_LOGE(TAG, "Probe out pin %d failed: %s", pin, esp_err_to_name(ret));
                 break;
@@ -218,8 +205,8 @@ esp_err_t debug_probe_new_channel(debug_probe_unit_handle_t unit, const debug_pr
 
     // one channel can only monitor one target module
     uint8_t target_module = (unit_id == DEBUG_PROBE_UNIT_HP)
-                      ? (uint8_t)config->target_module.hp_target
-                      : (uint8_t)config->target_module.lp_target;
+                            ? (uint8_t)config->target_module.hp_target
+                            : (uint8_t)config->target_module.lp_target;
     debug_probe_ll_channel_set_target_module(unit_id, chan_id, target_module);
     debug_probe_ll_enable_channel(unit_id, chan_id, true);
 

@@ -17,7 +17,6 @@
 #define PRO_CPU_NUM (0)
 
 #define REG_UART_BASE(i)                        (DR_REG_UART_BASE + (i) * 0x1000)        // UART0 and UART1
-#define REG_TIMG_BASE(i)                        (DR_REG_TIMERGROUP0_BASE + (i) * 0x1000) // TIMERG0 and TIMERG1
 
 //Registers Operation {{
 #define ETS_UNCACHED_ADDR(addr) (addr)
