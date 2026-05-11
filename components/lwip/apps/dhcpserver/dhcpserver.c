@@ -1281,11 +1281,8 @@ static void handle_dhcp(void *arg,
 {
     struct dhcps_t *dhcps = arg;
     struct dhcps_msg *pmsg_dhcps = NULL;
-    s16_t tlen, malloc_len;
-    u16_t i;
-    u16_t dhcps_msg_cnt = 0;
+    u16_t tlen, malloc_len;
     u8_t *p_dhcps_msg = NULL;
-    u8_t *data;
     s16_t state;
 
 #if DHCPS_DEBUG
@@ -1293,6 +1290,11 @@ static void handle_dhcp(void *arg,
 #endif
 
     if (p == NULL) {
+        return;
+    }
+
+    if (p->tot_len > 1500) {
+        pbuf_free(p);
         return;
     }
 
@@ -1312,52 +1314,23 @@ static void handle_dhcp(void *arg,
 
     p_dhcps_msg = (u8_t *)pmsg_dhcps;
     tlen = p->tot_len;
-    data = p->payload;
 
 #if DHCPS_DEBUG
     DHCPS_LOG("dhcps: handle_dhcp-> p->tot_len = %d\n", tlen);
     DHCPS_LOG("dhcps: handle_dhcp-> p->len = %d\n", p->len);
 #endif
 
-    for (i = 0; i < p->len; i++) {
-        p_dhcps_msg[dhcps_msg_cnt++] = data[i];
-#if DHCPS_DEBUG
-        DHCPS_LOG("%02x ", data[i]);
-
-        if ((i + 1) % 16 == 0) {
-            DHCPS_LOG("\n");
-        }
-
-#endif
-    }
-
-    if (p->next != NULL) {
-#if DHCPS_DEBUG
-        DHCPS_LOG("dhcps: handle_dhcp-> p->next != NULL\n");
-        DHCPS_LOG("dhcps: handle_dhcp-> p->next->tot_len = %d\n", p->next->tot_len);
-        DHCPS_LOG("dhcps: handle_dhcp-> p->next->len = %d\n", p->next->len);
-#endif
-
-        data = p->next->payload;
-
-        for (i = 0; i < p->next->len; i++) {
-            p_dhcps_msg[dhcps_msg_cnt++] = data[i];
-#if DHCPS_DEBUG
-            DHCPS_LOG("%02x ", data[i]);
-
-            if ((i + 1) % 16 == 0) {
-                DHCPS_LOG("\n");
-            }
-
-#endif
-        }
+    if (tlen == 0 || pbuf_copy_partial(p, p_dhcps_msg, tlen, 0) != tlen) {
+        pbuf_free(p);
+        mem_free(pmsg_dhcps);
+        return;
     }
 
 #if DHCPS_DEBUG
     DHCPS_LOG("dhcps: handle_dhcp-> parse_msg(p)\n");
 #endif
 
-    state = parse_msg(dhcps, pmsg_dhcps, tlen - 240);
+    state = parse_msg(dhcps, pmsg_dhcps, tlen >= 240 ? (u16_t)(tlen - 240) : 0);
 #ifdef LWIP_HOOK_DHCPS_POST_STATE
     state = LWIP_HOOK_DHCPS_POST_STATE(pmsg_dhcps, malloc_len, state);
 #endif /* LWIP_HOOK_DHCPS_POST_STATE */
