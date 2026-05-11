@@ -9,6 +9,8 @@ from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.service import BleakGATTService
 from bleak.backends.service import BleakGATTServiceCollection
+from bleak.exc import BleakGATTProtocolError
+from bleak.exc import BleakGATTProtocolErrorCode
 from loguru import logger
 
 from .constants import BLE_WRITE_WITH_RESPONSE_MAX_SIZE
@@ -33,12 +35,7 @@ class BLEUARTBridge:
         self._profile = profile or BLEUARTProfile()
         self._conn_state = ConnectionState.DISCONNECTED
         self._connection_timeout = connection_timeout
-        self._client = BleakClient(
-            self._device_id,
-            disconnected_callback=self._handle_disconnect,
-            services=[self._profile.service_uuid],
-            timeout=connection_timeout,
-        )
+        self._client = self._create_client()
         self._tx_char: BleakGATTCharacteristic | None = None
         self._rx_char: BleakGATTCharacteristic | None = None
         self._disconnected_event = asyncio.Event()
@@ -58,6 +55,14 @@ class BLEUARTBridge:
     @property
     def is_connected(self) -> bool:
         return self._conn_state is ConnectionState.CONNECTED and self._client.is_connected
+
+    def _create_client(self) -> BleakClient:
+        return BleakClient(
+            self._device_id,
+            disconnected_callback=self._handle_disconnect,
+            services=[self._profile.service_uuid],
+            timeout=self._connection_timeout,
+        )
 
     def reset(self) -> None:
         self._conn_state = ConnectionState.DISCONNECTED
@@ -86,7 +91,7 @@ class BLEUARTBridge:
             self.reset()
             return
         except Exception as e:
-            logger.exception(e)
+            logger.error(e)
             self.reset()
             return
 
@@ -107,7 +112,10 @@ class BLEUARTBridge:
         async with self._state_lock:
             await self._cleanup_connection_locked()
 
-    def _handle_disconnect(self, _: BleakClient) -> None:
+    def _handle_disconnect(self, client: BleakClient) -> None:
+        if client is not self._client:
+            logger.debug(f'Ignoring stale disconnect callback from {self._device_id}')
+            return
         logger.info(f'Disconnected from {self._device_id}')
         self.reset()
         self._disconnected_event.set()
@@ -129,6 +137,7 @@ class BLEUARTBridge:
                 # Update connection state
                 logger.info(f'Connecting to {self._device_id}...')
                 self._conn_state = ConnectionState.CONNECTING
+                self._client = self._create_client()
 
                 await self._client.connect()
                 if not self._client.is_connected:
@@ -139,7 +148,7 @@ class BLEUARTBridge:
                 await self._cleanup_connection_locked()
                 raise
             except Exception as e:
-                logger.exception(e)
+                logger.error(e)
                 await self._cleanup_connection_locked()
                 return False
 
@@ -158,7 +167,7 @@ class BLEUARTBridge:
                 await self._cleanup_connection_locked()
                 raise
             except Exception as e:
-                logger.exception(e)
+                logger.error(e)
                 await self._cleanup_connection_locked()
                 return False
 
@@ -176,8 +185,18 @@ class BLEUARTBridge:
             except asyncio.CancelledError:
                 await self._cleanup_connection_locked()
                 raise
+            except BleakGATTProtocolError as e:
+                if e.code != BleakGATTProtocolErrorCode.INSUFFICIENT_AUTHENTICATION:
+                    logger.error(e)
+                    await self._cleanup_connection_locked()
+                    return False
+
+                # For insufficient authentication exception, try pairing
+                logger.warning('Please try to pair device in system Bluetooth settings first!')
+                await self._cleanup_connection_locked()
+                return False
             except Exception as e:
-                logger.exception(e)
+                logger.error(e)
                 await self._cleanup_connection_locked()
                 return False
 
@@ -239,7 +258,7 @@ class BLEUARTBridge:
                 await self._cleanup_connection()
                 return False
             except Exception as e:
-                logger.exception(e)
+                logger.error(e)
                 await self._cleanup_connection()
                 return False
             return True
