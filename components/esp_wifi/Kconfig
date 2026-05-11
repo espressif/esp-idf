@@ -608,11 +608,16 @@ menu "Wi-Fi"
         config ESP_WIFI_ENABLE_ROAMING_APP
             bool "Advanced support for Wi-Fi Roaming (Experimental)"
             depends on IDF_EXPERIMENTAL_FEATURES
+            select ESP_WIFI_11KV_SUPPORT
             default n
             help
                 Enable Espressif's roaming app to allow for efficient Wi-Fi roaming.
                 This includes configurable periodic environment scans, maintaining a cache of the
                 best APs, handling low rssi events etc.
+
+                802.11k/v is selected so roaming-app scans can deliver beacon/probe frames to
+                the supplicant BSS table used by candidate_security_match() for RSN IE checks.
+                Without it, PMF/SAE-PK/H2E validation can fall back to coarse authmode heuristics.
 
                 Risk Warning
                 Please note that this feature is still experimental and enabling this potentially can
