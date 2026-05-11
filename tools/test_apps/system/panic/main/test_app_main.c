@@ -188,6 +188,10 @@ void app_main(void)
 
 #if CONFIG_ESP_SYSTEM_MEMPROT
     HANDLE_TEST(test_name, test_irom_reg_write_violation);
+    HANDLE_TEST(test_name, test_irom_mask_reg_write_violation);
+#ifdef SOC_DROM_MASK_HIGH
+    HANDLE_TEST(test_name, test_drom_mask_reg_write_violation);
+#endif
     HANDLE_TEST(test_name, test_drom_reg_write_violation);
     HANDLE_TEST(test_name, test_drom_reg_execute_violation);
 
