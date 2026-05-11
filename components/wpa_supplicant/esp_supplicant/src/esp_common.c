@@ -281,7 +281,8 @@ int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
     wpas_clear_beacon_rep_data(wpa_s);
 #endif /* defined(CONFIG_RRM) */
     esp_scan_init(wpa_s);
-
+#elif CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    wpa_bss_init(wpa_s);
 #endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
     wpa_s->type = 0;
     wpa_s->subtype = 0;
@@ -313,6 +314,8 @@ void esp_supplicant_common_deinit(void)
     wpas_rrm_reset(wpa_s);
     wpas_clear_beacon_rep_data(wpa_s);
 #endif /* defined(CONFIG_RRM) */
+#elif CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    wpa_bss_deinit(wpa_s);
 #endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
     if (wpa_s->type) {
         wpa_s->type = 0;

@@ -928,6 +928,7 @@ enum phy_type {
 	PHY_TYPE_HT = 7,
 	PHY_TYPE_DMG = 8,
 	PHY_TYPE_VHT = 9,
+	PHY_TYPE_HE = 14,
 };
 
 /* IEEE P802.11-REVmc/D5.0, 9.4.2.37 - Neighbor Report element */
