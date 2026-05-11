@@ -641,28 +641,6 @@ static void key_mgr_test_hmac_ecdh1_mode(void)
 #endif /* SOC_KEY_MANAGER_HMAC_KEY_DEPLOY */
 
 #if SOC_KEY_MANAGER_FE_KEY_DEPLOY && SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128
-/* Common XTS-AES verify body. Used by both the AES-mode and ECDH1-mode XTS
- * tests, which carry their own struct types but share the same plaintext +
- * expected-ciphertext layout. */
-static void verify_xts_aes_test_data(const uint8_t *plaintext_data,
-                                     const test_xts_data_t *xts_test_data)
-{
-    const esp_partition_t *partition = get_test_storage_partition();
-    ESP_ERROR_CHECK(esp_partition_erase_range(partition, 0, partition->size));
-
-    uint8_t read_data[128];
-    for (int i = 0; i < TEST_COUNT; i++) {
-        memset(read_data, 0, sizeof(read_data));
-        uint32_t address = xts_test_data[i].data_offset;
-        uint32_t data_size = xts_test_data[i].data_size;
-
-        ESP_ERROR_CHECK(esp_flash_write_encrypted(NULL, address, plaintext_data, data_size));
-        ESP_ERROR_CHECK(esp_flash_read(NULL, read_data, address, data_size));
-
-        TEST_ASSERT_EQUAL_HEX8_ARRAY(xts_test_data[i].ciphertext, read_data, data_size);
-    }
-}
-
 static void key_mgr_test_xts_aes_128_ecdh1_mode(void)
 {
     static esp_key_mgr_ecdh1_key_config_t key_config;
