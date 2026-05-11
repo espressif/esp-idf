@@ -600,6 +600,96 @@ static void key_mgr_test_ds_aes_mode(void)
 }
 #endif /* SOC_KEY_MANAGER_DS_KEY_DEPLOY */
 
+/* ---- ECDH1 deployment helpers ----
+ *
+ * Per-key-type test vectors (k2_info, init_key, expected XTS ciphertext /
+ * HMAC result / ECDSA-P256 pubkey) are precomputed off-device by
+ * gen_key_manager_test_cases.py against the same committed k1_64.bin /
+ * k2.bin / init_key.bin / rand_num.bin used by the AES-mode and ECDH0
+ * tests, and emitted as test_data_ecdh1_xts_aes_128 / test_data_ecdh1_hmac
+ * / test_data_ecdh1_ecdsa instances of test_data_aes_mode_t. That lets the
+ * AES-mode per-peripheral verifiers (test_xts_aes_key_aes_mode,
+ * key_mgr_test_hmac_key_aes_mode, test_ecdsa_key_aes_mode) compare HW
+ * output bitwise against the precomputed expected values without any
+ * on-device key-derivation. k1*G (the ECDH input the user supplies) is
+ * shared with the ECDH0 tests via test_data_ecdh0.k1_G[0]. */
+
+#if SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
+static void key_mgr_test_hmac_ecdh1_mode(void)
+{
+    static esp_key_mgr_ecdh1_key_config_t key_config;
+    memcpy(key_config.k2_info, (uint8_t*) test_data_ecdh1_hmac.k2_info, KEY_MGR_K2_INFO_SIZE);
+    memcpy(key_config.k1_G[0], (uint8_t*) test_data_ecdh0.k1_G[0], KEY_MGR_ECDH0_INFO_SIZE);
+    memcpy(key_config.sw_init_key, (uint8_t*) test_data_ecdh1_hmac.init_key, KEY_MGR_SW_INIT_KEY_SIZE);
+    key_config.use_pre_generated_sw_init_key = 1;
+    key_config.key_type = ESP_KEY_MGR_HMAC_KEY;
+
+    static esp_key_mgr_key_recovery_info_t key_recovery_info;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deploy_key_in_ecdh1_mode(&key_config, &key_recovery_info));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_activate_key(&key_recovery_info));
+
+    uint8_t hw_mac[32] = { 0 };
+    TEST_ASSERT_EQUAL(ESP_OK, hmac_calculate(HMAC_KEY_KM,
+                                             test_data_ecdh1_hmac.hmac_test_data.message,
+                                             sizeof(test_data_ecdh1_hmac.hmac_test_data.message),
+                                             hw_mac));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(test_data_ecdh1_hmac.hmac_test_data.hmac_result,
+                                 hw_mac, sizeof(hw_mac));
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deactivate_key(key_recovery_info.key_type));
+}
+#endif /* SOC_KEY_MANAGER_HMAC_KEY_DEPLOY */
+
+#if SOC_KEY_MANAGER_FE_KEY_DEPLOY && SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128
+static void key_mgr_test_xts_aes_128_ecdh1_mode(void)
+{
+    static esp_key_mgr_ecdh1_key_config_t key_config;
+    memcpy(key_config.k2_info, (uint8_t*) test_data_ecdh1_xts_aes_128.k2_info, KEY_MGR_K2_INFO_SIZE);
+    memcpy(key_config.k1_G[0], (uint8_t*) test_data_ecdh0.k1_G[0], KEY_MGR_ECDH0_INFO_SIZE);
+    memcpy(key_config.sw_init_key, (uint8_t*) test_data_ecdh1_xts_aes_128.init_key, KEY_MGR_SW_INIT_KEY_SIZE);
+    key_config.use_pre_generated_sw_init_key = 1;
+    key_config.key_type = ESP_KEY_MGR_FLASH_XTS_AES_KEY;
+    key_config.key_len = ESP_KEY_MGR_XTS_AES_LEN_128;
+
+    static esp_key_mgr_key_recovery_info_t key_recovery_info;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deploy_key_in_ecdh1_mode(&key_config, &key_recovery_info));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_activate_key(&key_recovery_info));
+    verify_xts_aes_test_data(test_data_ecdh1_xts_aes_128.plaintext_data,
+                             test_data_ecdh1_xts_aes_128.xts_test_data);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deactivate_key(key_recovery_info.key_type));
+}
+#endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY && SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128 */
+
+#if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
+static void key_mgr_test_ecdsa_p256_ecdh1_mode(void)
+{
+    static esp_key_mgr_ecdh1_key_config_t key_config;
+    memcpy(key_config.k2_info, (uint8_t*) test_data_ecdh1_ecdsa.k2_info, KEY_MGR_K2_INFO_SIZE);
+    memcpy(key_config.k1_G[0], (uint8_t*) test_data_ecdh0.k1_G[0], KEY_MGR_ECDH0_INFO_SIZE);
+    memcpy(key_config.sw_init_key, (uint8_t*) test_data_ecdh1_ecdsa.init_key, KEY_MGR_SW_INIT_KEY_SIZE);
+    key_config.use_pre_generated_sw_init_key = 1;
+    key_config.key_type = ESP_KEY_MGR_ECDSA_KEY;
+    key_config.key_len = ESP_KEY_MGR_ECDSA_LEN_256;
+
+    static esp_key_mgr_key_recovery_info_t key_recovery_info;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deploy_key_in_ecdh1_mode(&key_config, &key_recovery_info));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_activate_key(&key_recovery_info));
+
+#if SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+    test_ecdsa_key_aes_mode(ECDSA_CURVE_SECP256R1, sha_digest,
+                            test_data_ecdh1_ecdsa.ecdsa_test_data.ecdsa_p256_pubx,
+                            test_data_ecdh1_ecdsa.ecdsa_test_data.ecdsa_p256_puby,
+                            ECDSA_K_TYPE_DETERMINISITIC);
+#endif
+    test_ecdsa_key_aes_mode(ECDSA_CURVE_SECP256R1, sha_digest,
+                            test_data_ecdh1_ecdsa.ecdsa_test_data.ecdsa_p256_pubx,
+                            test_data_ecdh1_ecdsa.ecdsa_test_data.ecdsa_p256_puby,
+                            ECDSA_K_TYPE_TRNG);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deactivate_key(key_recovery_info.key_type));
+}
+#endif /* SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY */
+
 TEST_GROUP(key_manager);
 
 TEST_SETUP(key_manager)
@@ -627,6 +717,11 @@ TEST(key_manager, xts_aes_128_key_aes_deployment)
 TEST(key_manager, xts_key_128_ecdh0_deployment)
 {
     key_mgr_test_xts_aes_128_ecdh0_mode();
+}
+
+TEST(key_manager, xts_key_128_ecdh1_deployment)
+{
+    key_mgr_test_xts_aes_128_ecdh1_mode();
 }
 
 #if CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS
@@ -691,6 +786,11 @@ TEST(key_manager, ecdsa_p256_key_ecdh0_deployment)
     key_mgr_test_ecdsa_key_ecdh0_mode(ESP_KEY_MGR_ECDSA_LEN_256);
 }
 
+TEST(key_manager, ecdsa_p256_key_ecdh1_deployment)
+{
+    key_mgr_test_ecdsa_p256_ecdh1_mode();
+}
+
 TEST(key_manager, ecdsa_p256_key_random_deployment)
 {
     key_mgr_test_ecdsa_key_random_mode(ESP_KEY_MGR_ECDSA_LEN_256);
@@ -725,6 +825,11 @@ TEST(key_manager, hmac_key_ecdh0_deployment)
     key_mgr_test_hmac_ecdh0_mode();
 }
 
+TEST(key_manager, hmac_key_ecdh1_deployment)
+{
+    key_mgr_test_hmac_ecdh1_mode();
+}
+
 TEST(key_manager, hmac_key_random_deployment)
 {
     key_mgr_test_hmac_random_mode();
@@ -744,6 +849,7 @@ TEST_GROUP_RUNNER(key_manager)
 #if SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128
     RUN_TEST_CASE(key_manager, xts_aes_128_key_aes_deployment);
     RUN_TEST_CASE(key_manager, xts_key_128_ecdh0_deployment);
+    RUN_TEST_CASE(key_manager, xts_key_128_ecdh1_deployment);
 #if CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS
     // This tests expects Flash encryption to be enabled as the test compares the decrypted flash data with the plaintext data
     RUN_TEST_CASE(key_manager, xts_key_128_random_deployment);
@@ -766,6 +872,7 @@ TEST_GROUP_RUNNER(key_manager)
 
     RUN_TEST_CASE(key_manager, ecdsa_p256_key_aes_deployment);
     RUN_TEST_CASE(key_manager, ecdsa_p256_key_ecdh0_deployment);
+    RUN_TEST_CASE(key_manager, ecdsa_p256_key_ecdh1_deployment);
     RUN_TEST_CASE(key_manager, ecdsa_p256_key_random_deployment);
 
 #if SOC_ECDSA_SUPPORT_CURVE_P384
@@ -778,6 +885,7 @@ TEST_GROUP_RUNNER(key_manager)
 #if SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
     RUN_TEST_CASE(key_manager, hmac_key_aes_deployment);
     RUN_TEST_CASE(key_manager, hmac_key_ecdh0_deployment);
+    RUN_TEST_CASE(key_manager, hmac_key_ecdh1_deployment);
     RUN_TEST_CASE(key_manager, hmac_key_random_deployment);
 #endif /* SOC_KEY_MANAGER_HMAC_KEY_DEPLOY */
 
