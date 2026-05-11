@@ -27,6 +27,7 @@
 #include "soc/clk_tree_defs.h"
 #include "soc/hp_system_struct.h"
 #include "rom/opi_flash.h"
+#include "esp_rom_sys.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -956,6 +957,27 @@ __attribute__((always_inline))
 static inline void psram_ctrlr_ll_enable_core_err_resp(void)
 {
     HP_SYSTEM.core_err_resp_dis.val = 0x0;
+}
+
+/**
+ * @brief Wake PSRAM from half-sleep via MSPI CS controls.
+ *
+ * MSPI2: mem_cs_oe_ctrl drives CS. MSPI3: cs_keep_active + cs0/cs1_dis for CE#.
+ * Restore MSPI2/MSPI3 cs settings when done.
+ */
+__attribute__((always_inline))
+static inline void psram_ctrlr_ll_half_sleep_wakeup(void)
+{
+    bool old_oe_ctrl = SPIMEM2.mem_misc.mem_cs_oe_ctrl;
+    SPIMEM2.mem_misc.mem_cs_oe_ctrl = 1;
+    SPIMEM3.misc.cs_keep_active = 1;
+    SPIMEM3.misc.cs0_dis = 1;
+    SPIMEM3.misc.cs1_dis = 0;
+    esp_rom_delay_us(3);
+    SPIMEM3.misc.cs1_dis = 1;
+    SPIMEM3.misc.cs0_dis = 0;
+    SPIMEM3.misc.cs_keep_active = 0;
+    SPIMEM2.mem_misc.mem_cs_oe_ctrl = old_oe_ctrl;
 }
 
 #ifdef __cplusplus
