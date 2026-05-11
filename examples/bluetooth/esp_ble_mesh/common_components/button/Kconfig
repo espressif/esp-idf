@@ -18,4 +18,14 @@ menu "Button"
         range 10 100
         default 50
 
+    config BUTTON_IO_NUM
+        int "Default Boot Button IO"
+        default 0 if IDF_TARGET_ESP32
+        default 9 if IDF_TARGET_ESP32C3
+        default 0 if IDF_TARGET_ESP32S3
+        default 8 if IDF_TARGET_ESP32C6
+        default 9 if IDF_TARGET_ESP32H2
+        default 9 if IDF_TARGET_ESP32C61
+        default 28 if IDF_TARGET_ESP32C5
+
 endmenu

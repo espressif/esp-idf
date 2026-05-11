@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,7 +43,6 @@
 
 #define TAG "EXAMPLE"
 
-extern struct _led_state led_state[3];
 extern struct k_delayed_work send_self_prov_node_addr_timer;
 extern bt_mesh_atomic_t fast_prov_cli_flags;
 
@@ -168,9 +167,7 @@ static esp_ble_mesh_prov_t prov = {
 
 static void example_change_led_state(uint8_t onoff)
 {
-    struct _led_state *led = &led_state[1];
-
-    board_led_operation(led->pin, onoff);
+    ESP_LOGI(TAG, "Recv GenOnOff message, state: %s", onoff ? "ON" : "OFF");
 
     /* When the node receives the first Generic OnOff Get/Set/Set Unack message, it will
      * start the timer used to disable fast provisioning functionality.
@@ -189,7 +186,7 @@ static void node_prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, u
 {
     ESP_LOGI(TAG, "net_idx: 0x%04x, unicast_addr: 0x%04x", net_idx, addr);
     ESP_LOGI(TAG, "flags: 0x%02x, iv_index: 0x%08" PRIx32, flags, iv_index);
-    board_prov_complete();
+    ESP_LOGI(TAG, "Provisioning complete");
     /* Updates the net_idx used by Fast Prov Server model, and it can also
      * be updated if the Fast Prov Info Set message contains a valid one.
      */
@@ -225,7 +222,7 @@ static void provisioner_prov_complete(int node_idx, const uint8_t uuid[16], uint
 
     /* Sets node info */
     err = example_store_node_info(uuid, unicast_addr, element_num, net_idx,
-                                  fast_prov_server.app_idx, LED_OFF);
+                                  fast_prov_server.app_idx, 0);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: Failed to set node info", __func__);
         return;
@@ -754,8 +751,6 @@ static esp_err_t ble_mesh_init(void)
     }
 
     ESP_LOGI(TAG, "BLE Mesh Wi-Fi Coexist Node initialized");
-
-    board_led_operation(LED_B, LED_ON);
 
     return ESP_OK;
 }
