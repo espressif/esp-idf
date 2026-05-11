@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,13 +30,9 @@ esp_err_t esp_isp_lsc_allocate_gain_array(isp_proc_handle_t isp_proc, esp_isp_ls
     ESP_RETURN_ON_FALSE(isp_proc && gain_array && out_array_size_per_channel, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(atomic_load(&isp_proc->lsc_fsm) == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "lsc is enabled already");
 
-    int num_grids_x_max = ISP_LSC_GET_GRIDS(ISP_LL_HSIZE_MAX);
-    int num_grids_y_max = ISP_LSC_GET_GRIDS(ISP_LL_VSIZE_MAX);
     int num_grids_x = ISP_LSC_GET_GRIDS(isp_proc->h_res);
     int num_grids_y = ISP_LSC_GET_GRIDS(isp_proc->v_res);
-    ESP_LOGD(TAG, "num_grids_x_max: %d, num_grids_x: %d, num_grids_y_max: %d, num_grids_y: %d", num_grids_x_max, num_grids_y_max, num_grids_x, num_grids_y);
     ESP_RETURN_ON_FALSE(num_grids_x * num_grids_y <= ISP_LL_LUT_LSC_SIZE_MAX, ESP_ERR_INVALID_ARG, TAG, "invalid number of grids, max is %d, num_grids_x: %d, num_grids_y: %d", ISP_LL_LUT_LSC_SIZE_MAX, num_grids_x, num_grids_y);
-    ESP_RETURN_ON_FALSE(num_grids_x <= num_grids_x_max && num_grids_y <= num_grids_y_max, ESP_ERR_INVALID_ARG, TAG, "invalid h_res or v_res");
 
     gain_array->gain_r = (isp_lsc_gain_t *)heap_caps_calloc(1, num_grids_x * num_grids_y * sizeof(isp_lsc_gain_t), ISP_MEM_ALLOC_CAPS);
     gain_array->gain_gr = (isp_lsc_gain_t *)heap_caps_calloc(1, num_grids_x * num_grids_y * sizeof(isp_lsc_gain_t), ISP_MEM_ALLOC_CAPS);
@@ -63,12 +59,9 @@ esp_err_t esp_isp_lsc_configure(isp_proc_handle_t isp_proc, const esp_isp_lsc_co
 
     ESP_RETURN_ON_FALSE(isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
 
-    int num_grids_x_max = ISP_LSC_GET_GRIDS(ISP_LL_HSIZE_MAX);
-    int num_grids_y_max = ISP_LSC_GET_GRIDS(ISP_LL_VSIZE_MAX);
     int num_grids_x = ISP_LSC_GET_GRIDS(isp_proc->h_res);
     int num_grids_y = ISP_LSC_GET_GRIDS(isp_proc->v_res);
-    ESP_LOGD(TAG, "num_grids_x_max: %d, num_grids_x: %d, num_grids_y_max: %d, num_grids_y: %d", num_grids_x_max, num_grids_y_max, num_grids_x, num_grids_y);
-    ESP_RETURN_ON_FALSE(num_grids_x <= num_grids_x_max && num_grids_y <= num_grids_y_max, ESP_ERR_INVALID_ARG, TAG, "invalid h_res or v_res");
+    ESP_RETURN_ON_FALSE(num_grids_x * num_grids_y <= ISP_LL_LUT_LSC_SIZE_MAX, ESP_ERR_INVALID_ARG, TAG, "invalid number of grids, max is %d, num_grids_x: %d, num_grids_y: %d", ISP_LL_LUT_LSC_SIZE_MAX, num_grids_x, num_grids_y);
     ESP_RETURN_ON_FALSE(config->gain_array->gain_r && config->gain_array->gain_gr && config->gain_array->gain_gb && config->gain_array->gain_b, ESP_ERR_INVALID_ARG, TAG, "null pointer to gain arrays");
 
     isp_ll_lsc_set_clk_ctrl_mode(isp_proc->hal.hw, ISP_LL_PIPELINE_CLK_CTRL_AUTO);
