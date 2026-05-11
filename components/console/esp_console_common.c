@@ -72,8 +72,12 @@ void esp_console_repl_task(void *args)
     while (repl_com->state == CONSOLE_REPL_STATE_START) {
         char *line = linenoise(repl_com->prompt);
         if (line == NULL) {
-            ESP_LOGD(TAG, "empty line");
-            /* Ignore empty lines */
+            /*
+             * Avoid spinning when the input backend is disconnected or
+             * temporarily unavailable. This can happen for USB console
+             * backends after host loss.
+             */
+            vTaskDelay(pdMS_TO_TICKS(10));
             continue;
         }
         /* Add the command to the history */

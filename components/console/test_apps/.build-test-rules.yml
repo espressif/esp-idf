@@ -11,3 +11,12 @@ components/console/test_apps/console:
     - esp_usb_cdc_rom_console
     - esp_stdio
     - vfs
+
+components/console/test_apps/usb_serial_jtag_repl_no_input:
+  disable:
+    - if: IDF_TARGET not in ["esp32c6"]
+      reason: Single-target regression coverage to reduce CI load
+  depends_components:
+    - console
+    - esp_driver_uart
+    - esp_driver_usb_serial_jtag
