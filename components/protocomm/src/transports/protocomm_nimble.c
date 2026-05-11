@@ -21,6 +21,7 @@
 #include "host/ble_uuid.h"
 #include "host/util/util.h"
 #include "services/gap/ble_svc_gap.h"
+#include "services/gatt/ble_svc_gatt.h"
 
 static const char *TAG = "protocomm_nimble";
 
@@ -472,6 +473,10 @@ int
 gatt_svr_init(const simple_ble_cfg_t *config)
 {
     int rc;
+
+    /* GATT service initialization */
+    ble_svc_gatt_init();
+
     rc = ble_gatts_count_cfg(config->gatt_db);
     if (rc != 0) {
         return rc;
