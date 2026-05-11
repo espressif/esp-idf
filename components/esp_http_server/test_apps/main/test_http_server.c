@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include <esp_system.h>
 #include <esp_http_server.h>
 #include <esp_heap_caps.h>
@@ -20,6 +21,7 @@
 
 #include "unity.h"
 #include "test_utils.h"
+#include "mock_http_server_client.h"
 
 int pre_start_mem, post_stop_mem, post_stop_min_mem;
 bool basic_sanity = true;
@@ -30,6 +32,30 @@ esp_err_t null_func(httpd_req_t *req)
 {
     return ESP_OK;
 }
+
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+static httpd_handle_t start_test_ws_server(uint16_t server_port, uint16_t ctrl_port)
+{
+    httpd_handle_t hd = NULL;
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    config.server_port = server_port;
+    config.ctrl_port = ctrl_port;
+
+    httpd_uri_t ws_uri = {
+        .uri = "/ws",
+        .method = HTTP_GET,
+        .handler = null_func,
+        .user_ctx = NULL,
+        .is_websocket = true,
+        .handle_ws_control_frames = false,
+        .supported_subprotocol = NULL,
+    };
+
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_start(&hd, &config));
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_register_uri_handler(hd, &ws_uri));
+    return hd;
+}
+#endif /* CONFIG_HTTPD_WS_SUPPORT */
 
 httpd_uri_t handler_limit_uri (char* path)
 {
