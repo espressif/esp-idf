@@ -220,7 +220,7 @@ int dpp_connect(uint8_t *bssid, bool pdr_done)
     int res = 0;
     if (!pdr_done) {
         if (esp_wifi_sta_get_prof_authmode_internal() == WPA3_AUTH_DPP) {
-            esp_dpp_start_net_intro_protocol(bssid);
+            res = esp_dpp_start_net_intro_protocol(bssid);
         }
     } else {
         res = wpa_config_bss(bssid);
@@ -551,10 +551,23 @@ int esp_supplicant_init(void)
     esp_wifi_register_owe_cb(wpa_cb);
 #endif /* CONFIG_OWE_STA */
 
-    eloop_init();
+    if (eloop_init() != 0) {
+        wpa_printf(MSG_ERROR, "Failed to initialize eloop");
+        os_free(wpa_cb);
+        wpa_cb = NULL;
+        return ESP_FAIL;
+    }
+
     ret = esp_supplicant_common_init(wpa_cb);
 
     if (ret != 0) {
+        /*
+         * Note: We don't need to explicitly call eloop_destroy() here because
+         * returning an error causes the caller (esp_wifi_init) to trigger the
+         * deinit path, which invokes esp_supplicant_deinit() and frees the eloop.
+         */
+        os_free(wpa_cb);
+        wpa_cb = NULL;
         return ret;
     }
 
@@ -572,6 +585,7 @@ int esp_supplicant_deinit(void)
     esp_supplicant_common_deinit();
     esp_supplicant_unset_all_appie();
     eloop_destroy();
+    /* wpa_cb is freed by esp_wifi_unregister_wpa_cb_internal() */
     wpa_cb = NULL;
 #if CONFIG_ESP_WIFI_WAPI_PSK
     esp_wifi_internal_wapi_deinit();

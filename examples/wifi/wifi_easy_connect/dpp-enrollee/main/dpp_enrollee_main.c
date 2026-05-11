@@ -42,6 +42,11 @@ static const char *TAG = "wifi dpp-enrollee";
 wifi_config_t s_dpp_wifi_config;
 
 static int s_retry_num = 0;
+/* Flag to track if bootstrap URI generation was successful.
+ * This allows the event handler to distinguish between a failure to generate
+ * the bootstrap (pre-bootstrap) and a failure during the DPP exchange (post-bootstrap).
+ */
+static bool s_bootstrap_ready = false;
 
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t s_dpp_event_group;
@@ -49,7 +54,8 @@ static EventGroupHandle_t s_dpp_event_group;
 #define DPP_CONNECTED_BIT  BIT0
 #define DPP_CONNECT_FAIL_BIT     BIT1
 #define DPP_AUTH_FAIL_BIT           BIT2
-#define WIFI_MAX_RETRY_NUM 3
+#define WIFI_MAX_RETRY_NUM          3
+#define DPP_MAX_RETRY_NUM           WIFI_MAX_RETRY_NUM /* Can be configured by application if required */
 
 static void event_handler(void *arg, esp_event_base_t event_base,
                           int32_t event_id, void *event_data)
@@ -79,6 +85,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
 
                 ESP_LOGI(TAG, "Scan below QR Code to configure the enrollee:");
                 esp_qrcode_generate(&cfg, (const char *)uri_data->uri);
+                s_bootstrap_ready = true;
             }
             break;
         case WIFI_EVENT_DPP_CFG_RECVD:
@@ -90,11 +97,18 @@ static void event_handler(void *arg, esp_event_base_t event_base,
             break;
         case WIFI_EVENT_DPP_FAILED:
             wifi_event_dpp_failed_t *dpp_failure = event_data;
-            if (s_retry_num < 5) {
+            if (s_bootstrap_ready && s_retry_num < DPP_MAX_RETRY_NUM) {
                 ESP_LOGI(TAG, "DPP Auth failed (Reason: %s), retry...", esp_err_to_name((int)dpp_failure->failure_reason));
                 ESP_ERROR_CHECK(esp_supp_dpp_start_listen());
                 s_retry_num++;
             } else {
+                if (!s_bootstrap_ready) {
+                    ESP_LOGE(TAG, "DPP Bootstrap generation failed (Reason: %s). Cannot retry listen.",
+                             esp_err_to_name((int)dpp_failure->failure_reason));
+                } else {
+                    ESP_LOGE(TAG, "DPP Authentication failed after max retries (Reason: %s)",
+                             esp_err_to_name((int)dpp_failure->failure_reason));
+                }
                 xEventGroupSetBits(s_dpp_event_group, DPP_AUTH_FAIL_BIT);
             }
 
@@ -186,6 +200,7 @@ void dpp_enrollee_init(void)
     }
 
     esp_supp_dpp_deinit();
+    s_bootstrap_ready = false;
     ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler));
     ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler));
     vEventGroupDelete(s_dpp_event_group);

@@ -1110,7 +1110,7 @@ struct dpp_authentication * dpp_auth_init(void *msg_ctx,
 {
 	struct dpp_authentication *auth;
 	size_t nonce_len;
-	size_t secret_len;
+	size_t secret_len = 0;
 	struct wpabuf *pi = NULL;
 	const u8 *r_pubkey_hash, *i_pubkey_hash;
 #ifdef CONFIG_TESTING_OPTIONS
@@ -1473,7 +1473,7 @@ static void dpp_auth_success(struct dpp_authentication *auth)
 static int dpp_auth_build_resp_ok(struct dpp_authentication *auth)
 {
 	size_t nonce_len;
-	size_t secret_len;
+	size_t secret_len = 0;
 	struct wpabuf *msg, *pr = NULL;
 	u8 r_auth[4 + DPP_MAX_HASH_LEN];
 	u8 wrapped_r_auth[4 + DPP_MAX_HASH_LEN + AES_BLOCK_SIZE], *w_r_auth;
@@ -1538,6 +1538,7 @@ static int dpp_auth_build_resp_ok(struct dpp_authentication *auth)
 	if (dpp_ecdh(auth->own_protocol_key, auth->peer_protocol_key,
 		     auth->Nx, &secret_len) < 0)
 		goto fail;
+	auth->secret_len = secret_len;
 
 	wpa_hexdump_key(MSG_DEBUG, "DPP: ECDH shared secret (N.x)",
 			auth->Nx, auth->secret_len);
@@ -1725,7 +1726,7 @@ dpp_auth_req_rx(void *msg_ctx, u8 dpp_allowed_roles, int qr_mutual,
 		size_t attr_len)
 {
 	struct crypto_ec_key *pi = NULL;
-	size_t secret_len;
+	size_t secret_len = 0;
 	const u8 *addr[2];
 	size_t len[2];
 	u8 *unwrapped = NULL;
@@ -2293,7 +2294,7 @@ dpp_auth_resp_rx(struct dpp_authentication *auth, const u8 *hdr,
 		 const u8 *attr_start, size_t attr_len)
 {
 	struct crypto_ec_key *pr;
-	size_t secret_len;
+	size_t secret_len = 0;
 	const u8 *addr[2];
 	size_t len[2];
 	u8 *unwrapped = NULL, *unwrapped2 = NULL;
@@ -2428,6 +2429,7 @@ dpp_auth_resp_rx(struct dpp_authentication *auth, const u8 *hdr,
 		dpp_auth_fail(auth, "Failed to derive ECDH shared secret");
 		goto fail;
 	}
+	auth->secret_len = secret_len;
 	crypto_ec_key_deinit(auth->peer_protocol_key);
 	auth->peer_protocol_key = pr;
 	pr = NULL;
@@ -3428,7 +3430,7 @@ skip_groups:
 	if (!hash) {
 		goto fail;
 	}
-	if (dpp_get_config_obj_hash(signed1, signed1_len, signed2, signed1_len, hash, curve->hash_len) < 0)
+	if (dpp_get_config_obj_hash(signed1, signed1_len, signed2, signed2_len, hash, curve->hash_len) < 0)
 		goto fail;
 
 	r = crypto_bignum_init();
@@ -4857,7 +4859,7 @@ dpp_peer_intro(struct dpp_introduction *intro, const char *own_connector,
 	struct wpabuf *own_key_pub = NULL;
 	const struct dpp_curve_params *curve, *own_curve;
 	struct dpp_signed_connector_info info;
-	size_t Nx_len;
+	size_t Nx_len = 0;
 	u8 Nx[DPP_MAX_SHARED_SECRET_LEN];
 
 	os_memset(intro, 0, sizeof(*intro));

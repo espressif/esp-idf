@@ -2882,7 +2882,7 @@ void wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
     /* This is really SLOW, so just re cacl while reset param */
     if (esp_wifi_sta_get_reset_nvs_pmk_internal() != 0) {
         // check it's psk
-        if (strlen((char *)esp_wifi_sta_get_prof_password_internal()) == 64) {
+        if (os_strlen((char *)esp_wifi_sta_get_prof_password_internal()) == 64) {
             if (hexstr2bin((char *)esp_wifi_sta_get_prof_password_internal(),
                            esp_wifi_sta_get_ap_info_prof_pmk_internal(), PMK_LEN) != 0)
                 return;

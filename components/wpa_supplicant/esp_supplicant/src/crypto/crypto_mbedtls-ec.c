@@ -1529,6 +1529,56 @@ static psa_ecc_family_t group_id_to_psa(mbedtls_ecp_group_id grp_id, size_t *bit
     }
 }
 
+static mbedtls_ecp_group_id psa_to_group_id(psa_ecc_family_t family, size_t bits)
+{
+    switch (family) {
+    case PSA_ECC_FAMILY_SECP_R1:
+        switch (bits) {
+        case 256:
+            return MBEDTLS_ECP_DP_SECP256R1;
+        case 384:
+            return MBEDTLS_ECP_DP_SECP384R1;
+        case 521:
+            return MBEDTLS_ECP_DP_SECP521R1;
+        default:
+            break;
+        }
+        break;
+    case PSA_ECC_FAMILY_BRAINPOOL_P_R1:
+        switch (bits) {
+        case 256:
+            return MBEDTLS_ECP_DP_BP256R1;
+        case 384:
+            return MBEDTLS_ECP_DP_BP384R1;
+        case 512:
+            return MBEDTLS_ECP_DP_BP512R1;
+        default:
+            break;
+        }
+        break;
+    case PSA_ECC_FAMILY_MONTGOMERY:
+        if (bits == 255) {
+            return MBEDTLS_ECP_DP_CURVE25519;
+        }
+        if (bits == 448) {
+            return MBEDTLS_ECP_DP_CURVE448;
+        }
+        break;
+    case PSA_ECC_FAMILY_SECP_K1:
+        switch (bits) {
+        case 256:
+            return MBEDTLS_ECP_DP_SECP256K1;
+        default:
+            break;
+        }
+        break;
+    default:
+        break;
+    }
+
+    return MBEDTLS_ECP_DP_NONE;
+}
+
 static size_t crypto_ecdh_output_size(const crypto_ec_key_wrapper_t *wrapper)
 {
     size_t key_bits = 0;
@@ -1544,46 +1594,6 @@ static size_t crypto_ecdh_output_size(const crypto_ec_key_wrapper_t *wrapper)
     }
 
     return PSA_BITS_TO_BYTES(key_bits);
-}
-
-/* Reverse mapping: PSA ECC family + bit size to mbedtls group ID */
-static mbedtls_ecp_group_id psa_to_group_id(psa_ecc_family_t family, size_t bits)
-{
-    switch (family) {
-    case PSA_ECC_FAMILY_SECP_R1:
-        if (bits == 256) {
-            return MBEDTLS_ECP_DP_SECP256R1;
-        } else if (bits == 384) {
-            return MBEDTLS_ECP_DP_SECP384R1;
-        } else if (bits == 521) {
-            return MBEDTLS_ECP_DP_SECP521R1;
-        }
-        break;
-    case PSA_ECC_FAMILY_BRAINPOOL_P_R1:
-        if (bits == 256) {
-            return MBEDTLS_ECP_DP_BP256R1;
-        } else if (bits == 384) {
-            return MBEDTLS_ECP_DP_BP384R1;
-        } else if (bits == 512) {
-            return MBEDTLS_ECP_DP_BP512R1;
-        }
-        break;
-    case PSA_ECC_FAMILY_MONTGOMERY:
-        if (bits == 255) {
-            return MBEDTLS_ECP_DP_CURVE25519;
-        } else if (bits == 448) {
-            return MBEDTLS_ECP_DP_CURVE448;
-        }
-        break;
-    case PSA_ECC_FAMILY_SECP_K1:
-        if (bits == 256) {
-            return MBEDTLS_ECP_DP_SECP256K1;
-        }
-        break;
-    default:
-        break;
-    }
-    return MBEDTLS_ECP_DP_NONE;
 }
 
 struct crypto_ec_key * crypto_ec_key_set_pub(const struct crypto_ec_group *group,
@@ -1640,13 +1650,7 @@ struct crypto_ec_key * crypto_ec_key_set_pub(const struct crypto_ec_group *group
 
             os_memcpy(key_buf, buf, len);
             key_len = len;
-            // For uncompressed: key_bits = (len - 1) * 4
-            // For compressed: key_bits = (len - 1) * 8
-            if (buf[0] == 0x04) {
-                key_bits = (len - 1) * 4;
-            } else {
-                key_bits = (len - 1) * 8;
-            }
+            key_bits = bits;
         } else if ((len & 1) == 0) {
             // Raw X||Y format (even length, no prefix) - prepend 0x04
             key_buf = os_calloc(1, len + 1);
@@ -1659,8 +1663,7 @@ struct crypto_ec_key * crypto_ec_key_set_pub(const struct crypto_ec_group *group
             key_buf[0] = 0x04;
             os_memcpy(key_buf + 1, buf, len);
             key_len = len + 1;
-            // key_bits = len * 4 (since len = 2 * coordinate_size)
-            key_bits = len * 4;
+            key_bits = bits;
         } else {
             // Odd length without format prefix - invalid format
             wpa_printf(MSG_ERROR, "Invalid public key format: odd length without prefix");
@@ -1677,7 +1680,7 @@ struct crypto_ec_key * crypto_ec_key_set_pub(const struct crypto_ec_group *group
         }
         os_memcpy(key_buf, buf, len);
         key_len = len;
-        key_bits = len * 8;
+        key_bits = bits;
     }
 
     psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_VERIFY_HASH | PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_EXPORT | PSA_KEY_USAGE_DERIVE);
@@ -2399,6 +2402,9 @@ int crypto_ec_key_verify_signature_r_s(struct crypto_ec_key *csign,
                                        const u8 *s, size_t s_len)
 {
     crypto_ec_key_wrapper_t *wrapper = (crypto_ec_key_wrapper_t *)csign;
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_algorithm_t policy_alg;
+    psa_algorithm_t verify_alg;
     if (!wrapper) {
         return -1;
     }
@@ -2411,7 +2417,70 @@ int crypto_ec_key_verify_signature_r_s(struct crypto_ec_key *csign,
     os_memcpy(sig, r, r_len);
     os_memcpy(sig + r_len, s, s_len);
 
-    psa_status_t status = psa_verify_hash(wrapper->key_id, PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256), hash, hlen, sig, r_len + s_len);
+    if (psa_get_key_attributes(wrapper->key_id, &key_attributes) != PSA_SUCCESS) {
+        psa_reset_key_attributes(&key_attributes);
+        wpa_printf(MSG_ERROR, "psa_get_key_attributes failed for verify key");
+        os_free(sig);
+        return -1;
+    }
+    policy_alg = psa_get_key_algorithm(&key_attributes);
+    psa_reset_key_attributes(&key_attributes);
+
+    if (policy_alg == PSA_ALG_ECDSA_ANY) {
+        verify_alg = PSA_ALG_ECDSA_ANY;
+    } else {
+        psa_algorithm_t verify_hash_alg;
+        psa_algorithm_t policy_hash_alg;
+        bool policy_deterministic;
+
+        switch (hlen) {
+        case 20:
+            verify_hash_alg = PSA_ALG_SHA_1;
+            break;
+        case 28:
+            verify_hash_alg = PSA_ALG_SHA_224;
+            break;
+        case 32:
+            verify_hash_alg = PSA_ALG_SHA_256;
+            break;
+        case 48:
+            verify_hash_alg = PSA_ALG_SHA_384;
+            break;
+        case 64:
+            verify_hash_alg = PSA_ALG_SHA_512;
+            break;
+        default:
+            wpa_printf(MSG_ERROR, "Unsupported ECDSA hash length: %d", hlen);
+            os_free(sig);
+            return -1;
+        }
+
+        if (!PSA_ALG_IS_RANDOMIZED_ECDSA(policy_alg) &&
+                !PSA_ALG_IS_DETERMINISTIC_ECDSA(policy_alg)) {
+            wpa_printf(MSG_ERROR, "Unsupported ECDSA verify policy alg: 0x%x",
+                       (unsigned int) policy_alg);
+            os_free(sig);
+            return -1;
+        }
+
+        policy_hash_alg = PSA_ALG_SIGN_GET_HASH(policy_alg);
+        if (policy_hash_alg != 0 && policy_hash_alg != PSA_ALG_ANY_HASH &&
+                policy_hash_alg != verify_hash_alg) {
+            wpa_printf(MSG_ERROR, "ECDSA hash mismatch policy=0x%x verify=0x%x",
+                       (unsigned int) policy_hash_alg, (unsigned int) verify_hash_alg);
+            os_free(sig);
+            return -1;
+        }
+
+        policy_deterministic = PSA_ALG_IS_DETERMINISTIC_ECDSA(policy_alg);
+        verify_alg = policy_deterministic ?
+                     PSA_ALG_DETERMINISTIC_ECDSA(verify_hash_alg) :
+                     PSA_ALG_ECDSA(verify_hash_alg);
+    }
+
+    psa_status_t status = psa_verify_hash(wrapper->key_id,
+                                          verify_alg,
+                                          hash, hlen, sig, r_len + s_len);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "psa_verify_hash failed with %d", (int) status);
         os_free(sig);
@@ -2518,6 +2587,7 @@ struct crypto_ec_key *crypto_ec_parse_subpub_key(const unsigned char *p, size_t 
     // Configure attributes for import
     psa_set_key_usage_flags(&attributes,
                             PSA_KEY_USAGE_VERIFY_HASH | PSA_KEY_USAGE_VERIFY_MESSAGE | PSA_KEY_USAGE_EXPORT);
+    /* C-sign public keys: ECDSA-SHA256 policy for DPP signature verify */
     psa_set_key_algorithm(&attributes, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
 
     // Import directly from PK context into PSA
@@ -3253,21 +3323,53 @@ int crypto_ec_key_verify_signature(struct crypto_ec_key *key, const u8 *data,
     }
 
     size_t key_bits = psa_get_key_bits(&key_attributes);
+    psa_algorithm_t policy_alg = psa_get_key_algorithm(&key_attributes);
     psa_reset_key_attributes(&key_attributes);
 
-    /* Determine hash algorithm from data length */
+    /* Determine hash algorithm from data length and enforce key policy. */
     psa_algorithm_t verify_alg;
-    if (len == 32) {
-        verify_alg = PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256);
-    } else if (len == 48) {
-        verify_alg = PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_384);
-    } else if (len == 64) {
-        verify_alg = PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_512);
-    } else if (len == 20) {
-        verify_alg = PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_1);
+
+    if (policy_alg == PSA_ALG_ECDSA_ANY) {
+        verify_alg = PSA_ALG_ECDSA_ANY;
     } else {
-        wpa_printf(MSG_ERROR, "crypto_ec_key_verify_signature: Unsupported hash length %d", (int)len);
-        return -1;
+        psa_algorithm_t verify_hash_alg;
+        psa_algorithm_t policy_hash_alg;
+        bool policy_deterministic;
+
+        if (len == 32) {
+            verify_hash_alg = PSA_ALG_SHA_256;
+        } else if (len == 28) {
+            verify_hash_alg = PSA_ALG_SHA_224;
+        } else if (len == 48) {
+            verify_hash_alg = PSA_ALG_SHA_384;
+        } else if (len == 64) {
+            verify_hash_alg = PSA_ALG_SHA_512;
+        } else if (len == 20) {
+            verify_hash_alg = PSA_ALG_SHA_1;
+        } else {
+            wpa_printf(MSG_ERROR, "crypto_ec_key_verify_signature: Unsupported hash length %d", (int)len);
+            return -1;
+        }
+
+        if (!PSA_ALG_IS_RANDOMIZED_ECDSA(policy_alg) &&
+                !PSA_ALG_IS_DETERMINISTIC_ECDSA(policy_alg)) {
+            wpa_printf(MSG_ERROR, "crypto_ec_key_verify_signature: Unsupported policy alg 0x%x",
+                       (unsigned int)policy_alg);
+            return -1;
+        }
+
+        policy_hash_alg = PSA_ALG_SIGN_GET_HASH(policy_alg);
+        if (policy_hash_alg != 0 && policy_hash_alg != PSA_ALG_ANY_HASH &&
+                policy_hash_alg != verify_hash_alg) {
+            wpa_printf(MSG_ERROR, "crypto_ec_key_verify_signature: hash mismatch policy=0x%x verify=0x%x",
+                       (unsigned int)policy_hash_alg, (unsigned int)verify_hash_alg);
+            return -1;
+        }
+
+        policy_deterministic = PSA_ALG_IS_DETERMINISTIC_ECDSA(policy_alg);
+        verify_alg = policy_deterministic ?
+                     PSA_ALG_DETERMINISTIC_ECDSA(verify_hash_alg) :
+                     PSA_ALG_ECDSA(verify_hash_alg);
     }
 
     /* Convert DER-encoded signature to raw format (r||s) for PSA */

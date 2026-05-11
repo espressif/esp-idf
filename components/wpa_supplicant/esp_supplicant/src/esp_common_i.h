@@ -28,6 +28,9 @@ bool mbo_bss_profile_match(u8 *bssid);
 #endif /* defined(CONFIG_RRM) || defined(CONFIG_WNM) */
 int esp_supplicant_common_init(struct wpa_funcs *wpa_cb);
 void esp_supplicant_common_deinit(void);
+#ifdef CONFIG_DPP
+esp_err_t esp_supp_dpp_common_init(void);
+#endif
 void esp_supplicant_unset_all_appie(void);
 void esp_set_scan_ie(void);
 void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool add_mdie);

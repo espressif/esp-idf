@@ -37,9 +37,10 @@ typedef enum dpp_bootstrap_type {
   *
   *        Starts DPP Supplicant and initializes related Data Structures.
   *
-  * return
+  * @return
   *    - ESP_OK: Success
-  *    - ESP_FAIL: Failure
+  *    - ESP_ERR_DPP_FAILURE: Generic failure or already initialized
+  *    - ESP_ERR_NO_MEM: Memory allocation failed
   */
 esp_err_t esp_supp_dpp_init(void);
 
@@ -50,6 +51,7 @@ esp_err_t esp_supp_dpp_init(void);
   *
   * @return
   *    - ESP_OK: Success
+  *    - ESP_ERR_DPP_FAILURE: Failed to schedule deinitialization
   */
 esp_err_t esp_supp_dpp_deinit(void);
 
@@ -61,13 +63,18 @@ esp_err_t esp_supp_dpp_deinit(void);
   *
   * @param chan_list List of channels device will be available on for listening
   * @param type Bootstrap method type, only QR Code method is supported for now.
-  * @param key (Optional) 32 byte Raw Private Key for generating a Bootstrapping Public Key
+  * @param key (Optional) 32 byte hex-encoded Private Key for generating a Bootstrapping Public Key
   * @param info (Optional) Ancillary Device Information like Serial Number
   *
+  * @note   Since this API is asynchronous, internal failures during generation (e.g. OOM or crypto errors)
+  *         will be reported via the WIFI_EVENT_DPP_FAILED event.
+  *
   * @return
-  *    - ESP_OK: Success
-  *    - ESP_ERR_DPP_INVALID_LIST: Channel list not valid
-  *    - ESP_FAIL: Failure
+  *    - ESP_OK: Success (generation started asynchronously)
+  *    - ESP_ERR_INVALID_STATE: DPP not initialized or shutting down
+  *    - ESP_ERR_DPP_INVALID_LIST: Channel list not valid or too long
+  *    - ESP_ERR_NO_MEM: Memory allocation failed
+  *    - ESP_ERR_NOT_SUPPORTED: Requested bootstrap type not supported
   */
 esp_err_t
 esp_supp_dpp_bootstrap_gen(const char *chan_list, esp_supp_dpp_bootstrap_t type,
@@ -80,9 +87,8 @@ esp_supp_dpp_bootstrap_gen(const char *chan_list, esp_supp_dpp_bootstrap_t type,
   *
   * @return
   *    - ESP_OK: Success
-  *    - ESP_FAIL: Generic Failure
-  *    - ESP_ERR_INVALID_STATE: ROC attempted before WiFi is started
-  *    - ESP_ERR_NO_MEM: Memory allocation failed while posting ROC request
+  *    - ESP_ERR_INVALID_STATE: ROC attempted before WiFi is started, or DPP not initialized/bootstrapped
+  *    - ESP_ERR_NO_MEM: Memory allocation failed while scheduling listen operation
   */
 esp_err_t esp_supp_dpp_start_listen(void);
 
@@ -93,7 +99,7 @@ esp_err_t esp_supp_dpp_start_listen(void);
   *
   * @return
   *    - ESP_OK: Success
-  *    - ESP_FAIL: Failure
+  *    - ESP_FAIL: Failure to schedule listen stop
   */
 esp_err_t esp_supp_dpp_stop_listen(void);
 

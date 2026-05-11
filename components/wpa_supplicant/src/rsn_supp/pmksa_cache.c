@@ -189,7 +189,7 @@ pmksa_cache_add_entry(struct rsn_pmksa_cache *pmksa,
                         PMKID_LEN) == 0) {
                 wpa_printf(MSG_DEBUG, "WPA: reusing previous "
                         "PMKSA entry");
-                os_free(entry);
+                bin_clear_free(entry, sizeof(*entry));
                 return pos;
             }
             if (prev == NULL)
