@@ -41,7 +41,7 @@ static const char *desc[] = {
 
 static const char *reason[] = {
     NULL,
-    NULL,
+    "Instruction access fault",
     "Illegal instruction",
     "Breakpoint",
     "Load address misaligned",

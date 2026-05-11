@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
@@ -52,3 +52,38 @@ def test_lp_core_lp_rom(dut: Dut) -> None:
     dut.write('"LP-Core LP-ROM"')
     dut.expect_exact('ULP: all tests passed')
     dut.expect_exact('LP ROM test passed')
+
+
+_PMP_TARGETS = soc_filtered_targets('SOC_LP_CORE_HAS_PMP == 1')
+
+
+@pytest.mark.generic
+@idf_parametrize('target', _PMP_TARGETS, indirect=['target'])
+def test_lp_core_pmp_positive(dut: Dut) -> None:
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('"LP core PMP: normal operation succeeds"')
+    dut.expect_exact('LP core PMP: normal operation succeeds:PASS')
+
+
+@pytest.mark.generic
+@idf_parametrize('target', _PMP_TARGETS, indirect=['target'])
+def test_lp_core_pmp_write_to_text(dut: Dut) -> None:
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('"LP core PMP: write to .text triggers Store access fault"')
+    dut.expect_exact("Guru Meditation Error: LP Core panic'ed Store access fault")
+
+
+@pytest.mark.generic
+@idf_parametrize('target', _PMP_TARGETS, indirect=['target'])
+def test_lp_core_pmp_exec_from_data(dut: Dut) -> None:
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('"LP core PMP: execute from .data triggers Instruction access fault"')
+    dut.expect_exact("Guru Meditation Error: LP Core panic'ed Instruction access fault")
+
+
+@pytest.mark.generic
+@idf_parametrize('target', _PMP_TARGETS, indirect=['target'])
+def test_lp_core_pmp_access_unmapped(dut: Dut) -> None:
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('"LP core PMP: access unmapped region triggers Load access fault"')
+    dut.expect_exact("Guru Meditation Error: LP Core panic'ed Load access fault")

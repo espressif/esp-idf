@@ -129,6 +129,17 @@ menu "Ultra Low Power (ULP) Co-processor"
             Note: For LP ROM prints to work properly, make sure that the LP core boots
             from the LP ROM.
 
+    config ULP_LP_CORE_MEMPROT
+        bool "Enable LP Core memory protection (PMP)"
+        depends on ULP_COPROC_TYPE_LP_CORE && SOC_LP_CORE_HAS_PMP && !ULP_COPROC_RUN_FROM_HP_MEM
+        default n
+        help
+            Configures the LP CPU's PMP entries to enforce memory protection.
+            LP RAM is split into executable (.text) and data (.data/.bss/stack)
+            regions. Regions not explicitly permitted are inaccessible.
+            Not available when "Run LP Core from HP memory" is enabled.
+            Disable this if you need full control over PMP configuration.
+
     config ULP_TRAP_WAKEUP
         depends on ULP_COPROC_TYPE_LP_CORE
         bool

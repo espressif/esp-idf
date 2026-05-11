@@ -13,6 +13,10 @@ The ULP LP core coprocessor has the following features:
 * Can access all of the High-power (HP) SRAM and peripherals when the entire system is active.
 * Can access the Low-power (LP) SRAM and peripherals when the HP system is in sleep mode.
 
+.. only:: SOC_LP_CORE_HAS_PMP
+
+    On supported targets, the LP core includes RISC-V Physical Memory Protection (PMP). Enable :ref:`CONFIG_ULP_LP_CORE_MEMPROT` to apply a deny-by-default layout at LP-core startup: LP RAM is split into an executable region (code and read-only data) and a read-write region (writable data, stack, and shared memory), LP peripheral address space is read-write, and an optional region covers HP UART MMIO when using :ref:`CONFIG_ULP_HP_UART_CONSOLE_PRINT`. It cannot be used together with :ref:`CONFIG_ULP_COPROC_RUN_FROM_HP_MEM`. Addresses that do not fall into an allowed region cause a load, store, or instruction access fault.
+
 Compiling Code for the ULP LP Core
 ----------------------------------
 
@@ -210,6 +214,8 @@ Running the LP Core from HP Memory
 When this option is enabled, :ref:`CONFIG_ULP_COPROC_RESERVE_HP_MEM_BYTES` reserves a window at the top of HP SRAM for the LP core binary. During :cpp:func:`ulp_lp_core_load_binary`, LP-memory segments are still loaded into the reserved LP region, while data and code segments mapped to the HP-memory window are copied into the reserved HP SRAM region.
 
 This mode has an important limitation: the LP core cannot keep running while the chip is in Deep-sleep, because HP SRAM is powered down in that sleep mode. Use this mode for cases where the LP core only needs to run while the HP system remains powered, and keep the default LP-memory-only mode for Deep-sleep use cases.
+
+:ref:`CONFIG_ULP_LP_CORE_MEMPROT` cannot be enabled together with this HP-memory mode.
 
 ULP LP Core Program Flow
 ------------------------

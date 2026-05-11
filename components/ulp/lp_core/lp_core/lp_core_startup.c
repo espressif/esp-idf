@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,9 @@
 #include "ulp_lp_core_lp_timer_shared.h"
 #include "ulp_lp_core_memory_shared.h"
 #include "ulp_lp_core_print.h"
+#if CONFIG_ULP_LP_CORE_MEMPROT
+#include "ulp_lp_core_pmp.h"
+#endif
 
 extern void main();
 
@@ -23,6 +26,10 @@ void lp_core_startup()
 #endif
 
     ulp_lp_core_update_wakeup_cause();
+
+#if CONFIG_ULP_LP_CORE_MEMPROT
+    lp_core_configure_pmp();
+#endif
 
     main();
 
