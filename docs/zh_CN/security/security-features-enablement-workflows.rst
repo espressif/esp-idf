@@ -448,13 +448,9 @@ flash 加密指南
 
             espsecure generate-signing-key --version 2 --scheme ecdsa256 secure_boot_signing_key.pem
 
-        .. only:: not SOC_ECDSA_SUPPORT_CURVE_P384
-
-           将上述命令中的方案更改为 ``ecdsa192``，可生成 ecdsa192 私钥。
-
         .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
 
-           将上述命令中的方案更改为 ``ecdsa384`` 或 ``ecdsa192``，可生成 ecdsa384 或 ecdsa192 私钥。
+           将上述命令中的方案更改为 ``ecdsa384``，可生成 ecdsa384 私钥。
 
     .. only:: SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
 

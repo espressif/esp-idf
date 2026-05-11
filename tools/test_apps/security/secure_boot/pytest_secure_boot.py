@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import itertools
 import os
@@ -24,12 +24,10 @@ SIGNATURE_TYPE_RSA = 0
 SIGNATURE_TYPE_RSA_3072 = 1
 
 SIGNATURE_TYPE_ECDSA = 10
-SIGNATURE_TYPE_ECDSA_P192 = 11
 SIGNATURE_TYPE_ECDSA_P256 = 12
 SIGNATURE_TYPE_ECDSA_P384 = 13
 
 SIGNATURE_TYPE_RSA_3072_SIZE = 384
-SIGNATURE_TYPE_ECDSA_P192_SIZE = 64
 SIGNATURE_TYPE_ECDSA_P256_SIZE = 64
 SIGNATURE_TYPE_ECDSA_P384_SIZE = 96
 
@@ -52,7 +50,7 @@ SECURE_BOOT_ECDSA_P384_TARGETS = ['esp32c5']
 
 CONFIGS_SECURE_BOOT_ECDSA = list(
     itertools.chain(
-        itertools.product(['ecdsa_p192', 'ecdsa_p256'], SECURE_BOOT_ECDSA_TARGETS),
+        itertools.product(['ecdsa_p256'], SECURE_BOOT_ECDSA_TARGETS),
         itertools.product(['ecdsa_p384'], SECURE_BOOT_ECDSA_P384_TARGETS),
     )
 )
@@ -98,14 +96,14 @@ def corrupt_sig_block(sig_block, seed=0, corrupt_sig=True, corrupt_crc=False, si
     if signature_type == SIGNATURE_TYPE_RSA_3072:
         data = sig_block[:812]
         new_sig = sig = sig_block[812:1196]
-    elif signature_type in [SIGNATURE_TYPE_ECDSA_P192, SIGNATURE_TYPE_ECDSA_P256]:
+    elif signature_type in [SIGNATURE_TYPE_ECDSA_P256]:
         data = sig_block[:101]
         new_sig = sig = sig_block[101:165]
     elif signature_type == SIGNATURE_TYPE_ECDSA_P384:
         data = sig_block[:149]
         new_sig = sig = sig_block[149:245]
     else:
-        raise ValueError('Invalid signature type: {}'.format(signature_type))
+        raise ValueError(f'Invalid signature type: {signature_type}')
 
     crc = sig_block[1196:1200]
     padding = sig_block[1200:1216]
@@ -242,7 +240,7 @@ def _examples_security_secure_boot_key_revoke(dut: Dut) -> None:
         dut.serial.reset_efuses()
         dut.burn_wafer_version()
         dut.secure_boot_burn_en_bit()
-        dut.serial.burn_efuse('SECURE_BOOT_KEY_REVOKE%d' % index, 1)
+        dut.serial.burn_efuse(f'SECURE_BOOT_KEY_REVOKE{index}', 1)
         dut.secure_boot_burn_digest(secure_boot_key, index, 0)
         dut.expect('secure boot verification failed', timeout=5)
     dut.serial.reset_efuses()
@@ -270,16 +268,14 @@ def get_signature_type_size(dut: Dut, signature_type: int) -> int:
     if signature_type == SIGNATURE_TYPE_RSA:
         signature_type_size = SIGNATURE_TYPE_RSA_3072_SIZE
     elif signature_type == SIGNATURE_TYPE_ECDSA:
-        if dut.app.sdkconfig.get('CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_192_BITS'):
-            signature_type_size = SIGNATURE_TYPE_ECDSA_P192_SIZE
-        elif dut.app.sdkconfig.get('CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_256_BITS'):
+        if dut.app.sdkconfig.get('CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_256_BITS'):
             signature_type_size = SIGNATURE_TYPE_ECDSA_P256_SIZE
         elif dut.app.sdkconfig.get('CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS'):
             signature_type_size = SIGNATURE_TYPE_ECDSA_P384_SIZE
         else:
-            raise ValueError('Invalid signature type: {}'.format(signature_type))
+            raise ValueError(f'Invalid signature type: {signature_type}')
     else:
-        raise ValueError('Invalid signature type: {}'.format(signature_type))
+        raise ValueError(f'Invalid signature type: {signature_type}')
     return signature_type_size
 
 
@@ -297,7 +293,7 @@ def _examples_security_secure_boot_corrupt_bl_sig(dut: Dut, signature_type: int)
     secure_boot_key = dut.app.sdkconfig.get('SECURE_BOOT_SIGNING_KEY')
 
     for seed in seeds:
-        print('Case %d / %d' % (seed, max_seed))
+        print(f'Case {seed} / {max_seed}')
         corrupt_bl = corrupt_signature(signed_bl, seed=seed)
         with open('corrupt_bl.bin', 'wb') as corrupt_file:
             corrupt_file.write(corrupt_bl)
@@ -349,7 +345,7 @@ def _examples_security_secure_boot_corrupt_app_sig(dut: Dut, signature_type: int
     max_seed = max(seeds)
 
     for seed in seeds:
-        print('Case %d / %d' % (seed, max_seed))
+        print(f'Case {seed} / {max_seed}')
         corrupt_app = corrupt_signature(signed_app, seed=seed)
         with open('corrupt_app.bin', 'wb') as corrupt_file:
             corrupt_file.write(corrupt_app)

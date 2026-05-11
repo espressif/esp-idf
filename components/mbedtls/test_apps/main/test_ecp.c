@@ -13,7 +13,6 @@
 #include <inttypes.h>
 #include <esp_random.h>
 #define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
-#include <mbedtls/private/ecdh.h>
 #include <mbedtls/private/ecdsa.h>
 #include <mbedtls/error.h>
 #include "psa/crypto.h"
