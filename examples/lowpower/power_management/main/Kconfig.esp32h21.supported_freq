@@ -1,0 +1,45 @@
+choice EXAMPLE_PM_MAX_FREQ_MHZ
+    prompt "Max CPU frequency (MHz)"
+    default EXAMPLE_PM_MAX_FREQ_MHZ_96
+    config EXAMPLE_PM_MAX_FREQ_MHZ_8
+        bool "8"
+    config EXAMPLE_PM_MAX_FREQ_MHZ_16
+        bool "16"
+    config EXAMPLE_PM_MAX_FREQ_MHZ_32
+        bool "32"
+    config EXAMPLE_PM_MAX_FREQ_MHZ_48
+        bool "48"
+    config EXAMPLE_PM_MAX_FREQ_MHZ_96
+        bool "96"
+endchoice
+
+config EXAMPLE_PM_MAX_FREQ
+    int
+    default 8 if EXAMPLE_PM_MAX_FREQ_MHZ_8
+    default 16 if EXAMPLE_PM_MAX_FREQ_MHZ_16
+    default 32 if EXAMPLE_PM_MAX_FREQ_MHZ_32
+    default 48 if EXAMPLE_PM_MAX_FREQ_MHZ_48
+    default 96 if EXAMPLE_PM_MAX_FREQ_MHZ_96
+
+choice EXAMPLE_PM_MIN_FREQ_MHZ
+    prompt "Min CPU frequency (MHz)"
+    default EXAMPLE_PM_MIN_FREQ_MHZ_32
+    config EXAMPLE_PM_MIN_FREQ_MHZ_8
+        bool "8"
+    config EXAMPLE_PM_MIN_FREQ_MHZ_16
+        bool "16"
+    config EXAMPLE_PM_MIN_FREQ_MHZ_32
+        bool "32"
+    config EXAMPLE_PM_MIN_FREQ_MHZ_48
+        bool "48"
+    config EXAMPLE_PM_MIN_FREQ_MHZ_96
+        bool "96"
+endchoice
+
+config EXAMPLE_PM_MIN_FREQ
+    int
+    default 8 if EXAMPLE_PM_MIN_FREQ_MHZ_8
+    default 16 if EXAMPLE_PM_MIN_FREQ_MHZ_16
+    default 32 if EXAMPLE_PM_MIN_FREQ_MHZ_32
+    default 48 if EXAMPLE_PM_MIN_FREQ_MHZ_48
+    default 96 if EXAMPLE_PM_MIN_FREQ_MHZ_96
