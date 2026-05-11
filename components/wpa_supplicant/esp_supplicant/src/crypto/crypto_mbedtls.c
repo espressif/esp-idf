@@ -1117,6 +1117,30 @@ int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len,
 }
 #endif /* defined(CONFIG_MBEDTLS_SHA1_C) || defined(CONFIG_MBEDTLS_HARDWARE_SHA) */
 
+#if defined(MBEDTLS_PKCS5_C) && defined(MBEDTLS_MD_C)
+#include "mbedtls/private/pkcs5.h"
+
+#if defined(MBEDTLS_SHA256_C)
+int pbkdf2_sha256(const char *passphrase, const u8 *salt, size_t salt_len,
+                  int iterations, u8 *buf, size_t buflen)
+{
+    int ret;
+
+    if (!passphrase || !salt || !buf || !salt_len || !buflen || iterations <= 0) {
+        return -1;
+    }
+
+    ret = mbedtls_pkcs5_pbkdf2_hmac_ext(MBEDTLS_MD_SHA256,
+                                        (const u8 *) passphrase,
+                                        os_strlen(passphrase),
+                                        salt, salt_len,
+                                        (unsigned int) iterations, (uint32_t) buflen, buf);
+    return ret == 0 ? 0 : -1;
+}
+#endif /* MBEDTLS_SHA256_C */
+
+#endif /* MBEDTLS_PKCS5_C && MBEDTLS_MD_C */
+
 #ifdef MBEDTLS_DES_C
 int des_encrypt(const u8 *clear, const u8 *key, u8 *cypher)
 {
