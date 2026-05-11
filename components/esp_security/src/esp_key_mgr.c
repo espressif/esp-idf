@@ -795,6 +795,7 @@ typedef struct ecdh1_deploy {
     const esp_key_mgr_ecdh1_key_config_t *key_config;
     esp_key_mgr_key_recovery_info_t *key_info;
     bool huk_deployed;
+    bool multi_stage_deployment;
 } ecdh1_deploy_config_t;
 
 static esp_err_t key_mgr_deploy_key_ecdh1_mode(ecdh1_deploy_config_t *config)
@@ -817,7 +818,7 @@ static esp_err_t key_mgr_deploy_key_ecdh1_mode(ecdh1_deploy_config_t *config)
         ESP_LOGD(TAG, "HUK deployed successfully");
     }
 
-    uint8_t key_recovery_info_index = is_multi_stage_key_purpose(config->key_purpose) ? 0 : 1;
+    uint8_t key_recovery_info_index = config->multi_stage_deployment ? 1 : 0;
 
     uint8_t *key_recovery_info = config->key_info->key_info[key_recovery_info_index].info;
 
@@ -868,7 +869,7 @@ static esp_err_t key_mgr_deploy_key_ecdh1_mode(ecdh1_deploy_config_t *config)
     // Check if key deployment validation should be skipped for this purpose
     // Primary purposes in multi-stage deployments skip validation after the first stage
     // because the key is not yet completely deployed.
-    if (!is_multi_stage_key_purpose(config->key_purpose)) {
+    if (!multi_stage_deployment_key_purpose(config->key_purpose)) {
         if (!key_mgr_hal_is_key_deployment_valid(key_type, key_len)) {
             ESP_LOGE(TAG, "Key deployment is not valid");
             return ESP_FAIL;
@@ -920,9 +921,10 @@ esp_err_t esp_key_mgr_deploy_key_in_ecdh1_mode(const esp_key_mgr_ecdh1_key_confi
 
     ecdh1_deploy_config.huk_deployed = true;
 
-    if (is_multi_stage_key_purpose(ecdh1_deploy_config.key_purpose)) {
+    if (multi_stage_deployment_key_purpose(ecdh1_deploy_config.key_purpose)) {
         ecdh1_deploy_config.key_purpose = get_secondary_key_purpose(ecdh1_deploy_config.key_purpose);
         ecdh1_deploy_config.k1_G = key_config->k1_G[1];
+        ecdh1_deploy_config.multi_stage_deployment = true;
         esp_ret = key_mgr_deploy_key_ecdh1_mode(&ecdh1_deploy_config);
         if (esp_ret != ESP_OK) {
             ESP_LOGE(TAG, "Key deployment in ECDH1 mode failed");
