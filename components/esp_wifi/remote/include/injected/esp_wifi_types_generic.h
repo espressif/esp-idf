@@ -864,6 +864,10 @@ typedef struct {
 #define ESP_WIFI_NDP_ROLE_INITIATOR     1      /**< Initiator role for NAN Data Path */
 #define ESP_WIFI_NDP_ROLE_RESPONDER     2      /**< Responder role for NAN Data Path */
 
+#define ESP_WIFI_NAN_NDP_PMK_LEN        32     /**< Length of NAN Datapath PMK */
+#define ESP_WIFI_NAN_NDP_PMKID_LEN      16     /**< Length of NAN Datapath PMKID */
+#define ESP_WIFI_NAN_MAX_PMKIDS         2      /**< Maximum number of PMKIDs supported */
+
 #define ESP_WIFI_MAX_SVC_NAME_LEN       256    /**< Maximum length of NAN service name */
 #define ESP_WIFI_MAX_FILTER_LEN         256    /**< Maximum length of NAN service filter */
 #define ESP_WIFI_MAX_SVC_INFO_LEN       64     /**< Maximum length of NAN service info */
@@ -906,6 +910,46 @@ typedef enum {
 } wifi_nan_service_type_t;
 
 /**
+  * @brief NAN Cipher Suite IDs (Spec 4.1.1 & 6.1.1)
+  *
+  * @note Only WIFI_NAN_CSID_NCS_SK_128 is currently supported by the firmware.
+  *       The other values are reserved for future support; selecting any of
+  *       them via csid_bitmap will cause esp_wifi_nan_publish_service() and
+  *       esp_wifi_nan_subscribe_service() to fail.
+  */
+typedef enum {
+    WIFI_NAN_CSID_NCS_SK_128       = 1,    /**< NCS-SK-128 (PSK/Passphrase) */
+    WIFI_NAN_CSID_NCS_SK_256       = 2,    /**< NCS-SK-256 (PSK/Passphrase). Reserved: not supported right now. */
+    WIFI_NAN_CSID_NCS_PK_2WDH_128  = 3,    /**< NCS-PK-2WDH-128. Reserved: not supported right now. */
+    WIFI_NAN_CSID_NCS_PK_2WDH_256  = 4,    /**< NCS-PK-2WDH-256. Reserved: not supported right now. */
+    WIFI_NAN_CSID_NCS_PK_PASN_128  = 7,    /**< NCS-PK-PASN-128. Reserved: not supported right now. */
+    WIFI_NAN_CSID_NCS_PK_PASN_256  = 8,    /**< NCS-PK-PASN-256. Reserved: not supported right now. */
+} wifi_nan_cipher_suite_id_t;
+
+#define WIFI_NAN_CSID_BIT_NCS_SK_128       (1 << WIFI_NAN_CSID_NCS_SK_128)
+#define WIFI_NAN_CSID_BIT_NCS_SK_256       (1 << WIFI_NAN_CSID_NCS_SK_256)
+#define WIFI_NAN_CSID_BIT_NCS_PK_2WDH_128  (1 << WIFI_NAN_CSID_NCS_PK_2WDH_128)
+#define WIFI_NAN_CSID_BIT_NCS_PK_2WDH_256  (1 << WIFI_NAN_CSID_NCS_PK_2WDH_256)
+#define WIFI_NAN_CSID_BIT_NCS_PK_PASN_128  (1 << WIFI_NAN_CSID_NCS_PK_PASN_128)
+#define WIFI_NAN_CSID_BIT_NCS_PK_PASN_256  (1 << WIFI_NAN_CSID_NCS_PK_PASN_256)
+
+/**
+  * @brief NAN Discovery security parameters (Spec 4.1.1 - Publish/Subscribe)
+  *
+  */
+typedef struct {
+    uint16_t csid_bitmap;              /**< Bitmap of Supported Cipher Suite IDs (WIFI_NAN_CSID_BIT_*) */
+    uint8_t num_pmkids;                /**< Number of PMKIDs */
+    uint8_t pmkids[ESP_WIFI_NAN_MAX_PMKIDS][ESP_WIFI_NAN_NDP_PMKID_LEN]; /**< ND-PMKIDs */
+    uint8_t group_data_prot: 1;        /**< Group addressed data frame protection. Reserved: not supported right now. */
+    uint8_t group_mgmt_prot: 1;        /**< Group addressed management frame protection. Reserved: not supported right now. */
+    uint8_t use_pmk: 1;                /**< 0 - Use passphrase, 1 - Use PMK directly */
+    uint8_t reserved: 5;               /**< Reserved */
+    char passphrase[MAX_PASSPHRASE_LEN]; /**< NCS-SK passphrase (use_pmk=0). NUL-terminated. */
+    uint8_t pmk[ESP_WIFI_NAN_NDP_PMK_LEN]; /**< NCS-SK PMK (use_pmk=1). Raw bytes, not NUL-terminated. */
+} wifi_nan_discovery_security_params_t;
+
+/**
   * @brief USD specific configuration parameters
   *
   */
@@ -943,12 +987,14 @@ typedef struct {
     uint8_t fsd_gas: 1;                             /**< 0 - Follow-up used for FSD, 1 - GAS used for FSD */
     uint8_t ndp_resp_needed: 1;                     /**< 0 - Auto-Accept NDP Requests, 1 - Require explicit response with esp_wifi_nan_datapath_resp */
     uint8_t usd_discovery_flag: 1;                  /**< 0 - NAN Synchronization for Discovery, 1 - USD for Discovery. 'NAN Discovery flag' from specification */
-    uint8_t reserved: 2;                            /**< Reserved */
+    uint8_t security_reqd: 1;                       /**< Security: 0 - Open, 1 - Required (NDP Security) */
+    uint8_t reserved: 1;                            /**< Reserved */
     uint16_t ssi_len;                               /**< Length of service specific info, maximum allowed length - ESP_WIFI_MAX_SVC_SSI_LEN */
     uint8_t *ssi;                                   /**< Service Specific Info of type wifi_nan_wfa_ssi_t for WFA defined protocols, otherwise proprietary and defined by Applications */
     unsigned int ttl;                               /**< Run publish function for a given time interval in seconds. If ttl=0 and usd_discovery_flag is enabled,
                                                          only one Publish message is transmitted */
     wifi_nan_usd_config_t usd_publish_config;       /**< USD configuration parameters. Relevant only when 'usd_discovery_flag' is set. */
+    wifi_nan_discovery_security_params_t security_cfg; /**< Security configuration parameters */
     nan_vendor_ie_t *vendor_ie;                     /**< Vendor specific IE to be added in publish frames */
 } wifi_nan_publish_cfg_t;
 
@@ -965,12 +1011,14 @@ typedef struct {
     uint8_t fsd_reqd: 1;                            /**< Further Service Discovery(FSD) required */
     uint8_t fsd_gas: 1;                             /**< 0 - Follow-up used for FSD, 1 - GAS used for FSD */
     uint8_t usd_discovery_flag: 1;                  /**< 0 - NAN Synchronization for Discovery, 1 - USD for Discovery. 'NAN Discovery flag' from specification */
-    uint8_t reserved: 3;                            /**< Reserved */
+    uint8_t security_reqd: 1;                       /**< Security: 0 - Open, 1 - Required (NDP Security) */
+    uint8_t reserved: 2;                            /**< Reserved */
     uint16_t ssi_len;                               /**< Length of service specific info, maximum allowed length - ESP_WIFI_MAX_SVC_SSI_LEN */
     uint8_t *ssi;                                   /**< Service Specific Info of type wifi_nan_wfa_ssi_t for WFA defined protocols, otherwise proprietary and defined by Applications */
     unsigned int ttl;                               /**< Run subscribe function for a given time interval in seconds. If ttl=0 and usd_discovery_flag is enabled,
                                                          the subscriber listens until the first service match is reported. */
     wifi_nan_usd_config_t usd_subscribe_config;     /**< USD configuration parameters. Relevant only when 'usd_discovery_flag' is set. */
+    wifi_nan_discovery_security_params_t security_cfg; /**< Security configuration parameters */
     nan_vendor_ie_t *vendor_ie;                     /**< Vendor specific IE to be added in subscribe frames */
 } wifi_nan_subscribe_cfg_t;
 
@@ -990,16 +1038,28 @@ typedef struct {
 /**
   * @brief NAN Datapath Request parameters
   *
+  * @note Datapath security is governed by the security_cfg passed to
+  *       esp_wifi_nan_subscribe_service(); the NAN library derives ND-PMK,
+  *       ND-PMKID and cipher selection internally from that subscribe-time
+  *       configuration and applies them to every NDP initiated against the
+  *       matched publisher. Per-NDP security parameters are not exposed on
+  *       this struct: the caller never handles raw key material.
   */
 typedef struct {
     uint8_t pub_id;         /**< Publisher's service instance id */
     uint8_t peer_mac[6];    /**< Peer's MAC address */
-    bool confirm_required;  /**< NDP Confirm frame required */
+    bool confirm_required;  /**< NDP Confirm frame required. Always used for the secure NDP handshake. */
 } wifi_nan_datapath_req_t;
 
 /**
   * @brief NAN Datapath Response parameters
   *
+  * @note Datapath security is governed by the security_cfg passed to
+  *       esp_wifi_nan_publish_service(); the NAN library derives ND-PMK,
+  *       ND-PMKID and cipher selection internally from that publish-time
+  *       configuration and applies them to every NDP this responder
+  *       accepts. Per-NDP security parameters are not exposed on this
+  *       struct: the caller never handles raw key material.
   */
 typedef struct {
     bool accept;            /**< True - Accept incoming NDP, False - Reject it */
@@ -1412,7 +1472,8 @@ typedef struct {
     uint8_t fsd_reqd: 1;        /**< Further Service Discovery(FSD) required */
     uint8_t fsd_gas: 1;         /**< 0 - Follow-up used for FSD, 1 - GAS used for FSD */
     uint8_t ndpe_support: 1;    /**< NDPE supported by peer */
-    uint8_t reserved: 4;        /**< Reserved */
+    uint8_t security_reqd: 1;   /**< Security: 0 - Open, 1 - Required (NDP Security) */
+    uint8_t reserved: 3;        /**< Reserved */
     uint32_t reserved_1;        /**< Reserved */
     uint32_t reserved_2;        /**< Reserved */
     uint8_t ssi_version;        /**< Indicates version of SSI in Publish instance, 0 if not available */

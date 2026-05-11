@@ -290,6 +290,13 @@ if WIFI_RMT_NAN_SYNC_ENABLE
         default WIFI_RMT_NAN_SYNC_ENABLE
 endif
 
+if WIFI_RMT_NAN_SECURITY
+    config ESP_WIFI_NAN_SECURITY # ignore: multiple-definition
+        bool
+        depends on WIFI_RMT_NAN_SYNC_ENABLE && IDF_EXPERIMENTAL_FEATURES && WIFI_RMT_MBEDTLS_CRYPTO
+        default WIFI_RMT_NAN_SECURITY
+endif
+
 if WIFI_RMT_NAN_USD_ENABLE
     config ESP_WIFI_NAN_USD_ENABLE # ignore: multiple-definition
         bool
