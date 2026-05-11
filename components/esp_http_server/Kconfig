@@ -60,9 +60,8 @@ menu "HTTP Server"
             Sec-WebSocket-Key), rejects frames with reserved RSV bits, reserved or
             fragmented control opcodes, non-minimal payload length encodings, and
             frames whose 64-bit length has the MSB set; sends a CLOSE frame on
-            protocol errors; validates CLOSE frame status codes and UTF-8 reason;
-            validates UTF-8 text payloads; and blocks outbound data frames once a
-            CLOSE has been sent or received.
+            protocol errors; and blocks outbound data frames once a CLOSE has been
+            sent or received.
 
             This option defaults to off in this release cycle so existing deployments
             see no behavior change. Enable to opt into stricter enforcement; lenient

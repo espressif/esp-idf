@@ -56,7 +56,6 @@ static const char *TAG="httpd_ws";
 
 /* RFC 6455 §7.4 close status codes used for protocol-error Close frames */
 #define HTTPD_WS_CLOSE_CODE_PROTOCOL_ERROR 1002U
-#define HTTPD_WS_CLOSE_CODE_INVALID_UTF8  1007U
 #define HTTPD_WS_CLOSE_CODE_TOO_BIG       1009U
 
 /*
@@ -353,28 +352,46 @@ static esp_err_t httpd_ws_check_req(httpd_req_t *req)
     return ESP_OK;
 }
 
+/* RFC 6455 §5.5: opcodes 0x8-0xA (CLOSE, PING, PONG) are control frames.
+ * Reserved control opcodes 0xB-0xF are rejected earlier in httpd_ws_get_frame_type,
+ * so an explicit whitelist is used here instead of a `>= CLOSE` range compare. */
+static inline bool httpd_ws_is_control_opcode(httpd_ws_type_t type)
+{
+    return type == HTTPD_WS_TYPE_CLOSE ||
+           type == HTTPD_WS_TYPE_PING  ||
+           type == HTTPD_WS_TYPE_PONG;
+}
+
+/* Mark the session's pending frame as a CLOSE so the request layer tears the
+ * socket down after the current request completes. */
+static inline void httpd_ws_mark_closing(struct httpd_req_aux *aux)
+{
+    aux->ws_final = true;
+    aux->ws_type = HTTPD_WS_TYPE_CLOSE;
+}
+
 /* Send a Close frame with the given status code and mark the session as closing.
  * Always returns ESP_FAIL so callers can write: return httpd_ws_fail_connection(...).
  * RFC 6455 §7.1.7
  */
-static esp_err_t httpd_ws_fail_connection(httpd_req_t *req, uint16_t close_code, bool send_close)
+static esp_err_t httpd_ws_fail_connection(httpd_req_t *req, uint16_t close_code)
 {
+    esp_err_t ret = ESP_FAIL;
     if (!req || !req->aux) {
-        return ESP_FAIL;
+        return ret;
     }
 
     struct httpd_req_aux *aux = req->aux;
     if (!aux->sd) {
-        return ESP_FAIL;
+        return ret;
     }
 
-    aux->ws_final = true;
-    aux->ws_type = HTTPD_WS_TYPE_CLOSE;
+    httpd_ws_mark_closing(aux);
 
     bool already_closing = aux->sd->ws_close;
     aux->sd->ws_close = true;
 
-    if (send_close && aux->sd->ws_handshake_done && !already_closing) {
+    if (aux->sd->ws_handshake_done && !already_closing) {
         uint8_t close_payload[2] = {
             (uint8_t)(close_code >> 8U),
             (uint8_t)(close_code & 0xffU),
@@ -392,7 +409,7 @@ static esp_err_t httpd_ws_fail_connection(httpd_req_t *req, uint16_t close_code,
         }
     }
 
-    return ESP_FAIL;
+    return ret;
 }
 
 static esp_err_t httpd_ws_unmask_payload(uint8_t *payload, size_t len, const uint8_t *mask_key, size_t mask_offset)
@@ -447,15 +464,15 @@ static esp_err_t httpd_ws_recv_frame_internal(httpd_req_t *req, httpd_ws_frame_t
         /* Interpret length */
         uint8_t init_len = second_byte & HTTPD_WS_LENGTH_BITS;
 
-#if CONFIG_HTTPD_WS_STRICT_RFC6455
+#if CONFIG_HTTPD_WS_STRICTER_RFC6455
         /* RFC 6455 §5.5: control frames MUST have payload <= 125 bytes and
          * therefore MUST NOT use the 16- or 64-bit extended length encodings.
          */
-        if (frame->type >= HTTPD_WS_TYPE_CLOSE && init_len > 125) {
+        if (httpd_ws_is_control_opcode(frame->type) && init_len > 125) {
             ESP_LOGE(TAG, LOG_FMT("Invalid control frame length encoding"));
-            return httpd_ws_fail_connection(req, HTTPD_WS_CLOSE_CODE_PROTOCOL_ERROR, true);
+            return httpd_ws_fail_connection(req, HTTPD_WS_CLOSE_CODE_PROTOCOL_ERROR);
         }
-#endif /* CONFIG_HTTPD_WS_STRICT_RFC6455 */
+#endif /* CONFIG_HTTPD_WS_STRICTER_RFC6455 */
 
         if (init_len < 126) {
             /* Case 1: If length is 0-125, then this length bit is 7 bits */
@@ -469,7 +486,15 @@ static esp_err_t httpd_ws_recv_frame_internal(httpd_req_t *req, httpd_ws_frame_t
                 return ESP_FAIL;
             }
 
-            frame->len = ((uint32_t)(length_bytes[0] << 8U) | (length_bytes[1]));
+            uint16_t length = ((uint16_t)(length_bytes[0] << 8U) | (length_bytes[1]));
+#if CONFIG_HTTPD_WS_STRICTER_RFC6455
+            /* RFC 6455 §5.2: encodings must be minimal; a value < 126 MUST use 7-bit form. */
+            if (length < 126) {
+                ESP_LOGE(TAG, LOG_FMT("Invalid WS frame length: non-minimal 16-bit encoding"));
+                return httpd_ws_fail_connection(req, HTTPD_WS_CLOSE_CODE_PROTOCOL_ERROR);
+            }
+#endif /* CONFIG_HTTPD_WS_STRICTER_RFC6455 */
+            frame->len = length;
         } else if (init_len == 127) {
             /* Case 3: If length is byte 127, then this frame's length bit is 64 bits */
             uint8_t length_bytes[8] = { 0 };
@@ -479,14 +504,34 @@ static esp_err_t httpd_ws_recv_frame_internal(httpd_req_t *req, httpd_ws_frame_t
                 return ESP_FAIL;
             }
 
-            frame->len = (((uint64_t)length_bytes[0] << 56U) |
-                    ((uint64_t)length_bytes[1] << 48U) |
-                    ((uint64_t)length_bytes[2] << 40U) |
-                    ((uint64_t)length_bytes[3] << 32U) |
-                    ((uint64_t)length_bytes[4] << 24U) |
-                    ((uint64_t)length_bytes[5] << 16U) |
-                    ((uint64_t)length_bytes[6] <<  8U) |
-                    ((uint64_t)length_bytes[7]));
+#if CONFIG_HTTPD_WS_STRICTER_RFC6455
+            /* RFC 6455 §5.2: MSB must be 0 */
+            if (length_bytes[0] & 0x80) {
+                ESP_LOGE(TAG, LOG_FMT("Invalid WS frame length: MSB must be 0"));
+                return httpd_ws_fail_connection(req, HTTPD_WS_CLOSE_CODE_PROTOCOL_ERROR);
+            }
+#endif /* CONFIG_HTTPD_WS_STRICTER_RFC6455 */
+
+            uint64_t length = (uint64_t)length_bytes[0] << 56U |
+                    (uint64_t)length_bytes[1] << 48U |
+                    (uint64_t)length_bytes[2] << 40U |
+                    (uint64_t)length_bytes[3] << 32U |
+                    (uint64_t)length_bytes[4] << 24U |
+                    (uint64_t)length_bytes[5] << 16U |
+                    (uint64_t)length_bytes[6] <<  8U |
+                    (uint64_t)length_bytes[7];
+#if CONFIG_HTTPD_WS_STRICTER_RFC6455
+            /* Encoding must be minimal; values <= UINT16_MAX MUST use 16-bit form */
+            if (length <= UINT16_MAX) {
+                ESP_LOGE(TAG, LOG_FMT("Invalid WS frame length: non-minimal 64-bit encoding"));
+                return httpd_ws_fail_connection(req, HTTPD_WS_CLOSE_CODE_PROTOCOL_ERROR);
+            }
+#endif /* CONFIG_HTTPD_WS_STRICTER_RFC6455 */
+            if (length > SIZE_MAX) {
+                ESP_LOGE(TAG, LOG_FMT("Invalid WS frame length: too large for platform"));
+                return httpd_ws_fail_connection(req, HTTPD_WS_CLOSE_CODE_TOO_BIG);
+            }
+            frame->len = (size_t)length;
         }
         frame->left_len = frame->len;
 
@@ -501,9 +546,9 @@ static esp_err_t httpd_ws_recv_frame_internal(httpd_req_t *req, httpd_ws_frame_t
             /* If the WS frame from client to server is not masked, it should be rejected.
              * Please refer to RFC6455 Section 5.2 for more details. */
             ESP_LOGE(TAG, LOG_FMT("WS frame is not properly masked."));
-#if CONFIG_HTTPD_WS_STRICT_RFC6455
-            httpd_ws_fail_connection(req, HTTPD_WS_CLOSE_CODE_PROTOCOL_ERROR, true);
-#endif /* CONFIG_HTTPD_WS_STRICT_RFC6455 */
+#if CONFIG_HTTPD_WS_STRICTER_RFC6455
+            httpd_ws_fail_connection(req, HTTPD_WS_CLOSE_CODE_PROTOCOL_ERROR);
+#endif /* CONFIG_HTTPD_WS_STRICTER_RFC6455 */
             return ESP_ERR_INVALID_STATE;
         }
     }
@@ -580,6 +625,22 @@ esp_err_t httpd_ws_send_frame_async(httpd_handle_t hd, int fd, httpd_ws_frame_t 
         return ESP_ERR_INVALID_ARG;
     }
 
+    struct sock_db *sess = httpd_sess_get(hd, fd);
+    if (!sess) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+#if CONFIG_HTTPD_WS_STRICTER_RFC6455
+    /* RFC 6455 §1.4 / §5.5.1: once a CLOSE has been sent or received the
+     * endpoint MUST NOT transmit any further data frames. Only the CLOSE
+     * frame itself is permitted so that an in-progress fail-the-connection
+     * or close-handshake response can still be emitted. */
+    if (sess->ws_close && frame->type != HTTPD_WS_TYPE_CLOSE) {
+        ESP_LOGW(TAG, LOG_FMT("Session is closing; refusing non-CLOSE frame (type=0x%02X)"), frame->type);
+        return ESP_ERR_INVALID_STATE;
+    }
+#endif /* CONFIG_HTTPD_WS_STRICTER_RFC6455 */
+
     /* Prepare Tx buffer - maximum length is 14, which includes 2 bytes header, 8 bytes length, 4 bytes mask key */
     uint8_t tx_len = 0;
     uint8_t header_buf[10] = {0 };
@@ -590,7 +651,7 @@ esp_err_t httpd_ws_send_frame_async(httpd_handle_t hd, int fd, httpd_ws_frame_t 
     if (frame->len <= 125) {
         header_buf[1] = frame->len & 0x7fU; /* Length for 7 bits */
         tx_len = 2;
-    } else if (frame->len > 125 && frame->len < UINT16_MAX) {
+    } else if (frame->len > 125 && frame->len <= UINT16_MAX) {
         header_buf[1] = 126;                /* Length for 16 bits */
         header_buf[2] = (frame->len >> 8U) & 0xffU;
         header_buf[3] = frame->len & 0xffU;
@@ -610,11 +671,6 @@ esp_err_t httpd_ws_send_frame_async(httpd_handle_t hd, int fd, httpd_ws_frame_t 
 
     /* WebSocket server does not required to mask response payload, so leave the MASK bit as 0. */
     header_buf[1] &= (~HTTPD_WS_MASK_BIT);
-
-    struct sock_db *sess = httpd_sess_get(hd, fd);
-    if (!sess) {
-        return ESP_ERR_INVALID_ARG;
-    }
 
     /* Send off header */
     if (sess->send_fn(hd, fd, (const char *)header_buf, tx_len, 0) < 0) {
@@ -660,8 +716,7 @@ esp_err_t httpd_ws_get_frame_type(httpd_req_t *req)
         /* If we fail to read exactly one byte, this socket FD is invalid or the frame header is incomplete. */
         /* Here we mark it as a Close message and close it later. */
         ESP_LOGW(TAG, LOG_FMT("Failed to read header byte (socket FD invalid), closing socket now"));
-        aux->ws_final = true;
-        aux->ws_type = HTTPD_WS_TYPE_CLOSE;
+        httpd_ws_mark_closing(aux);
         return ESP_OK;
     }
 
@@ -671,13 +726,13 @@ esp_err_t httpd_ws_get_frame_type(httpd_req_t *req)
     aux->ws_final = (first_byte & HTTPD_WS_FIN_BIT) != 0;
     aux->ws_type = (first_byte & HTTPD_WS_OPCODE_BITS);
 
-#if CONFIG_HTTPD_WS_STRICT_RFC6455
+#if CONFIG_HTTPD_WS_STRICTER_RFC6455
     /* RFC 6455 §5.2: RSV bits MUST be 0 unless an extension has been negotiated.
      * This implementation does not support extensions, so any set RSV bit is an error.
      */
     if (first_byte & (HTTPD_WS_RSV1_BIT | HTTPD_WS_RSV2_BIT | HTTPD_WS_RSV3_BIT)) {
         ESP_LOGE(TAG, LOG_FMT("RSV1, RSV2 or RSV3 bits are set, closing connection"));
-        return httpd_ws_fail_connection(req, HTTPD_WS_CLOSE_CODE_PROTOCOL_ERROR, true);
+        return httpd_ws_fail_connection(req, HTTPD_WS_CLOSE_CODE_PROTOCOL_ERROR);
     }
 
     /* RFC 6455 §5.2: opcodes 0x3–0x7 and 0xB–0xF are reserved and must not be used. */
@@ -691,15 +746,15 @@ esp_err_t httpd_ws_get_frame_type(httpd_req_t *req)
         break;
     default:
         ESP_LOGE(TAG, LOG_FMT("Invalid WS frame type: 0x%02X"), aux->ws_type);
-        return httpd_ws_fail_connection(req, HTTPD_WS_CLOSE_CODE_PROTOCOL_ERROR, true);
+        return httpd_ws_fail_connection(req, HTTPD_WS_CLOSE_CODE_PROTOCOL_ERROR);
     }
 
     /* RFC 6455 §5.5: control frames MUST NOT be fragmented (FIN bit must be set). */
-    if (aux->ws_type >= HTTPD_WS_TYPE_CLOSE && !aux->ws_final) {
+    if (httpd_ws_is_control_opcode(aux->ws_type) && !aux->ws_final) {
         ESP_LOGE(TAG, LOG_FMT("Invalid fragmented control frame: 0x%02X"), aux->ws_type);
-        return httpd_ws_fail_connection(req, HTTPD_WS_CLOSE_CODE_PROTOCOL_ERROR, true);
+        return httpd_ws_fail_connection(req, HTTPD_WS_CLOSE_CODE_PROTOCOL_ERROR);
     }
-#endif /* CONFIG_HTTPD_WS_STRICT_RFC6455 */
+#endif /* CONFIG_HTTPD_WS_STRICTER_RFC6455 */
 
     /* If userspace requests control frames, do not deal with the control frames */
     if (!sd->ws_control_frames) {

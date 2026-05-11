@@ -1789,13 +1789,9 @@ typedef enum {
     HTTPD_WS_TYPE_CONTINUE        = 0x0,
     HTTPD_WS_TYPE_TEXT            = 0x1,
     HTTPD_WS_TYPE_BINARY          = 0x2,
-    HTTPD_WS_TYPE_NON_CTRL_RES    = 0x3,  /*!< Reserved non-control opcode range start */
-    HTTPD_WS_TYPE_NON_CTRL_RES_END = 0x7, /*!< Reserved non-control opcode range end */
     HTTPD_WS_TYPE_CLOSE           = 0x8,
     HTTPD_WS_TYPE_PING            = 0x9,
     HTTPD_WS_TYPE_PONG            = 0xA,
-    HTTPD_WS_TYPE_CTRL_RES        = 0xB,  /*!< Reserved control opcode range start */
-    HTTPD_WS_TYPE_CTRL_RES_END    = 0xF,  /*!< Reserved control opcode range end */
 } httpd_ws_type_t;
 
 /**
