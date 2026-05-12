@@ -44,6 +44,7 @@ TEST_CASE("lcd_panel_with_i2c_interface_(ssd1306)", "[lcd]")
         .dc_bit_offset = 6,       // According to SSD1306 datasheet
         .lcd_cmd_bits = 8,        // According to SSD1306 datasheet
         .lcd_param_bits = 8,      // According to SSD1306 datasheet
+        .transaction_timeout_ms = 0, // 0 keeps the legacy infinite wait behavior
     };
 
     TEST_ESP_OK(esp_lcd_new_panel_io_i2c(bus_handle, &io_config, &io_handle));
