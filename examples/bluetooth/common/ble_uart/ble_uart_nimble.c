@@ -64,7 +64,7 @@ extern void ble_store_config_init(void);
 
 /* ===== UUIDs =========================================================== */
 
-/* NUS UUIDs in little-endian byte order. */
+/* BLE UART profile UUIDs in little-endian byte order. */
 #define NUS_SVC_BYTES   0x9e, 0xca, 0xdc, 0x24, 0x0e, 0xe5, 0xa9, 0xe0, \
                         0x93, 0xf3, 0xa3, 0xb5, 0x01, 0x00, 0x40, 0x6e
 #define NUS_RX_BYTES    0x9e, 0xca, 0xdc, 0x24, 0x0e, 0xe5, 0xa9, 0xe0, \
@@ -80,8 +80,9 @@ static const ble_uuid128_t s_chr_tx_uuid = BLE_UUID128_INIT(NUS_TX_BYTES);
 
 /* ===== State =========================================================== */
 
-/* RX scratch capacity. Tunable via menuconfig; fall back to 1024 if
- * Kconfig.projbuild isn't carried along when reusing this file. */
+/* RX scratch capacity. Tunable via menuconfig (Component config → BLE UART
+ * library); fall
+ * back to 1024 if CONFIG_BLE_UART_RX_SCRATCH_SIZE is absent. */
 #ifndef CONFIG_BLE_UART_RX_SCRATCH_SIZE
 #define CONFIG_BLE_UART_RX_SCRATCH_SIZE     1024
 #endif
@@ -106,7 +107,7 @@ static uint8_t           s_own_addr_type;
 static int  gap_event(struct ble_gap_event *event, void *arg);
 static int  start_advertising(void);
 
-/* ===== GATT (NUS) ====================================================== */
+/* ===== GATT (BLE UART service) ========================================= */
 
 static int chr_access(uint16_t conn_handle, uint16_t attr_handle,
                       struct ble_gatt_access_ctxt *ctxt, void *arg)
@@ -253,7 +254,7 @@ static int start_advertising(void)
 {
     /* 31-byte primary adv can't hold flags + tx_pwr + name + 128-bit
      * UUID together, so split: primary = flags+tx_pwr+name,
-     * scan rsp = NUS UUID. */
+     * scan rsp = 128-bit service UUID. */
     const char *name     = s_dev_name;
     size_t      name_len = strlen(name);
 
@@ -262,7 +263,7 @@ static int start_advertising(void)
         .tx_pwr_lvl_is_present  = 1,
         .tx_pwr_lvl             = BLE_HS_ADV_TX_PWR_LVL_AUTO,
         /* If no name was set, advertise without one (NimBLE accepts
-         * NULL+0); the NUS UUID in scan rsp still identifies us. */
+         * NULL+0); the service UUID in scan rsp still identifies us. */
         .name                   = name_len > 0 ? (uint8_t *)name : NULL,
         .name_len               = name_len,
         .name_is_complete       = name_len > 0 ? 1 : 0,
