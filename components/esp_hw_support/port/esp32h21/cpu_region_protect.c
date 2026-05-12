@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -104,7 +104,7 @@ void esp_cpu_configure_region_protection(void)
     const unsigned NONE    = PMP_L;
     __attribute__((unused)) const unsigned R       = PMP_L | PMP_R;
     const unsigned RW      = PMP_L | PMP_R | PMP_W;
-    const unsigned RX      = PMP_L | PMP_R | PMP_X;
+    __attribute__((unused)) const unsigned RX      = PMP_L | PMP_R | PMP_X;
     const unsigned RWX     = PMP_L | PMP_R | PMP_W | PMP_X;
 
     //
@@ -122,9 +122,25 @@ void esp_cpu_configure_region_protection(void)
     _Static_assert(SOC_CPU_SUBSYSTEM_LOW < SOC_CPU_SUBSYSTEM_HIGH, "Invalid CPU subsystem region");
 
     // 2. I/D-ROM
-    const uint32_t pmpaddr1 = PMPADDR_NAPOT(SOC_IROM_MASK_LOW, SOC_IROM_MASK_HIGH);
-    PMP_ENTRY_SET(1, pmpaddr1, PMP_NAPOT | RX);
-    _Static_assert(SOC_IROM_MASK_LOW < SOC_IROM_MASK_HIGH, "Invalid I/D-ROM region");
+    /* For non-MP (Mass Production) revisions of the chip, the PMP (Physical Memory Protection) entries 2 and 3 are not utilized for ROM memory mapping.
+    *  In such cases, these entries remain unconfigured and vacant.
+    */
+#if CONFIG_ESP32H21_SELECTS_REV_MP && CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP && !BOOTLOADER_BUILD
+    const uint32_t drom_start = (uint32_t) (ets_rom_layout_p->drom_start);
+    if ((drom_start & (SOC_CPU_PMP_REGION_GRANULARITY - 1)) == 0) {
+        PMP_ENTRY_CFG_RESET(1);
+        PMP_ENTRY_CFG_RESET(2);
+        PMP_ENTRY_CFG_RESET(3);
+        PMP_ENTRY_SET(1, SOC_IROM_MASK_LOW, NONE);
+        PMP_ENTRY_SET(2, drom_start, PMP_TOR | RX);
+        PMP_ENTRY_SET(3, SOC_DROM_MASK_HIGH, PMP_TOR | R);
+    } else
+#endif
+    {
+        const uint32_t pmpaddr1 = PMPADDR_NAPOT(SOC_IROM_MASK_LOW, SOC_IROM_MASK_HIGH);
+        PMP_ENTRY_SET(1, pmpaddr1, PMP_NAPOT | CONDITIONAL_RX);
+        _Static_assert(SOC_IROM_MASK_LOW < SOC_IROM_MASK_HIGH, "Invalid I/D-ROM region");
+    }
 
     if (esp_cpu_dbgr_is_attached()) {
         // Anti-FI check that cpu is really in ocd mode

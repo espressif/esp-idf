@@ -1103,6 +1103,34 @@ def test_non_cache_irom_reg_write_violation(dut: PanicTestDut, test_func_name: s
         irom_reg_write_violation(dut, test_func_name)
 
 
+def irom_mask_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    dut.expect_gme('Store access fault')
+    dut.expect_reg_dump(0)
+    dut.expect_cpu_reset()
+
+
+@pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
+@idf_parametrize('config, target', CONFIGS_MEMPROT_FLASH_IDROM, indirect=['config', 'target'])
+def test_irom_mask_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    irom_mask_reg_write_violation(dut, test_func_name)
+
+
+def drom_mask_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    dut.expect_gme('Store access fault')
+    dut.expect_reg_dump(0)
+    dut.expect_cpu_reset()
+
+
+@pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
+@idf_parametrize('config, target', CONFIGS_MEMPROT_FLASH_IDROM, indirect=['config', 'target'])
+def test_drom_mask_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    drom_mask_reg_write_violation(dut, test_func_name)
+
+
 def drom_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     dut.expect_gme('Store access fault')

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,6 +62,12 @@ void test_irom_reg_write_violation(void);
 void test_spiram_xip_irom_alignment_reg_execute_violation(void);
 
 void test_spiram_xip_drom_alignment_reg_execute_violation(void);
+
+void test_irom_mask_reg_write_violation(void);
+
+#ifdef SOC_DROM_MASK_HIGH
+void test_drom_mask_reg_write_violation(void);
+#endif
 
 void test_drom_reg_write_violation(void);
 

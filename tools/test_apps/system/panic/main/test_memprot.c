@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -298,6 +298,23 @@ void test_irom_reg_write_violation(void)
     printf("Flash (IROM): Write operation | Address: %p\n", test_addr);
     *test_addr = RND_VAL;
 }
+
+void test_irom_mask_reg_write_violation(void)
+{
+    uint32_t *test_addr = (uint32_t *)(SOC_IROM_MASK_LOW + 0x04);
+    printf("ROM (IROM Mask): Write operation | Address: %p\n", test_addr);
+    *test_addr = RND_VAL;
+}
+
+#ifdef SOC_DROM_MASK_HIGH
+void test_drom_mask_reg_write_violation(void)
+{
+    uint32_t *test_addr = (uint32_t *)(SOC_DROM_MASK_HIGH - 0x04);
+    printf("ROM (DROM Mask): Write operation | Address: %p\n", test_addr);
+    *test_addr = RND_VAL;
+}
+
+#endif
 
 void test_drom_reg_write_violation(void)
 {
