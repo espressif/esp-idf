@@ -420,10 +420,17 @@ esp_tls_t *esp_tls_init(void);
  *                       structure should be zero-initialized
  * @param[in]  tls       Pointer to esp-tls as esp-tls handle.
  *
+ * @note       The cfg->timeout_ms parameter controls the connection timeout:
+ *             - timeout_ms > 0:  The connection attempt will be aborted if it does not
+ *                                complete within the specified duration.
+ *             - timeout_ms <= 0: No application-level timeout is applied. The connection
+ *                                relies on the underlying socket timeout (ESP_TLS_DEFAULT_CONN_TIMEOUT).
+ *             On timeout, the function returns -1 and records
+ *             ESP_ERR_ESP_TLS_CONNECTION_TIMEOUT in the error handle.
+ *
  * @return
- *             - -1      If connection establishment fails.
+ *             - -1      If connection establishment fails (including timeout).
  *             -  1      If connection establishment is successful.
- *             -  0      If connection state is in progress.
  */
 int esp_tls_conn_new_sync(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_t *tls);
 
