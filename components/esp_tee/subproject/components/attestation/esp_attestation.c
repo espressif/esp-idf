@@ -48,44 +48,23 @@ static void free_sw_claim_list(void)
     }
 }
 
-static esp_err_t fetch_device_id(uint8_t *devid_buf)
+static esp_err_t fetch_ueids(esp_att_token_cfg_t *cfg)
 {
-    if (devid_buf == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    uint8_t mac_addr[6] = {0};
-    esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_MAC, mac_addr, sizeof(mac_addr) * 8);
+    /* UEID: raw eFuse MAC */
+    esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_MAC, cfg->ueid_mac,
+                                              ESP_ATT_EAT_UEID_MAC_SZ * 8);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to read MAC from eFuse!");
-        goto exit;
+        return err;
     }
 
-    psa_hash_operation_t hash_op = PSA_HASH_OPERATION_INIT;
-    psa_status_t status = psa_hash_setup(&hash_op, PSA_ALG_SHA_256);
-    if (status != PSA_SUCCESS) {
-        return ESP_FAIL;
-    }
-
-    status = psa_hash_update(&hash_op, mac_addr, sizeof(mac_addr));
-    if (status != PSA_SUCCESS) {
-        return ESP_FAIL;
-    }
-
-    size_t digest_len = 0;
-    status = psa_hash_finish(&hash_op, devid_buf, SHA256_DIGEST_SZ, &digest_len);
-    if (status != PSA_SUCCESS) {
-        return ESP_FAIL;
-    }
-
-    if (digest_len != SHA256_DIGEST_SZ) {
-        return ESP_ERR_INVALID_SIZE;
+    /* UEID: 128-bit OPTIONAL_UNIQUE_ID */
+    err = esp_efuse_read_field_blob(ESP_EFUSE_OPTIONAL_UNIQUE_ID, cfg->ueid_opt_id,
+                                    ESP_ATT_EAT_UEID_OPT_ID_SZ * 8);
+    if (err != ESP_OK) {
+        return err;
     }
 
     return ESP_OK;
-
-exit:
-    return err;
 }
 
 static esp_err_t populate_att_token_cfg(esp_att_token_cfg_t *cfg, const esp_att_ecdsa_keypair_t *keypair)
@@ -94,10 +73,19 @@ static esp_err_t populate_att_token_cfg(esp_att_token_cfg_t *cfg, const esp_att_
         return ESP_ERR_INVALID_ARG;
     }
 
-    esp_err_t err = fetch_device_id(cfg->device_id);
+    esp_err_t err = fetch_ueids(cfg);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to get the device ID!");
+        ESP_LOGE(TAG, "Failed to get the UEIDs!");
         return err;
+    }
+
+    /* Device ID = SHA-256 of the MAC */
+    size_t digest_len = 0;
+    psa_status_t status = psa_hash_compute(PSA_ALG_SHA_256, cfg->ueid_mac, sizeof(cfg->ueid_mac),
+                                           cfg->device_id, sizeof(cfg->device_id), &digest_len);
+    if (status != PSA_SUCCESS || digest_len != sizeof(cfg->device_id)) {
+        ESP_LOGE(TAG, "Failed to derive the device ID!");
+        return ESP_FAIL;
     }
 
     err = esp_att_utils_ecdsa_get_pubkey_digest(keypair, cfg->instance_id, sizeof(cfg->instance_id));
@@ -106,6 +94,10 @@ static esp_err_t populate_att_token_cfg(esp_att_token_cfg_t *cfg, const esp_att_
         return err;
     }
 
+    /* Chip ID read from the ROM */
+    extern const uint32_t _rom_chip_id;
+    cfg->chip_id = _rom_chip_id;
+    /* Chip revision read from eFuse */
     cfg->device_ver = efuse_hal_chip_revision();
     /* TODO: Decide what all fields we need here */
     cfg->device_stat = 0xA5;

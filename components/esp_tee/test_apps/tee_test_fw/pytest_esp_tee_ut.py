@@ -475,6 +475,23 @@ def test_esp_tee_secure_storage_with_host_img(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(group='sec_storage_host_keygen')
 
 
+@idf_parametrize(
+    'config, target, skip_autoflash, markers',
+    CONFIG_OTA_NO_AUTOFLASH,
+    indirect=['config', 'target', 'skip_autoflash'],
+)
+def test_esp_tee_secure_storage_encryption(dut: IdfDut) -> None:
+    dut.serial.custom_flash_with_empty_sec_stg()
+
+    # NOTE: In release mode (CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE), the test
+    # expects the eFuse-burned HMAC key used for TEE secure storage to be available
+    # at the path "test_keys/tee_sec_stg_hmac_key.bin"
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('"Test TEE Secure Storage - Verify data encryption"')
+
+    dut.serial.verify_tee_sec_stg_encryption(dut)
+
+
 # ---------------- TEE Attestation tests ----------------
 
 
