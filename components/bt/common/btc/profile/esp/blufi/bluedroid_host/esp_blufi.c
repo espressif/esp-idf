@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,11 +32,15 @@
 #include "esp_bt_device.h"
 #include "esp_err.h"
 #include "esp_blufi.h"
+#include <esp_gap_ble_api.h>
 
 #if (BLUFI_INCLUDED == TRUE)
 
 static uint8_t server_if;
 static uint16_t conn_id;
+
+/* Forward declaration used by the GATTS event handler. */
+esp_err_t esp_blufi_close(esp_gatt_if_t gatts_if, uint16_t conn_id);
 static uint8_t blufi_service_uuid128[32] = {
     /* LSB <--------------------------------------------------------------------------------> MSB */
     //first uuid, 16bit, [12],[13] is the value
@@ -70,12 +74,166 @@ static esp_ble_adv_params_t blufi_adv_params = {
     .adv_filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
 };
 
+#ifdef CONFIG_BT_BLUFI_BLE_SMP_ENABLE
+static char *esp_auth_req_to_str(esp_ble_auth_req_t auth_req)
+{
+   char *auth_str = NULL;
+   switch(auth_req) {
+    case ESP_LE_AUTH_NO_BOND:
+        auth_str = "ESP_LE_AUTH_NO_BOND";
+        break;
+    case ESP_LE_AUTH_BOND:
+        auth_str = "ESP_LE_AUTH_BOND";
+        break;
+    case ESP_LE_AUTH_REQ_MITM:
+        auth_str = "ESP_LE_AUTH_REQ_MITM";
+        break;
+    case ESP_LE_AUTH_REQ_BOND_MITM:
+        auth_str = "ESP_LE_AUTH_REQ_BOND_MITM";
+        break;
+    case ESP_LE_AUTH_REQ_SC_ONLY:
+        auth_str = "ESP_LE_AUTH_REQ_SC_ONLY";
+        break;
+    case ESP_LE_AUTH_REQ_SC_BOND:
+        auth_str = "ESP_LE_AUTH_REQ_SC_BOND";
+        break;
+    case ESP_LE_AUTH_REQ_SC_MITM:
+        auth_str = "ESP_LE_AUTH_REQ_SC_MITM";
+        break;
+    case ESP_LE_AUTH_REQ_SC_MITM_BOND:
+        auth_str = "ESP_LE_AUTH_REQ_SC_MITM_BOND";
+        break;
+    default:
+        auth_str = "INVALID BLE AUTH REQ";
+        break;
+   }
+
+   return auth_str;
+}
+
+static char *esp_key_type_to_str(esp_ble_key_type_t key_type)
+{
+   char *key_str = NULL;
+   switch(key_type) {
+    case ESP_LE_KEY_NONE:
+        key_str = "ESP_LE_KEY_NONE";
+        break;
+    case ESP_LE_KEY_PENC:
+        key_str = "ESP_LE_KEY_PENC";
+        break;
+    case ESP_LE_KEY_PID:
+        key_str = "ESP_LE_KEY_PID";
+        break;
+    case ESP_LE_KEY_PCSRK:
+        key_str = "ESP_LE_KEY_PCSRK";
+        break;
+    case ESP_LE_KEY_PLK:
+        key_str = "ESP_LE_KEY_PLK";
+        break;
+    case ESP_LE_KEY_LLK:
+        key_str = "ESP_LE_KEY_LLK";
+        break;
+    case ESP_LE_KEY_LENC:
+        key_str = "ESP_LE_KEY_LENC";
+        break;
+    case ESP_LE_KEY_LID:
+        key_str = "ESP_LE_KEY_LID";
+        break;
+    case ESP_LE_KEY_LCSRK:
+        key_str = "ESP_LE_KEY_LCSRK";
+        break;
+    default:
+        key_str = "INVALID BLE KEY TYPE";
+        break;
+   }
+   return key_str;
+}
+#endif
+
 void esp_blufi_gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
+    BLUFI_TRACE_DEBUG("GAP_EVT, event %d", event);
     switch (event) {
     case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
+        if (param->adv_data_cmpl.status != ESP_BT_STATUS_SUCCESS) {
+            BTC_TRACE_ERROR("Advertising data set failed, status %x", param->adv_data_cmpl.status);
+            break;
+        }
         esp_ble_gap_start_advertising(&blufi_adv_params);
         break;
+    case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
+        //advertising start complete event to indicate advertising start successfully or failed
+        if (param->adv_start_cmpl.status != ESP_BT_STATUS_SUCCESS) {
+            BTC_TRACE_ERROR("Advertising start failed, status %x", param->adv_start_cmpl.status);
+            break;
+        }
+        BLUFI_TRACE_API("Advertising start successfully");
+        break;
+#ifdef CONFIG_BT_BLUFI_BLE_SMP_ENABLE
+    case ESP_GAP_BLE_PASSKEY_REQ_EVT:                           /* passkey request event */
+        BLUFI_TRACE_API("Passkey request");
+        break;
+    case ESP_GAP_BLE_OOB_REQ_EVT: {
+        BLUFI_TRACE_API("OOB request");
+        uint8_t tk[16] = {1}; //If you paired with OOB, both devices need to use the same tk
+        esp_ble_oob_req_reply(param->ble_security.ble_req.bd_addr, tk, sizeof(tk));
+        break;
+    }
+    case ESP_GAP_BLE_LOCAL_IR_EVT:                               /* BLE local IR event */
+        BLUFI_TRACE_API("Local identity root");
+        break;
+    case ESP_GAP_BLE_LOCAL_ER_EVT:                               /* BLE local ER event */
+        BLUFI_TRACE_API("Local encryption root");
+        break;
+    case ESP_GAP_BLE_NC_REQ_EVT:
+        /* The app will receive this evt when the IO has DisplayYesNO capability and the peer device IO also has DisplayYesNo capability.
+        show the passkey number to the user to confirm it with the number displayed by peer device. */
+        /*
+         * Security note:
+         * Auto-accepting Numeric Comparison would bypass the user confirmation step and
+         * effectively weaken MITM protection. Reject by default; applications that want
+         * MITM protection must implement explicit user confirmation logic.
+         */
+        esp_ble_confirm_reply(param->ble_security.ble_req.bd_addr, false);
+        BLUFI_TRACE_WARNING("Numeric Comparison request rejected by default, passkey %" PRIu32,
+                            param->ble_security.key_notif.passkey);
+        break;
+    case ESP_GAP_BLE_SEC_REQ_EVT:
+        /* send the positive(true) security response to the peer device to accept the security request.
+        If not accept the security request, should send the security response with negative(false) accept value*/
+        esp_ble_gap_security_rsp(param->ble_security.ble_req.bd_addr, true);
+        break;
+    case ESP_GAP_BLE_PASSKEY_NOTIF_EVT:  ///the app will receive this evt when the IO  has Output capability and the peer device IO has Input capability.
+        ///show the passkey number to the user to input it in the peer device.
+        BLUFI_TRACE_WARNING("Passkey notify, passkey %06" PRIu32, param->ble_security.key_notif.passkey);
+        break;
+    case ESP_GAP_BLE_KEY_EVT:
+        //shows the ble key info share with peer device to the user.
+        BLUFI_TRACE_API("Key exchanged, key_type %s", esp_key_type_to_str(param->ble_security.ble_key.key_type));
+        break;
+    case ESP_GAP_BLE_AUTH_CMPL_EVT: {
+        esp_bd_addr_t bd_addr;
+        memcpy(bd_addr, param->ble_security.auth_cmpl.bd_addr, sizeof(esp_bd_addr_t));
+        BLUFI_TRACE_API("Authentication complete, addr_type %u, addr "ESP_BD_ADDR_STR"",
+                 param->ble_security.auth_cmpl.addr_type, ESP_BD_ADDR_HEX(bd_addr));
+        if(!param->ble_security.auth_cmpl.success) {
+            BLUFI_TRACE_WARNING("Pairing failed, reason 0x%x",param->ble_security.auth_cmpl.fail_reason);
+        } else {
+            BLUFI_TRACE_WARNING("Pairing successfully, auth_mode %s",esp_auth_req_to_str(param->ble_security.auth_cmpl.auth_mode));
+        }
+        break;
+    }
+    case ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT: {
+        BLUFI_TRACE_DEBUG("Bond device remove, status %d, device "ESP_BD_ADDR_STR"",
+                 param->remove_bond_dev_cmpl.status, ESP_BD_ADDR_HEX(param->remove_bond_dev_cmpl.bd_addr));
+        break;
+    }
+    case ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT:
+        if (param->local_privacy_cmpl.status != ESP_BT_STATUS_SUCCESS){
+            BLUFI_TRACE_WARNING("Local privacy config failed, status %x", param->local_privacy_cmpl.status);
+        }
+        break;
+#endif // CONFIG_BT_BLUFI_BLE_SMP_ENABLE
     default:
         break;
     }
@@ -149,7 +307,7 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         break;
     }
     case BTA_GATTS_READ_EVT:
-        memset(&rsp, 0, sizeof(tBTA_GATTS_API_RSP));
+        memset(&rsp, 0, sizeof(rsp));
         rsp.attr_value.handle = p_data->req_data.p_data->read_req.handle;
         rsp.attr_value.len = 1;
         rsp.attr_value.value[0] = 0x00;
@@ -176,7 +334,9 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
                         status = GATT_INVALID_OFFSET;
                         break;
                     }
-                    blufi_env.prepare_buf = osi_malloc(BLUFI_PREPARE_BUF_MAX_SIZE);
+                    /* Use calloc so any unwritten gaps are deterministic (0) if peer sends
+                     * out-of-order/overlapping fragments and later executes the write. */
+                    blufi_env.prepare_buf = osi_calloc(BLUFI_PREPARE_BUF_MAX_SIZE);
                     blufi_env.prepare_len = 0;
                     if (blufi_env.prepare_buf == NULL) {
                         BLUFI_TRACE_ERROR("Blufi prep no mem\n");
@@ -209,7 +369,14 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
             memcpy(blufi_env.prepare_buf + p_data->req_data.p_data->write_req.offset,
                    p_data->req_data.p_data->write_req.value,
                    p_data->req_data.p_data->write_req.len);
-            blufi_env.prepare_len += p_data->req_data.p_data->write_req.len;
+            /* Maintain the maximum written extent rather than summing lengths.
+             * Summation breaks on retransmissions/overlaps and can exceed the actual
+             * written range, causing parsing of unwritten bytes. */
+            const uint16_t end =
+                (uint16_t)(p_data->req_data.p_data->write_req.offset + p_data->req_data.p_data->write_req.len);
+            if (end > blufi_env.prepare_len) {
+                blufi_env.prepare_len = end;
+            }
 
             return;
         } else {
@@ -251,10 +418,16 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         break;
     case BTA_GATTS_CREATE_EVT:
         blufi_env.handle_srvc = p_data->create.service_id;
-
+        #if CONFIG_BT_BLUFI_BLE_SMP_ENABLE
+        BLUFI_TRACE_WARNING("BLE SMP support in BLUFI is ENABLED!");
+        #endif // CONFIG_BT_BLUFI_BLE_SMP_ENABLE
         //add the first blufi characteristic --> write characteristic
         BTA_GATTS_AddCharacteristic(blufi_env.handle_srvc, &blufi_char_uuid_p2e,
-                                    (GATT_PERM_WRITE),
+                                    #if CONFIG_BT_BLUFI_BLE_SMP_ENABLE
+                                    GATT_PERM_WRITE_ENC_MITM,
+                                    #else
+                                    GATT_PERM_WRITE,
+                                    #endif
                                     (GATT_CHAR_PROP_BIT_WRITE),
                                     NULL, NULL);
         break;
@@ -264,7 +437,11 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
             blufi_env.handle_char_p2e = p_data->add_result.attr_id;
 
             BTA_GATTS_AddCharacteristic(blufi_env.handle_srvc, &blufi_char_uuid_e2p,
+                                        #if CONFIG_BT_BLUFI_BLE_SMP_ENABLE
+                                        (GATT_PERM_READ_ENC_MITM),
+                                        #else
                                         (GATT_PERM_READ),
+                                        #endif
                                         (GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY),
                                         NULL, NULL);
             break;
@@ -272,7 +449,11 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
             blufi_env.handle_char_e2p = p_data->add_result.attr_id;
 
             BTA_GATTS_AddCharDescriptor (blufi_env.handle_srvc,
+                                         #if CONFIG_BT_BLUFI_BLE_SMP_ENABLE
+                                         (GATT_PERM_READ_ENC_MITM | GATT_PERM_WRITE_ENC_MITM),
+                                         #else
                                          (GATT_PERM_READ | GATT_PERM_WRITE),
+                                         #endif
                                          &blufi_descr_uuid_e2p,
                                          NULL, NULL);
             break;
@@ -301,6 +482,13 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         btc_msg_t msg;
         esp_blufi_cb_param_t param;
 
+        if (blufi_env.is_connected) {
+            BLUFI_TRACE_WARNING("BLUFI already connected; rejecting new connection from "BT_BD_ADDR_STR", connect_id=%d",
+                                BT_BD_ADDR_HEX(p_data->conn.remote_bda), p_data->conn.conn_id);
+            (void)esp_blufi_close(p_data->conn.server_if, BTC_GATT_GET_CONN_ID(p_data->conn.conn_id));
+            break;
+        }
+
         //set the connection flag to true
         BLUFI_TRACE_API("\ndevice is connected "BT_BD_ADDR_STR", server_if=%d,reason=0x%x,connect_id=%d\n",
                         BT_BD_ADDR_HEX(p_data->conn.remote_bda), p_data->conn.server_if,
@@ -325,6 +513,18 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         btc_msg_t msg;
         esp_blufi_cb_param_t param;
 
+        /* Ignore disconnects that do not belong to the active BLUFI connection.
+         * Even though we reject concurrent connections, the stack may still
+         * deliver disconnect events for transient/previous connections; blindly
+         * resetting the global env would corrupt the active session. */
+        if (!blufi_env.is_connected || blufi_env.conn_id != p_data->conn.conn_id) {
+            BLUFI_TRACE_WARNING("Ignoring BLUFI disconnect for non-active conn_id=%d (active=%d, is_connected=%d) from "
+                                BT_BD_ADDR_STR,
+                                p_data->conn.conn_id, blufi_env.conn_id, blufi_env.is_connected,
+                                BT_BD_ADDR_HEX(p_data->conn.remote_bda));
+            break;
+        }
+
         blufi_env.is_connected = false;
         //set the connection flag to true
         BLUFI_TRACE_API("\ndevice is disconnected "BT_BD_ADDR_STR", server_if=%d,reason=0x%x,connect_id=%d\n",
@@ -340,6 +540,12 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         if (blufi_env.aggr_buf != NULL) {
             osi_free(blufi_env.aggr_buf);
             blufi_env.aggr_buf = NULL;
+        }
+
+        if (blufi_env.prepare_buf) {
+            osi_free(blufi_env.prepare_buf);
+            blufi_env.prepare_buf = NULL;
+            blufi_env.prepare_len = 0;
         }
 
         msg.sig = BTC_SIG_API_CB;
@@ -373,6 +579,18 @@ void esp_blufi_send_notify(void *arg)
 
 void esp_blufi_deinit(void)
 {
+    if (blufi_env.prepare_buf) {
+        osi_free(blufi_env.prepare_buf);
+        blufi_env.prepare_buf = NULL;
+        blufi_env.prepare_len = 0;
+    }
+    if (blufi_env.aggr_buf) {
+        osi_free(blufi_env.aggr_buf);
+        blufi_env.aggr_buf = NULL;
+    }
+    blufi_env.offset = 0;
+    blufi_env.total_len = 0;
+
     BTA_GATTS_StopService(blufi_env.handle_srvc);
     BTA_GATTS_DeleteService(blufi_env.handle_srvc);
     /* register the BLUFI profile to the BTA_GATTS module*/
@@ -396,6 +614,16 @@ void esp_blufi_adv_start_with_name(const char *name)
 void esp_blufi_adv_stop(void)
 {
     esp_ble_gap_stop_advertising();
+}
+
+
+esp_err_t esp_blufi_start_security_request(esp_blufi_bd_addr_t remote_bda)
+{
+    #ifdef CONFIG_BT_BLUFI_BLE_SMP_ENABLE
+    return esp_ble_set_encryption(remote_bda, ESP_BLE_SEC_ENCRYPT_MITM);
+    #else
+    return ESP_ERR_INVALID_STATE;
+    #endif // CONFIG_BT_BLUFI_BLE_SMP_ENABLE
 }
 
 void esp_blufi_send_encap(void *arg)
@@ -423,6 +651,8 @@ esp_err_t esp_blufi_close(esp_gatt_if_t gatts_if, uint16_t conn_id)
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
+    memset(&msg, 0, sizeof(msg));
+    memset(&arg, 0, sizeof(arg));
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
     msg.act = BTC_GATTS_ACT_CLOSE;

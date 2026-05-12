@@ -30,7 +30,7 @@ extern "C" {
 #define BT_BD_ADDR_HEX(addr)   addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
 
 #define GATT_UUID_CHAR_CLIENT_CONFIG    0x2902      /*  Client Characteristic Configuration */
-//define the blufi serivce uuid
+//define the blufi service uuid
 #define BLUFI_SERVICE_UUID  0xFFFF
 //define the blufi Char uuid (PHONE to ESP32)
 #define BLUFI_CHAR_P2E_UUID 0xFF01
@@ -98,6 +98,7 @@ void btc_blufi_cb_handler(btc_msg_t *msg);
 void btc_blufi_call_handler(btc_msg_t *msg);
 void btc_blufi_set_callbacks(esp_blufi_callbacks_t *callbacks);
 
+void btc_blufi_report_error(esp_blufi_error_state_t state);
 void btc_blufi_recv_handler(uint8_t *data, int len);
 void btc_blufi_send_notify(uint8_t *pkt, int pkt_len);
 void btc_blufi_call_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
