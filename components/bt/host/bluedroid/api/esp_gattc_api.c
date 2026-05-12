@@ -115,8 +115,8 @@ esp_err_t esp_ble_gattc_enh_open(esp_gatt_if_t gattc_if, esp_ble_gatt_creat_conn
         }
 
         conn_params = creat_conn_params->phy_1m_conn_params;
-        if (ESP_BLE_IS_VALID_PARAM(conn_params->interval_min, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
-            ESP_BLE_IS_VALID_PARAM(conn_params->interval_max, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
+        if (ESP_BLE_IS_VALID_PARAM(conn_params->interval_min, BLE_CONN_INT_MIN_HOST_CHECK, ESP_BLE_CONN_INT_MAX) &&
+            ESP_BLE_IS_VALID_PARAM(conn_params->interval_max, BLE_CONN_INT_MIN_HOST_CHECK, ESP_BLE_CONN_INT_MAX) &&
             ESP_BLE_IS_VALID_PARAM(conn_params->supervision_timeout, ESP_BLE_CONN_SUP_TOUT_MIN, ESP_BLE_CONN_SUP_TOUT_MAX) &&
             (conn_params->latency <= ESP_BLE_CONN_LATENCY_MAX) &&
             ((conn_params->supervision_timeout * 10) >= ((1 + conn_params->latency) * ((conn_params->interval_max * 5) >> 1))) &&
@@ -138,8 +138,8 @@ esp_err_t esp_ble_gattc_enh_open(esp_gatt_if_t gattc_if, esp_ble_gatt_creat_conn
         }
 
         conn_params = creat_conn_params->phy_2m_conn_params;
-        if (ESP_BLE_IS_VALID_PARAM(conn_params->interval_min, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
-            ESP_BLE_IS_VALID_PARAM(conn_params->interval_max, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
+        if (ESP_BLE_IS_VALID_PARAM(conn_params->interval_min, BLE_CONN_INT_MIN_HOST_CHECK, ESP_BLE_CONN_INT_MAX) &&
+            ESP_BLE_IS_VALID_PARAM(conn_params->interval_max, BLE_CONN_INT_MIN_HOST_CHECK, ESP_BLE_CONN_INT_MAX) &&
             ESP_BLE_IS_VALID_PARAM(conn_params->supervision_timeout, ESP_BLE_CONN_SUP_TOUT_MIN, ESP_BLE_CONN_SUP_TOUT_MAX) &&
             (conn_params->latency <= ESP_BLE_CONN_LATENCY_MAX) &&
             ((conn_params->supervision_timeout * 10) >= ((1 + conn_params->latency) * ((conn_params->interval_max * 5) >> 1))) &&
@@ -161,8 +161,8 @@ esp_err_t esp_ble_gattc_enh_open(esp_gatt_if_t gattc_if, esp_ble_gatt_creat_conn
         }
 
         conn_params = creat_conn_params->phy_coded_conn_params;
-        if (ESP_BLE_IS_VALID_PARAM(conn_params->interval_min, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
-            ESP_BLE_IS_VALID_PARAM(conn_params->interval_max, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
+        if (ESP_BLE_IS_VALID_PARAM(conn_params->interval_min, BLE_CONN_INT_MIN_HOST_CHECK, ESP_BLE_CONN_INT_MAX) &&
+            ESP_BLE_IS_VALID_PARAM(conn_params->interval_max, BLE_CONN_INT_MIN_HOST_CHECK, ESP_BLE_CONN_INT_MAX) &&
             ESP_BLE_IS_VALID_PARAM(conn_params->supervision_timeout, ESP_BLE_CONN_SUP_TOUT_MIN, ESP_BLE_CONN_SUP_TOUT_MAX) &&
             (conn_params->latency <= ESP_BLE_CONN_LATENCY_MAX) &&
             ((conn_params->supervision_timeout * 10) >= ((1 + conn_params->latency) * ((conn_params->interval_max * 5) >> 1))) &&
@@ -251,8 +251,8 @@ esp_err_t esp_ble_gattc_aux_open_with_pawr_synced(esp_gatt_if_t gattc_if, esp_bl
         }
 
         conn_params = pawr_conn_params->phy_1m_conn_params;
-        if (ESP_BLE_IS_VALID_PARAM(conn_params->interval_min, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
-            ESP_BLE_IS_VALID_PARAM(conn_params->interval_max, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
+        if (ESP_BLE_IS_VALID_PARAM(conn_params->interval_min, BLE_CONN_INT_MIN_HOST_CHECK, ESP_BLE_CONN_INT_MAX) &&
+            ESP_BLE_IS_VALID_PARAM(conn_params->interval_max, BLE_CONN_INT_MIN_HOST_CHECK, ESP_BLE_CONN_INT_MAX) &&
             ESP_BLE_IS_VALID_PARAM(conn_params->supervision_timeout, ESP_BLE_CONN_SUP_TOUT_MIN, ESP_BLE_CONN_SUP_TOUT_MAX) &&
             (conn_params->latency <= ESP_BLE_CONN_LATENCY_MAX) &&
             ((conn_params->supervision_timeout * 10) >= ((1 + conn_params->latency) * ((conn_params->interval_max * 5) >> 1))) &&
@@ -274,8 +274,8 @@ esp_err_t esp_ble_gattc_aux_open_with_pawr_synced(esp_gatt_if_t gattc_if, esp_bl
         }
 
         conn_params = pawr_conn_params->phy_2m_conn_params;
-        if (ESP_BLE_IS_VALID_PARAM(conn_params->interval_min, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
-            ESP_BLE_IS_VALID_PARAM(conn_params->interval_max, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
+        if (ESP_BLE_IS_VALID_PARAM(conn_params->interval_min, BLE_CONN_INT_MIN_HOST_CHECK, ESP_BLE_CONN_INT_MAX) &&
+            ESP_BLE_IS_VALID_PARAM(conn_params->interval_max, BLE_CONN_INT_MIN_HOST_CHECK, ESP_BLE_CONN_INT_MAX) &&
             ESP_BLE_IS_VALID_PARAM(conn_params->supervision_timeout, ESP_BLE_CONN_SUP_TOUT_MIN, ESP_BLE_CONN_SUP_TOUT_MAX) &&
             (conn_params->latency <= ESP_BLE_CONN_LATENCY_MAX) &&
             ((conn_params->supervision_timeout * 10) >= ((1 + conn_params->latency) * ((conn_params->interval_max * 5) >> 1))) &&
@@ -297,8 +297,8 @@ esp_err_t esp_ble_gattc_aux_open_with_pawr_synced(esp_gatt_if_t gattc_if, esp_bl
         }
 
         conn_params = pawr_conn_params->phy_coded_conn_params;
-        if (ESP_BLE_IS_VALID_PARAM(conn_params->interval_min, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
-            ESP_BLE_IS_VALID_PARAM(conn_params->interval_max, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
+        if (ESP_BLE_IS_VALID_PARAM(conn_params->interval_min, BLE_CONN_INT_MIN_HOST_CHECK, ESP_BLE_CONN_INT_MAX) &&
+            ESP_BLE_IS_VALID_PARAM(conn_params->interval_max, BLE_CONN_INT_MIN_HOST_CHECK, ESP_BLE_CONN_INT_MAX) &&
             ESP_BLE_IS_VALID_PARAM(conn_params->supervision_timeout, ESP_BLE_CONN_SUP_TOUT_MIN, ESP_BLE_CONN_SUP_TOUT_MAX) &&
             (conn_params->latency <= ESP_BLE_CONN_LATENCY_MAX) &&
             ((conn_params->supervision_timeout * 10) >= ((1 + conn_params->latency) * ((conn_params->interval_max * 5) >> 1))) &&

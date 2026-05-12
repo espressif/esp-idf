@@ -413,6 +413,18 @@
 #define UC_BT_BLE_HIGH_DUTY_ADV_INTERVAL FALSE
 #endif
 
+/* When set to 1, the Bluedroid host's parameter validation no longer enforces
+ * a minimum BLE connection interval; the actual lower limit is then left to
+ * the controller. See BLE_CONN_INT_MIN_HOST_CHECK in common/bt_target.h.
+ *
+ * Do not turn this on manually in menuconfig unless you know the implications.
+ * In normal IDF builds it follows the active Controller integration. */
+#ifdef CONFIG_BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT
+#define UC_BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT      1
+#else
+#define UC_BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT      0
+#endif
+
 //GATTS
 #ifdef CONFIG_BT_GATTS_ENABLE
 #define UC_BT_GATTS_ENABLE                  CONFIG_BT_GATTS_ENABLE

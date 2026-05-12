@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,10 +21,7 @@ r_llc_rem_encrypt_proc_continue_eco = 0x40001cf0;
 r_lld_ext_adv_dynamic_aux_pti_process_eco = 0x40001cfc;
 r_lld_adv_start_eco = 0x40001d04;
 r_lld_con_evt_canceled_cbk_eco = 0x40001d08;
-r_lld_con_evt_time_update_eco = 0x40001d0c;
 r_lld_con_start_eco = 0x40001d10;
-r_lld_con_frm_isr_eco = 0x40001d14;
-r_lld_con_tx_eco = 0x40001d18;
 r_lld_ext_scan_dynamic_pti_process_eco = 0x40001d28;
 r_lld_scan_frm_eof_isr_eco = 0x40001d2c;
 r_lld_sync_start_eco = 0x40001d30;
@@ -110,7 +107,6 @@ r_lld_adv_frm_isr_eco = 0x40001d00;
 r_lld_res_list_clear = 0x40004638;
 r_lld_res_list_rem = 0x40004680;
 r_lld_adv_start_hook = 0x40001c80;
-r_lld_con_evt_start_cbk_eco = 0x40001d1c;
 r_lld_con_tx_prog_new_packet = 0x40001b74;
 r_lld_adv_ext_chain_none_construct = 0x40001b50;
 r_llc_llcp_send_eco = 0x40001cf4;
@@ -127,4 +123,8 @@ r_lld_scan_process_pkt_rx_adv_rep = 0x40001284;
 r_register_esp_vendor_cmd_handler = 0x40001400;
 r_llc_llcp_pdu_handler_get_overwrite = 0x40001d5c;
 r_llc_start_eco = 0x40001cf8;
+r_lld_con_tx_eco = 0x40001d18;
+r_lld_con_evt_time_update_eco = 0x40001d0c;
+r_lld_con_evt_start_cbk_eco = 0x40001d1c;
+r_lld_con_frm_isr_eco = 0x40001d14;
 */

@@ -563,6 +563,31 @@ config BT_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS
         This improves security by ensuring that only connection requests with valid Access Addresses are accepted.
         If disabled, only basic checks are applied, improving compatibility.
 
+config BT_CTRL_BLE_MIN_CONN_INTERVAL_ENABLE
+    bool "Allow BLE connection interval below the spec minimum"
+    default y
+    select BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT if BT_BLUEDROID_ENABLED
+    help
+        Enabling this option allows the BLE controller to use a connection interval
+        smaller than the Bluetooth Core specification minimum of 7.5 ms. On
+        ESP32-C3/S3, when this option is enabled, the connection interval can go as
+        low as 3 * 1.25 ms = 3.75 ms.
+
+        Note: Because the connection interval is very short, the time available within
+        a single connection event is also very limited. It is best not to send or
+        receive long payloads (e.g. large ATT MTU, Data Length Extension with large
+        Tx/Rx octets) when this lower interval is used.
+
+        This option is enabled by default. Disable it to stay compliant with the BLE
+        specification (minimum connection interval 7.5 ms).
+
+        Host stack: When Bluedroid is the BLE host, enabling this option also selects
+        BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT so the host accepts connection
+        intervals below the spec minimum. NimBLE host does not provide equivalent
+        support yet; it is planned for a future release. Until then, use Bluedroid
+        if you need coordinated host and controller behavior for sub-minimum
+        intervals.
+
 menu "Controller debug log Options (Experimental)"
     config BT_CTRL_LE_LOG_EN
         depends on BT_CTRL_RUN_IN_FLASH_ONLY
