@@ -152,6 +152,7 @@ void app_main(void)
         .control_phase_bytes = 1,               // According to SSD1306 datasheet
         .lcd_cmd_bits = EXAMPLE_LCD_CMD_BITS,   // According to SSD1306 datasheet
         .lcd_param_bits = EXAMPLE_LCD_CMD_BITS, // According to SSD1306 datasheet
+        .transaction_timeout_ms = 0,            // wait infinitely
 #if CONFIG_EXAMPLE_LCD_CONTROLLER_SSD1306
         .dc_bit_offset = 6,                     // According to SSD1306 datasheet
 #elif CONFIG_EXAMPLE_LCD_CONTROLLER_SH1107
