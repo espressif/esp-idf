@@ -360,7 +360,6 @@ TEST_CASE("RTC memory should be lowest priority and its free size should be big 
 {
     const size_t allocation_size = 1024 * 4;
     void *ptr = NULL;
-    size_t free_size = 0;
 
     ptr = heap_caps_malloc(allocation_size, MALLOC_CAP_DEFAULT);
     TEST_ASSERT_NOT_NULL(ptr);
