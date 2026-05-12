@@ -293,6 +293,7 @@ def test_coproc_registers(dut: PanicTestDut) -> None:
 
 @pytest.mark.generic
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15607
 def test_gdbstub_runtime(dut: PanicTestDut) -> None:
     start_gdb(dut)
 

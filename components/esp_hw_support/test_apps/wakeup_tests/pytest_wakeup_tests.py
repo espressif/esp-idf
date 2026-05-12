@@ -48,6 +48,7 @@ available_rtcio_nums = {
     soc_filtered_targets('SOC_PM_SUPPORT_EXT1_WAKEUP == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1'),
     indirect=['target'],
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of multi-device runners')  # TODO: IDFCI-10702
 def test_ext1_deepsleep(dut: tuple[IdfDut, IdfDut]) -> None:
     wakee = dut[0]
     waker = dut[1]
@@ -99,6 +100,7 @@ def test_ext1_deepsleep(dut: tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize('config', TEST_CONFIGS, indirect=True)
 @idf_parametrize('target', soc_filtered_targets('SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP == 1'), indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of multi-device runners')  # TODO: IDFCI-10702
 def test_rtcio_deepsleep(dut: tuple[IdfDut, IdfDut]) -> None:
     wakee = dut[0]
     waker = dut[1]
@@ -144,7 +146,8 @@ def test_rtcio_deepsleep(dut: tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.parametrize('config', TEST_CONFIGS, indirect=True)
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='s31 bringup on this module is not done')
+@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='bringup on this module is not done')
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of multi-device runners')  # TODO: IDFCI-10702
 def test_gpio_wakeup_enable_lightsleep(dut: tuple[IdfDut, IdfDut]) -> None:
     wakee = dut[0]
     waker = dut[1]

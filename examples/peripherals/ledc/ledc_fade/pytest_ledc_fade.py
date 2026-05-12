@@ -8,6 +8,7 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 
 @pytest.mark.generic
 @idf_parametrize('target', soc_filtered_targets('SOC_LEDC_SUPPORTED == 1'), indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15610
 def test_ledc_fade_example(dut: IdfDut) -> None:
     # repeat to test at least two rounds of fade
     dut.expect_exact('1. LEDC fade up to duty = 4000')

@@ -16,6 +16,5 @@ from pytest_embedded_idf.utils import soc_filtered_targets
     indirect=True,
 )
 @idf_parametrize('target', soc_filtered_targets('SOC_PCNT_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32h21', 'esp32h4'], reason='lack of runners')
 def test_pulse_cnt(dut: Dut) -> None:
     dut.run_all_single_board_cases()

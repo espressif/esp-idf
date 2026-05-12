@@ -12,7 +12,7 @@ from pytest_embedded_idf.utils import soc_filtered_targets
     soc_filtered_targets('SOC_I2S_SUPPORTED == 1'),
     indirect=['target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32h21', 'esp32h4'], reason='lack of runners')
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
 def test_i2s_basic_example(dut: Dut) -> None:
     dut.expect(r'i2s_common: tx channel is registered on I2S0 successfully', timeout=5)
     dut.expect(r'i2s_common: rx channel is registered on I2S0 successfully', timeout=5)

@@ -40,6 +40,7 @@ def test_rtc_calib_compensation_across_dslp(case_tester: CaseTester) -> None:
 @pytest.mark.temp_skip_ci(
     targets=['esp32s31'], reason='no flash_suspend runners available yet'
 )  # TODO [ESP32S31] IDF-15531
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11111')
 @pytest.mark.parametrize(
     'config',
     [

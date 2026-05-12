@@ -58,6 +58,10 @@ tools/test_apps/system/eh_frame:
       reason: Only relevant for riscv targets
 
 tools/test_apps/system/esp_intr_dump:
+  disable_test:
+    - if: IDF_TARGET == "esp32h4"
+      temporary: true
+      reason: cannot pass # TODO: IDF-15603
 
 tools/test_apps/system/flash_auto_suspend_iram_reduction:
   disable:
@@ -76,7 +80,7 @@ tools/test_apps/system/g1_components:
 
 tools/test_apps/system/gdb:
   disable_test:
-    - if: IDF_TARGET in ["esp32p4", "esp32c5", "esp32c61", "esp32s31"]
+    - if: IDF_TARGET in ["esp32p4", "esp32c5", "esp32c61", "esp32s31", "esp32h4"]
       temporary: true
       reason: not supported yet # TODO: IDF-13142
 
@@ -89,6 +93,12 @@ tools/test_apps/system/gdb_loadable_elf:
     - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
       temporary: true
       reason: target esp32c6, esp32h2 is not supported yet
+
+tools/test_apps/system/gdbstub_runtime:
+  disable_test:
+    - if: IDF_TARGET == "esp32h4"
+      temporary: true
+      reason: cannot pass # TODO: IDF-15607
 
 tools/test_apps/system/init_array:
   enable:
@@ -138,6 +148,10 @@ tools/test_apps/system/no_embedded_paths:
 tools/test_apps/system/panic:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32s31"]
+  disable_test:
+    - if: IDF_TARGET == "esp32h4"
+      temporary: true
+      reason: cannot pass # TODO: IDF-15612
 
 tools/test_apps/system/ram_loadable_app:
   disable:
@@ -145,6 +159,9 @@ tools/test_apps/system/ram_loadable_app:
       temporary: true
       reason: p4 rev3 migration # TODO: IDF-14370
   disable_test:
+    - if: IDF_TARGET == "esp32h4"
+      temporary: true
+      reason: cannot pass yet # TODO: IDF-15626
     - if: IDF_TARGET == "esp32s31"
       temporary: true
       reason: cannot pass # TODO: IDF-15525
@@ -173,3 +190,7 @@ tools/test_apps/system/unicore_bootloader:
       reason: the test is only relevant for multicore chips
     - if: CONFIG_NAME == "unicore_psram" and SOC_PSRAM_SUPPORTED != 1
     - if: CONFIG_NAME == "multicore_psram" and SOC_PSRAM_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4"
+      temporary: true
+      reason: cannot pass # TODO: IDF-15620

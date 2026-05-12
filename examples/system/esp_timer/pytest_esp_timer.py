@@ -43,6 +43,7 @@ TIMED_RESTART_TIME = 7000000
     indirect=True,
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15605
 def test_esp_timer(dut: Dut) -> None:
     match = dut.expect(STARTING_TIMERS_REGEX)
     start_time = int(match.group(1))

@@ -11,9 +11,13 @@ from pytest_embedded_idf.utils import idf_parametrize
 @idf_parametrize(
     'config,target',
     itertools.chain(
-        itertools.product(['gpio'], ['esp32', 'esp32s3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32s31']),
-        itertools.product(['tez'], ['esp32', 'esp32s3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32s31']),
-        itertools.product(['soft'], ['esp32s3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32s31']),
+        itertools.product(
+            ['gpio'], ['esp32', 'esp32s3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32s31', 'esp32h4']
+        ),
+        itertools.product(
+            ['tez'], ['esp32', 'esp32s3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32s31', 'esp32h4']
+        ),
+        itertools.product(['soft'], ['esp32s3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32s31', 'esp32h4']),
     ),
     indirect=['config', 'target'],
 )

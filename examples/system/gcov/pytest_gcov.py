@@ -198,6 +198,6 @@ def _test_gcov_uart(dut: IdfDut) -> None:
 @pytest.mark.generic
 @idf_parametrize('config', ['gcov_uart'], indirect=['config'])
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='s31 bringup on this module is not done')
+@pytest.mark.temp_skip_ci(targets=['esp32s31', 'esp32h4'], reason='bringup on this module is not done')
 def test_gcov_uart(dut: IdfDut) -> None:
     _test_gcov_uart(dut)

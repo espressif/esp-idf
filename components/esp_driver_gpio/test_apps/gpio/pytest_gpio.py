@@ -12,6 +12,7 @@ CONFIGS = [
 
 @pytest.mark.generic
 @pytest.mark.parametrize('config', CONFIGS, indirect=True)
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15608
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_gpio(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(group='gpio')

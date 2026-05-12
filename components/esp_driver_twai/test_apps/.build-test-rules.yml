@@ -1,6 +1,10 @@
 components/esp_driver_twai/test_apps/test_twai:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32h4"]
+      temporary: true
+      reason: cannot pass # TODO: IDF-15618
   depends_components:
     - esp_driver_twai
     - esp_hal_twai

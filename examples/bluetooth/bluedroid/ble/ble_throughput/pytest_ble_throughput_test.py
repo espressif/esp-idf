@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import time
 from pathlib import Path
@@ -11,6 +11,7 @@ CUR_DIR = Path(__file__).parent.resolve()
 
 
 # Case 1: gatt write throughput test(EXAMPLE_CI_ID = 2)
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -25,7 +26,9 @@ CUR_DIR = Path(__file__).parent.resolve()
     indirect=True,
 )
 @idf_parametrize(
-    'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32c61', 'esp32c5', 'esp32h2', 'esp32s3'], indirect=['target']
+    'target',
+    ['esp32', 'esp32c3', 'esp32c6', 'esp32c61', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32h4'],
+    indirect=['target'],
 )
 @pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='lack of runner')
 def test_gatt_write_throughput(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
@@ -100,6 +103,7 @@ def test_c2_26mhz_xtal_write_throughput(app_path: str, dut: tuple[IdfDut, IdfDut
 
 
 # Case 3: gatt notify throughput test(EXAMPLE_CI_ID = 1)
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path, config, erase_nvs',
@@ -114,7 +118,9 @@ def test_c2_26mhz_xtal_write_throughput(app_path: str, dut: tuple[IdfDut, IdfDut
     indirect=True,
 )
 @idf_parametrize(
-    'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32c61', 'esp32c5', 'esp32h2', 'esp32s3'], indirect=['target']
+    'target',
+    ['esp32', 'esp32c3', 'esp32c6', 'esp32c61', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32h4'],
+    indirect=['target'],
 )
 @pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='lack of runner')
 def test_gatt_notify_throughput(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:

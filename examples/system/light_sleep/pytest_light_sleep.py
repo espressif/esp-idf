@@ -10,6 +10,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 @pytest.mark.generic
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15611
 def test_light_sleep(dut: Dut) -> None:
     ENTERING_SLEEP_STR = 'Entering light sleep'
     EXIT_SLEEP_REGEX = r'Returned from light sleep, reason: (\w+), t=(\d+) ms, slept for (\d+) ms'

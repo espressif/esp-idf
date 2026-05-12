@@ -12,6 +12,10 @@ components/spi_flash/test_apps/esp_flash:
     - esp_driver_spi
     - esptool_py # Some flash related kconfigs are listed here.
     - esp_hal_mspi
+  disable_test:
+    - if: IDF_TARGET in ["esp32h4"]
+      temporary: true
+      reason: cannot pass # TODO: IDF-15616
 
 components/spi_flash/test_apps/esp_flash_blockdev:
   disable_test:

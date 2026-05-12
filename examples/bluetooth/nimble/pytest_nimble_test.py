@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 from pathlib import Path
 
@@ -11,6 +11,7 @@ CUR_DIR = Path(__file__).parent.resolve()
 
 
 # Case 1: BLE power save test
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
 @pytest.mark.two_duts
 @pytest.mark.parametrize(
     'count, app_path',
@@ -24,7 +25,7 @@ CUR_DIR = Path(__file__).parent.resolve()
 )
 @idf_parametrize(
     'target',
-    ['esp32c6', 'esp32h2', 'esp32c3', 'esp32s3', 'esp32c5', 'esp32c61', 'esp32'],
+    ['esp32c6', 'esp32h2', 'esp32c3', 'esp32s3', 'esp32c5', 'esp32c61', 'esp32', 'esp32h4'],
     indirect=['target'],
 )
 @pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='lack of runners')

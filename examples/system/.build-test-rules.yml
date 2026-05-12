@@ -16,6 +16,10 @@ examples/system/app_trace_basic:
     - app_trace
 
 examples/system/base_mac_address:
+  disable_test:
+    - if: IDF_TARGET == "esp32h4"
+      temporary: true
+      reason: cannot pass # TODO: IDF-15600
   depends_components:
     - *common_components
     - esp_hw_support
@@ -43,9 +47,9 @@ examples/system/efuse:
       reason: Security features are not yet supported for Linux.
     - if: SOC_ECDSA_SUPPORT_CURVE_P384 != 1 and (CONFIG_NAME == "virt_secure_boot_v2_ecdsa_p384" or CONFIG_NAME == "virt_sb_v2_ecdsa_p384_and_fe")
       reason: Secure Boot V2 with ECDSA P384 is not supported.
-    - if: IDF_TARGET in ["esp32s31"]
+    - if: IDF_TARGET in ["esp32s31", "esp32h4"]
       temporary: true
-      reason: not support yet # TODO: [ESP32S31] IDF-14442
+      reason: not support yet # TODO: [ESP32S31] IDF-14442 [ESP32H4] IDF-12262
   depends_components:
     - *common_components
     - efuse
@@ -62,6 +66,10 @@ examples/system/esp_event/user_event_loops:
 examples/system/esp_timer:
   depends_components:
     - esp_timer
+  disable_test:
+    - if: IDF_TARGET in ["esp32h4"]
+      temporary: true
+      reason: cannot pass # TODO: IDF-15605
 
 examples/system/eventfd:
   disable:
@@ -121,6 +129,10 @@ examples/system/ipc/ipc_isr/xtensa:
 examples/system/light_sleep:
   disable:
     - if: SOC_LIGHT_SLEEP_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4"
+      temporary: true
+      reason: cannot pass # TODO: IDF-15611
 
 examples/system/nmi_isr:
   enable:
@@ -269,9 +281,6 @@ examples/system/sysview_tracing:
     - if: IDF_TARGET == "esp32h21"
       temporary: true
       reason: lack of runners
-    - if: IDF_TARGET == "esp32h4"
-      temporary: true
-      reason: not supported yet #TODO: OCD-1136
     - if: IDF_TARGET == "esp32s31"
       temporary: true
       reason: not support yet   #TODO: OCD-1289

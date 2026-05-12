@@ -8,7 +8,6 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 
 @pytest.mark.generic
 @idf_parametrize('target', soc_filtered_targets('SOC_PCNT_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32h21', 'esp32h4'], reason='lack of runners')
 def test_rotary_encoder(dut: Dut) -> None:
     dut.expect_exact('install pcnt unit')
     dut.expect_exact('set glitch filter')

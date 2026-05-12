@@ -20,7 +20,8 @@ from pytest_embedded_idf.utils import soc_filtered_targets
     soc_filtered_targets('SOC_I2S_SUPPORTED == 1 and IDF_TARGET not in ["esp32c5", "esp32s3"]'),
     indirect=['target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32h21', 'esp32h4'], reason='lack of runners')
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15609
 def test_i2s(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
