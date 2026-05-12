@@ -35,8 +35,5 @@ def test_slave_single_dev_esp32c5_rev1(case_tester) -> None:  # type: ignore
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count, config', [(2, 'release'), (2, 'iram_safe')], indirect=True)
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='no runner')
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='no runner')  # TODO: IDFCI-10702
-@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='s31 bringup on this module is not done')
 def test_slave_multi_dev(case_tester) -> None:  # type: ignore
     case_tester.run_all_multi_dev_cases(reset=True)

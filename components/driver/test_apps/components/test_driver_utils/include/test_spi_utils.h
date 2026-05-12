@@ -36,6 +36,13 @@
 #define PIN_NUM_CS              10  //the IOMUX pin of SPI2 CS0&CS1 is Pin_16&17 which conflict with UART Tx&Rx Pin
 #define PIN_NUM_WP              SPI2_IOMUX_PIN_NUM_WP
 #define PIN_NUM_HD              SPI2_IOMUX_PIN_NUM_HD
+#elif CONFIG_IDF_TARGET_ESP32H4
+#define PIN_NUM_MISO            SPI2_IOMUX_PIN_NUM_MISO
+#define PIN_NUM_MOSI            21  //the mosi iomux pin 17 for h4 is straping pin and don't connected on burger runner
+#define PIN_NUM_CLK             SPI2_IOMUX_PIN_NUM_CLK
+#define PIN_NUM_CS              SPI2_IOMUX_PIN_NUM_CS
+#define PIN_NUM_WP              SPI2_IOMUX_PIN_NUM_WP
+#define PIN_NUM_HD              SPI2_IOMUX_PIN_NUM_HD
 #else
 #define PIN_NUM_MISO            SPI2_IOMUX_PIN_NUM_MISO
 #define PIN_NUM_MOSI            SPI2_IOMUX_PIN_NUM_MOSI
@@ -44,6 +51,17 @@
 #define PIN_NUM_WP              SPI2_IOMUX_PIN_NUM_WP
 #define PIN_NUM_HD              SPI2_IOMUX_PIN_NUM_HD
 #endif
+
+// dummy cs pins for add device test, which are available pins but different from PIN_NUM_CS
+#if CONFIG_IDF_TARGET_ESP32
+#define DUMMY_CS_PINS() {25, 26, 27}
+#elif CONFIG_IDF_TARGET_ESP32H2
+#define DUMMY_CS_PINS() {9, 10, 11, 12, 22, 25}
+#elif CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32H4
+#define DUMMY_CS_PINS() {0, 1, 2, 3, 4, 5}
+#else
+#define DUMMY_CS_PINS() {0, 1, 4, 5, 8, 9}
+#endif //CONFIG_IDF_TARGET_ESP32
 
 #if (TEST_SPI_PERIPH_NUM >= 2)  // esp32, s2, s3
 #define TEST_SPI_HOST           SPI2_HOST

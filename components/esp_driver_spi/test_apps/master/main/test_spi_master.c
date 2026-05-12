@@ -1592,18 +1592,6 @@ TEST_CASE("spi_speed", "[spi]")
 
 //****************************************spi master add device test************************************//
 #define SPI_MAX_DEVICE_NUM  SPI_LL_PERIPH_CS_NUM(TEST_SPI_HOST)
-//add dummy devices first
-#if CONFIG_IDF_TARGET_ESP32
-#define DUMMY_CS_PINS() {25, 26, 27}
-#elif CONFIG_IDF_TARGET_ESP32H2
-#define DUMMY_CS_PINS() {9, 10, 11, 12, 22, 25}
-#elif CONFIG_IDF_TARGET_ESP32P4
-#define DUMMY_CS_PINS() {20, 21, 22, 23, 24, 25}
-#else
-#define DUMMY_CS_PINS() {0, 1, 4, 5, 8, 9}
-#endif //CONFIG_IDF_TARGET_ESP32
-
-#define CS_REAL_DEV       PIN_NUM_CS
 #define TEST_TRANS_LEN    48
 
 void test_add_device_master(void)
@@ -1639,7 +1627,7 @@ void test_add_device_master(void)
         //3. free devs[i] after transaction to release the real CS pin for using again by another dev,
         //So it will loop to check every gpio_signal one by one use one physical pin
         spi_bus_remove_device(devs[i]);
-        dev_cfg.spics_io_num = CS_REAL_DEV;
+        dev_cfg.spics_io_num = PIN_NUM_CS;
         TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &devs[i]));
 
         memset(master_recvbuf, 0, sizeof(master_recvbuf));
@@ -1673,7 +1661,7 @@ void test_add_device_slave(void)
 
     spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
     spi_slave_interface_config_t slvcfg = {
-        .spics_io_num = CS_REAL_DEV,
+        .spics_io_num = PIN_NUM_CS,
         .queue_size = 3,
     };
     TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &bus_cfg, &slvcfg, SPI_DMA_CH_AUTO));
