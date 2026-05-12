@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -301,15 +301,18 @@ void bitscrambler_free(bitscrambler_handle_t handle)
     if (!handle) {
         return;
     }
+
+    if (handle->extra_clean_up) {
+        handle->extra_clean_up(handle, handle->clean_up_user_ctx);
+    }
+
     if (handle->loopback) {
         release_channel(BITSCRAMBLER_DIR_TX);
         release_channel(BITSCRAMBLER_DIR_RX);
     } else {
         release_channel(handle->cfg.dir);
     }
-    if (handle->extra_clean_up) {
-        handle->extra_clean_up(handle, handle->clean_up_user_ctx);
-    }
+
     free(handle);
 }
 
