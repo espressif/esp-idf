@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,7 @@
 #include "esp_attr.h"
 #include "esp_cpu.h"
 #include "esp_memory_utils.h"
-#if CONFIG_SPIRAM
+#if !BOOTLOADER_BUILD && CONFIG_SPIRAM
 #include "esp_private/esp_psram_extram.h"
 #endif
 
@@ -23,7 +23,7 @@ bool esp_ptr_dma_ext_capable(const void *p)
 #if !SOC_PSRAM_DMA_CAPABLE
     return false;
 #endif  //!SOC_PSRAM_DMA_CAPABLE
-#if CONFIG_SPIRAM
+#if !BOOTLOADER_BUILD && CONFIG_SPIRAM
     return esp_psram_check_ptr_addr(p);
 #else
     return false;
@@ -36,7 +36,7 @@ bool esp_ptr_executable(const void *p)
     return (ip >= SOC_IROM_LOW && ip < SOC_IROM_HIGH)
         || (ip >= SOC_IRAM_LOW && ip < SOC_IRAM_HIGH)
         || (ip >= SOC_IROM_MASK_LOW && ip < SOC_IROM_MASK_HIGH)
-#if SOC_SPIRAM_SUPPORTED && CONFIG_SPIRAM
+#if !BOOTLOADER_BUILD && SOC_SPIRAM_SUPPORTED && CONFIG_SPIRAM
         || esp_ptr_external_ram(p)
 #endif
 #if defined(SOC_CACHE_APP_LOW) && defined(CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE)
@@ -62,7 +62,7 @@ bool esp_ptr_byte_accessible(const void *p)
      * additional check is required */
     r |= (ip >= SOC_RTC_DRAM_LOW && ip < SOC_RTC_DRAM_HIGH);
 #endif
-#if CONFIG_SPIRAM
+#if !BOOTLOADER_BUILD && CONFIG_SPIRAM
     r |= esp_psram_check_ptr_addr(p);
 #endif
 #if CONFIG_ESP32S3_DATA_CACHE_16KB
@@ -82,14 +82,14 @@ bool esp_ptr_external_ram(const void *p)
 #if !SOC_SPIRAM_SUPPORTED
     return false;
 #endif  //!SOC_SPIRAM_SUPPORTED
-#if CONFIG_SPIRAM
+#if !BOOTLOADER_BUILD && CONFIG_SPIRAM
     return esp_psram_check_ptr_addr(p);
 #else
     return false;
 #endif  //CONFIG_SPIRAM
 }
 
-#if CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
+#if !BOOTLOADER_BUILD && CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
 bool esp_stack_ptr_in_extram(uint32_t sp)
 {
     //Check if stack ptr is on PSRAM, and 16 byte aligned.

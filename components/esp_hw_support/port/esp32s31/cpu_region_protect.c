@@ -11,9 +11,9 @@
 #include "esp_fault.h"
 #include "hal/cache_ll.h"
 #include "riscv/csr.h"
-#if CONFIG_SPIRAM
+#if !BOOTLOADER_BUILD && CONFIG_SPIRAM
 #include "esp_private/esp_psram_extram.h"
-#endif /* CONFIG_SPIRAM */
+#endif /* !BOOTLOADER_BUILD && CONFIG_SPIRAM */
 
 /* TODO: [ESP32S31] IDF-15238 */
 
