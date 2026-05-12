@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,6 +46,7 @@ typedef struct {
     uint32_t control_phase_data; // control byte when transferring data
     esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done; // User register's callback, invoked when color data trans done
     void *user_ctx;             // User's private data, passed directly to callback on_color_trans_done()
+    int transaction_timeout_ms; // I2C xfer timeout passed to i2c_master_* (-1 = infinite)
 } lcd_panel_io_i2c_t;
 
 esp_err_t esp_lcd_new_panel_io_i2c(i2c_master_bus_handle_t bus, const esp_lcd_panel_io_i2c_config_t *io_config, esp_lcd_panel_io_handle_t *ret_io)
@@ -58,6 +59,7 @@ esp_err_t esp_lcd_new_panel_io_i2c(i2c_master_bus_handle_t bus, const esp_lcd_pa
     i2c_master_dev_handle_t i2c_handle = NULL;
     ESP_GOTO_ON_FALSE(io_config && ret_io, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     ESP_GOTO_ON_FALSE(io_config->control_phase_bytes * 8 > io_config->dc_bit_offset, ESP_ERR_INVALID_ARG, err, TAG, "D/C bit exceeds control bytes");
+    ESP_GOTO_ON_FALSE(io_config->transaction_timeout_ms >= -1, ESP_ERR_INVALID_ARG, err, TAG, "invalid transaction_timeout_ms");
     // leak detection of i2c_panel_io because saving i2c_panel_io->base address
     ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak")
     i2c_panel_io = calloc(1, sizeof(lcd_panel_io_i2c_t));
@@ -78,6 +80,8 @@ esp_err_t esp_lcd_new_panel_io_i2c(i2c_master_bus_handle_t bus, const esp_lcd_pa
     i2c_panel_io->control_phase_data = (!io_config->flags.dc_low_on_data) << (io_config->dc_bit_offset);
     i2c_panel_io->control_phase_cmd = (io_config->flags.dc_low_on_data) << (io_config->dc_bit_offset);
     i2c_panel_io->dev_addr = io_config->dev_addr;
+    /* transaction_timeout_ms == 0: omitted or zero-init, keep legacy infinite wait (same as -1). */
+    i2c_panel_io->transaction_timeout_ms = (io_config->transaction_timeout_ms == 0) ? -1 : io_config->transaction_timeout_ms;
     i2c_panel_io->base.del = panel_io_i2c_del;
     i2c_panel_io->base.rx_param = panel_io_i2c_rx_param;
     i2c_panel_io->base.tx_param = panel_io_i2c_tx_param;
@@ -142,9 +146,9 @@ static esp_err_t panel_io_i2c_rx_buffer(esp_lcd_panel_io_t *io, int lcd_cmd, voi
             write_size += cmds_size;
         }
 
-        ESP_GOTO_ON_ERROR(i2c_master_transmit_receive(i2c_panel_io->i2c_handle, write_buffer, write_size, buffer, buffer_size, -1), err, TAG, "i2c transaction failed");
+        ESP_GOTO_ON_ERROR(i2c_master_transmit_receive(i2c_panel_io->i2c_handle, write_buffer, write_size, buffer, buffer_size, i2c_panel_io->transaction_timeout_ms), err, TAG, "i2c transaction failed");
     } else {
-        ESP_GOTO_ON_ERROR(i2c_master_receive(i2c_panel_io->i2c_handle, buffer, buffer_size, -1), err, TAG, "i2c transaction failed");
+        ESP_GOTO_ON_ERROR(i2c_master_receive(i2c_panel_io->i2c_handle, buffer, buffer_size, i2c_panel_io->transaction_timeout_ms), err, TAG, "i2c transaction failed");
     }
 
     return ESP_OK;
@@ -190,7 +194,7 @@ static esp_err_t panel_io_i2c_tx_buffer(esp_lcd_panel_io_t *io, int lcd_cmd, con
         {.write_buffer = lcd_buffer, .buffer_size = lcd_buffer_size},
     };
 
-    ESP_GOTO_ON_ERROR(i2c_master_multi_buffer_transmit(i2c_panel_io->i2c_handle, lcd_i2c_buffer, sizeof(lcd_i2c_buffer) / sizeof(i2c_master_transmit_multi_buffer_info_t), -1), err, TAG, "i2c transaction failed");
+    ESP_GOTO_ON_ERROR(i2c_master_multi_buffer_transmit(i2c_panel_io->i2c_handle, lcd_i2c_buffer, sizeof(lcd_i2c_buffer) / sizeof(i2c_master_transmit_multi_buffer_info_t), i2c_panel_io->transaction_timeout_ms), err, TAG, "i2c transaction failed");
     if (!is_param) {
         // trans done callback
         if (i2c_panel_io->on_color_trans_done) {
