@@ -54,6 +54,9 @@ typedef struct {
 #elif CONFIG_IDF_TARGET_ESP32C6
 #define LP_I2C_SCL_IO   GPIO_NUM_7
 #define LP_I2C_SDA_IO   GPIO_NUM_6
+#elif CONFIG_IDF_TARGET_ESP32S31
+#define LP_I2C_SCL_IO   GPIO_NUM_7
+#define LP_I2C_SDA_IO   GPIO_NUM_6
 #else
 #error "Default LP core I2C pin not set for this chip"
 #endif
