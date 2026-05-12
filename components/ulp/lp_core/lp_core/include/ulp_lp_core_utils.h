@@ -17,20 +17,71 @@ extern "C" {
 #include "soc/soc_caps.h"
 
 /**
- * @brief Traverse all possible wake-up sources and update the wake-up cause so that
- *        ulp_lp_core_get_wakeup_cause can obtain the bitmap of the wake-up reasons.
- * @note Do not call it from user ULP programs because it will clear the wake-up cause bits
- *       which were set at ULP startup in lp_core_startup().
+ * @brief Check if the HP CPU wake up interruption bit is set and clear in that case
+ * @return true if the wake up was triggered by HP CPU, false otherwise
+ *
+ * @note Since wake up are interrupts, calling the function twice will return false
+ *       unless another interrupt happened meanwhile. It's recommended to call this
+ *       function just before halting the LP core to ensure no lingering interrupt, that
+ *       happened while the LP core was running, will wake up the LP core immediately
  */
-void ulp_lp_core_update_wakeup_cause(void);
+bool ulp_lp_core_wakeup_assert_clear_hp_cpu(void);
 
 /**
- * @brief Get the wakeup source which caused LP_CPU to wakeup from sleep
+ * @brief Check if the LP UART wake up interruption bit is set and clear in that case
+ * @return true if the wake up was triggered by LP UART, false otherwise
  *
- * @return  Wakeup cause in bit map, for the meaning of each bit, refer
- *          to the definition of wakeup source in lp_core_ll.h
+ * @note Since wake up are interrupts, calling the function twice will return false
+ *       unless another interrupt happened meanwhile. It's recommended to call this
+ *       function just before halting the LP core to ensure no lingering interrupt, that
+ *       happened while the LP core was running, will wake up the LP core immediately
  */
-uint32_t ulp_lp_core_get_wakeup_cause(void);
+bool ulp_lp_core_wakeup_assert_clear_lp_uart(void);
+
+/**
+ * @brief Check if the LP IO wake up interruption bit is set and clear in that case
+ * @return true if the wake up was triggered by LP IO, false otherwise
+ *
+ * @note Since wake up are interrupts, calling the function twice will return false
+ *       unless another interrupt happened meanwhile. It's recommended to call this
+ *       function just before halting the LP core to ensure no lingering interrupt, that
+ *       happened while the LP core was running, will wake up the LP core immediately
+ */
+bool ulp_lp_core_wakeup_assert_clear_lp_io(void);
+
+/**
+ * @brief Check if the LP voice activity detection wake up interruption bit is set and
+          clear in that case
+ * @return true if the wake up was triggered by LP VAD, false otherwise
+ *
+ * @note Since wake up are interrupts, calling the function twice will return false
+ *       unless another interrupt happened meanwhile. It's recommended to call this
+ *       function just before halting the LP core to ensure no lingering interrupt, that
+ *       happened while the LP core was running, will wake up the LP core immediately
+ */
+bool ulp_lp_core_wakeup_assert_clear_lp_vad(void);
+
+/**
+ * @brief Check if the ETM wake up interruption bit is set and clear in that case
+ * @return true if the wake up was triggered by ETM, false otherwise
+ *
+ * @note Since wake up are interrupts, calling the function twice will return false
+ *       unless another interrupt happened meanwhile. It's recommended to call this
+ *       function just before halting the LP core to ensure no lingering interrupt, that
+ *       happened while the LP core was running, will wake up the LP core immediately
+ */
+bool ulp_lp_core_wakeup_assert_clear_etm(void);
+
+/**
+ * @brief Check if the LP timer wake up interruption bit is set and clear in that case
+ * @return true if the wake up was triggered by ETM, false otherwise
+ *
+ * @note Since wake up are interrupts, calling the function twice will return false
+ *       unless another interrupt happened meanwhile. It's recommended to call this
+ *       function just before halting the LP core to ensure no lingering interrupt, that
+ *       happened while the LP core was running, will wake up the LP core immediately
+ */
+bool ulp_lp_core_wakeup_assert_clear_lp_timer(void);
 
 /**
  * @brief Wakeup main CPU from sleep or deep sleep.
