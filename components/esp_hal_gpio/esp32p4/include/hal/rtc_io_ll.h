@@ -405,6 +405,16 @@ static inline void rtcio_ll_wakeup_disable(int rtcio_num)
 }
 
 /**
+ * Clear edge-wakeup latch.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ */
+static inline void rtcio_ll_clear_edge_wakeup_latch(int rtcio_num)
+{
+    LP_GPIO.pin[rtcio_num].edge_wakeup_clr = 1;
+}
+
+/**
  * Enable interrupt function and set interrupt type
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).

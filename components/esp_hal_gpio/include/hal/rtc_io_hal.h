@@ -320,6 +320,20 @@ void rtcio_hal_isolate(int rtcio_num);
 #define rtc_hal_gpio_get_wakeup_status()                            rtcio_hal_get_interrupt_status()
 #define rtc_hal_gpio_clear_wakeup_status()                          rtcio_hal_clear_interrupt_status()
 
+#if SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED
+/**
+ * @brief Clear the latched edge-wakeup state for a GPIO that is enabled for
+ *        peripheral-powerdown-sleep wakeup in edge mode.
+ *
+ * Must be called before entering sleep on every pin configured for posedge/negedge/anyedge
+ * wakeup, otherwise a stale latched edge would immediately wake the chip.
+ *
+ * @param hal      Context of the HAL layer (unused, kept for API symmetry).
+ * @param gpio_num GPIO number.
+ */
+#define gpio_hal_clear_hp_periph_pd_sleep_edge_wakeup_latch(hal, gpio_num)  rtcio_ll_clear_edge_wakeup_latch(rtc_io_num_map[gpio_num])
+#endif //SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED
+
 /**
  * @brief Get the status of whether an IO is used for sleep wake-up.
  *

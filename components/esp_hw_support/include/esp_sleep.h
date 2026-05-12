@@ -44,8 +44,15 @@ typedef enum {
 #if SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 typedef enum {
     ESP_GPIO_WAKEUP_GPIO_LOW = 0,
-    ESP_GPIO_WAKEUP_GPIO_HIGH = 1
+    ESP_GPIO_WAKEUP_GPIO_HIGH = 1,
+#if SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED
+    ESP_GPIO_WAKEUP_GPIO_POSEDGE = 2,
+    ESP_GPIO_WAKEUP_GPIO_NEGEDGE = 3,
+    ESP_GPIO_WAKEUP_GPIO_ANYEDGE = 4,
+#endif
 } esp_sleep_gpio_wake_up_mode_t;
+
+#define WAKEUP_MODE_2_INT_TYPE(mode) ((gpio_int_type_t)((0x32154 >> ((mode) * 4)) & 0xF))
 #endif
 
 /**
@@ -482,11 +489,14 @@ __attribute__((deprecated("please use 'esp_sleep_enable_ext1_wakeup_io' and 'esp
  *       and external resistors may cause interference. BTW, when you use low level to wake up the
  *       chip, we strongly recommend you to add external resistors (pull-up).
  *
+ * @note The wakeup signal must be held (level mode) or have a pulse width (edge mode)
+ *       of at least 3 RTC slow-clock cycles to be reliably sampled by the wakeup logic.
+ *       The duration of one slow-clock cycle depends on `CONFIG_RTC_CLK_SRC` (e.g.
+ *       RC_SLOW @ ~136 kHz ~= 7.4 us/cycle, XTAL32K @ 32.768 kHz ~= 30.5 us/cycle).
+ *
  * @param gpio_pin_mask  Bit mask of GPIO numbers which will cause wakeup. Only GPIOs
  *              which have RTC functionality (pads that powered by VDD3P3_RTC) can be used in this bit map.
- * @param mode Select logic function used to determine wakeup condition:
- *            - ESP_GPIO_WAKEUP_GPIO_LOW: wake up when the gpio turn to low.
- *            - ESP_GPIO_WAKEUP_GPIO_HIGH: wake up when the gpio turn to high.
+ * @param mode Wakeup condition, see esp_sleep_gpio_wake_up_mode_t.
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_ARG if the mask contains any invalid wakeup pin or wakeup mode is invalid
