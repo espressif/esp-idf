@@ -293,8 +293,10 @@ void sleep_retention_do_system_retention(bool backup_or_restore);
  *
  * @param backup_or_restore true for backup register context to memory
  *                          or false for restore to register from memory
+ * @param wifimac_link_is_sel true to use dedicated WiFi MAC link,
+ *                             false to use modem entry link
  */
-void sleep_retention_do_phy_retention(bool backup_or_restore);
+void sleep_retention_do_phy_retention(bool backup_or_restore, bool wifimac_link_is_sel);
 #endif /*SOC_PM_SUPPORT_PMU_MODEM_STATE */
 #endif // SOC_PAU_SUPPORTED
 

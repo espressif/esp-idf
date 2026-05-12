@@ -156,6 +156,9 @@ typedef struct wifi_osi_funcs_t {
     int (*_coex_schm_flexible_period_set)(uint8_t);
     uint8_t (*_coex_schm_flexible_period_get)(void);
     void * (*_coex_schm_get_phase_by_idx)(int);
+#if CONFIG_SOC_WIFI_HE_SUPPORT
+    bool (*_wifi_disable_ac_ax)(void);
+#endif
     int32_t _magic;
 } wifi_osi_funcs_t;
 

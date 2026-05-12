@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1007,7 +1007,7 @@ void IRAM_ATTR sleep_retention_do_system_retention(bool backup_or_restore)
 #endif
 
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
-void IRAM_ATTR sleep_retention_do_phy_retention(bool backup_or_restore)
+void IRAM_ATTR sleep_retention_do_phy_retention(bool backup_or_restore, bool wifimac_link_is_sel)
 {
 /* since the PHY link and other module links are within the sleep-retention entry (4) context，
 *  add mutex protection to avoid data race.
@@ -1016,9 +1016,23 @@ void IRAM_ATTR sleep_retention_do_phy_retention(bool backup_or_restore)
     _lock_acquire_recursive(&s_retention.lock);
 #endif
     if (backup_or_restore) {
-        pau_regdma_trigger_modem_link_backup();
+#if SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
+        if (wifimac_link_is_sel) {
+            pau_regdma_trigger_wifimac_link_backup();
+        } else
+#endif
+        {
+            pau_regdma_trigger_modem_link_backup();
+        }
     } else {
-        pau_regdma_trigger_modem_link_restore();
+#if SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
+        if (wifimac_link_is_sel) {
+            pau_regdma_trigger_wifimac_link_restore();
+        } else
+#endif
+        {
+            pau_regdma_trigger_modem_link_restore();
+        }
     }
 #if SOC_PM_PAU_REGDMA_COMMON_PHY_LINK_ENTRY
     _lock_release_recursive(&s_retention.lock);

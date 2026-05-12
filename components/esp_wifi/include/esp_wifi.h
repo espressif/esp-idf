@@ -779,8 +779,9 @@ esp_err_t esp_wifi_get_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t *bw);
   *
   * @attention 1. This API should be called after esp_wifi_start() and before esp_wifi_stop()
   * @attention 2. When device is in STA mode, this API should not be called when STA is scanning or connecting to an external AP
-  * @attention 3. When device is in softAP mode, this API should not be called when softAP has connected to external STAs
-  * @attention 4. When device is in STA+softAP mode, this API should not be called when in the scenarios described above
+  * @attention 3. When device is in softAP mode and has connected to external STAs, it initiates the CSA process
+  * @attention 4. When device is in STA+softAP mode, this API should not be called when STA is scanning or connecting to an external AP
+  *               or softAP has connected to external STAs.
   * @attention 5. The channel info set by this API will not be stored in NVS. So If you want to remember the channel used before WiFi stop,
   *               you need to call this API again after WiFi start, or you can call `esp_wifi_set_config()` to store the channel info in NVS.
   * @attention 6. When operating in 5 GHz band, the second channel is automatically determined by the primary channel according to the 802.11 standard.

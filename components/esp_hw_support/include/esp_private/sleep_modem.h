@@ -83,8 +83,9 @@ void sleep_modem_mac_bb_power_up_prepare(void);
  * @brief The retention action in the modem state of WiFi PHY module
  *
  * @param restore  true for restore the PHY context, false for backup the PHY context
+ * @param wifimac_link_is_sel  true to trigger REGDMA via WiFi MAC link
  */
-void sleep_modem_wifi_do_phy_retention(bool restore);
+void sleep_modem_wifi_do_phy_retention(bool restore, bool wifimac_link_is_sel);
 
 /**
  * @brief Get WiFi modem state

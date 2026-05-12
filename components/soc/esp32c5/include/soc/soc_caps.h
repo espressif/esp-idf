@@ -608,6 +608,8 @@
 #define SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE (1)
 #define SOC_PM_PAU_REGDMA_LINK_IDX_WIFIMAC  (4) // The range of values for the link index is [0, SOC_PM_PAU_LINK_NUM)
 #define SOC_PM_PAU_REGDMA_COMMON_PHY_LINK_ENTRY (1)
+/** Workaround: software-triggered modem PHY retention uses dedicated WiFi MAC REGDMA, not entry link_sel */
+#define SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND (1)
 
 #define SOC_PM_PMU_MIN_SLP_SLOW_CLK_CYCLE_FIXED    (1)
 

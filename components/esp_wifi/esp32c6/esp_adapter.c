@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -568,16 +568,21 @@ static void esp_phy_disable_wrapper(void)
 }
 
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA
-static void regdma_link_set_write_wait_content_wrapper(void *addr, uint32_t value, uint32_t mask)
+static void IRAM_ATTR regdma_link_set_write_wait_content_wrapper(void *addr, uint32_t value, uint32_t mask)
 {
     regdma_link_set_write_wait_content(addr, value, mask);
 }
 
-static void *sleep_retention_find_link_by_id_wrapper(int id)
+static void *IRAM_ATTR sleep_retention_find_link_by_id_wrapper(int id)
 {
     return sleep_retention_find_link_by_id(id);
 }
 #endif
+
+static bool esp_wifi_disable_ac_ax_wrapper(void)
+{
+    return false; // disable 11ac and 11ax is not supported on esp32c6.
+}
 
 wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._version = ESP_WIFI_OS_ADAPTER_VERSION,
@@ -702,5 +707,6 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._coex_schm_flexible_period_set = coex_schm_flexible_period_set_wrapper,
     ._coex_schm_flexible_period_get = coex_schm_flexible_period_get_wrapper,
     ._coex_schm_get_phase_by_idx = coex_schm_get_phase_by_idx_wrapper,
+    ._wifi_disable_ac_ax = esp_wifi_disable_ac_ax_wrapper,
     ._magic = ESP_WIFI_OS_ADAPTER_MAGIC,
 };

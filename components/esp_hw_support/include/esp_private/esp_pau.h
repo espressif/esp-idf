@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,18 @@ void pau_regdma_trigger_modem_link_backup(void);
  * @brief Software trigger regdma to perform modem link restore
  */
 void pau_regdma_trigger_modem_link_restore(void);
+
+#if SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
+/**
+ * @brief Software trigger REGDMA backup on WiFi MAC SEL link
+ */
+void pau_regdma_trigger_wifimac_link_backup(void);
+
+/**
+ * @brief Software trigger REGDMA restore on WiFi MAC SEL link
+ */
+void pau_regdma_trigger_wifimac_link_restore(void);
+#endif
 #endif
 
 #if SOC_PM_RETENTION_SW_TRIGGER_REGDMA

@@ -282,7 +282,7 @@ uint16_t esp_wifi_sta_pmf_enabled(void);
 wifi_cipher_type_t esp_wifi_sta_get_mgmt_group_cipher(void);
 int esp_wifi_set_igtk_internal(uint8_t if_index, const wifi_wpa_igtk_t *igtk);
 esp_err_t esp_wifi_internal_issue_disconnect(uint8_t reason_code);
-bool esp_wifi_skip_supp_pmkcaching(void);
+bool esp_wifi_use_supp_pmk_cache(void);
 bool esp_wifi_is_rm_enabled_internal(uint8_t if_index);
 bool esp_wifi_is_btm_enabled_internal(uint8_t if_index);
 esp_err_t esp_wifi_register_mgmt_frame_internal(uint32_t type, uint32_t subtype);
