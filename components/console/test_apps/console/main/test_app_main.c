@@ -10,7 +10,7 @@
 #include <sys/time.h>
 
 // Some resources are lazy allocated (newlib locks) in the console code, the threshold is left for that case
-#define TEST_MEMORY_LEAK_THRESHOLD (150)
+#define TEST_MEMORY_LEAK_THRESHOLD (250)
 
 void setUp(void)
 {

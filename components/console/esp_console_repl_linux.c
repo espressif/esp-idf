@@ -51,7 +51,7 @@ static void prepare_input_stream(void)
         assert(tcgetattr(stdin_fileno, &s_orig_termios) == 0);
         struct termios raw = s_orig_termios;
         raw.c_iflag |= ICRNL; // we translate to NL because linenoise expects NL
-        raw.c_lflag &= ~(ECHO | ICANON); // turn off echo and cononical mode
+        raw.c_lflag &= ~(ECHO | ICANON); // turn off echo and canonical mode
         assert(tcsetattr(stdin_fileno, TCSAFLUSH, &raw) == 0);
 
         // Make sure user does not end up with a broken terminal
@@ -101,7 +101,7 @@ static esp_err_t esp_console_new_repl_linux(const esp_console_repl_config_t *rep
     fcntl(fileno(stdin), F_SETFL, 0);
 
     // initialize console , common part
-    ret = esp_console_common_init(repl_config->max_cmdline_length, &linux_repl->repl_com);
+    ret = esp_console_common_init(repl_config->max_cmdline_length, repl_config->max_cmdline_args, &linux_repl->repl_com);
     if (ret != ESP_OK) {
         goto _exit;
     }

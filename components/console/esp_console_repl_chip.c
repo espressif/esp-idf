@@ -62,7 +62,7 @@ esp_err_t esp_console_new_repl_usb_cdc(const esp_console_dev_usb_cdc_config_t *d
     fcntl(fileno(stdin), F_SETFL, 0);
 
     // initialize console, common part
-    ret = esp_console_common_init(repl_config->max_cmdline_length, &cdc_repl->repl_com);
+    ret = esp_console_common_init(repl_config->max_cmdline_length, repl_config->max_cmdline_args, &cdc_repl->repl_com);
     if (ret != ESP_OK) {
         goto _exit;
     }
@@ -136,7 +136,7 @@ esp_err_t esp_console_new_repl_usb_serial_jtag(const esp_console_dev_usb_serial_
     }
 
     // initialize console, common part
-    ret = esp_console_common_init(repl_config->max_cmdline_length, &usb_serial_jtag_repl->repl_com);
+    ret = esp_console_common_init(repl_config->max_cmdline_length, repl_config->max_cmdline_args, &usb_serial_jtag_repl->repl_com);
     if (ret != ESP_OK) {
         goto _exit;
     }
@@ -240,7 +240,9 @@ esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_con
     uart_vfs_dev_use_driver(dev_config->channel);
 
     // initialize console, common part
-    ret = esp_console_common_init(repl_config->max_cmdline_length, &uart_repl->repl_com);
+    ret = esp_console_common_init(repl_config->max_cmdline_length,
+                                  repl_config->max_cmdline_args,
+                                  &uart_repl->repl_com);
     if (ret != ESP_OK) {
         goto _exit;
     }
