@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,6 +64,11 @@ struct btdm_osal_mutex {
 struct btdm_osal_sem {
     void *sem;
 };
+
+#define BTDM_OSAL_ALIGN(__n, __a)                                              \
+  ((((__n) & ((__a)-1)) == 0) ? (__n) : ((__n) + ((__a) - ((__n) & ((__a)-1)))))
+
+#define BTDM_OSAL_ALIGNMENT (sizeof(void *))
 
 /*
  * Type definitions for BTDM OSAL

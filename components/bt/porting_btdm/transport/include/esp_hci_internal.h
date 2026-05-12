@@ -119,6 +119,8 @@ int r_ble_hci_trans_reset(void);
 //!TODO: Should we initialize the hci layer in IDF ?
 void esp_ble_hci_trans_init(uint8_t);
 
+int hci_cmd_proc_init(void);
+
 // ********************************************************************************************
 //                  btdm common
 // ********************************************************************************************
@@ -126,7 +128,9 @@ void esp_ble_hci_trans_init(uint8_t);
 typedef int (*btdm_hci_trans_tx_func_t)(hci_driver_packet_t *pkt);
 
 #define HCI_INTERNAL_CONN_MASK                          (0x0fff)
-#define HCI_INTERNAL_CONN_IS_BLE(conn_handle)           (!(conn_handle & 0x0800))
+#define HCI_INTERNAL_CONN_IS_BLE(conn_handle)           ((conn_handle & 0x0800) == 0x0000)
+#define HCI_INTERNAL_CONN_IS_BLE_ACL(conn_handle)       ((conn_handle & 0x0e00) == 0x0000)
+#define HCI_INTERNAL_CONN_IS_BLE_ISO(conn_handle)       ((conn_handle & 0x0e00) == 0x0200)
 #define HCI_INTERNAL_CONN_IS_BREDR(conn_handle)         (conn_handle & 0x0800)
 #define HCI_INTERNAL_CONN_IS_BREDR_ACL(conn_handle)     ((conn_handle & 0x0800) && (conn_handle & 0x000f))
 #define HCI_INTERNAL_CONN_IS_BREDR_SYNC(conn_handle)    ((conn_handle & 0x0800) && (conn_handle & 0x00f0))

@@ -16,6 +16,8 @@ int ble_stack_enable(void);
 
 void ble_stack_disable(void);
 
+void ble_stack_reset(void);
+
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 esp_err_t sleep_modem_ble_mac_modem_state_init(void);
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
