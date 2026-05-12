@@ -7,18 +7,21 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
-#include <esp_wifi.h>
+#include <unistd.h>
 #include <esp_event.h>
 #include <esp_log.h>
-#include <esp_system.h>
 #include <nvs_flash.h>
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include "esp_netif.h"
-#include "esp_eth.h"
 #include "protocol_examples_common.h"
+#if !CONFIG_IDF_TARGET_LINUX
+#include <esp_wifi.h>
+#include <esp_system.h>
+#include "esp_eth.h"
+#endif  // !CONFIG_IDF_TARGET_LINUX
 
 #include <esp_https_server.h>
 #include "esp_tls.h"
@@ -179,6 +182,11 @@ static httpd_handle_t start_webserver(void)
 
     httpd_ssl_config_t conf = HTTPD_SSL_CONFIG_DEFAULT();
 
+#if CONFIG_IDF_TARGET_LINUX
+    /* Use non-privileged port on Linux since port 443 requires root */
+    conf.port_secure = 8443;
+#endif
+
     extern const unsigned char servercert_start[] asm("_binary_servercert_pem_start");
     extern const unsigned char servercert_end[]   asm("_binary_servercert_pem_end");
 
@@ -235,6 +243,7 @@ static httpd_handle_t start_webserver(void)
     return server;
 }
 
+#if !CONFIG_IDF_TARGET_LINUX
 static esp_err_t stop_webserver(httpd_handle_t server)
 {
     // Stop the httpd server
@@ -262,6 +271,7 @@ static void connect_handler(void* arg, esp_event_base_t event_base,
         *server = start_webserver();
     }
 }
+#endif // !CONFIG_IDF_TARGET_LINUX
 
 void app_main(void)
 {
@@ -275,6 +285,7 @@ void app_main(void)
      * and stop server when disconnection happens.
      */
 
+#if !CONFIG_IDF_TARGET_LINUX
 #ifdef CONFIG_EXAMPLE_CONNECT_WIFI
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &connect_handler, &server));
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disconnect_handler, &server));
@@ -283,6 +294,7 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &connect_handler, &server));
     ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ETHERNET_EVENT_DISCONNECTED, &disconnect_handler, &server));
 #endif // CONFIG_EXAMPLE_CONNECT_ETHERNET
+#endif // !CONFIG_IDF_TARGET_LINUX
     ESP_ERROR_CHECK(esp_event_handler_register(ESP_HTTPS_SERVER_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
 
     /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
@@ -290,4 +302,12 @@ void app_main(void)
      * examples/protocols/README.md for more information about this function.
      */
     ESP_ERROR_CHECK(example_connect());
+
+#if CONFIG_IDF_TARGET_LINUX
+    /* On Linux, start the server directly since there are no WiFi/Ethernet events */
+    server = start_webserver();
+    while (server) {
+        sleep(5);
+    }
+#endif // CONFIG_IDF_TARGET_LINUX
 }
