@@ -61,7 +61,7 @@ if(NOT "$ENV{IDF_COMPONENT_MANAGER}" EQUAL "0")
     idf_build_set_property(IDF_COMPONENT_MANAGER 1)
 endif()
 # Set component manager interface version
-idf_build_set_property(__COMPONENT_MANAGER_INTERFACE_VERSION 4)
+idf_build_set_property(__COMPONENT_MANAGER_INTERFACE_VERSION 5)
 
 #
 # Parse and store the VERSION argument provided to the project() command.
@@ -783,10 +783,12 @@ macro(project project_name)
         if(result EQUAL 0)
             break()
         elseif(result EQUAL 10 AND retried EQUAL 0)
-            message(WARNING "Missing kconfig option. Re-run the build process...")
             set(retried 1)
         elseif(result EQUAL 10 AND retried EQUAL 1)
-            message(FATAL_ERROR "Missing required kconfig option after retry.")
+            message(WARNING "Missing required kconfig option after retry. Re-running the build process.")
+            set(retried 2)
+        elseif(result EQUAL 10 AND retried EQUAL 2)
+            message(FATAL_ERROR "Missing required kconfig option after last retry. Terminating build.")
         else()
             message(FATAL_ERROR "idf_build_process failed with exit code ${result}")
         endif()

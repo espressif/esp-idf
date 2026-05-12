@@ -649,6 +649,7 @@ macro(idf_build_process target)
     idf_build_get_property(idf_component_manager IDF_COMPONENT_MANAGER)
 
     set(result 0)
+    set(use_sdk_json FALSE)
     if(idf_component_manager EQUAL 1)
         idf_build_get_property(build_dir BUILD_DIR)
         set(managed_components_list_file ${build_dir}/managed_components_list.temp.cmake)
@@ -661,12 +662,16 @@ macro(idf_build_process target)
         foreach(__build_component_target ${build_component_targets})
             __component_get_property(__component_name ${__build_component_target} COMPONENT_NAME)
             __component_get_property(__component_dir ${__build_component_target} COMPONENT_DIR)
+            __component_get_property(__component_source ${__build_component_target} COMPONENT_SOURCE)
 
             # Exclude components could be passed with -DEXCLUDE_COMPONENTS
             # after the call to __component_add finished in the last run.
             # Need to check if the component is excluded again
             if(NOT __component_name IN_LIST EXCLUDE_COMPONENTS)
-                set(__contents "${__contents}  - name: \"${__component_name}\"\n    path: \"${__component_dir}\"\n")
+                string(CONCAT __contents "${__contents}"
+                    "  - name: \"${__component_name}\"\n"
+                    "    path: \"${__component_dir}\"\n"
+                    "    source: \"${__component_source}\"\n")
             endif()
         endforeach()
 
@@ -677,26 +682,37 @@ macro(idf_build_process target)
         idf_build_get_property(component_manager_interface_version __COMPONENT_MANAGER_INTERFACE_VERSION)
         idf_build_get_property(dependencies_lock_file DEPENDENCIES_LOCK)
 
+        set(use_sdk_json TRUE)
+        if(retried EQUAL 0)
+            set(use_sdk_json FALSE)
+        endif()
+
         execute_process(COMMAND ${python}
             "-m"
             "idf_component_manager.prepare_components"
             "--project_dir=${project_dir}"
             "--lock_path=${dependencies_lock_file}"
-            "--sdkconfig_json_file=${build_dir}/config/sdkconfig.json"
             "--interface_version=${component_manager_interface_version}"
+            "--use_sdk_json=${use_sdk_json}"
             "prepare_dependencies"
             "--local_components_list_file=${local_components_list_file}"
+            "--build_dir=${build_dir}"
             "--managed_components_list_file=${managed_components_list_file}"
             RESULT_VARIABLE result
             ERROR_VARIABLE error)
 
         if(NOT result EQUAL 0)
-            if(result EQUAL ${__RERUN_EXITCODE})
-                message(WARNING "${error}")
-            else()
+            # If KConfig variables are missing, allow rerunning 2 times
+            if(NOT (result EQUAL ${__RERUN_EXITCODE} AND retried LESS 2))
                 message(FATAL_ERROR "${error}")
             endif()
+        else()
+            if(error)
+                message(WARNING "${error}")
+            endif()
         endif()
+
+
 
         include(${managed_components_list_file})
 
@@ -744,7 +760,7 @@ macro(idf_build_process target)
     # It is here we retrieve the public and private requirements of each component.
     # It is also here we add the common component requirements to each component's
     # own requirements.
-    __component_get_requirements()
+    __component_get_requirements(${use_sdk_json})
 
     idf_build_get_property(component_targets __COMPONENT_TARGETS)
 
@@ -782,11 +798,23 @@ macro(idf_build_process target)
     idf_build_get_property(sdkconfig SDKCONFIG)
     idf_build_get_property(sdkconfig_defaults SDKCONFIG_DEFAULTS)
 
+    set(sdkconfig_cm "${build_dir}/sdkconfig.cm")
     # add target here since we have all components
     if(result EQUAL 0)
         __kconfig_generate_config("${sdkconfig}" "${sdkconfig_defaults}" CREATE_MENUCONFIG_TARGET)
+        # Delete the sdkconfig.cm backup if the last run of Component Manager was successful (cleanup)
+        if(EXISTS "${sdkconfig_cm}")
+            file(REMOVE "${sdkconfig_cm}")
+        endif()
     else()
-        __kconfig_generate_config("${sdkconfig}" "${sdkconfig_defaults}")
+        # We need to create backup of sdkconfig because the build system may
+        # lacks the Kconfig definitions for managed components.
+        if(EXISTS "${sdkconfig}")
+            file(COPY_FILE "${sdkconfig}" "${sdkconfig_cm}")
+        else()
+            file(REMOVE "${sdkconfig_cm}")
+        endif()
+        __kconfig_generate_config("${sdkconfig_cm}" "${sdkconfig_defaults}")
     endif()
 
     __build_import_configs()
@@ -811,6 +839,16 @@ macro(idf_build_process target)
         add_subdirectory(${idf_path} ${build_dir}/esp-idf)
 
         unset(ESP_PLATFORM)
+    else()
+        # We have to clear all build properties set in
+        # __build_expand_requirements if we are doing a retry
+        # This fixes order of dependencies when KConfig is used
+        idf_build_unset_property(__BUILD_COMPONENT_TARGETS)
+        idf_build_unset_property(__COMPONENT_TARGETS_SEEN)
+        idf_build_unset_property(__BUILD_COMPONENTS)
+        idf_build_unset_property(BUILD_COMPONENT_ALIASES)
+        idf_build_unset_property(BUILD_COMPONENTS)
+        idf_build_unset_property(__BUILD_COMPONENT_DEPGRAPH)
     endif()
 endmacro()
 
