@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,22 @@ struct nan_de *g_nan_de = NULL;
 static void *s_nan_usd_data_lock = NULL;
 #define NAN_USD_DATA_LOCK() os_mutex_lock(s_nan_usd_data_lock)
 #define NAN_USD_DATA_UNLOCK() os_mutex_unlock(s_nan_usd_data_lock)
+
+static bool nan_usd_try_lock_active(struct nan_de **nan_de)
+{
+    if (!s_nan_usd_data_lock) {
+        return false;
+    }
+
+    NAN_USD_DATA_LOCK();
+    if (!g_nan_de) {
+        NAN_USD_DATA_UNLOCK();
+        return false;
+    }
+
+    *nan_de = g_nan_de;
+    return true;
+}
 
 #ifdef DEBUG_PRINT
 static const char *nan_reason_txt(enum nan_de_reason reason)
@@ -86,6 +102,8 @@ static int esp_nan_freq_to_chan(int freq)
 static void nan_de_tx_event_handler(void *arg, esp_event_base_t event_base,
                                     int32_t event_id, void *event_data)
 {
+    struct nan_de *nan_de = NULL;
+
     if (event_id == WIFI_EVENT_ACTION_TX_STATUS) {
         wifi_event_action_tx_status_t *evt = (wifi_event_action_tx_status_t *)event_data;
         if (evt->status == WIFI_ACTION_TX_DONE) {
@@ -94,12 +112,16 @@ static void nan_de_tx_event_handler(void *arg, esp_event_base_t event_base,
                 wpa_printf(MSG_ERROR, "Invalid channel received from Action Tx handler");
                 return;
             }
-            NAN_USD_DATA_LOCK();
-            nan_de_tx_status(g_nan_de, freq, NULL);
+            if (!nan_usd_try_lock_active(&nan_de)) {
+                return;
+            }
+            nan_de_tx_status(nan_de, freq, NULL);
             NAN_USD_DATA_UNLOCK();
         } else if (evt->status == WIFI_ACTION_TX_DURATION_COMPLETED) {
-            NAN_USD_DATA_LOCK();
-            nan_de_tx_wait_ended(g_nan_de);
+            if (!nan_usd_try_lock_active(&nan_de)) {
+                return;
+            }
+            nan_de_tx_wait_ended(nan_de);
             NAN_USD_DATA_UNLOCK();
         }
     } else if (event_id == WIFI_EVENT_ROC_DONE) {
@@ -107,9 +129,12 @@ static void nan_de_tx_event_handler(void *arg, esp_event_base_t event_base,
         int freq = esp_nan_chan_to_freq(evt->channel);
         if (freq == -1) {
             wpa_printf(MSG_ERROR, "Invalid channel received from ROC done handler");
+            return;
         }
-        NAN_USD_DATA_LOCK();
-        nan_de_listen_ended(g_nan_de, freq);
+        if (!nan_usd_try_lock_active(&nan_de)) {
+            return;
+        }
+        nan_de_listen_ended(nan_de, freq);
         NAN_USD_DATA_UNLOCK();
     }
 }
@@ -117,6 +142,7 @@ static void nan_de_tx_event_handler(void *arg, esp_event_base_t event_base,
 int esp_nan_de_rx_action(uint8_t *hdr, uint8_t *payload, size_t len, uint8_t channel)
 {
     struct ieee80211_hdr *rx_hdr = (struct ieee80211_hdr *)hdr;
+    struct nan_de *nan_de = NULL;
     int freq;
 
     if (len < 6) {
@@ -152,8 +178,10 @@ int esp_nan_de_rx_action(uint8_t *hdr, uint8_t *payload, size_t len, uint8_t cha
         return ESP_FAIL;
     }
 
-    NAN_USD_DATA_LOCK();
-    nan_de_rx_sdf(g_nan_de, rx_hdr->addr2, rx_hdr->addr3, freq, payload, len - 6);
+    if (!nan_usd_try_lock_active(&nan_de)) {
+        return ESP_FAIL;
+    }
+    nan_de_rx_sdf(nan_de, rx_hdr->addr2, rx_hdr->addr3, freq, payload, len - 6);
     NAN_USD_DATA_UNLOCK();
     return ESP_OK;
 }
@@ -315,6 +343,14 @@ static void esp_nan_de_receive(void *ctx, int id, int peer_instance_id,
 
 esp_err_t esp_nan_usd_deinit()
 {
+    esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ACTION_TX_STATUS, &nan_de_tx_event_handler);
+    esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ROC_DONE, &nan_de_tx_event_handler);
+    esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_STOP,
+                                 &nan_sta_stop_handler);
+
+    if (!s_nan_usd_data_lock) {
+        return ESP_FAIL;
+    }
 
     NAN_USD_DATA_LOCK();
     if (!g_nan_de) {
@@ -325,16 +361,6 @@ esp_err_t esp_nan_usd_deinit()
     nan_de_deinit(g_nan_de);
     g_nan_de = NULL;
     NAN_USD_DATA_UNLOCK();
-
-    if (s_nan_usd_data_lock) {
-        os_mutex_delete(s_nan_usd_data_lock);
-        s_nan_usd_data_lock = NULL;
-    }
-
-    esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ACTION_TX_STATUS, &nan_de_tx_event_handler);
-    esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ROC_DONE, &nan_de_tx_event_handler);
-    esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_STOP,
-                                 &nan_sta_stop_handler);
 
     return ESP_OK;
 }
@@ -360,10 +386,12 @@ esp_err_t esp_nan_usd_init(void)
     cb.subscribe_terminated = esp_nan_de_subscribe_terminated;
     cb.receive = esp_nan_de_receive;
 
-    s_nan_usd_data_lock = os_recursive_mutex_create();
     if (!s_nan_usd_data_lock) {
-        ESP_LOGE("NAN-USD", "Failed to create NAN-USD data lock");
-        return  ESP_FAIL;
+        s_nan_usd_data_lock = os_recursive_mutex_create();
+        if (!s_nan_usd_data_lock) {
+            ESP_LOGE("NAN-USD", "Failed to create NAN-USD data lock");
+            return  ESP_FAIL;
+        }
     }
 
     ESP_RETURN_ON_ERROR(esp_wifi_get_mac(WIFI_IF_STA, mac), "NAN-USD", "Fetching MAC of STA ifx failed");
