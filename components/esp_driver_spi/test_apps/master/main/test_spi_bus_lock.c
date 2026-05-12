@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -347,3 +347,61 @@ TEST_CASE("spi master can be used on SPI1", "[spi]")
 //TODO: add a case when a non-polling transaction happened in the bus-acquiring time and then release the bus then queue a new trans
 
 #endif //!(CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32)
+
+#define TEST_LARGE_TRANS_LEN    2048
+static void dev2_polling_task(void *arg)
+{
+    task_context_t *ctx = (task_context_t *)arg;
+    spi_transaction_t t = {
+        .flags = SPI_TRANS_USE_TXDATA,
+        .length = 32,
+    };
+    while (!ctx->finished) {
+        TEST_ESP_OK(spi_device_polling_transmit(ctx->handle, &t));
+        vTaskDelay(pdMS_TO_TICKS(1));
+    }
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("release_bus during flying is safe to other device acquiring", "[spi]")
+{
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
+
+    spi_device_interface_config_t devcfg_p = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    spi_device_interface_config_t devcfg_q = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    devcfg_q.spics_io_num = -1;
+    devcfg_q.queue_size = 3;
+    devcfg_q.clock_speed_hz = 500 * 1000;
+
+    spi_device_handle_t dev_q;
+    task_context_t ctx = {};
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg_p, &ctx.handle));
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg_q, &dev_q));
+
+    // polling task with higher priority than the interrupt task
+    xTaskCreate(dev2_polling_task, "spi17860_p", 4096, &ctx, 6, NULL);
+
+    uint8_t *q_txb = heap_caps_malloc(TEST_LARGE_TRANS_LEN, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    spi_transaction_t *ret_trans, trans = {
+        .length = TEST_LARGE_TRANS_LEN * 8,
+        .tx_buffer = q_txb,
+    };
+    for (int i = 0; i < 30; i++) {
+        TEST_ESP_OK(spi_device_acquire_bus(dev_q, portMAX_DELAY));
+        TEST_ESP_OK(spi_device_queue_trans(dev_q, &trans, portMAX_DELAY));
+        esp_rom_printf("queue trans %d\n", i);
+        spi_device_release_bus(dev_q);
+    }
+
+    ctx.finished = true;
+    vTaskDelay(pdMS_TO_TICKS(100)); // wait for all trans finished
+    for (int i = 0; i < devcfg_q.queue_size; i++) {
+        spi_device_get_trans_result(dev_q, &ret_trans, 0);
+    }
+
+    free(q_txb);
+    TEST_ESP_OK(spi_bus_remove_device(ctx.handle));
+    TEST_ESP_OK(spi_bus_remove_device(dev_q));
+    TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
+}
