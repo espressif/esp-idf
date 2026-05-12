@@ -593,7 +593,7 @@ static void btc_gap_ble_adv_pkt_handler(void *arg)
         }
     }
 
-    if (pkt_queue_length(p_env->adv_rpt_queue) != 0) {
+    if (p_env->adv_rpt_ready && pkt_queue_length(p_env->adv_rpt_queue) != 0) {
         osi_thread_post_event(p_env->adv_rpt_ready, OSI_THREAD_MAX_TIMEOUT);
     }
 }
@@ -628,7 +628,9 @@ static void btc_process_adv_rpt_pkt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_
     } while (0);
 
     pkt_queue_enqueue(p_env->adv_rpt_queue, linked_pkt);
-    osi_thread_post_event(p_env->adv_rpt_ready, OSI_THREAD_MAX_TIMEOUT);
+    if (p_env->adv_rpt_ready) {
+        osi_thread_post_event(p_env->adv_rpt_ready, OSI_THREAD_MAX_TIMEOUT);
+    }
 }
 
 static void btc_search_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data)
@@ -3412,15 +3414,34 @@ void btc_gap_ble_deinit(void)
 #if (BLE_42_SCAN_EN == TRUE)
     btc_gap_ble_env_t *p_env = &btc_gap_ble_env;
 
-    osi_event_delete(p_env->adv_rpt_ready);
+    struct osi_event *adv_evt = p_env->adv_rpt_ready;
     p_env->adv_rpt_ready = NULL;
+    if (adv_evt) {
+        osi_event_delete(adv_evt);
+    }
 
-    pkt_queue_destroy(p_env->adv_rpt_queue, NULL);
-    p_env->adv_rpt_queue = NULL;
+    if (p_env->adv_rpt_queue) {
+        pkt_queue_destroy(p_env->adv_rpt_queue, NULL);
+        p_env->adv_rpt_queue = NULL;
+    }
 #endif // #if (BLE_42_SCAN_EN == TRUE)
 #if (BLE_42_ADV_EN == TRUE)
+    /* Under BTC_DYNAMIC_MEMORY, gl_bta_adv_data is a macro that dereferences
+     * gl_bta_adv_data_ptr. Guard against the case where the pointer is NULL
+     * (e.g. btc_init_mem() failed midway, or btc_deinit() is invoked twice)
+     * to avoid &(*NULL) UB before reaching btc_cleanup_adv_data()'s NULL
+     * check. */
+#if (BTC_DYNAMIC_MEMORY == TRUE)
+    if (gl_bta_adv_data_ptr) {
+        btc_cleanup_adv_data(&gl_bta_adv_data);
+    }
+    if (gl_bta_scan_rsp_data_ptr) {
+        btc_cleanup_adv_data(&gl_bta_scan_rsp_data);
+    }
+#else
     btc_cleanup_adv_data(&gl_bta_adv_data);
     btc_cleanup_adv_data(&gl_bta_scan_rsp_data);
+#endif // #if (BTC_DYNAMIC_MEMORY == TRUE)
 #endif // #if (BLE_42_ADV_EN == TRUE)
 #endif //  #if (BLE_42_FEATURE_SUPPORT == TRUE)
 }
