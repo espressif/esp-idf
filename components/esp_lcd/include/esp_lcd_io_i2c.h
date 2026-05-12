@@ -33,6 +33,7 @@ typedef struct {
         unsigned int disable_control_phase: 1; /*!< If this flag is enabled, the control phase isn't used */
     } flags; /*!< Extra flags to fine-tune the I2C device */
     uint32_t scl_speed_hz; /*!< I2C LCD SCL frequency (hz) */
+    int transaction_timeout_ms; /*!< Timeout for each I2C transfer in ms, 0/-1: wait forever, >0: finite timeout */
 } esp_lcd_panel_io_i2c_config_t;
 
 /**
