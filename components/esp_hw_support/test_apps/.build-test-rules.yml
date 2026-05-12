@@ -1,31 +1,66 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-
 components/esp_hw_support/test_apps/cpu:
+  depends_components:
+    - esp_hw_support
+    - riscv
+    - xtensa
+    - soc
   disable_test:
     - if: IDF_TARGET in ["esp32h4"]
       temporary: true
       reason: cannot pass # TODO: IDF-15602
 
+components/esp_hw_support/test_apps/esp_hw_support_unity_tests:
+  depends_components:
+    - esp_driver_gpio
+    - esp_hal_gpio
+    - esp_hal_wdt
+    - esp_hw_support
+    - soc
+    - xtensa
+
 components/esp_hw_support/test_apps/host_test_linux:
   enable:
     - if: IDF_TARGET == "linux"
+  depends_components:
+    - esp_hw_support
 
 components/esp_hw_support/test_apps/mspi:
+  depends_components:
+    - esp_hw_support
+    - spi_flash
+    - esp_partition
+    - esp_hal_mspi
+    - soc
   disable:
     - if: IDF_TARGET not in ["esp32s3", "esp32p4", "esp32c61", "esp32c5", "esp32s31"]
     - if: CONFIG_NAME in ["generic_timing_tuning_log_safe", "generic_timing_tuning_xip"] and IDF_TARGET in ["esp32s31"]
     - if: CONFIG_NAME == "120sdr_120sdr" and IDF_TARGET in ["esp32s3", "esp32p4", "esp32s31"]
 
 components/esp_hw_support/test_apps/mspi_psram_with_dfs:
+  depends_components:
+    - esp_hw_support
+    - spi_flash
+    - esp_partition
+    - esp_pm
+    - soc
   disable:
     - if: IDF_TARGET != "esp32s3"
 
 components/esp_hw_support/test_apps/rtc_8md256:
+  depends_components:
+    - esp_hw_support
+    - soc
   disable:
     - if: SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256 != 1
 
 components/esp_hw_support/test_apps/rtc_clk:
+  depends_components:
+    - esp_driver_gpio
+    - esp_hal_gpio
+    - esp_hw_support
+    - soc
   disable:
     - if: SOC_CLK_TREE_SUPPORTED != 1
 
@@ -34,15 +69,27 @@ components/esp_hw_support/test_apps/rtc_power_modes:
     - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c2", "esp32c3"]
       temporary: true
       reason: the other targets are not tested yet
+  depends_components:
+    - esp_driver_ledc
+    - esp_hw_support
+    - soc
 
 components/esp_hw_support/test_apps/sleep_retention:
   enable:
     - if: SOC_PAU_SUPPORTED == 1 and SOC_LIGHT_SLEEP_SUPPORTED == 1 and SOC_PM_CPU_RETENTION_BY_SW == 1 and CONFIG_NAME != "xip_psram"
     - if: SOC_PAU_SUPPORTED == 1 and SOC_LIGHT_SLEEP_SUPPORTED == 1 and SOC_PM_CPU_RETENTION_BY_SW == 1 and (SOC_SPIRAM_XIP_SUPPORTED == 1 and CONFIG_NAME == "xip_psram")
+  depends_components:
+    - esp_hw_support
+    - esp_mm
+    - esp_psram
+    - soc
 
 components/esp_hw_support/test_apps/usb_phy:
   enable:
     - if: SOC_USB_OTG_SUPPORTED == 1
+  depends_components:
+    - esp_hw_support
+    - soc
   depends_filepatterns:
     - components/hal/usb*.c
     - components/hal/include/hal/usb*.h
@@ -54,12 +101,22 @@ components/esp_hw_support/test_apps/usb_phy:
     - components/esp_hw_support/**/usb_phy.*
 
 components/esp_hw_support/test_apps/vad_wakeup:
+  depends_components:
+    - esp_hw_support
+    - esp_driver_i2s
+    - ulp
+    - soc
   disable:
     - if: SOC_LP_VAD_SUPPORTED != 1
 
 components/esp_hw_support/test_apps/wakeup_tests:
   enable:
     - if: SOC_DEEP_SLEEP_SUPPORTED == 1 and SOC_LIGHT_SLEEP_SUPPORTED == 1
+  depends_components:
+    - esp_driver_gpio
+    - esp_hal_gpio
+    - esp_hw_support
+    - soc
   disable_test:
     - if: IDF_TARGET in ["esp32h21", "esp32h4"]
       temporary: true
