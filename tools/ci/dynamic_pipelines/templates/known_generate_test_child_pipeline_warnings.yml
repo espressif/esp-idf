@@ -28,4 +28,3 @@ no_runner_tags:
   - esp32p4,jtag
   - esp32s2,usb_host_flash_disk
   - esp32s31,usb_host_flash_disk
-  - esp32s31_2,generic_multi_device,rev_default
