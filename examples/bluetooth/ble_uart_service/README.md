@@ -4,9 +4,10 @@
 | ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | --------- |
 
 A turnkey serial-over-BLE peripheral that implements the de-facto
-**Nordic UART Service** GATT layout (RX write, TX notify), so any
-standard BLE-serial central (nRF Connect, Web Bluetooth examples, your
-own iOS / Android / Linux / Python scripts) can talk to it unchanged.
+**BLE UART-over-GATT** layout (RX write, TX notify; fixed 128-bit UUIDs
+below), so any widely used BLE-serial central (mobile GATT client apps,
+Web Bluetooth examples, your own iOS / Android / Linux / Python scripts)
+can talk to it unchanged.
 
 The example ships with **two interchangeable backends** — NimBLE and
 Bluedroid — both implementing the same stack-agnostic
@@ -19,7 +20,7 @@ manager, advertising, pairing, GAP event handling — is wrapped behind
 **two function calls** in `app_main`:
 
 ```c
-ble_uart_install(&cfg);   // NimBLE host + NUS GATT service
+ble_uart_install(&cfg);   // NimBLE host + BLE UART GATT service
 ble_uart_open();          // start advertising + auto-encrypt
 ```
 
@@ -53,12 +54,14 @@ The `_ENC | _AUTHEN` flags are turned on only when `cfg.encrypted = true`
 | File | Lines | Role |
 | --- | ---: | --- |
 | `main/main.c`            | ~70  | NVS init, MAC-derived device name, install + open, RX echo handler. Identical for both backends. |
-| `main/ble_uart.h`        | ~260 | Stack-agnostic public API: 3-field config + 4 lifecycle functions + TX/status + UUID + `BLE_UART_E*` return codes. No NimBLE / Bluedroid types leak through. |
-| `main/ble_uart_nimble.c`     | ~670 | NimBLE backend: host bring-up, NUS GATT service via `ble_gatts_add_svcs`, advertising, pairing, install/open/close/uninstall. Active when `CONFIG_BT_NIMBLE_ENABLED=y`. |
-| `main/ble_uart_bluedroid.c`  | ~900 | Bluedroid backend: controller + host enable, NUS GATT service via `esp_ble_gatts_create_attr_tab` (service-table API), advertising, pairing, full PREP/EXEC long-write reassembly, install/open/close/uninstall. Active when `CONFIG_BT_BLUEDROID_ENABLED=y`. |
-| `main/Kconfig.projbuild` | ~40  | Device-name prefix + RX scratch buffer size knobs. |
+| `CMakeLists.txt` (root) | ~15 | `list(APPEND EXTRA_COMPONENT_DIRS .../common/ble_uart)` before `project()` so `main` can `REQUIRES ble_uart`. |
+| `../common/ble_uart/ble_uart.h`        | ~155 | Stack-agnostic public API: 3-field config + 4 lifecycle functions + TX/status + UUID + `BLE_UART_E*` return codes. No NimBLE / Bluedroid types leak through. |
+| `../common/ble_uart/ble_uart_nimble.c`     | ~650 | NimBLE backend: host bring-up, BLE UART GATT service via `ble_gatts_add_svcs`, advertising, pairing, install/open/close/uninstall. Active when `CONFIG_BT_NIMBLE_ENABLED=y`. |
+| `../common/ble_uart/ble_uart_bluedroid.c`  | ~1020 | Bluedroid backend: controller + host enable, BLE UART GATT service via `esp_ble_gatts_create_attr_tab` (service-table API), advertising, pairing, full PREP/EXEC long-write reassembly, install/open/close/uninstall. Active when `CONFIG_BT_BLUEDROID_ENABLED=y`. |
+| `../common/ble_uart/Kconfig` | ~30 | Device-name prefix + RX scratch size (`menuconfig → Component configuration → BLE UART library`). |
+| `../common/ble_uart/PORTING.md` | ~724 | Porting and API guide (integration, CMake, sdkconfig, thread safety). |
 | `sdkconfig.defaults`         | —    | Default: NimBLE backend, MTU 512, SC + bonding + persistent NVS. |
-| `sdkconfig.ci.bluedroid`     | —    | Overlay: switch to Bluedroid backend (used via `-D SDKCONFIG_DEFAULTS=...`, see "Choosing the host stack" below). |
+| `sdkconfig.bluedroid`     | —    | Overlay: switch to Bluedroid backend (used via `-D SDKCONFIG_DEFAULTS=...`, see "Choosing the host stack" below). |
 
 ## Public API
 
@@ -91,10 +94,10 @@ extern const ble_uart_uuid128_t ble_uart_service_uuid;
 
 The same `ble_uart.h` API is implemented twice — once on top of NimBLE
 (`ble_uart_nimble.c`) and once on top of Bluedroid
-(`ble_uart_bluedroid.c`). `main/CMakeLists.txt` registers both files;
-each guards its body with `#if CONFIG_BT_NIMBLE_ENABLED` / `#if
-CONFIG_BT_BLUEDROID_ENABLED`, so exactly one becomes live at compile
-time.
+(`ble_uart_bluedroid.c`). The shared `ble_uart` component's
+`CMakeLists.txt` registers both files; each guards its body with
+`#if CONFIG_BT_NIMBLE_ENABLED` / `#if CONFIG_BT_BLUEDROID_ENABLED`, so
+exactly one becomes live at compile time.
 
 Two ways to switch:
 
@@ -103,9 +106,9 @@ Two ways to switch:
 idf.py menuconfig
 #   Component config -> Bluetooth -> Host -> NimBLE / Bluedroid
 
-# B. Apply the Bluedroid overlay non-interactively (great for CI)
+# B. Apply the Bluedroid overlay non-interactively (scripts / reproducible builds)
 idf.py -B build_bd \
-       -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci.bluedroid" \
+       -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.bluedroid" \
        reconfigure
 idf.py -B build_bd build flash monitor
 ```
@@ -130,9 +133,15 @@ When neither is enabled the build fails up-front with a clear error.
 ```bash
 idf.py set-target esp32c3      # or esp32, esp32s3, esp32c6, esp32h2 ...
 idf.py menuconfig              # optional
-#   Component config -> BLE UART Example
+#   Component configuration -> BLE UART library
 #     - BLE device name prefix    (default: BleUart)
+#     - RX scratch buffer size      (default: 1024 bytes)
 ```
+
+Those `BLE_UART_*` options are defined in **`../common/ble_uart/Kconfig`**
+(the `ble_uart` component); they appear whenever `ble_uart` is part of the
+build (this example pulls it in via `EXTRA_COMPONENT_DIRS` in the root
+`CMakeLists.txt`).
 
 The two security knobs are set in `sdkconfig.defaults`:
 
@@ -152,7 +161,7 @@ idf.py build flash monitor
 ```
 
 Expected boot log (NimBLE backend — the per-characteristic register
-lines are NimBLE-specific; Bluedroid prints the four NUS handles in a
+lines are NimBLE-specific; Bluedroid prints the four UART-service handles in a
 single line, see below):
 
 ```
@@ -174,7 +183,9 @@ I (xxx) ble_uart: advertising started
 
 ## Pairing & demo
 
-1. On a phone, install **nRF Connect for Mobile**.
+1. On a phone, install **a BLE GATT client app** that supports scanning,
+   pairing, characteristic write, and notify/CCCD (many mobile “BLE tools”
+   or serial-over-BLE utilities qualify).
 2. Scan, tap **Connect** on `BleUart-XXXX`. The phone prompts for a
    6-digit code.
 3. The device prints a fresh code in a banner on UART:
@@ -187,7 +198,7 @@ I (xxx) ble_uart: advertising started
    ```
 4. Type that code on the phone; pairing completes. The link is now
    AES-CCM-encrypted and the LTK is stored to NVS.
-5. Open the *Nordic UART Service*, subscribe to TX (the down-arrow
+5. Open the **UART service** (UUID `6e400001-…`), subscribe to TX (the down-arrow
    icon), then write any bytes to RX (the up-arrow icon). The device
    logs them to UART and **echoes them right back** through TX.
 6. Disconnect and reconnect: no passkey prompt — the bond resumes
@@ -204,9 +215,26 @@ bytes with no framing assumptions). Send replies with `ble_uart_tx()`.
 
 ## Reusing `ble_uart` in your own project
 
-Copy `main/ble_uart.h` plus the backend(s) you want — `main/ble_uart_nimble.c`
-and/or `main/ble_uart_bluedroid.c` — into your project, add `bt nvs_flash`
-to your component's `REQUIRES`, then in your `app_main`:
+**Recommended (no copy):** register the shared component directory **before**
+`project()` so CMake can resolve `REQUIRES ble_uart` from `main/` (same pattern
+as this example's root `CMakeLists.txt`):
+
+```cmake
+cmake_minimum_required(VERSION 3.22)
+list(APPEND EXTRA_COMPONENT_DIRS "${CMAKE_CURRENT_LIST_DIR}/../path/to/common/ble_uart")
+include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+project(my_app)
+```
+
+Then in `main/CMakeLists.txt` use `REQUIRES ble_uart nvs_flash` and
+`#include "ble_uart.h"`.
+
+Adjust the `EXTRA_COMPONENT_DIRS` path if you vendor `common/ble_uart` elsewhere
+(e.g. `${CMAKE_CURRENT_LIST_DIR}/components/ble_uart`).
+
+**Alternative:** copy the whole `examples/bluetooth/common/ble_uart/` directory
+into your tree (or only the `.h` / `.c` files into `main/`) and add `bt nvs_flash`
+to that component's `REQUIRES`, then in your `app_main`:
 
 ```c
 nvs_flash_init();
