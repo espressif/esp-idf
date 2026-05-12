@@ -194,6 +194,9 @@
 // #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1 // TODO: [ESP32S31] IDF-14760
 #define SOC_GDMA_EXT_MEM_ENC_ALIGNMENT   (16)
 
+/*-------------------------- MODEM CAPS --------------------------------------*/
+#define SOC_MODEM_SUPPORT_ETM               1
+
 /*-------------------------- APM CAPS ----------------------------------------*/
 #define SOC_APM_CTRL_FILTER_SUPPORTED   1 /*!< Support for APM control filter */
 
