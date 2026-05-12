@@ -94,6 +94,11 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_ver_pkg(
     return EFUSE.rd_mac_sys4.pkg_version;
 }
 
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_recovery_bootloader_sector(void)
+{
+    return EFUSE.rd_repeat_data5.recovery_bootloader_flash_sector;
+}
+
 /******************* eFuse control functions *************************/
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_read_cmd(void)

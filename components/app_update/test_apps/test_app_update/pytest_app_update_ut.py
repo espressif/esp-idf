@@ -71,7 +71,7 @@ def test_app_update_with_rollback(dut: Dut) -> None:
     ['recovery_bootloader'],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32c5'], indirect=['target'])
+@idf_parametrize('target', ['esp32c5', 'esp32c61', 'esp32p4', 'esp32s31'], indirect=['target'])
 def test_recovery_bootloader_update(dut: Dut) -> None:
     try:
         dut.run_all_single_board_cases(group='recovery_bootloader', timeout=90)

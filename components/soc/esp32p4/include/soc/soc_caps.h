@@ -617,6 +617,10 @@
 #define SOC_PSRAM_ENCRYPTION_SEPARATE_KEY       1  /* PSRAM encryption can use independent key */
 #define SOC_PSRAM_ENCRYPTION_PAGE_CONFIGURABLE  1  /* PSRAM encryption can be configured on a MMU page basis */
 
+/*------------------------Bootloader CAPS---------------------------------*/
+/* Support Recovery Bootloader */
+#define SOC_RECOVERY_BOOTLOADER_SUPPORTED             (1)
+
 /*-------------------------- MEMPROT CAPS ------------------------------------*/
 
 /*-------------------------- UART CAPS ---------------------------------------*/
