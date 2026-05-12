@@ -437,6 +437,24 @@
 #define BLE_HIGH_DUTY_ADV_INTERVAL FALSE
 #endif
 
+/* Host-side parameter validation floor (in 1.25 ms units) for the BLE
+ * connection interval. Internal to the Bluedroid host: not sent on air, not
+ * exposed via the GATT Preferred Connection Parameters Characteristic, and
+ * not a public API constant - those use BTM_BLE_CONN_INT_MIN (0x0006).
+ *
+ * When UC_BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT == 1 the host stops
+ * enforcing a minimum (the actual lower limit is then defined entirely by
+ * the controller). 0x0001 is used rather than 0x0000 so the existing
+ * `uint16_t < MIN` range checks remain well-defined under GCC
+ * `-Wtype-limits`. */
+#ifndef BLE_CONN_INT_MIN_HOST_CHECK
+#if (UC_BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT == 1)
+#define BLE_CONN_INT_MIN_HOST_CHECK             0x0001
+#else
+#define BLE_CONN_INT_MIN_HOST_CHECK             0x0006
+#endif
+#endif
+
 #if (UC_BT_BLE_RPA_SUPPORTED  == TRUE)
 #define CONTROLLER_RPA_LIST_ENABLE   TRUE
 #else
