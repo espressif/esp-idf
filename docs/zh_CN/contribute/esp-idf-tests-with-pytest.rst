@@ -688,7 +688,7 @@ Pytest 使用技巧
 1. 向一定数量的 DUT 添加更多可复用功能。
 2. 为不同阶段添加自定义的前置和后置函数。
 
-以下代码示例来自 :idf_file:`panic/conftest.py <tools/test_apps/system/panic/conftest.py>`。
+以下代码示例来自 :idf_file:`panic/panic_base/conftest.py <tools/test_apps/system/panic/panic_base/conftest.py>`。
 
 .. code-block:: python
 
@@ -735,7 +735,7 @@ Pytest 使用技巧
 
 可使用 `xfail <https://docs.pytest.org/en/latest/how-to/skipping.html#xfail-mark-test-functions-as-expected-to-fail>`__ marker 来标记此测试用例，并写出原因。
 
-以下代码来自 :idf_file:`pytest_panic.py <tools/test_apps/system/panic/pytest_panic.py>`。
+以下代码来自 :idf_file:`pytest_panic.py <tools/test_apps/system/panic/panic_base/pytest_panic.py>`。
 
 .. code-block:: python
 

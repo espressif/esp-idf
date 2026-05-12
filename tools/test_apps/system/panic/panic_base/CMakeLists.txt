@@ -3,10 +3,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 set(COMPONENTS main esp_gdbstub)
-
-if(CONFIG_ESP_COREDUMP_ENABLE)
-    list(APPEND COMPONENTS espcoredump)
-endif()
+set(EXTRA_COMPONENT_DIRS "${CMAKE_CURRENT_LIST_DIR}/../common")
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
@@ -20,9 +17,7 @@ if(CONFIG_TEST_MEMPROT)
             target_link_libraries(${project_elf} PRIVATE "-Wl,--wrap=panic_arch_fill_info")
         endif()
     endif()
-endif()
-
-if(NOT CONFIG_TEST_MEMPROT AND NOT CONFIG_ESP_COREDUMP_ENABLE)
+else()
     # Enable UBSAN checks
     #
     # shift-base sanitizer is disabled due to the following pattern found in register header files:

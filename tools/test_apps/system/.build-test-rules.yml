@@ -141,7 +141,14 @@ tools/test_apps/system/no_embedded_paths:
       temporary: true
       reason: the other targets are not tested yet
 
-tools/test_apps/system/panic:
+tools/test_apps/system/panic/coredump:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32c61", "esp32h2", "esp32p4", "esp32s2", "esp32s3", "esp32s31"]
+  depends_components:
+    - espcoredump
+    - esp_system
+
+tools/test_apps/system/panic/panic_base:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32s31", "esp32h4"]
 

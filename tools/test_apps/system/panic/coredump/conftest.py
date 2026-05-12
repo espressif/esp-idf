@@ -1,16 +1,18 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 # pylint: disable=W0621  # redefined-outer-name
 
-import os
 import sys
+from pathlib import Path
 
 import pytest
 from _pytest.fixtures import FixtureRequest
 from _pytest.monkeypatch import MonkeyPatch
 
-sys.path.append(os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'panic', 'panic_base')))
+PANIC_BASE_APP = Path(__file__).resolve().parent.parent / 'panic_base'
+sys.path.insert(0, str(PANIC_BASE_APP))
+
 from test_panic_util import PanicTestDut  # noqa: E402
 
 

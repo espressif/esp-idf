@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 from pytest_embedded_idf.utils import idf_parametrize
 
-sys.path.append(path.expandvars(path.join('$IDF_PATH', 'tools', 'test_apps', 'system', 'panic')))
+sys.path.append(path.normpath(path.join(path.dirname(__file__), '..', 'panic', 'panic_base')))
 from test_panic_util import PanicTestDut  # noqa: E402
 
 
