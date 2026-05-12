@@ -1,22 +1,22 @@
 # OpenThread Border Router Setup Guide
-## ESP32-C6 OTBR + ESP32-H2 RCP + Home Assistant
+## ESP32-H2 N4 OTBR (COM6) + Home Assistant
 
 ---
 
-## Phase 1: Build & Flash OTBR Firmware on ESP32-C6
+## Phase 1: Build & Flash OTBR Firmware on ESP32-H2 N4
 
-### Step 1.1: Build OTBR for ESP32-C6
+### Step 1.1: Build OTBR for ESP32-H2 N4
 ```powershell
 cd c:\Users\chuky\esp-idf\examples\openthread\ot_br
-idf.py set-target esp32c6
+idf.py set-target esp32h2
 idf.py menuconfig
 # (No changes needed unless customizing WiFi settings)
 idf.py build
 ```
 
-### Step 1.2: Flash OTBR to ESP32-C6
+### Step 1.2: Flash OTBR to ESP32-H2 N4
 ```powershell
-# Identify ESP32-C6 COM port (usually COM6)
+# Identify ESP32-H2 N4 COM port (usually COM6)
 idf.py -p COM6 flash
 idf.py -p COM6 monitor
 ```

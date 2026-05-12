@@ -242,7 +242,7 @@ if ($ShowNetwork) {
 }
 
 Write-Host "🚀 NEXT STEPS:" -ForegroundColor Green
-Write-Host "1. Flash OTBR to ESP32-C6: .\build-flash-otbr.ps1 -BuildFlashMonitor" -ForegroundColor Gray
+Write-Host "1. Flash OTBR to ESP32-H2 N4 COM6: .\build-flash-otbr.ps1 -BuildFlashMonitor -Port COM6" -ForegroundColor Gray
 Write-Host "2. Configure WiFi using commands above" -ForegroundColor Gray
 Write-Host "3. Verify Thread network with network info commands" -ForegroundColor Gray
 Write-Host "4. Add to Home Assistant Settings → Devices & Services → Thread`n" -ForegroundColor Gray

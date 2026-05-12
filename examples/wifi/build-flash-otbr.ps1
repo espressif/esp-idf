@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Build and Flash OpenThread Border Router for ESP32-C6
+# Build and Flash OpenThread Border Router for ESP32-H2 N4
 
 param(
     [string]$Port = "COM6",
@@ -15,53 +15,43 @@ param(
 )
 
 $OTBRPath = "c:\Users\chuky\esp-idf\examples\openthread\ot_br"
-$Target = "esp32c6"
+$Target = "esp32h2"
 
 function Write-Header {
     Write-Host "`n╔════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-    Write-Host "║   OpenThread Border Router - ESP32-C6 Builder/Flasher   ║" -ForegroundColor Cyan
+    Write-Host "║  OpenThread Border Router - ESP32-H2 N4 Builder/Flasher  ║" -ForegroundColor Cyan
     Write-Host "╚════════════════════════════════════════════════════════╝`n" -ForegroundColor Cyan
 }
 
 function Show-Help {
-    Write-Host @"
-OpenThread Border Router Build & Flash Script for ESP32-C6
+    $helpText = @(
+        "OpenThread Border Router Build & Flash Script for ESP32-H2 N4"
+        ""
+        "USAGE:"
+        "  .\build-flash-otbr.ps1 [options]"
+        ""
+        "OPTIONS:"
+        "  -Port COM#                  Serial port (default: COM6)"
+        "  -BuildOnly                  Build firmware only (no flash)"
+        "  -FlashOnly                  Flash only (assumes build exists)"
+        "  -Monitor                    Start serial monitor after flash"
+        "  -BuildFlashMonitor          Build, flash, and monitor in one go"
+        "  -Clean                      Clean build (remove build directory)"
+        "  -Menuconfig                 Open configuration menu"
+        "  -CheckPortOnly              Enumerate and validate selected OTBR port"
+        "  -SkipChipCheck              Skip chip type validation (not recommended)"
+        "  -Help                       Show this help message"
+        ""
+        "EXAMPLES:"
+        "  .\build-flash-otbr.ps1 -BuildFlashMonitor"
+        "  .\build-flash-otbr.ps1 -BuildOnly"
+        "  .\build-flash-otbr.ps1 -Port COM7"
+        "  .\build-flash-otbr.ps1 -Monitor"
+        "  .\build-flash-otbr.ps1 -Menuconfig -BuildOnly"
+        "  .\build-flash-otbr.ps1 -Port COM6 -CheckPortOnly"
+    )
 
-USAGE:
-  .\build-flash-otbr.ps1 [options]
-
-OPTIONS:
-  -Port COM#                  Serial port (default: COM6)
-  -BuildOnly                  Build firmware only (no flash)
-  -FlashOnly                  Flash only (assumes build exists)
-  -Monitor                    Start serial monitor after flash
-  -BuildFlashMonitor          Build, flash, and monitor in one go
-  -Clean                      Clean build (remove build directory)
-  -Menuconfig                 Open configuration menu
-    -CheckPortOnly              Enumerate and validate selected OTBR port
-    -SkipChipCheck              Skip chip type validation (not recommended)
-  -Help                       Show this help message
-
-EXAMPLES:
-  # Full cycle: build, flash, and monitor
-  .\build-flash-otbr.ps1 -BuildFlashMonitor
-
-  # Build only
-  .\build-flash-otbr.ps1 -BuildOnly
-
-  # Flash to COM7
-  .\build-flash-otbr.ps1 -Port COM7
-
-  # Flash with monitoring
-  .\build-flash-otbr.ps1 -Monitor
-
-  # Configure options before build
-  .\build-flash-otbr.ps1 -Menuconfig -BuildOnly
-
-  # Verify COM6 is OTBR-capable before flashing
-  .\build-flash-otbr.ps1 -Port COM6 -CheckPortOnly
-
-"@
+    Write-Host ($helpText -join "`n")
 }
 
 function Get-PortInfo {
@@ -117,7 +107,7 @@ function Get-EspChipType {
 function Show-PortCapability {
     param(
         [string]$ComPort,
-        [bool]$RequireC6 = $false
+        [bool]$RequireH2 = $false
     )
 
     Write-Host "Checking serial port capability for $ComPort ..." -ForegroundColor Yellow
@@ -146,17 +136,16 @@ function Show-PortCapability {
 
     Write-Host "Detected chip: $($chip.ChipType)" -ForegroundColor Cyan
 
-    if ($RequireC6 -and $chip.ChipType -ne "ESP32-C6") {
-        Write-Host "ERROR: OTBR requires ESP32-C6, but $ComPort is $($chip.ChipType)." -ForegroundColor Red
-        Write-Host "Do not flash OTBR firmware to ESP32-H2 (RCP) ports." -ForegroundColor Red
+    if ($RequireH2 -and $chip.ChipType -ne "ESP32-H2") {
+        Write-Host "ERROR: OTBR requires ESP32-H2 N4 on COM6, but $ComPort is $($chip.ChipType)." -ForegroundColor Red
         return $false
     }
 
-    if ($chip.ChipType -eq "ESP32-C6") {
-        Write-Host "OK: $ComPort is OTBR-capable (ESP32-C6)." -ForegroundColor Green
+    if ($chip.ChipType -eq "ESP32-H2") {
+        Write-Host "OK: $ComPort is OTBR-capable (ESP32-H2 N4)." -ForegroundColor Green
     }
-    elseif ($chip.ChipType -eq "ESP32-H2") {
-        Write-Host "Note: $ComPort is ESP32-H2 (RCP role)." -ForegroundColor Yellow
+    else {
+        Write-Host "Note: $ComPort is $($chip.ChipType)." -ForegroundColor Yellow
     }
 
     return $true
@@ -219,7 +208,7 @@ function Invoke-Flash {
         [string]$ComPort
     )
     
-    if (-not (Show-PortCapability -ComPort $ComPort -RequireC6 $true)) {
+    if (-not (Show-PortCapability -ComPort $ComPort -RequireH2 $true)) {
         exit 1
     }
 
@@ -245,7 +234,7 @@ function Invoke-Monitor {
         [string]$ComPort
     )
     
-    if (-not (Show-PortCapability -ComPort $ComPort -RequireC6 $false)) {
+    if (-not (Show-PortCapability -ComPort $ComPort)) {
         exit 1
     }
 
@@ -287,7 +276,7 @@ if ($Help) {
 }
 
 if ($CheckPortOnly) {
-    if (Show-PortCapability -ComPort $Port -RequireC6 $true) {
+    if (Show-PortCapability -ComPort $Port -RequireH2 $true) {
         exit 0
     }
     exit 1

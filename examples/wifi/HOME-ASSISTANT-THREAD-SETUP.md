@@ -3,8 +3,8 @@
 ## Prerequisites
 
 ✅ Home Assistant installed and running (2023.8+)  
-✅ ESP32-C6 flashed with OTBR firmware  
-✅ ESP32-H2 flashed with RCP firmware  
+✅ ESP32-H2 N4 on COM6 flashed with OTBR firmware  
+✅ ESP32-H2-mini flashed with RCP firmware  
 ✅ OTBR connected to WiFi  
 ✅ RCP paired with OTBR via UART
 
@@ -198,7 +198,7 @@ wifi_status
    - If no response, check firewall rules
 4. Restart OTBR:
    - Restart from console: `reset`
-   - Or power cycle ESP32-C6
+   - Or power cycle ESP32-H2 N4 OTBR board
 
 ---
 

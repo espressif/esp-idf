@@ -1,7 +1,7 @@
 param(
     [string]$DesiredPort = "COM6",
     [switch]$ForceTakePort,
-    [string]$ChipPattern = "ESP32-C6"
+    [string]$ChipPattern = "ESP32-H2"
 )
 
 $ErrorActionPreference = "Stop"
@@ -110,7 +110,7 @@ Write-Host "Scanning present Espressif USB JTAG/Serial devices..." -ForegroundCo
 $devices = Get-PortDevices
 
 if (-not $devices -or $devices.Count -eq 0) {
-    throw "No present VID_303A serial ports found. Connect only the ESP32-C6 native USB first."
+    throw "No present VID_303A serial ports found. Connect only the ESP32-H2 N4 native USB first."
 }
 
 Write-Host "Candidate devices:" -ForegroundColor Cyan
@@ -140,7 +140,7 @@ if ($matches.Count -eq 0) {
 }
 
 if ($matches.Count -gt 1) {
-    throw "Multiple '$ChipPattern' devices detected. Keep only one C6 connected and rerun."
+    throw "Multiple '$ChipPattern' devices detected. Keep only one H2 connected and rerun."
 }
 
 $target = $matches[0]
@@ -175,4 +175,4 @@ if ($finalProbe.Chip -notmatch [regex]::Escape($ChipPattern)) {
     throw "Mapping change attempted, but final probe on $DesiredPort is not '$ChipPattern'."
 }
 
-Write-Host "Mapping complete: ESP32-C6 is now on COM6." -ForegroundColor Green
+Write-Host "Mapping complete: ESP32-H2 N4 is now on COM6." -ForegroundColor Green

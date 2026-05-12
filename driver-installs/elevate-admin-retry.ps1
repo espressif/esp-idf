@@ -130,6 +130,6 @@ else {
 Write-Host "`nAdministrator Status: ACTIVE" -ForegroundColor Green
 Write-Host "Ready for COM6 operations." -ForegroundColor Green
 Write-Host "`nNext steps:" -ForegroundColor Cyan
-Write-Host "  1. Plug in ESP32-C6 USB-C cable" -ForegroundColor Cyan
+Write-Host "  1. Plug in ESP32-H2 N4 USB-C cable" -ForegroundColor Cyan
 Write-Host "  2. Run: cd C:\Users\chuky\esp-idf\examples\wifi" -ForegroundColor Cyan
 Write-Host "  3. Run: .\build-flash-otbr.ps1 -BuildFlashMonitor -Port COM6" -ForegroundColor Cyan
