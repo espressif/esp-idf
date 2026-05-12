@@ -275,12 +275,38 @@ menu "Example Configuration"
                 You need to ensure that the set IO can be configured as a GPIO wake-up source,
                 refer SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_MASK in soc_caps.h.
 
-        config EXAMPLE_GPIO_WAKEUP_HIGH_LEVEL
-            bool "Enable GPIO high-level wakeup"
-            default y
+        choice EXAMPLE_GPIO_WAKEUP_TRIGGER
+            prompt "GPIO wakeup trigger type"
+            default EXAMPLE_GPIO_WAKEUP_TRIGGER_HIGH
             help
-                This option set the gpio wake-up trigger signal, In deep sleep, only high or low level wake-up is
-                supported. If this option is enabled, it is a high level wake up, otherwise it is a low level wake up.
+                Selects esp_sleep_gpio_wake_up_mode_t for
+                esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown.
+                Edge choices require SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED on the target.
+
+            config EXAMPLE_GPIO_WAKEUP_TRIGGER_LOW
+                bool "Low level"
+            config EXAMPLE_GPIO_WAKEUP_TRIGGER_HIGH
+                bool "High level"
+            config EXAMPLE_GPIO_WAKEUP_TRIGGER_POSEDGE
+                bool "Rising edge (posedge)"
+                depends on SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED
+            config EXAMPLE_GPIO_WAKEUP_TRIGGER_NEGEDGE
+                bool "Falling edge (negedge)"
+                depends on SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED
+            config EXAMPLE_GPIO_WAKEUP_TRIGGER_ANYEDGE
+                bool "Any edge"
+                depends on SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED
+        endchoice
+
+        config EXAMPLE_GPIO_WAKEUP_MODE
+            int
+            default 0 if EXAMPLE_GPIO_WAKEUP_TRIGGER_LOW
+            default 1 if EXAMPLE_GPIO_WAKEUP_TRIGGER_HIGH
+            default 2 if EXAMPLE_GPIO_WAKEUP_TRIGGER_POSEDGE
+            default 3 if EXAMPLE_GPIO_WAKEUP_TRIGGER_NEGEDGE
+            default 4 if EXAMPLE_GPIO_WAKEUP_TRIGGER_ANYEDGE
+            help
+                esp_sleep_gpio_wake_up_mode_t index (0=LOW, 1=HIGH, 2=POSEDGE, 3=NEGEDGE, 4=ANYEDGE);
     endmenu
 
 endmenu

@@ -40,7 +40,7 @@ This example should be able to run on any commonly available ESP32 series develo
 
 - **EXT1:** GPIO2 and GPIO4 should be connected to LOW to avoid floating pins. When triggering a wake up, connect one or both of the pins to HIGH. Note that floating pins may trigger a wake up.
 
-- **GPIO:** If `EXAMPLE_GPIO_WAKEUP_HIGH_LEVEL` is selected in menuconfig, then connect `EXAMPLE_GPIO_WAKEUP_PIN` to HIGH to trigger a wake up; Otherwise, connect `EXAMPLE_GPIO_WAKEUP_PIN` to LOW to trigger a wake up.
+- **GPIO:** In `Example configuration > GPIO wakeup configuration`, set **GPIO wakeup trigger type** to match how you drive `EXAMPLE_GPIO_WAKEUP_PIN`: for **High level**, hold the pin low before sleep then drive high to wake; for **Low level**, hold high then pull low; for **Rising/Falling/Any edge** (targets with `SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED`), use an edge after a stable idle level as required by the selected mode.
 
 ### Configure the project
 
@@ -51,8 +51,8 @@ idf.py menuconfig
 * **EXT0 wake up** can be enabled/disabled via `Example configuration > Enable wakeup from GPIO (ext0)`
 * **EXT1 wake up** can be enabled/disabled via `Example configuration > Enable wakeup from GPIO (ext1)`
 * **GPIO wake up** can be enabled/disabled via `Example configuration > Enable wakeup from GPIO`
-  Trigger pin can be chosen via `Example configuration > GPIO wakeup configuration > Enable wakeup from GPIO`
-  Trigger level can be selected via `Example configuration > GPIO wakeup configuration > Enable GPIO high-level wakeup`
+  The pin is set under `Example configuration > GPIO wakeup configuration > Enable wakeup from GPIO`.
+  The trigger is set under `Example configuration > GPIO wakeup configuration > GPIO wakeup trigger type` (level or edge where supported).
 
 Wake up sources that are unused or unconnected should be disabled in configuration to prevent inadvertent triggering of wake up as a result of floating pins.
 
