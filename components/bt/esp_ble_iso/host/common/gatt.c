@@ -128,10 +128,9 @@ struct bt_gatt_attr *bt_gatts_find_attr_by_handle(uint16_t handle)
                 break;
             }
         }
-    }
-
-    if (attr == NULL) {
-        LOG_WRN("AttrNotFound[%u]", handle);
+        if (attr != NULL) {
+            break;
+        }
     }
 
     return attr;

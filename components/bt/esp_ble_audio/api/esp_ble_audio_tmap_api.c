@@ -18,12 +18,15 @@ esp_err_t esp_ble_audio_tmap_register(esp_ble_audio_tmap_role_t role)
         return ESP_FAIL;
     }
 
-#if BLE_AUDIO_SVC_SEP_ADD
+#if BLE_AUDIO_SVC_DEFERRED_ADD
     err = bt_le_tmas_init();
     if (err) {
+        /* TODO: rollback register_safe once lib exposes an unregister API;
+         * retry will hit -EALREADY. Only reachable on GATT alloc failure.
+         */
         return ESP_FAIL;
     }
-#endif /* BLE_AUDIO_SVC_SEP_ADD */
+#endif /* BLE_AUDIO_SVC_DEFERRED_ADD */
 
     return ESP_OK;
 }

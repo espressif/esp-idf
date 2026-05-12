@@ -45,6 +45,18 @@ struct bt_le_gap_app_pa_sync_param {
     uint8_t adv_ca;
 };
 
+struct bt_le_gap_app_pa_sync_past_param {
+    uint8_t status;
+    uint16_t sync_handle;
+    struct bt_le_addr addr;
+    uint8_t sid;
+    uint8_t adv_phy;
+    uint16_t per_adv_itvl;
+    uint8_t adv_ca;
+    /* ACL conn that delivered the PAST. */
+    uint16_t conn_handle;
+};
+
 struct bt_le_gap_app_pa_sync_lost_param {
     uint16_t sync_handle;
     uint8_t reason;
@@ -113,6 +125,7 @@ struct bt_le_gap_app_param {
     union {
         struct bt_le_gap_app_ext_scan_recv_param    ext_scan_recv;
         struct bt_le_gap_app_pa_sync_param          pa_sync;
+        struct bt_le_gap_app_pa_sync_past_param     pa_sync_past;
         struct bt_le_gap_app_pa_sync_lost_param     pa_sync_lost;
         struct bt_le_gap_app_pa_sync_recv_param     pa_sync_recv;
         struct bt_le_gap_app_acl_connect_param      acl_connect;
@@ -126,6 +139,7 @@ struct bt_le_gap_app_param {
 enum bt_le_gap_app_param_type {
     BT_LE_GAP_APP_PARAM_EXT_SCAN_RECV,
     BT_LE_GAP_APP_PARAM_PA_SYNC,
+    BT_LE_GAP_APP_PARAM_PA_SYNC_PAST,
     BT_LE_GAP_APP_PARAM_PA_SYNC_LOST,
     BT_LE_GAP_APP_PARAM_PA_SYNC_RECV,
     BT_LE_GAP_APP_PARAM_ACL_CONNECT,
@@ -158,6 +172,18 @@ struct bt_le_gap_app_event_pa_sync {
     uint8_t adv_phy;
     uint16_t per_adv_itvl;
     uint8_t adv_ca;
+};
+
+struct bt_le_gap_app_event_pa_sync_past {
+    uint8_t status;
+    uint16_t sync_handle;
+    struct bt_le_addr addr;
+    uint8_t sid;
+    uint8_t adv_phy;
+    uint16_t per_adv_itvl;
+    uint8_t adv_ca;
+    /* ACL conn that delivered the PAST. */
+    uint16_t conn_handle;
 };
 
 struct bt_le_gap_app_event_pa_sync_lost {
@@ -228,6 +254,7 @@ struct bt_le_gap_app_event {
     union {
         struct bt_le_gap_app_event_ext_scan_recv    ext_scan_recv;
         struct bt_le_gap_app_event_pa_sync          pa_sync;
+        struct bt_le_gap_app_event_pa_sync_past     pa_sync_past;
         struct bt_le_gap_app_event_pa_sync_lost     pa_sync_lost;
         struct bt_le_gap_app_event_pa_sync_recv     pa_sync_recv;
         struct bt_le_gap_app_event_acl_connect      acl_connect;
@@ -242,6 +269,7 @@ struct bt_le_gap_app_event {
 enum bt_le_gap_app_event_type {
     BT_LE_GAP_APP_EVENT_EXT_SCAN_RECV,
     BT_LE_GAP_APP_EVENT_PA_SYNC,
+    BT_LE_GAP_APP_EVENT_PA_SYNC_PAST,
     BT_LE_GAP_APP_EVENT_PA_SYNC_LOST,
     BT_LE_GAP_APP_EVENT_PA_SYNC_RECV,
     BT_LE_GAP_APP_EVENT_ACL_CONNECT,

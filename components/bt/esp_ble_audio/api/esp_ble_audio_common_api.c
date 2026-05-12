@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <errno.h>
 
 #include "esp_ble_audio_common_api.h"
 
@@ -53,7 +54,11 @@ esp_err_t esp_ble_audio_gattc_disc_start(uint16_t conn_handle)
     int err;
 
     err = bt_gattc_disc_start_safe(conn_handle);
-    if (err) {
+    /* -EALREADY means disc already in progress for this conn (e.g. peer sent
+     * MTU exchange twice triggering two gatt_mtu_change events). The
+     * caller's goal is already true, treat as success.
+     */
+    if (err && err != -EALREADY) {
         return ESP_FAIL;
     }
 

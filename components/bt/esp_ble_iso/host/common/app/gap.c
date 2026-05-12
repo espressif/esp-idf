@@ -168,12 +168,58 @@ static void handle_pa_sync_event_safe(struct bt_le_gap_app_param *param)
                                  event.pa_sync.per_adv_itvl,
                                  event.pa_sync.addr.type,
                                  event.pa_sync.addr.val,
+                                 BT_CONN_HANDLE_INVALID,
                                  &per_adv_sync);
     if (err) {
         goto end;
     }
 
     err = bt_le_per_adv_sync_establish_listener(event.pa_sync.sync_handle);
+    assert(err == 0);
+
+end:
+    bt_le_host_unlock();
+
+    bt_le_gap_app_cb_evt(&event);
+}
+
+static void handle_pa_sync_past_event_safe(struct bt_le_gap_app_param *param)
+{
+    struct bt_le_gap_app_event event = {
+        .type = BT_LE_GAP_APP_EVENT_PA_SYNC_PAST,
+    };
+    struct bt_le_per_adv_sync *per_adv_sync;
+    int err;
+
+    event.pa_sync_past.status = param->pa_sync_past.status;
+    event.pa_sync_past.sync_handle = param->pa_sync_past.sync_handle;
+    event.pa_sync_past.addr.type = param->pa_sync_past.addr.type;
+    memcpy(event.pa_sync_past.addr.val, param->pa_sync_past.addr.val, BT_ADDR_SIZE);
+    event.pa_sync_past.sid = param->pa_sync_past.sid;
+    event.pa_sync_past.adv_phy = param->pa_sync_past.adv_phy;
+    event.pa_sync_past.per_adv_itvl = param->pa_sync_past.per_adv_itvl;
+    event.pa_sync_past.adv_ca = param->pa_sync_past.adv_ca;
+    event.pa_sync_past.conn_handle = param->pa_sync_past.conn_handle;
+
+    bt_le_host_lock();
+
+    if (event.pa_sync_past.status) {
+        goto end;
+    }
+
+    err = bt_le_per_adv_sync_new(event.pa_sync_past.sync_handle,
+                                 event.pa_sync_past.sid,
+                                 event.pa_sync_past.adv_phy,
+                                 event.pa_sync_past.per_adv_itvl,
+                                 event.pa_sync_past.addr.type,
+                                 event.pa_sync_past.addr.val,
+                                 event.pa_sync_past.conn_handle,
+                                 &per_adv_sync);
+    if (err) {
+        goto end;
+    }
+
+    err = bt_le_per_adv_sync_establish_listener(event.pa_sync_past.sync_handle);
     assert(err == 0);
 
 end:
@@ -436,6 +482,9 @@ void bt_le_gap_handle_event(uint8_t *data, size_t data_len)
         break;
     case BT_LE_GAP_APP_PARAM_PA_SYNC:
         handle_pa_sync_event_safe(param);
+        break;
+    case BT_LE_GAP_APP_PARAM_PA_SYNC_PAST:
+        handle_pa_sync_past_event_safe(param);
         break;
     case BT_LE_GAP_APP_PARAM_PA_SYNC_LOST:
         handle_pa_sync_lost_event_safe(param);

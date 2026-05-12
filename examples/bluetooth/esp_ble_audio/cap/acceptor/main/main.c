@@ -56,11 +56,24 @@ static struct peer_config peer = {
 static uint8_t ext_adv_data[] = {
     /* Flags */
     0x02, EXAMPLE_AD_TYPE_FLAGS, (EXAMPLE_AD_FLAGS_GENERAL | EXAMPLE_AD_FLAGS_NO_BREDR),
-    /* Incomplete List of 16-bit Service UUIDs */
-    0x05, EXAMPLE_AD_TYPE_UUID16_SOME, (ESP_BLE_AUDIO_UUID_ASCS_VAL & 0xFF),
-    ((ESP_BLE_AUDIO_UUID_ASCS_VAL >> 8) & 0xFF),
-    (ESP_BLE_AUDIO_UUID_CAS_VAL & 0xFF),
-    ((ESP_BLE_AUDIO_UUID_CAS_VAL >> 8) & 0xFF),
+    /* Incomplete List of 16-bit Service UUIDs:
+     *   CAS always; ASCS only when unicast role is built;
+     *   BASS only when broadcast role is built.
+     */
+#if CONFIG_EXAMPLE_UNICAST && CONFIG_EXAMPLE_BROADCAST
+    0x07, EXAMPLE_AD_TYPE_UUID16_SOME,
+    (ESP_BLE_AUDIO_UUID_ASCS_VAL & 0xFF), ((ESP_BLE_AUDIO_UUID_ASCS_VAL >> 8) & 0xFF),
+    (ESP_BLE_AUDIO_UUID_CAS_VAL  & 0xFF), ((ESP_BLE_AUDIO_UUID_CAS_VAL  >> 8) & 0xFF),
+    (ESP_BLE_AUDIO_UUID_BASS_VAL & 0xFF), ((ESP_BLE_AUDIO_UUID_BASS_VAL >> 8) & 0xFF),
+#elif CONFIG_EXAMPLE_UNICAST
+    0x05, EXAMPLE_AD_TYPE_UUID16_SOME,
+    (ESP_BLE_AUDIO_UUID_ASCS_VAL & 0xFF), ((ESP_BLE_AUDIO_UUID_ASCS_VAL >> 8) & 0xFF),
+    (ESP_BLE_AUDIO_UUID_CAS_VAL  & 0xFF), ((ESP_BLE_AUDIO_UUID_CAS_VAL  >> 8) & 0xFF),
+#elif CONFIG_EXAMPLE_BROADCAST
+    0x05, EXAMPLE_AD_TYPE_UUID16_SOME,
+    (ESP_BLE_AUDIO_UUID_CAS_VAL  & 0xFF), ((ESP_BLE_AUDIO_UUID_CAS_VAL  >> 8) & 0xFF),
+    (ESP_BLE_AUDIO_UUID_BASS_VAL & 0xFF), ((ESP_BLE_AUDIO_UUID_BASS_VAL >> 8) & 0xFF),
+#endif
     /* Service Data - 16-bit UUID */
     0x04, EXAMPLE_AD_TYPE_SERVICE_DATA16, (ESP_BLE_AUDIO_UUID_CAS_VAL & 0xFF),
     ((ESP_BLE_AUDIO_UUID_CAS_VAL >> 8) & 0xFF),
@@ -240,6 +253,7 @@ static void pa_sync(esp_ble_audio_gap_app_event_t *event)
 {
     if (event->pa_sync.status) {
         ESP_LOGE(TAG, "PA sync failed, status %d", event->pa_sync.status);
+        broadcast_pa_sync_failed(event);
         return;
     }
 
@@ -291,6 +305,7 @@ static void iso_gap_app_cb(esp_ble_audio_gap_app_event_t *event)
         break;
 #endif /* CONFIG_EXAMPLE_SCAN_SELF */
     case ESP_BLE_AUDIO_GAP_EVENT_PA_SYNC:
+    case ESP_BLE_AUDIO_GAP_EVENT_PA_SYNC_PAST:
         pa_sync(event);
         break;
     case ESP_BLE_AUDIO_GAP_EVENT_PA_SYNC_LOST:

@@ -20,6 +20,7 @@
 
 #include "host/ble_gap.h"
 #include "host/ble_hs_adv.h"
+#include "host/ble_store.h"
 
 #include "esp_ble_iso_common_api.h"
 
@@ -51,6 +52,8 @@
 #define EXAMPLE_BYTES_LIST_LE64             BT_BYTES_LIST_LE64
 
 int example_iso_gap_event_cb(struct ble_gap_event *event, void *arg);
+
+void example_iso_security_failed_recover(const char *tag, uint16_t conn_handle, uint8_t status);
 
 /**
  * @brief TX scheduler for periodic ISO data transmission.

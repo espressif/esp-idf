@@ -50,13 +50,8 @@ static struct ble_gatt_svc_def gatt_svc_cas[] = {
 int bt_le_nimble_cas_attr_handle_set(void)
 {
     struct bt_gatt_service *cas_svc;
-    uint16_t handle;
+    uint16_t handle = 0;
     int rc;
-
-    cas_svc = lib_cas_svc_get();
-    assert(cas_svc);
-
-    LOG_DBG("[N]CasAttrHdlSet[%u]", cas_svc->attr_count);
 
     rc = ble_gatts_find_svc(BLE_UUID16_DECLARE(BT_UUID_CAS_VAL), &handle);
     if (rc) {
@@ -64,7 +59,10 @@ int bt_le_nimble_cas_attr_handle_set(void)
         return rc;
     }
 
-    LOG_DBG("[N]Hdl[%u]", handle);
+    cas_svc = lib_cas_svc_get();
+    assert(cas_svc);
+
+    LOG_DBG("[N]CasAttrHdlSet[%u][%u]", handle, cas_svc->attr_count);
 
     for (size_t i = 0; i < cas_svc->attr_count; i++) {
         (cas_svc->attrs + i)->handle = handle + i;

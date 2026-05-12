@@ -253,7 +253,8 @@ static void security_change(esp_ble_iso_gap_app_event_t *event)
     int err;
 
     if (event->security_change.status) {
-        ESP_LOGE(TAG, "Security change failed, status %d", event->security_change.status);
+        example_audio_security_failed_recover(TAG, event->security_change.conn_handle,
+                                              event->security_change.status);
         return;
     }
 

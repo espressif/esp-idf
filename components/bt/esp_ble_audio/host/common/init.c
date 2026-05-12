@@ -178,12 +178,13 @@ static const uint16_t ext_structs[] = {
     sizeof(struct bt_bond_info),
 };
 
-#define LEA_VERSION     (0x20260512)
+#define LEA_VERSION     (0x20260514)
 
 struct lib_ext_cfgs {
     /* BLE */
     bool     config_past_sender;
     bool     config_past_receiver;
+    bool     config_past_check;
     uint8_t  config_max_conn;
     uint8_t  config_max_paired;
     uint16_t config_max_attr_len;
@@ -439,6 +440,7 @@ static const struct lib_ext_cfgs ext_cfgs = {
     /* BLE */
     .config_past_sender = CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER,
     .config_past_receiver = CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER,
+    .config_past_check = false,
     .config_max_conn = CONFIG_BT_MAX_CONN,
     .config_max_paired = CONFIG_BT_MAX_PAIRED,
     .config_max_attr_len = 251,
@@ -2092,7 +2094,7 @@ int bt_le_audio_init(void)
     return bt_le_nimble_audio_init();
 }
 
-#if BLE_AUDIO_SVC_SEP_ADD
+#if BLE_AUDIO_SVC_DEFERRED_ADD
 #if CONFIG_BT_ASCS
 int bt_le_ascs_init(void)
 {
@@ -2164,7 +2166,7 @@ int bt_le_micp_mic_dev_init(void)
     return bt_le_nimble_micp_mic_dev_init();
 }
 #endif /* CONFIG_BT_MICP_MIC_DEV */
-#endif /* BLE_AUDIO_SVC_SEP_ADD */
+#endif /* BLE_AUDIO_SVC_DEFERRED_ADD */
 
 int bt_le_audio_start(void *info)
 {

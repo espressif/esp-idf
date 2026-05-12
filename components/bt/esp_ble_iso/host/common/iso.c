@@ -36,9 +36,6 @@ LOG_MODULE_REGISTER(ISO_SHIM, CONFIG_BT_ISO_LOG_LEVEL);
 #define ISO_PKT_COMP_SDU        (0b10)
 #define ISO_PKT_LAST_FRAG       (0b11)
 
-#define BT_LE_FEAT_SET(feat, n)     (feat[(n) >> 3] |= BIT((n) & 7))
-#define BT_LE_FEAT_UNSET(feat, n)   (feat[(n) >> 3] &= ~BIT((n) & 7))
-
 static sys_slist_t iso_cbs = SYS_SLIST_STATIC_INIT(&iso_cbs);
 
 #if CONFIG_BT_ISO_UNICAST

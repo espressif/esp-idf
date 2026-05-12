@@ -139,8 +139,8 @@ static int csis_svc_check(void)
 int bt_le_nimble_csis_attr_handle_set(void)
 {
     struct bt_gatt_attr *attr;
-    uint16_t start_handle;
-    uint16_t end_handle;
+    uint16_t start_handle = 0;
+    uint16_t end_handle = 0;
 
     LOG_DBG("[N]CsisAttrHdlSet[%u]", csis_svc_count);
 

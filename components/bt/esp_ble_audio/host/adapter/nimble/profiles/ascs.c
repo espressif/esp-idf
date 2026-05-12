@@ -108,8 +108,18 @@ int bt_le_nimble_ascs_attr_handle_set(void)
 {
     struct bt_gatt_service *ascs_svc;
     struct bt_gatt_attr *attr;
-    uint16_t start_handle;
-    uint16_t end_handle;
+    uint16_t start_handle = 0;
+    uint16_t end_handle = 0;
+    int rc;
+
+    /* App may not register this svc (e.g. CAP Acceptor single mode keeps
+     * unused capability built). Skip rather than fail audio_start.
+     */
+    rc = ble_gatts_find_svc(BLE_UUID16_DECLARE(BT_UUID_ASCS_VAL), NULL);
+    if (rc) {
+        LOG_DBG("[N]AscsNotInit");
+        return 0;
+    }
 
     ascs_svc = lib_ascs_svc_get();
     assert(ascs_svc);

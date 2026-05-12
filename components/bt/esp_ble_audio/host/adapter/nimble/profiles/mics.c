@@ -234,20 +234,22 @@ int bt_le_nimble_mics_attr_handle_set(void)
     uint16_t end_handle = 0;
     int rc;
 
+    /* App may not register this svc (e.g. CAP Acceptor single mode keeps
+     * unused capability built). Skip rather than fail audio_start.
+     */
+    rc = ble_gatts_find_svc(BLE_UUID16_DECLARE(BT_UUID_MICS_VAL), &start_handle);
+    if (rc) {
+        LOG_DBG("[N]MicsNotInit");
+        return 0;
+    }
+
     mics_svc = lib_mics_svc_get();
     assert(mics_svc);
 
-    LOG_DBG("[N]MicsAttrHdlSet[%u]", mics_svc->attr_count);
-
-    rc = ble_gatts_find_svc(BLE_UUID16_DECLARE(BT_UUID_MICS_VAL), &start_handle);
-    if (rc) {
-        LOG_ERR("[N]MicsNotFound[%d]", rc);
-        return rc;
-    }
-
     end_handle = start_handle + mics_svc->attr_count - 1;
 
-    LOG_DBG("[N]Hdl[%u][%u]", start_handle, end_handle);
+    LOG_DBG("[N]MicsAttrHdlSet[%u][%u][%u]",
+            start_handle, end_handle, mics_svc->attr_count);
 
     for (size_t i = 0; i < mics_svc->attr_count; i++) {
         (mics_svc->attrs + i)->handle = start_handle + i;

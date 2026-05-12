@@ -78,9 +78,17 @@ struct bt_le_per_adv_sync {
     /** Advertiser PHY */
     uint8_t phy;
 
+    /** ACL conn that delivered PAST; BT_CONN_HANDLE_INVALID for non-PAST sync. */
+    uint16_t conn_handle;
+
     /** Flags */
     ATOMIC_DEFINE(flags, BT_PER_ADV_SYNC_NUM_FLAGS);
 };
+
+/* Port-level invalid conn_handle sentinel; matches NimBLE BLE_HS_CONN_HANDLE_NONE.
+ * Use in adapter-agnostic code that cannot reference NimBLE headers.
+ */
+#define BT_CONN_HANDLE_INVALID      0xffff
 
 struct bt_dev_le {
     /* LE features */
@@ -96,6 +104,9 @@ struct bt_dev {
 };
 
 extern struct bt_dev bt_dev;
+
+#define BT_LE_FEAT_SET(feat, n)     (feat[(n) >> 3] |= BIT((n) & 7))
+#define BT_LE_FEAT_UNSET(feat, n)   (feat[(n) >> 3] &= ~BIT((n) & 7))
 
 /* Data type to store state related with command to be updated
  * when command completes successfully.

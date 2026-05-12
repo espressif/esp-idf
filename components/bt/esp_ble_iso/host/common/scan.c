@@ -14,8 +14,10 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/common/bt_str.h>
 
+#include <../host/conn_internal.h>
 #include <../host/hci_core.h>
 
 #include "common/host.h"
@@ -220,8 +222,7 @@ static struct bt_le_per_adv_sync *per_adv_sync_find(uint16_t handle)
     struct bt_le_per_adv_sync *per_adv_sync = NULL;
 
     for (size_t i = 0; i < ARRAY_SIZE(per_adv_sync_pool); i++) {
-        if (atomic_test_bit(per_adv_sync_pool[i].flags,
-                            BT_PER_ADV_SYNC_SYNCED) &&
+        if (atomic_test_bit(per_adv_sync_pool[i].flags, BT_PER_ADV_SYNC_SYNCED) &&
                 per_adv_sync_pool[i].handle == handle) {
             per_adv_sync = &per_adv_sync_pool[i];
             break;
@@ -269,11 +270,13 @@ int bt_le_per_adv_sync_new(uint16_t sync_handle,
                            uint16_t interval,
                            uint8_t addr_type,
                            const uint8_t addr[6],
+                           uint16_t conn_handle,
                            struct bt_le_per_adv_sync **out_sync)
 {
     struct bt_le_per_adv_sync *per_adv_sync;
 
-    LOG_DBG("PaSyncNew[%u][%u][%u][%u]", sync_handle, sid, phy, interval);
+    LOG_DBG("PaSyncNew[%u][%u][%u][%u][%u]",
+            sync_handle, sid, phy, interval, conn_handle);
 
     if (addr_type > BT_ADDR_LE_RANDOM_ID || addr == NULL) {
         LOG_ERR("InvAddr[%02x][%p]", addr_type, addr);
@@ -296,6 +299,7 @@ int bt_le_per_adv_sync_new(uint16_t sync_handle,
     per_adv_sync->sid = sid;
     per_adv_sync->phy = phy;
     per_adv_sync->interval = interval;
+    per_adv_sync->conn_handle = conn_handle;
     per_adv_sync->addr.type = addr_type;
     memcpy(per_adv_sync->addr.a.val, addr, BT_ADDR_SIZE);
 
@@ -345,12 +349,25 @@ int bt_le_per_adv_sync_establish_listener(uint16_t sync_handle)
     info.sid = per_adv_sync->sid;
     info.interval = per_adv_sync->interval;
     info.phy = per_adv_sync->phy;
-    info.conn = NULL;   /* TODO: update for PAST */
+    /* PAST path: a valid conn_handle means PAST delivered the sync. NULL
+     * lookup here is a race — the ACL disconnected between PAST event
+     * enqueue and host processing. Synced cb still fires with conn=NULL.
+     */
+    if (per_adv_sync->conn_handle != BT_CONN_HANDLE_INVALID) {
+        info.conn = bt_conn_lookup_handle(per_adv_sync->conn_handle, BT_CONN_TYPE_LE);
+        if (info.conn == NULL) {
+            LOG_WRN("PaSyncConnGone[%u][%u]", sync_handle, per_adv_sync->conn_handle);
+        }
+    }
 
     SYS_SLIST_FOR_EACH_CONTAINER(&pa_sync_cbs, listener, node) {
         if (listener->synced) {
             listener->synced(per_adv_sync, &info);
         }
+    }
+
+    if (info.conn) {
+        bt_conn_unref(info.conn);
     }
 
     return 0;
@@ -491,4 +508,48 @@ int bt_le_scan_stop(void)
     }
 
     return err;
+}
+
+static void past_features_set(void)
+{
+#if CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER
+    BT_LE_FEAT_SET(bt_dev.le.features, BT_LE_FEAT_BIT_PAST_SEND);
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER */
+
+#if CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER
+    BT_LE_FEAT_SET(bt_dev.le.features, BT_LE_FEAT_BIT_PAST_RECV);
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER */
+
+    LOG_DBG("PastFeatSet[%s]", bt_hex(bt_dev.le.features, sizeof(bt_dev.le.features)));
+}
+
+static void past_features_unset(void)
+{
+#if CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER
+    BT_LE_FEAT_UNSET(bt_dev.le.features, BT_LE_FEAT_BIT_PAST_SEND);
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER */
+
+#if CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER
+    BT_LE_FEAT_UNSET(bt_dev.le.features, BT_LE_FEAT_BIT_PAST_RECV);
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER */
+
+    LOG_DBG("PastFeatUnset[%s]", bt_hex(bt_dev.le.features, sizeof(bt_dev.le.features)));
+}
+
+_IDF_ONLY
+int bt_le_scan_init(void)
+{
+    LOG_DBG("ScanInit");
+
+    past_features_set();
+
+    return 0;
+}
+
+_IDF_ONLY
+void bt_le_scan_deinit(void)
+{
+    LOG_DBG("ScanDeinit");
+
+    past_features_unset();
 }
