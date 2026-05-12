@@ -33,9 +33,9 @@ extern "C" {
 #endif
 
 struct btdm_osal_event_freertos {
-    bool queued;
     void (*fn)(struct btdm_osal_event *ev);
     void *arg;
+    bool queued;
 };
 
 struct btdm_osal_eventq_freertos {

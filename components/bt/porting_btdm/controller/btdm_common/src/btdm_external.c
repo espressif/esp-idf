@@ -17,9 +17,12 @@ wr_btdm_external_bb_get_tx_pwr_table(uint8_t *length, uint8_t modem_cfg)
     assert(length != NULL);
     assert (modem_cfg < TX_PWR_TABLE_MODEM_CFG_MAX);
 
+#if UC_BT_CTRL_BR_EDR_IS_ENABLE
     if (modem_cfg == TX_PWR_TABLE_MODEM_CFG_BREDR) {
         return bt_bb_tx_pwr_table_get(length, modem_cfg);
-    } else {
+    } else
+#endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
+    {
         // TODO: replace with bt_bb_tx_pwr_table_get when all the targets(h4, s31, etc) support this API
         return bt_bb_get_tx_pwr_table(length);
     }
