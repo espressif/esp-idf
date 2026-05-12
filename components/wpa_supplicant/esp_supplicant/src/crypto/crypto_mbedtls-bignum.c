@@ -551,8 +551,31 @@ int crypto_bignum_is_odd(const struct crypto_bignum *a)
 
 int crypto_bignum_rand(struct crypto_bignum *r, const struct crypto_bignum *m)
 {
+#if CONFIG_ESP_BRINGUP_BYPASS_RANDOM_SETTING
+    static u32 deterministic_counter = 1;
+    mbedtls_mpi det;
+    int ret;
+
+    if (mbedtls_mpi_cmp_int((const mbedtls_mpi *) m, 2) <= 0) {
+        return -1;
+    }
+
+    mbedtls_mpi_init(&det);
+    ret = mbedtls_mpi_lset(&det, deterministic_counter++);
+    if (ret == 0) {
+        ret = mbedtls_mpi_mod_mpi((mbedtls_mpi *) r, &det,
+                                  (const mbedtls_mpi *) m);
+    }
+    if (ret == 0 && mbedtls_mpi_cmp_int((mbedtls_mpi *) r, 0) == 0) {
+        ret = mbedtls_mpi_lset((mbedtls_mpi *) r, 1);
+    }
+    mbedtls_mpi_free(&det);
+
+    return ret ? -1 : 0;
+#else
     return ((mbedtls_mpi_random((mbedtls_mpi *) r, 0, (const mbedtls_mpi *) m,
                                 mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE) != 0) ? -1 : 0);
+#endif
 }
 
 static int mbedtls_bignum_legendre(const struct crypto_bignum *a,
