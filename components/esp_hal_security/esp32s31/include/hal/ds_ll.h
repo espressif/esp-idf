@@ -95,6 +95,14 @@ static inline ds_key_check_t ds_ll_key_error_source(void)
 }
 
 /**
+ * @brief Set the DS key source.
+ */
+static inline void ds_ll_set_key_source(ds_key_source_t key_source)
+{
+    REG_WRITE(DS_STATIC_REG, key_source);
+}
+
+/**
  * @brief Write the initialization vector to the corresponding register field.
  */
 static inline void ds_ll_configure_iv(const uint32_t *iv)

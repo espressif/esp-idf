@@ -435,7 +435,7 @@ flash 加密设置
 
   该命令将向 flash 写入未加密的镜像：二级引导加载程序、分区表和应用程序。烧录完成后，{IDF_TARGET_NAME} 将复位。在下一次启动时，二级引导加载程序会加密：二级引导加载程序、应用程序分区和标记为 ``encrypted`` 分区，然后复位。就地加密可能需要时间，对于大分区最多需要一分钟。之后，应用程序在运行时解密并执行。
 
-.. only:: SOC_KEY_MANAGER_SUPPORTED
+.. only:: SOC_KEY_MANAGER_FE_KEY_DEPLOY
 
   下面是使用基于密钥管理器的密钥启用 flash 加密后，{IDF_TARGET_NAME} 首次启动时的样例输出：
 

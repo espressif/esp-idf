@@ -435,7 +435,7 @@ To test flash encryption process, take the following steps:
 
   This command will write to flash memory unencrypted images: the second stage bootloader, the partition table and applications. Once the flashing is complete, {IDF_TARGET_NAME} will reset. On the next boot, the second stage bootloader encrypts: the second stage bootloader, application partitions and partitions marked as ``encrypted`` then resets. Encrypting in-place can take time, up to a minute for large partitions. After that, the application is decrypted at runtime and executed.
 
-.. only:: SOC_KEY_MANAGER_SUPPORTED
+.. only:: SOC_KEY_MANAGER_FE_KEY_DEPLOY
 
   A sample output of the first {IDF_TARGET_NAME} boot after enabling flash encryption using a Key Manager-based key is given below:
 

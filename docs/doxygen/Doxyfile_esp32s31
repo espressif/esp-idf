@@ -11,6 +11,8 @@ INPUT += \
     $(PROJECT_PATH)/components/esp_driver_touch_sens/include/driver/touch_sens_types.h\
     $(PROJECT_PATH)/components/esp_phy/include/esp_phy_init.h \
     $(PROJECT_PATH)/components/esp_phy/include/esp_phy_cert_test.h \
+    $(PROJECT_PATH)/components/esp_security/include/esp_key_mgr.h \
+    $(PROJECT_PATH)/components/esp_hal_security/include/hal/key_mgr_types.h \
     $(PROJECT_PATH)/components/bt/include/esp32s31/include/esp_bt.h \
     $(PROJECT_PATH)/components/bt/include/esp32s31/include/esp_bt_vs.h \
     $(PROJECT_PATH)/components/ulp/lp_core/include/lp_core_i2c.h \
