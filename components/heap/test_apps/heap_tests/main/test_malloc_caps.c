@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -57,7 +57,7 @@ TEST_CASE("Capabilities allocator test", "[heap]")
         m1 = heap_caps_malloc(alloc32, MALLOC_CAP_32BIT);
         printf("--> %p\n", m1);
         //Check that we got IRAM back
-        TEST_ASSERT((((int)m1)&0xFF000000)==0x40000000);
+        TEST_ASSERT(esp_ptr_in_iram(m1));
         free8 = heap_caps_get_free_size(MALLOC_CAP_8BIT);
         free32 = heap_caps_get_free_size(MALLOC_CAP_32BIT);
         printf("Free 8bit-capable memory (after 32-bit): %dK, 32-bit capable memory %dK\n", free8, free32);
@@ -81,8 +81,8 @@ TEST_CASE("Capabilities allocator test", "[heap]")
             m2[x]= heap_caps_malloc(alloc32, MALLOC_CAP_32BIT);
             printf("--> %p\n", m2[x]);
         }
-        TEST_ASSERT((((int)m2[0])&0xFF000000)==0x40000000);
-        TEST_ASSERT((((int)m2[9])&0xFF000000)==0x3F000000);
+        TEST_ASSERT(esp_ptr_in_iram(m2[0]));
+        TEST_ASSERT(esp_ptr_in_dram(m2[9]));
 
     } else {
         printf("This platform has no IRAM-only so changeover will never occur, jumping to next test\n");
@@ -94,7 +94,7 @@ TEST_CASE("Capabilities allocator test", "[heap]")
         free_iram = heap_caps_get_free_size(MALLOC_CAP_EXEC);
         m1= heap_caps_malloc(MIN(free_iram / 2, 10*1024), MALLOC_CAP_EXEC);
         printf("--> %p\n", m1);
-        TEST_ASSERT((((int)m1)&0xFF000000)==0x40000000);
+        TEST_ASSERT(esp_ptr_in_iram(m1) || esp_ptr_in_diram_iram(m1));
         for (x=0; x<10; x++) free(m2[x]);
 
     } else {
@@ -102,7 +102,7 @@ TEST_CASE("Capabilities allocator test", "[heap]")
         free_iram = heap_caps_get_free_size(MALLOC_CAP_EXEC);
         m1= heap_caps_malloc(MIN(free_iram / 2, 10*1024), MALLOC_CAP_EXEC);
         printf("--> %p\n", m1);
-        TEST_ASSERT((((int)m1)&0xFF000000)==0x40000000);
+        TEST_ASSERT(esp_ptr_in_iram(m1) || esp_ptr_in_diram_iram(m1));
     }
 
     free(m1);
@@ -323,14 +323,21 @@ TEST_CASE("RTC memory should be lowest priority and its free size should be big 
 {
     const size_t allocation_size = 1024 * 4;
     void *ptr = NULL;
-    size_t free_size = 0;
 
     ptr = heap_caps_malloc(allocation_size, MALLOC_CAP_DEFAULT);
     TEST_ASSERT_NOT_NULL(ptr);
     TEST_ASSERT(!esp_ptr_in_rtc_dram_fast(ptr));
 
-    free_size = heap_caps_get_free_size(MALLOC_CAP_RTCRAM);
-    TEST_ASSERT_GREATER_OR_EQUAL(1024 * 4, free_size);
+    const size_t min_rtc_size_since_init = heap_caps_get_minimum_free_size(MALLOC_CAP_RTCRAM);
+    const size_t rtc_free_size = heap_caps_get_free_size(MALLOC_CAP_RTCRAM);
+    TEST_ASSERT_EQUAL(min_rtc_size_since_init, rtc_free_size);
+    /* The ROM TLSF implementation uses a statically-sized control_t (sized for the
+    * maximum DRAM pool) which has much higher overhead on small pools like RTCRAM.
+    * The 80% threshold only applies when the IDF TLSF is used. */
+   #if !CONFIG_HEAP_TLSF_USE_ROM_IMPL
+    const size_t max_rtc_size = SOC_RTC_DATA_HIGH - SOC_RTC_DATA_LOW;
+    TEST_ASSERT_GREATER_OR_EQUAL((max_rtc_size * 8) / 10, rtc_free_size);
+    #endif
 
     free(ptr);
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,15 +20,51 @@
 
 #include "esp_rom_caps.h"
 #include "esp_rom_tlsf.h"
+#include "esp_rom_sys.h"
 
 #include "tlsf_block_functions.h"
 #include "tlsf_control_functions.h"
 
-static poison_check_pfunc_t s_poison_check_region = NULL;
+/*
+ * IMPORTANT!
+ *
+ * Several versions of the TLSF in ROM exist and can be divided in
+ * 3 categories:
+ *   1- Versions where tlsf_check and tlsf_walk_pool do not call
+ *      the poison check hook (oldest versions)
+ * 	 2- Versions where tlsf_check does call the poison check hook,
+ *      but tlsf_walk_pool still doesn't (intermediate versions)
+ *   3- Versions where both tlsf_check and tlsf_walk_pool call the
+ *      the poison check hook (latest versions)
+ *
+ * Category 3 does not require the patch defined in this file.
+ *
+ * Category 2 requires the patch but only for tlsf_walk_pool. In those
+ * versions, a definition of tlsf_poison_check_pfunc_set is present in
+ * the TLSF ROM which makes the definition in this file unnecessary since
+ * the linker will keep the ROM definition. For this reason, tlsf_walk_pool_pfunc_set
+ * is defined and called in multi_heap_poisoning.c to make sure that the poison check
+ * hook also gets set in this file. The definition of tlsf_poison_check_pfunc_set could
+ * be removed from this file if not for the needs of category 1.
+ *
+ * Category 1 versions of the ROM TLSF do not provide a definition of
+ * tlsf_poison_check_pfunc_set, making the definition below necessary for
+ * any application to compile and link properly. The added patch of tlsf_walk_pool
+ * makes the patch of tlsf_check unnecessary in this file since tlsf_check was only
+ * calling the poison check hook for free blocks while tlsf_walk_pool calls the poison
+ * check hook for all blocks (free and used). For this reason, tlsf_poison_check_pfunc_set
+ * is left empty.
+ * */
+
+static poison_check_pfunc_t s_walk_pool_check_region = NULL;
 
 void tlsf_poison_check_pfunc_set(poison_check_pfunc_t pfunc)
 {
-    s_poison_check_region = pfunc;
+}
+
+void tlsf_walk_pool_pfunc_set(poison_check_pfunc_t pfunc)
+{
+    s_walk_pool_check_region = pfunc;
 }
 
 #define tlsf_insist_no_assert(x) { if (!(x)) { status--; } }
@@ -51,7 +87,7 @@ static bool integrity_walker(void* ptr, size_t size, int used, void* user)
 	tlsf_insist_no_assert(integ->prev_status == this_prev_status && "prev status incorrect");
 	tlsf_insist_no_assert(size == this_block_size && "block size incorrect");
 
-	if (s_poison_check_region != NULL)
+	if (s_walk_pool_check_region != NULL)
 	{
 		/* block_size(block) returns the size of the usable memory when the block is allocated.
 		 * As the block under test is free, we need to subtract to the block size the next_free
@@ -66,7 +102,7 @@ static bool integrity_walker(void* ptr, size_t size, int used, void* user)
 		void* ptr_block = used ? (void*)block + block_start_offset :
 								 (void*)block + sizeof(block_header_t);
 
-		tlsf_insist_no_assert(s_poison_check_region(ptr_block, actual_free_block_size, !used, true));
+		tlsf_insist_no_assert(s_walk_pool_check_region(ptr_block, actual_free_block_size, !used, true));
 	}
 
 	integ->prev_status = this_status;
@@ -82,7 +118,7 @@ static bool default_walker(void* ptr, size_t size, int used, void* user)
 	return true;
 }
 
-void tlsf_walk_pool(pool_t pool, tlsf_walker walker, void* user)
+static void tlsf_walk_pool_impl(pool_t pool, tlsf_walker walker, void* user)
 {
 	tlsf_walker pool_walker = walker ? walker : default_walker;
 	block_header_t* block =
@@ -103,11 +139,11 @@ void tlsf_walk_pool(pool_t pool, tlsf_walker walker, void* user)
 	}
 }
 
-int tlsf_check_pool(pool_t pool)
+static int tlsf_check_pool_impl(pool_t pool)
 {
 	/* Check that the blocks are physically correct. */
 	integrity_t integ = { 0, 0 };
-	tlsf_walk_pool(pool, integrity_walker, &integ);
+	tlsf_walk_pool_impl(pool, integrity_walker, &integ);
 
 	return integ.status;
 }
@@ -116,38 +152,13 @@ int tlsf_check_pool(pool_t pool)
 
 /* Set up the TLSF ROM patches here */
 
-/*!
- * @brief Structure to store all the functions of a TLSF implementation.
- * The goal of this table is to change any of the address here in order
- * to let the ROM code call another function implementation than the one
- * in ROM.
+/*
+ * struct heap_tlsf_stub_table_t is defined in the per-target header.
+ * Its layout exactly mirrors the TLSF vtable in ROM for the current target.
+ * The header is produced by gen_esp_rom_heap_tlsf_stub_table.py from the
+ * target's .rom.heap.ld file; run that script whenever the .ld file changes.
  */
-struct heap_tlsf_stub_table_t {
-    tlsf_t (*tlsf_create)(void* mem);
-    tlsf_t (*tlsf_create_with_pool)(void* mem, size_t bytes);
-    pool_t (*tlsf_get_pool)(tlsf_t tlsf);
-    pool_t (*tlsf_add_pool)(tlsf_t tlsf, void* mem, size_t bytes);
-    void (*tlsf_remove_pool)(tlsf_t tlsf, pool_t pool);
-
-    void* (*tlsf_malloc)(tlsf_t tlsf, size_t size);
-    void* (*tlsf_memalign)(tlsf_t tlsf, size_t align, size_t size);
-    void* (*tlsf_memalign_offs)(tlsf_t tlsf, size_t align, size_t size, size_t offset);
-    void* (*tlsf_realloc)(tlsf_t tlsf, void* ptr, size_t size);
-    void (*tlsf_free)(tlsf_t tlsf, void* ptr);
-
-    size_t (*tlsf_block_size)(void* ptr);
-    size_t (*tlsf_size)(void);
-    size_t (*tlsf_align_size)(void);
-    size_t (*tlsf_block_size_min)(void);
-    size_t (*tlsf_block_size_max)(void);
-    size_t (*tlsf_pool_overhead)(void);
-    size_t (*tlsf_alloc_overhead)(void);
-
-    void (*tlsf_walk_pool)(pool_t pool, tlsf_walker walker, void* user);
-
-    int (*tlsf_check)(tlsf_t tlsf);
-    int (*tlsf_check_pool)(pool_t pool);
-};
+#include "esp_rom_heap_tlsf_stub_table.h"
 
 /* We need the original table from the ROM */
 extern struct heap_tlsf_stub_table_t* heap_tlsf_table_ptr;
@@ -169,8 +180,20 @@ void __attribute__((constructor)) tlsf_set_rom_patches(void)
     memcpy(&heap_tlsf_patch_table_ptr, heap_tlsf_table_ptr, sizeof(struct heap_tlsf_stub_table_t));
 
     /* Set the patched function here */
-    heap_tlsf_patch_table_ptr.tlsf_check_pool = tlsf_check_pool;
+    heap_tlsf_patch_table_ptr.tlsf_check_pool = tlsf_check_pool_impl;
+    heap_tlsf_patch_table_ptr.tlsf_walk_pool = tlsf_walk_pool_impl;
 
     /* Set our table as the one to use in the ROM code */
     heap_tlsf_table_ptr = &heap_tlsf_patch_table_ptr;
+}
+
+/*
+ * @brief Helper function to call the patched tlsf_walk_pool.
+ * This is needed because the ROM's tlsf_walk_pool symbol cannot be overridden
+ * on chips where it's a strong symbol (not using PROVIDE in linker script).
+ * Other patch files can call this to access the patched version.
+ */
+void tlsf_walk_pool_patched(pool_t pool, tlsf_walker walker, void* user)
+{
+    heap_tlsf_table_ptr->tlsf_walk_pool(pool, walker, user);
 }

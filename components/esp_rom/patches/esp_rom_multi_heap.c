@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,18 +16,12 @@
 
 #include "sdkconfig.h"
 #include "esp_rom_multi_heap.h"
+#include "esp_rom_tlsf.h"
 
 // Hook to force the linker to include this file
 void esp_rom_include_multi_heap_patch(void)
 {
 }
-
-/*!
- * @brief Opaque types for TLSF implementation
- */
-typedef void* tlsf_t;
-typedef void* pool_t;
-typedef void* tlsf_walker;
 
 typedef struct multi_heap_info {
     void *lock;
@@ -37,7 +31,7 @@ typedef struct multi_heap_info {
     void* heap_data;
 } heap_t;
 
-extern void tlsf_walk_pool(pool_t pool, tlsf_walker walker, void* user);
+/* Declare helper functions that are not in public headers */
 extern pool_t tlsf_get_pool(tlsf_t tlsf);
 extern void multi_heap_internal_lock(multi_heap_handle_t heap);
 extern void multi_heap_internal_unlock(multi_heap_handle_t heap);
@@ -47,7 +41,7 @@ void multi_heap_walk(multi_heap_handle_t heap, multi_heap_walker_cb_t walker_fun
     assert(heap != NULL);
 
     multi_heap_internal_lock(heap);
-    tlsf_walk_pool(tlsf_get_pool(heap->heap_data), walker_func, user_data);
+    tlsf_walk_pool_patched(tlsf_get_pool(heap->heap_data), walker_func, user_data);
     multi_heap_internal_unlock(heap);
 }
 
@@ -129,10 +123,11 @@ void* tlsf_find_containing_block(pool_t pool, void *ptr)
     while (block && !block_is_last(block))
     {
         if (!block_is_free(block)) {
-            void *block_end = block_to_ptr(block) + block_size(block);
-            if (block_to_ptr(block) <= ptr && block_end > ptr) {
+            void *block_start = block_to_ptr(block);
+            void *block_end = block_start + block_size(block);
+            if (block_start <= ptr && block_end > ptr) {
                 // we found the containing block, return
-                return block_to_ptr(block);
+                return block_start;
             }
         }
 
