@@ -123,11 +123,9 @@ if(CONFIG_ESP_WIFI_ENABLED OR CONFIG_ESP_HOST_WIFI_ENABLED)
         endforeach()
     endif()
     # TODO IDF-13365: remove the following lines
-    if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-        set_source_files_properties(regulatory/esp_wifi_regulatory.c
-                                    PROPERTIES COMPILE_FLAGS
-                                    -Wno-unterminated-string-initialization)
-    endif()
+    set_source_files_properties(regulatory/esp_wifi_regulatory.c
+                                PROPERTIES COMPILE_FLAGS
+                                -Wno-unterminated-string-initialization)
 endif()
 
 if(CONFIG_SPIRAM)

@@ -64,7 +64,7 @@ int tc_hmac_set_key(TCHmacState_t ctx, const uint8_t *key,
 		return TC_CRYPTO_FAIL;
 	}
 
-	const uint8_t dummy_key[key_size];
+	uint8_t dummy_key[key_size];
 	struct tc_hmac_state_struct dummy_state;
 
 	if (key_size <= TC_SHA256_BLOCK_SIZE) {
@@ -76,6 +76,7 @@ int tc_hmac_set_key(TCHmacState_t ctx, const uint8_t *key,
 		 * consumed in this process.
 		 */
 		(void)tc_sha256_init(&dummy_state.hash_state);
+		_set(dummy_key, 0, sizeof(dummy_key));
 		(void)tc_sha256_update(&dummy_state.hash_state,
 				       dummy_key,
 				       key_size);

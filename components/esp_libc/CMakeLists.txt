@@ -158,6 +158,9 @@ if(CONFIG_LIBC_NEWLIB_NANO_FORMAT)
     if(CMAKE_C_COMPILER_ID MATCHES "Clang")
         set(libc_dir_cmd ${CMAKE_C_COMPILER})
         string(REPLACE " " ";" cflags_list ${CMAKE_C_FLAGS})
+        # execute_process() quotes every argument, so we need to unquote response file path
+        # otherwise it will be treated in wrong way and clang will ignore it
+        string(REGEX REPLACE "@\"([^\"]*)\"" "@\\1" cflags_list ${cflags_list})
         list(APPEND libc_dir_cmd ${cflags_list} "-print-file-name=libc.a")
         execute_process(
             COMMAND ${libc_dir_cmd}

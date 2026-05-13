@@ -633,6 +633,7 @@ static inline bool gpio_ll_is_digital_io_hold(gpio_dev_t *hw, uint32_t gpio_num)
             return !!(LP_SYS.hp_gpio_o_hold_ctrl1.hp_gpio_0_hold_ctrl1 & (bit_mask >> (32 + SOC_RTCIO_PIN_COUNT)));
         }
     }
+    return false;
 }
 
 /**

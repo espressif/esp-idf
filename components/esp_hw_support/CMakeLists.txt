@@ -187,12 +187,6 @@ if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/include/soc/${target}")
     )
 endif()
 
-if(NOT CONFIG_ESP32P4_SELECTS_REV_LESS_V3 AND CONFIG_IDF_TARGET_ESP32P4)
-    if(CMAKE_C_COMPILER_ID MATCHES "Clang") # TODO: LLVM-478 IDF-14338
-        message(FATAL_ERROR "ESP32-P4 rev. 3.0 or higher is not supported in Clang-based toolchain")
-    endif()
-endif()
-
 if(${target} STREQUAL "esp32p4")
     # for mipi_csi_share_hw_ctrl.c
     list(APPEND priv_requires esp_hal_cam)

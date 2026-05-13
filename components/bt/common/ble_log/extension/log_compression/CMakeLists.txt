@@ -275,7 +275,8 @@ if(LOG_COMPRESSED_MODULE)
                                          "${jump_table_opts}")
                 endif()
 
-                if(CMAKE_C_COMPILER_ID MATCHES "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER 15.0)
+                if((CMAKE_C_COMPILER_ID MATCHES "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER 15.0) OR
+                    CMAKE_C_COMPILER_ID MATCHES "Clang")
                     set(files_with_compile_flags "host/bluedroid/device/controller.c")
                     add_flags_if_in_list("${src}"
                                          "${files_with_compile_flags}"

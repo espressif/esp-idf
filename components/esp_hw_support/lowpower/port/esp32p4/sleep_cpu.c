@@ -41,7 +41,7 @@
 
 
 #if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
-static SPM_DRAM_ATTR smp_retention_state_t s_smp_retention_state[portNUM_PROCESSORS];
+static SPM_DRAM_ATTR _Atomic(smp_retention_state_t) s_smp_retention_state[portNUM_PROCESSORS];
 #endif
 
 static bool s_fpu_saved[portNUM_PROCESSORS];

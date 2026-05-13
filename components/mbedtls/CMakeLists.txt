@@ -259,10 +259,11 @@ if(${IDF_TARGET} STREQUAL "linux")
     set(mbedtls_target_sources ${mbedtls_target_sources} "${COMPONENT_DIR}/port/net_sockets.c")
 endif()
 
-# While updating to MbedTLS release/v3.4.0, building mbedtls/library/psa_crypto.c
-# clang produces an unreachable-code warning.
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     target_compile_options(tfpsacrypto PRIVATE "-Wno-unreachable-code")
+    # while building mbedtls/library/x509_crt.c
+    # clang 21 produces an uninitialized-const-pointer warning
+    target_compile_options(mbedx509 PRIVATE "-Wno-uninitialized-const-pointer")
 endif()
 
 # net_sockets.c should only be compiled if BSD socket functions are available.
