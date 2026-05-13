@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -70,6 +70,7 @@ static void nan_ndp_indication_event_handler(void *arg, esp_event_base_t event_b
     esp_wifi_nan_datapath_resp(&ndp_resp);
 
 }
+
 void wifi_nan_publish(void)
 {
     nan_event_group = xEventGroupCreate();
@@ -106,6 +107,7 @@ void wifi_nan_publish(void)
         /* 0 - All incoming NDP requests will be internally accepted,
            1 - All incoming NDP requests raise NDP_INDICATION event and require esp_wifi_nan_datapath_resp to accept or reject. */
         .ndp_resp_needed = 1,
+        .datapath_reqd = 1,
     };
 
     pub_id = esp_wifi_nan_publish_service(&publish_cfg);

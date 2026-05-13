@@ -592,10 +592,11 @@ typedef struct {
   * @brief NAN Discovery start configuration
   */
 typedef struct {
-    uint8_t op_channel;    /**< NAN Discovery operating channel */
-    uint8_t master_pref;   /**< Device's preference value to serve as NAN Master */
-    uint8_t scan_time;     /**< Scan time in seconds while searching for a NAN cluster */
-    uint16_t warm_up_sec;  /**< Warm up time before assuming NAN Anchor Master role */
+    uint8_t op_channel;     /**< NAN Discovery operating channel */
+    uint8_t master_pref;    /**< Device's preference value to serve as NAN Master */
+    uint8_t scan_time;      /**< Scan time in seconds while searching for a NAN cluster */
+    uint16_t warm_up_sec;   /**< Warm up time before assuming NAN Anchor Master role */
+    bool disable_random_mac;/**< Disable the MAC Randomisation in NAN */
 } wifi_nan_sync_config_t;
 
 /**
@@ -916,6 +917,17 @@ typedef struct {
     uint8_t m_max;                                  /**< Indicates maximum value of dwell period M used in the USD (Mmax)*/
 } wifi_nan_usd_config_t;
 
+#define NAN_VENDOR_IE_MAX_BODY_LEN  255
+
+/**
+  * @brief NAN Vendor Specific Attribute format
+  */
+typedef struct {
+    uint8_t vendor_oui[3];      /**< Vendor identifier (OUI) */
+    uint16_t body_len;          /**< Length of body payload (max NAN_VENDOR_IE_MAX_BODY_LEN bytes) */
+    uint8_t *body;              /**< Vendor specific body payload */
+} nan_vendor_ie_t;
+
 /**
   * @brief NAN Publish service configuration parameters
   *
@@ -936,6 +948,7 @@ typedef struct {
     unsigned int ttl;                               /**< Run publish function for a given time interval in seconds. If ttl=0 and usd_discovery_flag is enabled,
                                                          only one Publish message is transmitted */
     wifi_nan_usd_config_t usd_publish_config;       /**< USD configuration parameters. Relevant only when 'usd_discovery_flag' is set. */
+    nan_vendor_ie_t *vendor_ie;                     /**< Vendor specific IE to be added in publish frames */
 } wifi_nan_publish_cfg_t;
 
 /**
@@ -957,6 +970,7 @@ typedef struct {
     unsigned int ttl;                               /**< Run subscribe function for a given time interval in seconds. If ttl=0 and usd_discovery_flag is enabled,
                                                          the subscriber listens until the first service match is reported. */
     wifi_nan_usd_config_t usd_subscribe_config;     /**< USD configuration parameters. Relevant only when 'usd_discovery_flag' is set. */
+    nan_vendor_ie_t *vendor_ie;                     /**< Vendor specific IE to be added in subscribe frames */
 } wifi_nan_subscribe_cfg_t;
 
 /**
@@ -969,6 +983,7 @@ typedef struct {
     uint8_t peer_mac[6];                            /**< Peer's MAC address */
     uint16_t ssi_len;                               /**< Length of service specific info, maximum allowed length - ESP_WIFI_MAX_FUP_SSI_LEN */
     uint8_t *ssi;                                   /**< Service Specific Info of type wifi_nan_wfa_ssi_t for WFA defined protocols, otherwise proprietary and defined by Applications */
+    nan_vendor_ie_t *vendor_ie;                     /**< Vendor specific IE to be added in followup frames */
 } wifi_nan_followup_params_t;
 
 /**
@@ -989,6 +1004,8 @@ typedef struct {
     bool accept;            /**< True - Accept incoming NDP, False - Reject it */
     uint8_t ndp_id;         /**< NAN Datapath Identifier */
     uint8_t peer_mac[6];    /**< Peer's MAC address */
+    uint16_t ssi_len;       /**< Length of service specific info, maximum allowed length - ESP_WIFI_MAX_SVC_SSI_LEN */
+    uint8_t *ssi;           /**< Service Specific Info of type wifi_nan_wfa_ssi_t for WFA defined protocols, otherwise proprietary and defined by Applications */
 } wifi_nan_datapath_resp_t;
 
 /**
@@ -1393,7 +1410,8 @@ typedef struct {
     uint8_t datapath_reqd: 1;   /**< NAN Datapath required for the service */
     uint8_t fsd_reqd: 1;        /**< Further Service Discovery(FSD) required */
     uint8_t fsd_gas: 1;         /**< 0 - Follow-up used for FSD, 1 - GAS used for FSD */
-    uint8_t reserved: 5;        /**< Reserved */
+    uint8_t ndpe_support: 1;    /**< NDPE supported by peer */
+    uint8_t reserved: 4;        /**< Reserved */
     uint32_t reserved_1;        /**< Reserved */
     uint32_t reserved_2;        /**< Reserved */
     uint8_t ssi_version;        /**< Indicates version of SSI in Publish instance, 0 if not available */
@@ -1450,8 +1468,7 @@ typedef struct {
     uint8_t peer_nmi[6];                        /**< Peer's NAN Management Interface MAC */
     uint8_t peer_ndi[6];                        /**< Peer's NAN Data Interface MAC */
     uint8_t own_ndi[6];                         /**< Own NAN Data Interface MAC */
-    uint32_t reserved_1;                        /**< Reserved */
-    uint32_t reserved_2;                        /**< Reserved */
+    uint8_t ipv6_identifier[8];                 /**< Peer's IPV6 Address Identifier */
     uint16_t ssi_len;                           /**< Length of Service Specific Info */
     uint8_t ssi[];                              /**< Service specific info from NDP/NDPE Attribute */
 } wifi_event_ndp_confirm_t;

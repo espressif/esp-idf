@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -44,6 +44,8 @@ const int NDP_CONFIRMED = BIT1;
 const int NDP_FAILED = BIT2;
 
 static wifi_event_nan_svc_match_t g_svc_match_evt;
+
+static uint8_t s_ipv6_identifier[8] = {0};
 
 static void nan_receive_event_handler(void *arg, esp_event_base_t event_base,
                                       int32_t event_id, void *event_data)
@@ -111,6 +113,7 @@ static void nan_ndp_confirmed_event_handler(void *arg, esp_event_base_t event_ba
         xEventGroupSetBits(nan_event_group, NDP_FAILED);
     } else {
         memcpy(g_peer_ndi, evt->peer_ndi, sizeof(g_peer_ndi));
+        memcpy(s_ipv6_identifier, evt->ipv6_identifier, sizeof(evt->ipv6_identifier));
         xEventGroupSetBits(nan_event_group, NDP_CONFIRMED);
     }
 }
@@ -121,8 +124,7 @@ static void ping_nan_peer(esp_netif_t *netif)
     config.task_stack_size = 4096;
     ip_addr_t target_addr = {0};
 
-    esp_wifi_nan_get_ipv6_linklocal_from_mac(&target_addr.u_addr.ip6, g_peer_ndi);
-    target_addr.type = IPADDR_TYPE_V6;
+    ESP_NAN_SET_IPV6_LINKLOCAL_FROM_IDENTIFIER(target_addr, s_ipv6_identifier);
     config.target_addr = target_addr;
     config.interface = esp_netif_get_netif_impl_index(netif);
 
@@ -183,6 +185,7 @@ void wifi_nan_subscribe(void)
     esp_wifi_nan_sync_start(&nan_cfg);
 
     /* Subscribe a service */
+    memset(s_ipv6_identifier, 0, sizeof(s_ipv6_identifier));
     uint8_t sub_id;
     wifi_nan_subscribe_cfg_t subscribe_cfg = {
         .service_name = EXAMPLE_NAN_SERV_NAME,
@@ -216,7 +219,6 @@ void wifi_nan_subscribe(void)
             return;
         }
         memcpy((char *)fup.ssi, EXAMPLE_NAN_SVC_MSG, fup.ssi_len);
-
         if (esp_wifi_nan_send_message(&fup) == ESP_OK)
             ESP_LOGI(TAG, "Sending message '%s' to Publisher "MACSTR" ...",
                           EXAMPLE_NAN_SVC_MSG, MAC2STR(g_svc_match_evt.pub_if_mac));
