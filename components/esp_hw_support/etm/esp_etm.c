@@ -18,7 +18,6 @@
 #include "freertos/task.h"
 #include "hal/etm_periph.h"
 #include "esp_log.h"
-#include "esp_sleep.h"
 #include "esp_check.h"
 #include "esp_heap_caps.h"
 #include "esp_etm.h"
@@ -247,9 +246,6 @@ esp_err_t esp_etm_new_channel(const esp_etm_channel_config_t *config, esp_etm_ch
     [[maybe_unused]] bool allow_pd = config->flags.allow_pd == 1;
 #if !SOC_ETM_SUPPORT_SLEEP_RETENTION
     ESP_RETURN_ON_FALSE(allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
-#if SOC_PM_SUPPORT_TOP_PD
-    esp_sleep_pd_config(ESP_PD_DOMAIN_TOP, ESP_PD_OPTION_ON); //IDF-15651
-#endif
 #endif // SOC_ETM_SUPPORT_SLEEP_RETENTION
 
     // allocate channel memory from internal memory because it contains atomic variable

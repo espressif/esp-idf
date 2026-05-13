@@ -18,7 +18,6 @@
 #include "esp_err.h"
 #include "esp_heap_caps.h"
 #include "esp_log.h"
-#include "esp_sleep.h"
 #include "esp_check.h"
 #include "esp_pm.h"
 #include "esp_clk_tree.h"
@@ -277,9 +276,6 @@ esp_err_t sdm_new_channel(const sdm_config_t *config, sdm_channel_handle_t *ret_
     [[maybe_unused]] bool allow_pd = config->flags.allow_pd == 1;
 #if !SOC_SDM_SUPPORT_SLEEP_RETENTION
     ESP_RETURN_ON_FALSE(allow_pd == false, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
-#if SOC_PM_SUPPORT_TOP_PD
-    esp_sleep_pd_config(ESP_PD_DOMAIN_TOP, ESP_PD_OPTION_ON); //IDF-15647
-#endif
 #endif // SOC_SDM_SUPPORT_SLEEP_RETENTION
 
     // allocate channel memory from internal memory because it contains atomic variable
