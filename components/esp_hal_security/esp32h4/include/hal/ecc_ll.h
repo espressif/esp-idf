@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -147,6 +147,11 @@ static inline void ecc_ll_set_mod_base(ecc_mod_base_t base)
         HAL_ASSERT(false && "Unsupported curve");
         return;
     }
+}
+
+static inline bool ecc_ll_is_p384_curve_operations_supported(void)
+{
+    return true;
 }
 
 static inline void ecc_ll_enable_constant_time_point_mul(bool enable)

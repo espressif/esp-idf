@@ -153,7 +153,7 @@ static inline void ecdsa_ll_clear_intr(ecdsa_ll_intr_type_t type)
 {
     switch (type) {
     case ECDSA_INT_CALC_DONE:
-        REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_PREP_DONE_INT_CLR, 1);
+        REG_SET_FIELD(ECDSA_INT_CLR_REG, ECDSA_PREP_DONE_INT_CLR, 1);
         break;
     case ECDSA_INT_SHA_RELEASE:
         REG_SET_FIELD(ECDSA_INT_CLR_REG, ECDSA_SHA_RELEASE_INT_CLR, 1);
