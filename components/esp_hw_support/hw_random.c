@@ -11,7 +11,7 @@
 #include <sys/param.h>
 #include "esp_attr.h"
 #include "esp_cpu.h"
-#include "soc/wdev_reg.h"
+#include "hal/rng_ll.h"
 #include "esp_private/esp_clk.h"
 #include "soc/soc_caps.h"
 #include "esp_log.h"
@@ -24,9 +24,6 @@
 
 #if SOC_RNG_CLOCK_IS_INDEPENDENT
 #include "hal/lp_clkrst_ll.h"
-#if SOC_RNG_BUF_CHAIN_ENTROPY_SOURCE || SOC_RNG_RTC_TIMER_ENTROPY_SOURCE
-#include "hal/rng_ll.h"
-#endif
 #endif
 
 #if defined CONFIG_IDF_TARGET_ESP32S3
@@ -62,7 +59,7 @@ uint32_t IRAM_ATTR esp_random(void)
     // Return a fixed pattern for bringup purposes
     return 0x5A5A5A5A;
 #else
-    /* The PRNG which implements WDEV_RANDOM register gets 2 bits
+    /* The PRNG which implements the hardware RNG data register gets 2 bits
      * of extra entropy from a hardware randomness source every APB clock cycle
      * (provided WiFi or BT are enabled). To make sure entropy is not drained
      * faster than it is added, this function needs to wait for at least 16 APB
@@ -71,7 +68,7 @@ uint32_t IRAM_ATTR esp_random(void)
      *
      * As a (probably unnecessary) precaution to avoid returning the
      * RNG state as-is, the result is XORed with additional
-     * WDEV_RND_REG reads while waiting.
+     * hardware RNG register reads while waiting.
      */
 
     /* This code does not run in a critical section, so CPU frequency switch may
@@ -88,7 +85,7 @@ uint32_t IRAM_ATTR esp_random(void)
     for (size_t i = 0; i < sizeof(result); i++) {
         do {
             ccount = esp_cpu_get_cycle_count();
-            result ^= REG_READ(WDEV_RND_REG);
+            result ^= rng_ll_read_data();
         } while (ccount - last_ccount < cpu_to_apb_freq_ratio * APB_CYCLE_WAIT_NUM);
 #if SOC_RTC_TIMER_SUPPORTED
         uint32_t current_rtc_timer_counter = (rtc_timer_hal_get_cycle_count(0) & 0xFF);
@@ -96,7 +93,7 @@ uint32_t IRAM_ATTR esp_random(void)
 #endif
     }
     last_ccount = ccount;
-    return result ^ REG_READ(WDEV_RND_REG);
+    return result ^ rng_ll_read_data();
 #endif // CONFIG_ESP_BRINGUP_BYPASS_RANDOM_SETTING
 }
 

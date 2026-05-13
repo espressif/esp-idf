@@ -380,6 +380,7 @@ typedef struct {
     volatile trng_date_reg_t date;
 } trng_dev_t;
 
+extern trng_dev_t LP_TRNG;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(trng_dev_t) == 0x100, "Invalid size of trng_dev_t structure");

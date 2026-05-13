@@ -239,6 +239,10 @@ config SOC_TOUCH_SENSOR_SUPPORTED
     bool
     default y
 
+config SOC_RNG_SUPPORTED
+    bool
+    default y
+
 config SOC_PPA_SUPPORTED
     bool
     default y

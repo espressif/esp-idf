@@ -159,7 +159,7 @@ Hardware Limitations
 
 .. list::
 
-    - Random Number Generator (RNG) uses ADC as an input source. When ADC :cpp:func:`adc_oneshot_read` works, the random number generated from RNG will be less random.
+    :not esp32s31: - Random Number Generator (RNG) uses ADC as an input source. When ADC :cpp:func:`adc_oneshot_read` works, the random number generated from RNG will be less random.
     :SOC_ADC_DMA_SUPPORTED: - A specific ADC unit can only work under one operating mode at any one time, either continuous mode or oneshot mode. :cpp:func:`adc_oneshot_read` has provided the protection.
     :esp32 or esp32s2 or esp32s3: - ADC2 is also used by Wi-Fi. :cpp:func:`adc_oneshot_read` has provided protection between the Wi-Fi driver and ADC oneshot mode driver.
     :esp32c3: - ADC2 oneshot mode is no longer supported, due to hardware limitations. The results are not stable. This issue can be found in `ESP32-C3 Series SoC Errata <https://www.espressif.com/sites/default/files/documentation/esp32-c3_errata_en.pdf>`_. For compatibility, you can enable :ref:`CONFIG_ADC_ONESHOT_FORCE_USE_ADC2_ON_C3` to force use ADC2.
