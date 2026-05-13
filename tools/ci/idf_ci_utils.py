@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 # internal use only for CI
 # some CI related util functions
@@ -128,6 +128,13 @@ class GitlabYmlConfig:
 
         # expanding "include"
         for item in root_yml.pop('include', []) or []:
+            if isinstance(item, dict):
+                if 'project' in item:
+                    continue
+                elif 'local' in item:
+                    item = item['local']
+                else:
+                    continue
             all_config.update(yaml.load(open(os.path.join(IDF_PATH, item)), Loader=yaml.FullLoader))
 
         if 'default' in all_config:
