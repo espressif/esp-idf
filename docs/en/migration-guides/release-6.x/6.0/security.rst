@@ -61,7 +61,6 @@ ESP-IDF v6.0 updates to Mbed TLS v4.0, where **PSA Crypto is the primary cryptog
          - 4.97
 
 
-
 Default configuration changes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -123,6 +122,7 @@ Note that the new AES functions return error codes for better error handling, un
 
     The HMAC peripheral is now used via the **PSA Crypto HMAC driver** instead of the legacy :cpp:func:`esp_hmac_calculate` API. The applications are expected to populate the :cpp:type:`esp_hmac_opaque_key_t` structure and import it via :cpp:func:`psa_import_key` API using the ``PSA_KEY_LIFETIME_ESP_HMAC`` lifetime attribute. Then, they can use the :cpp:func:`psa_mac_compute` API to compute HMAC.
 
+
 BluFi
 -----
 
@@ -136,6 +136,7 @@ BluFi (Wi-Fi provisioning over BLE) is affected by the Mbed TLS v4.x / PSA Crypt
 
   - Update the device firmware to ESP-IDF v6.0.
   - Update the BluFi client application to a version compatible with the updated BluFi protocol and security negotiation used by ESP-IDF v6.0.
+
 
 Bootloader Support
 ------------------
@@ -164,6 +165,7 @@ The following deprecated functions have been removed:
     ---------------------
 
     - When NVS encryption is enabled on SoCs with the HMAC peripheral that have flash encryption enabled, the HMAC-based NVS encryption scheme is now selected as default instead of the flash encryption-based scheme. If your application previously used the flash encryption-based scheme, you need to manually configure the NVS encryption scheme to flash encryption from HMAC through ``menuconfig`` or your project's ``sdkconfig`` (i.e., setting ``CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC=y``).
+
 
 Mbed TLS v4.1 migration
 -----------------------
