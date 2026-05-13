@@ -246,11 +246,6 @@ def test_Bidirectional_IPv6_connectivity(Init_interface: bool, dut: tuple[IdfDut
         cli_global_unicast_addr = ocf.get_global_unicast_addr(cli, br)
         logging.info(f'cli_global_unicast_addr {cli_global_unicast_addr}')
         interface_name = ocf.get_host_interface_name()
-        command = 'ping ' + str(cli_global_unicast_addr) + ' -c 10'
-        out_str = subprocess.getoutput(command)
-        logging.info(f'ping result:\n{out_str}')
-        role = re.findall(r' (\d+)%', str(out_str))[0]
-        assert role != '100'
         command = 'ifconfig ' + interface_name + ' | grep inet6 | grep global'
         out_bytes = subprocess.check_output(command, shell=True, timeout=5)
         out_str = out_bytes.decode('utf-8')
@@ -259,6 +254,18 @@ def test_Bidirectional_IPv6_connectivity(Init_interface: bool, dut: tuple[IdfDut
         logging.info(f'host_global_unicast_addr: {host_global_unicast_addr}')
         if not host_global_unicast_addr:
             raise Exception(f'onlinkprefix: {onlinkprefix}, host_global_unicast_addr: {host_global_unicast_addr}')
+        host_ping_loss_rates = []
+        for src_addr in host_global_unicast_addr:
+            command = f'ping -6 -I {src_addr} {cli_global_unicast_addr} -c 10'
+            result = subprocess.run(command, shell=True, capture_output=True, text=True)
+            ping_output = (result.stdout or '') + (f'\n{result.stderr}' if result.stderr else '')
+            logging.info('ping result (source=%s):\n%s', src_addr, ping_output)
+            loss_match = re.search(r'(\d+)\s*%', ping_output)
+            loss_rate = int(loss_match.group(1)) if loss_match else 100
+            host_ping_loss_rates.append(loss_rate)
+            logging.info('ping parsed result (source=%s): loss_rate=%d%%', src_addr, loss_rate)
+        logging.info('host_ping_loss_rates: %s', host_ping_loss_rates)
+        assert any(loss_rate != 100 for loss_rate in host_ping_loss_rates)
         rx_nums = 0
         for ip_addr in host_global_unicast_addr:
             txrx_nums = ocf.ot_ping(cli, str(ip_addr), count=10)
