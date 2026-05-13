@@ -6,9 +6,9 @@ import multiprocessing
 import os
 import socket
 import ssl
-import time
-import tempfile
 import subprocess
+import tempfile
+import time
 from typing import Callable
 
 import esptool
@@ -61,7 +61,6 @@ def start_https_server(server_file: str, key_file: str, server_ip: str, server_p
 
     httpd.socket = ssl_context.wrap_socket(httpd.socket, server_side=True)
     httpd.serve_forever()
-
 
 
 def write_time_to_nvs(dut: Dut) -> None:
