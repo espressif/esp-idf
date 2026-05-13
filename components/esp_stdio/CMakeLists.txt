@@ -27,7 +27,7 @@ endif()
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes})
 
-if(CONFIG_VFS_SUPPORT_IO)
+if(CONFIG_VFS_SUPPORT_IO AND NOT ${target} STREQUAL "linux")
     if(IDF_BUILD_V2)
         idf_component_include(vfs)
 
@@ -63,6 +63,9 @@ if(CONFIG_VFS_SUPPORT_IO)
     endif()
 
     target_link_libraries(${COMPONENT_LIB} PRIVATE idf::vfs)
-    # Make sure esp_stdio_register gets called at startup stage
+    # Make sure esp_stdio_register gets called at startup stage.
+    # The referenced symbol is defined in stdio_vfs.c, which is only added to
+    # the source list above on non-Linux targets; the force-undef is gated on
+    # the same condition for the link line to remain resolvable.
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_vfs_include_console_register")
 endif()
