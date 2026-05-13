@@ -66,10 +66,6 @@ examples/system/esp_event/user_event_loops:
 examples/system/esp_timer:
   depends_components:
     - esp_timer
-  disable_test:
-    - if: IDF_TARGET in ["esp32h4"]
-      temporary: true
-      reason: cannot pass # TODO: IDF-15605
 
 examples/system/eventfd:
   disable:

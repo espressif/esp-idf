@@ -28,7 +28,6 @@ from pytest_embedded_idf.utils import soc_filtered_targets
     ],
     indirect=['config', 'target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15604
 def test_esp_system(dut: Dut) -> None:
     # esp32p4 32MB PSRAM initialize in startup takes more than 30 sec
     dut.run_all_single_board_cases(timeout=60)
@@ -88,7 +87,6 @@ def esp_reset_and_wait_ready_esp32c5_rev1(dut: Dut) -> None:
     [target for target in soc_filtered_targets('SOC_LIGHT_SLEEP_SUPPORTED == 1')],
     indirect=['target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15604
 def test_sleep_uart_handling(dut: Dut) -> None:
     """Test UART handling modes during light sleep."""
     # Test FLUSH mode output
@@ -132,7 +130,6 @@ def test_sleep_uart_handling(dut: Dut) -> None:
     [target for target in soc_filtered_targets('SOC_CPU_LOCKUP_DEBUG_SUPPORTED == 1')],
     indirect=['target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15604
 def test_cpu_lockup_trap_chain(dut: Dut) -> None:
     """Trigger a PRO CPU lockup and verify the lockup output."""
     esp_reset_and_wait_ready(dut)
@@ -163,7 +160,6 @@ def test_cpu_lockup_trap_chain(dut: Dut) -> None:
 @pytest.mark.generic
 @idf_parametrize('config', ['default'], indirect=['config'])
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15604
 def test_stack_smash_protection(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('"stack smashing protection"')

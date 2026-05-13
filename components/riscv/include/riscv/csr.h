@@ -205,7 +205,7 @@ extern "C" {
 /* Espressif's custom CSR for the current privilege mode */
 #if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
 #define CSR_PRV_MODE   0xC10
-#elif CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61 || CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32S31
+#else
 #define CSR_PRV_MODE   0x810
 #endif
 

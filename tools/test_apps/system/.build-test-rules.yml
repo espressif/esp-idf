@@ -143,11 +143,7 @@ tools/test_apps/system/no_embedded_paths:
 
 tools/test_apps/system/panic:
   enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32s31"]
-  disable_test:
-    - if: IDF_TARGET == "esp32h4"
-      temporary: true
-      reason: cannot pass # TODO: IDF-15612
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32s31", "esp32h4"]
 
 tools/test_apps/system/ram_loadable_app:
   disable:

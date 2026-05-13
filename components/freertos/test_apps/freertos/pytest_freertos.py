@@ -44,7 +44,6 @@ from pytest_embedded_idf.utils import idf_parametrize
     ],
     indirect=['config', 'target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15606
 def test_freertos(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
