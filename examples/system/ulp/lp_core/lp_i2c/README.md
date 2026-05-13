@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C5 | ESP32-C6 | ESP32-P4 |
-| ----------------- | -------- | -------- | -------- |
+| Supported Targets | ESP32-C5 | ESP32-C6 | ESP32-P4 | ESP32-S31 |
+| ----------------- | -------- | -------- | -------- | --------- |
 
 # LP I2C Example
 
@@ -19,11 +19,13 @@ To run this example, you should have an ESP based development board that support
 
 **Note:** The following pin assignments are used by default.
 
-|                         | SDA   | SCL   |
-| ----------------------- | ------| ------|
-| ESP32-C6 LP I2C Master  | GPIO6 | GPIO7 |
-| ESP32-C5 LP I2C Master  | GPIO6 | GPIO7 |
-| BH1750 Sensor           | SDA   | SCL   |
+|                          | SDA   | SCL   |
+| ------------------------ | ----- | ----- |
+| ESP32-C6 LP I2C Master   | GPIO6 | GPIO7 |
+| ESP32-C5 LP I2C Master   | GPIO2 | GPIO3 |
+| ESP32-P4 LP I2C Master   | GPIO5 | GPIO4 |
+| ESP32-S31 LP I2C Master  | GPIO6 | GPIO7 |
+| BH1750 Sensor            | SDA   | SCL   |
 
 **Note:** There's no need to add external pull-up resistors for SDA/SCL pin, because the driver enables the internal pull-up resistors.
 
