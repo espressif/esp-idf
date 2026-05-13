@@ -6,8 +6,12 @@ import multiprocessing
 import os
 import socket
 import ssl
+import time
+import tempfile
+import subprocess
 from typing import Callable
 
+import esptool
 import pexpect
 import pytest
 from common_test_methods import get_env_config_variable
@@ -57,6 +61,51 @@ def start_https_server(server_file: str, key_file: str, server_ip: str, server_p
 
     httpd.socket = ssl_context.wrap_socket(httpd.socket, server_side=True)
     httpd.serve_forever()
+
+
+
+def write_time_to_nvs(dut: Dut) -> None:
+    """Write current host timestamp to the DUT's NVS partition.
+
+    This eliminates the need for SNTP time synchronization in CI,
+    where NTP servers may be unreachable. The firmware reads the
+    timestamp from NVS key 'storage/timestamp' and uses it to set
+    the system time for TLS certificate validation.
+    """
+    nvs_offset = dut.app.partition_table['nvs']['offset']
+    nvs_size = dut.app.partition_table['nvs']['size']
+
+    csv_file = os.path.join(tempfile.gettempdir(), 'nvs_time.csv')
+    bin_file = os.path.join(tempfile.gettempdir(), 'nvs_time.bin')
+
+    with open(csv_file, 'w') as f:
+        f.write('key,type,encoding,value\n')
+        f.write('storage,namespace,,\n')
+        f.write(f'timestamp,data,i64,{int(time.time())}\n')
+
+    nvs_gen = os.path.join(
+        os.environ['IDF_PATH'],
+        'components',
+        'nvs_flash',
+        'nvs_partition_generator',
+        'nvs_partition_gen.py',
+    )
+    subprocess.check_call(
+        ['python3', nvs_gen, 'generate', csv_file, bin_file, hex(nvs_size)],
+        stdout=subprocess.DEVNULL,
+    )
+
+    with dut.serial.disable_redirect_thread():
+        dut.serial.esp.connect()
+        esptool.main(
+            ['write-flash', '--no-compress', hex(nvs_offset), bin_file],
+            esp=dut.serial.esp,
+        )
+        settings = dut.serial.proc.get_settings()
+        dut.serial.esp.hard_reset()
+        dut.serial.proc.apply_settings(settings)
+
+    logging.info('Wrote host timestamp (%d) to NVS at offset %s', int(time.time()), hex(nvs_offset))
 
 
 @pytest.mark.ethernet
