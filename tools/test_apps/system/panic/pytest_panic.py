@@ -2149,6 +2149,52 @@ def test_irom_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> Non
     dut.expect_cpu_reset()
 
 
+def irom_mask_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    dut.expect_gme('Store access fault')
+    dut.expect_reg_dump(0)
+    dut.expect_cpu_reset()
+
+
+@pytest.mark.generic
+@idf_parametrize(
+    'config,target',
+    [
+        ('memprot_esp32c5', 'esp32c5'),
+        ('memprot_esp32c6', 'esp32c6'),
+        ('memprot_esp32c61', 'esp32c61'),
+        ('memprot_esp32h2', 'esp32h2'),
+        ('memprot_esp32p4', 'esp32p4'),
+    ],
+    indirect=['config', 'target'],
+)
+def test_irom_mask_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    irom_mask_reg_write_violation(dut, test_func_name)
+
+
+def drom_mask_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    dut.expect_gme('Store access fault')
+    dut.expect_reg_dump(0)
+    dut.expect_cpu_reset()
+
+
+@pytest.mark.generic
+@idf_parametrize(
+    'config,target',
+    [
+        ('memprot_esp32c5', 'esp32c5'),
+        ('memprot_esp32c6', 'esp32c6'),
+        ('memprot_esp32c61', 'esp32c61'),
+        ('memprot_esp32h2', 'esp32h2'),
+        ('memprot_esp32p4', 'esp32p4'),
+    ],
+    indirect=['config', 'target'],
+)
+def test_drom_mask_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    drom_mask_reg_write_violation(dut, test_func_name)
+
+
 @pytest.mark.generic
 @idf_parametrize(
     'config,target',
