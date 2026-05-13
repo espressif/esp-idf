@@ -244,6 +244,7 @@ static int esp_aes_process_dma_ext_ram(esp_aes_context *ctx, const unsigned char
     unsigned char *output_buf = NULL;
     const unsigned char *dma_input;
     chunk_len = MIN(AES_MAX_CHUNK_WRITE_SIZE, len);
+    const size_t alloc_chunk_len = chunk_len;
 
     size_t input_alignment = 1;
     size_t output_alignment = 1;
@@ -313,10 +314,12 @@ static int esp_aes_process_dma_ext_ram(esp_aes_context *ctx, const unsigned char
 
 cleanup:
 
-    if (realloc_input) {
+    if (realloc_input && input_buf) {
+        mbedtls_platform_zeroize(input_buf, alloc_chunk_len);
         free(input_buf);
     }
-    if (realloc_output) {
+    if (realloc_output && output_buf) {
+        mbedtls_platform_zeroize(output_buf, alloc_chunk_len);
         free(output_buf);
     }
 
@@ -459,7 +462,7 @@ static esp_err_t generate_descriptor_list(const uint8_t *buffer, const size_t le
     dma_descriptors = (crypto_dma_desc_t *) aes_dma_calloc(dma_descs_needed, sizeof(crypto_dma_desc_t), MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL, NULL);
     if (dma_descriptors == NULL) {
         ESP_LOGE(TAG, "Failed to allocate memory for the array of DMA descriptors");
-        return ESP_FAIL;
+        goto err;
     }
 
     size_t populated_dma_descs = 0;
@@ -468,7 +471,7 @@ static esp_err_t generate_descriptor_list(const uint8_t *buffer, const size_t le
         start_alignment_stream_buffer = aes_dma_calloc(alignment_buffer_size, sizeof(uint8_t), AES_DMA_ALLOC_CAPS | (esp_ptr_external_ram(buffer) ? MALLOC_CAP_SPIRAM : MALLOC_CAP_INTERNAL) , NULL);
         if (start_alignment_stream_buffer == NULL) {
             ESP_LOGE(TAG, "Failed to allocate memory for start alignment buffer");
-            return ESP_FAIL;
+            goto err;
         }
 
         memset(start_alignment_stream_buffer, 0, unaligned_start_bytes);
@@ -490,7 +493,7 @@ static esp_err_t generate_descriptor_list(const uint8_t *buffer, const size_t le
         end_alignment_stream_buffer = aes_dma_calloc(alignment_buffer_size, sizeof(uint8_t), AES_DMA_ALLOC_CAPS | (esp_ptr_external_ram(buffer) ? MALLOC_CAP_SPIRAM : MALLOC_CAP_INTERNAL), NULL);
         if (end_alignment_stream_buffer == NULL) {
             ESP_LOGE(TAG, "Failed to allocate memory for end alignment buffer");
-            return ESP_FAIL;
+            goto err;
         }
 
         memset(end_alignment_stream_buffer, 0, unaligned_end_bytes);
@@ -504,7 +507,7 @@ static esp_err_t generate_descriptor_list(const uint8_t *buffer, const size_t le
 
     if (dma_desc_link(dma_descriptors, dma_descs_needed, cache_line_size) != ESP_OK) {
         ESP_LOGE(TAG, "DMA descriptors cache sync C2M failed");
-        return ESP_FAIL;
+        goto err;
     }
 
 ret:
@@ -525,6 +528,18 @@ ret:
     *end_alignment_buffer = end_alignment_stream_buffer;
 
     return ESP_OK;
+
+err:
+    if (start_alignment_stream_buffer) {
+        mbedtls_platform_zeroize(start_alignment_stream_buffer, alignment_buffer_size);
+        free(start_alignment_stream_buffer);
+    }
+    if (end_alignment_stream_buffer) {
+        mbedtls_platform_zeroize(end_alignment_stream_buffer, alignment_buffer_size);
+        free(end_alignment_stream_buffer);
+    }
+    free(dma_descriptors);
+    return ESP_FAIL;
 }
 
 int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsigned char *output, size_t len, uint8_t *stream_out)
@@ -589,18 +604,11 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
     }
 
     size_t input_alignment_buffer_size = MAX(2 * input_cache_line_size, AES_BLOCK_BYTES);
+    size_t output_alignment_buffer_size = MAX(2 * output_cache_line_size, AES_BLOCK_BYTES);
 
     crypto_dma_desc_t *input_desc = NULL;
     uint8_t *input_start_stream_buffer = NULL;
     uint8_t *input_end_stream_buffer = NULL;
-
-    if (generate_descriptor_list(input, len, &input_start_stream_buffer, &input_end_stream_buffer, input_alignment_buffer_size, input_cache_line_size, NULL, NULL, &input_desc, NULL, false) != ESP_OK) {
-        mbedtls_platform_zeroize(output, len);
-        ESP_LOGE(TAG, "Generating input DMA descriptors failed");
-        return -1;
-    }
-
-    size_t output_alignment_buffer_size = MAX(2 * output_cache_line_size, AES_BLOCK_BYTES);
 
     crypto_dma_desc_t *output_desc = NULL;
     uint8_t *output_start_stream_buffer = NULL;
@@ -609,10 +617,16 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
     size_t output_end_alignment = 0;
     size_t output_dma_desc_num = 0;
 
+    if (generate_descriptor_list(input, len, &input_start_stream_buffer, &input_end_stream_buffer, input_alignment_buffer_size, input_cache_line_size, NULL, NULL, &input_desc, NULL, false) != ESP_OK) {
+        ESP_LOGE(TAG, "Generating input DMA descriptors failed");
+        ret = -1;
+        goto cleanup;
+    }
+
     if (generate_descriptor_list(output, len, &output_start_stream_buffer, &output_end_stream_buffer, output_alignment_buffer_size, output_cache_line_size, &output_start_alignment, &output_end_alignment, &output_desc, &output_dma_desc_num, true) != ESP_OK) {
-        mbedtls_platform_zeroize(output, len);
         ESP_LOGE(TAG, "Generating output DMA descriptors failed");
-        return -1;
+        ret = -1;
+        goto cleanup;
     }
 
     crypto_dma_desc_t *out_desc_tail = &output_desc[output_dma_desc_num - 1];
@@ -705,11 +719,23 @@ cleanup:
         mbedtls_platform_zeroize(output, len);
     }
 
-    free(input_start_stream_buffer);
-    free(input_end_stream_buffer);
+    if (input_start_stream_buffer) {
+        mbedtls_platform_zeroize(input_start_stream_buffer, input_alignment_buffer_size);
+        free(input_start_stream_buffer);
+    }
+    if (input_end_stream_buffer) {
+        mbedtls_platform_zeroize(input_end_stream_buffer, input_alignment_buffer_size);
+        free(input_end_stream_buffer);
+    }
 
-    free(output_start_stream_buffer);
-    free(output_end_stream_buffer);
+    if (output_start_stream_buffer) {
+        mbedtls_platform_zeroize(output_start_stream_buffer, output_alignment_buffer_size);
+        free(output_start_stream_buffer);
+    }
+    if (output_end_stream_buffer) {
+        mbedtls_platform_zeroize(output_end_stream_buffer, output_alignment_buffer_size);
+        free(output_end_stream_buffer);
+    }
 
     free(input_desc);
     free(output_desc);
@@ -918,12 +944,24 @@ cleanup:
     free(aad_end_stream_buffer);
     free(aad_desc);
 
-    free(input_start_stream_buffer);
-    free(input_end_stream_buffer);
+    if (input_start_stream_buffer) {
+        mbedtls_platform_zeroize(input_start_stream_buffer, input_alignment_buffer_size);
+        free(input_start_stream_buffer);
+    }
+    if (input_end_stream_buffer) {
+        mbedtls_platform_zeroize(input_end_stream_buffer, input_alignment_buffer_size);
+        free(input_end_stream_buffer);
+    }
     free(input_desc);
 
-    free(output_start_stream_buffer);
-    free(output_end_stream_buffer);
+    if (output_start_stream_buffer) {
+        mbedtls_platform_zeroize(output_start_stream_buffer, output_alignment_buffer_size);
+        free(output_start_stream_buffer);
+    }
+    if (output_end_stream_buffer) {
+        mbedtls_platform_zeroize(output_end_stream_buffer, output_alignment_buffer_size);
+        free(output_end_stream_buffer);
+    }
     free(output_desc);
 
     free(len_buf);
