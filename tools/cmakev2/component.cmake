@@ -807,11 +807,19 @@ endfunction()
     .. code-block:: cmake
 
         idf_component_include(<name>
+                              [OPTIONAL]
                               [INTERFACE <variable>])
 
     *name[in]*
 
         Component name.
+
+    *OPTIONAL[opt]*
+
+        If specified, the call is a silent no-op when the component is not
+        known to the build, instead of aborting. When combined with
+        ``INTERFACE``, the output variable is set to the empty string on
+        miss, so callers can use ``if(${variable})`` as a truth check.
 
     *INTERFACE[out,opt]*
 
@@ -830,15 +838,41 @@ endfunction()
 
     When the ``INTERFACE`` variable is provided, the name of the included
     component interface target will be stored in it.
+
+    By default, the function aborts the build if ``<name>`` is not known to
+    the build system. Pass ``OPTIONAL`` to make the call non-fatal -- useful
+    for integrations with components that may or may not be in the build,
+    such as managed dependencies that only some board configurations pull
+    in.
+
+    .. code-block:: cmake
+
+        # Wire up an optional integration only when the component is present.
+        idf_component_include(button OPTIONAL INTERFACE button_iface)
+        if(button_iface)
+            target_sources(${COMPONENT_TARGET} PRIVATE button_glue.c)
+            target_link_libraries(${COMPONENT_TARGET} PRIVATE ${button_iface})
+        endif()
 #]]
 function(idf_component_include name)
-    set(options)
+    set(options OPTIONAL)
     set(one_value INTERFACE)
     set(multi_value)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
 
-    __get_component_interface_or_die(COMPONENT "${name}"
-                                     OUTPUT component_interface)
+    if(ARG_OPTIONAL)
+        __get_component_interface(COMPONENT "${name}"
+                                  OUTPUT component_interface)
+        if("${component_interface}" STREQUAL "NOTFOUND")
+            if(DEFINED ARG_INTERFACE)
+                set(${ARG_INTERFACE} "" PARENT_SCOPE)
+            endif()
+            return()
+        endif()
+    else()
+        __get_component_interface_or_die(COMPONENT "${name}"
+                                         OUTPUT component_interface)
+    endif()
 
     # Check if the component is already included, meaning the add_subdirectory
     # has already been called for it and the component has been processed.  If
