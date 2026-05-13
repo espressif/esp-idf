@@ -14,9 +14,13 @@
 
     - 热噪声来自高速 ADC、SAR ADC 或两者。当高速 ADC 或 SAR ADC 被启用时，会生成比特流，并作为随机种子通过 XOR 逻辑门输入到随机数生成器中。
 
-.. only:: not SOC_WIFI_SUPPORTED and not SOC_IEEE802154_SUPPORTED and not SOC_BT_SUPPORTED
+.. only:: esp32p4
 
-    - 热噪声来自 SAR ADC。当 SAR ADC 被启用时，会生成比特流，并作为随机种子通过 XOR 逻辑门输入到随机数生成器中。
+    - 热噪声来自缓存单元 （BUF_CELL） 实现的环形振荡器 （BUF_CHAIN） 生成的计数值，以及 SAR ADC 熵源， 二者共同作为熵源生成随机数。
+
+.. only:: esp32s31
+
+    - 热噪声来自多个熵源，包括缓存单元（BUF_CELL）实现的环形振荡器（BUF_CHAIN）、RFADC、SAR ADC 以及 40 MHz 时钟。这些熵源的输出会持续经过 CRC32 计算处理后输入到随机数生成器中。
 
 .. only:: not esp32
 
