@@ -27,6 +27,10 @@
 #define I2S_LL_GET(_attr)       I2S_LL_ ## _attr
 #define I2S_LL_SUPPORT(_feat)   I2S_LL_SUPPORT_ ## _feat
 #define I2S_LL_INST_NUM         2  // ESP32S31 has 2 I2S instances
+#define I2S_LL_PDM_SUPPORTED_PORT_MASK        (1U << 0)  // PDM is supported on I2S0
+#define I2S_LL_PCM2PDM_SUPPORTED_PORT_MASK    (1U << 0)  // PCM2PDM is supported on I2S0
+#define I2S_LL_PDM2PCM_SUPPORTED_PORT_MASK    (1U << 0)  // PDM2PCM is supported on I2S0
+#define I2S_LL_BT_DEST_SUPPORTED_PORT_MASK    (1U << 0)  // Bluetooth destination is supported on I2S0
 
 #ifdef __cplusplus
 extern "C" {
@@ -724,6 +728,45 @@ static inline void i2s_ll_tx_stop(i2s_dev_t *hw)
 static inline void i2s_ll_rx_stop(i2s_dev_t *hw)
 {
     hw->rx_conf.rx_start = 0;
+}
+
+/**
+ * @brief Set I2S TX data destination
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param to_bt true: route TX data to Bluetooth; false: route TX data to the DMA memory path (default).
+ */
+static inline void i2s_ll_tx_set_destination(i2s_dev_t *hw, bool to_bt)
+{
+    hw->destination.tx_destination = to_bt ? 1 : 0;
+}
+
+/**
+ * @brief Set I2S RX data destination
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param to_bt true: route RX data to Bluetooth; false: route RX data to the DMA memory path (default).
+ */
+static inline void i2s_ll_rx_set_destination(i2s_dev_t *hw, bool to_bt)
+{
+    hw->destination.rx_destination = to_bt ? 1 : 0;
+}
+
+/**
+ * @brief Set I2S data destination
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param dir I2S channel direction
+ * @param destination I2S data destination
+ */
+static inline void i2s_ll_set_destination(i2s_dev_t *hw, i2s_dir_t dir, i2s_destination_t destination)
+{
+    bool to_bt = (destination == I2S_DESTINATION_BT);
+    if (dir == I2S_DIR_TX) {
+        i2s_ll_tx_set_destination(hw, to_bt);
+    } else {
+        i2s_ll_rx_set_destination(hw, to_bt);
+    }
 }
 
 /**
@@ -1813,6 +1856,45 @@ static inline void i2s_ll_tx_set_hw_sync_suppl_mode(i2s_dev_t *hw, bool mode)
 static inline void i2s_ll_tx_set_hw_sync_suppl_data(i2s_dev_t *hw, uint32_t data)
 {
     hw->hw_sync_data.tx_hw_sync_suppl_data = data;
+}
+
+/**
+ * @brief Check whether an I2S data destination is supported on the specified port
+ */
+static inline bool i2s_ll_is_destination_supported(int port_id, i2s_destination_t destination)
+{
+    switch (destination) {
+    case I2S_DESTINATION_DMA:
+        return true;
+    case I2S_DESTINATION_BT:
+        return (I2S_LL_BT_DEST_SUPPORTED_PORT_MASK & (1U << port_id)) != 0;
+    default:
+        return false;
+    }
+}
+
+/**
+ * @brief Check whether I2S PDM mode is supported on the specified port
+ */
+static inline bool i2s_ll_is_pdm_supported(int port_id)
+{
+    return (I2S_LL_PDM_SUPPORTED_PORT_MASK & (1U << port_id)) != 0;
+}
+
+/**
+ * @brief Check whether I2S TX PCM2PDM converter is supported on the specified port
+ */
+static inline bool i2s_ll_is_pcm2pdm_supported(int port_id)
+{
+    return (I2S_LL_PCM2PDM_SUPPORTED_PORT_MASK & (1U << port_id)) != 0;
+}
+
+/**
+ * @brief Check whether I2S RX PDM2PCM converter is supported on the specified port
+ */
+static inline bool i2s_ll_is_pdm2pcm_supported(int port_id)
+{
+    return (I2S_LL_PDM2PCM_SUPPORTED_PORT_MASK & (1U << port_id)) != 0;
 }
 
 #ifdef __cplusplus

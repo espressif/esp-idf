@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,10 @@
 #include "math.h"
 #include "esp_rom_gpio.h"
 #include "hal/i2s_periph.h"
+#include "hal/i2s_types.h"
 #include "driver/i2s_std.h"
+#include "driver/i2s_common.h"
+#include "soc/soc_caps.h"
 #if SOC_I2S_SUPPORTS_PDM
 #include "driver/i2s_pdm.h"
 #endif
@@ -1273,4 +1276,71 @@ TEST_CASE("I2S_rate_tunning", "[i2s]")
     TEST_ESP_OK(i2s_channel_disable(rx_handle));
     TEST_ESP_OK(i2s_del_channel(tx_handle));
     TEST_ESP_OK(i2s_del_channel(rx_handle));
+}
+
+TEST_CASE("i2s_destination_test", "[i2s]")
+{
+    i2s_chan_handle_t tx = NULL;
+    i2s_chan_handle_t rx = NULL;
+    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
+
+    i2s_std_config_t std_cfg = {
+        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
+        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(SAMPLE_BITS, I2S_SLOT_MODE_STEREO),
+        .gpio_cfg = I2S_TEST_MASTER_DEFAULT_PIN,
+    };
+    i2s_event_callbacks_t cbs = { 0 };
+
+    // DMA destination is the default path and should support normal callback registration for TX.
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx, NULL));
+    TEST_ESP_OK(i2s_channel_init_std_mode(tx, &std_cfg));
+    TEST_ESP_OK(i2s_channel_register_event_callback(tx, &cbs, NULL));
+    TEST_ESP_OK(i2s_del_channel(tx));
+    tx = NULL;
+
+    // DMA destination is the default path and should support normal callback registration for RX.
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, NULL, &rx));
+    TEST_ESP_OK(i2s_channel_init_std_mode(rx, &std_cfg));
+    TEST_ESP_OK(i2s_channel_register_event_callback(rx, &cbs, NULL));
+    TEST_ESP_OK(i2s_del_channel(rx));
+    rx = NULL;
+
+    chan_cfg.id = I2S_NUM_AUTO;
+#if SOC_I2S_SUPPORTS_BT_DEST
+
+    // BT destination should be accepted by auto allocation and bypass DMA-only APIs on TX.
+    uint8_t buf[16];
+    size_t loaded = 0;
+    size_t written = 0;
+    size_t read_bytes = 0;
+
+    chan_cfg.tx_destination = I2S_DESTINATION_BT;
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx, NULL));
+    TEST_ESP_OK(i2s_channel_init_std_mode(tx, &std_cfg));
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_SUPPORTED, i2s_channel_register_event_callback(tx, &cbs, NULL));
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_SUPPORTED, i2s_channel_preload_data(tx, buf, sizeof(buf), &loaded));
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_SUPPORTED, i2s_channel_write(tx, buf, sizeof(buf), &written, 0));
+    TEST_ESP_OK(i2s_del_channel(tx));
+    tx = NULL;
+    chan_cfg.tx_destination = I2S_DESTINATION_DMA;
+
+    // BT destination should be accepted by auto allocation and bypass DMA-only APIs on RX.
+    chan_cfg.rx_destination = I2S_DESTINATION_BT;
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, NULL, &rx));
+    TEST_ESP_OK(i2s_channel_init_std_mode(rx, &std_cfg));
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_SUPPORTED, i2s_channel_register_event_callback(rx, &cbs, NULL));
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_SUPPORTED, i2s_channel_read(rx, buf, sizeof(buf), &read_bytes, 0));
+    TEST_ESP_OK(i2s_del_channel(rx));
+    rx = NULL;
+    chan_cfg.rx_destination = I2S_DESTINATION_DMA;
+#else
+    // BT destination should be rejected on chips without hardware support.
+    chan_cfg.tx_destination = I2S_DESTINATION_BT;
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_SUPPORTED, i2s_new_channel(&chan_cfg, &tx, NULL));
+    chan_cfg.tx_destination = I2S_DESTINATION_DMA;
+
+    chan_cfg.rx_destination = I2S_DESTINATION_BT;
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_SUPPORTED, i2s_new_channel(&chan_cfg, NULL, &rx));
+    chan_cfg.rx_destination = I2S_DESTINATION_DMA;
+#endif
 }

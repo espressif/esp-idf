@@ -1552,14 +1552,14 @@ extern "C" {
  */
 #define I2S_DESTINATION_REG(i) (REG_I2S_BASE(i) + 0xf4)
 /** I2S_RX_DESTINATION : R/W; bitpos: [0]; default: 0;
- *  Set this bit to configure the data destination of i2s rx. 1: ble. 0: gdma.
+ *  Set this bit to configure the data destination of i2s rx. 1: bt. 0: gdma.
  */
 #define I2S_RX_DESTINATION    (BIT(0))
 #define I2S_RX_DESTINATION_M  (I2S_RX_DESTINATION_V << I2S_RX_DESTINATION_S)
 #define I2S_RX_DESTINATION_V  0x00000001U
 #define I2S_RX_DESTINATION_S  0
 /** I2S_TX_DESTINATION : R/W; bitpos: [1]; default: 0;
- *  Set this bit to configure the data destination of i2s tx. 1: ble. 0: gdma.
+ *  Set this bit to configure the data destination of i2s tx. 1: bt. 0: gdma.
  */
 #define I2S_TX_DESTINATION    (BIT(1))
 #define I2S_TX_DESTINATION_M  (I2S_TX_DESTINATION_V << I2S_TX_DESTINATION_S)

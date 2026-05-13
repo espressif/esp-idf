@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,8 @@ extern "C" {
     .auto_clear_before_cb = false, \
     .allow_pd = false, \
     .intr_priority = 0, \
+    .tx_destination = I2S_DESTINATION_DMA, \
+    .rx_destination = I2S_DESTINATION_DMA, \
 }
 
 #define I2S_GPIO_UNUSED         GPIO_NUM_NC         /*!< Used in i2s_gpio_config_t for signals which are not used */
@@ -79,6 +81,8 @@ typedef struct {
                                              * This can save power, but at the expense of more RAM being consumed.
                                              */
     int                 intr_priority;      /*!< I2S interrupt priority, range [0, 7], if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
+    i2s_destination_t   tx_destination;     /*!< TX data path: DMA (memory) or Bluetooth (see `i2s_destination_t`). I2S0 only when set to `I2S_DESTINATION_BT`. Immutable after `i2s_new_channel`. */
+    i2s_destination_t   rx_destination;     /*!< RX data path: DMA (memory) or Bluetooth. Same constraints as `tx_destination`. */
 } i2s_chan_config_t;
 
 /**
@@ -123,13 +127,16 @@ typedef struct {
  *        For ESP32 and ESP32S2, the whole I2S controller (i.e. both RX and TX channel) will be occupied,
  *        even if only one of RX or TX channel is registered.
  *        For the other targets, another channel on this controller will still available.
+ * @note  `tx_destination` / `rx_destination` select the DMA memory path or Bluetooth data path when
+ *        supported. Requesting an unsupported destination or port returns an error.
  *
  * @param[in]   chan_cfg    I2S controller channel configurations
  * @param[out]  ret_tx_handle   I2S channel handler used for managing the sending channel(optional)
  * @param[out]  ret_rx_handle   I2S channel handler used for managing the receiving channel(optional)
  * @return
  *      - ESP_OK    Allocate new channel(s) success
- *      - ESP_ERR_NOT_SUPPORTED The communication mode is not supported on the current chip
+ *      - ESP_ERR_NOT_SUPPORTED The communication mode or data path is not supported on the current chip,
+ *                              or Bluetooth data path is requested on an unsupported port
  *      - ESP_ERR_INVALID_ARG   NULL pointer or illegal parameter in i2s_chan_config_t
  *      - ESP_ERR_NOT_FOUND     No available I2S channel found
  */
@@ -237,6 +244,7 @@ esp_err_t i2s_channel_read(i2s_chan_handle_t handle, void *dest, size_t size, si
  *      - ESP_OK                Set event callbacks successfully
  *      - ESP_ERR_INVALID_ARG   Set event callbacks failed because of invalid argument
  *      - ESP_ERR_INVALID_STATE Set event callbacks failed because the current channel state is not REGISTERED or READY
+ *      - ESP_ERR_NOT_SUPPORTED Set event callbacks failed because the channel does not use the DMA data path
  */
 esp_err_t i2s_channel_register_event_callback(i2s_chan_handle_t handle, const i2s_event_callbacks_t *callbacks, void *user_data);
 
