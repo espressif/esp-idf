@@ -51,9 +51,9 @@ variables:
   CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
 
   # Docker images
-  ESP_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-env-v5.5:3"
-  ESP_IDF_DOC_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-idf-doc-env-v5.5:3-1"
-  TARGET_TEST_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/target-test-env-v5.5:2"
+  ESP_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v5.5:1"
+  ESP_IDF_DOC_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v5.5-docs:1"
+  TARGET_TEST_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v5.5-target-test:1"
   SONARQUBE_SCANNER_IMAGE: "${CI_DOCKER_REGISTRY}/sonarqube-scanner:5"
 
   # cache python dependencies
