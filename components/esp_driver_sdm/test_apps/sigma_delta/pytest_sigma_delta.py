@@ -12,6 +12,7 @@ CONFIGS = [
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='BLE power save bringup is not done')
 @pytest.mark.parametrize('config', CONFIGS, indirect=True)
 @idf_parametrize(
     'target',
