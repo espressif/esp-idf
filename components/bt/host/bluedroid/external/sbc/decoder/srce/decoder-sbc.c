@@ -386,7 +386,7 @@ OI_UINT8 OI_CODEC_SBC_FrameCount(OI_BYTE  *frameData,
         }
 
         /* Extract and translate required fields from Header */
-        subbands = mode = blocks = frameData[1];;
+        subbands = mode = blocks = frameData[1];
         mode = (mode & (BIT3 | BIT2)) >> 2;
         blocks = block_values[(blocks & (BIT5 | BIT4)) >> 4];
         subbands = band_values[(subbands & BIT0)];

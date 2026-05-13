@@ -52,6 +52,6 @@ tBTA_SDP_CFG bta_sdp_cfg = {
 #endif
 };
 
-tBTA_SDP_CFG *p_bta_sdp_cfg = (tBTA_SDP_CFG *) &bta_sdp_cfg;
+tBTA_SDP_CFG *p_bta_sdp_cfg = &bta_sdp_cfg;
 
 #endif /* #if defined(BTA_SDP_INCLUDED) && (BTA_SDP_INCLUDED == TRUE) */
