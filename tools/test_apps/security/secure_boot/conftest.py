@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 # pylint: disable=W0621  # redefined-outer-name
 import os
@@ -202,6 +202,20 @@ class Esp32h21FpgaDut(FpgaDut):
         self.serial.burn_efuse_key_digest(digest, f'SECURE_BOOT_DIGEST{key_index}', f'BLOCK_KEY{block}')
 
 
+class Esp32h4FpgaDut(FpgaDut):
+    SECURE_BOOT_EN_KEY = 'SECURE_BOOT_EN'
+    SECURE_BOOT_EN_VAL = 1
+
+    def burn_wafer_version(self) -> None:
+        pass
+
+    def secure_boot_burn_en_bit(self) -> None:
+        self.serial.burn_efuse(self.SECURE_BOOT_EN_KEY, self.SECURE_BOOT_EN_VAL)
+
+    def secure_boot_burn_digest(self, digest: str, key_index: int = 0, block: int = 0) -> None:
+        self.serial.burn_efuse_key_digest(digest, f'SECURE_BOOT_DIGEST{key_index}', f'BLOCK_KEY{block}')
+
+
 @pytest.fixture(scope='module')
 def monkeypatch_module(request: FixtureRequest) -> MonkeyPatch:
     mp = MonkeyPatch()
@@ -218,6 +232,7 @@ def replace_dut_class(monkeypatch_module: MonkeyPatch, pytestconfig: pytest.Conf
         'esp32c5': Esp32c5FpgaDut,
         'esp32c61': Esp32c61FpgaDut,
         'esp32h21': Esp32h21FpgaDut,
+        'esp32h4': Esp32h4FpgaDut,
     }
 
     target = pytestconfig.getoption('target')

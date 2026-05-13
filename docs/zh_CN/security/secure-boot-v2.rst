@@ -5,9 +5,9 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2, esp32c61="ECDSA", esp32c6, esp32h2, esp32p4, esp32c5, esp32h21="RSA-PSS 或 ECDSA"}
+{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2, esp32c61, esp32h4="ECDSA", esp32c6, esp32h2, esp32p4, esp32c5, esp32h21="RSA-PSS 或 ECDSA"}
 
-{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2, esp32c61="ECDSA-256", esp32c6, esp32h2, esp32p4, esp32h21="RSA-3072、ECDSA-256", esp32c5="RSA-3072、ECDSA-384、ECDSA-256"}
+{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2, esp32c61="ECDSA-256", esp32c6, esp32h2, esp32p4, esp32h21="RSA-3072、ECDSA-256", esp32h4="ECDSA-384、ECDSA-256", esp32c5="RSA-3072、ECDSA-384、ECDSA-256"}
 
 {IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6, esp32h2, esp32p4, esp32h21="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。", esp32c5="推荐使用 ECDSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。"}
 
@@ -25,7 +25,7 @@
 
 {IDF_TARGET_CPU_FREQ:default="", esp32c5="240 MHz", esp32c6="160 MHz", esp32h2="96 MHz", esp32p4="360 MHz"}
 
-{IDF_TARGET_SBV2_DEFAULT_SCHEME:default="RSA", esp32c2, esp32c61, esp32c5="ECDSA (v2)"}
+{IDF_TARGET_SBV2_DEFAULT_SCHEME:default="RSA", esp32c2, esp32c61, esp32c5, esp32h4="ECDSA (v2)"}
 
 {IDF_TARGET_EFUSE_WR_DIS_RD_DIS:default="ESP_EFUSE_WR_DIS_RD_DIS", esp32="ESP_EFUSE_WR_DIS_EFUSE_RD_DISABLE"}
 

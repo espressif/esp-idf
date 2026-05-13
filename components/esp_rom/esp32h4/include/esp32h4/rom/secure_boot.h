@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,8 +15,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-//TODO: [ESP32H4] IDF-12262 inherit from verification branch, need check
 
 #if CONFIG_SECURE_BOOT_V2_ENABLED || CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT
 
@@ -89,6 +87,25 @@ struct ets_secure_boot_sig_block {
 
 #elif CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
 
+#if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+struct __attribute((packed)) ets_secure_boot_sig_block {
+    uint8_t magic_byte;
+    uint8_t version;
+    uint8_t sha_version;
+    uint8_t _reserved2;
+    uint8_t image_digest[48];
+    struct {
+        struct {
+            uint8_t curve_id; /* ETS_ECDSA_CURVE_P192 / ETS_ECDSA_CURVE_P256 / ETS_ECDSA_CURVE_P384 */
+            uint8_t point[96]; /* X followed by Y (both little-endian), plus zero bytes if P192 */
+        } key;
+        uint8_t signature[96]; /* r followed by s (both little-endian) */
+        uint8_t padding[951];
+    } ecdsa;
+    uint32_t block_crc; /* note: crc covers all bytes in the structure before it, regardless of version field */
+    uint8_t _padding[16];
+};
+#else
 struct __attribute((packed)) ets_secure_boot_sig_block {
     uint8_t magic_byte;
     uint8_t version;
@@ -106,6 +123,7 @@ struct __attribute((packed)) ets_secure_boot_sig_block {
     uint32_t block_crc; /* note: crc covers all bytes in the structure before it, regardless of version field */
     uint8_t _padding[16];
 };
+#endif /* CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS */
 #endif
 
 ESP_STATIC_ASSERT(sizeof(ets_secure_boot_sig_block_t) == 1216, "invalid sig block size");
