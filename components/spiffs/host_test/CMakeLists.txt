@@ -23,4 +23,4 @@ set_property(
     APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${build_dir}/image.bin")
 
 
-add_dependencies(host_test_spiffs.elf image.bin)
+add_dependencies(${project_elf} image.bin)

@@ -41,4 +41,4 @@ add_custom_target(partition-table-8M
                     ${partition_table_display}
                     VERBATIM)
 
-add_dependencies(partition_api_test.elf partition-table partition-table-8M)
+add_dependencies(${project_elf} partition-table partition-table-8M)
