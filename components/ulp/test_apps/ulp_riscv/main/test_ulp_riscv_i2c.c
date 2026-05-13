@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,8 +28,8 @@ static void load_and_start_ulp_riscv_firmware(const uint8_t* ulp_bin, size_t ulp
     TEST_ASSERT(ulp_riscv_run() == ESP_OK);
 }
 
-#define I2C_SLAVE_SCL_IO     7                  /*!<I2C gpio number for SCL */
-#define I2C_SLAVE_SDA_IO     6                  /*!<I2C gpio number for SDA */
+#define I2C_SLAVE_SCL_IO     2                  /*!<I2C gpio number for SCL, must match RTC I2C master */
+#define I2C_SLAVE_SDA_IO     3                  /*!<I2C gpio number for SDA, must match RTC I2C master */
 #define I2C_SLAVE_NUM I2C_NUM_0                 /*!<I2C port number for slave dev */
 #define I2C_SLAVE_TX_BUF_LEN  (2*DATA_LENGTH)   /*!<I2C slave tx buffer size */
 #define I2C_SLAVE_RX_BUF_LEN  (2*DATA_LENGTH)   /*!<I2C slave rx buffer size */
@@ -80,6 +80,9 @@ static void i2c_master_write_read_test(void)
     /* Wait for ULP RISC-V to finish reading */
     while (ulp_read_test_reply == RISCV_COMMAND_INVALID) {
     }
+
+    /* Verify that the ULP I2C read succeeded */
+    TEST_ASSERT_EQUAL(RISCV_COMMAND_OK, ulp_read_test_reply & 0xFFFF);
 
     /* Verify the test data read by the DUT */
     uint8_t *read_data = (uint8_t*)&ulp_data_rd;
@@ -152,10 +155,20 @@ static void i2c_slave_read_write_test(void)
     /* Wait for DUT to write test data before reading it */
     unity_wait_for_signal("slave read");
 
+    /*
+     * The RTC I2C master sends a sub-register address byte before each transaction.
+     * The slave's RX buffer now contains:
+     *   [sub_reg_addr (read phase)] [sub_reg_addr (write phase)] [data_wr[0..N-1]]
+     * Drain the two stale sub-register address bytes before reading actual data.
+     */
+    uint8_t sub_reg_discard[2];
+    i2c_slave_read_buffer(I2C_SLAVE_NUM, sub_reg_discard, sizeof(sub_reg_discard), 2000 / portTICK_PERIOD_MS);
+
     /* Verify the test data written by the DUT */
     size_rd = i2c_slave_read_buffer(I2C_SLAVE_NUM, data_rd, RW_TEST_LENGTH, 10000 / portTICK_PERIOD_MS);
     ESP_LOGI(TAG, "Slave read data:");
     ESP_LOG_BUFFER_HEX(TAG, data_rd, size_rd);
+    TEST_ASSERT_EQUAL_INT(RW_TEST_LENGTH, size_rd);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_master_write_data, data_rd, RW_TEST_LENGTH);
 
     /* Clean up */
