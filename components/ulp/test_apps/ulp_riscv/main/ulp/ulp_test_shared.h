@@ -11,8 +11,7 @@
 /* I2C test params */
 #define I2C_SLAVE_ADDRESS 0x28
 #define DATA_LENGTH 200
-// TODO: Updated the test to perform multi-byte read/write (IDFGH-11056)
-#define RW_TEST_LENGTH       1  /*!<Data length for r/w test, any value from 0-DATA_LENGTH*/
+#define RW_TEST_LENGTH       7  /*!<Data length for r/w test, prime and not divisible by any I2C FIFO size */
 
 typedef enum {
     RISCV_READ_WRITE_TEST = 1,
