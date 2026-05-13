@@ -8,7 +8,7 @@ import ssl
 import subprocess
 import tempfile
 import time
-from collections.abc import Callable
+from typing import Callable
 
 import esptool
 import pexpect
