@@ -184,8 +184,8 @@
 .macro mintthresh_csr_disable reg
 #if __riscv_zcmp && SOC_CPU_ZCMP_WORKAROUND
     /* Workaround for triggering an interrupt even when mstatus.mie is 0, when cm.push is called. */
-    li t0, 0xff
-    csrrw \reg, MINTTHRESH_CSR, t0
+    li \reg, 0xff
+    csrrw \reg, MINTTHRESH_CSR, \reg
 #endif
 .endm
 
