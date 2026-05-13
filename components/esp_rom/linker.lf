@@ -9,3 +9,7 @@ entries:
         esp_rom_cache_esp32s2_esp32s3 (noflash)
     if ESP_ROM_HAS_CACHE_WRITEBACK_BUG = y:
         esp_rom_cache_writeback_esp32s3 (noflash)
+    if ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_MAP = y:
+        esp_rom_cache_writeback_esp32p4_esp32s31 (noflash)
+    if ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_NO_MAP = y:
+        esp_rom_cache_writeback_esp32c5_esp32c61_esp32h4 (noflash)

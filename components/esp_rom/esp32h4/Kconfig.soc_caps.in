@@ -74,3 +74,7 @@ config ESP_ROM_RAM_APP_NEEDS_MMU_INIT
 config ESP_ROM_BOOTLOADER_OFFSET_FLASH
     hex
     default 0x2000
+
+config ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_NO_MAP
+    bool
+    default y

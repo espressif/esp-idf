@@ -114,3 +114,7 @@ config ESP_ROM_DELAY_US_PATCH
 config ESP_ROM_BOOTLOADER_OFFSET_FLASH
     hex
     default 0x0
+
+config ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_NO_MAP
+    bool
+    default y

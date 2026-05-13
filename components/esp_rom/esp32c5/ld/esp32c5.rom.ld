@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -192,12 +192,12 @@ Cache_Sync_Items = 0x40000648;
 Cache_Op_Addr = 0x4000064c;
 Cache_Invalidate_Addr = 0x40000650;
 Cache_Clean_Addr = 0x40000654;
-Cache_WriteBack_Addr = 0x40000658;
-Cache_WriteBack_Invalidate_Addr = 0x4000065c;
+PROVIDE( Cache_WriteBack_Addr = 0x40000658 );
+PROVIDE( Cache_WriteBack_Invalidate_Addr = 0x4000065c );
 Cache_Invalidate_All = 0x40000660;
 Cache_Clean_All = 0x40000664;
-Cache_WriteBack_All = 0x40000668;
-Cache_WriteBack_Invalidate_All = 0x4000066c;
+PROVIDE( Cache_WriteBack_All = 0x40000668 );
+PROVIDE( Cache_WriteBack_Invalidate_All = 0x4000066c );
 Cache_Mask_All = 0x40000670;
 Cache_UnMask_Dram0 = 0x40000674;
 Cache_Suspend_Autoload = 0x40000678;

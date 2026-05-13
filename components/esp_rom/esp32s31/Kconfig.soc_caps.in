@@ -94,3 +94,7 @@ config ESP_ROM_PRINTS_LOCKUP_STATUS
 config ESP_ROM_BOOTLOADER_OFFSET_FLASH
     hex
     default 0x2000
+
+config ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_MAP
+    bool
+    default y
