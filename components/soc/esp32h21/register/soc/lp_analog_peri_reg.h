@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -13,7 +13,7 @@ extern "C" {
 /** LP_ANA_BOD_MODE0_CNTL_REG register
  *  need_des
  */
-#define LP_ANA_BOD_MODE0_CNTL_REG (DR_REG_LP_AON_BASE + 0x0)
+#define LP_ANA_BOD_MODE0_CNTL_REG (DR_REG_LP_ANA_PERI_BASE + 0x0)
 /** LP_ANA_BOD_MODE0_CLOSE_FLASH_ENA : R/W; bitpos: [6]; default: 0;
  *  need_des
  */
@@ -74,7 +74,7 @@ extern "C" {
 /** LP_ANA_BOD_MODE1_CNTL_REG register
  *  need_des
  */
-#define LP_ANA_BOD_MODE1_CNTL_REG (DR_REG_LP_AON_BASE + 0x4)
+#define LP_ANA_BOD_MODE1_CNTL_REG (DR_REG_LP_ANA_PERI_BASE + 0x4)
 /** LP_ANA_BOD_MODE1_RESET_ENA : R/W; bitpos: [31]; default: 0;
  *  need_des
  */
@@ -86,7 +86,7 @@ extern "C" {
 /** LP_ANA_VDD_SOURCE_CNTL_REG register
  *  need_des
  */
-#define LP_ANA_VDD_SOURCE_CNTL_REG (DR_REG_LP_AON_BASE + 0x8)
+#define LP_ANA_VDD_SOURCE_CNTL_REG (DR_REG_LP_ANA_PERI_BASE + 0x8)
 /** LP_ANA_DETMODE_SEL : R/W; bitpos: [7:0]; default: 255;
  *  need_des
  */
@@ -119,7 +119,7 @@ extern "C" {
 /** LP_ANA_VDDBAT_BOD_CNTL_REG register
  *  need_des
  */
-#define LP_ANA_VDDBAT_BOD_CNTL_REG (DR_REG_LP_AON_BASE + 0xc)
+#define LP_ANA_VDDBAT_BOD_CNTL_REG (DR_REG_LP_ANA_PERI_BASE + 0xc)
 /** LP_ANA_VDDBAT_UNDERVOLTAGE_FLAG : RO; bitpos: [0]; default: 0;
  *  need_des
  */
@@ -159,7 +159,7 @@ extern "C" {
 /** LP_ANA_VDDBAT_CHARGE_CNTL_REG register
  *  need_des
  */
-#define LP_ANA_VDDBAT_CHARGE_CNTL_REG (DR_REG_LP_AON_BASE + 0x10)
+#define LP_ANA_VDDBAT_CHARGE_CNTL_REG (DR_REG_LP_ANA_PERI_BASE + 0x10)
 /** LP_ANA_VDDBAT_CHARGE_UNDERVOLTAGE_FLAG : RO; bitpos: [0]; default: 0;
  *  need_des
  */
@@ -199,7 +199,7 @@ extern "C" {
 /** LP_ANA_CK_GLITCH_CNTL_REG register
  *  need_des
  */
-#define LP_ANA_CK_GLITCH_CNTL_REG (DR_REG_LP_AON_BASE + 0x14)
+#define LP_ANA_CK_GLITCH_CNTL_REG (DR_REG_LP_ANA_PERI_BASE + 0x14)
 /** LP_ANA_CK_GLITCH_RESET_ENA : R/W; bitpos: [31]; default: 0;
  *  need_des
  */
@@ -211,7 +211,7 @@ extern "C" {
 /** LP_ANA_PG_GLITCH_CNTL_REG register
  *  need_des
  */
-#define LP_ANA_PG_GLITCH_CNTL_REG (DR_REG_LP_AON_BASE + 0x18)
+#define LP_ANA_PG_GLITCH_CNTL_REG (DR_REG_LP_ANA_PERI_BASE + 0x18)
 /** LP_ANA_POWER_GLITCH_RESET_ENA : R/W; bitpos: [31:26]; default: 0;
  *  need_des
  */
@@ -223,7 +223,7 @@ extern "C" {
 /** LP_ANA_FIB_ENABLE_REG register
  *  need_des
  */
-#define LP_ANA_FIB_ENABLE_REG (DR_REG_LP_AON_BASE + 0x1c)
+#define LP_ANA_FIB_ENABLE_REG (DR_REG_LP_ANA_PERI_BASE + 0x1c)
 /** LP_ANA_ANA_FIB_ENA : R/W; bitpos: [31:24]; default: 255;
  *  need_des
  */
@@ -239,7 +239,7 @@ extern "C" {
 /** LP_ANA_INT_RAW_REG register
  *  need_des
  */
-#define LP_ANA_INT_RAW_REG (DR_REG_LP_AON_BASE + 0x20)
+#define LP_ANA_INT_RAW_REG (DR_REG_LP_ANA_PERI_BASE + 0x20)
 /** LP_ANA_VDDBAT_CHARGE_UPVOLTAGE_INT_RAW : R/WTC/SS; bitpos: [27]; default: 0;
  *  need_des
  */
@@ -279,7 +279,7 @@ extern "C" {
 /** LP_ANA_INT_ST_REG register
  *  need_des
  */
-#define LP_ANA_INT_ST_REG (DR_REG_LP_AON_BASE + 0x24)
+#define LP_ANA_INT_ST_REG (DR_REG_LP_ANA_PERI_BASE + 0x24)
 /** LP_ANA_VDDBAT_CHARGE_UPVOLTAGE_INT_ST : RO; bitpos: [27]; default: 0;
  *  need_des
  */
@@ -319,7 +319,7 @@ extern "C" {
 /** LP_ANA_INT_ENA_REG register
  *  need_des
  */
-#define LP_ANA_INT_ENA_REG (DR_REG_LP_AON_BASE + 0x28)
+#define LP_ANA_INT_ENA_REG (DR_REG_LP_ANA_PERI_BASE + 0x28)
 /** LP_ANA_VDDBAT_CHARGE_UPVOLTAGE_INT_ENA : R/W; bitpos: [27]; default: 0;
  *  need_des
  */
@@ -359,7 +359,7 @@ extern "C" {
 /** LP_ANA_INT_CLR_REG register
  *  need_des
  */
-#define LP_ANA_INT_CLR_REG (DR_REG_LP_AON_BASE + 0x2c)
+#define LP_ANA_INT_CLR_REG (DR_REG_LP_ANA_PERI_BASE + 0x2c)
 /** LP_ANA_VDDBAT_CHARGE_UPVOLTAGE_INT_CLR : WT; bitpos: [27]; default: 0;
  *  need_des
  */
@@ -399,7 +399,7 @@ extern "C" {
 /** LP_ANA_LP_INT_RAW_REG register
  *  need_des
  */
-#define LP_ANA_LP_INT_RAW_REG (DR_REG_LP_AON_BASE + 0x30)
+#define LP_ANA_LP_INT_RAW_REG (DR_REG_LP_ANA_PERI_BASE + 0x30)
 /** LP_ANA_BOD_MODE0_LP_INT_RAW : R/WTC/SS; bitpos: [31]; default: 0;
  *  need_des
  */
@@ -411,7 +411,7 @@ extern "C" {
 /** LP_ANA_LP_INT_ST_REG register
  *  need_des
  */
-#define LP_ANA_LP_INT_ST_REG (DR_REG_LP_AON_BASE + 0x34)
+#define LP_ANA_LP_INT_ST_REG (DR_REG_LP_ANA_PERI_BASE + 0x34)
 /** LP_ANA_BOD_MODE0_LP_INT_ST : RO; bitpos: [31]; default: 0;
  *  need_des
  */
@@ -423,7 +423,7 @@ extern "C" {
 /** LP_ANA_LP_INT_ENA_REG register
  *  need_des
  */
-#define LP_ANA_LP_INT_ENA_REG (DR_REG_LP_AON_BASE + 0x38)
+#define LP_ANA_LP_INT_ENA_REG (DR_REG_LP_ANA_PERI_BASE + 0x38)
 /** LP_ANA_BOD_MODE0_LP_INT_ENA : R/W; bitpos: [31]; default: 0;
  *  need_des
  */
@@ -435,7 +435,7 @@ extern "C" {
 /** LP_ANA_LP_INT_CLR_REG register
  *  need_des
  */
-#define LP_ANA_LP_INT_CLR_REG (DR_REG_LP_AON_BASE + 0x3c)
+#define LP_ANA_LP_INT_CLR_REG (DR_REG_LP_ANA_PERI_BASE + 0x3c)
 /** LP_ANA_BOD_MODE0_LP_INT_CLR : WT; bitpos: [31]; default: 0;
  *  need_des
  */
@@ -447,7 +447,7 @@ extern "C" {
 /** LP_ANA_DATE_REG register
  *  need_des
  */
-#define LP_ANA_DATE_REG (DR_REG_LP_AON_BASE + 0x3fc)
+#define LP_ANA_DATE_REG (DR_REG_LP_ANA_PERI_BASE + 0x3fc)
 /** LP_ANA_LP_ANA_DATE : R/W; bitpos: [30:0]; default: 37765696;
  *  need_des
  */
