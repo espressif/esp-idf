@@ -103,7 +103,7 @@ TEST_CASE("verify esp_random() bit balance 0/1 ratio", "[random]")
 #endif
 #endif
 
-    const size_t NUM_RANDOM = 50000; /* Need enough samples for statistical significance */
+    const size_t NUM_RANDOM = 500000; /* Need enough samples for statistical significance */
     const float EXPECTED_RATIO = 0.5f; /* Expected ratio of 1s */
     const float TOLERANCE = 0.01f; /* Allow 1% deviation (49%-51%) */
     uint32_t bit_counts[32] = {0}; /* Count of 1s for each bit position */
