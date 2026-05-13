@@ -48,19 +48,43 @@ typedef enum {
 } wifi_nan_security_type_t;
 
 /**
-  * @brief NAN Datapath security parameters (Spec 6.1.1 - Data Path Request/Response)
+  * @brief NAN single-PMKID security parameters
   *
-  * @note Shared between WiFi libraries and NAN app layer.
+  * @note Holds one derived ND-PMK + ND-PMKID per spec §7.1.3.5. Used both for
+  *       the blob's per-service derived cache (own-side Publish SDF SCIA TX)
+  *       and for the host's per-NDL handshake state (M1-M4). Single PMKID is
+  *       sufficient because every spec key derivation step yields exactly one
+  *       PMKID for a given (PMK, peer NMIs, Service ID) tuple.
+  *       Shared between WiFi libraries and NAN app layer.
   */
 typedef struct {
     wifi_nan_security_type_t type;     /**< Security Type (Open/Encrypted) */
-    uint16_t csid_bitmap;              /**< Bitmap of Cipher Suite IDs (WIFI_NAN_CSID_BIT_*) */
-    uint8_t nd_pmk[ESP_WIFI_NAN_NDP_PMK_LEN];     /**< ND-PMK (Required for Datapath) */
+    uint16_t csid_bitmap;              /**< Selected Cipher Suite ID bit (WIFI_NAN_CSID_BIT_*) */
+    uint8_t nd_pmk[ESP_WIFI_NAN_NDP_PMK_LEN];     /**< ND-PMK */
     uint8_t nd_pmkid[ESP_WIFI_NAN_NDP_PMKID_LEN]; /**< ND-PMKID */
     uint8_t group_data_prot: 1;        /**< Group addressed data frame protection. Reserved: not supported right now. */
     uint8_t group_mgmt_prot: 1;        /**< Group addressed management frame protection. Reserved: not supported right now. */
     uint8_t reserved: 6;               /**< Reserved */
-} wifi_nan_datapath_security_params_t;
+} wifi_nan_security_params_t;
+
+/**
+  * @brief NAN peer security material parsed from Publish/Subscribe SDF SCIA
+  *
+  * @note Per Wi-Fi Aware v4.0 §7.1.3.5, a publisher SDF SCIA may advertise
+  *       multiple ND-PMKIDs (one per cached PMK). The receiver stores them
+  *       and matches against locally-derived PMKID at NDP-initiation time.
+  *       Internal only — not part of the public API. Shared between WiFi
+  *       libraries and NAN app layer.
+  */
+#define NAN_PEER_MAX_PMKIDS  2  /**< Internal cap; can grow without API impact */
+typedef struct {
+    uint16_t csid_bitmap;              /**< Peer's advertised Cipher Suite ID bitmap */
+    uint8_t num_pmkids;                /**< Number of parsed PMKIDs */
+    uint8_t pmkids[NAN_PEER_MAX_PMKIDS][ESP_WIFI_NAN_NDP_PMKID_LEN]; /**< Parsed ND-PMKIDs */
+    uint8_t group_data_prot: 1;        /**< Peer advertises group data frame protection */
+    uint8_t group_mgmt_prot: 1;        /**< Peer advertises group mgmt frame protection */
+    uint8_t reserved: 6;               /**< Reserved */
+} wifi_nan_peer_sdf_security_t;
 
 /* NAN Peer info parsed from SDF */
 struct nan_cb_peer_info {
@@ -71,7 +95,7 @@ struct nan_cb_peer_info {
     uint8_t ssi_ver;                                        /**< SSI version (service_match) */
     uint8_t *ssi;                                           /**< Service-specific information */
     uint16_t ssi_len;                                       /**< SSI length in bytes */
-    wifi_nan_discovery_security_params_t *peer_security_params; /**< Peer's discovery security params (cipher / PMKIDs) */
+    wifi_nan_peer_sdf_security_t *peer_security_params;     /**< Peer's discovery security params parsed from SDF */
     nan_vendor_ie_t *vendor_ie;                             /**< Vendor-specific IE, if any */
 };
 
@@ -167,18 +191,23 @@ struct nan_secure_dp_funcs {
                                            uint8_t ndp_id, const uint8_t *peer_nmi);
 
     /* RX-path attribute parsers (CSIA / SCIA / key-desc). */
-    void (*parse_ndp_csia)(void *frm, size_t buf_len, wifi_nan_datapath_security_params_t *param);
-    void (*parse_ndp_scia)(void *frm, size_t buf_len, wifi_nan_datapath_security_params_t *param);
+    void (*parse_ndp_csia)(void *frm, size_t buf_len, wifi_nan_security_params_t *param);
+    void (*parse_ndp_scia)(void *frm, size_t buf_len, wifi_nan_security_params_t *param);
     void (*parse_ndp_key_desc)(void *frm, size_t buf_len, uint8_t ndp_id, const uint8_t *peer_nmi);
 
     /* Publish-side security parser (called when blob processes inbound publish SDF) */
     esp_err_t (*parse_publish_security)(const uint8_t *attrs, size_t attrs_len,
-                                        wifi_nan_discovery_security_params_t *security);
+                                        wifi_nan_peer_sdf_security_t *security);
 
-    /* Publish-init helper -- derives ND-PMK / ND-PMKID from the publish cfg
-     * passphrase and stores them on the host service record. Result is
-     * unused when CONFIG_ESP_WIFI_NAN_SECURITY=n. */
-    esp_err_t (*derive_security_params)(wifi_nan_publish_cfg_t *cfg);
+    /* Derives ND-PMK + ND-PMKID for each credential in sec_cfg->creds[] and
+     * writes one entry per credential into out_derived[0..num_credentials).
+     * Caller passes service_name + the original publish/subscribe security
+     * cfg. out_derived must point at an array of at least
+     * ESP_WIFI_NAN_MAX_CREDS_PER_SVC entries. All inputs are treated as
+     * read-only. Returns ESP_FAIL or NULL when CONFIG_ESP_WIFI_NAN_SECURITY=n. */
+    esp_err_t (*derive_security_params)(const char *service_name,
+                                        const wifi_nan_discovery_security_params_t *sec_cfg,
+                                        wifi_nan_security_params_t *out_derived);
 
     /* NDP security gate: cipher-suite bitmap for (ndp_id, peer_nmi), or 0 for open. */
     uint16_t (*get_ndp_security_csid)(uint8_t ndp_id, const uint8_t *peer_nmi);

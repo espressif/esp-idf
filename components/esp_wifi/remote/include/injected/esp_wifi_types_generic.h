@@ -17,6 +17,8 @@ extern "C" {
 #endif
 
 #define WIFI_AP_DEFAULT_MAX_IDLE_PERIOD  292 /**< Default timeout for SoftAP BSS Max Idle. Unit: 1000TUs >**/
+#define MAX_SSID_LEN        32    /**< Maximum length of SSID */
+#define MAX_PASSPHRASE_LEN  64    /**< Maximum length of passphrase */
 
 /**
   * @brief Wi-Fi mode type
@@ -866,7 +868,7 @@ typedef struct {
 
 #define ESP_WIFI_NAN_NDP_PMK_LEN        32     /**< Length of NAN Datapath PMK */
 #define ESP_WIFI_NAN_NDP_PMKID_LEN      16     /**< Length of NAN Datapath PMKID */
-#define ESP_WIFI_NAN_MAX_PMKIDS         2      /**< Maximum number of PMKIDs supported */
+#define ESP_WIFI_NAN_MAX_CREDS_PER_SVC  4      /**< Maximum number of NAN security credentials per service (passphrase/PMK entries) */
 
 #define ESP_WIFI_MAX_SVC_NAME_LEN       256    /**< Maximum length of NAN service name */
 #define ESP_WIFI_MAX_FILTER_LEN         256    /**< Maximum length of NAN service filter */
@@ -910,7 +912,7 @@ typedef enum {
 } wifi_nan_service_type_t;
 
 /**
-  * @brief NAN Cipher Suite IDs (Spec 4.1.1 & 6.1.1)
+  * @brief NAN Cipher Suite IDs (Wi-Fi Aware v4.0 §4.1.1 & §6.1.1)
   *
   * @note Only WIFI_NAN_CSID_NCS_SK_128 is currently supported by the firmware.
   *       The other values are reserved for future support; selecting any of
@@ -934,19 +936,37 @@ typedef enum {
 #define WIFI_NAN_CSID_BIT_NCS_PK_PASN_256  (1 << WIFI_NAN_CSID_NCS_PK_PASN_256)
 
 /**
-  * @brief NAN Discovery security parameters (Spec 4.1.1 - Publish/Subscribe)
+  * @brief NAN security credential - one passphrase or raw PMK + the cipher it's bound to.
   *
+  * Per Wi-Fi Aware v4.0 §7.1.3.5 the PMKID derivation formula is cipher-specific
+  * (NCS-SK-128 uses HMAC-SHA-256; NCS-SK-256 uses HMAC-SHA-384), so each
+  * credential must carry the cipher it was provisioned for.
   */
 typedef struct {
-    uint16_t csid_bitmap;              /**< Bitmap of Supported Cipher Suite IDs (WIFI_NAN_CSID_BIT_*) */
-    uint8_t num_pmkids;                /**< Number of PMKIDs */
-    uint8_t pmkids[ESP_WIFI_NAN_MAX_PMKIDS][ESP_WIFI_NAN_NDP_PMKID_LEN]; /**< ND-PMKIDs */
-    uint8_t group_data_prot: 1;        /**< Group addressed data frame protection. Reserved: not supported right now. */
-    uint8_t group_mgmt_prot: 1;        /**< Group addressed management frame protection. Reserved: not supported right now. */
-    uint8_t use_pmk: 1;                /**< 0 - Use passphrase, 1 - Use PMK directly */
-    uint8_t reserved: 5;               /**< Reserved */
-    char passphrase[MAX_PASSPHRASE_LEN]; /**< NCS-SK passphrase (use_pmk=0). NUL-terminated. */
-    uint8_t pmk[ESP_WIFI_NAN_NDP_PMK_LEN]; /**< NCS-SK PMK (use_pmk=1). Raw bytes, not NUL-terminated. */
+    uint8_t csid;                                /**< Cipher Suite ID this credential is for (wifi_nan_cipher_suite_id_t value) */
+    uint8_t use_pmk: 1;                          /**< 0 - Use passphrase, 1 - Use PMK directly */
+    uint8_t reserved: 7;                         /**< Reserved */
+    char    passphrase[MAX_PASSPHRASE_LEN];      /**< NCS-SK passphrase (use_pmk=0). NUL-terminated. */
+    uint8_t pmk[ESP_WIFI_NAN_NDP_PMK_LEN];       /**< NCS-SK PMK (use_pmk=1). Raw bytes, not NUL-terminated. */
+} wifi_nan_credential_t;
+
+/**
+  * @brief NAN Discovery security parameters (Wi-Fi Aware v4.0 §4.1.1 - Publish/Subscribe)
+  *
+  * Per Wi-Fi Aware v4.0 §9.5.21.4 (SCIA) and §7.1.3.5 the Publish/Subscribe SDF
+  * may advertise multiple ND-PMKIDs (one per provisioned ND-PMK). Applications
+  * provide one or more credentials in @c creds; the stack derives PMK + PMKID
+  * per credential and emits the multi-SCID list. Subscriber-side, the library
+  * walks an incoming publisher's SCID list and matches against any of the
+  * locally-provisioned credentials. The CSIA cipher bitmap advertised on air
+  * is computed by the stack as the union of each credential's @c csid.
+  */
+typedef struct {
+    uint8_t group_data_prot: 1;                  /**< Group addressed data frame protection. Reserved: not supported right now. */
+    uint8_t group_mgmt_prot: 1;                  /**< Group addressed management frame protection. Reserved: not supported right now. */
+    uint8_t reserved: 6;                         /**< Reserved */
+    uint8_t num_credentials;                     /**< Number of valid entries in @c creds (0..ESP_WIFI_NAN_MAX_CREDS_PER_SVC). 0 = open service. */
+    wifi_nan_credential_t creds[ESP_WIFI_NAN_MAX_CREDS_PER_SVC]; /**< Credentials list. */
 } wifi_nan_discovery_security_params_t;
 
 /**
@@ -1290,8 +1310,6 @@ typedef enum {
     WPS_FAIL_REASON_MAX             /**< Max WPS fail reason */
 } wifi_event_sta_wps_fail_reason_t;
 
-#define MAX_SSID_LEN        32    /**< Maximum length of SSID */
-#define MAX_PASSPHRASE_LEN  64    /**< Maximum length of passphrase */
 #define MAX_WPS_AP_CRED     3     /**< Maximum number of AP credentials received from WPS handshake */
 
 /**

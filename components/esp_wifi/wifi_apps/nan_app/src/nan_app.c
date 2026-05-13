@@ -111,7 +111,7 @@ struct own_svc_info *nan_find_own_svc(uint8_t svc_id)
     return p_svc;
 }
 
-static struct own_svc_info *nan_find_own_svc_by_name(const char *svc_name)
+struct own_svc_info *nan_find_own_svc_by_name(const char *svc_name)
 {
     struct own_svc_info *p_svc = NULL;
 
@@ -271,46 +271,68 @@ static bool nan_services_limit_reached(void)
     return true;
 }
 
-static void nan_record_own_svc(uint8_t id, uint8_t type, const char svc_name[],
-                               bool ndp_resp_needed,
-                               const wifi_nan_discovery_security_params_t *security_cfg)
+/* Pre-claim a slot for an upcoming publish/subscribe service. The slot is
+ * marked with a pending sentinel svc_id (0xFF) so nan_find_own_svc_by_name()
+ * can find it from the derive callback running on the WiFi task — that's how
+ * the host's per-credential derived_security[] mirror gets populated without
+ * a duplicate PBKDF2 pass on the app/main task (which would block IDLE0 and
+ * trip the watchdog). Real svc_id is stamped later by nan_finalize_own_svc(). */
+#define NAN_SVC_ID_PENDING  0xFF
+
+static struct own_svc_info *nan_claim_own_svc_slot(uint8_t type, const char svc_name[],
+                                                   const wifi_nan_discovery_security_params_t *security_cfg)
 {
     struct own_svc_info *p_svc = NULL;
-
     for (int i = 0; i < ESP_WIFI_NAN_MAX_SVC_SUPPORTED; i++) {
         if (s_nan_ctx.own_svc[i].svc_id == 0) {
             p_svc = &s_nan_ctx.own_svc[i];
             break;
         }
     }
-
     if (!p_svc) {
-        return;
+        return NULL;
     }
 
-    p_svc->svc_id = id;
+    p_svc->svc_id = NAN_SVC_ID_PENDING;
     p_svc->type = type;
     strlcpy(p_svc->svc_name, svc_name, ESP_WIFI_MAX_SVC_NAME_LEN);
-    SLIST_INIT(&(p_svc->peer_list));
-    if (type == ESP_NAN_PUBLISH) {
-        p_svc->ndp_resp_needed = ndp_resp_needed;
-    }
+    SLIST_INIT(&p_svc->peer_list);
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
-    /* Wipe to drop stale PMK material if this slot was previously used. */
-    forced_memzero(&p_svc->security_cfg, sizeof(p_svc->security_cfg));
-    forced_memzero(p_svc->pmk_cache, sizeof(p_svc->pmk_cache));
-
+    forced_memzero(&p_svc->user_cfg, sizeof(p_svc->user_cfg));
+    forced_memzero(&p_svc->derived_security, sizeof(p_svc->derived_security));
     if (security_cfg) {
-        memcpy(&p_svc->security_cfg, security_cfg, sizeof(wifi_nan_discovery_security_params_t));
-        if (security_cfg->num_pmkids > 0) {
-            memcpy(p_svc->pmk_cache[0], security_cfg->pmk, ESP_WIFI_NAN_NDP_PMK_LEN);
-            /* Public struct has one pmk[32]; cap num_pmkids to the count we cached. */
-            p_svc->security_cfg.num_pmkids = 1;
-        }
+        memcpy(&p_svc->user_cfg, security_cfg, sizeof(*security_cfg));
     }
 #else
     (void)security_cfg;
-#endif /* CONFIG_ESP_WIFI_NAN_SECURITY */
+#endif
+    return p_svc;
+}
+
+/* Stamp the real svc_id and per-publish flags after the blob accepts the
+ * service. Looked up by name since the WiFi-task derive callback may have
+ * already populated derived_security[] before this runs. */
+static void nan_finalize_own_svc(const char *svc_name, uint8_t id, bool ndp_resp_needed)
+{
+    struct own_svc_info *p_svc = nan_find_own_svc_by_name(svc_name);
+    if (!p_svc) {
+        return;
+    }
+    p_svc->svc_id = id;
+    if (p_svc->type == ESP_NAN_PUBLISH) {
+        p_svc->ndp_resp_needed = ndp_resp_needed;
+    }
+}
+
+/* Release a pending slot when the blob's publish/subscribe call fails. */
+static void nan_abort_own_svc(const char *svc_name)
+{
+    struct own_svc_info *p_svc = nan_find_own_svc_by_name(svc_name);
+    if (!p_svc) {
+        return;
+    }
+    forced_memzero(p_svc, sizeof(*p_svc));
+    /* svc_id back to 0 -> slot free */
 }
 
 /* A slot is in use once nan_record_new_ndl/preclaim has stamped peer_nmi,
@@ -566,9 +588,21 @@ void nan_app_service_match_cb(uint8_t sub_id, struct nan_cb_peer_info *peer_info
     ESP_LOGI(TAG, "Service matched with capabilities: 0x%04x", capab);
 
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
-    if (peer_info->peer_security_params) {
+    /* Service-match security gate:
+     *   1. Subscriber configured no credentials (open subscribe) -> accept
+     *      regardless of what the peer advertised. NDP will be open.
+     *   2. Subscriber configured credentials (secure subscribe) -> peer
+     *      must have advertised PMKIDs AND at least one of them must match
+     *      one of the local creds, else drop. */
+    if (nan_security_subscriber_has_creds()) {
+        if (!peer_info->peer_security_params ||
+            peer_info->peer_security_params->num_pmkids == 0) {
+            ESP_LOGW(TAG, "Secure subscribe: peer "MACSTR" advertises no PMKIDs",
+                     MAC2STR(pub_mac));
+            return;
+        }
         if (!nan_security_service_match(pub_mac, peer_info->peer_security_params)) {
-            ESP_LOGD(TAG, "PMKID mismatch with "MACSTR, MAC2STR(pub_mac));
+            ESP_LOGW(TAG, "PMKID mismatch with "MACSTR, MAC2STR(pub_mac));
             return;
         }
     }
@@ -1382,9 +1416,19 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
         ESP_LOGE(TAG, "Encrypted datapath not enabled (CONFIG_ESP_WIFI_NAN_SECURITY)");
         goto fail;
 #else
-        if (!(publish_cfg->security_cfg.csid_bitmap & WIFI_NAN_CSID_BIT_NCS_SK_128)) {
-            ESP_LOGE(TAG, "Unsupported cipher suite in csid_bitmap (only NCS-SK-128 is supported)");
+        if (publish_cfg->security_cfg.num_credentials == 0 ||
+            publish_cfg->security_cfg.num_credentials > ESP_WIFI_NAN_MAX_CREDS_PER_SVC) {
+            ESP_LOGE(TAG, "security_cfg.num_credentials=%u must be 1..%u",
+                     publish_cfg->security_cfg.num_credentials,
+                     ESP_WIFI_NAN_MAX_CREDS_PER_SVC);
             goto fail;
+        }
+        for (uint8_t i = 0; i < publish_cfg->security_cfg.num_credentials; i++) {
+            uint8_t csid = publish_cfg->security_cfg.creds[i].csid;
+            if (csid != WIFI_NAN_CSID_NCS_SK_128) {
+                ESP_LOGE(TAG, "creds[%u].csid=%u unsupported (only NCS-SK-128)", i, csid);
+                goto fail;
+            }
         }
 #endif
     }
@@ -1397,24 +1441,31 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
     }
     memcpy(cfg, publish_cfg, sizeof(*cfg));
 
-    /* Security derivation (PMK, PMKID) now runs in WiFi task context —
-     * the WiFi library calls nan_derive_security_params(cfg) during publish processing.
-     * After esp_nan_internal_publish_service returns, cfg->security_cfg has
-     * the derived PMK and PMKID populated by the WiFi task. */
+    /* Pre-claim host slot BEFORE calling into the blob. Reason: the blob
+     * invokes our derive_security_params callback on the WiFi task and looks
+     * up the host's slot by service name to mirror derived ND-PMK/ND-PMKID
+     * into p_svc->derived_security[]. Doing the derive on WiFi task (not the
+     * app/main task) keeps PBKDF2's hardware-SHA polling off IDLE0 and avoids
+     * tripping the task watchdog when num_credentials > 1. */
+    if (!nan_claim_own_svc_slot(ESP_NAN_PUBLISH, publish_cfg->service_name,
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+                                &cfg->security_cfg
+#else
+                                NULL
+#endif
+                               )) {
+        ESP_LOGE(TAG, "No free service slot");
+        goto fail;
+    }
 
     if (esp_nan_internal_publish_service(cfg, (uint8_t *) &pub_id, false) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to publish service '%s'", publish_cfg->service_name);
+        nan_abort_own_svc(publish_cfg->service_name);
         goto fail;
     }
 
     ESP_LOGI(TAG, "Started Publishing %s [Service ID - %u]", publish_cfg->service_name, pub_id);
-    nan_record_own_svc(pub_id, ESP_NAN_PUBLISH, publish_cfg->service_name, publish_cfg->ndp_resp_needed,
-#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
-                       &cfg->security_cfg
-#else
-                       NULL
-#endif
-    );
+    nan_finalize_own_svc(publish_cfg->service_name, pub_id, publish_cfg->ndp_resp_needed);
     os_free(cfg);
     NAN_DATA_UNLOCK();
 
@@ -1481,9 +1532,19 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
         ESP_LOGE(TAG, "Encrypted datapath not enabled (CONFIG_ESP_WIFI_NAN_SECURITY)");
         return 0;
 #else
-        if (!(subscribe_cfg->security_cfg.csid_bitmap & WIFI_NAN_CSID_BIT_NCS_SK_128)) {
-            ESP_LOGE(TAG, "Unsupported cipher suite in csid_bitmap (only NCS-SK-128 is supported)");
+        if (subscribe_cfg->security_cfg.num_credentials == 0 ||
+            subscribe_cfg->security_cfg.num_credentials > ESP_WIFI_NAN_MAX_CREDS_PER_SVC) {
+            ESP_LOGE(TAG, "security_cfg.num_credentials=%u must be 1..%u",
+                     subscribe_cfg->security_cfg.num_credentials,
+                     ESP_WIFI_NAN_MAX_CREDS_PER_SVC);
             return 0;
+        }
+        for (uint8_t i = 0; i < subscribe_cfg->security_cfg.num_credentials; i++) {
+            uint8_t csid = subscribe_cfg->security_cfg.creds[i].csid;
+            if (csid != WIFI_NAN_CSID_NCS_SK_128) {
+                ESP_LOGE(TAG, "creds[%u].csid=%u unsupported (only NCS-SK-128)", i, csid);
+                return 0;
+            }
         }
 #endif
     }
@@ -1502,14 +1563,22 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
         goto fail;
     }
 
+    /* Pre-claim host slot BEFORE the blob's subscribe call; see comment on
+     * the publish path for the watchdog rationale. */
+    if (!nan_claim_own_svc_slot(ESP_NAN_SUBSCRIBE, subscribe_cfg->service_name,
+                                &subscribe_cfg->security_cfg)) {
+        ESP_LOGE(TAG, "No free service slot");
+        goto fail;
+    }
 
     if (esp_nan_internal_subscribe_service(subscribe_cfg, (uint8_t*) &sub_id, false) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to subscribe to service '%s'", subscribe_cfg->service_name);
+        nan_abort_own_svc(subscribe_cfg->service_name);
         goto fail;
     }
 
     ESP_LOGI(TAG, "Started Subscribing to %s [Service ID - %u]", subscribe_cfg->service_name, sub_id);
-    nan_record_own_svc((uint8_t) sub_id, ESP_NAN_SUBSCRIBE, subscribe_cfg->service_name, false, &subscribe_cfg->security_cfg);
+    nan_finalize_own_svc(subscribe_cfg->service_name, (uint8_t) sub_id, false);
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
     nan_security_cache_subscriber_params(subscribe_cfg->service_name, &subscribe_cfg->security_cfg);
 #endif

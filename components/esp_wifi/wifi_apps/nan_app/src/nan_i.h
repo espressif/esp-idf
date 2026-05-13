@@ -162,8 +162,12 @@ struct own_svc_info {
 
     bool ndp_resp_needed;
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
-    wifi_nan_discovery_security_params_t security_cfg;
-    uint8_t pmk_cache[ESP_WIFI_NAN_MAX_PMKIDS][ESP_WIFI_NAN_NDP_PMK_LEN];
+    /* App-provided input (creds[] / csid_bitmap / group prot flags). */
+    wifi_nan_discovery_security_params_t user_cfg;
+    /* Derived material — one ND-PMK + ND-PMKID per credential. Mirrors the
+     * per-service array the blob caches in svc_entry->self_security_params[].
+     * Valid entries: [0, user_cfg.num_credentials). */
+    wifi_nan_security_params_t derived_security[ESP_WIFI_NAN_MAX_CREDS_PER_SVC];
 #endif
     uint8_t num_peer_records;
     SLIST_HEAD(peer_list_t, peer_svc_info) peer_list;
@@ -178,7 +182,7 @@ struct ndl_info {
     uint8_t own_role;
     uint32_t device_caps;
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
-    wifi_nan_datapath_security_params_t security_ctx;
+    wifi_nan_security_params_t security_ctx;
 
     uint8_t anonce[NAN_NONCE_LEN];
     uint8_t snonce[NAN_NONCE_LEN];
@@ -233,6 +237,7 @@ extern nan_ctx_t s_nan_ctx;
 
 /* Helpers defined in nan_app.c, used by nan_security.c */
 struct own_svc_info *nan_find_own_svc(uint8_t svc_id);
+struct own_svc_info *nan_find_own_svc_by_name(const char *svc_name);
 struct ndl_info *nan_find_ndl(uint8_t ndp_id, uint8_t peer_nmi[]);
 struct ndl_info *nan_find_ndl_by_pub_id_and_peer(uint8_t pub_id, const uint8_t *peer_nmi);
 
@@ -291,12 +296,12 @@ int  esp_nan_verify_ndp_security_install_mic(uint8_t *m4_body, size_t body_len,
                                              uint8_t *key_desc_attr,
                                              uint8_t ndp_id, const uint8_t *peer_nmi);
 
-void esp_nan_parse_ndp_csia(void *frm, size_t buf_len, wifi_nan_datapath_security_params_t *param);
-void esp_nan_parse_ndp_scia(void *frm, size_t buf_len, wifi_nan_datapath_security_params_t *param);
+void esp_nan_parse_ndp_csia(void *frm, size_t buf_len, wifi_nan_security_params_t *param);
+void esp_nan_parse_ndp_scia(void *frm, size_t buf_len, wifi_nan_security_params_t *param);
 void esp_nan_parse_ndp_key_desc(void *frm, size_t buf_len, uint8_t ndp_id, const uint8_t *peer_nmi);
 
 esp_err_t esp_nan_parse_publish_security(const uint8_t *attrs, size_t attrs_len,
-                                         wifi_nan_discovery_security_params_t *security);
+                                         wifi_nan_peer_sdf_security_t *security);
 
 /* Helpers defined in nan_security.c, used by nan_app.c */
 
@@ -311,8 +316,12 @@ void nan_security_apply_pending(struct ndl_info *ndl,
                                 const uint8_t *peer_nmi,
                                 const uint8_t *peer_ndi);
 
-/* PMK / PMKID derivation entry point used by the publish path. */
-esp_err_t nan_derive_security_params(wifi_nan_publish_cfg_t *cfg);
+/* PMK / PMKID derivation entry point used by the publish path. Derives from
+ * (service_name, sec_cfg) (passphrase or PMK) and writes the result into
+ * out_derived. */
+esp_err_t nan_derive_security_params(const char *service_name,
+                                     const wifi_nan_discovery_security_params_t *sec_cfg,
+                                     wifi_nan_security_params_t *out_derived);
 
 /* Blob-side gate query: returns ndl->security_ctx.csid_bitmap for the NDP
  * keyed on (ndp_id, peer_nmi), or 0 if no NDL match. ndp_id=0 is valid for
@@ -336,13 +345,23 @@ esp_err_t nan_security_populate_initiator_ndl(struct ndl_info *ndl,
  * from the service-match callback.
  */
 bool nan_security_service_match(const uint8_t *publisher_nmi,
-                                const wifi_nan_discovery_security_params_t *peer_sec);
+                                const wifi_nan_peer_sdf_security_t *peer_sec);
+
+/* Returns true if the local subscriber configured at least one credential
+ * via the most recent esp_wifi_nan_subscribe_service(). Used by the
+ * service-match gate to decide whether to PMKID-validate an incoming peer. */
+bool nan_security_subscriber_has_creds(void);
 #else
-static inline esp_err_t nan_derive_security_params(wifi_nan_publish_cfg_t *cfg)
+static inline esp_err_t nan_derive_security_params(const char *service_name,
+                                                   const wifi_nan_discovery_security_params_t *sec_cfg,
+                                                   wifi_nan_security_params_t *out_derived)
 {
-    (void)cfg;
+    (void)service_name;
+    (void)sec_cfg;
+    (void)out_derived;
     return ESP_FAIL;
 }
+static inline bool nan_security_subscriber_has_creds(void) { return false; }
 #endif /* CONFIG_ESP_WIFI_NAN_SECURITY */
 
 #ifdef __cplusplus
