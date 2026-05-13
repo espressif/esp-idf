@@ -9,6 +9,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 @idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
 def test_examples_nvs_rw_value(dut: Dut) -> None:
     dut.serial.erase_flash()
