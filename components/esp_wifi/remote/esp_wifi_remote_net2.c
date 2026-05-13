@@ -46,6 +46,7 @@ WEAK esp_err_t esp_wifi_remote_channel_rx(void *h, void *buffer, void *buff_to_f
     if (h == s_channel[CHANNEL_AP] && s_rx_fn[CHANNEL_AP]) {
         return s_rx_fn[CHANNEL_AP](buffer, len, buff_to_free);
     }
+    free(buff_to_free);
     return ESP_FAIL;
 }
 
@@ -90,7 +91,7 @@ IMPLEMENT_WIFI_TRANSMIT(transmit_ap, WIFI_IF_AP)
 
 static void wifi_free(void *h, void* buffer)
 {
-    // remote wifi, no need to free the buffer
+    free(buffer);
 }
 
 static esp_err_t receive_sta(void *buffer, uint16_t len, void *eb)
