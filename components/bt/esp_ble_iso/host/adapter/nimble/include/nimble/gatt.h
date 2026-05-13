@@ -113,7 +113,9 @@ void bt_le_nimble_gatts_nrp_indicate_cb(uint16_t conn_handle,
 
 int bt_le_nimble_gatt_nrp_insert(struct bt_conn *conn, uint8_t type, void *params);
 
-int bt_le_nimble_gatt_nrp_remove(struct bt_conn *conn, uint8_t type, void *params);
+/* err is forwarded only to the INDICATE func cb; other NRP types invoke their
+ * own func with err in cb_safe and pass 0 here. */
+int bt_le_nimble_gatt_nrp_remove(struct bt_conn *conn, uint8_t type, void *params, uint8_t err);
 
 void bt_le_nimble_gatt_nrp_clear(uint16_t conn_handle);
 

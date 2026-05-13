@@ -78,6 +78,35 @@ typedef enum bt_audio_codec_cfg_target_phy              esp_ble_audio_codec_cfg_
     })
 
 /**
+ * @brief   Variant of ESP_BLE_AUDIO_CODEC_CFG with explicit LVT content lengths.
+ *
+ * @param   _id         Codec ID.
+ * @param   _cid        Company ID.
+ * @param   _vid        Vendor ID.
+ * @param   _data       Codec Specific Data buffer in LVT format.
+ * @param   _data_len   Current LVT content length in `_data`.
+ * @param   _meta       Codec Specific Metadata buffer in LVT format.
+ * @param   _meta_len   Current LVT content length in `_meta`.
+ */
+#define ESP_BLE_AUDIO_CODEC_CFG_LEN(_id, _cid, _vid, _data, _data_len, _meta, _meta_len) \
+    ((esp_ble_audio_codec_cfg_t){ \
+        /* Use HCI data path as default, can be overwritten by application */ \
+        .path_id        = ESP_BLE_ISO_DATA_PATH_HCI, \
+        .ctlr_transcode = false, \
+        COND_CODE_1(IS_ENABLED(CONFIG_BT_BAP_UNICAST), \
+                    (.target_latency = ESP_BLE_AUDIO_CODEC_CFG_TARGET_LATENCY_BALANCED, \
+                     .target_phy = ESP_BLE_AUDIO_CODEC_CFG_TARGET_PHY_2M,), \
+                    ()) \
+        .id             = (_id), \
+        .cid            = (_cid), \
+        .vid            = (_vid), \
+        .data_len       = (_data_len), \
+        .data           = (_data), \
+        .meta_len       = (_meta_len), \
+        .meta           = (_meta), \
+    })
+
+/**
  * @brief   Helper to declare esp_ble_audio_codec_cap_t.
  *
  * @param   _id     Codec ID.
@@ -97,6 +126,23 @@ typedef enum bt_audio_codec_cfg_target_phy              esp_ble_audio_codec_cfg_
         .data_len       = sizeof(_data), \
         .data           = (_data), \
         .meta_len       = sizeof(_meta), \
+        .meta           = (_meta), \
+    })
+
+/**
+ * @brief   Variant of ESP_BLE_AUDIO_CODEC_CAP with explicit LVT content lengths.
+ */
+#define ESP_BLE_AUDIO_CODEC_CAP_LEN(_id, _cid, _vid, _data, _data_len, _meta, _meta_len) \
+    ((esp_ble_audio_codec_cap_t){ \
+        /* Use HCI data path as default, can be overwritten by application */ \
+        .path_id        = ESP_BLE_ISO_DATA_PATH_HCI, \
+        .ctlr_transcode = false, \
+        .id             = (_id), \
+        .cid            = (_cid), \
+        .vid            = (_vid), \
+        .data_len       = (_data_len), \
+        .data           = (_data), \
+        .meta_len       = (_meta_len), \
         .meta           = (_meta), \
     })
 

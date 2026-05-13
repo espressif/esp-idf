@@ -34,10 +34,17 @@ struct gatt_nrp_node {
     union {
         struct {
             struct bt_gatt_read_params *params;
+            /* read_by_uuid is multi-event (one per matching attr + EDONE);
+             * cb may return BT_GATT_ITER_STOP early, after which we must
+             * not invoke it again for trailing events on this procedure. */
+            bool iter_stopped;
         } read_by_uuid;
 
         struct {
             struct bt_gatt_read_params *params;
+            /* Same multi-event story as read_by_uuid; per-fragment events
+             * may precede EDONE and the cb may STOP early. */
+            bool iter_stopped;
         } read_long;
 
         struct {
@@ -46,6 +53,13 @@ struct gatt_nrp_node {
 
         struct {
             struct bt_gatt_write_params *params;
+            /* Heap copy of params->data captured at insert time. Callers may pass
+             * a pointer to a stack-allocated buffer (e.g. NET_BUF_SIMPLE_DEFINE
+             * inside a helper that returns immediately after bt_gatt_write); when
+             * the request gets queued behind another in-flight GATT op, the
+             * caller's buffer is gone by the time we re-dispatch. Hold our own
+             * copy and dispatch from it. NULL when length == 0. */
+            uint8_t *data_copy;
         } write_req;
 
         struct {
@@ -53,7 +67,11 @@ struct gatt_nrp_node {
         } subscribe;
 
         struct {
+            /* Deep-copied at insert: callers may reuse the params slot or
+             * pass stack-backed data while we are queued/in-flight. */
             struct bt_gatt_indicate_params *params;
+            struct bt_gatt_indicate_params params_copy;
+            uint8_t *data_copy;
         } indicate;
     };
 
@@ -70,13 +88,19 @@ static struct gatt_nrp {
     },
 };
 
+static struct gatt_nrp *gatt_nrp_find(uint16_t conn_handle);
+
 static int gattc_nrp_read_by_uuid_cb_safe(uint16_t conn_handle,
                                           const struct ble_gatt_error *error,
                                           struct ble_gatt_attr *attr,
                                           void *arg)
 {
     struct bt_gatt_read_params *read_params;
+    struct gatt_nrp_node *nrp_node;
+    struct gatt_nrp *nrp;
     struct bt_conn *conn;
+    sys_snode_t *node;
+    bool iter_stopped;
     int rc = 0;
 
     read_params = arg;
@@ -95,15 +119,21 @@ static int gattc_nrp_read_by_uuid_cb_safe(uint16_t conn_handle,
     if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
         LOG_ERR("[N]GattcNrpNotConn[%d]", __LINE__);
         rc = -ENOTCONN;
-        /* Note:
-         * Cannot remove NRP node or invoke callback without valid conn.
-         * Consider if bt_le_nimble_gatt_nrp_clear() should be invoked.
-         */
         goto end;
     }
 
-    /* Shall be invoked before the read_params->func is invoked */
-    bt_le_nimble_gatt_nrp_remove(conn, GATTC_NRP_READ_BY_UUID, read_params);
+    /* Peek (don't pop) the in-flight head; READ_BY_UUID delivers per-attr
+     * events followed by EDONE, so the head must survive across events.
+     * It is removed only on terminal status (EDONE / error) below. */
+    nrp = gatt_nrp_find(conn->handle);
+    assert(nrp);
+    node = sys_slist_peek_head(&nrp->list);
+    assert(node);
+    nrp_node = CONTAINER_OF(node, struct gatt_nrp_node, node);
+    assert(nrp_node->type == GATTC_NRP_READ_BY_UUID);
+    assert(nrp_node->read_by_uuid.params == read_params);
+
+    iter_stopped = nrp_node->read_by_uuid.iter_stopped;
 
     switch (error->status) {
     case 0:
@@ -118,20 +148,28 @@ static int gattc_nrp_read_by_uuid_cb_safe(uint16_t conn_handle,
             read_params->by_uuid.start_handle = attr->handle;
         }
 
-        read_params->func(conn, 0, read_params, attr->om->om_data, attr->om->om_len);
+        if (!iter_stopped) {
+            uint8_t cb_ret = read_params->func(conn, 0, read_params,
+                                               attr->om->om_data, attr->om->om_len);
+            if (cb_ret == BT_GATT_ITER_STOP) {
+                nrp_node->read_by_uuid.iter_stopped = true;
+            }
+        }
         break;
 
     case BLE_HS_EDONE:
-        read_params->func(conn, 0, read_params, NULL, 0);
+        bt_le_nimble_gatt_nrp_remove(conn, GATTC_NRP_READ_BY_UUID, read_params, 0);
+        if (!iter_stopped) {
+            read_params->func(conn, 0, read_params, NULL, 0);
+        }
         break;
 
     default:
         LOG_WRN("[N]GattcNrpStatus[%04x]", error->status);
 
-        if (error->status & BLE_HS_ERR_ATT_BASE) {
+        bt_le_nimble_gatt_nrp_remove(conn, GATTC_NRP_READ_BY_UUID, read_params, 0);
+        if ((error->status & BLE_HS_ERR_ATT_BASE) && !iter_stopped) {
             read_params->func(conn, (uint8_t)error->status, read_params, NULL, 0);
-        } else {
-            /* Note: for other errors, currently we just ignore it. */
         }
 
         rc = error->status;
@@ -150,7 +188,11 @@ static int gattc_nrp_read_long_cb_safe(uint16_t conn_handle,
                                        void *arg)
 {
     struct bt_gatt_read_params *read_params;
+    struct gatt_nrp_node *nrp_node;
+    struct gatt_nrp *nrp;
     struct bt_conn *conn;
+    sys_snode_t *node;
+    bool iter_stopped;
     int rc = 0;
 
     read_params = arg;
@@ -170,8 +212,17 @@ static int gattc_nrp_read_long_cb_safe(uint16_t conn_handle,
         goto end;
     }
 
-    /* Shall be invoked before the read_params->func is invoked */
-    bt_le_nimble_gatt_nrp_remove(conn, GATTC_NRP_READ_LONG, read_params);
+    /* Peek (don't pop) — per-fragment events may precede EDONE; head is
+     * removed only on terminal status below. */
+    nrp = gatt_nrp_find(conn->handle);
+    assert(nrp);
+    node = sys_slist_peek_head(&nrp->list);
+    assert(node);
+    nrp_node = CONTAINER_OF(node, struct gatt_nrp_node, node);
+    assert(nrp_node->type == GATTC_NRP_READ_LONG);
+    assert(nrp_node->read_long.params == read_params);
+
+    iter_stopped = nrp_node->read_long.iter_stopped;
 
     switch (error->status) {
     case 0:
@@ -181,20 +232,28 @@ static int gattc_nrp_read_long_cb_safe(uint16_t conn_handle,
         LOG_DBG("[N]GattcNrpHdl[%u][%u]Offset[%u]Len[%u]",
                 attr->handle, read_params->single.handle, attr->offset, attr->om->om_len);
 
-        read_params->func(conn, 0, read_params, attr->om->om_data, attr->om->om_len);
+        if (!iter_stopped) {
+            uint8_t cb_ret = read_params->func(conn, 0, read_params,
+                                               attr->om->om_data, attr->om->om_len);
+            if (cb_ret == BT_GATT_ITER_STOP) {
+                nrp_node->read_long.iter_stopped = true;
+            }
+        }
         break;
 
     case BLE_HS_EDONE:
-        read_params->func(conn, 0, read_params, NULL, 0);
+        bt_le_nimble_gatt_nrp_remove(conn, GATTC_NRP_READ_LONG, read_params, 0);
+        if (!iter_stopped) {
+            read_params->func(conn, 0, read_params, NULL, 0);
+        }
         break;
 
     default:
         LOG_WRN("[N]GattcNrpStatus[%04x]", error->status);
 
-        if (error->status & BLE_HS_ERR_ATT_BASE) {
+        bt_le_nimble_gatt_nrp_remove(conn, GATTC_NRP_READ_LONG, read_params, 0);
+        if ((error->status & BLE_HS_ERR_ATT_BASE) && !iter_stopped) {
             read_params->func(conn, (uint8_t)error->status, read_params, NULL, 0);
-        } else {
-            /* Note: for other errors, currently we just ignore it. */
         }
 
         rc = error->status;
@@ -234,7 +293,7 @@ static int gattc_nrp_read_single_cb_safe(uint16_t conn_handle,
     }
 
     /* Shall be invoked before the read_params->func is invoked */
-    bt_le_nimble_gatt_nrp_remove(conn, GATTC_NRP_READ_SINGLE, read_params);
+    bt_le_nimble_gatt_nrp_remove(conn, GATTC_NRP_READ_SINGLE, read_params, 0);
 
     switch (error->status) {
     case 0:
@@ -263,8 +322,6 @@ static int gattc_nrp_read_single_cb_safe(uint16_t conn_handle,
 
         if (error->status & BLE_HS_ERR_ATT_BASE) {
             read_params->func(conn, (uint8_t)error->status, read_params, NULL, 0);
-        } else {
-            /* Note: for other errors, currently we just ignore it. */
         }
 
         rc = error->status;
@@ -353,7 +410,7 @@ static int gattc_nrp_write_cb_safe(uint16_t conn_handle,
     }
 
     /* Shall be invoked before the write_params->func is invoked */
-    bt_le_nimble_gatt_nrp_remove(conn, GATTC_NRP_WRITE_REQ, write_params);
+    bt_le_nimble_gatt_nrp_remove(conn, GATTC_NRP_WRITE_REQ, write_params, 0);
 
     switch (error->status) {
     case 0:
@@ -372,8 +429,6 @@ static int gattc_nrp_write_cb_safe(uint16_t conn_handle,
 
         if (error->status & BLE_HS_ERR_ATT_BASE) {
             write_params->func(conn, (uint8_t)error->status, write_params);
-        } else {
-            /* Note: for other errors, currently we just ignore it. */
         }
 
         rc = error->status;
@@ -386,17 +441,18 @@ end:
     return rc;
 }
 
-static int gattc_nrp_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
+static int gattc_nrp_write(struct bt_conn *conn, struct bt_gatt_write_params *params,
+                           const uint8_t *data, uint16_t length)
 {
     int rc;
 
     LOG_DBG("[N]GattcNrpWr[%u][%u][%u]",
-            conn->handle, params->handle, params->length);
+            conn->handle, params->handle, length);
 
     rc = ble_gattc_write_flat(conn->handle,
                               params->handle,
-                              params->data,
-                              params->length,
+                              data,
+                              length,
                               gattc_nrp_write_cb_safe,
                               params);
     if (rc) {
@@ -430,7 +486,7 @@ static int gattc_nrp_subscribe_cb_safe(uint16_t conn_handle,
     }
 
     /* Should be invoked here */
-    bt_le_nimble_gatt_nrp_remove(conn, GATTC_NRP_SUBSCRIBE, sub_params);
+    bt_le_nimble_gatt_nrp_remove(conn, GATTC_NRP_SUBSCRIBE, sub_params, 0);
 
     switch (error->status) {
     case 0:
@@ -521,10 +577,13 @@ void bt_le_nimble_gatts_nrp_indicate_cb(uint16_t conn_handle,
     }
 
     if (status) {
+        /* EDONE = peer confirmed → success; other non-zero = failure. */
+        uint8_t err = (status == BLE_HS_EDONE) ? 0 : status;
+
         attr.handle = attr_handle;
         params.attr = &attr;
 
-        bt_le_nimble_gatt_nrp_remove(conn, GATTS_NRP_INDICATE, &params);
+        bt_le_nimble_gatt_nrp_remove(conn, GATTS_NRP_INDICATE, &params, err);
     }
 }
 
@@ -536,8 +595,11 @@ static int gatts_nrp_indicate(struct bt_conn *conn, struct bt_gatt_indicate_para
 
     assert(conn && params);
     assert(params->attr);
-    assert(params->data);
-    assert(params->len);
+    /* 0-length indications are valid (spec); ble_hs_mbuf_from_flat accepts
+     * (NULL, 0). But (NULL, len>0) would manifest as a misleading -ENOMEM,
+     * so catch the programmer error here as a defense-in-depth guard.
+     */
+    assert(params->len == 0 || params->data != NULL);
 
     data.attr = params->attr;
     data.handle = bt_gatt_attr_get_handle(data.attr);
@@ -633,6 +695,11 @@ static void gatt_nrp_del(struct gatt_nrp *nrp)
 
         LOG_DBG("[N]GattNrpFree[%p]", nrp_head);
 
+        if (nrp_head->type == GATTC_NRP_WRITE_REQ) {
+            free(nrp_head->write_req.data_copy);
+        } else if (nrp_head->type == GATTS_NRP_INDICATE) {
+            free(nrp_head->indicate.data_copy);
+        }
         free(nrp_head);
     }
 
@@ -671,15 +738,44 @@ static int gatt_nrp_insert(struct bt_conn *conn, uint8_t type, void *params)
     case GATTC_NRP_READ_SINGLE:
         nrp_node->read_single.params = params;
         break;
-    case GATTC_NRP_WRITE_REQ:
-        nrp_node->write_req.params = params;
+    case GATTC_NRP_WRITE_REQ: {
+        struct bt_gatt_write_params *wp = params;
+        nrp_node->write_req.params = wp;
+        nrp_node->write_req.data_copy = NULL;
+        if (wp->length > 0) {
+            assert(wp->data);
+            nrp_node->write_req.data_copy = malloc(wp->length);
+            if (nrp_node->write_req.data_copy == NULL) {
+                LOG_ERR("[N]GattNrpWrDataAllocFail[%u]", wp->length);
+                free(nrp_node);
+                return -ENOMEM;
+            }
+            memcpy(nrp_node->write_req.data_copy, wp->data, wp->length);
+        }
         break;
+    }
     case GATTC_NRP_SUBSCRIBE:
         nrp_node->subscribe.params = params;
         break;
-    case GATTS_NRP_INDICATE:
-        nrp_node->indicate.params = params;
+    case GATTS_NRP_INDICATE: {
+        struct bt_gatt_indicate_params *ip = params;
+
+        nrp_node->indicate.params_copy = *ip;
+        nrp_node->indicate.data_copy = NULL;
+        if (ip->len > 0) {
+            assert(ip->data);
+            nrp_node->indicate.data_copy = malloc(ip->len);
+            if (nrp_node->indicate.data_copy == NULL) {
+                LOG_ERR("[N]GattNrpIndDataAllocFail[%u]", ip->len);
+                free(nrp_node);
+                return -ENOMEM;
+            }
+            memcpy(nrp_node->indicate.data_copy, ip->data, ip->len);
+        }
+        nrp_node->indicate.params_copy.data = nrp_node->indicate.data_copy;
+        nrp_node->indicate.params = &nrp_node->indicate.params_copy;
         break;
+    }
     default:
         assert(0);
     }
@@ -692,11 +788,13 @@ static int gatt_nrp_insert(struct bt_conn *conn, uint8_t type, void *params)
                 type == GATTC_NRP_READ_SINGLE) {
             rc = gattc_nrp_read(conn, params);
         } else if (type == GATTC_NRP_WRITE_REQ) {
-            rc = gattc_nrp_write(conn, params);
+            rc = gattc_nrp_write(conn, params,
+                                 nrp_node->write_req.data_copy,
+                                 ((struct bt_gatt_write_params *)params)->length);
         } else if (type == GATTC_NRP_SUBSCRIBE) {
             rc = gattc_nrp_subscribe(conn, params);
         } else if (type == GATTS_NRP_INDICATE) {
-            rc = gatts_nrp_indicate(conn, params);
+            rc = gatts_nrp_indicate(conn, nrp_node->indicate.params);
         }
     } else {
         LOG_DBG("[N]GattNrpListNotEmpty");
@@ -709,6 +807,11 @@ static int gatt_nrp_insert(struct bt_conn *conn, uint8_t type, void *params)
     } else {
         if (rc != BLE_HS_ENOTCONN) {
             LOG_ERR("[N]GattNrpInsertFail[%d]", rc);
+        }
+        if (type == GATTC_NRP_WRITE_REQ) {
+            free(nrp_node->write_req.data_copy);
+        } else if (type == GATTS_NRP_INDICATE) {
+            free(nrp_node->indicate.data_copy);
         }
         free(nrp_node);
     }
@@ -756,7 +859,7 @@ int bt_le_nimble_gatt_nrp_insert(struct bt_conn *conn, uint8_t type, void *param
     return nimble_err_to_errno(rc);
 }
 
-int bt_le_nimble_gatt_nrp_remove(struct bt_conn *conn, uint8_t type, void *params)
+int bt_le_nimble_gatt_nrp_remove(struct bt_conn *conn, uint8_t type, void *params, uint8_t err)
 {
     struct gatt_nrp_node *nrp_head;
     struct gatt_nrp *nrp;
@@ -790,6 +893,8 @@ int bt_le_nimble_gatt_nrp_remove(struct bt_conn *conn, uint8_t type, void *param
         break;
     case GATTC_NRP_WRITE_REQ:
         assert(nrp_head->write_req.params == params);
+        free(nrp_head->write_req.data_copy);
+        nrp_head->write_req.data_copy = NULL;
         break;
     case GATTC_NRP_SUBSCRIBE:
         assert(nrp_head->subscribe.params == params);
@@ -805,11 +910,13 @@ int bt_le_nimble_gatt_nrp_remove(struct bt_conn *conn, uint8_t type, void *param
             assert(0);  /* Should not happen */
         }
 
-        /* Note:
-         * The params may be shared by multiple connections. And currently
-         * in this case, the params will not be updated in the func callback.
-         */
-        nrp_head->indicate.params->func(conn, nrp_head->indicate.params, 0);
+        /* params is the deep copy taken at insert time; cb sees the copy's
+         * address, not the caller's original (which may have been reused).
+         * err propagates the mapped NimBLE status (0 on EDONE, else err). */
+        nrp_head->indicate.params->func(conn, nrp_head->indicate.params, err);
+
+        free(nrp_head->indicate.data_copy);
+        nrp_head->indicate.data_copy = NULL;
         break;
     default:
         assert(0);
@@ -853,7 +960,9 @@ int bt_le_nimble_gatt_nrp_remove(struct bt_conn *conn, uint8_t type, void *param
                 nrp_head->read_single.params->func(conn, rc, nrp_head->read_single.params, NULL, 0);
             }
         } else if (nrp_head->type == GATTC_NRP_WRITE_REQ) {
-            rc = gattc_nrp_write(conn, nrp_head->write_req.params);
+            rc = gattc_nrp_write(conn, nrp_head->write_req.params,
+                                 nrp_head->write_req.data_copy,
+                                 nrp_head->write_req.params->length);
             if (rc) {
                 LOG_ERR("[N]GattcNrpWrFail[%d]", rc);
 
@@ -887,6 +996,11 @@ int bt_le_nimble_gatt_nrp_remove(struct bt_conn *conn, uint8_t type, void *param
          */
         sys_slist_remove(&nrp->list, NULL, node);
 
+        if (nrp_head->type == GATTC_NRP_WRITE_REQ) {
+            free(nrp_head->write_req.data_copy);
+        } else if (nrp_head->type == GATTS_NRP_INDICATE) {
+            free(nrp_head->indicate.data_copy);
+        }
         free(nrp_head);
     }
 

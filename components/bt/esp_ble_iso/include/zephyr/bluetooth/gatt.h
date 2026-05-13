@@ -1216,6 +1216,8 @@ struct bt_gatt_notify_params {
     uint16_t len;
     /** Notification Value callback */
     bt_gatt_complete_func_t func;
+    /** Data passed to @ref func when the notification completes. */
+    void *user_data;
     /** Att channel options. */
     enum bt_att_chan_opt chan_opt;
 };
