@@ -240,7 +240,7 @@ struct eap_peer_config {
 	 * be used to disable MSCHAPv2 password retry in authentication failure
 	 * cases.
 	 */
-	char *phase2;
+	const char *phase2;
 
 	/**
 	 * pcsc - Parameters for PC/SC smartcard interface for USIM and GSM SIM

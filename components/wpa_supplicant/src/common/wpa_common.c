@@ -1318,7 +1318,7 @@ int wpa_pmk_to_ptk(const u8 *pmk, size_t pmk_len, const char *label,
 void rsn_pmkid(const u8 *pmk, size_t pmk_len, const u8 *aa, const u8 *spa,
 	       u8 *pmkid, int akmp)
 {
-	char *title = "PMK Name";
+	const char *title = "PMK Name";
 	const u8 *addr[3];
 	const size_t len[3] = { 8, ETH_ALEN, ETH_ALEN };
 	unsigned char hash[SHA256_MAC_LEN];

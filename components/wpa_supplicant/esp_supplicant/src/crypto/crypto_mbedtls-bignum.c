@@ -125,7 +125,7 @@ static void p256_words_sub(u32 *a, const u32 *b)
 
 static void p256_words_swap(u32 *a, u32 *b)
 {
-    u32 tmp[P256_WORDS];
+    u32 tmp[P256_WORDS] = {0};
 
     os_memcpy(tmp, a, sizeof(tmp));
     os_memcpy(a, b, sizeof(tmp));
@@ -134,7 +134,7 @@ static void p256_words_swap(u32 *a, u32 *b)
 
 static void p256_words_mod(u32 *a, const u32 *n)
 {
-    u32 tmp[P256_WORDS];
+    u32 tmp[P256_WORDS] = {0};
 
     while (p256_words_cmp(a, n) >= 0) {
         size_t a_bits = p256_words_bitlen(a);
@@ -155,10 +155,10 @@ static int crypto_bignum_mulmod_secp256r1(const mbedtls_mpi *a,
                                           const mbedtls_mpi *mod,
                                           mbedtls_mpi *out)
 {
-    u32 a_words[P256_WORDS];
-    u32 b_words[P256_WORDS];
-    u32 b_mont[P256_WORDS];
-    u32 result[P256_WORDS];
+    u32 a_words[P256_WORDS] = {0};
+    u32 b_words[P256_WORDS] = {0};
+    u32 b_mont[P256_WORDS] = {0};
+    u32 result[P256_WORDS] = {0};
 
     if (!mpi_is_secp256r1_prime(mod) ||
             p256_words_from_mpi_reduced(a, a_words) != 0 ||
@@ -175,8 +175,8 @@ static int crypto_bignum_mulmod_secp256r1(const mbedtls_mpi *a,
 static int crypto_bignum_legendre_secp256r1(const mbedtls_mpi *a,
                                             const mbedtls_mpi *p)
 {
-    u32 A[P256_WORDS];
-    u32 N[P256_WORDS];
+    u32 A[P256_WORDS] = {0};
+    u32 N[P256_WORDS] = {0};
     unsigned int n_mod8;
     unsigned int a_mod4;
     unsigned int n_mod4;
