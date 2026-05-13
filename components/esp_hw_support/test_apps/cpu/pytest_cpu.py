@@ -28,7 +28,6 @@ def _run_non_recoverable_case(dut: IdfDut, test_name: str, expected_reason: str)
     ],
     indirect=['config', 'target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15602
 def test_cpu(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(group='!cpu_reset&!cpu_non_recoverable', timeout=120)
 
@@ -41,7 +40,6 @@ def test_cpu(dut: IdfDut) -> None:
     ],
     indirect=['config', 'target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15602
 def test_cpu_reset(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(group='cpu_reset', timeout=120)
 
@@ -54,7 +52,6 @@ def test_cpu_reset(dut: IdfDut) -> None:
     ],
     indirect=['config', 'target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15602
 def test_cpu_non_recoverable(dut: IdfDut) -> None:
     expected_reason = 'Unhandled debug exception' if dut.target in {'esp32', 'esp32s2', 'esp32s3'} else 'Breakpoint'
     present_cases = {case.name for case in dut.test_menu}

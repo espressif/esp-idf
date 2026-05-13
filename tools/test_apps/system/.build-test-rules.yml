@@ -58,10 +58,6 @@ tools/test_apps/system/eh_frame:
       reason: Only relevant for riscv targets
 
 tools/test_apps/system/esp_intr_dump:
-  disable_test:
-    - if: IDF_TARGET == "esp32h4"
-      temporary: true
-      reason: cannot pass # TODO: IDF-15603
 
 tools/test_apps/system/flash_auto_suspend_iram_reduction:
   disable:
@@ -147,11 +143,7 @@ tools/test_apps/system/no_embedded_paths:
 
 tools/test_apps/system/panic:
   enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32s31"]
-  disable_test:
-    - if: IDF_TARGET == "esp32h4"
-      temporary: true
-      reason: cannot pass # TODO: IDF-15612
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32s31", "esp32h4"]
 
 tools/test_apps/system/ram_loadable_app:
   disable:
