@@ -112,7 +112,7 @@ uint32_t esp_rom_get_bootloader_offset(void)
 #if CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP32P4_REV_MIN_FULL < 300
     // For early revisions of ESP32-P4 does not recovery bootloader feature.
     // Return the default bootloader offset.
-    return CONFIG_BOOTLOADER_OFFSET_IN_FLASH;
+    return ESP_ROM_BOOTLOADER_OFFSET_FLASH;
 #else
     static uint32_t offset_of_active_bootloader = UINT32_MAX;
     if (offset_of_active_bootloader == UINT32_MAX) {
