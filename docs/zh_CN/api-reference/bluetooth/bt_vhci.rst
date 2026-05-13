@@ -40,7 +40,7 @@
     .. doxygendefine:: ESP_BT_VS_SET_LE_VENDOR_EVTS_MASK_OCF
 
 
-.. only:: esp32c5 or esp32c6 or esp32h2 or esp32c61 or esp32h4 or esp32s31
+.. only:: esp32c5 or esp32c6 or esp32h2 or esp32h21 or esp32c61 or esp32h4 or esp32s31
 
     .. doxygendefine:: ESP_BT_VS_CONFIG_DUP_EXC_LIST_OCF
     .. doxygendefine:: ESP_BT_VS_SET_ADV_REPORT_FLOW_CTRL_OCF
@@ -82,7 +82,7 @@
     .. doxygendefine:: ESP_BT_VS_LE_ADV_LOST_EVT_SUBCODE
 
 
-.. only:: esp32c6 or esp32h2 or esp32c5 or esp32c61 or esp32h4
+.. only:: esp32c6 or esp32h2 or esp32h21 or esp32c5 or esp32c61 or esp32h4
 
     .. doxygendefine:: ESP_BT_VS_LE_CONN_SCAN_REQ_RXED_EVT_SUBCODE
     .. doxygendefine:: ESP_BT_VS_LE_CHAN_UPDATE_COMP_EVT_SUBCODE
@@ -214,7 +214,7 @@
     .. doxygendefine:: ESP_BT_VS_CFG_TEST_RELATED_SUBCMD_MAX
 
 
-.. only::  esp32c6 or esp32h2 or esp32c5 or esp32c61 or esp32h4
+.. only::  esp32c6 or esp32h2 or esp32h21 or esp32c5 or esp32c61 or esp32h4
 
     .. doxygendefine:: ESP_BT_VS_CFG_TEST_RELATED_OCF
     .. doxygendefine:: ESP_BT_VS_CFG_TEST_ENABLE_SUBCMD
@@ -368,7 +368,7 @@
         .. doxygendefine:: ESP_BT_VS_CH_CLASSIFICATION_REPORTING_MODE_EVT_SUBCODE
 
 
-    .. only:: esp32c5 or esp32c6 or esp32c61 or esp32h2 or esp32h4
+    .. only:: esp32c5 or esp32c6 or esp32c61 or esp32h2 or esp32h21 or esp32h4
 
         .. doxygendefine:: ESP_BT_VS_LE_RUNNING_STATUS_EVT_SUBCODE
 

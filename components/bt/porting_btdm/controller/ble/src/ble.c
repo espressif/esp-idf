@@ -500,9 +500,6 @@ static void IRAM_ATTR osi_assert_wrapper(const uint32_t ln, const char *fn,
 
 static uint32_t IRAM_ATTR osi_random_wrapper(void)
 {
-    //TODO: use esp_ramdom
-    // return esp_ramdom();
-
     return btdm_osal_rand();
 }
 

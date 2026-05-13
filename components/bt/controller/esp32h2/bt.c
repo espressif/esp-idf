@@ -103,7 +103,9 @@ struct ext_funcs_t {
     int (* _ecc_gen_key_pair)(uint8_t *public, uint8_t *priv);
     int (* _ecc_gen_dh_key)(const uint8_t *remote_pub_key_x, const uint8_t *remote_pub_key_y,
                             const uint8_t *local_priv_key, uint8_t *dhkey);
+#if CONFIG_IDF_TARGET_ESP32H2
     void (* _esp_reset_modem)(uint8_t mdl_opts, uint8_t start);
+#endif // CONFIG_IDF_TARGET_ESP32H2
     uint32_t magic;
 };
 
@@ -209,7 +211,9 @@ static int esp_intr_alloc_wrapper(int source, int flags, intr_handler_t handler,
 static int esp_intr_free_wrapper(void **ret_handle);
 static void osi_assert_wrapper(const uint32_t ln, const char *fn, uint32_t param1, uint32_t param2);
 static uint32_t osi_random_wrapper(void);
+#if CONFIG_IDF_TARGET_ESP32H2
 static void esp_reset_modem(uint8_t mdl_opts,uint8_t start);
+#endif // CONFIG_IDF_TARGET_ESP32H2
 static int esp_ecc_gen_key_pair(uint8_t *pub, uint8_t *priv);
 static int esp_ecc_gen_dh_key(const uint8_t *peer_pub_key_x, const uint8_t *peer_pub_key_y,
                               const uint8_t *our_priv_key, uint8_t *out_dhkey);
@@ -534,10 +538,13 @@ struct ext_funcs_t ext_funcs_ro = {
     ._os_random = osi_random_wrapper,
     ._ecc_gen_key_pair = esp_ecc_gen_key_pair,
     ._ecc_gen_dh_key = esp_ecc_gen_dh_key,
+#if CONFIG_IDF_TARGET_ESP32H2
     ._esp_reset_modem = esp_reset_modem,
+#endif // CONFIG_IDF_TARGET_ESP32H2
     .magic = EXT_FUNC_MAGIC_VALUE,
 };
 
+#if CONFIG_IDF_TARGET_ESP32H2
 static void IRAM_ATTR esp_reset_modem(uint8_t mdl_opts,uint8_t start)
 {
     if (mdl_opts == 0x05) {
@@ -557,6 +564,7 @@ static void IRAM_ATTR esp_reset_modem(uint8_t mdl_opts,uint8_t start)
 
     }
 }
+#endif // CONFIG_IDF_TARGET_ESP32H2
 
 static void IRAM_ATTR osi_assert_wrapper(const uint32_t ln, const char *fn,
                                          uint32_t param1, uint32_t param2)
@@ -570,7 +578,24 @@ static void IRAM_ATTR osi_assert_wrapper(const uint32_t ln, const char *fn,
 
 static uint32_t IRAM_ATTR osi_random_wrapper(void)
 {
+#if CONFIG_SOC_RNG_SUPPORTED
     return esp_random();
+#else
+    static bool first = true;
+
+    if (first) {
+        uint8_t mac[6];
+        uint32_t seed;
+
+        ESP_LOGW(NIMBLE_PORT_LOG_TAG, "Hardware RNG not supported; using insecure software random instead.");
+        first = false;
+        esp_read_mac((uint8_t *)mac, ESP_MAC_BT);
+        seed = (mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5];
+        srand(seed);
+    }
+
+    return rand();
+#endif // CONFIG_SOC_RNG_SUPPORTED
 }
 
 static void coex_schm_status_bit_set_wrapper(uint32_t type, uint32_t status)

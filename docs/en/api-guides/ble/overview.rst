@@ -13,7 +13,7 @@ This document provides an architecture overview of the Bluetooth Low Energy (Blu
 
     {IDF_TARGET_NAME} supports Bluetooth 5.0 (LE) and is certified for Bluetooth LE 5.4.
 
-.. only:: esp32c2 or esp32c6 or esp32h2 or esp32c5 or esp32c61
+.. only:: esp32c2 or esp32c6 or esp32h2 or esp32h21 or esp32c5 or esp32c61
 
     {IDF_TARGET_NAME} supports Bluetooth 5.0 (LE) and is certified for Bluetooth LE 5.3.
 
@@ -37,7 +37,7 @@ The Bluetooth LE stack in ESP-IDF is a layered architecture that enables Bluetoo
 
         {IDF_TARGET_NAME} Bluetooth LE Stack Architecture
 
-.. only:: esp32h2
+.. only:: esp32h2 or esp32h21
 
     .. figure:: ../../../_static/bluetooth-architecture-no-blufi.png
         :align: center
