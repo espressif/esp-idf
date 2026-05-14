@@ -34,6 +34,7 @@ struct esp_lcd_dpi_panel_t {
     uint32_t v_pixels;            // Vertical pixels
     size_t fb_size;               // Frame buffer size, in bytes
     size_t bits_per_pixel;        // Bits per pixel
+    soc_module_clk_t clk_src;     // DPI clock source, SOC_MOD_CLK_INVALID if not enabled
     lcd_color_format_t in_color_format;  // Input color format
     lcd_color_format_t out_color_format; // Output color format
     dw_gdma_channel_handle_t dma_chan;   // DMA channel
@@ -215,6 +216,7 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
 
     dpi_panel = heap_caps_calloc(1, sizeof(esp_lcd_dpi_panel_t), DSI_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(dpi_panel, ESP_ERR_NO_MEM, err, TAG, "no memory for DPI panel");
+    dpi_panel->clk_src = SOC_MOD_CLK_INVALID;
     dpi_panel->virtual_channel = panel_config->virtual_channel;
     dpi_panel->in_color_format = in_color_format;
     dpi_panel->out_color_format = out_color_format;
@@ -253,6 +255,7 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
     float dpi_clk_src_freq_mhz = (float)dpi_clk_src_freq_hz / 1000.0f / 1000.0f;
     uint32_t dpi_div = mipi_dsi_hal_host_dpi_calculate_divider(hal, dpi_clk_src_freq_mhz, panel_config->dpi_clock_freq_mhz);
     ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)dpi_clk_src, true), err, TAG, "clock source enable failed");
+    dpi_panel->clk_src = (soc_module_clk_t)dpi_clk_src;
     // set the clock source, set the divider, and enable the dpi clock
     PERIPH_RCC_ATOMIC() {
         mipi_dsi_ll_set_dpi_clock_source(bus_id, dpi_clk_src);
@@ -359,6 +362,10 @@ static esp_err_t dpi_panel_del(esp_lcd_panel_t *panel)
     // disable the DPI clock
     PERIPH_RCC_ATOMIC() {
         mipi_dsi_ll_enable_dpi_clock(bus_id, false);
+    }
+    if (dpi_panel->clk_src != SOC_MOD_CLK_INVALID) {
+        esp_clk_tree_enable_src(dpi_panel->clk_src, false);
+        dpi_panel->clk_src = SOC_MOD_CLK_INVALID;
     }
     // disable the DSI bridge
     mipi_dsi_brg_ll_enable(hal->bridge, false);
