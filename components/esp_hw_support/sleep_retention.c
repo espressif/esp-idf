@@ -335,7 +335,7 @@ static void entries_stats(struct module_sleep_retention_context *ctx)
 {
     _lock_acquire_recursive(&s_retention.lock);
     for (regdma_link_priority_t priority = 0; priority < SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES; priority++) {
-        for (int entry = 0; entry < ARRAY_SIZE(ctx->lists[s_retention.highpri].entries); entry++) {
+        for (int entry = 0; entry < ARRAY_SIZE(ctx->lists[priority].entries); entry++) {
             regdma_link_stats(ctx->lists[priority].entries[entry], entry);
         }
     }
