@@ -17,17 +17,30 @@ extern "C" {
 #endif
 
 /**
- * @brief Set the clock source for IO MUX
+ * @brief Acquire the clock source for IO MUX
  *
  * @note IO MUX clock is shared by submodules like SDM, Glitch Filter.
- *       The submodule drivers should call this function to detect if the user set the clock differently.
+ *       Each consumer should call this function when starting to use a specific clock source,
+ *       and call @ref io_mux_release_clock_source when done.
  *
  * @param clk_src The clock source for IO MUX
  * @return
  *      - ESP_OK: Success
- *      - ESP_ERR_INVALID_STATE: The IO MUX has been set to another clock source
+ *      - ESP_ERR_INVALID_STATE: The IO MUX has been acquired with another clock source
  */
-esp_err_t io_mux_set_clock_source(soc_module_clk_t clk_src);
+esp_err_t io_mux_acquire_clock_source(soc_module_clk_t clk_src);
+
+/**
+ * @brief Release the clock source for IO MUX
+ *
+ * When the last consumer releases, the clock source will be switched back to SOC_MOD_CLK_XTAL.
+ *
+ * @param clk_src The clock source to release (must match the one used in acquire)
+ * @return
+ *      - ESP_OK: Success
+ *      - ESP_ERR_INVALID_STATE: Reference count is zero or clock source mismatch
+ */
+esp_err_t io_mux_release_clock_source(soc_module_clk_t clk_src);
 
 #if SOC_LP_IO_CLOCK_IS_INDEPENDENT
 typedef struct {

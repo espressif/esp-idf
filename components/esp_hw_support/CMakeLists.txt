@@ -38,6 +38,7 @@ if(NOT non_os_build)
                      "esp_gpio_reserve.c"
                      "sar_tsens_ctrl.c"
                      "sar_periph_ctrl_common.c"
+                     "io_mux.c"
                      "port/${target}/io_mux.c"
                      "port/${target}/esp_clk_tree.c"
                      "spi_bus_lock.c"

@@ -1,13 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "esp_check.h"
-#include "esp_private/glitch_filter_priv.h"
-
-static const char *TAG = "gpio-filter";
+#include "glitch_filter_priv.h"
 
 /////////// Public abstract functions ///////////
 

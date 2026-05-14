@@ -5,6 +5,7 @@
  */
 
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdatomic.h>
 #include <sys/lock.h>
 #include "sdkconfig.h"
@@ -29,6 +30,7 @@
 #include "hal/sdm_ll.h"
 #include "hal/hal_utils.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/io_mux.h"
 #include "esp_private/gpio.h"
 #include "esp_private/sleep_retention.h"
@@ -60,7 +62,9 @@ struct sdm_group_t {
     portMUX_TYPE spinlock; // to protect per-group register level concurrent access
     sdm_hal_context_t hal; // hal context
     sdm_channel_t *channels[SDM_CAPS_GET(CHANS_PER_INST)]; // array of sdm channels
-    sdm_clock_source_t clk_src; // Clock source
+    soc_module_clk_t clk_src; // Clock source
+    bool io_mux_clk_acquired;
+    uint32_t src_clk_hz; // Source clock frequency in Hz
 #if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock; // PM lock, to prevent the system going into light sleep when SDM is running
 #endif
@@ -113,107 +117,158 @@ static void sdm_create_retention_module(sdm_group_t *group)
 }
 #endif // SDM_USE_RETENTION_LINK
 
-static sdm_group_t *sdm_acquire_group_handle(int group_id, sdm_clock_source_t clk_src)
+static sdm_group_t *sdm_group_acquire(int group_id)
 {
-    bool new_group = false;
     sdm_group_t *group = NULL;
 
-    // prevent install sdm group concurrently
     _lock_acquire(&s_platform.mutex);
     if (!s_platform.groups[group_id]) {
         group = heap_caps_calloc(1, sizeof(sdm_group_t), SDM_MEM_ALLOC_CAPS);
-        if (group) {
-            new_group = true;
-            s_platform.groups[group_id] = group; // register to platform
-            // initialize sdm group members
-            group->group_id = group_id;
-            group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
-            group->clk_src = clk_src;
-
-#if SDM_USE_RETENTION_LINK
-            sleep_retention_module_t module = soc_sdm_retention_infos[group_id].module;
-            sleep_retention_module_init_param_t init_param = {
-                .cbs = {
-                    .create = {
-                        .handle = sdm_create_sleep_retention_link_cb,
-                        .arg = group,
-                    },
-                },
-                .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
-                .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
-            };
-            // retention module init must be called BEFORE the hal init
-            if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
-                ESP_LOGW(TAG, "init sleep retention failed on SDM Group%d, power domain may be turned off during sleep", group_id);
-            }
-#endif // SDM_USE_RETENTION_LINK
-
-            // [IDF-12975]: enable APB register clock explicitly
-            // initialize HAL context
-            sdm_hal_init_config_t hal_config = {
-                .group_id = group_id,
-            };
-            sdm_hal_init(&group->hal, &hal_config);
+        if (!group) {
+            _lock_release(&s_platform.mutex);
+            return NULL;
         }
+        s_platform.groups[group_id] = group;
+        group->group_id = group_id;
+        group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
+        group->clk_src = SOC_MOD_CLK_INVALID;
     } else {
         group = s_platform.groups[group_id];
     }
-    if (group) {
-        // someone acquired the group handle means we have a new object that refer to this group
-        s_platform.group_ref_counts[group_id]++;
-    }
+    s_platform.group_ref_counts[group_id]++;
     _lock_release(&s_platform.mutex);
-
-    if (new_group) {
-        ESP_LOGD(TAG, "new group (%d) at %p", group_id, group);
-#if CONFIG_PM_ENABLE
-        esp_pm_lock_type_t pm_type = ESP_PM_NO_LIGHT_SLEEP;
-#if SDM_CAPS_GET(FUNC_CLOCK_SUPPORT_APB)
-        if (clk_src == SDM_CLK_SRC_APB) {
-            pm_type = ESP_PM_APB_FREQ_MAX;
-        }
-#endif // SDM_CAPS_GET(FUNC_CLOCK_SUPPORT_APB)
-        if (esp_pm_lock_create(pm_type, 0, soc_sdm_signals[group_id].module_name, &group->pm_lock) != ESP_OK) {
-            ESP_LOGE(TAG, "fail to create PM lock for group %d", group_id);
-        }
-#endif // CONFIG_PM_ENABLE
-    }
 
     return group;
 }
 
-static void sdm_release_group_handle(sdm_group_t *group)
+static esp_err_t sdm_group_install(sdm_group_t *group, soc_module_clk_t clk_src)
+{
+    esp_err_t ret = ESP_OK;
+    int group_id = group->group_id;
+
+    _lock_acquire(&s_platform.mutex);
+    if (group->clk_src != SOC_MOD_CLK_INVALID) {
+        ret = (group->clk_src == clk_src) ? ESP_OK : ESP_ERR_INVALID_STATE;
+        _lock_release(&s_platform.mutex);
+        return ret;
+    }
+
+#if SDM_USE_RETENTION_LINK
+    sleep_retention_module_t module = soc_sdm_retention_infos[group_id].module;
+    sleep_retention_module_init_param_t init_param = {
+        .cbs = {
+            .create = {
+                .handle = sdm_create_sleep_retention_link_cb,
+                .arg = group,
+            },
+        },
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
+        .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
+    };
+    // retention module init must be called BEFORE the hal init
+    if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
+        ESP_LOGW(TAG, "init sleep retention failed on SDM Group%d, power domain may be turned off during sleep", group_id);
+    }
+#endif // SDM_USE_RETENTION_LINK
+
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src(clk_src, true), err, TAG, "enable clock source failed for group %d", group_id);
+    group->clk_src = clk_src;
+    // SDM clock comes from IO MUX, but IO MUX clock might be shared with other submodules as well
+    ESP_GOTO_ON_ERROR(io_mux_acquire_clock_source(clk_src), err, TAG, "acquire IO MUX clock source failed for group %d", group_id);
+    group->io_mux_clk_acquired = true;
+    esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &group->src_clk_hz);
+
+    sdm_hal_init_config_t hal_config = {
+        .group_id = group_id,
+    };
+    sdm_hal_init(&group->hal, &hal_config);
+
+#if CONFIG_PM_ENABLE
+    esp_pm_lock_type_t pm_type = ESP_PM_NO_LIGHT_SLEEP;
+#if SDM_CAPS_GET(FUNC_CLOCK_SUPPORT_APB)
+    if (clk_src == (soc_module_clk_t)SDM_CLK_SRC_APB) {
+        pm_type = ESP_PM_APB_FREQ_MAX;
+    }
+#endif // SDM_CAPS_GET(FUNC_CLOCK_SUPPORT_APB)
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(pm_type, 0, soc_sdm_signals[group_id].module_name, &group->pm_lock),
+                      err, TAG, "fail to create PM lock for group %d", group_id);
+#endif // CONFIG_PM_ENABLE
+
+    _lock_release(&s_platform.mutex);
+    ESP_LOGD(TAG, "new group (%d) at %p", group_id, group);
+    return ESP_OK;
+
+err:
+#if CONFIG_PM_ENABLE
+    if (group->pm_lock) {
+        esp_pm_lock_delete(group->pm_lock);
+        group->pm_lock = NULL;
+    }
+#endif
+    if (group->io_mux_clk_acquired) {
+        sdm_hal_deinit(&group->hal);
+        io_mux_release_clock_source(group->clk_src);
+        group->io_mux_clk_acquired = false;
+    }
+    if (group->clk_src != SOC_MOD_CLK_INVALID) {
+        esp_clk_tree_enable_src(group->clk_src, false);
+        group->clk_src = SOC_MOD_CLK_INVALID;
+    }
+    _lock_release(&s_platform.mutex);
+    return ret;
+}
+
+static void sdm_group_uninstall(sdm_group_t *group)
+{
+    if (group->clk_src == SOC_MOD_CLK_INVALID) {
+        return;
+    }
+
+    sdm_hal_deinit(&group->hal);
+    if (group->io_mux_clk_acquired) {
+        io_mux_release_clock_source(group->clk_src);
+        group->io_mux_clk_acquired = false;
+    }
+    if (group->clk_src != SOC_MOD_CLK_INVALID) {
+        esp_clk_tree_enable_src(group->clk_src, false);
+        group->clk_src = SOC_MOD_CLK_INVALID;
+    }
+
+#if SDM_USE_RETENTION_LINK
+    sleep_retention_module_t module = soc_sdm_retention_infos[group->group_id].module;
+    sleep_retention_module_detach(module);
+    if (sleep_retention_is_module_created(module)) {
+        sleep_retention_module_free(module);
+    }
+    if (sleep_retention_is_module_inited(module)) {
+        sleep_retention_module_deinit(module);
+    }
+#endif // SDM_USE_RETENTION_LINK
+
+#if CONFIG_PM_ENABLE
+    if (group->pm_lock) {
+        esp_pm_lock_delete(group->pm_lock);
+        group->pm_lock = NULL;
+    }
+#endif // CONFIG_PM_ENABLE
+}
+
+static void sdm_group_release(sdm_group_t *group)
 {
     int group_id = group->group_id;
-    bool do_deinitialize = false;
+    bool do_teardown = false;
 
     _lock_acquire(&s_platform.mutex);
     s_platform.group_ref_counts[group_id]--;
     if (s_platform.group_ref_counts[group_id] == 0) {
         assert(s_platform.groups[group_id]);
-        do_deinitialize = true;
-        s_platform.groups[group_id] = NULL; // deregister from platform
-        sdm_hal_deinit(&group->hal);
-
-#if SDM_USE_RETENTION_LINK
-        sleep_retention_module_t module = soc_sdm_retention_infos[group_id].module;
-        sleep_retention_module_detach(module);
-        if (sleep_retention_is_module_created(module)) {
-            sleep_retention_module_free(module);
-        }
-        if (sleep_retention_is_module_inited(module)) {
-            sleep_retention_module_deinit(module);
-        }
-#endif // SDM_USE_RETENTION_LINK
+        s_platform.groups[group_id] = NULL;
+        do_teardown = true;
     }
     _lock_release(&s_platform.mutex);
 
-    if (do_deinitialize) {
-#if CONFIG_PM_ENABLE
-        if (group->pm_lock) {
-            esp_pm_lock_delete(group->pm_lock);
-        }
-#endif
+    if (do_teardown) {
+        sdm_group_uninstall(group);
         free(group);
         ESP_LOGD(TAG, "del group (%d)", group_id);
     }
@@ -221,11 +276,20 @@ static void sdm_release_group_handle(sdm_group_t *group)
 
 static esp_err_t sdm_register_to_group(sdm_channel_t *chan, sdm_clock_source_t clk_src)
 {
+    esp_err_t ret = ESP_OK;
     sdm_group_t *group = NULL;
     int chan_id = -1;
     for (int i = 0; i < SDM_CAPS_GET(INST_NUM); i++) {
-        group = sdm_acquire_group_handle(i, clk_src);
+        group = sdm_group_acquire(i);
         ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no mem for group (%d)", i);
+
+        ret = sdm_group_install(group, clk_src);
+        if (ret == ESP_ERR_INVALID_STATE) {
+            sdm_group_release(group);
+            continue;
+        }
+        ESP_GOTO_ON_ERROR(ret, err, TAG, "install group (%d) failed", i);
+
         // loop to search free unit in the group
         portENTER_CRITICAL(&group->spinlock);
         for (int j = 0; j < SDM_CAPS_GET(CHANS_PER_INST); j++) {
@@ -239,13 +303,19 @@ static esp_err_t sdm_register_to_group(sdm_channel_t *chan, sdm_clock_source_t c
         }
         portEXIT_CRITICAL(&group->spinlock);
         if (chan_id < 0) {
-            sdm_release_group_handle(group);
+            sdm_group_release(group);
         } else {
             break;
         }
     }
     ESP_RETURN_ON_FALSE(chan_id != -1, ESP_ERR_NOT_FOUND, TAG, "no free channels");
     return ESP_OK;
+
+err:
+    if (group) {
+        sdm_group_release(group);
+    }
+    return ret;
 }
 
 static void sdm_unregister_from_group(sdm_channel_t *chan)
@@ -256,17 +326,17 @@ static void sdm_unregister_from_group(sdm_channel_t *chan)
     group->channels[chan_id] = NULL;
     portEXIT_CRITICAL(&group->spinlock);
     // channel has a reference on group, release it now
-    sdm_release_group_handle(group);
+    sdm_group_release(group);
 }
 
 static esp_err_t sdm_destroy(sdm_channel_t *chan)
 {
-    if (chan->group) {
-        sdm_unregister_from_group(chan);
-    }
     if (chan->gpio_num >= 0) {
         gpio_output_disable(chan->gpio_num);
         esp_gpio_revoke(BIT64(chan->gpio_num));
+    }
+    if (chan->group) {
+        sdm_unregister_from_group(chan);
     }
     free(chan);
     return ESP_OK;
@@ -289,21 +359,12 @@ esp_err_t sdm_new_channel(const sdm_config_t *config, sdm_channel_handle_t *ret_
     ESP_RETURN_ON_FALSE(chan, ESP_ERR_NO_MEM, TAG, "no mem for channel");
     chan->gpio_num = GPIO_NUM_NC; // default to NC, will be set later
 
-    sdm_clock_source_t clk_src = config->clk_src ? config->clk_src : SDM_CLK_SRC_DEFAULT;
+    soc_module_clk_t clk_src = config->clk_src ? config->clk_src : SDM_CLK_SRC_DEFAULT;
     // register channel to the group
     ESP_GOTO_ON_ERROR(sdm_register_to_group(chan, clk_src), err, TAG, "register to group failed");
     sdm_group_t *group = chan->group;
     int group_id = group->group_id;
     int chan_id = chan->chan_id;
-
-    ESP_GOTO_ON_FALSE(group->clk_src == clk_src, ESP_ERR_INVALID_ARG, err, TAG, "clock source conflict");
-
-    // SDM clock comes from IO MUX, but IO MUX clock might be shared with other submodules as well
-    ESP_GOTO_ON_ERROR(io_mux_set_clock_source((soc_module_clk_t)clk_src), err, TAG, "set IO MUX clock source failed");
-
-    uint32_t src_clk_hz = 0;
-    ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src,
-                                                   ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_clk_hz), err, TAG, "get source clock frequency failed");
 
     // Reserve the new GPIO
     uint64_t old_gpio_rsv_mask = esp_gpio_reserve(BIT64(config->gpio_num));
@@ -314,6 +375,7 @@ esp_err_t sdm_new_channel(const sdm_config_t *config, sdm_channel_handle_t *ret_
     gpio_matrix_output(config->gpio_num, soc_sdm_signals[group_id].channels[chan_id].sig_id_matrix, config->flags.invert_out, false);
     chan->gpio_num = config->gpio_num;
 
+    uint32_t src_clk_hz = group->src_clk_hz;
     // set prescale based on sample rate
     uint32_t prescale = 0;
     hal_utils_clk_info_t clk_info = {

@@ -15,6 +15,9 @@
 
 #define GLITCH_FILTER_PM_LOCK_NAME_LEN_MAX 16
 
+///!< Logging settings
+#define TAG "gpio-filter"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
