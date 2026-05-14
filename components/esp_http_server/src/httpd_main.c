@@ -151,24 +151,27 @@ esp_err_t httpd_queue_work(httpd_handle_t handle, httpd_work_fn_t work, void *ar
         .hc_work = work,
         .hc_work_arg = arg,
     };
+
+    /* Reserve a slot in the control mbox before sending. In blocking mode
+     * the caller waits for a slot; in the default non-blocking mode we
+     * fail fast so the caller knows the work was not queued. */
 #if CONFIG_HTTPD_QUEUE_WORK_BLOCKING
-    // Semaphore is acquired here and released after work function is executed.
-    if (xSemaphoreTake(hd->ctrl_sock_semaphore, portMAX_DELAY) == pdTRUE) {
+    const TickType_t wait = portMAX_DELAY;
+#else
+    const TickType_t wait = 0;
 #endif
-        int ret = cs_send_to_ctrl_sock(hd->msg_fd, hd->config.ctrl_port, &msg, sizeof(msg));
-        if (ret < 0) {
-            ESP_LOGW(TAG, LOG_FMT("failed to queue work"));
-#if CONFIG_HTTPD_QUEUE_WORK_BLOCKING
-            xSemaphoreGive(hd->ctrl_sock_semaphore);
-#endif
-            return ESP_FAIL;
-        }
-        return ESP_OK;
-#if CONFIG_HTTPD_QUEUE_WORK_BLOCKING
+    if (xSemaphoreTake(hd->ctrl_sock_semaphore, wait) != pdTRUE) {
+        ESP_LOGW(TAG, LOG_FMT("ctrl socket queue full, work not queued"));
+        return ESP_FAIL;
     }
-    ESP_LOGE(TAG, "Unable to acquire semaphore");
-    return ESP_FAIL;
-#endif
+
+    int ret = cs_send_to_ctrl_sock(hd->msg_fd, hd->config.ctrl_port, &msg, sizeof(msg));
+    if (ret < 0) {
+        ESP_LOGW(TAG, LOG_FMT("failed to queue work"));
+        xSemaphoreGive(hd->ctrl_sock_semaphore);
+        return ESP_FAIL;
+    }
+    return ESP_OK;
 }
 
 esp_err_t httpd_get_client_list(httpd_handle_t handle, size_t *fds, int *client_fds)
@@ -208,16 +211,16 @@ static void httpd_process_ctrl_msg(struct httpd_data *hd)
     int ret = recv(hd->ctrl_fd, &msg, sizeof(msg), 0);
     if (ret <= 0) {
         ESP_LOGW(TAG, LOG_FMT("error in recv (%d)"), errno);
-#if CONFIG_HTTPD_QUEUE_WORK_BLOCKING
+        /* Returning the mbox slot to the producer side. xSemaphoreGive is a
+         * no-op once the counting semaphore is at its max, which keeps the
+         * accounting safe under producers that don't take (e.g. async
+         * handler wakeups, shutdown). */
         xSemaphoreGive(hd->ctrl_sock_semaphore);
-#endif
         return;
     }
     if (ret != sizeof(msg)) {
         ESP_LOGW(TAG, LOG_FMT("incomplete msg"));
-#if CONFIG_HTTPD_QUEUE_WORK_BLOCKING
         xSemaphoreGive(hd->ctrl_sock_semaphore);
-#endif
         return;
     }
 
@@ -235,9 +238,7 @@ static void httpd_process_ctrl_msg(struct httpd_data *hd)
     default:
         break;
     }
-#if CONFIG_HTTPD_QUEUE_WORK_BLOCKING
     xSemaphoreGive(hd->ctrl_sock_semaphore);
-#endif
 }
 
 // Called for each session from httpd_server
@@ -470,6 +471,10 @@ static void httpd_delete(struct httpd_data *hd)
     free(hd->err_handler_fns);
     free(ra->resp_hdrs);
     free(hd->hd_sd);
+    if (hd->ctrl_sock_semaphore) {
+        vSemaphoreDelete(hd->ctrl_sock_semaphore);
+        hd->ctrl_sock_semaphore = NULL;
+    }
 
     /* Free registered URI handlers */
     httpd_unregister_all_uri_handlers(hd);
@@ -505,18 +510,18 @@ esp_err_t httpd_start(httpd_handle_t *handle, const httpd_config_t *config)
         /* Failed to allocate memory */
         return ESP_ERR_HTTPD_ALLOC_MEM;
     }
-#if CONFIG_HTTPD_QUEUE_WORK_BLOCKING
-    /* Using a Counting Semaphore with count equals CONFIG_LWIP_UDP_RECVMBOX_SIZE
-     * as the number of UDP messages which can be stored is equal to UDP mailbox size.
-     * Using this, we can make sure that the work function is always received by the ctrl socket.
-     */
+    /* Counting semaphore sized to the UDP control-socket recv mbox. Each
+     * httpd_queue_work() take reserves one mbox slot; httpd_process_ctrl_msg()
+     * gives one back per drain. This bounds the producer to the mbox capacity
+     * and prevents silent lwIP-mbox overflow drops that would otherwise leak
+     * the caller's async-send context. Always created so the default
+     * (non-blocking) httpd_queue_work() path can also rely on it. */
     hd->ctrl_sock_semaphore = xSemaphoreCreateCounting(CONFIG_LWIP_UDP_RECVMBOX_SIZE, CONFIG_LWIP_UDP_RECVMBOX_SIZE);
     if (hd->ctrl_sock_semaphore == NULL) {
         ESP_LOGE(TAG, "Failed to create Semaphore");
         httpd_delete(hd);
         return ESP_ERR_HTTPD_ALLOC_MEM;
     }
-#endif
 
     if (httpd_server_init(hd) != ESP_OK) {
         httpd_delete(hd);
@@ -530,6 +535,12 @@ esp_err_t httpd_start(httpd_handle_t *handle, const httpd_config_t *config)
                                httpd_thread, hd,
                                hd->config.core_id,
                                hd->config.task_caps) != ESP_OK) {
+        /* Close the open socket */
+        close(hd->listen_fd);
+        /* Close the control socket */
+        cs_free_ctrl_sock(hd->ctrl_fd);
+        /* Close the message socket */
+        close(hd->msg_fd);
         /* Failed to launch task */
         httpd_delete(hd);
         return ESP_ERR_HTTPD_TASK;
@@ -584,9 +595,6 @@ esp_err_t httpd_stop(httpd_handle_t handle)
     }
 
     ESP_LOGD(TAG, LOG_FMT("server stopped"));
-#if CONFIG_HTTPD_QUEUE_WORK_BLOCKING
-    vSemaphoreDelete(hd->ctrl_sock_semaphore);
-#endif
     httpd_delete(hd);
     esp_http_server_dispatch_event(HTTP_SERVER_EVENT_STOP, NULL, 0);
     return ESP_OK;
