@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,8 @@
 
 volatile lp_core_test_command_reply_t read_test_reply = LP_CORE_COMMAND_INVALID;
 volatile lp_core_test_command_reply_t write_test_cmd = LP_CORE_COMMAND_INVALID;
+volatile int32_t read_test_ret = ESP_OK;
+volatile int32_t write_test_ret = ESP_OK;
 
 uint8_t data_rd[DATA_LENGTH] = {};
 uint8_t data_wr[DATA_LENGTH] = {};
@@ -27,14 +29,16 @@ int main(void)
      */
     ulp_lp_core_intr_enable();
 
-    lp_core_i2c_master_read_from_device(LP_I2C_NUM_0, I2C_SLAVE_ADDRESS, data_rd, RW_TEST_LENGTH, LP_I2C_TRANS_WAIT_FOREVER);
+    read_test_ret = lp_core_i2c_master_read_from_device(LP_I2C_NUM_0, I2C_SLAVE_ADDRESS, data_rd,
+                                                        RW_TEST_LENGTH, LP_I2C_TRANS_WAIT_FOREVER);
     read_test_reply = LP_CORE_COMMAND_OK;
 
     /* Wait for write command from main CPU */
     while (write_test_cmd != LP_CORE_COMMAND_OK) {
     }
 
-    lp_core_i2c_master_write_to_device(LP_I2C_NUM_0, I2C_SLAVE_ADDRESS, data_wr, RW_TEST_LENGTH, LP_I2C_TRANS_WAIT_FOREVER);
+    write_test_ret = lp_core_i2c_master_write_to_device(LP_I2C_NUM_0, I2C_SLAVE_ADDRESS, data_wr,
+                                                        RW_TEST_LENGTH, LP_I2C_TRANS_WAIT_FOREVER);
 
     write_test_cmd = LP_CORE_COMMAND_NOK;
 

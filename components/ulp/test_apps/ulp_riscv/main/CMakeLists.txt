@@ -6,7 +6,8 @@ set(ulp_sources4 "ulp/test_main_i2c.c")
 
 idf_component_register(SRCS ${app_sources}
                        INCLUDE_DIRS "ulp"
-                       REQUIRES ulp unity test_utils driver esp_timer
+                       REQUIRES ulp unity test_utils esp_timer
+                       PRIV_REQUIRES esp_driver_i2c
                        WHOLE_ARCHIVE)
 
 set(ulp_app_name ulp_test_app)
