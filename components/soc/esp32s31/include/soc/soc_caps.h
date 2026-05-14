@@ -23,7 +23,7 @@
 #define _SOC_CAPS_TARGET_IS_ESP32S31       1 // [gen_soc_caps:ignore]
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
-// #define SOC_ADC_SUPPORTED               1      // TODO: [ESP32S31] IDF-14741
+#define SOC_ADC_SUPPORTED               1
 #define SOC_ANA_CMPR_SUPPORTED          1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_UART_SUPPORTED              1
@@ -128,8 +128,30 @@
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
 /*!< SAR ADC Module*/
-#define SOC_ADC_MAX_CHANNEL_NUM                 (10)
+#define SOC_ADC_DIG_CTRL_SUPPORTED              1
 #define SOC_ADC_PERIPH_NUM                      (2)
+#define SOC_ADC_MAX_CHANNEL_NUM                 (8)
+#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         (8)
+#define SOC_ADC_ATTEN_NUM                       (1U)
+#define SOC_ADC_RTC_MIN_BITWIDTH                (17)
+#define SOC_ADC_RTC_MAX_BITWIDTH                (17)
+
+#define SOC_ADC_DMA_SUPPORTED                   1
+#define SOC_ADC_DIGI_CONTROLLER_NUM             (2)
+#define SOC_ADC_PATT_LEN_MAX                    (16)
+#define SOC_ADC_DIGI_MIN_BITWIDTH               (17)
+#define SOC_ADC_DIGI_MAX_BITWIDTH               (17)
+#define SOC_ADC_DIGI_RESULT_BYTES               (4)
+#define SOC_ADC_DIGI_DATA_BYTES_PER_CONV        (4)
+#define SOC_ADC_DIG_SUPPORTED_UNIT(UNIT)        (1)
+#define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          (83333U)
+#define SOC_ADC_SAMPLE_FREQ_THRES_LOW           (611U)
+#define SOC_ADC_DIGI_MONITOR_NUM                (2)
+
+#define SOC_ADC_DIFF_SUPPORTED                  (1)
+
+/*!< ADC power control is shared by PWDET, TempSensor */
+#define SOC_ADC_SHARED_POWER                    1
 
 /*-------------------------- CACHE CAPS --------------------------------------*/
 #define SOC_CACHE_WRITEBACK_SUPPORTED           1

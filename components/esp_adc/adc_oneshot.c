@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -200,7 +200,7 @@ esp_err_t adc_oneshot_config_channel(adc_oneshot_unit_handle_t handle, adc_chann
     ESP_RETURN_ON_FALSE(((config->bitwidth >= SOC_ADC_RTC_MIN_BITWIDTH && config->bitwidth <= SOC_ADC_RTC_MAX_BITWIDTH) || config->bitwidth == ADC_BITWIDTH_DEFAULT), ESP_ERR_INVALID_ARG, TAG, "invalid bitwidth");
     ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(handle->unit_id), ESP_ERR_INVALID_ARG, TAG, "invalid channel");
 
-    s_adc_io_init(handle->unit_id, channel);
+    ESP_RETURN_ON_ERROR(s_adc_io_init(handle->unit_id, channel), TAG, "adc io init failed");
 
     adc_oneshot_hal_ctx_t *hal = &(handle->hal);
     adc_oneshot_hal_chan_cfg_t cfg = {
@@ -268,7 +268,7 @@ esp_err_t adc_oneshot_read_isr(adc_oneshot_unit_handle_t handle, adc_channel_t c
     adc_hal_calibration_init(handle->unit_id);
     adc_set_hw_calibration_code(handle->unit_id, atten);
 #endif
-    adc_oneshot_hal_convert(&(handle->hal), out_raw);
+    bool valid = adc_oneshot_hal_convert(&(handle->hal), out_raw);
     ANALOG_CLOCK_DISABLE();
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
     ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)(handle->hal.clk_src), false));
@@ -276,7 +276,7 @@ esp_err_t adc_oneshot_read_isr(adc_oneshot_unit_handle_t handle, adc_channel_t c
 
     portEXIT_CRITICAL_SAFE(&rtc_spinlock);
 
-    return ESP_OK;
+    return valid ? ESP_OK : ESP_ERR_TIMEOUT;
 }
 
 esp_err_t adc_oneshot_del_unit(adc_oneshot_unit_handle_t handle)

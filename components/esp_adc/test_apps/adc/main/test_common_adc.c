@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -22,6 +22,8 @@ __attribute__((unused)) static const char *TAG = "TEST_ADC";
 ---------------------------------------------------------------*/
 #if CONFIG_IDF_TARGET_ESP32C2
 adc_atten_t g_test_atten[TEST_ATTEN_NUMS] = {ADC_ATTEN_DB_0, ADC_ATTEN_DB_12};
+#elif CONFIG_IDF_TARGET_ESP32S31
+adc_atten_t g_test_atten[TEST_ATTEN_NUMS] = {ADC_ATTEN_DB_0};
 #else
 adc_atten_t g_test_atten[TEST_ATTEN_NUMS] = {ADC_ATTEN_DB_0, ADC_ATTEN_DB_2_5, ADC_ATTEN_DB_6, ADC_ATTEN_DB_12};
 #endif
@@ -127,4 +129,33 @@ void test_adc_set_io_middle(adc_unit_t unit, adc_channel_t channel)
     }
 #endif
     vTaskDelay(10 / portTICK_PERIOD_MS);
+}
+
+void test_assert_adc_raw(adc_unit_t unit, adc_channel_t channel, bool level, int raw, bool dma_mode, bool loose_thresh)
+{
+    TEST_ASSERT(channel < SOC_ADC_CHANNEL_NUM(unit) && "invalid channel");
+
+#if defined ADC_TEST_HIGH_VAL_DMA
+    int expected_value = level ? (dma_mode ? ADC_TEST_HIGH_VAL_DMA : ADC_TEST_HIGH_VAL) : ADC_TEST_LOW_VAL;
+#else
+    int expected_value = level ? ADC_TEST_HIGH_VAL : ADC_TEST_LOW_VAL;
+#endif
+    int expected_thresh = level ? ADC_TEST_HIGH_THRESH : ADC_TEST_LOW_THRESH;
+    int io_num = adc_channel_io_map[unit][channel];
+
+#if SOC_ADC_DIFF_SUPPORTED
+    if ((((unsigned)channel) & 0x1U) == 0U) {
+        // N-side input's raw value is inverted.
+        expected_value = level ? 0 : ADC_TEST_LOW_VAL;
+        expected_thresh = ADC_TEST_LOW_THRESH;
+    }
+#endif
+
+    if (loose_thresh) {
+        expected_thresh = ADC_TEST_LOOSE_THRESH;
+    }
+
+    ESP_EARLY_LOGI(TAG, "ADC%d channel %d (GPIO%d) set=%d, raw=%d, expected=%d",
+                   unit + 1, channel, io_num, level, raw, expected_value);
+    TEST_ASSERT_INT_WITHIN(expected_thresh, expected_value, raw);
 }

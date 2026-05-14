@@ -13,6 +13,7 @@
 #include "esp_cpu.h"
 #include "esp_heap_caps.h"
 #include "hal/adc_periph.h"
+#include "hal/adc_ll.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_adc/adc_oneshot.h"
@@ -34,20 +35,25 @@ static int s_adc_count_size;
 static int *s_p_adc_count;
 static int s_adc_offset = -1;
 
+#ifndef ADC_LL_RAW_DATA_WEIGHTED_SUM
+#define ADC_TEST_RAW_BUCKET_SIZE(bitwidth)  (1 << (bitwidth))
+#else
+#define ADC_TEST_RAW_BUCKET_SIZE(bitwidth)  (ADC_TEST_HIGH_VAL + 1)
+#endif
+
 static int s_insert_point(uint32_t value)
 {
     const bool fixed_size = true;
 
     if (s_adc_offset < 0) {
         if (fixed_size) {
-            TEST_ASSERT_GREATER_OR_EQUAL(4096, s_adc_count_size);
-            s_adc_offset = 0;   //Fixed to 0 because the array can hold all the data in 12 bits
+            s_adc_offset = 0;   // Fixed to 0 because the array can hold the full raw code range
         } else {
             s_adc_offset = MAX((int)value - s_adc_count_size / 2, 0);
         }
     }
 
-    if (!fixed_size && (value < s_adc_offset || value >= s_adc_offset + s_adc_count_size)) {
+    if (value < s_adc_offset || value >= s_adc_offset + s_adc_count_size) {
         TEST_ASSERT_GREATER_OR_EQUAL(s_adc_offset, value);
         TEST_ASSERT_LESS_THAN(s_adc_offset + s_adc_count_size, value);
     }
@@ -217,7 +223,7 @@ static float test_adc_continuous_std(adc_atten_t atten, bool filter_en, int filt
         ESP_LOGI("TEST_ADC", "Test with atten: %d, no filter", atten);
     }
 
-    s_reset_array((1 << SOC_ADC_DIGI_MAX_BITWIDTH));
+    s_reset_array(ADC_TEST_RAW_BUCKET_SIZE(SOC_ADC_DIGI_MAX_BITWIDTH));
     TEST_ESP_OK(adc_continuous_start(handle));
 
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
@@ -271,29 +277,29 @@ TEST_CASE("ADC1 continuous raw average and std_deviation", "[adc_continuous][man
 
 TEST_CASE("ADC1 continuous std deviation performance, no filter", "[adc_continuous][performance]")
 {
-    float std = test_adc_continuous_std(ADC_ATTEN_DB_12, false, 0, true);
+    float std = test_adc_continuous_std(TEST_ADC_DRIVER_DEFAULT_ATTEN, false, 0, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_CONTINUOUS_STD_ATTEN3_NO_FILTER, "%.2f", std);
 }
 
 #if SOC_ADC_DIG_IIR_FILTER_SUPPORTED
 TEST_CASE("ADC1 continuous std deviation performance, with filter", "[adc_continuous][performance]")
 {
-    float std = test_adc_continuous_std(ADC_ATTEN_DB_12, false, 0, true);
+    float std = test_adc_continuous_std(TEST_ADC_DRIVER_DEFAULT_ATTEN, false, 0, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_CONTINUOUS_STD_ATTEN3_NO_FILTER, "%.2f", std);
 
-    std = test_adc_continuous_std(ADC_ATTEN_DB_12, true, ADC_DIGI_IIR_FILTER_COEFF_2, true);
+    std = test_adc_continuous_std(TEST_ADC_DRIVER_DEFAULT_ATTEN, true, ADC_DIGI_IIR_FILTER_COEFF_2, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_CONTINUOUS_STD_ATTEN3_FILTER_2, "%.2f", std);
 
-    std = test_adc_continuous_std(ADC_ATTEN_DB_12, true, ADC_DIGI_IIR_FILTER_COEFF_4, true);
+    std = test_adc_continuous_std(TEST_ADC_DRIVER_DEFAULT_ATTEN, true, ADC_DIGI_IIR_FILTER_COEFF_4, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_CONTINUOUS_STD_ATTEN3_FILTER_4, "%.2f", std);
 
-    std = test_adc_continuous_std(ADC_ATTEN_DB_12, true, ADC_DIGI_IIR_FILTER_COEFF_8, true);
+    std = test_adc_continuous_std(TEST_ADC_DRIVER_DEFAULT_ATTEN, true, ADC_DIGI_IIR_FILTER_COEFF_8, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_CONTINUOUS_STD_ATTEN3_FILTER_8, "%.2f", std);
 
-    std = test_adc_continuous_std(ADC_ATTEN_DB_12, true, ADC_DIGI_IIR_FILTER_COEFF_16, true);
+    std = test_adc_continuous_std(TEST_ADC_DRIVER_DEFAULT_ATTEN, true, ADC_DIGI_IIR_FILTER_COEFF_16, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_CONTINUOUS_STD_ATTEN3_FILTER_16, "%.2f", std);
 
-    std = test_adc_continuous_std(ADC_ATTEN_DB_12, true, ADC_DIGI_IIR_FILTER_COEFF_64, true);
+    std = test_adc_continuous_std(TEST_ADC_DRIVER_DEFAULT_ATTEN, true, ADC_DIGI_IIR_FILTER_COEFF_64, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_CONTINUOUS_STD_ATTEN3_FILTER_64, "%.2f", std);
 }
 #endif  //#if SOC_ADC_DIG_IIR_FILTER_SUPPORTED
@@ -421,7 +427,7 @@ static float test_adc_oneshot_std(adc_atten_t atten, bool is_performance_test)
     TEST_ESP_OK(adc_oneshot_config_channel(adc1_handle, channel, &config));
     ESP_LOGI("TEST_ADC", "Test with atten: %d", atten);
 
-    s_reset_array((1 << SOC_ADC_RTC_MAX_BITWIDTH));
+    s_reset_array(ADC_TEST_RAW_BUCKET_SIZE(SOC_ADC_RTC_MAX_BITWIDTH));
 
     if (is_performance_test) {
         test_adc_set_io_middle(ADC_UNIT_1, TEST_STD_ADC1_CHANNEL0);
@@ -463,7 +469,7 @@ TEST_CASE("ADC1 oneshot raw average and std_deviation", "[adc_oneshot][manual]")
 
 TEST_CASE("ADC1 oneshot std_deviation performance", "[adc_oneshot][performance]")
 {
-    float std = test_adc_oneshot_std(ADC_ATTEN_DB_12, true);
+    float std = test_adc_oneshot_std(TEST_ADC_DRIVER_DEFAULT_ATTEN, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_ONESHOT_STD_ATTEN3, "%.2f", std);
 }
 /*---------------------------------------------------------------
@@ -513,7 +519,7 @@ static void s_adc_cali_speed(adc_unit_t unit_id, adc_channel_t channel)
     } else {
 
         ESP_LOGI(TAG, "CPU FREQ is %dMHz", CPU_FREQ_MHZ);
-        uint32_t adc_time_record[4][TIMES_PER_ATTEN] = {};
+        uint32_t adc_time_record[TEST_ATTEN_NUMS][TIMES_PER_ATTEN] = {};
         int adc_raw = 0;
 
         //-------------ADC Init---------------//

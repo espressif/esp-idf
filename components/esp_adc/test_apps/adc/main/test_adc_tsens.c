@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,7 @@
 static const char *TAG = "adc_tsens";
 
 #define TEST_ADC1_CHAN0          ADC_CHANNEL_2
-#define TEST_ADC_ATTEN           ADC_ATTEN_DB_12
+#define TEST_ADC_ATTEN           TEST_ADC_DRIVER_DEFAULT_ATTEN
 
 static int adc_raw;
 static float tsens_value;
@@ -45,13 +45,11 @@ static void adc_oneshot_test(adc_oneshot_unit_handle_t adc_handle)
 {
     test_adc_set_io_level(ADC_UNIT_1, TEST_ADC1_CHAN0, 0);
     TEST_ESP_OK(adc_oneshot_read(adc_handle, TEST_ADC1_CHAN0, &adc_raw));
-    ESP_LOGI(TAG, "low  raw  data: %d", adc_raw);
-    TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw);
+    test_assert_adc_raw(ADC_UNIT_1, TEST_ADC1_CHAN0, false, adc_raw, false, false);
 
     test_adc_set_io_level(ADC_UNIT_1, TEST_ADC1_CHAN0, 1);
     TEST_ESP_OK(adc_oneshot_read(adc_handle, TEST_ADC1_CHAN0, &adc_raw));
-    ESP_LOGI(TAG, "high raw  data: %d", adc_raw);
-    TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw);
+    test_assert_adc_raw(ADC_UNIT_1, TEST_ADC1_CHAN0, true, adc_raw, false, false);
 }
 
 TEST_CASE("Test temperature sensor work with ADC oneshot", "[adc]")
@@ -118,7 +116,7 @@ TEST_CASE("Test temperature sensor work with ADC continuous", "[adc]")
         .conv_mode = ADC_CONV_SINGLE_UNIT_1,
     };
     adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
-    adc_pattern[0].atten = ADC_ATTEN_DB_12;
+    adc_pattern[0].atten = TEST_ADC_DRIVER_DEFAULT_ATTEN;
     adc_pattern[0].channel = TEST_ADC1_CHAN0;
     adc_pattern[0].unit = ADC_UNIT_1;
     adc_pattern[0].bit_width = SOC_ADC_DIGI_MAX_BITWIDTH;

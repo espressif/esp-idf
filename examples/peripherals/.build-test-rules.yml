@@ -16,7 +16,7 @@ examples/peripherals/adc/continuous_read:
   disable_test:
     - if: IDF_TARGET in ["esp32h4"]
       temporary: true
-      reason: no runners for esp32h4 ADC test
+      reason: no runners
   <<: *adc_dependencies
 
 examples/peripherals/adc/oneshot_read:
@@ -25,7 +25,7 @@ examples/peripherals/adc/oneshot_read:
   disable_test:
     - if: IDF_TARGET in ["esp32h4"]
       temporary: true
-      reason: no runners for esp32h4 ADC test
+      reason: no runners
   <<: *adc_dependencies
 
 examples/peripherals/analog_comparator/auto_scan:

@@ -17,4 +17,4 @@ components/esp_adc/test_apps/adc:
   disable_test:
     - if: IDF_TARGET in ["esp32h4"]
       temporary: true
-      reason: no runners for esp32h4 ADC test
+      reason: no runners
