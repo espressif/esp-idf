@@ -563,7 +563,9 @@ menu "BT DEBUG LOG LEVEL"
 
     choice BT_LOG_HCI_TRACE_LEVEL
         prompt "HCI layer"
-        default BT_LOG_HCI_TRACE_LEVEL_WARNING
+        default BT_LOG_HCI_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_HCI_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_HCI_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
         depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
         help
             Define BT trace level for HCI layer
@@ -598,7 +600,9 @@ menu "BT DEBUG LOG LEVEL"
 
     choice BT_LOG_BTM_TRACE_LEVEL
         prompt "BTM layer"
-        default BT_LOG_BTM_TRACE_LEVEL_WARNING
+        default BT_LOG_BTM_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_BTM_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_BTM_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
         depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
         help
             Define BT trace level for BTM layer
@@ -633,7 +637,9 @@ menu "BT DEBUG LOG LEVEL"
 
     choice BT_LOG_L2CAP_TRACE_LEVEL
         prompt "L2CAP layer"
-        default BT_LOG_L2CAP_TRACE_LEVEL_WARNING
+        default BT_LOG_L2CAP_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_L2CAP_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_L2CAP_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
         depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
         help
             Define BT trace level for L2CAP layer
@@ -738,7 +744,9 @@ menu "BT DEBUG LOG LEVEL"
 
     choice BT_LOG_GAP_TRACE_LEVEL
         prompt "GAP layer"
-        default BT_LOG_GAP_TRACE_LEVEL_WARNING
+        default BT_LOG_GAP_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_GAP_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_GAP_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
         depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
         help
             Define BT trace level for GAP layer
@@ -1053,7 +1061,9 @@ menu "BT DEBUG LOG LEVEL"
 
     choice BT_LOG_APPL_TRACE_LEVEL
         prompt "APPL layer"
-        default BT_LOG_APPL_TRACE_LEVEL_WARNING
+        default BT_LOG_APPL_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_APPL_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_APPL_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
         depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
         help
             Define BT trace level for APPL layer
@@ -1088,7 +1098,9 @@ menu "BT DEBUG LOG LEVEL"
 
     choice BT_LOG_GATT_TRACE_LEVEL
         prompt "GATT layer"
-        default BT_LOG_GATT_TRACE_LEVEL_WARNING
+        default BT_LOG_GATT_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_GATT_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_GATT_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
         depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
         help
             Define BT trace level for GATT layer
@@ -1123,7 +1135,9 @@ menu "BT DEBUG LOG LEVEL"
 
     choice BT_LOG_SMP_TRACE_LEVEL
         prompt "SMP layer"
-        default BT_LOG_SMP_TRACE_LEVEL_WARNING
+        default BT_LOG_SMP_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_SMP_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_SMP_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
         depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
         help
             Define BT trace level for SMP layer
@@ -1158,7 +1172,9 @@ menu "BT DEBUG LOG LEVEL"
 
     choice BT_LOG_BTIF_TRACE_LEVEL
         prompt "BTIF layer"
-        default BT_LOG_BTIF_TRACE_LEVEL_WARNING
+        default BT_LOG_BTIF_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_BTIF_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_BTIF_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
         depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
         help
             Define BT trace level for BTIF layer
@@ -1193,7 +1209,9 @@ menu "BT DEBUG LOG LEVEL"
 
     choice BT_LOG_BTC_TRACE_LEVEL
         prompt "BTC layer"
-        default BT_LOG_BTC_TRACE_LEVEL_WARNING
+        default BT_LOG_BTC_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_BTC_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_BTC_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
         depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
         help
             Define BT trace level for BTC layer
@@ -1228,7 +1246,9 @@ menu "BT DEBUG LOG LEVEL"
 
     choice BT_LOG_OSI_TRACE_LEVEL
         prompt "OSI layer"
-        default BT_LOG_OSI_TRACE_LEVEL_WARNING
+        default BT_LOG_OSI_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_OSI_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_OSI_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
         depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
         help
             Define BT trace level for OSI layer
