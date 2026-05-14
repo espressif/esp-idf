@@ -746,6 +746,9 @@
 #define SOC_JPEG_DECODE_SUPPORTED                 (1)
 #define SOC_JPEG_ENCODE_SUPPORTED                 (1)
 
+/*--------------------------- H264 --------------------------------*/
+#define SOC_H264_ENCODER_SUPPORTED                (1)
+
 /*--------------------------- CAM ---------------------------------*/
 #define SOC_LCDCAM_CAM_SUPPORT_RGB_YUV_CONV         (1)
 

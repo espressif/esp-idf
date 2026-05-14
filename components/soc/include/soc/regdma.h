@@ -68,6 +68,7 @@ extern "C" {
 #define REGDMA_EMAC_LINK(_pri)              ((0x27 << 8) | _pri)
 #define REGDMA_JPEG_LINK(_pri)              ((0x28 << 8) | _pri)
 #define REGDMA_LCDCAM_LINK(_pri)            ((0x29 << 8) | _pri)
+#define REGDMA_H264_LINK(_pri)              ((0x2a << 8) | _pri)
 
 #define REGDMA_MODEM_FE_LINK(_pri)          ((0xFF << 8) | _pri)
 
@@ -98,6 +99,7 @@ extern "C" {
 #define REGDMA_LINK_PRI_EMAC                    REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_LCDCAM                  REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_JPEG                    REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_H264                    REGDMA_LINK_PRI_GENERAL_PERIPH
 
 typedef enum {
     REGDMA_LINK_PRI_0 = 0,
