@@ -65,6 +65,12 @@ extern "C" {
 #define UC_BR_EDR_LK_STORE_EN 0
 #endif
 
+#if defined(CONFIG_BT_CTRL_BR_EDR_DTM_EN) && CONFIG_BT_CTRL_BR_EDR_DTM_EN
+#define UC_BR_EDR_DTM_EN 1
+#else
+#define UC_BR_EDR_DTM_EN 0
+#endif
+
 #if defined(CONFIG_BT_CTRL_BR_EDR_TX_CCA_ENABLED)
 #define UC_BR_EDR_TX_CCA_EN (CONFIG_BT_CTRL_BR_EDR_TX_CCA_ENABLED)
 #else

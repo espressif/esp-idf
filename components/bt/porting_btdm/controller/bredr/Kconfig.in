@@ -130,6 +130,31 @@ config BT_CTRL_BR_EDR_APB_EN
     help
         Enable BR/EDR Active Peripheral Broadcast
 
+config BT_CTRL_BR_EDR_APB_EXT_EN
+    bool "Enable BR/EDR Broadcast Encryption or Piconet Clock Adjustment"
+    select BT_CTRL_BR_EDR_APB_EN
+    default n
+    help
+        Enable BR/EDR Broadcast Encryption or Piconet Clock Adjustment
+
+choice BT_CTRL_BR_EDR_APB_EXT
+    prompt "Choice BR/EDR Broadcast Encryption or Piconet Clock Adjustment"
+    depends on BT_CTRL_BR_EDR_APB_EXT_EN
+    default BT_CTRL_BR_EDR_APB_EXT_PCA_EN
+    help
+        Enable BR/EDR Broadcast Encryption or Piconet Clock Adjustment
+
+    config BT_CTRL_BR_EDR_APB_EXT_BCST_ENC_EN
+        bool "Broadcast Encryption"
+        help
+            Enable BR/EDR Broadcast Encryption
+
+    config BT_CTRL_BR_EDR_APB_EXT_PCA_EN
+        bool "Piconet Clock Adjustment"
+        help
+            Enable BR/EDR Piconet Clock Adjustment
+endchoice
+
 config BT_CTRL_BR_EDR_CPB_TX_EN
     bool "Enable BR/EDR Connectionless Peripheral Broadcast Transimit"
     default n
@@ -147,6 +172,12 @@ config BT_CTRL_BR_EDR_LK_STORE_EN
     default n
     help
         Enable BR/EDR controller link key storage, only support store link key in RAM for now.
+
+config BT_CTRL_BR_EDR_DTM_EN
+    bool "Enable BR/EDR controller direct test mode"
+    default n
+    help
+        Enable BR/EDR controller direct test mode
 
 config BT_CTRL_BR_EDR_TX_CCA_ENABLED
     bool "Enable BR/EDR TX CCA feature"

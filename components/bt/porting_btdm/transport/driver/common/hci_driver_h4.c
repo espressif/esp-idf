@@ -59,6 +59,9 @@ hci_h4_frame_start(struct hci_h4_sm *rxs, uint8_t pkt_type)
 
     switch (rxs->pkt_type) {
     case HCI_H4_CMD:
+#if UC_BT_CTRL_BR_EDR_IS_ENABLE
+    case HCI_H4_SYNC:
+#endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
         rxs->min_len = 3;
         break;
     case HCI_H4_ACL:
@@ -227,6 +230,9 @@ hci_h4_sm_w4_payload(struct hci_h4_sm *h4sm,
     len = min(ib->len, h4sm->exp_len - h4sm->len);
     switch (h4sm->pkt_type) {
     case HCI_H4_CMD:
+#if UC_BT_CTRL_BR_EDR_IS_ENABLE
+    case HCI_H4_SYNC:
+#endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
         if (h4sm->pkt) {
             memcpy(&h4sm->pkt->data[h4sm->len], ib->buf, len);
         }
@@ -304,12 +310,20 @@ hci_h4_sm_completed(struct hci_h4_sm *h4sm)
 #endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
         break;
     case HCI_H4_CMD:
+#if UC_BT_CTRL_BR_EDR_IS_ENABLE
+    case HCI_H4_SYNC:
+#endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
     case HCI_H4_ISO:
         if (h4sm->buf) {
             switch(h4sm->pkt_type) {
                 case HCI_H4_CMD:
                     data_source = HCI_DRIVER_CMD;
                     break;
+#if UC_BT_CTRL_BR_EDR_IS_ENABLE
+                case HCI_H4_SYNC:
+                    data_source = HCI_DRIVER_BREDR_SYNC;
+                    break;
+#endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
                 case HCI_H4_ISO:
                     data_source = HCI_DRIVER_LE_ISO;
                     break;

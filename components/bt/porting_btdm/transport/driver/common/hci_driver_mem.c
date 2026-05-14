@@ -84,7 +84,6 @@ void
 hci_driver_mem_bredr_acl_free(void *ptr)
 {
     hci_driver_packet_t *pkt = (hci_driver_packet_t *) ptr;
-    bredr_hci_trans_acl_tx_done(pkt);
     bredr_hci_trans_acl_free(pkt);
 }
 
@@ -98,7 +97,6 @@ void
 hci_driver_mem_sync_free(void *ptr)
 {
     hci_driver_packet_t *pkt = (hci_driver_packet_t *) ptr;
-    bredr_hci_trans_sync_tx_done(pkt);
     bredr_hci_trans_sync_free(pkt);
 }
 #endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
