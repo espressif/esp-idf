@@ -61,13 +61,13 @@ extern "C" {
 #if CONFIG_EXAMPLE_CAM_HRES_640
 
 #if CONFIG_EXAMPLE_CAM_VRES_480
-#define EXAMPLE_CAM_FORMAT                     "DVP_8bit_20Minput_RGB565_640x480_6fps"
+#define EXAMPLE_CAM_FORMAT                     "DVP_8bit_20Minput_RGB565_LE_640x480_6fps"
 #endif
 
 #elif CONFIG_EXAMPLE_CAM_HRES_240
 
 #if CONFIG_EXAMPLE_CAM_VRES_240
-#define EXAMPLE_CAM_FORMAT                     "DVP_8bit_20Minput_RGB565_240x240_25fps"
+#define EXAMPLE_CAM_FORMAT                     "DVP_8bit_20Minput_RGB565_LE_240x240_25fps"
 #endif
 
 #endif

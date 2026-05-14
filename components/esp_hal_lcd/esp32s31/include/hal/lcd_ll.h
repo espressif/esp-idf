@@ -71,6 +71,8 @@ typedef enum {
 static inline void lcd_ll_enable_bus_clock(int group_id, bool enable)
 {
     (void)group_id;
+    // the core clock is a shared clock for both LCD and CAM
+    HP_SYS_CLKRST.lcdcam_lcdcam_ctrl0.reg_lcdcam_clk_en = enable;
     HP_SYS_CLKRST.lcdcam_ctrl0.reg_lcdcam_apb_clk_en = enable;
     HP_SYS_CLKRST.lcdcam_ctrl0.reg_lcdcam_sys_clk_en = enable;
 }
@@ -112,7 +114,6 @@ static inline void _lcd_ll_reset_register(int group_id)
 static inline void lcd_ll_enable_clock(lcd_cam_dev_t *dev, bool en)
 {
     (void)dev;
-    HP_SYS_CLKRST.lcdcam_lcdcam_ctrl0.reg_lcdcam_clk_en = en;
     HP_SYS_CLKRST.lcdcam_lcd_ctrl0.reg_lcd_clk_en = en;
 }
 

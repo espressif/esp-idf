@@ -343,6 +343,7 @@ IRAM 安全
 
 * :example:`peripherals/camera/mipi_isp_dsi` 演示了如何使用 ``esp_driver_cam`` 组件从 MIPI CSI 摄像头传感器捕获信号，传入 ISP 模块，并通过 DSI 接口将其显示在 LCD 屏幕上。
 * :example:`peripherals/camera/dvp_isp_dsi` 演示了如何使用 ``esp_driver_cam`` 组件从 DVP 摄像头传感器捕获信号，传入 ISP 模块，并通过 DSI 接口将其显示在 LCD 屏幕上。
+* :example:`peripherals/camera/dvp_dsi` 演示了如何使用 ``esp_driver_cam`` 组件通过 DVP 接口采集摄像头传感器数据，并在 MIPI DSI LCD 上显示。
 
 API 参考
 --------

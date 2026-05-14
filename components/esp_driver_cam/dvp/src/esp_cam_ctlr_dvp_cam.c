@@ -810,6 +810,9 @@ esp_err_t esp_cam_ctlr_dvp_format_conversion(esp_cam_ctlr_handle_t cam_handle,
         return ESP_OK;
     }
 
+#if !SOC_LCDCAM_CAM_SUPPORT_RGB_YUV_CONV
+    return ESP_ERR_NOT_SUPPORTED;
+#else
 #if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     if (config->src_format == CAM_CTLR_COLOR_YUV420) {
         ESP_LOGE(TAG, "YUV420 is not allowed for source format");
@@ -820,6 +823,7 @@ esp_err_t esp_cam_ctlr_dvp_format_conversion(esp_cam_ctlr_handle_t cam_handle,
     cam_hal_color_format_convert(&ctlr->hal, config);
 
     return ESP_OK;
+#endif
 }
 
 /**
