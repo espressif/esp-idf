@@ -158,6 +158,26 @@ class TestDependencyManagement(TestWithoutExtensions):
         )
 
 
+class TestIdfVersionSeeding(TestWithoutExtensions):
+    def test_idf_version_seeded_when_unset(self):
+        from idf_py_actions.tools import idf_version_from_cmake
+
+        with mock.patch.dict(os.environ):
+            os.environ.pop('IDF_VERSION', None)
+            idf.init_cli()(args=['--dry-run', 'build'], standalone_mode=False)
+            self.assertIn('IDF_VERSION', os.environ)
+            expected = idf_version_from_cmake()
+            self.assertIsNotNone(expected)
+            expected_stripped = expected.lstrip('v')
+            self.assertEqual(os.environ['IDF_VERSION'], expected_stripped)
+            self.assertFalse(os.environ['IDF_VERSION'].startswith('v'))
+
+    def test_idf_version_not_overwritten_when_set(self):
+        with mock.patch.dict(os.environ, {'IDF_VERSION': '0.0.0-sentinel'}):
+            idf.init_cli()(args=['--dry-run', 'build'], standalone_mode=False)
+            self.assertEqual(os.environ['IDF_VERSION'], '0.0.0-sentinel')
+
+
 class TestVerboseFlag(TestWithoutExtensions):
     def test_verbose_messages(self):
         output = subprocess.check_output(
