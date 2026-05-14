@@ -6,7 +6,7 @@ menu "Wi-Fi Remote"
         default y
 
     config ESP_WIFI_REMOTE_ENABLED  # ignore: multiple-definition
-        bool
+        bool "Enable Wi-Fi Remote component"
         default y if !ESP_HOST_WIFI_ENABLED
         default n if ESP_HOST_WIFI_ENABLED
 
