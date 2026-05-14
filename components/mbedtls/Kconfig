@@ -728,7 +728,7 @@ menu "mbedTLS"
 
             config MBEDTLS_KEY_EXCHANGE_ECJPAKE
                 bool "Enable ECJPAKE based ciphersuite modes"
-                depends on MBEDTLS_ECP_DP_SECP256R1_ENABLED
+                depends on MBEDTLS_ECJPAKE_C && MBEDTLS_ECP_DP_SECP256R1_ENABLED
                 default n
                 help
                     Enable to support ciphersuites with prefix TLS-ECJPAKE-WITH-
@@ -1092,6 +1092,13 @@ menu "mbedTLS"
                 default y
                 help
                         Enable ECDH. Needed to use ECDHE-xxx TLS ciphersuites.
+
+            config MBEDTLS_ECJPAKE_C
+                bool "Elliptic curve J-PAKE"
+                depends on MBEDTLS_ECP_C
+                default n
+                help
+                        Enable ECJPAKE. Needed to use ECJPAKE-xxx TLS ciphersuites.
 
             config MBEDTLS_ECDSA_C
                 bool "Elliptic Curve DSA"

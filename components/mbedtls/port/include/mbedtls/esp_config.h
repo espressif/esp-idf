@@ -2096,6 +2096,18 @@
 #endif
 
 /**
+ * \def MBEDTLS_ECJPAKE_C
+ *
+ * Enable the ECJPAKE based ciphersuites.
+ */
+#ifdef CONFIG_MBEDTLS_ECJPAKE_C
+#define PSA_WANT_ALG_JPAKE 1
+#else
+#undef PSA_WANT_ALG_JPAKE
+#undef PSA_WANT_ALG_TLS12_ECJPAKE_TO_PMS
+#endif
+
+/**
  * \def MBEDTLS_ECDSA_C
  *
  * Enable the elliptic curve DSA library.
