@@ -1,3 +1,6 @@
+# Passive hidden AP test: off by default. Merge sdkconfig.ci.passive_hidden_ap when building/running that case only
+# (see pytest test_wifi_connect_passive_hidden_ap). Example:
+#   idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci.passive_hidden_ap" set-target esp32c3 build
 
 # ignore task watchdog triggered by unity_run_menu
 CONFIG_ESP_TASK_WDT_EN=n
