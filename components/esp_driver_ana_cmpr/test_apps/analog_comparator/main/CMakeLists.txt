@@ -1,14 +1,14 @@
 set(srcs "test_app_main.c"
-         "test_ana_cmpr_utils.c"
-         "test_ana_cmpr.c")
+         "test_ana_cmpr_utils.cpp"
+         "test_ana_cmpr.cpp")
 
 if(CONFIG_ANA_CMPR_ISR_CACHE_SAFE)
-    list(APPEND srcs "test_ana_cmpr_iram.c")
+    list(APPEND srcs "test_ana_cmpr_iram.cpp")
 endif()
 
 if(CONFIG_SOC_ANA_CMPR_SUPPORT_ETM AND CONFIG_SOC_TIMER_SUPPORT_ETM)
     # Analog Comparator event test relies on GPTIMER task
-    list(APPEND srcs "test_ana_cmpr_etm.c")
+    list(APPEND srcs "test_ana_cmpr_etm.cpp")
 endif()
 
 idf_component_register(SRCS ${srcs}

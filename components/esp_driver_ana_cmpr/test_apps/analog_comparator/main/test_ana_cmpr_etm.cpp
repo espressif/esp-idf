@@ -16,14 +16,18 @@
 
 #define TEST_TIME_US        5000
 
+static inline gpio_num_t test_pad_gpio_num(int pad_gpio)
+{
+    return static_cast<gpio_num_t>(pad_gpio);
+}
+
 static gptimer_handle_t test_ana_cmpr_gptimer_init(void)
 {
     gptimer_handle_t gptimer = NULL;
-    gptimer_config_t timer_config = {
-        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
-        .direction = GPTIMER_COUNT_UP,
-        .resolution_hz = 1 * 1000 * 1000, // 1MHz, 1 tick = 1us
-    };
+    gptimer_config_t timer_config = {};
+    timer_config.clk_src = GPTIMER_CLK_SRC_DEFAULT;
+    timer_config.direction = GPTIMER_COUNT_UP;
+    timer_config.resolution_hz = 1 * 1000 * 1000; // 1MHz, 1 tick = 1us
     TEST_ESP_OK(gptimer_new_timer(&timer_config, &gptimer));
     TEST_ESP_OK(gptimer_set_raw_count(gptimer, 0));
     TEST_ESP_OK(gptimer_enable(gptimer));
@@ -40,21 +44,23 @@ static ana_cmpr_handle_t test_ana_cmpr_init(void)
 {
     ana_cmpr_handle_t cmpr = NULL;
 
-    ana_cmpr_config_t config = {
-        .unit = TEST_ANA_CMPR_UNIT_ID,
-        .clk_src = ANA_CMPR_CLK_SRC_DEFAULT,
-        .ref_src = ANA_CMPR_REF_SRC_INTERNAL,
-        .cross_type = ANA_CMPR_CROSS_ANY,
+    ana_cmpr_config_t config = {};
+    config.unit = TEST_ANA_CMPR_UNIT_ID;
+    config.clk_src = ANA_CMPR_CLK_SRC_DEFAULT;
+    config.ref_src = ANA_CMPR_REF_SRC_INTERNAL;
+    config.cross_type = ANA_CMPR_CROSS_ANY;
 #if ANALOG_CMPR_LL_GET(IP_VERSION) > 1
-        .src_chan0_gpio = ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[0],
-        .resample_limit = 3,
+    config.src_chan0_gpio = test_pad_gpio_num(ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[0]);
+    config.resample_limit = 3;
+#else
+    config.src_chan0_gpio = GPIO_NUM_NC;
+    config.resample_limit = 0;
 #endif
-    };
+    config.ext_ref_gpio = GPIO_NUM_NC;
     TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
 
-    ana_cmpr_internal_ref_config_t ref_cfg = {
-        .ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD,
-    };
+    ana_cmpr_internal_ref_config_t ref_cfg = {};
+    ref_cfg.ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD;
     TEST_ESP_OK(ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
 
     ana_cmpr_debounce_config_t dbc_cfg = {
@@ -114,9 +120,8 @@ static test_ana_cmpr_etm_handles_t test_ana_cmpr_init_etm_chain_v1(ana_cmpr_hand
     test_ana_cmpr_etm_handles_t etm_handles = {};
 
     /* Allocate the analog comparator positive & negative cross events */
-    ana_cmpr_etm_event_config_t evt_cfg = {
-        .event_type = ANA_CMPR_EVENT_POS_CROSS,
-    };
+    ana_cmpr_etm_event_config_t evt_cfg = {};
+    evt_cfg.event_type = ANA_CMPR_EVENT_POS_CROSS;
     TEST_ESP_OK(ana_cmpr_new_etm_event(cmpr, &evt_cfg, &etm_handles.cmpr_pos_evt));
     evt_cfg.event_type = ANA_CMPR_EVENT_NEG_CROSS;
     TEST_ESP_OK(ana_cmpr_new_etm_event(cmpr, &evt_cfg, &etm_handles.cmpr_neg_evt));
@@ -212,10 +217,8 @@ TEST_CASE("ana_cmpr etm event delete keeps sibling source event working", "[ana_
     // Trigger a scan to make sure the initial level is sampled
     TEST_ESP_OK(ana_cmpr_trigger_scan(cmpr));
 
-    ana_cmpr_etm_event_config_t evt_cfg = {
-        .src_chan_id = 0,
-        .event_type = ANA_CMPR_EVENT_POS_CROSS,
-    };
+    ana_cmpr_etm_event_config_t evt_cfg = {};
+    evt_cfg.event_type = ANA_CMPR_EVENT_POS_CROSS;
     esp_etm_event_handle_t pos_evt = NULL;
     esp_etm_event_handle_t neg_evt = NULL;
     TEST_ESP_OK(ana_cmpr_new_etm_event(cmpr, &evt_cfg, &pos_evt));
@@ -259,6 +262,8 @@ TEST_CASE("ana_cmpr etm event delete keeps sibling source event working", "[ana_
 #define TEST_ETM_MONITOR_GPIO    4
 #define TEST_ETM_SCAN_PERIOD_US  50
 #define TEST_ETM_WAIT_TIMEOUT_US 2000
+
+static constexpr gpio_num_t TEST_ETM_MONITOR_GPIO_NUM = static_cast<gpio_num_t>(TEST_ETM_MONITOR_GPIO);
 
 typedef struct {
     esp_etm_event_handle_t gptimer_alarm_evt;
@@ -328,9 +333,8 @@ static test_ana_cmpr_etm_task_handles_t test_ana_cmpr_init_etm_chain_v2(ana_cmpr
     };
     TEST_ESP_OK(ana_cmpr_new_etm_task(cmpr, &cmpr_task_cfg, &etm_handles.cmpr_start_task));
 
-    ana_cmpr_etm_event_config_t cmpr_evt_cfg = {
-        .event_type = ANA_CMPR_EVENT_POS_CROSS,
-    };
+    ana_cmpr_etm_event_config_t cmpr_evt_cfg = {};
+    cmpr_evt_cfg.event_type = ANA_CMPR_EVENT_POS_CROSS;
     TEST_ESP_OK(ana_cmpr_new_etm_event(cmpr, &cmpr_evt_cfg, &etm_handles.cmpr_pos_evt));
     cmpr_evt_cfg.event_type = ANA_CMPR_EVENT_NEG_CROSS;
     TEST_ESP_OK(ana_cmpr_new_etm_event(cmpr, &cmpr_evt_cfg, &etm_handles.cmpr_neg_evt));
@@ -339,8 +343,8 @@ static test_ana_cmpr_etm_task_handles_t test_ana_cmpr_init_etm_chain_v2(ana_cmpr
     gpio_task_cfg.actions[0] = GPIO_ETM_TASK_ACTION_SET;
     gpio_task_cfg.actions[1] = GPIO_ETM_TASK_ACTION_CLR;
     TEST_ESP_OK(gpio_new_etm_task(&gpio_task_cfg, &etm_handles.gpio_set_task, &etm_handles.gpio_clr_task));
-    TEST_ESP_OK(gpio_etm_task_add_gpio(etm_handles.gpio_set_task, TEST_ETM_MONITOR_GPIO));
-    TEST_ESP_OK(gpio_etm_task_add_gpio(etm_handles.gpio_clr_task, TEST_ETM_MONITOR_GPIO));
+    TEST_ESP_OK(gpio_etm_task_add_gpio(etm_handles.gpio_set_task, TEST_ETM_MONITOR_GPIO_NUM));
+    TEST_ESP_OK(gpio_etm_task_add_gpio(etm_handles.gpio_clr_task, TEST_ETM_MONITOR_GPIO_NUM));
 
     esp_etm_channel_config_t etm_cfg = {};
     TEST_ESP_OK(esp_etm_new_channel(&etm_cfg, &etm_handles.etm_reload_handle));
@@ -368,8 +372,8 @@ static void test_ana_cmpr_deinit_etm_chain_v2(test_ana_cmpr_etm_task_handles_t h
     TEST_ESP_OK(esp_etm_channel_disable(handles.etm_pos_handle));
     TEST_ESP_OK(esp_etm_channel_disable(handles.etm_neg_handle));
 
-    TEST_ESP_OK(gpio_etm_task_rm_gpio(handles.gpio_set_task, TEST_ETM_MONITOR_GPIO));
-    TEST_ESP_OK(gpio_etm_task_rm_gpio(handles.gpio_clr_task, TEST_ETM_MONITOR_GPIO));
+    TEST_ESP_OK(gpio_etm_task_rm_gpio(handles.gpio_set_task, TEST_ETM_MONITOR_GPIO_NUM));
+    TEST_ESP_OK(gpio_etm_task_rm_gpio(handles.gpio_clr_task, TEST_ETM_MONITOR_GPIO_NUM));
 
     TEST_ESP_OK(esp_etm_del_task(handles.gpio_set_task));
     TEST_ESP_OK(esp_etm_del_task(handles.gpio_clr_task));
@@ -392,13 +396,14 @@ TEST_CASE("ana_cmpr etm task periodic scan", "[ana_cmpr][etm]")
     ana_cmpr_handle_t cmpr = test_ana_cmpr_init();
     gpio_num_t src_gpio = test_init_src_chan_gpio(cmpr, 0, 0);
 
-    gpio_config_t monitor_gpio_cfg = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .mode = GPIO_MODE_INPUT_OUTPUT,
-        .pin_bit_mask = 1ULL << TEST_ETM_MONITOR_GPIO,
-    };
+    gpio_config_t monitor_gpio_cfg = {};
+    monitor_gpio_cfg.pin_bit_mask = 1ULL << TEST_ETM_MONITOR_GPIO;
+    monitor_gpio_cfg.mode = GPIO_MODE_INPUT_OUTPUT;
+    monitor_gpio_cfg.pull_up_en = GPIO_PULLUP_DISABLE;
+    monitor_gpio_cfg.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    monitor_gpio_cfg.intr_type = GPIO_INTR_DISABLE;
     TEST_ESP_OK(gpio_config(&monitor_gpio_cfg));
-    TEST_ESP_OK(gpio_set_level(TEST_ETM_MONITOR_GPIO, 0));
+    TEST_ESP_OK(gpio_set_level(TEST_ETM_MONITOR_GPIO_NUM, 0));
 
     // Prime the comparator with a known initial low level before ETM-driven scans begin.
     TEST_ESP_OK(gpio_set_level(src_gpio, 0));
@@ -407,11 +412,10 @@ TEST_CASE("ana_cmpr etm task periodic scan", "[ana_cmpr][etm]")
     vTaskDelay(pdMS_TO_TICKS(10));
     test_ana_cmpr_wait_output_level(cmpr, 0, false);
 
-    gptimer_alarm_config_t alarm_config = {
-        .reload_count = 0,
-        .alarm_count = TEST_ETM_SCAN_PERIOD_US,
-        .flags.auto_reload_on_alarm = true,
-    };
+    gptimer_alarm_config_t alarm_config = {};
+    alarm_config.reload_count = 0;
+    alarm_config.alarm_count = TEST_ETM_SCAN_PERIOD_US;
+    alarm_config.flags.auto_reload_on_alarm = true;
     TEST_ESP_OK(gptimer_set_alarm_action(gptimer, &alarm_config));
 
     test_ana_cmpr_etm_task_handles_t handles = test_ana_cmpr_init_etm_chain_v2(cmpr, gptimer);
@@ -421,20 +425,20 @@ TEST_CASE("ana_cmpr etm task periodic scan", "[ana_cmpr][etm]")
     // demonstrating that the ETM-driven scans are working correctly.
     TEST_ESP_OK(gptimer_start(gptimer));
 
-    TEST_ASSERT_EQUAL(0, gpio_get_level(TEST_ETM_MONITOR_GPIO));
+    TEST_ASSERT_EQUAL(0, gpio_get_level(TEST_ETM_MONITOR_GPIO_NUM));
 
     TEST_ESP_OK(gpio_set_level(src_gpio, 1));
     vTaskDelay(pdMS_TO_TICKS(1));
     test_ana_cmpr_wait_output_level(cmpr, 0, true);
-    TEST_ASSERT_EQUAL(1, gpio_get_level(TEST_ETM_MONITOR_GPIO));
+    TEST_ASSERT_EQUAL(1, gpio_get_level(TEST_ETM_MONITOR_GPIO_NUM));
 
     TEST_ESP_OK(gpio_set_level(src_gpio, 0));
     vTaskDelay(pdMS_TO_TICKS(1));
     test_ana_cmpr_wait_output_level(cmpr, 0, false);
-    TEST_ASSERT_EQUAL(0, gpio_get_level(TEST_ETM_MONITOR_GPIO));
+    TEST_ASSERT_EQUAL(0, gpio_get_level(TEST_ETM_MONITOR_GPIO_NUM));
 
     TEST_ESP_OK(gptimer_stop(gptimer));
-    TEST_ESP_OK(gpio_reset_pin(TEST_ETM_MONITOR_GPIO));
+    TEST_ESP_OK(gpio_reset_pin(TEST_ETM_MONITOR_GPIO_NUM));
     test_ana_cmpr_deinit_etm_chain_v2(handles);
     test_ana_cmpr_deinit(cmpr);
     test_ana_cmpr_gptimer_deinit(gptimer);
