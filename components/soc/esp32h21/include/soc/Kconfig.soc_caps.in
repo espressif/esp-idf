@@ -31,6 +31,14 @@ config SOC_GPTIMER_SUPPORTED
     bool
     default y
 
+config SOC_IEEE802154_SUPPORTED
+    bool
+    default y
+
+config SOC_IEEE802154_BLE_ONLY
+    bool
+    default y
+
 config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
@@ -156,6 +164,10 @@ config SOC_MODEM_CLOCK_SUPPORTED
     default y
 
 config SOC_REGI2C_SUPPORTED
+    bool
+    default y
+
+config SOC_PHY_SUPPORTED
     bool
     default y
 

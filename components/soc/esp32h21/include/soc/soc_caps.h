@@ -32,8 +32,8 @@
 #define SOC_AHB_GDMA_SUPPORTED          1
 #define SOC_GPTIMER_SUPPORTED           1
 // #define SOC_BT_SUPPORTED                1
-// #define SOC_IEEE802154_SUPPORTED        1
-// #define SOC_IEEE802154_BLE_ONLY         1
+#define SOC_IEEE802154_SUPPORTED        1
+#define SOC_IEEE802154_BLE_ONLY         1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 // #define SOC_TEMP_SENSOR_SUPPORTED       1    //TODO: [ESP32H21] IDF-11624
@@ -73,7 +73,7 @@
 // #define SOC_RNG_SUPPORTED               1    //TODO: [ESP32H21] IDF-11503
 #define SOC_MODEM_CLOCK_SUPPORTED       1
 #define SOC_REGI2C_SUPPORTED           1
-// #define SOC_PHY_SUPPORTED               1
+#define SOC_PHY_SUPPORTED               1
 #define SOC_PCNT_SUPPORTED              1
 #define SOC_MCPWM_SUPPORTED             1
 #define SOC_TWAI_SUPPORTED              1
