@@ -621,7 +621,7 @@ static void * coex_schm_get_phase_by_idx_wrapper(int phase_idx)
 
 static int coex_configure_preemption_end_cb_wrapper(bool is_register, int(*cb)(uint32_t))
 {
-#if CONFIG_SW_COEXIST_ENABLE && CONFIG_COEX_ISO_INT_SCHEME
+#if CONFIG_SW_COEXIST_ENABLE && SOC_BLE_ISO_SUPPORTED
     return esp_coex_configure_iso_end_wifi_cb(is_register, cb);
 #else
     return 0;

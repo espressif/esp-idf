@@ -325,15 +325,7 @@ int coex_schm_register_callback(coex_schm_callback_type_t type, void *callback);
  */
 esp_err_t esp_coex_adapter_register(coex_adapter_funcs_t *funcs);
 
-#if CONFIG_COEX_ISO_INT_SCHEME
-/**
- * @brief Register coexistence dynamic log functions.
- *
- *  @param funcs : coexistence dynamic log functions
- *  @return : ESP_OK - success, other - failed
- */
-esp_err_t esp_coex_dynamic_log_register(void *funcs);
-
+#if SOC_BLE_ISO_SUPPORTED
 /**
  * @brief Register coexistence iso end wifi callback function.
  *
@@ -342,7 +334,7 @@ esp_err_t esp_coex_dynamic_log_register(void *funcs);
  *  @return : ESP_OK - success, other - failed
  */
 esp_err_t esp_coex_configure_iso_end_wifi_cb(bool is_reg, void *funcs);
-#endif /* CONFIG_COEX_ISO_INT_SCHEME */
+#endif /* SOC_BLE_ISO_SUPPORTED */
 
 #if CONFIG_EXTERNAL_COEX_ENABLE
 /**
