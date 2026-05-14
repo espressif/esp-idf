@@ -596,7 +596,7 @@ void nan_app_service_match_cb(uint8_t sub_id, struct nan_cb_peer_info *peer_info
      *      one of the local creds, else drop. */
     if (nan_security_subscriber_has_creds()) {
         if (!peer_info->peer_security_params ||
-            peer_info->peer_security_params->num_pmkids == 0) {
+                peer_info->peer_security_params->num_pmkids == 0) {
             ESP_LOGW(TAG, "Secure subscribe: peer "MACSTR" advertises no PMKIDs",
                      MAC2STR(pub_mac));
             return;
@@ -997,12 +997,12 @@ void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer_info,
     MACADDR_COPY(evt->peer_ndi, peer_ndi);
     MACADDR_COPY(evt->own_ndi, own_ndi);
 
-    if (IS_ZERO_NAN_ADDR_ID(ipv6_identifier)) {
+    if (IS_ZERO_NAN_IPV6_IDENTIFIER(ipv6_identifier)) {
         ip6_addr_t linklocal;
         esp_wifi_nan_get_ipv6_linklocal_from_mac(&linklocal, peer_ndi);
-        memcpy(evt->ipv6_identifier, &linklocal.addr[2], NAN_IPV6_ADDR_ID_LEN);
+        memcpy(evt->ipv6_identifier, &linklocal.addr[2], NAN_IPV6_IDENTIFIER_LEN);
     } else {
-        memcpy(evt->ipv6_identifier, ipv6_identifier, NAN_IPV6_ADDR_ID_LEN);
+        memcpy(evt->ipv6_identifier, ipv6_identifier, NAN_IPV6_IDENTIFIER_LEN);
     }
     if (ssi && ssi_len) {
         memcpy(evt->ssi, ssi, ssi_len);

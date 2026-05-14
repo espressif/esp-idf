@@ -936,7 +936,7 @@ typedef enum {
 #define WIFI_NAN_CSID_BIT_NCS_PK_PASN_256  (1 << WIFI_NAN_CSID_NCS_PK_PASN_256)
 
 /**
-  * @brief NAN security credential — one passphrase or raw PMK + the cipher it's bound to.
+  * @brief NAN security credential - one passphrase or raw PMK + the cipher it's bound to.
   *
   * Per Wi-Fi Aware v4.0 §7.1.3.5 the PMKID derivation formula is cipher-specific
   * (NCS-SK-128 uses HMAC-SHA-256; NCS-SK-256 uses HMAC-SHA-384), so each
@@ -988,9 +988,9 @@ typedef struct {
   * @brief NAN Vendor Specific Attribute format
   */
 typedef struct {
-    uint8_t vendor_oui[3];      /**< Vendor identifier (OUI) */
-    uint16_t body_len;          /**< Length of body payload (max NAN_VENDOR_IE_MAX_BODY_LEN bytes) */
-    uint8_t *body;              /**< Vendor specific body payload */
+    uint8_t vendor_oui[WIFI_OUI_LEN]; /**< Vendor identifier (OUI) */
+    uint16_t body_len;                /**< Length of body payload (max 255 bytes) */
+    uint8_t *body;                    /**< Vendor specific body payload */
 } nan_vendor_ie_t;
 
 /**
@@ -1064,6 +1064,11 @@ typedef struct {
   *       configuration and applies them to every NDP initiated against the
   *       matched publisher. Per-NDP security parameters are not exposed on
   *       this struct: the caller never handles raw key material.
+  *
+  * @note NCS-SK only. For pairing-based cipher suites (NCS-PK-PASN), the
+  *       per-peer ND-PMK is derived from a cached NPKSA and will be
+  *       installed via a separate pairing API; this struct will remain
+  *       unchanged.
   */
 typedef struct {
     uint8_t pub_id;         /**< Publisher's service instance id */
@@ -1080,6 +1085,14 @@ typedef struct {
   *       configuration and applies them to every NDP this responder
   *       accepts. Per-NDP security parameters are not exposed on this
   *       struct: the caller never handles raw key material.
+  *
+  * @note NCS-SK only. For pairing-based cipher suites (NCS-PK-PASN), the
+  *       per-peer ND-PMK is derived from a cached NPKSA and will be
+  *       installed via a separate pairing API; this struct will remain
+  *       unchanged. The responder must already have the PMK cached at
+  *       M1 receive time (PMKID lookup happens before the indication
+  *       event), so per-NDP credential injection at response time is
+  *       not viable.
   */
 typedef struct {
     bool accept;            /**< True - Accept incoming NDP, False - Reject it */

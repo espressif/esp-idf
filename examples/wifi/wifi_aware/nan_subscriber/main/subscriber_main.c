@@ -68,7 +68,7 @@ const int NDP_FAILED = BIT2;
 
 static wifi_event_nan_svc_match_t g_svc_match_evt;
 
-static uint8_t s_ipv6_identifier[NAN_IPV6_ADDR_ID_LEN] = {0};
+static uint8_t s_ipv6_identifier[NAN_IPV6_IDENTIFIER_LEN] = {0};
 
 static void nan_receive_event_handler(void *arg, esp_event_base_t event_base,
                                       int32_t event_id, void *event_data)

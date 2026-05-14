@@ -30,12 +30,12 @@ extern "C" {
 #define NAN_MAX_PEERS_RECORD    15
 #define ESP_NAN_PUBLISH         2
 #define ESP_NAN_SUBSCRIBE       1
-#define NAN_IPV6_ADDR_ID_LEN    8
+#ifndef NAN_IPV6_IDENTIFIER_LEN
+#define NAN_IPV6_IDENTIFIER_LEN    8
+#endif
 
-#define IS_ZERO_NAN_ADDR_ID(a)   (!((a)[0] | (a)[1] | (a)[2] | (a)[3] | \
-                              (a)[4] | (a)[5] | (a)[6] | (a)[7]))
-
-#define NAN_IPV6_ADDR_ID_LEN    8
+#define IS_ZERO_NAN_IPV6_IDENTIFIER(a)   (!((a)[0] | (a)[1] | (a)[2] | (a)[3] | \
+                                     (a)[4] | (a)[5] | (a)[6] | (a)[7]))
 
 #define ESP_NAN_SET_IPV6_LINKLOCAL_FROM_IDENTIFIER(_target_addr, _identifier) \
     do {                                                                       \
@@ -44,7 +44,7 @@ extern "C" {
         (_target_addr).u_addr.ip6.addr[1] = 0;                                 \
         memcpy(&(_target_addr).u_addr.ip6.addr[2],                             \
                (_identifier),                                                   \
-               NAN_IPV6_ADDR_ID_LEN);                                            \
+               NAN_IPV6_IDENTIFIER_LEN);                                       \
     } while (0)
 
 /** Parameters of a peer service record */
