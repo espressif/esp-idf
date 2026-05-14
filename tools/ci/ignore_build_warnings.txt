@@ -23,6 +23,7 @@ warning: unknown kconfig symbol 'BTDM_CTRL_MODE_BTDM' assigned to*
 warning: unknown kconfig symbol 'CTRL_BTDM_MODEM_SLEEP' assigned to*
 warning: unknown kconfig symbol 'ESP_DEFAULT_CPU_FREQ_MHZ_80' assigned to 'y' in .*/examples/system/deep_sleep/*
 warning: unknown kconfig symbol 'ESP_DEFAULT_CPU_FREQ_MHZ_80' assigned to 'y' in .*/examples/system/light_sleep/*
+warning: unknown kconfig symbol 'ESP_DEFAULT_CPU_FREQ_MHZ_80' assigned to 'y' in .*/examples/wifi/power_save/*
 warning: unknown kconfig symbol 'ESP32_REV_MIN_3' assigned to 'y' in .*/examples/system/ota/simple_ota_example/sdkconfig.ci.on_update_no_sb_rsa
 warning: unknown kconfig symbol 'ESP32_REV_MIN' assigned to '3' in .*/examples/system/ota/simple_ota_example/sdkconfig.ci.on_update_no_sb_rsa
 warning: unknown kconfig symbol 'ESP32H4_RTC_CLK_CAL_CYCLES' assigned to '576' in .*/examples/bluetooth/nimble/blecent/sdkconfig.defaults.esp32h4
