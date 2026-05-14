@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 from pathlib import Path
 
@@ -81,6 +81,12 @@ def test_bt_spp_vfs(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
             f'{str(CUR_DIR / "hfp_ag")}|{str(CUR_DIR / "hfp_hf")}',
             'esp32|esp32',
             'all',
+        ),
+        (
+            2,
+            f'{str(CUR_DIR / "hfp_ag")}|{str(CUR_DIR / "hfp_hf")}',
+            'esp32|esp32',
+            'extcodec',
         ),
     ],
     indirect=True,
