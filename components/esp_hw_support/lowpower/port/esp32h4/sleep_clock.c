@@ -38,9 +38,10 @@ esp_err_t sleep_clock_modem_retention_init(void *arg)
     #define N_REGS_SYSCON() (((MODEM_SYSCON_MEM_RF2_CONF_REG - MODEM_SYSCON_TEST_CONF_REG) / 4) + 1)
     #define N_REGS_LPCON()  (((MODEM_LPCON_MEM_CONF_REG - MODEM_LPCON_TEST_CONF_REG) / 4) + 1)
 
-    /* In ESP32H4, the I2C control registers, syscon is placed in the modem domain, lpcon is placed in the top domain,
+    /* In ESP32H4, the I2C control registers (syscon, lpcon) are placed in the modem domain,
        and the BBPL requires I2C for calibration. This is the reason why the code for the BPLL enabled
        section needs to be placed in this function.*/
+    /* SYSCON LPCON configuration retention  */
     const static sleep_retention_entries_config_t modem_regs_retention[] = {
         /* SYSCON LPCON configuration retention  */
         [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEMSYSCON_LINK(0),   MODEM_SYSCON_TEST_CONF_REG, MODEM_SYSCON_TEST_CONF_REG,     N_REGS_SYSCON(),                0, 0), .owner = ENTRY(0) | ENTRY(1) }, /* MODEM SYSCON */
@@ -69,7 +70,7 @@ bool clock_domain_pd_allowed(void)
      * necessary to check the state of CLOCK_MODEM to determine MODEM domain on
      * or off. The clock and reset of digital peripherals are managed through
      * PCR, with TOP domain similar to MODEM domain. */
-    sleep_retention_module_bitmap_t modem_clk_dep_modules = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } };
+     __attribute__((unused)) sleep_retention_module_bitmap_t modem_clk_dep_modules = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } };
 #if SOC_BT_SUPPORTED
     modem_clk_dep_modules.bitmap[SLEEP_RETENTION_MODULE_BLE_MAC >> 5] |= BIT(SLEEP_RETENTION_MODULE_BLE_MAC % 32);
     modem_clk_dep_modules.bitmap[SLEEP_RETENTION_MODULE_BT_BB >> 5] |= BIT(SLEEP_RETENTION_MODULE_BT_BB % 32);
