@@ -73,7 +73,6 @@ ESP-IDF v6.0 已升级至 Mbed TLS v4.0，**PSA Crypto 成为主要加密接口*
 - ``MBEDTLS_THREADING_PTHREAD`` 默认启用。这使得 Mbed TLS 能够使用 pthread 原语来实现线程支持。
 - ``MBEDTLS_THREADING_ALT`` 默认禁用。这会禁止 Mbed TLS 使用替代线程原语来实现线程支持。
 
-
 参考文档
 ^^^^^^^^^^
 
@@ -151,7 +150,6 @@ BluFi（基于 BLE 的 Wi-Fi 配网）功能受到 ESP-IDF v6.0 中 Mbed TLS v4.
 - 在 ESP-IDF v6.0 中，用于安全启动的 ECDSA 应为 NISTP256/NISTP384 曲线。
 - 对旧版 NISTP192 的支持已弃用，仅当通过 ``CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_192_BITS`` 显式启用时方可使用。
 - 对旧版 NISTP192 的支持可能会在下一个 ESP-IDF 版本中被移除，因此强烈建议迁移至 NISTP256/NISTP384。
-- 从 Mbed TLS 4.1 开始，已移除对旧版 NISTP192 的支持。
 
 **已移除的废弃 API**
 
@@ -165,3 +163,11 @@ BluFi（基于 BLE 的 Wi-Fi 配网）功能受到 ESP-IDF v6.0 中 Mbed TLS v4.
     ------------
 
     - 当 SoC 具备 HMAC 外设并启用了 flash 加密时，如果同时还启用了 NVS 加密，则默认会选择基于 HMAC 的 NVS 加密方案，而不是基于 flash 加密的方案。如果你的应用程序之前使用基于 flash 加密的方案，则需要通过 ``menuconfig`` 或项目的 ``sdkconfig`` 文件，手动将 NVS 加密方案从 HMAC 配置为 flash 加密（即设置 ``CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC=y``）。
+
+Mbed TLS v4.1 迁移
+--------------------
+
+引导加载程序支持
+~~~~~~~~~~~~~~~~~~
+
+- 从 Mbed TLS 4.1 开始，已移除对旧版 NISTP192 的支持。
