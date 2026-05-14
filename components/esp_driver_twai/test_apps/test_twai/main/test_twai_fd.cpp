@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -159,8 +159,8 @@ TEST_CASE("twai fd transmit time (loopback)", "[twai]")
 
     TEST_ESP_OK(twai_node_register_event_callbacks(node_hdl, &user_cbs, &rx_frame));
     TEST_ESP_OK(twai_node_enable(node_hdl));
-    printf("%-12s %-14s %-14s %-7s %-15s %s\n", "pkg_len", "frame_len", "frame_num", "brs", "trans_time/ms", "result");
-    printf("-------------------------------------------------------------------------\n");
+    printf("%-12s %-14s %-14s %-7s %-15s %-15s %s\n", "pkg_len", "frame_len", "frame_num", "brs", "trans_time/ms", "predict/ms", "result");
+    printf("-----------------------------------------------------------------------------------------\n");
 
     uint64_t time1, time2;
     for (uint8_t test_mode = 0; test_mode < 3; test_mode ++) {
@@ -182,22 +182,38 @@ TEST_CASE("twai fd transmit time (loopback)", "[twai]")
             TEST_ESP_OK(twai_node_transmit(node_hdl, &tx_msgs[tx_cnt], 1000));
         }
 
+        // roughly estimate frame time with fixed frame overhead, ignoring dynamic bit stuffing
+        // 47: classic standard data frame overhead;
+        // 70: FD standard data frame overhead with CRC21
+        uint32_t arb_bits = frame_len * 8 + ((frame_len == 64) ? 70 : 47);
+        uint32_t data_bits = 0;
+        if (test_mode == 2) {
+            // BRS roughly splits the frame into 30 arbitration bits and payload + 40 FD data phase bits
+            arb_bits = 30;
+            data_bits = frame_len * 8 + 40;
+        }
+        uint64_t predict_time_ms = (uint64_t)trans_num * arb_bits * 1000 / node_config.bit_timing.bitrate;
+        predict_time_ms += (uint64_t)trans_num * data_bits * 1000 / node_config.data_timing.bitrate;
+        predict_time_ms += (trans_num * 10) / 1000; // add about 10 us interrupt overhead per frame
+
         //waiting pkg receive finish
         TEST_ESP_OK(twai_node_transmit_wait_all_done(node_hdl, -1));
         time2 = esp_timer_get_time();
         free(tx_msgs);
 
         // check if pkg receive correct
-        printf("%-12d %-14d %-14d %-7d %-15.2f %-s\n",
+        printf("%-12d %-14d %-14d %-7d %-15.2f %-15llu %-s\n",
                TEST_TRANS_TIME_BUF_LEN,
                frame_len,
                trans_num,
                (test_mode == 2),
                (time2 - time1) / 1000.f,
+               (unsigned long long)predict_time_ms,
                memcmp(recv_pkg_ptr, send_pkg_ptr, TEST_TRANS_TIME_BUF_LEN) ? "failed" : "ok");
         TEST_ASSERT_EQUAL_HEX8_ARRAY(send_pkg_ptr, recv_pkg_ptr, TEST_TRANS_TIME_BUF_LEN);
+        TEST_ASSERT_LESS_THAN((predict_time_ms / 10), abs((time2 - time1) / 1000 - predict_time_ms));
     }
-    printf("-------------------------------------------------------------------------\n");
+    printf("-----------------------------------------------------------------------------------------\n");
 
     free(send_pkg_ptr);
     free(recv_pkg_ptr);

@@ -121,13 +121,14 @@ void twai_hal_deinit(twai_hal_context_t *hal_ctx);
 void twai_hal_configure(twai_hal_context_t *hal_ctx, const twai_timing_config_t *t_config, const twai_filter_config_t *f_config, uint32_t clkout_divider);
 
 /**
- * @brief Check if the brp value valid for hardware register
+ * @brief Check if the timing value valid for hardware register
  *
  * @param hal_ctx Context of the HAL layer
- * @param brp Bit rate prescaler value
+ * @param t_config Pointer to timing configuration structure
+ * @param is_fd True if the timing is for FD data, false for classic TWAI
  * @return true or False
  */
-bool twai_hal_check_brp_validation(twai_hal_context_t *hal_ctx, uint32_t brp);
+bool twai_hal_check_timing_valid(twai_hal_context_t *hal_ctx, const twai_timing_advanced_config_t *t_config, bool is_fd);
 
 /**
  * @brief Configure the TWAI timing
