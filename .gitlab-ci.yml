@@ -26,7 +26,6 @@ include:
   - '.gitlab/ci/rules.yml'
   - ".gitlab/ci/manual_gate.yml"
   - '.gitlab/ci/upload_cache.yml'
-  - '.gitlab/ci/docs.yml'
   - '.gitlab/ci/static-code-analysis.yml'
   - '.gitlab/ci/pre_commit.yml'
   - '.gitlab/ci/pre_check.yml'
@@ -36,3 +35,18 @@ include:
   - '.gitlab/ci/post_deploy.yml'
   - '.gitlab/ci/retry_failed_jobs.yml'
   - '.gitlab/ci/test-win.yml'
+
+  - project: "ci/actions/common"
+    file:
+      - "templates/idf/deploy-docs.yml"
+  - project: "ci/actions/common"
+    file: "templates/idf/build-docs.yml"
+    inputs:
+      full-build-matrix:
+        - DOCLANG: ["en", "zh_CN"]
+          DOCTGT: ["esp32", "esp32s2", "esp32s3", "esp32c3", "esp32c2", "esp32c6", "esp32c61", "esp32c5","esp32h2", "esp32p4"]
+      partial-build-matrix:
+        - DOCLANG: "en"
+          DOCTGT: "esp32"
+        - DOCLANG: "zh_CN"
+          DOCTGT: "esp32p4"
