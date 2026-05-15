@@ -41,6 +41,7 @@
 #include "esp_hid_gap.h"
 
 static const char *TAG = "HID_DEV_DEMO";
+#define HID_BATTERY_LEVEL 60
 
 typedef struct
 {
@@ -941,6 +942,7 @@ void app_main(void)
     ESP_LOGI(TAG, "setting ble device");
     ESP_ERROR_CHECK(
         esp_hidd_dev_init(&ble_hid_config, ESP_HID_TRANSPORT_BLE, ble_hidd_event_callback, &s_ble_hid_param.hid_dev));
+    ESP_ERROR_CHECK(esp_hidd_dev_battery_set(s_ble_hid_param.hid_dev, HID_BATTERY_LEVEL));
 #endif
 
 #if CONFIG_BT_HID_DEVICE_ENABLED
