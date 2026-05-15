@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,8 +49,20 @@ typedef struct {
      */
     void (*panic_handler)(esp_trace_encoder_t *enc, const void *info);
 
+    /** @brief Resume trace event emission */
+    esp_err_t (*start)(esp_trace_encoder_t *enc);
+
+    /** @brief Pause trace event emission */
+    esp_err_t (*stop)(esp_trace_encoder_t *enc);
+
+    /** @brief Flush pending trace data through the encoder */
+    esp_err_t (*flush)(esp_trace_encoder_t *enc);
+
     /**
-     * @brief Take encoder lock
+     * @brief Take encoder lock.
+     *        Callers should pass ESP_TRACE_TMO_INFINITE unless they explicitly
+     *        check the return value — pairing a failed take with give_lock()
+     *        causes a spinlock owner-mismatch assert.
      * @param enc Encoder instance
      * @param tmo Timeout in microseconds
      * @return Lock state (for recursive locking) or 0 on failure

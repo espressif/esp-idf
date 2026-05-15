@@ -151,6 +151,48 @@ esp_err_t esp_trace_write(esp_trace_handle_t h, const void *data, size_t size, u
     return h->encoder.vt->write(&h->encoder, data, size, tmo);
 }
 
+esp_err_t esp_trace_start(void)
+{
+    esp_trace_handle_t h = s_active_handle;
+    if (!h) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!h->encoder.vt->start) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    return h->encoder.vt->start(&h->encoder);
+}
+
+esp_err_t esp_trace_stop(void)
+{
+    esp_trace_handle_t h = s_active_handle;
+    if (!h) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!h->encoder.vt->stop) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    return h->encoder.vt->stop(&h->encoder);
+}
+
+esp_err_t esp_trace_flush(void)
+{
+    esp_trace_handle_t h = s_active_handle;
+    if (!h) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!h->encoder.vt->flush) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    return h->encoder.vt->flush(&h->encoder);
+}
+
 bool esp_trace_is_host_connected(esp_trace_handle_t h)
 {
     if (!h || !h->transport.vt || !h->transport.vt->is_host_connected) {
