@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -99,6 +99,17 @@ FORCE_INLINE_ATTR void *rv_utils_get_sp(void)
     void *sp;
     asm volatile ("mv %0, sp;" : "=r" (sp));
     return sp;
+}
+
+/* Switch the stack pointer to a new address.
+ *
+ * Unlike the Xtensa SET_STACK, no window register management is required on
+ * RISC-V; a plain register move is sufficient.  The "memory" clobber prevents
+ * the compiler from reordering any accesses across the switch.
+ */
+FORCE_INLINE_ATTR void rv_utils_set_sp(void *new_sp)
+{
+    asm volatile ("mv sp, %0" :: "r"(new_sp) : "memory");
 }
 
 FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_get_cycle_count(void)
