@@ -51,9 +51,11 @@ def test_uart_dma_ota(dut: Dut) -> None:
     # We OTA the same binary to another partition and switch to there.
     binary_path = os.path.join(dut.app.binary_path, 'uart_dma_ota.bin')
     assert os.path.exists(binary_path), f'OTA binary not found at {binary_path}'
+    binary_size = os.path.getsize(binary_path)
 
     buad_rate = dut.app.sdkconfig.get('UART_BAUD_RATE')
     send_file_via_uart(FLASH_PORT, buad_rate, binary_path, PACKET_SIZE)
+    dut.expect_exact(f'uhci-example: Total received size: {binary_size}')
 
     dut.expect('OTA update successful. Rebooting', timeout=10)
     dut.expect('ESP-ROM:', timeout=10)

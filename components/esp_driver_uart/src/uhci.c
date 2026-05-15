@@ -130,7 +130,7 @@ static bool uhci_gdma_rx_callback_done(gdma_channel_handle_t dma_chan, gdma_even
         if (cache_line > 0) {
             // The per-node buffer base is aligned to cache_line (see uhci_receive), and rx_size here
             // equals buffer_size_per_desc_node[] which is also a multiple of cache_line.
-            esp_cache_msync(evt_data.data, rx_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+            esp_cache_msync((void *)evt_data.data, rx_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
         }
         if (uhci_ctrl->rx_dir.on_rx_trans_event) {
             need_yield |= uhci_ctrl->rx_dir.on_rx_trans_event(uhci_ctrl, &evt_data, uhci_ctrl->user_data);
@@ -166,7 +166,7 @@ static bool uhci_gdma_rx_callback_done(gdma_channel_handle_t dma_chan, gdma_even
         // is harmless.
         if (cache_line > 0) {
             size_t sync_size = (rx_size + cache_line - 1) & ~(cache_line - 1);
-            esp_cache_msync(evt_data.data, sync_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+            esp_cache_msync((void *)evt_data.data, sync_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
         }
         if (uhci_ctrl->rx_dir.on_rx_trans_event) {
             need_yield |= uhci_ctrl->rx_dir.on_rx_trans_event(uhci_ctrl, &evt_data, uhci_ctrl->user_data);
