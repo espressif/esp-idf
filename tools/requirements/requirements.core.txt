@@ -32,3 +32,4 @@ tree_sitter_c
 
 # gdb extensions dependencies
 freertos_gdb
+idf_drivers_gdb

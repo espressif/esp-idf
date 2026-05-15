@@ -22,10 +22,15 @@ function(__generate_gdbinit)
     set(gdbinit_py_extensions
         "# Add Python GDB extensions\n"
         "python\n"
+        "import sys\n"
         "try:\n"
         "    import freertos_gdb\n"
         "except ModuleNotFoundError:\n"
-        "    print('warning: python extension \"freertos_gdb\" not found.')\n"
+        "    print('warning: python extension \"freertos_gdb\" not found.', file=sys.stderr)\n"
+        "try:\n"
+        "    import idf_drivers_gdb\n"
+        "except ModuleNotFoundError:\n"
+        "    print('warning: python extension \"idf_drivers_gdb\" not found.', file=sys.stderr)\n"
         "end\n")
 
     # Define paths
