@@ -2208,10 +2208,16 @@ void bta_gattc_process_indicate(UINT16 conn_id, tGATTC_OPTYPE op, tGATT_CL_COMPL
             if (p_clcb != NULL) {
                 bta_gattc_proc_other_indication(p_clcb, op, p_data, &notify);
             }
-        } else if (op == GATTC_OPTYPE_INDICATION) {
-            /* no one interested and need ack? */
-            APPL_TRACE_DEBUG("%s no one interested, ack now", __func__);
-            GATTC_SendHandleValueConfirm(conn_id, handle);
+        } else {
+            /* No app registered for this handle: drop the PDU, but log it
+             * so the common "registered a wrong handle" bug is visible
+             * instead of silently failing. */
+            APPL_TRACE_WARNING("drop %s, handle 0x%04x not registered",
+                               (op == GATTC_OPTYPE_INDICATION) ? "ind" : "notif",
+                               handle);
+            if (op == GATTC_OPTYPE_INDICATION) {
+                GATTC_SendHandleValueConfirm(conn_id, handle);
+            }
         }
     }
 }

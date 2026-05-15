@@ -997,6 +997,22 @@ esp_err_t esp_ble_gattc_execute_write (esp_gatt_if_t gattc_if, uint16_t conn_id,
  *       1. This function triggers `ESP_GATTC_REG_FOR_NOTIFY_EVT`.
  *       2. You should call `esp_ble_gattc_write_char_descr()` after this API to write Client Characteristic Configuration (CCC) descriptor to the value of 1 (Enable Notification) or 2 (Enable Indication).
  *       3. `handle` must be greater than 0.
+ *       4. This API should be invoked only after service discovery for the target
+ *          peer has completed (i.e. after `ESP_GATTC_SEARCH_CMPL_EVT` has been
+ *          received, or after a previously persisted cache has been loaded). The
+ *          recommended way to obtain `handle` is via the cache accessor APIs such
+ *          as `esp_ble_gattc_get_all_char` or `esp_ble_gattc_get_char_by_uuid`.
+ *       5. When the GATT cache for `server_bda` is ready, the stack will validate
+ *          `handle` against the cache: it must refer to a characteristic value
+ *          whose properties include Notify or Indicate. If this validation fails,
+ *          `ESP_GATTC_REG_FOR_NOTIFY_EVT` reports `ESP_GATT_ILLEGAL_PARAMETER`
+ *          and the registration is rejected. If the cache is not yet ready (for
+ *          example the API is called before service discovery completes), the
+ *          stack skips this validation for backward compatibility, but in that
+ *          case any incoming notification whose handle does not match a prior
+ *          registration will be silently dropped by the host. Calling the API
+ *          with an invalid handle in that window is therefore strongly
+ *          discouraged.
  *
  * @return
  *        - ESP_OK: Success
