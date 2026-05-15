@@ -175,7 +175,7 @@ flash 加密最佳实践
             * - 高
               - 72.4 %
 
-        .. [#] 上述性能数据通过 mbedtls 测试应用中的 AES 性能测试 :component_file:`test_psa_aes_perf.c <mbedtls/test_apps/main/test_psa_aes_perf.c>` 计算得出。
+        .. [#] 上述性能数据通过 mbedtls 测试应用中的 AES 性能测试 :component_file:`test_psa_aes_perf.c <mbedtls/test_apps/mbedtls_ut/main/test_psa_aes_perf.c>` 计算得出。
 
         考虑到上述性能影响，ESP-IDF 默认关闭伪轮次功能，避免对相关性能造成影响。但如果需要更高的安全性，仍然建议启用。
 

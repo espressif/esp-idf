@@ -35,9 +35,14 @@ typedef enum {
  * @brief ESP DS data context
  * This context is used to store the ESP DS data.
  *
- * When passed to psa_import_key() for PSA_KEY_LIFETIME_ESP_RSA_DS_VOLATILE, the key material
- * (this struct and the esp_ds_data_t pointed to by esp_ds_data) must remain valid
- * until psa_destroy_key() is called on the imported key.
+ * For persistent keys (PSA_KEY_LIFETIME_ESP_RSA_DS), the driver deep-copies
+ * all referenced data at import time. The caller's data does not need to
+ * remain valid after psa_import_key() returns.
+ *
+ * For volatile keys (PSA_KEY_LIFETIME_ESP_RSA_DS_VOLATILE), the driver stores
+ * pointers to the caller's data. This struct and the esp_ds_data_t pointed to
+ * by esp_ds_data must remain valid until psa_destroy_key() is called.
+ * This preserves the heap savings of mmap'd flash data from esp_secure_cert_mgr.
  */
 typedef struct {
     esp_ds_data_t *esp_ds_data;     /**< Pointer to the esp ds data */
@@ -55,9 +60,10 @@ typedef struct {
 #if !(__DOXYGEN__) // No need to document these structures, these are internal to the driver
 /* The buffers are stored in the little-endian format */
 typedef struct {
-    const esp_rsa_ds_opaque_key_t *esp_rsa_ds_opaque_key; /**< Pointer to the esp ds opaque key */
+    const uint8_t *key_buffer;                      /**< Pointer to per-source storage struct in key slot */
 #if SOC_KEY_MANAGER_SUPPORTED
     bool is_km_key_active;                          /**< Flag indicating if the Key Manager key is active for this operation */
+    esp_key_mgr_key_recovery_info_t *km_ri;         /**< Pointer to the key recovery info for DS key */
 #endif /* SOC_KEY_MANAGER_SUPPORTED */
     psa_algorithm_t alg;                            /**< Algorithm used in the sign operation */
     uint32_t *sig_buffer;                           /**< Buffer to hold the signature */

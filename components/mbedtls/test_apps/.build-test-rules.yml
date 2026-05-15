@@ -1,6 +1,6 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-components/mbedtls/test_apps:
+components/mbedtls/test_apps/mbedtls_ut:
   disable:
     - if: CONFIG_NAME == "aes_no_hw" and SOC_AES_SUPPORTED != 1
     - if: CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1
@@ -22,3 +22,17 @@ components/mbedtls/test_apps:
     - esp_hal_dma
     - esp_mm
     - esp_hw_support
+
+components/mbedtls/test_apps/persistent_storage_format:
+  disable:
+    - if: CONFIG_NAME not in ["hmac", "ecdsa"]
+      reason: this app has no default config; only the hmac and ecdsa overlays are exercised
+    - if: CONFIG_NAME == "hmac" and IDF_TARGET != "esp32c3"
+      reason: nvs_encr_hmac runner (HMAC + RSA-DS persistent format consume) is esp32c3 only
+    - if: CONFIG_NAME == "ecdsa" and IDF_TARGET != "esp32h2"
+      reason: ECDSA persistent format consume runner is esp32h2 only
+  depends_components:
+    - mbedtls
+    - esp_security
+    - esp_hal_security
+    - nvs_flash
