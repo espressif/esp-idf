@@ -179,6 +179,9 @@ variables:
   # Done after sourcing export.sh so that we could easily invoke the right pip
   section_start "upgrade_ci_dependencies" "Upgrading CI dependencies"
   pip install --upgrade --upgrade-strategy=eager -r $IDF_PATH/tools/requirements/requirements.ci.txt -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+  # we need the latest DEV release for esptool to be installed in every job without bumping the minimal requirement in
+  # the constraint file.
+  pip install --upgrade --pre esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
   section_end "upgrade_ci_dependencies"
 
   REEXPORT_NEEDED=0
@@ -300,6 +303,8 @@ variables:
     - if ($env:IDF_DONT_USE_MIRRORS) { $env:IDF_MIRROR_PREFIX_MAP = '' }
     - ./install.ps1 --enable-ci
     - ./export.ps1
+    # Keep the esptool upgrade in line with how it is done in setup_tools_and_idf_python_venv
+    - pip install --upgrade --pre esptool -c "$env:USERPROFILE\.espressif\$env:CI_PYTHON_CONSTRAINT_FILE"
     - $env:PYTHONPATH = "$env:PYTHONPATH;$env:IDF_PATH\tools;$env:IDF_PATH\tools\esp_app_trace;$env:IDF_PATH\components\partition_table;$env:IDF_PATH\tools\ci\python_packages"
     - python "${SUBMODULE_FETCH_TOOL}" -s "${SUBMODULES_TO_FETCH}"
     # The time in VM may not be synced, since it's built a long time ago, so we need to sync time
