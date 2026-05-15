@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -67,34 +67,28 @@ esp_err_t lp_i2s_channel_init_std_mode(lp_i2s_chan_handle_t handle, const lp_i2s
 static esp_err_t s_io_init(lp_i2s_chan_handle_t chan, const lp_i2s_std_gpio_config_t *config)
 {
     if (config->bck >= 0) {
-        rtc_gpio_set_direction(config->bck, RTC_GPIO_MODE_INPUT_ONLY);
         rtc_gpio_init(config->bck);
-        rtc_gpio_iomux_func_sel(config->bck, 0);
         if (chan->role == I2S_ROLE_MASTER) {
-            lp_gpio_connect_in_signal(config->bck, lp_i2s_periph_signal[chan->ctlr->id].m_rx_bck_sig, 0);
+            lp_gpio_matrix_input(config->bck, lp_i2s_periph_signal[chan->ctlr->id].m_rx_bck_sig, 0);
         } else {
-            lp_gpio_connect_in_signal(config->bck, lp_i2s_periph_signal[chan->ctlr->id].s_rx_bck_sig, 0);
+            lp_gpio_matrix_input(config->bck, lp_i2s_periph_signal[chan->ctlr->id].s_rx_bck_sig, 0);
         }
         ESP_LOGD(TAG, "bck io: %d, role: %d, signal: %"PRId8, config->bck, chan->role, chan->role ? lp_i2s_periph_signal[chan->ctlr->id].s_rx_bck_sig : lp_i2s_periph_signal[chan->ctlr->id].m_rx_bck_sig);
     }
 
     if (config->ws >= 0) {
-        rtc_gpio_set_direction(config->ws, RTC_GPIO_MODE_INPUT_ONLY);
         rtc_gpio_init(config->ws);
-        rtc_gpio_iomux_func_sel(config->ws, 0);
         if (chan->role == I2S_ROLE_MASTER) {
-            lp_gpio_connect_in_signal(config->ws, lp_i2s_periph_signal[chan->ctlr->id].m_rx_ws_sig, 0);
+            lp_gpio_matrix_input(config->ws, lp_i2s_periph_signal[chan->ctlr->id].m_rx_ws_sig, 0);
         } else {
-            lp_gpio_connect_in_signal(config->ws, lp_i2s_periph_signal[chan->ctlr->id].s_rx_ws_sig, 0);
+            lp_gpio_matrix_input(config->ws, lp_i2s_periph_signal[chan->ctlr->id].s_rx_ws_sig, 0);
         }
         ESP_LOGD(TAG, "ws io: %d, role: %d, signal: %"PRId8, config->ws, chan->role, chan->role ? lp_i2s_periph_signal[chan->ctlr->id].s_rx_ws_sig : lp_i2s_periph_signal[chan->ctlr->id].m_rx_ws_sig);
     }
 
     if (config->din >= 0) {
-        rtc_gpio_set_direction(config->din, RTC_GPIO_MODE_INPUT_ONLY);
         rtc_gpio_init(config->din);
-        rtc_gpio_iomux_func_sel(config->din, 0);
-        lp_gpio_connect_in_signal(config->din, lp_i2s_periph_signal[chan->ctlr->id].data_in_sigs[0], 0);
+        lp_gpio_matrix_input(config->din, lp_i2s_periph_signal[chan->ctlr->id].data_in_sigs[0], 0);
         ESP_LOGD(TAG, "din io: %d, signal: %"PRId8, config->din, lp_i2s_periph_signal[chan->ctlr->id].data_in_sigs[0]);
     }
 
