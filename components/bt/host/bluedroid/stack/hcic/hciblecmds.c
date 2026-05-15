@@ -2476,7 +2476,7 @@ UINT8 btsnd_hcic_ble_iso_create_cis(uint8_t cis_count, struct ble_hci_cis_hdls *
     BT_HDR *p;
     UINT8 *pp;
 
-    HCI_TRACE_DEBUG("hci create cis: cig_id ", cis_count);
+    HCI_TRACE_DEBUG("hci create cis: cis_count %d", cis_count);
     // for (uint8_t i = 0; i < cis_count; i++)
     // {
     //     HCI_TRACE_ERROR("i %d cis_hdl %d acl_hdl %d", i, cis_hdls[i].cis_hdl, cis_hdls[i].acl_hdl);
