@@ -551,20 +551,12 @@ int esp_supplicant_init(void)
     esp_wifi_register_owe_cb(wpa_cb);
 #endif /* CONFIG_OWE_STA */
 
-    if (eloop_init() != 0) {
-        wpa_printf(MSG_ERROR, "Failed to initialize eloop");
-        os_free(wpa_cb);
-        wpa_cb = NULL;
-        return ESP_FAIL;
-    }
-
+    eloop_init();
     ret = esp_supplicant_common_init(wpa_cb);
 
     if (ret != 0) {
-        /*
-         * Note: We don't need to explicitly call eloop_destroy() here because
-         * returning an error causes the caller (esp_wifi_init) to trigger the
-         * deinit path, which invokes esp_supplicant_deinit() and frees the eloop.
+        /* esp_wifi_init() propagates this error to wifi_deinit_internal() which calls
+         * esp_supplicant_deinit(); that path runs eloop_destroy() for eloop cleanup.
          */
         os_free(wpa_cb);
         wpa_cb = NULL;

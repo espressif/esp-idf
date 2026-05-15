@@ -396,6 +396,11 @@ if WIFI_RMT_DPP_SUPPORT
         default WIFI_RMT_DPP_SUPPORT
 endif
 
+config ESP_WIFI_DPP_MAX_CONF_OBJ # ignore: multiple-definition
+    int
+    depends on WIFI_RMT_DPP_SUPPORT
+    default WIFI_RMT_DPP_MAX_CONF_OBJ
+
 if WIFI_RMT_11R_SUPPORT
     config ESP_WIFI_11R_SUPPORT # ignore: multiple-definition
         bool

@@ -16,6 +16,7 @@
 #include "crypto/sha256.h"
 #include "utils/includes.h"
 #include "utils/common.h"
+#include "ieee802_11_defs.h"
 #include "esp_err.h"
 #include "esp_dpp.h"
 #include "crypto/crypto.h"
@@ -63,17 +64,6 @@ static const u8 TRANSACTION_ID = 1;
 #define DPP_EVENT_PKEX_T_LIMIT "DPP-PKEX-T-LIMIT "
 #define DPP_EVENT_INTRO "DPP-INTRO "
 #define DPP_EVENT_CONF_REQ_RX "DPP-CONF-REQ-RX "
-
-
-#define WLAN_ACTION_PUBLIC 4
-#define WLAN_PA_VENDOR_SPECIFIC 9
-#define OUI_WFA 0x506f9a
-#define DPP_OUI_TYPE 0x1A
-
-#define WLAN_EID_ADV_PROTO 108
-#define WLAN_EID_VENDOR_SPECIFIC 221
-
-#define WLAN_PA_GAS_INITIAL_REQ 10
 
 enum dpp_public_action_frame_type {
 	DPP_PA_AUTHENTICATION_REQ = 0,
@@ -234,7 +224,23 @@ struct dpp_configuration {
 	int psk_set;
 };
 
-#define DPP_MAX_CONF_OBJ 10
+#define DPP_MAX_CONF_OBJ ESP_DPP_MAX_CONFIG_COUNT
+
+struct dpp_conf {
+	char *connector;
+	struct wpabuf *c_sign_key;
+	size_t dpp_csign_len;
+	struct wpabuf *net_access_key;
+	os_time_t net_access_key_expiry;
+	uint8_t curr_chan;
+	enum dpp_akm akm;
+};
+
+struct dpp_config_store {
+	/* Single active DPP config used for Network Introduction; applications own multi-config selection. */
+	struct dpp_conf *conf;
+	u8 peer_mac_addr[ETH_ALEN];
+};
 
 struct dpp_authentication {
 	void *msg_ctx;
@@ -511,9 +517,10 @@ struct wpabuf * dpp_build_conn_status_result(struct dpp_authentication *auth,
 					     enum dpp_status_error result,
 					     const u8 *ssid, size_t ssid_len,
 					     const char *channel_list);
-struct wpabuf * dpp_build_peer_disc_req(struct dpp_authentication *auth, struct dpp_config_obj *conf);
+struct wpabuf * dpp_build_peer_disc_req(struct dpp_config_store *dc, struct dpp_conf *conf);
 struct wpabuf * dpp_alloc_msg(enum dpp_public_action_frame_type type,
 			      size_t len);
+struct wpabuf * gas_build_comeback_req(u8 dialog_token);
 const u8 * dpp_get_attr(const u8 *buf, size_t len, u16 req_id, u16 *ret_len);
 int dpp_check_attrs(const u8 *buf, size_t len);
 int dpp_key_expired(const char *timestamp, os_time_t *expiry);
@@ -593,6 +600,9 @@ struct dpp_global_config {
 	int (*process_conf_obj)(void *ctx, struct dpp_authentication *auth);
 };
 
+struct dpp_config_store * dpp_config_store_init(void);
+void dpp_clear_confs(struct dpp_conf *conf);
+void dpp_config_store_deinit(struct dpp_config_store *dc);
 struct dpp_global * dpp_global_init(struct dpp_global_config *config);
 void dpp_global_clear(struct dpp_global *dpp);
 void dpp_global_deinit(struct dpp_global *dpp);

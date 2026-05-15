@@ -47,11 +47,13 @@ typedef enum {
 typedef enum {
     WIFI_OFFCHAN_TX_CANCEL,   /**< Cancel off-channel transmission */
     WIFI_OFFCHAN_TX_REQ,      /**< Request off-channel transmission */
+    WIFI_OFFCHAN_TX_CONNECTING_REQ,  /**< Off-channel Tx request during connecting state; not recommended for use by public APIs */
 } wifi_action_tx_t;
 
 typedef enum {
     WIFI_ROC_CANCEL,    /**< Cancel remain on channel */
     WIFI_ROC_REQ,       /**< Request remain on channel */
+    WIFI_ROC_CONNECTING_REQ,   /**< Remain-on-channel request during connecting state; not recommended for use by public APIs */
 } wifi_roc_t;
 /**
   * @brief Wi-Fi country policy
@@ -1300,7 +1302,7 @@ typedef enum {
 
     WIFI_EVENT_STA_BEACON_OFFSET_UNSTABLE,  /**< Station sampled beacon offset unstable */
     WIFI_EVENT_DPP_URI_READY,            /**< DPP URI is ready through Bootstrapping */
-    WIFI_EVENT_DPP_CFG_RECVD,            /**< Config received via DPP Authentication */
+    WIFI_EVENT_DPP_CFG_RECVD,            /**< DPP Configuration Response; payload is wifi_event_dpp_config_received_t */
     WIFI_EVENT_DPP_FAILED,               /**< DPP failed */
     WIFI_EVENT_NAN_BOOTSTRAP_INDICATION, /**< Received NAN Pairing Bootstrapping Request from a Peer */
     WIFI_EVENT_NAN_BOOTSTRAP_COMPLETED,  /**< NAN Pairing Bootstrapping completed (success/failure) */
@@ -1756,14 +1758,75 @@ typedef struct {
     char uri[];                  /**< URI data */
 } wifi_event_dpp_uri_ready_t;
 
-/** Argument structure for WIFI_EVENT_DPP_CFG_RECVD event */
+#define ESP_DPP_MAX_CONNECTOR_LEN 512
+#define ESP_DPP_MAX_KEY_LEN 128
+
+/**
+  * @brief One provisioned network from a DPP Configuration Response
+  *
+  *        Filled by the stack for WIFI_EVENT_DPP_CFG_RECVD. A single network row may contain hybrid
+  *        credentials (e.g., both a DPP Connector and a legacy PSK/SAE password). The application
+  *        should pass this structure to esp_supp_dpp_set_config() to load any DPP credentials, and
+  *        also extract the SSID/password for esp_wifi_set_config() to configure the driver for
+  *        legacy connection and fallback.
+  *
+  * @note Memory footprint: this structure uses fixed-size buffers for the connector and keys
+  *       (dominated by ESP_DPP_MAX_CONNECTOR_LEN and ESP_DPP_MAX_KEY_LEN). While this avoids
+  *       dynamic allocation and keeps the structure application-friendly, it results in a
+  *       size of nearly 1KB per entry.
+  */
 typedef struct {
-    wifi_config_t wifi_cfg;                  /**< Received WIFI config in DPP */
+    uint8_t ssid[MAX_SSID_LEN];              /**< SSID octets; valid length is @ref ssid_len */
+    uint8_t ssid_len;                        /**< SSID length in octets, 0 .. MAX_SSID_LEN */
+    uint8_t password[MAX_PASSPHRASE_LEN];    /**< Legacy AKM: passphrase or hex PSK octets; length @ref password_len */
+    uint8_t password_len;                    /**< Password length in octets, 0 .. MAX_PASSPHRASE_LEN; 0 if unused */
+    char connector[ESP_DPP_MAX_CONNECTOR_LEN]; /**< DPP Connector when akm includes DPP; NUL-terminated when @ref connector_len > 0 */
+    uint16_t connector_len;                  /**< Connector length in octets, excluding NUL; 0 if absent */
+    uint8_t net_access_key[ESP_DPP_MAX_KEY_LEN]; /**< Network access key when akm includes DPP */
+    uint16_t net_access_key_len;             /**< Used length of net_access_key */
+    uint8_t c_sign_key[ESP_DPP_MAX_KEY_LEN]; /**< C-sign key when akm includes DPP */
+    uint16_t c_sign_key_len;                 /**< Used length of c_sign_key */
+    uint64_t net_access_key_expiry;          /**< Optional expiry hint for net_access_key from configurator */
+    uint8_t curr_chan;                       /**< Channel from the DPP exchange for this row; used for off-channel network introduction */
+    uint8_t akm;                             /**< AKM for this row; values are esp_dpp_akm_t (stored as uint8_t) */
+} esp_dpp_config_data_t;
+
+/**
+  * @brief Argument structure for WIFI_EVENT_DPP_CFG_RECVD event
+  *
+  * Contains STA configurations received from the DPP Configurator. wifi_cfg is
+  * populated from the first configuration object for backward compatibility.
+  * Application should iterate through configs[] if the first connection attempt fails.
+  * The event data is only valid within the callback handler; applications must
+  * copy the configurations if they need to use them after the handler returns.
+  * If the first configuration object from the Configurator uses a DPP AKM and includes a connector, the supplicant
+  * automatically loads it into the internal DPP store for Network Introduction for backward
+  * compatibility. esp_supp_dpp_set_config() replaces that store when the application selects a
+  * row explicitly.
+  *
+  * Only the first CONFIG_ESP_WIFI_DPP_MAX_CONF_OBJ objects from the Configurator are forwarded; additional objects in the
+  * DPP response are ignored.
+  *
+  * Variable-length payload: base struct plus total_conf elements of configs[].
+  *
+  * @note Memory footprint: total event payload is roughly
+  *       sizeof(wifi_event_dpp_config_received_t) + total_conf * sizeof(esp_dpp_config_data_t),
+  *       i.e. ~1KB per forwarded configuration object. esp_event_post() deep-copies
+  *       this payload into the event queue, so transient peak heap usage during the post is
+  *       roughly twice the payload. Applications must copy these configurations if they
+  *       need to use them after the event handler returns, as they will no longer be available.
+  *       Memory-constrained applications can cap the payload by lowering
+  *       CONFIG_ESP_WIFI_DPP_MAX_CONF_OBJ (default 3).
+  */
+typedef struct {
+    wifi_config_t wifi_cfg;                  /**< STA summary from the first configuration object */
+    uint8_t total_conf;                      /**< Number of esp_dpp_config_data_t entries in configs */
+    esp_dpp_config_data_t configs[];         /**< One row per provisioned network, configurator order */
 } wifi_event_dpp_config_received_t;
 
-/** Argument structure for WIFI_EVENT_DPP_FAIL event */
+/** Argument structure for WIFI_EVENT_DPP_FAILED event */
 typedef struct {
-    int failure_reason;                      /**< Failure reason */
+    int failure_reason;                      /**< esp_err_t code (e.g. ESP_ERR_DPP_FAILURE) */
 } wifi_event_dpp_failed_t;
 
 #ifdef __cplusplus

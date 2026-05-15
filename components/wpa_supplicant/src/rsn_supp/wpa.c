@@ -2667,6 +2667,10 @@ int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, uint8_t pairwise_cipher, uint8_
         use_pmk_cache = false;
     }
 
+    if (sm->key_mgmt == WPA_KEY_MGMT_DPP) {
+        use_pmk_cache = true;
+    }
+
     if (os_memcmp(sm->ssid, ssid, ssid_len) == 0) {
 	wpa_printf(MSG_DEBUG, "reassoc same ess and okc is %d", sm->okc);
 	if (sm->okc == 1) {

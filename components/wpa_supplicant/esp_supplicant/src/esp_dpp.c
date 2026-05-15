@@ -18,6 +18,7 @@
 #include "common/ieee802_11_common.h"
 #include "esp_wps_i.h"
 #include "rsn_supp/wpa.h"
+#include "rsn_supp/wpa_i.h"
 #include "rsn_supp/pmksa_cache.h"
 #include <stdatomic.h>
 #include <limits.h>
@@ -39,6 +40,7 @@ static void *s_dpp_api_lock = NULL;
 static void *s_dpp_event_group = NULL;
 
 #define DPP_ROC_EVENT_HANDLED  BIT0
+#define DPP_MAX_COMEBACK_DELAY_TU 5000 /* ~5 seconds */
 
 static atomic_bool roc_in_progress;
 static atomic_bool dpp_shutting_down;
@@ -60,6 +62,23 @@ static void esp_dpp_peer_disc_retry(void *eloop_ctx, void *timeout_ctx);
 static void esp_dpp_gas_query_req_retry(void *eloop_ctx, void *timeout_ctx);
 static esp_err_t esp_dpp_start_net_intro_protocol_internal(uint8_t *bssid);
 static void dpp_stop_internal(void);
+static esp_err_t gas_query_req_tx(struct dpp_authentication *auth);
+static void gas_query_timeout(void *eloop_data, void *user_ctx);
+static void peer_disc_timeout(void *eloop_data, void *user_ctx);
+
+static bool esp_dpp_stored_conf_matches_row(struct dpp_config_store *dc,
+                                            const esp_dpp_config_data_t *row);
+static esp_err_t esp_dpp_conf_alloc_from_config_data(const esp_dpp_config_data_t *config,
+                                                     struct dpp_conf **out_conf);
+static struct dpp_conf *esp_dpp_config_store_get_selected_entry(void);
+
+static void dpp_gas_cleanup_locked(void)
+{
+    wpabuf_clear_free(s_dpp_ctx.gas_resp_buf);
+    s_dpp_ctx.gas_resp_buf = NULL;
+    s_dpp_ctx.gas_wait_comeback = false;
+    s_dpp_ctx.gas_frag_id = 0;
+}
 
 static esp_err_t dpp_api_lock(void)
 {
@@ -95,7 +114,7 @@ static int listen_stop_handler(void *data, void *user_ctx)
 {
     wifi_roc_req_t req = {0};
 
-    if (!atomic_load(&s_dpp_init_done) || atomic_load(&dpp_shutting_down)) {
+    if (!atomic_load(&s_dpp_init_done)) {
         return 0;
     }
 
@@ -114,6 +133,7 @@ static int listen_stop_handler(void *data, void *user_ctx)
 static void dpp_stop_internal(void)
 {
     dpp_cancel_auth_gas_eloop_timeouts();
+    dpp_gas_cleanup_locked();
 
     if (s_dpp_ctx.dpp_auth) {
         dpp_deinit_auth();
@@ -186,7 +206,8 @@ esp_err_t esp_dpp_send_action_frame(uint8_t *dest_mac, const uint8_t *buf, uint3
     req->channel = channel;
     req->sec_channel = WIFI_SECOND_CHAN_NONE;
     req->wait_time_ms = wait_time_ms;
-    req->type = WIFI_OFFCHAN_TX_REQ;
+    req->type = (type == DPP_TX_PEER_DISCOVERY_REQ) ? WIFI_OFFCHAN_TX_CONNECTING_REQ
+                : WIFI_OFFCHAN_TX_REQ;
     os_memcpy(req->data, buf, req->data_len);
 
     wpa_printf(MSG_DEBUG, "DPP: Mgmt Tx - MAC:" MACSTR ", Channel-%d, WaitT-%d, Type-%d",
@@ -321,126 +342,6 @@ static esp_err_t esp_dpp_rx_auth_req(struct action_rx_param *rx_param, uint8_t *
 
     return ESP_OK;
 }
-
-static void gas_query_timeout(void *eloop_data, void *user_ctx)
-{
-    struct dpp_authentication *auth = user_ctx;
-
-    /* Prerequisite confirmed via lifecycle (timers cancelled on deinit), lock acquisition will not fail. */
-    dpp_api_lock();
-
-    if (atomic_load(&dpp_shutting_down)) {
-        dpp_api_unlock();
-        return;
-    }
-
-    if (!s_dpp_ctx.dpp_auth || !s_dpp_ctx.dpp_auth->auth_success || (s_dpp_ctx.dpp_auth != auth)) {
-        wpa_printf(MSG_INFO, "DPP-GAS: Auth %p state not correct", auth);
-        dpp_api_unlock();
-        return;
-    }
-
-    wpa_printf(MSG_DEBUG, "GAS: No response received for GAS query");
-    dpp_abort_failure_locked(ESP_ERR_DPP_CONF_TIMEOUT);
-}
-
-static int gas_query_req_tx(struct dpp_authentication *auth)
-{
-    struct wpabuf *buf;
-    int supp_op_classes[] = {81, 0};
-    int ret;
-
-    wpabuf_free(auth->conf_req);
-    auth->conf_req = NULL;
-
-    buf = dpp_build_conf_req_helper(auth, NULL, 0, NULL,
-                                    supp_op_classes);
-    if (!buf) {
-        wpa_printf(MSG_ERROR, "DPP: No configuration request data available");
-        return ESP_ERR_DPP_FAILURE;
-    }
-
-    wpa_printf(MSG_INFO, "DPP: GAS request to " MACSTR " (chan %u)",
-               MAC2STR(auth->peer_mac_addr), auth->curr_chan);
-
-    ret = esp_dpp_send_action_frame(auth->peer_mac_addr, wpabuf_head(buf), wpabuf_len(buf),
-                                    auth->curr_chan, 1000 + OFFCHAN_TX_WAIT_TIME,
-                                    DPP_TX_GAS_CONFIG_REQ);
-    if (ret != ESP_OK) {
-        wpabuf_free(buf);
-        return ret;
-    }
-
-    auth->conf_req = buf;
-    if (eloop_register_timeout(2, 0, gas_query_timeout, NULL, auth) < 0) {
-        wpa_printf(MSG_ERROR, "DPP: Failed to register gas_query_timeout");
-        wpabuf_free(auth->conf_req);
-        auth->conf_req = NULL;
-        return ESP_ERR_NO_MEM;
-    }
-
-    return ret;
-}
-
-static esp_err_t esp_dpp_handle_config_obj(struct dpp_authentication *auth,
-                                           struct dpp_config_obj *conf)
-{
-    wifi_config_t *wifi_cfg = &s_dpp_ctx.wifi_cfg;
-    os_memset(wifi_cfg, 0, sizeof(wifi_config_t));
-
-    if (conf->ssid_len) {
-        os_memcpy(wifi_cfg->sta.ssid, conf->ssid, conf->ssid_len);
-    }
-
-    if (dpp_akm_legacy(conf->akm)) {
-        if (conf->passphrase[0])
-            os_memcpy(wifi_cfg->sta.password, conf->passphrase,
-                      sizeof(wifi_cfg->sta.password));
-        if (conf->akm == DPP_AKM_PSK_SAE) {
-            wifi_cfg->sta.pmf_cfg.required = true;
-        }
-    }
-
-    if (conf->connector) {
-        /* TODO: Save the Connector and consider using a command
-         * to fetch the value instead of sending an event with
-         * it. The Connector could end up being larger than what
-         * most clients are receive as an event
-         * message. */
-        wpa_printf(MSG_INFO, DPP_EVENT_CONNECTOR "%s",
-                   conf->connector);
-    }
-    if (atomic_load(&roc_in_progress)) {
-        listen_stop_handler(NULL, NULL);
-    }
-
-    wifi_event_dpp_config_received_t event = {0};
-    event.wifi_cfg = *wifi_cfg;
-
-    dpp_api_unlock();
-    esp_err_t ret = esp_event_post(WIFI_EVENT, WIFI_EVENT_DPP_CFG_RECVD, &event, sizeof(event),
-                                   os_task_ms_to_tick(200));
-
-    /* Prerequisite confirmed via atomic check at entry point, lock re-acquisition will not fail. */
-    dpp_api_lock();
-
-    /* Re-verify auth context: another task (e.g. deinit) could have freed s_dpp_ctx.dpp_auth
-     * while the lock was released. Note: ABA (pointer reuse) is not possible here because
-     * dpp_auth allocation is strictly serialized on the eloop task, which is currently
-     * occupied by this function. A pointer mismatch is sufficient to detect invalidation. */
-    if (!atomic_load(&s_dpp_init_done) || atomic_load(&dpp_shutting_down) || s_dpp_ctx.dpp_auth != auth) {
-        wpa_printf(MSG_ERROR, "DPP: Invalid state after relock in config handling - aborting");
-        return ESP_ERR_INVALID_STATE;
-    }
-
-    if (ret != ESP_OK) {
-        wpa_printf(MSG_ERROR, "DPP: Failed to post DPP_CFG_RECVD event, error 0x%x", ret);
-        return ret;
-    }
-
-    return ESP_OK;
-}
-
 static int esp_dpp_rx_auth_conf(struct action_rx_param *rx_param, uint8_t *dpp_data)
 {
     struct dpp_authentication *auth = s_dpp_ctx.dpp_auth;
@@ -471,9 +372,11 @@ static int esp_dpp_rx_auth_conf(struct action_rx_param *rx_param, uint8_t *dpp_d
         return ESP_ERR_DPP_FAILURE;
     }
 
-    /* Send GAS Query Req. Reset retry counter: GAS Config is a new phase
-     * with its own budget across retransmits. */
+    /* Fresh GAS query for this session: reset retry budget so a previous
+     * partial run cannot eat into this session's retries. The retry path
+     * (esp_dpp_gas_query_req_retry) bumps the counter itself. */
     s_dpp_ctx.gas_query_tries = 0;
+
     rc = gas_query_req_tx(auth);
     if (rc != ESP_OK) {
         wpa_printf(MSG_ERROR, "DPP: GAS query Tx failed");
@@ -485,148 +388,135 @@ static int esp_dpp_rx_auth_conf(struct action_rx_param *rx_param, uint8_t *dpp_d
 
 static esp_err_t esp_dpp_rx_peer_disc_resp(struct action_rx_param *rx_param)
 {
-    struct dpp_authentication *auth = s_dpp_ctx.dpp_auth;
+    struct dpp_config_store *dc = s_dpp_ctx.dpp_config_store;
     uint8_t *buf;
-    unsigned int seconds;
-    struct os_reltime rnow;
-    const uint8_t *connector, *trans_id, *status = NULL;
-    uint16_t connector_len, trans_id_len, status_len;
-    enum dpp_status_error res = DPP_STATUS_NOT_COMPATIBLE;
-    struct dpp_introduction intro;
-    os_time_t expiry;
-    struct os_time now;
-    struct wpa_sm *sm = get_wpa_sm();
-    struct rsn_pmksa_cache_entry *entry = NULL;
-    int i = 0;
 
-    if (!rx_param) {
-        return ESP_ERR_INVALID_ARG;
+    if (!dc) {
+        return ESP_ERR_DPP_FAILURE;
     }
-
-    if (rx_param->vendor_data_len < 2) {
-        /* esp_dpp_rx_frm already guards length; keep ESP_OK so spoofed frames
-         * cannot abort the session (same rationale as esp_dpp_rx_frm / GAS). */
-        wpa_printf(MSG_DEBUG, "DPP: Too short vendor specific data in peer discovery response");
-        return ESP_OK;
-    }
+    const uint8_t *trans_id;
+    uint16_t trans_id_len;
     size_t len = rx_param->vendor_data_len - 2;
 
     buf = rx_param->action_frm->u.public_action.v.pa_vendor_spec.vendor_data;
 
-    if (!auth) {
-        wpa_printf(MSG_DEBUG, "DPP: Auth context not found for Peer Discovery response");
-        return ESP_ERR_INVALID_STATE;
-    }
-
-    if (os_memcmp(auth->peer_mac_addr, rx_param->sa, ETH_ALEN) != 0) {
+    if (os_memcmp(dc->peer_mac_addr, rx_param->sa, ETH_ALEN) != 0) {
         wpa_printf(MSG_DEBUG, "DPP: Not expecting Peer Discovery response from " MACSTR, MAC2STR(rx_param->sa));
         return ESP_OK;
     }
 
     wpa_printf(MSG_DEBUG, "DPP: Peer Discovery from " MACSTR, MAC2STR(rx_param->sa));
 
-    for (i = 0; i < auth->num_conf_obj; i++) {
-
-        if (!auth->conf_obj[i].connector
-                || !auth->net_access_key
-                || !auth->conf_obj[i].c_sign_key
-                || dpp_akm_legacy(auth->conf_obj[i].akm)) {
-            wpa_printf(MSG_DEBUG, "DPP: Profile not found for network introduction or akm mismatch");
-            continue;
-        }
-
-        trans_id = dpp_get_attr(&buf[2], len, DPP_ATTR_TRANSACTION_ID, &trans_id_len);
-        if (!trans_id || trans_id_len != 1) {
-            wpa_printf(MSG_ERROR, "DPP: Peer did not include Transaction ID");
-            return ESP_ERR_DPP_FAILURE;
-        }
-        if (trans_id[0] != TRANSACTION_ID) {
-            wpa_printf(MSG_ERROR, "DPP: Ignore frame with unexpected Transaction ID %u", trans_id[0]);
-            return ESP_ERR_DPP_FAILURE;
-        }
-
-        status = dpp_get_attr(&buf[2], len, DPP_ATTR_STATUS, &status_len);
-        if (!status || status_len != 1) {
-            wpa_printf(MSG_ERROR, "DPP: Peer did not include Status");
-            return ESP_ERR_DPP_FAILURE;
-        }
-        if (status[0] != DPP_STATUS_OK) {
-            wpa_printf(MSG_ERROR, "DPP: Peer rejected network introduction: Status %u", status[0]);
-            return ESP_ERR_DPP_FAILURE;
-        }
-
-        connector = dpp_get_attr(&buf[2], len, DPP_ATTR_CONNECTOR, &connector_len);
-        if (!connector) {
-            wpa_printf(MSG_ERROR, "DPP: Peer did not include its Connector");
-            return ESP_ERR_DPP_FAILURE;
-        }
-
-        res = dpp_peer_intro(&intro, auth->conf_obj[i].connector,
-                             wpabuf_head(auth->net_access_key),
-                             wpabuf_len(auth->net_access_key),
-                             wpabuf_head(auth->conf_obj[i].c_sign_key),
-                             wpabuf_len(auth->conf_obj[i].c_sign_key),
-                             connector, connector_len, &expiry);
-
-        if (res == DPP_STATUS_OK) {
-            entry = os_zalloc(sizeof(*entry));
-            if (!entry) {
-                goto fail;
-            }
-            os_memcpy(entry->aa, rx_param->sa, ETH_ALEN);
-            os_memcpy(entry->pmkid, intro.pmkid, PMKID_LEN);
-            os_memcpy(entry->pmk, intro.pmk, intro.pmk_len);
-            entry->pmk_len = intro.pmk_len;
-            entry->akmp = WPA_KEY_MGMT_DPP;
-
-            if (expiry) {
-                os_get_time(&now);
-                if (expiry > now.sec) {
-                    seconds = expiry - now.sec;
-                } else {
-                    wpa_printf(MSG_WARNING, "DPP: Connector expired during processing");
-                    goto fail;
-                }
-            } else {
-                seconds = ESP_DPP_PMK_CACHE_DEFAULT_TIMEOUT;
-            }
-            os_get_reltime(&rnow);
-            entry->expiration = rnow.sec + seconds;
-            entry->reauth_time = rnow.sec + seconds;
-            entry->network_ctx = NULL;
-
-            wpa_printf(MSG_INFO, "peer=" MACSTR " status=%u", MAC2STR(rx_param->sa), status[0]);
-            break;
-        }
+    trans_id = dpp_get_attr(&buf[2], len, DPP_ATTR_TRANSACTION_ID, &trans_id_len);
+    if (!trans_id || trans_id_len != 1) {
+        wpa_printf(MSG_ERROR, "DPP: Peer did not include Transaction ID");
+        return ESP_ERR_DPP_INVALID_ATTR;
+    }
+    if (trans_id[0] != TRANSACTION_ID) {
+        wpa_printf(MSG_DEBUG, "DPP: Ignore frame with unexpected Transaction ID %u", trans_id[0]);
+        return ESP_OK;
     }
 
-    if (res != DPP_STATUS_OK) {
-        wpa_printf(MSG_ERROR, "DPP: Network Introduction protocol resulted in failure");
-        goto fail;
+    const uint8_t *status_val;
+    uint16_t status_len;
+    const uint8_t *peer_connector;
+    uint16_t peer_connector_len;
+    struct dpp_introduction *intro = NULL;
+    os_time_t expiry = 0;
+    struct dpp_conf *conf = dc->conf;
+
+    if (!conf) {
+        wpa_printf(MSG_ERROR, "DPP: No active configuration to derive PMK");
+        return ESP_ERR_DPP_FAILURE;
     }
 
-    wpa_printf(MSG_DEBUG,
-               "DPP: Try connection after successful network introduction");
-    int rc = dpp_connect(rx_param->sa, true);
-    if (rc != ESP_OK) {
-        goto fail;
+    intro = os_zalloc(sizeof(*intro));
+    if (!intro) {
+        wpa_printf(MSG_ERROR, "DPP: Failed to allocate memory for intro");
+        return ESP_ERR_NO_MEM;
     }
 
-    /* Connection initiated! Now we commit the PMK to the global cache. */
-    pmksa_cache_add_entry(sm->pmksa, entry);
-    entry = NULL;
+    esp_err_t ret = ESP_OK;
 
-    /* Final cleanup: connection initiated, auth context and timers no longer needed. */
-    dpp_stop_internal();
-    forced_memzero(&intro, sizeof(intro));
-
-    return ESP_OK;
-fail:
-    forced_memzero(&intro, sizeof(intro));
-    if (entry != NULL) {
-        bin_clear_free(entry, sizeof(*entry));
+    status_val = dpp_get_attr(&buf[2], len, DPP_ATTR_STATUS, &status_len);
+    if (!status_val || status_len != 1 || status_val[0] != DPP_STATUS_OK) {
+        wpa_printf(MSG_ERROR, "DPP: Peer Discovery failed or bad status (status: %d)", status_val ? status_val[0] : -1);
+        ret = ESP_ERR_DPP_FAILURE;
+        goto out;
     }
-    return ESP_ERR_DPP_FAILURE;
+
+    peer_connector = dpp_get_attr(&buf[2], len, DPP_ATTR_CONNECTOR, &peer_connector_len);
+    if (!peer_connector) {
+        wpa_printf(MSG_ERROR, "DPP: Peer did not include Connector");
+        ret = ESP_ERR_DPP_INVALID_ATTR;
+        goto out;
+    }
+
+    /* peer_disc_timeout handles timeout in Enrollee role */
+    eloop_cancel_timeout(peer_disc_timeout, NULL, s_dpp_ctx.dpp_auth);
+
+    if (!conf->connector || !conf->net_access_key || !conf->c_sign_key) {
+        wpa_printf(MSG_ERROR, "DPP: Incomplete config for network introduction");
+        ret = ESP_ERR_DPP_FAILURE;
+        goto out;
+    }
+
+    if (dpp_peer_intro(intro, conf->connector,
+                       wpabuf_head(conf->net_access_key), wpabuf_len(conf->net_access_key),
+                       wpabuf_head(conf->c_sign_key), wpabuf_len(conf->c_sign_key),
+                       peer_connector, peer_connector_len, &expiry) != DPP_STATUS_OK) {
+        wpa_printf(MSG_ERROR, "DPP: Failed to derive PMK from Peer Discovery Response");
+        ret = ESP_ERR_DPP_FAILURE;
+        goto out;
+    }
+
+    struct rsn_pmksa_cache_entry *entry;
+    struct os_reltime now_rel;
+    os_time_t seconds;
+
+    entry = os_zalloc(sizeof(*entry));
+    if (!entry) {
+        wpa_printf(MSG_ERROR, "DPP: Failed to allocate PMKSA entry");
+        ret = ESP_ERR_NO_MEM;
+        goto out;
+    }
+
+    os_memcpy(entry->aa, rx_param->sa, ETH_ALEN);
+    os_memcpy(entry->pmkid, intro->pmkid, PMKID_LEN);
+    os_memcpy(entry->pmk, intro->pmk, intro->pmk_len);
+    entry->pmk_len = intro->pmk_len;
+    entry->akmp = WPA_KEY_MGMT_DPP;
+    entry->network_ctx = NULL;
+
+    if (expiry > 0) {
+        struct os_time now;
+        os_get_time(&now);
+        if (expiry > now.sec) {
+            seconds = expiry - now.sec;
+        } else {
+            wpa_printf(MSG_WARNING, "DPP: Connector expired during processing");
+            bin_clear_free(entry, sizeof(*entry));
+            ret = ESP_ERR_DPP_FAILURE;
+            goto out;
+        }
+    } else {
+        seconds = ESP_DPP_PMK_CACHE_DEFAULT_TIMEOUT;
+    }
+
+    os_get_reltime(&now_rel);
+    entry->expiration = now_rel.sec + seconds;
+    entry->reauth_time = entry->expiration;
+
+    pmksa_cache_add_entry(gWpaSm.pmksa, entry);
+
+    if (dpp_connect(rx_param->sa, true) != ESP_OK) {
+        wpa_printf(MSG_ERROR, "DPP: Failed to trigger connection after Peer Discovery");
+        ret = ESP_ERR_DPP_FAILURE;
+    }
+
+out:
+    bin_clear_free(intro, sizeof(*intro));
+    return ret;
 }
 
 static esp_err_t esp_dpp_rx_frm(struct action_rx_param *rx_param)
@@ -635,20 +525,19 @@ static esp_err_t esp_dpp_rx_frm(struct action_rx_param *rx_param)
     uint8_t *tmp;
     int ret = ESP_OK;
 
-    if (rx_param->vendor_data_len < 2) {
-        /* Note: We do not return an error or abort the session on data validation
-         * failures to avoid interruption from spoofed frames. */
-        wpa_printf(MSG_ERROR, "DPP: Vendor data too short (%u)", (unsigned)rx_param->vendor_data_len);
-        return ESP_OK;
-    }
-
     tmp = rx_param->action_frm->u.public_action.v.pa_vendor_spec.vendor_data;
+    if (rx_param->vendor_data_len < 2) { /* vendor_data too short for 2-octet DPP header before attr buffer */
+        wpa_printf(MSG_DEBUG,
+                   "DPP: vendor-specific data too short (len=%u), dropping",
+                   (unsigned)rx_param->vendor_data_len);
+        return ESP_ERR_DPP_INVALID_ATTR;
+    }
     crypto_suit = tmp[0];
     type = tmp[1];
 
     if (crypto_suit != 1) {
         wpa_printf(MSG_ERROR, "DPP: Unsupported crypto suit");
-        return ESP_OK;
+        return ESP_ERR_DPP_INVALID_ATTR;
     }
 
     switch (type) {
@@ -661,18 +550,464 @@ static esp_err_t esp_dpp_rx_frm(struct action_rx_param *rx_param)
     case DPP_PA_PEER_DISCOVERY_RESP:
         ret = esp_dpp_rx_peer_disc_resp(rx_param);
         break;
+    default:
+        wpa_printf(MSG_DEBUG, "DPP: ignore unhandled DPP public action type %u", type);
+        break;
     }
 
     return ret;
 }
 
+static void peer_disc_timeout(void *eloop_data, void *user_ctx)
+{
+    /* Note: user_ctx (auth) is guaranteed valid and not a use-after-free risk.
+     * The eloop is single-threaded, and pending timeouts are synchronously cancelled
+     * via dpp_cancel_auth_gas_eloop_timeouts() during teardown before auth is freed. */
+    struct dpp_authentication *auth = user_ctx;
+
+    /* Prerequisite confirmed via lifecycle (timers cancelled on deinit), lock acquisition will not fail. */
+    dpp_api_lock();
+
+    if (atomic_load(&dpp_shutting_down)) {
+        dpp_api_unlock();
+        return;
+    }
+
+    if (!s_dpp_ctx.dpp_auth || (s_dpp_ctx.dpp_auth != auth)) {
+        wpa_printf(MSG_INFO, "DPP: Auth %p state not correct for peer discovery", auth);
+        dpp_api_unlock();
+        return;
+    }
+
+    wpa_printf(MSG_DEBUG, "DPP: No response received for Peer Discovery Request");
+    dpp_abort_failure_locked(ESP_ERR_DPP_CONF_TIMEOUT);
+}
+
+static void gas_query_timeout(void *eloop_data, void *user_ctx)
+{
+    /* Note: user_ctx (auth) is guaranteed valid and not a use-after-free risk.
+     * The eloop is single-threaded, and pending timeouts are synchronously cancelled
+     * via dpp_cancel_auth_gas_eloop_timeouts() during teardown before auth is freed. */
+    struct dpp_authentication *auth = user_ctx;
+
+    /* Prerequisite confirmed via lifecycle (timers cancelled on deinit), lock acquisition will not fail. */
+    dpp_api_lock();
+
+    if (atomic_load(&dpp_shutting_down)) {
+        dpp_api_unlock();
+        return;
+    }
+
+    if (!s_dpp_ctx.dpp_auth || !s_dpp_ctx.dpp_auth->auth_success || (s_dpp_ctx.dpp_auth != auth)) {
+        wpa_printf(MSG_INFO, "DPP-GAS: Auth %p state not correct", auth);
+        dpp_api_unlock();
+        return;
+    }
+
+    wpa_printf(MSG_DEBUG, "GAS: No response received for GAS query");
+    dpp_abort_failure_locked(ESP_ERR_DPP_CONF_TIMEOUT);
+}
+
+static esp_err_t gas_query_req_tx(struct dpp_authentication *auth)
+{
+    struct wpabuf *buf;
+    int supp_op_classes[] = {81, 0};
+    esp_err_t ret;
+
+    wpabuf_free(auth->conf_req);
+    auth->conf_req = NULL;
+
+    buf = dpp_build_conf_req_helper(auth, NULL, 0, NULL,
+                                    supp_op_classes);
+    if (!buf) {
+        wpa_printf(MSG_ERROR, "DPP: No configuration request data available");
+        return ESP_ERR_DPP_FAILURE;
+    }
+
+    wpa_printf(MSG_INFO, "DPP: GAS request to " MACSTR " (chan %u)",
+               MAC2STR(auth->peer_mac_addr), auth->curr_chan);
+
+    ret = esp_dpp_send_action_frame(auth->peer_mac_addr, wpabuf_head(buf), wpabuf_len(buf),
+                                    auth->curr_chan, 1000 + OFFCHAN_TX_WAIT_TIME,
+                                    DPP_TX_GAS_CONFIG_REQ);
+    if (ret != ESP_OK) {
+        wpabuf_free(buf);
+        return ret;
+    }
+
+    auth->conf_req = buf;
+    if (eloop_register_timeout(ESP_GAS_TIMEOUT_SECS, 0, gas_query_timeout, NULL, auth) < 0) {
+        wpa_printf(MSG_ERROR, "DPP: Failed to register gas_query_timeout");
+        wpabuf_free(auth->conf_req);
+        auth->conf_req = NULL;
+        return ESP_ERR_NO_MEM;
+    }
+
+    return ret;
+}
+
+static void esp_dpp_process_config_obj(esp_dpp_config_data_t *config_data, struct dpp_config_obj *conf)
+{
+    if (conf->ssid_len) {
+        size_t n = conf->ssid_len;
+
+        if (n > MAX_SSID_LEN) {
+            n = MAX_SSID_LEN;
+            wpa_printf(MSG_WARNING, "DPP: SSID truncated to %u octets", MAX_SSID_LEN);
+        }
+        config_data->ssid_len = (uint8_t)n;
+        os_memcpy(config_data->ssid, conf->ssid, n);
+    }
+
+    if (dpp_akm_legacy(conf->akm) || dpp_akm_ver2(conf->akm)) {
+        if (conf->passphrase[0]) {
+            size_t pass_len = os_strnlen(conf->passphrase, sizeof(conf->passphrase));
+
+            if (pass_len > MAX_PASSPHRASE_LEN) {
+                wpa_printf(MSG_WARNING,
+                           "DPP: passphrase length %zu exceeds MAX_PASSPHRASE_LEN, truncating",
+                           pass_len);
+                pass_len = MAX_PASSPHRASE_LEN;
+            }
+            os_memcpy(config_data->password, conf->passphrase, pass_len);
+            config_data->password_len = (uint8_t) pass_len;
+        } else if (conf->psk_set) {
+            char hex_tmp[MAX_PASSPHRASE_LEN + 1];
+            int hex_chars;
+
+            hex_chars = wpa_snprintf_hex(hex_tmp, sizeof(hex_tmp), conf->psk, PMK_LEN);
+            if (hex_chars != (int)(PMK_LEN * 2)) {
+                wpa_hexdump_key(MSG_ERROR,
+                                "DPP: PSK hex conversion failed (unexpected length)",
+                                conf->psk, PMK_LEN);
+                forced_memzero(hex_tmp, sizeof(hex_tmp));
+            } else {
+                os_memcpy(config_data->password, hex_tmp, PMK_LEN * 2);
+                config_data->password_len = PMK_LEN * 2;
+                forced_memzero(hex_tmp, sizeof(hex_tmp));
+            }
+        }
+    }
+}
+
+static int esp_dpp_handle_config_obj(struct dpp_authentication *auth,
+                                     struct dpp_config_obj *conf, esp_dpp_config_data_t *config_data)
+{
+    forced_memzero(config_data, sizeof(*config_data));
+
+    if (conf->connector) {
+        size_t n;
+
+        wpa_printf(MSG_INFO, DPP_EVENT_CONNECTOR "%s",
+                   conf->connector);
+        n = os_strlcpy(config_data->connector, conf->connector,
+                       sizeof(config_data->connector));
+        if (n >= sizeof(config_data->connector)) {
+            wpa_printf(MSG_WARNING,
+                       "DPP: Connector length %zu exceeds storage (%zu); "
+                       "truncated JWS cannot be used, rejecting configuration object",
+                       n, sizeof(config_data->connector));
+            forced_memzero(config_data, sizeof(*config_data));
+            return -1;
+        }
+        config_data->connector_len = (uint16_t)n;
+    } else {
+        config_data->connector_len = 0;
+    }
+
+    if (auth->net_access_key && dpp_akm_dpp(conf->akm)) {
+        size_t key_len = wpabuf_len(auth->net_access_key);
+        if (key_len > ESP_DPP_MAX_KEY_LEN) {
+            key_len = ESP_DPP_MAX_KEY_LEN;
+        }
+        os_memcpy(config_data->net_access_key, wpabuf_head(auth->net_access_key), key_len);
+        config_data->net_access_key_len = (uint16_t)key_len;
+        config_data->net_access_key_expiry = auth->net_access_key_expiry;
+    }
+
+    if (conf->c_sign_key) {
+        size_t key_len = wpabuf_len(conf->c_sign_key);
+        if (key_len > ESP_DPP_MAX_KEY_LEN) {
+            key_len = ESP_DPP_MAX_KEY_LEN;
+        }
+        os_memcpy(config_data->c_sign_key, wpabuf_head(conf->c_sign_key), key_len);
+        config_data->c_sign_key_len = (uint16_t)key_len;
+    }
+
+    config_data->curr_chan = (uint8_t)auth->curr_chan;
+    config_data->akm = (uint8_t)conf->akm;
+
+    esp_dpp_process_config_obj(config_data, conf);
+
+    return 0;
+}
+
+static void esp_dpp_fill_wifi_cfg_from_config(const esp_dpp_config_data_t *dpp, wifi_config_t *wifi_cfg)
+{
+    size_t ssid_len;
+    size_t pass_len;
+
+    forced_memzero(wifi_cfg, sizeof(*wifi_cfg));
+    if (!dpp) {
+        return;
+    }
+
+    if (dpp->ssid_len) {
+        ssid_len = dpp->ssid_len;
+        if (ssid_len > sizeof(wifi_cfg->sta.ssid)) {
+            ssid_len = sizeof(wifi_cfg->sta.ssid);
+        }
+        os_memcpy(wifi_cfg->sta.ssid, dpp->ssid, ssid_len);
+    } else if (dpp->ssid[0]) {
+        /* Fallback for legacy configs that don't set ssid_len */
+        ssid_len = os_strnlen((const char *) dpp->ssid, sizeof(dpp->ssid));
+        os_memcpy(wifi_cfg->sta.ssid, dpp->ssid, ssid_len);
+    }
+
+    if (dpp_akm_legacy((enum dpp_akm) dpp->akm) || dpp_akm_ver2((enum dpp_akm) dpp->akm)) {
+        pass_len = dpp->password_len;
+        if (pass_len == 0 && dpp->password[0]) {
+            /* Fallback for legacy configs */
+            pass_len = os_strnlen((const char *) dpp->password, sizeof(dpp->password));
+        }
+        if (pass_len > MAX_PASSPHRASE_LEN) {
+            wpa_printf(MSG_WARNING,
+                       "DPP: password_len %zu exceeds MAX_PASSPHRASE_LEN, clamping",
+                       pass_len);
+            pass_len = MAX_PASSPHRASE_LEN;
+        }
+        if (pass_len > sizeof(wifi_cfg->sta.password)) {
+            pass_len = sizeof(wifi_cfg->sta.password);
+        }
+        if (pass_len) {
+            os_memcpy(wifi_cfg->sta.password, dpp->password, pass_len);
+        }
+    }
+
+    if (dpp_akm_sae((enum dpp_akm) dpp->akm)) {
+        wifi_cfg->sta.pmf_cfg.capable = true;
+        wifi_cfg->sta.pmf_cfg.required = true;
+    }
+
+    if (dpp->curr_chan) {
+        wifi_cfg->sta.channel = dpp->curr_chan;
+    }
+}
+
+static esp_err_t gas_process_complete_resp(struct dpp_authentication *auth,
+                                           const uint8_t *resp, size_t dpp_data_len)
+{
+    int i, res;
+    uint8_t conf_capacity = 0;
+    size_t recv_size = 0;
+    size_t post_size = 0;
+    struct dpp_conf *new_conf_pending = NULL;
+    wifi_event_dpp_config_received_t *recv = NULL;
+    esp_err_t ret = ESP_ERR_DPP_FAILURE;
+
+    if (dpp_conf_resp_rx(auth, resp, dpp_data_len) < 0) {
+        wpa_printf(MSG_INFO, "DPP: Configuration attempt failed");
+        return ESP_ERR_DPP_FAILURE;
+    }
+
+    /* Configuration parsed successfully — cancel the GAS response timeout.
+     * Without this, gas_query_timeout would fire a few seconds later and
+     * post a spurious WIFI_EVENT_DPP_FAILED after the app already received
+     * WIFI_EVENT_DPP_CFG_RECVD. */
+    eloop_cancel_timeout(gas_query_timeout, NULL, auth);
+
+    if (auth->num_conf_obj <= 0) {
+        conf_capacity = 0;
+    } else if (auth->num_conf_obj > ESP_DPP_MAX_CONFIG_COUNT) {
+        conf_capacity = ESP_DPP_MAX_CONFIG_COUNT;
+    } else {
+        conf_capacity = (uint8_t)auth->num_conf_obj;
+    }
+    recv_size = sizeof(*recv) + conf_capacity * sizeof(recv->configs[0]);
+    recv = os_zalloc(recv_size);
+    if (!recv) {
+        wpa_printf(MSG_ERROR, "DPP: Failed to allocate memory for DPP event");
+        return ESP_ERR_NO_MEM;
+    }
+
+    /*
+     * Runs on eloop only.
+     * A candidate configuration is built into new_conf_pending and committed to dc->conf only
+     * after esp_event_post succeeds (commit-at-end). We track old_conf across the unlock
+     * window to prevent overwriting a configuration set concurrently by the app.
+     */
+    if (auth->num_conf_obj > ESP_DPP_MAX_CONFIG_COUNT) {
+        wpa_printf(MSG_WARNING,
+                   "DPP: %d config objects in response, forwarding first %d and dropping %d",
+                   auth->num_conf_obj, ESP_DPP_MAX_CONFIG_COUNT,
+                   auth->num_conf_obj - ESP_DPP_MAX_CONFIG_COUNT);
+    }
+
+    for (i = 0; i < auth->num_conf_obj && recv->total_conf < conf_capacity; i++) {
+        uint8_t idx = recv->total_conf;
+
+        res = esp_dpp_handle_config_obj(auth, &auth->conf_obj[i], &recv->configs[idx]);
+        if (res < 0) {
+            wpa_printf(MSG_WARNING, "DPP: Configuration storage failed for object %d; not counting in total_conf", i);
+            continue;
+        }
+
+        recv->total_conf++;
+    }
+
+    if (recv->total_conf > 0) {
+        esp_dpp_config_data_t *first_conf = &recv->configs[0];
+
+        esp_dpp_fill_wifi_cfg_from_config(first_conf, &recv->wifi_cfg);
+
+        if (dpp_akm_dpp((enum dpp_akm) first_conf->akm) &&
+                (first_conf->connector_len > 0)) {
+            if (s_dpp_ctx.dpp_config_store) {
+                struct dpp_config_store *dc = s_dpp_ctx.dpp_config_store;
+
+                if (esp_dpp_stored_conf_matches_row(dc, first_conf)) {
+                    /* Same as installed config; nothing new to store. */
+                } else {
+                    esp_err_t autostore = esp_dpp_conf_alloc_from_config_data(first_conf,
+                                                                              &new_conf_pending);
+
+                    if (autostore != ESP_OK) {
+                        wpa_printf(MSG_WARNING,
+                                   "DPP: auto-load of first configuration object for supplicant failed: %d",
+                                   (int) autostore);
+                        goto out;
+                    }
+                }
+            }
+        } else if (!dpp_akm_dpp((enum dpp_akm) first_conf->akm) &&
+                   s_dpp_ctx.dpp_config_store && s_dpp_ctx.dpp_config_store->conf) {
+            /* Replaced by a non-DPP AKM (legacy PSK/SAE): drop stored DPP
+             * config so it is not reused. A malformed DPP-AKM config with
+             * no Connector is rejected without touching the stored entry. */
+            dpp_clear_confs(s_dpp_ctx.dpp_config_store->conf);
+            s_dpp_ctx.dpp_config_store->conf = NULL;
+        }
+    }
+
+    if (recv->total_conf == 0) {
+        wpa_printf(MSG_ERROR, "DPP: No valid configuration object was processed");
+        goto out;
+    }
+
+    post_size = sizeof(*recv) + recv->total_conf * sizeof(recv->configs[0]);
+    struct dpp_conf *old_conf = s_dpp_ctx.dpp_config_store ? s_dpp_ctx.dpp_config_store->conf : NULL;
+    dpp_api_unlock();
+
+    if (esp_event_post(WIFI_EVENT, WIFI_EVENT_DPP_CFG_RECVD, recv, post_size, os_task_ms_to_tick(200)) != ESP_OK) {
+        wpa_printf(MSG_ERROR, "DPP: Failed to post WIFI_EVENT_DPP_CFG_RECVD");
+        /* Prerequisite confirmed via atomic check at entry, lock re-acquisition will not fail. */
+        dpp_api_lock();
+        goto out;
+    }
+
+    /* Prerequisite confirmed via atomic check at entry, lock re-acquisition will not fail. */
+    dpp_api_lock();
+
+    /* Re-verify state: another task (e.g. deinit) could have run while the lock
+     * was released. If DPP was shut down, skip the config store commit. */
+    if (atomic_load(&dpp_shutting_down) || !atomic_load(&s_dpp_init_done)) {
+        wpa_printf(MSG_WARNING, "DPP: State changed during event post, skipping config store commit");
+        ret = ESP_ERR_INVALID_STATE;
+        goto out;
+    }
+
+    if (new_conf_pending) {
+        if (s_dpp_ctx.dpp_config_store) {
+            struct dpp_config_store *dc = s_dpp_ctx.dpp_config_store;
+
+            if (dc->conf != old_conf) {
+                wpa_printf(MSG_INFO, "DPP: Configuration updated by another task during event post, dropping new config");
+                dpp_clear_confs(new_conf_pending);
+            } else {
+                dpp_clear_confs(dc->conf);
+                dc->conf = new_conf_pending;
+            }
+        } else {
+            dpp_clear_confs(new_conf_pending);
+        }
+        new_conf_pending = NULL;
+    }
+
+    ret = ESP_OK;
+
+out:
+    bin_clear_free(recv, recv_size);
+    dpp_clear_confs(new_conf_pending);
+    return ret;
+}
+
+static esp_err_t gas_comeback_req_tx(struct dpp_authentication *auth)
+{
+    struct wpabuf *buf;
+    esp_err_t ret;
+
+    buf = gas_build_comeback_req(s_dpp_ctx.gas_dialog_token);
+    if (!buf) {
+        wpa_printf(MSG_ERROR, "DPP: Failed to build GAS Comeback Request");
+        return ESP_ERR_DPP_FAILURE;
+    }
+
+    wpa_printf(MSG_INFO, "DPP: GAS Comeback Request to " MACSTR " (chan %u)",
+               MAC2STR(auth->peer_mac_addr), auth->curr_chan);
+
+    ret = esp_dpp_send_action_frame(auth->peer_mac_addr,
+                                    wpabuf_head(buf), wpabuf_len(buf),
+                                    auth->curr_chan,
+                                    1000 + OFFCHAN_TX_WAIT_TIME,
+                                    DPP_TX_GAS_COMEBACK);
+    wpabuf_free(buf);
+
+    if (ret == ESP_OK) {
+        eloop_cancel_timeout(gas_query_timeout, NULL, auth);
+        if (eloop_register_timeout(ESP_GAS_TIMEOUT_SECS, 0,
+                                   gas_query_timeout, NULL, auth) != 0) {
+            return ESP_ERR_DPP_FAILURE;
+        }
+    }
+
+    return ret;
+}
+
+static void gas_comeback_delay_timeout(void *eloop_data, void *user_ctx)
+{
+    /* Note: user_ctx (auth) is guaranteed valid and not a use-after-free risk.
+     * The eloop is single-threaded, and pending timeouts are synchronously cancelled
+     * via dpp_cancel_auth_gas_eloop_timeouts() during teardown before auth is freed. */
+    struct dpp_authentication *auth = user_ctx;
+
+    if (dpp_api_lock() != ESP_OK) {
+        return;
+    }
+
+    if (atomic_load(&dpp_shutting_down)) {
+        dpp_api_unlock();
+        return;
+    }
+
+    if (!s_dpp_ctx.dpp_auth || s_dpp_ctx.dpp_auth != auth ||
+            !s_dpp_ctx.dpp_auth->auth_success) {
+        dpp_api_unlock();
+        return;
+    }
+    if (gas_comeback_req_tx(auth) != ESP_OK) {
+        dpp_abort_failure_locked(ESP_ERR_DPP_TX_FAILURE);
+        return;
+    }
+    dpp_api_unlock();
+}
+
 static esp_err_t gas_query_resp_rx(struct action_rx_param *rx_param)
 {
     struct dpp_authentication *auth = s_dpp_ctx.dpp_auth;
-    uint8_t *pos = rx_param->action_frm->u.public_action.v.pa_gas_resp.data;
-    uint8_t *resp = &pos[10];  /* first byte of DPP attributes */
+    u16 comeback_delay;
+    u16 status_code;
+    uint8_t *pos;
     size_t vendor_len = rx_param->vendor_data_len;
-    esp_err_t ret = ESP_OK;
 
     if (!auth) {
         return ESP_OK;
@@ -684,52 +1019,246 @@ static esp_err_t gas_query_resp_rx(struct action_rx_param *rx_param)
         return ESP_OK;
     }
 
-    if (vendor_len < 2) {
-        /* Note: We do not return an error or abort the session on data validation
-         * failures (like length or structural checks) to avoid interruption from
-         * spoofed frames. The session will timeout naturally if a legitimate
-         * response is not received. */
-        wpa_printf(MSG_DEBUG, "DPP: GAS response vendor data too short (%u)",
-                   (unsigned)vendor_len);
+    dpp_gas_cleanup_locked();
+
+    if (!auth->auth_success) {
+        wpa_printf(MSG_DEBUG, "DPP: GAS Initial Response while DPP auth not complete; ignore");
         return ESP_OK;
     }
 
-    /* Basic structural checks on the Advertisement Protocol payload */
-    if (!(pos[1] == WLAN_EID_VENDOR_SPECIFIC && pos[2] == 5 &&
-            WPA_GET_BE24(&pos[3]) == OUI_WFA && pos[6] == 0x1a && pos[7] == 1)) {
-        wpa_hexdump(MSG_INFO, "DPP: Failed, Configuration Response adv_proto", pos, 8);
-        return ESP_OK;
-    }
-
-    /* DPP attribute length = vendor_data_len - 2, now safe after the >= 2 check above */
-    size_t dpp_data_len = vendor_len - 2;
-
-    if (dpp_conf_resp_rx(auth, resp, dpp_data_len) < 0) {
-        wpa_printf(MSG_INFO, "DPP: Configuration attempt failed");
-        return ESP_OK;
-    }
-
-    eloop_cancel_timeout(gas_query_timeout, NULL, auth);
-
-    /* At the moment the architecture only supports one DPP configuration.
-     * We parse and handle the first configuration object only. */
     if (auth->num_conf_obj > 0) {
-        ret = esp_dpp_handle_config_obj(auth, &auth->conf_obj[0]);
-        if (ret != ESP_OK) {
-            wpa_printf(MSG_INFO, "DPP: Configuration handling failed");
-            goto fail;
-        }
-
-        /* If legacy AKM, we are done with DPP. Stop everything. */
-        if (dpp_akm_legacy(auth->conf_obj[0].akm)) {
-            dpp_stop_internal();
-            return ESP_OK;
-        }
+        wpa_printf(MSG_DEBUG, "DPP: Already received configuration, ignoring retransmitted GAS Initial Response");
+        return ESP_OK;
     }
 
-    return ESP_OK;
+    pos = rx_param->action_frm->u.public_action.v.pa_gas_resp.data;
+    status_code = WPA_GET_LE16((const u8 *)&rx_param->action_frm->u.public_action.v.pa_gas_resp.status_code);
+    comeback_delay = WPA_GET_LE16((const u8 *)&rx_param->action_frm->u.public_action.v.pa_gas_resp.comeback_delay);
 
-fail:
+    if (status_code != 0) {
+        wpa_printf(MSG_ERROR, "DPP: GAS Initial Response failed status=%u", status_code);
+        eloop_cancel_timeout(gas_query_timeout, NULL, auth);
+        return ESP_ERR_DPP_FAILURE;
+    }
+
+    if (comeback_delay) {
+        if (comeback_delay > DPP_MAX_COMEBACK_DELAY_TU) {
+            wpa_printf(MSG_WARNING, "DPP: GAS comeback delay %u TU too large, capping to %u",
+                       comeback_delay, DPP_MAX_COMEBACK_DELAY_TU);
+            comeback_delay = DPP_MAX_COMEBACK_DELAY_TU;
+        }
+        unsigned int secs = (comeback_delay * 1024) / 1000000;
+        unsigned int usecs = comeback_delay * 1024 - secs * 1000000;
+
+        wpa_printf(MSG_DEBUG, "DPP: GAS comeback delay %u TUs (%u.%06u s)",
+                   comeback_delay, secs, usecs);
+
+        s_dpp_ctx.gas_wait_comeback = true;
+        s_dpp_ctx.gas_frag_id = 0;
+        s_dpp_ctx.gas_dialog_token =
+            rx_param->action_frm->u.public_action.v.pa_gas_resp.diag_token;
+
+        eloop_cancel_timeout(gas_query_timeout, NULL, auth);
+
+        if (eloop_register_timeout(secs, usecs, gas_comeback_delay_timeout, NULL, auth) != 0) {
+            return ESP_ERR_DPP_FAILURE;
+        }
+        return ESP_OK;
+    }
+
+    if (vendor_len < 8) {
+        wpa_printf(MSG_INFO, "DPP: Too short GAS response data (adv protocol)");
+        eloop_cancel_timeout(gas_query_timeout, NULL, auth);
+        return ESP_ERR_DPP_FAILURE;
+    }
+
+    if (!(pos[1] == WLAN_EID_VENDOR_SPECIFIC && pos[2] == 5 &&
+            WPA_GET_BE24(&pos[3]) == OUI_WFA && pos[6] == DPP_OUI_TYPE && pos[7] == 1)) {
+        wpa_hexdump(MSG_INFO, "DPP: Failed, Configuration Response adv_proto", pos, 8);
+        eloop_cancel_timeout(gas_query_timeout, NULL, auth);
+        return ESP_ERR_DPP_FAILURE;
+    }
+
+    if (vendor_len < 10) {
+        wpa_printf(MSG_INFO, "DPP: Too short GAS response data");
+        eloop_cancel_timeout(gas_query_timeout, NULL, auth);
+        return ESP_ERR_DPP_FAILURE;
+    }
+
+    size_t dpp_data_len = vendor_len - 10;
+    uint8_t *resp = &pos[10];
+
+    return gas_process_complete_resp(auth, resp, dpp_data_len);
+}
+
+static esp_err_t gas_comeback_resp_rx(struct action_rx_param *rx_param)
+{
+    struct dpp_authentication *auth = s_dpp_ctx.dpp_auth;
+    uint8_t *frame_start;
+    size_t frame_len;
+    uint8_t *pos;
+    u16 status_code, comeback_delay, resp_len;
+    u8 frag_id, more_frags;
+    unsigned int left;
+    esp_err_t ret = ESP_ERR_DPP_FAILURE;
+
+    if (!auth || !auth->auth_success) {
+        return ESP_OK;
+    }
+
+    if (auth->num_conf_obj > 0) {
+        wpa_printf(MSG_DEBUG, "DPP: Already received configuration, ignoring retransmitted GAS Comeback Response");
+        return ESP_OK;
+    }
+
+    /* Verify source MAC: Management frames like GAS can be easily spoofed. */
+    if (os_memcmp(rx_param->sa, auth->peer_mac_addr, ETH_ALEN) != 0) {
+        wpa_printf(MSG_DEBUG, "DPP: MAC mismatch on GAS Comeback Response - ignore potentially spoofed frame");
+        return ESP_OK;
+    }
+
+    if (!s_dpp_ctx.gas_wait_comeback) {
+        wpa_printf(MSG_DEBUG, "DPP: Unexpected GAS Comeback Response - ignore");
+        return ESP_OK;
+    }
+
+    frame_start = (uint8_t *)&rx_param->action_frm->u.public_action;
+    frame_len = rx_param->frm_len -
+                (size_t)(frame_start - (uint8_t *)rx_param->action_frm);
+    pos = frame_start;
+
+    if (frame_len < 8) { /* need at least 7 for fixed fields plus 1 for adv proto element start */
+        wpa_printf(MSG_DEBUG, "DPP: Too short GAS Comeback Response");
+        goto gas_fail;
+    }
+
+    pos++; /* action */
+
+    if (*pos != s_dpp_ctx.gas_dialog_token) {
+        wpa_printf(MSG_DEBUG, "DPP: GAS dialog token mismatch (expected %u, got %u)",
+                   s_dpp_ctx.gas_dialog_token, *pos);
+        return ESP_OK;
+    }
+    pos++; /* dialog token */
+
+    status_code = WPA_GET_LE16(pos);
+    pos += 2;
+
+    frag_id = *pos & 0x7f;
+    more_frags = (*pos & 0x80) >> 7;
+    pos++; /* fragment id; bit7 = more fragments */
+
+    comeback_delay = WPA_GET_LE16(pos);
+    pos += 2;
+
+    wpa_printf(MSG_DEBUG, "DPP: GAS Comeback Response: status=%u frag_id=%u "
+               "more_frags=%u comeback_delay=%u",
+               status_code, frag_id, more_frags, comeback_delay);
+
+    if (status_code != 0 && status_code != WLAN_STATUS_QUERY_RESP_OUTSTANDING) {
+        wpa_printf(MSG_ERROR, "DPP: GAS Comeback Response failed status=%u", status_code);
+        goto gas_fail;
+    }
+
+    if (comeback_delay) {
+        if (frag_id) {
+            wpa_printf(MSG_ERROR, "DPP: Invalid comeback response with "
+                       "non-zero frag_id and comeback_delay");
+            goto gas_fail;
+        }
+        if (comeback_delay > DPP_MAX_COMEBACK_DELAY_TU) {
+            wpa_printf(MSG_WARNING, "DPP: GAS comeback delay %u TU too large, capping to %u",
+                       comeback_delay, DPP_MAX_COMEBACK_DELAY_TU);
+            comeback_delay = DPP_MAX_COMEBACK_DELAY_TU;
+        }
+        unsigned int secs = (comeback_delay * 1024) / 1000000;
+        unsigned int usecs = comeback_delay * 1024 - secs * 1000000;
+        eloop_cancel_timeout(gas_query_timeout, NULL, auth);
+        if (eloop_register_timeout(secs, usecs, gas_comeback_delay_timeout, NULL, auth) != 0) {
+            goto gas_fail;
+        }
+        return ESP_OK;
+    }
+
+    {
+        u8 expected_frag = s_dpp_ctx.gas_frag_id & 0x7f;
+        u8 previous_frag = (expected_frag - 1) & 0x7f;
+
+        if (frag_id != expected_frag) {
+            if (frag_id == previous_frag) {
+                wpa_printf(MSG_DEBUG, "DPP: Drop frame as possible "
+                           "retry of previous fragment");
+                return ESP_OK;
+            }
+            wpa_printf(MSG_ERROR, "DPP: Unexpected frag_id %u (expected %u)",
+                       frag_id, expected_frag);
+            goto gas_fail;
+        }
+    }
+    s_dpp_ctx.gas_frag_id = (s_dpp_ctx.gas_frag_id + 1) & 0x7f;
+
+    left = frame_len - (size_t)(pos - frame_start);
+    if (left < 2 || pos[0] != WLAN_EID_ADV_PROTO || left < (size_t)(2 + pos[1])) {
+        wpa_printf(MSG_DEBUG, "DPP: No room for Advertisement Protocol element");
+        goto gas_fail;
+    }
+    pos += 2 + pos[1];
+
+    left = frame_len - (size_t)(pos - frame_start);
+    if (left < 2) {
+        wpa_printf(MSG_DEBUG, "DPP: No room for GAS Response Length");
+        goto gas_fail;
+    }
+    resp_len = WPA_GET_LE16(pos);
+    pos += 2;
+
+    left = frame_len - (size_t)(pos - frame_start);
+    if (resp_len > left) {
+        wpa_printf(MSG_DEBUG, "DPP: Truncated GAS Comeback Response");
+        goto gas_fail;
+    }
+
+    if (s_dpp_ctx.gas_resp_buf &&
+            wpabuf_len(s_dpp_ctx.gas_resp_buf) + resp_len > ESP_DPP_GAS_REASSEMBLY_MAX_LEN) {
+        wpa_printf(MSG_ERROR, "DPP: GAS response too long, rejecting fragments");
+        ret = ESP_ERR_NO_MEM;
+        goto gas_fail;
+    }
+
+    if (!s_dpp_ctx.gas_resp_buf) {
+        s_dpp_ctx.gas_resp_buf = wpabuf_alloc(resp_len + 256);
+        if (!s_dpp_ctx.gas_resp_buf) {
+            ret = ESP_ERR_NO_MEM;
+            goto gas_fail;
+        }
+    }
+    if (wpabuf_resize(&s_dpp_ctx.gas_resp_buf, resp_len) < 0) {
+        wpa_printf(MSG_ERROR, "DPP: No memory to store GAS fragment");
+        ret = ESP_ERR_NO_MEM;
+        goto gas_fail;
+    }
+    wpabuf_put_data(s_dpp_ctx.gas_resp_buf, pos, resp_len);
+
+    if (more_frags) {
+        if (gas_comeback_req_tx(auth) != ESP_OK) {
+            goto gas_fail;
+        }
+        return ESP_OK;
+    }
+
+    ret = gas_process_complete_resp(auth,
+                                    wpabuf_head(s_dpp_ctx.gas_resp_buf),
+                                    wpabuf_len(s_dpp_ctx.gas_resp_buf));
+    if (ret != ESP_OK) {
+        goto gas_fail;
+    }
+    dpp_gas_cleanup_locked();
+    return ret;
+
+gas_fail:
+    dpp_gas_cleanup_locked();
+    eloop_cancel_timeout(gas_query_timeout, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
+    eloop_cancel_timeout(gas_comeback_delay_timeout, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
     return ret;
 }
 
@@ -784,12 +1313,7 @@ static void esp_dpp_rx_action(void *data, void *user_ctx)
 
             ret = esp_dpp_rx_frm(rx_param);
         }
-    } else if (public_action->action == WLAN_PA_GAS_INITIAL_RESP &&
-               rx_param->frm_len >= 9 &&
-               public_action->v.pa_gas_resp.type == WLAN_EID_ADV_PROTO &&
-               public_action->v.pa_gas_resp.length == 8 &&
-               public_action->v.pa_gas_resp.status_code == 0) {
-
+    } else if (public_action->action == WLAN_PA_GAS_INITIAL_RESP && rx_param->frm_len >= 7) {
         if (!s_dpp_ctx.dpp_auth ||
                 s_dpp_ctx.dpp_auth->gas_dialog_token < 0 ||
                 public_action->v.pa_gas_resp.diag_token !=
@@ -799,23 +1323,45 @@ static void esp_dpp_rx_action(void *data, void *user_ctx)
                        public_action->v.pa_gas_resp.diag_token,
                        s_dpp_ctx.dpp_auth ?
                        s_dpp_ctx.dpp_auth->gas_dialog_token : -1);
-            os_free(rx_param);
-            return;
-        }
-
-        size_t offset = (size_t)(public_action->v.pa_gas_resp.data +
-                                 public_action->v.pa_gas_resp.length -
-                                 (u8 *)rx_param->action_frm);
-
-        if (rx_param->frm_len < offset) {
-            wpa_printf(MSG_DEBUG, "DPP: Ignored too short GAS Initial Response");
             goto fail_unlock;
         }
 
-        rx_param->vendor_data_len = rx_param->frm_len - offset;
+        uint16_t status_code = WPA_GET_LE16((u8 *)&public_action->v.pa_gas_resp.status_code);
 
-        wpa_printf(MSG_DEBUG, "DPP: Gas response received");
-        ret = gas_query_resp_rx(rx_param);
+        if (status_code != 0) {
+            /* Non-zero status: error frame (typically 7 bytes, no Adv Proto element).
+             * gas_query_resp_rx handles status_code != 0 → ESP_ERR_DPP_FAILURE,
+             * enabling fast failure instead of waiting for a timeout. */
+            if (atomic_load(&roc_in_progress)) {
+                listen_stop_handler(NULL, NULL);
+            }
+            wpa_printf(MSG_DEBUG, "DPP: GAS Initial Response with error status=%u", status_code);
+            ret = gas_query_resp_rx(rx_param);
+        } else if (rx_param->frm_len >= 9 &&
+                   public_action->v.pa_gas_resp.type == WLAN_EID_ADV_PROTO &&
+                   public_action->v.pa_gas_resp.length == 8) {
+
+            size_t offset = (size_t)(public_action->v.pa_gas_resp.data -
+                                     (u8 *)rx_param->action_frm);
+
+            if (rx_param->frm_len < offset) {
+                wpa_printf(MSG_DEBUG,
+                           "DPP: GAS Initial Resp truncated (len=%u < adv_proto data offset %zu), dropping",
+                           (unsigned)rx_param->frm_len, offset);
+                goto fail_unlock;
+            }
+
+            if (atomic_load(&roc_in_progress)) {
+                listen_stop_handler(NULL, NULL);
+            }
+
+            rx_param->vendor_data_len = rx_param->frm_len - offset;
+            wpa_printf(MSG_DEBUG, "DPP: Gas response received");
+            ret = gas_query_resp_rx(rx_param);
+        }
+    } else if (public_action->action == WLAN_PA_GAS_COMEBACK_RESP &&
+               rx_param->frm_len >= 9) {
+        ret = gas_comeback_resp_rx(rx_param);
     }
 
 fail_unlock:
@@ -828,6 +1374,30 @@ fail_unlock:
             dpp_api_unlock();
         }
         return;
+    }
+
+    /* On successful config receipt, clean up based on AKM type:
+     * - Legacy AKM (PSK/SAE): DPP's job is done. The app has the SSID+password
+     *   and will call esp_wifi_connect() directly. Stop DPP to free auth state
+     *   and prevent stale timers from firing.
+     * - DPP AKM (Connector): The app still needs to call
+     *   esp_dpp_start_net_intro_protocol(), which requires auth->conf_obj and
+     *   auth->net_access_key. Keep auth alive but cancel GAS timers. */
+    if (s_dpp_ctx.dpp_auth && s_dpp_ctx.dpp_auth->num_conf_obj > 0) {
+        bool has_dpp_akm = false;
+        for (size_t i = 0; i < s_dpp_ctx.dpp_auth->num_conf_obj; i++) {
+            if (dpp_akm_dpp(s_dpp_ctx.dpp_auth->conf_obj[i].akm)) {
+                has_dpp_akm = true;
+                break;
+            }
+        }
+
+        if (!has_dpp_akm) {
+            dpp_stop_internal();
+        } else {
+            /* Cancel stale GAS timers; auth is still needed for net intro */
+            dpp_cancel_auth_gas_eloop_timeouts();
+        }
     }
     dpp_api_unlock();
 }
@@ -867,7 +1437,7 @@ static void dpp_listen_next_channel(void *data, void *user_ctx)
     ret = esp_wifi_remain_on_channel(&req);
     if (ret != ESP_OK) {
         wpa_printf(MSG_ERROR, "Failed ROC. error : 0x%x", ret);
-        dpp_abort_failure_locked(ret);
+        dpp_abort_failure_locked(ESP_ERR_DPP_FAILURE);
         return;
     }
     if (s_dpp_event_group) {
@@ -1001,6 +1571,10 @@ static int esp_dpp_deinit(void *data, void *user_ctx)
         dpp_global_deinit(s_dpp_ctx.dpp_global);
         s_dpp_ctx.dpp_global = NULL;
     }
+    if (s_dpp_ctx.dpp_config_store) {
+        dpp_config_store_deinit(s_dpp_ctx.dpp_config_store);
+        s_dpp_ctx.dpp_config_store = NULL;
+    }
     if (s_dpp_ctx.dpp_auth) {
         dpp_auth_deinit(s_dpp_ctx.dpp_auth);
         s_dpp_ctx.dpp_auth = NULL;
@@ -1086,6 +1660,8 @@ static void esp_dpp_auth_resp_retry(void *eloop_ctx, void *timeout_ctx)
 static void esp_dpp_peer_disc_retry(void *eloop_ctx, void *timeout_ctx)
 {
     struct dpp_authentication *auth;
+    struct dpp_config_store *config_store;
+    uint8_t ap_bssid[ETH_ALEN];
     unsigned int max_tries = 5;
 
     /* Prerequisite confirmed via lifecycle (timers cancelled on deinit), lock acquisition will not fail. */
@@ -1097,7 +1673,8 @@ static void esp_dpp_peer_disc_retry(void *eloop_ctx, void *timeout_ctx)
     }
 
     auth = s_dpp_ctx.dpp_auth;
-    if (!auth) {
+    config_store = s_dpp_ctx.dpp_config_store;
+    if (!auth || !config_store) {
         dpp_api_unlock();
         return;
     }
@@ -1109,19 +1686,23 @@ static void esp_dpp_peer_disc_retry(void *eloop_ctx, void *timeout_ctx)
         return;
     }
 
+    /* auth->peer_mac_addr is the DPP Configurator's source MAC from the Auth
+     * Request and may differ from the AP BSSID. Use the BSSID saved on the
+     * original call to esp_dpp_start_net_intro_protocol(). Copy it locally
+     * because esp_dpp_start_net_intro_protocol_internal() memcpys its
+     * argument back into config_store->peer_mac_addr. */
+    os_memcpy(ap_bssid, config_store->peer_mac_addr, ETH_ALEN);
+
     wpa_printf(MSG_INFO, "DPP: Retransmitting Peer Discovery Request frame");
-    if (esp_dpp_start_net_intro_protocol_internal(auth->peer_mac_addr) != ESP_OK) {
+    if (esp_dpp_start_net_intro_protocol_internal(ap_bssid) != ESP_OK) {
         dpp_abort_failure_locked(ESP_ERR_DPP_TX_FAILURE);
         return;
     }
     /* Safety net: if TX status is never delivered, this timeout ensures we don't
      * hang forever. tx_status_eloop_handler will cancel and re-register with the
-     * correct deadline when the TX status arrives.
-     * Note: Reuse gas_query_timeout for Peer Discovery phase to maintain
-     * compatibility with older applications that expect ESP_ERR_DPP_CONF_TIMEOUT
-     * on all discovery/config failures. */
-    if (eloop_register_timeout(ESP_GAS_TIMEOUT_SECS + 2, 0, gas_query_timeout, NULL, auth) < 0) {
-        wpa_printf(MSG_ERROR, "DPP: Failed to register gas_query_timeout for intro");
+     * correct deadline when the TX status arrives. */
+    if (eloop_register_timeout(ESP_GAS_TIMEOUT_SECS + 2, 0, peer_disc_timeout, NULL, auth) < 0) {
+        wpa_printf(MSG_ERROR, "DPP: Failed to register peer_disc_timeout for intro");
         dpp_abort_failure_locked(ESP_ERR_DPP_FAILURE);
         return;
     }
@@ -1218,22 +1799,19 @@ static void tx_status_eloop_handler(void *eloop_ctx, void *event_data)
     } else if (type == DPP_TX_PEER_DISCOVERY_REQ) {
         if (evt->status == WIFI_ACTION_TX_FAILED) {
             /* failed to send Peer Discovery frame, retry */
-            wpa_printf(MSG_WARNING, "DPP: failed to send Peer Discovery frame");
-            eloop_cancel_timeout(gas_query_timeout, NULL, auth);
+            wpa_printf(MSG_WARNING, "DPP: failed to send Peer Discovery frame, retrying");
+            eloop_cancel_timeout(peer_disc_timeout, NULL, auth);
             if (eloop_register_timeout(1, 0, esp_dpp_peer_disc_retry, NULL, NULL) < 0) {
-                wpa_printf(MSG_ERROR, "DPP: Failed to register peer_disc_retry");
+                wpa_printf(MSG_ERROR, "DPP: Failed to register esp_dpp_peer_disc_retry");
                 dpp_abort_failure_locked(ESP_ERR_DPP_FAILURE);
                 os_free(evt);
                 return;
             }
         } else if (evt->status == WIFI_ACTION_TX_DONE) {
-            /* Peer discovery sent, wait for response.
-             * Note: Reuse gas_query_timeout for Peer Discovery phase to maintain
-             * compatibility with older applications that expect ESP_ERR_DPP_CONF_TIMEOUT
-             * on all discovery/config failures. */
-            eloop_cancel_timeout(gas_query_timeout, NULL, auth);
-            if (eloop_register_timeout(ESP_GAS_TIMEOUT_SECS, 0, gas_query_timeout, NULL, auth) < 0) {
-                wpa_printf(MSG_ERROR, "DPP: Failed to register gas_query_timeout after disc TX");
+            /* Peer discovery sent, wait for response. */
+            eloop_cancel_timeout(peer_disc_timeout, NULL, auth);
+            if (eloop_register_timeout(ESP_GAS_TIMEOUT_SECS, 0, peer_disc_timeout, NULL, auth) < 0) {
+                wpa_printf(MSG_ERROR, "DPP: Failed to register peer_disc_timeout after disc TX");
                 dpp_abort_failure_locked(ESP_ERR_DPP_FAILURE);
                 os_free(evt);
                 return;
@@ -1266,6 +1844,26 @@ static void tx_status_eloop_handler(void *eloop_ctx, void *event_data)
                 dpp_abort_failure_locked(ESP_ERR_DPP_FAILURE);
                 os_free(evt);
                 return;
+            }
+        }
+    } else if (type == DPP_TX_GAS_COMEBACK) {
+        if (auth->auth_success) {
+            if (evt->status == WIFI_ACTION_TX_FAILED) {
+                wpa_printf(MSG_WARNING, "DPP: Failed to send GAS Comeback Request");
+                dpp_abort_failure_locked(ESP_ERR_DPP_TX_FAILURE);
+                os_free(evt);
+                return;
+            } else if (evt->status == WIFI_ACTION_TX_DONE) {
+                /* Re-arm response timeout from actual send time (more precise
+                 * than the timeout armed at queue time in gas_comeback_req_tx). */
+                eloop_cancel_timeout(gas_query_timeout, NULL, auth);
+                if (eloop_register_timeout(ESP_GAS_TIMEOUT_SECS, 0,
+                                           gas_query_timeout, NULL, auth) < 0) {
+                    wpa_printf(MSG_ERROR, "DPP: Failed to register gas_query_timeout after comeback TX");
+                    dpp_abort_failure_locked(ESP_ERR_DPP_FAILURE);
+                    os_free(evt);
+                    return;
+                }
             }
         }
     }
@@ -1317,14 +1915,12 @@ static void roc_status_eloop_handler(void *eloop_ctx, void *event_data)
             if (eloop_register_timeout(0, 0, dpp_listen_next_channel, NULL, NULL) < 0) {
                 wpa_printf(MSG_ERROR,
                            "DPP: Failed to register listen_next_channel after ROC; listen may stall");
-                dpp_stop_internal();
                 atomic_store(&roc_in_progress, false);
                 if (eg) {
                     os_event_group_set_bits(eg, DPP_ROC_EVENT_HANDLED);
                 }
                 os_free(evt);
-                dpp_api_unlock();
-                dpp_post_dpp_failed_event(ESP_ERR_NO_MEM);
+                dpp_abort_failure_locked(ESP_ERR_NO_MEM);
                 return;
             }
         }
@@ -1492,12 +2088,13 @@ esp_supp_dpp_bootstrap_gen(const char *chan_list, esp_supp_dpp_bootstrap_t type,
     }
 
     esp_err_t ret = ESP_OK;
+    char *uri_chan_list = NULL;
+    char *command = NULL;
     struct dpp_bootstrap_params_t *params = &s_dpp_ctx.bootstrap_params;
-    char *uri_chan_list = esp_dpp_parse_chan_list(chan_list);
+    uri_chan_list = esp_dpp_parse_chan_list(chan_list);
 
-    wpa_printf(MSG_DEBUG, "DPP: Starting bootstrap genration");
-    if (!uri_chan_list) {
-        wpa_printf(MSG_ERROR, "Invalid Channel list - %s", chan_list ? chan_list : "(null)");
+    if (!uri_chan_list || params->num_chan > ESP_DPP_MAX_CHAN_COUNT || params->num_chan == 0) {
+        wpa_printf(MSG_ERROR, "DPP: Invalid channel list - %s", chan_list ? chan_list : "(null)");
         s_dpp_ctx.bootstrap_done = false;
         ret = ESP_ERR_DPP_INVALID_LIST;
         goto fail;
@@ -1509,27 +2106,29 @@ esp_supp_dpp_bootstrap_gen(const char *chan_list, esp_supp_dpp_bootstrap_t type,
         goto fail;
     }
 
-    params->type = type;
-    esp_wifi_get_mac(WIFI_IF_STA, params->mac);
-
     size_t info_len = info ? os_strlen(info) : 0;
-
     size_t command_len = os_strlen("type=qrcode mac=") + 17 + os_strlen(uri_chan_list) +
-                         (key ? os_strlen("key=") + os_strlen(key) : 0) +
+                         (key ? os_strlen(" key=") + os_strlen(key) : 0) +
                          (info_len ? os_strlen(" info=") + info_len : 0) + 1;
 
-    char *command = os_zalloc(command_len);
+    command = os_zalloc(command_len);
     if (!command) {
         wpa_printf(MSG_ERROR, "DPP: Failed to allocate memory for bootstrap command");
         ret = ESP_ERR_NO_MEM;
         goto fail;
     }
 
+    params->type = type;
+    esp_wifi_get_mac(WIFI_IF_STA, params->mac);
+
     os_snprintf(command, command_len, "type=qrcode mac=" MACSTR "%s%s%s%s%s",
                 MAC2STR(params->mac), uri_chan_list,
-                key ? "key=" : "", key ? key : "",
+                key ? " key=" : "", key ? key : "",
                 info_len ? " info=" : "",
                 info_len ? info : "");
+
+    os_free(uri_chan_list);
+    uri_chan_list = NULL;
 
     if (eloop_register_timeout(0, 0, esp_dpp_bootstrap_gen, command, NULL) < 0) {
         wpa_printf(MSG_ERROR, "DPP: Failed to register bootstrap_gen timeout");
@@ -1555,10 +2154,10 @@ static void dpp_listen_start(void *ctx, void *data)
 {
     /* Prerequisite confirmed by caller, lock acquisition will not fail. */
     dpp_api_lock();
-
     s_dpp_ctx.dpp_listen_ongoing = true;
-    dpp_listen_next_channel(NULL, NULL);
     dpp_api_unlock();
+
+    dpp_listen_next_channel(NULL, NULL);
 }
 
 static void dpp_cancel_auth_gas_eloop_timeouts(void)
@@ -1567,7 +2166,9 @@ static void dpp_cancel_auth_gas_eloop_timeouts(void)
     eloop_cancel_timeout(esp_dpp_auth_conf_wait_timeout, NULL, NULL);
     eloop_cancel_timeout(esp_dpp_auth_resp_retry, NULL, NULL);
     eloop_cancel_timeout(gas_query_timeout, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
+    eloop_cancel_timeout(gas_comeback_delay_timeout, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
     eloop_cancel_timeout(esp_dpp_peer_disc_retry, NULL, NULL);
+    eloop_cancel_timeout(peer_disc_timeout, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
     eloop_cancel_timeout(esp_dpp_gas_query_req_retry, NULL, NULL);
 }
 
@@ -1714,6 +2315,13 @@ static int esp_dpp_init(void *eloop_data, void *user_ctx)
         goto init_fail;
     }
 
+    s_dpp_ctx.dpp_config_store = dpp_config_store_init();
+    if (!s_dpp_ctx.dpp_config_store) {
+        wpa_printf(MSG_ERROR, "DPP: failed to allocate memory for config store");
+        ret = ESP_ERR_NO_MEM;
+        goto init_fail;
+    }
+
     ret = esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_ACTION_TX_STATUS,
                                      &tx_status_handler, NULL);
     if (ret != ESP_OK) {
@@ -1735,13 +2343,20 @@ static int esp_dpp_init(void *eloop_data, void *user_ctx)
 
     return ESP_OK;
 init_fail:
+    atomic_store(&dpp_shutting_down, true);
+    dpp_api_unlock();
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ACTION_TX_STATUS,
                                  &tx_status_handler);
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ROC_DONE,
                                  &roc_status_handler);
+    dpp_api_lock();
     if (s_dpp_ctx.dpp_global) {
         dpp_global_deinit(s_dpp_ctx.dpp_global);
         s_dpp_ctx.dpp_global = NULL;
+    }
+    if (s_dpp_ctx.dpp_config_store) {
+        dpp_config_store_deinit(s_dpp_ctx.dpp_config_store);
+        s_dpp_ctx.dpp_config_store = NULL;
     }
     dpp_api_unlock();
     return ret;
@@ -1800,32 +2415,30 @@ esp_err_t esp_supp_dpp_init(void)
 
 static esp_err_t esp_dpp_start_net_intro_protocol_internal(uint8_t *bssid)
 {
-    struct dpp_authentication *auth = s_dpp_ctx.dpp_auth;
+    struct dpp_conf *config;
+    struct dpp_config_store *config_store;
     struct wpabuf *buf = NULL;
-    int ret = ESP_OK;
+    esp_err_t ret = ESP_OK;
+    uint8_t curr_chan;
 
-    if (!auth) {
+    config = esp_dpp_config_store_get_selected_entry();
+    if (!config) {
+        wpa_printf(MSG_ERROR, "DPP: No connection configuration set");
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (auth->num_conf_obj == 0) {
-        return ESP_ERR_INVALID_STATE;
-    }
-
-    /* At the moment the architecture only supports one DPP configuration.
-     * We attempt network introduction with the first configuration object only. */
-    os_memcpy(auth->peer_mac_addr, bssid, ETH_ALEN);
-    buf = dpp_build_peer_disc_req(auth, &auth->conf_obj[0]);
+    config_store = s_dpp_ctx.dpp_config_store;
+    os_memcpy(config_store->peer_mac_addr, bssid, ETH_ALEN);
+    curr_chan = config->curr_chan;
+    buf = dpp_build_peer_disc_req(config_store, config);
 
     if (!buf) {
-        return ESP_ERR_NO_MEM;
+        return ESP_ERR_DPP_FAILURE;
     }
 
-    if (esp_dpp_send_action_frame(bssid, wpabuf_head(buf), wpabuf_len(buf),
-                                  auth->curr_chan, 1000 + OFFCHAN_TX_WAIT_TIME,
-                                  DPP_TX_PEER_DISCOVERY_REQ) != ESP_OK) {
-        ret = ESP_FAIL;
-    }
+    ret = esp_dpp_send_action_frame(bssid, wpabuf_head(buf), wpabuf_len(buf),
+                                    curr_chan, 1000 + OFFCHAN_TX_WAIT_TIME,
+                                    DPP_TX_PEER_DISCOVERY_REQ);
 
     wpabuf_free(buf);
 
@@ -1852,21 +2465,23 @@ esp_err_t esp_dpp_start_net_intro_protocol(uint8_t *bssid)
         return ESP_ERR_INVALID_STATE;
     }
 
-    s_dpp_ctx.gas_query_tries = 0;
-
     /* Ensure no stale Auth, GAS, or Discovery timers from a previous attempt
-     * are running. If they fire, they would abort the new attempt prematurely. */
-    esp_dpp_cancel_timeouts();
+     * are running. If they fire, they would abort the new attempt prematurely.
+     * Use the narrower auth/GAS/disc cancel; full esp_dpp_cancel_timeouts()
+     * is reserved for deinit. */
+    dpp_cancel_auth_gas_eloop_timeouts();
+    s_dpp_ctx.gas_query_tries = 0;
 
     wpa_printf(MSG_INFO, "DPP: Starting Network Introduction to " MACSTR, MAC2STR(bssid));
 
     ret = esp_dpp_start_net_intro_protocol_internal(bssid);
     if (ret != ESP_OK) {
-        if (ret == ESP_ERR_INVALID_STATE) {
-            dpp_api_unlock();
-        } else {
-            dpp_abort_failure_locked(ret);
-        }
+        /* Normalize generic ESP_FAIL or ESP_ERR_INVALID_STATE to
+         * a DPP-specific failure so the application-facing event reason
+         * is meaningful and consistent. */
+        esp_err_t reason = (ret == ESP_FAIL) ? ESP_ERR_DPP_TX_FAILURE :
+                           (ret == ESP_ERR_INVALID_STATE) ? ESP_ERR_DPP_FAILURE : ret;
+        dpp_abort_failure_locked(reason);
         return ret;
     }
 
@@ -1916,6 +2531,179 @@ esp_err_t esp_supp_dpp_deinit(void)
         dpp_api_unlock();
         return ESP_ERR_DPP_FAILURE;
     }
+    return ESP_OK;
+}
+
+static bool esp_dpp_stored_conf_matches_row(struct dpp_config_store *dc,
+                                            const esp_dpp_config_data_t *row)
+{
+    struct dpp_conf *c;
+    enum dpp_akm want;
+
+    if (!dc || !row) {
+        return false;
+    }
+
+    c = dc->conf;
+    want = (enum dpp_akm) row->akm;
+    if (!c || !dpp_akm_dpp(c->akm) || c->akm != want || c->curr_chan != row->curr_chan) {
+        return false;
+    }
+    if (row->connector_len > 0) {
+        size_t cfg_clen;
+        size_t c_clen;
+
+        cfg_clen = row->connector_len;
+        if (cfg_clen >= ESP_DPP_MAX_CONNECTOR_LEN) {
+            return false;
+        }
+        if (!c->connector) {
+            return false;
+        }
+        c_clen = os_strlen(c->connector);
+        if (c_clen != cfg_clen ||
+                os_memcmp(c->connector, row->connector, cfg_clen) != 0) {
+            return false;
+        }
+    } else if (c->connector) {
+        return false;
+    }
+
+    return true;
+}
+
+static esp_err_t esp_dpp_conf_alloc_from_config_data(const esp_dpp_config_data_t *config,
+                                                     struct dpp_conf **out_conf)
+{
+    struct dpp_conf *new_conf = NULL;
+
+    *out_conf = NULL;
+
+    if (!config) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (!dpp_akm_dpp((enum dpp_akm) config->akm)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (config->connector_len == 0 || config->net_access_key_len == 0 ||
+            config->c_sign_key_len == 0) {
+        wpa_printf(MSG_ERROR, "DPP: Incomplete DPP configuration row");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (config->net_access_key_len > ESP_DPP_MAX_KEY_LEN ||
+            config->c_sign_key_len > ESP_DPP_MAX_KEY_LEN) {
+        wpa_printf(MSG_ERROR, "DPP: Invalid key length in config");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    new_conf = os_zalloc(sizeof(struct dpp_conf));
+    if (!new_conf) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    if (config->connector_len > 0) {
+        size_t clen;
+
+        clen = config->connector_len;
+        if (clen >= ESP_DPP_MAX_CONNECTOR_LEN) {
+            wpa_printf(MSG_ERROR, "DPP: connector_len out of range");
+            dpp_clear_confs(new_conf);
+            return ESP_ERR_INVALID_ARG;
+        }
+
+        new_conf->connector = os_malloc(clen + 1);
+        if (!new_conf->connector) {
+            goto fail;
+        }
+        os_memcpy(new_conf->connector, config->connector, clen);
+        new_conf->connector[clen] = '\0';
+    }
+    if (config->net_access_key_len) {
+        new_conf->net_access_key = wpabuf_alloc_copy(config->net_access_key, config->net_access_key_len);
+        if (!new_conf->net_access_key) {
+            goto fail;
+        }
+        new_conf->net_access_key_expiry = config->net_access_key_expiry;
+    }
+    if (config->c_sign_key_len) {
+        new_conf->c_sign_key = wpabuf_alloc_copy(config->c_sign_key, config->c_sign_key_len);
+        if (!new_conf->c_sign_key) {
+            goto fail;
+        }
+        new_conf->dpp_csign_len = config->c_sign_key_len;
+    }
+    new_conf->curr_chan = config->curr_chan;
+    new_conf->akm = (enum dpp_akm) config->akm;
+
+    *out_conf = new_conf;
+    return ESP_OK;
+
+fail:
+    dpp_clear_confs(new_conf);
+    return ESP_ERR_NO_MEM;
+}
+
+static struct dpp_conf *esp_dpp_config_store_get_selected_entry(void)
+{
+    struct dpp_config_store *dc = s_dpp_ctx.dpp_config_store;
+
+    if (!dc) {
+        return NULL;
+    }
+    return dc->conf;
+}
+
+esp_err_t esp_supp_dpp_set_config(const esp_dpp_config_data_t *config)
+{
+    struct dpp_conf *new_conf = NULL;
+    struct dpp_config_store *dc;
+    esp_err_t err;
+
+    err = dpp_api_lock();
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    if (!atomic_load(&s_dpp_init_done)) {
+        dpp_api_unlock();
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    dc = s_dpp_ctx.dpp_config_store;
+
+    if (!config) {
+        if (dc && dc->conf) {
+            dpp_clear_confs(dc->conf);
+            dc->conf = NULL;
+        }
+        dpp_api_unlock();
+        return ESP_OK;
+    }
+
+    if (!dc) {
+        dpp_api_unlock();
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (esp_dpp_stored_conf_matches_row(dc, config)) {
+        dpp_api_unlock();
+        return ESP_OK;
+    }
+
+    err = esp_dpp_conf_alloc_from_config_data(config, &new_conf);
+    if (err != ESP_OK) {
+        dpp_api_unlock();
+        return err;
+    }
+
+    dpp_clear_confs(dc->conf);
+    dc->conf = new_conf;
+
+    dpp_api_unlock();
+
     return ESP_OK;
 }
 

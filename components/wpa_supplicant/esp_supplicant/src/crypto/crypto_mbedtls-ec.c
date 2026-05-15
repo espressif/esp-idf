@@ -1683,8 +1683,13 @@ struct crypto_ec_key * crypto_ec_key_set_pub(const struct crypto_ec_group *group
         key_bits = bits;
     }
 
-    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_VERIFY_HASH | PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_EXPORT | PSA_KEY_USAGE_DERIVE);
-    psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
+    if (ecc_family == PSA_ECC_FAMILY_MONTGOMERY) {
+        psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_EXPORT | PSA_KEY_USAGE_DERIVE);
+        psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDH);
+    } else {
+        psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_VERIFY_HASH | PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_EXPORT | PSA_KEY_USAGE_DERIVE);
+        psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
+    }
     psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY(ecc_family));
     psa_set_key_bits(&key_attributes, key_bits);
 

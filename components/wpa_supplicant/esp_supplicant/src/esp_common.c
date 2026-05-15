@@ -18,7 +18,7 @@
 #include "esp_scan_i.h"
 #include "esp_common_i.h"
 #include "common/ieee802_11_common.h"
-#include "esp_dpp.h"
+#include "esp_dpp_i.h"
 #include "esp_rrm.h"
 #include "esp_wnm.h"
 #include "rsn_supp/wpa_i.h"
