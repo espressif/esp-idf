@@ -169,6 +169,9 @@ variables:
   # Done after sourcing export.sh so that we could easily invoke the right pip
   section_start "upgrade_ci_dependencies" "Upgrading CI dependencies"
   pip install --upgrade --upgrade-strategy=eager -r $IDF_PATH/tools/requirements/requirements.ci.txt -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+  # we need the latest DEV release for esptool to be installed in every job without bumping the minimal requirement in
+  # the constraint file.
+  pip install --upgrade --pre esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
   section_end "upgrade_ci_dependencies"
 
   REEXPORT_NEEDED=0
