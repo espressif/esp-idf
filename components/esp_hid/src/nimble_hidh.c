@@ -70,14 +70,14 @@ static inline void SEND_CB(void)
 static inline void LOCK_OPS(void)
 {
     if (s_ble_hidh_op_mutex) {
-        xSemaphoreTake(s_ble_hidh_op_mutex, portMAX_DELAY);
+        xSemaphoreTakeRecursive(s_ble_hidh_op_mutex, portMAX_DELAY);
     }
 }
 
 static inline void UNLOCK_OPS(void)
 {
     if (s_ble_hidh_op_mutex) {
-        xSemaphoreGive(s_ble_hidh_op_mutex);
+        xSemaphoreGiveRecursive(s_ble_hidh_op_mutex);
     }
 }
 
@@ -789,6 +789,20 @@ static void attach_report_listeners(esp_hidh_dev_t *dev)
     report = dev->reports;
 
     if (dev->ble.battery_handle) {
+        uint8_t *rdata = NULL;
+        uint16_t rlen = 0;
+
+        if (event_loop_handle &&
+                read_char(dev->ble.conn_id, dev->ble.battery_handle, &rdata, &rlen) == 0 &&
+                rlen >= 1 && rdata != NULL) {
+            esp_hidh_event_data_t p = {0};
+            p.battery.dev = dev;
+            p.battery.level = rdata[0];
+            esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_BATTERY_EVENT,
+                              &p, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
+        }
+        free(rdata);
+
         register_for_notify(dev->ble.conn_id, dev->ble.battery_handle);
         if (dev->ble.battery_ccc_handle && dev->ble.conn_id >= 0 && dev->connected) {
             write_char_descr(dev, dev->ble.battery_ccc_handle, 2, (uint8_t *)&ccc_data);
@@ -1174,7 +1188,7 @@ esp_err_t esp_ble_hidh_init(const esp_hidh_config_t *config)
     s_ble_hidh_cb_semaphore = xSemaphoreCreateBinary();
     ESP_RETURN_ON_FALSE(s_ble_hidh_cb_semaphore,
                         ESP_ERR_NO_MEM, TAG, "Allocation failed");
-    s_ble_hidh_op_mutex = xSemaphoreCreateMutex();
+    s_ble_hidh_op_mutex = xSemaphoreCreateRecursiveMutex();
     if (s_ble_hidh_op_mutex == NULL) {
         vSemaphoreDelete(s_ble_hidh_cb_semaphore);
         s_ble_hidh_cb_semaphore = NULL;
