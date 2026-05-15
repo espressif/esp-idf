@@ -892,6 +892,20 @@ def init_cli(verbose_output: list | None = None) -> Any:
     # Set `complete_var` to not existing environment variable name to prevent early cmd completion
     project_dir = parse_project_dir(standalone_mode=False, complete_var='_IDF.PY_COMPLETE_NOT_EXISTING')
 
+    # Ensure IDF_VERSION is available for in-process component-manager code
+    # (e.g. dependencies.lock `if: idf_version` clauses). Outside a CMake build
+    # this env var is unset; without it idf-component-manager falls back to
+    # spawning `idf.py --version`, which re-enters here -> infinite recursion.
+    if 'IDF_VERSION' not in os.environ:
+        # Best-effort: if idf_version_from_cmake() returns None (corrupt/missing
+        # version.cmake) IDF_VERSION stays unset and the recursion guard does not apply.
+        idf_ver = idf_version_from_cmake()  # 'vX.Y.Z' or None; regex parse, no subprocess
+        if idf_ver:
+            # Strip the leading 'v' to match the value a CMake build provides
+            # (see tools/cmake/version.cmake); component-manager code consumes
+            # this env var verbatim and cannot parse a 'v' prefix.
+            os.environ['IDF_VERSION'] = idf_ver.lstrip('v')
+
     all_actions: dict = {}
     # Load extensions from components dir
     idf_py_extensions_path = os.path.join(os.environ['IDF_PATH'], 'tools', 'idf_py_actions')
