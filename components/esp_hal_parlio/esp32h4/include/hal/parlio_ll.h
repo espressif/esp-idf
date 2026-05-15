@@ -42,7 +42,7 @@
 #define PARLIO_LL_EVENT_RX_MASK          (PARLIO_LL_EVENT_RX_FIFO_FULL)
 
 #define PARLIO_LL_TX_DATA_LINE_AS_CLK_GATE  7 // TXD[7] can be used as clock gate signal
-#define PARLIO_LL_TX_VALID_MAX_DELAY        32767
+#define PARLIO_LL_TX_VALID_MAX_DELAY        65535
 #ifdef __cplusplus
 extern "C" {
 #endif
