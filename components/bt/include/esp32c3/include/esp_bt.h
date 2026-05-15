@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -268,7 +268,21 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
 #define BT_CTRL_RUN_IN_FLASH_ONLY  (0)
 #endif
 
-
+/*
+ * Only when CONFIG_BT_CTRL_CHECK_CONFIG_EFF is absent: this build does not
+ * run controller Kconfig, so missing CONFIG_BT_CTRL_BLE_* means "use default",
+ * not "disabled". When the symbol is defined (normal IDF sdkconfig), Kconfig
+ * is authoritative: bool=n leaves CONFIG_BT_CTRL_BLE_* undefined and must
+ * not be overridden here.
+ */
+#ifndef CONFIG_BT_CTRL_CHECK_CONFIG_EFF
+#define CONFIG_BT_CTRL_BLE_ADV 1
+#define CONFIG_BT_CTRL_BLE_SCAN 1
+#define CONFIG_BT_CTRL_DTM_ENABLE 1
+#define CONFIG_BT_CTRL_BLE_MASTER 1
+#define CONFIG_BT_CTRL_BLE_SECURITY_ENABLE 1
+#define CONFIG_BT_CTRL_BLE_MIN_CONN_INTERVAL_ENABLE 1
+#endif /* !CONFIG_BT_CTRL_CHECK_CONFIG_EFF */
 
 #if defined(CONFIG_BT_CTRL_DTM_ENABLE)
 #define BT_CTRL_DTM_ENABLE  CONFIG_BT_CTRL_DTM_ENABLE
