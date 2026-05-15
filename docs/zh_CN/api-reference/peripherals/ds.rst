@@ -113,8 +113,17 @@ TLS 连接所需的 DS 外设配置
 
     psa_destroy_key(key_id);
 
-使用 DS 外设进行 SSL 双向认证
------------------------------
+持久化与易失性 RSA_DS PSA 密钥
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+驱动支持两种 PSA 密钥生命周期：
+
+- ``PSA_KEY_LIFETIME_ESP_RSA_DS_VOLATILE`` （上述示例中使用）只在 PSA 密钥 槽中保存指向调用方提供的 ``esp_ds_data_ctx_t`` 以及密钥管理器恢复信息的 指针。被引用的缓冲区必须保持有效，直到调用 :cpp:func:`psa_destroy_key` 为止。这样可避免对大块数据（例如 :cpp:type:`esp_ds_data_t`，约 1200–1600 字节，因芯片而异）进行深拷贝；当这些数据已经通过 ``esp_secure_cert_mgr`` 从 flash 中以 mmap 形式可用时，这一点尤其有用。
+
+- ``PSA_KEY_LIFETIME_ESP_RSA_DS`` （持久化）在调用 :cpp:func:`psa_import_key` 时将加密的密钥数据深拷贝到 PSA 密钥槽中，并 由 PSA 与其他密钥属性一同持久化到 NVS。导入返回后，调用方即可释放原始 缓冲区；后续的 :cpp:func:`psa_sign_hash` 和 :cpp:func:`psa_asymmetric_decrypt` 调用会自动从 NVS 取回所需数据。 当应用希望密钥在重启后依然可用，且无需在每次启动时重新从外部存储 载入 ``esp_ds_data_ctx_t`` 时，应使用此生命周期。
+
+使用 RSA_DS 外设进行 SSL 双向认证
+------------------------------------
 
 此前位于 ``examples/protocols/mqtt/ssl_ds`` 目录下的 SSL 双向认证示例现已随独立的 `espressif/mqtt <https://components.espressif.com/components/espressif/mqtt>`__ 组件一同提供。请参照该组件文档获取 SSL DS 示例，并与 ESP-MQTT 一同构建。该示例仍使用 ``mqtt_client`` （由 ESP-MQTT 实现），通过双向认证 TLS 连接至 ``test.mosquitto.org``，其中 TLS 通信层仍由 ESP-TLS 实现。
 

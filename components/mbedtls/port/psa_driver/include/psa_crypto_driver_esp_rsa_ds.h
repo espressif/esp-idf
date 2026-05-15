@@ -22,14 +22,13 @@ extern "C" {
 
 #define PSA_KEY_LOCATION_ESP_RSA_DS ((psa_key_location_t) 0x800003)
 
-/* IDF-15427: ESP-PSA driver does not support persistent RSA DS keys as of now */
-#if 0
-/* @brief Construct a lifetime for ESP RSA DS keys with default persistence */
+/**
+ * @brief Construct a persistent lifetime for ESP RSA DS keys
+ */
 #define PSA_KEY_LIFETIME_ESP_RSA_DS \
     PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION( \
         PSA_KEY_PERSISTENCE_DEFAULT, \
         PSA_KEY_LOCATION_ESP_RSA_DS)
-#endif
 
 /**
  * @brief Construct a volatile lifetime for ESP RSA DS keys
@@ -145,15 +144,23 @@ psa_status_t esp_rsa_ds_opaque_import_key(
     size_t *bits);
 
 /**
- * @brief Return the size of the RSA DS opaque key in bytes
+ * @brief Return the storage buffer size required for an RSA DS opaque key
  *
- * @param key_type Key type
- * @param key_bits Key bits
- * @return Size of the RSA DS opaque key in bytes
+ * For volatile keys, returns a small pointer-based storage size.
+ * For persistent keys, inspects the user-facing import data to determine
+ * the key source and returns the corresponding inline storage struct size.
+ *
+ * @param attributes Key attributes (used to check persistence)
+ * @param key_type   Key type
+ * @param data       Import data (user-facing esp_rsa_ds_opaque_key_t)
+ * @param data_length Length of import data
+ * @return Size of the storage buffer in bytes, or 0 on error
  */
 size_t esp_rsa_ds_opaque_size_function(
+    const psa_key_attributes_t *attributes,
     psa_key_type_t key_type,
-    size_t key_bits);
+    const uint8_t *data,
+    size_t data_length);
 
 /**
  * @brief Set the timeout for the RSA DS session
