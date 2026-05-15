@@ -33,6 +33,28 @@ config BT_CTRL_SLEEP_ENABLE
     help
         Enable Bluetooth Controller sleep
 
+choice BT_CTRL_LP_CLK_SRC
+    prompt "Bluetooth low power clock source"
+    default BT_CTRL_LP_CLK_SRC_MAIN_XTAL
+    depends on BT_CTRL_SLEEP_ENABLE
+    config BT_CTRL_LP_CLK_SRC_MAIN_XTAL
+        bool "Use main XTAL as RTC clock source"
+        help
+            User main XTAL as RTC clock source.
+            This option is recommended if external 32.768k XTAL is not available.
+            Using the external 32.768 kHz XTAL will have lower current consumption
+            in light sleep compared to using the main XTAL.
+
+    config BT_CTRL_LP_CLK_SRC_DEFAULT
+        depends on (RTC_CLK_SRC_EXT_CRYS || !BT_CTRL_BREDR_ENABLE)
+        bool "Use system RTC slow clock source"
+        help
+            Use the same slow clock source as system RTC
+            Using any clock source other than external 32.768 kHz XTAL supports only
+            legacy ADV and SCAN due to low clock accuracy.
+
+endchoice
+
 config BT_DUAL_MODE_ARCH
     bool
     default y
