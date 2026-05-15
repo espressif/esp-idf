@@ -36,9 +36,7 @@
 #if SOC_I2C_SUPPORT_APB || SOC_I2C_SUPPORT_XTAL
 #include "esp_private/esp_clk.h"
 #endif
-#if SOC_I2C_SUPPORT_RTC
-#include "clk_ctrl_os.h"
-#endif
+#include "esp_private/esp_clk_tree_common.h"
 
 static const char *I2C_TAG = "i2c";
 
@@ -752,34 +750,8 @@ static esp_err_t i2c_hw_fsm_reset(i2c_port_t i2c_num)
 
 static uint32_t s_get_src_clk_freq(i2c_clock_source_t clk_src)
 {
-    // TODO: replace the following switch table by clk_tree API
     uint32_t periph_src_clk_hz = 0;
-    switch (clk_src) {
-#if SOC_I2C_SUPPORT_APB
-    case I2C_CLK_SRC_APB:
-        periph_src_clk_hz = esp_clk_apb_freq();
-        break;
-#endif
-#if SOC_I2C_SUPPORT_XTAL
-    case I2C_CLK_SRC_XTAL:
-        periph_src_clk_hz = esp_clk_xtal_freq();
-        break;
-#endif
-#if SOC_I2C_SUPPORT_RTC
-    case I2C_CLK_SRC_RC_FAST:
-        periph_rtc_dig_clk8m_enable();
-        periph_src_clk_hz = periph_rtc_dig_clk8m_get_freq();
-        break;
-#endif
-#if SOC_I2C_SUPPORT_REF_TICK
-    case I2C_CLK_SRC_REF_TICK:
-        periph_src_clk_hz = REF_CLK_FREQ;
-        break;
-#endif
-    default:
-        ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, I2C_TAG, "clock source %d is not supported", clk_src);
-        break;
-    }
+    esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz);
 
     return periph_src_clk_hz;
 }

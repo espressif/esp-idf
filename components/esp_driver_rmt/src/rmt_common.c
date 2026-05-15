@@ -1,11 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "rmt_private.h"
-#include "clk_ctrl_os.h"
+#include "esp_clk_tree.h"
 #include "soc/rtc.h"
 #include "driver/gpio.h"
 
@@ -95,7 +95,6 @@ rmt_group_t *rmt_acquire_group_handle(int group_id)
 void rmt_release_group_handle(rmt_group_t *group)
 {
     int group_id = group->group_id;
-    rmt_clock_source_t clk_src = group->clk_src;
     bool do_deinitialize = false;
     rmt_hal_context_t *hal = &group->hal;
 
@@ -116,16 +115,6 @@ void rmt_release_group_handle(rmt_group_t *group)
         }
     }
     _lock_release(&s_platform.mutex);
-
-    switch (clk_src) {
-#if RMT_LL_SUPPORT(RC_FAST)
-    case RMT_CLK_SRC_RC_FAST:
-        periph_rtc_dig_clk8m_disable();
-        break;
-#endif // RMT_LL_SUPPORT(RC_FAST)
-    default:
-        break;
-    }
 
     if (do_deinitialize) {
 #if RMT_USE_RETENTION_LINK
@@ -209,17 +198,8 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
         clock_selection_conflict = (group->clk_src != clk_src);
     }
     portEXIT_CRITICAL(&group->spinlock);
-    ESP_RETURN_ON_FALSE(!clock_selection_conflict, ESP_ERR_INVALID_ARG, TAG,
+    ESP_RETURN_ON_FALSE(!clock_selection_conflict, ESP_ERR_INVALID_STATE, TAG,
                         "group clock conflict, already is %d but attempt to %d", group->clk_src, clk_src);
-
-    // TODO: [clk_tree] to use a generic clock enable/disable or acquire/release function for all clock source
-#if RMT_LL_SUPPORT(RC_FAST)
-    if (clk_src == RMT_CLK_SRC_RC_FAST) {
-        // RC_FAST clock is not enabled automatically on start up, we enable it here manually.
-        // Note there's a ref count in the enable/disable function, we must call them in pair in the driver.
-        periph_rtc_dig_clk8m_enable();
-    }
-#endif // RMT_LL_SUPPORT(RC_FAST)
 
 #if CONFIG_PM_ENABLE
     // if DMA is not used, we're using CPU to push the data to the RMT FIFO
@@ -239,8 +219,8 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
 #if RMT_LL_GET(CHANNEL_CLK_INDEPENDENT)
     uint32_t periph_src_clk_hz = 0;
     // get clock source frequency
-    ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz),
-                        TAG, "get clock source frequency failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz),
+                      err, TAG, "get clock source frequency failed");
     RMT_CLOCK_SRC_ATOMIC() {
         rmt_ll_set_group_clock_src(group->hal.regs, chan->channel_id, clk_src, 1, 1, 0);
         rmt_ll_enable_group_clock(group->hal.regs, true);
@@ -250,7 +230,7 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
     real_div = (group->resolution_hz + expect_channel_resolution / 2) / expect_channel_resolution;
 #else
     // set division for group clock source, to achieve highest resolution while guaranteeing the channel resolution.
-    ESP_RETURN_ON_ERROR(rmt_set_group_prescale(chan, expect_channel_resolution, &real_div), TAG, "set rmt group prescale failed");
+    ESP_GOTO_ON_ERROR(rmt_set_group_prescale(chan, expect_channel_resolution, &real_div), err, TAG, "set rmt group prescale failed");
 #endif // RMT_LL_GET(CHANNEL_CLK_INDEPENDENT)
 
     if (chan->direction == RMT_CHANNEL_DIRECTION_TX) {
@@ -263,6 +243,10 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
     if (chan->resolution_hz != expect_channel_resolution) {
         ESP_LOGW(TAG, "channel resolution loss, real=%"PRIu32, chan->resolution_hz);
     }
+    return ret;
+
+err:
+    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, false);
     return ret;
 }
 

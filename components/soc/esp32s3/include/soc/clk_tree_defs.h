@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -244,14 +244,14 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of Temperature Sensor
  */
-#define SOC_TEMP_SENSOR_CLKS {SOC_MOD_CLK_TEMP_SENSOR}
+#define SOC_TEMP_SENSOR_CLKS {SOC_MOD_CLK_RC_FAST}
 
 /**
  * @brief Type of Temp Sensor clock source
  */
 typedef enum {
-    TEMPERATURE_SENSOR_CLK_SRC_RC_FAST = SOC_MOD_CLK_TEMP_SENSOR,   /*!< Select RC_FAST as the source clock */
-    TEMPERATURE_SENSOR_CLK_SRC_DEFAULT = SOC_MOD_CLK_TEMP_SENSOR,   /*!< Select RC_FAST as the default choice */
+    TEMPERATURE_SENSOR_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,   /*!< Select RC_FAST as the source clock */
+    TEMPERATURE_SENSOR_CLK_SRC_DEFAULT = SOC_MOD_CLK_RC_FAST,   /*!< Select RC_FAST as the default choice */
 } soc_periph_temperature_sensor_clk_src_t;
 
 ///////////////////////////////////////////////////UART/////////////////////////////////////////////////////////////////

@@ -305,6 +305,7 @@ esp_err_t i2c_new_slave_device(const i2c_slave_config_t *slave_config, i2c_slave
     i2c_ll_set_slave_addr(hal->dev, slave_config->slave_addr, false);
     i2c_ll_set_tout(hal->dev, I2C_LL_MAX_TIMEOUT);
 
+    ESP_GOTO_ON_ERROR(i2c_select_periph_clock(i2c_slave->base, slave_config->clk_source), err, TAG, "select periph clock failed");
     I2C_CLOCK_SRC_ATOMIC() {
         i2c_ll_set_source_clk(hal->dev, slave_config->clk_source);
     }

@@ -133,6 +133,7 @@ struct esp_rgb_panel_t {
     gpio_num_t data_gpio_nums[LCD_LL_GET(RGB_BUS_WIDTH)]; // GPIOs used for data lines, we keep these GPIOs for action like "invert_color"
     uint64_t gpio_reserve_mask; // GPIOs reserved by this panel, used to revoke the GPIO reservation when the panel is deleted
     uint32_t src_clk_hz;   // Peripheral source clock resolution
+    lcd_clock_source_t clk_src; // Peripheral clock source
     esp_lcd_rgb_timing_t timings;   // RGB timing parameters (e.g. pclk, sync pulse, porch width)
     int bounce_pos_px;              // Position in whatever source material is used for the bounce buffer, in pixels
     size_t bb_eof_count;            // record the number we received the DMA EOF event, compare with `expect_eof_count` in the VSYNC_END ISR
@@ -240,6 +241,9 @@ static esp_err_t lcd_rgb_panel_destroy(esp_rgb_panel_t *rgb_panel)
     lcd_ll_stop(rgb_panel->hal.dev);
     LCD_CLOCK_SRC_ATOMIC() {
         lcd_ll_enable_clock(rgb_panel->hal.dev, false);
+    }
+    if (rgb_panel->clk_src) {
+        esp_clk_tree_enable_src(rgb_panel->clk_src, false);
     }
     if (rgb_panel->panel_id >= 0) {
         PERIPH_RCC_RELEASE_ATOMIC(soc_lcd_rgb_signals[rgb_panel->panel_id].module, ref_count) {
@@ -884,10 +888,11 @@ static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *rgb_panel, lcd_
 {
     // get clock source frequency
     uint32_t src_clk_hz = 0;
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), TAG, "clock source enable failed");
+    rgb_panel->clk_src = clk_src;
     ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_clk_hz),
                         TAG, "get clock source frequency failed");
     rgb_panel->src_clk_hz = src_clk_hz;
-    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), TAG, "clock source enable failed");
     LCD_CLOCK_SRC_ATOMIC() {
         lcd_ll_select_clk_src(rgb_panel->hal.dev, clk_src);
     }

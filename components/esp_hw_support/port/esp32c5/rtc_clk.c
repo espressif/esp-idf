@@ -459,7 +459,9 @@ FORCE_IRAM_ATTR void rtc_clk_cpu_set_to_default_config(void)
 #endif
     rtc_clk_cpu_freq_to_xtal(freq_mhz, 1);
 #ifndef BOOTLOADER_BUILD
-    esp_clk_tree_enable_src(old_cpu_clk_src, false);
+    if (old_cpu_clk_src != SOC_MOD_CLK_XTAL) {
+        esp_clk_tree_enable_src(old_cpu_clk_src, false);
+    }
 #endif
     s_cur_pll_freq = 0; // no disable PLL, but set freq to 0 to trigger a PLL calibration after wake-up from sleep
 }

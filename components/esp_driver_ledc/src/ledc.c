@@ -17,7 +17,6 @@
 #include "soc/soc_caps.h"
 #include "hal/ledc_hal.h"
 #include "driver/ledc.h"
-#include "clk_ctrl_os.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/periph_ctrl.h"
 #include "driver/gpio.h"
@@ -174,18 +173,17 @@ static IRAM_ATTR void ledc_ls_channel_update(ledc_mode_t speed_mode, ledc_channe
 //We know that RC_FAST is about 8M/20M, but don't know the actual value. So we need to do a calibration.
 static bool ledc_slow_clk_calibrate(void)
 {
-    if (periph_rtc_dig_clk8m_enable()) {
-        s_ledc_slow_clk_rc_fast_freq = periph_rtc_dig_clk8m_get_freq();
-#if !SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
-        /* Workaround: RC_FAST calibration cannot be performed, we can only use its theoretic freq */
-        ESP_LOGD(LEDC_TAG, "Calibration cannot be performed, approximate RC_FAST_CLK : %"PRIu32" Hz", s_ledc_slow_clk_rc_fast_freq);
-#else
-        ESP_LOGD(LEDC_TAG, "Calibrate RC_FAST_CLK : %"PRIu32" Hz", s_ledc_slow_clk_rc_fast_freq);
-#endif
-        return true;
+    if (esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RC_FAST, ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT, &s_ledc_slow_clk_rc_fast_freq) != ESP_OK) {
+        ESP_LOGE(LEDC_TAG, "Calibrate RC_FAST_CLK failed");
+        return false;
     }
-    ESP_LOGE(LEDC_TAG, "Calibrate RC_FAST_CLK failed");
-    return false;
+#if !SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
+    /* Workaround: RC_FAST calibration cannot be performed, we can only use its theoretic freq */
+    ESP_LOGD(LEDC_TAG, "Calibration cannot be performed, approximate RC_FAST_CLK : %"PRIu32" Hz", s_ledc_slow_clk_rc_fast_freq);
+#else
+    ESP_LOGD(LEDC_TAG, "Calibrate RC_FAST_CLK : %"PRIu32" Hz", s_ledc_slow_clk_rc_fast_freq);
+#endif
+    return true;
 }
 
 static esp_err_t ledc_enable_intr_type(ledc_mode_t speed_mode, ledc_channel_t channel, ledc_intr_type_t type)

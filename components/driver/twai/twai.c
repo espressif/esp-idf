@@ -18,7 +18,6 @@
 #include "esp_check.h"
 #include "esp_heap_caps.h"
 #include "esp_clk_tree.h"
-#include "clk_ctrl_os.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/gpio.h"

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -160,7 +160,6 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
     // initialize HAL layer
     timer_hal_init(&timer->hal, group_id, timer_id);
     // select clock source, set clock resolution
-    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)config->clk_src, true), err, TAG, "clock source enable failed");
     ESP_GOTO_ON_ERROR(gptimer_select_periph_clock(timer, config->clk_src, config->resolution_hz), err, TAG, "set periph clock failed");
     // initialize counter value to zero
     timer_hal_set_counter_value(&timer->hal, 0);
@@ -195,7 +194,6 @@ esp_err_t gptimer_del_timer(gptimer_handle_t timer)
     ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(atomic_load(&timer->fsm) == GPTIMER_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "timer not in init state");
     gptimer_group_t *group = timer->group;
-    gptimer_clock_source_t clk_src = timer->clk_src;
     int group_id = group->group_id;
     int timer_id = timer->timer_id;
     timer_hal_context_t *hal = &timer->hal;
@@ -208,15 +206,6 @@ esp_err_t gptimer_del_timer(gptimer_handle_t timer)
     // recycle memory resource
     ESP_RETURN_ON_ERROR(gptimer_destroy(timer), TAG, "destroy gptimer failed");
 
-    switch (clk_src) {
-#if TIMER_LL_FUNC_CLOCK_SUPPORT_RC_FAST
-    case GPTIMER_CLK_SRC_RC_FAST:
-        periph_rtc_dig_clk8m_disable();
-        break;
-#endif // TIMER_LL_FUNC_CLOCK_SUPPORT_RC_FAST
-    default:
-        break;
-    }
     return ESP_OK;
 }
 

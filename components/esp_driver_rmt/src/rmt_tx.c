@@ -377,9 +377,12 @@ static esp_err_t rmt_del_tx_channel(rmt_channel_handle_t channel)
     rmt_group_t *group = channel->group;
     int group_id = group->group_id;
     int channel_id = channel->channel_id;
+    soc_module_clk_t clk_src = (soc_module_clk_t)group->clk_src;
     ESP_LOGD(TAG, "del tx channel(%d,%d)", group_id, channel_id);
     // recycle memory resource
     ESP_RETURN_ON_ERROR(rmt_tx_destroy(tx_chan), TAG, "destroy tx channel failed");
+    // disable the clock source at last
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(clk_src, false), TAG, "clock source disable failed");
     return ESP_OK;
 }
 

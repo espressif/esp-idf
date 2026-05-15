@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "clk_ctrl_os.h"
+#include "esp_clk_tree.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/sleep_retention.h"
 #include "parlio_priv.h"

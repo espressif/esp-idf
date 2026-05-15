@@ -5,6 +5,7 @@
  */
 
 #include <stdint.h>
+#include <stdatomic.h>
 #include "sdkconfig.h"
 #include "esp_clk_tree.h"
 #include "esp_err.h"
@@ -13,12 +14,12 @@
 #include "soc/clk_tree_defs.h"
 #include "soc/rtc.h"
 #include "soc/reset_reasons.h"
+#include "soc/soc_caps.h"
 #include "hal/clk_gate_ll.h"
 #include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/periph_ctrl.h"
-#include "esp_rom_sys.h"
 
 ESP_LOG_ATTR_TAG(TAG, "esp_clk_tree");
 
@@ -103,8 +104,30 @@ esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_sr
     return ESP_OK;
 }
 
-#define ENUM2ARRAY(clk_src) (clk_src - SOC_MOD_CLK_PLL_F20M)
-static int16_t s_pll_src_cg_ref_cnt[SOC_MOD_CLK_PLL_F240M - SOC_MOD_CLK_PLL_F20M + 1] = { 0 };
+esp_err_t esp_clk_tree_src_set_freq_hz(soc_module_clk_t clk_src, uint32_t expt_freq_value, uint32_t *ret_freq_value)
+{
+    ESP_RETURN_ON_FALSE(clk_src > 0 && clk_src < SOC_MOD_CLK_INVALID, ESP_ERR_INVALID_ARG, TAG, "unknown clk src");
+    ESP_RETURN_ON_FALSE(expt_freq_value > 0, ESP_ERR_INVALID_ARG, TAG, "invalid frequency");
+
+    uint32_t real_freq_value = 0;
+    esp_err_t ret = ESP_OK;
+    switch (clk_src) {
+    case SOC_MOD_CLK_APLL:
+        ret = esp_clk_tree_apll_freq_set(expt_freq_value, &real_freq_value);
+        break;
+    case SOC_MOD_CLK_MPLL:
+        ret = esp_clk_tree_mpll_freq_set(expt_freq_value, &real_freq_value);
+        break;
+    default:
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    if (ret_freq_value) {
+        *ret_freq_value = real_freq_value;
+    }
+    return ret;
+}
+
+static _Atomic int16_t s_pll_src_cg_ref_cnt[SOC_MOD_CLK_INVALID] = { 0 };
 static bool esp_clk_tree_initialized = false;
 
 void esp_clk_tree_initialize(void)
@@ -139,36 +162,67 @@ esp_err_t esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool ena
     return ESP_OK; // TODO: PM-354
 }
 
+#define ENABLE_CLK_GATE(clk_src_en_func, enable) \
+    PERIPH_RCC_ATOMIC() { \
+        clk_src_en_func(enable); \
+    }
+
 esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
 {
-    if (!esp_clk_tree_initialized || (clk_src < SOC_MOD_CLK_PLL_F20M) || (clk_src > SOC_MOD_CLK_PLL_F240M)) {
+    if (clk_src < 1 || clk_src >= SOC_MOD_CLK_INVALID) {
+        // some conditions is legal, e.g. -1 means external clock source
         return ESP_OK;
     }
 
-    PERIPH_RCC_ATOMIC() {
-        if (enable) {
-            s_pll_src_cg_ref_cnt[ENUM2ARRAY(clk_src)]++;
-        }
-        if (s_pll_src_cg_ref_cnt[ENUM2ARRAY(clk_src)] == 1) {
-            switch (clk_src) {
-                case SOC_MOD_CLK_PLL_F20M:  clk_gate_ll_ref_20m_clk_en(enable);  break;
-                case SOC_MOD_CLK_PLL_F25M:  clk_gate_ll_ref_25m_clk_en(enable);  break;
-                case SOC_MOD_CLK_PLL_F50M:  clk_gate_ll_ref_50m_clk_en(enable);  break;
-                case SOC_MOD_CLK_PLL_F80M:  clk_gate_ll_ref_80m_clk_en(enable);  break;
-                case SOC_MOD_CLK_PLL_F120M: clk_gate_ll_ref_120m_clk_en(enable); break;
-                case SOC_MOD_CLK_PLL_F160M: clk_gate_ll_ref_160m_clk_en(enable); break;
-                case SOC_MOD_CLK_PLL_F240M: clk_gate_ll_ref_240m_clk_en(enable); break;
-                default: break;
+    if (!esp_clk_tree_initialized) {
+        return ESP_OK;
+    }
+
+    // these clock sources have their own reference counting
+    switch (clk_src) {
+        case SOC_MOD_CLK_APLL:
+            if (enable) {
+                esp_clk_tree_apll_acquire();
+            } else {
+                esp_clk_tree_apll_release();
             }
-        }
-        if (!enable) {
-            s_pll_src_cg_ref_cnt[ENUM2ARRAY(clk_src)]--;
-        }
-        if (s_pll_src_cg_ref_cnt[ENUM2ARRAY(clk_src)] < 0) {
+            return ESP_OK;
+        case SOC_MOD_CLK_MPLL:
+            if (enable) {
+                return esp_clk_tree_mpll_acquire();
+            } else {
+                esp_clk_tree_mpll_release();
+            }
+            return ESP_OK;
+        default:
+            break;
+    }
+
+    // other clock sources use the global reference counting
+    int16_t prev_ref_cnt = 0;
+    if (enable) {
+        prev_ref_cnt = atomic_fetch_add(&s_pll_src_cg_ref_cnt[clk_src], 1);
+    } else {
+        prev_ref_cnt = atomic_fetch_sub(&s_pll_src_cg_ref_cnt[clk_src], 1);
+        if (prev_ref_cnt <= 0) {
             ESP_EARLY_LOGW(TAG, "soc_module_clk_t %d disabled multiple times!!", clk_src);
-            s_pll_src_cg_ref_cnt[ENUM2ARRAY(clk_src)] = 0;
+            atomic_store(&s_pll_src_cg_ref_cnt[clk_src], 0);
+            return ESP_OK;
         }
     }
+    if ((prev_ref_cnt == 0 && enable) || (prev_ref_cnt == 1 && !enable)) {
+        switch (clk_src) {
+            case SOC_MOD_CLK_RC_FAST:   enable ? rtc_dig_clk8m_enable() : rtc_dig_clk8m_disable(); break;
+            case SOC_MOD_CLK_PLL_F20M:  ENABLE_CLK_GATE(clk_gate_ll_ref_20m_clk_en, enable);  break;
+            case SOC_MOD_CLK_PLL_F25M:  ENABLE_CLK_GATE(clk_gate_ll_ref_25m_clk_en, enable);  break;
+            case SOC_MOD_CLK_PLL_F50M:  ENABLE_CLK_GATE(clk_gate_ll_ref_50m_clk_en, enable);  break;
+            case SOC_MOD_CLK_PLL_F80M:  ENABLE_CLK_GATE(clk_gate_ll_ref_80m_clk_en, enable);  break;
+            case SOC_MOD_CLK_PLL_F120M: ENABLE_CLK_GATE(clk_gate_ll_ref_120m_clk_en, enable); break;
+            case SOC_MOD_CLK_PLL_F160M: ENABLE_CLK_GATE(clk_gate_ll_ref_160m_clk_en, enable); break;
+            case SOC_MOD_CLK_PLL_F240M: ENABLE_CLK_GATE(clk_gate_ll_ref_240m_clk_en, enable); break;
+            default: break;
+        }
+    }
+
     return ESP_OK;
 }
-#undef ENUM2ARRAY
