@@ -47,6 +47,10 @@ config SOC_LCDCAM_SUPPORTED
     bool
     default y
 
+config SOC_LCDCAM_CAM_SUPPORTED
+    bool
+    default y
+
 config SOC_LCDCAM_I80_LCD_SUPPORTED
     bool
     default y
@@ -912,6 +916,10 @@ config SOC_EFUSE_ECDSA_KEY_P384
     default y
 
 config SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
+    bool
+    default y
+
+config SOC_LCDCAM_CAM_SUPPORT_RGB_YUV_CONV
     bool
     default y
 

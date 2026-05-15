@@ -35,7 +35,7 @@
 #define SOC_DMA2D_SUPPORTED             1
 #define SOC_GPTIMER_SUPPORTED           1
 #define SOC_LCDCAM_SUPPORTED            1
-// #define SOC_LCDCAM_CAM_SUPPORTED        1      // TODO: [ESP32S31] IDF-14722
+#define SOC_LCDCAM_CAM_SUPPORTED        1
 #define SOC_LCDCAM_I80_LCD_SUPPORTED    1
 #define SOC_LCDCAM_RGB_LCD_SUPPORTED    1
 #define SOC_LCD_I80_SUPPORTED           1
@@ -365,6 +365,10 @@
 // TODO: [ESP32S31] IDF-14626
 #define SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY    1 /*!< Key manager responsible to deploy ECDSA key */
 // #define SOC_KEY_MANAGER_FE_KEY_DEPLOY       1 /*!< Key manager responsible to deploy Flash Encryption key */
+
+/*--------------------------- CAM ---------------------------------*/
+#define SOC_LCDCAM_CAM_SUPPORT_RGB_YUV_CONV         (1)
+
 /*-------------------------- Secure Boot CAPS----------------------------*/
 // TODO: [ESP32S31] IDF-14629
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3

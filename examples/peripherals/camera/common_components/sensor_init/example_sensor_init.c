@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "sdkconfig.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_err.h"
@@ -36,9 +36,9 @@ void example_sensor_init(example_sensor_config_t *sensor_config, example_sensor_
 
     //---------------SCCB Init------------------//
     esp_cam_sensor_config_t cam_config = {
-        .reset_pin = -1,
-        .pwdn_pin = -1,
-        .xclk_pin = -1,
+        .reset_pin = sensor_config->reset_pin,
+        .pwdn_pin = sensor_config->pwdn_pin,
+        .xclk_pin = sensor_config->xclk_pin,
     };
 
     esp_cam_sensor_device_t *cam = NULL;

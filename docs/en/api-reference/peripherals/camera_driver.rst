@@ -343,6 +343,7 @@ Application Examples
 
 * :example:`peripherals/camera/mipi_isp_dsi` – Demonstrates how to use the ``esp_driver_cam`` component to capture signals from a MIPI CSI camera sensor via the ISP module and display them on an LCD screen via a DSI interface.
 * :example:`peripherals/camera/dvp_isp_dsi` – Demonstrates how to use the ``esp_driver_cam`` component to capture signals from a DVP camera sensor via the ISP module and display them on an LCD screen via a DSI interface.
+* :example:`peripherals/camera/dvp_dsi` – Demonstrates how to use the ``esp_driver_cam`` component to capture DVP camera sensor data and display it on a MIPI DSI LCD.
 
 API Reference
 -------------

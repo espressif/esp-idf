@@ -85,6 +85,9 @@ TEST_CASE("TEST esp_cam on ov5647", "[csi][camera][ov5647]")
         .i2c_port_num  = I2C_NUM_0,
         .i2c_sda_io_num = TEST_MIPI_CSI_CAM_SCCB_SDA_IO,
         .i2c_scl_io_num = TEST_MIPI_CSI_CAM_SCCB_SCL_IO,
+        .reset_pin = -1,
+        .pwdn_pin = -1,
+        .xclk_pin = -1,
         .port          = ESP_CAM_SENSOR_MIPI_CSI,
         .format_name   = TEST_CAM_FORMAT,
     };
