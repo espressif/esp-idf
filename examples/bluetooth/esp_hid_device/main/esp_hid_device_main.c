@@ -38,6 +38,7 @@
 #include "esp_hid_gap.h"
 
 static const char *TAG = "HID_DEV_DEMO";
+#define HID_BATTERY_LEVEL 60
 
 typedef struct
 {
@@ -615,6 +616,10 @@ static void ble_hidd_event_callback(void *handler_args, esp_event_base_t base, i
     }
     case ESP_HIDD_CONNECT_EVENT: {
         ESP_LOGI(TAG, "CONNECT");
+        esp_err_t err = esp_hidd_dev_battery_set(s_ble_hid_param.hid_dev, HID_BATTERY_LEVEL);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to set battery level: %d", err);
+        }
         break;
     }
     case ESP_HIDD_PROTOCOL_MODE_EVENT: {

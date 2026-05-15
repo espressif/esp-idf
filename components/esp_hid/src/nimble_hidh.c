@@ -9,6 +9,7 @@
 #include "esp_hidh_private.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_check.h"
 
 #include "esp_hid_common.h"
 
@@ -17,6 +18,7 @@
 #include "freertos/semphr.h"
 
 #include <assert.h>
+#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include "nimble/nimble_opt.h"
@@ -38,6 +40,7 @@
 
 static const char *TAG = "NIMBLE_HIDH";
 static SemaphoreHandle_t s_ble_hidh_cb_semaphore = NULL;
+static SemaphoreHandle_t s_ble_hidh_op_mutex = NULL;
 
 /* variables used for attribute discovery */
 static int services_discovered;
@@ -55,11 +58,31 @@ static inline void SEND_CB(void)
     xSemaphoreGive(s_ble_hidh_cb_semaphore);
 }
 
+static inline void LOCK_OPS(void)
+{
+    if (s_ble_hidh_op_mutex) {
+        xSemaphoreTakeRecursive(s_ble_hidh_op_mutex, portMAX_DELAY);
+    }
+}
+
+static inline void UNLOCK_OPS(void)
+{
+    if (s_ble_hidh_op_mutex) {
+        xSemaphoreGiveRecursive(s_ble_hidh_op_mutex);
+    }
+}
+
 static esp_event_loop_handle_t event_loop_handle;
-static uint8_t *s_read_data_val = NULL;
-static uint16_t s_read_data_len = 0;
-static int s_read_status = 0;
 static esp_event_handler_t s_event_callback;
+
+struct read_ctx {
+    uint8_t **out_val;
+    uint16_t *out_len;
+    int status;
+    SemaphoreHandle_t sem;
+    uint8_t *data_val;
+    uint16_t data_len;
+};
 
 /**
  * Utility function to log an array of bytes.
@@ -97,66 +120,153 @@ nimble_on_read(uint16_t conn_handle,
                 struct ble_gatt_attr *attr,
                 void *arg)
 {
+    struct read_ctx *ctx = (struct read_ctx *)arg;
     int old_offset;
+    uint16_t chunk_len;
+    uint8_t *tmp;
     MODLOG_DFLT(INFO, "Read complete; status=%d conn_handle=%d", error->status,
                 conn_handle);
-    s_read_status = error->status;
-    switch(s_read_status) {
+    ctx->status = error->status;
+    switch(ctx->status) {
         case 0:
+            if (attr == NULL || attr->om == NULL) {
+                ctx->status = BLE_HS_EINVAL;
+                xSemaphoreGive(ctx->sem);
+                return BLE_HS_EINVAL;
+            }
             MODLOG_DFLT(DEBUG, " attr_handle=%d value=", attr->handle);
-            old_offset = s_read_data_len;
-            s_read_data_len += OS_MBUF_PKTLEN(attr->om);
-            s_read_data_val = realloc(s_read_data_val, s_read_data_len + 1); // 1 extra byte to store null char
-            ble_hs_mbuf_to_flat(attr->om, s_read_data_val + old_offset, OS_MBUF_PKTLEN(attr->om), NULL);
+            old_offset = ctx->data_len;
+            chunk_len = OS_MBUF_PKTLEN(attr->om);
+            tmp = realloc(ctx->data_val, old_offset + chunk_len + 1); // 1 extra byte to store null char
+            if (tmp == NULL) {
+                ctx->status = BLE_HS_ENOMEM;
+                free(ctx->data_val);
+                ctx->data_val = NULL;
+                ctx->data_len = 0;
+                xSemaphoreGive(ctx->sem);
+                return BLE_HS_ENOMEM;
+            }
+            ctx->data_val = tmp;
+            ctx->data_len = old_offset + chunk_len;
+            ble_hs_mbuf_to_flat(attr->om, ctx->data_val + old_offset, chunk_len, NULL);
             print_mbuf(attr->om);
             return 0;
         case BLE_HS_EDONE:
-            s_read_data_val[s_read_data_len] = 0; // to insure strings are ended with \0 */
-            s_read_status = 0;
-            SEND_CB();
+            if (ctx->data_val == NULL) {
+                ctx->data_val = malloc(1);
+                if (ctx->data_val == NULL) {
+                    ctx->status = BLE_HS_ENOMEM;
+                    xSemaphoreGive(ctx->sem);
+                    return BLE_HS_ENOMEM;
+                }
+            }
+            ctx->data_val[ctx->data_len] = 0; // to insure strings are ended with \0 */
+            ctx->status = 0;
+            xSemaphoreGive(ctx->sem);
             return 0;
+        default: {
+            int rc = ctx->status;
+            xSemaphoreGive(ctx->sem);
+            return rc;
+        }
     }
-    return 0;
 }
 
 static int read_char(uint16_t conn_handle, uint16_t handle, uint8_t **out, uint16_t *out_len)
 {
-    s_read_data_val = NULL;
-    s_read_data_len = 0;
+    struct read_ctx ctx;
     int rc;
 
+    if (out) {
+        *out = NULL;
+    }
+    if (out_len) {
+        *out_len = 0;
+    }
+
+    ctx.sem = xSemaphoreCreateBinary();
+    if (ctx.sem == NULL) {
+        return BLE_HS_ENOMEM;
+    }
+    ctx.out_val = out;
+    ctx.out_len = out_len;
+    ctx.status = 0;
+    ctx.data_val = NULL;
+    ctx.data_len = 0;
+
     /* read long because the server may not support the large enough mtu */
-    rc = ble_gattc_read_long(conn_handle, handle, 0, nimble_on_read, NULL);
+    LOCK_OPS();
+    rc = ble_gattc_read_long(conn_handle, handle, 0, nimble_on_read, &ctx);
     if (rc != 0) {
         ESP_LOGE(TAG, "read_char failed");
+        UNLOCK_OPS();
+        vSemaphoreDelete(ctx.sem);
         return rc;
     }
-    WAIT_CB();
-    if (s_read_status == 0) {
-        *out = s_read_data_val;
-        *out_len = s_read_data_len;
+    xSemaphoreTake(ctx.sem, portMAX_DELAY);
+    if (ctx.status == 0) {
+        if (out) {
+            *out = ctx.data_val;
+        } else {
+            free(ctx.data_val);
+        }
+        if (out_len) {
+            *out_len = ctx.data_len;
+        }
+    } else {
+        free(ctx.data_val);
     }
-    return s_read_status;
+    vSemaphoreDelete(ctx.sem);
+    UNLOCK_OPS();
+    return ctx.status;
 }
 
 static int read_descr(uint16_t conn_handle, uint16_t handle, uint8_t **out, uint16_t *out_len)
 {
+    struct read_ctx ctx;
     int rc;
 
-    s_read_data_val = NULL;
-    s_read_data_len = 0;
+    if (out) {
+        *out = NULL;
+    }
+    if (out_len) {
+        *out_len = 0;
+    }
 
-    rc = ble_gattc_read_long(conn_handle, handle, 0, nimble_on_read, NULL);
+    ctx.sem = xSemaphoreCreateBinary();
+    if (ctx.sem == NULL) {
+        return BLE_HS_ENOMEM;
+    }
+    ctx.out_val = out;
+    ctx.out_len = out_len;
+    ctx.status = 0;
+    ctx.data_val = NULL;
+    ctx.data_len = 0;
+
+    LOCK_OPS();
+    rc = ble_gattc_read_long(conn_handle, handle, 0, nimble_on_read, &ctx);
     if (rc != 0) {
         ESP_LOGE(TAG, "read_descr failed");
+        UNLOCK_OPS();
+        vSemaphoreDelete(ctx.sem);
         return rc;
     }
-    WAIT_CB();
-    if (s_read_status == 0) {
-        *out = s_read_data_val;
-        *out_len = s_read_data_len;
+    xSemaphoreTake(ctx.sem, portMAX_DELAY);
+    if (ctx.status == 0) {
+        if (out) {
+            *out = ctx.data_val;
+        } else {
+            free(ctx.data_val);
+        }
+        if (out_len) {
+            *out_len = ctx.data_len;
+        }
+    } else {
+        free(ctx.data_val);
     }
-    return s_read_status;
+    vSemaphoreDelete(ctx.sem);
+    UNLOCK_OPS();
+    return ctx.status;
 }
 
 static int
@@ -463,14 +573,20 @@ static void read_device_services(esp_hidh_dev_t *dev)
                     else {
                         chr_end_handle = service_result[s].end_handle;
                     }
-                    rc = ble_gattc_disc_all_dscs(dev->ble.conn_id, char_result[c].val_handle,
-                                                 chr_end_handle, desc_disced, descr_result);
-                    WAIT_CB();
-                    if(status != 0) {
-                        ESP_LOGE(TAG, "failed to find discriptors for characteristic : %d",c);
-                        assert(status == 0);
+                    // Skip descriptor discovery if range is invalid (start >= end)
+                    if (char_result[c].val_handle >= chr_end_handle) {
+                        dcount = 0;
+                        rc = ESP_OK;
+                    } else {
+                        rc = ble_gattc_disc_all_dscs(dev->ble.conn_id, char_result[c].val_handle,
+                                                     chr_end_handle, desc_disced, descr_result);
+                        WAIT_CB();
+                        if(status != 0) {
+                            ESP_LOGE(TAG, "failed to find discriptors for characteristic : %d",c);
+                            assert(status == 0);
+                        }
+                        dcount = dscs_discovered;
                     }
-                    dcount = dscs_discovered;
                     if (rc == ESP_OK) {
                         for (uint16_t d = 0; d < dcount; d++) {
                             duuid = ble_uuid_u16(&descr_result[d].uuid.u);
@@ -572,12 +688,16 @@ static void register_for_notify(uint16_t conn_handle, uint16_t handle)
     int rc;
     value[0] = 1;
     value[1] = 0;
+    LOCK_OPS();
     rc = ble_gattc_write_flat(conn_handle, handle, value, sizeof value, on_subscribe,(void *)&conn_handle);
     if (rc != 0) {
         ESP_LOGE(TAG, "Error: Failed to subscribe to characteristic; "
                     "rc=%d\n", rc);
+        UNLOCK_OPS();
+        return;
     }
     WAIT_CB();
+    UNLOCK_OPS();
 }
 
 static int
@@ -600,13 +720,22 @@ on_write(uint16_t conn_handle,
 }
 static void write_char_descr(uint16_t conn_id, uint16_t handle, uint16_t value_len, uint8_t *value)
 {
-    ble_gattc_write_flat(conn_id, handle, value, value_len, on_write, &conn_id);
+    int rc;
+    LOCK_OPS();
+    rc = ble_gattc_write_flat(conn_id, handle, value, value_len, on_write, &conn_id);
+    if (rc != 0) {
+        ESP_LOGE(TAG, "Error: Failed to write descriptor; rc=%d\n", rc);
+        UNLOCK_OPS();
+        return;
+    }
     WAIT_CB();
+    UNLOCK_OPS();
 }
 
 static void attach_report_listeners(esp_hidh_dev_t *dev)
 {
     if (dev == NULL) {
+        ESP_LOGE(TAG, "dev is NULL, returning");
         return;
     }
     uint16_t ccc_data = 1;
@@ -614,10 +743,23 @@ static void attach_report_listeners(esp_hidh_dev_t *dev)
 
     //subscribe to battery notifications
     if (dev->ble.battery_handle) {
-        register_for_notify(dev->ble.conn_id, dev->ble.battery_handle);
+        uint8_t *rdata = NULL;
+        uint16_t rlen = 0;
+        
+        if (event_loop_handle &&
+                read_char(dev->ble.conn_id, dev->ble.battery_handle, &rdata, &rlen) == 0 &&
+                rlen >= 1 && rdata != NULL) {
+            esp_hidh_event_data_t p = {0};
+            p.battery.dev = dev;
+            p.battery.level = rdata[0];
+            esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_BATTERY_EVENT,
+                              &p, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
+        }
+        free(rdata);
+
         if (dev->ble.battery_ccc_handle) {
             //Write CCC descr to enable notifications
-            write_char_descr(dev->ble.conn_id, dev->ble.battery_ccc_handle, 2, (uint8_t *)&ccc_data);
+            write_char_descr(dev->ble.conn_id, dev->ble.battery_ccc_handle, sizeof(ccc_data), (uint8_t *)&ccc_data);
         }
     }
 
@@ -839,8 +981,10 @@ static esp_err_t esp_ble_hidh_dev_report_read(esp_hidh_dev_t *dev, size_t map_in
         }
         *value_len = len;
         memcpy(value, v, len);
+        free(v);
         return ESP_OK;
     }
+    free(v);
     ESP_LOGE(TAG, "%s report %d read failed: 0x%x", esp_hid_report_type_str(report_type), report_id, s);
     return ESP_FAIL;
 }
@@ -933,12 +1077,27 @@ esp_err_t esp_ble_hidh_init(const esp_hidh_config_t *config)
     if (ret != ESP_OK) {
         if (event_loop_handle) {
             esp_event_loop_delete(event_loop_handle);
+            event_loop_handle = NULL;
         }
 
         if (s_ble_hidh_cb_semaphore) {
             vSemaphoreDelete(s_ble_hidh_cb_semaphore);
             s_ble_hidh_cb_semaphore = NULL;
         }
+        s_event_callback = NULL;
+        return ret;
+    }
+
+    s_ble_hidh_op_mutex = xSemaphoreCreateRecursiveMutex();
+    if (s_ble_hidh_op_mutex == NULL) {
+        if (event_loop_handle) {
+            esp_event_loop_delete(event_loop_handle);
+            event_loop_handle = NULL;
+        }
+        vSemaphoreDelete(s_ble_hidh_cb_semaphore);
+        s_ble_hidh_cb_semaphore = NULL;
+        s_event_callback = NULL;
+        return ESP_ERR_NO_MEM;
     }
 
     ble_hs_cfg.reset_cb = nimble_host_reset;
@@ -955,6 +1114,11 @@ esp_err_t esp_ble_hidh_deinit(void)
 
     if (event_loop_handle) {
         esp_event_loop_delete(event_loop_handle);
+        event_loop_handle = NULL;
+    }
+    if (s_ble_hidh_op_mutex) {
+        vSemaphoreDelete(s_ble_hidh_op_mutex);
+        s_ble_hidh_op_mutex = NULL;
     }
     vSemaphoreDelete(s_ble_hidh_cb_semaphore);
     s_ble_hidh_cb_semaphore = NULL;
