@@ -179,6 +179,23 @@ esp_err_t sleep_retention_module_free(sleep_retention_module_t module);
    *   - ESP_ERR_INVALID_STATE if the module's retention entries have not been allocated
    */
 esp_err_t sleep_retention_module_attach(sleep_retention_module_t module);
+ /**
+   * @brief Detach a module's sleep retention entries from the PMU REGDMA linked list
+   *
+   * After detachment, PMU REGDMA will no longer execute backup and restore
+   * operations for this module during the SoC system's light sleep. The
+   * retention entries are not freed and can be re-attached later via
+   * sleep_retention_module_attach().
+   *
+   * @param module the module number for the retention context to detach
+   *
+   * @return
+   *   - ESP_OK on success
+   *   - ESP_ERR_INVALID_ARG if the module is not valid or not initialized with attach attribute
+   *   - ESP_ERR_NOT_SUPPORTED if the module does not support detachment
+   *   - ESP_ERR_NOT_ALLOWED if the module state is not allowed
+   *   - ESP_ERR_INVALID_STATE if the module is not currently attached
+   */
 esp_err_t sleep_retention_module_detach(sleep_retention_module_t module);
 
 /**
