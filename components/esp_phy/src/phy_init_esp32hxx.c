@@ -118,6 +118,9 @@ void esp_phy_enable(esp_phy_modem_t modem)
 #if CONFIG_ESP_PHY_ENABLE_VERSION_PRINT
             phy_version_print();
 #endif
+#if CONFIG_ESP_PHY_PLL_TRACK_TEMP_DEBUG
+            phy_track_temp_debug(CONFIG_ESP_PHY_PLL_TRACK_TEMP_DEBUG_FLAG, CONFIG_ESP_PHY_PLL_TRACK_TEMP_DELTA);
+#endif
             s_phy_is_enabled = true;
         } else {
             phy_wakeup_init();
@@ -153,6 +156,7 @@ void esp_phy_disable(esp_phy_modem_t modem)
 #endif
         phy_close_rf();
         phy_xpd_tsens();
+        phy_wait_freq_hw_hop_done();
 #if SOC_MODEM_CLOCK_IS_INDEPENDENT
         modem_clock_module_disable(PERIPH_PHY_MODULE);
 #endif

@@ -60,6 +60,9 @@ entries:
         phy_reg:phy_ant_init (noflash)
         phy_reg:bt_filter_reg (noflash)
         phy_hw_freq:phy_en_hw_set_freq (noflash)
+        phy_api:phy_wait_freq_hw_hop_done (noflash)
+        phy_hw_freq:phy_wait_freq_set_busy (noflash)
+        phy_basic:phy_time_now (noflash)
 
 [mapping:esp_phy_hxx]
 archive: libesp_phy.a
