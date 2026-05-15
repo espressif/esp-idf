@@ -18,13 +18,18 @@
 extern "C" {
 #endif
 
-#define BLE_AUDIO_SVC_SEP_ADD   0   /* Indicate if adding LE Audio services separately */
+/* Defer LE Audio service add from host init to the application
+ * register call (esp_ble_audio_*_register). Lets the firmware keep
+ * unused capabilities built in without exposing their attributes
+ * before the app provides backing state.
+ */
+#define BLE_AUDIO_SVC_DEFERRED_ADD  1
 
 /* Minimum value required by BAP.
  * 64 octets is not enough for running 4 ASEs.
  * Hence use 128 as the default value here.
  */
-#define BLE_AUDIO_ATT_MTU_MIN   128
+#define BLE_AUDIO_ATT_MTU_MIN       128
 
 struct bt_csip_set_member_svc_inst;
 

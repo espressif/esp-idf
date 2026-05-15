@@ -566,12 +566,15 @@ esp_err_t esp_ble_audio_media_proxy_pl_init(void)
         return ESP_FAIL;
     }
 
-#if CONFIG_BT_MCS && BLE_AUDIO_SVC_SEP_ADD
+#if CONFIG_BT_MCS && BLE_AUDIO_SVC_DEFERRED_ADD
     err = bt_le_media_proxy_pl_init();
     if (err) {
+        /* TODO: rollback pl_init_safe once lib exposes an undo API;
+         * retry will hit -EALREADY. Only reachable on GATT alloc failure.
+         */
         return ESP_FAIL;
     }
-#endif /* CONFIG_BT_MCS && BLE_AUDIO_SVC_SEP_ADD */
+#endif /* CONFIG_BT_MCS && BLE_AUDIO_SVC_DEFERRED_ADD */
 
     return ESP_OK;
 }

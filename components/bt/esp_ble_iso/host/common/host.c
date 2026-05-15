@@ -72,10 +72,15 @@ int bt_le_host_init(void)
 
     k_mutex_create(&host_mutex);
 
+    err = bt_le_scan_init();
+    if (err) {
+        goto delete_mutex;
+    }
+
 #if CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT
     err = bt_le_l2cap_init();
     if (err) {
-        goto delete_mutex;
+        goto deinit_scan;
     }
 #endif /* CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT */
 
@@ -96,8 +101,10 @@ deinit_iso:
 deinit_l2cap:
 #if CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT
     bt_le_l2cap_deinit();
-delete_mutex:
+deinit_scan:    /* only reachable when OTS path is compiled in */
 #endif /* CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT */
+    bt_le_scan_deinit();
+delete_mutex:
     k_mutex_delete(&host_mutex);
 
     return err;
@@ -107,11 +114,12 @@ void bt_le_host_deinit(void)
 {
     LOG_DBG("HostDeinit");
 
+    bt_le_iso_task_deinit();
+    bt_le_iso_deinit();
 #if CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT
     bt_le_l2cap_deinit();
 #endif /* CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT */
-    bt_le_iso_deinit();
-    bt_le_iso_task_deinit();
+    bt_le_scan_deinit();
 
     k_mutex_delete(&host_mutex);
 }

@@ -162,8 +162,8 @@ int bt_le_nimble_pacs_attr_handle_set(void)
 {
     struct bt_gatt_service *pacs_svc;
     struct bt_gatt_attr *attr;
-    uint16_t start_handle;
-    uint16_t end_handle;
+    uint16_t start_handle = 0;
+    uint16_t end_handle = 0;
 
     pacs_svc = lib_pacs_svc_get();
     assert(pacs_svc);

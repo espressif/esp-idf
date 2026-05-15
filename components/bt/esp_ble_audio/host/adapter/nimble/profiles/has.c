@@ -110,21 +110,23 @@ int bt_le_nimble_has_attr_handle_set(void)
     uint16_t end_handle = 0;
     int rc;
 
-    has_svc = lib_has_svc_get();
-    assert(has_svc);
-
-    LOG_DBG("[N]HasAttrHdlSet[%u]", has_svc->attr_count);
-    assert(has_svc->attr_count > 0);
-
+    /* App may not register this svc (e.g. CAP Acceptor single mode keeps
+     * unused capability built). Skip rather than fail audio_start.
+     */
     rc = ble_gatts_find_svc(BLE_UUID16_DECLARE(BT_UUID_HAS_VAL), &start_handle);
     if (rc) {
-        LOG_ERR("[N]HasNotFound[%d]", rc);
-        return rc;
+        LOG_DBG("[N]HasNotInit");
+        return 0;
     }
+
+    has_svc = lib_has_svc_get();
+    assert(has_svc);
+    assert(has_svc->attr_count > 0);
 
     end_handle = start_handle + has_svc->attr_count - 1;
 
-    LOG_DBG("[N]Hdl[%u][%u]", start_handle, end_handle);
+    LOG_DBG("[N]HasAttrHdlSet[%u][%u][%u]",
+            start_handle, end_handle, has_svc->attr_count);
 
     for (size_t i = 0; i < has_svc->attr_count; i++) {
         (has_svc->attrs + i)->handle = start_handle + i;

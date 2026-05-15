@@ -552,6 +552,8 @@ esp_err_t esp_ble_iso_chan_send_ts(esp_ble_iso_chan_t *chan,
 #define ESP_BLE_ISO_GAP_EVENT_EXT_SCAN_RECV     BT_LE_GAP_APP_EVENT_EXT_SCAN_RECV
 /*!< ISO GAP Periodic Sync Established event */
 #define ESP_BLE_ISO_GAP_EVENT_PA_SYNC           BT_LE_GAP_APP_EVENT_PA_SYNC
+/*!< ISO GAP Periodic Sync Transfer Received event */
+#define ESP_BLE_ISO_GAP_EVENT_PA_SYNC_PAST      BT_LE_GAP_APP_EVENT_PA_SYNC_PAST
 /*!< ISO GAP Periodic Sync Lost event */
 #define ESP_BLE_ISO_GAP_EVENT_PA_SYNC_LOST      BT_LE_GAP_APP_EVENT_PA_SYNC_LOST
 /*!< ISO GAP Connection Complete event */

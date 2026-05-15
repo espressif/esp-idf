@@ -165,21 +165,22 @@ static const struct ble_gatt_svc_def gatt_svc_gtbs[] =  {
 int bt_le_nimble_gtbs_attr_handle_set(void)
 {
     struct bt_gatt_service *gtbs_svc;
-    uint16_t handle;
+    uint16_t handle = 0;
     int rc;
+
+    /* App may not register this svc (e.g. CAP Acceptor single mode keeps
+     * unused capability built). Skip rather than fail audio_start.
+     */
+    rc = ble_gatts_find_svc(BLE_UUID16_DECLARE(BT_UUID_GTBS_VAL), &handle);
+    if (rc) {
+        LOG_DBG("[N]GtbsNotInit");
+        return 0;
+    }
 
     gtbs_svc = lib_gtbs_svc_get();
     assert(gtbs_svc);
 
-    LOG_DBG("[N]GtbsAttrHdlSet[%u]", gtbs_svc->attr_count);
-
-    rc = ble_gatts_find_svc(BLE_UUID16_DECLARE(BT_UUID_GTBS_VAL), &handle);
-    if (rc) {
-        LOG_ERR("[N]GtbsNotFound[%d]", rc);
-        return rc;
-    }
-
-    LOG_DBG("[N]Hdl[%u]", handle);
+    LOG_DBG("[N]GtbsAttrHdlSet[%u][%u]", handle, gtbs_svc->attr_count);
 
     for (size_t i = 0; i < gtbs_svc->attr_count; i++) {
         (gtbs_svc->attrs + i)->handle = handle + i;

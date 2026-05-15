@@ -56,5 +56,7 @@ void broadcast_scan_recv(esp_ble_audio_gap_app_event_t *event);
 
 void broadcast_pa_synced(esp_ble_audio_gap_app_event_t *event);
 
+void broadcast_pa_sync_failed(esp_ble_audio_gap_app_event_t *event);
+
 void broadcast_pa_lost(esp_ble_audio_gap_app_event_t *event);
 #endif /* CONFIG_EXAMPLE_BROADCAST */

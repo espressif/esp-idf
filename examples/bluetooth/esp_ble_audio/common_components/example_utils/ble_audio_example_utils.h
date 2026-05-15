@@ -21,6 +21,7 @@
 
 #include "host/ble_gap.h"
 #include "host/ble_hs_adv.h"
+#include "host/ble_store.h"
 
 #include "esp_ble_audio_bap_api.h"
 
@@ -52,6 +53,8 @@
 #define EXAMPLE_BYTES_LIST_LE64             BT_BYTES_LIST_LE64
 
 int example_audio_gap_event_cb(struct ble_gap_event *event, void *arg);
+
+void example_audio_security_failed_recover(const char *tag, uint16_t conn_handle, uint8_t status);
 
 void example_print_codec_cfg(const char *tag, const esp_ble_audio_codec_cfg_t *codec_cfg);
 

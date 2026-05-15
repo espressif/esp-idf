@@ -135,6 +135,24 @@ void bt_le_nimble_gap_post_event(void *param)
         qev->pa_sync.adv_ca = ev->periodic_sync.adv_clk_accuracy;
         break;
 
+    case BLE_GAP_EVENT_PERIODIC_TRANSFER:
+    case BLE_GAP_EVENT_PERIODIC_TRANSFER_V2:
+        /* Both events share the same periodic_transfer union field; V2 only
+         * adds PAwR-specific tail fields that this handler does not consume.
+         */
+        qev->type = BT_LE_GAP_APP_PARAM_PA_SYNC_PAST;
+
+        qev->pa_sync_past.status = ev->periodic_transfer.status;
+        qev->pa_sync_past.sync_handle = ev->periodic_transfer.sync_handle;
+        qev->pa_sync_past.addr.type = ev->periodic_transfer.adv_addr.type;
+        memcpy(qev->pa_sync_past.addr.val, ev->periodic_transfer.adv_addr.val, BT_ADDR_SIZE);
+        qev->pa_sync_past.sid = ev->periodic_transfer.sid;
+        qev->pa_sync_past.adv_phy = ev->periodic_transfer.adv_phy;
+        qev->pa_sync_past.per_adv_itvl = ev->periodic_transfer.per_adv_itvl;
+        qev->pa_sync_past.adv_ca = ev->periodic_transfer.adv_clk_accuracy;
+        qev->pa_sync_past.conn_handle = ev->periodic_transfer.conn_handle;
+        break;
+
     case BLE_GAP_EVENT_PERIODIC_SYNC_LOST:
         qev->type = BT_LE_GAP_APP_PARAM_PA_SYNC_LOST;
 

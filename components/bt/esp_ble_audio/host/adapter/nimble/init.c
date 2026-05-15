@@ -168,7 +168,7 @@ int bt_le_nimble_audio_init(void)
     }
 #endif /* CONFIG_BT_PACS */
 
-#if (BLE_AUDIO_SVC_SEP_ADD == 0)
+#if (BLE_AUDIO_SVC_DEFERRED_ADD == 0)
 #if CONFIG_BT_ASCS
     err = bt_le_nimble_ascs_init();
     if (err) {
@@ -203,7 +203,7 @@ int bt_le_nimble_audio_init(void)
         return err;
     }
 #endif /* CONFIG_BT_HAS */
-#endif /* (BLE_AUDIO_SVC_SEP_ADD == 0) */
+#endif /* (BLE_AUDIO_SVC_DEFERRED_ADD == 0) */
 
     return err;
 }
@@ -419,7 +419,7 @@ int bt_le_nimble_audio_start(void *info)
     ARG_UNUSED(inc_csis_svc);
 #endif /* CONFIG_BT_CAP_ACCEPTOR */
 
-#if (BLE_AUDIO_SVC_SEP_ADD == 0)
+#if (BLE_AUDIO_SVC_DEFERRED_ADD == 0)
 #if CONFIG_BT_MCS
     err = bt_le_nimble_media_proxy_pl_init();
     if (err) {
@@ -440,7 +440,7 @@ int bt_le_nimble_audio_start(void *info)
         return err;
     }
 #endif /* CONFIG_BT_MICP_MIC_DEV */
-#endif /* (BLE_AUDIO_SVC_SEP_ADD == 0) */
+#endif /* (BLE_AUDIO_SVC_DEFERRED_ADD == 0) */
 
     err = ble_gatts_start();
     if (err) {

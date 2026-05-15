@@ -58,21 +58,22 @@ static const struct ble_gatt_svc_def gatt_svc_tmas[] = {
 int bt_le_nimble_tmas_attr_handle_set(void)
 {
     struct bt_gatt_service *tmas_svc;
-    uint16_t handle;
+    uint16_t handle = 0;
     int rc;
+
+    /* App may not register this svc (e.g. CAP Acceptor single mode keeps
+     * unused capability built). Skip rather than fail audio_start.
+     */
+    rc = ble_gatts_find_svc(BLE_UUID16_DECLARE(BT_UUID_TMAS_VAL), &handle);
+    if (rc) {
+        LOG_DBG("[N]TmasNotInit");
+        return 0;
+    }
 
     tmas_svc = lib_tmas_svc_get();
     assert(tmas_svc);
 
-    LOG_DBG("[N]TmasAttrHdlSet[%u]", tmas_svc->attr_count);
-
-    rc = ble_gatts_find_svc(BLE_UUID16_DECLARE(BT_UUID_TMAS_VAL), &handle);
-    if (rc) {
-        LOG_ERR("[N]TmasNotFound[%d]", rc);
-        return rc;
-    }
-
-    LOG_DBG("[N]Hdl[%u]", handle);
+    LOG_DBG("[N]TmasAttrHdlSet[%u][%u]", handle, tmas_svc->attr_count);
 
     for (size_t i = 0; i < tmas_svc->attr_count; i++) {
         (tmas_svc->attrs + i)->handle = handle + i;

@@ -25,13 +25,13 @@ esp_err_t esp_ble_audio_bap_unicast_server_register(const esp_ble_audio_bap_unic
         return ESP_FAIL;
     }
 
-#if BLE_AUDIO_SVC_SEP_ADD
+#if BLE_AUDIO_SVC_DEFERRED_ADD
     err = bt_le_ascs_init();
     if (err) {
         bt_bap_unicast_server_unregister_safe();
         return ESP_FAIL;
     }
-#endif /* BLE_AUDIO_SVC_SEP_ADD */
+#endif /* BLE_AUDIO_SVC_DEFERRED_ADD */
 
     return ESP_OK;
 }
@@ -723,13 +723,13 @@ esp_err_t esp_ble_audio_bap_scan_delegator_register(esp_ble_audio_bap_scan_deleg
         return ESP_FAIL;
     }
 
-#if BLE_AUDIO_SVC_SEP_ADD
+#if BLE_AUDIO_SVC_DEFERRED_ADD
     err = bt_le_bass_init();
     if (err) {
         bt_bap_scan_delegator_unregister_safe();
         return ESP_FAIL;
     }
-#endif /* BLE_AUDIO_SVC_SEP_ADD */
+#endif /* BLE_AUDIO_SVC_DEFERRED_ADD */
 
     return ESP_OK;
 }

@@ -318,12 +318,12 @@ esp_err_t esp_ble_audio_tbs_register_bearer(const esp_ble_audio_tbs_register_par
 
     *bearer_index = ret;
 
-#if BLE_AUDIO_SVC_SEP_ADD
+#if BLE_AUDIO_SVC_DEFERRED_ADD
     if (bt_le_gtbs_init()) {
         bt_tbs_unregister_bearer_safe(*bearer_index);
         return ESP_FAIL;
     }
-#endif /* BLE_AUDIO_SVC_SEP_ADD */
+#endif /* BLE_AUDIO_SVC_DEFERRED_ADD */
 
     return ESP_OK;
 }

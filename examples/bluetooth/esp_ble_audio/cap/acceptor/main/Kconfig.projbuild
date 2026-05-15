@@ -4,32 +4,27 @@
 
 menu "Example: CAP Acceptor"
 
-    choice EXAMPLE_CAP_ACCEPTOR_MODE
-        prompt "CAP Acceptor mode"
-        default EXAMPLE_UNICAST
+    config EXAMPLE_UNICAST
+        bool "Unicast"
+        default y
         help
-            Select exactly one CAP acceptor mode.
+            If set, advertise as a Unicast acceptor (ASCS) for unicast audio.
 
-        config EXAMPLE_UNICAST
-            bool "Unicast"
-            help
-                If selected, the sample will start advertising connectable
-                for Broadcast Assistants.
+    config EXAMPLE_BROADCAST
+        bool "Broadcast"
+        default y if !EXAMPLE_UNICAST
+        select BT_NIMBLE_PERIODIC_ADV_SYNC_TRANSFER
+        help
+            If set, advertise as a Broadcast acceptor (BASS Scan Delegator)
+            for syncable broadcast audio. Can coexist with EXAMPLE_UNICAST
+            for a dual-role CAP Acceptor (BAP spec C.2 allows both).
 
-        config EXAMPLE_BROADCAST
-            bool "Broadcast"
-            help
-                If selected, the sample will start advertising syncable
-                audio streams.
-
-    endchoice
-
-    if EXAMPLE_BROADCAST
-        config EXAMPLE_SCAN_SELF
-            bool "Scan for Broadcast Sources without Broadcast Assistant"
-            help
-                If set to true, the sample will start scanning for Broadcast
-                Sources without waiting for a Broadcast Assistant to connect.
-    endif
+    config EXAMPLE_SCAN_SELF
+        bool "Scan for Broadcast Sources without Broadcast Assistant"
+        # !EXAMPLE_UNICAST: dual-role + self-scan coexistence not supported yet.
+        depends on EXAMPLE_BROADCAST && !EXAMPLE_UNICAST
+        help
+            If set, the sample will start scanning for Broadcast Sources
+            without waiting for a Broadcast Assistant to connect.
 
 endmenu

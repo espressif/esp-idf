@@ -1411,7 +1411,10 @@ int bt_le_nimble_gattc_db_auto_disc(uint16_t conn_handle)
 
     adb = gattc_db_find(conn_handle);
     if (adb) {
-        LOG_WRN("[N]GattcDbExist");
+        /* Idempotent: caller's goal (disc running for this conn) is
+         * already true. -EALREADY tells the API layer to map to success.
+         */
+        LOG_DBG("[N]GattcDbExist");
         return -EALREADY;
     }
 

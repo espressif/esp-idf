@@ -74,7 +74,7 @@ static int gatts_access_cb(uint16_t conn_handle, uint16_t attr_handle,
     case BLE_GATT_ACCESS_OP_READ_CHR:
         attr = bt_gatts_find_attr_by_handle(attr_handle);
         if (attr == NULL) {
-            LOG_WRN("[N]RdInvHdl[%u]", attr_handle);
+            LOG_WRN("[N]RdAttrNotFound[%u]", attr_handle);
             return BT_GATT_ERR(BT_ATT_ERR_INVALID_HANDLE);
         }
 
@@ -88,7 +88,7 @@ static int gatts_access_cb(uint16_t conn_handle, uint16_t attr_handle,
 
         rc = attr->read(conn, attr, (void *)&cb, UINT16_MAX, 0);
         if (rc < 0) {
-            LOG_ERR("[N]RdFail[%u][%d]", attr_handle, rc);
+            LOG_DBG("[N]RdGattErr[%u][%d]", attr_handle, rc);
             return BT_GATT_ERR(rc);
         }
 
@@ -97,7 +97,7 @@ static int gatts_access_cb(uint16_t conn_handle, uint16_t attr_handle,
     case BLE_GATT_ACCESS_OP_WRITE_CHR:
         attr = bt_gatts_find_attr_by_handle(attr_handle);
         if (attr == NULL) {
-            LOG_WRN("[N]WrInvHdl[%u]", attr_handle);
+            LOG_WRN("[N]WrAttrNotFound[%u]", attr_handle);
             return BT_GATT_ERR(BT_ATT_ERR_INVALID_HANDLE);
         }
 
@@ -118,7 +118,7 @@ static int gatts_access_cb(uint16_t conn_handle, uint16_t attr_handle,
             LOG_DBG("[N]WrBassControlPoint[%u]", alloc_len);
 
             if (OS_MBUF_PKTLEN(ctx->om) > alloc_len) {
-                LOG_ERR("[N]WrBassCtrlPtTooLong[%u > %u]",
+                LOG_WRN("[N]WrBassCtrlPtTooLong[%u > %u]",
                         OS_MBUF_PKTLEN(ctx->om), alloc_len);
                 return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
             }
@@ -148,7 +148,7 @@ static int gatts_access_cb(uint16_t conn_handle, uint16_t attr_handle,
             data = NULL;
         }
         if (rc < 0) {
-            LOG_ERR("[N]WrFail[%u][%d]", attr_handle, rc);
+            LOG_DBG("[N]WrGattErr[%u][%d]", attr_handle, rc);
             return BT_GATT_ERR(rc);
         }
 

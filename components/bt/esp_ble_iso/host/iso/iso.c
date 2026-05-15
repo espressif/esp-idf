@@ -118,7 +118,12 @@ void hci_iso(struct net_buf *buf)
 
     iso = bt_conn_lookup_handle(iso(buf)->handle, BT_CONN_TYPE_ISO);
     if (iso == NULL) {
-        LOG_ERR("ConnNotFoundForHdl[%u]", iso(buf)->handle);
+        /* Expected during BIG/CIG teardown: the bt_conn is unref'd
+         * synchronously when the host initiates termination, but ISO packets
+         * already queued for the iso task may still arrive here. Drop them
+         * silently.
+         */
+        LOG_INF("IsoRxConnGone[%u]", iso(buf)->handle);
         return;
     }
 
