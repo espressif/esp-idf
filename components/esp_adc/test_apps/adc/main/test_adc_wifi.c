@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,14 +34,12 @@ static const char* TAG = "test_adc_wifi";
 #define ADC2_WIFI_TEST_CHAN0            ADC_CHANNEL_0
 #endif
 
-#define ADC_ERROR_THRES         200
 #define TEST_NUM                8
 
 #define MINUS_UNTIL_ZERO(a, b) ( ((a) > (b)) ? ((a)-(b)): 0)
 #define TIME_REMAIN(start, now, timeout) ((now) >= (start) ? MINUS_UNTIL_ZERO((timeout), (now)-(start)) : -1)
 
 static int read_raw;
-static int target_value;
 static int test_adc_io;
 static bool test_list[TEST_NUM] = {0, 1, 0, 0, 1, 0, 1, 0};
 
@@ -98,7 +96,7 @@ static int event_deinit(void)
     return ESP_OK;
 }
 
-static void s_test_adc_work_when_wifi_on(adc_oneshot_unit_handle_t adc_handle, adc_channel_t channel)
+static void s_test_adc_work_when_wifi_on(adc_oneshot_unit_handle_t adc_handle, adc_unit_t unit_id, adc_channel_t channel, bool level)
 {
     esp_err_t ret = ESP_FAIL;
     int32_t start = xTaskGetTickCount();
@@ -110,8 +108,8 @@ static void s_test_adc_work_when_wifi_on(adc_oneshot_unit_handle_t adc_handle, a
         remain_wait_ms = pdTICKS_TO_MS(TIME_REMAIN(start, now, timeout));
         ret = adc_oneshot_read(adc_handle, channel, &read_raw);
         if (ret == ESP_OK) {
-            printf("When WiFi is ON, ADC read: %d (target_value: %d)\n", read_raw, target_value);
-            TEST_ASSERT_INT_WITHIN(ADC_ERROR_THRES, target_value, read_raw);
+            printf("When WiFi is ON, ADC read: %d\n", read_raw);
+            test_assert_adc_raw(unit_id, channel, level, read_raw, false, true);
             break;
         } else if (ret == ESP_ERR_TIMEOUT) {
             continue;
@@ -170,19 +168,18 @@ __attribute__((unused)) static void adc_work_with_wifi(adc_unit_t unit_id, adc_c
     //-------------ADC TEST Channel Config---------------//
     adc_oneshot_chan_cfg_t config = {
         .bitwidth = ADC_BITWIDTH_DEFAULT,
-        .atten = ADC_ATTEN_DB_12,
+        .atten = TEST_ADC_DRIVER_DEFAULT_ATTEN,
     };
     TEST_ESP_OK(adc_oneshot_config_channel(adc_handle, channel, &config));
 
     for (int i = 0; i < TEST_NUM; i++) {
         /* Tune test ADC channel level */
         test_adc_set_io_level(unit_id, channel, test_list[i]);
-        target_value = test_list[i] ? ADC_TEST_HIGH_VAL : ADC_TEST_LOW_VAL;
 
         /* ADC single read before WIFI start */
         TEST_ESP_OK(adc_oneshot_read(adc_handle, channel, &read_raw));
-        printf("Before WiFi starts, ADC read: %d (target_value: %d)\n", read_raw, target_value);
-        TEST_ASSERT_INT_WITHIN(ADC_ERROR_THRES, target_value, read_raw);
+        printf("Before WiFi starts, ADC read: %d\n", read_raw);
+        test_assert_adc_raw(unit_id, channel, test_list[i], read_raw, false, true);
 
         /* ADC single read when WIFI is on */
         TEST_ESP_OK(esp_wifi_start());
@@ -193,16 +190,16 @@ __attribute__((unused)) static void adc_work_with_wifi(adc_unit_t unit_id, adc_c
             // After SAR ADC2 is released by Wi-Fi, users can use SAR ADC2 normally.
             TEST_ASSERT_EQUAL(ESP_ERR_TIMEOUT, adc_oneshot_read(adc_handle, channel, &read_raw));
         } else {
-            s_test_adc_work_when_wifi_on(adc_handle, channel);
+            s_test_adc_work_when_wifi_on(adc_handle, unit_id, channel, test_list[i]);
         }
 #else
-        s_test_adc_work_when_wifi_on(adc_handle, channel);
+        s_test_adc_work_when_wifi_on(adc_handle, unit_id, channel, test_list[i]);
 #endif
         /* ADC single read after WIFI is off */
         TEST_ESP_OK(esp_wifi_stop());
         TEST_ESP_OK(adc_oneshot_read(adc_handle, channel, &read_raw));
-        printf("After WiFi is OFF, ADC read: %d (target_value: %d)\n\n", read_raw, target_value);
-        TEST_ASSERT_INT_WITHIN(ADC_ERROR_THRES, target_value, read_raw);
+        printf("After WiFi is OFF, ADC read: %d\n\n", read_raw);
+        test_assert_adc_raw(unit_id, channel, test_list[i], read_raw, false, true);
     }
 
     TEST_ESP_OK(adc_oneshot_del_unit(adc_handle));

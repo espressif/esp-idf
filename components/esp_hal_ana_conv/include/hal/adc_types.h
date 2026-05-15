@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -238,6 +238,35 @@ typedef struct {
                                             If (channel > ADC_CHANNEL_MAX), The data is invalid. */
             uint32_t reserved17_31: 15; /*!<Reserved 17-31. */
         } type2;                        /*!<When the configured output format is 12bit. */
+        uint32_t val;                   /*!<Raw data value */
+    };
+} adc_digi_output_data_t;
+
+#elif SOC_IS(ESP32S31)
+/**
+ * @brief ADC digital controller (DMA mode) output data format.
+ *        Used to analyze the acquired ADC (DMA) data.
+ * @note  ESP32-S31: 22-bit result: [16:0]=17-bit unsigned data, [20:17]=channel, bit 21=`unit` (0=SAR1, 1=SAR2).
+ */
+typedef struct {
+    union {
+        struct {
+            uint32_t data:          17; /*!<ADC conversion data. 17-bit field stores the weighted sum of
+                                            17 SAR comparator bits (non-uniform weights), max value 4393.
+                                            +-----+--------+-----+--------+-----+--------+
+                                            | bit | weight | bit | weight | bit | weight |
+                                            +-----+--------+-----+--------+-----+--------+
+                                            | 16  | 2^11   | 10  | 2^6    |  4  | 2^2    |
+                                            | 15  | 2^10   |  9  | 2^5    |  3  | 2      |
+                                            | 14  | 2^9    |  8  | 2^5    |  2  | 2      |
+                                            | 13  | 2^8    |  7  | 2^4    |  1  | 0      |
+                                            | 12  | 2^8    |  6  | 2^3    |  0  | 1      |
+                                            | 11  | 2^7    |  5  | 2^3    |     |        |
+                                            +-----+--------+-----+--------+-----+--------+ */
+            uint32_t channel:       4;  /*!<Channel index within the SAR (maps to HW channel field bit[3:0]). */
+            uint32_t unit:          1;  /*!<ADC unit: 0=SAR1 (ADC1), 1=SAR2 (ADC2). HW channel field bit[4]. */
+            uint32_t reserved22_31: 10; /*!<Reserved. */
+        } type2;                        /*!<When the configured output format is 17bit.*/
         uint32_t val;                   /*!<Raw data value */
     };
 } adc_digi_output_data_t;

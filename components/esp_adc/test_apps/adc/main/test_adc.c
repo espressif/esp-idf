@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,12 +27,10 @@ const __attribute__((unused)) static char *TAG = "TEST_ADC";
 #define ADC1_TEST_CHAN0          ADC_CHANNEL_4
 #define ADC1_TEST_CHAN1          ADC_CHANNEL_5
 #define ADC2_TEST_CHAN0          ADC_CHANNEL_0
-static const char *TAG_CH[2][10] = {{"ADC1_CH4", "ADC1_CH5"}, {"ADC2_CH0"}};
 #else
 #define ADC1_TEST_CHAN0          ADC_CHANNEL_2
 #define ADC1_TEST_CHAN1          ADC_CHANNEL_3
 #define ADC2_TEST_CHAN0          ADC_CHANNEL_0
-static const char *TAG_CH[2][10] = {{"ADC1_CH2", "ADC1_CH3"}, {"ADC2_CH0"}};
 #endif
 
 /*---------------------------------------------------------------
@@ -69,7 +67,7 @@ static void adc_oneshot_init_test(void)
     //-------------ADC1 TEST Channel 0 Config---------------//
     adc_oneshot_chan_cfg_t config = {
         .bitwidth = ADC_BITWIDTH_DEFAULT,
-        .atten = ADC_ATTEN_DB_12,
+        .atten = TEST_ADC_DRIVER_DEFAULT_ATTEN,
     };
     TEST_ESP_OK(adc_oneshot_config_channel(adc1_handle, ADC1_TEST_CHAN0, &config));
 
@@ -86,36 +84,30 @@ static void adc_oneshot_read_test(void)
 {
     test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN0, 0);
     TEST_ESP_OK(adc_oneshot_read(adc1_handle, ADC1_TEST_CHAN0, &adc_raw[0][0]));
-    ESP_LOGI(TAG_CH[0][0], "low  raw  data: %d", adc_raw[0][0]);
-    TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw[0][0]);
+    test_assert_adc_raw(ADC_UNIT_1, ADC1_TEST_CHAN0, false, adc_raw[0][0], false, false);
 
     test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN1, 0);
     TEST_ESP_OK(adc_oneshot_read(adc1_handle, ADC1_TEST_CHAN1, &adc_raw[0][1]));
-    ESP_LOGI(TAG_CH[0][1], "low  raw  data: %d", adc_raw[0][1]);
-    TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw[0][1]);
+    test_assert_adc_raw(ADC_UNIT_1, ADC1_TEST_CHAN1, false, adc_raw[0][1], false, false);
 
 #if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
     test_adc_set_io_level(ADC_UNIT_2, ADC2_TEST_CHAN0, 0);
     TEST_ESP_OK(adc_oneshot_read(adc2_handle, ADC2_TEST_CHAN0, &adc_raw[1][0]));
-    ESP_LOGI(TAG_CH[1][0], "low  raw  data: %d", adc_raw[1][0]);
-    TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw[1][0]);
+    test_assert_adc_raw(ADC_UNIT_2, ADC2_TEST_CHAN0, false, adc_raw[1][0], false, false);
 #endif //#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
 
     test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN0, 1);
     TEST_ESP_OK(adc_oneshot_read(adc1_handle, ADC1_TEST_CHAN0, &adc_raw[0][0]));
-    ESP_LOGI(TAG_CH[0][0], "high raw  data: %d", adc_raw[0][0]);
-    TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw[0][0]);
+    test_assert_adc_raw(ADC_UNIT_1, ADC1_TEST_CHAN0, true, adc_raw[0][0], false, false);
 
     test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN1, 1);
     TEST_ESP_OK(adc_oneshot_read(adc1_handle, ADC1_TEST_CHAN1, &adc_raw[0][1]));
-    ESP_LOGI(TAG_CH[0][1], "high raw  data: %d", adc_raw[0][1]);
-    TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw[0][1]);
+    test_assert_adc_raw(ADC_UNIT_1, ADC1_TEST_CHAN1, true, adc_raw[0][1], false, false);
 
 #if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
     test_adc_set_io_level(ADC_UNIT_2, ADC2_TEST_CHAN0, 1);
     TEST_ESP_OK(adc_oneshot_read(adc2_handle, ADC2_TEST_CHAN0, &adc_raw[1][0]));
-    ESP_LOGI(TAG_CH[1][0], "high raw  data: %d", adc_raw[1][0]);
-    TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw[1][0]);
+    test_assert_adc_raw(ADC_UNIT_2, ADC2_TEST_CHAN0, true, adc_raw[1][0], false, false);
 #endif //#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
 }
 
@@ -147,7 +139,7 @@ TEST_CASE("ADC oneshot stress test that get zero even if convent done", "[adc_on
 
     int test_num = 100;
     adc_channel_t channel = ADC1_TEST_CHAN1;
-    adc_atten_t atten = ADC_ATTEN_DB_12;
+    adc_atten_t atten = TEST_ADC_DRIVER_DEFAULT_ATTEN;
     adc_unit_t unit_id = ADC_UNIT_1;
 
     adc_oneshot_unit_handle_t adc1_handle;
@@ -345,7 +337,7 @@ TEST_CASE("ADC continuous monitor init_deinit", "[adc]")
 
     adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
     for (int i = 0; i < 1; i++) {
-        adc_pattern[i].atten = ADC_ATTEN_DB_12;
+        adc_pattern[i].atten = TEST_ADC_DRIVER_DEFAULT_ATTEN;
         adc_pattern[i].channel = i;
         adc_pattern[i].unit = ADC_UNIT_1;
         adc_pattern[i].bit_width = SOC_ADC_DIGI_MAX_BITWIDTH;
@@ -445,7 +437,7 @@ TEST_CASE("ADC continuous monitor functionary", "[adc]")
 
     adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
     for (int i = 0; i < 2; i++) {
-        adc_pattern[i].atten = ADC_ATTEN_DB_12;
+        adc_pattern[i].atten = TEST_ADC_DRIVER_DEFAULT_ATTEN;
         adc_pattern[i].channel = TEST_ADC_CHANNEL;
         adc_pattern[i].unit = ADC_UNIT_1;
         adc_pattern[i].bit_width = SOC_ADC_DIGI_MAX_BITWIDTH;

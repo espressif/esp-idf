@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,7 +33,12 @@ esp_err_t adc_dma_init(adc_dma_t *adc_dma)
         .flags.isr_cache_safe = true,
 #endif
     };
+#if ADC_LL_DMA_USE_LP_AHB_GDMA
+    ret = gdma_new_lp_ahb_channel(&rx_alloc_config, NULL, &(adc_dma->gdma_chan));
+#else
     ret = gdma_new_ahb_channel(&rx_alloc_config, NULL, &(adc_dma->gdma_chan));
+#endif
+
     if (ret != ESP_OK) {
         return ret;
     }

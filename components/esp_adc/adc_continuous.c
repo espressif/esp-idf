@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -512,6 +512,7 @@ esp_err_t adc_continuous_config(adc_continuous_handle_t handle, const adc_contin
     uint32_t adc1_chan_mask = 0;
     uint32_t adc2_chan_mask = 0;
     for (int i = 0; i < config->pattern_num; i++) {
+        ESP_RETURN_ON_FALSE(config->adc_pattern[i].atten < SOC_ADC_ATTEN_NUM, ESP_ERR_INVALID_ARG, ADC_TAG, "invalid pattern attenuation");
         const adc_digi_pattern_config_t *pat = &config->adc_pattern[i];
         if (pat->unit == ADC_UNIT_1) {
             handle->use_adc1 = 1;

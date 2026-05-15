@@ -697,6 +697,19 @@ typedef enum {
     PCNT_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,       /*!< Select APB as the default choice */
 } soc_periph_pcnt_clk_src_t;
 
+//////////////////////////////////////////////////ADC///////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of ADC
+ */
+#define SOC_ADC_DIGI_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST}
+
+typedef enum {
+    ADC_DIGI_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,   /*!< Select FOSC (internal RC oscillator) as ADC source clock */
+    ADC_DIGI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL as ADC source clock */
+    ADC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,       /*!< Select XTAL as the default clock choice */
+} soc_periph_adc_digi_clk_src_t;
+
 #ifdef __cplusplus
 }
 #endif
