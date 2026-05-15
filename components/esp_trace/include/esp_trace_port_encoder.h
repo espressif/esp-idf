@@ -21,7 +21,13 @@ typedef struct esp_trace_transport esp_trace_transport_t;
 /**
  * @brief Encoder Virtual Table
  *
- * Defines the interface for trace encoders (libraries)
+ * Defines the interface for trace encoders (libraries).
+ *
+ * @warning Runtime callbacks (write, flush, take_lock, give_lock, panic_handler)
+ *          must not call FreeRTOS / IDF APIs that themselves emit trace hooks
+ *          (e.g. vTaskDelay, xQueue*, xSemaphore*) — doing so re-enters the
+ *          tracing path and can deadlock on the encoder lock or crash in ISR
+ *          context.
  */
 typedef struct {
     /**

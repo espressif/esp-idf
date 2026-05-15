@@ -123,8 +123,6 @@ KNOWN_MISSING = {
     'system/gcov',
     'system/gdbstub',
     'system/rt_mqueue',
-    'system/sysview_tracing',
-    'system/sysview_tracing_heap_log',
     'system/ulp/lp_core/build_system',
     'system/ulp/lp_core/build_system/main/ulp',
     'system/ulp/lp_core/debugging/main/ulp',
