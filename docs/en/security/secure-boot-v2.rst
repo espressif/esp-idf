@@ -76,7 +76,6 @@ The Secure Boot process on {IDF_TARGET_NAME} involves the following steps:
 2. When the second stage bootloader loads a particular application image, the application's {IDF_TARGET_SBV2_SCHEME} signature is verified. If the verification is successful, the application image is executed.
 
 
-
 Advantages
 ----------
 
@@ -526,7 +525,6 @@ Restrictions After Secure Boot Is Enabled
 - Please note that enabling Secure Boot or flash encryption disables the USB-OTG USB stack in the ROM, disallowing updates via the serial emulation or Device Firmware Update (DFU) on that port.
 
 - After Secure Boot is enabled, further read-protection of eFuse keys is not possible. This is done to prevent an attacker from read-protecting the eFuse block that contains the Secure Boot public key digest, which could result in immediate denial of service and potentially enable a fault injection attack to bypass the signature verification. For further information on read-protected keys, see the details below.
-
 
 
 Burning read-protected keys
