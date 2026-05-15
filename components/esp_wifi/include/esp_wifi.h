@@ -122,6 +122,7 @@ typedef struct {
     bool                   dump_hesigb_enable;     /**< enable dump sigb field */
     bool                   privacy_enhancements;   /**< WiFi privacy enhancements (enables random mac, seq number, dialogue token number, vendor seq number cnt). Supported on station interface only; softAP may be added in future */
     uint8_t                rmac_auto_reset_int;    /**< Random MAC auto-reset interval in hours (1-24) while not connected */
+    int                    wifi_task_stack_size;    /**< WIFI task stack size */
     int                    magic;                  /**< WiFi init magic number, it should be the last field */
 } wifi_init_config_t;
 
@@ -298,6 +299,24 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
 #define WIFI_ENABLE_OWE_SOFTAP 0
 #endif
 
+#if CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_STA
+#define WIFI_ENABLE_WPA3_OWE_STA (1<<11)
+#else
+#define WIFI_ENABLE_WPA3_OWE_STA 0
+#endif
+
+#if CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_STA || CONFIG_ESP_WIFI_ENABLE_WPA3_SAE
+#define WIFI_TASK_STACK_SIZE_BASE   6144
+#else
+#define WIFI_TASK_STACK_SIZE_BASE   3072
+#endif
+
+#if !WIFI_NANO_FORMAT_ENABLED
+#define WIFI_TASK_STACK_SIZE (WIFI_TASK_STACK_SIZE_BASE + 512)
+#else
+#define WIFI_TASK_STACK_SIZE WIFI_TASK_STACK_SIZE_BASE
+#endif
+
 #define CONFIG_FEATURE_WPA3_SAE_BIT     (1<<0)
 #define CONFIG_FEATURE_CACHE_TX_BUF_BIT (1<<1)
 #define CONFIG_FEATURE_FTM_INITIATOR_BIT (1<<2)
@@ -309,6 +328,7 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
 #define CONFIG_FEATURE_BSS_MAX_IDLE_BIT (1<<8)
 #define CONFIG_FEATURE_WIFI_PASSIVE_HIDDEN_AP_BIT (1<<9)
 #define CONFIG_FEATURE_OWE_SOFTAP_BIT (1<<10)
+#define CONFIG_FEATURE_WPA3_OWE_STA_BIT (1<<11)
 
 /* Set additional WiFi features and capabilities */
 #define WIFI_FEATURE_CAPS (WIFI_ENABLE_WPA3_SAE | \
@@ -321,7 +341,8 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
                            WIFI_ENABLE_ENTERPRISE | \
                            WIFI_ENABLE_BSS_MAX_IDLE | \
                            WIFI_ENABLE_PASSIVE_HIDDEN_AP | \
-                           WIFI_ENABLE_OWE_SOFTAP)
+                           WIFI_ENABLE_OWE_SOFTAP | \
+                           WIFI_ENABLE_WPA3_OWE_STA)
 
 #if CONFIG_ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED
 #define WIFI_PRIVACY_ENHANCEMENTS_ENABLED true
@@ -363,6 +384,7 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
     .dump_hesigb_enable = WIFI_DUMP_HESIGB_ENABLED, \
     .privacy_enhancements = WIFI_PRIVACY_ENHANCEMENTS_ENABLED, \
     .rmac_auto_reset_int = WIFI_RMAC_AUTO_RESET_INTERVAL, \
+    .wifi_task_stack_size = WIFI_TASK_STACK_SIZE, \
     .magic = WIFI_INIT_CONFIG_MAGIC\
 }
 
