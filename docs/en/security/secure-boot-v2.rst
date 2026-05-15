@@ -76,7 +76,6 @@ The Secure Boot process on {IDF_TARGET_NAME} involves the following steps:
 2. When the second stage bootloader loads a particular application image, the application's {IDF_TARGET_SBV2_SCHEME} signature is verified. If the verification is successful, the application image is executed.
 
 
-
 Advantages
 ----------
 
@@ -529,7 +528,6 @@ Restrictions After Secure Boot Is Enabled
 - After Secure Boot is enabled, further read-protection of eFuse keys is not possible. This is done to prevent an attacker from read-protecting the eFuse block that contains the Secure Boot public key digest, which could result in immediate denial of service and potentially enable a fault injection attack to bypass the signature verification. For further information on read-protected keys, see the details below.
 
 
-
 Burning read-protected keys
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -612,7 +610,6 @@ For example, to generate a signing key using the OpenSSL command line:
             openssl ecparam -name secp384r1 -genkey -noout -out my_secure_boot_signing_key.pem
 
 Remember that the strength of the Secure Boot system depends on keeping the signing key private.
-
 
 .. _remote-sign-v2-image:
 
