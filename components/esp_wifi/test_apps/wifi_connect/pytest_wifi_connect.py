@@ -6,7 +6,14 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.two_duts
-@pytest.mark.parametrize('count', [2], indirect=True)
+@pytest.mark.parametrize(
+    'count, config',
+    [
+        (2, 'default'),
+        (2, 'static_tx_buf'),
+    ],
+    indirect=True,
+)
 @idf_parametrize(
     'target',
     # esp32s31: no two_duts runner in CI (rev_default) yet
@@ -23,6 +30,7 @@ def test_wifi_connect_cases(case_tester: CaseTester) -> None:  # type: ignore
     'count, config, baud',
     [
         (2, 'esp32c2_xtal26m', '74880'),
+        (2, 'esp32c2_xtal26m_static_tx_buf', '74880'),
     ],
     indirect=True,
 )
