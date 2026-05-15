@@ -7,7 +7,6 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 @pytest.mark.generic
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15600
 def test_base_mac_address(dut: Dut) -> None:
     def get_hex_r(num_bytes: int) -> str:
         return r', '.join((r'0x([0-9a-f]{1,2})',) * num_bytes)
@@ -45,7 +44,7 @@ def test_base_mac_address(dut: Dut) -> None:
         dut.expect_exact('WIFI_STA MAC: ' + get_expected_mac_string(0, dut.target), timeout=2)
         dut.expect_exact('SoftAP MAC: ' + get_expected_mac_string(1, dut.target))
 
-    if dut.target != 'esp32s2' and dut.target != 'esp32h2':
+    if dut.target != 'esp32s2' and dut.target not in ['esp32h2', 'esp32h4']:
         if sdkconfig.get('ESP_MAC_ADDR_UNIVERSE_BT'):
             dut.expect_exact('BT MAC: ' + get_expected_mac_string(2, dut.target))
         if sdkconfig.get('SOC_WIFI_SUPPORTED') or sdkconfig.get('ESP_MAC_ADDR_UNIVERSE_BT'):
@@ -53,7 +52,7 @@ def test_base_mac_address(dut: Dut) -> None:
         else:
             dut.expect_exact('Ethernet MAC: ' + get_expected_mac_string(0, dut.target))  # for esp32p4
         dut.expect_exact('New Ethernet MAC: ' + get_expected_mac_string(6, dut.target))
-    elif dut.target == 'esp32h2':
+    elif dut.target in ['esp32h2', 'esp32h4']:
         dut.expect_exact('BT MAC: ' + get_expected_mac_string(0, dut.target))
         dut.expect_exact('New Ethernet MAC: ' + get_expected_mac_string(6, dut.target))
 
