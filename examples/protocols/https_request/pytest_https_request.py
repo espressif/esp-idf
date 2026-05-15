@@ -1,13 +1,16 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import http.server
 import logging
 import multiprocessing
 import os
-import socket
 import ssl
-from typing import Callable
+import subprocess
+import tempfile
+import time
+from collections.abc import Callable
 
+import esptool
 import pexpect
 import pytest
 from common_test_methods import get_env_config_variable
@@ -30,14 +33,14 @@ def https_request_handler() -> Callable[..., http.server.BaseHTTPRequestHandler]
                 if not self.wfile.closed:
                     self.wfile.flush()
                     self.wfile.close()
-            except socket.error:
+            except OSError:
                 pass
             self.rfile.close()
 
         def handle(self) -> None:
             try:
                 RangeRequestHandler.handle(self)
-            except socket.error:
+            except OSError:
                 pass
 
         def do_GET(self) -> None:
@@ -59,6 +62,50 @@ def start_https_server(server_file: str, key_file: str, server_ip: str, server_p
     httpd.serve_forever()
 
 
+def write_time_to_nvs(dut: Dut) -> None:
+    """Write current host timestamp to the DUT's NVS partition.
+
+    This eliminates the need for SNTP time synchronization in CI,
+    where NTP servers may be unreachable. The firmware reads the
+    timestamp from NVS key 'storage/timestamp' and uses it to set
+    the system time for TLS certificate validation.
+    """
+    nvs_offset = dut.app.partition_table['nvs']['offset']
+    nvs_size = dut.app.partition_table['nvs']['size']
+
+    csv_file = os.path.join(tempfile.gettempdir(), 'nvs_time.csv')
+    bin_file = os.path.join(tempfile.gettempdir(), 'nvs_time.bin')
+
+    with open(csv_file, 'w') as f:
+        f.write('key,type,encoding,value\n')
+        f.write('storage,namespace,,\n')
+        f.write(f'timestamp,data,i64,{int(time.time())}\n')
+
+    nvs_gen = os.path.join(
+        os.environ['IDF_PATH'],
+        'components',
+        'nvs_flash',
+        'nvs_partition_generator',
+        'nvs_partition_gen.py',
+    )
+    subprocess.check_call(
+        ['python3', nvs_gen, 'generate', csv_file, bin_file, hex(nvs_size)],
+        stdout=subprocess.DEVNULL,
+    )
+
+    with dut.serial.disable_redirect_thread():
+        dut.serial.esp.connect()
+        esptool.main(
+            ['write-flash', '--no-compress', hex(nvs_offset), bin_file],
+            esp=dut.serial.esp,
+        )
+        settings = dut.serial.proc.get_settings()
+        dut.serial.esp.hard_reset()
+        dut.serial.proc.apply_settings(settings)
+
+    logging.info('Wrote host timestamp (%d) to NVS at offset %s', int(time.time()), hex(nvs_offset))
+
+
 @pytest.mark.ethernet
 @pytest.mark.parametrize(
     'config',
@@ -67,15 +114,15 @@ def start_https_server(server_file: str, key_file: str, server_ip: str, server_p
     ],
     indirect=True,
 )
-@pytest.mark.parametrize('erase_nvs', ['y'], indirect=True)
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_protocol_https_request_cli_session_tickets(dut: Dut) -> None:
+    write_time_to_nvs(dut)
     logging.info('Testing for "esp_tls client session tickets"')
 
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'https_request.bin')
     bin_size = os.path.getsize(binary_file)
-    logging.info('https_request_bin_size : {}KB'.format(bin_size // 1024))
+    logging.info(f'https_request_bin_size : {bin_size // 1024}KB')
     # start https server
     server_port = 8070
     server_file = os.path.join(os.path.dirname(__file__), 'main', 'local_server_cert.pem')
@@ -83,13 +130,13 @@ def test_examples_protocol_https_request_cli_session_tickets(dut: Dut) -> None:
     thread1 = multiprocessing.Process(target=start_https_server, args=(server_file, key_file, '0.0.0.0', server_port))
     thread1.daemon = True
     thread1.start()
-    logging.info('The server started on localhost:{}'.format(server_port))
+    logging.info(f'The server started on localhost:{server_port}')
     try:
         # start test
         dut.expect('Loaded app from partition at offset', timeout=30)
         try:
             ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
-            print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
+            print(f'Connected to AP/Ethernet with IP: {ip_address}')
         except pexpect.exceptions.TIMEOUT:
             raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
         host_ip = get_host_ip4_by_dest_ip(ip_address)
@@ -134,14 +181,14 @@ def test_examples_protocol_https_request_cli_session_tickets(dut: Dut) -> None:
     ],
     indirect=True,
 )
-@pytest.mark.parametrize('erase_nvs', ['y'], indirect=True)
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_protocol_https_request_dynamic_buffers_tls1_3(dut: Dut) -> None:
+    write_time_to_nvs(dut)
     # Check for tls 1.3 connection using crt bundle with mbedtls dynamic resource enabled
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'https_request.bin')
     bin_size = os.path.getsize(binary_file)
-    logging.info('https_request_bin_size : {}KB'.format(bin_size // 1024))
+    logging.info(f'https_request_bin_size : {bin_size // 1024}KB')
     # start https server
     server_port = 8070
     server_file = os.path.join(os.path.dirname(__file__), 'main', 'local_server_cert.pem')
@@ -149,13 +196,13 @@ def test_examples_protocol_https_request_dynamic_buffers_tls1_3(dut: Dut) -> Non
     thread1 = multiprocessing.Process(target=start_https_server, args=(server_file, key_file, '0.0.0.0', server_port))
     thread1.daemon = True
     thread1.start()
-    logging.info('The server started on localhost:{}'.format(server_port))
+    logging.info(f'The server started on localhost:{server_port}')
 
     dut.expect('Loaded app from partition at offset', timeout=30)
     try:
         try:
             ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
-            print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
+            print(f'Connected to AP/Ethernet with IP: {ip_address}')
             host_ip = get_host_ip4_by_dest_ip(ip_address)
             dut.expect('Start https_request example', timeout=30)
             print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port)))
@@ -218,19 +265,19 @@ def test_examples_protocol_https_request_dynamic_buffers_tls1_3(dut: Dut) -> Non
     ],
     indirect=True,
 )
-@pytest.mark.parametrize('erase_nvs', ['y'], indirect=True)
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_protocol_https_request_dynamic_buffers(dut: Dut) -> None:
+    write_time_to_nvs(dut)
     # Check for connection using crt bundle with mbedtls dynamic resource enabled
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'https_request.bin')
     bin_size = os.path.getsize(binary_file)
-    logging.info('https_request_bin_size : {}KB'.format(bin_size // 1024))
+    logging.info(f'https_request_bin_size : {bin_size // 1024}KB')
 
     dut.expect('Loaded app from partition at offset', timeout=30)
     try:
         ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
-        print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
+        print(f'Connected to AP/Ethernet with IP: {ip_address}')
     except pexpect.exceptions.TIMEOUT:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
 
@@ -249,7 +296,6 @@ def test_examples_protocol_https_request_dynamic_buffers(dut: Dut) -> None:
 
 
 @pytest.mark.ethernet
-@pytest.mark.parametrize('erase_nvs', ['y'], indirect=True)
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_protocol_https_request(dut: Dut) -> None:
     """
@@ -259,16 +305,17 @@ def test_examples_protocol_https_request(dut: Dut) -> None:
          certificate verification options
       3. send http request
     """
+    write_time_to_nvs(dut)
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'https_request.bin')
     bin_size = os.path.getsize(binary_file)
-    logging.info('https_request_bin_size : {}KB'.format(bin_size // 1024))
+    logging.info(f'https_request_bin_size : {bin_size // 1024}KB')
     logging.info('Starting https_request simple test app')
 
     dut.expect('Loaded app from partition at offset', timeout=30)
     try:
         ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
-        print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
+        print(f'Connected to AP/Ethernet with IP: {ip_address}')
     except pexpect.exceptions.TIMEOUT:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
 
@@ -362,12 +409,12 @@ def test_examples_protocol_https_request_rom_impl(dut: Dut) -> None:
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'https_request.bin')
     bin_size = os.path.getsize(binary_file)
-    logging.info('https_request_bin_size : {}KB'.format(bin_size // 1024))
+    logging.info(f'https_request_bin_size : {bin_size // 1024}KB')
     logging.info('Starting https_request simple test app')
 
     try:
         ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
-        print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
+        print(f'Connected to AP/Ethernet with IP: {ip_address}')
     except pexpect.exceptions.TIMEOUT:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
 
