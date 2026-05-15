@@ -48,7 +48,7 @@ component property
 .. _cmakev2-term-component-source:
 
 component source
-   A location the build system searches for components, each with a precedence. From highest to lowest: ``project_components`` (the project's ``main`` and ``components`` directories), ``project_extra_components`` (directories in ``EXTRA_COMPONENT_DIRS``), ``project_managed_components`` (fetched by the component manager), and ``idf_components`` (bundled with ESP-IDF). A component from a higher-precedence source shadows a same-named component from a lower one. See :doc:`design`.
+   A location the build system searches for components, each with a precedence. From highest to lowest: ``project_components`` (the project's ``main`` and ``components`` directories), ``project_extra_components`` (directories in ``EXTRA_COMPONENT_DIRS``), ``project_managed_components`` (fetched by the component manager), ``idf_managed_components`` (ESP-IDF's own root-managed components, resolved by the component manager), and ``idf_components`` (bundled with ESP-IDF). A component from a higher-precedence source shadows a same-named component from a lower one. See :doc:`design`.
 
 .. _cmakev2-term-configuration:
 

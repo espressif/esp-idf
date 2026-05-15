@@ -25,9 +25,9 @@ function(__init_component_manager)
     endif()
 
     # Set IDF_COMPONENT_MANAGER_INTERFACE_VERSION.
-    # Defaults to 5. Allow overriding via env/CMake.
+    # Defaults to 6. Allow overriding via env/CMake.
     __get_default_value(VARIABLE IDF_COMPONENT_MANAGER_INTERFACE_VERSION
-                        DEFAULT 5
+                        DEFAULT 6
                         OUTPUT cmgr_iface)
     idf_build_set_property(IDF_COMPONENT_MANAGER_INTERFACE_VERSION ${cmgr_iface})
 
@@ -36,6 +36,17 @@ function(__init_component_manager)
                         DEFAULT ""
                         OUTPUT deps_lock_file)
     idf_build_set_property(DEPENDENCIES_LOCK "${deps_lock_file}")
+endfunction()
+
+function(__component_manager_get_command var)
+    idf_build_get_property(python PYTHON)
+    if(DEFINED ENV{IDF_COMPONENT_WRAPPER} AND NOT "$ENV{IDF_COMPONENT_WRAPPER}" STREQUAL "")
+        set(component_manager_cmd
+            "${python}" "$ENV{IDF_COMPONENT_WRAPPER}" "idf_component_manager.prepare_components")
+    else()
+        set(component_manager_cmd "${python}" "-m" "idf_component_manager.prepare_components")
+    endif()
+    set(${var} ${component_manager_cmd} PARENT_SCOPE)
 endfunction()
 
 #[[
@@ -135,14 +146,12 @@ function(__download_managed_component)
         idf_die("RESULT option is required")
     endif()
 
-    idf_build_get_property(python PYTHON)
+    __component_manager_get_command(component_manager_cmd)
     idf_build_get_property(project_dir PROJECT_DIR)
     idf_build_get_property(component_manager_interface_version IDF_COMPONENT_MANAGER_INTERFACE_VERSION)
     idf_build_get_property(dependencies_lock_file DEPENDENCIES_LOCK)
     # Invoke the component manager
-    execute_process(COMMAND ${python}
-        "-m"
-        "idf_component_manager.prepare_components"
+    execute_process(COMMAND ${component_manager_cmd}
         "--project_dir=${project_dir}"
         "--lock_path=${dependencies_lock_file}"
         "--interface_version=${component_manager_interface_version}"
@@ -298,7 +307,6 @@ function(__inject_requirements_for_component_from_manager component_name)
 
     idf_dbg("Injecting requirements for component '${component_name}' from the component manager")
 
-    idf_build_get_property(python PYTHON)
     idf_build_get_property(project_dir PROJECT_DIR)
     idf_build_get_property(build_dir BUILD_DIR)
     idf_build_get_property(dependencies_lock_file DEPENDENCIES_LOCK)
@@ -355,9 +363,8 @@ function(__inject_requirements_for_component_from_manager component_name)
     endif()
 
     # Call component manager to inject requirements
-    execute_process(COMMAND ${python}
-        "-m"
-        "idf_component_manager.prepare_components"
+    __component_manager_get_command(component_manager_cmd)
+    execute_process(COMMAND ${component_manager_cmd}
         "--project_dir=${project_dir}"
         "--lock_path=${dependencies_lock_file}"
         "--interface_version=${component_manager_interface_version}"

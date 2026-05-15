@@ -122,9 +122,10 @@ set(CMAKE_BUILD_EARLY_EXPANSION 1)
 
 # smaller number means lower priority
 set(__TARGETS_IDF_COMPONENTS "")                # 0
-set(__TARGETS_PROJECT_MANAGED_COMPONENTS "")    # 1
-set(__TARGETS_PROJECT_EXTRA_COMPONENTS "")      # 2
-set(__TARGETS_PROJECT_COMPONENTS "")            # 3
+set(__TARGETS_IDF_MANAGED_COMPONENTS "")        # 1
+set(__TARGETS_PROJECT_MANAGED_COMPONENTS "")    # 2
+set(__TARGETS_PROJECT_EXTRA_COMPONENTS "")      # 3
+set(__TARGETS_PROJECT_COMPONENTS "")            # 4
 
 foreach(__component_target ${__component_targets})
     __component_get_property(__component_source ${__component_target} COMPONENT_SOURCE)

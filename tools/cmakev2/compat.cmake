@@ -945,6 +945,7 @@ endmacro()
         Source of the component. One of:
 
         * ``idf_components``
+        * ``idf_managed_components``
         * ``project_managed_components``
         * ``project_extra_components``
         * ``project_components``

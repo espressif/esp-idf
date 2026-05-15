@@ -156,7 +156,7 @@ if(NOT "$ENV{IDF_COMPONENT_MANAGER}" EQUAL "0")
     idf_build_set_property(IDF_COMPONENT_MANAGER 1)
 endif()
 # Set component manager interface version
-idf_build_set_property(__COMPONENT_MANAGER_INTERFACE_VERSION 5)
+idf_build_set_property(__COMPONENT_MANAGER_INTERFACE_VERSION 6)
 
 #
 # Parse and store the VERSION argument provided to the project() command.
