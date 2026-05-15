@@ -26,6 +26,9 @@
 #include "services/hid/ble_svc_hid.h"
 #include "services/dis/ble_svc_dis.h"
 #include "services/sps/ble_svc_sps.h"
+#include <stdatomic.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 #if CONFIG_BT_NIMBLE_HID_SERVICE
 
@@ -41,6 +44,22 @@ static esp_ble_hidd_dev_t *s_dev = NULL;
     Assuming the first instance of the hid service is registered first.
     Increment service index as the hid services get registered */
 static int service_index = -1;
+static SemaphoreHandle_t s_hidd_cb_mutex = NULL;
+static struct ble_gap_event_listener nimble_gap_event_listener;
+
+static inline void hidd_cb_lock(void)
+{
+    if (s_hidd_cb_mutex) {
+        xSemaphoreTake(s_hidd_cb_mutex, portMAX_DELAY);
+    }
+}
+
+static inline void hidd_cb_unlock(void)
+{
+    if (s_hidd_cb_mutex) {
+        xSemaphoreGive(s_hidd_cb_mutex);
+    }
+}
 
 typedef hidd_report_item_t hidd_le_report_item_t;
 
@@ -75,7 +94,12 @@ struct esp_ble_hidd_dev_s {
     uint8_t                     pnp[7]; /* something related to device info service */
     hidd_dev_map_t             *devices;
     uint8_t                     devices_len;
+    atomic_uint_fast32_t        event_loop_ref; /* refcount for in-flight posts */
 };
+
+static void nimble_report_write_cb(uint16_t attr_handle, uint8_t report_type, uint8_t report_id,
+                                   const uint8_t *data, uint16_t len);
+static void nimble_char_write_cb(uint16_t attr_handle, uint16_t char_uuid16, uint8_t value);
 
 // HID Information characteristic value
 static const uint8_t hidInfo[4] = {
@@ -287,8 +311,22 @@ static int ble_hid_free_config(esp_ble_hidd_dev_t *dev)
     return ESP_OK;
 }
 
+static void nimble_hidd_stop_event_ack_handler(void *arg, esp_event_base_t event_base,
+                                               int32_t event_id, void *event_data)
+{
+    (void)event_base;
+    (void)event_id;
+    (void)event_data;
+    SemaphoreHandle_t sem = (SemaphoreHandle_t)arg;
+    if (sem != NULL) {
+        xSemaphoreGive(sem);
+    }
+}
+
 static int nimble_hidd_dev_deinit(void *devp) {
     esp_ble_hidd_dev_t *dev = (esp_ble_hidd_dev_t *)devp;
+    SemaphoreHandle_t stop_event_sem = NULL;
+    esp_err_t reg_rc = ESP_FAIL;
     if (!s_dev) {
         ESP_LOGE(TAG, "HID device profile already uninitialized");
         return ESP_OK;
@@ -298,11 +336,57 @@ static int nimble_hidd_dev_deinit(void *devp) {
         ESP_LOGE(TAG, "Wrong HID device provided");
         return ESP_FAIL;
     }
+    hidd_cb_lock();
+    nimble_hid_stop_gatts(dev);
+    ble_svc_hid_register_report_write_cb(NULL);
+    ble_svc_hid_register_char_write_cb(NULL);
+     /* unregister GAP event listener to prevent callbacks accessing s_dev
+         after we clear it; clear NimBLE host callbacks too for extra safety */
+     ble_gap_event_listener_unregister(&nimble_gap_event_listener);
+     ble_hs_cfg.sync_cb = NULL;
+     ble_hs_cfg.gatts_register_cb = NULL;
     s_dev = NULL;
     service_index = -1; // resetting the value
+    hidd_cb_unlock();
 
-    nimble_hid_stop_gatts(dev);
+    stop_event_sem = xSemaphoreCreateBinary();
+    if (stop_event_sem != NULL) {
+        reg_rc = esp_event_handler_register_with(dev->event_loop_handle, ESP_HIDD_EVENTS,
+                                                 ESP_HIDD_STOP_EVENT,
+                                                 nimble_hidd_stop_event_ack_handler,
+                                                 stop_event_sem);
+    }
+
     esp_event_post_to(dev->event_loop_handle, ESP_HIDD_EVENTS, ESP_HIDD_STOP_EVENT, NULL, 0, portMAX_DELAY);
+
+    if (reg_rc == ESP_OK) {
+        xSemaphoreTake(stop_event_sem, pdMS_TO_TICKS(100));
+        esp_event_handler_unregister_with(dev->event_loop_handle, ESP_HIDD_EVENTS,
+                                          ESP_HIDD_STOP_EVENT, nimble_hidd_stop_event_ack_handler);
+    }
+
+    if (stop_event_sem != NULL) {
+        vSemaphoreDelete(stop_event_sem);
+    }
+
+    /* Wait for any in-flight event posts to complete before deleting the event loop.
+       Callbacks increment event_loop_ref while holding hidd_cb_lock, so once s_dev
+       is set to NULL no new increments will occur. Wait up to 1000ms for refcount
+       to drain to zero to avoid use-after-free; proceed after timeout with a warn. */
+    {
+        int waited_ms = 0;
+        const int max_wait_ms = 1000;
+        while (atomic_load(&dev->event_loop_ref) != 0 && waited_ms < max_wait_ms) {
+            vTaskDelay(pdMS_TO_TICKS(10));
+            waited_ms += 10;
+        }
+        if (atomic_load(&dev->event_loop_ref) != 0) {
+            ESP_LOGW(TAG, "Event loop posts still in flight (%u); leaving resources allocated to avoid UAF",
+                     (unsigned)atomic_load(&dev->event_loop_ref));
+            return ESP_FAIL;
+        }
+    }
+
     ble_hid_free_config(dev);
     free(dev);
     return ESP_OK;
@@ -362,12 +446,163 @@ static hidd_le_report_item_t* find_report_by_usage_and_type(uint8_t usage, uint8
     return NULL;
 }
 
+static hidd_le_report_item_t *find_report_by_handle(uint16_t attr_handle, uint8_t *map_index)
+{
+    for (uint8_t d = 0; d < s_dev->devices_len; d++) {
+        for (uint8_t i = 0; i < s_dev->devices[d].reports_len; i++) {
+            hidd_le_report_item_t *rpt = &s_dev->devices[d].reports[i];
+            if (rpt->handle == attr_handle) {
+                if (map_index) {
+                    *map_index = d;
+                }
+                return rpt;
+            }
+        }
+    }
+    return NULL;
+}
+
+static void nimble_report_write_cb(uint16_t attr_handle, uint8_t report_type, uint8_t report_id,
+                                   const uint8_t *data, uint16_t len)
+{
+    esp_hidd_event_data_t *p_cb_param = NULL;
+    size_t event_data_size;
+    uint8_t map_index = 0;
+    hidd_le_report_item_t *match = NULL;
+    esp_event_loop_handle_t event_loop = NULL;
+    esp_ble_hidd_dev_t *dev_handle = NULL;
+    esp_hidd_dev_t *dev = NULL;
+    uint8_t usage = 0;
+
+    hidd_cb_lock();
+    if (s_dev == NULL || s_dev->event_loop_handle == NULL || data == NULL || len == 0) {
+        hidd_cb_unlock();
+        return;
+    }
+
+    if (report_type != ESP_HID_REPORT_TYPE_OUTPUT && report_type != ESP_HID_REPORT_TYPE_FEATURE) {
+        hidd_cb_unlock();
+        return;
+    }
+
+    match = find_report_by_handle(attr_handle, &map_index);
+    if (match == NULL) {
+        hidd_cb_unlock();
+        return;
+    }
+
+    event_data_size = sizeof(esp_hidd_event_data_t) + len;
+    p_cb_param = (esp_hidd_event_data_t *)calloc(1, event_data_size);
+    if (p_cb_param == NULL) {
+        ESP_LOGE(TAG, "%s malloc event data failed!", __func__);
+        hidd_cb_unlock();
+        return;
+    }
+
+    memcpy(((uint8_t *)p_cb_param) + sizeof(esp_hidd_event_data_t), data, len);
+    /* copy out data we need while holding lock and bump refcount */
+    dev_handle = s_dev;
+    atomic_fetch_add(&dev_handle->event_loop_ref, 1);
+    event_loop = dev_handle->event_loop_handle;
+    dev = dev_handle->dev;
+    usage = match->usage;
+    hidd_cb_unlock();
+
+    if (report_type == ESP_HID_REPORT_TYPE_OUTPUT) {
+        p_cb_param->output.dev = dev;
+        p_cb_param->output.usage = usage;
+        p_cb_param->output.report_id = report_id;
+        p_cb_param->output.length = len;
+        p_cb_param->output.data = (uint8_t *)data; /* fixed by esp_hidd_process_event_data_handler */
+        p_cb_param->output.map_index = map_index;
+        esp_event_post_to(event_loop, ESP_HIDD_EVENTS, ESP_HIDD_OUTPUT_EVENT,
+                          p_cb_param, event_data_size, portMAX_DELAY);
+        atomic_fetch_sub(&dev_handle->event_loop_ref, 1);
+    } else {
+        p_cb_param->feature.dev = dev;
+        p_cb_param->feature.usage = usage;
+        p_cb_param->feature.report_id = report_id;
+        p_cb_param->feature.length = len;
+        p_cb_param->feature.data = (uint8_t *)data; /* fixed by esp_hidd_process_event_data_handler */
+        p_cb_param->feature.map_index = map_index;
+        esp_event_post_to(event_loop, ESP_HIDD_EVENTS, ESP_HIDD_FEATURE_EVENT,
+                          p_cb_param, event_data_size, portMAX_DELAY);
+        atomic_fetch_sub(&dev_handle->event_loop_ref, 1);
+    }
+    free(p_cb_param);
+}
+
+static void nimble_char_write_cb(uint16_t attr_handle, uint16_t char_uuid16, uint8_t value)
+{
+    uint8_t map_index = 0;
+    bool found = false;
+    esp_hidd_event_data_t cb_param = {0};
+    esp_event_loop_handle_t event_loop = NULL;
+    esp_ble_hidd_dev_t *dev_handle = NULL;
+
+    hidd_cb_lock();
+    if (s_dev == NULL || s_dev->event_loop_handle == NULL) {
+        hidd_cb_unlock();
+        return;
+    }
+
+    for (uint8_t d = 0; d < s_dev->devices_len; d++) {
+        if (char_uuid16 == BLE_SVC_HID_CHR_UUID16_PROTOCOL_MODE &&
+                s_dev->devices[d].hid_protocol_handle == attr_handle) {
+            found = true;
+            map_index = d;
+            break;
+        }
+        if (char_uuid16 == BLE_SVC_HID_CHR_UUID16_HID_CTRL_PT &&
+                s_dev->devices[d].hid_control_handle == attr_handle) {
+            found = true;
+            map_index = d;
+            break;
+        }
+    }
+
+    if (!found) {
+        hidd_cb_unlock();
+        return;
+    }
+
+    if (char_uuid16 == BLE_SVC_HID_CHR_UUID16_PROTOCOL_MODE) {
+        s_dev->protocol = value;
+        cb_param.protocol_mode.dev = s_dev->dev;
+        cb_param.protocol_mode.protocol_mode = value;
+        cb_param.protocol_mode.map_index = map_index;
+        /* bump refcount while holding lock */
+        dev_handle = s_dev;
+        atomic_fetch_add(&dev_handle->event_loop_ref, 1);
+        event_loop = dev_handle->event_loop_handle;
+        hidd_cb_unlock();
+        esp_event_post_to(event_loop, ESP_HIDD_EVENTS, ESP_HIDD_PROTOCOL_MODE_EVENT,
+                          &cb_param, sizeof(esp_hidd_event_data_t), portMAX_DELAY);
+        atomic_fetch_sub(&dev_handle->event_loop_ref, 1);
+    } else if (char_uuid16 == BLE_SVC_HID_CHR_UUID16_HID_CTRL_PT) {
+        s_dev->control = value;
+        cb_param.control.dev = s_dev->dev;
+        cb_param.control.control = value;
+        cb_param.control.map_index = map_index;
+        /* bump refcount while holding lock */
+        dev_handle = s_dev;
+        atomic_fetch_add(&dev_handle->event_loop_ref, 1);
+        event_loop = dev_handle->event_loop_handle;
+        hidd_cb_unlock();
+        esp_event_post_to(event_loop, ESP_HIDD_EVENTS, ESP_HIDD_CONTROL_EVENT,
+                  &cb_param, sizeof(esp_hidd_event_data_t), portMAX_DELAY);
+        atomic_fetch_sub(&dev_handle->event_loop_ref, 1);
+    } else {
+        hidd_cb_unlock();
+    }
+}
+
 static int nimble_hidd_dev_input_set(void *devp, size_t index, size_t id, uint8_t *data, size_t length)
 {
     hidd_le_report_item_t *p_rpt;
     esp_ble_hidd_dev_t *dev = (esp_ble_hidd_dev_t *)devp;
     int rc;
-    struct os_mbuf *om;
+    struct os_mbuf *om = NULL;
     if (!dev || s_dev != dev) {
         return ESP_FAIL;
     }
@@ -386,6 +621,7 @@ static int nimble_hidd_dev_input_set(void *devp, size_t index, size_t id, uint8_
     }
     rc = ble_hs_mbuf_to_flat(om, &dev->protocol, sizeof(dev->protocol), NULL);
     if(rc != 0) {
+        os_mbuf_free_chain(om);
         return ESP_FAIL;
     }
     /* free the mbuf */
@@ -413,7 +649,7 @@ static int nimble_hidd_dev_feature_set(void *devp, size_t index, size_t id, uint
     hidd_le_report_item_t *p_rpt;
     esp_ble_hidd_dev_t *dev = (esp_ble_hidd_dev_t *)devp;
     int rc;
-    struct os_mbuf *om;
+    struct os_mbuf *om = NULL;
     if (!dev || s_dev != dev) {
         return ESP_FAIL;
     }
@@ -432,6 +668,7 @@ static int nimble_hidd_dev_feature_set(void *devp, size_t index, size_t id, uint
     }
     rc = ble_hs_mbuf_to_flat(om, &dev->protocol, sizeof(dev->protocol), NULL);
     if(rc != 0) {
+        os_mbuf_free_chain(om);
         return ESP_FAIL;
     }
     /* free the mbuf */
@@ -481,7 +718,7 @@ static void ble_hidd_dev_free(void)
 static int nimble_hid_gap_event(struct ble_gap_event *event, void *arg)
 {
     struct ble_gap_conn_desc desc;
-    struct os_mbuf *om;
+    struct os_mbuf *om = NULL;
     uint8_t data;
     int rc;
 
@@ -504,12 +741,14 @@ static int nimble_hid_gap_event(struct ble_gap_event *event, void *arg)
 
         /* reset the protocol mode value */
         data = ESP_HID_PROTOCOL_MODE_REPORT;
-        om = ble_hs_mbuf_from_flat(&data, 1);
-        if(om == NULL) {
-            ESP_LOGD(TAG, "No memory to allocate mbuf");
-        }
-        /* NOTE : om is freed by stack */
+        /* allocate a fresh mbuf for each device to avoid use-after-free */
         for(int i = 0; i < s_dev->devices_len; i++) {
+            om = ble_hs_mbuf_from_flat(&data, 1);
+            if(om == NULL) {
+                ESP_LOGD(TAG, "No memory to allocate mbuf");
+                continue;
+            }
+            /* NOTE : om is freed by stack in ble_att_svr_write_local */
             rc = ble_att_svr_write_local(s_dev->devices[i].hid_protocol_handle, om);
             if (rc != 0) {
                 ESP_LOGE(TAG, "Write on Protocol Mode Failed: %d", rc);
@@ -540,7 +779,7 @@ static void nimble_gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, voi
 {
     char buf[BLE_UUID_STR_LEN];
     hidd_le_report_item_t *rpt = NULL;
-    struct os_mbuf *om;
+    struct os_mbuf *om = NULL;
     uint16_t uuid16;
     uint16_t report_info;
     uint8_t report_type, report_id;
@@ -642,7 +881,6 @@ void nimble_host_reset(int reason)
     MODLOG_DFLT(ERROR, "Resetting state; reason=%d\n", reason);
 }
 
-static struct ble_gap_event_listener nimble_gap_event_listener;
 esp_err_t esp_ble_hidd_dev_init(esp_hidd_dev_t *dev_p, const esp_hid_device_config_t *config, esp_event_handler_t callback)
 {
     int rc;
@@ -663,6 +901,13 @@ esp_err_t esp_ble_hidd_dev_init(esp_hidd_dev_t *dev_p, const esp_hid_device_conf
     s_dev->protocol = ESP_HID_PROTOCOL_MODE_REPORT;
     s_dev->event_loop_handle = NULL;
     s_dev->dev = dev_p;
+    if (s_hidd_cb_mutex == NULL) {
+        s_hidd_cb_mutex = xSemaphoreCreateMutex();
+        if (s_hidd_cb_mutex == NULL) {
+            ble_hidd_dev_free();
+            return ESP_ERR_NO_MEM;
+        }
+    }
 
     esp_event_loop_args_t event_task_args = {
         .queue_size = 5,
@@ -710,8 +955,20 @@ esp_err_t esp_ble_hidd_dev_init(esp_hidd_dev_t *dev_p, const esp_hid_device_conf
     ble_hs_cfg.reset_cb = nimble_host_reset;
     ble_hs_cfg.sync_cb = nimble_host_synced;
     ble_hs_cfg.gatts_register_cb = nimble_gatt_svr_register_cb;
+    ble_svc_hid_register_report_write_cb(nimble_report_write_cb);
+    ble_svc_hid_register_char_write_cb(nimble_char_write_cb);
     rc = nimble_hid_start_gatts();
     if(rc != ESP_OK) {
+        ble_svc_hid_register_report_write_cb(NULL);
+        ble_svc_hid_register_char_write_cb(NULL);
+        /* Stop any GATT services that were initialized by nimble_hid_start_gatts */
+        nimble_hid_stop_gatts(s_dev);
+        /* Prevent NimBLE host callbacks from running against freed state */
+        ble_hs_cfg.sync_cb = NULL;
+        ble_hs_cfg.gatts_register_cb = NULL;
+        /* reset service index to initial state to avoid stale index on re-init */
+        service_index = -1;
+        ble_hidd_dev_free();
         return rc;
     }
     ble_gap_event_listener_register(&nimble_gap_event_listener,
