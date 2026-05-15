@@ -1223,6 +1223,10 @@ config SOC_PM_TOP_DEPENDS_ON_RTC_PERIPH
     bool
     default y
 
+config SOC_PM_XTALX2_PD_IN_MODEM_STATES
+    bool
+    default y
+
 config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
     bool
     default y

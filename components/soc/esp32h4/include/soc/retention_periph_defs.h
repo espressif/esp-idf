@@ -56,6 +56,7 @@ typedef enum periph_retention_module {
     SLEEP_RETENTION_MODULE_BLE_MAC      = 30,
     SLEEP_RETENTION_MODULE_BT_BB        = 31,
     SLEEP_RETENTION_MODULE_802154_MAC   = 32,
+    SLEEP_RETENTION_MODULE_POWER        = 33,
 
     SLEEP_RETENTION_MODULE_MAX          = SOC_PM_RETENTION_MODULE_NUM - 1
 } periph_retention_module_t;
