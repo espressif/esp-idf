@@ -227,6 +227,20 @@ The `esp_trace` component supports integration of external trace libraries throu
 - **Transport Adapters**: Handle the physical transport layer (e.g., JTAG, UART)
 - **Encoder Adapters**: Handle the trace encoding/formatting (e.g., SystemView, custom formats)
 
+> ⚠️ **Reentrancy constraint for adapter runtime callbacks**
+>
+> Encoder and transport callbacks invoked from the hot path — `write`, `flush` / `flush_nolock`, `read`, `take_lock` / `give_lock`, `panic_handler` — run from inside FreeRTOS trace hooks (and from ISR context for `traceISR_ENTER` / `traceISR_EXIT`). They are also called while the encoder's lock is held.
+>
+> Do **not** call FreeRTOS / IDF APIs that themselves trigger trace hooks from these callbacks. Anything that would emit a `trace*()` macro re-enters the tracing path: it can recurse into your own encoder, deadlock on the encoder's non-recursive spinlock, or call a task-only API from ISR context.
+>
+> Specifically avoid:
+> - Task APIs: `vTaskDelay`, `vTaskSuspend`, `xTaskNotify*`, anything that yields.
+> - Queue / semaphore / mutex APIs: `xQueueSend/Receive`, `xSemaphoreTake/Give`, `xQueueSemaphoreTake`.
+> - Stream / message buffer APIs.
+> - Heap allocations that may take an internal mutex.
+>
+> Safe building blocks for adapter code: lock-free or spinlock-only primitives (e.g. `esp_trace_lock_*`, `esp_trace_rb_*`), low-level peripheral register access, atomic operations, and `esp_rom_*` helpers. Do any heavier work (FreeRTOS APIs, allocations) only at adapter `init()` time, before the trace session is in steady state.
+
 ### Creating a Transport Adapter
 
 Transport adapters provide the physical communication layer for trace data.
@@ -408,4 +422,5 @@ For detailed usage instructions, see:
 Examples demonstrating trace usage can be found in:
 - `examples/system/app_trace_basic/` - Basic application tracing
 - `examples/system/sysview_tracing/` - SystemView tracing example
+- `examples/system/esp_trace/` - Minimal template for integrating an external trace library (encoder + FreeRTOS hooks + vtable lock)
 - `examples/system/sysview_tracing_heap_log/` - SystemView heap and log tracing example

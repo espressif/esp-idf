@@ -557,9 +557,27 @@ Good instructions on how to install, configure, and visualize data in Impulse fr
 
         If you have problems with visualization (no data is shown or strange behaviors of zoom action are observed), you can try to delete current signal hierarchy and double-click on the necessary file or port. Eclipse will ask you to create a new signal hierarchy.
 
+Application Examples
+""""""""""""""""""""
+
+- :example:`system/sysview_tracing` demonstrates how to trace FreeRTOS task and system events using SEGGER SystemView.
+- :example:`system/sysview_tracing_heap_log` demonstrates heap allocation tracing alongside SystemView events.
+
 .. _app_trace-gcov-source-code-coverage:
 
 Gcov (Source Code Coverage)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In ESP-IDF projects, code coverage analysis using gcov can be done with the help of `espressif/esp_gcov <https://components.espressif.com/components/espressif/esp_gcov>`_ managed component.
+
+.. _app_trace-integrating-a-custom-trace-library:
+
+Integrating a Custom Trace Library
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``esp_trace`` component exposes a stable extension point (``CONFIG_ESP_TRACE_LIB_EXTERNAL``) for plugging in a third-party trace recorder without patching ESP-IDF. An external component provides an encoder adapter (registered via ``ESP_TRACE_REGISTER_ENCODER()``) and a slim ``esp_trace_freertos_impl.h`` that injects the desired FreeRTOS trace hooks. The encoder vtable also offers optional ``start`` / ``stop`` / ``flush`` and ``take_lock`` / ``give_lock`` entries dispatched from the public :cpp:func:`esp_trace_start`, :cpp:func:`esp_trace_stop`, :cpp:func:`esp_trace_flush` API.
+
+Application Examples
+""""""""""""""""""""
+
+- :example:`system/esp_trace` is a minimal copy-paste template that wires up an external encoder, demonstrates the FreeRTOS trace-hook include-chain contract, and covers cross-core serialization through the encoder lock.
