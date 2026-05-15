@@ -1153,7 +1153,7 @@ config SOC_TOUCH_MAX_CHAN_ID
 
 config SOC_TOUCH_SUPPORT_SLEEP_WAKEUP
     bool
-    default n
+    default y
 
 config SOC_TOUCH_SUPPORT_BENCHMARK
     bool

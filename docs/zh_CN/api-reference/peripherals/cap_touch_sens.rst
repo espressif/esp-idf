@@ -446,6 +446,12 @@
         // 注册 Deep-sleep 唤醒功能
         ESP_ERROR_CHECK(touch_sensor_config_sleep_wakeup(sens_handle, &deep_slp_cfg));
 
+    .. only:: esp32s31
+
+        .. note::
+
+            ESP32-S31 触摸传感器从 Deep-sleep 唤醒在部分场景下可能失败。增大 :cpp:type:`touch_sensor_config_t` 中的 ``meas_interval_us`` 可缓解该问题。
+
 .. only:: SOC_TOUCH_SUPPORT_DENOISE_CHAN
 
     .. _touch-denoise-chan:

@@ -446,6 +446,12 @@ Call :cpp:func:`touch_channel_read_data` to read the data with different types. 
         // Register the deep sleep wake-up
         ESP_ERROR_CHECK(touch_sensor_config_sleep_wakeup(sens_handle, &deep_slp_cfg));
 
+    .. only:: esp32s31
+
+        .. note::
+
+            ESP32-S31 touch sensor wake-up from deep sleep may fail in some cases. Increasing ``meas_interval_us`` in :cpp:type:`touch_sensor_config_t` can help mitigate this issue.
+
 .. only:: SOC_TOUCH_SUPPORT_DENOISE_CHAN
 
     .. _touch-denoise-chan:
