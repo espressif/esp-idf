@@ -111,6 +111,10 @@ config SOC_TEMP_SENSOR_SUPPORTED
     bool
     default y
 
+config SOC_USB_SERIAL_JTAG_SUPPORTED
+    bool
+    default y
+
 config SOC_ULP_SUPPORTED
     bool
     default y
