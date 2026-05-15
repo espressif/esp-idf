@@ -121,6 +121,20 @@ static void roaming_app_free_tracked_timeout_user_data(void)
     }
 }
 
+static int roaming_app_register_timeout_with_user_data(unsigned int secs, unsigned int usecs,
+                                                       eloop_timeout_handler handler, void *eloop_data,
+                                                       void *user_data)
+{
+    roaming_app_track_timeout_user_data(user_data);
+
+    if (eloop_register_timeout(secs, usecs, handler, eloop_data, user_data) != 0) {
+        roaming_app_untrack_timeout_user_data(user_data);
+        return -1;
+    }
+
+    return 0;
+}
+
 void esp_wifi_roaming_set_current_bssid(const uint8_t *bssid)
 {
     if (bssid) {
@@ -1109,10 +1123,8 @@ void roam_sta_disconnected(void *data)
         return;
     }
     os_memcpy(disconn, data, sizeof(*disconn));
-    if (eloop_register_timeout(0, 0, roaming_app_disconnected_event_handler, NULL, disconn) != 0) {
+    if (roaming_app_register_timeout_with_user_data(0, 0, roaming_app_disconnected_event_handler, NULL, disconn) != 0) {
         os_free(disconn);
-    } else {
-        roaming_app_track_timeout_user_data(disconn);
     }
 }
 
@@ -1301,10 +1313,8 @@ static void roaming_app_neighbor_report_recv_handler(void* arg, esp_event_base_t
     }
     memcpy(event_copy, event, sizeof(wifi_event_neighbor_report_t) + event->report_len);
 
-    if (eloop_register_timeout(0, 0, roaming_app_neighbor_report_recv_internal_handler, NULL, event_copy) != 0) {
+    if (roaming_app_register_timeout_with_user_data(0, 0, roaming_app_neighbor_report_recv_internal_handler, NULL, event_copy) != 0) {
         os_free(event_copy);
-    } else {
-        roaming_app_track_timeout_user_data(event_copy);
     }
 }
 #endif /*PERIODIC_RRM_MONITORING*/
@@ -1362,10 +1372,8 @@ static void roaming_app_rssi_low_handler(void* arg, esp_event_base_t event_base,
     }
     memcpy(event_copy, event, sizeof(wifi_event_bss_rssi_low_t));
 
-    if (eloop_register_timeout(0, 0, roaming_app_rssi_low_internal_handler, NULL, event_copy) != 0) {
+    if (roaming_app_register_timeout_with_user_data(0, 0, roaming_app_rssi_low_internal_handler, NULL, event_copy) != 0) {
         os_free(event_copy);
-    } else {
-        roaming_app_track_timeout_user_data(event_copy);
     }
 }
 #endif
@@ -1483,6 +1491,7 @@ void roaming_app_trigger_roam(struct cand_bss *bss)
     ESP_LOGD(ROAMING_TAG, "Processing trigger roaming request.");
     if (g_roaming_app.pending_roam_bss) {
         eloop_cancel_timeout(roaming_app_trigger_roam_internal_handler, NULL, g_roaming_app.pending_roam_bss);
+        roaming_app_untrack_timeout_user_data(g_roaming_app.pending_roam_bss);
         os_free(g_roaming_app.pending_roam_bss);
         g_roaming_app.pending_roam_bss = NULL;
     }
@@ -1493,8 +1502,8 @@ void roaming_app_trigger_roam(struct cand_bss *bss)
         ESP_LOGD(ROAMING_TAG,
                  "Deferring roam during backoff (elapsed %ld s since anchor), reschedule in %ld s",
                  elapsed_sec, remaining_sec);
-        if (eloop_register_timeout((unsigned int)remaining_sec, 0,
-                                   roaming_app_trigger_roam_internal_handler, NULL, (void *)bss)) {
+        if (roaming_app_register_timeout_with_user_data((unsigned int)remaining_sec, 0,
+                                                        roaming_app_trigger_roam_internal_handler, NULL, (void *)bss)) {
             ESP_LOGE(ROAMING_TAG, "Could not register roaming event.");
             goto free_bss;
         }
@@ -1568,12 +1577,11 @@ static int wifi_post_roam_event(struct cand_bss *bss)
         }
         os_memcpy(cand_bss, bss, sizeof(struct cand_bss));
         /* trigger the roaming event */
-        if (eloop_register_timeout(0, 0, roaming_app_trigger_roam_internal_handler, NULL, (void *)cand_bss)) {
+        if (roaming_app_register_timeout_with_user_data(0, 0, roaming_app_trigger_roam_internal_handler, NULL, (void *)cand_bss)) {
             ESP_LOGE(ROAMING_TAG, "Could not register roaming event.");
             os_free(cand_bss);
             return -1;
         }
-        roaming_app_track_timeout_user_data(cand_bss);
     } else {
         ESP_LOGE(ROAMING_TAG, "Cannot trigger roaming event without any candidate APs");
         return -1;
@@ -2177,6 +2185,7 @@ static void roaming_app_cancel_pending_events(void)
     eloop_cancel_timeout(roaming_app_disconnected_event_handler, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
     eloop_cancel_timeout(roaming_app_trigger_roam_internal_handler, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
     if (g_roaming_app.pending_roam_bss) {
+        roaming_app_untrack_timeout_user_data(g_roaming_app.pending_roam_bss);
         os_free(g_roaming_app.pending_roam_bss);
         g_roaming_app.pending_roam_bss = NULL;
     }
@@ -2280,11 +2289,10 @@ esp_err_t esp_wifi_blacklist_add(const uint8_t *bssid)
         return ESP_ERR_NO_MEM;
     }
     memcpy(bssid_copy, bssid, ETH_ALEN);
-    if (eloop_register_timeout(0, 0, roaming_app_blacklist_add_handler, NULL, bssid_copy) != 0) {
+    if (roaming_app_register_timeout_with_user_data(0, 0, roaming_app_blacklist_add_handler, NULL, bssid_copy) != 0) {
         os_free(bssid_copy);
         return ESP_FAIL;
     }
-    roaming_app_track_timeout_user_data(bssid_copy);
     return ESP_OK;
 }
 
@@ -2331,11 +2339,10 @@ esp_err_t esp_wifi_blacklist_remove(const uint8_t *bssid)
         return ESP_ERR_NO_MEM;
     }
     memcpy(bssid_copy, bssid, ETH_ALEN);
-    if (eloop_register_timeout(0, 0, roaming_app_blacklist_remove_handler, NULL, bssid_copy) != 0) {
+    if (roaming_app_register_timeout_with_user_data(0, 0, roaming_app_blacklist_remove_handler, NULL, bssid_copy) != 0) {
         os_free(bssid_copy);
         return ESP_FAIL;
     }
-    roaming_app_track_timeout_user_data(bssid_copy);
     return ESP_OK;
 }
 #endif
