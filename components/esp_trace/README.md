@@ -33,11 +33,12 @@ end
 %% =======================
 subgraph PRIMARY["🔌 PUBLIC INTERFACE"]
     api["- esp_trace.h 
-    - esp_trace_init()
-    - esp_trace_record()
     - esp_trace_write()
+    - esp_trace_start()
+    - esp_trace_stop()
     - esp_trace_flush()
-    - esp_trace_print()"]
+    - esp_trace_is_host_connected()
+    - esp_trace_get_link_type()"]
 end
 
 %% wiring: App uses API (labels land on the short pre-edges to api_in)
@@ -203,7 +204,7 @@ idf_component_register(
 )
 ```
 
-This means you can directly use both the trace library APIs (e.g., SystemView) and `esp_trace` APIs (like `esp_trace_get_user_params()`, `esp_trace_is_host_connected()`, etc.) without explicitly declaring the dependency.
+This means you can directly use both the trace library APIs (e.g., SystemView) and `esp_trace` APIs (like `esp_trace_get_user_params()`, `esp_trace_is_host_connected()`, `esp_trace_start()` / `esp_trace_stop()` / `esp_trace_flush()`, etc.) without explicitly declaring the dependency.
 
 ### When Using Standalone Apptrace
 
