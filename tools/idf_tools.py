@@ -242,6 +242,7 @@ class Platforms:
         'x86_64-w64-mingw32': PLATFORM_WIN64,
         PLATFORM_WIN_ARM64: PLATFORM_WIN_ARM64,
         'Windows-ARM64': PLATFORM_WIN_ARM64,
+        'aarch64-w64-mingw32': PLATFORM_WIN_ARM64,
         # macOS
         PLATFORM_MACOS: PLATFORM_MACOS,
         'osx': PLATFORM_MACOS,
@@ -269,6 +270,7 @@ class Platforms:
         'Linux-aarch64': PLATFORM_LINUX_ARM64,
         'Linux-armv8l': PLATFORM_LINUX_ARM64,
         'aarch64': PLATFORM_LINUX_ARM64,
+        'aarch64-linux-gnu': PLATFORM_LINUX_ARM64,
         PLATFORM_LINUX_ARMHF: PLATFORM_LINUX_ARMHF,
         'arm-linux-gnueabihf': PLATFORM_LINUX_ARMHF,
         PLATFORM_LINUX_ARM32: PLATFORM_LINUX_ARM32,
