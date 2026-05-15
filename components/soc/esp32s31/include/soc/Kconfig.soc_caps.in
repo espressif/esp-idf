@@ -511,6 +511,10 @@ config SOC_GDMA_SUPPORT_ETM
     bool
     default y
 
+config SOC_GDMA_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
 config SOC_GDMA_EXT_MEM_ENC_ALIGNMENT
     int
     default 16

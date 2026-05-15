@@ -30,7 +30,7 @@ static const uint32_t g0p0_regs_map0[4] = {0x100001, 0xc0000080, 0xc000780c, 0x7
 static const uint32_t g0p0_regs_map1[4] = {0x17, 0x0, 0x0, 0x0};
 static const regdma_entries_config_t gdma_g0p0_regs_retention[] = {
     [0] = {
-        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_AHB_DMA_LINK(0x00), \
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x00), \
                                             G0P0_RETENTION_MAP_BASE_0, G0P0_RETENTION_MAP_BASE_0, \
                                             G0P0_RETENTION_REGS_CNT_0, 0, 0, \
                                             g0p0_regs_map0[0], g0p0_regs_map0[1], \
@@ -38,7 +38,7 @@ static const regdma_entries_config_t gdma_g0p0_regs_retention[] = {
         .owner = GDMA_RETENTION_ENTRY
     }, \
     [1] = {
-        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_AHB_DMA_LINK(0x00), \
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x01), \
                                             G0P0_RETENTION_MAP_BASE_1, G0P0_RETENTION_MAP_BASE_1, \
                                             G0P0_RETENTION_REGS_CNT_1, 0, 0, \
                                             g0p0_regs_map1[0], g0p0_regs_map1[1], \
@@ -75,7 +75,7 @@ static const uint32_t g0p1_regs_map1[4] = {0x1e033, 0x1e033, 0x0, 0x0};
 static const uint32_t g0p1_regs_map2[4] = {0x17, 0x0, 0x0, 0x0};
 static const regdma_entries_config_t gdma_g0p1_regs_retention[] = {
     [0] = {
-        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_AHB_DMA_LINK(0x00), \
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x00), \
                                             G0P1_RETENTION_MAP_BASE_0, G0P1_RETENTION_MAP_BASE_0, \
                                             G0P1_RETENTION_REGS_CNT_0, 0, 0, \
                                             g0p1_regs_map0[0], g0p1_regs_map0[1], \
@@ -83,7 +83,7 @@ static const regdma_entries_config_t gdma_g0p1_regs_retention[] = {
         .owner = GDMA_RETENTION_ENTRY
     }, \
     [1] = {
-        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_AHB_DMA_LINK(0x00), \
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x01), \
                                             G0P1_RETENTION_MAP_BASE_1, G0P1_RETENTION_MAP_BASE_1, \
                                             G0P1_RETENTION_REGS_CNT_1, 0, 0, \
                                             g0p1_regs_map1[0], g0p1_regs_map1[1], \
@@ -91,7 +91,7 @@ static const regdma_entries_config_t gdma_g0p1_regs_retention[] = {
         .owner = GDMA_RETENTION_ENTRY
     }, \
     [2] = {
-        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_AHB_DMA_LINK(0x00), \
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x02), \
                                             G0P1_RETENTION_MAP_BASE_2, G0P1_RETENTION_MAP_BASE_2, \
                                             G0P1_RETENTION_REGS_CNT_2, 0, 0, \
                                             g0p1_regs_map2[0], g0p1_regs_map2[1], \
@@ -127,7 +127,7 @@ static const uint32_t g0p2_regs_map1[4] = {0x1e033, 0x1e033, 0x0, 0x0};
 static const uint32_t g0p2_regs_map2[4] = {0x17, 0x0, 0x0, 0x0};
 static const regdma_entries_config_t gdma_g0p2_regs_retention[] = {
     [0] = {
-        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_AHB_DMA_LINK(0x00), \
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x00), \
                                             G0P2_RETENTION_MAP_BASE_0, G0P2_RETENTION_MAP_BASE_0, \
                                             G0P2_RETENTION_REGS_CNT_0, 0, 0, \
                                             g0p2_regs_map0[0], g0p2_regs_map0[1], \
@@ -135,7 +135,7 @@ static const regdma_entries_config_t gdma_g0p2_regs_retention[] = {
         .owner = GDMA_RETENTION_ENTRY
     }, \
     [1] = {
-        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_AHB_DMA_LINK(0x00), \
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x01), \
                                             G0P2_RETENTION_MAP_BASE_1, G0P2_RETENTION_MAP_BASE_1, \
                                             G0P2_RETENTION_REGS_CNT_1, 0, 0, \
                                             g0p2_regs_map1[0], g0p2_regs_map1[1], \
@@ -143,7 +143,7 @@ static const regdma_entries_config_t gdma_g0p2_regs_retention[] = {
         .owner = GDMA_RETENTION_ENTRY
     }, \
     [2] = {
-        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_AHB_DMA_LINK(0x00), \
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x02), \
                                             G0P2_RETENTION_MAP_BASE_2, G0P2_RETENTION_MAP_BASE_2, \
                                             G0P2_RETENTION_REGS_CNT_2, 0, 0, \
                                             g0p2_regs_map2[0], g0p2_regs_map2[1], \
@@ -179,7 +179,7 @@ static const uint32_t g0p3_regs_map1[4] = {0x1e033, 0x1e033, 0x0, 0x0};
 static const uint32_t g0p3_regs_map2[4] = {0x17, 0x0, 0x0, 0x0};
 static const regdma_entries_config_t gdma_g0p3_regs_retention[] = {
     [0] = {
-        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_AHB_DMA_LINK(0x00), \
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x00), \
                                             G0P3_RETENTION_MAP_BASE_0, G0P3_RETENTION_MAP_BASE_0, \
                                             G0P3_RETENTION_REGS_CNT_0, 0, 0, \
                                             g0p3_regs_map0[0], g0p3_regs_map0[1], \
@@ -187,7 +187,7 @@ static const regdma_entries_config_t gdma_g0p3_regs_retention[] = {
         .owner = GDMA_RETENTION_ENTRY
     }, \
     [1] = {
-        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_AHB_DMA_LINK(0x00), \
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x01), \
                                             G0P3_RETENTION_MAP_BASE_1, G0P3_RETENTION_MAP_BASE_1, \
                                             G0P3_RETENTION_REGS_CNT_1, 0, 0, \
                                             g0p3_regs_map1[0], g0p3_regs_map1[1], \
@@ -195,7 +195,7 @@ static const regdma_entries_config_t gdma_g0p3_regs_retention[] = {
         .owner = GDMA_RETENTION_ENTRY
     }, \
     [2] = {
-        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_AHB_DMA_LINK(0x00), \
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x02), \
                                             G0P3_RETENTION_MAP_BASE_2, G0P3_RETENTION_MAP_BASE_2, \
                                             G0P3_RETENTION_REGS_CNT_2, 0, 0, \
                                             g0p3_regs_map2[0], g0p3_regs_map2[1], \
@@ -227,7 +227,7 @@ static const uint32_t g0p4_regs_map0[4] = {0x900001, 0x0, 0x0, 0x0};
 static const uint32_t g0p4_regs_map1[4] = {0x1e033, 0x1e033, 0x17, 0x0};
 static const regdma_entries_config_t gdma_g0p4_regs_retention[] = {
     [0] = {
-        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_AHB_DMA_LINK(0x00), \
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x00), \
                                             G0P4_RETENTION_MAP_BASE_0, G0P4_RETENTION_MAP_BASE_0, \
                                             G0P4_RETENTION_REGS_CNT_0, 0, 0, \
                                             g0p4_regs_map0[0], g0p4_regs_map0[1], \
@@ -235,7 +235,7 @@ static const regdma_entries_config_t gdma_g0p4_regs_retention[] = {
         .owner = GDMA_RETENTION_ENTRY
     }, \
     [1] = {
-        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_AHB_DMA_LINK(0x00), \
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x01), \
                                             G0P4_RETENTION_MAP_BASE_1, G0P4_RETENTION_MAP_BASE_1, \
                                             G0P4_RETENTION_REGS_CNT_1, 0, 0, \
                                             g0p4_regs_map1[0], g0p4_regs_map1[1], \
