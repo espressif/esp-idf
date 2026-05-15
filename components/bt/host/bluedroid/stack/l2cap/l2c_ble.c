@@ -377,9 +377,9 @@ void l2cble_scanner_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE type,
     p_lcb->ble_addr_type = type;
 
     /* If there are any preferred connection parameters, set them now */
-    if ( (p_dev_rec->conn_params.min_conn_int     >= BTM_BLE_CONN_INT_MIN ) &&
+    if ( (p_dev_rec->conn_params.min_conn_int     >= BLE_CONN_INT_MIN_HOST_CHECK ) &&
             (p_dev_rec->conn_params.min_conn_int     <= BTM_BLE_CONN_INT_MAX ) &&
-            (p_dev_rec->conn_params.max_conn_int     >= BTM_BLE_CONN_INT_MIN ) &&
+            (p_dev_rec->conn_params.max_conn_int     >= BLE_CONN_INT_MIN_HOST_CHECK ) &&
             (p_dev_rec->conn_params.max_conn_int     <= BTM_BLE_CONN_INT_MAX ) &&
             (p_dev_rec->conn_params.slave_latency    <= BTM_BLE_CONN_LATENCY_MAX ) &&
             (p_dev_rec->conn_params.supervision_tout >= BTM_BLE_CONN_SUP_TOUT_MIN) &&
@@ -762,8 +762,8 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         STREAM_TO_UINT16 (timeout, p);  /* 0x000A - 0x0C80 */
         /* If we are a master, the slave wants to update the parameters */
         if (p_lcb->link_role == HCI_ROLE_MASTER) {
-            if (min_interval < BTM_BLE_CONN_INT_MIN || min_interval > BTM_BLE_CONN_INT_MAX ||
-                    max_interval < BTM_BLE_CONN_INT_MIN || max_interval > BTM_BLE_CONN_INT_MAX ||
+            if (min_interval < BLE_CONN_INT_MIN_HOST_CHECK || min_interval > BTM_BLE_CONN_INT_MAX ||
+                    max_interval < BLE_CONN_INT_MIN_HOST_CHECK || max_interval > BTM_BLE_CONN_INT_MAX ||
                     latency  > BTM_BLE_CONN_LATENCY_MAX ||
                     timeout < BTM_BLE_CONN_SUP_TOUT_MIN || timeout > BTM_BLE_CONN_SUP_TOUT_MAX ||
                     /* The supervision_timeout parameter defines the link supervision timeout for the connection.
