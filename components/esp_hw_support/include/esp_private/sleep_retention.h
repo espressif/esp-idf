@@ -161,6 +161,23 @@ esp_err_t sleep_retention_module_allocate(sleep_retention_module_t module);
  */
 esp_err_t sleep_retention_module_free(sleep_retention_module_t module);
 
+/**
+   * @brief Attach a module's sleep retention entries to the PMU REGDMA linked list
+   *
+   * After attachment, PMU REGDMA will execute backup and restore operations for
+   * this module during the SoC system's light sleep. The module must have been
+   * initialized with SLEEP_RETENTION_MODULE_ATTR_ATTACH attribute and its
+   * retention entries must have been allocated before calling this function.
+   *
+   * @param module the module number for the retention context to attach
+   *
+   * @return
+   *   - ESP_OK on success
+   *   - ESP_ERR_INVALID_ARG if the module is not valid or not initialized with attach attribute
+   *   - ESP_ERR_NOT_SUPPORTED if the module does not support attachment
+   *   - ESP_ERR_NOT_ALLOWED if the module state is not allowed
+   *   - ESP_ERR_INVALID_STATE if the module's retention entries have not been allocated
+   */
 esp_err_t sleep_retention_module_attach(sleep_retention_module_t module);
 esp_err_t sleep_retention_module_detach(sleep_retention_module_t module);
 
