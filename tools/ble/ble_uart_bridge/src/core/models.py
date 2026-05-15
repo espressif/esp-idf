@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
+from dataclasses import dataclass
 from enum import Enum
 
 from .constants import NUS_RX_CHAR_UUID
@@ -15,12 +16,14 @@ class ConnectionState(str, Enum):
     CONNECTED = 'CONNECTED'
 
 
+@dataclass(frozen=True)
 class DeviceInfo:
     device_id: str
     name: str | None
     rssi: int | None
 
 
+@dataclass(frozen=True)
 class BLEUARTProfile:
     service_uuid: str = NUS_SERVICE_UUID
     rx_char_uuid: str = NUS_RX_CHAR_UUID
