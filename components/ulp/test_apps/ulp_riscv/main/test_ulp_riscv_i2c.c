@@ -5,6 +5,9 @@
  */
 
 #include <string.h>
+#include <inttypes.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
 #include "ulp_riscv.h"
 #include "ulp_riscv_i2c.h"
 #include "ulp_test_app_i2c.h"
@@ -12,7 +15,9 @@
 #include "unity.h"
 #include "test_utils.h"
 #include "esp_log.h"
-#include "driver/i2c.h"
+#include "driver/i2c_slave.h"
+#include "hal/i2c_ll.h"
+#include "soc/i2c_struct.h"
 
 #define ULP_WAKEUP_PERIOD 1000000 // 1 second
 static const char* TAG = "ulp_riscv_i2c_test";
@@ -36,6 +41,27 @@ static void load_and_start_ulp_riscv_firmware(const uint8_t* ulp_bin, size_t ulp
 
 static uint8_t expected_master_write_data[DATA_LENGTH];
 static uint8_t expected_master_read_data[DATA_LENGTH];
+static uint8_t s_slave_rx_data[DATA_LENGTH];
+static size_t s_slave_rx_len;
+static QueueHandle_t s_i2c_slave_event_queue;
+
+typedef enum {
+    I2C_SLAVE_EVT_RX,
+} i2c_slave_test_event_t;
+
+static bool IRAM_ATTR i2c_slave_receive_cb(i2c_slave_dev_handle_t i2c_slave,
+                                           const i2c_slave_rx_done_event_data_t *evt_data,
+                                           void *arg)
+{
+    BaseType_t task_woken = pdFALSE;
+    i2c_slave_test_event_t evt = I2C_SLAVE_EVT_RX;
+    s_slave_rx_len = evt_data->length;
+    if (evt_data->length <= sizeof(s_slave_rx_data)) {
+        memcpy(s_slave_rx_data, evt_data->buffer, evt_data->length);
+    }
+    xQueueSendFromISR(s_i2c_slave_event_queue, &evt, &task_woken);
+    return task_woken == pdTRUE;
+}
 
 static void init_test_data(size_t len)
 {
@@ -96,7 +122,8 @@ static void i2c_master_write_read_test(void)
         wr_data[i] = expected_master_write_data[i];
     }
 
-    /* Wait for the I2C slave device to be ready */
+    /* Let the slave side finish the read transaction before starting the write. */
+    unity_send_signal("master read done");
     unity_wait_for_signal("master write");
 
     /* Signal the ULR RISC-V to perform the write to the I2C slave device */
@@ -111,18 +138,28 @@ static void i2c_master_write_read_test(void)
     unity_send_signal("slave read");
 }
 
-static i2c_config_t i2c_slave_init(void)
+static i2c_slave_config_t i2c_slave_init(void)
 {
-    i2c_config_t conf_slave = {
-        .mode = I2C_MODE_SLAVE,
+    i2c_slave_config_t conf_slave = {
+        .i2c_port = I2C_SLAVE_NUM,
         .sda_io_num = I2C_SLAVE_SDA_IO,
         .scl_io_num = I2C_SLAVE_SCL_IO,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .slave.addr_10bit_en = 0,
-        .slave.slave_addr = I2C_SLAVE_ADDRESS,
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .send_buf_depth = I2C_SLAVE_TX_BUF_LEN,
+        .receive_buf_depth = I2C_SLAVE_RX_BUF_LEN,
+        .slave_addr = I2C_SLAVE_ADDRESS,
+        .addr_bit_len = I2C_ADDR_BIT_LEN_7,
+        .flags.enable_internal_pullup = true,
     };
     return conf_slave;
+}
+
+static void i2c_slave_disable_clock_stretch(void)
+{
+    /* TODO(IDF-15683): remove this workaround once the new I2C slave driver handles RTC I2C repeated-start reads. */
+    i2c_ll_slave_enable_scl_stretch(&I2C0, false);
+    i2c_ll_slave_clear_stretch(&I2C0);
+    i2c_ll_update(&I2C0);
 }
 
 /* This runs on the I2C slave device */
@@ -131,23 +168,35 @@ static void i2c_slave_read_write_test(void)
     /* Initialize test data */
     init_test_data(DATA_LENGTH);
 
-    uint8_t *data_rd = (uint8_t *) malloc(DATA_LENGTH);
-    memset(data_rd, 0, DATA_LENGTH);
-    int size_rd;
+    uint32_t size_wr;
 
     /* Initialize I2C slave device */
-    i2c_config_t conf_slave = i2c_slave_init();
-    TEST_ESP_OK(i2c_param_config(I2C_SLAVE_NUM, &conf_slave));
-    TEST_ESP_OK(i2c_driver_install(I2C_SLAVE_NUM, I2C_MODE_SLAVE,
-                                   I2C_SLAVE_RX_BUF_LEN,
-                                   I2C_SLAVE_TX_BUF_LEN, 0));
+    i2c_slave_dev_handle_t slave_handle = NULL;
+    i2c_slave_config_t conf_slave = i2c_slave_init();
+    s_i2c_slave_event_queue = xQueueCreate(4, sizeof(i2c_slave_test_event_t));
+    TEST_ASSERT_NOT_NULL(s_i2c_slave_event_queue);
+    s_slave_rx_len = 0;
+    memset(s_slave_rx_data, 0, sizeof(s_slave_rx_data));
+
+    TEST_ESP_OK(i2c_new_slave_device(&conf_slave, &slave_handle));
+    i2c_slave_disable_clock_stretch();
+
+    i2c_slave_event_callbacks_t cbs = {
+        .on_receive = i2c_slave_receive_cb,
+    };
+    TEST_ESP_OK(i2c_slave_register_event_callbacks(slave_handle, &cbs, NULL));
+
+    /* Prepare the test data to be read by the DUT */
+    TEST_ESP_OK(i2c_slave_write(slave_handle, expected_master_read_data, RW_TEST_LENGTH, &size_wr, 2000));
+    ESP_LOGI(TAG, "Slave queued read data length: %"PRIu32, size_wr);
+    TEST_ASSERT_EQUAL_UINT32(RW_TEST_LENGTH, size_wr);
+    ESP_LOG_BUFFER_HEX(TAG, expected_master_read_data, RW_TEST_LENGTH);
 
     /* Signal the DUT that the I2C slave device is ready */
     unity_send_signal("i2c slave init finish");
 
-    /* Prepare the test data to be read by the DUT */
-    size_rd = i2c_slave_write_buffer(I2C_SLAVE_NUM, expected_master_read_data, RW_TEST_LENGTH, 2000 / portTICK_PERIOD_MS);
-    ESP_LOG_BUFFER_HEX(TAG, expected_master_read_data, size_rd);
+    unity_wait_for_signal("master read done");
+    i2c_slave_test_event_t evt;
 
     /* Signal the DUT to write test data */
     unity_send_signal("master write");
@@ -155,25 +204,18 @@ static void i2c_slave_read_write_test(void)
     /* Wait for DUT to write test data before reading it */
     unity_wait_for_signal("slave read");
 
-    /*
-     * The RTC I2C master sends a sub-register address byte before each transaction.
-     * The slave's RX buffer now contains:
-     *   [sub_reg_addr (read phase)] [sub_reg_addr (write phase)] [data_wr[0..N-1]]
-     * Drain the two stale sub-register address bytes before reading actual data.
-     */
-    uint8_t sub_reg_discard[2];
-    i2c_slave_read_buffer(I2C_SLAVE_NUM, sub_reg_discard, sizeof(sub_reg_discard), 2000 / portTICK_PERIOD_MS);
-
     /* Verify the test data written by the DUT */
-    size_rd = i2c_slave_read_buffer(I2C_SLAVE_NUM, data_rd, RW_TEST_LENGTH, 10000 / portTICK_PERIOD_MS);
+    TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(s_i2c_slave_event_queue, &evt, pdMS_TO_TICKS(10000)));
+
+    ESP_LOGI(TAG, "Slave read length: %d", s_slave_rx_len);
     ESP_LOGI(TAG, "Slave read data:");
-    ESP_LOG_BUFFER_HEX(TAG, data_rd, size_rd);
-    TEST_ASSERT_EQUAL_INT(RW_TEST_LENGTH, size_rd);
-    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_master_write_data, data_rd, RW_TEST_LENGTH);
+    ESP_LOG_BUFFER_HEX(TAG, s_slave_rx_data, s_slave_rx_len);
+    TEST_ASSERT_EQUAL_INT(RW_TEST_LENGTH + 1, s_slave_rx_len);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_master_write_data, &s_slave_rx_data[1], RW_TEST_LENGTH);
 
     /* Clean up */
-    free(data_rd);
-    i2c_driver_delete(I2C_SLAVE_NUM);
+    vQueueDelete(s_i2c_slave_event_queue);
+    TEST_ESP_OK(i2c_del_slave_device(slave_handle));
 }
 
 TEST_CASE_MULTIPLE_DEVICES("ULP RISC-V RTC I2C read and write test", "[ulp][test_env=generic_multi_device][timeout=150]", i2c_master_write_read_test, i2c_slave_read_write_test);
