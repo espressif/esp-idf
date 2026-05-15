@@ -626,6 +626,12 @@ examples/peripherals/twai/twai_utils:
 examples/peripherals/uart/uart_dma_ota:
   disable:
     - if: SOC_UHCI_SUPPORTED != 1
+  depends_components:
+    - esp_driver_uart
+    - esp_driver_dma
+    - app_update
+    - esp_ringbuf
+    - soc
 
 examples/peripherals/uart/uart_echo_rs485:
   enable:

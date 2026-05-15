@@ -1,3 +1,3 @@
 idf_component_register(SRCS "uart_dma_ota_example_main.c"
-                    REQUIRES esp_driver_uart app_update
+                    REQUIRES esp_driver_uart app_update esp_ringbuf
                     INCLUDE_DIRS ".")
