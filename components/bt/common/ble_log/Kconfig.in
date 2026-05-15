@@ -1,5 +1,7 @@
 config BLE_LOG_ENABLED
     bool "Enable BT Log Async Output (Dev Only)"
+    select BLE_COMPRESSED_LOG_ENABLE
+    select BLE_HOST_COMPRESSED_LOG_ENABLE if BT_BLUEDROID_ENABLED
     default n
     help
         Enable BT Log Async Output
@@ -63,16 +65,14 @@ if BLE_LOG_ENABLED
         bool "Current BLE Controller is ESP BLE Legacy Controller"
         depends on BT_CONTROLLER_ENABLED
         depends on !SOC_ESP_NIMBLE_CONTROLLER
-        depends on BT_CTRL_RUN_IN_FLASH_ONLY
         default y
-        select BT_CTRL_LE_LOG_EN
-        select BLE_LOG_LL_ENABLED
         help
             Current BLE Controller is ESP BLE Legacy Controller
 
     config BLE_LOG_LL_ENABLED
         bool "Enable BLE Log for Link Layer"
         depends on BT_CONTROLLER_ENABLED
+        default y if BLE_LOG_IS_ESP_LEGACY_CONTROLLER
         default n
         help
             Enable BLE Log for Link Layer
@@ -112,11 +112,25 @@ if BLE_LOG_ENABLED
                 it will be truncated.
     endif
 
-    config BLE_LOG_HOST_SIDE_HCI_LOG_ENABLED
-        bool "Enable BLE Host side HCI Logging"
+    config BLE_LOG_HOST_LOG
+        bool "Enable BLE Log for Host"
+        depends on BT_BLUEDROID_ENABLED
         default y
         help
-            Enable BLE Host side HCI Logging
+            Enable BLE Log for the Host stack (Bluedroid or NimBLE).
+
+            When enabled, host-side log statements are routed through the
+            BLE Log async output transport instead of (or in addition to)
+            the standard UART logging path. Disable this option to keep
+            BLE Log enabled for the controller/link layer only.
+
+    config BLE_LOG_HOST_SIDE_HCI_LOG_ENABLED
+        bool "Enable BLE Host side HCI Logging"
+        default y if BLE_LOG_IS_ESP_LEGACY_CONTROLLER
+        help
+            Enable HCI packet logging captured on the Host side
+            (Bluedroid / NimBLE HCI HAL). Useful for correlating
+            host events with controller-side HCI traces.
 
     config BLE_LOG_TS_ENABLED
         bool "Enable BLE Log Timestamp Synchronization (TS)"
