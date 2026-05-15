@@ -13,6 +13,7 @@
 
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
+#include "hal/pmu_types.h"
 
 #if SOC_PMU_SUPPORTED
 #include "hal/pmu_hal.h"
@@ -23,16 +24,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @brief PMU ICG modem code of HP system
- * @note  This type is required in rtc_clk_init.c when PMU not fully supported
- */
-typedef enum {
-    PMU_HP_ICG_MODEM_CODE_SLEEP = 0,
-    PMU_HP_ICG_MODEM_CODE_MODEM = 1,
-    PMU_HP_ICG_MODEM_CODE_ACTIVE = 2,
-} pmu_hp_icg_modem_mode_t;
 
 #if SOC_PMU_SUPPORTED
 

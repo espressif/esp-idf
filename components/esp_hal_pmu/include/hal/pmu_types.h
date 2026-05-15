@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "soc/soc.h"
 #include "soc/soc_caps.h"
 #include "hal/config.h"
 
@@ -23,6 +24,17 @@ typedef enum {
     PMU_MODE_HP_SLEEP,      /*!< PMU in HP_SLEEP mode */
     PMU_MODE_HP_MAX,
 } pmu_hp_mode_t;
+
+/**
+ * @brief PMU ICG modem code of HP system
+ *
+ * Each code maps to one bit in modem_lpcon `clk_*_st_map` bitmap fields.
+ */
+typedef enum {
+    PMU_HP_ICG_MODEM_CODE_SLEEP = 0,  /*!< ICG bitmap bit for HP_SLEEP mode */
+    PMU_HP_ICG_MODEM_CODE_MODEM = 1,  /*!< ICG bitmap bit for HP_MODEM mode */
+    PMU_HP_ICG_MODEM_CODE_ACTIVE = 2, /*!< ICG bitmap bit for HP_ACTIVE mode */
+} pmu_hp_icg_modem_mode_t;
 
 /**
  * @brief PMU modes of LP system
