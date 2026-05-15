@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -265,6 +265,22 @@ void esp_phy_sleep_data_init(void);
  * @brief PHY module sleep data de-initialize.
  */
 void esp_phy_sleep_data_deinit(void);
+#endif
+
+/**
+ * @brief Wait for frequency hardware hop to complete
+ *
+ */
+void phy_wait_freq_hw_hop_done(void);
+
+#if CONFIG_ESP_PHY_PLL_TRACK_TEMP_DEBUG
+/**
+ * @brief Set the temperature delta for PHY track pll
+ *
+ * @param     debug_flag  Debug flag for PHY temperature tracking
+ * @param     track_temp   Temperature delta for PHY temperature tracking
+ */
+void phy_track_temp_debug(uint8_t debug_flag, uint8_t track_temp);
 #endif
 
 #ifdef __cplusplus

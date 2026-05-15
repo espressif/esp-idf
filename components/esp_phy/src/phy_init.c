@@ -36,12 +36,6 @@
 
 #include "soc/rtc_periph.h"
 
-// TODO: IDF-15338
-#if CONFIG_IDF_TARGET_ESP32C5
-#define FECOEX_SET_FREQ_SET_CHAN_REG    (0x600a001c)
-#define FECOEX_SET_FREQ_RESTEN             (BIT(30))
-#endif
-
 #if CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION
 #include "esp_partition.h"
 #endif
@@ -342,6 +336,9 @@ void esp_phy_enable(esp_phy_modem_t modem)
         assert(phy_module_has_clock_bits(PHY_INIT_MODEM_CLOCK_REQUIRED_BITS));
         if (s_is_phy_calibrated == false) {
             esp_phy_load_cal_and_init();
+#if CONFIG_ESP_PHY_PLL_TRACK_TEMP_DEBUG
+            phy_track_temp_debug(CONFIG_ESP_PHY_PLL_TRACK_TEMP_DEBUG_FLAG, CONFIG_ESP_PHY_PLL_TRACK_TEMP_DELTA);
+#endif
             s_is_phy_calibrated = true;
         } else {
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
@@ -363,22 +360,12 @@ void esp_phy_enable(esp_phy_modem_t modem)
 #endif
                 sleep_modem_wifi_do_phy_retention(true, wifimac_link_is_sel);
                 } else {
-// TODO: IDF-15338
-#if CONFIG_IDF_TARGET_ESP32C5
-                    REG_CLR_BIT(FECOEX_SET_FREQ_SET_CHAN_REG, FECOEX_SET_FREQ_RESTEN);
-                    REG_SET_BIT(FECOEX_SET_FREQ_SET_CHAN_REG, FECOEX_SET_FREQ_RESTEN);
-#endif
                     phy_wakeup_init();
                 }
             } else {
                 phy_wakeup_from_modem_state_extra_init();
             }
 #else
-// TODO: IDF-15338
-#if CONFIG_IDF_TARGET_ESP32C5
-            REG_CLR_BIT(FECOEX_SET_FREQ_SET_CHAN_REG, FECOEX_SET_FREQ_RESTEN);
-            REG_SET_BIT(FECOEX_SET_FREQ_SET_CHAN_REG, FECOEX_SET_FREQ_RESTEN);
-#endif
             phy_wakeup_init();
 #endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP */
 
@@ -456,6 +443,7 @@ void esp_phy_disable(esp_phy_modem_t modem)
         // Update WiFi MAC time before disable WiFi/BT common peripheral clock
         phy_update_wifi_mac_time(true, esp_timer_get_time());
 #endif
+        phy_wait_freq_hw_hop_done();
         // Disable WiFi/BT common peripheral clock. Do not disable clock for hardware RNG
         esp_phy_common_clock_disable();
     }
