@@ -1,5 +1,5 @@
 #
-# ESP32C61-specific
+# ESP32C6-specific
 #
 
 CONFIG_COMMANDS_ENABLE_BLE_DTM_TEST=y
