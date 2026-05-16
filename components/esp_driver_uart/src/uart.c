@@ -947,6 +947,9 @@ esp_err_t _uart_set_pin6(uart_port_t uart_num, int tx_io_num, int rx_io_num, int
         if (tx_rx_same_io || !uart_try_set_iomux_pin(uart_num, rx_io_num, SOC_UART_PERIPH_SIGNAL_RX)) {
             io_reserve_mask &= ~BIT64(rx_io_num); // input IO via GPIO matrix does not need to be reserved
             if (uart_num < SOC_UART_HP_NUM) {
+                // Clear any residual IOMUX function so the pin isn't simultaneously driven by IOMUX
+                // while we route it via the GPIO matrix. Symmetric with gpio_matrix_output().
+                gpio_func_sel(rx_io_num, PIN_FUNC_GPIO);
                 gpio_matrix_input(rx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_PERIPH_SIGNAL_RX), false);
             }
 #if SOC_LP_GPIO_MATRIX_SUPPORTED && (SOC_UART_LP_NUM >= 1)
