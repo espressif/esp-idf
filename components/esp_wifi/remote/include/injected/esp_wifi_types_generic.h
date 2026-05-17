@@ -1014,7 +1014,9 @@ typedef struct {
     unsigned int ttl;                               /**< Run publish function for a given time interval in seconds. If ttl=0 and usd_discovery_flag is enabled,
                                                          only one Publish message is transmitted */
     wifi_nan_usd_config_t usd_publish_config;       /**< USD configuration parameters. Relevant only when 'usd_discovery_flag' is set. */
-    wifi_nan_discovery_security_params_t security_cfg; /**< Security configuration parameters */
+    wifi_nan_discovery_security_params_t *security_cfg; /**< Security configuration parameters. Used when security_reqd is set, NULL otherwise.
+                                                          The driver makes a private copy during esp_wifi_nan_publish_service();
+                                                          the caller may free this immediately after the call returns. */
     nan_vendor_ie_t *vendor_ie;                     /**< Vendor specific IE to be added in publish frames */
 } wifi_nan_publish_cfg_t;
 
@@ -1038,7 +1040,9 @@ typedef struct {
     unsigned int ttl;                               /**< Run subscribe function for a given time interval in seconds. If ttl=0 and usd_discovery_flag is enabled,
                                                          the subscriber listens until the first service match is reported. */
     wifi_nan_usd_config_t usd_subscribe_config;     /**< USD configuration parameters. Relevant only when 'usd_discovery_flag' is set. */
-    wifi_nan_discovery_security_params_t security_cfg; /**< Security configuration parameters */
+    wifi_nan_discovery_security_params_t *security_cfg; /**< Security configuration parameters. Used when security_reqd is set, NULL otherwise.
+                                                          The driver makes a private copy during esp_wifi_nan_subscribe_service();
+                                                          the caller may free this immediately after the call returns. */
     nan_vendor_ie_t *vendor_ie;                     /**< Vendor specific IE to be added in subscribe frames */
 } wifi_nan_subscribe_cfg_t;
 

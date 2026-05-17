@@ -38,6 +38,12 @@ menu "Example Configuration"
             bool "Enable NAN Security"
             depends on ESP_WIFI_NAN_SECURITY
             default y
+            help
+                Enable encrypted NAN datapath (NDP Security) for this example.
+                When enabled the subscriber only matches secured Publish SDFs
+                whose PMKID is derivable from the credential configured below
+                (passphrase or PMK) and sets up an encrypted NDP.
+                Disable to discover open (unencrypted) services.
 
         choice EXAMPLE_NAN_SECURITY_METHOD
             prompt "Security Method"

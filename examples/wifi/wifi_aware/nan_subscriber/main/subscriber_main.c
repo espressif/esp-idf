@@ -223,25 +223,28 @@ void wifi_nan_subscribe(void)
         .single_match_event = 1,
 #ifdef CONFIG_EXAMPLE_NAN_SECURITY_ENABLED
         .security_reqd = 1,
-        .security_cfg = {
-            .num_credentials = 1,
-            .creds = {
-                {
-                    .csid = WIFI_NAN_CSID_NCS_SK_128,
-#ifdef CONFIG_EXAMPLE_NAN_SEC_METHOD_PMK
-                    .use_pmk = true,
-#else
-                    .use_pmk = false,
-                    .passphrase = CONFIG_EXAMPLE_NAN_PASSPHRASE,
-#endif
-                },
-            },
-        },
 #endif
     };
+#ifdef CONFIG_EXAMPLE_NAN_SECURITY_ENABLED
+    wifi_nan_discovery_security_params_t security_cfg = {
+        .num_credentials = 1,
+        .creds = {
+            {
+                .csid = WIFI_NAN_CSID_NCS_SK_128,
+#ifdef CONFIG_EXAMPLE_NAN_SEC_METHOD_PMK
+                .use_pmk = true,
+#else
+                .use_pmk = false,
+                .passphrase = CONFIG_EXAMPLE_NAN_PASSPHRASE,
+#endif
+            },
+        },
+    };
+    subscribe_cfg.security_cfg = &security_cfg;
+#endif
 #if defined(CONFIG_EXAMPLE_NAN_SECURITY_ENABLED) && defined(CONFIG_EXAMPLE_NAN_SEC_METHOD_PMK)
-    if (!decode_hex_string(CONFIG_EXAMPLE_NAN_PMK, subscribe_cfg.security_cfg.creds[0].pmk,
-                           sizeof(subscribe_cfg.security_cfg.creds[0].pmk))) {
+    if (!decode_hex_string(CONFIG_EXAMPLE_NAN_PMK, security_cfg.creds[0].pmk,
+                           sizeof(security_cfg.creds[0].pmk))) {
         ESP_LOGE(TAG, "Failed to decode CONFIG_EXAMPLE_NAN_PMK");
         return;
     }

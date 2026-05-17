@@ -1416,15 +1416,19 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
         ESP_LOGE(TAG, "Encrypted datapath not enabled (CONFIG_ESP_WIFI_NAN_SECURITY)");
         goto fail;
 #else
-        if (publish_cfg->security_cfg.num_credentials == 0 ||
-            publish_cfg->security_cfg.num_credentials > ESP_WIFI_NAN_MAX_CREDS_PER_SVC) {
+        if (!publish_cfg->security_cfg) {
+            ESP_LOGE(TAG, "security_reqd set but security_cfg is NULL");
+            goto fail;
+        }
+        if (publish_cfg->security_cfg->num_credentials == 0 ||
+            publish_cfg->security_cfg->num_credentials > ESP_WIFI_NAN_MAX_CREDS_PER_SVC) {
             ESP_LOGE(TAG, "security_cfg.num_credentials=%u must be 1..%u",
-                     publish_cfg->security_cfg.num_credentials,
+                     publish_cfg->security_cfg->num_credentials,
                      ESP_WIFI_NAN_MAX_CREDS_PER_SVC);
             goto fail;
         }
-        for (uint8_t i = 0; i < publish_cfg->security_cfg.num_credentials; i++) {
-            uint8_t csid = publish_cfg->security_cfg.creds[i].csid;
+        for (uint8_t i = 0; i < publish_cfg->security_cfg->num_credentials; i++) {
+            uint8_t csid = publish_cfg->security_cfg->creds[i].csid;
             if (csid != WIFI_NAN_CSID_NCS_SK_128) {
                 ESP_LOGE(TAG, "creds[%u].csid=%u unsupported (only NCS-SK-128)", i, csid);
                 goto fail;
@@ -1449,7 +1453,7 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
      * tripping the task watchdog when num_credentials > 1. */
     if (!nan_claim_own_svc_slot(ESP_NAN_PUBLISH, publish_cfg->service_name,
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
-                                &cfg->security_cfg
+                                cfg->security_cfg
 #else
                                 NULL
 #endif
@@ -1520,7 +1524,7 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
                 subscribe_cfg->service_name, sub_id);
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
         nan_security_cache_subscriber_params(subscribe_cfg->service_name,
-                                             &subscribe_cfg->security_cfg);
+                                             subscribe_cfg->security_cfg);
 #endif
         return sub_id;
     }
@@ -1532,15 +1536,19 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
         ESP_LOGE(TAG, "Encrypted datapath not enabled (CONFIG_ESP_WIFI_NAN_SECURITY)");
         return 0;
 #else
-        if (subscribe_cfg->security_cfg.num_credentials == 0 ||
-            subscribe_cfg->security_cfg.num_credentials > ESP_WIFI_NAN_MAX_CREDS_PER_SVC) {
+        if (!subscribe_cfg->security_cfg) {
+            ESP_LOGE(TAG, "security_reqd set but security_cfg is NULL");
+            return 0;
+        }
+        if (subscribe_cfg->security_cfg->num_credentials == 0 ||
+            subscribe_cfg->security_cfg->num_credentials > ESP_WIFI_NAN_MAX_CREDS_PER_SVC) {
             ESP_LOGE(TAG, "security_cfg.num_credentials=%u must be 1..%u",
-                     subscribe_cfg->security_cfg.num_credentials,
+                     subscribe_cfg->security_cfg->num_credentials,
                      ESP_WIFI_NAN_MAX_CREDS_PER_SVC);
             return 0;
         }
-        for (uint8_t i = 0; i < subscribe_cfg->security_cfg.num_credentials; i++) {
-            uint8_t csid = subscribe_cfg->security_cfg.creds[i].csid;
+        for (uint8_t i = 0; i < subscribe_cfg->security_cfg->num_credentials; i++) {
+            uint8_t csid = subscribe_cfg->security_cfg->creds[i].csid;
             if (csid != WIFI_NAN_CSID_NCS_SK_128) {
                 ESP_LOGE(TAG, "creds[%u].csid=%u unsupported (only NCS-SK-128)", i, csid);
                 return 0;
@@ -1566,7 +1574,7 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
     /* Pre-claim host slot BEFORE the blob's subscribe call; see comment on
      * the publish path for the watchdog rationale. */
     if (!nan_claim_own_svc_slot(ESP_NAN_SUBSCRIBE, subscribe_cfg->service_name,
-                                &subscribe_cfg->security_cfg)) {
+                                subscribe_cfg->security_cfg)) {
         ESP_LOGE(TAG, "No free service slot");
         goto fail;
     }
@@ -1580,7 +1588,7 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
     ESP_LOGI(TAG, "Started Subscribing to %s [Service ID - %u]", subscribe_cfg->service_name, sub_id);
     nan_finalize_own_svc(subscribe_cfg->service_name, (uint8_t) sub_id, false);
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
-    nan_security_cache_subscriber_params(subscribe_cfg->service_name, &subscribe_cfg->security_cfg);
+    nan_security_cache_subscriber_params(subscribe_cfg->service_name, subscribe_cfg->security_cfg);
 #endif
     NAN_DATA_UNLOCK();
 
