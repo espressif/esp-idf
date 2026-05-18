@@ -1,4 +1,5 @@
 idf_build_get_property(target IDF_TARGET)
+idf_build_get_property(idf_ver_def IDF_VER)
 
 if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
@@ -12,6 +13,10 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS "include")
+
+set_source_files_properties(
+    SOURCE "esp_bootloader_desc.c" PROPERTIES COMPILE_DEFINITIONS
+    "IDF_VER_DEF=\"${idf_ver_def}\"")
 
 if(BOOTLOADER_BUILD)
     # esp_bootloader_desc structure is added as an undefined symbol because otherwise the

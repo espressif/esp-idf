@@ -120,7 +120,9 @@ function(__init_project_configuration)
     list(APPEND compile_definitions "_GNU_SOURCE")
 
     list(APPEND compile_definitions "ESP_PLATFORM")
-    list(APPEND compile_definitions "IDF_VER=\"${idf_ver}\"")
+    if(CONFIG_APP_BUILD_DEFINE_IDF_VER)
+        list(APPEND compile_definitions "IDF_VER=\"${idf_ver}\"")
+    endif()
 
     list(APPEND compile_options     "-ffunction-sections"
                                     "-fdata-sections"

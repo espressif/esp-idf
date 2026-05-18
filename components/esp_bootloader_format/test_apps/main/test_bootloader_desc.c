@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include "unity.h"
 #include "unity_fixture.h"
 #include "unity_internals.h"
+#include "esp_idf_version.h"
 
 TEST_GROUP(esp_bootloader_format);
 
@@ -30,8 +31,8 @@ TEST(esp_bootloader_format, esp_ota_get_bootloader_description)
     TEST_ASSERT_EQUAL(desc.magic_byte, ESP_BOOTLOADER_DESC_MAGIC_BYTE);
     TEST_ASSERT_EQUAL(desc.version, CONFIG_BOOTLOADER_PROJECT_VER);
     printf("\tESP-IDF version from 2nd stage bootloader: %s\n", desc.idf_ver);
-    printf("\tESP-IDF version from app: %s\n", IDF_VER);
-    TEST_ASSERT_EQUAL(0, memcmp(desc.idf_ver, IDF_VER, sizeof(IDF_VER)));
+    printf("\tESP-IDF version from app: %s\n", esp_get_idf_version());
+    TEST_ASSERT_EQUAL(0, memcmp(desc.idf_ver, esp_get_idf_version(), strlen(esp_get_idf_version())));
 }
 
 TEST_GROUP_RUNNER(esp_bootloader_format)

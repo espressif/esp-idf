@@ -37,7 +37,7 @@ uint32_t esp_get_minimum_free_heap_size(void)
 
 const char *esp_get_idf_version(void)
 {
-    return IDF_VER;
+    return IDF_VER_DEF;
 }
 
 void __attribute__((noreturn)) esp_system_abort(const char *details)

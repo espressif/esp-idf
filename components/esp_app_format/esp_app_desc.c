@@ -37,7 +37,7 @@ const __attribute__((weak)) __attribute__((section(".rodata_desc")))  esp_app_de
 #else
     .project_name = PROJECT_NAME,
 #endif
-    .idf_ver = IDF_VER,
+    .idf_ver = IDF_VER_DEF,
 
 // On Linux we just initialize the hash to some known value for testing
 #if CONFIG_IDF_TARGET_LINUX
@@ -68,7 +68,7 @@ const __attribute__((weak)) __attribute__((section(".rodata_desc")))  esp_app_de
 #ifndef CONFIG_APP_EXCLUDE_PROJECT_VER_VAR
 _Static_assert(sizeof(PROJECT_VER) <= sizeof(esp_app_desc.version), "PROJECT_VER is longer than version field in structure");
 #endif
-_Static_assert(sizeof(IDF_VER) <= sizeof(esp_app_desc.idf_ver), "IDF_VER is longer than idf_ver field in structure");
+_Static_assert(sizeof(IDF_VER_DEF) <= sizeof(esp_app_desc.idf_ver), "IDF_VER_DEF is longer than idf_ver field in structure");
 #ifndef CONFIG_APP_EXCLUDE_PROJECT_NAME_VAR
 _Static_assert(sizeof(PROJECT_NAME) <= sizeof(esp_app_desc.project_name), "PROJECT_NAME is longer than project_name field in structure");
 #endif

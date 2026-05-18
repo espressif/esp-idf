@@ -356,6 +356,26 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 If enabled, all date, time, and path information would be eliminated. A .gdbinit file would be create
                 automatically. (or will be append if you have one already)
 
+        config APP_BUILD_DEFINE_IDF_VER
+            bool "Add -DIDF_VER compiler flag globally"
+            default "n" if IDF_CI_BUILD
+            default "y"
+            help
+                Add IDF_VER to global COMPILE_DEFINITIONS.
+
+                IDF_VER source priority:
+                - version.txt
+                - git describe
+                - "v${IDF_VERSION_MAJOR}.${IDF_VERSION_MINOR}.${IDF_VERSION_PATCH}"
+
+                If disabled, IDF_VER is still stored via idf_build_set_property,
+                but it is not added to COMPILE_DEFINITIONS. This improves ccache
+                hit rate by keeping git describe out of the compile command line
+                for most translation units.
+
+                Disabled by default in CI builds (IDF_CI_BUILD). In most cases,
+                use esp_get_idf_version() instead of the compile-time IDF_VER macro.
+
         config APP_NO_BLOBS
             bool "No Binary Blobs"
             default n
