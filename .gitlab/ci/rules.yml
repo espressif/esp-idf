@@ -206,13 +206,6 @@
       when: never
     - <<: *if-protected-no_label
 
-.rules:protected-no_label-always:
-  rules:
-    - <<: *if-qa-test-tag
-      when: never
-    - <<: *if-protected-no_label
-      when: always
-
 .rules:tag:release:
   rules:
     - <<: *if-tag-release
