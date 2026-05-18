@@ -13,7 +13,6 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/mspi_timing_tuning.h"
 #include "esp_private/esp_psram_impl.h"
-#include "esp_private/esp_psram_ldo.h"
 #include "hal/psram_ctrlr_ll.h"
 #include "hal/mspi_ll.h"
 #include "soc/rtc.h"
@@ -415,12 +414,6 @@ esp_err_t esp_psram_impl_enable(void)
 {
     psram_ctrlr_ll_enable_power(true);
 
-#if PSRAM_CTRLR_LL_DEDICATED_LDO
-    esp_psram_power_cfg_t config = {
-        .voltage_mv = CONFIG_SPIRAM_LDO_VOLTAGE_DOMAIN,
-    };
-    esp_psram_power_init(&config);
-#endif
 #if SOC_CLK_MPLL_SUPPORTED
     // We need to use the acquire and freq_set functions directly instead of general clk_tree API for IRAM safe function
     esp_clk_tree_mpll_acquire();

@@ -24,7 +24,6 @@ set(srcs "system_layer/esp_psram_mspi.c")
 
 if(CONFIG_SPIRAM)
     list(APPEND srcs "system_layer/esp_psram.c")
-    list(APPEND srcs "system_layer/esp_psram_ldo_supply.c")
 
     if(${target} STREQUAL "esp32")
         list(APPEND srcs "esp32/esp_psram_extram_cache.c"
