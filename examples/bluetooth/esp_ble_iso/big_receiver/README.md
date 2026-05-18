@@ -7,7 +7,7 @@
 
 ## Overview
 
-This example demonstrates a raw BLE Isochronous Broadcast Receiver — it joins a Broadcast Isochronous Group (BIG) directly at the ISO transport layer over the NimBLE host, without any BLE Audio profile (BAP/CAP) on top.
+This example demonstrates a raw BLE Isochronous Broadcast Receiver — it joins a Broadcast Isochronous Group (BIG) directly at the ISO transport layer over either the NimBLE or Bluedroid host (selected at build time via Kconfig), without any BLE Audio profile (BAP/CAP) on top.
 
 The device acts as the **receiver (BIG sync sink)**: it scans for an extended advertiser by device name, synchronises to the peer's periodic advertising train, parses the BIGInfo report, and then issues `LE BIG Create Sync` to join two BIS sub-events. An HCI output data path is installed on each BIS and incoming SDUs are accounted for by a small RX-metrics helper.
 
@@ -26,7 +26,7 @@ idf.py menuconfig
 
 No build-time options — runtime defaults are baked into source.
 
-Notable hard-coded parameters in `main/main.c`:
+Notable hard-coded parameters in `main/main.c` and `main/<host>/scan.c`:
 
 * `TARGET_DEVICE_NAME` — `"BIG Broadcaster"` (matched against the AD complete-name field)
 * `TARGET_BROADCAST_CODE` — `"1234"` (must match the broadcaster)
@@ -37,22 +37,35 @@ Notable hard-coded parameters in `main/main.c`:
 
 ### Security & Pairing
 
-The shared init at `../common_components/example_init/ble_iso_example_init.c` configures Just-Works pairing (LE Secure Connections, no MITM, `BLE_SM_IO_CAP_NO_IO`) with bonding enabled, and leaves `gatts_register_cb = NULL` (no GATT services). These settings are not exercised by this example — the receiver passively syncs to PA + BIS without ATT or pairing.
+On the NimBLE path, the shared init at `../common_components/example_init/ble_iso_example_init.c` configures Just-Works pairing (LE Secure Connections, no MITM, `BLE_SM_IO_CAP_NO_IO`) with bonding enabled, and leaves `gatts_register_cb = NULL` (no GATT services). On the Bluedroid path the same init just brings up the controller and host with no SMP configuration. Either way these settings are not exercised by this example — the receiver passively syncs to PA + BIS without ATT or pairing.
 
 ## Build & Flash
+
+The base `sdkconfig.defaults` defaults to the **Bluedroid** host; idf.py automatically merges the per-target overlay (`sdkconfig.defaults.$IDF_TARGET`). To build with **NimBLE** host instead, layer `sdkconfig.defaults.nimble` on top via `-DSDKCONFIG_DEFAULTS`.
+
+### Bluedroid host (default)
 
 ```bash
 idf.py set-target esp32h4
 idf.py -p PORT flash monitor
 ```
 
+### NimBLE host
+
+```bash
+idf.py set-target esp32h4
+idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32h4;sdkconfig.defaults.nimble" -p PORT flash monitor
+```
+
+For `esp32s31`, replace the chip overlay accordingly.
+
 (Exit serial monitor with `Ctrl-]`.)
 
 ## Example Flow
 
-1. NVS, NimBLE host, and the ISO common layer are initialised; a GAP application callback is registered for ISO-related GAP events.
-2. Passive extended scanning is started via `ble_gap_disc()`.
-3. On each `EXT_SCAN_RECV` the AD payload is parsed; if the complete-name field equals `"BIG Broadcaster"` and the report carries a non-zero periodic-advertising interval, `ble_gap_periodic_adv_sync_create()` is called.
+1. NVS, the selected BLE host (NimBLE or Bluedroid), and the ISO common layer are initialised; a GAP application callback is registered for ISO-related GAP events.
+2. Passive extended scanning is started via the host-specific `scan_start()` wrapper.
+3. On each `EXT_SCAN_RECV` the AD payload is parsed; if the complete-name field equals `"BIG Broadcaster"` and the report carries a non-zero periodic-advertising interval, `pa_sync_create()` is called.
 4. On `PA_SYNC` success the extended scan is cancelled (BIGInfo arrives over the PA channel anyway).
 5. On the first `BIGINFO_RECV` event the receiver fills `esp_ble_iso_big_sync_param_t` (both BIS in `bis_bitfield`, broadcast code `"1234"`, MSE = `nse` from BIGInfo) and calls `esp_ble_iso_big_sync()` — the HCI `LE BIG Create Sync` command.
 6. When each BIS becomes ready, the connected callback resets that BIS's RX metrics and installs an HCI output data path (`ESP_BLE_ISO_DATA_PATH_DIR_OUTPUT`, transparent coding).

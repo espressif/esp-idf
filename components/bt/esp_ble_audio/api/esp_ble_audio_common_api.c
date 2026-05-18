@@ -70,10 +70,12 @@ void esp_ble_audio_gap_app_post_event(uint8_t type, void *param)
     bt_le_gap_app_post_event(type, param);
 }
 
+#if !CONFIG_BT_BLUEDROID_ENABLED
 void esp_ble_audio_gatt_app_post_event(uint8_t type, void *param)
 {
     bt_le_gatt_app_post_event(type, param);
 }
+#endif /* !CONFIG_BT_BLUEDROID_ENABLED */
 
 esp_err_t esp_ble_audio_common_init(esp_ble_audio_init_info_t *info)
 {
@@ -156,3 +158,10 @@ esp_err_t esp_ble_audio_common_start(esp_ble_audio_start_info_t *info)
 
     return ESP_OK;
 }
+
+#if CONFIG_BT_BLUEDROID_ENABLED
+uint8_t esp_ble_audio_bluedroid_get_gattc_if(void)
+{
+    return bt_le_bluedroid_gattc_get_if();
+}
+#endif /* CONFIG_BT_BLUEDROID_ENABLED */

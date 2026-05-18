@@ -44,7 +44,11 @@
 #include <../host/conn_internal.h>
 #include <../host/hci_core.h>
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+#include "bluedroid/init.h"
+#else
 #include "nimble/init.h"
+#endif
 
 #include "../../../lib/include/audio.h"
 
@@ -2091,7 +2095,11 @@ int bt_le_audio_init(void)
         return err;
     }
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_audio_init();
+#else
     return bt_le_nimble_audio_init();
+#endif
 }
 
 #if BLE_AUDIO_SVC_DEFERRED_ADD
@@ -2100,7 +2108,11 @@ int bt_le_ascs_init(void)
 {
     LOG_DBG("AscsInit");
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_ascs_init();
+#else
     return bt_le_nimble_ascs_init();
+#endif
 }
 #endif /* CONFIG_BT_ASCS */
 
@@ -2109,7 +2121,11 @@ int bt_le_bass_init(void)
 {
     LOG_DBG("BassInit");
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_bass_init();
+#else
     return bt_le_nimble_bass_init();
+#endif
 }
 #endif /* CONFIG_BT_BAP_SCAN_DELEGATOR */
 
@@ -2118,7 +2134,11 @@ int bt_le_tmas_init(void)
 {
     LOG_DBG("TmasInit");
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_tmas_init();
+#else
     return bt_le_nimble_tmas_init();
+#endif
 }
 #endif /* CONFIG_BT_TMAP */
 
@@ -2127,7 +2147,11 @@ int bt_le_gtbs_init(void)
 {
     LOG_DBG("GtbsInit");
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_gtbs_init();
+#else
     return bt_le_nimble_gtbs_init();
+#endif
 }
 #endif /* CONFIG_BT_TBS */
 
@@ -2136,7 +2160,11 @@ int bt_le_has_init(void)
 {
     LOG_DBG("HasInit");
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_has_init();
+#else
     return bt_le_nimble_has_init();
+#endif
 }
 #endif /* CONFIG_BT_HAS */
 
@@ -2145,7 +2173,11 @@ int bt_le_media_proxy_pl_init(void)
 {
     LOG_DBG("MprxPlInit");
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_media_proxy_pl_init();
+#else
     return bt_le_nimble_media_proxy_pl_init();
+#endif
 }
 #endif /* CONFIG_BT_MCS */
 
@@ -2154,7 +2186,11 @@ int bt_le_vcp_vol_rend_init(void)
 {
     LOG_DBG("VcpVolRendInit");
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_vcp_vol_rend_init();
+#else
     return bt_le_nimble_vcp_vol_rend_init();
+#endif
 }
 #endif /* CONFIG_BT_VCP_VOL_REND */
 
@@ -2163,7 +2199,11 @@ int bt_le_micp_mic_dev_init(void)
 {
     LOG_DBG("MicpMicDevInit");
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_micp_mic_dev_init();
+#else
     return bt_le_nimble_micp_mic_dev_init();
+#endif
 }
 #endif /* CONFIG_BT_MICP_MIC_DEV */
 #endif /* BLE_AUDIO_SVC_DEFERRED_ADD */
@@ -2172,7 +2212,11 @@ int bt_le_audio_start(void *info)
 {
     LOG_DBG("AudioStart");
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_audio_start(info);
+#else
     return bt_le_nimble_audio_start(info);
+#endif
 }
 
 void ble_audio_lib_compressed_out(uint8_t log_level, uint32_t log_index, size_t arg_cnt, ...)

@@ -23,7 +23,7 @@
 #include "host/ble_gatt.h"
 #include "host/ble_hs_mbuf.h"
 
-#include "nimble/profiles/server.h"
+#include "nimble/server.h"
 
 #include "common/host.h"
 
@@ -120,7 +120,10 @@ int bt_le_nimble_has_attr_handle_set(void)
     }
 
     has_svc = lib_has_svc_get();
-    assert(has_svc);
+    if (!has_svc) {
+        LOG_ERR("[N]HasSvcGetFail");
+        return -ENODEV;
+    }
     assert(has_svc->attr_count > 0);
 
     end_handle = start_handle + has_svc->attr_count - 1;
@@ -136,7 +139,7 @@ int bt_le_nimble_has_attr_handle_set(void)
     attr = has_svc->attrs + has_svc->attr_count - 1;
 
     if (attr->handle != end_handle) {
-        LOG_ERR("[N]HasMismatchAttrHdl (%u %u %u %u)",
+        LOG_ERR("[N]HasMismatchAttrHdl[%u][%u][%u][%u]",
                 start_handle, end_handle, attr->handle, has_svc->attr_count);
         return -1;
     }
@@ -155,7 +158,10 @@ static int has_svc_check(void)
      */
 
     has_svc = lib_has_svc_get();
-    assert(has_svc);
+    if (!has_svc) {
+        LOG_ERR("[N]HasSvcGetFail");
+        return -ENODEV;
+    }
 
     LOG_DBG("[N]HasSvcCheck");
 

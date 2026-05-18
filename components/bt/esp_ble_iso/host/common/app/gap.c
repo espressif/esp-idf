@@ -517,8 +517,11 @@ void bt_le_gap_handle_event(uint8_t *data, size_t data_len)
 
 void bt_le_gap_app_post_event(uint8_t type, void *param)
 {
-    /* Currently type is not used */
+#if CONFIG_BT_BLUEDROID_ENABLED
+    /* For Bluedroid, post the typed event to the ISO task instead. */
+    bt_le_bluedroid_gap_post_event(type, param);
+#else
     ARG_UNUSED(type);
-
     bt_le_nimble_gap_post_event(param);
+#endif
 }

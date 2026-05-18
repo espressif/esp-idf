@@ -21,7 +21,7 @@
 #include "host/ble_gatt.h"
 #include "host/ble_hs_mbuf.h"
 
-#include "nimble/profiles/server.h"
+#include "nimble/server.h"
 
 #include "common/host.h"
 
@@ -178,7 +178,10 @@ int bt_le_nimble_gtbs_attr_handle_set(void)
     }
 
     gtbs_svc = lib_gtbs_svc_get();
-    assert(gtbs_svc);
+    if (!gtbs_svc) {
+        LOG_ERR("[N]GtbsSvcGetFail");
+        return -ENODEV;
+    }
 
     LOG_DBG("[N]GtbsAttrHdlSet[%u][%u]", handle, gtbs_svc->attr_count);
 
@@ -200,7 +203,10 @@ static int gtbs_svc_check(void)
      */
 
     gtbs_svc = lib_gtbs_svc_get();
-    assert(gtbs_svc);
+    if (!gtbs_svc) {
+        LOG_ERR("[N]GtbsSvcGetFail");
+        return -ENODEV;
+    }
 
     LOG_DBG("[N]GtbsSvcCheck");
 

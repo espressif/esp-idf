@@ -6,13 +6,8 @@
  */
 
 #include <stdint.h>
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
-#include <errno.h>
 
 #include "nvs_flash.h"
-#include "esp_system.h"
 
 #include "tmap_bmr.h"
 
@@ -26,9 +21,7 @@ static void pa_sync(esp_ble_audio_gap_app_event_t *event)
     ESP_LOGI(TAG, "PA synced: handle %u sid %u phy %u peer %02x:%02x:%02x:%02x:%02x:%02x",
              event->pa_sync.sync_handle, event->pa_sync.sid,
              event->pa_sync.adv_phy,
-             event->pa_sync.addr.val[5], event->pa_sync.addr.val[4],
-             event->pa_sync.addr.val[3], event->pa_sync.addr.val[2],
-             event->pa_sync.addr.val[1], event->pa_sync.addr.val[0]);
+             EXAMPLE_BT_ADDR_PRINT_ARGS(event->pa_sync.addr.val));
 
     bap_broadcast_pa_sync(event);
 }
@@ -77,6 +70,12 @@ void app_main(void)
     err = bluetooth_init();
     if (err) {
         ESP_LOGE(TAG, "Failed to initialize BLE, err %d", err);
+        return;
+    }
+
+    err = app_host_init();
+    if (err) {
+        ESP_LOGE(TAG, "Failed to init host, err %d", err);
         return;
     }
 

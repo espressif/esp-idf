@@ -5,12 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+
 #include "esp_log.h"
 
 #include "sdkconfig.h"
-
-#include "host/ble_hs.h"
-#include "services/gap/ble_svc_gap.h"
 
 #include "esp_ble_audio_lc3_defs.h"
 #include "esp_ble_audio_bap_api.h"
@@ -23,7 +22,52 @@
 
 #define TAG "CAP_INI"
 
-#define CONN_HANDLE_INIT    0xFFFF
+#define CONN_HANDLE_INIT        0xFFFF
+
+#if CONFIG_EXAMPLE_UNICAST
+#define LOCAL_DEVICE_NAME       "CAP Initiator"
+
+#define SCAN_INTERVAL           160     /* 100ms */
+#define SCAN_WINDOW             160     /* 100ms */
+
+/* ACL init parameters shared between bluedroid and nimble host wrappers.
+ * Raw HCI units (scan: 0.625ms; conn interval: 1.25ms; timeout: 10ms). */
+#define INIT_SCAN_INTERVAL      16      /* 10ms */
+#define INIT_SCAN_WINDOW        16      /* 10ms */
+#define CONN_INTERVAL           24      /* 30ms */
+#define CONN_LATENCY            0
+#define CONN_TIMEOUT            500     /* 5s */
+#define CONN_MIN_CE_LEN         0xFFFF
+#define CONN_MAX_CE_LEN         0xFFFF
+#elif CONFIG_EXAMPLE_BROADCAST
+#define LOCAL_DEVICE_NAME       "CAP Broadcast Source"
+
+#define ADV_HANDLE              0
+#define ADV_SID                 0
+#define ADV_TX_POWER            127
+#define ADV_INTERVAL_MS         200
+#define PER_ADV_INTERVAL_MS     100
+#endif
+
+int app_host_init(void);
+
+int set_device_name(void);
+
+#if CONFIG_EXAMPLE_UNICAST
+int ext_scan_start(void);
+int ext_scan_stop(void);
+
+int conn_create(uint8_t addr_type, const uint8_t addr[6]);
+
+int pairing_start(uint16_t conn_handle);
+
+int exchange_mtu(uint16_t conn_handle);
+
+void security_failed_recover(uint16_t conn_handle, uint8_t status);
+#elif CONFIG_EXAMPLE_BROADCAST
+int ext_adv_start(const uint8_t *ext_data, uint8_t ext_len,
+                  const uint8_t *per_data, uint8_t per_len);
+#endif
 
 struct tx_stream {
     esp_ble_audio_cap_stream_t *stream;

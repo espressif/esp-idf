@@ -484,7 +484,12 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, void *cb)
     int err = 0;
 
     if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) == false) {
+#if CONFIG_BT_BLUEDROID_ENABLED
+        ARG_UNUSED(cb);
+        err = bt_le_bluedroid_scan_start(param);
+#else
         err = bt_le_nimble_scan_start(param, cb);
+#endif
         if (err == 0) {
             atomic_set_bit(bt_dev.flags, BT_DEV_SCANNING);
         }
@@ -501,7 +506,11 @@ int bt_le_scan_stop(void)
     int err = 0;
 
     if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
+#if CONFIG_BT_BLUEDROID_ENABLED
+        err = bt_le_bluedroid_scan_stop();
+#else
         err = bt_le_nimble_scan_stop();
+#endif
         if (err == 0) {
             atomic_clear_bit(bt_dev.flags, BT_DEV_SCANNING);
         }

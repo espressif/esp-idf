@@ -21,7 +21,7 @@
 #include "host/ble_gatt.h"
 #include "host/ble_hs_mbuf.h"
 
-#include "nimble/profiles/server.h"
+#include "nimble/server.h"
 
 #include "common/host.h"
 
@@ -71,7 +71,10 @@ int bt_le_nimble_tmas_attr_handle_set(void)
     }
 
     tmas_svc = lib_tmas_svc_get();
-    assert(tmas_svc);
+    if (!tmas_svc) {
+        LOG_ERR("[N]TmasSvcGetFail");
+        return -ENODEV;
+    }
 
     LOG_DBG("[N]TmasAttrHdlSet[%u][%u]", handle, tmas_svc->attr_count);
 
@@ -93,7 +96,10 @@ static int tmas_svc_check(void)
      */
 
     tmas_svc = lib_tmas_svc_get();
-    assert(tmas_svc);
+    if (!tmas_svc) {
+        LOG_ERR("[N]TmasSvcGetFail");
+        return -ENODEV;
+    }
 
     LOG_DBG("[N]TmasSvcCheck");
 

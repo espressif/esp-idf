@@ -13,11 +13,17 @@
 
 #include "sdkconfig.h"
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+#include "bluedroid/iso.h"
+#else
 #include "nimble/iso.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+struct net_buf;
 
 struct bt_le_iso_cb {
     void (*cis_dis)(struct net_buf *buf);

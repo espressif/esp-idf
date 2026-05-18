@@ -7,7 +7,7 @@
 
 ## Overview
 
-This example implements the **Common Audio Profile (CAP) Initiator** role on top of the NimBLE host stack with ISO and LE Audio support. It is built in one of two mutually exclusive sub-modes selected at build time: a **CAP Unicast Initiator / BAP Unicast Client**, or a **CAP Broadcast Source**. A small TX module (`cap_initiator_tx.c`) drives audio packets onto every started stream using the LE Audio example TX scheduler.
+This example implements the **Common Audio Profile (CAP) Initiator** role on top of the selected BLE host stack (Bluedroid by default; NimBLE via the `sdkconfig.defaults.nimble` overlay) with ISO and LE Audio support. It is built in one of two mutually exclusive sub-modes selected at build time: a **CAP Unicast Initiator / BAP Unicast Client**, or a **CAP Broadcast Source**. A small TX module (`cap_initiator_tx.c`) drives audio packets onto every started stream using the LE Audio example TX scheduler.
 
 In **unicast** mode, the initiator scans for connectable extended advertising that carries CAS service data, connects, initiates pairing, exchanges MTU, performs GATT service discovery, then discovers CAS, sink ASEs and source ASEs, configures the codec with the LC3 16_2_1 unicast preset, creates an ad-hoc unicast group, and starts the streams. In **broadcast** mode, the initiator creates a CAP broadcast source with the LC3 16_2_1 broadcast preset, starts non-connectable extended advertising plus periodic advertising carrying the Broadcast Audio Announcement UUID, a hardcoded broadcast ID (`0x123456`), the local device name (`CAP Broadcast Source`), and the BASE, then starts the broadcast stream.
 
@@ -37,10 +37,23 @@ Just-Works pairing (LE Secure Connections, no MITM, `BLE_SM_IO_CAP_NO_IO`) with 
 
 ## Build & Flash
 
+The base `sdkconfig.defaults` defaults to the **Bluedroid** host; idf.py automatically merges the per-target overlay (`sdkconfig.defaults.$IDF_TARGET`). To build with **NimBLE** host instead, layer `sdkconfig.defaults.nimble` on top via `-DSDKCONFIG_DEFAULTS`.
+
+### Bluedroid host (default)
+
 ```bash
 idf.py set-target esp32h4
 idf.py -p PORT flash monitor
 ```
+
+### NimBLE host
+
+```bash
+idf.py set-target esp32h4
+idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32h4;sdkconfig.defaults.nimble" -p PORT flash monitor
+```
+
+For `esp32s31`, replace the chip overlay accordingly.
 
 (Exit serial monitor with `Ctrl-]`.)
 

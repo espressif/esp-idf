@@ -28,6 +28,7 @@ extern "C" {
 /* Mutex */
 
 #define K_MUTEX_FOREVER     portMAX_DELAY
+#define K_MUTEX_SHORT       (5000 / portTICK_PERIOD_MS)
 
 struct k_mutex {
     SemaphoreHandle_t handle;
@@ -97,6 +98,94 @@ static inline int k_mutex_unlock(struct k_mutex *mutex)
     }
 
     return 0;
+}
+
+/* Semaphore */
+
+#define K_SEM_FOREVER       portMAX_DELAY
+#define K_SEM_SHORT         (5000 / portTICK_PERIOD_MS)
+
+struct k_sem {
+    SemaphoreHandle_t handle;
+    int result;
+};
+
+static inline void k_sem_create(struct k_sem *sem)
+{
+    assert(sem);
+    assert(sem->handle == NULL);
+
+    sem->handle = xSemaphoreCreateBinary();
+    assert(sem->handle);
+    sem->result = 0;
+}
+
+static inline void k_sem_delete(struct k_sem *sem)
+{
+    assert(sem);
+    assert(sem->handle);
+
+    vSemaphoreDelete(sem->handle);
+    sem->handle = NULL;
+}
+
+/* Inline log helper with a fixed tag, mirroring K_MUTEX_LOG_ERR. The sem
+ * helpers are inlined across many TUs, not all of which call
+ * LOG_MODULE_REGISTER, so we cannot reference the per-TU __iso_log_tag.
+ * Hardcode the "ISO_SEM" tag and keep the same level gating. */
+#if CONFIG_BT_ISO_NO_LOG || (CONFIG_BT_ISO_LOG_LEVEL < BT_ISO_LOG_ERROR)
+#define K_SEM_LOG_ERR(fmt, args...)
+#else
+#define K_SEM_LOG_ERR(fmt, args...)     BT_ISO_LOGE("ISO_SEM", fmt, ## args)
+#endif
+
+static inline int k_sem_take(struct k_sem *sem, uint32_t timeout)
+{
+    assert(sem);
+    assert(sem->handle);
+
+    /* Do NOT touch sem->result here. The producer may have already written
+     * it and called k_sem_give before this take ran (BTU/HCI cb on a
+     * higher-priority task). Clearing now would race-overwrite the
+     * producer's value. Caller must k_sem_reset() before initiating the
+     * async op that will produce the result. */
+
+    if (xSemaphoreTake(sem->handle, timeout) == pdTRUE) {
+        return 0;
+    }
+
+#if !CONFIG_BT_ISO_NO_LOG && (CONFIG_BT_ISO_LOG_LEVEL >= BT_ISO_LOG_ERROR)
+    K_SEM_LOG_ERR("TakeFail[self=%s]", pcTaskGetName(NULL));
+#else
+    K_SEM_LOG_ERR("TakeFail");
+#endif
+    return -EIO;
+}
+
+static inline int k_sem_give(struct k_sem *sem)
+{
+    assert(sem);
+    assert(sem->handle);
+
+    if (xSemaphoreGive(sem->handle) != pdTRUE) {
+        K_SEM_LOG_ERR("GiveFail");
+        return -EIO;
+    }
+
+    return 0;
+}
+
+/* Discard any pending give. Used by callers that reuse the same sem across
+ * cmd/response cycles where a previous cycle timed out — without this, a
+ * late give from the timed-out cycle would unblock the next take and the
+ * caller would see uninitialized response data. */
+static inline void k_sem_reset(struct k_sem *sem)
+{
+    assert(sem);
+    assert(sem->handle);
+
+    xQueueReset(sem->handle);
+    sem->result = 0;
 }
 
 /* Timer */

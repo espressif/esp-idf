@@ -29,13 +29,24 @@ endif()
 list(APPEND ble_audio_include_dirs
     "${CMAKE_CURRENT_LIST_DIR}/api/include"
     "${CMAKE_CURRENT_LIST_DIR}/host/common/include"
-    "${CMAKE_CURRENT_LIST_DIR}/host/adapter/nimble/include"
     "${CMAKE_CURRENT_LIST_DIR}/include"
 )
 
+if(CONFIG_BT_NIMBLE_ENABLED)
+    set(audio_adapter "host/adapter/nimble")
+elseif(CONFIG_BT_BLUEDROID_ENABLED)
+    set(audio_adapter "host/adapter/bluedroid")
+endif()
+
+list(APPEND ble_audio_include_dirs
+    "${CMAKE_CURRENT_LIST_DIR}/${audio_adapter}/include"
+)
 list(APPEND ble_audio_srcs
-    "${CMAKE_CURRENT_LIST_DIR}/host/adapter/nimble/profiles/server.c"
-    "${CMAKE_CURRENT_LIST_DIR}/host/adapter/nimble/init.c"
+    "${CMAKE_CURRENT_LIST_DIR}/${audio_adapter}/server.c"
+    "${CMAKE_CURRENT_LIST_DIR}/${audio_adapter}/init.c"
+)
+
+list(APPEND ble_audio_srcs
     "${CMAKE_CURRENT_LIST_DIR}/host/common/init.c"
     "${CMAKE_CURRENT_LIST_DIR}/api/esp_ble_audio_aics_api.c"
     "${CMAKE_CURRENT_LIST_DIR}/api/esp_ble_audio_bap_api.c"
@@ -57,69 +68,71 @@ list(APPEND ble_audio_srcs
     "${CMAKE_CURRENT_LIST_DIR}/api/esp_ble_audio_vocs_api.c"
 )
 
+# Profile glue files live under the host adapter; same set of profile sources
+# for either host, dispatched via ${audio_adapter}.
 if(CONFIG_BT_ASCS)
     list(APPEND ble_audio_srcs
-        "${CMAKE_CURRENT_LIST_DIR}/host/adapter/nimble/profiles/ascs.c"
+        "${CMAKE_CURRENT_LIST_DIR}/${audio_adapter}/profiles/ascs.c"
     )
 endif()
 
 if(CONFIG_BT_PACS)
     list(APPEND ble_audio_srcs
-        "${CMAKE_CURRENT_LIST_DIR}/host/adapter/nimble/profiles/pacs.c"
+        "${CMAKE_CURRENT_LIST_DIR}/${audio_adapter}/profiles/pacs.c"
     )
 endif()
 
 if(CONFIG_BT_BAP_SCAN_DELEGATOR)
     list(APPEND ble_audio_srcs
-        "${CMAKE_CURRENT_LIST_DIR}/host/adapter/nimble/profiles/bass.c"
+        "${CMAKE_CURRENT_LIST_DIR}/${audio_adapter}/profiles/bass.c"
     )
 endif()
 
 if(CONFIG_BT_CAP_ACCEPTOR)
     list(APPEND ble_audio_srcs
-        "${CMAKE_CURRENT_LIST_DIR}/host/adapter/nimble/profiles/cas.c"
+        "${CMAKE_CURRENT_LIST_DIR}/${audio_adapter}/profiles/cas.c"
     )
 endif()
 
 if(CONFIG_BT_CSIP_SET_MEMBER)
     list(APPEND ble_audio_srcs
-        "${CMAKE_CURRENT_LIST_DIR}/host/adapter/nimble/profiles/csis.c"
+        "${CMAKE_CURRENT_LIST_DIR}/${audio_adapter}/profiles/csis.c"
     )
 endif()
 
 if(CONFIG_BT_TBS)
     list(APPEND ble_audio_srcs
-        "${CMAKE_CURRENT_LIST_DIR}/host/adapter/nimble/profiles/tbs.c"
+        "${CMAKE_CURRENT_LIST_DIR}/${audio_adapter}/profiles/tbs.c"
     )
 endif()
 
 if(CONFIG_BT_TMAP)
     list(APPEND ble_audio_srcs
-        "${CMAKE_CURRENT_LIST_DIR}/host/adapter/nimble/profiles/tmas.c"
+        "${CMAKE_CURRENT_LIST_DIR}/${audio_adapter}/profiles/tmas.c"
     )
 endif()
 
 if(CONFIG_BT_VCP_VOL_REND)
     list(APPEND ble_audio_srcs
-        "${CMAKE_CURRENT_LIST_DIR}/host/adapter/nimble/profiles/vcs.c"
+        "${CMAKE_CURRENT_LIST_DIR}/${audio_adapter}/profiles/vcs.c"
     )
 endif()
 
 if(CONFIG_BT_MICP_MIC_DEV)
     list(APPEND ble_audio_srcs
-        "${CMAKE_CURRENT_LIST_DIR}/host/adapter/nimble/profiles/mics.c"
+        "${CMAKE_CURRENT_LIST_DIR}/${audio_adapter}/profiles/mics.c"
     )
 endif()
 
 if(CONFIG_BT_MCS)
     list(APPEND ble_audio_srcs
-        "${CMAKE_CURRENT_LIST_DIR}/host/adapter/nimble/profiles/mcs.c"
+        "${CMAKE_CURRENT_LIST_DIR}/${audio_adapter}/profiles/mcs.c"
     )
 endif()
 
 if(CONFIG_BT_HAS)
     list(APPEND ble_audio_srcs
-        "${CMAKE_CURRENT_LIST_DIR}/host/adapter/nimble/profiles/has.c"
+        "${CMAKE_CURRENT_LIST_DIR}/${audio_adapter}/profiles/has.c"
     )
 endif()
 

@@ -128,15 +128,20 @@ typedef struct {
  */
 void esp_ble_audio_gap_app_post_event(uint8_t type, void *param);
 
+#if !CONFIG_BT_BLUEDROID_ENABLED
 /**
  * @brief   Post an application-layer GATT event for audio internal usage.
  *
- * @note    This function is only needed while using NimBLE Host.
+ * @note    NimBLE-only. Bluedroid dispatches GATT events directly inside the
+ *          adapter (BTA callbacks), so no app-level post is needed. This
+ *          declaration is hidden from Bluedroid builds to make misuse a
+ *          compile-time error.
  *
  * @param   type    Event type.
  * @param   param   Event parameters.
  */
 void esp_ble_audio_gatt_app_post_event(uint8_t type, void *param);
+#endif /* !CONFIG_BT_BLUEDROID_ENABLED */
 
 /**
  * @brief   Initialize BLE Audio common functionality.
@@ -166,6 +171,21 @@ typedef struct {
  * @return  ESP_OK on success, or an error code on failure.
  */
 esp_err_t esp_ble_audio_common_start(esp_ble_audio_start_info_t *info);
+
+#if CONFIG_BT_BLUEDROID_ENABLED
+/**
+ * @brief   Get the engine's internal GATTC interface handle (Bluedroid only).
+ *
+ * Pass this to esp_ble_gattc_aux_open() / esp_ble_gattc_open() so the
+ * resulting ACL events route back to the engine, avoiding the need for the
+ * application to register a second BTA GATTC app for connection initiation.
+ *
+ * @return  Engine's gattc_if (ABI-compatible with esp_gatt_if_t), or
+ *          ESP_GATT_IF_NONE (0xFF) if GATTC registration has not completed —
+ *          callers must bail rather than pass it to aux_open.
+ */
+uint8_t esp_ble_audio_bluedroid_get_gattc_if(void);
+#endif /* CONFIG_BT_BLUEDROID_ENABLED */
 
 #ifdef __cplusplus
 }

@@ -529,9 +529,11 @@ static void gattc_db_disc(struct gattc_db *adb, uint8_t status)
      * to the upper layer.
      */
     if (status == DISC_FAIL) {
+        uint16_t conn_handle = adb->conn_handle;
+
         gattc_db_del(adb);
 
-        bt_le_nimble_gatt_post_disc_cmpl_event(adb->conn_handle, 0x01);
+        bt_le_nimble_gatt_post_disc_cmpl_event(conn_handle, 0x01);
         return;
     }
 
@@ -553,9 +555,11 @@ static void gattc_db_disc(struct gattc_db *adb, uint8_t status)
              * we will delete the gatt client database and post the
              * discovery completion event.
              */
+            uint16_t conn_handle = adb->conn_handle;
+
             gattc_db_del(adb);
 
-            bt_le_nimble_gatt_post_disc_cmpl_event(adb->conn_handle, 0x01);
+            bt_le_nimble_gatt_post_disc_cmpl_event(conn_handle, 0x01);
             break;
         }
 
@@ -590,8 +594,8 @@ static int gattc_db_disc_all_svcs_cb_safe(uint16_t conn_handle,
     case 0:
         assert(svc);
 
-        LOG_DBG("[N]GattcDbDiscAllSvcs[%s][%u][%u]",
-                audio_svc_uuid_to_str(svc->uuid.u16.value),
+        LOG_DBG("[N]GattcDbDiscAllSvcs[0x%04x][%u][%u]",
+                svc->uuid.u16.value,
                 svc->start_handle, svc->end_handle);
 
         gattc_db_svc_insert(adb, svc);
@@ -637,7 +641,7 @@ static int gattc_db_find_inc_svcs_cb_safe(uint16_t conn_handle,
 
     adb = gattc_db_find(conn_handle);
     if (adb == NULL) {
-        LOG_ERR("[N]GattcDbNotFound");
+        LOG_WRN("[N]GattcDbFindIncSvcsCbNotFound");
         rc = -ENODEV;
         goto end;
     }
@@ -646,8 +650,8 @@ static int gattc_db_find_inc_svcs_cb_safe(uint16_t conn_handle,
     case 0:
         assert(svc);
 
-        LOG_DBG("[N]GattcDbFindIncSvcs[%s][%u][%u]",
-                audio_svc_uuid_to_str(svc->uuid.u16.value),
+        LOG_DBG("[N]GattcDbFindIncSvcs[0x%04x][%u][%u]",
+                svc->uuid.u16.value,
                 svc->start_handle, svc->end_handle);
 
         gattc_db_inc_svc_insert(asvc, svc);
@@ -725,7 +729,7 @@ static int gattc_db_disc_all_inc_chrs_cb_safe(uint16_t conn_handle,
 
     adb = gattc_db_find(conn_handle);
     if (adb == NULL) {
-        LOG_ERR("[N]GattcDbNotFound");
+        LOG_WRN("[N]GattcDbDiscAllIncChrsCbNotFound");
         rc = -ENODEV;
         goto end;
     }
@@ -783,7 +787,7 @@ static int gattc_db_disc_all_chrs_cb_safe(uint16_t conn_handle,
 
     adb = gattc_db_find(conn_handle);
     if (adb == NULL) {
-        LOG_ERR("[N]GattcDbNotFound");
+        LOG_WRN("[N]GattcDbDiscAllChrsCbNotFound");
         rc = -ENODEV;
         goto end;
     }
@@ -843,7 +847,7 @@ static int gattc_db_disc_all_inc_dscs_cb_safe(uint16_t conn_handle,
 
     adb = gattc_db_find(conn_handle);
     if (adb == NULL) {
-        LOG_ERR("[N]GattcDbNotFound");
+        LOG_WRN("[N]GattcDbDiscAllIncDscsCbNotFound");
         rc = -ENODEV;
         goto end;
     }
@@ -906,7 +910,7 @@ static int gattc_db_disc_all_dscs_cb_safe(uint16_t conn_handle,
 
     adb = gattc_db_find(conn_handle);
     if (adb == NULL) {
-        LOG_ERR("[N]GattcDbNotFound");
+        LOG_WRN("[N]GattcDbDiscAllDscsCbNotFound");
         rc = -ENODEV;
         goto end;
     }
@@ -967,7 +971,7 @@ static int gattc_db_enable_notify_cb_safe(uint16_t conn_handle,
 
     adb = gattc_db_find(conn_handle);
     if (adb == NULL) {
-        LOG_ERR("[N]GattcDbNotFound");
+        LOG_WRN("[N]GattcDbEnableNotifyCbNotFound");
         rc = -ENODEV;
         goto end;
     }
@@ -987,10 +991,17 @@ static int gattc_db_enable_notify_cb_safe(uint16_t conn_handle,
         break;
     }
 
-    /* Mark the CCCD write as completed */
-    achrc->cccd_write = 1;
-
-    gattc_db_disc(adb, DISC_SUCCESS);
+    if (rc) {
+        /* Terminal failure (ENOTCONN/ETIMEOUT) — bail via DISC_FAIL so the
+         * next CCCD write isn't queued; it would otherwise sit on NimBLE's
+         * pending list and only resolve after the 30s ATT timeout, by which
+         * time the adb has been removed. */
+        gattc_db_disc(adb, DISC_FAIL);
+    } else {
+        /* Mark the CCCD write as completed */
+        achrc->cccd_write = 1;
+        gattc_db_disc(adb, DISC_SUCCESS);
+    }
 
 end:
     bt_le_host_unlock();
@@ -1014,7 +1025,7 @@ static int handle_gattc_disc_svc_by_uuid(struct bt_conn *conn, ble_uuid16_t *uui
 
     adb = gattc_db_find(conn->handle);
     if (adb == NULL) {
-        LOG_ERR("[N]GattcDbNotFound");
+        LOG_WRN("[N]GattcDiscSvcByUuidNotFound");
         goto end;
     }
 
@@ -1068,7 +1079,7 @@ static int handle_gattc_find_inc_svcs(struct bt_conn *conn,
 
     adb = gattc_db_find(conn->handle);
     if (adb == NULL) {
-        LOG_ERR("[N]GattcDbNotFound");
+        LOG_WRN("[N]GattcFindIncSvcsNotFound");
         goto end;
     }
 
@@ -1087,6 +1098,9 @@ static int handle_gattc_find_inc_svcs(struct bt_conn *conn,
             inc_svc.start_handle = ainc_svc->svc.start_handle;
             inc_svc.end_handle = ainc_svc->svc.end_handle;
 
+            /* Include declaration's own attribute type — same rationale
+             * as the Bluedroid side: caller may dereference attr->uuid. */
+            attr.uuid = BT_UUID_GATT_INCLUDE;
             attr.user_data = &inc_svc;
             /* TODO:
              * When CONFIG_BT_NIMBLE_INCL_SVC_DISCOVERY is enabled, use ainc_svc->attr_handle here.
@@ -1158,7 +1172,7 @@ static int handle_gattc_disc_chrs(struct bt_conn *conn, ble_uuid16_t *uuid,
 
     adb = gattc_db_find(conn->handle);
     if (adb == NULL) {
-        LOG_ERR("[N]GattcDbNotFound");
+        LOG_WRN("[N]GattcDiscChrsNotFound");
         goto end;
     }
 
@@ -1234,7 +1248,7 @@ void handle_gattc_db_disc_event_safe(struct bt_le_gattc_discover_event *event)
 
     conn = bt_le_acl_conn_find(event->conn_handle);
     if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("[N]GattcDbNotConn[%d]", __LINE__);
+        LOG_INF("[N]GattcDbDiscNotConn[%u][%u]", event->conn_handle, BT_CONN_STATE_GET(conn));
         goto end;
     }
 
@@ -1341,7 +1355,7 @@ static int handle_gattc_disc_all_dscs(struct bt_conn *conn,
 
     adb = gattc_db_find(conn->handle);
     if (adb == NULL) {
-        LOG_ERR("[N]GattcDbNotFound");
+        LOG_WRN("[N]GattcDiscAllDscsNotFound");
         rc = -ENODEV;
         goto end;
     }

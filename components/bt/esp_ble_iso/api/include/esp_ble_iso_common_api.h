@@ -591,6 +591,21 @@ void esp_ble_iso_gap_app_post_event(uint8_t type, void *param);
  */
 esp_err_t esp_ble_iso_common_init(esp_ble_iso_init_info_t *info);
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+/**
+ * @brief   Get the engine's internal GATTC interface handle (Bluedroid only).
+ *
+ * Pass this to esp_ble_gattc_aux_open() / esp_ble_gattc_open() so the
+ * resulting ACL events route back to the engine, avoiding the need for the
+ * application to register a second BTA GATTC app for connection initiation.
+ *
+ * @return  Engine's gattc_if (ABI-compatible with esp_gatt_if_t), or
+ *          ESP_GATT_IF_NONE (0xFF) if GATTC registration has not completed —
+ *          callers must bail rather than pass it to aux_open.
+ */
+uint8_t esp_ble_iso_bluedroid_get_gattc_if(void);
+#endif /* CONFIG_BT_BLUEDROID_ENABLED */
+
 #ifdef __cplusplus
 }
 #endif

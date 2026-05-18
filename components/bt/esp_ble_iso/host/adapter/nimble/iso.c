@@ -842,15 +842,20 @@ int bt_le_nimble_iso_init(void)
 {
     int err;
 
+    /* nimble's setters reject NULL and refuse re-registration (EALREADY), and
+     * expose no unregister path — so deinit cannot clear these. On a host
+     * re-enable the callback is still our own iso_evt_rx / bt_le_iso_rx, so
+     * treat EALREADY as success instead of failing the whole init. (evt setter
+     * returns -BLE_HS_EALREADY, pkt setter returns BLE_HS_EALREADY.) */
     err = ble_hs_iso_evt_rx_cb_set(iso_evt_rx);
-    if (err) {
+    if (err && err != -BLE_HS_EALREADY) {
         LOG_ERR("[N]IsoEvtRxCbSetFail[%d]", err);
         return err;
     }
 
 #if CONFIG_BT_ISO_RX
     err = ble_hs_iso_pkt_rx_cb_set(bt_le_iso_rx);
-    if (err) {
+    if (err && err != BLE_HS_EALREADY) {
         LOG_ERR("[N]IsoPktRxCbSetFail[%d]", err);
         return err;
     }
@@ -869,14 +874,11 @@ int bt_le_nimble_iso_init(void)
 
 void bt_le_nimble_iso_deinit(void)
 {
-    LOG_DBG("IsoDeinit");
+    LOG_DBG("[N]IsoDeinit");
 
-    ble_hs_iso_evt_rx_cb_set(NULL);
-
-#if CONFIG_BT_ISO_RX
-    ble_hs_iso_pkt_rx_cb_set(NULL);
-#endif /* CONFIG_BT_ISO_RX */
-
+    /* nimble exposes no way to unregister iso_evt_rx / bt_le_iso_rx (the
+     * setters reject NULL); they harmlessly persist until the next init,
+     * which tolerates the resulting EALREADY. */
 #if CONFIG_BT_ISO_UNICAST
     iso_disable_cis();
 #endif /* CONFIG_BT_ISO_UNICAST */
