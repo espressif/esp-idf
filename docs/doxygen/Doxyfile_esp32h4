@@ -8,3 +8,5 @@ INPUT += \
     $(PROJECT_PATH)/components/esp_driver_touch_sens/hw_ver3/include/driver/touch_version_types.h \
     $(PROJECT_PATH)/components/esp_driver_touch_sens/include/driver/touch_sens.h \
     $(PROJECT_PATH)/components/esp_driver_touch_sens/include/driver/touch_sens_types.h \
+    $(PROJECT_PATH)/components/esp_security/include/esp_key_mgr.h \
+    $(PROJECT_PATH)/components/esp_hal_security/include/hal/key_mgr_types.h \

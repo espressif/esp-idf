@@ -205,17 +205,6 @@
     This is esp32p4 chip with 2 CPU core(s), WiFi, silicon revision v0.0, 2MB external flash
     FLASH_CRYPT_CNT eFuse value is 1
     Flash encryption feature is enabled in DEVELOPMENT mode
-    Erasing partition "storage" (0x1000 bytes)
-    Writing data with esp_partition_write:
-    I (455) example: 0x4ff112a0   00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f  |................|
-    I (455) example: 0x4ff112b0   10 11 12 13 14 15 16 17  18 19 1a 1b 1c 1d 1e 1f  |................|
-    Reading with esp_partition_read:
-    I (465) example: 0x4ff112c0   00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f  |................|
-    I (475) example: 0x4ff112d0   10 11 12 13 14 15 16 17  18 19 1a 1b 1c 1d 1e 1f  |................|
-    Reading with esp_flash_read:
-    I (485) example: 0x4ff112c0   8a 20 78 9a cc bd 90 3a  96 0b 50 25 09 3b df c9  |. x....:..P%.;..|
-    I (495) example: 0x4ff112d0   d5 d7 0b fe af d2 cb 9a  3f e7 50 9f e7 b5 98 fc  |........?.P.....|
-    I (595) main_task: Returned from app_main()
 
 ------
 

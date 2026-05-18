@@ -108,7 +108,13 @@ Flash Encryption Best Practices
 
     The Key Manager peripheral in {IDF_TARGET_NAME} provides hardware-assisted **key deployment and recovery** for cryptographic keys. Keys are cryptographically bound to a Hardware Unique Key (HUK) that is unique to each chip, ensuring that key material is never exposed to software-accessible memory.
 
-    The Key Manager supports key management for the following cryptographic peripherals: :doc:`ECDSA <../api-reference/peripherals/ecdsa>`, :doc:`HMAC <../api-reference/peripherals/hmac>`, :doc:`Digital Signature (DS) <../api-reference/peripherals/ds>`, and Flash Encryption.
+    .. only:: SOC_DIG_SIGN_SUPPORTED
+
+        The Key Manager supports key management for the following cryptographic peripherals: :doc:`ECDSA <../api-reference/peripherals/ecdsa>`, :doc:`HMAC <../api-reference/peripherals/hmac>`, :doc:`Digital Signature (DS) <../api-reference/peripherals/ds>`, and Flash Encryption.
+
+    .. only:: not SOC_DIG_SIGN_SUPPORTED
+
+        The Key Manager supports key management for the following cryptographic peripherals: :doc:`ECDSA <../api-reference/peripherals/ecdsa>`, :doc:`HMAC <../api-reference/peripherals/hmac>`, and Flash Encryption.
 
     Please refer to :doc:`../api-reference/peripherals/key_manager` for detailed documentation.
 
