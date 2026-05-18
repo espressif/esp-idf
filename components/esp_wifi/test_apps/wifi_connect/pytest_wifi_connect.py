@@ -6,8 +6,17 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.two_duts
-@pytest.mark.parametrize('count', [2], indirect=True)
-@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32s3'], indirect=['target'])
+@pytest.mark.parametrize(
+    'count, config',
+    [
+        (2, 'default'),
+        (2, 'static_tx_buf'),
+    ],
+    indirect=True,
+)
+@idf_parametrize(
+    'target', ['esp32', 'esp32c3', 'esp32s3', 'esp32c6'], indirect=['target']
+)
 def test_wifi_connect_cases(case_tester: CaseTester) -> None:  # type: ignore
     case_tester.run_all_cases()
 
@@ -18,6 +27,7 @@ def test_wifi_connect_cases(case_tester: CaseTester) -> None:  # type: ignore
     'count, config, baud',
     [
         (2, 'esp32c2_xtal26m', '74880'),
+        (2, 'esp32c2_xtal26m_static_tx_buf', '74880'),
     ],
     indirect=True,
 )
