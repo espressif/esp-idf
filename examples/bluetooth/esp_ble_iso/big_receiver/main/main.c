@@ -11,27 +11,18 @@
 
 #include "esp_log.h"
 #include "nvs_flash.h"
-#include "esp_system.h"
-
-#include "host/ble_gap.h"
 
 #include "esp_ble_iso_common_api.h"
 
 #include "ble_iso_example_init.h"
 #include "ble_iso_example_utils.h"
 
-#define TAG "BIG_SNC"
+#include "scan.h"
 
 #define TARGET_DEVICE_NAME      "BIG Broadcaster"
 #define TARGET_DEVICE_NAME_LEN  (sizeof(TARGET_DEVICE_NAME) - 1)
 
 #define TARGET_BROADCAST_CODE   "1234"
-
-#define SCAN_INTERVAL           160     /* 100ms */
-#define SCAN_WINDOW             160     /* 100ms */
-
-#define PA_SYNC_SKIP            0
-#define PA_SYNC_TIMEOUT         1000    /* 1000 * 10ms = 10s */
 
 #define BIS_ISO_CHAN_COUNT      2       /* Use exactly 2 BIS channels */
 #define BIG_SYNC_TIMEOUT        100     /* 100 * 10ms = 1s */
@@ -157,46 +148,6 @@ static int bis_chan_index_get(const esp_ble_iso_chan_t *chan)
     return -1;
 }
 
-static void ext_scan_start(void)
-{
-    struct ble_gap_disc_params params = {0};
-    uint8_t own_addr_type;
-    int err;
-
-    err = ble_hs_id_infer_auto(0, &own_addr_type);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to determine own addr type, err %d", err);
-        return;
-    }
-
-    params.passive = 1;
-    params.itvl = SCAN_INTERVAL;
-    params.window = SCAN_WINDOW;
-
-    err = ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &params,
-                       example_iso_gap_event_cb, NULL);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to start scanning, err %d", err);
-        return;
-    }
-
-    ESP_LOGI(TAG, "Scanning for broadcaster...");
-}
-
-static int pa_sync_create(uint8_t addr_type, uint8_t addr[6], uint8_t sid)
-{
-    struct ble_gap_periodic_sync_params params = {0};
-    ble_addr_t sync_addr = {0};
-
-    sync_addr.type = addr_type;
-    memcpy(sync_addr.val, addr, sizeof(sync_addr.val));
-    params.skip = PA_SYNC_SKIP;
-    params.sync_timeout = PA_SYNC_TIMEOUT;
-
-    return ble_gap_periodic_adv_sync_create(&sync_addr, sid, &params,
-                                            example_iso_gap_event_cb, NULL);
-}
-
 static bool data_cb(uint8_t type, const uint8_t *data,
                     uint8_t data_len, void *user_data)
 {
@@ -253,15 +204,13 @@ static void pa_sync(esp_ble_iso_gap_app_event_t *event)
 
     ESP_LOGI(TAG, "PA synced: handle %u sid %u phy %u peer %02x:%02x:%02x:%02x:%02x:%02x",
              event->pa_sync.sync_handle, event->pa_sync.sid, event->pa_sync.adv_phy,
-             event->pa_sync.addr.val[5], event->pa_sync.addr.val[4],
-             event->pa_sync.addr.val[3], event->pa_sync.addr.val[2],
-             event->pa_sync.addr.val[1], event->pa_sync.addr.val[0]);
+             EXAMPLE_BT_ADDR_PRINT_ARGS(event->pa_sync.addr.val));
 
     /* PA sync is established; the BIGInfo report will arrive via the
      * PA sync channel, so the extended scanner is no longer needed.
      * Stop it now — pa_sync_lost() will restart it on loss.
      */
-    err = ble_gap_disc_cancel();
+    err = ext_scan_stop();
     if (err) {
         ESP_LOGW(TAG, "Failed to stop scanning, err %d", err);
     }
@@ -347,11 +296,21 @@ void app_main(void)
         return;
     }
 
+    err = app_host_init();
+    if (err) {
+        ESP_LOGE(TAG, "Failed to init host, err %d", err);
+        return;
+    }
+
     err = esp_ble_iso_common_init(&info);
     if (err) {
         ESP_LOGE(TAG, "Failed to initialize ISO, err %d", err);
         return;
     }
 
-    ext_scan_start();
+    err = ext_scan_start();
+    if (err) {
+        ESP_LOGE(TAG, "Failed to start scan, err %d", err);
+        return;
+    }
 }

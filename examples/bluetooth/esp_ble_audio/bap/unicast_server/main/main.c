@@ -13,11 +13,6 @@
 
 #include "esp_log.h"
 #include "nvs_flash.h"
-#include "esp_system.h"
-#include "esp_timer.h"
-
-#include "host/ble_hs.h"
-#include "services/gap/ble_svc_gap.h"
 
 #include "esp_ble_audio_lc3_defs.h"
 #include "esp_ble_audio_bap_api.h"
@@ -26,18 +21,7 @@
 #include "ble_audio_example_init.h"
 #include "ble_audio_example_utils.h"
 
-#define TAG "BAP_USR"
-
-#define LOCAL_DEVICE_NAME       "BAP Unicast Server"
-#define LOCAL_DEVICE_NAME_LEN   (sizeof(LOCAL_DEVICE_NAME) - 1)
-
-#define ADV_HANDLE              0x00
-#define ADV_SID                 0
-#define ADV_TX_POWER            127
-#define ADV_ADDRESS             BLE_OWN_ADDR_PUBLIC
-#define ADV_PRIMARY_PHY         BLE_HCI_LE_PHY_1M
-#define ADV_SECONDARY_PHY       BLE_HCI_LE_PHY_2M
-#define ADV_INTERVAL            BLE_GAP_ADV_ITVL_MS(200)
+#include "peripheral.h"
 
 #define SINK_LOCATION           (ESP_BLE_AUDIO_LOCATION_FRONT_LEFT | \
                                  ESP_BLE_AUDIO_LOCATION_FRONT_RIGHT)
@@ -536,7 +520,7 @@ static int set_pacs_available_contexts(void)
     return 0;
 }
 
-static void build_adv_data(void)
+static void build_ext_adv_data(void)
 {
     size_t idx = 0;
 
@@ -569,60 +553,6 @@ static void build_adv_data(void)
     memcpy(&ext_adv_data[idx], LOCAL_DEVICE_NAME, LOCAL_DEVICE_NAME_LEN);
 }
 
-static void ext_adv_start(void)
-{
-    struct ble_gap_ext_adv_params ext_params = {0};
-    struct os_mbuf *data = NULL;
-    int err;
-
-    build_adv_data();
-
-    ext_params.connectable = 1;
-    ext_params.scannable = 0;
-    ext_params.legacy_pdu = 0;
-    ext_params.own_addr_type = ADV_ADDRESS;
-    ext_params.primary_phy = ADV_PRIMARY_PHY;
-    ext_params.secondary_phy = ADV_SECONDARY_PHY;
-    ext_params.tx_power = ADV_TX_POWER;
-    ext_params.sid = ADV_SID;
-    ext_params.itvl_min = ADV_INTERVAL;
-    ext_params.itvl_max = ADV_INTERVAL;
-
-    err = ble_gap_ext_adv_configure(ADV_HANDLE, &ext_params, NULL,
-                                    example_audio_gap_event_cb, NULL);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to configure ext adv params, err %d", err);
-        return;
-    }
-
-    data = os_msys_get_pkthdr(sizeof(ext_adv_data), 0);
-    if (data == NULL) {
-        ESP_LOGE(TAG, "Failed to get ext adv mbuf");
-        return;
-    }
-
-    err = os_mbuf_append(data, ext_adv_data, sizeof(ext_adv_data));
-    if (err) {
-        ESP_LOGE(TAG, "Failed to append ext adv data, err %d", err);
-        os_mbuf_free_chain(data);
-        return;
-    }
-
-    err = ble_gap_ext_adv_set_data(ADV_HANDLE, data);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to set ext adv data, err %d", err);
-        return;
-    }
-
-    err = ble_gap_ext_adv_start(ADV_HANDLE, 0, 0);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to start ext advertising, err %d", err);
-        return;
-    }
-
-    ESP_LOGI(TAG, "Advertising started (handle %u)", ADV_HANDLE);
-}
-
 static void acl_connect(esp_ble_audio_gap_app_event_t *event)
 {
     if (event->acl_connect.status) {
@@ -632,9 +562,7 @@ static void acl_connect(esp_ble_audio_gap_app_event_t *event)
 
     ESP_LOGI(TAG, "Connected: handle %u role %u peer %02x:%02x:%02x:%02x:%02x:%02x",
              event->acl_connect.conn_handle, event->acl_connect.role,
-             event->acl_connect.dst.val[5], event->acl_connect.dst.val[4],
-             event->acl_connect.dst.val[3], event->acl_connect.dst.val[2],
-             event->acl_connect.dst.val[1], event->acl_connect.dst.val[0]);
+             EXAMPLE_BT_ADDR_PRINT_ARGS(event->acl_connect.dst.val));
 }
 
 static void acl_disconnect(esp_ble_audio_gap_app_event_t *event)
@@ -642,7 +570,22 @@ static void acl_disconnect(esp_ble_audio_gap_app_event_t *event)
     ESP_LOGI(TAG, "Disconnected: handle %u reason 0x%02x",
              event->acl_disconnect.conn_handle, event->acl_disconnect.reason);
 
-    ext_adv_start();
+    ext_adv_start(ext_adv_data, sizeof(ext_adv_data));
+}
+
+static void security_change(esp_ble_audio_gap_app_event_t *event)
+{
+    if (event->security_change.status) {
+        ESP_LOGE(TAG, "Security failed: handle %u status %d",
+                 event->security_change.conn_handle,
+                 event->security_change.status);
+        return;
+    }
+
+    ESP_LOGI(TAG, "Security: handle %u level %u bonded %u",
+             event->security_change.conn_handle,
+             event->security_change.sec_level,
+             event->security_change.bonded);
 }
 
 static void iso_gap_app_cb(esp_ble_audio_gap_app_event_t *event)
@@ -653,6 +596,9 @@ static void iso_gap_app_cb(esp_ble_audio_gap_app_event_t *event)
         break;
     case ESP_BLE_AUDIO_GAP_EVENT_ACL_DISCONNECT:
         acl_disconnect(event);
+        break;
+    case ESP_BLE_AUDIO_GAP_EVENT_SECURITY_CHANGE:
+        security_change(event);
         break;
     default:
         break;
@@ -735,6 +681,12 @@ void app_main(void)
         return;
     }
 
+    err = app_host_init();
+    if (err) {
+        ESP_LOGE(TAG, "Failed to init host, err %d", err);
+        return;
+    }
+
     err = esp_ble_audio_common_init(&info);
     if (err) {
         ESP_LOGE(TAG, "Failed to initialize audio, err %d", err);
@@ -800,11 +752,13 @@ void app_main(void)
         return;
     }
 
-    err = ble_svc_gap_device_name_set(LOCAL_DEVICE_NAME);
+    err = set_device_name();
     if (err) {
         ESP_LOGE(TAG, "Failed to set device name, err %d", err);
         return;
     }
 
-    ext_adv_start();
+    build_ext_adv_data();
+
+    ext_adv_start(ext_adv_data, sizeof(ext_adv_data));
 }

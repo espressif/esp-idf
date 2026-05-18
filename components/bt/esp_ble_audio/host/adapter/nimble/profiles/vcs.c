@@ -23,7 +23,7 @@
 #include "host/ble_gatt.h"
 #include "host/ble_hs_mbuf.h"
 
-#include "nimble/profiles/server.h"
+#include "nimble/server.h"
 
 #include "common/host.h"
 
@@ -261,7 +261,10 @@ static int vcs_svc_check(void)
      */
 
     vcs_svc = lib_vcs_svc_get();
-    assert(vcs_svc);
+    if (!vcs_svc) {
+        LOG_ERR("[N]VcsSvcGetFail");
+        return -ENODEV;
+    }
 
     LOG_DBG("[N]VCSSvcCheck");
 
@@ -380,7 +383,10 @@ int bt_le_nimble_vcs_attr_handle_set(void)
     }
 
     vcs_svc = lib_vcs_svc_get();
-    assert(vcs_svc);
+    if (!vcs_svc) {
+        LOG_ERR("[N]VcsSvcGetFail");
+        return -ENODEV;
+    }
 
     end_handle = start_handle + vcs_svc->attr_count - 1;
 
@@ -576,6 +582,11 @@ int bt_le_nimble_vcs_init(void *vcp_inc)
                 inc_vocs_svc_init(&inc_vocs_insts[i], &gatt_svc_inc_vocs[i]);
 
                 inc_vocs_insts[i].svc_p = lib_vocs_svc_get(vcp_included->vocs[i]);
+                if (!inc_vocs_insts[i].svc_p) {
+                    LOG_ERR("[N]VocsSvcGetFail[%u]", i);
+                    rc = -ENODEV;
+                    goto free;
+                }
 
                 vcs_inc_svcs[i] = &gatt_svc_inc_vocs[i];
             }
@@ -608,6 +619,11 @@ int bt_le_nimble_vcs_init(void *vcp_inc)
                 inc_aics_svc_init(&inc_aics_insts[i], &gatt_svc_inc_aics[i]);
 
                 inc_aics_insts[i].svc_p = lib_aics_svc_get(vcp_included->aics[i]);
+                if (!inc_aics_insts[i].svc_p) {
+                    LOG_ERR("[N]AicsSvcGetFail[%u]", i);
+                    rc = -ENODEV;
+                    goto free;
+                }
 
                 vcs_inc_svcs[inc_vocs_svc_count + i] = &gatt_svc_inc_aics[i];
             }
@@ -670,13 +686,17 @@ free:
         }
 
         if (inc_aics_svc_count) {
-            for (size_t i = 0; i < inc_aics_svc_count; i++) {
-                free((void *)gatt_svc_inc_aics[i].characteristics);
-                gatt_svc_inc_aics[i].characteristics = NULL;
-            }
+            /* A VOCS-phase failure reaches here with the count already set
+             * but gatt_svc_inc_aics not yet allocated (still NULL). */
+            if (gatt_svc_inc_aics) {
+                for (size_t i = 0; i < inc_aics_svc_count; i++) {
+                    free((void *)gatt_svc_inc_aics[i].characteristics);
+                    gatt_svc_inc_aics[i].characteristics = NULL;
+                }
 
-            free(gatt_svc_inc_aics);
-            gatt_svc_inc_aics = NULL;
+                free(gatt_svc_inc_aics);
+                gatt_svc_inc_aics = NULL;
+            }
 
             inc_aics_svc_count = 0;
         }

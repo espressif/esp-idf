@@ -9,15 +9,9 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <errno.h>
 
 #include "tmap_bmr.h"
 
-#define SCAN_INTERVAL           160     /* 100ms */
-#define SCAN_WINDOW             160     /* 100ms */
-
-#define PA_SYNC_SKIP            0
-#define PA_SYNC_TIMEOUT         1000    /* 1000 * 10ms = 10s */
 #define PA_SYNC_HANDLE_INIT     UINT16_MAX
 
 static uint16_t sync_handle = PA_SYNC_HANDLE_INIT;
@@ -142,30 +136,6 @@ static esp_ble_audio_bap_broadcast_sink_cb_t broadcast_sink_cbs = {
 
 static esp_ble_audio_bap_scan_delegator_cb_t scan_delegator_cbs;
 
-static void sync_broadcast_pa(const bt_addr_le_t *addr,
-                              uint8_t adv_sid,
-                              uint32_t broadcast_id)
-{
-    struct ble_gap_periodic_sync_params params = {0};
-    ble_addr_t sync_addr = {0};
-    int err;
-
-    sync_addr.type = addr->type;
-    memcpy(sync_addr.val, addr->a.val, sizeof(sync_addr.val));
-    params.skip = PA_SYNC_SKIP;
-    params.sync_timeout = PA_SYNC_TIMEOUT;
-
-    err = ble_gap_periodic_adv_sync_create(&sync_addr, adv_sid, &params,
-                                           example_audio_gap_event_cb, NULL);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to create PA sync, err %d", err);
-        return;
-    }
-
-    bcast_id = broadcast_id;
-    pa_syncing = true;  /* Mark PA sync as in progress */
-}
-
 static bool scan_check_and_sync_broadcast(uint8_t type, const uint8_t *data,
                                           uint8_t data_len, void *user_data)
 {
@@ -216,7 +186,7 @@ static bool scan_check_and_sync_broadcast(uint8_t type, const uint8_t *data,
 void bap_broadcast_scan_recv(esp_ble_audio_gap_app_event_t *event)
 {
     uint32_t broadcast_id;
-    bt_addr_le_t addr;
+    int err;
 
     if ((event->ext_scan_recv.event_type & EXAMPLE_ADV_PROP_CONNECTABLE) ||
             event->ext_scan_recv.per_adv_itvl == 0) {
@@ -238,10 +208,16 @@ void bap_broadcast_scan_recv(esp_ble_audio_gap_app_event_t *event)
         ESP_LOGI(TAG, "Found TMAP BMS, starting PA sync (broadcast ID 0x%06lx)",
                  broadcast_id);
 
-        addr.type = event->ext_scan_recv.addr.type;
-        memcpy(addr.a.val, event->ext_scan_recv.addr.val, sizeof(addr.a.val));
+        err = pa_sync_create(event->ext_scan_recv.addr.type,
+                             event->ext_scan_recv.addr.val,
+                             event->ext_scan_recv.sid);
+        if (err) {
+            ESP_LOGE(TAG, "Failed to create PA sync, err %d", err);
+            return;
+        }
 
-        sync_broadcast_pa(&addr, event->ext_scan_recv.sid, broadcast_id);
+        bcast_id = broadcast_id;
+        pa_syncing = true;
     }
 }
 
@@ -259,7 +235,7 @@ void bap_broadcast_pa_sync(esp_ble_audio_gap_app_event_t *event)
     ESP_LOGI(TAG, "PA sync %u synced with broadcast ID 0x%06x",
              event->pa_sync.sync_handle, bcast_id);
 
-    err = ble_gap_disc_cancel();
+    err = ext_scan_stop();
     if (err) {
         ESP_LOGE(TAG, "Failed to stop scanning, err %d", err);
         return;
@@ -296,29 +272,7 @@ void bap_broadcast_pa_lost(esp_ble_audio_gap_app_event_t *event)
 
 int bap_broadcast_sink_scan(void)
 {
-    struct ble_gap_disc_params params = {0};
-    uint8_t own_addr_type;
-    int err;
-
-    err = ble_hs_id_infer_auto(0, &own_addr_type);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to determine own addr type, err %d", err);
-        return err;
-    }
-
-    params.passive = 1;
-    params.itvl = SCAN_INTERVAL;
-    params.window = SCAN_WINDOW;
-
-    err = ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &params,
-                       example_audio_gap_event_cb, NULL);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to start scanning, err %d", err);
-        return err;
-    }
-
-    ESP_LOGI(TAG, "Scanning for broadcaster...");
-    return 0;
+    return ext_scan_start();
 }
 
 int bap_broadcast_sink_init(void)

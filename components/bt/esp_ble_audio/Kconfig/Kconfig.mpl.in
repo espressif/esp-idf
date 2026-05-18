@@ -71,9 +71,10 @@ if BT_MPL
 
     config BT_MPL_OBJECTS
         bool "Support for media player objects"
-        depends on BT_OTS
+        select BT_OTS
     # TODO: Temporarily depends also on BT_MCS, to avoid issues with the
-    # bt_mcs_get_ots() call
+    # bt_mcs_get_ots() call. BT_MCS stays as `depends on` because it has
+    # non-leaf prerequisites (BT_MCTL_LOCAL_PLAYER_REMOTE_CONTROL ...).
         depends on BT_MCS
     # OTS shall be instantiated as a Secondary Service and shall be
     # included in MCS or GMCS.

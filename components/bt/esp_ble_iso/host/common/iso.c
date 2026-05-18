@@ -25,11 +25,19 @@
 
 LOG_MODULE_REGISTER(ISO_SHIM, CONFIG_BT_ISO_LOG_LEVEL);
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+#ifdef CONFIG_BT_BLE_ISO_STD_FLOW_CTRL
+#define ISO_STD_FLOW_CTRL       true
+#else /* CONFIG_BT_BLE_ISO_STD_FLOW_CTRL */
+#define ISO_STD_FLOW_CTRL       false
+#endif /* CONFIG_BT_BLE_ISO_STD_FLOW_CTRL */
+#else /* CONFIG_BT_BLUEDROID_ENABLED */
 #ifdef CONFIG_BT_NIMBLE_ISO_STD_FLOW_CTRL
 #define ISO_STD_FLOW_CTRL       true
 #else /* CONFIG_BT_NIMBLE_ISO_STD_FLOW_CTRL */
 #define ISO_STD_FLOW_CTRL       false
 #endif /* CONFIG_BT_NIMBLE_ISO_STD_FLOW_CTRL */
+#endif /* CONFIG_BT_BLUEDROID_ENABLED */
 
 #define ISO_PKT_FIRST_FRAG      (0b00)
 #define ISO_PKT_CONT_FRAG       (0b01)
@@ -757,7 +765,11 @@ void bt_le_iso_handle_rx_data(uint8_t *data, size_t data_len)
 
 int bt_le_iso_disconnect(uint16_t conn_handle, uint8_t reason)
 {
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_iso_disconnect(conn_handle, reason);
+#else
     return bt_le_nimble_iso_disconnect(conn_handle, reason);
+#endif
 }
 
 static void iso_features_set(void)
@@ -819,7 +831,11 @@ int bt_le_iso_init(void)
     r_ble_ll_isoal_tx_comp_cb_set(iso_tx_comp_cb);
 #endif /* CONFIG_BT_ISO_TX */
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    err = bt_le_bluedroid_iso_init();
+#else
     err = bt_le_nimble_iso_init();
+#endif
     if (err) {
         return err;
     }
@@ -839,5 +855,9 @@ void bt_le_iso_deinit(void)
     r_ble_ll_isoal_tx_comp_cb_set(NULL);
 #endif /* CONFIG_BT_ISO_TX */
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    bt_le_bluedroid_iso_deinit();
+#else
     bt_le_nimble_iso_deinit();
+#endif
 }

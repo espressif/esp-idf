@@ -7,7 +7,7 @@
 
 ## Overview
 
-This example demonstrates a raw BLE Isochronous Broadcaster — it creates a Broadcast Isochronous Group (BIG) directly at the ISO transport layer over the NimBLE host, without any BLE Audio profile (BAP/CAP) on top.
+This example demonstrates a raw BLE Isochronous Broadcaster — it creates a Broadcast Isochronous Group (BIG) directly at the ISO transport layer over either the NimBLE or Bluedroid host (selected at build time via Kconfig), without any BLE Audio profile (BAP/CAP) on top.
 
 The device acts as the **broadcaster**: it starts extended + periodic advertising, creates a BIG carrying two BIS streams, sets up an HCI input data path on each BIS, and then transmits SDUs on a fixed 10 ms cadence using a software TX scheduler. The peer (`big_receiver`) discovers the broadcaster by name, syncs to the periodic advertising train, decodes BIGInfo, and joins the BIS sub-events.
 
@@ -39,20 +39,33 @@ Notable hard-coded parameters in `main/main.c`:
 
 ### Security & Pairing
 
-The shared init at `../common_components/example_init/ble_iso_example_init.c` configures Just-Works pairing (LE Secure Connections, no MITM, `BLE_SM_IO_CAP_NO_IO`) with bonding enabled, and leaves `gatts_register_cb = NULL` (no GATT services). These settings are not exercised by this example — BIG broadcast traffic is non-connectable and BIS payload encryption is driven by the broadcast code, independent of host SMP.
+On the NimBLE path, the shared init at `../common_components/example_init/ble_iso_example_init.c` configures Just-Works pairing (LE Secure Connections, no MITM, `BLE_SM_IO_CAP_NO_IO`) with bonding enabled, and leaves `gatts_register_cb = NULL` (no GATT services). On the Bluedroid path the same init just brings up the controller and host with no SMP configuration. Either way these settings are not exercised by this example — BIG broadcast traffic is non-connectable and BIS payload encryption is driven by the broadcast code, independent of host SMP.
 
 ## Build & Flash
+
+The base `sdkconfig.defaults` defaults to the **Bluedroid** host; idf.py automatically merges the per-target overlay (`sdkconfig.defaults.$IDF_TARGET`). To build with **NimBLE** host instead, layer `sdkconfig.defaults.nimble` on top via `-DSDKCONFIG_DEFAULTS`.
+
+### Bluedroid host (default)
 
 ```bash
 idf.py set-target esp32h4
 idf.py -p PORT flash monitor
 ```
 
+### NimBLE host
+
+```bash
+idf.py set-target esp32h4
+idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32h4;sdkconfig.defaults.nimble" -p PORT flash monitor
+```
+
+For `esp32s31`, replace the chip overlay accordingly.
+
 (Exit serial monitor with `Ctrl-]`.)
 
 ## Example Flow
 
-1. NVS, NimBLE host, and the ISO common layer are initialised.
+1. NVS, the selected BLE host (NimBLE or Bluedroid), and the ISO common layer are initialised.
 2. A TX scheduler is initialised for each of the two BIS channels.
 3. Extended advertising parameters / data and periodic advertising parameters / data are configured for handle 0 (non-connectable, non-scannable, primary 1M / secondary 2M).
 4. Periodic advertising and extended advertising are started.

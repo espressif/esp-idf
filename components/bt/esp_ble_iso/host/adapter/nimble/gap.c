@@ -217,9 +217,9 @@ void bt_le_nimble_gap_post_event(void *param)
         break;
 
     default:
+        LOG_WRN("[N]GapPostEvtUnexp[%u]", ev->type);
         free(qev);
-        assert(0);
-        break;
+        return;
     }
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GAP_EVENT, qev, sizeof(*qev));
@@ -253,22 +253,39 @@ free:
 
 int bt_le_nimble_scan_start(const struct bt_le_scan_param *param, ble_gap_event_fn *cb)
 {
-    struct ble_gap_disc_params scan_param = {0};
+    struct ble_gap_ext_disc_params uncoded = {0};
+    int rc;
 
-    scan_param.itvl = param->interval;
-    scan_param.window = param->window;
-    scan_param.filter_policy = 0;
-    scan_param.limited = 0;
-    scan_param.passive = !param->type;
-    scan_param.filter_duplicates = 0;
+    LOG_DBG("[N]ScanStart[%u][%u][%u]", param->type, param->interval, param->window);
 
-    return nimble_err_to_errno(ble_gap_disc(BLE_OWN_ADDR_PUBLIC, BLE_HS_FOREVER,
-                                            &scan_param, cb, NULL));
+    uncoded.itvl = param->interval;
+    uncoded.window = param->window;
+    uncoded.passive = !param->type;
+
+    /* LE Audio sources broadcast via extended advertising; legacy
+     * ble_gap_disc would miss them. Uncoded-only mirrors the Bluedroid
+     * side which sets BTM_BLE_GAP_EXT_SCAN_UNCODE_MASK. */
+    rc = ble_gap_ext_disc(BLE_OWN_ADDR_PUBLIC, 0, 0, 0, 0, 0,
+                          &uncoded, NULL, cb, NULL);
+    if (rc) {
+        LOG_ERR("[N]ScanStartFail[%d]", rc);
+    }
+
+    return nimble_err_to_errno(rc);
 }
 
 int bt_le_nimble_scan_stop(void)
 {
-    return nimble_err_to_errno(ble_gap_disc_cancel());
+    int rc;
+
+    LOG_DBG("[N]ScanStop");
+
+    rc = ble_gap_disc_cancel();
+    if (rc) {
+        LOG_ERR("[N]ScanStopFail[%d]", rc);
+    }
+
+    return nimble_err_to_errno(rc);
 }
 
 int bt_le_nimble_iso_disconnect(uint16_t conn_handle, uint8_t reason)

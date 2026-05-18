@@ -7,9 +7,6 @@
  */
 
 #include <stdint.h>
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
 #include <errno.h>
 
 #include "tmap_peripheral.h"
@@ -321,6 +318,9 @@ int mcp_discover_mcs(void)
         ESP_LOGE(TAG, "%s, not connected", __func__);
         return -ENOTCONN;
     }
+
+    /* New session — re-arm the initial read cascade. */
+    is_remote_read = false;
 
     err = esp_ble_audio_mcc_discover_mcs(conn_handle, true);
     if (err) {

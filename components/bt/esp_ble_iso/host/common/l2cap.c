@@ -146,7 +146,7 @@ int bt_le_l2cap_accept(uint16_t conn_handle, uint16_t psm,
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("NotConn[%d]", __LINE__);
+        LOG_INF("L2capAcceptNotConn[%u][%u]", conn_handle, BT_CONN_STATE_GET(conn));
 
         *result = L2CAP_LE_ERR_INVALID_PARAMS;
         return -ENOTCONN;
@@ -219,7 +219,7 @@ void bt_le_l2cap_connected(uint16_t conn_handle, uint16_t psm,
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("NotConn[%d]", __LINE__);
+        LOG_INF("L2capConnectedNotConn[%u][%u]", conn_handle, BT_CONN_STATE_GET(conn));
         return;
     }
 
@@ -255,7 +255,7 @@ void bt_le_l2cap_disconnected(uint16_t conn_handle, uint16_t psm)
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("NotConn[%d]", __LINE__);
+        LOG_INF("L2capDisconnectedNotConn[%u][%u]", conn_handle, BT_CONN_STATE_GET(conn));
         return;
     }
 
@@ -294,7 +294,7 @@ void bt_le_l2cap_received(uint16_t conn_handle, uint16_t psm,
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("NotConn[%d]", __LINE__);
+        LOG_INF("L2capReceivedNotConn[%u][%u]", conn_handle, BT_CONN_STATE_GET(conn));
         return;
     }
 
@@ -315,7 +315,9 @@ void bt_le_l2cap_received(uint16_t conn_handle, uint16_t psm,
 _IDF_ONLY
 int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan, uint16_t psm)
 {
+#if !CONFIG_BT_BLUEDROID_ENABLED
     int err;
+#endif
 
     LOG_DBG("L2capChanConnect[%04x]", psm);
 
@@ -334,6 +336,12 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan, uint
         return -EINVAL;
     }
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    /* L2CAP COC is not yet implemented in the Bluedroid adapter (no
+     * bt_le_bluedroid_l2cap_chan_connect exists). Return early so callers
+     * like bt_gatt_ots_l2cap_connect see a clean -ENOTSUP. */
+    return -ENOTSUP;
+#else
     err = bt_le_nimble_l2cap_chan_connect(conn->handle);
     if (err) {
         return err;
@@ -342,12 +350,15 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan, uint
     l2cap_chan_add(conn, chan, psm);
 
     return 0;
+#endif
 }
 
 _IDF_ONLY
 int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 {
+#if !CONFIG_BT_BLUEDROID_ENABLED
     int err;
+#endif
 
     LOG_DBG("L2capChanDisconnect");
 
@@ -361,6 +372,9 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
         return -ENOTCONN;
     }
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return -ENOTSUP;
+#else
     err = bt_le_nimble_l2cap_chan_disconnect(chan);
     if (err) {
         /* If the disconnect failed, remove the channel from the connection.
@@ -371,6 +385,7 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
     }
 
     return err;
+#endif
 }
 
 _IDF_ONLY
@@ -393,7 +408,11 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
         return -EMSGSIZE;
     }
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return -ENOTSUP;
+#else
     return bt_le_nimble_l2cap_chan_send(chan, buf);
+#endif
 }
 
 _IDF_ONLY
@@ -490,10 +509,18 @@ int bt_le_l2cap_init(void)
     }
 #endif /* CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT */
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    /* No adapter-level L2CAP init exists (COC not implemented). Don't fail
+     * host init here — the host-agnostic OTS registrations above are still
+     * valid; any actual COC connect attempt later returns -ENOTSUP in
+     * bt_l2cap_chan_connect, so OTS features fail gracefully at use time
+     * instead of preventing the whole host from coming up. */
+#else
     err = bt_le_nimble_l2cap_init();
     if (err) {
         return err;
     }
+#endif
 
     return 0;
 }

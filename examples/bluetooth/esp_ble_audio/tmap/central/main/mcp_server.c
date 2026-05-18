@@ -5,9 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-
 #include "tmap_central.h"
 
 int mcp_server_init(void)

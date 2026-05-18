@@ -15,12 +15,10 @@
 #include "sdkconfig.h"
 
 #include "esp_err.h"
+#include "esp_log.h"
 
-#include "zephyr/kernel.h"
-
-#include "host/ble_gap.h"
-#include "host/ble_hs_adv.h"
-#include "host/ble_store.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 
 #include "esp_ble_iso_common_api.h"
 
@@ -51,9 +49,60 @@
 #define EXAMPLE_BYTES_LIST_LE48             BT_BYTES_LIST_LE48
 #define EXAMPLE_BYTES_LIST_LE64             BT_BYTES_LIST_LE64
 
-int example_iso_gap_event_cb(struct ble_gap_event *event, void *arg);
+/* bt_le_addr.val carries the host stack's native byte order: NimBLE is
+ * LSB-first (BT spec wire order), Bluedroid is MSB-first (BD_ADDR). Use
+ * this with "%02x:%02x:%02x:%02x:%02x:%02x" to print MSB-first regardless
+ * of host. Examples can otherwise pass val[] straight to their host APIs
+ * without conversion. */
+#if CONFIG_BT_BLUEDROID_ENABLED
+#define EXAMPLE_BT_ADDR_PRINT_ARGS(_v) \
+    (_v)[0], (_v)[1], (_v)[2], (_v)[3], (_v)[4], (_v)[5]
 
-void example_iso_security_failed_recover(const char *tag, uint16_t conn_handle, uint8_t status);
+/* Fire-and-wait helper for Bluedroid GAP APIs that pair an async call with
+ * a matching ESP_GAP_BLE_*_COMPLETE_EVT. The example's GAP event handler
+ * is expected to xSemaphoreGive(_sem) on that COMPLETE_EVT. `TAG` and the
+ * enclosing function's `esp_err_t` return are taken from the call site.
+ *
+ * !!! Demo-only — DO NOT copy into production code. !!!
+ * Risks (acceptable in linear init sequences, not in customer apps):
+ *   - Same-task deadlock: must NOT be called from the task that dispatches
+ *     the COMPLETE_EVT (BTC task by default; lib forwarding can route some
+ *     events through other tasks — verify the path for your event).
+ *   - portMAX_DELAY = no timeout: hangs forever on controller/firmware
+ *     misbehavior. Production must use a bounded timeout + recovery.
+ *   - Shared binary sem: concurrent callers race; first take consumes
+ *     whichever give arrived. Examples avoid this by serializing init.
+ *   - No abort hook: nothing can break a portMAX_DELAY wait at shutdown.
+ *   - Status not checked: see EXAMPLE_WAIT_API_CHECK below.
+ *
+ * Production should drive BLE init/teardown via an event-driven state
+ * machine (one task owns the BLE flow, callbacks advance state, no
+ * blocking from inside callbacks). NimBLE host returns ctrl errors
+ * synchronously and sidesteps most of this complexity. */
+#define EXAMPLE_WAIT_API(_call, _sem, _delay) do {                      \
+        esp_err_t _err = (_call);                                       \
+        if (_err != ESP_OK) {                                           \
+            ESP_LOGE(TAG, #_call " failed, err %d", _err);              \
+            return _err;                                                \
+        }                                                               \
+        xSemaphoreTake(_sem, _delay);                                   \
+    } while (0)
+
+/* As EXAMPLE_WAIT_API but also checks the controller status latched by the
+ * gap_event_handler into `_op_status` after the sem is taken. Returns
+ * ESP_FAIL on async failure. Caller must provide a static esp_bt_status_t
+ * and write it from each COMPLETE_EVT param before xSemaphoreGive. */
+#define EXAMPLE_WAIT_API_CHECK(_call, _sem, _delay, _op_status) do {    \
+        EXAMPLE_WAIT_API(_call, _sem, _delay);                          \
+        if ((_op_status) != ESP_BT_STATUS_SUCCESS) {                    \
+            ESP_LOGE(TAG, #_call " ctrl status %d", (_op_status));      \
+            return ESP_FAIL;                                            \
+        }                                                               \
+    } while (0)
+#else
+#define EXAMPLE_BT_ADDR_PRINT_ARGS(_v) \
+    (_v)[5], (_v)[4], (_v)[3], (_v)[2], (_v)[1], (_v)[0]
+#endif
 
 /**
  * @brief TX scheduler for periodic ISO data transmission.

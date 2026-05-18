@@ -430,3 +430,10 @@ unregister_gap:
     }
     return ESP_FAIL;
 }
+
+#if CONFIG_BT_BLUEDROID_ENABLED
+uint8_t esp_ble_iso_bluedroid_get_gattc_if(void)
+{
+    return bt_le_bluedroid_gattc_get_if();
+}
+#endif /* CONFIG_BT_BLUEDROID_ENABLED */

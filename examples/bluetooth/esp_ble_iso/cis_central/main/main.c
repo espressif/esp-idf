@@ -10,35 +10,16 @@
 
 #include "esp_log.h"
 #include "nvs_flash.h"
-#include "esp_system.h"
-#include "esp_timer.h"
-
-#include "host/ble_gap.h"
-#include "services/gap/ble_svc_gap.h"
 
 #include "esp_ble_iso_common_api.h"
 
 #include "ble_iso_example_init.h"
 #include "ble_iso_example_utils.h"
 
-#define TAG "CIS_CEN"
-
-#define LOCAL_DEVICE_NAME       "CIS Central"
+#include "central.h"
 
 #define TARGET_DEVICE_NAME      "CIS Peripheral"
 #define TARGET_DEVICE_NAME_LEN  (sizeof(TARGET_DEVICE_NAME) - 1)
-
-#define SCAN_INTERVAL           160     /* 100ms */
-#define SCAN_WINDOW             160     /* 100ms */
-
-#define INIT_SCAN_INTERVAL      16      /* 10ms */
-#define INIT_SCAN_WINDOW        16      /* 10ms */
-#define CONN_INTERVAL           64      /* 64 * 1.25 = 80ms */
-#define CONN_LATENCY            0
-#define CONN_TIMEOUT            500     /* 500 * 10ms = 5s */
-#define CONN_MAX_CE_LEN         0xFFFF
-#define CONN_MIN_CE_LEN         0xFFFF
-#define CONN_DURATION           10000   /* 10s */
 
 #define SECURITY_LEVEL          ESP_BLE_ISO_SECURITY_NO_MITM
 
@@ -205,72 +186,6 @@ static void tx_scheduler_cb(void *arg)
     iso_chan_send();
 }
 
-static void ext_scan_start(void)
-{
-    struct ble_gap_disc_params params = {0};
-    uint8_t own_addr_type;
-    int err;
-
-    err = ble_hs_id_infer_auto(0, &own_addr_type);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to determine address type, err %d", err);
-        return;
-    }
-
-    params.passive = 1;
-    params.itvl = SCAN_INTERVAL;
-    params.window = SCAN_WINDOW;
-
-    err = ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &params,
-                       example_iso_gap_event_cb, NULL);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to start scanning, err %d", err);
-        return;
-    }
-
-    ESP_LOGI(TAG, "Scanning for peripheral...");
-}
-
-static int conn_create(uint8_t addr_type, uint8_t addr[6])
-{
-    struct ble_gap_conn_params params = {0};
-    uint8_t own_addr_type = 0;
-    ble_addr_t dst = {0};
-    int err;
-
-    err = ble_gap_disc_cancel();
-    if (err) {
-        ESP_LOGE(TAG, "Failed to stop scanning, err %d", err);
-        return err;
-    }
-
-    err = ble_hs_id_infer_auto(0, &own_addr_type);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to determine address type, err %d", err);
-        return err;
-    }
-
-    params.scan_itvl = INIT_SCAN_INTERVAL;
-    params.scan_window = INIT_SCAN_WINDOW;
-    params.itvl_min = CONN_INTERVAL;
-    params.itvl_max = CONN_INTERVAL;
-    params.latency = CONN_LATENCY;
-    params.supervision_timeout = CONN_TIMEOUT;
-    params.max_ce_len = CONN_MAX_CE_LEN;
-    params.min_ce_len = CONN_MIN_CE_LEN;
-
-    dst.type = addr_type;
-    memcpy(dst.val, addr, sizeof(dst.val));
-
-    return ble_gap_connect(own_addr_type, &dst, CONN_DURATION, &params,
-                           example_iso_gap_event_cb, NULL);
-}
-
-static int pairing_start(uint16_t conn_handle)
-{
-    return ble_gap_security_initiate(conn_handle);
-}
-
 static bool data_cb(uint8_t type, const uint8_t *data,
                     uint8_t data_len, void *user_data)
 {
@@ -302,9 +217,19 @@ static void ext_scan_recv(esp_ble_iso_gap_app_event_t *event)
         return;
     }
 
+    err = ext_scan_stop();
+    if (err) {
+        ESP_LOGE(TAG, "Failed to stop scanning, err %d", err);
+        return;
+    }
+
     err = conn_create(event->ext_scan_recv.addr.type, event->ext_scan_recv.addr.val);
     if (err) {
         ESP_LOGE(TAG, "Failed to create connection, err %d", err);
+        /* Scan was stopped above. acl_disconnect (which restarts scan) only
+         * fires on an established connection — resume here to avoid a
+         * no-scan / no-conn dead state. */
+        ext_scan_start();
         return;
     }
 
@@ -318,14 +243,15 @@ static void acl_connect(esp_ble_iso_gap_app_event_t *event)
     if (event->acl_connect.status) {
         ESP_LOGE(TAG, "Connection failed, status %d", event->acl_connect.status);
         acl_connected = false;
+        /* Async failure: acl_disconnect won't fire (never established),
+         * so restart scanning here to avoid a no-scan / no-conn dead state. */
+        ext_scan_start();
         return;
     }
 
     ESP_LOGI(TAG, "Connected: handle %u role %u peer %02x:%02x:%02x:%02x:%02x:%02x",
              event->acl_connect.conn_handle, event->acl_connect.role,
-             event->acl_connect.dst.val[5], event->acl_connect.dst.val[4],
-             event->acl_connect.dst.val[3], event->acl_connect.dst.val[2],
-             event->acl_connect.dst.val[1], event->acl_connect.dst.val[0]);
+             EXAMPLE_BT_ADDR_PRINT_ARGS(event->acl_connect.dst.val));
 
     if (iso_chan.required_sec_level == ESP_BLE_ISO_SECURITY_NO_MITM ||
             iso_chan.required_sec_level == ESP_BLE_ISO_SECURITY_MITM) {
@@ -352,8 +278,8 @@ static void acl_disconnect(esp_ble_iso_gap_app_event_t *event)
 static void security_change(esp_ble_iso_gap_app_event_t *event)
 {
     if (event->security_change.status) {
-        example_iso_security_failed_recover(TAG, event->security_change.conn_handle,
-                                            event->security_change.status);
+        security_failed_recover(event->security_change.conn_handle,
+                                event->security_change.status);
         return;
     }
 
@@ -406,15 +332,15 @@ void app_main(void)
         return;
     }
 
-    err = esp_ble_iso_common_init(&info);
+    err = app_host_init();
     if (err) {
-        ESP_LOGE(TAG, "Failed to initialize ISO, err %d", err);
+        ESP_LOGE(TAG, "Failed to init host, err %d", err);
         return;
     }
 
-    err = ble_svc_gap_device_name_set(LOCAL_DEVICE_NAME);
+    err = esp_ble_iso_common_init(&info);
     if (err) {
-        ESP_LOGE(TAG, "Failed to set device name, err %d", err);
+        ESP_LOGE(TAG, "Failed to initialize ISO, err %d", err);
         return;
     }
 
@@ -426,5 +352,15 @@ void app_main(void)
         return;
     }
 
-    ext_scan_start();
+    err = set_device_name();
+    if (err) {
+        ESP_LOGE(TAG, "Failed to set device name, err %d", err);
+        return;
+    }
+
+    err = ext_scan_start();
+    if (err) {
+        ESP_LOGE(TAG, "Failed to start scan, err %d", err);
+        return;
+    }
 }

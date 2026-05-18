@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
-#include <assert.h>
 #include <errno.h>
 
 #include "cap_acceptor.h"
@@ -18,13 +17,8 @@
 #define TARGET_DEVICE_NAME      "CAP Broadcast Source"
 #define TARGET_DEVICE_NAME_LEN  (sizeof(TARGET_DEVICE_NAME) - 1)
 #define TARGET_BROADCAST_CODE   "1234"
-
-#define SCAN_INTERVAL           160     /* 100ms */
-#define SCAN_WINDOW             160     /* 100ms */
 #endif /* CONFIG_EXAMPLE_SCAN_SELF */
 
-#define PA_SYNC_SKIP            0
-#define PA_SYNC_TIMEOUT         1000    /* 1000 * 10ms = 10s */
 #define PA_SYNC_HANDLE_INIT     UINT16_MAX
 
 enum broadcast_flag {
@@ -78,101 +72,9 @@ static struct broadcast_sink {
     .sync_handle = PA_SYNC_HANDLE_INIT,
 };
 
-static example_audio_rx_metrics_t rx_metrics;
-
-static int pa_sync_without_past(const bt_addr_le_t *addr, uint8_t adv_sid)
-{
-    struct ble_gap_periodic_sync_params params = {0};
-    ble_addr_t sync_addr = {0};
-    int err;
-
-    sync_addr.type = addr->type;
-    memcpy(sync_addr.val, addr->a.val, sizeof(sync_addr.val));
-    params.skip = PA_SYNC_SKIP;
-    params.sync_timeout = PA_SYNC_TIMEOUT;
-
-    err = ble_gap_periodic_adv_sync_create(&sync_addr, adv_sid, &params,
-                                           example_audio_gap_event_cb, NULL);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to create PA sync without past, err %d", err);
-    }
-
-    return err;
-}
-
-static int pa_sync_with_past(uint16_t conn_handle,
-                             const esp_ble_audio_bap_scan_delegator_recv_state_t *recv_state)
-{
-    struct ble_gap_periodic_sync_params params = {0};
-    int err;
-
-    params.skip = PA_SYNC_SKIP;
-    params.sync_timeout = PA_SYNC_TIMEOUT;
-
-    err = ble_gap_periodic_adv_sync_receive(conn_handle, &params,
-                                            example_audio_gap_event_cb, NULL);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to enable PAST receive, err %d", err);
-        return err;
-    }
-
-    /* Tell the Assistant we are waiting for PAST so it sends
-     * HCI_LE_Periodic_Advertising_Sync_Transfer.
-     */
-    err = esp_ble_audio_bap_scan_delegator_set_pa_state(recv_state->src_id,
-                                                        ESP_BLE_AUDIO_BAP_PA_STATE_INFO_REQ);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to set PA state to INFO_REQ, err %d", err);
-    }
-
-    return err;
-}
-
-static int pa_sync_terminate(void)
-{
-    int err;
-
-    err = ble_gap_periodic_adv_sync_terminate(broadcast_sink.sync_handle);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to terminate PA sync, err %d", err);
-    }
-
-    return err;
-}
+static example_audio_rx_metrics_t rx_metrics[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 
 #if CONFIG_EXAMPLE_SCAN_SELF
-static int ext_scan_start(void)
-{
-    struct ble_gap_disc_params params = {0};
-    uint8_t own_addr_type;
-    int err;
-
-    err = ble_hs_id_infer_auto(0, &own_addr_type);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to determine own addr type, err %d", err);
-        return err;
-    }
-
-    params.passive = 1;
-    params.itvl = SCAN_INTERVAL;
-    params.window = SCAN_WINDOW;
-
-    err = ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &params,
-                       example_audio_gap_event_cb, NULL);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to start scanning, err %d", err);
-        return err;
-    }
-
-    ESP_LOGI(TAG, "Scanning for broadcast source...");
-    return 0;
-}
-
-static int ext_scan_stop(void)
-{
-    return ble_gap_disc_cancel();
-}
-
 int check_start_scan(void)
 {
     int err;
@@ -243,7 +145,6 @@ static bool data_cb(uint8_t type, const uint8_t *data,
 void broadcast_scan_recv(esp_ble_audio_gap_app_event_t *event)
 {
     struct scan_recv_data sr = {0};
-    bt_addr_le_t addr;
     int err;
 
     /* Periodic advertising interval. 0 if no periodic advertising. */
@@ -267,10 +168,9 @@ void broadcast_scan_recv(esp_ble_audio_gap_app_event_t *event)
         broadcast_sink.requested_bis_sync = ESP_BLE_AUDIO_BAP_BIS_SYNC_NO_PREF;
         broadcast_sink.broadcast_id = sr.broadcast_id;
 
-        addr.type = event->ext_scan_recv.addr.type;
-        memcpy(addr.a.val, event->ext_scan_recv.addr.val, sizeof(addr.a.val));
-
-        err = pa_sync_without_past(&addr, event->ext_scan_recv.sid);
+        err = pa_sync_create(event->ext_scan_recv.addr.type,
+                             event->ext_scan_recv.addr.val,
+                             event->ext_scan_recv.sid);
         if (err) {
             return;
         }
@@ -417,9 +317,11 @@ static uint8_t broadcast_stream_idx(const esp_ble_audio_bap_stream_t *stream)
 
 static void broadcast_stream_started_cb(esp_ble_audio_bap_stream_t *stream)
 {
-    ESP_LOGI(TAG, "[SNK #%u] Stream started", broadcast_stream_idx(stream));
+    uint8_t idx = broadcast_stream_idx(stream);
 
-    example_audio_rx_metrics_reset(&rx_metrics);
+    ESP_LOGI(TAG, "[SNK #%u] Stream started", idx);
+
+    example_audio_rx_metrics_reset(&rx_metrics[idx]);
 
     broadcast_sink.active_streams++;
     flag_clear(FLAG_BROADCAST_SYNCING);
@@ -480,11 +382,12 @@ static void broadcast_stream_recv_cb(esp_ble_audio_bap_stream_t *stream,
                                      const esp_ble_iso_recv_info_t *info,
                                      const uint8_t *data, uint16_t len)
 {
+    uint8_t idx = broadcast_stream_idx(stream);
     char obj_name[10];
 
-    rx_metrics.last_sdu_len = len;
-    snprintf(obj_name, sizeof(obj_name), "SNK #%u", broadcast_stream_idx(stream));
-    example_audio_rx_metrics_on_recv(info, &rx_metrics, TAG, obj_name);
+    rx_metrics[idx].last_sdu_len = len;
+    snprintf(obj_name, sizeof(obj_name), "SNK #%u", idx);
+    example_audio_rx_metrics_on_recv(info, &rx_metrics[idx], TAG, obj_name);
 }
 
 static void base_recv_cb(esp_ble_audio_bap_broadcast_sink_t *sink,
@@ -538,7 +441,7 @@ static void recv_state_updated_cb(esp_ble_conn_t *conn,
              recv_state->pa_sync_state, recv_state->encrypt_state);
 
     for (uint8_t i = 0; i < recv_state->num_subgroups; i++) {
-        ESP_LOGI(TAG, "subgroup %d bis_sync: 0x%08x", i, recv_state->subgroups[i].bis_sync);
+        ESP_LOGI(TAG, "subgroup %d bis_sync 0x%08x", i, recv_state->subgroups[i].bis_sync);
     }
 
     if (recv_state->pa_sync_state == ESP_BLE_AUDIO_BAP_PA_STATE_SYNCED) {
@@ -566,14 +469,29 @@ static int pa_sync_req_cb(esp_ble_conn_t *conn,
     }
 
     if (past_available) {
-        err = pa_sync_with_past(conn->handle, recv_state);
+        err = pa_sync_with_past(conn->handle,
+                                recv_state->addr.type, recv_state->addr.a.val);
         if (err) {
+            return -EIO;
+        }
+
+        /* Tell the Assistant we are waiting for PAST so it sends
+         * HCI_LE_Periodic_Advertising_Sync_Transfer. */
+        err = esp_ble_audio_bap_scan_delegator_set_pa_state(recv_state->src_id,
+                                                            ESP_BLE_AUDIO_BAP_PA_STATE_INFO_REQ);
+        if (err) {
+            ESP_LOGE(TAG, "Failed to set PA state to INFO_REQ, err %d", err);
+            /* Disarm the PAST receive we just enabled — Assistant was never
+             * notified, so any late-arriving PAST would land on stale state
+             * (broadcast_id=0, FLAG_PA_SYNCING unset). */
+            pa_past_cancel(conn->handle);
             return -EIO;
         }
 
         ESP_LOGI(TAG, "Waiting for PAST...");
     } else {
-        err = pa_sync_without_past(&recv_state->addr, recv_state->adv_sid);
+        err = pa_sync_create(recv_state->addr.type, recv_state->addr.a.val,
+                             recv_state->adv_sid);
         if (err) {
             return err;
         }
@@ -596,8 +514,17 @@ static int pa_sync_term_req_cb(esp_ble_conn_t *conn,
 
     broadcast_sink.recv_state = recv_state;
 
-    err = pa_sync_terminate();
+    /* Nothing to terminate if PAST/PA-sync never landed (e.g., PAST setup failed
+     * earlier). Issuing the HCI terminate with the sentinel handle gets 0x12
+     * (Invalid HCI Command Parameters) back from the controller. */
+    if (broadcast_sink.sync_handle == PA_SYNC_HANDLE_INIT) {
+        ESP_LOGI(TAG, "PA sync never established, skip terminate");
+        return 0;
+    }
+
+    err = pa_sync_terminate(broadcast_sink.sync_handle);
     if (err) {
+        ESP_LOGE(TAG, "Failed to terminate PA sync, err %d", err);
         return -EIO;
     }
 
@@ -783,11 +710,11 @@ void broadcast_pa_sync_failed(esp_ble_audio_gap_app_event_t *event)
     }
 }
 
-void broadcast_pa_lost(esp_ble_audio_gap_app_event_t *event)
+void broadcast_pa_lost(uint16_t sync_handle)
 {
     esp_err_t err;
 
-    if (event->pa_sync_lost.sync_handle != broadcast_sink.sync_handle) {
+    if (sync_handle != broadcast_sink.sync_handle) {
         return;
     }
 
@@ -836,6 +763,14 @@ void broadcast_pa_lost(esp_ble_audio_gap_app_event_t *event)
     flag_clear(FLAG_BASE_RECEIVED);
     flag_clear(FLAG_BROADCAST_SYNCABLE);
     flag_clear(FLAG_BROADCAST_CODE_REQUIRED);
+
+#if CONFIG_EXAMPLE_SCAN_SELF
+    /* Clear cached recv_state so broadcast_scan_recv's gate can drive
+     * a fresh PA sync. */
+    broadcast_sink.recv_state = NULL;
+
+    check_start_scan();
+#endif /* CONFIG_EXAMPLE_SCAN_SELF */
 }
 
 int cap_acceptor_broadcast_init(void)

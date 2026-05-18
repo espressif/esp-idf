@@ -7,11 +7,11 @@
 
 ## Overview
 
-This is a raw BLE Connected Isochronous Stream (CIS) example operating directly at the ISO transport layer. It is **not** a BAP/CAP (BLE Audio profile) example — it does not implement Unicast Server, ASCS, PACS, or any LC3 codec; it only exercises the underlying CIS accept/receive plumbing.
+This is a raw BLE Connected Isochronous Stream (CIS) example operating directly at the ISO transport layer over either the NimBLE or Bluedroid host (selected at build time via Kconfig). It is **not** a BAP/CAP (BLE Audio profile) example — it does not implement Unicast Server, ASCS, PACS, or any LC3 codec; it only exercises the underlying CIS accept/receive plumbing.
 
 The peripheral starts connectable extended advertising under the name `CIS Peripheral` (1M primary / 2M secondary PHY, 200 ms interval), registers an ISO server with security level `ESP_BLE_ISO_SECURITY_NO_MITM` and an accept callback that hands out the single CIS channel slot, sets up the output data path to the HCI in transparent format when the CIS connects, and tallies received SDUs through the shared RX-metrics helper.
 
-There is no audio decoding — incoming SDUs are simply counted (valid / error / lost / null), so any 120-byte dummy payload from the central is consumed as opaque data by the NimBLE host with ISO support and the `esp_ble_iso_*` APIs.
+There is no audio decoding — incoming SDUs are simply counted (valid / error / lost / null), so any 120-byte dummy payload from the central is consumed as opaque data via the `esp_ble_iso_*` APIs.
 
 ## Requirements
 
@@ -28,20 +28,33 @@ No build-time options — runtime defaults are baked into source.
 
 ### Security & Pairing
 
-Just-Works pairing (LE Secure Connections, no MITM, `BLE_SM_IO_CAP_NO_IO`) with bonding enabled, inherited from the shared host init in `../common_components/example_init/ble_iso_example_init.c`. ISO examples do not register any GATT services (`gatts_register_cb = NULL`).
+Just-Works pairing (LE Secure Connections, no MITM, IO capability = None) with bonding enabled. The configuration is set up in the shared host init `../common_components/example_init/ble_iso_example_init.c` for both NimBLE (`ble_hs_cfg.sm_*`) and Bluedroid (`esp_ble_gap_set_security_param()`). ISO examples do not register any custom GATT services.
 
 ## Build & Flash
+
+The base `sdkconfig.defaults` defaults to the **Bluedroid** host; idf.py automatically merges the per-target overlay (`sdkconfig.defaults.$IDF_TARGET`). To build with **NimBLE** host instead, layer `sdkconfig.defaults.nimble` on top via `-DSDKCONFIG_DEFAULTS`.
+
+### Bluedroid host (default)
 
 ```bash
 idf.py set-target esp32h4
 idf.py -p PORT flash monitor
 ```
 
+### NimBLE host
+
+```bash
+idf.py set-target esp32h4
+idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32h4;sdkconfig.defaults.nimble" -p PORT flash monitor
+```
+
+For `esp32s31`, replace the chip overlay accordingly.
+
 (Exit serial monitor with `Ctrl-]`.)
 
 ## Example Flow
 
-1. Initialize NVS, NimBLE host, and the ISO common layer with a GAP callback.
+1. Initialize NVS, the selected BLE host, and the ISO common layer with a GAP callback.
 2. Register an ISO server (`esp_ble_iso_server_register`) whose accept callback returns the single static CIS channel.
 3. Build flags + complete-local-name AD payload and start connectable extended advertising on handle 0 at a 200 ms interval.
 4. On ACL connect, log the peer; the central drives subsequent pairing and CIG/CIS creation.
