@@ -425,6 +425,14 @@ function(__init_common_components)
     # component.
     if(explicit_requires_common)
         set(requires_common "${explicit_requires_common}")
+        # Auto-append the target's arch component when the app overrides
+        # common-requires without it. Lets G0-style apps (which set the property
+        # before project() to a restricted list) avoid hand-rolling a
+        # target -> arch map pre-project, since IDF_TARGET_ARCH isn't known
+        # until after sdkconfig is included. Empty on linux -> no append.
+        if(idf_target_arch AND NOT idf_target_arch IN_LIST requires_common)
+            list(APPEND requires_common "${idf_target_arch}")
+        endif()
 
     elseif("${idf_target}" STREQUAL "linux")
         set(requires_common freertos esp_hw_support heap log soc hal esp_rom esp_common esp_system linux
