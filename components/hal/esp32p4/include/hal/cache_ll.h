@@ -665,7 +665,6 @@ static inline void cache_ll_l1_writeback_dcache_addr(uint32_t cache_id, uint32_t
 {
     if (cache_id == 0 || cache_id == CACHE_LL_ID_ALL) {
         Cache_WriteBack_Addr(CACHE_MAP_L1_DCACHE, vaddr, size);
-        Cache_WriteBack_Addr(CACHE_MAP_L1_DCACHE, vaddr, size);
     }
 }
 

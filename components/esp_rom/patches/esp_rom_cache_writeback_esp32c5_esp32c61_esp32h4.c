@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include "soc/cache_reg.h"
+#include "rom/cache.h"
 
 // esp32c5, esp32c61 and esp32h4 do not need msp parameters in apis.
 int Cache_WriteBack_Addr(uint32_t addr, uint32_t size)
