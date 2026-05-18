@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -180,6 +180,12 @@ esp_err_t sd_host_sdmmc_controller_add_slot(sd_host_ctlr_handle_t ctlr, const sd
     return ESP_OK;
 
 err:
+    if (slot_available) {
+        portENTER_CRITICAL(&ctlr_ctx->spinlock);
+        ctlr_ctx->slot[config->slot_id] = NULL;
+        ctlr_ctx->registered_slot_nums -= 1;
+        portEXIT_CRITICAL(&ctlr_ctx->spinlock);
+    }
     free(slot);
 
     return ret;
@@ -305,11 +311,19 @@ static esp_err_t sd_host_controller_remove_sdmmc_slot(sd_host_slot_handle_t slot
     sd_host_sdmmc_ctlr_t *ctlr = slot_ctx->ctlr;
 
     bool slot_registered = false;
+    bool no_registered_slots = false;
     portENTER_CRITICAL(&ctlr->spinlock);
     if (ctlr->slot[slot_ctx->slot_id]) {
         slot_registered = true;
         ctlr->slot[slot_ctx->slot_id] = NULL;
         ctlr->registered_slot_nums -= 1;
+        no_registered_slots = (ctlr->registered_slot_nums == 0);
+        if (no_registered_slots) {
+            sdmmc_ll_enable_global_interrupt(ctlr->hal.dev, false);
+            sdmmc_ll_enable_interrupt(ctlr->hal.dev, 0xffffffff, false);
+            sdmmc_ll_clear_interrupt(ctlr->hal.dev, 0xffffffff);
+            sdmmc_ll_clear_idsts_interrupt(ctlr->hal.dev, 0xffffffff);
+        }
     }
     portEXIT_CRITICAL(&ctlr->spinlock);
     ESP_RETURN_ON_FALSE(slot_registered, ESP_ERR_INVALID_STATE, TAG, "slot is not registered");
