@@ -24,6 +24,7 @@
 #include "btc/btc_manage.h"
 #include "btc_av.h"
 #include "btc_av_co.h"
+#include "btc_a2dp_latm_raw.h"
 #include "btc_avrc.h"
 #include "btc/btc_util.h"
 #include "btc/btc_profile_queue.h"
@@ -2204,15 +2205,32 @@ bt_status_t btc_a2d_src_audio_data_send(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_aud
     }
     BT_HDR *p_buf = (BT_HDR *)audio_buf;
     uint8_t buf_offset = BTC_AUDIO_BUFF_OFFSET;
-    UINT8 codec_id = bta_av_co_get_cur_codec_type();
+    uint16_t data_len = 0;
+    tBTC_AV_CODEC_INFO cur_codec_info;
 
-    switch (codec_id) {
+    bta_av_co_get_cur_codec_info(&cur_codec_info);
+
+    switch (cur_codec_info.id) {
         case BTC_AV_CODEC_SBC:
+            buf_offset += BTA_AV_SBC_HDR_SIZE;
+            data_len = audio_buf->data_len;
             break;
 #if (BTC_AV_CODEC_AAC_INCLUDED == TRUE)
-        case BTC_AV_CODEC_M24:
-            buf_offset -= BTA_AV_SBC_HDR_SIZE;
+        case BTC_AV_CODEC_M24: {
+            uint8_t *p_latm_buf = (uint8_t *)(p_buf + 1) + buf_offset;
+            uint16_t latm_hdr_cap = (uint16_t)(audio_buf->data - p_latm_buf);
+
+            data_len = audio_buf->data_len;
+
+            if (latm_hdr_cap == 0U || data_len + latm_hdr_cap > btc_av_cb.mtu) {
+                return BT_STATUS_FAIL;
+            }
+            if (!btc_a2dp_latm_build_hdr(cur_codec_info.info, data_len, p_latm_buf, latm_hdr_cap)) {
+                return BT_STATUS_FAIL;
+            }
+            data_len += latm_hdr_cap;
             break;
+        }
 #endif
 
         default:
@@ -2222,9 +2240,8 @@ bt_status_t btc_a2d_src_audio_data_send(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_aud
     assert(audio_buf->data - (UINT8 *)(p_buf + 1) >= buf_offset);
     /* since p_buf and audio_buf point to the same memory, backup those value before modify p_buf */
     uint16_t number_frame = audio_buf->number_frame;
-    uint16_t data_len = audio_buf->data_len;
     uint32_t timestamp = audio_buf->timestamp;
-    p_buf->offset = audio_buf->data - (UINT8 *)(p_buf + 1);
+    p_buf->offset = buf_offset;
     p_buf->layer_specific = number_frame;
     p_buf->len = data_len;
     *((UINT32 *) (p_buf + 1)) = timestamp;
@@ -2272,23 +2289,31 @@ void btc_av_audio_buff_alloc(uint16_t size, uint8_t **pp_buff, uint8_t **pp_data
     *pp_data = NULL;
 
 #if (BTC_AV_EXT_CODEC == TRUE)
-    UINT8 codec_id = bta_av_co_get_cur_codec_type();
+    tBTC_AV_CODEC_INFO cur_codec_info;
 
-    switch (codec_id) {
+    bta_av_co_get_cur_codec_info(&cur_codec_info);
+
+    switch (cur_codec_info.id) {
         case BTC_AV_CODEC_SBC:
+            buf_offset += BTA_AV_SBC_HDR_SIZE;
             break;
-#if (BTC_AV_CODEC_AAC_INCLUDED == TRUE)
-        case BTC_AV_CODEC_M24:
-            buf_offset -= BTA_AV_SBC_HDR_SIZE;
+#if (BTC_AV_CODEC_AAC_INCLUDED == TRUE) && (BTC_AV_SRC_INCLUDED == TRUE)
+        case BTC_AV_CODEC_M24: {
+            uint8_t latm_hdr = btc_a2dp_latm_au_prefix_bytes(cur_codec_info.info, size);
+
+            if (latm_hdr == 0U) {
+                return;
+            }
+            buf_offset += latm_hdr;
             break;
+        }
 #endif
 
         default:
             return;
     }
 #endif
-    /* todo */
-    BT_HDR *p_buf= (BT_HDR *)osi_calloc(sizeof(BT_HDR) + buf_offset + size);
+    BT_HDR *p_buf = (BT_HDR *)osi_calloc(sizeof(BT_HDR) + buf_offset + size);
     if (p_buf != NULL) {
         *pp_buff = (uint8_t *)p_buf;
         *pp_data = (uint8_t *)(p_buf + 1) + buf_offset;

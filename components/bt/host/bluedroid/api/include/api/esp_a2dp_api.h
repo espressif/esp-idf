@@ -67,6 +67,50 @@ typedef uint16_t esp_a2d_psc_t;                /*!< Protocol service capabilitie
 #define ESP_A2D_SBC_CIE_ALLOC_MTHD_SRN          _Pragma("GCC warning \"'ESP_A2D_SBC_CIE_ALLOC_MTHD_SRN' macro is deprecated, use 'ESP_A2D_SBC_CIE_ALLOC_MTHD_SNR'\"") ESP_A2D_SBC_CIE_ALLOC_MTHD_SNR
 #define ESP_A2D_SBC_CIE_ALLOC_MTHD_LOUDNESS     (0x1)       /*!< SBC allocation method Loudness */
 
+/* A2DP M24 (MPEG-2, 4 AAC) DRC bit mask in CIE */
+#define ESP_A2D_M24_CIE_DRC_SUPPORT             (0x1)       /*!< M24 MPEG-D DRC supported */
+#define ESP_A2D_M24_CIE_DRC_NS                  (0x0)       /*!< M24 MPEG-D DRC not supported */
+
+/* A2DP M24 object type bit mask in CIE */
+#define ESP_A2D_M24_CIE_OBJ_TYPE_2_AAC_LC       (0x40)      /*!< M24 MPEG-2 AAC LC */
+#define ESP_A2D_M24_CIE_OBJ_TYPE_4_AAC_LC       (0x20)      /*!< M24 MPEG-4 AAC LC */
+#define ESP_A2D_M24_CIE_OBJ_TYPE_4_AAC_LTP      (0x10)      /*!< M24 MPEG-4 AAC LTP */
+#define ESP_A2D_M24_CIE_OBJ_TYPE_4_AAC_SCALABLE (0x08)      /*!< M24 MPEG-4 AAC Scalable */
+#define ESP_A2D_M24_CIE_OBJ_TYPE_4_HE_AAC       (0x04)      /*!< M24 MPEG-4 HE-AAC */
+#define ESP_A2D_M24_CIE_OBJ_TYPE_4_HE_AAC_V2    (0x02)      /*!< M24 MPEG-4 HE-AAC v2 */
+#define ESP_A2D_M24_CIE_OBJ_TYPE_4_AAC_ELD_V2   (0x01)      /*!< M24 MPEG-4 AAC-ELD v2 */
+
+/* A2DP M24 sampling frequency part 1 bit mask in CIE */
+#define ESP_A2D_M24_CIE_SF1_8K                  (0x80)      /*!< M24 sampling frequency 8 kHz */
+#define ESP_A2D_M24_CIE_SF1_11K                 (0x40)      /*!< M24 sampling frequency 11.025 kHz */
+#define ESP_A2D_M24_CIE_SF1_12K                 (0x20)      /*!< M24 sampling frequency 12 kHz */
+#define ESP_A2D_M24_CIE_SF1_16K                 (0x10)      /*!< M24 sampling frequency 16 kHz */
+#define ESP_A2D_M24_CIE_SF1_22K                 (0x08)      /*!< M24 sampling frequency 22.05 kHz */
+#define ESP_A2D_M24_CIE_SF1_24K                 (0x04)      /*!< M24 sampling frequency 24 kHz */
+#define ESP_A2D_M24_CIE_SF1_32K                 (0x02)      /*!< M24 sampling frequency 32 kHz */
+#define ESP_A2D_M24_CIE_SF1_44K                 (0x01)      /*!< M24 sampling frequency 44.1 kHz */
+
+/* A2DP M24 sampling frequency part 2 bit mask in CIE */
+#define ESP_A2D_M24_CIE_SF2_48K                 (0x08)      /*!< M24 sampling frequency 48 kHz */
+#define ESP_A2D_M24_CIE_SF2_64K                 (0x04)      /*!< M24 sampling frequency 64 kHz */
+#define ESP_A2D_M24_CIE_SF2_88K                 (0x02)      /*!< M24 sampling frequency 88.2 kHz */
+#define ESP_A2D_M24_CIE_SF2_96K                 (0x01)      /*!< M24 sampling frequency 96 kHz */
+
+/* A2DP M24 channels bit mask in CIE */
+#define ESP_A2D_M24_CIE_CH_1                    (0x08)      /*!< M24 1 channel */
+#define ESP_A2D_M24_CIE_CH_2                    (0x04)      /*!< M24 2 channels */
+#define ESP_A2D_M24_CIE_CH_6                    (0x02)      /*!< M24 6 channels */
+#define ESP_A2D_M24_CIE_CH_8                    (0x01)      /*!< M24 8 channels */
+
+/* A2DP M24 VBR bit mask in CIE */
+#define ESP_A2D_M24_CIE_VBR_SUPPORT             (0x1)       /*!< M24 VBR supported */
+#define ESP_A2D_M24_CIE_VBR_NS                  (0x0)       /*!< M24 VBR not supported */
+
+/* A2DP M24 bit rate bit mask in CIE */
+#define ESP_A2D_M24_CIE_BR1_MSK                 (0x7F)      /*!< M24 bit rate part 1 mask */
+#define ESP_A2D_M24_CIE_BR2_MSK                 (0xFF)      /*!< M24 bit rate part 2 mask */
+#define ESP_A2D_M24_CIE_BR3_MSK                 (0xFF)      /*!< M24 bit rate part 3 mask */
+
 /**
  * @brief A2DP SBC media codec capabilities information struct
  */
@@ -657,6 +701,9 @@ esp_err_t esp_a2d_source_deinit(void);
  * @brief           Send an audio buffer with encoded audio data to sink. The audio data length shall not be bigger than
  *                  audio connection mtu (retrieved from ESP_A2D_CONNECTION_STATE_EVT). if the return value is
  *                  ESP_OK, then the audio buff is consumed, otherwise, audio buff can be reused by user.
+ *
+ * @note            If use AAC codec, the raw AAC data length shall not be bigger than (mtu - 20).
+ *                  20 is the reserved length for encapsulating LATM.
  *
  * @param[in]       conn_hdl: connection handle
  *
