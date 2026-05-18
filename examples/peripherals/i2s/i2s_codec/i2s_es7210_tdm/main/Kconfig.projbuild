@@ -1,0 +1,69 @@
+menu "Example Configuration"
+
+    menu "Example IO Configuration"
+        config EXAMPLE_I2C_SDA_IO
+            int "I2C SDA IO"
+            default 1 if IDF_TARGET_ESP32S3
+            default 17 if IDF_TARGET_ESP32H4
+            default 3
+
+        config EXAMPLE_I2C_SCL_IO
+            int "I2C SCL IO"
+            default 16 if IDF_TARGET_ESP32H4
+            default 2
+
+        config EXAMPLE_I2S_MCLK_IO
+            int "I2S MCLK IO"
+            default 20 if IDF_TARGET_ESP32S3
+            default 4 if IDF_TARGET_ESP32P4
+            default 0
+
+        config EXAMPLE_I2S_BCLK_IO
+            int "I2S BCLK IO"
+            default 10 if IDF_TARGET_ESP32S3
+            default 5 if IDF_TARGET_ESP32P4
+            default 4 if IDF_TARGET_ESP32H4
+            default 1
+
+        config EXAMPLE_I2S_WS_IO
+            int "I2S WS IO"
+            default 9 if IDF_TARGET_ESP32S3
+            default 6 if IDF_TARGET_ESP32P4
+            default 5 if IDF_TARGET_ESP32H4
+            default 10
+
+        config EXAMPLE_I2S_DIN_IO
+            int "I2S DIN IO"
+            default 11 if IDF_TARGET_ESP32S3
+            default 7 if IDF_TARGET_ESP32P4
+            default 6 if IDF_TARGET_ESP32H4
+            default 8
+
+        config EXAMPLE_SD_SPI_CLK_IO
+            int "SD card SPI CLK IO"
+            default 18 if IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32P4
+            default 12 if IDF_TARGET_ESP32H4
+            default 5
+
+        config EXAMPLE_SD_SPI_MOSI_IO
+            int "SD card SPI MOSI IO"
+            default 17 if IDF_TARGET_ESP32S3
+            default 19 if IDF_TARGET_ESP32P4
+            default 13 if IDF_TARGET_ESP32H4
+            default 7
+
+        config EXAMPLE_SD_SPI_MISO_IO
+            int "SD card SPI MISO IO"
+            default 16 if IDF_TARGET_ESP32S3
+            default 14 if IDF_TARGET_ESP32P4 || IDF_TARGET_ESP32H4
+            default 6
+
+        config EXAMPLE_SD_SPI_CS_IO
+            int "SD card SPI CS IO"
+            default 15 if IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32H4
+            default 17 if IDF_TARGET_ESP32P4
+            default 4
+
+    endmenu
+
+endmenu

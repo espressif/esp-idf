@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -13,60 +13,7 @@
 #include "esp_codec_dev.h"
 #include "esp_codec_dev_vol.h"
 #include "format_wav.h"
-
-#if CONFIG_IDF_TARGET_ESP32S3 // ESP32-S3-Korvo-1 pin out
-/* I2C port and GPIOs */
-#define EXAMPLE_I2C_NUM            (0)
-#define EXAMPLE_I2C_SDA_IO         (1)
-#define EXAMPLE_I2C_SCL_IO         (2)
-
-/* I2S port and GPIOs */
-#define EXAMPLE_I2S_NUM            (0)
-#define EXAMPLE_I2S_MCK_IO         (20)
-#define EXAMPLE_I2S_BCK_IO         (10)
-#define EXAMPLE_I2S_WS_IO          (9)
-#define EXAMPLE_I2S_DI_IO          (11)
-
-/* SD card SPI GPIOs */
-#define EXAMPLE_SD_SPI_CLK_IO      (18)
-#define EXAMPLE_SD_SPI_MOSI_IO     (17)
-#define EXAMPLE_SD_SPI_MISO_IO     (16)
-#define EXAMPLE_SD_SPI_CS_IO       (15)
-#elif CONFIG_IDF_TARGET_ESP32P4
-#define EXAMPLE_I2C_NUM            (0)
-#define EXAMPLE_I2C_SDA_IO         (3)
-#define EXAMPLE_I2C_SCL_IO         (2)
-
-/* I2S port and GPIOs */
-#define EXAMPLE_I2S_NUM            (0)
-#define EXAMPLE_I2S_MCK_IO         (4)
-#define EXAMPLE_I2S_BCK_IO         (5)
-#define EXAMPLE_I2S_WS_IO          (6)
-#define EXAMPLE_I2S_DI_IO          (7)
-
-/* SD card SPI GPIOs */
-#define EXAMPLE_SD_SPI_CLK_IO      (18)
-#define EXAMPLE_SD_SPI_MOSI_IO     (19)
-#define EXAMPLE_SD_SPI_MISO_IO     (14)
-#define EXAMPLE_SD_SPI_CS_IO       (17)
-#else
-#define EXAMPLE_I2C_NUM            (0)
-#define EXAMPLE_I2C_SDA_IO         (3)
-#define EXAMPLE_I2C_SCL_IO         (2)
-
-/* I2S port and GPIOs */
-#define EXAMPLE_I2S_NUM            (0)
-#define EXAMPLE_I2S_MCK_IO         (0)
-#define EXAMPLE_I2S_BCK_IO         (1)
-#define EXAMPLE_I2S_WS_IO          (10)
-#define EXAMPLE_I2S_DI_IO          (8)
-
-/* SD card SPI GPIOs */
-#define EXAMPLE_SD_SPI_CLK_IO      (5)
-#define EXAMPLE_SD_SPI_MOSI_IO     (7)
-#define EXAMPLE_SD_SPI_MISO_IO     (6)
-#define EXAMPLE_SD_SPI_CS_IO       (4)
-#endif
+#include "example_config.h"
 
 /* I2S configurations */
 #define EXAMPLE_I2S_CHAN_NUM       (4)
