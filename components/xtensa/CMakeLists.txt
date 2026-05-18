@@ -50,7 +50,13 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "xtensa_loadstore_handler.S")
     endif()
 
-    if(NOT CONFIG_FREERTOS_PORT)
+    # xtensa_rtos.h is provided by freertos when it is in the build closure.
+    # Under build system v2 every component's Kconfig is processed, so
+    # CONFIG_FREERTOS_PORT is set even when an app (e.g. g0_components)
+    # removes freertos from __COMPONENT_REQUIRES_COMMON. Inspect the
+    # common-requires list directly to detect the actual closure.
+    idf_build_get_property(__common_reqs __COMPONENT_REQUIRES_COMMON)
+    if(NOT "freertos" IN_LIST __common_reqs)
         # No RTOS provided. Use default bare metal stubs (to pass G0 build test)
         list(APPEND srcs
              "baremetal/xtensa_rtos_bm.S")
