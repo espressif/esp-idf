@@ -72,7 +72,7 @@ ESP_HW_LOG_ATTR_TAG(TAG, "pmu_param");
         .xpd_bbpll      = 1  \
     }, \
     .xtal = {                \
-        .xpd_xtalx2     = 1, \
+        .xpd_xtalx2     = 0, \
         .xpd_xtal       = 1  \
     } \
 }
@@ -325,7 +325,7 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
     .retention = {                                  \
         .hp_sleep2active_backup_modem_clk_code = 2, \
         .hp_modem2active_backup_modem_clk_code = 2, \
-        .hp_sleep2active_backup_clk_sel = PMU_CLK_SRC_VAL(SOC_MOD_CLK_XTAL), \
+        .hp_sleep2active_backup_clk_sel = PMU_CLK_SRC_VAL(SOC_MOD_CLK_XTAL_X2_F64M), \
         .hp_modem2active_backup_clk_sel = PMU_CLK_SRC_VAL(SOC_MOD_CLK_XTAL), \
         .hp_sleep2active_backup_mode    = PMU_HP_RETENTION_REGDMA_CONFIG(0, 0), \
         .hp_modem2active_backup_mode    = PMU_HP_RETENTION_REGDMA_CONFIG(0, 2), \
@@ -350,7 +350,7 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         .hp_modem2sleep_backup_modem_clk_code  = 0, \
         .hp_active2sleep_backup_modem_clk_code = 2, \
         .hp_modem2sleep_backup_clk_sel  = PMU_CLK_SRC_VAL(SOC_MOD_CLK_XTAL), \
-        .hp_active2sleep_backup_clk_sel = PMU_CLK_SRC_VAL(SOC_MOD_CLK_XTAL), \
+        .hp_active2sleep_backup_clk_sel = PMU_CLK_SRC_VAL(SOC_MOD_CLK_XTAL_X2_F64M), \
         .hp_modem2sleep_backup_mode     = PMU_HP_RETENTION_REGDMA_CONFIG(1, 1), \
         .hp_active2sleep_backup_mode    = PMU_HP_RETENTION_REGDMA_CONFIG(1, 0), \
         .hp_modem2sleep_backup_en       = 0, \
