@@ -19,7 +19,6 @@
 #include "hal/touch_sensor_periph.h"
 #include "hal/touch_sens_types.h"
 #include "hal/config.h"
-#include "soc/lp_analog_peri_struct.h"
 #include "soc/lp_clkrst_struct.h"
 #include "soc/lpperi_struct.h"
 #include "soc/touch_aon_struct.h"
