@@ -220,12 +220,6 @@
   rules:
     - <<: *if-protected-check
 
-.rules:protected:deploy:
-  rules:
-    - <<: *if-qa-test-tag
-      when: never
-    - <<: *if-protected-deploy
-
 .rules:master:push:
   rules:
     - <<: *if-master-push

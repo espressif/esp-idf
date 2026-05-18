@@ -1,8 +1,3 @@
-.deploy_job_template:
-  stage: deploy
-  image: $ESP_ENV_IMAGE
-  tags: [ deploy ]
-
 .metrics_template:
   stage: deploy
   tags: [ fast_run, shiny ]
@@ -25,23 +20,6 @@
   before_script:
     - echo "Installing esp-metrics-cli tool"
     - pip install "esp-metrics-cli>=0.3,<1"
-
-deploy_update_SHA_in_esp-dockerfiles:
-  extends:
-    - .deploy_job_template
-    - .before_script:minimal
-    - .rules:protected:deploy
-  dependencies: []
-  variables:
-    GIT_DEPTH: 2
-  tags: [build, shiny]
-  script:
-    - 'curl --header "PRIVATE-TOKEN: ${ESPCI_SCRIPTS_TOKEN}" -o create_MR_in_esp_dockerfile.sh $GITLAB_HTTP_SERVER/api/v4/projects/1260/repository/files/create_MR_in_esp_dockerfile%2Fcreate_MR_in_esp_dockerfile.sh/raw\?ref\=master'
-    - chmod +x create_MR_in_esp_dockerfile.sh
-    - ./create_MR_in_esp_dockerfile.sh
-  environment:
-    name: deploy_update_SHA_in_esp-dockerfiles_production
-    deployment_tier: production
 
 target-examples-count-metrics:
   extends:
