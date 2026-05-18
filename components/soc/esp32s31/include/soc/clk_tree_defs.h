@@ -710,6 +710,21 @@ typedef enum {
     ADC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,       /*!< Select XTAL as the default clock choice */
 } soc_periph_adc_digi_clk_src_t;
 
+//////////////////////////////////////////////////Temp Sensor///////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of Temperature Sensor
+ */
+#define SOC_TEMP_SENSOR_CLKS {SOC_MOD_CLK_LP_PERI}
+
+/**
+* @brief Type of Temp Sensor clock source
+*/
+typedef enum {
+    TEMPERATURE_SENSOR_CLK_SRC_LP_PERI = SOC_MOD_CLK_LP_PERI,     /*!< Select LP_PERI as the source clock */
+    TEMPERATURE_SENSOR_CLK_SRC_DEFAULT = SOC_MOD_CLK_LP_PERI,    /*!< Select LP_PERI as the default choice */
+} soc_periph_temperature_sensor_clk_src_t;
+
 #ifdef __cplusplus
 }
 #endif
