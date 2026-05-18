@@ -168,6 +168,10 @@ variables:
 
   source ./export.sh
 
+  # we need the latest DEV release for esptool to be installed in every job without bumping the minimal requirement in
+  # the constraint file.
+  pip install --upgrade --pre esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+
   # Custom clang
   if [[ ! -z "$CI_CLANG_DISTRO_URL" ]]; then
     echo "Using custom clang from ${CI_CLANG_DISTRO_URL}"
