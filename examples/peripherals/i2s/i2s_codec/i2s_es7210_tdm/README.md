@@ -29,7 +29,7 @@ Recorded voice will be saved to SD card in `wav` format, and can be played or pr
 * A SPI SD card module
 * A SD card reader and a PC (if you want to play recorded voice)
 
-All the GPIO used in this example can be changed according to your board, by macros `EXAMPLE_xxx_IO` defined at the beginning of [i2s_es7210_record_example.c](main/i2s_es7210_record_example.c).
+All the GPIO used in this example can be changed according to your board, via `idf.py menuconfig` under `Example Configuration` -> `Example IO Configuration`.
 
 ### Dependency
 
@@ -49,7 +49,7 @@ If the dependency is added, you can check `idf_component.yml` for more detail. W
 idf.py set-target TARGET
 ```
 
-The configuration macros are defined at the beginning of `main/i2s_es7210_record_example.c`, you can change the configuration macros according to your needs.
+Run `idf.py menuconfig` to configure GPIO pins and other options under `Example Configuration`.
 
 ### Build and Flash
 

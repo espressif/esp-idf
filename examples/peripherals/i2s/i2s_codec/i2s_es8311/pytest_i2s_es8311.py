@@ -13,7 +13,6 @@ from pytest_embedded_idf.utils import soc_filtered_targets
     indirect=['target'],
 )
 @pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15609
 def test_i2s_es8311_example_generic(dut: Dut) -> None:
     dut.expect('i2s es8311 codec example start')
     dut.expect('-----------------------------')
