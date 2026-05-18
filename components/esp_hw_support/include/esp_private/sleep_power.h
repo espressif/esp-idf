@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-#if CONFIG_BT_CTRL_SLEEP_ENABLE
+#if CONFIG_BT_CTRL_SLEEP_ENABLE && SOC_PM_MODEM_LOCK_CLK_WORKAROUND
 
 /**
  * @brief System power retention initialize.

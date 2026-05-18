@@ -68,8 +68,11 @@ static esp_err_t btbb_sleep_retention_enable(void)
     sleep_retention_module_init_param_t init_param = {
         .cbs     = { .create = { .handle = btbb_sleep_retention_init, .arg = NULL } },
         .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
-        .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_MODEM)
     };
+        init_param.depends.bitmap[SLEEP_RETENTION_MODULE_CLOCK_MODEM >> 5] |= BIT(SLEEP_RETENTION_MODULE_CLOCK_MODEM % 32);
+#if SOC_PM_MODEM_LOCK_CLK_WORKAROUND && CONFIG_BT_CTRL_SLEEP_ENABLE
+        init_param.depends.bitmap[SLEEP_RETENTION_MODULE_POWER >> 5] |= BIT(SLEEP_RETENTION_MODULE_POWER % 32);
+#endif
     esp_err_t err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_BT_BB, &init_param);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "Modem BT BB retention callback register failed");

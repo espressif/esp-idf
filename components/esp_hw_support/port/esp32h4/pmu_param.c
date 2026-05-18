@@ -68,8 +68,8 @@ ESP_HW_LOG_ATTR_TAG(TAG, "pmu_param");
         .i2c_iso_en     = 0, \
         .i2c_retention  = 0, \
         .xpd_bb_i2c     = 1, \
-        .xpd_bbpll_i2c  = 1, \
-        .xpd_bbpll      = 1  \
+        .xpd_bbpll_i2c  = 0, \
+        .xpd_bbpll      = 0  \
     }, \
     .xtal = {                \
         .xpd_xtalx2     = 0, \
