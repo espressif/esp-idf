@@ -57,7 +57,7 @@ typedef uint32_t (* esp_hf_client_outgoing_data_cb_t)(uint8_t *buf, uint32_t len
  * @return
  *                  - ESP_OK: success
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
- *                  - ESP_FAIL: if callback is a NULL function pointer
+ *                  - ESP_FAIL: others
  *
  */
 esp_err_t esp_hf_client_register_data_callback(esp_hf_client_incoming_data_cb_t recv,
