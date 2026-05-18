@@ -922,3 +922,27 @@ function(idf_build_component component_dir)
                      PREFIX "${component_prefix}"
                      SOURCE "${component_source}")
 endfunction()
+
+#[[
+    __import_sdkconfig_as_build_properties()
+
+    Mirror every CONFIG_* symbol from the generated sdkconfig.cmake onto the
+    build-properties target so that the
+    `idf_build_get_property(var CONFIG_FOO)` idiom keeps working under the
+    compatibility shim. Called from kconfig.cmake::__generate_sdkconfig after
+    each kconfgen run.
+#]]
+function(__import_sdkconfig_as_build_properties)
+    idf_build_get_property(sdkconfig_cmake __SDKCONFIG_CMAKE)
+    if(NOT sdkconfig_cmake OR NOT EXISTS "${sdkconfig_cmake}")
+        return()
+    endif()
+    include("${sdkconfig_cmake}")
+    if(NOT DEFINED CONFIGS_LIST)
+        return()
+    endif()
+    idf_build_set_property(__CONFIG_VARIABLES "${CONFIGS_LIST}")
+    foreach(config IN LISTS CONFIGS_LIST)
+        idf_build_set_property("${config}" "${${config}}")
+    endforeach()
+endfunction()
