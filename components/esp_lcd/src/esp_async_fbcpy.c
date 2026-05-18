@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -188,15 +188,20 @@ static bool dma2d_job_picked_cb(uint32_t num_chans, const dma2d_trans_channel_in
 esp_err_t esp_async_fbcpy(esp_async_fbcpy_handle_t mcp, esp_async_fbcpy_trans_desc_t* transaction, esp_async_fbcpy_event_callback_t memcpy_done_cb, void *cb_args)
 {
     ESP_RETURN_ON_FALSE(mcp && transaction, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(transaction->copy_size_x > 0 && transaction->copy_size_y > 0, ESP_ERR_INVALID_ARG, TAG, "invalid copy size");
     mcp->memcpy_done_cb = memcpy_done_cb;
     mcp->cb_args = cb_args;
 
-    // write back the user's draw buffer, so that the DMA can see the correct data
-    // Note, the user src buffer may not be contiguous, writeback from the head to the tail anyways
+    // Write back the user's draw buffer only when it is behind cache, so that the DMA can see the correct data.
+    // Note, the user src buffer may not be contiguous, write back from the head to the tail anyways.
     size_t bits_per_pixel = color_hal_pixel_format_fourcc_get_bit_depth(transaction->pixel_format_fourcc_id);
     size_t copy_head = (transaction->src_offset_x + transaction->src_offset_y * transaction->src_buffer_size_x) * bits_per_pixel / 8;
-    size_t copy_size = (transaction->copy_size_x + transaction->copy_size_y * transaction->src_buffer_size_x) * bits_per_pixel / 8;
-    ESP_RETURN_ON_ERROR(esp_cache_msync((void *)transaction->src_buffer + copy_head, copy_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED), TAG, "writeback draw buffer failed");
+    size_t copy_size = (transaction->copy_size_x + (transaction->copy_size_y - 1) * transaction->src_buffer_size_x) * bits_per_pixel / 8;
+    void *copy_start = (void *)((const uint8_t *)transaction->src_buffer + copy_head);
+    size_t cache_line_size = esp_cache_get_line_size_by_addr(copy_start);
+    if (cache_line_size > 0) {
+        ESP_RETURN_ON_ERROR(esp_cache_msync(copy_start, copy_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED), TAG, "writeback draw buffer failed");
+    }
 
     // mount the data to the DMA descriptor
     async_memcpy_setup_dma2d_descriptor(mcp, transaction);
