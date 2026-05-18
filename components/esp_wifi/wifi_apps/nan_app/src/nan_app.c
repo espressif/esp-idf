@@ -196,6 +196,9 @@ static bool nan_record_peer_svc(uint8_t own_svc_id, uint8_t peer_svc_id, uint8_t
     p_peer_svc->type = (p_own_svc->type == ESP_NAN_SUBSCRIBE) ? ESP_NAN_PUBLISH : ESP_NAN_SUBSCRIBE;
     MACADDR_COPY(p_peer_svc->peer_nmi, peer_nmi);
     p_peer_svc->device_caps = device_caps;
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+    p_peer_svc->matched_cred_idx = 0xFF; /* NAN_NO_MATCHED_CRED — set by service_match if PMKID hits */
+#endif
     if (p_own_svc->num_peer_records < NAN_MAX_PEERS_RECORD) {
         SLIST_INSERT_HEAD(&(p_own_svc->peer_list), p_peer_svc, next);
         p_own_svc->num_peer_records++;
@@ -588,21 +591,33 @@ void nan_app_service_match_cb(uint8_t sub_id, struct nan_cb_peer_info *peer_info
     ESP_LOGI(TAG, "Service matched with capabilities: 0x%04x", capab);
 
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
-    /* Service-match security gate:
-     *   1. Subscriber configured no credentials (open subscribe) -> accept
-     *      regardless of what the peer advertised. NDP will be open.
-     *   2. Subscriber configured credentials (secure subscribe) -> peer
-     *      must have advertised PMKIDs AND at least one of them must match
-     *      one of the local creds, else drop. */
-    if (nan_security_subscriber_has_creds()) {
+    /* Service-match security gate, keyed by the local subscribe (sub_id):
+     *   1. This subscribe was created without credentials (open subscribe) ->
+     *      accept regardless of what the peer advertised. NDP will be open.
+     *   2. This subscribe was created with credentials (secure subscribe) ->
+     *      peer must have advertised PMKIDs AND at least one of them must
+     *      match one of this subscribe's creds, else drop.
+     * Reading per-subscribe state from own_svc (instead of a singleton cache)
+     * disambiguates concurrent secure subscribes — each service uses its own
+     * service_name + creds[] in the PMKID derivation. */
+    NAN_DATA_LOCK();
+    struct own_svc_info *p_own_svc = nan_find_own_svc(sub_id);
+    struct peer_svc_info *p_peer_svc_sec = nan_find_peer_svc(sub_id, pub_id, pub_mac);
+    bool has_creds = p_own_svc && p_own_svc->user_cfg.num_credentials > 0;
+    NAN_DATA_UNLOCK();
+
+    if (has_creds) {
         if (!peer_info->peer_security_params ||
                 peer_info->peer_security_params->num_pmkids == 0) {
-            ESP_LOGW(TAG, "Secure subscribe: peer "MACSTR" advertises no PMKIDs",
-                     MAC2STR(pub_mac));
+            ESP_LOGW(TAG, "Secure subscribe '%s': peer "MACSTR" advertises no PMKIDs",
+                     p_own_svc ? p_own_svc->svc_name : "?", MAC2STR(pub_mac));
             return;
         }
-        if (!nan_security_service_match(pub_mac, peer_info->peer_security_params)) {
-            ESP_LOGW(TAG, "PMKID mismatch with "MACSTR, MAC2STR(pub_mac));
+        if (!p_peer_svc_sec ||
+                !nan_security_service_match(p_own_svc, p_peer_svc_sec,
+                                            pub_mac, peer_info->peer_security_params)) {
+            ESP_LOGW(TAG, "PMKID mismatch: svc='%s' peer="MACSTR,
+                     p_own_svc ? p_own_svc->svc_name : "?", MAC2STR(pub_mac));
             return;
         }
     }
@@ -1522,10 +1537,6 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
         }
         ESP_LOGI(TAG, "Started Subscribing to %s [Service ID - %u]",
                 subscribe_cfg->service_name, sub_id);
-#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
-        nan_security_cache_subscriber_params(subscribe_cfg->service_name,
-                                             subscribe_cfg->security_cfg);
-#endif
         return sub_id;
     }
 #endif /* CONFIG_ESP_WIFI_NAN_USD_ENABLE */
@@ -1587,9 +1598,6 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
 
     ESP_LOGI(TAG, "Started Subscribing to %s [Service ID - %u]", subscribe_cfg->service_name, sub_id);
     nan_finalize_own_svc(subscribe_cfg->service_name, (uint8_t) sub_id, false);
-#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
-    nan_security_cache_subscriber_params(subscribe_cfg->service_name, subscribe_cfg->security_cfg);
-#endif
     NAN_DATA_UNLOCK();
 
     return sub_id;
@@ -1786,7 +1794,11 @@ uint8_t esp_wifi_nan_datapath_req(wifi_nan_datapath_req_t *req)
                                                              req->peer_mac,
                                                              saved_device_caps);
     if (preclaimed) {
-        nan_security_populate_initiator_ndl(preclaimed, p_peer_svc->peer_nmi);
+        /* p_peer_svc carries the per-(svc, peer) cred index remembered at SDF
+         * RX; own_svc supplies svc_name + creds[] for this specific subscribe. */
+        struct own_svc_info *p_own_svc_init = nan_find_own_svc(p_peer_svc->own_svc_id);
+        nan_security_populate_initiator_ndl(preclaimed, p_own_svc_init, p_peer_svc,
+                                            p_peer_svc->peer_nmi);
     }
 #endif
 

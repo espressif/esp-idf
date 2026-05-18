@@ -63,77 +63,8 @@ static struct {
 /* Spec Table 121: valid CSIDs are 1..8. Bit 0 and bits 9..15 are not assigned. */
 #define NAN_CSID_VALID_BITMAP   ((uint16_t)0x01FE)
 
-/* Cached subscribe-side discovery security (passphrase / PMK, service name). */
-static struct {
-    bool valid;
-    char service_name[ESP_WIFI_MAX_SVC_NAME_LEN];
-    wifi_nan_discovery_security_params_t security_cfg;
-} s_nan_subscriber_sec_cache;
-
-/* Per-peer subscriber match memory: at service-match time
- * nan_security_service_match identifies which local credential matched the
- * publisher; we remember (publisher NMI -> matched cred index) so that the
- * later NDP-init path (nan_security_populate_initiator_ndl) derives M1's pair
- * PMKID from the *correct* credential instead of always cred[0]. Sized at
- * NAN_MAX_PEERS_RECORD to cover the realistic peer count; round-robin
- * eviction on overflow. */
-#define NAN_SUB_MATCH_CACHE_SIZE  NAN_MAX_PEERS_RECORD
-static struct {
-    bool    used;
-    uint8_t peer_nmi[ETH_ALEN];
-    uint8_t matched_cred_idx;
-} s_nan_subscriber_match_cache[NAN_SUB_MATCH_CACHE_SIZE];
-static uint8_t s_nan_subscriber_match_cursor;
-
-static void nan_subscriber_match_remember(const uint8_t *peer_nmi, uint8_t cred_idx)
-{
-    if (!peer_nmi) {
-        return;
-    }
-    /* Update existing entry for this peer if present. */
-    for (uint8_t i = 0; i < NAN_SUB_MATCH_CACHE_SIZE; i++) {
-        if (s_nan_subscriber_match_cache[i].used &&
-            memcmp(s_nan_subscriber_match_cache[i].peer_nmi, peer_nmi, ETH_ALEN) == 0) {
-            s_nan_subscriber_match_cache[i].matched_cred_idx = cred_idx;
-            return;
-        }
-    }
-    /* First free slot. */
-    for (uint8_t i = 0; i < NAN_SUB_MATCH_CACHE_SIZE; i++) {
-        if (!s_nan_subscriber_match_cache[i].used) {
-            s_nan_subscriber_match_cache[i].used = true;
-            memcpy(s_nan_subscriber_match_cache[i].peer_nmi, peer_nmi, ETH_ALEN);
-            s_nan_subscriber_match_cache[i].matched_cred_idx = cred_idx;
-            return;
-        }
-    }
-    /* Full: round-robin evict. */
-    uint8_t idx = s_nan_subscriber_match_cursor;
-    s_nan_subscriber_match_cursor = (uint8_t)((s_nan_subscriber_match_cursor + 1) % NAN_SUB_MATCH_CACHE_SIZE);
-    s_nan_subscriber_match_cache[idx].used = true;
-    memcpy(s_nan_subscriber_match_cache[idx].peer_nmi, peer_nmi, ETH_ALEN);
-    s_nan_subscriber_match_cache[idx].matched_cred_idx = cred_idx;
-}
-
-static int nan_subscriber_match_recall(const uint8_t *peer_nmi)
-{
-    if (!peer_nmi) {
-        return -1;
-    }
-    for (uint8_t i = 0; i < NAN_SUB_MATCH_CACHE_SIZE; i++) {
-        if (s_nan_subscriber_match_cache[i].used &&
-            memcmp(s_nan_subscriber_match_cache[i].peer_nmi, peer_nmi, ETH_ALEN) == 0) {
-            return (int)s_nan_subscriber_match_cache[i].matched_cred_idx;
-        }
-    }
-    return -1;
-}
-
-static void nan_subscriber_match_clear(void)
-{
-    memset(s_nan_subscriber_match_cache, 0, sizeof(s_nan_subscriber_match_cache));
-    s_nan_subscriber_match_cursor = 0;
-}
+/* Sentinel for peer_svc->matched_cred_idx: no PMKID match remembered yet. */
+#define NAN_NO_MATCHED_CRED  0xFF
 
 /*-------------------------------------------------------------------------
  * Static helpers
@@ -846,31 +777,9 @@ uint16_t nan_get_ndp_security_csid(uint8_t ndp_id, const uint8_t *peer_nmi)
     return csid;
 }
 
-void nan_security_cache_subscriber_params(const char *service_name,
-                                          const wifi_nan_discovery_security_params_t *security_cfg)
-{
-    /* New (or cleared) subscribe session: wipe any stale per-peer match
-     * memory from a previous subscriber. */
-    nan_subscriber_match_clear();
-
-    if (!service_name || !security_cfg) {
-        s_nan_subscriber_sec_cache.valid = false;
-        return;
-    }
-    strlcpy(s_nan_subscriber_sec_cache.service_name, service_name,
-            sizeof(s_nan_subscriber_sec_cache.service_name));
-    memcpy(&s_nan_subscriber_sec_cache.security_cfg, security_cfg,
-           sizeof(wifi_nan_discovery_security_params_t));
-    s_nan_subscriber_sec_cache.valid = true;
-}
-
-bool nan_security_subscriber_has_creds(void)
-{
-    return s_nan_subscriber_sec_cache.valid &&
-           s_nan_subscriber_sec_cache.security_cfg.num_credentials > 0;
-}
-
-bool nan_security_service_match(const uint8_t *publisher_nmi,
+bool nan_security_service_match(const struct own_svc_info *own_svc,
+                                struct peer_svc_info *peer_svc,
+                                const uint8_t *publisher_nmi,
                                 const wifi_nan_peer_sdf_security_t *peer_sec)
 {
     uint8_t pmk[ESP_WIFI_NAN_NDP_PMK_LEN];
@@ -879,20 +788,20 @@ bool nan_security_service_match(const uint8_t *publisher_nmi,
     uint8_t hash[32];
     bool matched = false;
 
-    if (!s_nan_subscriber_sec_cache.valid || !publisher_nmi || !peer_sec) {
+    if (!own_svc || !peer_svc || !publisher_nmi || !peer_sec) {
         return false;
     }
     if (peer_sec->num_pmkids == 0) {
         return false;
     }
-    if (!nan_compute_service_id(s_nan_subscriber_sec_cache.service_name, service_id)) {
+    if (!nan_compute_service_id(own_svc->svc_name, service_id)) {
         return false;
     }
     if (!g_wifi_default_wpa_crypto_funcs.hmac_sha256_vector) {
         return false;
     }
 
-    const wifi_nan_discovery_security_params_t *cfg = &s_nan_subscriber_sec_cache.security_cfg;
+    const wifi_nan_discovery_security_params_t *cfg = &own_svc->user_cfg;
     if (cfg->num_credentials == 0 ||
             cfg->num_credentials > ESP_WIFI_NAN_MAX_CREDS_PER_SVC) {
         return false;
@@ -929,13 +838,13 @@ bool nan_security_service_match(const uint8_t *publisher_nmi,
 
         for (uint8_t i = 0; i < peer_sec->num_pmkids && i < NAN_PEER_MAX_PMKIDS; i++) {
             if (memcmp(pmkid, peer_sec->pmkids[i], ESP_WIFI_NAN_NDP_PMKID_LEN) == 0) {
-                ESP_LOGD(TAG, "ND-PMKID match: cred[%u] vs peer SCID[%u], publisher "MACSTR,
-                         c, i, MAC2STR(publisher_nmi));
+                ESP_LOGD(TAG, "ND-PMKID match: svc='%s' cred[%u] vs peer SCID[%u], publisher "MACSTR,
+                         own_svc->svc_name, c, i, MAC2STR(publisher_nmi));
                 ESP_LOG_BUFFER_HEXDUMP(TAG, pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN, ESP_LOG_INFO);
-                /* Remember which local cred matched this publisher so the
-                 * later NDP-init path (nan_security_populate_initiator_ndl)
-                 * uses the right cred for M1's pair-PMKID derivation. */
-                nan_subscriber_match_remember(publisher_nmi, c);
+                /* Remember which local cred matched, so the initiator NDP-req
+                 * path (nan_security_populate_initiator_ndl) derives M1's
+                 * pair-PMKID from the right credential. */
+                peer_svc->matched_cred_idx = c;
                 matched = true;
                 goto done;
             }
@@ -959,32 +868,33 @@ done:
  * publish-time discovery PMKID (which uses broadcast IAddr).
  */
 esp_err_t nan_security_populate_initiator_ndl(struct ndl_info *ndl,
+                                              const struct own_svc_info *own_svc,
+                                              const struct peer_svc_info *peer_svc,
                                               const uint8_t *peer_nmi)
 {
-    if (!ndl || !peer_nmi) {
+    if (!ndl || !own_svc || !peer_nmi) {
         return ESP_FAIL;
     }
-    if (!s_nan_subscriber_sec_cache.valid) {
-        return ESP_OK; /* subscriber didn't cache security; open NDP */
-    }
-    const wifi_nan_discovery_security_params_t *cfg = &s_nan_subscriber_sec_cache.security_cfg;
+    const wifi_nan_discovery_security_params_t *cfg = &own_svc->user_cfg;
     if (cfg->num_credentials == 0) {
         return ESP_OK; /* subscriber didn't request encrypted datapath */
     }
 
-    /* Use the credential that matched this publisher at discovery time
-     * (remembered by nan_security_service_match -> nan_subscriber_match_remember).
-     * Falls back to creds[0] only when no match memory exists for this peer
-     * (e.g., subscriber initiated NDP without a prior service match — atypical). */
-    int matched_idx = nan_subscriber_match_recall(peer_nmi);
-    uint8_t cred_idx = (matched_idx >= 0) ? (uint8_t)matched_idx : 0;
+    /* Use the credential that matched this publisher at SDF RX (stored on the
+     * peer_svc by nan_security_service_match). Falls back to creds[0] only
+     * when no SDF-time match was recorded (atypical: subscriber initiated NDP
+     * without a prior service match). */
+    uint8_t matched_idx = peer_svc ? peer_svc->matched_cred_idx : NAN_NO_MATCHED_CRED;
+    uint8_t cred_idx = (matched_idx != NAN_NO_MATCHED_CRED) ? matched_idx : 0;
     if (cred_idx >= cfg->num_credentials) {
         cred_idx = 0;
     }
     const wifi_nan_credential_t *cred = &cfg->creds[cred_idx];
-    ESP_LOGD(TAG, "NDP req security: using cred[%u] for peer "MACSTR
+    ESP_LOGD(TAG, "NDP req security: svc='%s' using cred[%u] for peer "MACSTR
              " (matched_idx=%d, num_creds=%u)",
-             cred_idx, MAC2STR(peer_nmi), matched_idx, cfg->num_credentials);
+             own_svc->svc_name, cred_idx, MAC2STR(peer_nmi),
+             (matched_idx == NAN_NO_MATCHED_CRED) ? -1 : (int)matched_idx,
+             cfg->num_credentials);
 
     uint8_t pmk[ESP_WIFI_NAN_NDP_PMK_LEN];
     uint8_t service_id[6];
@@ -995,7 +905,7 @@ esp_err_t nan_security_populate_initiator_ndl(struct ndl_info *ndl,
         ESP_LOGE(TAG, "NDP req security: get own NMI failed");
         goto cleanup;
     }
-    if (!nan_compute_service_id(s_nan_subscriber_sec_cache.service_name, service_id)) {
+    if (!nan_compute_service_id(own_svc->svc_name, service_id)) {
         ESP_LOGE(TAG, "NDP req security: service id derivation failed");
         goto cleanup;
     }

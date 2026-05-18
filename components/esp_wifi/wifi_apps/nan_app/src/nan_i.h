@@ -152,6 +152,13 @@ struct peer_svc_info {
     uint8_t type;
     uint8_t peer_nmi[MACADDR_LEN];
     uint32_t device_caps;
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+    /* Per-(own_svc, peer) result of subscriber-side PMKID match at SDF RX.
+     * 0xFF = no match; otherwise the index into own_svc->user_cfg.creds[]
+     * whose ND-PMKID matched the publisher SCIA. The initiator NDP-req path
+     * uses this to pick the right credential for M1's pair-PMKID. */
+    uint8_t matched_cred_idx;
+#endif
 };
 
 /* Own (locally registered) service info */
@@ -328,29 +335,26 @@ esp_err_t nan_derive_security_params(const char *service_name,
  * the initiator pre-claim window (peer-only lookup). */
 uint16_t nan_get_ndp_security_csid(uint8_t ndp_id, const uint8_t *peer_nmi);
 
-/* Subscribe path: cache security_cfg + service name for PMKID verification on match. */
-void nan_security_cache_subscriber_params(const char *service_name,
-                                          const wifi_nan_discovery_security_params_t *security_cfg);
-
 /* Subscribe path: populate the initiator NDL's security_ctx (cipher + pair-PMKID +
- * ND-PMK) from the cached subscriber params, so the blob's CSIA/SCIA/Shared-Key
- * Descriptor builder callbacks find security keyed by (ndp_id, peer_nmi).
- * No-op if subscriber didn't request encrypted datapath. */
+ * ND-PMK) from the local subscribe's own_svc and the SDF-time matched credential
+ * recorded on peer_svc. The blob's CSIA / SCIA / Shared-Key-Descriptor builder
+ * callbacks look up security keyed by (ndp_id, peer_nmi). No-op if the local
+ * subscribe didn't request encrypted datapath. */
 esp_err_t nan_security_populate_initiator_ndl(struct ndl_info *ndl,
+                                              const struct own_svc_info *own_svc,
+                                              const struct peer_svc_info *peer_svc,
                                               const uint8_t *peer_nmi);
 
 /*
  * Compare locally derived ND-PMKID (subscriber passphrase, publisher NMI) to
- * peer discovery security params. publisher_nmi is the publisher's NAN MAC
- * from the service-match callback.
+ * peer discovery security params. own_svc identifies the local subscribe
+ * (service_name + creds[]) and peer_svc is updated with matched_cred_idx on
+ * success. Returns true if any local cred's PMKID matches a peer-advertised one.
  */
-bool nan_security_service_match(const uint8_t *publisher_nmi,
+bool nan_security_service_match(const struct own_svc_info *own_svc,
+                                struct peer_svc_info *peer_svc,
+                                const uint8_t *publisher_nmi,
                                 const wifi_nan_peer_sdf_security_t *peer_sec);
-
-/* Returns true if the local subscriber configured at least one credential
- * via the most recent esp_wifi_nan_subscribe_service(). Used by the
- * service-match gate to decide whether to PMKID-validate an incoming peer. */
-bool nan_security_subscriber_has_creds(void);
 #else
 static inline esp_err_t nan_derive_security_params(const char *service_name,
                                                    const wifi_nan_discovery_security_params_t *sec_cfg,
@@ -361,7 +365,6 @@ static inline esp_err_t nan_derive_security_params(const char *service_name,
     (void)out_derived;
     return ESP_FAIL;
 }
-static inline bool nan_security_subscriber_has_creds(void) { return false; }
 #endif /* CONFIG_ESP_WIFI_NAN_SECURITY */
 
 #ifdef __cplusplus
