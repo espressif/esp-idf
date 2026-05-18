@@ -6,18 +6,25 @@
 
 #include "test_ana_cmpr.h"
 
+static inline gpio_num_t test_pad_gpio_num(int pad_gpio)
+{
+    return static_cast<gpio_num_t>(pad_gpio);
+}
+
 TEST_CASE("ana_cmpr unit install/uninstall", "[ana_cmpr]")
 {
     ana_cmpr_handle_t cmpr = NULL;
-    ana_cmpr_config_t config = {
-        .unit = 100,   // Set a wrong unit
-        .clk_src = ANA_CMPR_CLK_SRC_DEFAULT,
-        .ref_src = ANA_CMPR_REF_SRC_INTERNAL,
-        .cross_type = ANA_CMPR_CROSS_ANY,
+    ana_cmpr_config_t config = {};
+    config.unit = 100; // Set a wrong unit
+    config.clk_src = ANA_CMPR_CLK_SRC_DEFAULT;
+    config.ref_src = ANA_CMPR_REF_SRC_INTERNAL;
+    config.cross_type = ANA_CMPR_CROSS_ANY;
 #if ANALOG_CMPR_LL_GET(IP_VERSION) > 1
-        .src_chan0_gpio = ana_cmpr_periph[0].pad_gpios[0],
+    config.src_chan0_gpio = test_pad_gpio_num(ana_cmpr_periph[0].pad_gpios[0]);
+#else
+    config.src_chan0_gpio = GPIO_NUM_NC;
 #endif
-    };
+    config.ext_ref_gpio = GPIO_NUM_NC;
     /* Allocate a wrong unit */
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, ana_cmpr_new_unit(&config, &cmpr));
     /* Reject negative interrupt priority */
@@ -30,9 +37,8 @@ TEST_CASE("ana_cmpr unit install/uninstall", "[ana_cmpr]")
     /* Try to allocate a existed unit */
     TEST_ESP_ERR(ESP_ERR_INVALID_STATE, ana_cmpr_new_unit(&config, &cmpr));
     /* Set the internal reference before enable */
-    ana_cmpr_internal_ref_config_t ref_cfg = {
-        .ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD,
-    };
+    ana_cmpr_internal_ref_config_t ref_cfg = {};
+    ref_cfg.ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD;
     TEST_ESP_OK(ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
     /* Enable the unit */
     TEST_ESP_OK(ana_cmpr_enable(cmpr));
@@ -49,7 +55,7 @@ TEST_CASE("ana_cmpr unit install/uninstall", "[ana_cmpr]")
     /* Try to set internal reference for a external unit */
     config.ref_src = ANA_CMPR_REF_SRC_EXTERNAL;
 #if ANALOG_CMPR_LL_GET(IP_VERSION) > 1
-    config.ext_ref_gpio = ana_cmpr_periph[0].pad_gpios[1];
+    config.ext_ref_gpio = test_pad_gpio_num(ana_cmpr_periph[0].pad_gpios[1]);
 #endif
     TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
     TEST_ESP_ERR(ESP_ERR_NOT_ALLOWED, ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
@@ -61,22 +67,24 @@ TEST_CASE("ana_cmpr event callback", "[ana_cmpr]")
 {
     uint32_t cnt = 0;
     ana_cmpr_handle_t cmpr = NULL;
-    ana_cmpr_config_t config = {
-        .unit = TEST_ANA_CMPR_UNIT_ID,
-        .clk_src = ANA_CMPR_CLK_SRC_DEFAULT,
-        .ref_src = ANA_CMPR_REF_SRC_INTERNAL,
-        .cross_type = ANA_CMPR_CROSS_ANY,
+    ana_cmpr_config_t config = {};
+    config.unit = TEST_ANA_CMPR_UNIT_ID;
+    config.clk_src = ANA_CMPR_CLK_SRC_DEFAULT;
+    config.ref_src = ANA_CMPR_REF_SRC_INTERNAL;
+    config.cross_type = ANA_CMPR_CROSS_ANY;
 #if ANALOG_CMPR_LL_GET(IP_VERSION) > 1
-        .src_chan0_gpio = ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[0],
-        .resample_limit = 3,
+    config.src_chan0_gpio = test_pad_gpio_num(ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[0]);
+    config.resample_limit = 3;
+#else
+    config.src_chan0_gpio = GPIO_NUM_NC;
+    config.resample_limit = 0;
 #endif
-    };
+    config.ext_ref_gpio = GPIO_NUM_NC;
     TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
 
     gpio_num_t src_chan_io = test_init_src_chan_gpio(cmpr, 0, 0);
-    ana_cmpr_internal_ref_config_t ref_cfg = {
-        .ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD,
-    };
+    ana_cmpr_internal_ref_config_t ref_cfg = {};
+    ref_cfg.ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD;
     TEST_ESP_OK(ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
     ana_cmpr_debounce_config_t dbc_cfg = {
         .wait_us = 10,
@@ -115,21 +123,20 @@ TEST_CASE("ana_cmpr event callback", "[ana_cmpr]")
 TEST_CASE("ana_cmpr source channel management api", "[ana_cmpr]")
 {
     ana_cmpr_handle_t cmpr = NULL;
-    ana_cmpr_config_t config = {
-        .unit = TEST_ANA_CMPR_UNIT_ID,
-        .clk_src = ANA_CMPR_CLK_SRC_DEFAULT,
-        .ref_src = ANA_CMPR_REF_SRC_INTERNAL,
-        .cross_type = ANA_CMPR_CROSS_ANY,
-        .resample_limit = 3,
-        .src_chan0_gpio = ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[0],
-    };
+    ana_cmpr_config_t config = {};
+    config.unit = TEST_ANA_CMPR_UNIT_ID;
+    config.clk_src = ANA_CMPR_CLK_SRC_DEFAULT;
+    config.ref_src = ANA_CMPR_REF_SRC_INTERNAL;
+    config.cross_type = ANA_CMPR_CROSS_ANY;
+    config.src_chan0_gpio = test_pad_gpio_num(ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[0]);
+    config.ext_ref_gpio = GPIO_NUM_NC;
+    config.resample_limit = 3;
     TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
 
 #if ANALOG_CMPR_LL_GET(IP_VERSION) > 1
-    ana_cmpr_src_chan_config_t src_cfg = {
-        .gpio_num = ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[1],
-        .cross_type = ANA_CMPR_CROSS_POS,
-    };
+    ana_cmpr_src_chan_config_t src_cfg = {};
+    src_cfg.gpio_num = test_pad_gpio_num(ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[1]);
+    src_cfg.cross_type = ANA_CMPR_CROSS_POS;
     TEST_ESP_OK(ana_cmpr_add_src_chan(cmpr, 1, &src_cfg));
     TEST_ESP_OK(ana_cmpr_remove_src_chan(cmpr, 1));
     TEST_ESP_OK(ana_cmpr_remove_src_chan(cmpr, 1));
@@ -159,28 +166,27 @@ TEST_CASE("ana_cmpr trigger scan and get output level", "[ana_cmpr]")
     TEST_IGNORE_MESSAGE("not supported on old IP version");
 #else
     ana_cmpr_handle_t cmpr = NULL;
-    ana_cmpr_config_t config = {
-        .unit = TEST_ANA_CMPR_UNIT_ID,
-        .clk_src = ANA_CMPR_CLK_SRC_DEFAULT,
-        .ref_src = ANA_CMPR_REF_SRC_INTERNAL,
-        .cross_type = ANA_CMPR_CROSS_ANY,
-        .resample_limit = 3,
-        .src_chan0_gpio = ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[0],
-    };
+    ana_cmpr_config_t config = {};
+    config.unit = TEST_ANA_CMPR_UNIT_ID;
+    config.clk_src = ANA_CMPR_CLK_SRC_DEFAULT;
+    config.ref_src = ANA_CMPR_REF_SRC_INTERNAL;
+    config.cross_type = ANA_CMPR_CROSS_ANY;
+    config.src_chan0_gpio = test_pad_gpio_num(ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[0]);
+    config.ext_ref_gpio = GPIO_NUM_NC;
+    config.resample_limit = 3;
     TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
 
-    ana_cmpr_src_chan_config_t src_cfg = {
-        .cross_type = ANA_CMPR_CROSS_ANY,
-    };
+    ana_cmpr_src_chan_config_t src_cfg = {};
+    src_cfg.gpio_num = GPIO_NUM_NC;
+    src_cfg.cross_type = ANA_CMPR_CROSS_ANY;
     // for test purpose, source channel N uses pad N.
     for (int i = 1; i < ANALOG_CMPR_LL_GET(SRC_CHANNEL_NUM); i++) {
-        src_cfg.gpio_num = ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[i];
+        src_cfg.gpio_num = test_pad_gpio_num(ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[i]);
         TEST_ESP_OK(ana_cmpr_add_src_chan(cmpr, i, &src_cfg));
     }
 
-    ana_cmpr_internal_ref_config_t ref_cfg = {
-        .ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD,
-    };
+    ana_cmpr_internal_ref_config_t ref_cfg = {};
+    ref_cfg.ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD;
     TEST_ESP_OK(ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
 
     ana_cmpr_scan_config_t scan_cfg = {
@@ -193,9 +199,9 @@ TEST_CASE("ana_cmpr trigger scan and get output level", "[ana_cmpr]")
 
     for (int i = 0; i < ANALOG_CMPR_LL_GET(SRC_CHANNEL_NUM); i++) {
         bool out_level = false;
-        gpio_output_enable(ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[i]);
+        gpio_output_enable(test_pad_gpio_num(ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[i]));
         // Set input to low (0V), which is lower than 50% VDD reference
-        gpio_set_level(ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[i], 0);
+        gpio_set_level(test_pad_gpio_num(ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[i]), 0);
         // Trigger a scan to update the comparison result
         TEST_ESP_OK(ana_cmpr_trigger_scan(cmpr));
         vTaskDelay(pdMS_TO_TICKS(10));
@@ -203,7 +209,7 @@ TEST_CASE("ana_cmpr trigger scan and get output level", "[ana_cmpr]")
         TEST_ASSERT_EQUAL(false, out_level);
 
         // Set input to high (3.3V), which is higher than 50% VDD reference
-        gpio_set_level(ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[i], 1);
+        gpio_set_level(test_pad_gpio_num(ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[i]), 1);
         // Trigger a scan to update the comparison result
         TEST_ESP_OK(ana_cmpr_trigger_scan(cmpr));
         vTaskDelay(pdMS_TO_TICKS(10));
@@ -222,27 +228,26 @@ TEST_CASE("ana_cmpr trigger scan step mode", "[ana_cmpr]")
     TEST_IGNORE_MESSAGE("not supported on old IP version");
 #else
     ana_cmpr_handle_t cmpr = NULL;
-    ana_cmpr_config_t config = {
-        .unit = TEST_ANA_CMPR_UNIT_ID,
-        .clk_src = ANA_CMPR_CLK_SRC_DEFAULT,
-        .ref_src = ANA_CMPR_REF_SRC_INTERNAL,
-        .cross_type = ANA_CMPR_CROSS_ANY,
-        .resample_limit = 3,
-        .src_chan0_gpio = ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[0],
-    };
+    ana_cmpr_config_t config = {};
+    config.unit = TEST_ANA_CMPR_UNIT_ID;
+    config.clk_src = ANA_CMPR_CLK_SRC_DEFAULT;
+    config.ref_src = ANA_CMPR_REF_SRC_INTERNAL;
+    config.cross_type = ANA_CMPR_CROSS_ANY;
+    config.src_chan0_gpio = test_pad_gpio_num(ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[0]);
+    config.ext_ref_gpio = GPIO_NUM_NC;
+    config.resample_limit = 3;
     TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
 
-    ana_cmpr_src_chan_config_t src_cfg = {
-        .cross_type = ANA_CMPR_CROSS_ANY,
-    };
+    ana_cmpr_src_chan_config_t src_cfg = {};
+    src_cfg.gpio_num = GPIO_NUM_NC;
+    src_cfg.cross_type = ANA_CMPR_CROSS_ANY;
     for (int i = 1; i < ANALOG_CMPR_LL_GET(SRC_CHANNEL_NUM); i++) {
-        src_cfg.gpio_num = ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[i];
+        src_cfg.gpio_num = test_pad_gpio_num(ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[i]);
         TEST_ESP_OK(ana_cmpr_add_src_chan(cmpr, i, &src_cfg));
     }
 
-    ana_cmpr_internal_ref_config_t ref_cfg = {
-        .ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD,
-    };
+    ana_cmpr_internal_ref_config_t ref_cfg = {};
+    ref_cfg.ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD;
     TEST_ESP_OK(ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
 
     ana_cmpr_scan_config_t scan_cfg = {
@@ -251,7 +256,7 @@ TEST_CASE("ana_cmpr trigger scan step mode", "[ana_cmpr]")
     };
     TEST_ESP_OK(ana_cmpr_set_scan_config(cmpr, &scan_cfg));
 
-    gpio_num_t src_chan_ios[ANALOG_CMPR_LL_GET(SRC_CHANNEL_NUM)] = {0};
+    gpio_num_t src_chan_ios[ANALOG_CMPR_LL_GET(SRC_CHANNEL_NUM)] = {};
     for (int i = 0; i < ANALOG_CMPR_LL_GET(SRC_CHANNEL_NUM); i++) {
         src_chan_ios[i] = test_init_src_chan_gpio(cmpr, i, 0);
     }
@@ -300,24 +305,23 @@ TEST_CASE("ana_cmpr capture timestamps", "[ana_cmpr]")
     TEST_IGNORE_MESSAGE("not supported on old IP version");
 #else
     ana_cmpr_handle_t cmpr = NULL;
-    ana_cmpr_config_t config = {
-        .unit = TEST_ANA_CMPR_UNIT_ID,
-        .clk_src = ANA_CMPR_CLK_SRC_DEFAULT,
-        .ref_src = ANA_CMPR_REF_SRC_INTERNAL,
-        .cross_type = ANA_CMPR_CROSS_ANY,
-        .resample_limit = 3,
-        .src_chan0_gpio = ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[0],
-        .en_capture_timer = true,
-    };
+    ana_cmpr_config_t config = {};
+    config.unit = TEST_ANA_CMPR_UNIT_ID;
+    config.clk_src = ANA_CMPR_CLK_SRC_DEFAULT;
+    config.ref_src = ANA_CMPR_REF_SRC_INTERNAL;
+    config.cross_type = ANA_CMPR_CROSS_ANY;
+    config.src_chan0_gpio = test_pad_gpio_num(ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[0]);
+    config.ext_ref_gpio = GPIO_NUM_NC;
+    config.resample_limit = 3;
+    config.en_capture_timer = true;
     TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
 
     uint32_t resolution_hz = 0;
     TEST_ESP_OK(ana_cmpr_get_clock_resolution_hz(cmpr, &resolution_hz));
     TEST_ASSERT_GREATER_THAN_UINT32(0, resolution_hz);
 
-    ana_cmpr_internal_ref_config_t ref_cfg = {
-        .ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD,
-    };
+    ana_cmpr_internal_ref_config_t ref_cfg = {};
+    ref_cfg.ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD;
     TEST_ESP_OK(ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
 
     ana_cmpr_scan_config_t scan_cfg = {

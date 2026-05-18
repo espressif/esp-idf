@@ -7,6 +7,11 @@
 #include "test_ana_cmpr.h"
 #include "unity_test_utils_cache.h"
 
+static inline gpio_num_t test_pad_gpio_num(int pad_gpio)
+{
+    return static_cast<gpio_num_t>(pad_gpio);
+}
+
 typedef struct {
     ana_cmpr_handle_t handle;
     uint32_t count;
@@ -16,9 +21,9 @@ typedef struct {
 static void IRAM_ATTR test_ana_cmpr_iram_safety(void *args)
 {
     test_ana_cmpr_data_t *data = (test_ana_cmpr_data_t *)args;
-    ana_cmpr_internal_ref_config_t ref_cfg = {
-        .ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD,
-    };
+    ana_cmpr_internal_ref_config_t ref_cfg = {};
+    ref_cfg.ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD;
+    ref_cfg.ref_hys_level = ANA_CMPR_REF_HYS_LEVEL0;
     ana_cmpr_set_internal_reference(data->handle, &ref_cfg);
     ana_cmpr_debounce_config_t dbc_cfg = {
         .wait_us = 1,
@@ -41,21 +46,24 @@ static void IRAM_ATTR test_ana_cmpr_iram_safety(void *args)
 TEST_CASE("ana_cmpr works with cache disabled", "[ana_cmpr]")
 {
     ana_cmpr_handle_t cmpr = NULL;
-    ana_cmpr_config_t config = {
-        .unit = TEST_ANA_CMPR_UNIT_ID,
-        .clk_src = ANA_CMPR_CLK_SRC_DEFAULT,
-        .ref_src = ANA_CMPR_REF_SRC_INTERNAL,
-        .cross_type = ANA_CMPR_CROSS_ANY,
+    ana_cmpr_config_t config = {};
+    config.unit = TEST_ANA_CMPR_UNIT_ID;
+    config.clk_src = ANA_CMPR_CLK_SRC_DEFAULT;
+    config.ref_src = ANA_CMPR_REF_SRC_INTERNAL;
+    config.cross_type = ANA_CMPR_CROSS_ANY;
 #if ANALOG_CMPR_LL_GET(IP_VERSION) > 1
-        .src_chan0_gpio = ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[0],
-        .resample_limit = 3,
+    config.src_chan0_gpio = test_pad_gpio_num(ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[0]);
+    config.resample_limit = 3;
+#else
+    config.src_chan0_gpio = GPIO_NUM_NC;
+    config.resample_limit = 0;
 #endif
-    };
+    config.ext_ref_gpio = GPIO_NUM_NC;
     TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
 
-    ana_cmpr_internal_ref_config_t ref_cfg = {
-        .ref_volt = ANA_CMPR_REF_VOLT_20_PCT_VDD,
-    };
+    ana_cmpr_internal_ref_config_t ref_cfg = {};
+    ref_cfg.ref_volt = ANA_CMPR_REF_VOLT_20_PCT_VDD;
+    ref_cfg.ref_hys_level = ANA_CMPR_REF_HYS_LEVEL0;
     TEST_ESP_OK(ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
     ana_cmpr_debounce_config_t dbc_cfg = {
         .wait_us = 10,
