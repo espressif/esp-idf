@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -91,6 +91,11 @@ extern "C" {
 #define SDMMC_LL_DELAY_MAX_NUMS_LS                    4
 #define SDMMC_LL_DELAY_PHASE_SUPPORTED                1
 #define SDMMC_LL_SDIO_PLL_SUPPORTED                   1
+#define SDMMC_LL_SDR104_SUPPORTED                     1
+#define SDMMC_LL_DDR50_SUPPORTED                      1
+#define SDMMC_LL_SDR50_SUPPORTED                      1
+
+#define SDMMC_LL_DEFAULT_DIV                          2
 
 /**
  * SDMMC delay phase
@@ -127,6 +132,20 @@ typedef enum {
     SDMMC_LL_SPEED_MODE_LS,
     SDMMC_LL_SPEED_MODE_HS,
 } sdmmc_ll_speed_mode_t;
+
+/**
+ * SDMMC memory low power mode
+ */
+typedef enum {
+    SDMMC_LL_MEM_LP_MODE_SHUT_DOWN,
+} sdmmc_ll_mem_lp_mode_t;
+
+/**
+ * @brief SDMMC IO power control source
+ */
+typedef enum {
+    SDMMC_LL_IO_POWER_CONTROL_SRC_LDO,
+} sdmmc_ll_io_power_control_src_t;
 
 /*---------------------------------------------------------------
                     Clock & Reset
@@ -168,6 +187,60 @@ static inline void sdmmc_ll_reset_register(int group_id)
         (void)__DECLARE_RCC_ATOMIC_ENV; \
         sdmmc_ll_reset_register(__VA_ARGS__); \
     } while(0)
+
+/**
+ * @brief Force power on the SDMMC memory block, regardless of the outside PMU logic
+ *
+ * @param dev Peripheral instance address
+ */
+static inline void sdmmc_ll_mem_force_power_on(sdmmc_dev_t *dev)
+{
+    (void)dev;
+}
+
+/**
+ * @brief Force the SDMMC memory block into low power mode, regardless of the outside PMU logic
+ *
+ * @param dev Peripheral instance address
+ */
+static inline void sdmmc_ll_mem_force_low_power(sdmmc_dev_t *dev)
+{
+    (void)dev;
+}
+
+/**
+ * @brief Power control the SDMMC memory block by the outside PMU logic
+ *
+ * @param dev Peripheral instance address
+ */
+static inline void sdmmc_ll_mem_power_by_pmu(sdmmc_dev_t *dev)
+{
+    (void)dev;
+}
+
+/**
+ * @brief Set low power mode for SDMMC memory block
+ *
+ * @param dev Peripheral instance address
+ * @param mode SDMMC memory low power mode in low power stage
+ */
+static inline void sdmmc_ll_mem_set_low_power_mode(sdmmc_dev_t *dev, sdmmc_ll_mem_lp_mode_t mode)
+{
+    (void)dev;
+    (void)mode;
+}
+
+/**
+ * @brief Set SDMMC pad pin dedicated ctrl
+ *
+ * @param dev Peripheral instance address
+ * @param enable True to enable, False to disable
+ */
+static inline void sdmmc_ll_pad_set_pin_dedicated_ctrl(sdmmc_dev_t *dev, bool enable)
+{
+    (void)dev;
+    (void)enable;
+}
 
 /**
  * @brief Enable the bus clock for SDIO PLL
@@ -917,6 +990,16 @@ static inline uint32_t sdmmc_ll_get_idsts_interrupt_raw(sdmmc_dev_t *hw)
 static inline void sdmmc_ll_clear_idsts_interrupt(sdmmc_dev_t *hw, uint32_t mask)
 {
     hw->idsts.val = mask;
+}
+
+/**
+ * @brief Switch SDMMC IO power control source
+ *
+ * @param src   SDMMC IO power control source
+ */
+static inline void sdmmc_ll_switch_io_power_control_src(sdmmc_ll_io_power_control_src_t src)
+{
+    //for compatibility
 }
 
 #ifdef __cplusplus

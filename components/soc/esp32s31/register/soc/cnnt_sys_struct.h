@@ -579,7 +579,7 @@ typedef union {
 } cnnt_sys_gmac_ctrl2_reg_t;
 
 
-typedef struct {
+typedef struct cnnt_dev_t {
     volatile cnnt_sys_ver_date_reg_t sys_ver_date;
     volatile cnnt_clk_en_reg_t clk_en;
     uint32_t reserved_008[2];

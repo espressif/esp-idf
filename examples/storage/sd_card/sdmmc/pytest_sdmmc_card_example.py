@@ -9,7 +9,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.sdcard_sdmode
-@idf_parametrize('target', ['esp32', 'esp32p4'], indirect=['target'])
+@idf_parametrize('target', ['esp32', 'esp32p4', 'esp32s31'], indirect=['target'])
 def test_examples_sd_card_sdmmc(dut: Dut) -> None:
     dut.expect('example: Initializing SD card', timeout=20)
     dut.expect('example: Using SDMMC peripheral', timeout=10)

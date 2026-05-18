@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,6 +53,19 @@
 #define SDMMC_SLOT1_D1     13
 #define SDMMC_SLOT1_D2     14
 #define SDMMC_SLOT1_D3     15
+#elif CONFIG_IDF_TARGET_ESP32S31
+#define SDMMC_SLOT0_CLK    24
+#define SDMMC_SLOT0_CMD    25
+#define SDMMC_SLOT0_D0     20
+#define SDMMC_SLOT0_D1     21
+#define SDMMC_SLOT0_D2     22
+#define SDMMC_SLOT0_D3     23
+#define SDMMC_SLOT1_CLK    39
+#define SDMMC_SLOT1_CMD    40
+#define SDMMC_SLOT1_D0     35
+#define SDMMC_SLOT1_D1     36
+#define SDMMC_SLOT1_D2     37
+#define SDMMC_SLOT1_D3     38
 #endif
 
 TEST_CASE("SDMMC controller exhausted allocation", "[sdmmc]")

@@ -340,6 +340,7 @@ ESP32H4_DOCS = [
 
 ESP32S31_DOCS = [
     'api-reference/system/ipc.rst',
+    'api-reference/peripherals/sd_pullup_requirements.rst',
     'api-guides/RF_calibration.rst',
     'api-guides/phy.rst',
 ]

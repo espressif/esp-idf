@@ -89,7 +89,7 @@
 #define SOC_LP_SPI_SUPPORTED            1
 #define SOC_SPIRAM_SUPPORTED            1
 #define SOC_PSRAM_DMA_CAPABLE           1
-// #define SOC_SDMMC_HOST_SUPPORTED        1      // TODO: [ESP32S31] IDF-14705
+#define SOC_SDMMC_HOST_SUPPORTED        1
 #define SOC_CLK_TREE_SUPPORTED          1
 #define SOC_ASSIST_DEBUG_SUPPORTED      1
 #define SOC_CPU_LOCKUP_DEBUG_SUPPORTED  1
@@ -99,6 +99,7 @@
 #define SOC_SPI_FLASH_SUPPORTED         1         // TODO: [ESP32S31] IDF-14777
 #define SOC_SPI_FLASH_HAS_DEDICATED_LDO 1
 #define SOC_TOUCH_SENSOR_SUPPORTED      1
+#define SOC_GP_LDO_SUPPORTED            1 // General purpose LDO
 #define SOC_RNG_SUPPORTED               1
 #define SOC_PPA_SUPPORTED               1
 #define SOC_LIGHT_SLEEP_SUPPORTED       1
@@ -300,6 +301,16 @@
 #define SOC_MMU_LINEAR_ADDRESS_REGION_NUM     (2U)
 #define SOC_MMU_DI_VADDR_SHARED               (1) /*!< D/I vaddr are shared */
 #define SOC_MMU_PER_EXT_MEM_TARGET            (1) /*!< MMU is per physical external memory target (flash, psram) */
+
+/*-------------------------- SDMMC CAPS -----------------------------------------*/
+#define SOC_SDMMC_USE_IOMUX               1
+#define SOC_SDMMC_NUM_SLOTS               2
+#define SOC_SDMMC_DATA_WIDTH_MAX          4
+/* Supported host clock delay phase number */
+#define SOC_SDMMC_DELAY_PHASE_NUM         8
+#define SOC_SDMMC_IO_UHS_POWER_EXTERNAL   1    ///< SDMMC IO power controlled by external power supply
+#define SOC_SDMMC_PSRAM_DMA_CAPABLE       1    ///< SDMMC peripheral can do DMA transfer to/from PSRAMsts
+#define SOC_SDMMC_UHS_I_SUPPORTED         1
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM                  3

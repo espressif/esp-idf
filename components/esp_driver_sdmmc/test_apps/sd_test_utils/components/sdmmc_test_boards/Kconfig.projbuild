@@ -45,6 +45,10 @@ menu "SDMMC Test Board Configuration"
             bool "ESP32-C5 breakout board"
             depends on IDF_TARGET_ESP32C5
 
+        config SDMMC_BOARD_ESP32S31_KORVO_BOARD
+            bool "ESP32-S31 KORVO Board"
+            depends on IDF_TARGET_ESP32S31
+
         config SDMMC_BOARD_CUSTOM_SD
             depends on SOC_SDMMC_HOST_SUPPORTED
             bool "Custom SD (choose pins)"
@@ -147,6 +151,7 @@ menu "SDMMC Test Board Configuration"
                 int "GPIO not routed on the board"
                 default 34 if IDF_TARGET_ESP32P4
                 default 8 if IDF_TARGET_ESP32C5
+                default 26 if IDF_TARGET_ESP32S31
                 default -1
 
         endmenu

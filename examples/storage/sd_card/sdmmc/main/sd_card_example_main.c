@@ -16,7 +16,7 @@
 #include "driver/sdmmc_host.h"
 #include "driver/gpio.h"
 #include "sd_test_io.h"
-#if SOC_SDMMC_IO_POWER_EXTERNAL
+#if SOC_SDMMC_IO_POWER_EXTERNAL || SOC_SDMMC_IO_UHS_POWER_EXTERNAL
 #include "sd_pwr_ctrl_by_on_chip_ldo.h"
 #endif
 
@@ -176,6 +176,11 @@ void app_main(void)
     host.slot = SDMMC_HOST_SLOT_0;
     host.max_freq_khz = SDMMC_FREQ_SDR104;
     host.flags &= ~SDMMC_HOST_FLAG_DDR;
+#endif
+
+#if SOC_SDMMC_IO_UHS_POWER_EXTERNAL
+    //for uhs-i power
+    host.io_voltage = 1.8f;
 #endif
 
     // For SoCs where the SD power can be supplied both via an internal or external (e.g. on-board LDO) power supply.

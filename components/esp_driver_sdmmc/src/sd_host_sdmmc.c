@@ -16,8 +16,9 @@
 #include "esp_memory_utils.h"
 #include "soc/chip_revision.h"
 #include "soc/sdmmc_pins.h"
-#include "hal/sdmmc_periph.h"
 #include "soc/soc_caps.h"
+#include "soc/clk_tree_defs.h"
+#include "hal/sdmmc_periph.h"
 #include "hal/efuse_hal.h"
 #include "hal/sd_types.h"
 #include "hal/sdmmc_hal.h"
@@ -31,6 +32,7 @@
 #include "esp_private/gpio.h"
 #include "esp_private/sd_host_private.h"
 #include "freertos/FreeRTOS.h"
+#include "clk_ctrl_os.h"
 
 typedef struct sd_platform_t {
     _lock_t              mutex;
@@ -106,7 +108,14 @@ esp_err_t sd_host_create_sdmmc_controller(const sd_host_sdmmc_cfg_t *config, sd_
 #endif //CONFIG_PM_ENABLE
 
     sdmmc_hal_init(&ctlr->hal);
-    sd_host_set_clk_div(ctlr, SDMMC_CLK_SRC_DEFAULT, 2);
+    PERIPH_RCC_ATOMIC() {
+        sdmmc_ll_pad_set_pin_dedicated_ctrl(ctlr->hal.dev, true);
+    }
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src(SDMMC_CLK_SRC_DEFAULT, true), err, TAG, "failed to acquire clk");
+    uint32_t src_freq_hz = 0;
+    esp_clk_tree_src_get_freq_hz(SDMMC_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_freq_hz);
+    ESP_EARLY_LOGI(TAG, "src_freq_hz: %d", src_freq_hz);
+    sd_host_set_clk_div(ctlr, SDMMC_CLK_SRC_DEFAULT, SDMMC_LL_DEFAULT_DIV);
 
     // Reset
     esp_err_t err = sd_host_reset(ctlr);
@@ -120,8 +129,6 @@ esp_err_t sd_host_create_sdmmc_controller(const sd_host_sdmmc_cfg_t *config, sd_
     sdmmc_ll_clear_interrupt(ctlr->hal.dev, 0xffffffff);
     sdmmc_ll_enable_interrupt(ctlr->hal.dev, 0xffffffff, false);
     sdmmc_ll_enable_global_interrupt(ctlr->hal.dev, false);
-    sdmmc_ll_enable_interrupt(ctlr->hal.dev, SDMMC_LL_EVENT_DEFAULT, true);
-    sdmmc_ll_enable_global_interrupt(ctlr->hal.dev, true);
     sdmmc_ll_init_dma(ctlr->hal.dev);
 
     ctlr->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
@@ -175,6 +182,14 @@ esp_err_t sd_host_sdmmc_controller_add_slot(sd_host_ctlr_handle_t ctlr, const sd
 
     ESP_GOTO_ON_ERROR(sdmmc_slot_io_config(slot, config), err, TAG, "failed to config slot io");
 
+    portENTER_CRITICAL(&ctlr_ctx->spinlock);
+    if (ctlr_ctx->registered_slot_nums == 1) {
+        sdmmc_ll_clear_interrupt(ctlr_ctx->hal.dev, 0xffffffff);
+        sdmmc_ll_enable_interrupt(ctlr_ctx->hal.dev, SDMMC_LL_EVENT_DEFAULT, true);
+        sdmmc_ll_enable_global_interrupt(ctlr_ctx->hal.dev, true);
+    }
+    portEXIT_CRITICAL(&ctlr_ctx->spinlock);
+
     *ret_handle = &slot->drv;
 
     return ESP_OK;
@@ -208,6 +223,22 @@ static esp_err_t sd_host_slot_sdmmc_configure(sd_host_slot_handle_t slot, const 
     ESP_RETURN_ON_FALSE(config->delayline < (SOC_SDMMC_DELAY_PHASE_NUM + 1), ESP_ERR_INVALID_ARG, TAG, "invalid delay line");
 #else
     ESP_LOGW(TAG, "input line delay not supported, fallback to 0 delay");
+#endif
+
+#if !SDMMC_LL_SDR104_SUPPORTED
+    if (config->sampling_mode == SD_SAMPLING_MODE_SDR) {
+        ESP_RETURN_ON_FALSE(config->freq_hz < SDMMC_FREQ_SDR104 * 1000, ESP_ERR_NOT_SUPPORTED, TAG, "UHS-I SDR104 is not supported");
+    }
+#endif
+#if !SDMMC_LL_DDR50_SUPPORTED
+    if (config->sampling_mode == SD_SAMPLING_MODE_DDR) {
+        ESP_RETURN_ON_FALSE(config->freq_hz < SDMMC_FREQ_DDR50 * 1000, ESP_ERR_NOT_SUPPORTED, TAG, "UHS-I DDR50 is not supported");
+    }
+#endif
+#if !SDMMC_LL_SDR50_SUPPORTED
+    if (config->sampling_mode == SD_SAMPLING_MODE_SDR) {
+        ESP_RETURN_ON_FALSE(config->freq_hz < SDMMC_FREQ_SDR50 * 1000, ESP_ERR_NOT_SUPPORTED, TAG, "UHS-I SDR50 is not supported");
+    }
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32P4
@@ -369,6 +400,8 @@ static esp_err_t sd_host_del_sdmmc_controller(sd_host_ctlr_handle_t ctlr)
     ESP_RETURN_ON_ERROR(sd_host_declaim_controller(ctlr_ctx), TAG, "controller isn't in use");
     ESP_RETURN_ON_ERROR(esp_intr_free(ctlr_ctx->intr_handle), TAG, "failed to delete interrupt service");
 
+    sdmmc_hal_deinit(&ctlr_ctx->hal);
+
     if (ctlr_ctx->event_queue) {
         vQueueDeleteWithCaps(ctlr_ctx->event_queue);
     }
@@ -382,6 +415,10 @@ static esp_err_t sd_host_del_sdmmc_controller(sd_host_ctlr_handle_t ctlr)
     if (ctlr_ctx->pm_lock) {
         esp_pm_lock_delete(ctlr_ctx->pm_lock);
     }
+#endif
+
+#if SDMMC_LL_MPLL_SUPPORTED
+    esp_clk_tree_enable_src(SOC_MOD_CLK_MPLL, false);
 #endif
 
     free(ctlr_ctx->dma_desc);
@@ -804,6 +841,14 @@ static void sd_host_isr(void *arg)
     sd_host_sdmmc_ctlr_t *ctlr = (sd_host_sdmmc_ctlr_t *)arg;
     sd_host_sdmmc_slot_t *slot = ctlr->slot[ctlr->cur_slot_id];
 
+    if (slot == NULL) {
+        uint32_t pending = sdmmc_ll_get_intr_status(ctlr->hal.dev);
+        uint32_t dma_pending = sdmmc_ll_get_idsts_interrupt_raw(ctlr->hal.dev);
+        sdmmc_ll_clear_interrupt(ctlr->hal.dev, pending);
+        sdmmc_ll_clear_idsts_interrupt(ctlr->hal.dev, dma_pending);
+        return;
+    }
+
     sd_host_sdmmc_event_t event = {};
     bool need_yield = false;
     int higher_priority_task_awoken = pdFALSE;
@@ -1013,7 +1058,7 @@ static void sd_host_slot_get_clk_dividers(sd_host_sdmmc_slot_t *slot, uint32_t f
 {
     uint32_t clk_src_freq_hz = 0;
     soc_periph_sdmmc_clk_src_t clk_src = 0;
-#if SOC_SDMMC_UHS_I_SUPPORTED
+#if SOC_SDMMC_UHS_I_SUPPORTED && SDMMC_LL_SDIO_PLL_SUPPORTED
     if (freq_khz > SDMMC_FREQ_HIGHSPEED) {
         clk_src = SDMMC_CLK_SRC_SDIO_200M;
     } else
@@ -1038,39 +1083,55 @@ static void sd_host_slot_get_clk_dividers(sd_host_sdmmc_slot_t *slot, uint32_t f
     // Calculate new dividers
 #if SOC_SDMMC_UHS_I_SUPPORTED
     if (freq_khz == SDMMC_FREQ_SDR104) {
-        *host_div = 1;       // 200 MHz / 1 = 200 MHz
+        *host_div = clk_src_freq_hz / 200000000;
         *card_div = 0;
     } else if (freq_khz == SDMMC_FREQ_SDR50) {
-        *host_div = 2;       // 200 MHz / 2 = 100 MHz
+        *host_div = clk_src_freq_hz / 100000000;
         *card_div = 0;
     } else
 #endif
+#if !SDMMC_LL_MPLL_SUPPORTED
         if (freq_khz >= SDMMC_FREQ_HIGHSPEED) {
-            *host_div = 4;       // 160 MHz / 4 = 40 MHz
+            *host_div = 4;       // src_freq_hz / 4 = 40 MHz
             *card_div = 0;
         } else if (freq_khz == SDMMC_FREQ_DEFAULT) {
-            *host_div = 8;       // 160 MHz / 8 = 20 MHz
+            *host_div = 8;       // src_freq_hz / 8 = 20 MHz
             *card_div = 0;
         } else if (freq_khz == SDMMC_FREQ_PROBING) {
-            *host_div = 10;      // 160 MHz / 10 / (20 * 2) = 400 kHz
+            *host_div = 10;      // src_freq_hz / 10 / (20 * 2) = 400 kHz
             *card_div = 20;
-        } else {
-            /*
-             * for custom frequencies use maximum range of host divider (1-16), find the closest <= div. combination
-             * if exceeded, combine with the card divider to keep reasonable precision (applies mainly to low frequencies)
-             * effective frequency range: 400 kHz - 32 MHz (32.1 - 39.9 MHz cannot be covered with given divider scheme)
-             */
-            *host_div = (clk_src_freq_hz) / (freq_khz * 1000);
-            if (*host_div > 15) {
+        } else
+#endif
+        {
+            uint32_t target_hz = (uint32_t)freq_khz * 1000;
+            // host_div: 1..16 (4-bit edge regs), card_div: 0=bypass or 1..255 (actual div = 2*card_div)
+            // actual_freq = clk_src / host_div                   when card_div == 0
+            // actual_freq = clk_src / host_div / (2 * card_div)  when card_div > 0
+            uint32_t total_div = (clk_src_freq_hz + target_hz - 1) / target_hz;
+
+            if (total_div <= 16) {
+                *host_div = (int)total_div;
+                *card_div = 0;
+            } else {
+                // Two-stage: smallest host_div keeps highest intermediate freq for best precision
                 *host_div = 2;
-                *card_div = (clk_src_freq_hz / 2) / (2 * freq_khz * 1000);
-                if (((clk_src_freq_hz / 2) % (2 * freq_khz * 1000)) > 0) {
-                    (*card_div)++;
+                *card_div = 255;
+                for (int h = 2; h <= 16; h++) {
+                    uint32_t intermediate = clk_src_freq_hz / h;
+                    int c = (int)((intermediate + 2 * target_hz - 1) / (2 * target_hz));
+                    if (c < 1) {
+                        c = 1;
+                    }
+                    if (c <= 255) {
+                        *host_div = h;
+                        *card_div = c;
+                        break;
+                    }
                 }
-            } else if ((clk_src_freq_hz % (freq_khz * 1000)) > 0) {
-                (*host_div)++;
             }
         }
+
+    ESP_LOGD(TAG, "host_div: %d, card_div: %d", *host_div, *card_div);
 
     *src = clk_src;
 }

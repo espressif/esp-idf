@@ -21,6 +21,10 @@
 #include "esp_cache.h"
 #include "esp_private/sdmmc_common.h"
 #include "freertos/FreeRTOS.h"
+#include "soc/soc_caps.h"
+#if SOC_SDMMC_HOST_SUPPORTED
+#include "hal/sdmmc_ll.h"
+#endif
 
 #define SDMMC_DELAY_NUMS_MAX 10
 
@@ -441,7 +445,7 @@ esp_err_t sdmmc_do_timing_tuning(sdmmc_card_t *card, sdmmc_delay_mode_t delay_mo
     int results[SDMMC_DELAY_NUMS_MAX] = {};
     int start_delay_item = (delay_mode == SDMMC_DELAY_MODE_PHASE) ? SDMMC_DELAY_PHASE_0 : SDMMC_DELAY_LINE_0;
     int slot = card->host.slot;
-    int delay_total_nums = 4;
+    int delay_total_nums = 5;
     if (delay_mode == SDMMC_DELAY_MODE_PHASE) {
         if (card->host.max_freq_khz == SDMMC_FREQ_SDR104) {
             delay_total_nums = SDMMC_DELAY_PHASE_AUTO;
@@ -567,9 +571,15 @@ esp_err_t sdmmc_enable_hs_mode_and_check(sdmmc_card_t* card)
 
 static esp_err_t sdmmc_init_sd_uhs1_volt_sw_cb(void* arg, int voltage_mv)
 {
-    sdmmc_card_t* card = (sdmmc_card_t*)arg;
     ESP_LOGV(TAG, "%s: Voltage switch callback (%umv)", __func__, voltage_mv);
+
+#if SOC_SDMMC_IO_UHS_POWER_EXTERNAL
+    sdmmc_ll_switch_io_power_control_src(SDMMC_LL_IO_POWER_CONTROL_SRC_LDO);
+    return ESP_OK;
+#else
+    sdmmc_card_t* card = (sdmmc_card_t*)arg;
     return sd_pwr_ctrl_set_io_voltage(card->host.pwr_ctrl_handle, voltage_mv);
+#endif
 }
 
 esp_err_t sdmmc_init_sd_uhs1(sdmmc_card_t* card)

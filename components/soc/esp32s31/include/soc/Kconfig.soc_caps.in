@@ -243,6 +243,10 @@ config SOC_PSRAM_DMA_CAPABLE
     bool
     default y
 
+config SOC_SDMMC_HOST_SUPPORTED
+    bool
+    default y
+
 config SOC_CLK_TREE_SUPPORTED
     bool
     default y
@@ -272,6 +276,10 @@ config SOC_SPI_FLASH_HAS_DEDICATED_LDO
     default y
 
 config SOC_TOUCH_SENSOR_SUPPORTED
+    bool
+    default y
+
+config SOC_GP_LDO_SUPPORTED
     bool
     default y
 
@@ -780,6 +788,34 @@ config SOC_MMU_DI_VADDR_SHARED
     default y
 
 config SOC_MMU_PER_EXT_MEM_TARGET
+    bool
+    default y
+
+config SOC_SDMMC_USE_IOMUX
+    bool
+    default y
+
+config SOC_SDMMC_NUM_SLOTS
+    int
+    default 2
+
+config SOC_SDMMC_DATA_WIDTH_MAX
+    int
+    default 4
+
+config SOC_SDMMC_DELAY_PHASE_NUM
+    int
+    default 8
+
+config SOC_SDMMC_IO_UHS_POWER_EXTERNAL
+    bool
+    default y
+
+config SOC_SDMMC_PSRAM_DMA_CAPABLE
+    bool
+    default y
+
+config SOC_SDMMC_UHS_I_SUPPORTED
     bool
     default y
 
