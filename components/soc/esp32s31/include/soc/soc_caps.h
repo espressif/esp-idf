@@ -471,7 +471,7 @@
 #define SOC_TOUCH_MAX_CHAN_ID                       (13)    /*!< Touch maximum channel number */
 
 /* Touch Sensor Features */
-#define SOC_TOUCH_SUPPORT_SLEEP_WAKEUP              (0)     /*!< Touch sensor supports sleep awake */
+#define SOC_TOUCH_SUPPORT_SLEEP_WAKEUP              (1)     /*!< Touch sensor supports sleep awake */
 #define SOC_TOUCH_SUPPORT_BENCHMARK                 (1)     /*!< Touch sensor supports benchmark configuration */
 #define SOC_TOUCH_SUPPORT_WATERPROOF                (1)     /*!< Touch sensor supports waterproof */
 #define SOC_TOUCH_SUPPORT_PROX_SENSING              (1)     /*!< Touch sensor supports proximity sensing */
