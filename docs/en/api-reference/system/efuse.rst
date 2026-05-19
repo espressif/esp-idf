@@ -75,7 +75,7 @@ Record Format
 
 In simple cases, each record occupies a single row in the table. Each record contains the following values (i.e., columns):
 
-{IDF_TARGET_MAX_EFUSE_BLK:default = "EFUSE_BLK10", esp32 = "EFUSE_BLK3", esp32c2 = "EFUSE_BLK3"}
+{IDF_TARGET_MAX_EFUSE_BLK:default = "EFUSE_BLK10", esp32 = "EFUSE_BLK3", esp32c2 = "EFUSE_BLK3", esp32s31 = "EFUSE_BLK9"}
 
 .. code-block:: none
 
