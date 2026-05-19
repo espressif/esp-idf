@@ -701,13 +701,16 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_apb_get_divider(voi
     return HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.apb_freq_ctrl0, reg_apb_clk_div_num) + 1;
 }
 
-// TODO: IDF-14730
-// static inline __attribute__((always_inline)) void clk_ll_ref_500m_set_src(soc_ref_500m_clk_src_t in_sel)
-// {
-//     // 0: cpll (320MHz)
-//     // 1: mpll (500MHz)
-//     HP_SYS_CLKRST.ref_500m_ctrl0.reg_ref_500m_sel = in_sel;
-// }
+/**
+ * @brief Select REF_500M_CLK source
+ *
+ * @param in_sel 0 selects CPLL (320 MHz), 1 selects MPLL (500 MHz).
+ */
+static inline __attribute__((always_inline)) void clk_ll_ref_500m_set_src(uint8_t in_sel)
+{
+    HAL_ASSERT(in_sel == 0 || in_sel == 1);
+    HP_SYS_CLKRST.ref_500m_ctrl0.reg_ref_500m_sel = in_sel;
+}
 
 /**
  * @brief Set PLL_F50M_CLK divider. freq of PLL_F50M_CLK = freq of MPLL_CLK / divider
