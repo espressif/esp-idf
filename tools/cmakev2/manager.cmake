@@ -292,23 +292,46 @@ function(__inject_requirements_for_component_from_manager component_name)
     idf_build_get_property(component_manager_interface_version IDF_COMPONENT_MANAGER_INTERFACE_VERSION)
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(component_prefix PREFIX)
-    idf_component_get_property(component_source "${component_name}" COMPONENT_SOURCE)
     idf_component_get_property(component_dir "${component_name}" COMPONENT_DIR)
 
     # The component manager will inject requirements for this component. To do this, it needs to files:
     #
-    # 1. An input file which states the component's source type. This is a minimal build system v1-style file
-    #    which contains the component's source type. To make the component manager happy, we create a file with
-    #    shim __component_set_property(), which calls idf_component_set_property(). The component manager will
-    #    modify this file by adding the component's requirements. TODO: Improve this.
+    # 1. An input file which seeds the component manager with one entry per
+    #    discovered component, each carrying its __COMPONENT_SOURCE. This is a
+    #    minimal build system v1-style file consumed by the manager via the
+    #    shim __component_set_property(), which calls idf_component_set_property().
+    #    Seeding the whole project ensures handle_project_requirements()'s
+    #    known_components matches the project-wide list v1 provides, so its
+    #    _choose_component() can rewrite a manifest-declared namespaced dep
+    #    (e.g. "lvgl__lvgl") to its locally-shadowing short name ("lvgl") when
+    #    a local component shadows a managed dependency. Without seeding, the
+    #    manager would only see the one component being processed and the
+    #    rewrite would never fire. The manager then modifies this file by
+    #    appending the component's resolved requirements. TODO: Improve this.
     # 2. A file which lists the components with manifests. This file is created by the component manager,
     #    and is deleted after the component manager is done. This works for build system v1 where we provide
     #    a global list of components with manifests. However, for build system v2, we need to provide this file
     #    for each component. Hence, we create this file and place it in the build directory.
+    # Iterate COMPONENT_INTERFACES (not COMPONENTS_DISCOVERED) and read each
+    # component's properties via __idf_component_get_property_unchecked so the
+    # COMPONENT_SOURCE comes from the component's own interface target rather
+    # than the alias-aware lookup. After __init_component_interface_cache
+    # short-name aliasing fires (e.g. a higher-priority "example__cmp" rebinds
+    # the cache entry "cmp" to its own interface), the name-based getter
+    # returns the alias target's source -- in that case both "cmp" and
+    # "example__cmp" would be seeded as "project_managed_components" and the
+    # manager's _override_requirements_by_component_sources would reject the
+    # duplicate.
     set(out_file "${build_dir}/component_requires.${component_name}.temp.cmake")
-    set(cmgr_target "___${component_prefix}_${component_name}")
-    # We only provide component source to the component manager
-    file(WRITE "${out_file}" "__component_set_property(${cmgr_target} __COMPONENT_SOURCE \"${component_source}\")\n")
+    idf_build_get_property(component_interfaces COMPONENT_INTERFACES)
+    set(requires_content "")
+    foreach(seed_interface IN LISTS component_interfaces)
+        __idf_component_get_property_unchecked(seed_name "${seed_interface}" COMPONENT_NAME)
+        __idf_component_get_property_unchecked(seed_source "${seed_interface}" COMPONENT_SOURCE)
+        string(APPEND requires_content
+            "__component_set_property(___${component_prefix}_${seed_name} __COMPONENT_SOURCE \"${seed_source}\")\n")
+    endforeach()
+    file(WRITE "${out_file}" "${requires_content}")
 
     # Create components_with_manifests_list.temp file with only this component if it has a manifest
     set(components_with_manifests_file "${build_dir}/components_with_manifests_list.temp")
