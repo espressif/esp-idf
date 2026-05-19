@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -72,6 +72,7 @@ typedef union {
          *  1: bus width is 2.
          *  2: bus width is 4.
          *  3: bus width is 8.
+         *  4: bus width is 16.
          */
         uint32_t rx_bus_wid_sel:3;
     };
@@ -146,6 +147,7 @@ typedef union {
          *  1: bus width is 2.
          *  2: bus width is 4.
          *  3: bus width is 8.
+         *  4: bus width is 16.
          */
         uint32_t tx_bus_wid_sel:3;
     };
@@ -487,7 +489,7 @@ typedef union {
 } parl_io_version_reg_t;
 
 
-typedef struct {
+typedef struct parl_io_dev_t {
     volatile parl_io_rx_mode_cfg_reg_t rx_mode_cfg;
     volatile parl_io_rx_data_cfg_reg_t rx_data_cfg;
     volatile parl_io_rx_genrl_cfg_reg_t rx_genrl_cfg;
@@ -513,6 +515,8 @@ typedef struct {
     uint32_t reserved_124[182];
     volatile parl_io_version_reg_t version;
 } parl_io_dev_t;
+
+extern parl_io_dev_t PARL_IO;
 
 
 #ifndef __cplusplus
