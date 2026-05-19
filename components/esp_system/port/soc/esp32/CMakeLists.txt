@@ -4,7 +4,7 @@ set(srcs "highint_hdl.S"
          "system_internal.c"
          "cache_err_int.c")
 
-if(CONFIG_ESP32_ECO3_CACHE_LOCK_FIX)
+if(CONFIG_ESP32_ECO3_CACHE_LOCK_FIX AND CONFIG_ESP_INT_WDT)
     list(APPEND srcs "eco3_livelock_workaround.c")
 endif()
 
