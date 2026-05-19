@@ -12,6 +12,8 @@
 #include "unity.h"
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
+#include "esp_heap_caps_init.h"
+#include "heap_memory_layout.h"
 #include "spi_flash_mmap.h"
 #include "esp_memory_utils.h"
 #include "esp_private/spi_flash_os.h"
@@ -204,6 +206,41 @@ TEST_CASE("heap caps minimum free bytes monitoring", "[heap]")
     // the local minimum (since the local minimum didn't create a new all time minimum)
     size_t free_size = heap_caps_get_minimum_free_size(caps);
     TEST_ASSERT(local_minimum_free_size >= free_size);
+}
+
+extern void set_leak_threshold(int threshold);
+
+/* NOTE: This is not a well-formed unit test, it leaks memory */
+TEST_CASE("heap registered after startup should not affect minimum free size", "[heap]")
+{
+    printf("heap registered after startup should not affect minimum free size\n");
+
+    const uint32_t MALLOC_CAP_INVENTED = (1 << 29); /* unused capability, must differ from (1 << 30) used in test_runtime_heap_reg.c */
+    const size_t BUF_SZ = 3500;
+    uint32_t caps[SOC_MEMORY_TYPE_NO_PRIOS] = { MALLOC_CAP_INVENTED };
+
+    // Record the minimum free size for default caps before adding a new heap
+    size_t minimum_before = heap_caps_get_minimum_free_size(MALLOC_CAP_DEFAULT);
+
+    // Allocate a buffer and register it as a new heap region.
+    // Since we are past startup (app_main has been reached), the newly
+    // registered heap should NOT affect the minimum free size.
+    void *buffer = malloc(BUF_SZ);
+    TEST_ASSERT_NOT_NULL(buffer);
+    TEST_ESP_OK(heap_caps_add_region_with_caps(caps, (intptr_t)buffer, (intptr_t)buffer + BUF_SZ));
+
+    // The minimum free size for the invented capability should be 0
+    // because the heap was registered after startup.
+    size_t minimum_invented = heap_caps_get_minimum_free_size(MALLOC_CAP_INVENTED);
+    TEST_ASSERT_EQUAL(0, minimum_invented);
+
+    // The minimum free size for default caps should not have increased
+    // (it may have decreased slightly due to the malloc above).
+    size_t minimum_after = heap_caps_get_minimum_free_size(MALLOC_CAP_DEFAULT);
+    TEST_ASSERT(minimum_after <= minimum_before);
+
+    // set the leak threshold to a bigger value as this test leaks memory
+    set_leak_threshold(-4000);
 }
 
 TEST_CASE("heap caps minimum free bytes fault cases", "[heap]")
