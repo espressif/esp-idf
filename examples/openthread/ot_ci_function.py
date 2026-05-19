@@ -12,6 +12,8 @@ import subprocess
 import time
 from functools import wraps
 from typing import Callable
+from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Tuple
 
@@ -417,17 +419,19 @@ def wait_for_host_ra_route(
     raise AssertionError('Host did not receive valid RA in time (OMR route and onlink GUA both required)')
 
 
-def host_global_address_has_onlink_prefix(interface_name: str, onlinkprefix: str) -> bool:
+def _list_host_onlink_global_address_entries(interface_name: str, onlinkprefix: str) -> List[Tuple[str, bool]]:
+    """Return (address, is_usable) for each global address in the onlink /64."""
     onlinkprefix = onlinkprefix.strip()
     if not onlinkprefix:
-        return False
+        return []
     base = onlinkprefix.rstrip(':')
     try:
         network = ipaddress.IPv6Network(f'{base}::/64', strict=False)
     except ValueError:
         logging.warning(f'Invalid onlinkprefix for /64 check: {onlinkprefix}')
-        return False
+        return []
 
+    entries: Dict[str, bool] = {}
     out = subprocess.getoutput(f'ip -6 addr show dev {interface_name}')
     for line in out.splitlines():
         if 'inet6' not in line or 'scope global' not in line:
@@ -437,11 +441,30 @@ def host_global_address_has_onlink_prefix(interface_name: str, onlinkprefix: str
             continue
         addr_s = m.group(1).split('%')[0]
         try:
-            if ipaddress.IPv6Address(addr_s) in network:
-                return True
+            if ipaddress.IPv6Address(addr_s) not in network:
+                continue
         except ValueError:
             continue
-    return False
+        is_usable = 'tentative' not in line and 'dadfailed' not in line
+        if addr_s in entries:
+            entries[addr_s] = entries[addr_s] and is_usable
+        else:
+            entries[addr_s] = is_usable
+    return list(entries.items())
+
+
+def host_global_address_has_onlink_prefix(interface_name: str, onlinkprefix: str) -> bool:
+    entries = _list_host_onlink_global_address_entries(interface_name, onlinkprefix)
+    if not entries:
+        return False
+    return all(usable for _, usable in entries)
+
+
+def list_host_usable_onlink_global_addresses(interface_name: str, onlinkprefix: str) -> List[str]:
+    entries = _list_host_onlink_global_address_entries(interface_name, onlinkprefix)
+    if not entries or not all(usable for _, usable in entries):
+        return []
+    return [addr for addr, _ in entries]
 
 
 def wait_for_host_onlink_global_address(
