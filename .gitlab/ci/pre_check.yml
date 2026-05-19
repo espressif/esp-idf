@@ -34,7 +34,7 @@ check_version:
   extends:
     - .pre_check_template
     - .rules:protected:check
-  tags: [ brew, github_sync ]
+  tags: [ github_sync ]
   variables:
     # need a full clone to get the latest tag
     # the --shallow-since=$(git log -1 --format=%as $LATEST_GIT_TAG) option is not accurate
