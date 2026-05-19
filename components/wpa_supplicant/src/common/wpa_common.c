@@ -320,12 +320,9 @@ static int rsn_selector_to_bitfield(const u8 *s)
 		return WPA_CIPHER_BIP_GMAC_256;
 #endif
 #endif /* CONFIG_IEEE80211W */
-	if (RSN_SELECTOR_GET(s) == RSN_CIPHER_SUITE_NO_GROUP_ADDRESSED){
-        printf("### function = %s line = %di ###\n",__func__,__LINE__);
+	if (RSN_SELECTOR_GET(s) == RSN_CIPHER_SUITE_NO_GROUP_ADDRESSED)
 		return WPA_CIPHER_GTK_NOT_USED;
-    }
 
-    printf("### function = %s line = %di ###\n",__func__,__LINE__);
 	return 0;
 }
 
@@ -2079,7 +2076,6 @@ int wpa_pasn_validate_rsne(const struct wpa_ie_data *data)
 		wpa_printf(MSG_DEBUG, "PASN: Invalid group data cipher");
 		return -1;
 	}
-    printf("### function = %s line = %d   %d %d ###\n",__func__,__LINE__,data->has_pairwise,data->pairwise_cipher);
 
 	if (!data->has_pairwise || !data->pairwise_cipher ||
 	    (data->pairwise_cipher & (data->pairwise_cipher - 1))) {
@@ -2353,11 +2349,76 @@ void pasn_nd_pmk_global_clear(void)
 
 
 /**
- * pasn_pmk_to_ptk - Calculate PASN PTK from PMK, addresses, etc.
+ * pasn_nd_pmk_derive_from_kdk_store - NAN ND-PMK from NM-KDK (hostap equivalent)
+ *
+ * Mirrors hostap nan_crypto_derive_nd_pmk_from_kdk() / nan_crypto_derive_from_kdk():
+ *
+ * ND-PMK = KDF-HASH-NNN(KDK, "NDP PMK Derivation",
+ *			 Pairing Initiator NMI || Pairing Responder NMI)
+ *
+ * NNN follows the NAN PASN cipher suite: SHA-256 for 128-bit suite (e.g. CCMP),
+ * SHA-384 for 256-bit suite (GCMP-256). Output is always PMK_LEN octets.
+ */
+int pasn_nd_pmk_derive_from_kdk_store(const u8 *kdk, size_t kdk_len,
+				      int pairwise_cipher,
+				      const u8 *initiator_nmi,
+				      const u8 *responder_nmi)
+{
+	static const char label[] = "NDP PMK Derivation";
+	u8 data[2 * ETH_ALEN];
+	int ret;
+
+	if (!kdk || !kdk_len || !initiator_nmi || !responder_nmi)
+		return -1;
+
+	os_memcpy(data, initiator_nmi, ETH_ALEN);
+	os_memcpy(data + ETH_ALEN, responder_nmi, ETH_ALEN);
+
+	wpa_printf(MSG_DEBUG, "PASN: Deriving ND-PMK from NM-KDK (NAN pairing)");
+	wpa_hexdump_key(MSG_DEBUG, "PASN: KDK", kdk, kdk_len);
+	wpa_printf(MSG_DEBUG, "PASN: Initiator NMI " MACSTR,
+		   MAC2STR(initiator_nmi));
+	wpa_printf(MSG_DEBUG, "PASN: Responder NMI " MACSTR,
+		   MAC2STR(responder_nmi));
+
+	if (pairwise_cipher == WPA_CIPHER_GCMP_256) {
+#ifdef CONFIG_SHA384
+		wpa_printf(MSG_DEBUG, "PASN: ND-PMK derivation using SHA384");
+
+		ret = sha384_prf(kdk, kdk_len, label, data, sizeof(data),
+				 pasn_nd_pmk_global.nd_pmk, PMK_LEN);
+#else /* CONFIG_SHA384 */
+		wpa_printf(MSG_DEBUG, "PASN: ND-PMK SHA384 not supported");
+		return -1;
+#endif /* CONFIG_SHA384 */
+	} else {
+		wpa_printf(MSG_DEBUG, "PASN: ND-PMK derivation using SHA256");
+
+		ret = sha256_prf(kdk, kdk_len, label, data, sizeof(data),
+				 pasn_nd_pmk_global.nd_pmk, PMK_LEN);
+	}
+
+	if (ret < 0)
+		return -1;
+
+	pasn_nd_pmk_global.valid = 1;
+	wpa_hexdump_key(MSG_DEBUG, "PASN: ND-PMK (global):",
+			pasn_nd_pmk_global.nd_pmk, PMK_LEN);
+
+	return 0;
+}
+
+
+/**
+ * pasn_pmk_to_ptk - Calculate PASN/EPPKE PTK from PMK, addresses, etc.
  * @pmk: Pairwise master key
  * @pmk_len: Length of PMK
- * @spa: Suppplicant address
- * @bssid: AP BSSID
+ * @spa: For EPPKE authentication, non-AP MLD MAC address is used for MLO. For
+ *	PASN authentication or EPPKE authentication for non-MLO, non-AP STA link
+ *	MAC address is used.
+ * @bssid: For EPPKE authentication, AP MLD MAC address is used for MLO. For
+ *	PASN authentication or EPPKE authentication for non-MLO, AP BSSID is
+ *	used.
  * @dhss: Is the shared secret (DHss) derived from the PASN ephemeral key
  *	exchange encoded as an octet string
  * @dhss_len: The length of dhss in octets
@@ -2367,29 +2428,24 @@ void pasn_nd_pmk_global_clear(void)
  * @kdk_len: the length in octets that should be derived for HTLK. Can be zero.
  * @kek_len: The length in octets that should be derived for KEK. Can be zero.
  * @alg: Output variable for indicating the selected hash algorithm
+ * @is_eppke: EPPKE authentication
  * Returns: 0 on success, -1 on failure
  */
 int pasn_pmk_to_ptk(const u8 *pmk, size_t pmk_len,
 		    const u8 *spa, const u8 *bssid,
 		    const u8 *dhss, size_t dhss_len,
 		    struct wpa_ptk *ptk, int akmp, int cipher,
-		    size_t kdk_len, size_t kek_len, enum rsn_hash_alg *alg)
+		    size_t kdk_len, size_t kek_len, enum rsn_hash_alg *alg,
+		    bool is_eppke)
 {
 	u8 tmp[WPA_KCK_MAX_LEN + WPA_KEK_MAX_LEN + WPA_TK_MAX_LEN +
 	       WPA_KDK_MAX_LEN];
-	u8 kek_buf[WPA_KEK_MAX_LEN];
-	u8 nd_pmk_buf[PMK_LEN];
 	const u8 *pos;
 	u8 *data;
 	size_t data_len, ptk_len;
-	size_t first_prf_len;
-	const size_t nan_mgmt_kek_len = 16;
 	int ret = -1;
-	const char *label = "PASN PTK Derivation";
-	const char *kek_label = "NAN Management KEK Derivation";
-	const char *nd_pmk_label = "NDP PMK Derivation";
-
-	(void) kek_len;
+	const char *label = is_eppke ? "EPPKE PTK Derivation" :
+		"PASN PTK Derivation";
 
 	if (!pmk || !pmk_len) {
 		wpa_printf(MSG_ERROR, "PASN: No PMK set for PTK derivation");
@@ -2401,10 +2457,14 @@ int pasn_pmk_to_ptk(const u8 *pmk, size_t pmk_len,
 		return -1;
 	}
 
-	pasn_nd_pmk_global_clear();
-
 	/*
-	 * PASN-PTK = KDF(PMK, “PASN PTK Derivation”, SPA || BSSID || DHss)
+	 * Use "EPPKE PTK Derivation" instead of "PASN PTK Derivation" for
+	 * EPPKE Authentication per IEEE P802.11bi/D4.0, 12.16.9.3.4 (PTKSA
+	 * derivation and MIC computation with EPPKE authentication). For EPPKE
+	 * MLO, the non-AP MLD MAC address is used instead of the SPA and the
+	 * AP MLD MAC address instead of the BSSID.
+	 *
+	 * PASN-PTK = KDF(PMK, "PASN PTK Derivation", SPA || BSSID || DHss)
 	 *
 	 * KCK = L(PASN-PTK, 0, 256)
 	 * TK = L(PASN-PTK, 256, TK_bits)
@@ -2419,11 +2479,10 @@ int pasn_pmk_to_ptk(const u8 *pmk, size_t pmk_len,
 	os_memcpy(data + ETH_ALEN, bssid, ETH_ALEN);
 	os_memcpy(data + 2 * ETH_ALEN, dhss, dhss_len);
 
-	/* KEK is not taken from the first PASN-PTK layout; optional NAN KEK below. */
 	ptk->kck_len = WPA_PASN_KCK_LEN;
 	ptk->tk_len = wpa_cipher_key_len(cipher);
 	ptk->kdk_len = kdk_len;
-	ptk->kek_len = 0;
+	ptk->kek_len = kek_len;
 	ptk->kek2_len = 0;
 	ptk->kck2_len = 0;
 
@@ -2434,14 +2493,16 @@ int pasn_pmk_to_ptk(const u8 *pmk, size_t pmk_len,
 		goto err;
 	}
 
-	first_prf_len = ptk->kck_len + ptk->tk_len + ptk->kdk_len;
-	if (first_prf_len > sizeof(tmp))
+	ptk_len = ptk->kck_len + ptk->tk_len + ptk->kdk_len + ptk->kek_len;
+	if (ptk_len > sizeof(tmp))
 		goto err;
-	ptk_len = first_prf_len;
 
 	*alg = pasn_select_hash_alg(akmp, cipher, pmk_len);
 
 	switch (*alg) {
+	case RSN_HASH_SHA512:
+		wpa_printf(MSG_DEBUG, "PASN: SHA512 PTK derivation not supported");
+		goto err;
 	case RSN_HASH_SHA384:
 #ifdef CONFIG_SHA384
 		wpa_printf(MSG_DEBUG, "PASN: PTK derivation using SHA384");
@@ -2450,7 +2511,7 @@ int pasn_pmk_to_ptk(const u8 *pmk, size_t pmk_len,
 			       ptk_len) < 0)
 			goto err;
 		break;
-#endif
+#endif /* CONFIG_SHA384 */
 	case RSN_HASH_SHA256:
 		wpa_printf(MSG_DEBUG, "PASN: PTK derivation using SHA256");
 
@@ -2476,6 +2537,13 @@ int pasn_pmk_to_ptk(const u8 *pmk, size_t pmk_len,
 	wpa_hexdump_key(MSG_DEBUG, "PASN: KCK:", ptk->kck, WPA_PASN_KCK_LEN);
 	pos = &tmp[WPA_PASN_KCK_LEN];
 
+	if (kek_len) {
+		os_memcpy(ptk->kek, pos, kek_len);
+		wpa_hexdump_key(MSG_DEBUG, "PASN: KEK:",
+				ptk->kek, ptk->kek_len);
+		pos += kek_len;
+	}
+
 	os_memcpy(ptk->tk, pos, ptk->tk_len);
 	wpa_hexdump_key(MSG_DEBUG, "PASN: TK:", ptk->tk, ptk->tk_len);
 	pos += ptk->tk_len;
@@ -2484,78 +2552,12 @@ int pasn_pmk_to_ptk(const u8 *pmk, size_t pmk_len,
 		os_memcpy(ptk->kdk, pos, ptk->kdk_len);
 		wpa_hexdump_key(MSG_DEBUG, "PASN: KDK:",
 				ptk->kdk, ptk->kdk_len);
-
-		/*
-		 * NAN Management KEK = KDF(KDK, "NAN Management KEK Derivation",
-		 * SPA || BSSID || DHss)
-		 */
-		switch (*alg) {
-		case RSN_HASH_SHA384:
-#ifdef CONFIG_SHA384
-			wpa_printf(MSG_DEBUG, "PASN: KEK derivation using SHA384");
-
-			if (sha384_prf(ptk->kdk, ptk->kdk_len, kek_label, data,
-				       data_len, kek_buf, nan_mgmt_kek_len) < 0)
-				goto err;
-			break;
-#endif
-		case RSN_HASH_SHA256:
-			wpa_printf(MSG_DEBUG, "PASN: KEK derivation using SHA256");
-
-			if (sha256_prf(ptk->kdk, ptk->kdk_len, kek_label, data,
-				       data_len, kek_buf, nan_mgmt_kek_len) < 0)
-				goto err;
-			break;
-		default:
-			wpa_printf(MSG_DEBUG, "PASN: Unsupported hash algorithm %d",
-				   *alg);
-			goto err;
-		}
-
-		os_memcpy(ptk->kek, kek_buf, nan_mgmt_kek_len);
-		ptk->kek_len = nan_mgmt_kek_len;
-		wpa_hexdump_key(MSG_DEBUG, "PASN: KEK (NAN management):",
-				ptk->kek, ptk->kek_len);
-
-		/*
-		 * ND-PMK = KDF(KDK, "NDP PMK Derivation", SPA || BSSID || DHss)
-		 */
-		switch (*alg) {
-		case RSN_HASH_SHA384:
-#ifdef CONFIG_SHA384
-			wpa_printf(MSG_DEBUG, "PASN: ND-PMK derivation using SHA384");
-
-			if (sha384_prf(ptk->kdk, ptk->kdk_len, nd_pmk_label, data,
-				       data_len, nd_pmk_buf, PMK_LEN) < 0)
-				goto err;
-			break;
-#endif
-		case RSN_HASH_SHA256:
-			wpa_printf(MSG_DEBUG, "PASN: ND-PMK derivation using SHA256");
-
-			if (sha256_prf(ptk->kdk, ptk->kdk_len, nd_pmk_label, data,
-				       data_len, nd_pmk_buf, PMK_LEN) < 0)
-				goto err;
-			break;
-		default:
-			wpa_printf(MSG_DEBUG, "PASN: Unsupported hash algorithm %d",
-				   *alg);
-			goto err;
-		}
-
-		os_memcpy(pasn_nd_pmk_global.nd_pmk, nd_pmk_buf, PMK_LEN);
-		pasn_nd_pmk_global.valid = 1;
-		wpa_hexdump_key(MSG_DEBUG, "PASN: ND-PMK (global):",
-				pasn_nd_pmk_global.nd_pmk, PMK_LEN);
-		forced_memzero(nd_pmk_buf, sizeof(nd_pmk_buf));
 	}
 
-	ptk->ptk_len = ptk->kck_len + ptk->kek_len + ptk->tk_len + ptk->kdk_len;
+	ptk->ptk_len = ptk_len;
 	forced_memzero(tmp, sizeof(tmp));
 	ret = 0;
 err:
-	forced_memzero(kek_buf, sizeof(kek_buf));
-	forced_memzero(nd_pmk_buf, sizeof(nd_pmk_buf));
 	bin_clear_free(data, data_len);
 	return ret;
 }
@@ -2568,6 +2570,8 @@ err:
 size_t pasn_mic_len(enum rsn_hash_alg alg)
 {
 	switch (alg) {
+	case RSN_HASH_SHA512:
+		return 32;
 	case RSN_HASH_SHA384:
 		return 24;
 	case RSN_HASH_SHA256:

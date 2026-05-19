@@ -413,14 +413,26 @@ pasn_derive_keys(struct pasn_data *pasn,
 
 	pasn->pmk_len = pmk_len;
 	os_memcpy(pasn->pmk, pmk, pmk_len);
+	pasn_nd_pmk_global_clear();
+
 	ret = pasn_pmk_to_ptk(pmk, pmk_len, peer_addr, own_addr,
 			      wpabuf_head(secret), wpabuf_len(secret),
 			      &pasn->ptk, pasn->akmp,
 			      pasn->cipher, pasn->kdk_len, pasn->kek_len,
-			      &pasn->hash_alg);
+			      &pasn->hash_alg, false);
 	if (ret) {
 		wpa_printf(MSG_DEBUG, "PASN: Failed to derive PTK");
 		return -1;
+	}
+
+	if (pasn->ptk.kdk_len) {
+		ret = pasn_nd_pmk_derive_from_kdk_store(
+			pasn->ptk.kdk, pasn->ptk.kdk_len, pasn->cipher,
+			peer_addr, own_addr);
+		if (ret) {
+			wpa_printf(MSG_DEBUG, "PASN: Failed to derive ND-PMK");
+			return -1;
+		}
 	}
 
 	if (pasn->secure_ltf) {

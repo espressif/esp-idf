@@ -109,6 +109,23 @@ typedef struct {
     uint32_t cookie;             /**< Comeback cookie */
 } wifi_nan_pairing_npba_params_t;
 
+/**
+ * @brief Container for optional internal follow-up TX parameters.
+ *
+ * Aggregates everything beyond the basic @c wifi_nan_followup_params_t that
+ * the firmware/proprietary layer may need to compose a follow-up frame:
+ * NPBA attribute parameters (NAN pairing), a pre-wrapped Shared Key
+ * Descriptor blob (NAN PASN follow-up), and a NAN Identity Resolution
+ * Attribute (NIRA) blob. Any field may be NULL/zeroed when not in use.
+ */
+typedef struct {
+    wifi_nan_pairing_npba_params_t *pairing_npba; /**< NPBA params, or NULL */
+    uint8_t *shared_key_wrapped;                  /**< Encoded Shared Key Descriptor attr, or NULL */
+    uint16_t shared_key_wrapped_len;              /**< Length of @c shared_key_wrapped in bytes */
+    uint8_t *nira_attr;                           /**< Encoded NAN Identity Resolution Attribute, or NULL */
+    uint16_t nira_attr_len;                       /**< Length of @c nira_attr in bytes */
+} extra_params_internal_t;
+
 #ifdef __cplusplus
 }
 #endif

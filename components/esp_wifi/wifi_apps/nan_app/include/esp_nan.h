@@ -22,6 +22,7 @@ extern "C" {
     .scan_time = 3, \
     .warm_up_sec = 5, \
     .disable_random_mac = false, \
+    .nik_valid = false, \
 };
 
 #define NDP_STATUS_ACCEPTED     1
@@ -56,6 +57,25 @@ struct nan_peer_record {
     uint8_t ndp_id;        /**< Specifies if the peer has any active datapath */
     uint8_t peer_ndi[6];   /**< Peer's NAN Data Interface address, only valid when ndp_id is non-zero */
 };
+
+#define NAN_PAIRING_PINCODE_MIN 000000
+#define NAN_PAIRING_PINCODE_MAX 999999
+
+union pairing_cred_t {
+    uint32_t pincode;       /**< 6-digit PIN in range of NAN_PAIRING_PINCODE_MIN to NAN_PAIRING_PINCODE_MAX */
+};
+
+enum nan_pairing_role {
+    NAN_PAIRING_ROLE_INITIATOR,
+    NAN_PAIRING_ROLE_RESPONDER,
+};
+
+typedef struct {
+    uint8_t peer_svc_id;
+    uint8_t peer_nmi[6];
+    enum nan_pairing_role self_role;
+    union pairing_cred_t cred;
+} wifi_nan_pairing_config_t;
 
 /**
   * @brief      Start NAN Synchronization using the provided parameters.
@@ -202,7 +222,7 @@ typedef struct {
     wifi_nan_pairing_status_t status;   /**< Set to COMEBACK when resending with cookie */
     uint16_t comeback_after;            /**< Comeback deferral time in TUs (only when status=COMEBACK) */
     uint32_t cookie;                    /**< Opaque cookie from responder (only when status=COMEBACK) */
-} wifi_nan_pairing_bootstrapping_req_t;
+} wifi_nan_pairing_bootstrap_req_t;
 
 /**
   * @brief NAN Pairing Bootstrapping Response parameters (responder -> initiator)
@@ -235,7 +255,7 @@ typedef struct {
   *    - ESP_ERR_INVALID_ARG: Invalid parameters
   *    - ESP_FAIL: Failed to send
   */
-esp_err_t esp_wifi_nan_pairing_request(wifi_nan_pairing_bootstrapping_req_t *req);
+esp_err_t esp_wifi_nan_bootstrap_request(wifi_nan_pairing_bootstrap_req_t *req);
 
 /**
   * @brief      Respond to a NAN Pairing Bootstrapping request from a peer
@@ -250,7 +270,21 @@ esp_err_t esp_wifi_nan_pairing_request(wifi_nan_pairing_bootstrapping_req_t *req
   *    - ESP_ERR_INVALID_ARG: Invalid parameters
   *    - ESP_FAIL: Failed to send
   */
-esp_err_t esp_wifi_nan_pairing_response(wifi_nan_pairing_bootstrapping_resp_t *resp);
+esp_err_t esp_wifi_nan_bootstrap_response(wifi_nan_pairing_bootstrapping_resp_t *resp);
+
+/**
+  * @brief      Start NAN Pairing process after credentials are shared Out-of-band
+  *
+  * @attention  This API should be called after Bootstrapping is completed
+  *
+  * @param      req  Pairing setup parameters.
+  *
+  * @return
+  *    - ESP_OK: Bootstrapping request follow-up sent successfully
+  *    - ESP_ERR_INVALID_ARG: Invalid parameters
+  *    - ESP_FAIL: Failed to send
+  */
+esp_err_t esp_wifi_nan_pairing_start(wifi_nan_pairing_config_t *cfg);
 
 #endif /* CONFIG_ESP_WIFI_NAN_PAIRING */
 

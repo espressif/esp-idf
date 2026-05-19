@@ -28,7 +28,9 @@
 #define WPA_PASN_MAX_MIC_LEN 32
 
 /**
- * NDP PMK (32 octets) from KDK in pasn_pmk_to_ptk (label "NDP PMK Derivation").
+ * ND-PMK (32 octets) for Wi-Fi NAN pairing, derived from NM-KDK via
+ * pasn_nd_pmk_derive_from_kdk_store() (same KDF as hostap
+ * nan_crypto_derive_nd_pmk_from_kdk).
  * @valid: nonzero after successful derivation in the current session.
  */
 struct pasn_nd_pmk_store {
@@ -39,6 +41,11 @@ struct pasn_nd_pmk_store {
 extern struct pasn_nd_pmk_store pasn_nd_pmk_global;
 
 void pasn_nd_pmk_global_clear(void);
+
+int pasn_nd_pmk_derive_from_kdk_store(const u8 *kdk, size_t kdk_len,
+				      int pairwise_cipher,
+				      const u8 *initiator_nmi,
+				      const u8 *responder_nmi);
 
 #define COMEBACK_PENDING_IDX_SIZE 256
 
@@ -598,7 +605,8 @@ int pasn_pmk_to_ptk(const u8 *pmk, size_t pmk_len,
 		    const u8 *spa, const u8 *bssid,
 		    const u8 *dhss, size_t dhss_len,
 		    struct wpa_ptk *ptk, int akmp, int cipher,
-		    size_t kdk_len, size_t kek_len, enum rsn_hash_alg *alg);
+		    size_t kdk_len, size_t kek_len, enum rsn_hash_alg *alg,
+		    bool is_eppke);
 
 size_t pasn_mic_len(enum rsn_hash_alg alg);
 

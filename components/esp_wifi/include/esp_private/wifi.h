@@ -102,6 +102,7 @@ struct nan_cb_peer_info {
     uint16_t ssi_len;                                       /**< SSI length in bytes */
     wifi_nan_peer_sdf_security_t *peer_security_params;     /**< Peer's discovery security params parsed from SDF */
     nan_vendor_ie_t *vendor_ie;                             /**< Vendor-specific IE, if any */
+    uint8_t *shared_key_attr;                               /**< Shared key descriptor attribute, if any */
 };
 
 /* NDP Peer info parsed from NAF. */
@@ -176,6 +177,8 @@ struct nan_sync_callbacks {
     void (* pairing_indication)(uint8_t peer_svc_id, uint8_t pub_id, uint8_t peer_nmi[6], uint16_t selected_method);
     void (* pairing_confirm)(uint8_t status, uint8_t peer_svc_id, uint8_t sub_id, uint8_t peer_nmi[6], uint16_t matched_method, uint8_t reason_code);
     void (* receive_pasn)(uint8_t *buf, size_t len, uint16_t trans_seq, uint16_t status);
+    uint32_t (* get_nira_len)(void);
+    int (* construct_nira)(uint8_t *frm);
 };
 
 /* Host helpers for NAN encrypted-datapath, registered via
@@ -1040,15 +1043,15 @@ esp_err_t esp_nan_internal_subscribe_service(const wifi_nan_subscribe_cfg_t *sub
   *
   * @param[in]  fup_params  Configuration parameters for sending a Follow-up to the Peer.
   * @param[out] context Context returned for Follow-up frame to be matched in Tx done.
-  * @param[in] pairing_npba Optional NPBA parameters for NAN pairing follow-up generation.
-  *                         If NULL, follow-up is sent with provided `fup_params->ssi`.
+  * @param[in]  params_i Optional internal-only extras (NPBA / wrapped Shared Key Descriptor).
+  *                      If NULL, follow-up is sent with provided `fup_params->ssi`.
   *
   * @return
   *    - ESP_OK: succeed
   *    - others: failed
   */
 esp_err_t esp_nan_internal_send_followup(wifi_nan_followup_params_t *fup_params, uint32_t *context,
-                                         wifi_nan_pairing_npba_params_t *pairing_npba);
+                                         extra_params_internal_t *params_i);
 
 /**
   * @brief      Send Datapath Request to the Publisher with matching service

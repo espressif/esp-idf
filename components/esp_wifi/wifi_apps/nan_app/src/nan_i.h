@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * Internal declarations shared between nan_app.c and nan_security.c.
+ * Internal declarations shared between nan_app.c, nan_security.c, and nan_pairing.c.
  */
 
 #pragma once
@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <sys/queue.h>
 #include "esp_err.h"
+#include "esp_bit_defs.h"
 #include "esp_wifi_types_generic.h"
 #include "esp_private/wifi.h"
 #include "esp_nan.h"
@@ -28,6 +29,18 @@ extern "C" {
 #endif
 #define MACADDR_EQUAL(a1, a2)   (memcmp(a1, a2, MACADDR_LEN) == 0)
 #define MACADDR_COPY(dst, src)  (memcpy(dst, src, MACADDR_LEN))
+
+/* NAN sync event-group bits and follow-up TX timeout (nan_app.c, nan_pairing.c). */
+#ifndef NAN_DW_INTVL_MS
+#define NAN_DW_INTVL_MS         524
+#endif
+#ifndef NAN_TX_SUCCESS
+#define NAN_TX_SUCCESS          BIT(2)
+#define NAN_TX_FAILURE          BIT(3)
+#endif
+#ifndef NAN_ACTION_TIMEOUT
+#define NAN_ACTION_TIMEOUT      (4 * NAN_DW_INTVL_MS)
+#endif
 
 /*
  * Shared lock used by both files.
@@ -143,6 +156,9 @@ enum nan_handshake_state {
 };
 #endif /* CONFIG_ESP_WIFI_NAN_SECURITY */
 
+/* NIK length for cipher version 0 (Wi-Fi Aware spec v4.0). */
+#define NAN_APP_PEER_NIK_LEN  16
+
 /* Per-peer service info */
 struct peer_svc_info {
     SLIST_ENTRY(peer_svc_info) next;
@@ -158,6 +174,16 @@ struct peer_svc_info {
      * whose ND-PMKID matched the publisher SCIA. The initiator NDP-req path
      * uses this to pick the right credential for M1's pair-PMKID. */
     uint8_t matched_cred_idx;
+#endif
+#if CONFIG_ESP_WIFI_NAN_PAIRING
+    /* Peer NIK / cipher version / lifetime extracted from a NAN Shared Key
+     * Descriptor attribute received in a follow-up frame. @c has_nik is set
+     * once a valid NIK has been decrypted and stored.
+     */
+    uint8_t peer_nik[NAN_APP_PEER_NIK_LEN];
+    uint8_t peer_nik_cipher_ver;
+    uint32_t peer_nik_lifetime_sec;
+    bool has_nik;
 #endif
 };
 
@@ -241,6 +267,11 @@ typedef struct {
     struct ndl_info ndl[ESP_WIFI_NAN_DATAPATH_MAX_PEERS];
     struct own_svc_info own_svc[ESP_WIFI_NAN_MAX_SVC_SUPPORTED];
     esp_netif_t *nan_netif;
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+    /* Own NAN Identity Key (NIK) cached for pairing/security flows. */
+    uint8_t own_nik[ESP_WIFI_NAN_NIK_LEN];
+    bool own_nik_valid;
+#endif
 #ifdef CONFIG_ESP_WIFI_PASN_SUPPORT
     struct nan_pasn_data *nan_pasn_data;
 #endif
@@ -259,6 +290,26 @@ struct ndl_info *nan_find_ndl_by_pub_id_and_peer(uint8_t pub_id, const uint8_t *
 /* Always-present (defined in nan_app.c) */
 void     esp_nan_ndp_tx_done_cb(uint8_t ndp_id, const uint8_t *peer_nmi,
                                 uint8_t msg_type, bool tx_status);
+
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+#include "freertos/FreeRTOS.h"
+#include "freertos/event_groups.h"
+
+void nan_app_post_event(int32_t event_id, void *event_data, size_t event_data_size);
+struct peer_svc_info *nan_find_peer_svc(uint8_t own_svc_id, uint8_t peer_svc_id, uint8_t peer_nmi[]);
+EventGroupHandle_t nan_pairing_get_event_group(void);
+uint32_t *nan_pairing_get_fup_context(void);
+const uint8_t *nan_pairing_get_null_mac(void);
+
+bool nan_pairing_validate_publish_bootstrapping(uint16_t bootstrapping_methods);
+bool nan_pairing_validate_subscribe_bootstrapping(uint16_t bootstrapping_methods);
+
+void nan_app_bootstrap_indication_cb(uint8_t peer_svc_id, uint8_t pub_id,
+                                     uint8_t peer_nmi[6], uint16_t selected_method);
+void nan_app_bootstrap_completed_cb(uint8_t status, uint8_t peer_svc_id, uint8_t sub_id,
+                                    uint8_t peer_nmi[6], uint16_t matched_method,
+                                    uint8_t reason_code);
+#endif /* CONFIG_ESP_WIFI_NAN_PAIRING */
 
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
 /* Security-gated (defined in nan_security.c) */
@@ -352,26 +403,21 @@ esp_err_t nan_security_populate_initiator_ndl(struct ndl_info *ndl,
                                               const uint8_t *peer_nmi);
 
 /*
- * Compare locally derived ND-PMKID (subscriber passphrase, publisher NMI) to
- * peer discovery security params. own_svc identifies the local subscribe
- * (service_name + creds[]) and peer_svc is updated with matched_cred_idx on
- * success. Returns true if any local cred's PMKID matches a peer-advertised one.
+ * Match subscriber discovery security to a publisher's params.
+ * NCS-SK: Compare locally derived ND-PMKID (subscriber passphrase, publisher NMI) to
+ * peer discovery security params. Returns true if any local cred's PMKID matches a peer-advertised one.
+ * NCS-PASN: Returns true for matching cipher in Publisher's csid_bitmap
  */
 bool nan_security_service_match(const struct own_svc_info *own_svc,
                                 struct peer_svc_info *peer_svc,
                                 const uint8_t *publisher_nmi,
                                 const wifi_nan_peer_sdf_security_t *peer_sec);
-#else
-static inline esp_err_t nan_derive_security_params(const char *service_name,
-                                                   const wifi_nan_discovery_security_params_t *sec_cfg,
-                                                   wifi_nan_security_params_t *out_derived)
-{
-    (void)service_name;
-    (void)sec_cfg;
-    (void)out_derived;
-    return ESP_FAIL;
-}
 #endif /* CONFIG_ESP_WIFI_NAN_SECURITY */
+#if CONFIG_ESP_WIFI_NAN_PAIRING
+void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
+                                      const uint8_t *peer_mac,
+                                      const uint8_t *shared_key_attr);
+#endif
 
 #ifdef __cplusplus
 }

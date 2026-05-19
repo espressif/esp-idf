@@ -7,7 +7,8 @@
  */
 
 #include "sdkconfig.h"
-#include "nan_pasn.h"
+#include "esp_private/esp_supp_nan.h"
+#include "esp_nan_supp_i.h"
 
 #if CONFIG_ESP_WIFI_PASN_SUPPORT
 
@@ -17,6 +18,9 @@
 #include "common/nan.h"
 #include "esp_wifi_driver.h"
 #include "crypto/crypto.h"
+#include "crypto/aes_wrap.h"
+#include "crypto/sha256.h"
+#include "crypto/sha384.h"
 
 #include "pasn/pasn_common.h"
 #include "common/wpa_common.h"
@@ -27,6 +31,7 @@
 #include "utils/eloop.h"
 #include "esp_err.h"
 #include "esp_wifi.h"
+#include "esp_event.h"
 #include "esp_private/wifi.h"
 
 #define IEEE80211_MGMT_HDRLEN 24
@@ -45,6 +50,135 @@ static struct nan_pasn_key_material g_nan_pasn_saved_keys;
 
 /* Key index for esp_wifi_set_nan_key_internal (NAN PASN pairwise TK). */
 int temp = 1;
+
+#define NAN_PASN_AES_WRAP_OVERHEAD      8
+#define NAN_PASN_AES_WRAP_MIN_CIPHERTEXT (NAN_PASN_AES_WRAP_OVERHEAD + 8)
+
+/**
+ * Key lengths for NCS-PK-PASN-128 / NCS-PK-PASN-256 (Wi-Fi Aware pairing).
+ * Mirrors hostap @c nan_crypto_cipher_*_len in src/nan/nan_crypto.c.
+ */
+static size_t nan_pasn_cipher_kck_len(int cipher)
+{
+    switch (cipher) {
+    case WPA_CIPHER_CCMP:
+        return 16;
+    case WPA_CIPHER_GCMP_256:
+        return 24;
+    default:
+        return 0;
+    }
+}
+
+static size_t nan_pasn_cipher_kek_len(int cipher)
+{
+    switch (cipher) {
+    case WPA_CIPHER_CCMP:
+        return 16;
+    case WPA_CIPHER_GCMP_256:
+        return 32;
+    default:
+        return 0;
+    }
+}
+
+static size_t nan_pasn_cipher_tk_len(int cipher)
+{
+    switch (cipher) {
+    case WPA_CIPHER_CCMP:
+        return 16;
+    case WPA_CIPHER_GCMP_256:
+        return 32;
+    default:
+        return 0;
+    }
+}
+
+static size_t nan_pasn_cipher_mic_len(int cipher)
+{
+    switch (cipher) {
+    case WPA_CIPHER_CCMP:
+        return 16;
+    case WPA_CIPHER_GCMP_256:
+        return 24;
+    default:
+        return 0;
+    }
+}
+
+static size_t nan_pasn_cipher_eapol_key_hdrlen(int cipher)
+{
+    size_t mic_len = nan_pasn_cipher_mic_len(cipher);
+
+    if (mic_len == 24) {
+        return sizeof(struct wpa_eapol_key_192);
+    }
+    if (mic_len == 16) {
+        return sizeof(struct wpa_eapol_key);
+    }
+    return 0;
+}
+
+static bool nan_pasn_cipher_is_supported(int cipher)
+{
+    return cipher == WPA_CIPHER_CCMP || cipher == WPA_CIPHER_GCMP_256;
+}
+
+/**
+ * nan_crypto_derive_from_kdk - Derive a key from KDK using KDF-HASH-NNN
+ *
+ * KEY = KDF-HASH-NNN(KDK, label, Pairing Initiator NMI || Pairing Responder NMI)
+ *
+ * Mirrors hostap @c nan_crypto_derive_from_kdk (src/nan/nan_crypto.c).
+ * @a cipher is @c WPA_CIPHER_CCMP (NCS-PK-PASN-128) or @c WPA_CIPHER_GCMP_256
+ * (NCS-PK-PASN-256).
+ */
+static int nan_crypto_derive_from_kdk(const u8 *kdk, size_t kdk_len, int cipher,
+                                      const char *label,
+                                      const u8 *initiator_nmi,
+                                      const u8 *responder_nmi,
+                                      u8 *key, size_t key_len)
+{
+    u8 data[ETH_ALEN * 2];
+    int ret;
+
+    if (!kdk || !kdk_len || !label || !initiator_nmi || !responder_nmi ||
+            !key || !key_len) {
+        wpa_printf(MSG_INFO,
+                   "NAN: Invalid parameters for NPK/KEK derivation");
+        return -1;
+    }
+
+    os_memcpy(data, initiator_nmi, ETH_ALEN);
+    os_memcpy(data + ETH_ALEN, responder_nmi, ETH_ALEN);
+
+    if (cipher == WPA_CIPHER_CCMP) {
+        ret = sha256_prf(kdk, kdk_len, label, data, sizeof(data), key, key_len);
+    } else if (cipher == WPA_CIPHER_GCMP_256) {
+        ret = sha384_prf(kdk, kdk_len, label, data, sizeof(data), key, key_len);
+    } else {
+        wpa_printf(MSG_INFO,
+                   "NAN: Unsupported cipher suite for key derivation: %d",
+                   cipher);
+        return -1;
+    }
+
+    if (ret) {
+        wpa_printf(MSG_INFO,
+                   "NAN: NPK/KEK derivation failed (ret=%d)", ret);
+        return ret;
+    }
+
+    wpa_hexdump_key(MSG_DEBUG, "NAN: KDK", kdk, kdk_len);
+    wpa_printf(MSG_DEBUG, "NAN: Label: %s", label);
+    wpa_printf(MSG_DEBUG, "NAN: Initiator NMI " MACSTR,
+               MAC2STR(initiator_nmi));
+    wpa_printf(MSG_DEBUG, "NAN: Responder NMI " MACSTR,
+               MAC2STR(responder_nmi));
+    wpa_hexdump_key(MSG_DEBUG, "NAN: Derived key", key, key_len);
+
+    return 0;
+}
 
 /** Same layout as @ref nan_pasn_store_ptk (KCK|KEK|TK|KDK). */
 static int nan_pasn_flatten_ptk_blob(struct wpa_ptk *ptk, u8 *dst, size_t dst_sz,
@@ -83,38 +217,40 @@ static int nan_pasn_flatten_ptk_blob(struct wpa_ptk *ptk, u8 *dst, size_t dst_sz
  * Install PASN pairwise TK into the NAN interface key table (firmware).
  * Call while @a pasn still holds a valid PTK (before forced_memzero).
  */
-static void nan_pasn_install_nan_pairwise_tk(struct pasn_data *pasn)
+static int nan_pasn_install_nan_pairwise_tk(struct nan_pasn_data *nan, struct pasn_data *pasn)
 {
     struct wpa_ptk *ptk;
     uint8_t key_rsc[8] = {0};
-    uint8_t peer[ETH_ALEN];
     int kret;
+    (void)nan;
 
     if (!pasn) {
-        return;
+        return -1;
     }
 
-    if (pasn->cipher != WPA_CIPHER_CCMP) {
+    if (!nan_pasn_cipher_is_supported(pasn->cipher)) {
         wpa_printf(MSG_INFO, "NAN PASN: skip NAN TK install (cipher=%d)", pasn->cipher);
-        return;
+        return -1;
     }
 
     ptk = pasn_get_ptk(pasn);
-    if (!ptk || !ptk->tk_len || ptk->tk_len > sizeof(ptk->tk)) {
-        return;
+    if (!ptk || !ptk->tk_len || ptk->tk_len != nan_pasn_cipher_tk_len(pasn->cipher) ||
+            ptk->tk_len > sizeof(ptk->tk)) {
+        return -1;
     }
 
-    os_memcpy(peer, pasn->peer_addr, ETH_ALEN);
-    wpa_hexdump_key(MSG_INFO, "NAN PASN: TK before esp_wifi_set_nan_key_internal",
-                    ptk->tk, ptk->tk_len);
+    ESP_LOG_BUFFER_HEXDUMP("NAN PASN: NM-TK",
+                           ptk->tk, ptk->tk_len, ESP_LOG_INFO);
     kret = esp_wifi_set_nan_key_internal(
-               NAN_PASN_WIFI_ALG_CCMP, peer, temp, 1, key_rsc, sizeof(key_rsc),
+               NAN_PASN_WIFI_ALG_CCMP, pasn->peer_addr, temp, 1, key_rsc, sizeof(key_rsc),
                ptk->tk, ptk->tk_len,
-               NAN_PASN_KEY_FLAG_PAIRWISE | NAN_PASN_KEY_FLAG_RX | NAN_PASN_KEY_FLAG_TX);
+               NAN_KEY_NM_TK);
     if (kret != 0) {
         wpa_printf(MSG_WARNING, "NAN PASN: esp_wifi_set_nan_key_internal failed (%d)",
                    kret);
+        return -1;
     }
+    return 0;
 }
 
 /**
@@ -150,47 +286,48 @@ static void nan_pasn_post_pasn_pairing_indication_evt(struct nan_pasn_data *nan,
 }
 
 /**
- * Common path for @ref esp_nan_app_post_pasn_pairing_confirm (initiator and responder).
+ * nan_crypto_derive_kek - Derive KEK from NM-KDK after PASN pairing
  *
- * @param auth_frame_status_code  IEEE 802.11 Authentication @c status_code from the RX frame (host endian).
- * @param initiator_nmi           Initiator NMI (6 octets).
- * @param responder_nmi           Responder NMI (6 octets).
- * @param require_pasn_internal_success  If true, post only when @c pasn->status is @c WLAN_STATUS_SUCCESS
- *                                       (initiator after Auth2). Responder uses false.
+ * NM-KEK = KDF-HASH-MMM(NM-KDK, "NAN Management KEK Derivation",
+ *                       Pairing Initiator NMI || Pairing Responder NMI)
+ *
+ * Mirrors hostap @c nan_crypto_derive_kek (src/nan/nan_crypto.c). Called from
+ * @ref nan_pasn_copy_keys_from_pasn when @c ptk->kdk_len is set.
  */
-static void nan_pasn_post_pasn_pairing_confirm_evt(struct nan_pasn_data *nan,
-                                                   struct pasn_data *pasn,
-                                                   u16 auth_frame_status_code,
-                                                   const u8 initiator_nmi[ETH_ALEN],
-                                                   const u8 responder_nmi[ETH_ALEN],
-                                                   bool require_pasn_internal_success)
+static int nan_crypto_derive_kek(const u8 *kdk, size_t kdk_len, int cipher,
+                                 const u8 *initiator_nmi,
+                                 const u8 *responder_nmi, struct wpa_ptk *ptk)
 {
-#if 0
-    wifi_event_nan_pasn_pairing_confirm_t conf;
+    const char *label = "NAN Management KEK Derivation";
+    size_t kek_len;
 
-    if (!nan || !pasn) {
-        return;
-    }
-    if (require_pasn_internal_success && pasn->status != WLAN_STATUS_SUCCESS) {
-        return;
+    wpa_printf(MSG_DEBUG, "NAN: Deriving KEK from NM-KDK");
+
+    if (!kdk || !kdk_len || !initiator_nmi || !responder_nmi || !ptk) {
+        wpa_printf(MSG_INFO,
+                   "NAN: Invalid parameters for KEK derivation");
+        return -1;
     }
 
-    os_memset(&conf, 0, sizeof(conf));
-    conf.type = WIFI_NAN_PASN_PAIRING_IND_TYPE_SETUP;
-    conf.status = WIFI_NAN_PASN_PAIRING_CONFIRM_STATUS_ACCEPTED;
-    conf.self_handle = 0;
-    conf.reason_code =
-        (auth_frame_status_code == WLAN_STATUS_SUCCESS) ? 0
-        : (uint8_t)auth_frame_status_code;
-    os_memcpy(conf.initiator_nan_address, initiator_nmi, ETH_ALEN);
-    os_memcpy(conf.responder_nan_address, responder_nmi, ETH_ALEN);
-    conf.paired_peer_handle_valid = 0;
-    conf.auth_password = nan->dev_sae_pin_len > 0 ? 1 : 0;
-    conf.auth_opportunistic =
-        (pasn->akmp == WPA_KEY_MGMT_PASN && nan->dev_sae_pin_len == 0) ? 1 : 0;
-    conf.npk_nik_caching = 0;
-    esp_nan_app_post_pasn_pairing_confirm(&conf);
-#endif
+    if (!nan_pasn_cipher_is_supported(cipher)) {
+        wpa_printf(MSG_INFO,
+                   "NAN: Unsupported cipher suite for KEK derivation: %d",
+                   cipher);
+        return -1;
+    }
+
+    kek_len = nan_pasn_cipher_kek_len(cipher);
+    if (kek_len > sizeof(ptk->kek)) {
+        wpa_printf(MSG_INFO,
+                   "NAN: KEK length %zu exceeds wpa_ptk buffer", kek_len);
+        return -1;
+    }
+
+    ptk->kek_len = kek_len;
+
+    return nan_crypto_derive_from_kdk(kdk, kdk_len, cipher, label,
+                                      initiator_nmi, responder_nmi,
+                                      ptk->kek, ptk->kek_len);
 }
 
 static void nan_pasn_copy_keys_from_pasn(struct nan_pasn_data *nan, struct pasn_data *pasn)
@@ -222,11 +359,44 @@ static void nan_pasn_copy_keys_from_pasn(struct nan_pasn_data *nan, struct pasn_
         g_nan_pasn_saved_keys.pmk_len = pmk_len;
     }
 
+    /*
+     * NAN Management KEK is derived from KDK using pairing initiator/responder
+     * NMI addresses (nan_crypto_derive_kek), same pattern as hostap. ND-PMK is
+     * derived earlier via pasn_nd_pmk_derive_from_kdk_store() (hostap
+     * nan_crypto_derive_nd_pmk_from_kdk) after pasn_pmk_to_ptk.
+     */
+    if (ptk->kdk_len) {
+        const u8 *initiator_nmi;
+        const u8 *responder_nmi;
+
+        if (nan->dev_role == NAN_ROLE_PAIRING_INITIATOR) {
+            initiator_nmi = pasn->own_addr;
+            responder_nmi = pasn->peer_addr;
+        } else {
+            initiator_nmi = pasn->peer_addr;
+            responder_nmi = pasn->own_addr;
+        }
+
+        if (nan_crypto_derive_kek(ptk->kdk, ptk->kdk_len, pasn->cipher,
+                                  initiator_nmi, responder_nmi, ptk) != 0) {
+            wpa_printf(MSG_INFO, "NAN PASN: KEK derivation failed");
+            forced_memzero(&g_nan_pasn_saved_keys, sizeof(g_nan_pasn_saved_keys));
+            return;
+        }
+
+        ptk->ptk_len = ptk->kck_len + ptk->kek_len + ptk->tk_len + ptk->kdk_len;
+    }
+
     if (nan_pasn_flatten_ptk_blob(ptk, g_nan_pasn_saved_keys.ptk_blob,
                                   sizeof(g_nan_pasn_saved_keys.ptk_blob),
                                   &g_nan_pasn_saved_keys.ptk_blob_len) != 0) {
         forced_memzero(&g_nan_pasn_saved_keys, sizeof(g_nan_pasn_saved_keys));
         return;
+    }
+
+    if (ptk->kek_len && ptk->kek_len <= sizeof(g_nan_pasn_saved_keys.kek)) {
+        os_memcpy(g_nan_pasn_saved_keys.kek, ptk->kek, ptk->kek_len);
+        g_nan_pasn_saved_keys.kek_len = ptk->kek_len;
     }
 
     g_nan_pasn_saved_keys.valid = 1;
@@ -240,6 +410,336 @@ const struct nan_pasn_key_material *nan_pasn_get_saved_keys(void)
 void nan_pasn_clear_saved_keys(void)
 {
     forced_memzero(&g_nan_pasn_saved_keys, sizeof(g_nan_pasn_saved_keys));
+}
+
+/* NAN KDE OUI Type values from Wi-Fi Aware spec v4.0, Table 126. */
+#define NAN_PASN_KDE_OUI_TYPE_NIK       36
+#define NAN_PASN_KDE_OUI_TYPE_LIFETIME  37
+#define NAN_PASN_KEY_LIFETIME_NIK_BIT   BIT(3)
+
+/**
+ * Decrypt NAN key data using AES Key Unwrap (RFC 3394).
+ *
+ * Ported from hostap @c nan_crypto_decrypt_key_data (src/nan/nan_crypto.c).
+ * Caller is responsible for freeing the returned wpabuf using @c wpabuf_free.
+ *
+ */
+
+static struct wpabuf *
+nan_crypto_decrypt_key_data(const u8 *kek, size_t kek_len,
+                            const u8 *encrypted_data, size_t encrypted_len)
+{
+    struct wpabuf *decrypted;
+    size_t plain_len;
+    u8 *buf;
+
+    if (!encrypted_data || !encrypted_len) {
+        wpa_printf(MSG_INFO, "NAN: Invalid encrypted key data");
+        return NULL;
+    }
+
+    wpa_hexdump_key(MSG_DEBUG, "NAN: Encrypted key data",
+                    encrypted_data, encrypted_len);
+
+    if (!kek || !kek_len) {
+        wpa_printf(MSG_INFO,
+                   "NAN: No KEK available for key data decryption");
+        return NULL;
+    }
+
+    wpa_hexdump_key(MSG_DEBUG, "NAN: KEK for decryption", kek, kek_len);
+
+    /* AES-WRAP adds 8 bytes overhead and requires 8-byte aligned input. */
+    if (encrypted_len < NAN_PASN_AES_WRAP_MIN_CIPHERTEXT ||
+            encrypted_len % 8 != 0) {
+        wpa_printf(MSG_INFO,
+                   "NAN: Invalid encrypted key data length %zu",
+                   encrypted_len);
+        return NULL;
+    }
+
+    plain_len = encrypted_len - 8;
+    decrypted = wpabuf_alloc(plain_len);
+    if (!decrypted) {
+        wpa_printf(MSG_INFO,
+                   "NAN: Failed to allocate decryption buffer");
+        return NULL;
+    }
+
+    buf = wpabuf_put(decrypted, plain_len);
+    if (aes_unwrap(kek, kek_len, plain_len / 8, encrypted_data, buf)) {
+        wpa_printf(MSG_INFO,
+                   "NAN: AES unwrap failed - could not decrypt key data");
+        wpabuf_free(decrypted);
+        return NULL;
+    }
+
+    wpa_hexdump_key(MSG_DEBUG, "NAN: Decrypted key data",
+                    wpabuf_head(decrypted), wpabuf_len(decrypted));
+
+    return decrypted;
+}
+
+/**
+ * Walk a sequence of NAN KDEs (Vendor Specific elements with WFA OUI) in the
+ * decrypted Key Data and copy the NIK and lifetime fields into output args.
+ */
+static int nan_pasn_parse_nik_kdes(const u8 *data, size_t len, int cipher,
+                                   u8 *nik, u8 *cipher_ver,
+                                   u32 *lifetime_sec, u16 *lifetime_bitmap)
+{
+    size_t gtk_key_len = nan_pasn_cipher_tk_len(cipher);
+    size_t gtk_kde_min = 2 + 6 + gtk_key_len;
+    /* RSN KDE selectors. Defined locally so the parser stays usable even when
+     * the upstream macros are gated by CONFIG_IEEE80211W or are absent (BIGTK).
+     */
+    static const u32 sel_igtk  = RSN_SELECTOR(0x00, 0x0f, 0xac, 9);
+    static const u32 sel_bigtk = RSN_SELECTOR(0x00, 0x0f, 0xac, 14);
+    static const u8 wfa_oui[3] = { 0x50, 0x6f, 0x9a };
+    bool nik_found = false;
+    const u8 *pos = data;
+    const u8 *end = data + len;
+
+    while (pos + 2 <= end) {
+        u8 id = pos[0];
+        u8 elen = pos[1];
+
+        if (pos + 2 + elen > end) {
+            return -1;
+        }
+        if (id != WLAN_EID_VENDOR_SPECIFIC || elen < 4) {
+            pos += 2 + elen;
+            continue;
+        }
+
+        const u32 selector = RSN_SELECTOR_GET(pos + 2);
+        const u8 oui_type = pos[5];
+        const u8 *kde_body = pos + 6;
+        size_t kde_body_len = elen - 4;
+
+        if (os_memcmp(pos + 2, wfa_oui, sizeof(wfa_oui)) == 0) {
+            if (oui_type == NAN_PASN_KDE_OUI_TYPE_NIK &&
+                    kde_body_len >= 1 + NAN_PASN_NIK_LEN) {
+                if (cipher_ver) {
+                    *cipher_ver = kde_body[0];
+                }
+                os_memcpy(nik, kde_body + 1, NAN_PASN_NIK_LEN);
+                nik_found = true;
+                wpa_printf(MSG_DEBUG, "NAN: NIK KDE cipher_ver=%u",
+                           kde_body[0]);
+                wpa_hexdump_key(MSG_DEBUG, "NAN: NIK",
+                                kde_body + 1, NAN_PASN_NIK_LEN);
+            } else if (oui_type == NAN_PASN_KDE_OUI_TYPE_LIFETIME &&
+                       kde_body_len >= 6) {
+                if (lifetime_bitmap) {
+                    *lifetime_bitmap = WPA_GET_LE16(kde_body);
+                }
+                if (lifetime_sec) {
+                    *lifetime_sec = WPA_GET_BE32(kde_body + 2);
+                }
+            }
+        } else if (gtk_key_len && selector == sel_igtk &&
+                   kde_body_len >= gtk_kde_min) {
+            /* IGTK KDE: KeyID(2 LE) | IPN(6) | IGTK */
+            size_t igtk_len = kde_body_len - 8;
+            wpa_printf(MSG_DEBUG,
+                       "NAN: IGTK KDE KeyID=%u igtk_len=%zu",
+                       WPA_GET_LE16(kde_body), igtk_len);
+            wpa_hexdump(MSG_DEBUG, "NAN: IGTK IPN", kde_body + 2, 6);
+            wpa_hexdump_key(MSG_DEBUG, "NAN: IGTK",
+                            kde_body + 8, igtk_len);
+            ESP_LOG_BUFFER_HEXDUMP("IGTK", kde_body + 8, igtk_len, ESP_LOG_INFO);
+        } else if (gtk_key_len && selector == sel_bigtk &&
+                   kde_body_len >= gtk_kde_min) {
+            /* BIGTK KDE: KeyID(2 LE) | BIPN(6) | BIGTK */
+            size_t bigtk_len = kde_body_len - 8;
+            wpa_printf(MSG_DEBUG,
+                       "NAN: BIGTK KDE KeyID=%u bigtk_len=%zu",
+                       WPA_GET_LE16(kde_body), bigtk_len);
+            wpa_hexdump(MSG_DEBUG, "NAN: BIPN", kde_body + 2, 6);
+            wpa_hexdump_key(MSG_DEBUG, "NAN: BIGTK",
+                            kde_body + 8, bigtk_len);
+            ESP_LOG_BUFFER_HEXDUMP("BIGTK", kde_body + 8, bigtk_len, ESP_LOG_INFO);
+        }
+
+        pos += 2 + elen;
+    }
+
+    /* Lifetime KDE is optional in practice (e.g. iPhone omits it), so only
+     * the NIK is required here.
+     */
+    return nik_found ? 0 : -1;
+}
+
+/**
+ * Expected format of shared_key_attr (NCS-PK-PASN-128, MIC=16):
+ *
+ * Offset  Size  Field                                  Source / spec ref
+ * ─────────────────────────────────────────────────────────────────────
+ * NAN attribute header (Wi-Fi Aware v4.0, Table 125)
+ *   0x00   1   Attribute ID = 0x24                    NAN_ATTR_SHARED_KEY_DESCR
+ *   0x01   2   Attribute Length (LE)                  body length, not incl. header
+ *   0x03   1   Publish ID                             struct nan_shared_key.publish_id
+ *
+ * IEEE 802.11 RSNA Key Descriptor (EAPOL-Key body, IEEE 802.11-2020 §12.7.2)
+ *   0x04   1   Descriptor Type = 0x02                 NAN_KEY_DESC (Wi-Fi Aware fixed)
+ *   0x05   2   Key Information (BE)
+ *   0x07   2   Key Length (BE) = 0x0000               not carrying a pairwise cipher key
+ *   0x09   8   Key Replay Counter                     unused for PASN one-shot
+ *   0x11  32   Key Nonce                              unused (no 4-way handshake)
+ *   0x31  16   EAPOL-Key IV                           unused
+ *   0x41   8   Key RSC                                unused
+ *   0x49   8   Reserved (Key ID)
+ *   0x51  16   Key MIC                                HMAC over body w/ MIC zeroed
+ *   0x61   2   Key Data Length (BE)                   length of the wrapped blob
+ *   0x63   N   Key Data                               AES-WRAP(KEK, KDEs || pad)
+ *
+ *  Total = 4 + 95 + N bytes.
+ *
+ * NCS-PK-PASN-128 (CCMP) and NCS-PK-PASN-256 (GCMP-256) use cipher-dependent
+ * KEK/MIC lengths (see @c nan_pasn_cipher_*_len).
+ */
+int nan_pasn_followup_decrypt_keys(const uint8_t *shared_key_attr,
+                                   size_t attr_total_len,
+                                   uint8_t *nik, size_t nik_size,
+                                   uint8_t *cipher_ver,
+                                   uint32_t *lifetime_sec)
+{
+    const struct nan_pasn_key_material *saved;
+    const struct wpa_eapol_key *key_desc;
+    const u8 *body;
+    size_t body_len;
+    u16 attr_body_len;
+    u16 key_info;
+    u16 key_data_len;
+    u8 found_cipher_ver = 0;
+    u32 found_lifetime = 0;
+    u16 lifetime_bitmap = 0;
+    struct wpabuf *key_data = NULL;
+    size_t eapol_hdrlen;
+    size_t mic_len;
+    int ret = -1;
+
+    if (!shared_key_attr || !nik || nik_size < NAN_PASN_NIK_LEN) {
+        return -1;
+    }
+
+    /* Attribute header: ID(1) + Length(2 LE). */
+    if (attr_total_len < 3 || shared_key_attr[0] != NAN_ATTR_SHARED_KEY_DESCR) {
+        wpa_printf(MSG_INFO, "NAN: Invalid Shared Key Descriptor attribute");
+        return -1;
+    }
+
+    attr_body_len = WPA_GET_LE16(&shared_key_attr[1]);
+    if ((size_t)attr_body_len + 3 > attr_total_len) {
+        wpa_printf(MSG_INFO,
+                   "NAN: Truncated Shared Key Descriptor attribute (len=%u, total=%zu)",
+                   attr_body_len, attr_total_len);
+        return -1;
+    }
+
+    saved = nan_pasn_get_saved_keys();
+    if (!saved || !saved->kek_len) {
+        wpa_printf(MSG_INFO,
+                   "NAN: No saved KEK available to decrypt Shared Key Descriptor");
+        return -1;
+    }
+    if (!nan_pasn_cipher_is_supported(saved->cipher)) {
+        wpa_printf(MSG_INFO,
+                   "NAN: Unsupported cipher 0x%x for Shared Key Descriptor",
+                   saved->cipher);
+        return -1;
+    }
+
+    eapol_hdrlen = nan_pasn_cipher_eapol_key_hdrlen(saved->cipher);
+    mic_len = nan_pasn_cipher_mic_len(saved->cipher);
+    if (!eapol_hdrlen || !mic_len) {
+        return -1;
+    }
+
+    /*
+     * Body layout (Wi-Fi Aware spec v4.0 + IEEE 802.11 EAPOL-Key):
+     *   publish_id(1) + EAPOL-Key descriptor (MIC length per cipher) +
+     *   key_data.
+     */
+    if (attr_body_len < 1 + eapol_hdrlen) {
+        wpa_printf(MSG_INFO,
+                   "NAN: Shared Key Descriptor body too short (%u, need %zu)",
+                   attr_body_len, (size_t)(1 + eapol_hdrlen));
+        return -1;
+    }
+
+    body = &shared_key_attr[3];
+    body_len = attr_body_len;
+
+    /* Skip the 1-byte Publish ID; key descriptor starts at offset 1. */
+    key_desc = (const struct wpa_eapol_key *)(body + 1);
+    key_info = WPA_GET_BE16(key_desc->key_info);
+
+    if (!(key_info & WPA_KEY_INFO_KEY_TYPE)) {
+        wpa_printf(MSG_INFO,
+                   "NAN: Follow-up frame does not contain pairwise key");
+        return -1;
+    }
+    if (!(key_info & WPA_KEY_INFO_ENCR_KEY_DATA)) {
+        wpa_printf(MSG_INFO,
+                   "NAN: Follow-up frame does not contain encrypted key data");
+        return -1;
+    }
+
+    key_data_len = WPA_GET_BE16(key_desc->key_data_length);
+    if ((size_t)1 + eapol_hdrlen + key_data_len > body_len) {
+        wpa_printf(MSG_INFO,
+                   "NAN: Shared Key Descriptor key data overruns attribute (key_data_len=%u, body_len=%zu, eapol_hdrlen=%zu)",
+                   key_data_len, body_len, eapol_hdrlen);
+        return -1;
+    }
+
+    wpa_printf(MSG_DEBUG,
+               "NAN: Shared Key Descr cipher=%d mic_len=%zu key_data_len=%u body_len=%zu",
+               saved->cipher, mic_len, key_data_len, body_len);
+
+    key_data = nan_crypto_decrypt_key_data(saved->kek, saved->kek_len,
+                                           body + 1 + eapol_hdrlen,
+                                           key_data_len);
+    if (!key_data) {
+        wpa_printf(MSG_INFO,
+                   "NAN: Failed to decrypt Shared Key Descriptor key data");
+        return -1;
+    }
+
+    ESP_LOG_BUFFER_HEXDUMP("Key Data", wpabuf_head(key_data), wpabuf_len(key_data), ESP_LOG_INFO);
+    if (nan_pasn_parse_nik_kdes(wpabuf_head(key_data), wpabuf_len(key_data),
+                                saved->cipher, nik, &found_cipher_ver,
+                                &found_lifetime, &lifetime_bitmap) != 0) {
+        wpa_printf(MSG_INFO,
+                   "NAN: NIK KDE missing in decrypted key data");
+        goto out;
+    }
+
+    /* Lifetime KDE is optional; if present, its bitmap must mark NIK. */
+    if (found_lifetime &&
+            !(lifetime_bitmap & NAN_PASN_KEY_LIFETIME_NIK_BIT)) {
+        wpa_printf(MSG_INFO,
+                   "NAN: Unexpected key bitmap in Key Lifetime KDE: 0x%04x",
+                   lifetime_bitmap);
+        goto out;
+    }
+
+    if (cipher_ver) {
+        *cipher_ver = found_cipher_ver;
+    }
+    if (lifetime_sec) {
+        *lifetime_sec = found_lifetime;
+    }
+
+    wpa_hexdump_key(MSG_DEBUG, "NAN: Peer NIK from follow-up", nik,
+                    NAN_PASN_NIK_LEN);
+    ret = 0;
+
+out:
+    wpabuf_clear_free(key_data);
+    return ret;
 }
 
 static int nan_chan_to_freq_mhz(uint8_t chan)
@@ -520,10 +1020,15 @@ void nan_pasn_initialize(struct nan_pasn_data *nan, const u8 *addr, int freq, bo
     pasn->cipher = WPA_CIPHER_CCMP;
     pasn_enable_kdk_derivation(pasn);
 
-    if (!derive_kek) {
-        pasn->derive_kek = false;
-        pasn->kek_len = 0;
-    }
+    /*
+     * NAN PASN uses kek_len 0 for in-frame PASN-PTK; NAN Management KEK comes
+     * from KDK via nan_crypto_derive_kek in nan_pasn_copy_keys_from_pasn.
+     * ND-PMK is filled by pasn_nd_pmk_derive_from_kdk_store (hostap
+     * nan_crypto_derive_nd_pmk_from_kdk). Matches hostap nan_pairing.c.
+     */
+    (void)derive_kek;
+    pasn->derive_kek = false;
+    pasn->kek_len = 0;
 
     if (nan->dev_sae_pin_len > 0) {
         pasn->akmp = WPA_KEY_MGMT_SAE;
@@ -742,14 +1247,14 @@ static int nan_handle_pasn_auth(struct nan_pasn_data *nan,
             return -1;
         }
         nan_pasn_auth_timeout_cancel(nan);
-        nan_pasn_post_pasn_pairing_confirm_evt(
-            nan, pasn, le_to_host16(mgmt->auth.status_code),
-            mgmt->sa, nan->cfg->dev_addr, false);
 #ifdef CONFIG_TESTING_OPTIONS
         nan_pasn_store_ptk(nan, &pasn->ptk);
 #endif /* CONFIG_TESTING_OPTIONS */
         nan_pasn_copy_keys_from_pasn(nan, pasn);
-        nan_pasn_install_nan_pairwise_tk(pasn);
+        if (nan_pasn_install_nan_pairwise_tk(nan, pasn) == 0 &&
+                nan->pairing_key_installed_cb) {
+            nan->pairing_key_installed_cb(pasn->peer_addr);
+        }
         forced_memzero(pasn_get_ptk(pasn), sizeof(pasn->ptk));
         nan_pasn_data_deinit(nan);
     }
@@ -790,12 +1295,17 @@ int nan_pasn_auth_rx(struct nan_pasn_data *nan, const struct ieee80211_auth *mgm
         if (ret < 0) {
             wpa_printf(MSG_INFO, "PASN: wpa_pasn_auth_rx() failed");
             nan->dev_role = NAN_ROLE_IDLE;
-        } else {
-            nan_pasn_post_pasn_pairing_confirm_evt(
-                nan, pasn, le_to_host16(mgmt->auth.status_code),
-                pasn->own_addr, pasn->peer_addr, true);
+        } else if (ret == 0 && pasn->status == WLAN_STATUS_SUCCESS) {
+            /*
+             * Pairing setup confirm maps to PASN completion. For initiator,
+             * this is only after Auth2 has been validated and Auth3 has been
+             * successfully built/transmitted by wpa_pasn_auth_rx().
+             */
             nan_pasn_copy_keys_from_pasn(nan, pasn);
-            nan_pasn_install_nan_pairwise_tk(pasn);
+            if (nan_pasn_install_nan_pairwise_tk(nan, pasn) == 0 &&
+                    nan->pairing_key_installed_cb) {
+                nan->pairing_key_installed_cb(pasn->peer_addr);
+            }
         }
 #ifdef CONFIG_TESTING_OPTIONS
         nan_pasn_store_ptk(nan, &pasn->ptk);
@@ -1033,6 +1543,7 @@ int nan_pasn_auth_initiate(struct nan_pasn_data *pd, const uint8_t *peer_addr, i
 struct nan_pasn_eloop_ctx {
     uint8_t peer_addr[ETH_ALEN];
     uint32_t pincode;
+    esp_nan_pairing_key_installed_cb_t pairing_key_installed_cb;
 };
 
 static void nan_pasn_auth_eloop_cb(void *eloop_ctx, void *user_data)
@@ -1061,6 +1572,7 @@ static void nan_pasn_auth_eloop_cb(void *eloop_ctx, void *user_data)
     }
 
     esp_nan_app_set_pasn_data(pd);
+    pd->pairing_key_installed_cb = ctx->pairing_key_installed_cb;
 
     if (ctx->pincode != UINT32_MAX) {
         n = os_snprintf(pin_digits, sizeof(pin_digits), "%06u",
@@ -1090,21 +1602,19 @@ static void nan_pasn_auth_eloop_cb(void *eloop_ctx, void *user_data)
     os_free(ctx);
 }
 
-int nan_pasn_auth_eloop(const uint8_t *peer_addr, uint32_t pincode)
+int esp_nan_supp_pasn_initiator_auth(const uint8_t *peer_nmi, uint32_t pincode,
+                                     esp_nan_pairing_key_installed_cb_t pairing_key_installed_cb)
 {
     struct nan_pasn_eloop_ctx *ctx;
 
-    if (!peer_addr) {
-        return -1;
-    }
-
     ctx = os_zalloc(sizeof(*ctx));
-    if (!ctx) {
+    if (!ctx || !peer_nmi) {
         return -1;
     }
 
-    os_memcpy(ctx->peer_addr, peer_addr, ETH_ALEN);
+    os_memcpy(ctx->peer_addr, peer_nmi, ETH_ALEN);
     ctx->pincode = pincode;
+    ctx->pairing_key_installed_cb = pairing_key_installed_cb;
 
     if (eloop_register_timeout(0, 0, nan_pasn_auth_eloop_cb, NULL, ctx) != 0) {
         os_free(ctx);
@@ -1255,36 +1765,41 @@ fail:
 
 struct pasn_responder_eloop_ctx {
     uint8_t peer_addr[ETH_ALEN];
-    unsigned int has_peer;
     uint32_t pincode;
+    esp_nan_pairing_key_installed_cb_t pairing_key_installed_cb;
 };
 
 static void pasn_responder_init_eloop_cb(void *eloop_ctx, void *user_data)
 {
     struct pasn_responder_eloop_ctx *ctx = user_data;
+    struct nan_pasn_data *pd;
 
     (void)eloop_ctx;
     if (!ctx) {
         return;
     }
-    pasn_responder_init(ctx->has_peer ? ctx->peer_addr : NULL, ctx->pincode);
+    if (pasn_responder_init(ctx->peer_addr, ctx->pincode) == 0) {
+        pd = esp_nan_app_get_pasn_data();
+        if (pd) {
+            pd->pairing_key_installed_cb = ctx->pairing_key_installed_cb;
+        }
+    }
     os_free(ctx);
 }
 
-int pasn_responder_init_eloop(const uint8_t *peer_addr, uint32_t pincode)
+int esp_nan_supp_pasn_responder_init(const uint8_t *peer_nmi, uint32_t pincode,
+                                     esp_nan_pairing_key_installed_cb_t pairing_key_installed_cb)
 {
     struct pasn_responder_eloop_ctx *ctx;
 
     ctx = os_zalloc(sizeof(*ctx));
-    if (!ctx) {
+    if (!ctx || !peer_nmi) {
         return -1;
     }
 
     ctx->pincode = pincode;
-    if (peer_addr) {
-        ctx->has_peer = 1;
-        os_memcpy(ctx->peer_addr, peer_addr, ETH_ALEN);
-    }
+    os_memcpy(ctx->peer_addr, peer_nmi, ETH_ALEN);
+    ctx->pairing_key_installed_cb = pairing_key_installed_cb;
 
     if (eloop_register_timeout(0, 0, pasn_responder_init_eloop_cb, NULL, ctx) != 0) {
         os_free(ctx);
@@ -1389,6 +1904,24 @@ int pasn_responder_init_eloop(const uint8_t *peer_addr, uint32_t pincode)
     return -1;
 }
 
+int esp_nan_supp_pasn_responder_init(const uint8_t *peer_nmi, uint32_t pincode,
+                                     esp_nan_pairing_key_installed_cb_t pairing_key_installed_cb)
+{
+    (void)peer_nmi;
+    (void)pincode;
+    (void)pairing_key_installed_cb;
+    return -1;
+}
+
+int esp_nan_supp_pasn_initiator_auth(const uint8_t *peer_nmi, uint32_t pincode,
+                                     esp_nan_pairing_key_installed_cb_t pairing_key_installed_cb)
+{
+    (void)peer_nmi;
+    (void)pincode;
+    (void)pairing_key_installed_cb;
+    return -1;
+}
+
 const struct nan_pasn_key_material *nan_pasn_get_saved_keys(void)
 {
     return NULL;
@@ -1396,6 +1929,21 @@ const struct nan_pasn_key_material *nan_pasn_get_saved_keys(void)
 
 void nan_pasn_clear_saved_keys(void)
 {
+}
+
+int nan_pasn_followup_decrypt_keys(const uint8_t *shared_key_attr,
+                                   size_t attr_total_len,
+                                   uint8_t *nik, size_t nik_size,
+                                   uint8_t *cipher_ver,
+                                   uint32_t *lifetime_sec)
+{
+    (void)shared_key_attr;
+    (void)attr_total_len;
+    (void)nik;
+    (void)nik_size;
+    (void)cipher_ver;
+    (void)lifetime_sec;
+    return -1;
 }
 
 #endif /* CONFIG_ESP_WIFI_PASN_SUPPORT */

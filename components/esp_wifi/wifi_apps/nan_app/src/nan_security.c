@@ -94,6 +94,11 @@ static const uint8_t *nan_find_attr(const uint8_t *attrs, size_t attrs_len,
     return NULL;
 }
 
+static bool nan_csid_bitmap_has_pasn(uint16_t csid_bitmap)
+{
+    return (csid_bitmap & WIFI_NAN_CSID_BIT_NCS_PK_PASN_128) != 0;
+}
+
 /*
  * Service ID = first 6 bytes of SHA256(lowercase(service_name))
  * per Wi-Fi Aware v4.0 §5.1.5 (Service Name and Service ID).
@@ -795,6 +800,27 @@ bool nan_security_service_match(const struct own_svc_info *own_svc,
     if (!own_svc || !peer_svc || !publisher_nmi || !peer_sec) {
         return false;
     }
+
+    const wifi_nan_discovery_security_params_t *cfg = &own_svc->user_cfg;
+
+    if (cfg->num_credentials == 0 ||
+            cfg->num_credentials > ESP_WIFI_NAN_MAX_CREDS_PER_SVC) {
+        return false;
+    }
+
+    if (nan_csid_bitmap_has_pasn(peer_sec->csid_bitmap)) {
+        int c;
+        for (c = 0; c < cfg->num_credentials; c++) {
+            const wifi_nan_credential_t *cred = &cfg->creds[c];
+            if (peer_sec->csid_bitmap & (1 << cred->csid)) {
+                return true;
+            }
+        }
+        if (c == cfg->num_credentials) {
+            return false;
+        }
+    }
+
     if (peer_sec->num_pmkids == 0) {
         return false;
     }
@@ -802,12 +828,6 @@ bool nan_security_service_match(const struct own_svc_info *own_svc,
         return false;
     }
     if (!g_wifi_default_wpa_crypto_funcs.hmac_sha256_vector) {
-        return false;
-    }
-
-    const wifi_nan_discovery_security_params_t *cfg = &own_svc->user_cfg;
-    if (cfg->num_credentials == 0 ||
-            cfg->num_credentials > ESP_WIFI_NAN_MAX_CREDS_PER_SVC) {
         return false;
     }
 

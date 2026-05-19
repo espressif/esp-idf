@@ -3042,8 +3042,10 @@ mbedtls_ecp_group_id ecc_group_from_psa(psa_ecc_family_t family,
     switch (family) {
     case PSA_ECC_FAMILY_SECP_R1:
         switch (bits) {
+#ifdef MBEDTLS_ECP_DP_SECP192R1_ENABLED
         case 192:
             return MBEDTLS_ECP_DP_SECP192R1;
+#endif
         case 256:
             return MBEDTLS_ECP_DP_SECP256R1;
         case 384:
@@ -3075,8 +3077,10 @@ mbedtls_ecp_group_id ecc_group_from_psa(psa_ecc_family_t family,
 
     case PSA_ECC_FAMILY_SECP_K1:
         switch (bits) {
+#ifdef MBEDTLS_ECP_DP_SECP192K1_ENABLED
         case 192:
             return MBEDTLS_ECP_DP_SECP192K1;
+#endif
         case 256:
             return MBEDTLS_ECP_DP_SECP256K1;
         }

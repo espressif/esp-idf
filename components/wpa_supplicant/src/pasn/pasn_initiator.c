@@ -1364,14 +1364,27 @@ int wpa_pasn_auth_rx(struct pasn_data *pasn, const u8 *data, size_t len,
 		goto fail;
 	}
 
+	pasn_nd_pmk_global_clear();
+
 	ret = pasn_pmk_to_ptk(pasn->pmk, pasn->pmk_len,
 			      pasn->own_addr, pasn->peer_addr,
 			      wpabuf_head(secret), wpabuf_len(secret),
 			      &pasn->ptk, pasn->akmp, pasn->cipher,
-			      pasn->kdk_len, pasn->kek_len, &pasn->hash_alg);
+			      pasn->kdk_len, pasn->kek_len, &pasn->hash_alg,
+			      false);
 	if (ret) {
 		wpa_printf(MSG_DEBUG, "PASN: Failed to derive PTK");
 		goto fail;
+	}
+
+	if (pasn->ptk.kdk_len) {
+		ret = pasn_nd_pmk_derive_from_kdk_store(
+			pasn->ptk.kdk, pasn->ptk.kdk_len, pasn->cipher,
+			pasn->own_addr, pasn->peer_addr);
+		if (ret) {
+			wpa_printf(MSG_DEBUG, "PASN: Failed to derive ND-PMK");
+			goto fail;
+		}
 	}
 
 	if (pasn->secure_ltf) {

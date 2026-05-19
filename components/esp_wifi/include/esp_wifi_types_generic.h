@@ -591,6 +591,8 @@ typedef struct {
     uint8_t sae_h2e_identifier[SAE_H2E_IDENTIFIER_LEN];           /**< Password identifier for H2E. Strings null-terminated (length < SAE_H2E_IDENTIFIER_LEN) or non-null terminated (length = SAE_H2E_IDENTIFIER_LEN) are accepted. Non-null terminated string with 0xFF for full length of SAE_H2E_IDENTIFIER_LEN is not considered a valid identifier */
 } wifi_sta_config_t;
 
+#define ESP_WIFI_NAN_NIK_LEN            16     /**< Length of NAN Identity Key (NIK) */
+
 /**
   * @brief NAN Discovery start configuration
   */
@@ -600,6 +602,9 @@ typedef struct {
     uint8_t scan_time;      /**< Scan time in seconds while searching for a NAN cluster */
     uint16_t warm_up_sec;   /**< Warm up time before assuming NAN Anchor Master role */
     bool disable_random_mac;/**< Disable the MAC Randomisation in NAN */
+    uint8_t nik[ESP_WIFI_NAN_NIK_LEN];  /**< Optional NIK. Auto-generated when nik_valid is false. */
+    uint8_t nik_valid: 1;               /**< NIK present in nik[] and should be used as-is. */
+    uint8_t reserved: 7;                /**< Reserved for future use. */
 } wifi_nan_sync_config_t;
 
 /**
@@ -1287,8 +1292,10 @@ typedef enum {
     WIFI_EVENT_NDP_INDICATION,           /**< Received NDP Request from a NAN Peer */
     WIFI_EVENT_NDP_CONFIRM,              /**< NDP Confirm Indication */
     WIFI_EVENT_NDP_TERMINATED,           /**< NAN Datapath terminated indication */
-    WIFI_EVENT_NAN_PAIRING_INDICATION,   /**< Received NAN Pairing Bootstrapping Request from a Peer */
-    WIFI_EVENT_NAN_PAIRING_CONFIRM,      /**< NAN Pairing Bootstrapping completed (success/failure) */
+    WIFI_EVENT_NAN_BOOTSTRAP_INDICATION, /**< Received NAN Pairing Bootstrapping Request from a Peer */
+    WIFI_EVENT_NAN_BOOTSTRAP_COMPLETED,  /**< NAN Pairing Bootstrapping completed (success/failure) */
+    WIFI_EVENT_NAN_PAIRING_INDICATION,   /**< Received NAN Pairing indication (reserved) */
+    WIFI_EVENT_NAN_PAIRING_CONFIRM,      /**< NAN PASN pairwise key installation completed */
     WIFI_EVENT_HOME_CHANNEL_CHANGE,      /**< Wi-Fi home channel change，doesn't occur when scanning */
 
     WIFI_EVENT_STA_NEIGHBOR_REP,         /**< Received Neighbor Report response */
@@ -1617,9 +1624,9 @@ typedef struct {
 } wifi_event_ndp_terminated_t;
 
 /**
-  * @brief Argument structure for WIFI_EVENT_NAN_PAIRING_INDICATION event
+  * @brief Argument structure for WIFI_EVENT_NAN_BOOTSTRAP_INDICATION event
   *
-  * Posted when a NAN Pairing Bootstrapping Request follow-up is received from a peer.
+  * Posted when a NAN Pairing Bootstrapping Request is received from a peer.
   * The application should respond using esp_wifi_nan_pairing_response().
   */
 typedef struct {
@@ -1629,12 +1636,12 @@ typedef struct {
     uint16_t selected_method;                   /**< Bootstrapping method selected by initiator (wifi_nan_bootstrap_method_t) */
     uint8_t is_comeback;                        /**< 1 if this is a comeback retry with cookie */
     uint32_t cookie;                            /**< Comeback cookie from initiator (0 if none) */
-} wifi_event_nan_pairing_indication_t;
+} wifi_event_nan_bootstrap_indication_t;
 
 /**
-  * @brief Argument structure for WIFI_EVENT_NAN_PAIRING_CONFIRM event
+  * @brief Argument structure for WIFI_EVENT_NAN_BOOTSTRAP_COMPLETED event
   *
-  * Posted when a NAN Pairing Bootstrapping Response follow-up is received,
+  * Posted when a NAN Pairing Bootstrapping Response is received,
   * or when the bootstrapping handshake completes/fails.
   */
 typedef struct {
@@ -1646,7 +1653,19 @@ typedef struct {
     uint8_t reason_code;                        /**< Rejection reason (valid if rejected) */
     uint16_t comeback_after;                    /**< Comeback deferral time in TUs (valid if comeback) */
     uint32_t cookie;                            /**< Comeback cookie from responder (0 if none) */
-} wifi_event_nan_pairing_confirm_t;
+} wifi_event_nan_bootstrap_complete_t;
+
+/**
+  * @brief Argument structure for WIFI_EVENT_NAN_PAIRING_CONFIRM event
+  *
+ * Posted when PASN pairwise key installation completes.
+ * Distinct from WIFI_EVENT_NAN_BOOTSTRAP_COMPLETED (NPBA follow-up bootstrapping).
+  */
+typedef struct {
+    uint8_t status;                             /**< 0=Accepted, 1=Rejected (wifi_nan_pairing_status_t) */
+    uint8_t reason_code;                        /**< Rejection reason (valid if rejected) */
+    uint8_t peer_nmi[6];                        /**< Peer's NAN Management Interface MAC */
+} wifi_event_nan_pairing_complete_t;
 
 /**
   * @brief Argument structure for WIFI_EVENT_STA_NEIGHBOR_REP event
