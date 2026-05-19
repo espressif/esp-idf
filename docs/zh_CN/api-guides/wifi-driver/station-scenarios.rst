@@ -772,7 +772,7 @@ Wi-Fi 原因代码
      - 乐鑫特有的 Wi-Fi 原因代码： 当 station 连续失去 N 个 beacon，将中断连接并报告该代码。
    * - NO_AP_FOUND
      - 201
-     - 乐鑫特有的 Wi-Fi 原因代码： 当 station 未扫描到目标 AP 时，将报告该代码。
+     - 乐鑫特有的 Wi-Fi 原因代码： 当 station 未扫描到目标 AP 时，将报告该代码。如果是由于安全性不匹配或 station 配置不匹配导致未扫描到目标 AP，则会报告新的原因代码NO_AP_FOUND_XXX。
    * - AUTH_FAIL
      - 202
      - 乐鑫特有的 Wi-Fi 原因代码： authentication 失败，但并非由超时而引发。

@@ -515,12 +515,12 @@ API :cpp:func:`esp_wifi_set_config()` can be used to configure the station. And 
    * - threshold
      - The threshold is used to filter the found AP. If the RSSI or security mode is less than the configured threshold, the AP will be discarded.
 
-       If the RSSI is set to 0, it means the default threshold is used, and the default RSSI threshold is -127 dBm. If the authmode threshold is set to 0, it means the default threshold is used, and the default authmode threshold is open.
+       If the RSSI is set to 0, it means the default threshold is used, and the default RSSI threshold is -127 dBm. If the authmode threshold is set to 0, it means the default threshold is used, and the default authmode threshold is ``WIFI_AUTH_OPEN``.
 
 
 .. attention::
 
-    WEP/WPA security modes are deprecated in IEEE 802.11-2016 specifications and are recommended not to be used. These modes can be rejected using authmode threshold by setting threshold as WPA2 by threshold.authmode as ``WIFI_AUTH_WPA2_PSK``.
+    WEP and TKIP are deprecated in IEEE 802.11-2016 and should not be used. To make the station connect only to APs with WPA2 or higher security, set ``wifi_config_t.sta.threshold.authmode`` to ``WIFI_AUTH_WPA2_PSK``. APs below this threshold, such as OPEN, WEP, and WPA-PSK, will be ignored during connection filtering.
 
 AP Basic Configuration
 +++++++++++++++++++++++++++++++++++++
