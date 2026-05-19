@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,7 @@ static void mbedtls_rom_mutex_init( mbedtls_threading_mutex_t *mutex )
 #if defined(MBEDTLS_THREADING_ALT)
     mutex->mutex = xSemaphoreCreateMutex();
     assert(mutex->mutex != NULL);
+    mutex->is_valid = 1;
 #else
     mbedtls_mutex_init(mutex);
 #endif
@@ -38,7 +39,11 @@ static void mbedtls_rom_mutex_free( mbedtls_threading_mutex_t *mutex )
     }
 
 #if defined(MBEDTLS_THREADING_ALT)
+    if (!mutex->is_valid) {
+        return;
+    }
     vSemaphoreDelete(mutex->mutex);
+    mutex->is_valid = 0;
 #else
     mbedtls_mutex_free(mutex);
 #endif
@@ -51,6 +56,9 @@ static int mbedtls_rom_mutex_lock( mbedtls_threading_mutex_t *mutex )
     }
 
 #if defined(MBEDTLS_THREADING_ALT)
+    if (!mutex->is_valid) {
+        return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
+    }
     if (xSemaphoreTake(mutex->mutex, portMAX_DELAY) != pdTRUE) {
         return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
     }
@@ -67,6 +75,9 @@ static int mbedtls_rom_mutex_unlock( mbedtls_threading_mutex_t *mutex )
     }
 
 #if defined(MBEDTLS_THREADING_ALT)
+    if (!mutex->is_valid) {
+        return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
+    }
     if (xSemaphoreGive(mutex->mutex) != pdTRUE) {
         return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
     }
