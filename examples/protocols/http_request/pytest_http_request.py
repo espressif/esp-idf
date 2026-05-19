@@ -30,7 +30,7 @@ def test_examples_protocol_http_request(dut: Dut) -> None:
     dut.expect(' ... socket send success')
     dut.expect(' ... set socket receiving timeout success')
     # check server response
-    dut.expect(r'HTTP/1.0 200 OK')
+    dut.expect(r'HTTP/1.1 200 OK')
     # read from the socket completed
     dut.expect('... done reading from socket. Last read return=0 errno=128')
     dut.expect(r'(\d)...')
