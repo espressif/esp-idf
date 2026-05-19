@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -17,6 +17,58 @@
 #include "sdkconfig.h"
 
 static const char *TAG = "eth_basic_example";
+
+#if CONFIG_EXAMPLE_ETH_PHY_YT8531_INIT
+/**
+ * @brief Initialize YT8531 PHY specific configuration
+ *
+ * @note This function demonstrates how to configure PHY specific registers needed for proper
+ *       operation of the PHY without specific PHY driver by just using the esp_eth_ioctl API.
+ *       This example is YT8531 specific but you can use it as a template to configure other PHYs.
+ *
+ * @param eth_handle Ethernet handle
+ * @return ESP_OK on success, ESP_FAIL on failure
+ */
+static esp_err_t eth_phy_yt8531_specific_init(esp_eth_handle_t eth_handle)
+{
+    /* When the YT8531 PHY is reset during the Generic 802.3 PHY driver initialization, it disables auto negotiation.
+     * So we need to enable it again. This is undocumented but observed behavior.
+     */
+    bool auto_nego_en = true;
+    ESP_RETURN_ON_ERROR(esp_eth_ioctl(eth_handle, ETH_CMD_S_AUTONEGO, &auto_nego_en), TAG, "set auto negotiation failed");
+
+    /*
+    * RGMII requires Tx and Rx paths clock delays to be configured.
+    *
+    * Target delay: ~2 ns on both Tx and Rx.
+    */
+    esp_eth_phy_reg_rw_data_t phy_reg = {.reg_value_p = NULL};
+    uint32_t reg_val;
+    phy_reg.reg_value_p = &reg_val;
+
+    // --- Configure RX ~2 ns coarse delay (EXT_CHIP_CONFIG 0xA001, bit[8]) ---
+    reg_val = 0xA001;
+    phy_reg.reg_addr = 0x1E;  // EXT address register
+    ESP_RETURN_ON_ERROR(esp_eth_ioctl(eth_handle, ETH_CMD_WRITE_PHY_REG, &phy_reg), TAG, "write EXT addr reg (Chip_Config) failed");
+    phy_reg.reg_addr = 0x1F;  // EXT data register
+    ESP_RETURN_ON_ERROR(esp_eth_ioctl(eth_handle, ETH_CMD_READ_PHY_REG, &phy_reg), TAG, "read Chip_Config failed");
+    reg_val |= (1U << 8);     // set rxc_dly_en
+    ESP_RETURN_ON_ERROR(esp_eth_ioctl(eth_handle, ETH_CMD_WRITE_PHY_REG, &phy_reg), TAG, "write Chip_Config failed");
+
+    // --- Configure TX ~2 ns delay (EXT_RGMII_CONFIG1 0xA003, bits[7:0]) ---
+    reg_val = 0xA003;
+    phy_reg.reg_addr = 0x1E;  // EXT address register
+    ESP_RETURN_ON_ERROR(esp_eth_ioctl(eth_handle, ETH_CMD_WRITE_PHY_REG, &phy_reg), TAG, "write EXT addr reg (RGMII_Config1) failed");
+    phy_reg.reg_addr = 0x1F;  // EXT data register
+    ESP_RETURN_ON_ERROR(esp_eth_ioctl(eth_handle, ETH_CMD_READ_PHY_REG, &phy_reg), TAG, "read RGMII_Config1 failed");
+    // Clear tx_delay_sel [3:0] and tx_delay_sel_fe [7:4], then set both to 13 (~1.95 ns)
+    reg_val = (reg_val & ~0x00FFU) | (13U << 4) | (13U << 0);
+    ESP_RETURN_ON_ERROR(esp_eth_ioctl(eth_handle, ETH_CMD_WRITE_PHY_REG, &phy_reg), TAG, "write RGMII_Config1 failed");
+
+    ESP_LOGI(TAG, "RGMII PHY delays configured: Rx ~2 ns (coarse), Tx ~2 ns (13 steps x 150 ps)");
+    return ESP_OK;
+}
+#endif // CONFIG_EXAMPLE_ETH_PHY_YT8531_INIT
 
 /**
  * @brief Initialize Ethernet driver with generic PHY (all IEEE 802.3 compliant PHYs)
@@ -81,6 +133,30 @@ static esp_err_t eth_init(esp_eth_handle_t *eth_handle_out)
 #endif // SOC_EMAC_USE_MULTI_IO_MUX
 #endif // CONFIG_EXAMPLE_ETH_PHY_INTERFACE_RMII
 
+#if CONFIG_EXAMPLE_ETH_PHY_INTERFACE_RGMII
+    // Configure RGMII interface
+    esp32_emac_config.interface = EMAC_DATA_INTERFACE_RGMII;
+
+    // Configure RGMII clock GPIOs
+    esp32_emac_config.clock_config.rgmii.clock_rx_gpio = CONFIG_EXAMPLE_ETH_RGMII_RX_CLK_GPIO;
+    esp32_emac_config.clock_config.rgmii.clock_tx_gpio = CONFIG_EXAMPLE_ETH_RGMII_TX_CLK_GPIO;
+    esp32_emac_config.clock_config.rgmii.clock_phy_ref_gpio = CONFIG_EXAMPLE_ETH_RGMII_PHY_REF_CLK_GPIO;
+
+#if SOC_EMAC_USE_MULTI_IO_MUX
+    // Configure RGMII dataplane GPIOs
+    esp32_emac_config.emac_dataif_gpio.rgmii.tx_ctl_num = CONFIG_EXAMPLE_ETH_RGMII_TX_CTL_GPIO;
+    esp32_emac_config.emac_dataif_gpio.rgmii.txd0_num = CONFIG_EXAMPLE_ETH_RGMII_TXD0_GPIO;
+    esp32_emac_config.emac_dataif_gpio.rgmii.txd1_num = CONFIG_EXAMPLE_ETH_RGMII_TXD1_GPIO;
+    esp32_emac_config.emac_dataif_gpio.rgmii.txd2_num = CONFIG_EXAMPLE_ETH_RGMII_TXD2_GPIO;
+    esp32_emac_config.emac_dataif_gpio.rgmii.txd3_num = CONFIG_EXAMPLE_ETH_RGMII_TXD3_GPIO;
+    esp32_emac_config.emac_dataif_gpio.rgmii.rx_ctl_num = CONFIG_EXAMPLE_ETH_RGMII_RX_CTL_GPIO;
+    esp32_emac_config.emac_dataif_gpio.rgmii.rxd0_num = CONFIG_EXAMPLE_ETH_RGMII_RXD0_GPIO;
+    esp32_emac_config.emac_dataif_gpio.rgmii.rxd1_num = CONFIG_EXAMPLE_ETH_RGMII_RXD1_GPIO;
+    esp32_emac_config.emac_dataif_gpio.rgmii.rxd2_num = CONFIG_EXAMPLE_ETH_RGMII_RXD2_GPIO;
+    esp32_emac_config.emac_dataif_gpio.rgmii.rxd3_num = CONFIG_EXAMPLE_ETH_RGMII_RXD3_GPIO;
+#endif // SOC_EMAC_USE_MULTI_IO_MUX
+#endif // CONFIG_EXAMPLE_ETH_PHY_INTERFACE_RGMII
+
     // Create new ESP32 Ethernet MAC instance
     esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
     if (mac == NULL) {
@@ -105,6 +181,10 @@ static esp_err_t eth_init(esp_eth_handle_t *eth_handle_out)
         phy->del(phy);
         return ESP_FAIL;
     }
+
+#if CONFIG_EXAMPLE_ETH_PHY_YT8531_INIT
+    ESP_RETURN_ON_ERROR(eth_phy_yt8531_specific_init(eth_handle), TAG, "YT8531 PHY specific initialization failed");
+#endif // CONFIG_EXAMPLE_ETH_PHY_YT8531_INIT
 
     *eth_handle_out = eth_handle;
 
@@ -156,6 +236,13 @@ static void eth_event_handler(void *arg, esp_event_base_t event_base,
         ESP_LOGI(TAG, "Ethernet Link Up");
         ESP_LOGI(TAG, "Ethernet HW Addr %02x:%02x:%02x:%02x:%02x:%02x",
                  mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+
+        eth_speed_t speed;
+        esp_eth_ioctl(eth_handle, ETH_CMD_G_SPEED, &speed);
+        eth_duplex_t duplex;
+        esp_eth_ioctl(eth_handle, ETH_CMD_G_DUPLEX_MODE, &duplex);
+        ESP_LOGI(TAG, "Ethernet Speed: %iMbps, %s duplex", speed == ETH_SPEED_10M ? 10 : speed == ETH_SPEED_100M ? 100 : 1000,
+                 duplex == ETH_DUPLEX_HALF ? "half" : "full");
         break;
     case ETHERNET_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "Ethernet Link Down");

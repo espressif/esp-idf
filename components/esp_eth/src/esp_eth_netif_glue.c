@@ -115,7 +115,7 @@ static void eth_action_connected(void *handler_args, esp_event_base_t base, int3
     if (netif_glue->eth_driver == eth_handle) {
         eth_speed_t speed;
         esp_eth_ioctl(eth_handle, ETH_CMD_G_SPEED, &speed);
-        esp_netif_set_link_speed(netif_glue->base.netif, speed == ETH_SPEED_100M ? 100000000 : 10000000);
+        esp_netif_set_link_speed(netif_glue->base.netif, speed == ETH_SPEED_1000M ? 1000000000 : speed == ETH_SPEED_100M ? 100000000 : 10000000);
         esp_netif_action_connected(netif_glue->base.netif, base, event_id, event_data);
     }
 }

@@ -235,9 +235,31 @@ void emac_hal_init(emac_hal_context_t *hal);
 
 #define emac_hal_clock_enable_rmii_input(hal) emac_ll_clock_enable_rmii_input((hal)->ext_regs)
 
-#if SOC_IS(ESP32P4)
+#if SOC_EMAC_SUPPORT_1000M
+#define emac_hal_clock_enable_rgmii(hal) emac_ll_clock_enable_rgmii((hal)->ext_regs)
+#endif // SOC_EMAC_SUPPORT_1000M
+
+#define emac_hal_gpio_init(hal, gpio_num) emac_ll_gpio_init((hal)->ext_regs, gpio_num)
+#if SOC_EMAC_DEDICATED_GPIO_CTRL_SUPPORTED
+#define emac_hal_dedicated_pad_ctrl_enable(hal, enable) emac_ll_dedicated_pad_ctrl_enable((hal)->ext_regs, enable)
+#define emac_hal_dedicated_pad_pullup_enable(hal, pad, enable) emac_ll_dedicated_pad_pullup_enable((hal)->ext_regs, pad, enable)
+#define emac_hal_dedicated_pad_pulldown_enable(hal, pad, enable) emac_ll_dedicated_pad_pulldown_enable((hal)->ext_regs, pad, enable)
+#define emac_hal_dedicated_pad_input_enable(hal, pad, enable) emac_ll_dedicated_pad_input_enable((hal)->ext_regs, pad, enable)
+#define emac_hal_dedicated_pad_sleep_pullup_enable(hal, pad, enable) emac_ll_dedicated_pad_sleep_pullup_enable((hal)->ext_regs, pad, enable)
+#define emac_hal_dedicated_pad_sleep_pulldown_enable(hal, pad, enable) emac_ll_dedicated_pad_sleep_pulldown_enable((hal)->ext_regs, pad, enable)
+#define emac_hal_dedicated_pad_sleep_enable(hal, pad, enable) emac_ll_dedicated_pad_sleep_enable((hal)->ext_regs, pad, enable)
+#endif // SOC_EMAC_DEDICATED_GPIO_CTRL_SUPPORTED
+
+#if !SOC_IS(ESP32)
 #define emac_hal_clock_rmii_rx_tx_div(hal, div) emac_ll_clock_rmii_rx_tx_div((hal)->ext_regs, div)
-#endif // SOC_IS(ESP32P4)
+#define emac_hal_enable_phy_ref_clock_output(hal) emac_ll_enable_phy_ref_clock_output((hal)->ext_regs)
+#endif // !SOC_IS(ESP32)
+
+esp_err_t emac_hal_ref_clock_select(emac_hal_context_t *hal, int sel);
+
+esp_err_t emac_hal_ref_clock_enable(emac_hal_context_t *hal, bool enable);
+
+esp_err_t emac_hal_ref_clock_div(emac_hal_context_t *hal, int div);
 
 #define emac_hal_clock_enable_rmii_output(hal) emac_ll_clock_enable_rmii_output((hal)->ext_regs)
 
@@ -324,6 +346,8 @@ void emac_hal_set_rx_tx_desc_addr(emac_hal_context_t *hal, eth_dma_rx_descriptor
 #define emac_hal_transmit_poll_demand(hal) emac_ll_transmit_poll_demand((hal)->dma_regs, 0)
 
 #define emac_hal_get_hw_feat(hal) emac_ll_get_hw_feat((hal)->dma_regs)
+
+#define emac_hal_get_gmii_status(hal) emac_ll_get_gmii_status((hal)->mac_regs)
 
 #if SOC_EMAC_IEEE1588V2_SUPPORTED
 #define emac_hal_get_ts_status(hal) emac_ll_get_ts_status((hal)->ptp_regs);

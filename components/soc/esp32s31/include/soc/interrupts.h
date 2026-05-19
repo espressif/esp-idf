@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -190,8 +190,11 @@ typedef enum {
 
 extern const char * const esp_isr_names[ETS_MAX_INTR_SOURCE];
 
-// ESP32-S31 names the PMU interrupt source ETS_PMT_INTR_SOURCE; alias for cross-chip compatibility
+// Aliases for cross-chip compatibility
+// ESP32-S31 names the PMU interrupt source ETS_PMT_INTR_SOURCE
 #define ETS_PMU_INTR_SOURCE ETS_PMT_INTR_SOURCE
+// ESP32-S31 names the EMAC interrupt source ETS_SBD_INTR_SOURCE
+#define ETS_ETH_MAC_INTR_SOURCE     ETS_SBD_INTR_SOURCE
 
 #ifdef __cplusplus
 }

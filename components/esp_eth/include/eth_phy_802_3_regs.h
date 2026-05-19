@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,7 +23,8 @@ extern "C" {
  */
 typedef union {
     struct {
-        uint32_t reserved : 7;          /*!< Reserved */
+        uint32_t reserved : 6;          /*!< Reserved */
+        uint32_t speed_1000 : 1;        /*!< 1000Mbps support */
         uint32_t collision_test : 1;    /*!< Collision test */
         uint32_t duplex_mode : 1;       /*!< Duplex mode:Full Duplex(1) and Half Duplex(0) */
         uint32_t restart_auto_nego : 1; /*!< Restart auto-negotiation */
@@ -153,6 +154,36 @@ typedef union {
     uint32_t val;
 } aner_reg_t;
 #define ETH_PHY_ANER_REG_ADDR (0x06)
+
+/**
+ * @brief 1000BASE-T Control register
+ *
+ */
+typedef union {
+    struct {
+        uint32_t reserved0 : 8;        /*!< Reserved */
+        uint32_t base1000_t : 1;       /*!< 1000Base-T half duplex support */
+        uint32_t base1000_t_fd : 1;    /*!< 1000Base-T full duplex support */
+        uint32_t reserved1 : 6;        /*!< Reserved */
+    };
+    uint32_t val;
+} gbcr_reg_t;
+#define ETH_PHY_GBCR_REG_ADDR (0x09)
+
+/**
+ * @brief 1000BASE-T Status register
+ *
+ */
+typedef union {
+    struct {
+        uint32_t reserved0 : 10;                /*!< Reserved */
+        uint32_t lp_base1000_t : 1;             /*!< Link partner 1000Base-T half duplex support */
+        uint32_t lp_base1000_t_fd : 1;          /*!< Link partner 1000Base-T full duplex support */
+        uint32_t reserved1 : 4;                 /*!< Reserved */
+    };
+    uint32_t val;
+} gbsr_reg_t;
+#define ETH_PHY_GBSR_REG_ADDR (0x0A)
 
 /**
  * @brief MMD Access control register

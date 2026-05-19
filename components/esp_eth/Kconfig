@@ -19,13 +19,13 @@ menu "Ethernet"
             default 512
             help
                 Set the size of each buffer used by Ethernet MAC DMA.
-                !! Important !! Make sure it is 64B aligned for ESP32P4!
+                !! Important !! Make sure it is 64B aligned for ESP32P4/S31!
 
         config ETH_DMA_RX_BUFFER_NUM
             int "Amount of Ethernet DMA Rx buffers"
             range 3 30
-            default 10 if IDF_TARGET_ESP32
-            default 20 if IDF_TARGET_ESP32P4 #ESP32P4 has smaller internal Rx FIFO
+            default 10 if IDF_TARGET_ESP32 #ESP32 has bigger internal Rx FIFO
+            default 20
             help
                 Number of DMA receive buffers. Each buffer's size is ETH_DMA_BUFFER_SIZE.
                 Larger number of buffers could increase throughput somehow.
@@ -56,7 +56,7 @@ menu "Ethernet"
                 If enabled, functions related to RX/TX are placed into IRAM. It can improve Ethernet throughput.
                 If disabled, all functions are placed into FLASH.
 
-        menu "Ethernet Clock"
+        menu "Ethernet Time"
             depends on SOC_EMAC_IEEE1588V2_SUPPORTED
 
             config ETH_CLOCK_ADJTIME_PERIOD_MS
@@ -76,6 +76,65 @@ menu "Ethernet"
                     Drift estimates exceeding this limit (in ppb) are rejected as
                     out of range. Typical crystal oscillators drift less than 50 ppm
                     (50000 ppb).
+        endmenu
+
+        menu "Ethernet Clock"
+            choice ETH_EMAC_PHY_REF_CLK_SRC
+                prompt "PHY reference clock source"
+                depends on !SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
+                default ETH_EMAC_PHY_REF_CLK_SRC_AUTO
+                help
+                    Select the PLL clock source used to drive the PHY reference clock output
+                    (PLL_F50M). This applies to two scenarios: RMII mode with EMAC_CLK_OUT when
+                    the output clock is looped back externally, and RGMII mode when an optional
+                    50 MHz PHY_REF_CLK output is enabled (clock_phy_ref_gpio != -1).
+
+                config ETH_EMAC_PHY_REF_CLK_SRC_AUTO
+                    bool "Auto"
+                    help
+                        Let the driver select the clock source automatically based on the
+                        hardware abstraction layer defaults.
+                config ETH_EMAC_PHY_REF_CLK_SRC_MPLL
+                    bool "MPLL"
+                    depends on IDF_TARGET_ESP32S31
+                    help
+                        Use MPLL as the PHY reference clock source.
+                config ETH_EMAC_PHY_REF_CLK_SRC_CPLL
+                    bool "CPLL"
+                    depends on IDF_TARGET_ESP32S31
+                    help
+                        Use CPLL as the PHY reference clock source.
+            endchoice
+
+            choice ETH_EMAC_RGMII_TX_CLK_SRC
+                prompt "RGMII Tx clock source"
+                depends on SOC_EMAC_SUPPORT_1000M
+                default ETH_EMAC_RGMII_TX_CLK_SRC_AUTO
+                help
+                    Select the PLL clock source used to generate the EMAC RGMII Tx clock output.
+
+                config ETH_EMAC_RGMII_TX_CLK_SRC_AUTO
+                    bool "Auto"
+                    help
+                        Let the driver select the clock source automatically based on the
+                        hardware abstraction layer defaults.
+                config ETH_EMAC_RGMII_TX_CLK_SRC_MPLL
+                    bool "MPLL"
+                    depends on IDF_TARGET_ESP32S31
+                    help
+                        Use MPLL as the RGMII Tx clock source.
+                config ETH_EMAC_RGMII_TX_CLK_SRC_CPLL
+                    bool "CPLL"
+                    depends on IDF_TARGET_ESP32S31
+                    help
+                        Use CPLL as the RGMII Tx clock source.
+                config ETH_EMAC_RGMII_TX_CLK_SRC_APLL
+                    bool "APLL"
+                    depends on IDF_TARGET_ESP32S31
+                    help
+                        Use Audio PLL (APLL) as the RGMII Tx clock source.
+            endchoice
+
         endmenu
 
     endif # ETH_USE_ESP32_EMAC

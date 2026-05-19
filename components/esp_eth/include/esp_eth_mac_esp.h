@@ -32,7 +32,7 @@ typedef enum {
     EMAC_CLK_EXT_IN,
 
     /**
-     * @brief Output RMII Clock from internal (A/M)PLL Clock. EMAC Clock GPIO number needs to be configured when this option is selected.
+     * @brief Output RMII Clock from internal PLL Clock. EMAC Clock GPIO number needs to be configured when this option is selected.
      *
      * @warning ESP32 Errata: If you want the Ethernet to work with Wi-Fi or BT, don’t select ESP32 as RMII CLK output as it would result in clock instability.
      *                        Applicable only to ESP32, other ESP32 SoCs are not affected.
@@ -53,9 +53,14 @@ typedef union {
         // Reserved for GPIO number, clock source, etc. in MII mode
     } mii; /*!< EMAC MII Clock Configuration */
     struct {
-        emac_rmii_clock_mode_t clock_mode;  /*!< RMII Clock Mode Configuration */
-        int                    clock_gpio;  /*!< RMII Clock GPIO Configuration */
+        emac_rmii_clock_mode_t        clock_mode;  /*!< RMII Clock Mode Configuration */
+        int                           clock_gpio;  /*!< RMII Clock GPIO Configuration */
     } rmii; /*!< EMAC RMII Clock Configuration */
+    struct {
+        int                           clock_rx_gpio;        /*!< RGMII Rx Clock GPIO Configuration */
+        int                           clock_tx_gpio;        /*!< RGMII Tx Clock GPIO Configuration */
+        int                           clock_phy_ref_gpio;    /*!< RGMII PHY_REF_CLK Clock GPIO Configuration */
+    } rgmii; /*!< EMAC RGMII Clock Configuration */
 } eth_mac_clock_config_t;
 
 /**
@@ -100,14 +105,32 @@ typedef struct {
     int rxd1_num;   /*!< RXD1 GPIO number */
 } eth_mac_rmii_gpio_config_t;
 
+/**
+ * @brief Ethernet MAC RGMII data interface GPIO configuration
+ *
+ */
+typedef struct {
+    int tx_ctl_num;  /*!< TX_CTL GPIO number */
+    int txd0_num;   /*!< TXD0 GPIO number */
+    int txd1_num;   /*!< TXD1 GPIO number */
+    int txd2_num;   /*!< TXD2 GPIO number */
+    int txd3_num;   /*!< TXD3 GPIO number */
+    int rx_ctl_num;  /*!< RX_CTL GPIO number */
+    int rxd0_num;   /*!< RXD0 GPIO number */
+    int rxd1_num;   /*!< RXD1 GPIO number */
+    int rxd2_num;   /*!< RXD2 GPIO number */
+    int rxd3_num;   /*!< RXD3 GPIO number */
+} eth_mac_rgmii_gpio_config_t;
+
 #if SOC_EMAC_USE_MULTI_IO_MUX || SOC_EMAC_MII_USE_GPIO_MATRIX
 /**
  * @brief Ethernet MAC MII/RMII data plane GPIO configuration
  *
  */
 typedef union {
-    eth_mac_mii_gpio_config_t mii; /*!< EMAC MII Data GPIO Configuration */
-    eth_mac_rmii_gpio_config_t rmii; /*!< EMAC RMII Data GPIO Configuration */
+    eth_mac_mii_gpio_config_t mii;      /*!< EMAC MII Data GPIO Configuration */
+    eth_mac_rmii_gpio_config_t rmii;    /*!< EMAC RMII Data GPIO Configuration */
+    eth_mac_rgmii_gpio_config_t rgmii;  /*!< EMAC RGMII Data GPIO Configuration */
 } eth_mac_dataif_gpio_config_t;
 #endif // SOC_EMAC_USE_MULTI_IO_MUX
 
@@ -247,7 +270,54 @@ typedef bool (*ts_target_exceed_cb_from_isr_t)(esp_eth_mediator_t *eth, void *us
         },                                                                    \
         .mdc_freq_hz = 0,                                                     \
     }
-#endif // CONFIG_IDF_TARGET_ESP32P4
+#elif CONFIG_IDF_TARGET_ESP32S31
+#define ETH_ESP32_EMAC_DEFAULT_CONFIG()                                   \
+{                                                                         \
+    .smi_gpio =                                                           \
+    {                                                                     \
+        .mdc_num = 5,                                                     \
+        .mdio_num = 6                                                     \
+    },                                                                    \
+    .interface = EMAC_DATA_INTERFACE_RGMII,                               \
+    .clock_config =                                                       \
+    {                                                                     \
+        .rgmii =                                                          \
+        {                                                                 \
+            .clock_rx_gpio = 14,                                          \
+            .clock_tx_gpio = 13,                                          \
+            .clock_phy_ref_gpio = -1,                                     \
+        }                                                                 \
+    },                                                                    \
+    .dma_burst_len = ETH_DMA_BURST_LEN_16,                                \
+    .intr_priority = 0,                                                   \
+    .emac_dataif_gpio =                                                   \
+    {                                                                     \
+        .rgmii =                                                          \
+        {                                                                 \
+            .tx_ctl_num = 12,                                             \
+            .txd0_num = 8,                                                \
+            .txd1_num = 9,                                                \
+            .txd2_num = 10,                                               \
+            .txd3_num = 11,                                               \
+            .rx_ctl_num = 15,                                             \
+            .rxd0_num = 19,                                               \
+            .rxd1_num = 18,                                               \
+            .rxd2_num = 17,                                               \
+            .rxd3_num = 16                                                \
+        }                                                                 \
+    },                                                                    \
+    .clock_config_out_in =                                                \
+    {                                                                     \
+        .rgmii =                                                          \
+        {                                                                 \
+            .clock_rx_gpio = -1,                                          \
+            .clock_tx_gpio = -1,                                          \
+            .clock_phy_ref_gpio = -1                                      \
+        }                                                                 \
+    },                                                                    \
+    .mdc_freq_hz = 0,                                                     \
+}
+#endif
 
 /**
 * @brief Create ESP32 Ethernet MAC instance

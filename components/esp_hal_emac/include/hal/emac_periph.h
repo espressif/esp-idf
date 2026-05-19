@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,6 +44,7 @@ typedef struct {
     uint32_t mii_tx_er_o_idx;
     uint32_t rmii_refclk_i_idx;
     uint32_t rmii_refclk_o_idx;
+    uint32_t phy_ref_clk_o_idx;
     uint32_t ptp_pps_idx;
 } emac_io_info_t;
 
@@ -67,6 +68,25 @@ typedef struct {
 
 typedef struct {
     const emac_iomux_info_t *clk_tx;
+    const emac_iomux_info_t *tx_ctl;
+    const emac_iomux_info_t *txd0;
+    const emac_iomux_info_t *txd1;
+    const emac_iomux_info_t *txd2;
+    const emac_iomux_info_t *txd3;
+    const emac_iomux_info_t *clk_rx;
+    const emac_iomux_info_t *rx_ctl;
+    const emac_iomux_info_t *rxd0;
+    const emac_iomux_info_t *rxd1;
+    const emac_iomux_info_t *rxd2;
+    const emac_iomux_info_t *rxd3;
+} emac_rgmii_iomux_info_t;
+
+typedef struct {
+    const emac_iomux_info_t *phy_ref_clk;
+} emac_ref_clk_iomux_info_t;
+
+typedef struct {
+    const emac_iomux_info_t *clk_tx;
     const emac_iomux_info_t *tx_en;
     const emac_iomux_info_t *txd0;
     const emac_iomux_info_t *txd1;
@@ -86,7 +106,9 @@ typedef struct {
 
 extern const emac_io_info_t emac_io_idx;
 extern const emac_rmii_iomux_info_t emac_rmii_iomux_pins;
+extern const emac_rgmii_iomux_info_t emac_rgmii_iomux_pins;
 extern const emac_mii_iomux_info_t emac_mii_iomux_pins;
+extern const emac_ref_clk_iomux_info_t emac_ref_clk_iomux_pins;
 
 #if SOC_PAU_SUPPORTED && SOC_EMAC_SUPPORT_SLEEP_RETENTION
 #define EMAC_REGDMA_LINK_EMAC_START_BEGIN   (10)
