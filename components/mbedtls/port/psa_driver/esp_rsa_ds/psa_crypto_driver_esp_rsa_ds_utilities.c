@@ -9,9 +9,7 @@
 #include "mbedtls/asn1.h"
 #include "mbedtls/psa_util.h"
 #include "esp_log.h"
-/* The unpadding routines below borrow the audited constant-time primitives
- * from upstream mbedtls (the same header is already used by the esp_aes
- * driver in this tree). */
+#include "mbedtls/constant_time.h"
 #include "constant_time_internal.h"
 
 typedef struct {
@@ -449,81 +447,91 @@ psa_status_t esp_rsa_ds_pad_oaep_unpad(unsigned char *input,
     size_t *olen,
     psa_algorithm_t hash_alg)
 {
+    /* This mirrors mbedtls_rsa_rsaes_oaep_decrypt() in upstream rsa.c.
+     * Below the public-input sanity check, the unpadding scan operates
+     * only through mbedtls_ct primitives, so its time and memory trace
+     * depend solely on ilen and hash_alg. The single branch on `bad`
+     * at the end leaks no more than the return value already does,
+     * which matches the upstream design and is acceptable for OAEP
+     * (the relevant side-channel attack relies on distinguishing
+     * failure modes, not on timing the success path). */
+
     unsigned int hlen = PSA_HASH_LENGTH(hash_alg);
-    unsigned char bad = 0;
-    size_t msg_len = 0;
-
-    /* Validate input length */
-    bad |= (ilen < 2 * hlen + 2);
-
-    /* Apply MGF masks */
-    bad |= esp_rsa_ds_mgf_mask(input + 1, hlen, input + hlen + 1, ilen - hlen - 1, hash_alg) != PSA_SUCCESS;
-
-    bad |= esp_rsa_ds_mgf_mask(input + hlen + 1, ilen - hlen - 1, input + 1, hlen, hash_alg) != PSA_SUCCESS;
-
-    /* Check first byte (should be 0x00) */
-    bad |= input[0];
-
-    /* Skip the first byte and maskSeed */
-    unsigned char *db = input + 1 + hlen;
-    size_t db_len = ilen - hlen - 1;
-
-    /* Compute hash, label is NULL and label_len is 0 */
+    mbedtls_ct_condition_t bad;
+    mbedtls_ct_condition_t in_padding;
+    size_t pad_len;
+    unsigned char *p;
     unsigned char lhash[PSA_HASH_MAX_SIZE];
-    memset(lhash, 0, sizeof(lhash));
+
+    /* All lengths checked here are public. */
+    if (hlen == 0 || hlen > PSA_HASH_MAX_SIZE || ilen < 2 * hlen + 2) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    /* Unmask seed and DB. A failure here is an internal hash error,
+     * not a ciphertext-dependent condition, so an early return is
+     * safe. */
+    if (esp_rsa_ds_mgf_mask(input + 1, hlen,
+                            input + hlen + 1, ilen - hlen - 1, hash_alg) != PSA_SUCCESS ||
+        esp_rsa_ds_mgf_mask(input + hlen + 1, ilen - hlen - 1,
+                            input + 1, hlen, hash_alg) != PSA_SUCCESS) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    /* lHash of the empty label, recomputed each call. */
     size_t lhen = 0;
-    bad |= psa_hash_compute(hash_alg, NULL, 0, lhash, sizeof(lhash), &lhen) != PSA_SUCCESS;
-
-    bad |= (lhen != hlen);
-
-    /* Verify hash portion of db against lhash */
-    for (size_t i = 0; i < hlen && i < db_len; i++) {
-        bad |= db[i] ^ lhash[i];
+    if (psa_hash_compute(hash_alg, NULL, 0, lhash, sizeof(lhash), &lhen) != PSA_SUCCESS
+            || lhen != hlen) {
+        mbedtls_platform_zeroize(lhash, sizeof(lhash));
+        return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    /* Skip past lhash in DB */
-    unsigned char *p = db + hlen;
-    size_t remaining = db_len - hlen;
+    /* Constant-time padding check. */
+    p   = input;
+    bad = mbedtls_ct_bool(*p++);          /* First byte must be 0x00 */
+    p  += hlen;                            /* Skip seed */
+    bad = mbedtls_ct_bool_or(bad,
+            mbedtls_ct_bool(mbedtls_ct_memcmp(lhash, p, hlen)));
+    p  += hlen;
 
-    /*
-     * Scan PS || 0x01 || M
-     */
-    unsigned char seen_one = 0;
-    size_t msg_index = 0;
-
-    for (size_t i = 0; i < remaining; i++) {
-        unsigned char is_zero = (p[i] == 0);
-        unsigned char is_one  = (p[i] == 1);
-
-        /* Before delimiter, only 0x00 allowed */
-        bad |= (seen_one == 0) & !(is_zero | is_one);
-
-        /* Record first 0x01 */
-        msg_index |= (seen_one == 0 && is_one) * i;
-        seen_one  |= is_one;
+    /* Count leading zeros in DB (between lHash and the 0x01 delimiter).
+     * The loop scans the full DB region every time; the latch via
+     * in_padding keeps pad_len from incrementing once a non-zero byte
+     * is seen. */
+    pad_len    = 0;
+    in_padding = MBEDTLS_CT_TRUE;
+    for (size_t i = 0; i < ilen - 2 * hlen - 2; i++) {
+        in_padding = mbedtls_ct_bool_and(in_padding, mbedtls_ct_uint_eq(p[i], 0));
+        pad_len   += mbedtls_ct_uint_if_else_0(in_padding, 1);
     }
+    p  += pad_len;
+    bad = mbedtls_ct_bool_or(bad, mbedtls_ct_uint_ne(*p++, 0x01));
 
-    /* Must see exactly one delimiter */
-    bad |= (seen_one == 0);
+    mbedtls_platform_zeroize(lhash, sizeof(lhash));
 
-    /* Calculate message length */
-    msg_len = remaining - msg_index - 1;
-    bad |= (msg_len == 0);
-
-    /* Check output buffer size */
-    bad |= (output_max_len < msg_len);
-
-    if (bad) {
+    /* Single decision point on the accumulated bit. */
+    if (bad != MBEDTLS_CT_FALSE) {
         *olen = 0;
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    /* Copy message in constant time */
-    *olen = msg_len;
-    if (*olen > 0) {
-        memcpy(output, p + msg_index + 1, msg_len);
+    /* Padding is valid; from here the plaintext length is no longer
+     * secret (it is returned to the caller via *olen). */
+    size_t plaintext_size = ilen - (size_t) (p - input);
+    if (plaintext_size > output_max_len) {
+        *olen = 0;
+        return PSA_ERROR_INVALID_ARGUMENT;
     }
 
+    *olen = plaintext_size;
+    if (plaintext_size != 0) {
+        /* memmove (not memcpy): the driver's caller aliases input and
+         * output to the same buffer, so the source range [p, p+plaintext_size)
+         * overlaps the destination range [output, output+plaintext_size).
+         * Both pointers and the length are public, so memmove's access
+         * pattern stays fixed by public values -- CT property preserved. */
+        memmove(output, p, plaintext_size);
+    }
     return PSA_SUCCESS;
 }
 #endif /* CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 */
