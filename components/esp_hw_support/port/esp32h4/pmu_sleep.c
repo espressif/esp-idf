@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include "soc/rtc.h"
 #include "soc/pmu_struct.h"
 #include "hal/lp_aon_hal.h"
+#include "hal/efuse_ll.h"
 #include "esp_private/esp_pmu.h"
 #include "pmu_param.h"
 
@@ -295,6 +296,10 @@ uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp
 bool pmu_sleep_finish(bool dslp)
 {
     (void)dslp;
+
+    // Wait eFuse memory update done.
+    while (efuse_ll_get_controller_state() != EFUSE_CONTROLLER_STATE_IDLE) { }
+
     return pmu_ll_hp_is_sleep_reject(PMU_instance()->hal->dev);
 }
 
