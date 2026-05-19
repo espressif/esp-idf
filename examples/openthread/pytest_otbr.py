@@ -9,6 +9,7 @@ import secrets
 import subprocess
 import threading
 import time
+from typing import Optional
 from typing import Tuple
 
 import ot_ci_function as ocf
@@ -239,22 +240,17 @@ def formBasicWiFiThreadNetwork(br:IdfDut, cli:IdfDut) -> None:
 )
 def test_Bidirectional_IPv6_connectivity(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
     br = dut[2]
-    cli  = dut[1]
+    cli = dut[1]
     assert Init_interface
     dut[0].serial.stop_redirect_thread()
 
     formBasicWiFiThreadNetwork(br, cli)
     try:
         onlinkprefix = ocf.get_onlinkprefix(br)
-        print(f'br onlinkprefix: {onlinkprefix}')
         cli_global_unicast_addr = ocf.get_global_unicast_addr(cli, br)
         print(f'cli_global_unicast_addr {cli_global_unicast_addr}')
         interface_name = ocf.get_host_interface_name()
-        command = 'ifconfig ' + interface_name + ' | grep inet6 | grep global'
-        out_bytes = subprocess.check_output(command, shell=True, timeout=5)
-        out_str = out_bytes.decode('utf-8')
-        pattern = rf'\W+({onlinkprefix}(?:\w+:){{3}}\w+)\W+'
-        host_global_unicast_addr = re.findall(pattern, out_str)
+        host_global_unicast_addr = ocf.list_host_usable_onlink_global_addresses(interface_name, onlinkprefix)
         print(f'host_global_unicast_addr: {host_global_unicast_addr}')
         if not host_global_unicast_addr:
             raise Exception(f'onlinkprefix: {onlinkprefix}, host_global_unicast_addr: {host_global_unicast_addr}')
@@ -516,7 +512,7 @@ def test_service_discovery_of_WiFi_device(Init_interface:bool, Init_avahi:bool, 
     dut[0].serial.stop_redirect_thread()
 
     formBasicWiFiThreadNetwork(br, cli)
-    sp: subprocess.Popen | None = None
+    sp: Optional[subprocess.Popen] = None
     try:
         br_global_unicast_addr = ocf.get_global_unicast_addr(br, br)
         command = 'dns config ' + br_global_unicast_addr
