@@ -3,6 +3,10 @@
 components/esp_driver_mcpwm/test_apps/mcpwm:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32h4"]
+      temporary: true
+      reason: BLE power save bringup is not done
   depends_components:
     - esp_driver_mcpwm
     - esp_hal_mcpwm

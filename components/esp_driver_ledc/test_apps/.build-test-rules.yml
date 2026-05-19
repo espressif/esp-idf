@@ -3,6 +3,10 @@
 components/esp_driver_ledc/test_apps/ledc:
   disable:
     - if: SOC_LEDC_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32h4"]
+      temporary: true
+      reason: BLE power save bringup is not done
   depends_components:
     - esp_driver_ledc
     - esp_hal_ledc

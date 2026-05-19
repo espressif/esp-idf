@@ -3,6 +3,10 @@
 components/esp_driver_sdm/test_apps/sigma_delta:
   disable:
     - if: SOC_SDM_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32h4"]
+      temporary: true
+      reason: BLE power save bringup is not done
   depends_components:
     - esp_driver_gpio
     - esp_driver_sdm
