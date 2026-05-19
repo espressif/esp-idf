@@ -39,6 +39,8 @@
 #if CONFIG_SPIRAM
 #include "hal/ldo_ll.h"
 #include "hal/mspi_ll.h"
+#endif
+#if !BOOTLOADER_BUILD && CONFIG_SPIRAM
 #include "esp_private/esp_psram_impl.h"
 #endif
 
@@ -417,7 +419,7 @@ SPM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt,
     pmu_sleep_cache_sync_items(SMMU_GID_DEFAULT, CACHE_SYNC_WRITEBACK, CACHE_MAP_L1_DCACHE, 0, 0); // No PSRAM dirty data after this time write back
 
     if (!dslp) {
-#if CONFIG_SPIRAM
+#if !BOOTLOADER_BUILD && CONFIG_SPIRAM
         psram_ctrlr_ll_wait_all_transaction_done();
 #if CONFIG_PM_SLP_SPIRAM_HALFSLEEP_ENABLED
         esp_psram_impl_enter_halfsleep_mode();
@@ -518,7 +520,7 @@ SPM_IRAM_ATTR bool pmu_sleep_finish(bool dslp)
             _psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_3, PSRAM_CLK_SRC_MPLL);
 #endif
         }
-#if CONFIG_SPIRAM
+#if !BOOTLOADER_BUILD && CONFIG_SPIRAM
         mspi_ll_psram_unhold_all_pins();
 #if CONFIG_PM_SLP_SPIRAM_HALFSLEEP_ENABLED
         esp_psram_impl_exit_halfsleep_mode();

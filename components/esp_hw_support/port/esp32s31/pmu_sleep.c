@@ -22,7 +22,7 @@
 #include "hal/efuse_hal.h"
 #include "hal/mspi_ll.h"
 #include "esp_hw_log.h"
-#if CONFIG_SPIRAM
+#if !BOOTLOADER_BUILD && CONFIG_SPIRAM
 #include "esp_private/esp_psram_impl.h"
 #include "hal/psram_ctrlr_ll.h"
 #endif
@@ -341,7 +341,7 @@ void pmu_sleep_init(const pmu_sleep_config_t *config, bool dslp)
 IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu, bool dslp)
 {
     if (!dslp) {
-#if CONFIG_SPIRAM
+#if !BOOTLOADER_BUILD && CONFIG_SPIRAM
         psram_ctrlr_ll_wait_all_transaction_done();
 #if CONFIG_PM_SLP_SPIRAM_HALFSLEEP_ENABLED
         esp_psram_impl_enter_halfsleep_mode();
@@ -390,7 +390,7 @@ IRAM_ATTR bool pmu_sleep_finish(bool dslp)
             rtc_clk_mpll_enable();
             rtc_clk_mpll_configure(clk_hal_xtal_get_freq_mhz(), s_mpll_freq_mhz_before_sleep, false);
         }
-#if CONFIG_SPIRAM
+#if !BOOTLOADER_BUILD && CONFIG_SPIRAM
         mspi_ll_psram_unhold_all_pins();
 #if CONFIG_PM_SLP_SPIRAM_HALFSLEEP_ENABLED
         esp_psram_impl_exit_halfsleep_mode();
