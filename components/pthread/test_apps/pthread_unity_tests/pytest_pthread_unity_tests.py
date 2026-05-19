@@ -14,7 +14,6 @@ from pytest_embedded_idf.utils import idf_parametrize
     indirect=True,
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='can not pass')  # TODO: IDF-15638
 def test_pthread(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='!thread-specific', timeout=300)
 
@@ -36,7 +35,6 @@ def test_pthread_single_core(dut: Dut) -> None:
     indirect=True,
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='can not pass')  # TODO: IDF-15638
 def test_pthread_tls(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='thread-specific', timeout=300)
 
