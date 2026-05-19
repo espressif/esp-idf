@@ -111,6 +111,8 @@ function(__setup_ulp_project app_name project_path prefix type s_sources exp_dep
                 DEPENDS ${app_name}-prefix/src/${app_name}-stamp/${app_name}-configure
                 USES_TERMINAL
             )
+            idf_register_menuconfig(NAME "ULP (${app_name})"
+                                    TARGET menuconfig-${app_name})
         else()
             externalproject_add(${app_name}
                 SOURCE_DIR ${project_path}

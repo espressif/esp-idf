@@ -861,7 +861,10 @@ function(__project_default)
     endif()
 
     idf_create_menuconfig("${executable}"
-                          TARGET menuconfig)
+                          TARGET menuconfig-app)
+    idf_register_menuconfig(NAME "Main application"
+                            TARGET menuconfig-app)
+    __finalize_menuconfig()
 
     idf_create_confserver("${executable}"
                           TARGET confserver)
