@@ -917,6 +917,7 @@ tBTA_GATT_STATUS BTA_GATTC_RegisterForNotifications (tBTA_GATTC_IF client_if,
                                                      BD_ADDR bda, UINT16 handle)
 {
     tBTA_GATTC_RCB      *p_clreg;
+    tBTA_GATTC_SERV     *p_srcb;
     tBTA_GATT_STATUS    status = BTA_GATT_ILLEGAL_PARAMETER;
     UINT8               i;
 
@@ -924,6 +925,29 @@ tBTA_GATT_STATUS BTA_GATTC_RegisterForNotifications (tBTA_GATTC_IF client_if,
     {
         APPL_TRACE_ERROR("registration failed, handle is 0");
         return status;
+    }
+
+    /* If cache is ready, validate handle is a notify/indicate-capable
+     * characteristic value handle; otherwise skip (legacy behaviour). */
+    p_srcb = bta_gattc_find_srcb(bda);
+    if (p_srcb != NULL && p_srcb->p_srvc_cache != NULL &&
+        p_srcb->state == BTA_GATTC_SERV_IDLE) {
+        tBTA_GATTC_CHARACTERISTIC *p_char =
+            bta_gattc_get_characteristic_srcb(p_srcb, handle);
+
+        if (p_char == NULL) {
+            APPL_TRACE_ERROR("reg notif: bad handle 0x%04x", handle);
+            return BTA_GATT_ILLEGAL_PARAMETER;
+        }
+
+        if ((p_char->properties & (BTA_GATT_CHAR_PROP_BIT_NOTIFY |
+                                   BTA_GATT_CHAR_PROP_BIT_INDICATE)) == 0) {
+            APPL_TRACE_ERROR("reg notif: handle 0x%04x prop 0x%02x not notif/ind",
+                             handle, p_char->properties);
+            return BTA_GATT_ILLEGAL_PARAMETER;
+        }
+    } else {
+        APPL_TRACE_WARNING("reg notif: cache not ready, skip check");
     }
 
     if ((p_clreg = bta_gattc_cl_get_regcb(client_if)) != NULL) {
