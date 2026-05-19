@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -323,8 +323,7 @@ IRAM_ATTR npl_freertos_eventq_remove(struct ble_npl_eventq *evq,
             portYIELD_FROM_ISR();
         }
     } else {
-        portMUX_TYPE ble_npl_mut = portMUX_INITIALIZER_UNLOCKED;
-        portENTER_CRITICAL(&ble_npl_mut);
+        portENTER_CRITICAL(&ble_port_mutex);
 
         count = uxQueueMessagesWaiting(eventq->q);
         for (i = 0; i < count; i++) {
@@ -339,7 +338,7 @@ IRAM_ATTR npl_freertos_eventq_remove(struct ble_npl_eventq *evq,
             BLE_LL_ASSERT(ret == pdPASS);
         }
 
-        portEXIT_CRITICAL(&ble_npl_mut);
+        portEXIT_CRITICAL(&ble_port_mutex);
     }
 
     event->queued = 0;

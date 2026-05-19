@@ -513,9 +513,11 @@ os_memblock_get(struct os_mempool *mp)
                 // Should not happen
                 OS_ENTER_CRITICAL(sr);
                 mp->mp_num_free++;
+#if MYNEWT_VAL(MP_BLOCK_REUSED)
                 if (mp->mp_flags & OS_MEMPOOL_F_REUSED) {
                     mp->mp_alloc_blocks--;
                 }
+#endif
                 OS_EXIT_CRITICAL(sr);
             }
         } else if (block) {
