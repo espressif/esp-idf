@@ -70,14 +70,9 @@ void esp_tee_soc_secure_sys_init(void)
         REG_CLR_BIT(DR_REG_INTMTX_BASE + 4 * i, BIT(8));
     }
 
-    /* TODO: IDF-8958
-     * The values for the secure interrupt number and priority and
-     * the interrupt priority threshold (for both M and U mode) need
-     * to be investigated further
-     */
     esprv_int_set_threshold(0);
 
-    esprv_int_set_priority(TEE_SECURE_INUM, 7);
+    esprv_int_set_priority(TEE_SECURE_INUM, TEE_SECURE_INUM_PRIO);
     esprv_int_set_type(TEE_SECURE_INUM, ESP_CPU_INTR_TYPE_LEVEL);
     esprv_int_enable(BIT(TEE_SECURE_INUM));
     esprv_int_set_vectored(TEE_SECURE_INUM, true);
