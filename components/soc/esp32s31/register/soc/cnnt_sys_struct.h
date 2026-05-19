@@ -608,6 +608,7 @@ typedef struct {
     volatile cnnt_sys_gmac_ctrl2_reg_t sys_gmac_ctrl2;
 } cnnt_dev_t;
 
+extern cnnt_dev_t CNNT_SYS_REG;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(cnnt_dev_t) == 0x6c, "Invalid size of cnnt_dev_t structure");
