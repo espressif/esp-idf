@@ -88,6 +88,9 @@ tL2C_LCB *l2cu_allocate_lcb (BD_ADDR p_bd_addr, BOOLEAN is_bonding, tBT_TRANSPOR
             btu_free_timer(&p_lcb->timer_entry);
             btu_free_timer(&p_lcb->info_timer_entry);
             btu_free_timer(&p_lcb->upda_con_timer);
+#if (CLASSIC_BT_INCLUDED == TRUE)
+            btu_free_timer(&p_lcb->retry_timer_entry);
+#endif
 
             memset (p_lcb, 0, sizeof (tL2C_LCB));
             memcpy (p_lcb->remote_bd_addr, p_bd_addr, BD_ADDR_LEN);
@@ -114,6 +117,7 @@ tL2C_LCB *l2cu_allocate_lcb (BD_ADDR p_bd_addr, BOOLEAN is_bonding, tBT_TRANSPOR
 #endif
             {
 #if (CLASSIC_BT_INCLUDED == TRUE)
+                p_lcb->retry_timer_entry.param = (TIMER_PARAM_TYPE)p_lcb;
                 l2cb.num_links_active++;
                 l2c_link_adjust_allocation();
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
@@ -181,6 +185,10 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
     memset(&p_lcb->info_timer_entry, 0, sizeof(TIMER_LIST_ENT));
     btu_free_timer(&p_lcb->upda_con_timer);
     memset(&p_lcb->upda_con_timer, 0, sizeof(TIMER_LIST_ENT));
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    btu_free_timer(&p_lcb->retry_timer_entry);
+    memset(&p_lcb->retry_timer_entry, 0, sizeof(TIMER_LIST_ENT));
+#endif
 
     /* Release any unfinished L2CAP packet on this link */
     if (p_lcb->p_hcit_rcv_acl) {
