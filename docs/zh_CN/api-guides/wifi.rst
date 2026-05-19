@@ -1441,7 +1441,13 @@ API :cpp:func:`esp_wifi_set_config()` 可用于配置 AP。配置的参数信息
   * - ssid_len
     - SSID 的长度。如果 ssid_len 为 0，则检查 SSID 直至出现终止字符。如果 ssid_len 大于 32，请更改为 32，或者根据 ssid_len 设置 SSID 长度。
   * - channel
-    - AP 的信道。设为 0 表示自动选择（最小信道：2.4 GHz 通常为 1，5 GHz 通常为 36）。其它非法值将返回 ``ESP_ERR_INVALID_ARG``。请确保信道在允许范围内。更多说明请参阅 `Wi-Fi 国家/地区代码`_。
+    - .. only:: SOC_WIFI_SUPPORT_5G
+
+         AP 的信道。设为 0 表示自动选择（最小信道：2.4 GHz 通常为 1，5 GHz 通常为 36）。其它非法值将返回 ``ESP_ERR_INVALID_ARG``。请确保信道在允许范围内。更多说明请参阅 `Wi-Fi 国家/地区代码`_。
+
+      .. only:: not SOC_WIFI_SUPPORT_5G
+
+         AP 的信道。设为 0 表示自动选择（最小信道：2.4 GHz 通常为 1）。其它非法值将返回 ``ESP_ERR_INVALID_ARG``。请确保信道在允许范围内。更多说明请参阅 `Wi-Fi 国家/地区代码`_。
   * - authmode
     - ESP AP 的身份验证模式。目前，ESP AP 不支持 AUTH_WEP。如果 authmode 是一个无效值，AP 默认该值为 ``WIFI_AUTH_OPEN``。
   * - ssid_hidden
