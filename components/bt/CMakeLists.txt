@@ -870,6 +870,7 @@ if(CONFIG_BT_ENABLED)
                 "host/nimble/nimble/porting/nimble/src/nimble_port.c"
                 "host/nimble/nimble/porting/npl/freertos/src/nimble_port_freertos.c"
                 "host/nimble/port/src/nvs_port.c"
+                "host/nimble/port/src/esp_nimble_mem.c"
             )
 
             list(APPEND include_dirs
