@@ -924,6 +924,8 @@ typedef enum {
     WIFI_NAN_CSID_NCS_SK_256       = 2,    /**< NCS-SK-256 (PSK/Passphrase). Reserved: not supported right now. */
     WIFI_NAN_CSID_NCS_PK_2WDH_128  = 3,    /**< NCS-PK-2WDH-128. Reserved: not supported right now. */
     WIFI_NAN_CSID_NCS_PK_2WDH_256  = 4,    /**< NCS-PK-2WDH-256. Reserved: not supported right now. */
+    WIFI_NAN_CSID_NCS_GTK_CCM_128  = 5,
+    WIFI_NAN_CSID_NCS_GTK_GCM_256  = 6,
     WIFI_NAN_CSID_NCS_PK_PASN_128  = 7,    /**< NCS-PK-PASN-128. Reserved: not supported right now. */
     WIFI_NAN_CSID_NCS_PK_PASN_256  = 8,    /**< NCS-PK-PASN-256. Reserved: not supported right now. */
 } wifi_nan_cipher_suite_id_t;
@@ -1049,6 +1051,7 @@ typedef struct {
                                                           The driver makes a private copy during esp_wifi_nan_publish_service();
                                                           the caller may free this immediately after the call returns. */
     nan_vendor_ie_t *vendor_ie;                     /**< Vendor specific IE to be added in publish frames */
+    wifi_nan_pairing_cfg_t pairing;                 /**< Pairing configuration parameters */
 } wifi_nan_publish_cfg_t;
 
 /**
@@ -1075,6 +1078,7 @@ typedef struct {
                                                           The driver makes a private copy during esp_wifi_nan_subscribe_service();
                                                           the caller may free this immediately after the call returns. */
     nan_vendor_ie_t *vendor_ie;                     /**< Vendor specific IE to be added in subscribe frames */
+    wifi_nan_pairing_cfg_t pairing;                 /**< Pairing configuration parameters */
 } wifi_nan_subscribe_cfg_t;
 
 /**

@@ -231,6 +231,9 @@ struct ndl_info {
 #endif
 };
 
+/* Forward decl for PASN data, used opaquely when CONFIG_ESP_WIFI_PASN_SUPPORT */
+struct nan_pasn_data;
+
 /* NAN context shared between files */
 typedef struct {
     uint8_t state;
@@ -238,6 +241,9 @@ typedef struct {
     struct ndl_info ndl[ESP_WIFI_NAN_DATAPATH_MAX_PEERS];
     struct own_svc_info own_svc[ESP_WIFI_NAN_MAX_SVC_SUPPORTED];
     esp_netif_t *nan_netif;
+#ifdef CONFIG_ESP_WIFI_PASN_SUPPORT
+    struct nan_pasn_data *nan_pasn_data;
+#endif
 } nan_ctx_t;
 
 extern nan_ctx_t s_nan_ctx;

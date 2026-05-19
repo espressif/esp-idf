@@ -175,6 +175,7 @@ struct nan_sync_callbacks {
     void (* ndp_response_indication)(struct ndp_cb_peer_info *peer_info);
     void (* pairing_indication)(uint8_t peer_svc_id, uint8_t pub_id, uint8_t peer_nmi[6], uint16_t selected_method);
     void (* pairing_confirm)(uint8_t status, uint8_t peer_svc_id, uint8_t sub_id, uint8_t peer_nmi[6], uint16_t matched_method, uint8_t reason_code);
+    void (* receive_pasn)(uint8_t *buf, size_t len, uint16_t trans_seq, uint16_t status);
 };
 
 /* Host helpers for NAN encrypted-datapath, registered via

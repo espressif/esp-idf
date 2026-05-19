@@ -51,6 +51,34 @@ static void pmksa_cache_free_entry(struct rsn_pmksa_cache *pmksa,
 }
 
 
+void pmksa_cache_remove(struct rsn_pmksa_cache *pmksa,
+			struct rsn_pmksa_cache_entry *entry)
+{
+	struct rsn_pmksa_cache_entry *e;
+
+	e = pmksa->pmksa;
+	while (e) {
+		if (e == entry) {
+			pmksa->pmksa = entry->next;
+			break;
+		}
+		if (e->next == entry) {
+			e->next = entry->next;
+			break;
+		}
+	}
+
+	if (!e) {
+		wpa_printf(MSG_DEBUG,
+			   "RSN: Could not remove PMKSA cache entry %p since it is not in the list",
+			   entry);
+		return;
+	}
+
+	pmksa_cache_free_entry(pmksa, entry, PMKSA_FREE);
+}
+
+
 static void pmksa_cache_expire(void *eloop_ctx, void *user_data)
 {
     struct rsn_pmksa_cache *pmksa = eloop_ctx;
@@ -314,6 +342,8 @@ struct rsn_pmksa_cache_entry * pmksa_cache_get(struct rsn_pmksa_cache *pmksa,
         const u8 *aa, const u8 *pmkid,
         const void *network_ctx)
 {
+    if(!pmksa)
+        return NULL;
     struct rsn_pmksa_cache_entry *entry = pmksa->pmksa;
     while (entry) {
         if ((aa == NULL || os_memcmp(entry->aa, aa, ETH_ALEN) == 0) &&

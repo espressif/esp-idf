@@ -270,6 +270,20 @@ static int ieee802_11_parse_extension(const u8 *pos, size_t elen,
 		elems->fils_pk = pos;
 		elems->fils_pk_len = elen;
 		break;
+#ifdef CONFIG_PASN
+	case WLAN_EID_EXT_PASN_PARAMS:
+		elems->pasn_params = pos;
+		elems->pasn_params_len = elen;
+		break;
+	case WLAN_EID_EXT_PASN_ENCRYPTED_DATA:
+		elems->pasn_encrypted_data = pos;
+		elems->pasn_encrypted_data_len = elen;
+		break;
+#endif /* CONFIG_PASN */
+	case WLAN_EID_EXT_WRAPPED_DATA:
+		elems->wrapped_data = pos;
+		elems->wrapped_data_len = elen;
+		break;
 	default:
 		wpa_printf(MSG_EXCESSIVE,
 			"IEEE 802.11 element parsing ignored unknown element extension (ext_id=%u elen=%u)",
@@ -326,6 +340,18 @@ static ParseRes __ieee802_11_parse_elems(const u8 *start, size_t len,
 			elems->ext_capab_len = elen;
 			break;
 #endif
+		case WLAN_EID_RSN:
+			elems->rsn_ie = pos;
+			elems->rsn_ie_len = elen;
+			break;
+		case WLAN_EID_RSNX:
+			elems->rsnxe = pos;
+			elems->rsnxe_len = elen;
+			break;
+		case WLAN_EID_MIC:
+			elems->mic = pos;
+			elems->mic_len = elen;
+			break;
 		default:
 			break;
 
@@ -503,4 +529,44 @@ u8 get_operating_class(u8 chan, int sec_channel)
 #endif
 
 	return op_class;
+}
+
+struct wpabuf * ieee802_11_defrag(const u8 *data, size_t len, bool ext_elem)
+{
+	struct wpabuf *buf;
+	const u8 *pos, *end;
+	size_t min_defrag_len = ext_elem ? 255 : 256;
+
+	if (!data || !len)
+		return NULL;
+
+	if (len < min_defrag_len)
+		return wpabuf_alloc_copy(data, len);
+
+	buf = wpabuf_alloc_copy(data, min_defrag_len - 1);
+	if (!buf)
+		return NULL;
+
+	pos = &data[min_defrag_len - 1];
+	end = data + len;
+	len -= min_defrag_len - 1;
+	while (len > 2 && pos[0] == WLAN_EID_FRAGMENT && pos[1]) {
+		int ret;
+		size_t elen = 2 + pos[1];
+
+		if (elen > (size_t) (end - pos) || elen > len)
+			break;
+		ret = wpabuf_resize(&buf, pos[1]);
+		if (ret < 0) {
+			wpabuf_free(buf);
+			return NULL;
+		}
+
+		/* Copy only the fragment data (without the EID and length) */
+		wpabuf_put_data(buf, &pos[2], pos[1]);
+		pos += elen;
+		len -= elen;
+	}
+
+	return buf;
 }

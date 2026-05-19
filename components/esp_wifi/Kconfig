@@ -354,6 +354,15 @@ menu "Wi-Fi"
             help
                 Select this option to allow the device to enable OWE Only mode for softap.
 
+        config ESP_WIFI_PASN_SUPPORT
+            bool "Enable PASN support"
+            depends on ESP_WIFI_NAN_PAIRING
+            default y if ESP_WIFI_NAN_PAIRING
+            help
+                Enable PASN for Wi-Fi NAN; the supplicant exposes CONFIG_PASN when this is on.
+                This option is only available when "NAN-Sync pairing bootstrapping"
+                (ESP_WIFI_NAN_PAIRING) is enabled, because NAN PASN builds on that path.
+
         config ESP_WIFI_SLP_IRAM_OPT
             bool "WiFi SLP IRAM speed optimization"
             select PM_SLP_DEFAULT_PARAMS_OPT

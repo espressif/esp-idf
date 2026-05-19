@@ -22,6 +22,10 @@
 #ifdef CONFIG_ESP_WIFI_NAN_USD_ENABLE
 #include "esp_private/esp_nan_usd.h"
 #endif /* CONFIG_ESP_WIFI_NAN_USD_ENABLE */
+#if defined(CONFIG_ESP_WIFI_NAN_SYNC_ENABLE) && defined(CONFIG_ESP_WIFI_PASN_SUPPORT)
+#include "nan_pasn.h"
+#include "apps_private/wifi_apps_private.h"
+#endif
 
 /* NAN States */
 #define NAN_STARTED_BIT     BIT0
@@ -69,6 +73,18 @@ static const uint8_t s_wfa_oui[3] = {0x50, 0x6f, 0x9a};
 
 /* Definition of nan_ctx_t storage shared via nan_i.h. */
 nan_ctx_t s_nan_ctx;
+
+#if defined(CONFIG_ESP_WIFI_PASN_SUPPORT)
+struct nan_pasn_data *esp_nan_app_get_pasn_data(void)
+{
+    return s_nan_ctx.nan_pasn_data;
+}
+
+void esp_nan_app_set_pasn_data(struct nan_pasn_data *pd)
+{
+    s_nan_ctx.nan_pasn_data = pd;
+}
+#endif
 
 void esp_wifi_nan_get_ipv6_linklocal_from_mac(ip6_addr_t *ip6, uint8_t *mac_addr)
 {
@@ -1269,6 +1285,11 @@ void esp_nan_action_start(esp_netif_t *nan_netif)
 #ifdef CONFIG_ESP_WIFI_NAN_PAIRING
         .pairing_indication = nan_app_pairing_indication_cb,
         .pairing_confirm = nan_app_pairing_confirm_cb,
+#endif
+#if defined(CONFIG_ESP_WIFI_NAN_SYNC_ENABLE) && defined(CONFIG_ESP_WIFI_PASN_SUPPORT)
+        .receive_pasn = handle_auth_pasn,
+#else
+        .receive_pasn = NULL,
 #endif
     };
     esp_nan_internal_register_callbacks(&nan_cb);
