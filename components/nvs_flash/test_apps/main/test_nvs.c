@@ -43,6 +43,7 @@ extern int32_t get_heap_free_difference(const bool nvs_active_pool);
 
 static const char* TAG = "test_nvs";
 
+#if CONFIG_SPIRAM
 TEST_CASE("Kconfig option controls heap capability allocator for NVS", "[nvs_ram]")
 {
     // number of keys used for test
@@ -105,6 +106,7 @@ TEST_CASE("Kconfig option controls heap capability allocator for NVS", "[nvs_ram
     TEST_ASSERT_GREATER_THAN_INT32(0, get_heap_free_difference(true));
     TEST_ASSERT_GREATER_OR_EQUAL_INT32(0, get_heap_free_difference(false));
 }
+#endif // CONFIG_SPIRAM
 
 TEST_CASE("Partition name no longer than 16 characters", "[nvs]")
 {
