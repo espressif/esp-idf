@@ -924,6 +924,8 @@ typedef enum {
     WIFI_NAN_CSID_NCS_SK_256       = 2,    /**< NCS-SK-256 (PSK/Passphrase). Reserved: not supported right now. */
     WIFI_NAN_CSID_NCS_PK_2WDH_128  = 3,    /**< NCS-PK-2WDH-128. Reserved: not supported right now. */
     WIFI_NAN_CSID_NCS_PK_2WDH_256  = 4,    /**< NCS-PK-2WDH-256. Reserved: not supported right now. */
+    WIFI_NAN_CSID_NCS_GTK_CCM_128  = 5,
+    WIFI_NAN_CSID_NCS_GTK_GCM_256  = 6,
     WIFI_NAN_CSID_NCS_PK_PASN_128  = 7,    /**< NCS-PK-PASN-128. Reserved: not supported right now. */
     WIFI_NAN_CSID_NCS_PK_PASN_256  = 8,    /**< NCS-PK-PASN-256. Reserved: not supported right now. */
 } wifi_nan_cipher_suite_id_t;
@@ -932,6 +934,8 @@ typedef enum {
 #define WIFI_NAN_CSID_BIT_NCS_SK_256       (1 << WIFI_NAN_CSID_NCS_SK_256)
 #define WIFI_NAN_CSID_BIT_NCS_PK_2WDH_128  (1 << WIFI_NAN_CSID_NCS_PK_2WDH_128)
 #define WIFI_NAN_CSID_BIT_NCS_PK_2WDH_256  (1 << WIFI_NAN_CSID_NCS_PK_2WDH_256)
+#define WIFI_NAN_CSID_BIT_NCS_GTK_CCM_128  (1 << WIFI_NAN_CSID_NCS_GTK_CCM_128)
+#define WIFI_NAN_CSID_BIT_NCS_GTK_GCM_256  (1 << WIFI_NAN_CSID_NCS_GTK_GCM_256)
 #define WIFI_NAN_CSID_BIT_NCS_PK_PASN_128  (1 << WIFI_NAN_CSID_NCS_PK_PASN_128)
 #define WIFI_NAN_CSID_BIT_NCS_PK_PASN_256  (1 << WIFI_NAN_CSID_NCS_PK_PASN_256)
 
@@ -968,6 +972,35 @@ typedef struct {
     uint8_t num_credentials;                     /**< Number of valid entries in @c creds (0..ESP_WIFI_NAN_MAX_CREDS_PER_SVC). 0 = open service. */
     wifi_nan_credential_t creds[ESP_WIFI_NAN_MAX_CREDS_PER_SVC]; /**< Credentials list. */
 } wifi_nan_discovery_security_params_t;
+
+/**
+  * @brief NAN Pairing Bootstrapping Method bitmask (per Wi-Fi Aware 4.0 spec)
+  *
+  * Each bit corresponds to a bootstrapping method capability.
+  * Multiple bits can be set simultaneously in the NPBA attribute.
+  */
+#define WIFI_NAN_BOOTSTRAP_OPPORTUNISTIC        BIT(0)  /**< Opportunistic bootstrapping */
+#define WIFI_NAN_BOOTSTRAP_PIN_CODE_DISPLAY     BIT(1)  /**< Pin-code display */
+#define WIFI_NAN_BOOTSTRAP_PASSPHRASE_DISPLAY   BIT(2)  /**< Passphrase display */
+#define WIFI_NAN_BOOTSTRAP_QR_CODE_DISPLAY      BIT(3)  /**< QR-code display */
+#define WIFI_NAN_BOOTSTRAP_NFC_TAG              BIT(4)  /**< NFC tag */
+#define WIFI_NAN_BOOTSTRAP_PIN_CODE_KEYPAD      BIT(5)  /**< Keypad (pin-code only) */
+#define WIFI_NAN_BOOTSTRAP_PASSPHRASE_KEYPAD    BIT(6)  /**< Keypad (passphrase) */
+#define WIFI_NAN_BOOTSTRAP_QR_CODE_SCAN         BIT(7)  /**< QR-code scan */
+#define WIFI_NAN_BOOTSTRAP_NFC_READER           BIT(8)  /**< NFC reader */
+
+/**
+  * @brief NAN Pairing configuration parameters for Publish/Subscribe
+  *
+  */
+typedef struct {
+    uint8_t pairing_setup: 1;           /**< 0 - Pairing setup disabled, 1 - enabled */
+    uint8_t npk_nik_caching: 1;         /**< 0 - NPK/NIK caching disabled, 1 - enabled */
+    uint8_t pairing_verification: 1;    /**< 0 - Pairing verification disabled, 1 - enabled */
+    uint8_t reserved: 5;                /**< Reserved bits */
+    uint16_t bootstrapping_methods;     /**< Bitmask of wifi_nan_bootstrap_method_t */
+    uint16_t comeback_delay;            /**< Comeback delay in TUs, 0 if comeback not required */
+} wifi_nan_pairing_cfg_t;
 
 /**
   * @brief USD specific configuration parameters
@@ -1018,6 +1051,7 @@ typedef struct {
                                                           The driver makes a private copy during esp_wifi_nan_publish_service();
                                                           the caller may free this immediately after the call returns. */
     nan_vendor_ie_t *vendor_ie;                     /**< Vendor specific IE to be added in publish frames */
+    wifi_nan_pairing_cfg_t pairing;                 /**< Pairing configuration parameters */
 } wifi_nan_publish_cfg_t;
 
 /**
@@ -1044,6 +1078,7 @@ typedef struct {
                                                           The driver makes a private copy during esp_wifi_nan_subscribe_service();
                                                           the caller may free this immediately after the call returns. */
     nan_vendor_ie_t *vendor_ie;                     /**< Vendor specific IE to be added in subscribe frames */
+    wifi_nan_pairing_cfg_t pairing;                 /**< Pairing configuration parameters */
 } wifi_nan_subscribe_cfg_t;
 
 /**
@@ -1252,6 +1287,8 @@ typedef enum {
     WIFI_EVENT_NDP_INDICATION,           /**< Received NDP Request from a NAN Peer */
     WIFI_EVENT_NDP_CONFIRM,              /**< NDP Confirm Indication */
     WIFI_EVENT_NDP_TERMINATED,           /**< NAN Datapath terminated indication */
+    WIFI_EVENT_NAN_PAIRING_INDICATION,   /**< Received NAN Pairing Bootstrapping Request from a Peer */
+    WIFI_EVENT_NAN_PAIRING_CONFIRM,      /**< NAN Pairing Bootstrapping completed (success/failure) */
     WIFI_EVENT_HOME_CHANNEL_CHANGE,      /**< Wi-Fi home channel change，doesn't occur when scanning */
 
     WIFI_EVENT_STA_NEIGHBOR_REP,         /**< Received Neighbor Report response */
@@ -1578,6 +1615,38 @@ typedef struct {
     uint8_t ndp_id;                             /**< NDP instance id */
     uint8_t init_ndi[6];                        /**< Initiator's NAN Data Interface MAC */
 } wifi_event_ndp_terminated_t;
+
+/**
+  * @brief Argument structure for WIFI_EVENT_NAN_PAIRING_INDICATION event
+  *
+  * Posted when a NAN Pairing Bootstrapping Request follow-up is received from a peer.
+  * The application should respond using esp_wifi_nan_pairing_response().
+  */
+typedef struct {
+    uint8_t peer_svc_id;                        /**< Peer's service instance id */
+    uint8_t own_svc_id;                         /**< Own service instance id */
+    uint8_t peer_nmi[6];                        /**< Peer's NAN Management Interface MAC */
+    uint16_t selected_method;                   /**< Bootstrapping method selected by initiator (wifi_nan_bootstrap_method_t) */
+    uint8_t is_comeback;                        /**< 1 if this is a comeback retry with cookie */
+    uint32_t cookie;                            /**< Comeback cookie from initiator (0 if none) */
+} wifi_event_nan_pairing_indication_t;
+
+/**
+  * @brief Argument structure for WIFI_EVENT_NAN_PAIRING_CONFIRM event
+  *
+  * Posted when a NAN Pairing Bootstrapping Response follow-up is received,
+  * or when the bootstrapping handshake completes/fails.
+  */
+typedef struct {
+    uint8_t status;                             /**< 0=Accepted, 1=Rejected, 2=Comeback (wifi_nan_pairing_status_t) */
+    uint8_t peer_svc_id;                        /**< Peer's service instance id */
+    uint8_t own_svc_id;                         /**< Own service instance id */
+    uint8_t peer_nmi[6];                        /**< Peer's NAN Management Interface MAC */
+    uint16_t matched_method;                    /**< Matched bootstrapping method (valid if accepted) */
+    uint8_t reason_code;                        /**< Rejection reason (valid if rejected) */
+    uint16_t comeback_after;                    /**< Comeback deferral time in TUs (valid if comeback) */
+    uint32_t cookie;                            /**< Comeback cookie from responder (0 if none) */
+} wifi_event_nan_pairing_confirm_t;
 
 /**
   * @brief Argument structure for WIFI_EVENT_STA_NEIGHBOR_REP event

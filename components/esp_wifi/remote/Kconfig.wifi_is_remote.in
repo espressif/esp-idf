@@ -304,6 +304,13 @@ if WIFI_RMT_NAN_USD_ENABLE
         default WIFI_RMT_NAN_USD_ENABLE
 endif
 
+if WIFI_RMT_NAN_PAIRING
+    config ESP_WIFI_NAN_PAIRING # ignore: multiple-definition
+        bool
+        depends on WIFI_RMT_NAN_SYNC_ENABLE
+        default WIFI_RMT_NAN_PAIRING
+endif
+
 if WIFI_RMT_MBEDTLS_CRYPTO
     config ESP_WIFI_MBEDTLS_CRYPTO # ignore: multiple-definition
         bool

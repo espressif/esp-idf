@@ -173,6 +173,8 @@ struct nan_sync_callbacks {
      * host can populate ndl->peer_ndi for spec-correct PTK derivation
      * (§7.1.3.5: PTK uses Data Interface addresses). */
     void (* ndp_response_indication)(struct ndp_cb_peer_info *peer_info);
+    void (* pairing_indication)(uint8_t peer_svc_id, uint8_t pub_id, uint8_t peer_nmi[6], uint16_t selected_method);
+    void (* pairing_confirm)(uint8_t status, uint8_t peer_svc_id, uint8_t sub_id, uint8_t peer_nmi[6], uint16_t matched_method, uint8_t reason_code);
 };
 
 /* Host helpers for NAN encrypted-datapath, registered via
@@ -1037,12 +1039,15 @@ esp_err_t esp_nan_internal_subscribe_service(const wifi_nan_subscribe_cfg_t *sub
   *
   * @param[in]  fup_params  Configuration parameters for sending a Follow-up to the Peer.
   * @param[out] context Context returned for Follow-up frame to be matched in Tx done.
+  * @param[in] pairing_npba Optional NPBA parameters for NAN pairing follow-up generation.
+  *                         If NULL, follow-up is sent with provided `fup_params->ssi`.
   *
   * @return
   *    - ESP_OK: succeed
   *    - others: failed
   */
-esp_err_t esp_nan_internal_send_followup(const wifi_nan_followup_params_t *fup_params, uint32_t *context);
+esp_err_t esp_nan_internal_send_followup(wifi_nan_followup_params_t *fup_params, uint32_t *context,
+                                         wifi_nan_pairing_npba_params_t *pairing_npba);
 
 /**
   * @brief      Send Datapath Request to the Publisher with matching service
@@ -1155,6 +1160,39 @@ esp_err_t esp_wifi_connect_internal(void);
   *
   */
 esp_err_t esp_wifi_disconnect_internal(void);
+
+/**
+ * @brief      Get length of NAN Identity Resolution Attribute (NIRA)
+ *
+ * @return     Length in bytes
+ */
+uint32_t esp_nan_get_nira_len(void);
+
+/**
+ * @brief      Construct dummy NAN Identity Resolution Attribute (NIRA)
+ *
+ * @param[out] frm     Buffer to write the attribute to
+ *
+ * @return     Number of bytes written
+ */
+int esp_nan_construct_nira(uint8_t *frm);
+
+/**
+ * @brief      Get length of Management MIC Element (MME)
+ *
+ * @return     Length in bytes
+ */
+uint32_t esp_nan_get_mme_len(void);
+
+/**
+ * @brief      Construct dummy Management MIC Element (MME)
+ *
+ * @param[out] frm     Buffer to write the element to
+ * @param[in]  ipn     Incremental Packet Number (6-byte IPN, lower 4 bytes used from this param)
+ *
+ * @return     Number of bytes written
+ */
+int esp_nan_construct_mme(uint8_t *frm, uint32_t ipn);
 
 /**
   * @brief Get the time information from the MAC clock. The time is precise only if modem sleep or light sleep is not enabled.

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,6 +84,30 @@ typedef struct {
     /**< Difference triggers an unstable event when the actual rx beacon probability continuously falls below the expected probability by this value, unit: percentage  */
     uint8_t     difference;
 } wifi_beacon_offset_config_t;
+
+/**
+  * @brief NAN Pairing Bootstrapping NPBA Type subfield values (internal use)
+  */
+typedef enum {
+    WIFI_NAN_NPBA_TYPE_ADVERTISE = 0,   /**< Advertise supported bootstrapping methods */
+    WIFI_NAN_NPBA_TYPE_REQUEST   = 1,   /**< Bootstrapping request from initiator */
+    WIFI_NAN_NPBA_TYPE_RESPONSE  = 2,   /**< Bootstrapping response from responder */
+} wifi_nan_npba_type_t;
+
+/**
+  * @brief NAN Pairing Bootstrapping Attribute parameters for follow-up TX (internal use)
+  *
+  * When provided to internal follow-up send path, Wi-Fi firmware/proprietary layer
+  * composes NPBA in SSI and transmits a regular NAN follow-up.
+  */
+typedef struct {
+    wifi_nan_npba_type_t type;   /**< NPBA type subfield */
+    uint8_t status;              /**< Pairing status (wifi_nan_pairing_status_t) */
+    uint16_t method;             /**< Selected/matched bootstrapping method */
+    uint8_t reason_code;         /**< Rejection reason code */
+    uint16_t comeback_after;     /**< Comeback defer time in TUs */
+    uint32_t cookie;             /**< Comeback cookie */
+} wifi_nan_pairing_npba_params_t;
 
 #ifdef __cplusplus
 }

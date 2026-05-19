@@ -596,6 +596,15 @@ config WIFI_RMT_NAN_USD_ENABLE
     help
         Enable Wi-Fi Aware: Unsynchronized service discovery (NAN-USD)
 
+config WIFI_RMT_NAN_PAIRING
+    bool "Enable NAN Pairing"
+    depends on WIFI_RMT_NAN_SYNC_ENABLE
+    default n
+    help
+        Enable NAN Pairing support. This allows devices to establish
+        secure pairing using bootstrapping methods like PIN code or
+        opportunistic pairing as defined in Wi-Fi Aware specification.
+
 config WIFI_RMT_MBEDTLS_CRYPTO
     bool "Use MbedTLS crypto APIs"
     default y

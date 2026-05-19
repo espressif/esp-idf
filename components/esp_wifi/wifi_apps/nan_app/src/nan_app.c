@@ -725,8 +725,8 @@ void nan_app_receive_cb(uint8_t svc_id, struct nan_cb_peer_info *peer_info)
     if (ssi && ssi_len) {
         memcpy(evt->ssi, ssi, ssi_len);
         evt->ssi_len = ssi_len;
-        ESP_LOGD(TAG, "Received payload from Peer "MACSTR" [Peer Service id - %d] - ", MAC2STR(peer_mac), peer_svc_id);
-        ESP_LOG_BUFFER_HEXDUMP(TAG, ssi, ssi_len, ESP_LOG_DEBUG);
+        ESP_LOGE(TAG, "Received payload from Peer "MACSTR" [Peer Service id - %d] - ", MAC2STR(peer_mac), peer_svc_id);
+        ESP_LOG_BUFFER_HEXDUMP(TAG, ssi, ssi_len, ESP_LOG_INFO);
     }
 
     nan_app_post_event(WIFI_EVENT_NAN_RECEIVE, evt, evt_data_len);
@@ -1168,6 +1168,41 @@ static struct nan_secure_dp_funcs s_nan_secure_dp_funcs = {
 #endif /* CONFIG_ESP_WIFI_NAN_SECURITY */
 };
 
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+void nan_app_pairing_indication_cb(uint8_t peer_svc_id, uint8_t pub_id,
+                                   uint8_t peer_nmi[6], uint16_t selected_method)
+{
+    ESP_LOGI(TAG, "Pairing Bootstraping Request from "MACSTR" [pub_id=%d, method=0x%x]",
+             MAC2STR(peer_nmi), pub_id, selected_method);
+
+    wifi_event_nan_pairing_indication_t evt = {0};
+    evt.peer_svc_id = peer_svc_id;
+    evt.own_svc_id = pub_id;
+    MACADDR_COPY(evt.peer_nmi, peer_nmi);
+    evt.selected_method = selected_method;
+
+    nan_app_post_event(WIFI_EVENT_NAN_PAIRING_INDICATION, &evt, sizeof(evt));
+}
+
+void nan_app_pairing_confirm_cb(uint8_t status, uint8_t peer_svc_id, uint8_t sub_id,
+                                uint8_t peer_nmi[6], uint16_t matched_method,
+                                uint8_t reason_code)
+{
+    ESP_LOGI(TAG, "Pairing Bootstraping Response from "MACSTR" [sub_id=%d, status=%d, method=0x%x]",
+             MAC2STR(peer_nmi), sub_id, status, matched_method);
+
+    wifi_event_nan_pairing_confirm_t evt = {0};
+    evt.status = status;
+    evt.peer_svc_id = peer_svc_id;
+    evt.own_svc_id = sub_id;
+    MACADDR_COPY(evt.peer_nmi, peer_nmi);
+    evt.matched_method = matched_method;
+    evt.reason_code = reason_code;
+
+    nan_app_post_event(WIFI_EVENT_NAN_PAIRING_CONFIRM, &evt, sizeof(evt));
+}
+#endif /* CONFIG_ESP_WIFI_NAN_PAIRIN */
+
 void esp_nan_app_deinit(void)
 {
     esp_nan_internal_register_secure_dp_funcs(NULL);
@@ -1231,6 +1266,10 @@ void esp_nan_action_start(esp_netif_t *nan_netif)
         .ndp_terminated = nan_app_ndp_terminated_cb,
         .action_txdone = nan_action_txdone_cb,
         .ndp_response_indication = nan_app_ndp_response_indication_cb,
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+        .pairing_indication = nan_app_pairing_indication_cb,
+        .pairing_confirm = nan_app_pairing_confirm_cb,
+#endif
     };
     esp_nan_internal_register_callbacks(&nan_cb);
 
@@ -1393,6 +1432,17 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
         }
     }
 
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+    /* Validate pairing bootstrapping methods for Publisher */
+    if (publish_cfg->pairing.bootstrapping_methods) {
+        uint16_t valid_methods = WIFI_NAN_BOOTSTRAP_OPPORTUNISTIC | WIFI_NAN_BOOTSTRAP_PIN_CODE_DISPLAY;
+        if (publish_cfg->pairing.bootstrapping_methods & ~valid_methods) {
+            ESP_LOGE(TAG, "Invalid bootstrapping methods for Publisher. Only OPPORTUNISTIC and PIN_CODE_DISPLAY allowed");
+            return 0;
+        }
+    }
+#endif /* CONFIG_ESP_WIFI_NAN_PAIRING */
+
 #ifdef CONFIG_ESP_WIFI_NAN_USD_ENABLE
     if (s_usd_in_progress) {
         if ((pub_id = esp_nan_usd_publish(publish_cfg)) == -1) {
@@ -1527,6 +1577,17 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
             ESP_LOGI(TAG, "Unrecognized WFA Defined SSI protocol (%d)", wfa_ssi->proto);
         }
     }
+
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+    /* Validate pairing bootstrapping methods for Subscriber */
+    if (subscribe_cfg->pairing.bootstrapping_methods) {
+        uint16_t valid_methods = WIFI_NAN_BOOTSTRAP_OPPORTUNISTIC | WIFI_NAN_BOOTSTRAP_PIN_CODE_KEYPAD;
+        if (subscribe_cfg->pairing.bootstrapping_methods & ~valid_methods) {
+            ESP_LOGE(TAG, "Invalid bootstrapping methods for Subscriber. Only OPPORTUNISTIC and PIN_CODE_KEYPAD allowed");
+            return 0;
+        }
+    }
+#endif /* CONFIG_ESP_WIFI_NAN_PAIRING */
 
 #ifdef CONFIG_ESP_WIFI_NAN_USD_ENABLE
     if (s_usd_in_progress) {
@@ -1666,7 +1727,7 @@ esp_err_t esp_wifi_nan_send_message(wifi_nan_followup_params_t *fup_params)
 
     NAN_DATA_UNLOCK();
     os_event_group_clear_bits(nan_event_group, NAN_TX_SUCCESS | NAN_TX_FAILURE);
-    if ((ret = esp_nan_internal_send_followup(fup_params, &s_fup_context)) != ESP_OK) {
+    if ((ret = esp_nan_internal_send_followup(fup_params, &s_fup_context, NULL)) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to send Follow-up message!");
         return ret;
     }
@@ -1693,6 +1754,120 @@ esp_err_t esp_wifi_nan_send_message(wifi_nan_followup_params_t *fup_params)
 
     return ret;
 }
+
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+static esp_err_t nan_send_pairing_followup(uint8_t inst_id, uint8_t peer_inst_id,
+                                           uint8_t *peer_mac,
+                                           wifi_nan_pairing_npba_params_t *pairing_npba)
+{
+    struct peer_svc_info *p_peer_svc;
+    NAN_DATA_LOCK();
+    p_peer_svc = nan_find_peer_svc(inst_id, peer_inst_id, peer_mac);
+    if (!p_peer_svc) {
+        ESP_LOGE(TAG, "Cannot send Pairing follow-up, peer not found!");
+        NAN_DATA_UNLOCK();
+        return ESP_FAIL;
+    }
+
+    wifi_nan_followup_params_t fup_params = {0};
+    fup_params.inst_id = inst_id ? inst_id : p_peer_svc->own_svc_id;
+    fup_params.peer_inst_id = peer_inst_id ? peer_inst_id : p_peer_svc->svc_id;
+    if (!MACADDR_EQUAL(peer_mac, null_mac)) {
+        MACADDR_COPY(fup_params.peer_mac, p_peer_svc->peer_nmi);
+    } else {
+        MACADDR_COPY(fup_params.peer_mac, peer_mac);
+    }
+    NAN_DATA_UNLOCK();
+
+    os_event_group_clear_bits(nan_event_group, NAN_TX_SUCCESS | NAN_TX_FAILURE);
+    esp_err_t ret = esp_nan_internal_send_followup(&fup_params, &s_fup_context, pairing_npba);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
+    EventBits_t bits = os_event_group_wait_bits(nan_event_group,
+            NAN_TX_SUCCESS | NAN_TX_FAILURE, pdFALSE, pdFALSE,
+            pdMS_TO_TICKS(NAN_ACTION_TIMEOUT));
+    if (bits & NAN_TX_SUCCESS) {
+        return ESP_OK;
+    }
+    return ESP_FAIL;
+}
+
+esp_err_t esp_wifi_nan_pairing_request(wifi_nan_pairing_bootstrapping_req_t *req)
+{
+    if (!req) {
+        ESP_LOGE(TAG, "Pairing request params NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (!req->selected_method ||
+        (req->selected_method & (req->selected_method - 1))) {
+        ESP_LOGE(TAG, "Exactly one bootstrapping method must be selected");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    uint16_t valid_methods = WIFI_NAN_BOOTSTRAP_OPPORTUNISTIC | WIFI_NAN_BOOTSTRAP_PIN_CODE_KEYPAD;
+    if (req->selected_method & ~valid_methods) {
+        ESP_LOGE(TAG, "Invalid bootstrapping method for initiator (subscriber)");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    wifi_nan_pairing_npba_params_t pairing_npba = {
+        .type = WIFI_NAN_NPBA_TYPE_REQUEST,
+        .status = req->status,
+        .method = req->selected_method,
+        .reason_code = 0,
+        .comeback_after = req->comeback_after,
+        .cookie = req->cookie,
+    };
+
+    esp_err_t ret = nan_send_pairing_followup(req->inst_id, req->peer_inst_id,
+                                              req->peer_mac, &pairing_npba);
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "Sent Pairing Bootstrapping request to Peer "MACSTR" [method=0x%x]",
+                 MAC2STR(req->peer_mac), req->selected_method);
+    } else {
+        ESP_LOGE(TAG, "Failed to send Pairing Bootstrapping request!");
+    }
+    return ret;
+}
+
+esp_err_t esp_wifi_nan_pairing_response(wifi_nan_pairing_bootstrapping_resp_t *resp)
+{
+    if (!resp) {
+        ESP_LOGE(TAG, "Pairing response params NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (resp->status == WIFI_NAN_PAIRING_STATUS_ACCEPTED) {
+        uint16_t valid_methods = WIFI_NAN_BOOTSTRAP_OPPORTUNISTIC | WIFI_NAN_BOOTSTRAP_PIN_CODE_DISPLAY;
+        if (!resp->matched_method || (resp->matched_method & ~valid_methods)) {
+            ESP_LOGE(TAG, "Invalid matched bootstrapping method for responder (publisher)");
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+
+    wifi_nan_pairing_npba_params_t pairing_npba = {
+        .type = WIFI_NAN_NPBA_TYPE_RESPONSE,
+        .status = resp->status,
+        .method = resp->matched_method,
+        .reason_code = resp->reason_code,
+        .comeback_after = resp->comeback_after,
+        .cookie = resp->cookie,
+    };
+
+    esp_err_t ret = nan_send_pairing_followup(resp->inst_id, resp->peer_inst_id,
+                                              resp->peer_mac, &pairing_npba);
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "Sent Pairing Bootstrapping response to Peer "MACSTR" [status=%d]",
+                 MAC2STR(resp->peer_mac), resp->status);
+    } else {
+        ESP_LOGE(TAG, "Failed to send Pairing Bootstrapping response!");
+    }
+    return ret;
+}
+#endif /* CONFIG_ESP_WIFI_NAN_PAIRING */
 
 esp_err_t esp_wifi_nan_cancel_service(uint8_t service_id)
 {
@@ -2151,3 +2326,99 @@ wifi_nan_usd_config_t esp_wifi_usd_get_default_subscribe_cfg(void)
     return cfg;
 }
 #endif /* CONFIG_ESP_WIFI_NAN_USD_ENABLE */
+
+#define NAN_ATTR_ID_IDENTITY_RESOLUTION     0x2B
+/* NIRA: ID(1) + Len(2) + CipherVersion(1) + Nonce(8) + Tag(8) = 20 */
+#define NAN_NIRA_ATTR_LEN                   20
+
+uint32_t esp_nan_get_nira_len(void)
+{
+    return NAN_NIRA_ATTR_LEN;
+}
+
+/**
+ * @brief Construct dummy NAN Identity Resolution Attribute (NIRA)
+ *
+ * Format: ID(1) + Length(2) + Cipher Version(1) + Nonce(8) + Tag(8)
+ * Cipher Version 0: 128-bit NIK, 64-bit Nonce, 64-bit Tag, HMAC-SHA-256
+ * Uses random nonce and tag for now (real implementation derives tag from NIK).
+ */
+int esp_nan_construct_nira(uint8_t *frm)
+{
+    if (!frm) {
+        return 0;
+    }
+
+    uint8_t *p = frm;
+
+    /* Attribute ID (0x2B) */
+    *p++ = NAN_ATTR_ID_IDENTITY_RESOLUTION;
+
+    /* Attribute Length: CipherVersion(1) + Nonce(8) + Tag(8) = 17 */
+    uint16_t attr_len = 17;
+    *p++ = attr_len & 0xFF;
+    *p++ = (attr_len >> 8) & 0xFF;
+
+    /* Cipher Version: 0 (128-bit NIK, 64-bit Nonce, 64-bit Tag, HMAC-SHA-256) */
+    *p++ = 0;
+
+    /* Nonce: 8 bytes random */
+    os_get_random(p, 8);
+    p += 8;
+
+    /* Tag: 8 bytes random (dummy - real impl: Truncate-64(HMAC-SHA-256(NIK, "NIR", NMI || Nonce))) */
+    os_get_random(p, 8);
+    p += 8;
+
+    ESP_LOGI(TAG, "Constructed NIRA (dummy): len=%d", (int)(p - frm));
+    return (int)(p - frm);
+}
+
+#define NAN_MME_ELEMENT_ID      0x4C
+/* MME: ElementID(1) + Length(1) + KeyID(2) + IPN(6) + MIC(8) = 18 */
+#define NAN_MME_LEN             18
+
+uint32_t esp_nan_get_mme_len(void)
+{
+    return NAN_MME_LEN;
+}
+
+/**
+ * @brief Construct dummy Management MIC Element (MME)
+ *
+ * Format: Element ID(1) + Length(1) + Key ID(2) + IPN/BIPN(6) + MIC(8)
+ * Key ID is set to 4, MIC is 8 bytes random (dummy).
+ */
+int esp_nan_construct_mme(uint8_t *frm, uint32_t ipn)
+{
+    if (!frm) {
+        return 0;
+    }
+
+    uint8_t *p = frm;
+
+    /* Element ID */
+    *p++ = NAN_MME_ELEMENT_ID;
+
+    /* Length: KeyID(2) + IPN(6) + MIC(8) = 16 */
+    *p++ = 16;
+
+    /* Key ID: 4 (LE16) */
+    *p++ = 4;
+    *p++ = 0;
+
+    /* IPN/BIPN: 6 bytes from ipn parameter (LE, zero-padded upper 2 bytes) */
+    *p++ = (uint8_t)(ipn & 0xFF);
+    *p++ = (uint8_t)((ipn >> 8) & 0xFF);
+    *p++ = (uint8_t)((ipn >> 16) & 0xFF);
+    *p++ = (uint8_t)((ipn >> 24) & 0xFF);
+    *p++ = 0;
+    *p++ = 0;
+
+    /* MIC: 8 bytes random (dummy) */
+    os_get_random(p, 8);
+    p += 8;
+
+    ESP_LOGI(TAG, "Constructed MME (dummy): len=%d, ipn=0x%lx", (int)(p - frm), (unsigned long)ipn);
+    return (int)(p - frm);
+}

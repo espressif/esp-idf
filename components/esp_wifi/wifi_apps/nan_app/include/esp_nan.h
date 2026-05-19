@@ -177,6 +177,83 @@ esp_err_t esp_wifi_nan_get_peer_records(int *num_peer_records, uint8_t own_svc_i
 
 esp_err_t esp_wifi_nan_get_peer_info(char *svc_name, uint8_t *peer_mac, struct nan_peer_record *peer_info);
 
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+
+/**
+  * @brief NAN Pairing Bootstrapping status values
+  */
+typedef enum {
+    WIFI_NAN_PAIRING_STATUS_ACCEPTED = 0,   /**< Bootstrapping request accepted */
+    WIFI_NAN_PAIRING_STATUS_REJECTED = 1,   /**< Bootstrapping request rejected */
+    WIFI_NAN_PAIRING_STATUS_COMEBACK = 2,   /**< Comeback - responder needs more time */
+} wifi_nan_pairing_status_t;
+
+/**
+  * @brief NAN Pairing Bootstrapping Request parameters (initiator -> responder)
+  *
+  * Used by a subscriber (bootstrapping initiator) to send a bootstrapping
+  * request follow-up message with NPBA attribute (Type=Request) to a publisher.
+  */
+typedef struct {
+    uint8_t inst_id;                    /**< Own service instance id */
+    uint8_t peer_inst_id;               /**< Peer's service instance id */
+    uint8_t peer_mac[6];                /**< Peer's NAN Management Interface MAC */
+    uint16_t selected_method;           /**< One selected method from wifi_nan_bootstrap_method_t */
+    wifi_nan_pairing_status_t status;   /**< Set to COMEBACK when resending with cookie */
+    uint16_t comeback_after;            /**< Comeback deferral time in TUs (only when status=COMEBACK) */
+    uint32_t cookie;                    /**< Opaque cookie from responder (only when status=COMEBACK) */
+} wifi_nan_pairing_bootstrapping_req_t;
+
+/**
+  * @brief NAN Pairing Bootstrapping Response parameters (responder -> initiator)
+  *
+  * Used by a publisher (bootstrapping responder) to respond to a bootstrapping
+  * request follow-up message with NPBA attribute (Type=Response).
+  */
+typedef struct {
+    uint8_t inst_id;                    /**< Own service instance id */
+    uint8_t peer_inst_id;               /**< Peer's service instance id */
+    uint8_t peer_mac[6];                /**< Peer's NAN Management Interface MAC */
+    wifi_nan_pairing_status_t status;   /**< Accepted, Rejected, or Comeback */
+    uint16_t matched_method;            /**< Matched bootstrapping method (valid if accepted) */
+    uint8_t reason_code;                /**< Rejection reason code (valid if rejected) */
+    uint16_t comeback_after;            /**< Comeback deferral time in TUs (only when status=COMEBACK) */
+    uint32_t cookie;                    /**< Opaque cookie for comeback (only when status=COMEBACK) */
+} wifi_nan_pairing_bootstrapping_resp_t;
+
+/**
+  * @brief      Send a NAN Pairing Bootstrapping request to a matched publisher
+  *
+  * @attention  This API should be called by the Subscriber after a service match
+  *             (WIFI_EVENT_NAN_SVC_MATCH) with a Publisher that has pairing enabled.
+  *             The selected_method must match one of the methods advertised by the publisher.
+  *
+  * @param      req  Pairing bootstrapping request parameters.
+  *
+  * @return
+  *    - ESP_OK: Bootstrapping request follow-up sent successfully
+  *    - ESP_ERR_INVALID_ARG: Invalid parameters
+  *    - ESP_FAIL: Failed to send
+  */
+esp_err_t esp_wifi_nan_pairing_request(wifi_nan_pairing_bootstrapping_req_t *req);
+
+/**
+  * @brief      Respond to a NAN Pairing Bootstrapping request from a peer
+  *
+  * @attention  This API should be called by the Publisher after receiving a
+  *             WIFI_EVENT_NAN_PAIRING_INDICATION event.
+  *
+  * @param      resp  Pairing bootstrapping response parameters.
+  *
+  * @return
+  *    - ESP_OK: Bootstrapping response follow-up sent successfully
+  *    - ESP_ERR_INVALID_ARG: Invalid parameters
+  *    - ESP_FAIL: Failed to send
+  */
+esp_err_t esp_wifi_nan_pairing_response(wifi_nan_pairing_bootstrapping_resp_t *resp);
+
+#endif /* CONFIG_ESP_WIFI_NAN_PAIRING */
+
 #endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
 
 #if defined(CONFIG_ESP_WIFI_NAN_SYNC_ENABLE) ||  defined(CONFIG_ESP_WIFI_NAN_USD_ENABLE)

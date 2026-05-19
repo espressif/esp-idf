@@ -708,32 +708,36 @@ esp_err_t nan_derive_security_params(const char *service_name,
             goto fail;
         }
 
-        if (cred->use_pmk) {
-            memcpy(pmk, cred->pmk, ESP_WIFI_NAN_NDP_PMK_LEN);
-        } else {
-            if (nan_derive_nd_pmk_from_passphrase(cred->passphrase, cred->csid,
-                                                  service_id, r_addr, pmk) != 0) {
-                ESP_LOGE(TAG, "Cred[%u]: PBKDF2 ND-PMK derivation failed", i);
-                goto fail;
+        if (cred->csid == WIFI_NAN_CSID_NCS_SK_128) {
+            if (cred->use_pmk) {
+                memcpy(pmk, cred->pmk, ESP_WIFI_NAN_NDP_PMK_LEN);
+            } else {
+                if (nan_derive_nd_pmk_from_passphrase(cred->passphrase, cred->csid,
+                                                      service_id, r_addr, pmk) != 0) {
+                    ESP_LOGE(TAG, "Cred[%u]: PBKDF2 ND-PMK derivation failed", i);
+                    goto fail;
+                }
             }
+
+            const unsigned char *addr_pmkid[4] = {(const unsigned char *)NAN_PMK_NAME_LABEL,
+                                                  i_addr, r_addr, service_id
+                                                 };
+            int len_pmkid[4] = {NAN_PMK_NAME_LABEL_LEN, 6, 6, 6};
+
+            g_wifi_default_wpa_crypto_funcs.hmac_sha256_vector(pmk, ESP_WIFI_NAN_NDP_PMK_LEN,
+                                                               4, addr_pmkid, len_pmkid, hash);
+
+            memcpy(out_derived[i].nd_pmk,   pmk,  ESP_WIFI_NAN_NDP_PMK_LEN);
+            memcpy(out_derived[i].nd_pmkid, hash, ESP_WIFI_NAN_NDP_PMKID_LEN);
+            forced_memzero(pmk, sizeof(pmk));
+        } else if (cred->csid == WIFI_NAN_CSID_NCS_PK_PASN_128) {
+            /* Fill PMKID with 0xff before pairing, ND-PMK to be derived at the end of pairing */
+            memset(out_derived[i].nd_pmkid, 0xff, ESP_WIFI_NAN_NDP_PMKID_LEN);
         }
-
-        const unsigned char *addr_pmkid[4] = {(const unsigned char *)NAN_PMK_NAME_LABEL,
-                                              i_addr, r_addr, service_id
-                                             };
-        int len_pmkid[4] = {NAN_PMK_NAME_LABEL_LEN, 6, 6, 6};
-
-        g_wifi_default_wpa_crypto_funcs.hmac_sha256_vector(pmk, ESP_WIFI_NAN_NDP_PMK_LEN,
-                                                           4, addr_pmkid, len_pmkid, hash);
-
         out_derived[i].type            = WIFI_NAN_SECURITY_ENCRYPTED;
         out_derived[i].csid_bitmap     = (uint16_t)(1u << cred->csid);
         out_derived[i].group_data_prot = sec_cfg->group_data_prot;
         out_derived[i].group_mgmt_prot = sec_cfg->group_mgmt_prot;
-        memcpy(out_derived[i].nd_pmk,   pmk,  ESP_WIFI_NAN_NDP_PMK_LEN);
-        memcpy(out_derived[i].nd_pmkid, hash, ESP_WIFI_NAN_NDP_PMKID_LEN);
-
-        forced_memzero(pmk, sizeof(pmk));
     }
 
     /* Mirror the derived material into the host's own_svc_info slot for this
@@ -967,8 +971,8 @@ int esp_nan_construct_csia(uint8_t *frm, uint8_t pub_id, uint16_t own_csid_bitma
     *p++ = attr_len & 0xFF;
     *p++ = (attr_len >> 8) & 0xFF;
 
-    /* Capabilities byte (currently 0) */
-    *p++ = 0;
+    /* Capabilities byte (0x4 set for iOS interop) */
+    *p++ = 0x4;
 
     /* Cipher Suite ID list: [CSID(1)] [Publish ID(1)] */
     for (uint8_t csid = 1; csid <= 8; csid++) {
