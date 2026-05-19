@@ -777,7 +777,11 @@ static size_t esp_psram_get_effective_mapped_size(void)
     }
 
     if (s_psram_ctx.is_initialised) {
-        return s_psram_ctx.mapped_regions[PSRAM_MEM_8BIT_ALIGNED].size + s_psram_ctx.mapped_regions[PSRAM_MEM_32BIT_ALIGNED].size;
+        size_t mapped = 0;
+        for (int i = 0; i < PSRAM_MEM_TYPE_NUM; i++) {
+            mapped += s_psram_ctx.mapped_regions[i].size;
+        }
+        return mapped;
     } else {
         uint32_t psram_available_size = 0;
         esp_err_t ret = esp_psram_impl_get_available_size(&psram_available_size);
@@ -815,7 +819,11 @@ size_t esp_psram_get_heap_size_to_protect(void)
     }
 
     if (s_psram_ctx.is_initialised) {
-        return s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size + s_psram_ctx.regions_to_heap[PSRAM_MEM_32BIT_ALIGNED].size;
+        size_t heap = 0;
+        for (int i = 0; i < PSRAM_MEM_TYPE_NUM; i++) {
+            heap += s_psram_ctx.regions_to_heap[i].size;
+        }
+        return heap;
     } else {
         size_t effective_mapped_size = esp_psram_get_effective_mapped_size();
         if (effective_mapped_size == 0) {
