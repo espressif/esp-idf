@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -26,20 +26,27 @@ extern "C" {
  *  No description
  */
 #define MODEM_SYSCON_CLK_CONF_REG (DR_REG_MODEM_SYSCON_BASE + 0x4)
-/** MODEM_SYSCON_CLK_ETM_EN : R/W; bitpos: [21]; default: 0;
+/** MODEM_SYSCON_CLK_ETM_EN : R/W; bitpos: [20]; default: 0;
  *  No description
  */
-#define MODEM_SYSCON_CLK_ETM_EN    (BIT(21))
+#define MODEM_SYSCON_CLK_ETM_EN    (BIT(20))
 #define MODEM_SYSCON_CLK_ETM_EN_M  (MODEM_SYSCON_CLK_ETM_EN_V << MODEM_SYSCON_CLK_ETM_EN_S)
 #define MODEM_SYSCON_CLK_ETM_EN_V  0x00000001U
-#define MODEM_SYSCON_CLK_ETM_EN_S  21
-/** MODEM_SYSCON_CLK_ZB_APB_EN : R/W; bitpos: [22]; default: 0;
+#define MODEM_SYSCON_CLK_ETM_EN_S  20
+/** MODEM_SYSCON_CLK_ZB_APB_EN : R/W; bitpos: [21]; default: 0;
  *  No description
  */
-#define MODEM_SYSCON_CLK_ZB_APB_EN    (BIT(22))
+#define MODEM_SYSCON_CLK_ZB_APB_EN    (BIT(21))
 #define MODEM_SYSCON_CLK_ZB_APB_EN_M  (MODEM_SYSCON_CLK_ZB_APB_EN_V << MODEM_SYSCON_CLK_ZB_APB_EN_S)
 #define MODEM_SYSCON_CLK_ZB_APB_EN_V  0x00000001U
-#define MODEM_SYSCON_CLK_ZB_APB_EN_S  22
+#define MODEM_SYSCON_CLK_ZB_APB_EN_S  21
+/** MODEM_SYSCON_CLK_ZB_MAC_SYS_EN : R/W; bitpos: [22]; default: 0;
+ *  No description
+ */
+#define MODEM_SYSCON_CLK_ZB_MAC_SYS_EN    (BIT(22))
+#define MODEM_SYSCON_CLK_ZB_MAC_SYS_EN_M  (MODEM_SYSCON_CLK_ZB_MAC_SYS_EN_V << MODEM_SYSCON_CLK_ZB_MAC_SYS_EN_S)
+#define MODEM_SYSCON_CLK_ZB_MAC_SYS_EN_V  0x00000001U
+#define MODEM_SYSCON_CLK_ZB_MAC_SYS_EN_S  22
 /** MODEM_SYSCON_CLK_ZB_MAC_EN : R/W; bitpos: [23]; default: 0;
  *  No description
  */
