@@ -19,7 +19,8 @@
 #include "esp_system.h"
 #include "unity_test_utils_memory.h"
 
-#if SOC_KEY_MANAGER_SUPPORTED
+// TODO: IDF-15703 re-enable Key Manager driver tests on esp32s31 once the TRNG support update lands
+#if SOC_KEY_MANAGER_SUPPORTED && !CONFIG_IDF_TARGET_ESP32S31
 #include "hal/key_mgr_ll.h"
 
 #if SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
@@ -522,4 +523,4 @@ TEST_CASE("Key Manager ECDH1 mode: DS key deployment", "[hw_crypto] [key_mgr]")
     free(key_recovery_info);
 }
 #endif /* SOC_KEY_MANAGER_DS_KEY_DEPLOY */
-#endif /* SOC_KEY_MANAGER_SUPPORTED */
+#endif /* SOC_KEY_MANAGER_SUPPORTED && !CONFIG_IDF_TARGET_ESP32S31 */
