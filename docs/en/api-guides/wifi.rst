@@ -1362,7 +1362,13 @@ API :cpp:func:`esp_wifi_set_config()` can be used to configure the AP. And the c
   * - ssid_len
     - Length of SSID; if ssid_len is 0, check the SSID until there is a termination character. If ssid_len > 32, change it to 32; otherwise, set the SSID length according to ssid_len.
   * - channel
-    - Channel of AP; set to 0 for auto selection (min channel: typically 1 for 2.4G, 36 for 5G). Other invalid values return ``ESP_ERR_INVALID_ARG``. So, please make sure the channel is within the required range. For more details, refer to `Wi-Fi Country Code`_.
+    - .. only:: SOC_WIFI_SUPPORT_5G
+
+         Channel of AP; set to 0 for auto selection (min channel: typically 1 for 2.4G, 36 for 5G). Other invalid values return ``ESP_ERR_INVALID_ARG``. So, please make sure the channel is within the required range. For more details, refer to `Wi-Fi Country Code`_.
+
+      .. only:: not SOC_WIFI_SUPPORT_5G
+
+         Channel of AP; set to 0 for auto selection (min channel: typically 1 for 2.4G). Other invalid values return ``ESP_ERR_INVALID_ARG``. So, please make sure the channel is within the required range. For more details, refer to `Wi-Fi Country Code`_.
   * - authmode
     - Auth mode of ESP AP; currently, ESP AP does not support AUTH_WEP. If the authmode is an invalid value, AP defaults the value to ``WIFI_AUTH_OPEN``.
   * - ssid_hidden
