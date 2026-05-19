@@ -16,10 +16,6 @@ examples/system/app_trace_basic:
     - app_trace
 
 examples/system/base_mac_address:
-  disable_test:
-    - if: IDF_TARGET == "esp32h4"
-      temporary: true
-      reason: cannot pass # TODO: IDF-15600
   depends_components:
     - *common_components
     - esp_hw_support
