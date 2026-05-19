@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,11 +7,16 @@
 #pragma once
 
 #include <stdlib.h>
+#include "soc/soc_caps.h"
 #include "hal/temperature_sensor_periph.h"
 #include "hal/temperature_sensor_types.h"
 #include "driver/temperature_sensor.h"
 #include "esp_intr_alloc.h"
 #include "sdkconfig.h"
+#if SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
+#include "soc/regdma.h"
+#include "soc/retention_periph_defs.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,6 +37,18 @@ typedef enum {
 
 // Use retention link only when the target supports sleep retention and PM is enabled
 #define TEMPERATURE_SENSOR_USE_RETENTION_LINK  (SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TEMPERATURE_SENSOR_UNDER_PD_TOP_DOMAIN)
+
+#if SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
+// Sleep-retention RegDMA link descriptor exported by per-target
+// `<target>/temperature_sensor_retention.c`.
+typedef struct {
+    const regdma_entries_config_t *link_list;
+    uint32_t link_num;
+    periph_retention_module_t module_id;
+} temperature_sensor_reg_ctx_link_t;
+
+extern const temperature_sensor_reg_ctx_link_t temperature_sensor_regs_retention;
+#endif // SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
 
 typedef struct temperature_sensor_obj_t temperature_sensor_obj_t;
 
