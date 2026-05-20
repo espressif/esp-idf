@@ -93,6 +93,7 @@ void app_main(void)
     ESP_ERROR_CHECK(mdns_hostname_set("esp-ot-br"));
 #if CONFIG_OPENTHREAD_SUPPORT_HW_RESET_RCP
     esp_openthread_register_rcp_failure_handler(rcp_failure_hardware_reset_handler);
+    esp_openthread_set_coprocessor_reset_failure_callback(rcp_failure_hardware_reset_handler);
 #endif
 
 #if CONFIG_OPENTHREAD_CLI

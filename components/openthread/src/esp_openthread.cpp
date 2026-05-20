@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -80,19 +80,20 @@ esp_err_t esp_openthread_init(const esp_openthread_platform_config_t *config)
     ESP_RETURN_ON_ERROR(esp_openthread_platform_init(config), OT_PLAT_LOG_TAG,
                         "Failed to initialize OpenThread platform driver");
     esp_openthread_lock_acquire(portMAX_DELAY);
-    ESP_RETURN_ON_FALSE(otInstanceInitSingle() != NULL, ESP_FAIL, OT_PLAT_LOG_TAG,
-                        "Failed to initialize OpenThread instance");
+    esp_err_t ret = ESP_OK;
+    ESP_GOTO_ON_FALSE(otInstanceInitSingle() != NULL, ESP_FAIL, exit, OT_PLAT_LOG_TAG,
+                      "Failed to initialize OpenThread instance");
 #if CONFIG_OPENTHREAD_DNS64_CLIENT
-    ESP_RETURN_ON_ERROR(esp_openthread_dns64_client_init(), OT_PLAT_LOG_TAG,
-                        "Failed to initialize OpenThread dns64 client");
+    ESP_GOTO_ON_ERROR(esp_openthread_dns64_client_init(), exit, OT_PLAT_LOG_TAG,
+                      "Failed to initialize OpenThread dns64 client");
 #endif
 #if !CONFIG_OPENTHREAD_RADIO
-    ESP_RETURN_ON_ERROR(esp_openthread_state_event_init(esp_openthread_get_instance()), OT_PLAT_LOG_TAG,
-                        "Failed to initialize OpenThread state event");
+    ESP_GOTO_ON_ERROR(esp_openthread_state_event_init(esp_openthread_get_instance()), exit, OT_PLAT_LOG_TAG,
+                      "Failed to initialize OpenThread state event");
 #endif
+exit:
     esp_openthread_lock_release();
-
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t esp_openthread_auto_start(otOperationalDatasetTlvs *datasetTlvs)
@@ -140,7 +141,7 @@ esp_err_t esp_openthread_auto_start(otOperationalDatasetTlvs *datasetTlvs)
             memcpy(dataset.mMeshLocalPrefix.m8, prefix.mPrefix.mFields.m8, sizeof(dataset.mMeshLocalPrefix.m8));
             dataset.mComponents.mIsMeshLocalPrefixPresent = true;
         } else {
-            ESP_LOGE("Failed to parse mesh local prefix", CONFIG_OPENTHREAD_MESH_LOCAL_PREFIX);
+            ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to parse mesh local prefix: %s", CONFIG_OPENTHREAD_MESH_LOCAL_PREFIX);
         }
 
         // Network Key

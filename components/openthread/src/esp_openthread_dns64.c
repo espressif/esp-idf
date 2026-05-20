@@ -107,6 +107,7 @@ static void dns_found_handler(const char *name, const ip_addr_t *ipaddr, void *c
     if (resolve_entry && resolve_entry->found) {
         if (!ipaddr) {
             resolve_entry->found(name, NULL, resolve_entry->callback_arg);
+            resolve_entry->is_using = false;
         } else if (lwip_strnicmp(name, resolve_entry->name, sizeof(resolve_entry->name)) == 0) {
             ip_addr_t ipaddr_copy = *ipaddr;
             ip6_addr_t nat64_prefix;
@@ -117,8 +118,8 @@ static void dns_found_handler(const char *name, const ip_addr_t *ipaddr, void *c
                 ipaddr_copy.u_addr.ip6.zone = IP6_NO_ZONE;
             }
             resolve_entry->found(name, &ipaddr_copy, resolve_entry->callback_arg);
+            resolve_entry->is_using = false;
         }
-        resolve_entry->is_using = false;
     }
 }
 

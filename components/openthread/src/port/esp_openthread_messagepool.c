@@ -18,11 +18,14 @@
 #define OT_MSGPOOL_NUM_BUFFERS_NO_PSRAM 65
 
 static int s_buffer_pool_head = -1;
+static uint16_t s_buffer_pool_size = 0;
 static otMessageBuffer **s_buffer_pool_pointer = NULL;
 static otMessageBuffer *s_buffer_pool = NULL;
 
 void otPlatMessagePoolInit(otInstance *aInstance, uint16_t aMinNumFreeBuffers, size_t aBufferSize)
 {
+    assert(aBufferSize % sizeof(otMessageBuffer) == 0);
+
     uint16_t num_buffers = aMinNumFreeBuffers;
 
     if (!esp_psram_is_initialized() && num_buffers > OT_MSGPOOL_NUM_BUFFERS_NO_PSRAM) {
@@ -41,6 +44,7 @@ void otPlatMessagePoolInit(otInstance *aInstance, uint16_t aMinNumFreeBuffers, s
         s_buffer_pool_pointer[i] = buffer_pool + i * aBufferSize / sizeof(otMessageBuffer);
     }
     s_buffer_pool_head = num_buffers - 1;
+    s_buffer_pool_size = num_buffers;
     s_buffer_pool = buffer_pool;
     ESP_LOGI(OT_PLAT_LOG_TAG, "Create message buffer pool successfully, size %d", num_buffers * aBufferSize);
 }
@@ -57,6 +61,7 @@ otMessageBuffer *otPlatMessagePoolNew(otInstance *aInstance)
 
 void otPlatMessagePoolFree(otInstance *aInstance, otMessageBuffer *aBuffer)
 {
+    assert(s_buffer_pool_head + 1 < s_buffer_pool_size);
     s_buffer_pool_head++;
     s_buffer_pool_pointer[s_buffer_pool_head] = aBuffer;
 }
@@ -77,4 +82,5 @@ void otPlatMessagePoolDeinit(otInstance *aInstance)
         s_buffer_pool = NULL;
     }
     s_buffer_pool_head = -1;
+    s_buffer_pool_size = 0;
 }

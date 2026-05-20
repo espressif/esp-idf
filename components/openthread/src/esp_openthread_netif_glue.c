@@ -243,10 +243,8 @@ void esp_openthread_register_meshcop_e_handler(esp_event_handler_t handler, bool
 {
     if (for_publish) {
         meshcop_e_publish_handler = handler;
-    } else if (!for_publish) {
-        meshcop_e_remove_handler = handler;
     } else {
-        ESP_ERROR_CHECK(ESP_FAIL);
+        meshcop_e_remove_handler = handler;
     }
 }
 
@@ -345,6 +343,8 @@ void *esp_openthread_netif_glue_init(const esp_openthread_platform_config_t *con
     s_openthread_netif_glue.event_fd = eventfd(0, 0);
     if (s_openthread_netif_glue.event_fd < 0) {
         ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to create event fd for Thread netif");
+        vQueueDelete(s_packet_queue);
+        s_packet_queue = NULL;
         ExitNow(error = ESP_FAIL);
     }
     s_openthread_netif_glue.base.post_attach = openthread_netif_post_attach;

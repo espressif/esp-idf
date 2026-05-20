@@ -36,6 +36,7 @@ esp_err_t esp_openthread_sleep_init(void)
 
 void esp_openthread_sleep_process(void)
 {
+    assert(s_pm_lock != NULL);
     if (s_ot_sleep == false && esp_ieee802154_get_state() == ESP_IEEE802154_RADIO_SLEEP) {
         esp_pm_lock_release(s_pm_lock);
         s_ot_sleep = true;
