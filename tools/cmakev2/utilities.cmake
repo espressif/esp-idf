@@ -835,6 +835,17 @@ endfunction()
 function(target_add_binary_data target embed_file embed_type)
     cmake_parse_arguments(_ "" "RENAME_TO" "DEPENDS" ${ARGN})
     idf_build_get_property(build_dir BUILD_DIR)
+
+    # In cmakev1, the executable target was named "${project}.elf".
+    # In cmakev2, the executable is named "${project}" and ".elf" is just the
+    # output suffix. Strip the ".elf" suffix if the target does not exist but
+    # the bare name does. This keeps existing app CMakeLists.txt files working.
+    if(NOT TARGET "${target}")
+        string(REGEX REPLACE "\\.elf$" "" target_bare "${target}")
+        if(TARGET "${target_bare}")
+            set(target "${target_bare}")
+        endif()
+    endif()
     idf_build_get_property(idf_path IDF_PATH)
 
     get_filename_component(embed_file "${embed_file}" ABSOLUTE)
