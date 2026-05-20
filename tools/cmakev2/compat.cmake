@@ -592,7 +592,7 @@ function(idf_component_register)
     endforeach()
 
     if(sources OR ARG_EMBED_FILES OR ARG_EMBED_TXTFILES)
-        add_library("${COMPONENT_TARGET}" STATIC "${sources}")
+        add_library("${COMPONENT_TARGET}" STATIC ${sources})
 
         foreach(include_dir IN LISTS include_dirs)
             target_include_directories("${COMPONENT_TARGET}" PUBLIC "${include_dir}")
