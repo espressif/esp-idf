@@ -23,9 +23,10 @@ BLE50_SECURITY_CI_CONFIGS = ['name']
     indirect=True,
 )
 @idf_parametrize(
-    'target', ['esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61', 'esp32h4'], indirect=['target']
+    'target',
+    ['esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61', 'esp32h4', 'esp32s31'],
+    indirect=['target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='lack of runner')
 def test_ble50_security_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     server = dut[0]
     client = dut[1]
@@ -113,9 +114,10 @@ def test_c2_26mhz_xtal_ble50_security_func(app_path: str, dut: tuple[IdfDut, Idf
     indirect=True,
 )
 @idf_parametrize(
-    'target', ['esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61', 'esp32h4'], indirect=['target']
+    'target',
+    ['esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61', 'esp32h4', 'esp32s31'],
+    indirect=['target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='lack of runner')
 def test_period_adv_sync_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     adv_dut = dut[0]
     sync_dut = dut[1]
@@ -187,9 +189,10 @@ def test_c2_26mhz_xtal_period_adv_sync_func(app_path: str, dut: tuple[IdfDut, Id
     indirect=True,
 )
 @idf_parametrize(
-    'target', ['esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61', 'esp32h4'], indirect=['target']
+    'target',
+    ['esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32c61', 'esp32h4', 'esp32s31'],
+    indirect=['target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='lack of runner')
 def test_ble50_security_config_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     server = dut[0]
     client = dut[1]

@@ -20,9 +20,6 @@ examples/bluetooth/bluedroid/ble:
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32s31"
-      temporary: true
-      reason: lack of runners
     - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
@@ -56,9 +53,6 @@ examples/bluetooth/bluedroid/ble/ble_throughput:
   disable:
     - if: SOC_BLE_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32s31"
-      temporary: true
-      reason: lack of runners
     - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
@@ -75,9 +69,6 @@ examples/bluetooth/bluedroid/ble_50:
   disable:
     - if: SOC_BLE_50_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32s31"
-      temporary: true
-      reason: lack of runners
     - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner

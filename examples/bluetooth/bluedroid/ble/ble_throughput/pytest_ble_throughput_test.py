@@ -27,10 +27,9 @@ CUR_DIR = Path(__file__).parent.resolve()
 )
 @idf_parametrize(
     'target',
-    ['esp32', 'esp32c3', 'esp32c6', 'esp32c61', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32h4'],
+    ['esp32', 'esp32c3', 'esp32c6', 'esp32c61', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32h4', 'esp32s31'],
     indirect=['target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='lack of runner')
 def test_gatt_write_throughput(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     server = dut[0]
     client = dut[1]
@@ -119,10 +118,9 @@ def test_c2_26mhz_xtal_write_throughput(app_path: str, dut: tuple[IdfDut, IdfDut
 )
 @idf_parametrize(
     'target',
-    ['esp32', 'esp32c3', 'esp32c6', 'esp32c61', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32h4'],
+    ['esp32', 'esp32c3', 'esp32c6', 'esp32c61', 'esp32c5', 'esp32h2', 'esp32s3', 'esp32h4', 'esp32s31'],
     indirect=['target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='lack of runner')
 def test_gatt_notify_throughput(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     server = dut[0]
     client = dut[1]

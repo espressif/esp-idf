@@ -456,8 +456,6 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
                                                 scan_result->scan_rst.adv_data_len + scan_result->scan_rst.scan_rsp_len,
                                                 ESP_BLE_AD_TYPE_NAME_CMPL,
                                                 &adv_name_len);
-            ESP_LOGI(GATTC_TAG, "Scan result, device "ESP_BD_ADDR_STR", name len %u", ESP_BD_ADDR_HEX(scan_result->scan_rst.bda), adv_name_len);
-            ESP_LOG_BUFFER_CHAR(GATTC_TAG, adv_name, adv_name_len);
             if (adv_name != NULL) {
                 if (strlen(remote_device_name) == adv_name_len && strncmp((char *)adv_name, remote_device_name, adv_name_len) == 0) {
                     // Note: If there are multiple devices with the same device name, the device may connect to an unintended one.
@@ -544,6 +542,9 @@ void app_main(void)
 
     #if CONFIG_EXAMPLE_CI_PIPELINE_ID
     memcpy(remote_device_name, esp_bluedroid_get_example_name(), sizeof(remote_device_name));
+    ble_scan_params.scan_interval = ESP_BLE_GAP_SCAN_ITVL_MS(50);
+    ble_scan_params.scan_window = ESP_BLE_GAP_SCAN_WIN_MS(50);
+    ble_scan_params.scan_duplicate = BLE_SCAN_DUPLICATE_ENABLE;
     #endif
 
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
