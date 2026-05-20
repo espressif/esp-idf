@@ -6,6 +6,7 @@
 
 #include <string.h>
 #include <inttypes.h>
+#include <stdatomic.h>
 
 #include "utils/includes.h"
 #include "common.h"
@@ -31,11 +32,19 @@
 #include "eap_common/eap_wsc_common.h"
 #include "esp_wpas_glue.h"
 
+#define WPS_IE_VENDOR_DATA_MIN_LEN 4
+#define WPS_IE_VENDOR_DATA_OFFSET 6
+#define EAP_REQUEST_TYPE_LEN 1
+#define EAP_WSC_MESSAGE_LEN_FIELD_LEN 2
+#define WPS_MESSAGE_LENGTH_MAX 50000
+
 const char *wps_model_number = CONFIG_IDF_TARGET;
 
 void *s_wps_api_lock = NULL;  /* Used in WPS/WPS-REG public API only, never be freed */
 void *s_wps_api_sem = NULL;   /* Sync semaphore used between WPS/WPS-REG public API caller task and WPS task, never be freed */
-bool s_wps_enabled = false;
+/* Atomic enable flag; API code still uses s_wps_api_lock for compound state checks. */
+/* Atomic WPS owner shared between API callers and Wi-Fi task callbacks. */
+static atomic_int s_wps_owner = ATOMIC_VAR_INIT(WPS_OWNER_NONE);
 #ifdef USE_WPS_TASK
 struct wps_rx_param {
     u8 sa[ETH_ALEN];
@@ -408,9 +417,22 @@ wps_parse_scan_result(struct wps_scan_ie *scan)
 
     if (scan->wps) {
         bool ap_found = false;
-        struct wpabuf *buf = wpabuf_alloc_copy(scan->wps + 6, scan->wps[1] - 4);
+        struct wpabuf *buf;
         int count;
         const u8 *scan_uuid;
+
+        if (scan->wps[1] < WPS_IE_VENDOR_DATA_MIN_LEN) {
+            wpa_printf(MSG_DEBUG, "WPS: Invalid WPS IE length %u",
+                       scan->wps[1]);
+            return false;
+        }
+
+        buf = wpabuf_alloc_copy(scan->wps + WPS_IE_VENDOR_DATA_OFFSET,
+                                scan->wps[1] - WPS_IE_VENDOR_DATA_MIN_LEN);
+        if (!buf) {
+            wpa_printf(MSG_DEBUG, "WPS: Failed to copy WPS IE");
+            return false;
+        }
 
         if ((wps_get_type() == WPS_TYPE_PBC && wps_is_selected_pbc_registrar(buf)) ||
             (wps_get_type() == WPS_TYPE_PIN && wps_is_addr_authorized(buf, sm->ownaddr, 1))) {
@@ -431,7 +453,7 @@ wps_parse_scan_result(struct wps_scan_ie *scan)
         }
 
         if (ap_found || sm->ignore_sel_reg) {
-            if (scan->ssid[1] > SSID_MAX_LEN) {
+            if (!scan->ssid || scan->ssid[1] > SSID_MAX_LEN) {
                 wpabuf_free(buf);
                 return false;
             }
@@ -555,75 +577,133 @@ _err:
     return ret;
 }
 
-int wps_enrollee_process_msg_frag(struct wpabuf **buf, int tot_len, u8 *frag_data, int frag_len, u8 flag)
+static int wps_eap_wsc_process_cont(struct wps_eap_wsc_frag_data *frag,
+                                    const u8 *buf, size_t len, u8 op_code)
 {
-    struct wps_sm *sm = gWpsSm;
-    u8 identifier;
-
-    if (!sm) {
-        return ESP_FAIL;
+    if (op_code != frag->in_op_code) {
+        wpa_printf(MSG_DEBUG, "EAP-WSC: Unexpected Op-Code %d in fragment "
+                   "(expected %d)", op_code, frag->in_op_code);
+        return -1;
     }
 
-    identifier = sm->current_identifier;
-
-    if (buf == NULL || frag_data == NULL) {
-        wpa_printf(MSG_ERROR, "fun:%s. line:%d, frag buf or frag data is null", __FUNCTION__, __LINE__);
-        return ESP_FAIL;
+    if (len > wpabuf_tailroom(frag->in_buf)) {
+        wpa_printf(MSG_DEBUG, "EAP-WSC: Fragment overflow");
+        return -1;
     }
 
-    if (*buf == NULL) {
-        if (frag_len < 0 || tot_len < frag_len) {
-            wpa_printf(MSG_ERROR, "WPS: Invalid first fragment length");
-            return ESP_FAIL;
+    wpabuf_put_data(frag->in_buf, buf, len);
+    wpa_printf(MSG_DEBUG, "EAP-WSC: Received %lu bytes, waiting for %lu "
+               "bytes more", (unsigned long) len,
+               (unsigned long) wpabuf_tailroom(frag->in_buf));
+
+    return 0;
+}
+
+static int wps_eap_wsc_process_fragment(struct wps_eap_wsc_frag_data *frag,
+                                        u8 flags, u8 op_code,
+                                        u16 message_length,
+                                        const u8 *buf, size_t len)
+{
+    if (frag->in_buf == NULL && !(flags & WSC_FLAGS_LF)) {
+        wpa_printf(MSG_DEBUG, "EAP-WSC: No Message Length field in a "
+                   "fragmented packet");
+        return -1;
+    }
+
+    if (frag->in_buf == NULL) {
+        frag->in_buf = wpabuf_alloc(message_length);
+        if (frag->in_buf == NULL) {
+            wpa_printf(MSG_DEBUG, "EAP-WSC: No memory for message");
+            return -1;
+        }
+        frag->in_op_code = op_code;
+        wpabuf_put_data(frag->in_buf, buf, len);
+        wpa_printf(MSG_DEBUG, "EAP-WSC: Received %lu bytes in first "
+                   "fragment, waiting for %lu bytes more",
+                   (unsigned long) len,
+                   (unsigned long) wpabuf_tailroom(frag->in_buf));
+    }
+
+    return 0;
+}
+
+static int wps_eap_wsc_prepare_rx_buf(struct wps_sm *sm,
+                                      struct wps_eap_wsc_frag_data *frag,
+                                      u8 flags, u8 op_code,
+                                      u16 message_length,
+                                      const u8 *buf, size_t len,
+                                      struct wpabuf *tmpbuf,
+                                      bool *fragment_pending)
+{
+    *fragment_pending = false;
+
+    if (frag->in_buf) {
+        if (wps_eap_wsc_process_cont(frag, buf, len, op_code) < 0) {
+            goto fail;
         }
 
-        *buf = wpabuf_alloc(tot_len);
-        if (*buf == NULL) {
-            return ESP_ERR_NO_MEM;
+        if (flags & WSC_FLAGS_MF) {
+            if (wps_send_frag_ack(sm->current_identifier) != ESP_OK) {
+                goto fail;
+            }
+            *fragment_pending = true;
         }
-
-        wpabuf_put_data(*buf, frag_data, frag_len);
-        return wps_send_frag_ack(identifier);
+        return ESP_OK;
     }
 
-    if (flag & WPS_MSG_FLAG_LEN) {
-        wpa_printf(MSG_ERROR, "WPS: %s: Invalid fragment flag: 0x%02x", __func__, flag);
-        wpabuf_free(*buf);
-        *buf = NULL;
-        return ESP_FAIL;
+    if (flags & WSC_FLAGS_MF) {
+        if (wps_eap_wsc_process_fragment(frag, flags, op_code,
+                                         message_length, buf, len) < 0) {
+            goto fail;
+        }
+        if (wps_send_frag_ack(sm->current_identifier) != ESP_OK) {
+            goto fail;
+        }
+        *fragment_pending = true;
+        return ESP_OK;
     }
 
-    wpabuf_put_data(*buf, frag_data, frag_len);
-
-    if (flag & WPS_MSG_FLAG_MORE) {
-        return wps_send_frag_ack(identifier);
-    }
-
+    wpabuf_set(tmpbuf, buf, len);
     return ESP_OK;
+
+fail:
+    wpabuf_free(frag->in_buf);
+    frag->in_buf = NULL;
+    return ESP_FAIL;
 }
 
 int wps_process_wps_mX_req(u8 *ubuf, int len, enum wps_process_res *res)
 {
     struct wps_sm *sm = gWpsSm;
-    static struct wpabuf *wps_buf = NULL;
+    struct wps_eap_wsc_frag_data *frag;
     struct eap_expand *expd;
-    int tlen = 0;
-    u8 *tbuf;
-    u8 flag;
-    int frag_len;
-    u16 be_tot_len = 0;
+    const u8 *pos, *end;
+    u8 flags;
+    u16 message_length = 0;
+    bool fragment_pending;
+    struct wpabuf tmpbuf;
+    struct wpabuf *msg_buf;
 
     if (!sm || !res) {
         return ESP_FAIL;
     }
 
-    if (len < (int)(sizeof(struct eap_expand) + 1)) {
+    frag = &sm->wsc_frag;
+
+    if (len < (int)(sizeof(struct eap_expand) + EAP_REQUEST_TYPE_LEN)) {
         wpa_printf(MSG_ERROR, "WPS: Truncated EAP-Expanded header");
         return ESP_FAIL;
     }
 
     expd = (struct eap_expand *) ubuf;
-    wpa_printf(MSG_DEBUG, "wps process mX req: len %d, tlen %d", len, tlen);
+    pos = ubuf + sizeof(struct eap_expand);
+    end = ubuf + len;
+
+    if (WPA_GET_BE24(expd->vendor_id) != EAP_VENDOR_WFA ||
+            WPA_GET_BE32((const u8 *)&expd->vendor_type) != EAP_VENDOR_TYPE_WSC) {
+        wpa_printf(MSG_WARNING, "WPS: Unexpected expanded EAP vendor/type");
+        return ESP_ERR_INVALID_ARG;
+    }
 
     if (sm->state == WAIT_START) {
         if (expd->opcode != WSC_Start) {
@@ -639,74 +719,46 @@ int wps_process_wps_mX_req(u8 *ubuf, int len, enum wps_process_res *res)
         return ESP_ERR_INVALID_STATE;
     }
 
-    flag = *(u8 *)(ubuf + sizeof(struct eap_expand));
-    if (flag & WPS_MSG_FLAG_LEN) {
-        if (len < (int)(sizeof(struct eap_expand) + 1 + 2)) {
-            wpa_printf(MSG_ERROR, "WPS: Missing total length field");
+    flags = *pos++;
+    if (flags & WSC_FLAGS_LF) {
+        if (end - pos < EAP_WSC_MESSAGE_LEN_FIELD_LEN) {
+            wpa_printf(MSG_ERROR, "WPS: Message underflow");
             return ESP_FAIL;
         }
-        tbuf = ubuf + sizeof(struct eap_expand) + 1 + 2; // includes 2-byte total length
-        frag_len = len - (sizeof(struct eap_expand) + 1 + 2);
-        be_tot_len = *(u16 *)(ubuf + sizeof(struct eap_expand) + 1);
-        tlen = ((be_tot_len & 0xff) << 8) | ((be_tot_len >> 8) & 0xff);
-    } else {
-        tbuf = ubuf + sizeof(struct eap_expand) + 1;
-        frag_len = len - (sizeof(struct eap_expand) + 1);
-        tlen = frag_len;
-    }
+        message_length = WPA_GET_BE16(pos);
+        pos += EAP_WSC_MESSAGE_LEN_FIELD_LEN;
 
-    if (frag_len < 0 || tlen < 0 || ((flag & WPS_MSG_FLAG_LEN) && tlen < frag_len)) {
-        wpa_printf(MSG_ERROR, "WPS: Invalid fragment sizes");
-        if (wps_buf) {
-            wpabuf_free(wps_buf);
-            wps_buf = NULL;
-        }
-        return ESP_FAIL;
-    }
-
-    if (tlen > 50000) {
-        wpa_printf(MSG_ERROR, "EAP-WSC: Invalid Message Length");
-        return ESP_FAIL;
-    }
-    if ((flag & WPS_MSG_FLAG_MORE) || wps_buf != NULL) {//frag msg
-
-        wpa_printf(MSG_DEBUG, "rx frag msg id:%d, flag:%d, frag_len: %d, tot_len: %d, be_tot_len:%d", sm->current_identifier, flag, frag_len, tlen, be_tot_len);
-        if (ESP_OK != wps_enrollee_process_msg_frag(&wps_buf, tlen, tbuf, frag_len, flag)) {
-            if (wps_buf) {
-                wpabuf_free(wps_buf);
-                wps_buf = NULL;
-            }
+        if (message_length < (u16)(end - pos) || message_length > WPS_MESSAGE_LENGTH_MAX) {
+            wpa_printf(MSG_ERROR, "WPS: Invalid Message Length");
             return ESP_FAIL;
         }
-        if (flag & WPS_MSG_FLAG_MORE) {
-            *res = WPS_FRAGMENT;
-            return ESP_OK;
-        }
-    } else { //not frag msg
-        if (wps_buf) {//if something wrong, frag msg buf is not freed, free first
-            wpa_printf(MSG_ERROR, "something is wrong, frag buf is not freed");
-            wpabuf_free(wps_buf);
-            wps_buf = NULL;
-        }
-        wps_buf = wpabuf_alloc_copy(tbuf, tlen);
     }
 
-    if (!wps_buf) {
+    wpa_printf(MSG_DEBUG, "WPS: Received packet: Op-Code %d Flags 0x%x "
+               "Message Length %d", expd->opcode, flags, message_length);
+
+    if (wps_eap_wsc_prepare_rx_buf(sm, frag, flags, expd->opcode,
+                                   message_length, pos, end - pos,
+                                   &tmpbuf, &fragment_pending) != ESP_OK) {
         return ESP_FAIL;
+    }
+
+    if (fragment_pending) {
+        *res = WPS_FRAGMENT;
+        return ESP_OK;
     }
 
     eloop_cancel_timeout(wifi_station_wps_msg_timeout, NULL, NULL);
+    msg_buf = frag->in_buf ? frag->in_buf : &tmpbuf;
 
-    *res = wps_enrollee_process_msg(sm->wps, expd->opcode, wps_buf);
+    *res = wps_enrollee_process_msg(sm->wps, expd->opcode, msg_buf);
 
     if (*res == WPS_FAILURE) {
         sm->state = WPA_FAIL;
     }
 
-    if (wps_buf) {
-        wpabuf_free(wps_buf);
-        wps_buf = NULL;
-    }
+    wpabuf_free(frag->in_buf);
+    frag->in_buf = NULL;
     return ESP_OK;
 }
 
@@ -888,6 +940,8 @@ int wps_finish(void)
             esp_wifi_connect();
 
             os_free(config);
+        } else {
+            esp_wifi_disconnect();
         }
         eloop_cancel_timeout(wifi_station_wps_success, NULL, NULL);
 	eloop_register_timeout(1, 0, wifi_station_wps_success, NULL, NULL);
@@ -1105,6 +1159,11 @@ int wps_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len)
         ret = 0;
         break;
     case EAP_CODE_REQUEST: {
+        if (plen < sizeof(*ehdr) + EAP_REQUEST_TYPE_LEN) {
+            wpa_printf(MSG_DEBUG, "WPS: Truncated EAP-Request frame");
+            ret = 0;
+            break;
+        }
         eap_type = ((u8 *)ehdr)[sizeof(*ehdr)];
         switch (eap_type) {
         case EAP_TYPE_IDENTITY:
@@ -1119,8 +1178,8 @@ int wps_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len)
             wpa_printf(MSG_DEBUG, "=========expanded plen[%" PRId32 "], %d===========", plen, sizeof(*ehdr));
             sm->current_identifier = ehdr->identifier;
 
-            tmp = (u8 *)(ehdr + 1) + 1;
-            ret = wps_process_wps_mX_req(tmp, plen - sizeof(*ehdr) - 1, &res);
+            tmp = (u8 *)(ehdr + 1) + EAP_REQUEST_TYPE_LEN;
+            ret = wps_process_wps_mX_req(tmp, plen - sizeof(*ehdr) - EAP_REQUEST_TYPE_LEN, &res);
             if (res == WPS_FRAGMENT) {
                 wpa_printf(MSG_DEBUG, "wps frag, silently exit", res);
                 ret = ESP_OK;
@@ -1133,6 +1192,8 @@ int wps_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len)
                     wpa_printf(MSG_DEBUG, "sm->wps->state = %d", sm->wps->state);
                     wps_start_msg_timer();
                 }
+            } else if (ret == ESP_ERR_INVALID_ARG) {
+                ret = ESP_OK;
             } else if (ret == ESP_ERR_INVALID_STATE) {
                 ret = ESP_OK;
             } else {
@@ -1442,7 +1503,7 @@ static int save_credentials_cb(void *ctx, const struct wps_credential *cred)
     gWpsSm->ap_cred_cnt++;
 
     wpa_hexdump_ascii(MSG_DEBUG, "ssid ", cred->ssid, cred->ssid_len);
-    wpa_hexdump_ascii(MSG_DEBUG, "key ", cred->key, cred->key_len);
+    wpa_hexdump_ascii_key(MSG_DEBUG, "key ", cred->key, cred->key_len);
 
     return ESP_OK;
 }
@@ -1463,8 +1524,8 @@ int wps_init_cfg_pin(struct wps_config *cfg)
         cfg->pin_len = 8;
         if (wps_generate_pin(&spin) < 0) {
             return -1;
-	}
-        wpa_printf(MSG_INFO, "Provided PIN %s is not valid, generated a new PIN %08d", (char *)cfg->pin, spin);
+        }
+        wpa_printf(MSG_DEBUG, "WPS: Invalid PIN provided, generated a new PIN");
         os_snprintf((char *)cfg->pin, 9, "%08d", spin);
     }
 
@@ -1478,7 +1539,7 @@ struct wps_sm_funcs* wps_get_wps_sm_cb(void)
 
 static int wifi_station_wps_init(const esp_wps_config_t *config)
 {
-    struct wps_funcs *wps_cb;
+    struct wps_funcs *wps_cb = NULL;
     struct wps_sm *sm = NULL;
     struct wps_config cfg = {0};
 
@@ -1546,7 +1607,7 @@ static int wifi_station_wps_init(const esp_wps_config_t *config)
     eloop_cancel_timeout(wifi_wps_scan, NULL, NULL);
     eloop_cancel_timeout(wifi_station_wps_eapol_start_handle, NULL, NULL);
 
-    wps_cb = os_malloc(sizeof(struct wps_funcs));
+    wps_cb = os_zalloc(sizeof(struct wps_funcs));
     if (wps_cb == NULL) {
         goto _err;
     }
@@ -1554,19 +1615,32 @@ static int wifi_station_wps_init(const esp_wps_config_t *config)
     wps_cb->wifi_station_wps_start = wifi_station_wps_start;
     wps_cb->wps_sm_rx_eapol = wps_sm_rx_eapol;
     wps_cb->wps_start_pending = wps_start_pending;
-    esp_wifi_set_wps_cb_internal(wps_cb);
 
-    s_wps_sm_cb = os_malloc(sizeof(struct wps_sm_funcs));
+    s_wps_sm_cb = os_zalloc(sizeof(struct wps_sm_funcs));
     if (s_wps_sm_cb == NULL) {
         goto _err;
     }
     s_wps_sm_cb->wps_sm_notify_deauth = wps_sm_notify_deauth;
+
+    if (esp_wifi_set_wps_cb_internal(wps_cb) != ESP_OK) {
+        goto _err;
+    }
+
+    wps_cb = NULL;
 
     return ESP_OK;
 
 _err:
     esp_wifi_unset_appie_internal(WIFI_APPIE_WPS_PR);
     esp_wifi_unset_appie_internal(WIFI_APPIE_WPS_AR);
+
+    if (wps_cb) {
+        os_free(wps_cb);
+    }
+    if (s_wps_sm_cb) {
+        os_free(s_wps_sm_cb);
+        s_wps_sm_cb = NULL;
+    }
 
     if (sm->dev) {
         wps_dev_deinit(sm->dev);
@@ -1634,6 +1708,10 @@ wifi_station_wps_deinit(void)
     if (sm->wps) {
         wps_deinit(sm->wps);
         sm->wps = NULL;
+    }
+    if (sm->wsc_frag.in_buf) {
+        wpabuf_free(sm->wsc_frag.in_buf);
+        sm->wsc_frag.in_buf = NULL;
     }
     if (s_wps_sm_cb) {
         s_wps_sm_cb->wps_sm_notify_deauth = NULL;
@@ -1923,7 +2001,7 @@ int wps_check_wifi_mode(void)
 int esp_wifi_wps_enable(const esp_wps_config_t *config)
 {
     int ret = ESP_OK;
-    struct wps_sm *sm = gWpsSm;
+    enum wps_owner owner;
 
     if (esp_wifi_get_user_init_flag_internal() == 0) {
         wpa_printf(MSG_ERROR, "wps enable: wifi not started cannot disable wpsreg");
@@ -1940,8 +2018,9 @@ int esp_wifi_wps_enable(const esp_wps_config_t *config)
     }
 
     API_MUTEX_TAKE();
-    if (s_wps_enabled) {
-        if (sm && os_memcmp(sm->identity, WSC_ID_REGISTRAR, sm->identity_len) == 0) {
+    owner = wps_get_owner();
+    if (owner != WPS_OWNER_NONE) {
+        if (owner == WPS_OWNER_REGISTRAR) {
             wpa_printf(MSG_ERROR, "wps enable: wpsreg already enabled cannot enable wps enrollee");
             ret = ESP_ERR_WIFI_MODE;
         } else {
@@ -1965,20 +2044,28 @@ int esp_wifi_wps_enable(const esp_wps_config_t *config)
         return ret;
     }
 
-    s_wps_enabled = true;
+    wps_set_owner(WPS_OWNER_ENROLLEE);
     wpa_printf(MSG_DEBUG, "wifi wps task: prio:%d, stack:%d", 2, WPS_TASK_STACK_SIZE);
     API_MUTEX_GIVE();
     return ret;
 #else
     ret = wifi_wps_enable_internal(config);
+    if (ret == ESP_OK) {
+        wps_set_owner(WPS_OWNER_ENROLLEE);
+    }
     API_MUTEX_GIVE();
     return ret;
 #endif
 }
 
-bool is_wps_enabled(void)
+enum wps_owner wps_get_owner(void)
 {
-    return s_wps_enabled;
+    return (enum wps_owner) atomic_load(&s_wps_owner);
+}
+
+void wps_set_owner(enum wps_owner owner)
+{
+    atomic_store(&s_wps_owner, owner);
 }
 
 int wifi_wps_enable_internal(const esp_wps_config_t *config)
@@ -1999,8 +2086,13 @@ int wifi_wps_enable_internal(const esp_wps_config_t *config)
 
     wpa_printf(MSG_INFO, "wifi_wps_enable");
 
-    wps_set_type(config->wps_type);
-    wps_set_status(WPS_STATUS_DISABLE);
+    if (wps_set_type(config->wps_type) != ESP_OK) {
+        return ESP_FAIL;
+    }
+    if (wps_set_status(WPS_STATUS_DISABLE) != ESP_OK) {
+        wps_set_type(WPS_TYPE_DISABLE);
+        return ESP_FAIL;
+    }
 
     ret = wifi_station_wps_init(config);
 
@@ -2030,24 +2122,28 @@ int esp_wifi_wps_disable(void)
 {
     int ret = 0;
     int wps_status;
-    struct wps_sm *wps_sm = gWpsSm;
+    int prev_wps_type;
+    enum wps_owner prev_owner;
     struct wpa_sm *wpa_sm = &gWpaSm;
-
-    if (wps_sm && os_memcmp(wps_sm->identity, WSC_ID_REGISTRAR, wps_sm->identity_len) == 0) {
-        return ESP_ERR_WIFI_MODE;
-    }
 
     API_MUTEX_TAKE();
 
-    if (!s_wps_enabled) {
+    prev_owner = wps_get_owner();
+    if (prev_owner == WPS_OWNER_NONE) {
         wpa_printf(MSG_DEBUG, "wps disable: already disabled");
         API_MUTEX_GIVE();
         return ESP_OK;
     }
+    if (prev_owner == WPS_OWNER_REGISTRAR) {
+        API_MUTEX_GIVE();
+        return ESP_ERR_WIFI_MODE;
+    }
 
     wps_status = wps_get_status();
     wpa_printf(MSG_INFO, "wifi_wps_disable");
+    prev_wps_type = wps_get_type();
     wps_set_type(WPS_TYPE_DISABLE); /* Notify WiFi task */
+    wps_set_owner(WPS_OWNER_NONE);
 
 #ifdef USE_WPS_TASK
     ret = wps_post_block(SIG_WPS_DISABLE, 0);
@@ -2057,6 +2153,8 @@ int esp_wifi_wps_disable(void)
 
     if (ESP_OK != ret) {
         wpa_printf(MSG_ERROR, "wps disable: failed to disable wps, ret=%d", ret);
+        wps_set_type(prev_wps_type);
+        wps_set_owner(prev_owner);
     }
 
     /* Only disconnect in case of WPS pending */
@@ -2065,24 +2163,31 @@ int esp_wifi_wps_disable(void)
     }
     esp_wifi_set_wps_start_flag_internal(false);
     wps_task_deinit();
-    s_wps_enabled = false;
     API_MUTEX_GIVE();
     wpa_sm->wpa_sm_wps_disable = NULL;
-    return ESP_OK;
+    return ret;
 }
 
 int esp_wifi_wps_start(int timeout_ms)
 {
+    enum wps_owner owner;
+
     if (ESP_OK != wps_check_wifi_mode()) {
         return ESP_ERR_WIFI_MODE;
     }
 
     API_MUTEX_TAKE();
 
-    if (!s_wps_enabled) {
+    owner = wps_get_owner();
+    if (owner == WPS_OWNER_NONE) {
         wpa_printf(MSG_ERROR, "wps start: wps not enabled");
         API_MUTEX_GIVE();
         return ESP_ERR_WIFI_WPS_SM;
+    }
+    if (owner != WPS_OWNER_ENROLLEE) {
+        wpa_printf(MSG_ERROR, "wps start: wps enrollee not enabled");
+        API_MUTEX_GIVE();
+        return ESP_ERR_WIFI_MODE;
     }
 
     if (wps_get_type() == WPS_TYPE_DISABLE || (wps_get_status() != WPS_STATUS_DISABLE && wps_get_status() != WPS_STATUS_SCANNING)) {
