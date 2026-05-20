@@ -134,6 +134,7 @@ The :cpp:type:`twai_frame_t` message structure also includes other configuration
 - :cpp:member:`twai_frame_t::header::fdf`: Marks the frame as an FD format frame, supporting up to 64 bytes of data.
 - :cpp:member:`twai_frame_t::header::brs`: Enables use of a separate data-phase baud rate when transmitting.
 - :cpp:member:`twai_frame_t::header::esi`: For received frames, indicates the error state of the transmitting node.
+- :cpp:member:`twai_frame_t::tx_queue_priority`: Local transmit queue priority. See `Transmit Queue Priority`_ for details.
 
 Receiving Messages
 ------------------
@@ -213,6 +214,13 @@ The TWAI driver supports transmitting messages from an Interrupt Service Routine
 
 .. note::
     When calling :cpp:func:`twai_node_transmit` from an ISR, the ``timeout`` parameter is ignored, and the function will not block. If the transmit queue is full, the function will return immediately with an error. It is the application's responsibility to handle cases where the queue is full. Similarly, the ``twai_frame_t`` structure and the memory pointed to by ``buffer`` must remain valid until the transmission is complete. You can get the completed frame by the :cpp:member:`twai_tx_done_event_data_t::done_tx_frame` pointer.
+
+Transmit Queue Priority
+-----------------------
+
+The TWAI driver supports local transmit queue prioritization through :cpp:member:`twai_frame_t::tx_queue_priority`. When multiple frames are pending in the driver's transmit queue, frames with a higher ``tx_queue_priority`` value are dequeued and started transmitting first. Frames with the same priority keep their enqueue order.
+
+This priority only affects the driver's local transmit queue. It is not transmitted on the TWAI bus and does not replace TWAI bus arbitration. If the controller has multiple hardware transmit buffers (for example, 4 hardware transmit buffers for esp32c5), the already cached frames will not be preempted by newly queued higher-priority frames. Once a frame reaches the bus, arbitration is still determined by the frame ID, where lower IDs have higher bus priority.
 
 Bit Timing Customization
 ------------------------
