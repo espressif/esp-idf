@@ -50,8 +50,8 @@ extern "C" {
   *     LP_AON_STORE5_REG       FAST_RTC_MEMORY_LENGTH
   *     LP_AON_STORE6_REG       FAST_RTC_MEMORY_ENTRY
   *     LP_AON_STORE7_REG       RTC fix us, low 32 bits
-  *     LP_AON_STORE8_REG       Store light sleep wake stub addr
-  *     LP_AON_STORE9_REG       Store the sleep mode at bit[0]  (0:light sleep 1:deep sleep)
+  *     LP_AON_STORE8_REG       Store light sleep wake stub addr (mask bit[1:0])
+  *     LP_AON_STORE8_REG       Store the sleep mode at bit[0]  (0:light sleep 1:deep sleep)
   *************************************************************************************
   *
   * Since esp32h4 does not support RTC mem, so use LP_AON store regs to record rtc time:
@@ -70,7 +70,7 @@ extern "C" {
 #define RTC_RESET_CAUSE_REG                 LP_AON_STORE6_REG
 #define RTC_FIX_US_LOW_REG                  LP_AON_STORE7_REG
 #define RTC_SLEEP_WAKE_STUB_ADDR_REG        LP_AON_STORE8_REG
-#define RTC_SLEEP_MODE_REG                  LP_AON_STORE9_REG
+#define RTC_SLEEP_MODE_REG                  LP_AON_STORE8_REG
 
 #define RTC_DISABLE_ROM_LOG ((1 << 0) | (1 << 16)) //!< Disable logging from the ROM code.
 
