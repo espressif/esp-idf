@@ -10,9 +10,17 @@ This test app is relatively complex because it has to check many possible combin
 - Chip target: esp32, esp32c3, ...
 - Configuration: default, GDB Stub, Core Dump to UART, ...
 
-Failure scenarios are implemented in [test_panic.c](main/test_panic.c). The test application receives the name of the scenario from console (e.g. `test_illegal_instruction` ). The failure scenario is executed and the app panics. Once the panic output is printed, the pytest-based test case parses the output and verifies that the behavior of the panic handler was correct.
+Failure scenarios are implemented in the shared component at [common/main/test_panic.c](../common/main/test_panic.c). The test application receives the name of the scenario from console (e.g. `test_illegal_instruction` ). The failure scenario is executed and the app panics. Once the panic output is printed, the pytest-based test case parses the output and verifies that the behavior of the panic handler was correct.
 
-In [pytest_panic.py](pytest_panic.py), there typically is one test function for each failure scenario. Each test function is then parametrized by `config` parameter. This creates "copies" of the test case for each of the configurations (default, GDB Stub, etc.) Tests are also parametrized with target-specific markers. Most tests can run on every target, but there are a few exceptions, such as failure scenarios specific to the dual-core chips.
+The `panic_base` app owns the non-coredump configurations. Coredump-specific sdkconfigs, partitions, and pytest wrappers live in the sibling [coredump](../coredump) app so CI can route them separately.
+
+In [pytest_panic.py](pytest_panic.py), there typically is one test function for each failure scenario. Each test function is then parametrized by `config` parameter. This creates "copies" of the test case for each of the non-coredump configurations (default, GDB Stub, etc.) Tests are also parametrized with target-specific markers. Most tests can run on every target, but there are a few exceptions, such as failure scenarios specific to the dual-core chips.
+
+## Where to add a new test
+
+- **Scenario that should run under both panic and coredump configs** (e.g. a new watchdog or fault test): put the test body in `panic_base/pytest_panic.py`, then add a thin wrapper in `coredump/pytest_panic_coredump.py` that calls into it with coredump configs and `COREDUMP_TARGETS_ALL`. Shared helpers (`common_test`, `expect_coredump_*`) also live in `pytest_panic.py`.
+- **Scenario that only makes sense with coredump enabled** (extram stack, capture_dram, coredump_summary, tcb_corrupted, gdbstub_coredump, …): add the test directly in `coredump/pytest_panic_coredump.py`. Do not put it in `panic_base`.
+- **New C-level failure scenario**: add it to [common/main/test_panic.c](../common/main/test_panic.c) so both apps pick it up.
 
 The test cases use a customized DUT class `PanicTestDut`, defined in [panic_dut.py](test_panic_util/panic_dut.py). This class is derived from [`IdfDut`](https://docs.espressif.com/projects/pytest-embedded/en/latest/references/pytest_embedded_idf/#pytest_embedded_idf.dut.IdfDut). It defines several helper functions to make the test cases easier to read.
 

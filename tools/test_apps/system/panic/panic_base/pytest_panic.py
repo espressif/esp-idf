@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import itertools
+import os
 import re
 from collections.abc import Sequence
 from re import Pattern
@@ -27,33 +28,16 @@ TARGETS_ALL = TARGETS_XTENSA + TARGETS_RISCV
 # Some tests only run on dual-core targets, they use the config below.
 TARGETS_DUAL_CORE = TARGETS_XTENSA_DUAL_CORE + TARGETS_RISCV_DUAL_CORE
 
-CONFIGS = list(
-    itertools.chain(
-        itertools.product(
-            [
-                'coredump_flash_default',
-                'coredump_flash_soft_sha',
-                'coredump_uart_default',
-                'coredump_flash_custom_stack',
-                'gdbstub',
-                'panic',
-            ],
-            TARGETS_ALL,
-        )
-    )
-)
+PANIC_APP = os.path.dirname(__file__)
 
-CONFIGS_UBSAN = list(
-    itertools.chain(
-        itertools.product(
-            [
-                'gdbstub',
-                'panic',
-            ],
-            TARGETS_ALL,
-        )
-    )
-)
+
+def configs_for_app(app_path: str, configs: Sequence[str]) -> list[tuple[str, str]]:
+    return [(app_path, config) for config in configs]
+
+
+CONFIGS = configs_for_app(PANIC_APP, ['gdbstub', 'panic'])
+
+CONFIGS_UBSAN = configs_for_app(PANIC_APP, ['gdbstub', 'panic'])
 
 CONFIG_PANIC = list(
     itertools.chain(
@@ -78,50 +62,11 @@ CONFIG_PANIC = list(
 CONFIG_PANIC_DUAL_CORE = list(itertools.chain(itertools.product(['panic'], TARGETS_DUAL_CORE)))
 CONFIG_PANIC_HALT = list(itertools.chain(itertools.product(['panic_halt'], TARGETS_ALL)))
 
-CONFIGS_DUAL_CORE = list(
-    itertools.chain(
-        itertools.product(
-            [
-                'coredump_flash_default',
-                'coredump_uart_default',
-                'gdbstub',
-                'panic',
-            ],
-            TARGETS_DUAL_CORE,
-        )
-    )
-)
+CONFIGS_DUAL_CORE = configs_for_app(PANIC_APP, ['gdbstub', 'panic'])
 
-CONFIGS_HW_STACK_GUARD = list(
-    itertools.chain(
-        itertools.product(
-            ['coredump_uart_default', 'gdbstub', 'panic'],
-            TARGETS_RISCV,
-        )
-    )
-)
+CONFIGS_HW_STACK_GUARD = configs_for_app(PANIC_APP, ['gdbstub', 'panic'])
 
-CONFIGS_HW_STACK_GUARD_DUAL_CORE = list(
-    itertools.chain(
-        itertools.product(
-            ['coredump_uart_default', 'gdbstub', 'panic'],
-            TARGETS_RISCV_DUAL_CORE,
-        )
-    )
-)
-
-CONFIG_CAPTURE_DRAM = list(
-    itertools.chain(itertools.product(['coredump_flash_capture_dram', 'coredump_uart_capture_dram'], TARGETS_ALL))
-)
-
-CONFIG_COREDUMP_SUMMARY = list(itertools.chain(itertools.product(['coredump_flash_default'], TARGETS_ALL)))
-
-CONFIG_COREDUMP_SUMMARY_FLASH_ENCRYPTED = list(
-    itertools.chain(
-        itertools.product(['coredump_flash_encrypted'], ['esp32', 'esp32c3']),
-        itertools.product(['coredump_flash_encrypted_coredump_plain'], ['esp32', 'esp32c3']),
-    )
-)
+CONFIGS_HW_STACK_GUARD_DUAL_CORE = configs_for_app(PANIC_APP, ['gdbstub', 'panic'])
 
 # Panic abort information will start with this string.
 PANIC_ABORT_PREFIX = 'Panic reason: '
@@ -199,7 +144,8 @@ def common_test(
 
 
 @pytest.mark.generic
-@idf_parametrize('config, target', CONFIGS, indirect=['config', 'target'])
+@pytest.mark.parametrize('app_path, config', CONFIGS, indirect=True)
+@idf_parametrize('target', TARGETS_ALL, indirect=['target'])
 def test_task_wdt_cpu0(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     dut.expect_exact('Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:')
@@ -231,7 +177,8 @@ def test_task_wdt_cpu0(dut: PanicTestDut, config: str, test_func_name: str) -> N
 
 
 @pytest.mark.generic
-@idf_parametrize('config, target', CONFIGS_DUAL_CORE, indirect=['config', 'target'])
+@pytest.mark.parametrize('app_path, config', CONFIGS_DUAL_CORE, indirect=True)
+@idf_parametrize('target', TARGETS_DUAL_CORE, indirect=['target'])
 def test_task_wdt_cpu1(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     dut.expect_exact('Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:')
@@ -257,45 +204,9 @@ def test_task_wdt_cpu1(dut: PanicTestDut, config: str, test_func_name: str) -> N
     common_test(dut, config, expected_backtrace=expected_backtrace, expected_coredump=[coredump_pattern])
 
 
-@idf_parametrize(
-    'config,target,markers',
-    [
-        ('coredump_flash_extram_stack_heap_esp32', 'esp32', (pytest.mark.psram,)),
-        ('coredump_flash_extram_stack_heap_esp32s2', 'esp32s2', (pytest.mark.generic,)),
-        ('coredump_flash_extram_stack_heap_esp32s3', 'esp32s3', (pytest.mark.quad_psram,)),
-        ('coredump_flash_extram_stack_bss_esp32', 'esp32', (pytest.mark.psram,)),
-        ('coredump_flash_extram_stack_bss_esp32s2', 'esp32s2', (pytest.mark.generic,)),
-        ('coredump_flash_extram_stack_bss_esp32s3', 'esp32s3', (pytest.mark.quad_psram,)),
-    ],
-    indirect=['config', 'target'],
-)
-def test_panic_extram_stack(dut: PanicTestDut, config: str) -> None:
-    if 'heap' in config:
-        dut.run_test_func('test_panic_extram_stack_heap')
-    else:
-        dut.run_test_func('test_panic_extram_stack_bss')
-    dut.expect_none('Allocated stack is not in external RAM')
-    dut.expect_none('Guru Meditation')
-    dut.expect_backtrace()
-    dut.expect_elf_sha256()
-
-    if dut.target == 'esp32':
-        # ESP32 External data memory range [0x3f800000-0x3fc00000)
-        coredump_pattern = re.compile('.coredump.tasks.data (0x3[fF][8-9a-bA-B][0-9a-fA-F]{5}) (0x[a-fA-F0-9]+) RW')
-    elif dut.target == 'esp32s2':
-        # ESP32-S2 External data memory range [0x3f500000-0x3ff80000)
-        coredump_pattern = re.compile(
-            '.coredump.tasks.data (0x3[fF][5-9a-fA-F][0-7][0-9a-fA-F]{4}) (0x[a-fA-F0-9]+) RW'
-        )
-    else:
-        # ESP32-S3 External data memory range [0x3c000000-0x3e000000)
-        coredump_pattern = re.compile('.coredump.tasks.data (0x3[c-dC-D][0-9a-fA-F]{6}) (0x[a-fA-F0-9]+) RW')
-
-    common_test(dut, config, expected_backtrace=None, expected_coredump=[coredump_pattern])
-
-
 @pytest.mark.generic
-@idf_parametrize('config, target', CONFIGS, indirect=['config', 'target'])
+@pytest.mark.parametrize('app_path, config', CONFIGS, indirect=True)
+@idf_parametrize('target', TARGETS_ALL, indirect=['target'])
 def test_int_wdt(dut: PanicTestDut, target: str, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     dut.expect_gme('Interrupt wdt timeout on CPU0')
@@ -317,7 +228,8 @@ def test_int_wdt(dut: PanicTestDut, target: str, config: str, test_func_name: st
 
 
 @pytest.mark.generic
-@idf_parametrize('config, target', CONFIGS, indirect=['config', 'target'])
+@pytest.mark.parametrize('app_path, config', CONFIGS, indirect=True)
+@idf_parametrize('target', TARGETS_ALL, indirect=['target'])
 def test_int_wdt_cache_disabled(dut: PanicTestDut, target: str, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     dut.expect_gme('Interrupt wdt timeout on CPU0')
@@ -339,7 +251,8 @@ def test_int_wdt_cache_disabled(dut: PanicTestDut, target: str, config: str, tes
 
 
 @pytest.mark.generic
-@idf_parametrize('config, target', CONFIGS, indirect=['config', 'target'])
+@pytest.mark.parametrize('app_path, config', CONFIGS, indirect=True)
+@idf_parametrize('target', TARGETS_ALL, indirect=['target'])
 def test_cache_error(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     if dut.target in ['esp32c3', 'esp32c2']:
@@ -370,7 +283,8 @@ def test_cache_error(dut: PanicTestDut, config: str, test_func_name: str) -> Non
 
 
 @pytest.mark.generic
-@idf_parametrize('config, target', CONFIGS, indirect=['config', 'target'])
+@pytest.mark.parametrize('app_path, config', CONFIGS, indirect=True)
+@idf_parametrize('target', TARGETS_ALL, indirect=['target'])
 def test_stack_overflow(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     if dut.is_xtensa:
@@ -391,7 +305,8 @@ def test_stack_overflow(dut: PanicTestDut, config: str, test_func_name: str) -> 
 
 
 @pytest.mark.generic
-@idf_parametrize('config, target', CONFIGS, indirect=['config', 'target'])
+@pytest.mark.parametrize('app_path, config', CONFIGS, indirect=True)
+@idf_parametrize('target', TARGETS_ALL, indirect=['target'])
 def test_instr_fetch_prohibited(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     if dut.is_xtensa:
@@ -418,7 +333,8 @@ def test_instr_fetch_prohibited(dut: PanicTestDut, config: str, test_func_name: 
 
 
 @pytest.mark.generic
-@idf_parametrize('config, target', CONFIGS, indirect=['config', 'target'])
+@pytest.mark.parametrize('app_path, config', CONFIGS, indirect=True)
+@idf_parametrize('target', TARGETS_ALL, indirect=['target'])
 def test_illegal_instruction(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     if dut.is_xtensa:
@@ -454,19 +370,22 @@ def check_x_prohibited(dut: PanicTestDut, config: str, test_func_name: str, oper
 
 
 @pytest.mark.generic
-@idf_parametrize('config, target', CONFIGS, indirect=['config', 'target'])
+@pytest.mark.parametrize('app_path, config', CONFIGS, indirect=True)
+@idf_parametrize('target', TARGETS_ALL, indirect=['target'])
 def test_storeprohibited(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     check_x_prohibited(dut, config, test_func_name, 'Store')
 
 
 @pytest.mark.generic
-@idf_parametrize('config, target', CONFIGS, indirect=['config', 'target'])
+@pytest.mark.parametrize('app_path, config', CONFIGS, indirect=True)
+@idf_parametrize('target', TARGETS_ALL, indirect=['target'])
 def test_loadprohibited(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     check_x_prohibited(dut, config, test_func_name, 'Load')
 
 
 @pytest.mark.generic
-@idf_parametrize('config, target', CONFIGS, indirect=['config', 'target'])
+@pytest.mark.parametrize('app_path, config', CONFIGS, indirect=True)
+@idf_parametrize('target', TARGETS_ALL, indirect=['target'])
 def test_abort(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     regex_pattern = rb'abort\(\) was called at PC [0-9xa-f]+ on core 0'
@@ -488,7 +407,8 @@ def test_abort(dut: PanicTestDut, config: str, test_func_name: str) -> None:
 
 
 @pytest.mark.generic
-@idf_parametrize('config, target', CONFIGS_UBSAN, indirect=['config', 'target'])
+@pytest.mark.parametrize('app_path, config', CONFIGS_UBSAN, indirect=True)
+@idf_parametrize('target', TARGETS_ALL, indirect=['target'])
 def test_ub(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     regex_pattern = rb'Undefined behavior of type out_of_bounds'
@@ -514,7 +434,8 @@ def test_ub(dut: PanicTestDut, config: str, test_func_name: str) -> None:
 
 
 @pytest.mark.generic
-@idf_parametrize('config, target', CONFIGS, indirect=['config', 'target'])
+@pytest.mark.parametrize('app_path, config', CONFIGS, indirect=True)
+@idf_parametrize('target', TARGETS_ALL, indirect=['target'])
 def test_abort_cache_disabled(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     if dut.target == 'esp32s2':
         pytest.xfail(reason='Crashes in itoa which is not in ROM, IDF-3572')
@@ -538,7 +459,8 @@ def test_abort_cache_disabled(dut: PanicTestDut, config: str, test_func_name: st
 
 
 @pytest.mark.generic
-@idf_parametrize('config, target', CONFIGS, indirect=['config', 'target'])
+@pytest.mark.parametrize('app_path, config', CONFIGS, indirect=True)
+@idf_parametrize('target', TARGETS_ALL, indirect=['target'])
 def test_assert(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     regex_pattern = rb'assert failed:[\s\w()]*?\s[.\w/]*\.(?:c|cpp|h|hpp):\d.*$'
@@ -560,7 +482,8 @@ def test_assert(dut: PanicTestDut, config: str, test_func_name: str) -> None:
 
 
 @pytest.mark.generic
-@idf_parametrize('config, target', CONFIGS, indirect=['config', 'target'])
+@pytest.mark.parametrize('app_path, config', CONFIGS, indirect=True)
+@idf_parametrize('target', TARGETS_ALL, indirect=['target'])
 def test_assert_cache_disabled(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     if dut.target == 'esp32s2':
         pytest.xfail(reason='Crashes in itoa which is not in ROM, IDF-3572')
@@ -1267,15 +1190,6 @@ def test_invalid_memory_region_execute_violation(dut: PanicTestDut, test_func_na
     dut.expect_cpu_reset()
 
 
-@pytest.mark.generic
-@pytest.mark.parametrize('config', ['gdbstub_coredump'], indirect=True)
-@idf_parametrize('target', ['esp32'], indirect=['target'])
-def test_gdbstub_coredump(dut: PanicTestDut) -> None:
-    test_func_name = 'test_storeprohibited'
-    dut.run_test_func(test_func_name)
-    common_test(dut, 'gdbstub_coredump', get_default_backtrace(test_func_name))
-
-
 def test_hw_stack_guard_cpu(dut: PanicTestDut, cpu: int) -> None:
     dut.expect_exact(f"Guru Meditation Error: Core  {cpu} panic'ed (Stack protection fault).")
     dut.expect_none('ASSIST_DEBUG is not triggered BUT interrupt occurred!')
@@ -1294,7 +1208,8 @@ def test_hw_stack_guard_cpu(dut: PanicTestDut, cpu: int) -> None:
 
 
 @pytest.mark.generic
-@idf_parametrize('config, target', CONFIGS_HW_STACK_GUARD, indirect=['config', 'target'])
+@pytest.mark.parametrize('app_path, config', CONFIGS_HW_STACK_GUARD, indirect=True)
+@idf_parametrize('target', TARGETS_RISCV, indirect=['target'])
 def test_hw_stack_guard_cpu0(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     test_hw_stack_guard_cpu(dut, 0)
@@ -1302,7 +1217,8 @@ def test_hw_stack_guard_cpu0(dut: PanicTestDut, config: str, test_func_name: str
 
 
 @pytest.mark.generic
-@idf_parametrize('config, target', CONFIGS_HW_STACK_GUARD_DUAL_CORE, indirect=['config', 'target'])
+@pytest.mark.parametrize('app_path, config', CONFIGS_HW_STACK_GUARD_DUAL_CORE, indirect=True)
+@idf_parametrize('target', TARGETS_RISCV_DUAL_CORE, indirect=['target'])
 def test_hw_stack_guard_cpu1(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     test_hw_stack_guard_cpu(dut, 1)
@@ -1321,108 +1237,6 @@ def test_illegal_access(dut: PanicTestDut, config: str, test_func_name: str) -> 
         dut.expect_backtrace()
         dut.expect_elf_sha256()
         dut.expect_none('Guru Meditation')
-
-
-@pytest.mark.generic
-@idf_parametrize('config, target', CONFIG_CAPTURE_DRAM, indirect=['config', 'target'])
-def test_capture_dram(dut: PanicTestDut, config: str, test_func_name: str) -> None:
-    dut.run_test_func(test_func_name)
-    regex_pattern = rb'assert failed:[\s\w()]*?\s[.\w/]*\.(?:c|cpp|h|hpp):\d.*$'
-    dut.expect(re.compile(regex_pattern, re.MULTILINE))
-    if dut.is_xtensa:
-        dut.expect_backtrace()
-    else:
-        dut.expect_stack_dump()
-    dut.expect_elf_sha256()
-    dut.expect_none(['Guru Meditation', 'Re-entered core dump'])
-
-    core_elf_file = None
-    if 'flash' in config:
-        expect_coredump_flash_write_logs(dut, config)
-        core_elf_file = dut.process_coredump_flash()
-    elif 'uart' in config:
-        coredump_base64 = expect_coredump_uart_write_logs(dut)
-        core_elf_file = dut.process_coredump_uart(coredump_base64)
-    assert core_elf_file is not None
-
-    dut.start_gdb_for_coredump(core_elf_file)
-
-    assert dut.gdb_data_eval_expr('g_data_var') == '43'
-    assert dut.gdb_data_eval_expr('g_bss_var') == '55'
-    assert re.search(r'0x[0-9a-fA-F]+ "Coredump Test"', dut.gdb_data_eval_expr('g_heap_ptr'))
-    assert int(dut.gdb_data_eval_expr('g_cd_iram')) == 0x4243
-    assert int(dut.gdb_data_eval_expr('g_cd_dram')) == 0x4344
-    assert int(dut.gdb_data_eval_expr('g_noinit_var')) == 0xCAFEBABE
-    buffer_value = str(dut.gdb_data_eval_expr('g_noinit_buffer'))
-    assert 'NOINIT_TEST_STRING' in buffer_value
-
-    if dut.target not in ['esp32c61', 'esp32c2']:
-        assert int(dut.gdb_data_eval_expr('g_rtc_data_var')) == 0x55AA
-        assert int(dut.gdb_data_eval_expr('g_rtc_fast_var')) == 0xAABBCCDD
-
-
-def _test_coredump_summary(dut: PanicTestDut, flash_encrypted: bool, coredump_encrypted: bool) -> None:
-    dut.run_test_func('test_setup_coredump_summary')
-    dut.expect_cpu_reset()
-    if flash_encrypted:
-        dut.expect_exact('Flash encryption mode is DEVELOPMENT (not secure)')
-    dut.run_test_func('test_coredump_summary')
-    if flash_encrypted and not coredump_encrypted:
-        dut.expect_exact('Flash encryption enabled in hardware and core dump partition is not encrypted!')
-        return
-    dut.expect_elf_sha256('App ELF file SHA256: ')
-    dut.expect_exact('Crashed task: main')
-    if dut.is_xtensa:
-        dut.expect_exact('Exception cause: 0')
-    else:
-        dut.expect_exact('Exception cause: 2')
-    dut.expect(PANIC_ABORT_PREFIX + r'assert failed:[\s\w()]*?\s[.\w/]*\.(?:c|cpp|h|hpp):\d.*$')
-
-
-@pytest.mark.generic
-@idf_parametrize('config, target', CONFIG_COREDUMP_SUMMARY, indirect=['config', 'target'])
-def test_coredump_summary(dut: PanicTestDut) -> None:
-    _test_coredump_summary(dut, False, False)
-
-
-@pytest.mark.flash_encryption
-@idf_parametrize('config, target', CONFIG_COREDUMP_SUMMARY_FLASH_ENCRYPTED, indirect=['config', 'target'])
-def test_coredump_summary_flash_encrypted(dut: PanicTestDut, config: str) -> None:
-    _test_coredump_summary(dut, True, config == 'coredump_flash_encrypted')
-
-
-@pytest.mark.generic
-@idf_parametrize('config', ['coredump_flash_default'], indirect=['config'])
-@idf_parametrize('target', TARGETS_ALL, indirect=['target'])
-def test_tcb_corrupted(dut: PanicTestDut, target: str, config: str, test_func_name: str) -> None:
-    dut.run_test_func(test_func_name)
-    if dut.is_xtensa:
-        dut.expect(re.compile(rb"Guru Meditation Error: Core\s+\d\s+panic'ed \((LoadProhibited|StoreProhibited)\)"))
-        dut.expect_reg_dump()
-        dut.expect_backtrace()
-    else:
-        dut.expect(re.compile(rb"Guru Meditation Error: Core\s+\d\s+panic'ed \((Load|Store) access fault\)"))
-        dut.expect_reg_dump()
-        dut.expect_stack_dump()
-
-    dut.expect_elf_sha256()
-    dut.expect_none('Guru Meditation')
-
-    # Verify that valid tasks are captured in coredump despite IDLE task corruption
-    #        TCB             NAME
-    # ---------- ----------------
-    if dut.is_multi_core:
-        regex_patterns = [
-            rb'[0-9xa-fA-F]             main',
-            rb'[0-9xa-fA-F]             ipc0',
-            rb'[0-9xa-fA-F]             ipc1',
-        ]
-    else:
-        regex_patterns = [rb'[0-9xa-fA-F]             main']
-
-    coredump_pattern = [re.compile(pattern.decode('utf-8')) for pattern in regex_patterns]
-
-    common_test(dut, config, expected_backtrace=None, expected_coredump=coredump_pattern)
 
 
 @pytest.mark.generic

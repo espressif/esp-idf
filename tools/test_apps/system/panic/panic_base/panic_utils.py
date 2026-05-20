@@ -42,10 +42,7 @@ def verify_valid_gdb_subprocess(gdb_process: Popen) -> None:
         raise NoGdbProcessError('gdb process is not attached')
 
     elif gdb_process.poll() is not None:
-        raise NoGdbProcessError(
-            'gdb process has already finished with return code: %s'
-            % str(gdb_process.poll())
-        )
+        raise NoGdbProcessError(f'gdb process has already finished with return code: {gdb_process.poll()}')
 
 
 def attach_logger() -> logging.Logger:

@@ -688,7 +688,7 @@ Usually, you may want to write a custom class under these conditions:
 1. Add more reusable functions for a certain number of DUTs.
 2. Add custom setup and teardown functions
 
-This code example is taken from :idf_file:`panic/conftest.py <tools/test_apps/system/panic/conftest.py>`.
+This code example is taken from :idf_file:`panic/panic_base/conftest.py <tools/test_apps/system/panic/panic_base/conftest.py>`.
 
 .. code-block:: python
 
@@ -735,7 +735,7 @@ Sometimes, a test can consistently fail for the following reasons:
 
 Now you may mark this test case with marker `xfail <https://docs.pytest.org/en/latest/how-to/skipping.html#xfail-mark-test-functions-as-expected-to-fail>`__ with a user-friendly readable reason.
 
-This code example is taken from :idf_file:`pytest_panic.py <tools/test_apps/system/panic/pytest_panic.py>`
+This code example is taken from :idf_file:`pytest_panic.py <tools/test_apps/system/panic/panic_base/pytest_panic.py>`
 
 .. code-block:: python
 
