@@ -256,24 +256,28 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
     .bias = {                       \
         .dcdc_ccm_enb       = 0,    \
         .dcdc_clear_rdy     = 0,    \
-        .dig_reg_dpcur_bias = 1,    \
+        .dig_reg_dpcur_bias = 3,    \
         .dig_reg_dsfmos     = 15,    \
         .dcm_mode           = 3,    \
         .dcm_vset           = 24,   \
         .xpd_trx            = 1,    \
-        .xpd_bias           = 0,    \
+        .xpd_bias           = 1,    \
         .discnnt_dig_rtc    = 0,    \
         .pd_cur             = 0,    \
         .bias_sleep         = 0     \
     }, \
     .regulator0 = {                 \
         .power_det_bypass   = 0,    \
+        .lp_dbias_vol       = 0xd,  \
+        .hp_dbias_vol       = 0x1c, \
+        .dbias_sel          = 1,    \
+        .dbias_init         = 1,    \
         .slp_mem_xpd        = 0,    \
         .slp_logic_xpd      = 0,    \
         .xpd                = 1,    \
         .slp_mem_dbias      = 0,    \
         .slp_logic_dbias    = 0,    \
-        .dbias              = 0  \
+        .dbias              = 0 \
     }, \
     .regulator1 = {                 \
         .drv_b              = HP_CALI_DRVB_DEFAULT     \
