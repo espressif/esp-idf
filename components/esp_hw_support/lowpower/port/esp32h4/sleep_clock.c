@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,6 @@
 #include "soc/pcr_reg.h"
 #include "modem/modem_syscon_reg.h"
 #include "modem/modem_lpcon_reg.h"
-#include "modem/i2c_ana_mst_reg.h"
 #include "soc/pmu_reg.h"
 #include "soc/lp_analog_peri_reg.h"
 
@@ -46,16 +45,6 @@ esp_err_t sleep_clock_modem_retention_init(void *arg)
         /* SYSCON LPCON configuration retention  */
         [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEMSYSCON_LINK(0),   MODEM_SYSCON_TEST_CONF_REG, MODEM_SYSCON_TEST_CONF_REG,     N_REGS_SYSCON(),                0, 0), .owner = ENTRY(0) | ENTRY(1) }, /* MODEM SYSCON */
         [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEMLPCON_LINK (0),   MODEM_LPCON_TEST_CONF_REG,  MODEM_LPCON_TEST_CONF_REG,      N_REGS_LPCON(),                 0, 0), .owner = ENTRY(0) | ENTRY(1) }, /* MODEM LPCON */
-        /* Enable i2c master clock */
-        [2] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_MODEMSYSCON_LINK(1),   MODEM_LPCON_CLK_CONF_REG,   MODEM_LPCON_CLK_I2C_MST_EN,     MODEM_LPCON_CLK_I2C_MST_EN_M,   1, 0), .owner = ENTRY(0) },
-        /* Start BBPLL self-calibration */
-        [3] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_MODEMSYSCON_LINK(2),   I2C_ANA_MST_ANA_CONF0_REG,  0,                              I2C_MST_BBPLL_STOP_FORCE_HIGH,  1, 0), .owner = ENTRY(0) },
-        [4] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_MODEMSYSCON_LINK(3),   I2C_ANA_MST_ANA_CONF0_REG,  I2C_MST_BBPLL_STOP_FORCE_LOW,   I2C_MST_BBPLL_STOP_FORCE_LOW,   1, 0), .owner = ENTRY(0) },
-        /* Wait calibration done */
-        [5] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_MODEMSYSCON_LINK(4),   I2C_ANA_MST_ANA_CONF0_REG,  I2C_MST_BBPLL_CAL_DONE,         I2C_MST_BBPLL_CAL_DONE,         1, 0), .owner = ENTRY(0) },
-        /* Stop BBPLL self-calibration */
-        [6] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_MODEMSYSCON_LINK(5),   I2C_ANA_MST_ANA_CONF0_REG,  0,                              I2C_MST_BBPLL_STOP_FORCE_LOW,   1, 0), .owner = ENTRY(0) },
-        [7] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_MODEMSYSCON_LINK(6),   I2C_ANA_MST_ANA_CONF0_REG,  I2C_MST_BBPLL_STOP_FORCE_HIGH,  I2C_MST_BBPLL_STOP_FORCE_HIGH,  1, 0), .owner = ENTRY(0) },
     };
 
     esp_err_t err = sleep_retention_entries_create(modem_regs_retention, ARRAY_SIZE(modem_regs_retention), REGDMA_LINK_PRI_MODEM_CLK, SLEEP_RETENTION_MODULE_CLOCK_MODEM);
