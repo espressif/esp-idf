@@ -24,14 +24,6 @@ static int8_t tx_pwr_lvl;
 static struct ble_prox_cent_conn_peer conn_peer[MYNEWT_VAL(BLE_MAX_CONNECTIONS) + 1];
 static struct ble_prox_cent_link_lost_peer disconn_peer[MYNEWT_VAL(BLE_MAX_CONNECTIONS) + 1];
 
-/* Note: Path loss is calculated using formula : threshold - RSSI value
- *       by default threshold is kept -128 as per the spec
- *       high_threshold and low_threshold are hardcoded after testing and noting
- *       RSSI values when distance between devices are less and more.
- */
-static int8_t high_threshold = -70;
-static int8_t low_threshold = -100;
-
 void ble_store_config_init(void);
 static void ble_prox_cent_scan(void);
 static int ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg);
@@ -661,16 +653,11 @@ ble_prox_cent_path_loss_task(void *pvParameters)
                 MODLOG_DFLT(INFO, "path loss = %d pwr lvl = %d rssi = %d",
                             path_loss, tx_pwr_lvl, rssi);
 
-                if ((conn_peer[i].val_handle != 0) &&
-                        (path_loss > high_threshold || path_loss < low_threshold)) {
-
-                    if (path_loss < low_threshold) {
-                        path_loss = 0;
-                    }
-
+                if (conn_peer[i].val_handle != 0) {
+                    int8_t path_loss_val = (int8_t)path_loss;
 #if MYNEWT_VAL(BLE_GATTC)
                     rc = ble_gattc_write_no_rsp_flat(i, conn_peer[i].val_handle,
-                                                     &path_loss, sizeof(path_loss));
+                                                     &path_loss_val, sizeof(path_loss_val));
                     if (rc != 0) {
                         MODLOG_DFLT(ERROR, "Error: Failed to write characteristic; rc=%d\n",
                                     rc);
