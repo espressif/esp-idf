@@ -1,7 +1,6 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
-
 # N     A large safe prime (N = 2q+1, where q is prime) [All arithmetic is done modulo N]
 # g     A generator modulo N
 # k     Multiplier parameter (k = H(N, g) in SRP-6a, k = 3 for legacy SRP-6)
@@ -15,12 +14,15 @@
 # A, B  Public ephemeral values
 # x     Private key (derived from p and s)
 # v     Password verifier
-
 import hashlib
 import os
-from typing import Any, Callable, Optional, Tuple
+from typing import Any
+from typing import Callable
+from typing import Optional
+from typing import Tuple
 
-from utils import bytes_to_long, long_to_bytes
+from utils import bytes_to_long
+from utils import long_to_bytes
 
 SHA1 = 0
 SHA224 = 1
@@ -34,33 +36,40 @@ NG_3072 = 2
 NG_4096 = 3
 NG_8192 = 4
 
-_hash_map = {SHA1: hashlib.sha1,
-             SHA224: hashlib.sha224,
-             SHA256: hashlib.sha256,
-             SHA384: hashlib.sha384,
-             SHA512: hashlib.sha512}
+_hash_map = {
+    SHA1: hashlib.sha1,
+    SHA224: hashlib.sha224,
+    SHA256: hashlib.sha256,
+    SHA384: hashlib.sha384,
+    SHA512: hashlib.sha512,
+}
 
 
 _ng_const = (
     # 1024-bit
-    ('''\
+    (
+        """\
 EEAF0AB9ADB38DD69C33F80AFA8FC5E86072618775FF3C0B9EA2314C9C256576D674DF7496\
 EA81D3383B4813D692C6E0E0D5D8E250B98BE48E495C1D6089DAD15DC7D7B46154D6B6CE8E\
 F4AD69B15D4982559B297BCF1885C529F566660E57EC68EDBC3C05726CC02FD4CBF4976EAA\
-9AFD5138FE8376435B9FC61D2FC0EB06E3''',
-     '2'),
+9AFD5138FE8376435B9FC61D2FC0EB06E3""",
+        '2',
+    ),
     # 2048
-    ('''\
+    (
+        """\
 AC6BDB41324A9A9BF166DE5E1389582FAF72B6651987EE07FC3192943DB56050A37329CBB4\
 A099ED8193E0757767A13DD52312AB4B03310DCD7F48A9DA04FD50E8083969EDB767B0CF60\
 95179A163AB3661A05FBD5FAAAE82918A9962F0B93B855F97993EC975EEAA80D740ADBF4FF\
 747359D041D5C33EA71D281E446B14773BCA97B43A23FB801676BD207A436C6481F1D2B907\
 8717461A5B9D32E688F87748544523B524B0D57D5EA77A2775D2ECFA032CFBDBF52FB37861\
 60279004E57AE6AF874E7303CE53299CCC041C7BC308D82A5698F3A8D0C38271AE35F8E9DB\
-FBB694B5C803D89F7AE435DE236D525F54759B65E372FCD68EF20FA7111F9E4AFF73''',
-     '2'),
+FBB694B5C803D89F7AE435DE236D525F54759B65E372FCD68EF20FA7111F9E4AFF73""",
+        '2',
+    ),
     # 3072
-    ('''\
+    (
+        """\
 FFFFFFFFFFFFFFFFC90FDAA22168C2\
 34C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E\
 3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B5\
@@ -74,10 +83,12 @@ FFFFFFFFFFFFFFFFC90FDAA22168C2\
 E1E4C7ABF5AE8CDB0933D71E8C94E04A25619DCEE3D2261AD2EE6BF12FFA\
 06D98A0864D87602733EC86A64521F2B18177B200CBBE117577A615D6C77\
 0988C0BAD946E208E24FA074E5AB3143DB5BFCE0FD108E4B82D120A93AD2\
-CAFFFFFFFFFFFFFFFF''',
-     '5'),
+CAFFFFFFFFFFFFFFFF""",
+        '5',
+    ),
     # 4096
-    ('''\
+    (
+        """\
 FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E08\
 8A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B\
 302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9\
@@ -96,10 +107,12 @@ E0FD108E4B82D120A92108011A723C12A787E6D788719A10BDBA5B26\
 04DE8EF92E8EFC141FBECAA6287C59474E6BC05D99B2964FA090C3A2\
 233BA186515BE7ED1F612970CEE2D7AFB81BDD762170481CD0069127\
 D5B05AA993B4EA988D8FDDC186FFB7DC90A6C08F4DF435C934063199\
-FFFFFFFFFFFFFFFF''',
-     '5'),
+FFFFFFFFFFFFFFFF""",
+        '5',
+    ),
     # 8192
-    ('''\
+    (
+        """\
 FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E08\
 8A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B\
 302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9\
@@ -136,8 +149,9 @@ B7C5DA76F550AA3D8A1FBFF0EB19CCB1A313D55CDA56C9EC2EF29632\
 0846851DF9AB48195DED7EA1B1D510BD7EE74D73FAF36BC31ECFA268\
 359046F4EB879F924009438B481C6CD7889A002ED5EE382BC9190DA6\
 FC026E479558E4475677E9AA9E3050E2765694DFC81F56E880B96E71\
-60C980DD98EDD3DFFFFFFFFFFFFFFFFF''',
-     '0x13')
+60C980DD98EDD3DFFFFFFFFFFFFFFFFF""",
+        '0x13',
+    ),
 )
 
 
@@ -189,7 +203,9 @@ def calculate_x(hash_class: Callable, s: Any, Iu: str, p: str) -> int:
     return H(hash_class, s, H(hash_class, _Iu + b':' + _p))
 
 
-def generate_salt_and_verifier(Iu: str, p: str, len_s: int, hash_alg: int = SHA512, ng_type: int = NG_3072) -> Tuple[bytes, bytes]:
+def generate_salt_and_verifier(
+    Iu: str, p: str, len_s: int, hash_alg: int = SHA512, ng_type: int = NG_3072
+) -> Tuple[bytes, bytes]:
     hash_class = _hash_map[hash_alg]
     N, g = get_ng(ng_type)
 
@@ -219,7 +235,7 @@ def calculate_H_AMK(hash_class: Callable, A: int, M: bytes, K: bytes) -> Any:
     return h.digest()
 
 
-class Srp6a (object):
+class Srp6a(object):
     def __init__(self, username: str, password: str, hash_alg: int = SHA512, ng_type: int = NG_3072):
         hash_class = _hash_map[hash_alg]
 
@@ -229,8 +245,19 @@ class Srp6a (object):
         self.Iu = username
         self.p = password
 
-        self.a = get_random_of_length(32)
-        self.A = pow(g, self.a, N)
+        # Re-roll 'a' until A serializes to exactly len(N) bytes. The device
+        # stores the received A verbatim and re-hashes it during proof
+        # verification, but Python re-derives via long_to_bytes(A) which
+        # strips leading zeros. A leading-zero byte in A (~1/256 chance for
+        # NG_3072) makes the two views diverge and breaks the handshake.
+        n_byte_len = (N.bit_length() + 7) // 8
+        for _ in range(10000):
+            self.a = get_random_of_length(32)
+            self.A = pow(g, self.a, N)
+            if (self.A.bit_length() + 7) // 8 == n_byte_len:
+                break
+        else:
+            raise RuntimeError('SRP6a: failed to generate A with full byte length')
 
         self.v: Optional[int] = None
         self.K: Optional[bytes] = None
@@ -297,5 +324,5 @@ class Srp6a (object):
             self._authenticated = True
 
 
-class AuthenticationFailed (Exception):
+class AuthenticationFailed(Exception):
     pass
