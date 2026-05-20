@@ -114,7 +114,9 @@ int RFCOMM_CreateConnection (UINT16 uuid, UINT8 scn, BOOLEAN is_server,
     RFCOMM_TRACE_API ("RFCOMM_CreateConnection()  BDA: %02x-%02x-%02x-%02x-%02x-%02x",
                       bd_addr[0], bd_addr[1], bd_addr[2], bd_addr[3], bd_addr[4], bd_addr[5]);
 
-    *p_handle = 0;
+    if (p_handle) {
+        *p_handle = 0;
+    }
 
     if (( scn == 0 ) || (scn >= PORT_MAX_RFC_PORTS )) {
         /* Server Channel Number(SCN) should be in range 1...30 */
@@ -170,7 +172,9 @@ int RFCOMM_CreateConnection (UINT16 uuid, UINT8 scn, BOOLEAN is_server,
 
     RFCOMM_TRACE_EVENT ("RFCOMM_CreateConnection dlci:%d signal state:0x%x", dlci, p_port->default_signal_state);
 
-    *p_handle = p_port->inx;
+    if (p_handle) {
+        *p_handle = p_port->inx;
+    }
 
     p_port->state        = PORT_STATE_OPENING;
     p_port->uuid         = uuid;

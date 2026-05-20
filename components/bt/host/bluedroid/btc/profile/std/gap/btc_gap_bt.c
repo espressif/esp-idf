@@ -89,7 +89,6 @@ static void btc_bt_set_scan_mode(esp_bt_connection_mode_t c_mode, esp_bt_discove
     }
 
     BTA_DmSetVisibility(disc_mode, conn_mode, BTA_DM_IGNORE, BTA_DM_IGNORE);
-    return;
 }
 
 static void btc_gap_bt_start_discovery(btc_gap_bt_args_t *arg)
@@ -97,7 +96,7 @@ static void btc_gap_bt_start_discovery(btc_gap_bt_args_t *arg)
     tBTA_DM_INQ inq_params;
     tBTA_SERVICE_MASK services = 0;
 
-    BTIF_TRACE_EVENT("%s", __FUNCTION__);
+    BTIF_TRACE_EVENT("%s", __func__);
 
     inq_params.mode = (arg->start_disc.mode == ESP_BT_INQ_MODE_GENERAL_INQUIRY) ?
                       BTA_DM_GENERAL_INQUIRY : BTA_DM_LIMITED_INQUIRY;
@@ -112,8 +111,6 @@ static void btc_gap_bt_start_discovery(btc_gap_bt_args_t *arg)
     gap_bt_local_param.disc_stat = ESP_BT_GAP_DISCOVERY_STOPPED;
     /* find nearby devices */
     BTA_DmSearch(&inq_params, services, bte_search_devices_evt);
-
-    return;
 }
 
 static void btc_gap_bt_cancel_discovery(void)
@@ -1032,6 +1029,9 @@ static void btc_gap_bt_get_dev_name_callback(UINT8 status, char *name)
     ret = btc_transfer_context(&msg, &param, sizeof(esp_bt_gap_cb_param_t), NULL, NULL);
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
+        if (param.get_dev_name_cmpl.name) {
+            osi_free(param.get_dev_name_cmpl.name);
+        }
     }
 }
 
@@ -1302,7 +1302,6 @@ void btc_gap_bt_call_handler(btc_msg_t *msg)
         break;
     }
     btc_gap_bt_arg_deep_free(msg);
-    return;
 }
 
 void btc_gap_bt_busy_level_updated(uint8_t bl_flags)
@@ -1355,10 +1354,16 @@ void btc_gap_bt_cb_deep_free(btc_msg_t *msg)
 #if (BTC_DM_PM_INCLUDED == TRUE)
     case BTC_GAP_BT_MODE_CHG_EVT:
 #endif /// BTC_DM_PM_INCLUDED == TRUE
-    case BTC_GAP_BT_GET_DEV_NAME_CMPL_EVT:
         break;
+    case BTC_GAP_BT_GET_DEV_NAME_CMPL_EVT: {
+        char *name = ((esp_bt_gap_cb_param_t *)msg->arg)->get_dev_name_cmpl.name;
+        if (name) {
+            osi_free(name);
+        }
+        break;
+    }
     default:
-        BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
+        BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __func__, msg->act);
         break;
     }
 }
@@ -1472,7 +1477,7 @@ void btc_gap_bt_cb_handler(btc_msg_t *msg)
         break;
     }
     default:
-        BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
+        BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __func__, msg->act);
         break;
     }
     btc_gap_bt_cb_deep_free(msg);

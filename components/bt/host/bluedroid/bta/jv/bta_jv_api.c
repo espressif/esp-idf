@@ -35,7 +35,6 @@
 #include "stack/gap_api.h"
 
 #include "common/bt_target.h"
-#include "stack/sdp_api.h"
 
 
 #if (defined BTA_JV_INCLUDED && BTA_JV_INCLUDED == TRUE)
@@ -700,9 +699,7 @@ tBTA_JV_STATUS BTA_JvL2capStopServerLE(UINT16 local_chan, void *user_data)
 **
 ** Function         BTA_JvL2capRead
 **
-** Description      This function reads data from an L2CAP connecti;
-    tBTA_JV_RFC_CB  *p_cb = rc->p_cb;
-on
+** Description      This function reads data from an L2CAP connection
 **                  When the operation is complete, tBTA_JV_L2CAP_CBACK is
 **                  called with BTA_JV_L2CAP_READ_EVT.
 **
@@ -1140,7 +1137,9 @@ tBTA_JV_STATUS BTA_JvRfcommReady(UINT32 handle, UINT32 *p_data_size)
             status = BTA_JV_SUCCESS;
         }
     }
-    *p_data_size = size;
+    if (p_data_size) {
+        *p_data_size = size;
+    }
     return (status);
 }
 

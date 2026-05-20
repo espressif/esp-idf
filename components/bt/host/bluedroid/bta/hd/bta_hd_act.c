@@ -51,6 +51,7 @@ static bool check_descriptor(uint8_t *data, uint16_t length, bool *has_report_id
             break;
         case 0x85: // Report ID
             *has_report_id = TRUE;
+        /* fall through */
         default:
             ptr += (item & 0x03);
             break;
@@ -524,6 +525,7 @@ extern void bta_hd_intr_data_act(tBTA_HD_DATA *p_data)
 {
     tBTA_HD_CBACK_DATA *p_cback = (tBTA_HD_CBACK_DATA *)p_data;
     if (!p_cback || !p_cback->p_data) {
+        APPL_TRACE_ERROR("no DATA request on intr");
         return;
     }
 
@@ -568,6 +570,7 @@ extern void bta_hd_get_report_act(tBTA_HD_DATA *p_data)
 {
     tBTA_HD_CBACK_DATA *p_cback = (tBTA_HD_CBACK_DATA *)p_data;
     if (!p_cback || !p_cback->p_data) {
+        APPL_TRACE_ERROR("no DATA request on GET_REPORT");
         return;
     }
 
@@ -626,6 +629,7 @@ extern void bta_hd_set_report_act(tBTA_HD_DATA *p_data)
 {
     tBTA_HD_CBACK_DATA *p_cback = (tBTA_HD_CBACK_DATA *)p_data;
     if (!p_cback || !p_cback->p_data) {
+        APPL_TRACE_ERROR("no DATA request on SET_REPORT");
         return;
     }
 
@@ -826,7 +830,7 @@ static void bta_hd_cback(BD_ADDR bd_addr, uint8_t event, uint32_t data, BT_HDR *
     }
 
     if (sm_event != BTA_HD_INVALID_EVT &&
-        (p_buf = (tBTA_HD_CBACK_DATA *)osi_malloc(sizeof(tBTA_HD_CBACK_DATA) + sizeof(BT_HDR))) != NULL) {
+        (p_buf = (tBTA_HD_CBACK_DATA *)osi_malloc(sizeof(tBTA_HD_CBACK_DATA))) != NULL) {
         p_buf->hdr.event = sm_event;
         bdcpy(p_buf->addr, bd_addr);
         p_buf->data = data;
