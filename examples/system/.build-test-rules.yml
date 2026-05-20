@@ -121,10 +121,6 @@ examples/system/ipc/ipc_isr/xtensa:
 examples/system/light_sleep:
   disable:
     - if: SOC_LIGHT_SLEEP_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32h4"
-      temporary: true
-      reason: cannot pass # TODO: IDF-15611
 
 examples/system/nmi_isr:
   enable:
