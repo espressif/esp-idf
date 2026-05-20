@@ -188,7 +188,10 @@ int esp_tls_conn_destroy(esp_tls_t *tls)
         esp_tls_internal_event_tracker_destroy(tls->error_handle);
 #if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 && CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
         if (tls->client_session) {
+            mbedtls_platform_zeroize(tls->client_session, tls->client_session_len);
             free(tls->client_session);
+            tls->client_session = NULL;
+            tls->client_session_len = 0;
         }
 #endif // CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 && CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
         free(tls);
