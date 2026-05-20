@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -75,4 +75,16 @@
  */
 #ifndef OPENTHREAD_SPINEL_CONFIG_COPROCESSOR_RESET_FAILURE_CALLBACK_ENABLE
 #define OPENTHREAD_SPINEL_CONFIG_COPROCESSOR_RESET_FAILURE_CALLBACK_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE
+ *
+ * In spinel-only mode no Instance object is compiled or instantiated, so the
+ * single-instance path (Instance::Get().GetLogLevel()) is unavailable. Enabling
+ * multiple-instance support forces the logging APIs to use the global log level
+ * (Instance::GetGlobalLogLevel()), which does not depend on an Instance object.
+ */
+#ifndef OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE
+#define OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE 1
 #endif
