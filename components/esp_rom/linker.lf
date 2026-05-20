@@ -11,3 +11,7 @@ entries:
         esp_rom_cache_writeback_esp32s3 (noflash)
     if SOC_SYSTIMER_SUPPORTED = y:
         esp_rom_systimer (noflash)
+    if ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_MAP = y:
+        esp_rom_cache_writeback_esp32p4 (noflash)
+    if ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_NO_MAP = y:
+        esp_rom_cache_writeback_esp32c5_esp32c61_esp32h4 (noflash)
