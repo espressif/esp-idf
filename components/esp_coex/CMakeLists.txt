@@ -6,8 +6,7 @@ if(${idf_target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
 
-# There are no subdir with implementation for esp32h4
-if(CONFIG_ESP_COEX_ENABLED AND NOT CONFIG_IDF_TARGET_ESP32H4)
+if(CONFIG_ESP_COEX_ENABLED)
     if(CONFIG_ESP_COEX_SW_COEXIST_ENABLE OR CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE)
         if(CONFIG_APP_NO_BLOBS)
             set(link_binary_libs 0)
@@ -33,8 +32,7 @@ idf_component_register(SRCS "${srcs}"
                     PRIV_REQUIRES esp_timer esp_driver_gpio
                     LDFRAGMENTS "${ldfragments}")
 
-# There are no subdir with implementation for esp32h4
-if(CONFIG_ESP_COEX_ENABLED AND NOT CONFIG_IDF_TARGET_ESP32H4)
+if(CONFIG_ESP_COEX_ENABLED)
     if(CONFIG_ESP_COEX_SW_COEXIST_ENABLE OR CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE)
         idf_build_get_property(build_dir BUILD_DIR)
 
