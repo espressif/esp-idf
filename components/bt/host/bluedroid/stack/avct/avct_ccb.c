@@ -83,7 +83,7 @@ void avct_ccb_dealloc(tAVCT_CCB *p_ccb, UINT8 event, UINT16 result, BD_ADDR bd_a
     if (p_ccb->p_bcb == NULL) {
         memset(p_ccb, 0, sizeof(tAVCT_CCB));
     } else {
-        /* control channel is down, but the browsing channel is still connected 0 disconnect it now */
+        /* control channel is down, but the browsing channel is still connected - disconnect it now */
         avct_bcb_event(p_ccb->p_bcb, AVCT_LCB_UL_UNBIND_EVT, (tAVCT_LCB_EVT *) &p_ccb);
         p_ccb->p_lcb = NULL;
     }

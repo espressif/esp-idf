@@ -541,6 +541,10 @@ void avdt_scb_event(tAVDT_SCB *p_scb, UINT8 event, tAVDT_SCB_EVT *p_data)
     UINT8               action;
     int                 i;
 
+    if (p_scb == NULL || p_scb->state > AVDT_SCB_CLOSING_ST || event > AVDT_SCB_DELAY_RPT_RSP_TOUT_EVT) {
+        return;
+    }
+
 #if AVDT_DEBUG == TRUE
     AVDT_TRACE_EVENT("SCB hdl=%d event=%d/%s state=%s\n", avdt_scb_to_hdl(p_scb), event, avdt_scb_evt_str[event], avdt_scb_st_str[p_scb->state]);
 #endif
@@ -558,7 +562,9 @@ void avdt_scb_event(tAVDT_SCB *p_scb, UINT8 event, tAVDT_SCB_EVT *p_data)
     /* execute action functions */
     for (i = 0; i < AVDT_SCB_ACTIONS; i++) {
         if ((action = state_table[event][i]) != AVDT_SCB_IGNORE) {
-            (*avdt_cb.p_scb_act[action])(p_scb, p_data);
+            if (action < AVDT_SCB_NUM_ACTIONS) {
+                (*avdt_cb.p_scb_act[action])(p_scb, p_data);
+            }
         } else {
             break;
         }
