@@ -31,7 +31,7 @@
 #define BTA_HF_H2_HEADER_SN1_BIT_OFFSET2    15
 
 #define BTA_HF_H2_HEADER_SYNC_WORD_CHECK(p) \
-    ((((UINT16)(((UINT8 *)(p))[0])) | (((UINT16)(((UINT8 *)(p))[1])) << 8)) & \
+    (((((UINT16)(((UINT8 *)(p))[0])) | (((UINT16)(((UINT8 *)(p))[1])) << 8)) & \
     BTA_HF_H2_HEADER_SYNC_WORD_MASK) == \
     BTA_HF_H2_HEADER_SYNC_WORD)
 
@@ -538,7 +538,7 @@ void bta_hf_client_sco_co_in_data(BT_HDR  *p_buf, tBTM_SCO_DATA_FLAG status)
                 }
                 btc_hf_client_audio_data_cb_to_app((uint8_t *)p_new_buf, (uint8_t *)p_data, BTM_MSBC_FRAME_SIZE, bta_hf_client_co_cb.is_bad_frame);
                 bta_hf_client_co_cb.is_bad_frame = false;
-                memset(bta_hf_client_co_cb.rx_half_msbc_data, 0, BTM_MSBC_FRAME_SIZE);
+                memset(bta_hf_client_co_cb.rx_half_msbc_data, 0, BTM_MSBC_FRAME_SIZE / 2);
             }
             bta_hf_client_co_cb.rx_first_pkt = !bta_hf_client_co_cb.rx_first_pkt;
         }

@@ -71,7 +71,7 @@ static bta_hf_ct_plc_t *bta_hf_ct_plc_ptr;
 #define BTA_HF_H2_HEADER_SN1_BIT_OFFSET2    15
 
 #define BTA_HF_H2_HEADER_SYNC_WORD_CHECK(p) \
-    ((((UINT16)(((UINT8 *)(p))[0])) | (((UINT16)(((UINT8 *)(p))[1])) << 8)) & \
+    (((((UINT16)(((UINT8 *)(p))[0])) | (((UINT16)(((UINT8 *)(p))[1])) << 8)) & \
     BTA_HF_H2_HEADER_SYNC_WORD_MASK) == \
     BTA_HF_H2_HEADER_SYNC_WORD)
 
