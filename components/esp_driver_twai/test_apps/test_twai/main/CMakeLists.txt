@@ -1,7 +1,7 @@
 set(srcs "test_app_main.c")
 
 if(CONFIG_SOC_TWAI_SUPPORTED)
-    list(APPEND srcs "test_twai_common.c" "test_twai_network.c")
+    list(APPEND srcs "test_twai_common.c" "test_twai_network.c" "test_twai_queue.cpp")
     if(CONFIG_SOC_LIGHT_SLEEP_SUPPORTED)
         list(APPEND srcs "test_twai_sleep.c")
     endif()

@@ -7,9 +7,10 @@
 #include "esp_timer.h"
 #include "esp_twai.h"
 #include "esp_twai_onchip.h"
+#include "twai_private.h"
 #include "esp_private/twai_interface.h"
 #include "esp_private/twai_utils.h"
-#include "twai_private.h"
+#include "esp_private/twai_frame_queue.h"
 
 #if !SOC_RCC_IS_INDEPENDENT
 #define TWAI_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
@@ -70,7 +71,7 @@ typedef struct {
     twai_hal_context_t *hal;
     intr_handle_t intr_hdl;
     intr_handle_t timer_intr_hdl;
-    QueueHandle_t tx_mount_queue;
+    twai_frame_queue_t tx_queue;
     EventGroupHandle_t event_group;
     twai_clock_source_t curr_clk_src;
     uint32_t src_freq_hz;
@@ -209,7 +210,7 @@ static uint8_t _node_start_tx_batch_from_isr(twai_onchip_ctx_t *node, BaseType_t
     // we should fill slot with same order to avoid data inverse
     while (tx_idx < node->tx_slot_num) {    // try best to fill all tx slots
         const twai_frame_t *frame = NULL;
-        if (xQueueReceiveFromISR(node->tx_mount_queue, &frame, yield_required) != pdTRUE) {
+        if (twai_frame_queue_pop_from_isr(node->tx_queue, &frame, (bool *)yield_required) != ESP_OK) {
             break;
         }
         node->p_curr_tx[tx_idx] = frame;
@@ -366,9 +367,7 @@ static void _node_destroy(twai_onchip_ctx_t *twai_ctx)
     if (twai_ctx->timer_intr_hdl) {
         esp_intr_free(twai_ctx->timer_intr_hdl);
     }
-    if (twai_ctx->tx_mount_queue) {
-        vQueueDeleteWithCaps(twai_ctx->tx_mount_queue);
-    }
+    twai_frame_queue_del(twai_ctx->tx_queue);
     if (twai_ctx->event_group) {
         vEventGroupDeleteWithCaps(twai_ctx->event_group);
     }
@@ -604,7 +603,7 @@ static esp_err_t _node_get_status(twai_node_handle_t node, twai_node_status_t *s
         status_ret->state = atomic_load(&twai_ctx->state);
         status_ret->tx_error_count = twai_hal_get_tec(twai_ctx->hal);
         status_ret->rx_error_count = twai_hal_get_rec(twai_ctx->hal);
-        status_ret->tx_queue_remaining = uxQueueSpacesAvailable(twai_ctx->tx_mount_queue);
+        status_ret->tx_queue_remaining = twai_frame_queue_get_free_space(twai_ctx->tx_queue);
     }
     if (record_ret) {
         *record_ret = twai_ctx->history;
@@ -628,7 +627,6 @@ static esp_err_t _node_queue_tx(twai_node_handle_t node, const twai_frame_t *fra
     ESP_RETURN_ON_FALSE_ISR((!frame->header.brs) || (twai_ctx->valid_fd_timing), ESP_ERR_INVALID_ARG, TAG, "brs can't be used without config data_timing");
     ESP_RETURN_ON_FALSE_ISR(!twai_ctx->hal->enable_listen_only, ESP_ERR_NOT_SUPPORTED, TAG, "node is config as listen only");
     ESP_RETURN_ON_FALSE_ISR(atomic_load(&twai_ctx->state) != TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "node is bus off");
-    TickType_t ticks_to_wait = (timeout == -1) ? portMAX_DELAY : pdMS_TO_TICKS(timeout);
 
     xEventGroupClearBits(twai_ctx->event_group, TWAI_IDLE_EVENT_BIT); //going to send, clear the idle event
     bool false_var = false;
@@ -637,37 +635,17 @@ static esp_err_t _node_queue_tx(twai_node_handle_t node, const twai_frame_t *fra
         _node_start_trans(twai_ctx, 0);
     } else {
         // Hardware busy, need to queue the frame
-        BaseType_t is_isr_context = xPortInIsrContext();
-        BaseType_t yield_required = pdFALSE;
-
-        if (is_isr_context) {
-            // In ISR context - use ISR-safe queue operations
-            ESP_RETURN_ON_FALSE_ISR(xQueueSendFromISR(twai_ctx->tx_mount_queue, &frame, &yield_required), ESP_ERR_TIMEOUT, TAG, "tx queue full");
-        } else {
-            // In task context - use normal queue operations
-            ESP_RETURN_ON_FALSE(xQueueSend(twai_ctx->tx_mount_queue, &frame, ticks_to_wait), ESP_ERR_TIMEOUT, TAG, "tx queue full");
-        }
+        ESP_RETURN_ON_ERROR_ISR(twai_frame_queue_push_safe(twai_ctx->tx_queue, frame, frame->tx_queue_priority, timeout), TAG, "tx queue full");
 
         // Second chance check for hardware availability
         false_var = false;
         if (atomic_compare_exchange_strong(&twai_ctx->hw_busy, &false_var, true)) {
-            BaseType_t dequeue_result;
-            if (is_isr_context) {
-                dequeue_result = xQueueReceiveFromISR(twai_ctx->tx_mount_queue, &twai_ctx->p_curr_tx[0], &yield_required);
-            } else {
-                dequeue_result = xQueueReceive(twai_ctx->tx_mount_queue, &twai_ctx->p_curr_tx[0], 0);
-            }
-            if (dequeue_result == pdTRUE) {
+            if (twai_frame_queue_pop_safe(twai_ctx->tx_queue, &twai_ctx->p_curr_tx[0]) == ESP_OK) {
                 _node_start_trans(twai_ctx, 0);
             } else {
                 // any reason here means frame already taken and maybe finished by fast hardware, so back `hw_busy` to false
                 atomic_store(&twai_ctx->hw_busy, false);
             }
-        }
-
-        // Handle ISR yield if required
-        if (is_isr_context && yield_required) {
-            portYIELD_FROM_ISR();
         }
     }
     return ESP_OK;
@@ -679,9 +657,9 @@ static esp_err_t _node_wait_tx_all_done(twai_node_handle_t node, int timeout)
     TickType_t ticks_to_wait = (timeout == -1) ? portMAX_DELAY : pdMS_TO_TICKS(timeout);
     ESP_RETURN_ON_FALSE(atomic_load(&twai_ctx->state) != TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "node is bus off");
 
-    // either hw_busy or tx_mount_queue is not empty, means tx is not finished
+    // either hw_busy or tx_queue is not empty, means tx is not finished
     // otherwise, hardware is idle, return immediately
-    if (atomic_load(&twai_ctx->hw_busy) || uxQueueMessagesWaiting(twai_ctx->tx_mount_queue)) {
+    if (atomic_load(&twai_ctx->hw_busy) || twai_frame_queue_get_count(twai_ctx->tx_queue)) {
         //wait for idle event bit but without clear it, every tasks block here can be waked up
         if (TWAI_IDLE_EVENT_BIT != xEventGroupWaitBits(twai_ctx->event_group, TWAI_IDLE_EVENT_BIT, pdFALSE, pdFALSE, ticks_to_wait)) {
             return ESP_ERR_TIMEOUT;
@@ -737,9 +715,11 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
 
     // state is in bus_off before enabled
     atomic_store(&node->state, TWAI_ERROR_BUS_OFF);
-    node->tx_mount_queue = xQueueCreateWithCaps(node_config->tx_queue_depth, sizeof(twai_frame_t *), TWAI_MALLOC_CAPS);
+    if (!node_config->flags.enable_listen_only) {
+        ESP_GOTO_ON_ERROR(twai_frame_queue_new(&node->tx_queue, node_config->tx_queue_depth, TWAI_MALLOC_CAPS), err, TAG, "no_mem");
+    }
     node->event_group = xEventGroupCreateWithCaps(TWAI_MALLOC_CAPS);
-    ESP_GOTO_ON_FALSE((node->tx_mount_queue && node->event_group) || node_config->flags.enable_listen_only, ESP_ERR_NO_MEM, err, TAG, "no_mem");
+    ESP_GOTO_ON_FALSE(node->event_group, ESP_ERR_NO_MEM, err, TAG, "no_mem");
     uint32_t intr_flags = TWAI_INTR_ALLOC_FLAGS;
     intr_flags |= (node_config->intr_priority > 0) ? BIT(node_config->intr_priority) : ESP_INTR_FLAG_LOWMED;
     _lock_acquire(&s_platform.intr_mutex);  // lock to prevent twai_intr and timer_intr registered to different cpu then triggered at the same time
