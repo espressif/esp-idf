@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
+import time
 
 import pytest
 from common_test_methods import get_env_config_variable
@@ -26,9 +27,20 @@ class WsClient:
         self.port = port
         self.ip = ip
         self.ws = websocket.WebSocket()
+        # Set timeout to 10 seconds to avoid indefinite blocking
+        self.ws.settimeout(10)
 
     def __enter__(self):  # type: ignore
-        self.ws.connect(f'ws://{self.ip}:{self.port}/{self.uri}')
+        url = f'ws://{self.ip}:{self.port}/ws'
+        for attempt in range(3):
+            try:
+                self.ws.connect(url)
+                return self
+            except (websocket.WebSocketBadStatusException, ConnectionRefusedError, TimeoutError, OSError) as e:
+                logging.warning('WS connect attempt %d/3 to %s failed: %s', attempt + 1, url, e)
+                if attempt == 2:
+                    raise
+                time.sleep(2)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):     # type: ignore
@@ -65,6 +77,13 @@ def test_examples_protocol_http_ws_echo_server(dut: Dut) -> None:
         dut.write(f'{ap_ssid} {ap_password}')
     got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
     got_port = dut.expect(r"Starting server on port: '(\d+)'", timeout=30)[1].decode()
+
+    # Wait for all URI handlers to be registered before connecting.
+    # The /ws URI handler is registered asynchronously after the server
+    # starts, taking 40-660ms depending on config and CI load.
+    # Connecting before registration completes causes 404 Not Found errors.
+    dut.expect('Returned from app_main()', timeout=30)
+    time.sleep(1)
 
     logging.info(f'Got IP   : {got_ip}')
     logging.info(f'Got Port : {got_port}')
