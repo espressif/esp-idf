@@ -164,8 +164,9 @@ config SPIRAM_ENC_EXEMPT
     help
         !!! SECURITY WARNING !!!
 
-        Enabling this option carves out a region at the top of PSRAM that is mapped
-        WITHOUT encryption, even when flash encryption is enabled. Memory allocated
+        Enabling this option carves out a region at the upper end of PSRAM (highest
+        physical addresses) that is mapped WITHOUT encryption, even when flash
+        encryption is enabled. Memory allocated
         from this region (via MALLOC_CAP_SPIRAM_NO_ENC) is stored in plaintext in
         PSRAM and can be observed by an attacker with physical access to the PSRAM
         interface.
@@ -189,7 +190,8 @@ config SPIRAM_ENC_EXEMPT_SIZE
     range 64 65536
     depends on SPIRAM_ENC_EXEMPT
     help
-        Size of the PSRAM region carved out at the top of PSRAM and mapped without
-        encryption. Rounded up to a multiple of the MMU page size (typically 64 KB).
+        Size of the PSRAM region carved out at the upper end of PSRAM (highest
+        physical addresses) and mapped without encryption. Rounded up to a multiple
+        of the MMU page size (typically 64 KB).
         The region is registered as a separate heap pool, accessible only via
         MALLOC_CAP_SPIRAM_NO_ENC.

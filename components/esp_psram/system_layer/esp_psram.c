@@ -52,7 +52,7 @@
  * PSRAM memory regions:
  * - 8bit aligned
  * - 32bit aligned
- * - Optional: encryption-exempt carve-out (top of PSRAM)
+ * - Optional: encryption-exempt carve-out (upper end of PSRAM, highest physical addresses)
  */
 #define PSRAM_MEM_8BIT_ALIGNED      0
 #define PSRAM_MEM_32BIT_ALIGNED     1
