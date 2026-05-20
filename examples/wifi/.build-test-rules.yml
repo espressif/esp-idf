@@ -79,9 +79,6 @@ examples/wifi/itwt:
   <<: *wifi_depends_default
   disable:
     - if: SOC_WIFI_HE_SUPPORT != 1
-    - if: IDF_TARGET == "esp32s31"
-      temporary: true
-      reason: sdkconfig.defaults references Kconfig CPU freq symbols not present for S31; fix defaults or split sdkconfig then remove
 
 examples/wifi/power_save:
   <<: *wifi_depends_default
