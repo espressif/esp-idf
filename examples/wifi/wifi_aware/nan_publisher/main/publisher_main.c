@@ -11,6 +11,7 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
+#include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -36,6 +37,23 @@
 
 static EventGroupHandle_t nan_event_group;
 static const char *TAG = "publisher";
+
+#ifdef CONFIG_EXAMPLE_NAN_SEC_METHOD_PMK
+static bool decode_hex_string(const char *hex, uint8_t *out, size_t out_len)
+{
+    if (!hex || !out || strlen(hex) != out_len * 2) {
+        return false;
+    }
+    for (size_t i = 0; i < out_len; i++) {
+        unsigned int byte;
+        if (sscanf(hex + 2 * i, "%2x", &byte) != 1) {
+            return false;
+        }
+        out[i] = (uint8_t)byte;
+    }
+    return true;
+}
+#endif
 
 static int NAN_RECEIVE = BIT0;
 uint8_t g_peer_inst_id;
@@ -105,10 +123,38 @@ void wifi_nan_publish(void)
         .matching_filter = EXAMPLE_NAN_MATCHING_FILTER,
         .single_replied_event = 1,
         /* 0 - All incoming NDP requests will be internally accepted,
-           1 - All incoming NDP requests raise NDP_INDICATION event and require esp_wifi_nan_datapath_resp to accept or reject. */
+           1 - All incoming NDP requests raise NDP_INDICATION event and require esp_wifi_nan_datapath_resp to accept or reject.
+           This example uses 1 to exercise nan_ndp_indication_event_handler(). */
         .ndp_resp_needed = 1,
         .datapath_reqd = 1,
+#ifdef CONFIG_EXAMPLE_NAN_SECURITY_ENABLED
+        .security_reqd = 1,
+#endif
     };
+#ifdef CONFIG_EXAMPLE_NAN_SECURITY_ENABLED
+    wifi_nan_discovery_security_params_t security_cfg = {
+        .num_credentials = 1,
+        .creds = {
+            {
+                .csid = WIFI_NAN_CSID_NCS_SK_128,
+#ifdef CONFIG_EXAMPLE_NAN_SEC_METHOD_PMK
+                .use_pmk = true,
+#else
+                .use_pmk = false,
+                .passphrase = CONFIG_EXAMPLE_NAN_PASSPHRASE,
+#endif
+            },
+        },
+    };
+    publish_cfg.security_cfg = &security_cfg;
+#endif
+#if defined(CONFIG_EXAMPLE_NAN_SECURITY_ENABLED) && defined(CONFIG_EXAMPLE_NAN_SEC_METHOD_PMK)
+    if (!decode_hex_string(CONFIG_EXAMPLE_NAN_PMK, security_cfg.creds[0].pmk,
+                           sizeof(security_cfg.creds[0].pmk))) {
+        ESP_LOGE(TAG, "Failed to decode CONFIG_EXAMPLE_NAN_PMK");
+        return;
+    }
+#endif
 
     pub_id = esp_wifi_nan_publish_service(&publish_cfg);
     if (pub_id == 0) {

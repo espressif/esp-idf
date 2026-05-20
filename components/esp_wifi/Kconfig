@@ -593,6 +593,23 @@ menu "Wi-Fi"
             help
                 Enable Wi-Fi Aware: Synchronization feature (NAN-Sync).
 
+        config ESP_WIFI_NAN_SECURITY
+            bool "Enable Wi-Fi Aware: Encrypted Pairwise Datapath (NDP Security)"
+            depends on ESP_WIFI_NAN_SYNC_ENABLE && IDF_EXPERIMENTAL_FEATURES && ESP_WIFI_MBEDTLS_CRYPTO
+            select MBEDTLS_PKCS5_C
+            select MBEDTLS_SHA256_C
+            default n
+            help
+                Enable encrypted pairwise datapath for Wi-Fi Aware (NAN).
+                Adds PBKDF2 key derivation (mbedTLS PKCS#5), 4-way handshake (M1-M4),
+                PTK derivation, and CCMP key installation for secured NAN
+                data links. Disable to save code size when only open
+                datapaths are needed.
+
+                Requires ESP_WIFI_MBEDTLS_CRYPTO + MBEDTLS_PKCS5_C + MBEDTLS_SHA256_C
+                for ND-PMK derivation via pbkdf2_sha256() (MBEDTLS_MD_C is pulled in
+                transitively by MBEDTLS_PKCS5_C).
+
         config ESP_WIFI_NAN_USD_ENABLE
             bool "Enable Wi-Fi Aware: Unsynchronized service discovery (NAN-USD)"
             depends on IDF_EXPERIMENTAL_FEATURES

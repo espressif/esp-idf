@@ -33,4 +33,44 @@ menu "Example Configuration"
         help
             Send a message to the Publisher using NAN Follow Up
 
+    menu "Security Configuration"
+        config EXAMPLE_NAN_SECURITY_ENABLED
+            bool "Enable NAN Security"
+            depends on ESP_WIFI_NAN_SECURITY
+            default y
+            help
+                Enable encrypted NAN datapath (NDP Security) for this example.
+                When enabled the subscriber only matches secured Publish SDFs
+                whose PMKID is derivable from the credential configured below
+                (passphrase or PMK) and sets up an encrypted NDP.
+                Disable to discover open (unencrypted) services.
+
+        choice EXAMPLE_NAN_SECURITY_METHOD
+            prompt "Security Method"
+            depends on EXAMPLE_NAN_SECURITY_ENABLED
+            default EXAMPLE_NAN_SEC_METHOD_PASSPHRASE
+            help
+                Choose the method for NAN discovery security.
+
+            config EXAMPLE_NAN_SEC_METHOD_PASSPHRASE
+                bool "Passphrase-based (Password)"
+            config EXAMPLE_NAN_SEC_METHOD_PMK
+                bool "Direct PMK (32-byte hex)"
+        endchoice
+
+        config EXAMPLE_NAN_PASSPHRASE
+            string "Passphrase"
+            depends on EXAMPLE_NAN_SEC_METHOD_PASSPHRASE
+            default "password"
+            help
+                Passphrase for NAN Discovery security. Must match the publisher.
+
+        config EXAMPLE_NAN_PMK
+            string "Direct PMK (Hex)"
+            depends on EXAMPLE_NAN_SEC_METHOD_PMK
+            default "ee3585063056d164d15454ad39010d4e2640b0d82fb24a2d6899862d273c68bf"
+            help
+                32-byte hex string representing the PMK. Must match the publisher.
+    endmenu
+
 endmenu
