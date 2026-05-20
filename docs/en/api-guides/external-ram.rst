@@ -267,7 +267,7 @@ By default, failure to initialize external RAM will cause the ESP-IDF startup to
 
         ``MALLOC_CAP_SPIRAM_NO_ENC`` must be requested explicitly. It is intentionally not combined with ``MALLOC_CAP_SPIRAM`` or ``MALLOC_CAP_DEFAULT``, so ordinary SPIRAM/heap allocations cannot accidentally land in the unencrypted region.
 
-        To verify after the fact that a buffer was allocated from the unencrypted carve-out (for example after a ``heap_caps_malloc_prefer()`` call that may have fallen back to encrypted PSRAM), use :cpp:func:`esp_psram_ptr_is_no_enc`.
+        To verify after the fact that a buffer was allocated from the unencrypted carve-out (for example after a ``heap_caps_malloc_prefer()`` call that may have fallen back to encrypted PSRAM), use ``esp_psram_ptr_is_no_enc()``.
 
     .. only:: SOC_PSRAM_ENCRYPTION_SEPARATE_KEY
 
