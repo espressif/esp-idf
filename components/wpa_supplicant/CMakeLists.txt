@@ -114,13 +114,16 @@ endif()
 
 if(CONFIG_ESP_WIFI_MBEDTLS_CRYPTO)
     set(crypto_src
-    "esp_supplicant/src/crypto/fastpbkdf2.c"
     "esp_supplicant/src/crypto/crypto_mbedtls.c"
     "esp_supplicant/src/crypto/crypto_mbedtls-bignum.c"
     "esp_supplicant/src/crypto/crypto_mbedtls-rsa.c"
     "esp_supplicant/src/crypto/crypto_mbedtls-ec.c")
-    if(NOT CONFIG_IDF_TARGET_ESP32)
-        list(APPEND crypto_src "esp_supplicant/src/crypto/fastpsk.c")
+    if(CONFIG_MBEDTLS_HARDWARE_SHA)
+        if(NOT CONFIG_SOC_SHA_SUPPORT_PARALLEL_ENG)
+            list(APPEND crypto_src "esp_supplicant/src/crypto/fastpsk.c")
+        else()
+            list(APPEND crypto_src "esp_supplicant/src/crypto/fastpbkdf2.c")
+        endif()
     endif()
     # Add internal RC4 as RC4 has been removed from mbedtls
     set(crypto_src ${crypto_src} "src/crypto/rc4.c")
@@ -255,7 +258,6 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE
     CONFIG_IEEE80211W
     CONFIG_SHA256
     CONFIG_NO_RADIUS
-    CONFIG_FAST_PBKDF2
     )
 
 if(CONFIG_ESP_WIFI_ENABLE_WPA3_SAE)
@@ -317,6 +319,13 @@ if(CONFIG_ESP_WIFI_WPS_SOFTAP_REGISTRAR)
 endif()
 if(CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_STA)
         target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_OWE_STA)
+endif()
+if(CONFIG_MBEDTLS_HARDWARE_SHA)
+    if(NOT CONFIG_SOC_SHA_SUPPORT_PARALLEL_ENG)
+        target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_FAST_PSK)
+    else()
+        target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_FAST_PBKDF2)
+    endif()
 endif()
 set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 3)
 
