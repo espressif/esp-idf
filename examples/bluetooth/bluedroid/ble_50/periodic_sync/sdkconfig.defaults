@@ -2,3 +2,4 @@
 # Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
 #
 CONFIG_BT_ENABLED=y
+CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
