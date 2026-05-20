@@ -77,9 +77,9 @@ This contains tests for the following features of the crypto peripherals:
 The HMAC tests need an HMAC key to be burned in the `BLOCK_KEY4` and `BLOCK_KEY5` of the efuses. As this verification application is independent of the efuse component, the user needs to manually burn the keys and their key purposes using `espefuse`.
 
 ```bash
-espefuse -p $ESPPORT burn-key BLOCK_KEY4 main/hmac/hmac_key.bin HMAC_DOWN_JTAG
+espefuse -p $ESPPORT burn-key BLOCK_KEY3 main/hmac/hmac_key.bin HMAC_DOWN_JTAG
 
-espefuse -p $ESPPORT burn-key BLOCK_KEY5 main/hmac/hmac_key.bin HMAC_UP
+espefuse -p $ESPPORT burn-key BLOCK_KEY4 main/hmac/hmac_key.bin HMAC_UP
 ```
 
 # Burning the HMAC keys for Digital Signature tests
@@ -108,12 +108,25 @@ espefuse -p $ESPPORT burn-key BLOCK_KEY2 main/ds/keys/4096/ds_key3.bin HMAC_DOWN
 
 By default, ECDSA tests are disabled. You can enable it after disabling HMAC & DS tests using `idf.py menuconfig -> Test App Configuration -> Enable ECDSA Peripheral test cases`
 
-The ECDSA tests need some ECDSA keys to be burned in the `BLOCK_KEY3` and `BLOCK_KEY4` of the efuses. As this verification application is independent of the efuse component, the user needs to manually burn the keys and their key purposes using `espefuse`.
+The ECDSA tests need ECDSA private keys burned in efuse key blocks. This application does not use the efuse component, so you must burn the keys and their key purposes manually with `espefuse`.
+
+**When curve-specific key purposes are supported** (e.g. chips with `SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES`):
 
 ```bash
-espefuse -p $ESPPORT burn-key BLOCK_KEY3 main/ecdsa/ecdsa192_priv_key.pem ECDSA_KEY
+espefuse -p $ESPPORT burn-key BLOCK_KEY0 main/ecdsa/ecdsa192_priv_key.pem ECDSA_KEY_P192
 
-espefuse -p $ESPPORT burn-key BLOCK_KEY4 main/ecdsa/ecdsa256_priv_key.pem ECDSA_KEY
+espefuse -p $ESPPORT burn-key BLOCK_KEY1 main/ecdsa/ecdsa256_priv_key.pem ECDSA_KEY_P256
+
+espefuse -p $ESPPORT burn-key BLOCK_KEY2 main/ecdsa/ecdsa384_priv_key.pem ECDSA_KEY_P384
+```
+The ECDSA-P384 key will be burned in two parts, with the lower portion programmed into BLOCK_KEY2 using the key purpose ECDSA_KEY_P384_L and the upper portion programmed into the next available eFuse block using the key purpose ECDSA_KEY_P384_H.
+
+**When curve-specific key purposes are not supported**
+
+```bash
+espefuse -p $ESPPORT burn-key BLOCK_KEY0 main/ecdsa/ecdsa192_priv_key.pem ECDSA_KEY
+
+espefuse -p $ESPPORT burn-key BLOCK_KEY1 main/ecdsa/ecdsa256_priv_key.pem ECDSA_KEY
 ```
 
 # Burning the XTS-AES key

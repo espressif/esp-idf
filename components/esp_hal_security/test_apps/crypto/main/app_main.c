@@ -31,7 +31,8 @@ static void run_all_tests(void)
 #endif /* !CONFIG_SOC_SHA_SUPPORT_PARALLEL_ENG*/
 #endif
 
-#if CONFIG_CRYPTO_IS_KEY_MANAGER_SUPPORTED
+#if CONFIG_CRYPTO_IS_KEY_MANAGER_SUPPORTED && !CONFIG_IDF_TARGET_ESP32S31
+    // TODO: IDF-15703 re-enable Key Manager tests on esp32s31 once the TRNG support update lands
     RUN_TEST_GROUP(key_manager);
 #endif
 

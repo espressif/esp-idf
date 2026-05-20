@@ -70,10 +70,11 @@
 #define SOC_AES_SUPPORTED               1
 #define SOC_MPI_SUPPORTED               1
 #define SOC_SHA_SUPPORTED               1
-// #define SOC_HMAC_SUPPORTED              1      // TODO: [ESP32S31] IDF-14621
-// #define SOC_DIG_SIGN_SUPPORTED          1      // TODO: [ESP32S31] IDF-14624
+#define SOC_HMAC_SUPPORTED              1
+#define SOC_DIG_SIGN_SUPPORTED          1
 #define SOC_ECC_SUPPORTED               1
 #define SOC_ECC_EXTENDED_MODES_SUPPORTED   1
+#define SOC_ECDSA_SUPPORTED             1
 // #define SOC_FLASH_ENC_SUPPORTED         1         // TODO: [ESP32S31] IDF-14628
 // #define SOC_SECURE_BOOT_SUPPORTED       1      // TODO: [ESP32S31] IDF-14629
 #define SOC_BOD_SUPPORTED               1
@@ -376,14 +377,28 @@
 #define SOC_SHA_SUPPORT_SHA512_256      (1)
 #define SOC_SHA_SUPPORT_SHA512_T        (1)
 
-/*-------------------------- MPI/RSA CAPS ----------------------------------------*/
+/*--------------------------- MPI CAPS ---------------------------------------*/
 #define SOC_MPI_MEM_BLOCKS_NUM          (4)
 #define SOC_MPI_OPERATIONS_NUM          (3)
+
+/*--------------------------- RSA CAPS ---------------------------------------*/
 #define SOC_RSA_MAX_BIT_LEN             (4096)
 
-/*-------------------------- ECC CAPS ----------------------------------------*/
+/*--------------------------- ECC CAPS ---------------------------------------*/
 #define SOC_ECC_CONSTANT_TIME_POINT_MUL           1
 #define SOC_ECC_SUPPORT_CURVE_P384      (1)
+
+/*--------------------------- ECDSA CAPS ---------------------------------------*/
+#define SOC_ECDSA_SUPPORT_EXPORT_PUBKEY              (1)
+#define SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE         (1)
+#define SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP      (1)
+#define SOC_ECDSA_SUPPORT_CURVE_P384                 (1)
+#define SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES (1)  /*!< Support individual key purposes for different ECDSA curves (P192, P256, P384) */
+
+/*-------------------------- Digital Signature CAPS ----------------------------------------*/
+#define SOC_DS_SIGNATURE_MAX_BIT_LEN    (4096)
+#define SOC_DS_KEY_PARAM_MD_IV_LENGTH   (16)
+#define SOC_DS_KEY_CHECK_MAX_WAIT_US    (1100)
 
 /*-------------------------- eFuse CAPS----------------------------*/
 #define SOC_EFUSE_DIS_PAD_JTAG 1
@@ -397,10 +412,17 @@
 #define SOC_EFUSE_ECDSA_KEY_P192 1
 #define SOC_EFUSE_ECDSA_KEY_P384 1
 
+/*-------------------------- HUK CAPS----------------------------*/
+#define SOC_HUK_SUPPORTED                       1
+
 /*-------------------------- Key Manager CAPS----------------------------*/
 // TODO: [ESP32S31] IDF-14626
-#define SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY    1 /*!< Key manager responsible to deploy ECDSA key */
-// #define SOC_KEY_MANAGER_FE_KEY_DEPLOY       1 /*!< Key manager responsible to deploy Flash Encryption key */
+#define SOC_KEY_MANAGER_SUPPORTED                   1
+#define SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT      1 /*!< Key manager supports key deployment */
+#define SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY            1 /*!< Key manager responsible to deploy ECDSA key */
+#define SOC_KEY_MANAGER_HMAC_KEY_DEPLOY             1 /*!< Key manager responsible to deploy HMAC key */
+#define SOC_KEY_MANAGER_DS_KEY_DEPLOY               1 /*!< Key manager responsible to deploy DS key */
+// SOC_KEY_MANAGER_FE_KEY_DEPLOY (incl. XTS-AES-128/256) will be enabled along with Flash Encryption support.
 
 /*--------------------------- CAM ---------------------------------*/
 #define SOC_LCDCAM_CAM_SUPPORT_RGB_YUV_CONV         (1)

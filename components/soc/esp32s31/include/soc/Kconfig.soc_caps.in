@@ -179,11 +179,23 @@ config SOC_SHA_SUPPORTED
     bool
     default y
 
+config SOC_HMAC_SUPPORTED
+    bool
+    default y
+
+config SOC_DIG_SIGN_SUPPORTED
+    bool
+    default y
+
 config SOC_ECC_SUPPORTED
     bool
     default y
 
 config SOC_ECC_EXTENDED_MODES_SUPPORTED
+    bool
+    default y
+
+config SOC_ECDSA_SUPPORTED
     bool
     default y
 
@@ -1003,6 +1015,38 @@ config SOC_ECC_SUPPORT_CURVE_P384
     bool
     default y
 
+config SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
+    bool
+    default y
+
+config SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+    bool
+    default y
+
+config SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
+    bool
+    default y
+
+config SOC_ECDSA_SUPPORT_CURVE_P384
+    bool
+    default y
+
+config SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES
+    bool
+    default y
+
+config SOC_DS_SIGNATURE_MAX_BIT_LEN
+    int
+    default 4096
+
+config SOC_DS_KEY_PARAM_MD_IV_LENGTH
+    int
+    default 16
+
+config SOC_DS_KEY_CHECK_MAX_WAIT_US
+    int
+    default 1100
+
 config SOC_EFUSE_DIS_PAD_JTAG
     bool
     default y
@@ -1035,7 +1079,27 @@ config SOC_EFUSE_ECDSA_KEY_P384
     bool
     default y
 
+config SOC_HUK_SUPPORTED
+    bool
+    default y
+
+config SOC_KEY_MANAGER_SUPPORTED
+    bool
+    default y
+
+config SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
+    bool
+    default y
+
 config SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
+    bool
+    default y
+
+config SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
+    bool
+    default y
+
+config SOC_KEY_MANAGER_DS_KEY_DEPLOY
     bool
     default y
 
