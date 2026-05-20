@@ -170,8 +170,14 @@ variables:
   section_start "upgrade_ci_dependencies" "Upgrading CI dependencies"
   pip install --upgrade --upgrade-strategy=eager -r $IDF_PATH/tools/requirements/requirements.ci.txt -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
   # we need the latest DEV release for esptool to be installed in every job without bumping the minimal requirement in
-  # the constraint file.
-  pip install --upgrade --pre esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+  # the constraint file. CI_ESPTOOL_EXTRA_INDEX_URL (set in GitLab project variables) optionally points to an internal
+  # package registry so that internal dev builds are preferred when the variable is set; it is a no-op when unset.
+  # Use an explicit if/else: the `${VAR:+--flag "$VAR"}` form collapses to a single token under zsh (macOS runners).
+  if [[ -n "$CI_ESPTOOL_EXTRA_INDEX_URL" ]]; then
+    pip install --upgrade --pre --extra-index-url "$CI_ESPTOOL_EXTRA_INDEX_URL" esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+  else
+    pip install --upgrade --pre esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+  fi
   section_end "upgrade_ci_dependencies"
 
   REEXPORT_NEEDED=0
