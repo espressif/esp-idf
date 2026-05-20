@@ -21,6 +21,8 @@
 
 #define TAG "OT_STATE"
 
+ESP_EVENT_DEFINE_BASE(OPENTHREAD_EVENT);
+
 #if CONFIG_OPENTHREAD_BORDER_ROUTER
 static void handle_ot_border_router_state_changed(otInstance* instance)
 {

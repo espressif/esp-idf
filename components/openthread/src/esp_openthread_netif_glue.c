@@ -46,8 +46,6 @@ static esp_openthread_netif_glue_t s_openthread_netif_glue = {
     .event_fd = -1,
 };
 
-ESP_EVENT_DEFINE_BASE(OPENTHREAD_EVENT);
-
 static QueueHandle_t s_packet_queue;
 static esp_netif_t *s_openthread_netif;
 static const char *netif_glue_workflow = "netif_glue";
