@@ -387,24 +387,27 @@ static void s_psram_mapping(uint32_t psram_available_size, uint32_t start_page)
         ret = esp_mmu_map_reserve_block_with_caps(enc_exempt_size,
                                                   MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_8BIT | MMU_MEM_CAP_32BIT,
                                                   MMU_TARGET_PSRAM0, &v_start_no_enc);
-        assert(ret == ESP_OK);
+        if (ret != ESP_OK) {
+            ESP_EARLY_LOGE(TAG, "Virtual address pool exhausted; disabling SPIRAM_ENC_EXEMPT carve-out (%dKB)",
+                           (int)(enc_exempt_size / 1024));
+        } else {
+            mmu_hal_map_region_no_enc((uint32_t)v_start_no_enc, MMU_PAGE_TO_BYTES(start_page), enc_exempt_size);
 
-        mmu_hal_map_region_no_enc((uint32_t)v_start_no_enc, MMU_PAGE_TO_BYTES(start_page), enc_exempt_size);
-
-        cache_bus_mask_t bus_mask = cache_ll_l1_get_bus(0, (uint32_t)v_start_no_enc, enc_exempt_size);
-        cache_ll_l1_enable_bus(0, bus_mask);
+            cache_bus_mask_t bus_mask = cache_ll_l1_get_bus(0, (uint32_t)v_start_no_enc, enc_exempt_size);
+            cache_ll_l1_enable_bus(0, bus_mask);
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-        bus_mask = cache_ll_l1_get_bus(1, (uint32_t)v_start_no_enc, enc_exempt_size);
-        cache_ll_l1_enable_bus(1, bus_mask);
+            bus_mask = cache_ll_l1_get_bus(1, (uint32_t)v_start_no_enc, enc_exempt_size);
+            cache_ll_l1_enable_bus(1, bus_mask);
 #endif
 
-        s_psram_ctx.mapped_regions[PSRAM_MEM_ENC_EXEMPT].size = enc_exempt_size;
-        s_psram_ctx.mapped_regions[PSRAM_MEM_ENC_EXEMPT].vaddr_start = (intptr_t)v_start_no_enc;
-        s_psram_ctx.mapped_regions[PSRAM_MEM_ENC_EXEMPT].vaddr_end = (intptr_t)v_start_no_enc + enc_exempt_size;
-        s_psram_ctx.regions_to_heap[PSRAM_MEM_ENC_EXEMPT].size = enc_exempt_size;
-        s_psram_ctx.regions_to_heap[PSRAM_MEM_ENC_EXEMPT].vaddr_start = (intptr_t)v_start_no_enc;
-        s_psram_ctx.regions_to_heap[PSRAM_MEM_ENC_EXEMPT].vaddr_end = (intptr_t)v_start_no_enc + enc_exempt_size;
-        ESP_EARLY_LOGI(TAG, "PSRAM unencrypted region: 0x%x B at %p", (unsigned)enc_exempt_size, v_start_no_enc);
+            s_psram_ctx.mapped_regions[PSRAM_MEM_ENC_EXEMPT].size = enc_exempt_size;
+            s_psram_ctx.mapped_regions[PSRAM_MEM_ENC_EXEMPT].vaddr_start = (intptr_t)v_start_no_enc;
+            s_psram_ctx.mapped_regions[PSRAM_MEM_ENC_EXEMPT].vaddr_end = (intptr_t)v_start_no_enc + enc_exempt_size;
+            s_psram_ctx.regions_to_heap[PSRAM_MEM_ENC_EXEMPT].size = enc_exempt_size;
+            s_psram_ctx.regions_to_heap[PSRAM_MEM_ENC_EXEMPT].vaddr_start = (intptr_t)v_start_no_enc;
+            s_psram_ctx.regions_to_heap[PSRAM_MEM_ENC_EXEMPT].vaddr_end = (intptr_t)v_start_no_enc + enc_exempt_size;
+            ESP_EARLY_LOGI(TAG, "PSRAM unencrypted region: 0x%x B at %p", (unsigned)enc_exempt_size, v_start_no_enc);
+        }
     }
 #endif /* CONFIG_SPIRAM_ENC_EXEMPT */
 
@@ -730,6 +733,18 @@ bool esp_psram_extram_test(void)
     if (!test_success) {
         return false;
     }
+
+#if CONFIG_SPIRAM_ENC_EXEMPT
+    if (s_psram_ctx.mapped_regions[PSRAM_MEM_ENC_EXEMPT].size) {
+        test_success = s_test_psram(s_psram_ctx.mapped_regions[PSRAM_MEM_ENC_EXEMPT].vaddr_start,
+                                    s_psram_ctx.mapped_regions[PSRAM_MEM_ENC_EXEMPT].size,
+                                    0,
+                                    0);
+    }
+    if (!test_success) {
+        return false;
+    }
+#endif
 
     return true;
 }
