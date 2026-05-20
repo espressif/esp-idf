@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -72,16 +72,16 @@ static void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
     case ESP_A2D_SNK_PSC_CFG_EVT:
     case ESP_A2D_SNK_SET_DELAY_VALUE_EVT:
     case ESP_A2D_SNK_GET_DELAY_VALUE_EVT: {
-        bt_app_work_dispatch(bt_a2d_evt_def_hdl, event, param, sizeof(esp_a2d_cb_param_t), NULL);
+        bt_app_work_dispatch(bt_a2d_evt_def_hdl, event, param, sizeof(esp_a2d_cb_param_t), NULL, NULL);
         break;
     }
     case ESP_A2D_CONNECTION_STATE_EVT:
     case ESP_A2D_AUDIO_STATE_EVT:
     case ESP_A2D_AUDIO_CFG_EVT: {
 #if CONFIG_EXAMPLE_A2DP_SINK_STREAM_ENABLE
-        bt_app_work_dispatch(bt_a2d_evt_int_codec_hdl, event, param, sizeof(esp_a2d_cb_param_t), NULL);
+        bt_app_work_dispatch(bt_a2d_evt_int_codec_hdl, event, param, sizeof(esp_a2d_cb_param_t), NULL, NULL);
 #else
-        bt_app_work_dispatch(bt_a2d_evt_def_hdl, event, param, sizeof(esp_a2d_cb_param_t), NULL);
+        bt_app_work_dispatch(bt_a2d_evt_def_hdl, event, param, sizeof(esp_a2d_cb_param_t), NULL, NULL);
 #endif
         break;
     }
@@ -101,14 +101,13 @@ static void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len)
 static void bt_app_rc_ct_cb(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t *param)
 {
     switch (event) {
-    case ESP_AVRC_CT_METADATA_RSP_EVT:
     case ESP_AVRC_CT_CONNECTION_STATE_EVT:
     case ESP_AVRC_CT_PASSTHROUGH_RSP_EVT:
     case ESP_AVRC_CT_CHANGE_NOTIFY_EVT:
     case ESP_AVRC_CT_REMOTE_FEATURES_EVT:
     case ESP_AVRC_CT_GET_RN_CAPABILITIES_RSP_EVT:
     case ESP_AVRC_CT_PROF_STATE_EVT: {
-        bt_app_work_dispatch(bt_avrc_common_ct_evt_def_hdl, event, param, sizeof(esp_avrc_ct_cb_param_t), NULL);
+        bt_app_work_dispatch(bt_avrc_common_ct_evt_def_hdl, event, param, sizeof(esp_avrc_ct_cb_param_t), NULL, NULL);
         break;
     }
     default:
@@ -124,13 +123,13 @@ static void bt_app_rc_tg_cb(esp_avrc_tg_cb_event_t event, esp_avrc_tg_cb_param_t
     case ESP_AVRC_TG_PASSTHROUGH_CMD_EVT:
     case ESP_AVRC_TG_SET_PLAYER_APP_VALUE_EVT:
     case ESP_AVRC_TG_PROF_STATE_EVT: {
-        bt_app_work_dispatch(bt_avrc_common_tg_evt_def_hdl, event, param, sizeof(esp_avrc_tg_cb_param_t), NULL);
+        bt_app_work_dispatch(bt_avrc_common_tg_evt_def_hdl, event, param, sizeof(esp_avrc_tg_cb_param_t), NULL, NULL);
         break;
     }
     case ESP_AVRC_TG_CONNECTION_STATE_EVT:
     case ESP_AVRC_TG_SET_ABSOLUTE_VOLUME_CMD_EVT:
     case ESP_AVRC_TG_REGISTER_NOTIFICATION_EVT: {
-        bt_app_work_dispatch(bt_avrc_avc_tg_evt_hdl, event, param, sizeof(esp_avrc_tg_cb_param_t), NULL);
+        bt_app_work_dispatch(bt_avrc_avc_tg_evt_hdl, event, param, sizeof(esp_avrc_tg_cb_param_t), NULL, NULL);
         break;
     }
     default:
@@ -191,5 +190,5 @@ void app_main(void)
 
     bt_app_task_start_up();
     /* bluetooth device name, connection mode and profile set up */
-    bt_app_work_dispatch(bt_av_hdl_stack_evt, BT_APP_EVT_STACK_UP, NULL, 0, NULL);
+    bt_app_work_dispatch(bt_av_hdl_stack_evt, BT_APP_EVT_STACK_UP, NULL, 0, NULL, NULL);
 }
