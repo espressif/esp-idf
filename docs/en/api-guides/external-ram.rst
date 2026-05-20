@@ -252,7 +252,7 @@ By default, failure to initialize external RAM will cause the ESP-IDF startup to
         Reserving an Unencrypted PSRAM Region
         -------------------------------------
 
-        Enabling :ref:`CONFIG_SPIRAM_ENC_EXEMPT` reserves a region at the top of PSRAM (sized by :ref:`CONFIG_SPIRAM_ENC_EXEMPT_SIZE`, in KB, rounded up to the MMU page size) that is mapped without encryption. This region is registered as a separate heap pool reachable only via the ``MALLOC_CAP_SPIRAM_NO_ENC`` capability. The rest of PSRAM (and flash) remains encrypted.
+        Enabling :ref:`CONFIG_SPIRAM_ENC_EXEMPT` reserves a region at the upper end of PSRAM (highest physical addresses; sized by :ref:`CONFIG_SPIRAM_ENC_EXEMPT_SIZE`, in KB, rounded up to the MMU page size) that is mapped without encryption. This region is registered as a separate heap pool reachable only via the ``MALLOC_CAP_SPIRAM_NO_ENC`` capability. The rest of PSRAM (and flash) remains encrypted.
 
         .. warning::
 
