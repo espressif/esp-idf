@@ -180,8 +180,14 @@ variables:
   section_start "upgrade_ci_dependencies" "Upgrading CI dependencies"
   pip install --upgrade --upgrade-strategy=eager -r $IDF_PATH/tools/requirements/requirements.ci.txt -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
   # we need the latest DEV release for esptool to be installed in every job without bumping the minimal requirement in
-  # the constraint file.
-  pip install --upgrade --pre esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+  # the constraint file. CI_ESPTOOL_EXTRA_INDEX_URL (set in GitLab project variables) optionally points to an internal
+  # package registry so that internal dev builds are preferred when the variable is set; it is a no-op when unset.
+  # Use an explicit if/else: the `${VAR:+--flag "$VAR"}` form collapses to a single token under zsh (macOS runners).
+  if [[ -n "$CI_ESPTOOL_EXTRA_INDEX_URL" ]]; then
+    pip install --upgrade --pre --extra-index-url "$CI_ESPTOOL_EXTRA_INDEX_URL" esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+  else
+    pip install --upgrade --pre esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+  fi
   section_end "upgrade_ci_dependencies"
 
   REEXPORT_NEEDED=0
@@ -304,7 +310,8 @@ variables:
     - ./install.ps1 --enable-ci
     - ./export.ps1
     # Keep the esptool upgrade in line with how it is done in setup_tools_and_idf_python_venv
-    - pip install --upgrade --pre esptool -c "$env:USERPROFILE\.espressif\$env:CI_PYTHON_CONSTRAINT_FILE"
+    - $extraIndex = if ($env:CI_ESPTOOL_EXTRA_INDEX_URL) { @('--extra-index-url', $env:CI_ESPTOOL_EXTRA_INDEX_URL) } else { @() }
+    - pip install --upgrade --pre @extraIndex esptool -c "$env:USERPROFILE\.espressif\$env:CI_PYTHON_CONSTRAINT_FILE"
     - $env:PYTHONPATH = "$env:PYTHONPATH;$env:IDF_PATH\tools;$env:IDF_PATH\tools\esp_app_trace;$env:IDF_PATH\components\partition_table;$env:IDF_PATH\tools\ci\python_packages"
     - python "${SUBMODULE_FETCH_TOOL}" -s "${SUBMODULES_TO_FETCH}"
     # The time in VM may not be synced, since it's built a long time ago, so we need to sync time
