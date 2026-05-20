@@ -165,13 +165,14 @@ static int16_t s_cpll_ref_cnt = 0;
 
 void esp_clk_tree_initialize(void)
 {
-    soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
+    // TODO: IDF-15502
+    /*soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
     if ((rst_reason == RESET_REASON_CPU_SW) || (rst_reason == RESET_REASON_CPU_MWDT)          \
             || (rst_reason == RESET_REASON_CPU_RWDT) || (rst_reason == RESET_REASON_CPU_JTAG) \
             || (rst_reason == RESET_REASON_CPU_LOCKUP)) {
         s_clk_tree_initialized = true;
         return;
-    }
+    }*/
 
     // Power
     soc_cpu_clk_src_t cpu_clk_src_btld = clk_ll_cpu_get_src();
@@ -186,12 +187,13 @@ void esp_clk_tree_initialize(void)
     s_pll_src_cg_ref_cnt[SOC_MOD_CLK_BBPLL] = 1;
 
     // Gating: disable all PLL-derived reference clocks; they will be re-enabled on demand via esp_clk_tree_enable_src
-    _clk_gate_ll_ref_20m_clk_en(false);
-    _clk_gate_ll_ref_25m_clk_en(false);
-    _clk_gate_ll_ref_50m_clk_en(false);
-    _clk_gate_ll_ref_80m_clk_en(false);
-    _clk_gate_ll_ref_160m_clk_en(false);
-    if (s_pll_src_cg_ref_cnt[SOC_MOD_CLK_PLL_F240M] == 0) _clk_gate_ll_ref_240m_clk_en(false);
+    // TODO: IDF-15502
+    //_clk_gate_ll_ref_20m_clk_en(false);
+    //_clk_gate_ll_ref_25m_clk_en(false);
+    //_clk_gate_ll_ref_50m_clk_en(false);
+    //_clk_gate_ll_ref_80m_clk_en(false);
+    //_clk_gate_ll_ref_160m_clk_en(false);
+    //if (s_pll_src_cg_ref_cnt[SOC_MOD_CLK_PLL_F240M] == 0) _clk_gate_ll_ref_240m_clk_en(false);
     s_clk_tree_initialized = true;
 }
 
@@ -280,17 +282,18 @@ esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
             return ESP_OK;
         }
     }
-    if ((prev_ref_cnt == 0 && enable) || (prev_ref_cnt == 1 && !enable)) {
-        switch (clk_src) {
-            case SOC_MOD_CLK_RC_FAST:   enable ? rtc_dig_clk8m_enable() : rtc_dig_clk8m_disable(); break;
-            case SOC_MOD_CLK_PLL_F20M:  ENABLE_CLK_GATE(clk_gate_ll_ref_20m_clk_en, enable);  break;
-            case SOC_MOD_CLK_PLL_F25M:  ENABLE_CLK_GATE(clk_gate_ll_ref_25m_clk_en, enable);  break;
-            case SOC_MOD_CLK_PLL_F80M:  ENABLE_CLK_GATE(clk_gate_ll_ref_80m_clk_en, enable);  break;
-            case SOC_MOD_CLK_PLL_F160M: ENABLE_CLK_GATE(clk_gate_ll_ref_160m_clk_en, enable); break;
-            case SOC_MOD_CLK_PLL_F240M: ENABLE_CLK_GATE(clk_gate_ll_ref_240m_clk_en, enable); break;
-            default: break;
-        }
-    }
+    // TODO: IDF-15502
+    //if ((prev_ref_cnt == 0 && enable) || (prev_ref_cnt == 1 && !enable)) {
+    //    switch (clk_src) {
+    //        case SOC_MOD_CLK_RC_FAST:   enable ? rtc_dig_clk8m_enable() : rtc_dig_clk8m_disable(); break;
+    //        case SOC_MOD_CLK_PLL_F20M:  ENABLE_CLK_GATE(clk_gate_ll_ref_20m_clk_en, enable);  break;
+    //        case SOC_MOD_CLK_PLL_F25M:  ENABLE_CLK_GATE(clk_gate_ll_ref_25m_clk_en, enable);  break;
+    //        case SOC_MOD_CLK_PLL_F80M:  ENABLE_CLK_GATE(clk_gate_ll_ref_80m_clk_en, enable);  break;
+    //        case SOC_MOD_CLK_PLL_F160M: ENABLE_CLK_GATE(clk_gate_ll_ref_160m_clk_en, enable); break;
+    //        case SOC_MOD_CLK_PLL_F240M: ENABLE_CLK_GATE(clk_gate_ll_ref_240m_clk_en, enable); break;
+    //        default: break;
+    //    }
+    //}
 
     return ESP_OK;
 }
