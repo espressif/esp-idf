@@ -64,6 +64,18 @@ static void btc_sdp_cleanup(void)
     if (sdp_local_param_ptr) {
 #endif
         if (sdp_local_param.sdp_slot_mutex) {
+            osi_mutex_lock(&sdp_local_param.sdp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
+            for (int i = 0; i < SDP_MAX_RECORDS; i++) {
+                sdp_slot_t *slot = sdp_local_param.sdp_slots[i];
+                if (slot) {
+                    if (slot->record_data) {
+                        osi_free(slot->record_data);
+                    }
+                    osi_free(slot);
+                    sdp_local_param.sdp_slots[i] = NULL;
+                }
+            }
+            osi_mutex_unlock(&sdp_local_param.sdp_slot_mutex);
             osi_mutex_free(&sdp_local_param.sdp_slot_mutex);
             sdp_local_param.sdp_slot_mutex = NULL;
         }
@@ -1221,7 +1233,7 @@ static void btc_sdp_deinit(void)
                 BTA_SdpRemoveRecordByUser((void*)i);
             }
         }
-        BTA_SdpDisable();
+        ret = BTA_SdpDisable();
     } while(0);
 
     if (ret != ESP_SDP_SUCCESS) {
@@ -1407,34 +1419,40 @@ void btc_sdp_cb_handler(btc_msg_t *msg)
         btc_sdp_cb_to_app(ESP_SDP_DEINIT_EVT, &param);
         break;
     case BTA_SDP_SEARCH_COMP_EVT:
-        // SDP search completed, now can be searched again
-        sdp_local_param.search_allowed = true;
+        if (is_sdp_init()) {
+            // SDP search completed, now can be searched again
+            sdp_local_param.search_allowed = true;
 
-        param.search.status = p_data->sdp_search_comp.status;
-        memcpy(param.search.remote_addr, p_data->sdp_search_comp.remote_addr, sizeof(BD_ADDR));
-        bta_to_btc_uuid(&param.search.sdp_uuid, &p_data->sdp_search_comp.uuid);
-        param.search.record_count = p_data->sdp_search_comp.record_count;
-        param.search.records = (esp_bluetooth_sdp_record_t *)p_data->sdp_search_comp.records;
-        btc_sdp_cb_to_app(ESP_SDP_SEARCH_COMP_EVT, &param);
+            param.search.status = p_data->sdp_search_comp.status;
+            memcpy(param.search.remote_addr, p_data->sdp_search_comp.remote_addr, sizeof(BD_ADDR));
+            bta_to_btc_uuid(&param.search.sdp_uuid, &p_data->sdp_search_comp.uuid);
+            param.search.record_count = p_data->sdp_search_comp.record_count;
+            param.search.records = (esp_bluetooth_sdp_record_t *)p_data->sdp_search_comp.records;
+            btc_sdp_cb_to_app(ESP_SDP_SEARCH_COMP_EVT, &param);
+        }
         break;
     case BTA_SDP_CREATE_RECORD_USER_EVT:
-        param.create_record.status = p_data->sdp_create_record.status;
-        param.create_record.record_handle = p_data->sdp_create_record.handle;
-        btc_sdp_cb_to_app(ESP_SDP_CREATE_RECORD_COMP_EVT, &param);
+        if (is_sdp_init()) {
+            param.create_record.status = p_data->sdp_create_record.status;
+            param.create_record.record_handle = p_data->sdp_create_record.handle;
+            btc_sdp_cb_to_app(ESP_SDP_CREATE_RECORD_COMP_EVT, &param);
+        }
         break;
     case BTA_SDP_REMOVE_RECORD_USER_EVT:
-        if (p_data->sdp_remove_record.status == BTA_SDP_SUCCESS) {
-            int slot_id = get_sdp_slot_id_by_handle(p_data->sdp_remove_record.handle);
-            if (slot_id < 0) {
-                p_data->sdp_remove_record.status = ESP_SDP_NO_CREATE_RECORD;
-            } else {
-                free_sdp_slot(slot_id);
+        if (is_sdp_init()) {
+            if (p_data->sdp_remove_record.status == BTA_SDP_SUCCESS) {
+                int slot_id = get_sdp_slot_id_by_handle(p_data->sdp_remove_record.handle);
+                if (slot_id < 0) {
+                    p_data->sdp_remove_record.status = ESP_SDP_NO_CREATE_RECORD;
+                } else {
+                    free_sdp_slot(slot_id);
+                }
             }
-        }
 
-        param.remove_record.status = p_data->sdp_remove_record.status;
-        param.remove_record.record_handle = p_data->sdp_remove_record.handle;
-        btc_sdp_cb_to_app(ESP_SDP_REMOVE_RECORD_COMP_EVT, &param);
+            param.remove_record.status = p_data->sdp_remove_record.status;
+            param.remove_record.record_handle = p_data->sdp_remove_record.handle;
+            btc_sdp_cb_to_app(ESP_SDP_REMOVE_RECORD_COMP_EVT, &param);
+        }
         break;
     default:
         BTC_TRACE_DEBUG("%s: Unhandled event (%d)!", __func__, msg->act);

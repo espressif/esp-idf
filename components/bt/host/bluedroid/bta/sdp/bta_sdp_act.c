@@ -524,6 +524,12 @@ void bta_sdp_search(tBTA_SDP_MSG *p_data)
         APPL_TRACE_DEBUG("SDP control block handle is null\n");
         return;
     }
+
+    if (bta_sdp_cb.p_dm_cback == NULL) {
+        APPL_TRACE_DEBUG("SDP is not active\n");
+        return;
+    }
+
     tBT_UUID *bta_sdp_search_uuid = osi_malloc(sizeof(tBT_UUID));
     if (bta_sdp_search_uuid == NULL) {
         APPL_TRACE_DEBUG("SDP search param malloc failed\n");
@@ -638,8 +644,17 @@ void bta_sdp_disable(tBTA_SDP_MSG *p_data)
     APPL_TRACE_DEBUG("%s()\n", __func__);
     tBTA_SDP bta_sdp;
     bta_sdp.status = BTA_SDP_SUCCESS;
-    if (bta_sdp_cb.p_dm_cback) {
-        bta_sdp_cb.p_dm_cback(BTA_SDP_DISABLE_EVT, &bta_sdp, NULL);
+    tBTA_SDP_DM_CBACK *dm_cbk = bta_sdp_cb.p_dm_cback;
+
+    bta_sdp_cb.p_dm_cback = NULL;
+    if (p_bta_sdp_cfg->p_sdp_db && (bta_sdp_cb.sdp_active != BTA_SDP_ACTIVE_NONE)) {
+        if (!SDP_CancelServiceSearch(p_bta_sdp_cfg->p_sdp_db)) {
+            bta_sdp_cb.sdp_active = BTA_SDP_ACTIVE_NONE;
+        }
+    }
+
+    if (dm_cbk) {
+        dm_cbk(BTA_SDP_DISABLE_EVT, &bta_sdp, NULL);
     }
 }
 
