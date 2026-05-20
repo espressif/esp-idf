@@ -1,18 +1,21 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """
 Check if all rules in rules.yml used or not in CI yaml files.
 """
-
 import argparse
 import os
 import re
 import sys
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Set
+from typing import Union
 
 import yaml
 from idf_ci_utils import IDF_PATH
@@ -49,6 +52,13 @@ class YMLConfig:
 
         all_config = dict()
         for item in self.root_yml['include']:
+            if isinstance(item, dict):
+                if 'project' in item:
+                    continue
+                elif 'local' in item:
+                    item = item['local']
+                else:
+                    continue
             all_config.update(load_yaml(os.path.join(IDF_PATH, item)))
         self._config = all_config
         return self._config

@@ -18,6 +18,9 @@ workflow:
 # Place the default settings in `.gitlab/ci/common.yml` instead
 
 include:
+  - project: "ci/actions/common"
+    file:
+      - "templates/idf/integration-test.yml"
   - '.gitlab/ci/common.yml'
   - '.gitlab/ci/rules.yml'
   - '.gitlab/ci/upload_cache.yml'
@@ -25,7 +28,6 @@ include:
   - '.gitlab/ci/static-code-analysis.yml'
   - '.gitlab/ci/pre_check.yml'
   - '.gitlab/ci/build.yml'
-  - '.gitlab/ci/integration_test.yml'
   - '.gitlab/ci/host-test.yml'
   - '.gitlab/ci/target-test.yml'
   - '.gitlab/ci/deploy.yml'

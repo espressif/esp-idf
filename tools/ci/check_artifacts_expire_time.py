@@ -1,10 +1,8 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 # internal use only
 # check if expire time is set for all artifacts
-
 import os
 
 import yaml
@@ -23,8 +21,15 @@ def check_artifacts_expire_time() -> None:
 
     # load files listed in `include`
     if 'include' in config:
-        for _file in config['include']:
-            with open(os.path.join(IDF_PATH or '', _file)) as f:
+        for item in config['include']:
+            if isinstance(item, dict):
+                if 'project' in item:
+                    continue
+                elif 'local' in item:
+                    item = item['local']
+                else:
+                    continue
+            with open(os.path.join(IDF_PATH or '', item)) as f:
                 config.update(yaml.load(f, Loader=yaml.FullLoader))
 
     print('expire time for jobs:')
