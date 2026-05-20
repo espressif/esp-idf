@@ -90,13 +90,16 @@ tBTA_STATUS BTA_HfClientEnable(tBTA_HF_CLIENT_CBACK *p_cback)
         return BTA_FAILURE;
     }
 
-    /* register with BTA system manager */
-    bta_sys_register(BTA_ID_HS, &bta_hf_client_reg);
-
     if ((p_buf = (tBTA_HF_CLIENT_API_ENABLE *) osi_malloc(sizeof(tBTA_HF_CLIENT_API_ENABLE))) != NULL) {
+        /* register with BTA system manager */
+        bta_sys_register(BTA_ID_HS, &bta_hf_client_reg);
+
         p_buf->hdr.event = BTA_HF_CLIENT_API_ENABLE_EVT;
         p_buf->p_cback = p_cback;
         bta_sys_sendmsg(p_buf);
+    } else {
+        APPL_TRACE_ERROR("BTA_HfClientEnable ENOMEM");
+        return BTA_NO_RESOURCES;
     }
 
     return BTA_SUCCESS;
