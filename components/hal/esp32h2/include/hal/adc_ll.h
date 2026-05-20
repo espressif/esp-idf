@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,11 +54,11 @@ extern "C" {
 #define ADC_LL_FSM_START_WAIT_DEFAULT                  (5)
 #define ADC_LL_FSM_STANDBY_WAIT_DEFAULT                (100)
 #define ADC_LL_SAMPLE_CYCLE_DEFAULT                    (2)
-#define ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT                (2)
+#define ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT                (1)
 
-#define ADC_LL_CLKM_DIV_NUM_DEFAULT       19
-#define ADC_LL_CLKM_DIV_B_DEFAULT         1
-#define ADC_LL_CLKM_DIV_A_DEFAULT         0
+#define ADC_LL_CLKM_DIV_NUM_DEFAULT       18
+#define ADC_LL_CLKM_DIV_B_DEFAULT         5
+#define ADC_LL_CLKM_DIV_A_DEFAULT         1
 #define ADC_LL_DEFAULT_CONV_LIMIT_EN      0
 #define ADC_LL_DEFAULT_CONV_LIMIT_NUM     255
 
@@ -143,7 +143,7 @@ static inline void adc_ll_set_sample_cycle(uint32_t sample_cycle)
 static inline void adc_ll_digi_set_clk_div(uint32_t div)
 {
     /* ADC clock divided from digital controller clock clk */
-    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.saradc_ctrl, saradc_saradc_sar_clk_div, div);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.sar_clk_div, sar1_clk_div_num, div);
 }
 
 /**
