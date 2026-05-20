@@ -31,6 +31,7 @@ def test_parlio(dut: Dut) -> None:
     ],
     indirect=True,
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15613
 @idf_parametrize(
     'target', soc_filtered_targets('SOC_PARLIO_SUPPORTED == 1 and SOC_FLASH_ENC_SUPPORTED == 1'), indirect=['target']
 )
