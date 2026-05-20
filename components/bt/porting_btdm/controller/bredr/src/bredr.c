@@ -110,6 +110,7 @@ extern int bredr_ctrl_feat_sync_en(void);
 extern int bredr_ctrl_feat_apb_en(void);
 extern int bredr_ctrl_feat_bcst_enc_en(void);
 extern int bredr_ctrl_feat_pca_en(void);
+extern int bredr_ctrl_feat_hold_en(void);
 extern int bredr_ctrl_feat_cpb_rx_en(void);
 extern int bredr_ctrl_feat_cpb_tx_en(void);
 extern int bredr_ctrl_feat_dtm_en(void);
@@ -625,6 +626,14 @@ static int bredr_ctrl_setup_callback(void)
             break;
         }
 #endif /* UC_BR_EDR_APB_EXT_PCA_EN */
+
+#if UC_BR_EDR_HOLD_EN
+        ret = bredr_ctrl_feat_hold_en();
+        if (ret != 0) {
+            ESP_LOGE(BREDR_LOG_TAG, "bredr_ctrl_feat_hold_en failed, ret:%d", ret);
+            break;
+        }
+#endif /* UC_BR_EDR_HOLD_EN */
 
 #if UC_BR_EDR_CPB_RX_LINK_NB
         ret = bredr_ctrl_feat_cpb_rx_en();

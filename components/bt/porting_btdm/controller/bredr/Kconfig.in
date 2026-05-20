@@ -167,6 +167,12 @@ config BT_CTRL_BR_EDR_CPB_RX_EN
     help
         Enable BR/EDR Connectionless Peripheral Broadcast Receive
 
+config BT_CTRL_BR_EDR_HOLD_EN
+    bool "Enable BR/EDR Hold Mode"
+    default n
+    help
+        Enable BR/EDR Hold Mode
+
 config BT_CTRL_BR_EDR_LK_STORE_EN
     bool "Enable BR/EDR controller link key storage"
     default n
