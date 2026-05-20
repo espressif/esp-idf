@@ -46,6 +46,7 @@
 ** Function         SDP_InitDiscoveryDb
 **
 ** Description      This function is called to initialize a discovery database.
+**                  It will no longer use p_attr_list and p_uuid_list after calling it.
 **
 ** Parameters:      p_db        - (input) address of an area of memory where the
 **                                        discovery database is managed.
@@ -63,7 +64,7 @@
 **
 *******************************************************************************/
 BOOLEAN SDP_InitDiscoveryDb (tSDP_DISCOVERY_DB *p_db, UINT32 len, UINT16 num_uuid,
-                             tSDP_UUID *p_uuid_list, UINT16 num_attr, UINT16 *p_attr_list)
+                             const tSDP_UUID *p_uuid_list, UINT16 num_attr, const UINT16 *p_attr_list)
 {
 #if SDP_CLIENT_ENABLED == TRUE
     UINT16  xx;
