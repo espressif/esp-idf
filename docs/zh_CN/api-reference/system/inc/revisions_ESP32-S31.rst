@@ -1,3 +1,0 @@
-.. note::
-
-    To be updated.

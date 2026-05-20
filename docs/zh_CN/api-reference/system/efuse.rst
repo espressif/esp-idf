@@ -75,7 +75,7 @@ eFuse 字段通过 CSV 文件中特定格式的表格进行定义。通过这种
 
 一般情况下，每个记录在定义表格中占据一行，每行包含以下值（也就是列）：
 
-{IDF_TARGET_MAX_EFUSE_BLK:default = "EFUSE_BLK10", esp32 = "EFUSE_BLK3", esp32c2 = "EFUSE_BLK3"}
+{IDF_TARGET_MAX_EFUSE_BLK:default = "EFUSE_BLK10", esp32 = "EFUSE_BLK3", esp32c2 = "EFUSE_BLK3", esp32s31 = "EFUSE_BLK9"}
 
 .. code-block:: none
 
