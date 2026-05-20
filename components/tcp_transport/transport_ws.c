@@ -625,12 +625,15 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
             return rlen;
         }
 
-        if (data_ptr[0] != 0 || data_ptr[1] != 0 || data_ptr[2] != 0 || data_ptr[3] != 0) {
-            // really too big!
-            payload_len = 0xFFFFFFFF;
-        } else {
-            payload_len = (uint8_t)data_ptr[4] << 24 | (uint8_t)data_ptr[5] << 16 | (uint8_t)data_ptr[6] << 8 | data_ptr[7];
+        if (data_ptr[0] != 0 || data_ptr[1] != 0 || data_ptr[2] != 0 || data_ptr[3] != 0 ||
+            ((uint8_t)data_ptr[4] & 0x80)) {
+            ESP_LOGE(TAG, "Payload length out of range");
+            return -1;
         }
+        payload_len = (int)((uint32_t)(uint8_t)data_ptr[4] << 24 |
+                            (uint32_t)(uint8_t)data_ptr[5] << 16 |
+                            (uint32_t)(uint8_t)data_ptr[6] << 8 |
+                            (uint32_t)(uint8_t)data_ptr[7]);
     }
     // RFC 6455 Section 5.5: Control frames MUST have payload length of 125 bytes or less
     if ((ws->frame_state.opcode & WS_OPCODE_CONTROL_FRAME) && payload_len > 125) {
