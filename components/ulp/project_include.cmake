@@ -12,13 +12,44 @@ function(__setup_ulp_project app_name project_path prefix type s_sources exp_dep
             list(APPEND sources ${source})
         endforeach()
 
+        # In cmakev2, anchor the ULP sub-project's binary dir to the parent's
+        # BUILD_DIR so it is not nested under the component that happened to
+        # register it, and so that wiping the parent build dir removes the ULP
+        # artifacts together with its editable sdkconfig (see -DSDKCONFIG below).
+        if(IDF_BUILD_V2)
+            idf_build_get_property(build_dir BUILD_DIR)
+            set(ulp_binary_dir "${build_dir}/subprojects/${app_name}")
+
+            # Safety net for cases where the build directory is not wiped
+            # before changing target (e.g. someone reconfigures directly via
+            # `cmake -B build -DIDF_TARGET=...` instead of `idf.py set-target`,
+            # which would normally pull in `fullclean` and remove the whole
+            # build tree). When `_IDF_PY_SET_TARGET_ACTION=1` is set, mirror
+            # what the parent does to its own sdkconfig (cmakev1 renames it,
+            # cmakev2 relaxes the consistency check) and move the sub-project's
+            # sdkconfig aside. The ULP's externalproject_add configure is lazy
+            # and runs after the parent's configure exits, so by then
+            # _IDF_PY_SET_TARGET_ACTION is no longer in the environment.
+            # Without this, a stale sub-project sdkconfig from a previous
+            # target would trip the cross-check inside the ULP's
+            # __init_idf_target.
+            set(ulp_sdkconfig "${ulp_binary_dir}/sdkconfig")
+            if("$ENV{_IDF_PY_SET_TARGET_ACTION}" STREQUAL "1" AND EXISTS "${ulp_sdkconfig}")
+                file(RENAME "${ulp_sdkconfig}" "${ulp_sdkconfig}.old")
+                message(STATUS "Existing sub-project sdkconfig '${ulp_sdkconfig}' "
+                               "renamed to '${ulp_sdkconfig}.old'.")
+            endif()
+        else()
+            set(ulp_binary_dir "${CMAKE_CURRENT_BINARY_DIR}/${app_name}")
+        endif()
+
         foreach(source ${sources})
             get_filename_component(ps_source ${source} NAME_WE)
-            set(ps_output ${CMAKE_CURRENT_BINARY_DIR}/${app_name}/${ps_source}.ulp.S)
+            set(ps_output ${ulp_binary_dir}/${ps_source}.ulp.S)
             list(APPEND ps_sources ${ps_output})
         endforeach()
 
-        set(ulp_artifacts_prefix ${CMAKE_CURRENT_BINARY_DIR}/${app_name}/${app_name})
+        set(ulp_artifacts_prefix ${ulp_binary_dir}/${app_name})
 
         set(ulp_artifacts ${ulp_artifacts_prefix}.bin
                             ${ulp_artifacts_prefix}.ld
@@ -26,7 +57,7 @@ function(__setup_ulp_project app_name project_path prefix type s_sources exp_dep
 
         set(ulp_artifacts_extras ${ulp_artifacts_prefix}.map
                             ${ulp_artifacts_prefix}.sym
-                            ${CMAKE_CURRENT_BINARY_DIR}/${app_name}/esp32.ulp.ld)
+                            ${ulp_binary_dir}/esp32.ulp.ld)
 
         # Replace the separator for the list of ULP source files that will be passed to
         # the external ULP project. This is a workaround to the bug https://public.kitware.com/Bug/view.php?id=16137.
@@ -79,7 +110,7 @@ function(__setup_ulp_project app_name project_path prefix type s_sources exp_dep
         if(IDF_BUILD_V2)
             externalproject_add(${app_name}
                 SOURCE_DIR ${project_path}
-                BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${app_name}
+                BINARY_DIR ${ulp_binary_dir}
                 INSTALL_COMMAND ""
                 CMAKE_ARGS  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
                             -DCMAKE_GENERATOR=${CMAKE_GENERATOR}
@@ -93,15 +124,17 @@ function(__setup_ulp_project app_name project_path prefix type s_sources exp_dep
                             -DCOMPONENT_INCLUDES=$<TARGET_PROPERTY:${COMPONENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>
                             -DIDF_TARGET=${idf_target}
                             -DIDF_PATH=${idf_path}
+                            -DSDKCONFIG=${ulp_binary_dir}/sdkconfig
                             -DSDKCONFIG_DEFAULTS=${sdkconfig}
+                            -DDEPENDENCIES_LOCK=${ulp_binary_dir}/dependencies.lock
                             -DPYTHON=${python}
                             -DPYTHON_DEPS_CHECKED=1
                             -DCMAKE_MODULE_PATH=${idf_path}/components/ulp/cmake/
                             -DIDF_CUSTOM_TOOLCHAIN=1
                             ${extra_cmake_args}
-                BUILD_COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR}/${app_name} --target build
+                BUILD_COMMAND ${CMAKE_COMMAND} --build ${ulp_binary_dir} --target build
                 BUILD_BYPRODUCTS ${ulp_artifacts} ${ulp_artifacts_extras} ${ulp_ps_sources}
-                                ${CMAKE_CURRENT_BINARY_DIR}/${app_name}/${app_name}
+                                ${ulp_binary_dir}/${app_name}
                 BUILD_ALWAYS 1
                 )
 
@@ -116,7 +149,7 @@ function(__setup_ulp_project app_name project_path prefix type s_sources exp_dep
         else()
             externalproject_add(${app_name}
                 SOURCE_DIR ${project_path}
-                BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${app_name}
+                BINARY_DIR ${ulp_binary_dir}
                 INSTALL_COMMAND ""
                 CMAKE_ARGS  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
                             -DCMAKE_GENERATOR=${CMAKE_GENERATOR}
@@ -135,9 +168,9 @@ function(__setup_ulp_project app_name project_path prefix type s_sources exp_dep
                             -DPYTHON=${python}
                             -DCMAKE_MODULE_PATH=${idf_path}/components/ulp/cmake/
                             ${extra_cmake_args}
-                BUILD_COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR}/${app_name} --target build
+                BUILD_COMMAND ${CMAKE_COMMAND} --build ${ulp_binary_dir} --target build
                 BUILD_BYPRODUCTS ${ulp_artifacts} ${ulp_artifacts_extras} ${ulp_ps_sources}
-                                ${CMAKE_CURRENT_BINARY_DIR}/${app_name}/${app_name}
+                                ${ulp_binary_dir}/${app_name}
                 BUILD_ALWAYS 1
                 )
         endif()
@@ -147,14 +180,14 @@ function(__setup_ulp_project app_name project_path prefix type s_sources exp_dep
         spaces2list(exp_dep_srcs)
         set_source_files_properties(${exp_dep_srcs} PROPERTIES OBJECT_DEPENDS ${ulp_artifacts})
 
-        include_directories(${CMAKE_CURRENT_BINARY_DIR}/${app_name})
+        include_directories(${ulp_binary_dir})
 
         add_custom_target(${app_name}_artifacts DEPENDS ${app_name})
 
         add_dependencies(${COMPONENT_LIB} ${app_name}_artifacts)
 
-        target_linker_script(${COMPONENT_LIB} INTERFACE ${CMAKE_CURRENT_BINARY_DIR}/${app_name}/${app_name}.ld)
-        target_add_binary_data(${COMPONENT_LIB} ${CMAKE_CURRENT_BINARY_DIR}/${app_name}/${app_name}.bin BINARY)
+        target_linker_script(${COMPONENT_LIB} INTERFACE ${ulp_binary_dir}/${app_name}.ld)
+        target_add_binary_data(${COMPONENT_LIB} ${ulp_binary_dir}/${app_name}.bin BINARY)
     endif()
 endfunction()
 
