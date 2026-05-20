@@ -112,7 +112,7 @@ static void
 btdm_lp_timer_clk_init(esp_btdm_controller_config_t *cfg)
 {
     if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_INVALID) {
-#if CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL
+#if CONFIG_BT_CTRL_LP_CLK_SRC_MAIN_XTAL
         s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL;
         s_bt_lpclk_freq = s_bt_xtal_lpclk_freq;
 #else
@@ -141,7 +141,7 @@ btdm_lp_timer_clk_init(esp_btdm_controller_config_t *cfg)
         ESP_LOGE(BTDM_LOG_TAG, "Unsupported clock source");
         assert(0);
 #endif
-#endif /* CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL */
+#endif /* CONFIG_BT_CTRL_LP_CLK_SRC_MAIN_XTAL */
     }
 
     btdm_lp_rtc_slow_clk_select(s_bt_lpclk_src);
@@ -277,7 +277,6 @@ btdm_lp_modem_state_deinit(void)
  * Public Function Definitions
  ***************************************************************************************************
  */
-#include "modem/modem_syscon_reg.h"
 void
 btdm_lp_enable_clock(esp_btdm_controller_config_t *cfg)
 {
@@ -319,7 +318,7 @@ btdm_lp_init(void)
     rc = btdm_lp_modem_state_init();
     assert(rc == 0);
     esp_sleep_enable_bt_wakeup();
-    ESP_LOGW(BTDM_LOG_TAG, "Enable light sleep, the wake up source is BLE timer");
+    ESP_LOGW(BTDM_LOG_TAG, "Enable light sleep, the wake up source is modem lp timer");
 
     rc = esp_pm_register_inform_out_light_sleep_overhead_callback(r_btdm_sleep_wake_up_overhead_set);
     if (rc != ESP_OK) {
