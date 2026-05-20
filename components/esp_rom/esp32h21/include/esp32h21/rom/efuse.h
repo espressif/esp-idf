@@ -14,8 +14,6 @@ extern "C" {
 #include <stddef.h>
 #include <stdbool.h>
 
-//TODO: [ESP32H21] IDF-11556
-
 /** \defgroup efuse_APIs efuse APIs
   * @brief     ESP32H21 efuse read/write APIs
   * @attention

@@ -12,8 +12,6 @@
 #include "hal/efuse_ll.h"
 #include_next "hal/efuse_hal.h"
 
-//TODO: [ESP32H21] IDF-11556, inherit from h2
-
 #ifdef __cplusplus
 extern "C" {
 #endif

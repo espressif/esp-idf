@@ -11,8 +11,6 @@
 #include "hal/efuse_ll.h"
 #include "esp_attr.h"
 
-//TODO: [ESP32H21] IDF-11556
-
 #define ESP_EFUSE_BLOCK_ERROR_BITS(error_reg, block) ((error_reg) & (0x08 << (4 * (block))))
 #define ESP_EFUSE_BLOCK_ERROR_NUM_BITS(error_reg, block) ((error_reg) & (0x07 << (4 * (block))))
 
