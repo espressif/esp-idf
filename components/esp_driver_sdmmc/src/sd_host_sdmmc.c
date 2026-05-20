@@ -153,6 +153,8 @@ esp_err_t sd_host_sdmmc_controller_add_slot(sd_host_ctlr_handle_t ctlr, const sd
     sd_host_sdmmc_slot_t *slot = heap_caps_calloc(1, sizeof(sd_host_sdmmc_slot_t), SD_HOST_SDMMC_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(slot, ESP_ERR_NO_MEM, TAG, "no mem for sd host slot context");
 
+    xSemaphoreTake(ctlr_ctx->mutex, portMAX_DELAY);
+
     bool slot_available = false;
     portENTER_CRITICAL(&ctlr_ctx->spinlock);
     if (!ctlr_ctx->slot[config->slot_id]) {
@@ -192,6 +194,7 @@ esp_err_t sd_host_sdmmc_controller_add_slot(sd_host_ctlr_handle_t ctlr, const sd
 
     *ret_handle = &slot->drv;
 
+    xSemaphoreGive(ctlr_ctx->mutex);
     return ESP_OK;
 
 err:
@@ -201,6 +204,7 @@ err:
         ctlr_ctx->registered_slot_nums -= 1;
         portEXIT_CRITICAL(&ctlr_ctx->spinlock);
     }
+    xSemaphoreGive(ctlr_ctx->mutex);
     free(slot);
 
     return ret;
@@ -299,9 +303,11 @@ static esp_err_t sd_host_slot_sdmmc_register_event_callbacks(sd_host_slot_handle
 #endif
 
     sd_host_sdmmc_slot_t *slot_ctx = __containerof(slot, sd_host_sdmmc_slot_t, drv);
+    portENTER_CRITICAL(&slot_ctx->ctlr->spinlock);
     slot_ctx->cbs.on_trans_done = cbs->on_trans_done;
     slot_ctx->cbs.on_io_interrupt = cbs->on_io_interrupt;
     slot_ctx->user_data = user_data;
+    portEXIT_CRITICAL(&slot_ctx->ctlr->spinlock);
 
     return ESP_OK;
 }
@@ -341,6 +347,8 @@ static esp_err_t sd_host_controller_remove_sdmmc_slot(sd_host_slot_handle_t slot
     sd_host_sdmmc_slot_t *slot_ctx = __containerof(slot, sd_host_sdmmc_slot_t, drv);
     sd_host_sdmmc_ctlr_t *ctlr = slot_ctx->ctlr;
 
+    xSemaphoreTake(ctlr->mutex, portMAX_DELAY);
+
     bool slot_registered = false;
     bool no_registered_slots = false;
     portENTER_CRITICAL(&ctlr->spinlock);
@@ -357,7 +365,11 @@ static esp_err_t sd_host_controller_remove_sdmmc_slot(sd_host_slot_handle_t slot
         }
     }
     portEXIT_CRITICAL(&ctlr->spinlock);
-    ESP_RETURN_ON_FALSE(slot_registered, ESP_ERR_INVALID_STATE, TAG, "slot is not registered");
+    if (!slot_registered) {
+        xSemaphoreGive(ctlr->mutex);
+        ESP_LOGE(TAG, "slot is not registered");
+        return ESP_ERR_INVALID_STATE;
+    }
 
     if (slot_ctx->io_config.clk_io != GPIO_NUM_NC) {
         gpio_output_disable(slot_ctx->io_config.clk_io);
@@ -386,6 +398,7 @@ static esp_err_t sd_host_controller_remove_sdmmc_slot(sd_host_slot_handle_t slot
         gpio_output_disable(slot_ctx->io_config.d7_io);
     }
 
+    xSemaphoreGive(ctlr->mutex);
     free(slot);
 
     return ESP_OK;
@@ -393,20 +406,22 @@ static esp_err_t sd_host_controller_remove_sdmmc_slot(sd_host_slot_handle_t slot
 
 static esp_err_t sd_host_del_sdmmc_controller(sd_host_ctlr_handle_t ctlr)
 {
+    esp_err_t ret = ESP_OK;
     sd_host_sdmmc_ctlr_t *ctlr_ctx = __containerof(ctlr, sd_host_sdmmc_ctlr_t, drv);
     ESP_RETURN_ON_FALSE(ctlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(ctlr_ctx->registered_slot_nums == 0, ESP_ERR_INVALID_STATE, TAG, "host controller with slot registered");
 
-    ESP_RETURN_ON_ERROR(sd_host_declaim_controller(ctlr_ctx), TAG, "controller isn't in use");
-    ESP_RETURN_ON_ERROR(esp_intr_free(ctlr_ctx->intr_handle), TAG, "failed to delete interrupt service");
+    if (ctlr_ctx->mutex) {
+        xSemaphoreTake(ctlr_ctx->mutex, portMAX_DELAY);
+    }
+
+    ESP_GOTO_ON_FALSE(ctlr_ctx->registered_slot_nums == 0, ESP_ERR_INVALID_STATE, err, TAG, "host controller with slot registered");
+    ESP_GOTO_ON_ERROR(sd_host_declaim_controller(ctlr_ctx), err, TAG, "controller isn't in use");
+    ESP_GOTO_ON_ERROR(esp_intr_free(ctlr_ctx->intr_handle), err, TAG, "failed to delete interrupt service");
 
     sdmmc_hal_deinit(&ctlr_ctx->hal);
 
     if (ctlr_ctx->event_queue) {
         vQueueDeleteWithCaps(ctlr_ctx->event_queue);
-    }
-    if (ctlr_ctx->mutex) {
-        vSemaphoreDeleteWithCaps(ctlr_ctx->mutex);
     }
     if (ctlr_ctx->io_intr_sem) {
         vSemaphoreDeleteWithCaps(ctlr_ctx->io_intr_sem);
@@ -421,12 +436,22 @@ static esp_err_t sd_host_del_sdmmc_controller(sd_host_ctlr_handle_t ctlr)
     esp_clk_tree_enable_src(SOC_MOD_CLK_MPLL, false);
 #endif
 
+    if (ctlr_ctx->mutex) {
+        vSemaphoreDeleteWithCaps(ctlr_ctx->mutex);
+    }
+
     free(ctlr_ctx->dma_desc);
     ctlr_ctx->dma_desc = NULL;
     free(ctlr_ctx);
     ctlr_ctx = NULL;
 
     return ESP_OK;
+
+err:
+    if (ctlr_ctx->mutex) {
+        xSemaphoreGive(ctlr_ctx->mutex);
+    }
+    return ret;
 }
 
 static esp_err_t sd_host_slot_sdmmc_io_int_enable(sd_host_slot_handle_t slot)
