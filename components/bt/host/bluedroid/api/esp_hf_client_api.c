@@ -518,9 +518,6 @@ esp_err_t esp_hf_client_register_data_callback(esp_hf_client_incoming_data_cb_t 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
-    if (recv == NULL || send == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
 
     btc_msg_t msg;
     msg.sig = BTC_SIG_API_CALL;
