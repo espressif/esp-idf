@@ -301,7 +301,7 @@ typedef struct {
 #endif
 #if SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
     uint64_t gpio_wakeup_mask;
-    uint64_t gpio_trigger_mode;
+    uint8_t  gpio_trigger_mode[SOC_GPIO_PIN_COUNT];
 #endif
     uint32_t sleep_time_adjustment;
     uint32_t ccount_ticks_record;
@@ -314,7 +314,6 @@ typedef struct {
 #endif
     bool overhead_out_need_remeasure;
 } sleep_config_t;
-
 
 #if CONFIG_ESP_SLEEP_DEBUG
 static esp_sleep_context_t *s_sleep_ctx = NULL;
@@ -1782,7 +1781,7 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_GPIO, RTC_GPIO_TRIG_EN)) {
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
         s_config.gpio_wakeup_mask = 0;
-        s_config.gpio_trigger_mode = 0;
+        memset(s_config.gpio_trigger_mode, 0, sizeof(s_config.gpio_trigger_mode));
 #endif
         s_config.wakeup_triggers &= ~RTC_GPIO_TRIG_EN;
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_UART0, RTC_UART0_TRIG_EN)) {
@@ -2260,17 +2259,27 @@ static void esp_sleep_gpio_wakeup_prepare_on_hp_periph_powerdown(void)
         int __DECLARE_RCC_ATOMIC_ENV __attribute__ ((unused));
         rtcio_ll_enable_io_clock(true);
 #endif
+        __attribute__ ((unused)) gpio_int_type_t intr_type = (gpio_int_type_t)s_config.gpio_trigger_mode[gpio_idx];
 #if CONFIG_ESP_SLEEP_GPIO_ENABLE_INTERNAL_RESISTORS
         if (GPIO_IS_VALID_OUTPUT_GPIO(gpio_idx)) {
-            if (s_config.gpio_trigger_mode & BIT(gpio_idx)) {
+            if (intr_type == GPIO_INTR_LOW_LEVEL || intr_type == GPIO_INTR_NEGEDGE) {
+                gpio_pullup_en(gpio_idx);
+                gpio_pulldown_dis(gpio_idx);
+            } else if (intr_type == GPIO_INTR_HIGH_LEVEL || intr_type == GPIO_INTR_POSEDGE) {
                 gpio_pullup_dis(gpio_idx);
                 gpio_pulldown_en(gpio_idx);
             } else {
-                gpio_pullup_en(gpio_idx);
+                gpio_pullup_dis(gpio_idx);
                 gpio_pulldown_dis(gpio_idx);
             }
         } else {
             ESP_EARLY_LOGE(TAG, "GPIO%d not support internal PU/PD", gpio_idx);
+        }
+#endif
+#if SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED
+        /* Clear any pending edge-wakeup latch so a stale event does not immediately re-wake the chip. */
+        if (intr_type == GPIO_INTR_POSEDGE || intr_type == GPIO_INTR_NEGEDGE || intr_type == GPIO_INTR_ANYEDGE) {
+            gpio_hal_clear_hp_periph_pd_sleep_edge_wakeup_latch(NULL, gpio_idx);
         }
 #endif
         ESP_ERROR_CHECK(gpio_hold_en(gpio_idx));
@@ -2282,14 +2291,20 @@ static void esp_sleep_gpio_wakeup_prepare_on_hp_periph_powerdown(void)
 
 esp_err_t esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown(uint64_t gpio_pin_mask, esp_sleep_gpio_wake_up_mode_t mode)
 {
-    if (mode > ESP_GPIO_WAKEUP_GPIO_HIGH) {
-        ESP_LOGE(TAG, "invalid mode");
-        return ESP_ERR_INVALID_ARG;
-    }
     if (gpio_pin_mask == 0) {
         return ESP_ERR_INVALID_ARG;
     }
-    gpio_int_type_t intr_type = ((mode == ESP_GPIO_WAKEUP_GPIO_LOW) ? GPIO_INTR_LOW_LEVEL : GPIO_INTR_HIGH_LEVEL);
+    const gpio_int_type_t intr_type = WAKEUP_MODE_2_INT_TYPE(mode);
+    if (intr_type == GPIO_INTR_DISABLE || intr_type > GPIO_INTR_HIGH_LEVEL) {
+        ESP_LOGE(TAG, "invalid mode");
+        return ESP_ERR_INVALID_ARG;
+    }
+#if !SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED
+    if (intr_type != GPIO_INTR_LOW_LEVEL && intr_type != GPIO_INTR_HIGH_LEVEL) {
+        ESP_LOGE(TAG, "invalid mode");
+        return ESP_ERR_INVALID_ARG;
+    }
+#endif
     esp_err_t err = ESP_OK;
 
     uint64_t invalid_io_mask = gpio_pin_mask & ~SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_MASK;
@@ -2306,11 +2321,7 @@ esp_err_t esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown(uint64_t gpio_pin_
         err = gpio_wakeup_enable_on_hp_periph_powerdown_sleep(gpio_idx, intr_type);
         if (err != ESP_OK) return err;
         s_config.gpio_wakeup_mask |= BIT64(gpio_idx);
-        if (mode == ESP_GPIO_WAKEUP_GPIO_HIGH) {
-            s_config.gpio_trigger_mode |= BIT64(gpio_idx);
-        } else {
-            s_config.gpio_trigger_mode &= ~BIT64(gpio_idx);
-        }
+        s_config.gpio_trigger_mode[gpio_idx] = (uint8_t)intr_type;
         gpio_pin_mask &= gpio_pin_mask - 1;
     }
     s_config.wakeup_triggers |= RTC_GPIO_TRIG_EN;

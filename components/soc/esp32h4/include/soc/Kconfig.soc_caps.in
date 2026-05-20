@@ -507,6 +507,10 @@ config SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_MASK
     int
     default 0
 
+config SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED
+    bool
+    default y
+
 config SOC_GPIO_SUPPORT_FORCE_HOLD
     bool
     default y

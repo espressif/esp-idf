@@ -263,6 +263,7 @@
 
 // LP IO peripherals have independent clock gating to manage
 #define SOC_LP_IO_CLOCK_IS_INDEPENDENT      (1)
+#define SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED  (1)
 
 #define SOC_GPIO_VALID_GPIO_MASK        (0x007FFFFFFFFFFFFF)
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK SOC_GPIO_VALID_GPIO_MASK

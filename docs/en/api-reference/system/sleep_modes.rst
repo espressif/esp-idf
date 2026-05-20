@@ -381,15 +381,22 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
             - Deep-sleep mode (always)
             - Light-sleep mode when :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` is enabled
 
+            .. only:: SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED
+
+                On {IDF_TARGET_NAME} the API also accepts edge-triggered wakeup modes: ``ESP_GPIO_WAKEUP_GPIO_POSEDGE`` (rising edge), ``ESP_GPIO_WAKEUP_GPIO_NEGEDGE`` (falling edge), and ``ESP_GPIO_WAKEUP_GPIO_ANYEDGE`` (both edges). For ``ESP_GPIO_WAKEUP_GPIO_ANYEDGE``, the internal pull-up/pull-down is disabled (when :ref:`CONFIG_ESP_SLEEP_GPIO_ENABLE_INTERNAL_RESISTORS` is enabled) because the idle level is ambiguous; an external pull or an already-stable line is recommended.
+
             .. note::
                 Only GPIOs powered by the VDD3P3_RTC power domain (RTC IOs) can be used with this API. The exact set of supported pins can be checked in the `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__ > Section IO Pins.
+
+    .. note::
+        Any GPIO/IO wakeup signal -- whether level or edge -- must be held (or have a pulse width) of at least 3 RTC slow-clock cycles to be reliably sampled by the wakeup logic. The duration of one slow-clock cycle depends on :ref:`CONFIG_RTC_CLK_SRC` (e.g. RC_SLOW @ ~136 kHz ~= 7.4 us/cycle, XTAL32K @ 32.768 kHz ~= 30.5 us/cycle). This applies to both :cpp:func:`esp_sleep_enable_gpio_wakeup` and :cpp:func:`esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown`.
 
 .. only:: esp32h2
 
     GPIO Wakeup
     ^^^^^^^^^^^
 
-    Any IO can be used as the external input to wake up the chip from Light-sleep. Each pin can be individually configured to trigger wakeup on high or low level using the :cpp:func:`gpio_wakeup_enable` function. Then the :cpp:func:`esp_sleep_enable_gpio_wakeup` function should be called to enable this wakeup source.
+    Any IO can be used as the external input to wake up the chip from Light-sleep. Each pin can be individually configured using :cpp:func:`gpio_wakeup_enable` (low/high level only). Then the :cpp:func:`esp_sleep_enable_gpio_wakeup` function should be called to enable this wakeup source.
 
 
 .. _uart_wakeup_light_sleep:

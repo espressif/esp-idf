@@ -309,12 +309,13 @@ esp_err_t rtc_gpio_isolate(gpio_num_t gpio_num);
 /**
  * @brief Enable wakeup from sleep mode using specific GPIO
  * @param gpio_num  GPIO number
- * @param intr_type  Wakeup on high level (GPIO_INTR_HIGH_LEVEL) or low level
- *                   (GPIO_INTR_LOW_LEVEL)
+ * @param intr_type  Wakeup trigger type:
+ *                   - Always supported: GPIO_INTR_HIGH_LEVEL, GPIO_INTR_LOW_LEVEL
+ *                   - If SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED:
+ *                        GPIO_INTR_POSEDGE, GPIO_INTR_NEGEDGE, GPIO_INTR_ANYEDGE
  * @return
  *      - ESP_OK Success
- *      - ESP_ERR_INVALID_ARG The IO is not an RTC IO, or intr_type is not
- *        one of GPIO_INTR_HIGH_LEVEL, GPIO_INTR_LOW_LEVEL.
+ *      - ESP_ERR_INVALID_ARG The IO is not an RTC IO, or intr_type is not supported by the target.
  */
 esp_err_t rtc_gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type);
 

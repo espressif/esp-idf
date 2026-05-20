@@ -114,6 +114,6 @@ components/esp_hw_support/test_apps/wakeup_tests:
     - esp_hw_support
     - soc
   disable_test:
-    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32h21"]
       temporary: true
       reason: lack of runners

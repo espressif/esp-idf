@@ -1067,10 +1067,17 @@ esp_err_t gpio_wakeup_enable_on_hp_periph_powerdown_sleep(gpio_num_t gpio_num, g
         ESP_LOGE(GPIO_TAG, "GPIO %d does not support wakeup on peripheral powerdown sleep", gpio_num);
         return ESP_ERR_INVALID_ARG;
     }
+#if SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED
+    if (intr_type == GPIO_INTR_DISABLE || intr_type > GPIO_INTR_HIGH_LEVEL) {
+        ESP_LOGE(GPIO_TAG, "invalid intr_type for wakeup, gpio_num:%u", gpio_num);
+        return ESP_ERR_INVALID_ARG;
+    }
+#else
     if ((intr_type != GPIO_INTR_LOW_LEVEL) && (intr_type != GPIO_INTR_HIGH_LEVEL)) {
         ESP_LOGE(GPIO_TAG, "GPIO wakeup only supports level mode, but edge mode set. gpio_num:%u", gpio_num);
         return ESP_ERR_INVALID_ARG;
     }
+#endif
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
 #if SOC_LP_IO_CLOCK_IS_INDEPENDENT
     io_mux_enable_lp_io_clock(gpio_num, true);
