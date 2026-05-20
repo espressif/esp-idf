@@ -618,6 +618,21 @@ bool IRAM_ATTR esp_psram_check_ptr_addr(const void *p)
     return false;
 }
 
+bool IRAM_ATTR esp_psram_ptr_is_no_enc(const void *p)
+{
+#if CONFIG_SPIRAM_ENC_EXEMPT
+    if (!s_psram_ctx.is_initialised) {
+        return false;
+    }
+
+    return ((intptr_t)p >= s_psram_ctx.mapped_regions[PSRAM_MEM_ENC_EXEMPT].vaddr_start &&
+            (intptr_t)p < s_psram_ctx.mapped_regions[PSRAM_MEM_ENC_EXEMPT].vaddr_end);
+#else
+    (void)p;
+    return false;
+#endif
+}
+
 esp_err_t esp_psram_extram_reserve_dma_pool(size_t size)
 {
     if (size == 0) {
