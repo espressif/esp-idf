@@ -1007,6 +1007,10 @@ config SOC_USB_OTG_PERIPH_NUM
     int
     default 1
 
+config SOC_USB_FSLS_PHY_NUM
+    int
+    default 1
+
 config SOC_SHA_DMA_MAX_BUFFER_SIZE
     int
     default 3968
