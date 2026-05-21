@@ -41,10 +41,13 @@
 
 static void print_results(const char *name, double time, size_t size, int repeat_count)
 {
+/* Suppress benchmark printf in CI (CONFIG_IDF_CI_BUILD, IDF_CI_BUILD=1) to avoid UART flooding. */
+#if !CONFIG_IDF_CI_BUILD
     double average = time / repeat_count;
     double speed = (size / average) / (1024 * 1024) * (1000 * 1000);
     printf("[%-55s] (%dx) %8.3f ms %8.2f k" UNIT_STRING " %10.3f M" UNIT_STRING "/s\n",
            name, repeat_count, (float) average / 1000, (float)size * UNIT_MULTIPLIER / 1024, speed);
+#endif
 }
 
 void spiflash_speed_test_raw_run(size_t repeat_count)
