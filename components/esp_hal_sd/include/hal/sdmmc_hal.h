@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,6 +33,13 @@ typedef struct {
  * @param hal Context of the HAL
  */
 void sdmmc_hal_init(sdmmc_hal_context_t *hal);
+
+/**
+ * @brief Deinit the sdmmc hal context.
+ *
+ * @param hal Context of the HAL
+ */
+void sdmmc_hal_deinit(sdmmc_hal_context_t *hal);
 
 #ifdef __cplusplus
 }

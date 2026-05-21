@@ -340,6 +340,21 @@ typedef enum {
     LP_I2C_SCLK_DEFAULT = SOC_MOD_CLK_RTC_FAST,                 /*!< LP_I2C source clock default choice is RTC_FAST */
 } soc_periph_lp_i2c_clk_src_t;
 
+//////////////////////////////////////////////////SDMMC///////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of SDMMC
+ */
+#define SOC_SDMMC_CLKS {SOC_MOD_CLK_MPLL}
+
+/**
+ * @brief Type of SDMMC clock source
+ */
+typedef enum {
+    SDMMC_CLK_SRC_DEFAULT = SOC_MOD_CLK_MPLL,   /*!< Select MPLL as the default choice */
+    SDMMC_CLK_SRC_MPLL = SOC_MOD_CLK_MPLL,      /*!< Select MPLL as the source clock */
+} soc_periph_sdmmc_clk_src_t;
+
 /////////////////////////////////////////////////SPI////////////////////////////////////////////////////////////////////
 
 /**

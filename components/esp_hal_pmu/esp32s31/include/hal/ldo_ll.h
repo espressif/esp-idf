@@ -9,13 +9,45 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "hal/misc.h"
+#include "hal/pmu_types.h"
 #include "soc/pmu_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define LDO_LL_RAIL_VOLTAGE_MV          3300
+#define LDO_LL_NUM_UNITS                    1    // Number of LDO units
+#define LDO_LL_ADJUSTABLE_CHAN_MASK         0x01 // all the channels are adjustable by setting "mul" and "dref" registers
+
+#define LDO_LL_RECOMMEND_MAX_VOLTAGE_MV     2700
+#define LDO_LL_RECOMMEND_MIN_VOLTAGE_MV     500
+#define LDO_LL_RAIL_VOLTAGE_MV              3300
+
+/**
+ * @brief In the analog design, the LDO output "channel" is index from 1, i.e., VO1, VO2, VO3, VO4.
+ *        But in software, we mapped them to "LDO unit", which is index from 0, i.e., 0, 1, 2, 3.
+ */
+#define LDO_ID2UNIT(ldo_id)  ((ldo_id) - 1)
+
+/**
+ * @brief LDO unit owner
+ */
+typedef enum {
+    LDO_LL_UNIT_OWNER_HW, // LDO unit is controlled by hardware
+    LDO_LL_UNIT_OWNER_SW, // LDO unit is controlled by software
+} ldo_ll_unit_owner_t;
+
+/**
+ * @brief Check if a LDO channel is valid
+ *
+ * @param ldo_chan LDO channel ID, note, this is indexed from 1
+ * @return True for valid, false for invalid
+ */
+__attribute__((always_inline))
+static inline bool ldo_ll_is_valid_ldo_channel(int ldo_chan)
+{
+    return (ldo_chan > 0) && (ldo_chan <= LDO_LL_NUM_UNITS);
+}
 
 /**
  * @brief Convert voltage to dref and mul value
@@ -63,6 +95,20 @@ static inline void ldo_ll_voltage_to_dref_mul(int ldo_unit, int voltage_mv, uint
 }
 
 /**
+ * @brief Set owner of a LDO unit
+ *
+ * @note Even if the LDO unit is controlled by hardware, its voltage can still be changed by software by `ldo_ll_adjust_voltage`
+ *
+ * @param ldo_unit LDO unit
+ * @param owner Owner of the LDO unit
+ */
+__attribute__((always_inline))
+static inline void ldo_ll_set_owner(int ldo_unit, ldo_ll_unit_owner_t owner)
+{
+    //for compatibility
+}
+
+/**
  * @brief Adjust voltage of a LDO unit
  *
  * @note When bypass is enabled, the input voltage is sourced directly to the output.
@@ -82,17 +128,6 @@ static inline void ldo_ll_adjust_voltage(int ldo_unit, uint8_t dref, uint8_t mul
 }
 
 /**
- * @brief Enable power on the PSRAM domain
- *
- * @param enable True: enable; False: disable
- */
-__attribute__((always_inline))
-static inline void ldo_ll_psram_power_enable(bool enable)
-{
-    PMU.psram_cfg.psram_xpd = enable;
-}
-
-/**
  * @brief Enable ripple suppression of a LDO unit
  *
  * @param ldo_unit LDO unit
@@ -103,6 +138,20 @@ static inline void ldo_ll_enable_ripple_suppression(int ldo_unit, bool enable)
 {
     (void)ldo_unit;
     PMU.ext_ldo_ctrl.ext_ldo_en_vdet = enable;
+}
+
+/**
+ * @brief Enable a LDO unit
+ *
+ * @param ldo_unit LDO unit
+ * @param enable  True: enable; False: disable
+ */
+__attribute__((always_inline))
+static inline void ldo_ll_enable(int ldo_unit, bool enable)
+{
+    //for compatibility
+    //PMU.hp_sys[PMU_MODE_HP_ACTIVE].regulator0.xpd is for chip internal LDO for chip power
+    //this will not be controlled by this general purpose LDO file
 }
 
 /**

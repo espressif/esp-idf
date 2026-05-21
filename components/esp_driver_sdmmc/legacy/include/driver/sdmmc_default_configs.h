@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,40 @@ extern "C" {
  *
  * Uses SDMMC peripheral, with 4-bit mode enabled, and max frequency set to 20MHz
  */
+#if CONFIG_IDF_TARGET_ESP32S31
+#define SDMMC_HOST_DEFAULT() {\
+    .flags = SDMMC_HOST_FLAG_8BIT | \
+             SDMMC_HOST_FLAG_4BIT | \
+             SDMMC_HOST_FLAG_1BIT | \
+             SDMMC_HOST_FLAG_DDR  | \
+             SDMMC_HOST_FLAG_DEINIT_ARG, \
+    .slot = SDMMC_HOST_SLOT_0, \
+    .max_freq_khz = SDMMC_FREQ_DEFAULT, \
+    .io_voltage = 3.3f, \
+    .driver_strength = SDMMC_DRIVER_STRENGTH_B, \
+    .current_limit = SDMMC_CURRENT_LIMIT_200MA, \
+    .init = &sdmmc_host_init, \
+    .set_bus_width = &sdmmc_host_set_bus_width, \
+    .get_bus_width = &sdmmc_host_get_slot_width, \
+    .set_bus_ddr_mode = &sdmmc_host_set_bus_ddr_mode, \
+    .set_card_clk = &sdmmc_host_set_card_clk, \
+    .set_cclk_always_on = &sdmmc_host_set_cclk_always_on, \
+    .do_transaction = &sdmmc_host_do_transaction, \
+    .deinit_p = &sdmmc_host_deinit_slot, \
+    .io_int_enable = sdmmc_host_io_int_enable, \
+    .io_int_wait = sdmmc_host_io_int_wait, \
+    .command_timeout_ms = 0, \
+    .get_real_freq = &sdmmc_host_get_real_freq, \
+    .input_delay_phase = SDMMC_DELAY_PHASE_0, \
+    .set_input_delay = &sdmmc_host_set_input_delay, \
+    .set_input_delayline = &sdmmc_host_set_input_delayline, \
+    .unaligned_multi_block_rw_max_chunk_size = 16, \
+    .dma_aligned_buffer = NULL, \
+    .pwr_ctrl_handle = NULL, \
+    .check_buffer_alignment = &sdmmc_host_check_buffer_alignment, \
+    .is_slot_set_to_uhs1 = &sdmmc_host_is_slot_set_to_uhs1, \
+}
+#else
 #define SDMMC_HOST_DEFAULT() {\
     .flags = SDMMC_HOST_FLAG_8BIT | \
              SDMMC_HOST_FLAG_4BIT | \
@@ -54,6 +88,7 @@ extern "C" {
     .check_buffer_alignment = &sdmmc_host_check_buffer_alignment, \
     .is_slot_set_to_uhs1 = &sdmmc_host_is_slot_set_to_uhs1, \
 }
+#endif
 
 #define SDMMC_SLOT_NO_CD      GPIO_NUM_NC     ///< indicates that card detect line is not used
 #define SDMMC_SLOT_NO_WP      GPIO_NUM_NC     ///< indicates that write protect line is not used
@@ -110,6 +145,24 @@ extern "C" {
     .d5 = GPIO_NUM_34, \
     .d6 = GPIO_NUM_35, \
     .d7 = GPIO_NUM_36, \
+    .cd = SDMMC_SLOT_NO_CD, \
+    .wp = SDMMC_SLOT_NO_WP, \
+    .width   = SDMMC_SLOT_WIDTH_DEFAULT, \
+    .flags = 0, \
+}
+
+#elif CONFIG_IDF_TARGET_ESP32S31
+#define SDMMC_SLOT_CONFIG_DEFAULT() {\
+    .clk = GPIO_NUM_24, \
+    .cmd = GPIO_NUM_25, \
+    .d0 = GPIO_NUM_20, \
+    .d1 = GPIO_NUM_21, \
+    .d2 = GPIO_NUM_22, \
+    .d3 = GPIO_NUM_23, \
+    .d4 = GPIO_NUM_NC, \
+    .d5 = GPIO_NUM_NC, \
+    .d6 = GPIO_NUM_NC, \
+    .d7 = GPIO_NUM_NC, \
     .cd = SDMMC_SLOT_NO_CD, \
     .wp = SDMMC_SLOT_NO_WP, \
     .width   = SDMMC_SLOT_WIDTH_DEFAULT, \

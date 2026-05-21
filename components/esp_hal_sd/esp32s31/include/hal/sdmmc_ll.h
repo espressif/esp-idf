@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +22,12 @@
 #include "soc/clk_tree_defs.h"
 #include "soc/sdmmc_struct.h"
 #include "soc/sdmmc_reg.h"
-#include "soc/dport_reg.h"
+#include "soc/hp_sys_clkrst_struct.h"
+#include "soc/lp_clkrst_struct.h"
+#include "soc/pmu_reg.h"
+#include "soc/cnnt_sys_struct.h"
+#include "soc/cnnt_io_mux_struct.h"
+#include "soc/pmu_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -84,23 +89,59 @@ extern "C" {
  * SDMMC capabilities
  */
 #define SDMMC_LL_SLOT_SUPPORT_GPIO_MATRIX(SLOT_ID)    0
-#define SDMMC_LL_IOMUX_FUNC                           3
+#define SDMMC_LL_IOMUX_FUNC                           4
 #define SDMMC_LL_HOST_CTLR_NUMS                       1U
+#define SDMMC_LL_DELAY_MAX_NUMS_LS                    4
+#define SDMMC_LL_DELAY_PHASE_SUPPORTED                1
+#define SDMMC_LL_MPLL_SUPPORTED                       1
+#define SDMMC_LL_SDR50_SUPPORTED                      1
 
-#define SDMMC_LL_DEFAULT_DIV                          2
+#define SDMMC_LL_DEFAULT_DIV                          8
 
+/**
+ * SDMMC delay phase
+ */
 typedef enum {
     SDMMC_LL_DELAY_PHASE_0,
     SDMMC_LL_DELAY_PHASE_1,
     SDMMC_LL_DELAY_PHASE_2,
     SDMMC_LL_DELAY_PHASE_3,
+    SDMMC_LL_DELAY_PHASE_4,
+    SDMMC_LL_DELAY_PHASE_5,
+    SDMMC_LL_DELAY_PHASE_6,
+    SDMMC_LL_DELAY_PHASE_7,
 } sdmmc_ll_delay_phase_t;
+
+/**
+ * SDMMC delayline
+ */
+typedef enum {
+    SDMMC_LL_DELAY_LINE_0,
+    SDMMC_LL_DELAY_LINE_1,
+    SDMMC_LL_DELAY_LINE_2,
+    SDMMC_LL_DELAY_LINE_3,
+    SDMMC_LL_DELAY_LINE_4,
+    SDMMC_LL_DELAY_LINE_5,
+    SDMMC_LL_DELAY_LINE_6,
+    SDMMC_LL_DELAY_LINE_7,
+} sdmmc_ll_delay_line_t;
+
+/**
+ * SDMMC speed mode
+ */
+typedef enum {
+    SDMMC_LL_SPEED_MODE_LS,
+    SDMMC_LL_SPEED_MODE_HS,
+} sdmmc_ll_speed_mode_t;
 
 /**
  * SDMMC memory low power mode
  */
 typedef enum {
-    SDMMC_LL_MEM_LP_MODE_SHUT_DOWN,
+    SDMMC_LL_MEM_LP_MODE_DEEP_SLEEP,    // memory will enter deep sleep during low power stage, keep memory data
+    SDMMC_LL_MEM_LP_MODE_LIGHT_SLEEP,   // memory will enter light sleep during low power stage, keep memory data
+    SDMMC_LL_MEM_LP_MODE_SHUT_DOWN,     // memory will be powered down during low power stage
+    SDMMC_LL_MEM_LP_MODE_DISABLE,       // disable the low power stage
 } sdmmc_ll_mem_lp_mode_t;
 
 /**
@@ -108,6 +149,7 @@ typedef enum {
  */
 typedef enum {
     SDMMC_LL_IO_POWER_CONTROL_SRC_INTERNAL,
+    SDMMC_LL_IO_POWER_CONTROL_SRC_LDO,
 } sdmmc_ll_io_power_control_src_t;
 
 /*---------------------------------------------------------------
@@ -122,11 +164,7 @@ typedef enum {
 static inline void sdmmc_ll_enable_bus_clock(int group_id, bool en)
 {
     (void)group_id;
-    if (en) {
-        DPORT_SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, DPORT_WIFI_CLK_SDIO_HOST_EN);
-    } else {
-        DPORT_CLEAR_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, DPORT_WIFI_CLK_SDIO_HOST_EN);
-    }
+    HP_SYS_CLKRST.sdio_host_ctrl0.reg_sdmmc_sys_clk_en = en;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
@@ -144,16 +182,9 @@ static inline void sdmmc_ll_enable_bus_clock(int group_id, bool en)
 static inline void sdmmc_ll_reset_register(int group_id)
 {
     (void)group_id;
-    DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, DPORT_SDIO_HOST_RST);
-    DPORT_CLEAR_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, DPORT_SDIO_HOST_RST);
+    CNNT_SYS_REG.sys_hp_sdmmc_ctrl.sys_sdmmc_rst_en = 1;
+    CNNT_SYS_REG.sys_hp_sdmmc_ctrl.sys_sdmmc_rst_en = 0;
 }
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define sdmmc_ll_reset_register(...) do { \
-        (void)__DECLARE_RCC_ATOMIC_ENV; \
-        sdmmc_ll_reset_register(__VA_ARGS__); \
-    } while(0)
 
 /**
  * @brief Force power on the SDMMC memory block, regardless of the outside PMU logic
@@ -162,7 +193,8 @@ static inline void sdmmc_ll_reset_register(int group_id)
  */
 static inline void sdmmc_ll_mem_force_power_on(sdmmc_dev_t *dev)
 {
-    (void)dev;
+    CNNT_SYS_REG.sys_sdmmc_mem_lp_ctrl.sys_sdmmc_mem_lp_force_ctrl = 1;
+    CNNT_SYS_REG.sys_sdmmc_mem_lp_ctrl.sys_sdmmc_mem_lp_en = 0;
 }
 
 /**
@@ -172,7 +204,8 @@ static inline void sdmmc_ll_mem_force_power_on(sdmmc_dev_t *dev)
  */
 static inline void sdmmc_ll_mem_force_low_power(sdmmc_dev_t *dev)
 {
-    (void)dev;
+    CNNT_SYS_REG.sys_sdmmc_mem_lp_ctrl.sys_sdmmc_mem_lp_force_ctrl = 1;
+    CNNT_SYS_REG.sys_sdmmc_mem_lp_ctrl.sys_sdmmc_mem_lp_en = 1;
 }
 
 /**
@@ -182,7 +215,8 @@ static inline void sdmmc_ll_mem_force_low_power(sdmmc_dev_t *dev)
  */
 static inline void sdmmc_ll_mem_power_by_pmu(sdmmc_dev_t *dev)
 {
-    (void)dev;
+    CNNT_SYS_REG.sys_sdmmc_mem_lp_ctrl.sys_sdmmc_mem_lp_force_ctrl = 0;
+    CNNT_SYS_REG.sys_sdmmc_mem_lp_ctrl.sys_sdmmc_mem_lp_en = 0;
 }
 
 /**
@@ -193,8 +227,7 @@ static inline void sdmmc_ll_mem_power_by_pmu(sdmmc_dev_t *dev)
  */
 static inline void sdmmc_ll_mem_set_low_power_mode(sdmmc_dev_t *dev, sdmmc_ll_mem_lp_mode_t mode)
 {
-    (void)dev;
-    (void)mode;
+    CNNT_SYS_REG.sys_sdmmc_mem_lp_ctrl.sys_sdmmc_mem_lp_mode = mode;
 }
 
 /**
@@ -205,9 +238,15 @@ static inline void sdmmc_ll_mem_set_low_power_mode(sdmmc_dev_t *dev, sdmmc_ll_me
  */
 static inline void sdmmc_ll_pad_set_pin_dedicated_ctrl(sdmmc_dev_t *dev, bool enable)
 {
-    (void)dev;
-    (void)enable;
+    CNNT_PAD_CTRL.ctrl.sdio_pad_pin_ctrl_ded_sel = enable;
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define sdmmc_ll_pad_set_pin_dedicated_ctrl(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        sdmmc_ll_pad_set_pin_dedicated_ctrl(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Select SDMMC clock source
@@ -217,7 +256,18 @@ static inline void sdmmc_ll_pad_set_pin_dedicated_ctrl(sdmmc_dev_t *dev, bool en
  */
 static inline void sdmmc_ll_select_clk_source(sdmmc_dev_t *hw, soc_periph_sdmmc_clk_src_t clk_src)
 {
-    //leave for compatibility
+    uint32_t clk_val = 0;
+    switch (clk_src) {
+    case SDMMC_CLK_SRC_MPLL:
+        clk_val = 0;
+        break;
+    default:
+        HAL_ASSERT(false);
+        break;
+    }
+
+    HP_SYS_CLKRST.sdio_host_ctrl0.reg_sdio_ls_clk_src_sel = clk_val;
+    HP_SYS_CLKRST.sdio_host_ctrl0.reg_sdio_ls_clk_en = true;
 }
 
 /**
@@ -228,22 +278,18 @@ static inline void sdmmc_ll_select_clk_source(sdmmc_dev_t *hw, soc_periph_sdmmc_
  */
 static inline void sdmmc_ll_set_clock_div(sdmmc_dev_t *hw, uint32_t div)
 {
-    /**
-     * Set frequency to 160MHz / div
-     *
-     * n: counter resets at div_factor_n.
-     * l: negedge when counter equals div_factor_l.
-     * h: posedge when counter equals div_factor_h.
-     *
-     * We set the duty cycle to 1/2
-     */
-    HAL_ASSERT(div > 1 && div <= 16);
-    int h = div - 1;
-    int l = div / 2 - 1;
-
-    hw->clock.div_factor_h = h;
-    hw->clock.div_factor_l = l;
-    hw->clock.div_factor_n = h;
+    if (div > 1) {
+        HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_clk_edge_h = div / 2 - 1;
+        HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_clk_edge_n = div - 1;
+        HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_clk_edge_l = div - 1;
+        HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_clk_edge_cfg_update = 1;
+        HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_clk_edge_cfg_update = 0;
+    } else {
+        HP_SYS_CLKRST.sdio_host_ctrl0.reg_sdio_hs_mode = 1;
+        HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_clk_edge_h = 0;
+        HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_clk_edge_n = 0;
+        HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_clk_edge_l = 0;
+    }
 }
 
 /**
@@ -253,7 +299,7 @@ static inline void sdmmc_ll_set_clock_div(sdmmc_dev_t *hw, uint32_t div)
  */
 static inline void sdmmc_ll_deinit_clk(sdmmc_dev_t *hw)
 {
-    hw->clock.val = 0;
+    hw->clk_edge_sel.val = 0;
 }
 
 /**
@@ -265,7 +311,16 @@ static inline void sdmmc_ll_deinit_clk(sdmmc_dev_t *hw)
  */
 static inline uint32_t sdmmc_ll_get_clock_div(sdmmc_dev_t *hw)
 {
-    return hw->clock.div_factor_h + 1;
+    uint32_t div = 0;
+    if (HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_clk_edge_h == 0 &&
+            HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_clk_edge_n == 0 &&
+            HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_clk_edge_l == 0) {
+        div = 1;
+    } else {
+        div = HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_clk_edge_l + 1;
+    }
+
+    return div;
 }
 
 /**
@@ -275,10 +330,93 @@ static inline uint32_t sdmmc_ll_get_clock_div(sdmmc_dev_t *hw)
  */
 static inline void sdmmc_ll_init_phase_delay(sdmmc_dev_t *hw)
 {
-    // 180 degree phase on input and output clocks
-    hw->clock.phase_dout = 4;
-    hw->clock.phase_din = 4;
-    hw->clock.phase_core = 0;
+    HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_drv_clk_en = 1;
+    HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_sam_clk_en = 1;
+    HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_slf_clk_en = 1;
+
+    HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_drv_clk_edge_sel = 1;
+    HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_sam_clk_edge_sel = 0;
+    HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_slf_clk_edge_sel = 0;
+
+    HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_clk_edge_cfg_update = 1;
+    HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_clk_edge_cfg_update = 0;
+}
+
+/**
+ * @brief Set SDMMC din delay phase
+ *
+ * @param hw     hardware instance address
+ * @param phase  delay phase
+ * @param mode   speed mode
+ */
+static inline void sdmmc_ll_set_din_delay_phase(sdmmc_dev_t *hw, sdmmc_ll_delay_phase_t phase, sdmmc_ll_speed_mode_t mode)
+{
+    if (mode == SDMMC_LL_SPEED_MODE_LS) {
+        switch (phase) {
+        case SDMMC_LL_DELAY_PHASE_1:
+            HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_sam_clk_edge_sel = 0x1;
+            break;
+        case SDMMC_LL_DELAY_PHASE_2:
+            HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_sam_clk_edge_sel = 0x2;
+            break;
+        case SDMMC_LL_DELAY_PHASE_3:
+            HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_sam_clk_edge_sel = 0x3;
+            break;
+        default:
+            HP_SYS_CLKRST.sdio_host_func_ctrl0.reg_sdio_ls_sam_clk_edge_sel = 0x0;
+            break;
+        }
+    } else {
+        SDMMC.dll_clk_conf.dll_cclk_in_sam_phase = (phase << 3);
+    }
+}
+
+/**
+ * @brief Set SDMMC dout delay phase
+ *
+ * @param hw     hardware instance address
+ * @param phase  delay phase
+ * @param mode   speed mode
+ */
+static inline void sdmmc_ll_set_dout_delay_phase(sdmmc_dev_t *hw, sdmmc_ll_delay_phase_t phase, sdmmc_ll_speed_mode_t mode)
+{
+    if (mode == SDMMC_LL_SPEED_MODE_HS) {
+        SDMMC.dll_clk_conf.dll_cclk_in_drv_phase = (phase << 3);
+    }
+}
+
+/**
+ * @brief Set SDMMC din delay line
+ *
+ * @param hw     hardware instance address
+ * @param phase  delay line
+ * @param mode   speed mode
+ */
+static inline void sdmmc_ll_set_din_delay_line(sdmmc_dev_t *hw, sdmmc_ll_delay_line_t phase, sdmmc_ll_speed_mode_t mode)
+{
+    SDMMC.dll_clk_conf.dll_cclk_in_sam_phase &= ~0x7;
+    if (mode == SDMMC_LL_SPEED_MODE_HS) {
+        SDMMC.dll_clk_conf.dll_cclk_in_sam_phase |= phase;
+    } else {
+        HAL_ASSERT(false);
+    }
+}
+
+/**
+ * @brief Set SDMMC dout delay line
+ *
+ * @param hw     hardware instance address
+ * @param phase  delay line
+ * @param mode   speed mode
+ */
+static inline void sdmmc_ll_set_dout_delay_line(sdmmc_dev_t *hw, sdmmc_ll_delay_line_t phase, sdmmc_ll_speed_mode_t mode)
+{
+    SDMMC.dll_clk_conf.dll_cclk_in_drv_phase &= ~0x7;
+    if (mode == SDMMC_LL_SPEED_MODE_HS) {
+        SDMMC.dll_clk_conf.dll_cclk_in_drv_phase |= phase;
+    } else {
+        HAL_ASSERT(false);
+    }
 }
 
 /**
@@ -290,13 +428,11 @@ static inline void sdmmc_ll_init_phase_delay(sdmmc_dev_t *hw)
  */
 static inline void sdmmc_ll_enable_card_clock(sdmmc_dev_t *hw, uint32_t slot, bool en)
 {
-    uint32_t reg_val = HAL_FORCE_READ_U32_REG_FIELD(hw->clkena, cclk_enable);
     if (en) {
-        reg_val |= BIT(slot);
+        hw->clkena.cclk_enable |= BIT(slot);
     } else {
-        reg_val &= ~BIT(slot);
+        hw->clkena.cclk_enable &= ~BIT(slot);
     }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clkena, cclk_enable, reg_val);
 }
 
 /**
@@ -310,10 +446,10 @@ static inline void sdmmc_ll_set_card_clock_div(sdmmc_dev_t *hw, uint32_t slot, u
 {
     if (slot == 0) {
         hw->clksrc.card0 = 0;
-        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clkdiv, div0, card_div);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clkdiv, clk_divider0, card_div);
     } else if (slot == 1) {
         hw->clksrc.card1 = 1;
-        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clkdiv, div1, card_div);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clkdiv, clk_divider1, card_div);
     } else {
         HAL_ASSERT(false);
     }
@@ -332,9 +468,9 @@ static inline uint32_t sdmmc_ll_get_card_clock_div(sdmmc_dev_t *hw, uint32_t slo
     uint32_t card_div = 0;
 
     if (slot == 0) {
-        card_div = HAL_FORCE_READ_U32_REG_FIELD(hw->clkdiv, div0);
+        card_div = HAL_FORCE_READ_U32_REG_FIELD(hw->clkdiv, clk_divider0);
     } else if (slot == 1) {
-        card_div = HAL_FORCE_READ_U32_REG_FIELD(hw->clkdiv, div1);
+        card_div = HAL_FORCE_READ_U32_REG_FIELD(hw->clkdiv, clk_divider1);
     } else {
         HAL_ASSERT(false);
     }
@@ -351,13 +487,11 @@ static inline uint32_t sdmmc_ll_get_card_clock_div(sdmmc_dev_t *hw, uint32_t slo
  */
 static inline void sdmmc_ll_enable_card_clock_low_power(sdmmc_dev_t *hw, uint32_t slot, bool en)
 {
-    uint32_t reg_val = HAL_FORCE_READ_U32_REG_FIELD(hw->clkena, cclk_low_power);
     if (en) {
-        reg_val |= BIT(slot);
+        hw->clkena.lp_enable |= BIT(slot);
     } else {
-        reg_val &= ~BIT(slot);
+        hw->clkena.lp_enable &= ~BIT(slot);
     }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clkena, cclk_low_power, reg_val);
 }
 
 /**
@@ -447,7 +581,7 @@ static inline void sdmmc_ll_set_data_timeout(sdmmc_dev_t *hw, uint32_t timeout_c
         timeout_cycles = 0xffffff;
     }
 
-    hw->tmout.data = timeout_cycles;
+    hw->tmout.data_timeout = timeout_cycles;
 }
 
 /**
@@ -458,7 +592,7 @@ static inline void sdmmc_ll_set_data_timeout(sdmmc_dev_t *hw, uint32_t timeout_c
  */
 static inline void sdmmc_ll_set_response_timeout(sdmmc_dev_t *hw, uint32_t timeout_cycles)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->tmout, response, timeout_cycles);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->tmout, response_timeout, timeout_cycles);
 }
 
 /**
@@ -471,7 +605,7 @@ static inline void sdmmc_ll_set_response_timeout(sdmmc_dev_t *hw, uint32_t timeo
  */
 static inline bool sdmmc_ll_is_card_detected(sdmmc_dev_t *hw, uint32_t slot)
 {
-    return ((hw->cdetect.cards & BIT(slot)) == 0);
+    return ((hw->cdetect.card_detect_n & BIT(slot)) == 0);
 }
 
 /**
@@ -484,7 +618,7 @@ static inline bool sdmmc_ll_is_card_detected(sdmmc_dev_t *hw, uint32_t slot)
  */
 static inline bool sdmmc_ll_is_card_write_protected(sdmmc_dev_t *hw, uint32_t slot)
 {
-    bool is_protected = hw->wrtprt.cards & BIT(slot);
+    bool is_protected = hw->wrtprt.write_protect & BIT(slot);
     return is_protected;
 }
 
@@ -497,7 +631,11 @@ static inline bool sdmmc_ll_is_card_write_protected(sdmmc_dev_t *hw, uint32_t sl
  */
 static inline void sdmmc_ll_enable_1v8_mode(sdmmc_dev_t *hw, uint32_t slot, bool en)
 {
-    //for compatibility
+    if (en) {
+        hw->uhs.volt |= BIT(slot);
+    } else {
+        hw->uhs.volt &= ~BIT(slot);
+    }
 }
 
 /**
@@ -509,15 +647,12 @@ static inline void sdmmc_ll_enable_1v8_mode(sdmmc_dev_t *hw, uint32_t slot, bool
  */
 static inline void sdmmc_ll_enable_ddr_mode(sdmmc_dev_t *hw, uint32_t slot, bool en)
 {
-    uint32_t ddr_reg_val = HAL_FORCE_READ_U32_REG_FIELD(hw->uhs, ddr);
     if (en) {
-        ddr_reg_val |= BIT(slot);
-        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->uhs, ddr, ddr_reg_val);
-        hw->emmc_ddr_reg |= BIT(slot);
+        hw->uhs.ddr |= BIT(slot);
+        hw->emmcddr.halfstartbit_reg |= BIT(slot);
     } else {
-        ddr_reg_val &= ~BIT(slot);
-        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->uhs, ddr, ddr_reg_val);
-        hw->emmc_ddr_reg &= ~BIT(slot);
+        hw->uhs.ddr &= ~BIT(slot);
+        hw->emmcddr.halfstartbit_reg &= ~BIT(slot);
     }
 }
 
@@ -529,7 +664,7 @@ static inline void sdmmc_ll_enable_ddr_mode(sdmmc_dev_t *hw, uint32_t slot, bool
  */
 static inline void sdmmc_ll_set_data_transfer_len(sdmmc_dev_t *hw, uint32_t len)
 {
-    hw->bytcnt = len;
+    hw->bytcnt.byte_count = len;
 }
 
 /**
@@ -551,7 +686,7 @@ static inline void sdmmc_ll_set_block_size(sdmmc_dev_t *hw, uint32_t block_size)
  */
 static inline void sdmmc_ll_set_desc_addr(sdmmc_dev_t *hw, uint32_t desc_addr)
 {
-    hw->dbaddr = (sdmmc_desc_t *)desc_addr;
+    hw->dbaddr.dbaddr_reg = desc_addr;
 }
 
 /**
@@ -561,7 +696,7 @@ static inline void sdmmc_ll_set_desc_addr(sdmmc_dev_t *hw, uint32_t desc_addr)
  */
 static inline void sdmmc_ll_poll_demand(sdmmc_dev_t *hw)
 {
-    hw->pldmnd = 1;
+    hw->pldmnd.pldmnd_pd = 1;
 }
 
 /**
@@ -631,27 +766,22 @@ static inline uint32_t sdmmc_ll_get_hw_config_info(sdmmc_dev_t *hw)
 static inline void sdmmc_ll_set_card_width(sdmmc_dev_t *hw, uint32_t slot, sd_bus_width_t width)
 {
     uint16_t mask = 1 << slot;
-    uint32_t reg_val = HAL_FORCE_READ_U32_REG_FIELD(hw->ctype, card_width);
-    uint32_t reg_val_8 = HAL_FORCE_READ_U32_REG_FIELD(hw->ctype, card_width_8);
 
     switch (width) {
     case SD_BUS_WIDTH_1_BIT:
-        reg_val_8 &= ~mask;
-        reg_val &= ~mask;
+        hw->ctype.card_width8 &= ~mask;
+        hw->ctype.card_width4 &= ~mask;
         break;
     case SD_BUS_WIDTH_4_BIT:
-        reg_val_8 &= ~mask;
-        reg_val |= mask;
+        hw->ctype.card_width8 &= ~mask;
+        hw->ctype.card_width4 |= mask;
         break;
     case SD_BUS_WIDTH_8_BIT:
-        reg_val_8 |= mask;
+        hw->ctype.card_width8 |= mask;
         break;
     default:
         HAL_ASSERT(false);
     }
-
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->ctype, card_width, reg_val);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->ctype, card_width_8, reg_val_8);
 }
 
 /**
@@ -681,10 +811,13 @@ static inline void sdmmc_ll_init_dma(sdmmc_dev_t *hw)
 {
     hw->ctrl.dma_enable = 1;
     hw->bmod.val = 0;
-    hw->bmod.sw_reset = 1;
-    hw->idinten.ni = 1;
-    hw->idinten.ri = 1;
-    hw->idinten.ti = 1;
+    hw->bmod.bmod_swr = 1;
+    hw->idinten.idinten_ni = 1;
+    hw->idinten.idinten_ri = 1;
+    hw->idinten.idinten_ti = 1;
+    hw->fifoth.dma_multiple_transaction_size = 0x5;
+    hw->bmod.bmod_fb = 1;
+    hw->bmod.bmod_pbl = 0x7;
 }
 
 /**
@@ -697,8 +830,8 @@ static inline void sdmmc_ll_enable_dma(sdmmc_dev_t *hw, bool en)
 {
     hw->ctrl.dma_enable = en;
     hw->ctrl.use_internal_dma = en;
-    hw->bmod.enable = en;
-    hw->bmod.fb = en;
+    hw->bmod.bmod_de = en;
+    hw->bmod.bmod_fb = en;
 }
 
 /**
@@ -710,8 +843,8 @@ static inline void sdmmc_ll_stop_dma(sdmmc_dev_t *hw)
 {
     hw->ctrl.use_internal_dma = 0;
     hw->ctrl.dma_reset = 1;     //here might be an issue as we don't wait the `dma_reset` to be self-cleared, check in next steps
-    hw->bmod.fb = 0;
-    hw->bmod.enable = 0;
+    hw->bmod.bmod_fb = 0;
+    hw->bmod.bmod_de = 0;
 }
 
 /*---------------------------------------------------------------
@@ -781,7 +914,7 @@ static inline void sdmmc_ll_enable_global_interrupt(sdmmc_dev_t *hw, bool en)
  */
 static inline void sdmmc_ll_enable_busy_clear_interrupt(sdmmc_dev_t *hw, bool en)
 {
-    hw->cardthrctl.busy_clr_int_en = en;
+    hw->cardthrctl.cardclrinten_reg = en;
 }
 
 /**
@@ -810,7 +943,12 @@ static inline void sdmmc_ll_clear_idsts_interrupt(sdmmc_dev_t *hw, uint32_t mask
  */
 static inline void sdmmc_ll_switch_io_power_control_src(sdmmc_ll_io_power_control_src_t src)
 {
-    //for compatibility
+    if (src == SDMMC_LL_IO_POWER_CONTROL_SRC_INTERNAL) {
+        PMU.vdd_sdio_cfg.sdio_sw_power_sel = 0;
+    } else {
+        PMU.vdd_sdio_cfg.sdio_sw_power_sel = 1;
+        PMU.vdd_sdio_cfg.sdio_power_sel_sw_ctrl = 0;
+    }
 }
 
 #ifdef __cplusplus

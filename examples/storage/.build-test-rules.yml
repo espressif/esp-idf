@@ -73,7 +73,7 @@ examples/storage/sd_card/sdmmc:
   disable:
     - if: SOC_SDMMC_HOST_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32p4"]
+    - if: IDF_TARGET not in ["esp32", "esp32p4", "esp32s31"]
       temporary: true
       reason: lack of runners
 

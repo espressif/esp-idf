@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -8,6 +8,36 @@
 #include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+typedef struct sdmmc_desc_s {
+    struct {
+        uint32_t reserved1: 1;
+        uint32_t disable_int_on_completion: 1;
+        uint32_t last_descriptor: 1;
+        uint32_t first_descriptor: 1;
+        uint32_t second_address_chained: 1;
+        uint32_t end_of_ring: 1;
+        uint32_t reserved2: 24;
+        uint32_t card_error_summary: 1;
+        uint32_t owned_by_idmac: 1;
+    };
+    struct {
+        uint32_t buffer1_size: 13;
+        uint32_t buffer2_size: 13;
+        uint32_t reserved3: 6;
+    };
+    void* buffer1_ptr;
+    union {
+        void* buffer2_ptr;
+        void* next_desc_ptr;
+    };
+} sdmmc_desc_t;
+
+#define SDMMC_DMA_MAX_BUF_LEN 4096
+
+#ifndef __cplusplus
+_Static_assert(sizeof(sdmmc_desc_t) == 16, "invalid size of sdmmc_desc_t structure");
 #endif
 
 /** Group: Control register */
@@ -39,7 +69,7 @@ typedef union {
          *  Global interrupt enable/disable bit. 0: Disable; 1: Enable.
          */
         uint32_t int_enable:1;
-        uint32_t reserved_5:1;
+        uint32_t dma_enable:1;
         /** read_wait : R/W; bitpos: [6]; default: 0;
          *  For sending read-wait to SDIO cards.
          */
@@ -90,7 +120,12 @@ typedef union {
          *  then software should set this bit.
          */
         uint32_t ceata_device_interrupt_status:1;
-        uint32_t reserved_12:20;
+        uint32_t reserved2:4;
+        uint32_t card_voltage_a:4;
+        uint32_t card_voltage_b:4;
+        uint32_t enable_od_pullup:1;
+        uint32_t use_internal_dma:1;
+        uint32_t reserved3:6;
     };
     uint32_t val;
 } sdhost_ctrl_reg_t;
@@ -147,7 +182,8 @@ typedef union {
          *  10 : Clock divider 2;
          *  11 : Clock divider 3.
          */
-        uint32_t clksrc_reg:4;
+        uint32_t card0:2;
+        uint32_t card1:2;
         uint32_t reserved_4:28;
     };
     uint32_t val;
@@ -334,10 +370,10 @@ typedef union {
          *  0: No response expected from card; 1: Response expected from card.
          */
         uint32_t response_expect:1;
-        /** response_length : R/W; bitpos: [7]; default: 0;
+        /** response_long : R/W; bitpos: [7]; default: 0;
          *  0: Short response expected from card; 1: Long response expected from card.
          */
-        uint32_t response_length:1;
+        uint32_t response_long:1;
         /** check_response_crc : R/W; bitpos: [8]; default: 0;
          *  0: Do not check; 1: Check response CRC.
          *  Some of command responses do not return valid CRC bits. Software should disable CRC
@@ -348,11 +384,11 @@ typedef union {
          *  0: No data transfer expected; 1: Data transfer expected.
          */
         uint32_t data_expected:1;
-        /** read_write : R/W; bitpos: [10]; default: 0;
+        /** rw : R/W; bitpos: [10]; default: 0;
          *  0: Read from card; 1: Write to card.
          *  Don't care if no data is expected from card.
          */
-        uint32_t read_write:1;
+        uint32_t rw:1;
         /** transfer_mode : R/W; bitpos: [11]; default: 0;
          *  0: Block data transfer command; 1: Stream data transfer command.
          *  Don't care if no data expected.
@@ -363,14 +399,14 @@ typedef union {
          *  end of data transfer.
          */
         uint32_t send_auto_stop:1;
-        /** wait_prvdata_complete : R/W; bitpos: [13]; default: 0;
+        /** wait_complete : R/W; bitpos: [13]; default: 0;
          *  0: Send command at once, even if previous data transfer has not completed; 1: Wait
          *  for previous data transfer to complete before sending Command.
-         *  The SDHOST_WAIT_PRVDATA_COMPLETE] = 0 option is typically used to query status of
+         *  The SDHOST_WAIT_COMPLETE] = 0 option is typically used to query status of
          *  card during data transfer or to stop current data transfer. SDHOST_CARD_NUMBERr
          *  should be same as in previous command.
          */
-        uint32_t wait_prvdata_complete:1;
+        uint32_t wait_complete:1;
         /** stop_abort_cmd : R/W; bitpos: [14]; default: 0;
          *  0: Neither stop nor abort command can stop current data transfer. If abort is sent
          *  to function-number currently selected or not in data-transfer mode, then bit should
@@ -381,20 +417,20 @@ typedef union {
          *  state-machines of CIU can return correctly to idle state.
          */
         uint32_t stop_abort_cmd:1;
-        /** send_initialization : R/W; bitpos: [15]; default: 0;
+        /** send_init : R/W; bitpos: [15]; default: 0;
          *  0: Do not send initialization sequence (80 clocks of 1) before sending this
          *  command; 1: Send initialization sequence before sending this command.
          *  After powered on, 80 clocks must be sent to card for initialization before sending
          *  any commands to card. Bit should be set while sending first command to card so that
          *  controller will initialize clocks before sending command to card.
          */
-        uint32_t send_initialization:1;
-        /** card_number : R/W; bitpos: [20:16]; default: 0;
+        uint32_t send_init:1;
+        /** card_num : R/W; bitpos: [20:16]; default: 0;
          *  Card number in use. Represents physical slot number of card being accessed. In
          *  SD-only mode, up to two cards are supported.
          */
-        uint32_t card_number:5;
-        /** update_clock_registers_only : R/W; bitpos: [21]; default: 0;
+        uint32_t card_num:5;
+        /** update_clk_reg : R/W; bitpos: [21]; default: 0;
          *  0: Normal command sequence; 1: Do not send commands, just update clock register
          *  value into card clock domain.
          *  Following register values are transferred into card clock domain: CLKDIV, CLRSRC,
@@ -407,7 +443,7 @@ typedef union {
          *  register values for new command sequence to card(s). When bit is set, there are no
          *  Command Done interrupts because no command is sent to SD_MMC_CEATA cards.
          */
-        uint32_t update_clock_registers_only:1;
+        uint32_t update_clk_reg:1;
         /** read_ceata_device : R/W; bitpos: [22]; default: 0;
          *  Read access flag.
          *  0: Host is not performing read access (RW_REG or RW_BLK)towards CE-ATA device;
@@ -431,81 +467,31 @@ typedef union {
          *  not masked.
          */
         uint32_t ccs_expected:1;
-        uint32_t reserved_24:5;
+        uint32_t reserved_24:4;
+        /** volt_switch : R/W; bitpos: [28]; default: 0;
+         *  Voltage switch bit.
+         *  0: No voltage switching.
+         *  1: Voltage switching enabled; must be set for CMD11 only.
+         */
+        uint32_t volt_switch:1;
         /** use_hole_reg : R/W; bitpos: [29]; default: 1;
          *  Use Hold Register.
          *  0: CMD and DATA sent to card bypassing HOLD Register;
          *  1: CMD and DATA sent to card through the HOLD Register.
          */
-        uint32_t use_hole_reg:1;
+        uint32_t use_hold_reg:1;
         uint32_t reserved_30:1;
-        /** start_cmd : R/W; bitpos: [31]; default: 0;
+        /** start_command : R/W; bitpos: [31]; default: 0;
          *  Start command. Once command is served by the CIU, this bit is automatically
          *  cleared. When this bit is set, host should not attempt to write to any command
          *  registers. If a write is attempted, hardware lock error is set in raw interrupt
          *  register. Once command is sent and a response is received from SD_MMC_CEATA cards,
          *  Command Done bit is set in the raw interrupt Register.
          */
-        uint32_t start_cmd:1;
+        uint32_t start_command:1;
     };
     uint32_t val;
 } sdhost_cmd_reg_t;
-
-
-/** Group: Response data register */
-/** Type of resp0 register
- *  Response data register
- */
-typedef union {
-    struct {
-        /** response0_reg : RO; bitpos: [31:0]; default: 0;
-         *  Bit[31:0] of response.
-         */
-        uint32_t response0_reg:32;
-    };
-    uint32_t val;
-} sdhost_resp0_reg_t;
-
-
-/** Group: Long response data register */
-/** Type of resp1 register
- *  Long response data register
- */
-typedef union {
-    struct {
-        /** response1_reg : RO; bitpos: [31:0]; default: 0;
-         *  Bit[63:32] of long response.
-         */
-        uint32_t response1_reg:32;
-    };
-    uint32_t val;
-} sdhost_resp1_reg_t;
-
-/** Type of resp2 register
- *  Long response data register
- */
-typedef union {
-    struct {
-        /** response2_reg : RO; bitpos: [31:0]; default: 0;
-         *  Bit[95:64] of long response.
-         */
-        uint32_t response2_reg:32;
-    };
-    uint32_t val;
-} sdhost_resp2_reg_t;
-
-/** Type of resp3 register
- *  Long response data register
- */
-typedef union {
-    struct {
-        /** response3_reg : RO; bitpos: [31:0]; default: 0;
-         *  Bit[127:96] of long response.
-         */
-        uint32_t response3_reg:32;
-    };
-    uint32_t val;
-} sdhost_resp3_reg_t;
 
 
 /** Group: Masked interrupt status register */
@@ -880,13 +866,18 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:16;
-        /** ddr_reg : R/W; bitpos: [17:16]; default: 0;
+        /** volt: R/W; bitpos: [1:0]; default: 0;
+         *  0: 3.3V mode.
+         *  1: 1.8V mode.
+         */
+        uint32_t volt:2;
+        uint32_t reserved_0:14;
+        /** ddr : R/W; bitpos: [17:16]; default: 0;
          *  DDR mode selection,1 bit for each card.
          *  0-Non-DDR mode.
          *  1-DDR mode.
          */
-        uint32_t ddr_reg:2;
+        uint32_t ddr:2;
         uint32_t reserved_18:14;
     };
     uint32_t val;
@@ -1392,7 +1383,7 @@ typedef union {
 } sdhost_dll_conf_reg_t;
 
 
-typedef struct {
+typedef struct sdmmc_dev_t {
     volatile sdhost_ctrl_reg_t ctrl;
     uint32_t reserved_004;
     volatile sdhost_clkdiv_reg_t clkdiv;
@@ -1403,12 +1394,9 @@ typedef struct {
     volatile sdhost_blksiz_reg_t blksiz;
     volatile sdhost_bytcnt_reg_t bytcnt;
     volatile sdhost_intmask_reg_t intmask;
-    volatile sdhost_cmdarg_reg_t cmdarg;
+    volatile uint32_t cmdarg;
     volatile sdhost_cmd_reg_t cmd;
-    volatile sdhost_resp0_reg_t resp0;
-    volatile sdhost_resp1_reg_t resp1;
-    volatile sdhost_resp2_reg_t resp2;
-    volatile sdhost_resp3_reg_t resp3;
+    volatile uint32_t resp[4];
     volatile sdhost_mintsts_reg_t mintsts;
     volatile sdhost_rintsts_reg_t rintsts;
     volatile sdhost_status_reg_t status;
@@ -1420,7 +1408,7 @@ typedef struct {
     volatile sdhost_tbbcnt_reg_t tbbcnt;
     volatile sdhost_debnce_reg_t debnce;
     volatile sdhost_usrid_reg_t usrid;
-    volatile sdhost_verid_reg_t verid;
+    volatile uint32_t verid;
     volatile sdhost_hcon_reg_t hcon;
     volatile sdhost_uhs_reg_t uhs;
     volatile sdhost_rst_n_reg_t rst_n;
@@ -1446,6 +1434,9 @@ typedef struct {
     volatile sdhost_dll_conf_reg_t dll_conf;
 } sdmmc_dev_t;
 
+extern sdmmc_dev_t SDMMC;
+
+typedef sdhost_cmd_reg_t sdmmc_hw_cmd_t;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(sdmmc_dev_t) == 0x810, "Invalid size of sdmmc_dev_t structure");
