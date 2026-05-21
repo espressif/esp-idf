@@ -408,14 +408,17 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
     buffer_len = tx_buffer_len(ssl, in_msglen);
 
 #if defined(MBEDTLS_SSL_PROTO_TLS1_3)
-    /* For TLS 1.3 ENCRYPTED_EXTENSIONS state, allocate max size buffer.
-     * This is needed because ChangeCipherSpec (1 byte) arrives first,
-     * followed immediately by EncryptedExtensions (potentially large).
-     * Since mbedtls processes both in the same read loop without returning
-     * to the wrapper, we need to allocate sufficient space upfront. */
-    if (ssl->MBEDTLS_PRIVATE(state) == MBEDTLS_SSL_ENCRYPTED_EXTENSIONS) {
+    /* In TLS 1.3 middlebox-compat mode (RFC 8446 D.4) a 1-byte dummy CCS
+     * record may precede a handshake record. mbedtls silently skips the CCS
+     * and, in the same read loop, reads the (larger) record that follows into
+     * this same RX buffer. The header peek above only saw the 1-byte CCS, so
+     * whenever the peeked record is such a CCS, size for the max record
+     * instead to avoid overflowing the buffer when the next record is read. */
+    if (ssl->MBEDTLS_PRIVATE(tls_version) == MBEDTLS_SSL_VERSION_TLS1_3 &&
+        ssl->MBEDTLS_PRIVATE(in_msgtype) == MBEDTLS_SSL_MSG_CHANGE_CIPHER_SPEC) {
         buffer_len = tx_buffer_len(ssl, MBEDTLS_SSL_IN_CONTENT_LEN);
-        ESP_LOGV(TAG, "TLS 1.3 ENCRYPTED_EXTENSIONS: allocating max buffer %d bytes", buffer_len);
+        ESP_LOGV(TAG, "TLS 1.3 CCS peeked: allocating max RX buffer %d bytes",
+                 buffer_len);
     }
 #endif
 
