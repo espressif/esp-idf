@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@
 #include "esp_coex_i154.h"
 #endif
 
-#if (CONFIG_OPENTHREAD_RCP_UART || CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG)
+#if (CONFIG_OPENTHREAD_RCP_UART || CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG || CONFIG_OPENTHREAD_RCP_CUSTOM)
 #include "utils/uart.h"
 #endif
 
@@ -36,7 +36,7 @@ struct ConsoleCmdMsg
 };
 #endif // CONFIG_OPENTHREAD_RCP_SPINEL_CONSOLE
 
-#if (CONFIG_OPENTHREAD_RCP_UART || CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG)
+#if (CONFIG_OPENTHREAD_RCP_UART || CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG || CONFIG_OPENTHREAD_RCP_CUSTOM)
 extern "C" {
     static int NcpSend(const uint8_t *aBuf, uint16_t aBufLength)
     {
@@ -94,7 +94,7 @@ static esp_err_t init_console_command_worker()
 
 extern "C" void otAppNcpInit(otInstance *aInstance)
 {
-#if (CONFIG_OPENTHREAD_RCP_UART || CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG)
+#if (CONFIG_OPENTHREAD_RCP_UART || CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG || CONFIG_OPENTHREAD_RCP_CUSTOM)
     IgnoreError(otPlatUartEnable());
     otNcpHdlcInit(aInstance, NcpSend);
 #else

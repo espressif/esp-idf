@@ -11,6 +11,9 @@
 #include "esp_log.h"
 #include "esp_openthread_alarm.h"
 #include "esp_openthread_common_macro.h"
+#if CONFIG_OPENTHREAD_RCP_CUSTOM
+#include "esp_openthread_transport_priv.h"
+#endif
 #include "esp_openthread_lock.h"
 #include "esp_openthread_radio.h"
 #include "esp_openthread_spi_slave.h"
@@ -112,6 +115,12 @@ static esp_err_t esp_openthread_host_interface_init(const esp_openthread_platfor
                           "esp_openthread_host_rcp_usb_init failed");
         break;
 #endif
+#if CONFIG_OPENTHREAD_RCP_CUSTOM
+    case HOST_CONNECTION_MODE_RCP_TRANSPORT:
+        ESP_RETURN_ON_ERROR(esp_openthread_host_rcp_transport_init(config), OT_PLAT_LOG_TAG,
+                            "esp_openthread_host_rcp_transport_init failed");
+        break;
+#endif
 #if CONFIG_OPENTHREAD_CONSOLE_TYPE_UART
     case HOST_CONNECTION_MODE_CLI_UART:
         ESP_RETURN_ON_ERROR(esp_openthread_host_cli_uart_init(config), OT_PLAT_LOG_TAG,
@@ -190,6 +199,11 @@ esp_err_t esp_openthread_platform_deinit(void)
     case HOST_CONNECTION_MODE_RCP_UART:
     case HOST_CONNECTION_MODE_CLI_UART:
         esp_openthread_uart_deinit();
+        break;
+#endif
+#if CONFIG_OPENTHREAD_RCP_CUSTOM
+    case HOST_CONNECTION_MODE_RCP_TRANSPORT:
+        esp_openthread_host_rcp_transport_deinit();
         break;
 #endif
     default:

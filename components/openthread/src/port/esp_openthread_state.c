@@ -50,7 +50,7 @@ static void handle_ot_netif_state_change(otInstance* instance)
         }
     }
 
-#if (CONFIG_OPENTHREAD_RADIO_SPINEL_UART || CONFIG_OPENTHREAD_RADIO_SPINEL_SPI)
+#if (CONFIG_OPENTHREAD_RADIO_SPINEL_UART || CONFIG_OPENTHREAD_RADIO_SPINEL_SPI || CONFIG_OPENTHREAD_RADIO_SPINEL_CUSTOM)
     esp_openthread_handle_netif_state_change(otIp6IsEnabled(instance));
 #endif
 }
