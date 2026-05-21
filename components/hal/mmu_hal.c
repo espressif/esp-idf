@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -112,6 +112,30 @@ void mmu_hal_map_region(uint32_t mmu_id, mmu_target_t mem_type, uint32_t vaddr, 
         page_num--;
     }
 }
+
+#if SOC_PSRAM_ENCRYPTION_PAGE_CONFIGURABLE
+void mmu_hal_map_region_no_enc(uint32_t vaddr, uint32_t paddr, uint32_t len)
+{
+    uint32_t mmu_id = MMU_LL_PSRAM_MMU_ID;
+    uint32_t page_size_in_bytes = mmu_hal_pages_to_bytes(mmu_id, 1);
+    HAL_ASSERT(vaddr % page_size_in_bytes == 0);
+    HAL_ASSERT(paddr % page_size_in_bytes == 0);
+    HAL_ASSERT(mmu_ll_check_valid_paddr_region(mmu_id, paddr, len));
+    // Restrict to data vaddr space — unencrypted PSRAM must never back code/rodata.
+    HAL_ASSERT(mmu_hal_check_valid_ext_vaddr_region(mmu_id, vaddr, len, MMU_VADDR_DATA));
+
+    uint32_t page_num = (len + page_size_in_bytes - 1) / page_size_in_bytes;
+    uint32_t mmu_val = mmu_ll_format_paddr(mmu_id, paddr, MMU_TARGET_PSRAM0);
+
+    while (page_num) {
+        uint32_t entry_id = mmu_ll_get_entry_id(mmu_id, vaddr);
+        mmu_ll_write_entry_no_enc(mmu_id, entry_id, mmu_val);
+        vaddr += page_size_in_bytes;
+        mmu_val++;
+        page_num--;
+    }
+}
+#endif
 
 void mmu_hal_unmap_region(uint32_t mmu_id, uint32_t vaddr, uint32_t len)
 {

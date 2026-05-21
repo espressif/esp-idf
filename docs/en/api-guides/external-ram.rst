@@ -249,6 +249,30 @@ By default, failure to initialize external RAM will cause the ESP-IDF startup to
 
         On {IDF_TARGET_NAME}, PSRAM encryption can be controlled on a per-MMU-page basis, allowing individual PSRAM pages to be selectively encrypted or left unencrypted. However, in the default configuration, all PSRAM pages are encrypted when flash encryption is enabled.
 
+        Reserving an Unencrypted PSRAM Region
+        -------------------------------------
+
+        Enabling :ref:`CONFIG_SPIRAM_ENC_EXEMPT` reserves a region at the upper end of PSRAM (highest physical addresses; sized by :ref:`CONFIG_SPIRAM_ENC_EXEMPT_SIZE`, in KB, rounded up to the MMU page size) that is mapped without encryption. This region is registered as a separate heap pool reachable only via the ``MALLOC_CAP_SPIRAM_NO_ENC`` capability. The rest of PSRAM (and flash) remains encrypted.
+
+        .. warning::
+
+            Memory allocated with ``MALLOC_CAP_SPIRAM_NO_ENC`` is stored as plaintext in PSRAM and can be observed by an attacker with physical access to the PSRAM interface. Never place TLS state, keys, or other secrets in this region.
+
+        Typical use case: PSRAM encryption imposes alignment constraints on buffers that some DMA engines (for example, 2D-DMA) cannot satisfy. Buffers that need to be DMA-accessed from such engines can be allocated from this unencrypted region:
+
+        .. code-block:: c
+
+            #if CONFIG_SPIRAM_ENC_EXEMPT
+            uint32_t caps = MALLOC_CAP_SPIRAM_NO_ENC;
+            #else
+            uint32_t caps = MALLOC_CAP_SPIRAM;
+            #endif
+            uint8_t *buf = heap_caps_malloc(buf_size, caps);
+
+        ``MALLOC_CAP_SPIRAM_NO_ENC`` must be requested explicitly. It is intentionally not combined with ``MALLOC_CAP_SPIRAM`` or ``MALLOC_CAP_DEFAULT``, so ordinary SPIRAM/heap allocations cannot accidentally land in the unencrypted region.
+
+        To verify after the fact that a buffer was allocated from the unencrypted carve-out (for example after a ``heap_caps_malloc_prefer()`` call that may have fallen back to encrypted PSRAM), use ``esp_psram_ptr_is_no_enc()``.
+
     .. only:: SOC_PSRAM_ENCRYPTION_SEPARATE_KEY
 
         On {IDF_TARGET_NAME}, PSRAM encryption can use an independent encryption key. If the PSRAM encryption key is not programmed, the flash encryption key will be used as the PSRAM encryption key.
