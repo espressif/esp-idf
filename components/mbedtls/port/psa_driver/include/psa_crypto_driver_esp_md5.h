@@ -8,7 +8,7 @@
 
 #include "esp_types.h"
 #include "psa/crypto.h"
-#include "esp_rom_md5.h"
+#include "psa_crypto_driver_esp_md5_contexts.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,25 +27,25 @@ psa_status_t esp_md5_hash_compute(psa_algorithm_t alg,
     size_t hash_size,
     size_t *hash_length);
 
-psa_status_t esp_md5_hash_setup(md5_context_t *operation,
+psa_status_t esp_md5_hash_setup(esp_md5_hash_operation_t *operation,
                                 psa_algorithm_t alg);
 
 psa_status_t esp_md5_hash_update(
-    md5_context_t *operation,
+    esp_md5_hash_operation_t *operation,
     const uint8_t *input,
     size_t input_length );
 
 psa_status_t esp_md5_hash_finish(
-    md5_context_t *operation,
+    esp_md5_hash_operation_t *operation,
     uint8_t *hash,
     size_t hash_size,
     size_t *hash_length);
 
-psa_status_t esp_md5_hash_abort(md5_context_t *operation);
+psa_status_t esp_md5_hash_abort(esp_md5_hash_operation_t *operation);
 
 psa_status_t esp_md5_hash_clone(
-    const md5_context_t *source_operation,
-    md5_context_t *target_operation);
+    const esp_md5_hash_operation_t *source_operation,
+    esp_md5_hash_operation_t *target_operation);
 
 #ifdef __cplusplus
 }

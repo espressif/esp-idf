@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2025-2026 Espressif Systems (Shanghai) CO LTD
  */
 
 #include <string.h>
@@ -14,6 +14,7 @@
 #include "sha/sha_parallel_engine.h"
 #include "esp_err.h"
 #include "soc/soc_caps.h"
+#include "mbedtls/platform_util.h"
 
 /*
  * 32-bit integer manipulation macros (big endian)
@@ -187,6 +188,11 @@ static void esp_sha256_software_process(esp_sha256_context *ctx, const unsigned 
     for ( i = 0; i < 8; i++ ) {
         ctx->state[i] += A[i];
     }
+
+    mbedtls_platform_zeroize(W, sizeof(W));
+    mbedtls_platform_zeroize(A, sizeof(A));
+    temp1 = temp2 = 0;
+    (void)temp1; (void)temp2;
 }
 static int esp_internal_sha256_parallel_engine_process(esp_sha256_context *ctx, const unsigned char data[64], bool read_digest)
 {
@@ -346,6 +352,8 @@ psa_status_t esp_sha256_driver_update(
     return PSA_SUCCESS;
 }
 
+psa_status_t esp_sha256_driver_abort(esp_sha256_context *ctx);
+
 psa_status_t esp_sha256_driver_compute(
     esp_sha256_context *ctx,
     psa_algorithm_t alg,
@@ -375,20 +383,24 @@ psa_status_t esp_sha256_driver_compute(
 #endif // SOC_SHA_SUPPORT_SHA224
     int ret = esp_sha256_starts(ctx, mode);
     if (ret != ESP_OK) {
-        return PSA_ERROR_HARDWARE_FAILURE;
+        goto hw_fail;
     }
 
     ret = esp_sha256_update(ctx, input, input_length);
     if (ret != ESP_OK) {
-        return PSA_ERROR_HARDWARE_FAILURE;
+        goto hw_fail;
     }
 
     ret = esp_sha256_finish(ctx, hash);
     if (ret != ESP_OK) {
-        return PSA_ERROR_HARDWARE_FAILURE;
+        goto hw_fail;
     }
     *hash_length = PSA_HASH_LENGTH(alg);
     return PSA_SUCCESS;
+
+hw_fail:
+    esp_sha256_driver_abort(ctx);
+    return PSA_ERROR_HARDWARE_FAILURE;
 }
 
 psa_status_t esp_sha256_driver_finish(
@@ -430,6 +442,6 @@ psa_status_t esp_sha256_driver_abort(esp_sha256_context *ctx)
         esp_sha_unlock_engine(SHA2_256);
         ctx->operation_mode = ESP_SHA_MODE_SOFTWARE;
     }
-    memset(ctx, 0, sizeof(esp_sha256_context));
+    mbedtls_platform_zeroize(ctx, sizeof(esp_sha256_context));
     return PSA_SUCCESS;
 }
