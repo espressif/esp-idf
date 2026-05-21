@@ -237,6 +237,10 @@ psa_status_t esp_hmac_setup_opaque(
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
+    if (esp_hmac_ctx->alg != 0) {
+        return PSA_ERROR_BAD_STATE;
+    }
+
     if (key_buffer_size < sizeof(esp_hmac_efuse_key_storage_t)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -265,6 +269,7 @@ psa_status_t esp_hmac_setup_opaque(
 
     memset(esp_hmac_ctx, 0, sizeof(esp_hmac_opaque_operation_t));
 
+    esp_hmac_ctx->alg = alg;
     esp_hmac_ctx->key_buffer = key_buffer;
     esp_hmac_ctx->is_persistent = is_persistent;
 
@@ -273,8 +278,19 @@ psa_status_t esp_hmac_setup_opaque(
 
 psa_status_t esp_hmac_update_opaque(esp_hmac_opaque_operation_t *esp_hmac_ctx, const uint8_t *data, size_t data_length)
 {
-    if (!esp_hmac_ctx || !data || data_length == 0) {
+    if (!esp_hmac_ctx) {
         return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    if (data == NULL && data_length != 0) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (esp_hmac_ctx->alg == 0) {
+        return PSA_ERROR_BAD_STATE;
+    }
+
+    if (esp_hmac_ctx->computed) {
+        return PSA_ERROR_BAD_STATE;
     }
 
     hmac_key_id_t hmac_key_id = 0;
@@ -331,12 +347,17 @@ psa_status_t esp_hmac_update_opaque(esp_hmac_opaque_operation_t *esp_hmac_ctx, c
     }
 #endif /* SOC_KEY_MANAGER_SUPPORTED && !ESP_TEE_BUILD */
 
+    if (hmac_ret == ESP_OK) {
+        esp_hmac_ctx->computed = true;
+        return PSA_SUCCESS;
+    }
+
+    mbedtls_platform_zeroize(esp_hmac_ctx->hmac, sizeof(esp_hmac_ctx->hmac));
+
     if (hmac_ret == ESP_ERR_INVALID_ARG) {
         return PSA_ERROR_INVALID_ARGUMENT;
     } else if (hmac_ret == ESP_FAIL) {
         return PSA_ERROR_HARDWARE_FAILURE;
-    } else if (hmac_ret == ESP_OK) {
-        return PSA_SUCCESS;
     }
 
     return PSA_ERROR_CORRUPTION_DETECTED;
@@ -352,12 +373,20 @@ psa_status_t esp_hmac_finish_opaque(
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (mac_size < ESP_HMAC_RESULT_SIZE) {
-        return PSA_ERROR_BUFFER_TOO_SMALL;
+    if (esp_hmac_ctx->alg == 0 || !esp_hmac_ctx->computed) {
+        return PSA_ERROR_BAD_STATE;
     }
 
-    memcpy(mac, esp_hmac_ctx->hmac, ESP_HMAC_RESULT_SIZE);
-    *mac_length = ESP_HMAC_RESULT_SIZE;
+    if (mac_size == 0 || mac_size > ESP_HMAC_RESULT_SIZE) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    /* PSA core passes the truncated length as mac_size; copy exactly that
+     * many bytes to honour PSA_ALG_TRUNCATED_MAC. */
+    memcpy(mac, esp_hmac_ctx->hmac, mac_size);
+    *mac_length = mac_size;
+
+    mbedtls_platform_zeroize(esp_hmac_ctx->hmac, sizeof(esp_hmac_ctx->hmac));
 
     return PSA_SUCCESS;
 }
@@ -379,20 +408,23 @@ psa_status_t esp_hmac_compute_opaque(
 
     status = esp_hmac_setup_opaque(&esp_hmac_ctx, attributes, key_buffer, key_buffer_size, alg);
     if (status != PSA_SUCCESS) {
-        return status;
+        goto exit;
     }
 
     status = esp_hmac_update_opaque(&esp_hmac_ctx, input, input_length);
     if (status != PSA_SUCCESS) {
-        return status;
+        goto exit;
     }
 
-    status = esp_hmac_finish_opaque(&esp_hmac_ctx, mac, mac_size, mac_length);
-    if (status != PSA_SUCCESS) {
-        return status;
+    size_t actual_mac_length = 0;
+    status = esp_hmac_finish_opaque(&esp_hmac_ctx, mac, mac_size, &actual_mac_length);
+    if (status == PSA_SUCCESS) {
+        *mac_length = actual_mac_length;
     }
 
-    return PSA_SUCCESS;
+exit:
+    esp_hmac_abort_opaque(&esp_hmac_ctx);
+    return status;
 }
 
 psa_status_t esp_hmac_verify_finish_opaque(
@@ -404,7 +436,15 @@ psa_status_t esp_hmac_verify_finish_opaque(
     uint8_t actual_mac[ESP_HMAC_RESULT_SIZE];
     size_t actual_mac_length = 0;
 
-    status = esp_hmac_finish_opaque(esp_hmac_ctx, actual_mac, sizeof(actual_mac), &actual_mac_length);
+    if (esp_hmac_ctx == NULL || mac == NULL) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (mac_length == 0 || mac_length > sizeof(actual_mac)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    status = esp_hmac_finish_opaque(esp_hmac_ctx, actual_mac, mac_length, &actual_mac_length);
     if (status == PSA_SUCCESS) {
         if (mbedtls_ct_memcmp(mac, actual_mac, mac_length) != 0) {
             status = PSA_ERROR_INVALID_SIGNATURE;

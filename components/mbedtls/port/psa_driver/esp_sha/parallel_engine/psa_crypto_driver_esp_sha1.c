@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2025-2026 Espressif Systems (Shanghai) CO LTD
  */
 
 #include <string.h>
@@ -13,6 +13,7 @@
 #include "../include/psa_crypto_driver_esp_sha1.h"
 #include "sha/sha_parallel_engine.h"
 #include "esp_err.h"
+#include "mbedtls/platform_util.h"
 
 #ifndef GET_UINT32_BE
 #define GET_UINT32_BE(n,b,i)                            \
@@ -409,6 +410,8 @@ psa_status_t esp_sha1_driver_finish(
     return PSA_SUCCESS;
 }
 
+psa_status_t esp_sha1_driver_abort(esp_sha1_context *ctx);
+
 psa_status_t esp_sha1_driver_compute(
     esp_sha1_context *ctx,
     const uint8_t *input,
@@ -423,21 +426,25 @@ psa_status_t esp_sha1_driver_compute(
 
     int ret = esp_sha1_starts(ctx);
     if (ret != ESP_OK) {
-        return PSA_ERROR_HARDWARE_FAILURE;
+        goto hw_fail;
     }
 
     ret = esp_sha1_update(ctx, input, input_length);
     if (ret != ESP_OK) {
-        return PSA_ERROR_HARDWARE_FAILURE;
+        goto hw_fail;
     }
 
     ret = esp_sha1_finish(ctx, hash);
     if (ret != ESP_OK) {
-        return PSA_ERROR_HARDWARE_FAILURE;
+        goto hw_fail;
     }
 
     *hash_length = PSA_HASH_LENGTH(PSA_ALG_SHA_1);
     return PSA_SUCCESS;
+
+hw_fail:
+    esp_sha1_driver_abort(ctx);
+    return PSA_ERROR_HARDWARE_FAILURE;
 }
 
 psa_status_t esp_sha1_driver_abort(esp_sha1_context *ctx)
@@ -452,6 +459,6 @@ psa_status_t esp_sha1_driver_abort(esp_sha1_context *ctx)
         ctx->operation_mode = ESP_SHA_MODE_SOFTWARE;
     }
 #endif // MBEDTLS_PSA_ACCEL_ALG_SHA_1
-    memset(ctx, 0, sizeof(esp_sha1_context));
+    mbedtls_platform_zeroize(ctx, sizeof(esp_sha1_context));
     return PSA_SUCCESS;
 }

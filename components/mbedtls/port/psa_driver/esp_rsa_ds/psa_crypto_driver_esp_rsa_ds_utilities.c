@@ -445,7 +445,9 @@ psa_status_t esp_rsa_ds_pad_oaep_unpad(unsigned char *input,
     unsigned char *output,
     size_t output_max_len,
     size_t *olen,
-    psa_algorithm_t hash_alg)
+    psa_algorithm_t hash_alg,
+    const uint8_t *label,
+    size_t label_length)
 {
     /* This mirrors mbedtls_rsa_rsaes_oaep_decrypt() in upstream rsa.c.
      * Below the public-input sanity check, the unpadding scan operates
@@ -512,6 +514,8 @@ psa_status_t esp_rsa_ds_pad_oaep_unpad(unsigned char *input,
     /* Single decision point on the accumulated bit. */
     if (bad != MBEDTLS_CT_FALSE) {
         *olen = 0;
+        mbedtls_platform_zeroize(input, ilen);
+        mbedtls_platform_zeroize(lhash, sizeof(lhash));
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
