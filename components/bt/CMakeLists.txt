@@ -98,6 +98,12 @@ idf_component_register(SRCS "${srcs}"
                        PRIV_REQUIRES "${bt_priv_requires}"
                        LDFRAGMENTS "${ldscripts}")
 
+idf_component_get_property(bt_component_type bt COMPONENT_TYPE)
+if(bt_component_type STREQUAL "LIBRARY")
+    idf_component_optional_requires(PRIVATE ble_insights)
+else()
+    idf_component_optional_requires(INTERFACE ble_insights)
+endif()
 
 if(CONFIG_BT_ENABLED)
     target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-implicit-fallthrough -Wno-unused-const-variable)

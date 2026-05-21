@@ -119,6 +119,12 @@ menu "Bluetooth"
         source "$IDF_PATH/components/bt/esp_ble_audio/Kconfig.in"
     endmenu
 
+    config BT_HCI_LOG_INSIGHTS_ENABLE
+        depends on BT_HCI_LOG_DEBUG_EN
+        bool "Enable Insights for HCI LOGS BT Stack"
+        help
+            Enable this to allow the BT stack to send diagnostic events.
+
 endmenu
 
 menuconfig BLE_MESH

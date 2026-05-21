@@ -94,6 +94,7 @@ list(APPEND bt_common_srcs
     "${CMAKE_CURRENT_LIST_DIR}/api/esp_blufi_api.c"
     "${CMAKE_CURRENT_LIST_DIR}/hci_log/bt_hci_log.c"
     "${CMAKE_CURRENT_LIST_DIR}/btc/core/btc_manage.c"
+    "${CMAKE_CURRENT_LIST_DIR}/hci_log/bt_hci_log_insights.c"
     "${CMAKE_CURRENT_LIST_DIR}/btc/core/btc_task.c"
     "${CMAKE_CURRENT_LIST_DIR}/btc/profile/esp/blufi/blufi_prf.c"
     "${CMAKE_CURRENT_LIST_DIR}/btc/profile/esp/blufi/blufi_protocol.c"

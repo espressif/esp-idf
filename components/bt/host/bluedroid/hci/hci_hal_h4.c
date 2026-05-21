@@ -34,6 +34,7 @@
 #include "esp_bt.h"
 #endif
 #include "esp_bluedroid_hci.h"
+#include "bt_common.h"
 
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
 #include "l2c_int.h"
@@ -585,14 +586,20 @@ void bt_record_hci_data(uint8_t *data, uint16_t len)
 #endif // (BLE_50_FEATURE_SUPPORT == TRUE)
     )) {
         bt_hci_log_record_hci_adv(HCI_LOG_DATA_TYPE_ADV, &data[2], len - 2);
+#if BT_HCI_INSIGHTS_INCLUDED
+        bt_hci_log_record_insights(HCI_LOG_DATA_TYPE_ADV, &data[2], len - 2);
+#endif
     } else {
         uint8_t data_type;
-        if (data[0] == HCI_LOG_DATA_TYPE_ISO_DATA) {
+        if (data[0] == DATA_TYPE_ISO) {
             data_type = HCI_LOG_DATA_TYPE_ISO_DATA;
         } else {
             data_type = ((data[0] == 2) ? HCI_LOG_DATA_TYPE_C2H_ACL : data[0]);
         }
         bt_hci_log_record_hci_data(data_type, &data[1], len - 1);
+#if BT_HCI_INSIGHTS_INCLUDED
+        bt_hci_log_record_insights(data_type, &data[1], len - 1);
+#endif
     }
 #endif // (BT_HCI_LOG_INCLUDED == TRUE)
 }
