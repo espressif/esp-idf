@@ -387,7 +387,6 @@ typedef struct {
             .dcdc_clear_rdy     = 0,                                \
             .dig_reg_dpcur_bias = 1,                                \
             .dig_reg_dsfmos     = 4,                                \
-            .dcm_vset           = 20,                               \
             .dcm_mode           = 3,                                \
             .discnnt_dig_rtc    = 0,                                \
             .xpd_trx            = 0,                                \
@@ -406,7 +405,7 @@ typedef struct {
             .dcdc_clear_rdy     = 0,                                \
             .dig_reg_dpcur_bias = 1,                                \
             .dig_reg_dsfmos     = 4,                                \
-            .dcm_vset           = 0,                                \
+            .dcm_vset           = 20,                               \
             .dcm_mode           = 3,                                \
             .discnnt_dig_rtc    = 0,                                \
             .drv_b              = PMU_LP_DRVB_DEEPSLEEP,            \
