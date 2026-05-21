@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import argparse
 import glob
@@ -58,6 +58,14 @@ expected_dep_violations = {
     'esp_hw_support': ['efuse', 'bootloader_support', 'esp_driver_gpio', 'esp_timer', 'esp_pm'],
     'cxx': ['pthread'],
 }
+
+# idf_component_optional_requires has a DEFERRED mode under build system v2
+# that propagates the resolved dependency back into PRIV_REQUIRES, so the
+# dependency graph captures edges that target_link_libraries creates at link
+# time but were never recorded as requires.
+if os.environ.get('IDF_BUILD_V2'):
+    expected_dep_violations.setdefault('esp_common', []).extend(['efuse', 'bootloader_support', 'app_update'])
+    expected_dep_violations['esp_system'].append('esp_app_format')
 
 # Target-specific expected dependency violations
 target_specific_expected_dep_violations = {
