@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -33,6 +33,8 @@ void sdcard_speed_test_fatfs_run(void);
 
 static void print_bench_output(struct timeval tv_start, struct timeval tv_end, size_t size, size_t start_offset, bool is_write)
 {
+/* Suppress benchmark printf in CI (CONFIG_IDF_CI_BUILD, IDF_CI_BUILD=1) to avoid UART flooding. */
+#if !CONFIG_IDF_CI_BUILD
     bool use_megabytes;
 #ifdef CONFIG_EXAMPLE_USE_MEGABYTES
     use_megabytes = true;
@@ -45,6 +47,7 @@ static void print_bench_output(struct timeval tv_start, struct timeval tv_end, s
     printf("%s %d bytes in %.3fms (%.3f%s) %s address %u\n",
             (is_write)?"Wrote":"Read", size, t_s * 1e3, (use_megabytes)?io_speed:io_speed*8.0,
             (use_megabytes)?"MiB/s":"Mib/s", (is_write)?"to":"from", start_offset);
+#endif //CONFIG_IDF_CI_BUILD
 }
 
 static void test_rw_raw_spiflash_speed(wl_handle_t handle, size_t src_dest_addr, void *src_dest_buff, size_t size, bool is_write)
@@ -82,13 +85,6 @@ static void test_rw_raw_sd_speed(sdmmc_card_t *card, char* buf, uint32_t start_s
 
 static void test_rw_fs_speed(const char* filename, void* buf, size_t buf_size, size_t file_size, bool is_write)
 {
-    bool use_megabytes;
-#ifdef CONFIG_EXAMPLE_USE_MEGABYTES
-    use_megabytes = true;
-#else
-    use_megabytes = false;
-#endif // CONFIG_EXAMPLE_USE_MEGABYTES
-
     const size_t buf_count = file_size / buf_size;
     FILE* f = fopen(filename, (is_write) ? "wb" : "rb");
 
@@ -107,11 +103,20 @@ static void test_rw_fs_speed(const char* filename, void* buf, size_t buf_size, s
     gettimeofday(&tv_end, NULL);
     fclose(f);
 
+/* Suppress benchmark printf in CI (CONFIG_IDF_CI_BUILD, IDF_CI_BUILD=1) to avoid UART flooding. */
+#if !CONFIG_IDF_CI_BUILD
+    bool use_megabytes;
+#ifdef CONFIG_EXAMPLE_USE_MEGABYTES
+    use_megabytes = true;
+#else
+    use_megabytes = false;
+#endif // CONFIG_EXAMPLE_USE_MEGABYTES
     float t_s = tv_end.tv_sec - tv_start.tv_sec + 1e-6f * (tv_end.tv_usec - tv_start.tv_usec);
     double io_speed = file_size / (1024.0f * 1024.0f * t_s);
     printf("%s %d bytes (buffer size %dB) in %.3fms (%.3f%s)\n",
             (is_write)?"Wrote":"Read", file_size, buf_size, t_s * 1e3,
             (use_megabytes)?io_speed:io_speed*8.0, (use_megabytes)?"MiB/s":"Mib/s");
+#endif
 }
 
 void spiflash_speed_test_raw_run(void)
