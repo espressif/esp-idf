@@ -1239,6 +1239,10 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
             free(old_host);
             return ESP_ERR_NO_MEM;
         }
+        /* Cross-origin credential hygiene: an Authorization header set by the
+         * application for the original host must not be re-sent to a different
+         * host (e.g. an attacker-controlled redirect target). */
+        http_header_delete(client->request->headers, "Authorization");
         /* Free cached data if any, as we are closing this connection */
         esp_http_client_cached_buf_cleanup(client->response->buffer);
         esp_http_client_close(client);

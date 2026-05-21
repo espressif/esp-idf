@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -182,6 +182,58 @@ TEST_CASE("esp_http_client_set_header() should not return error if header value 
     // Now, delete the header by passing value = NULL
     err = esp_http_client_set_header(client, "Test-Header", NULL);
     TEST_ASSERT_EQUAL(ESP_OK, err);  // Ensure it does NOT return ESP_ERR_INVALID_ARG
+
+    esp_http_client_cleanup(client);
+}
+
+/**
+ * Cross-origin credential leak: an Authorization header set by the application
+ * must NOT be carried across a host change in esp_http_client_set_url (which
+ * happens on redirects). Failing to clear it leaks tokens to attacker-controlled
+ * hosts when the trusted server returns a 30x Location pointing elsewhere.
+ */
+TEST_CASE("set_url() to a different host strips Authorization header", "[esp_http_client]")
+{
+    esp_http_client_config_t config = {
+        .url = "http://httpbin.org/get",
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    TEST_ASSERT_NOT_NULL(client);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_set_header(client, "Authorization", "Bearer secret-token"));
+
+    char *value = NULL;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_get_header(client, "Authorization", &value));
+    TEST_ASSERT_NOT_NULL(value);
+
+    /* Simulate an attacker-controlled redirect target */
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_set_url(client, "http://attacker.example/steal"));
+
+    value = NULL;
+    esp_err_t err = esp_http_client_get_header(client, "Authorization", &value);
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, err);
+    TEST_ASSERT_NULL(value);
+
+    esp_http_client_cleanup(client);
+}
+
+/* Regression guard: same-host set_url (e.g. redirect to a different path on the
+ * same origin) must preserve the Authorization header. */
+TEST_CASE("set_url() to the same host preserves Authorization header", "[esp_http_client]")
+{
+    esp_http_client_config_t config = {
+        .url = "http://httpbin.org/get",
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    TEST_ASSERT_NOT_NULL(client);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_set_header(client, "Authorization", "Bearer token"));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_set_url(client, "http://httpbin.org/other"));
+
+    char *value = NULL;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_get_header(client, "Authorization", &value));
+    TEST_ASSERT_NOT_NULL(value);
+    TEST_ASSERT_EQUAL_STRING("Bearer token", value);
 
     esp_http_client_cleanup(client);
 }
