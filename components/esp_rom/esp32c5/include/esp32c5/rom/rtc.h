@@ -50,7 +50,7 @@ extern "C" {
   *     LP_AON_STORE5_REG       FAST_RTC_MEMORY_LENGTH
   *     LP_AON_STORE6_REG       FAST_RTC_MEMORY_ENTRY
   *     LP_AON_STORE7_REG       FAST_RTC_MEMORY_CRC
-  *     LP_AON_STORE8_REG       Store light sleep wake stub addr
+  *     LP_AON_STORE8_REG       Store light sleep wake stub addr (mask bit[1:0])
   *     LP_AON_STORE8_REG       Store the sleep mode at bit[0]  (0:light sleep 1:deep sleep)
   *     LP_AON_STORE9_REG       LP core store wakeup cause
   *************************************************************************************
