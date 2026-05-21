@@ -133,6 +133,7 @@ if(CONFIG_BT_ENABLED)
     list(APPEND srcs "common/btc/core/btc_alarm.c"
          "common/api/esp_blufi_api.c"
          "common/hci_log/bt_hci_log.c"
+         "common/hci_log/bt_hci_log_insights.c"
          "common/btc/core/btc_manage.c"
          "common/btc/core/btc_task.c"
          "common/btc/profile/esp/blufi/blufi_prf.c"
@@ -1013,6 +1014,13 @@ if(DEFINED CONFIG_BLE_LOG_PRPH_UART_DMA_PORT)
         target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=uart_write_bytes")
         target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=uart_write_bytes_with_break")
     endif()
+endif()
+
+idf_component_get_property(bt_component_type bt COMPONENT_TYPE)
+if(bt_component_type STREQUAL "LIBRARY")
+    idf_component_optional_requires(PRIVATE ble_insights)
+else()
+    idf_component_optional_requires(INTERFACE ble_insights)
 endif()
 
 if(CONFIG_BLE_COMPRESSED_LOG_ENABLE)

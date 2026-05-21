@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -174,6 +174,14 @@
 #define UC_BT_HCI_LOG_ADV_BUFFER_SIZE CONFIG_BT_HCI_LOG_ADV_BUFFER_SIZE
 #else
 #define UC_BT_HCI_LOG_ADV_BUFFER_SIZE  (5)
+#endif
+
+
+// HCI LOG INSIGHTS
+#ifdef CONFIG_BT_HCI_LOG_INSIGHTS_ENABLE
+#define UC_BT_HCI_LOG_INSIGHTS_ENABLE  TRUE
+#else
+#define UC_BT_HCI_LOG_INSIGHTS_ENABLE  FALSE
 #endif
 
 #endif /* __BT_USER_CONFIG_H__ */
