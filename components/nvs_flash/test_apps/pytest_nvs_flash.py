@@ -14,7 +14,7 @@ CONFIGS_NVS_ENCR_FLASH_ENC = [
 @pytest.mark.parametrize('config', ['default'], indirect=True)
 @idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
 def test_nvs_flash(dut: IdfDut) -> None:
-    dut.run_all_single_board_cases(group='!nvs_encr_hmac', timeout=120)
+    dut.run_all_single_board_cases(group='!nvs_encr_hmac&!nvs_ram', timeout=120)
 
 
 @pytest.mark.nvs_encr_hmac
@@ -44,6 +44,7 @@ def test_nvs_flash_encr_flash_enc(dut: IdfDut) -> None:
 
 
 @pytest.mark.psram
+@pytest.mark.parametrize('config', ['spiram'], indirect=True)
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_nvs_flash_ram(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(group='nvs_ram')
