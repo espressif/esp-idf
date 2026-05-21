@@ -11,6 +11,14 @@
 // esp32c5, esp32c61 and esp32h4 do not need msp parameters in apis.
 int Cache_WriteBack_Addr(uint32_t addr, uint32_t size)
 {
+    uint32_t plus;
+    uint32_t cache_line_size = MIN_CACHE_LINE_SIZE;
+
+    plus = addr & (cache_line_size - 1);
+    addr -= plus;
+    size += plus;
+    size = (size + cache_line_size - 1) & ~(cache_line_size - 1);
+
     REG_WRITE(CACHE_SYNC_MAP_REG, CACHE_MAP_FLASH_CACHE);
     REG_WRITE(CACHE_SYNC_ADDR_REG, addr);
     REG_WRITE(CACHE_SYNC_SIZE_REG, size);
@@ -37,6 +45,14 @@ void Cache_WriteBack_All(void)
 
 int Cache_WriteBack_Invalidate_Addr(uint32_t addr, uint32_t size)
 {
+    uint32_t plus;
+    uint32_t cache_line_size = MIN_CACHE_LINE_SIZE;
+
+    plus = addr & (cache_line_size - 1);
+    addr -= plus;
+    size += plus;
+    size = (size + cache_line_size - 1) & ~(cache_line_size - 1);
+
     REG_WRITE(CACHE_SYNC_MAP_REG, CACHE_MAP_FLASH_CACHE);
     REG_WRITE(CACHE_SYNC_ADDR_REG, addr);
     REG_WRITE(CACHE_SYNC_SIZE_REG, size);
