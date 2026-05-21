@@ -186,12 +186,6 @@ TEST_CASE("esp_http_client_set_header() should not return error if header value 
     esp_http_client_cleanup(client);
 }
 
-/**
- * Cross-origin credential leak: an Authorization header set by the application
- * must NOT be carried across a host change in esp_http_client_set_url (which
- * happens on redirects). Failing to clear it leaks tokens to attacker-controlled
- * hosts when the trusted server returns a 30x Location pointing elsewhere.
- */
 TEST_CASE("set_url() to a different host strips Authorization header", "[esp_http_client]")
 {
     esp_http_client_config_t config = {
@@ -206,7 +200,7 @@ TEST_CASE("set_url() to a different host strips Authorization header", "[esp_htt
     TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_get_header(client, "Authorization", &value));
     TEST_ASSERT_NOT_NULL(value);
 
-    /* Simulate an attacker-controlled redirect target */
+    /* Simulate a redirect target */
     TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_set_url(client, "http://attacker.example/steal"));
 
     value = NULL;
@@ -217,8 +211,6 @@ TEST_CASE("set_url() to a different host strips Authorization header", "[esp_htt
     esp_http_client_cleanup(client);
 }
 
-/* Regression guard: same-host set_url (e.g. redirect to a different path on the
- * same origin) must preserve the Authorization header. */
 TEST_CASE("set_url() to the same host preserves Authorization header", "[esp_http_client]")
 {
     esp_http_client_config_t config = {
@@ -234,6 +226,36 @@ TEST_CASE("set_url() to the same host preserves Authorization header", "[esp_htt
     TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_get_header(client, "Authorization", &value));
     TEST_ASSERT_NOT_NULL(value);
     TEST_ASSERT_EQUAL_STRING("Bearer token", value);
+
+    esp_http_client_cleanup(client);
+}
+
+TEST_CASE("set_url() to a different host clears URL-embedded credentials", "[esp_http_client]")
+{
+    esp_http_client_config_t config = {
+        .host = HOST,
+        .path = "/",
+        .username = USERNAME,
+        .password = PASSWORD,
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    TEST_ASSERT_NOT_NULL(client);
+
+    char *value = NULL;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_get_username(client, &value));
+    TEST_ASSERT_NOT_NULL(value);
+    value = NULL;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_get_password(client, &value));
+    TEST_ASSERT_NOT_NULL(value);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_set_url(client, "http://attacker.example/steal"));
+
+    value = NULL;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_get_username(client, &value));
+    TEST_ASSERT_NULL(value);
+    value = NULL;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_get_password(client, &value));
+    TEST_ASSERT_NULL(value);
 
     esp_http_client_cleanup(client);
 }
