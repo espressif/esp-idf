@@ -189,11 +189,6 @@ void app_main(void)
     example_init_etm(cmpr, gptimer);
 
     ESP_ERROR_CHECK(ana_cmpr_enable(cmpr));
-    /* Run one software-triggered scan before the periodic timer starts.
-     * This gives the comparator an initial result immediately, instead of waiting for the first timer alarm. */
-    ESP_ERROR_CHECK(ana_cmpr_trigger_scan(cmpr));
-    vTaskDelay(pdMS_TO_TICKS(10));
-
     /* After the timer starts, future scans are launched by ETM rather than by CPU code. */
     ESP_ERROR_CHECK(gptimer_start(gptimer));
     ESP_LOGI(TAG, "Periodic ETM-driven comparator scan started");

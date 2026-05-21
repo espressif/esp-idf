@@ -16,6 +16,7 @@
 #include "soc/pcr_struct.h"
 #include "soc/soc_etm_struct.h"
 #include "soc/soc_etm_source.h"
+#include "esp_rom_sys.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,6 +42,9 @@ typedef zero_det_dev_t analog_cmpr_dev_t;
 
 // Can detect positive/negative/any cross type
 #define ANALOG_CMPR_LL_SUPPORT_EDGE_SPECIFIC_INTR_MASK  1
+
+// Support software trigger channel scan
+#define ANALOG_CMPR_LL_SUPPORT_SW_SCAN    1
 
 #define ANALOG_CMPR_LL_GET_HW(unit)     (&ZERO_DET)
 
@@ -112,17 +116,6 @@ static inline void analog_cmpr_ll_set_clk_src(int unit_id, ana_cmpr_clk_src_t cl
 }
 
 /**
- * @brief Enable the function clock for Analog Comparator module
- *
- * @param unit_id Unit ID
- * @param enable true to enable, false to disable
- */
-static inline void analog_cmpr_ll_enable_function_clock(int unit_id, bool enable)
-{
-    PCR.zero_det_clk_conf.zero_det_func_clk_en = enable;
-}
-
-/**
  * @brief Set the clock divider for analog comparator PAD_COMP_CLK
  *
  * @param unit_id Unit ID
@@ -133,6 +126,17 @@ static inline void analog_cmpr_ll_set_clk_div(int unit_id, uint32_t div)
 {
     (void)unit_id;
     (void)div;
+}
+
+/**
+ * @brief Enable the function clock for Analog Comparator module
+ *
+ * @param unit_id Unit ID
+ * @param enable true to enable, false to disable
+ */
+static inline void analog_cmpr_ll_enable_function_clock(int unit_id, bool enable)
+{
+    PCR.zero_det_clk_conf.zero_det_func_clk_en = enable;
 }
 
 /**
@@ -343,13 +347,17 @@ static inline void analog_cmpr_ll_set_scan_mode(analog_cmpr_dev_t *hw, ana_cmpr_
 __attribute__((always_inline))
 static inline void analog_cmpr_ll_start_scan(analog_cmpr_dev_t *dev)
 {
-    (void)dev;
     // enable ETM register clock
     PCR.etm_conf.etm_clk_en = 1;
     while (PCR.etm_conf.etm_ready == 0) {
     }
+
+    int trigger_times = dev->det_conf.det_limit_cnt;
     // use reg_etm_date[31] register to trigger analog comparator to start
-    SOC_ETM.etm_date.val |= 1UL << 31;
+    while (trigger_times--) {
+        SOC_ETM.etm_date.val |= 1UL << 31;
+        esp_rom_delay_us(10);
+    }
 }
 
 /**
@@ -374,6 +382,7 @@ static inline void analog_cmpr_ll_set_poll_period(analog_cmpr_dev_t *hw, uint32_
  */
 static inline void analog_cmpr_ll_set_resample_limit(analog_cmpr_dev_t *hw, uint8_t limit_cnt)
 {
+    limit_cnt = MAX(limit_cnt, 1);
     hw->det_conf.det_limit_cnt = limit_cnt;
 }
 
