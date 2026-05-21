@@ -1209,15 +1209,16 @@ wr_btdm_osal_srand(uint32_t seed)
 int
 wr_btdm_osal_rand(void)
 {
-    // TODO: use esp_random
-    // return (int)esp_random();
-
+#if CONFIG_SOC_RNG_SUPPORTED
+    return (int)esp_random();
+#else
     static bool first = true;
 
     if (first) {
         uint8_t mac[6];
         uint32_t seed;
 
+        ESP_LOGW(TAG, "Hardware RNG not supported; using insecure software random instead.");
         first = false;
         btdm_osal_read_efuse_mac(mac);
         seed = (mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5];
@@ -1225,6 +1226,7 @@ wr_btdm_osal_rand(void)
     }
 
     return rand();
+#endif // CONFIG_SOC_RNG_SUPPORTED
 }
 
 /*
