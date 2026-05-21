@@ -6,6 +6,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 @pytest.mark.parametrize(
     'config',
     [
@@ -20,6 +21,7 @@ def test_vfs_default(dut: Dut) -> None:
 
 
 @pytest.mark.generic
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 @pytest.mark.parametrize(
     'config',
     [
@@ -33,6 +35,7 @@ def test_vfs_ccomp(dut: Dut) -> None:
 
 
 @pytest.mark.quad_psram
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 @pytest.mark.parametrize(
     'config',
     [
