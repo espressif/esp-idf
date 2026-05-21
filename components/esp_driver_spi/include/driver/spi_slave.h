@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -163,6 +163,7 @@ esp_err_t spi_slave_disable(spi_host_device_t host);
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_ERR_NO_MEM        if set flag `SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO` but there is no free memory
  *         - ESP_ERR_INVALID_STATE if sync data between Cache and memory failed
+ *         - ESP_ERR_TIMEOUT       if there was no room in the queue before ``ticks_to_wait`` expired
  *         - ESP_OK                on success
  */
 esp_err_t spi_slave_queue_trans(spi_host_device_t host, const spi_slave_transaction_t *trans_desc, uint32_t ticks_to_wait);
@@ -186,6 +187,7 @@ esp_err_t spi_slave_queue_trans(spi_host_device_t host, const spi_slave_transact
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_ERR_NOT_SUPPORTED if flag `SPI_SLAVE_NO_RETURN_RESULT` is set
  *         - ESP_ERR_INVALID_STATE if dma over/underflow error occurs during psram transfer
+ *         - ESP_ERR_TIMEOUT       if there was no completed transaction before ``ticks_to_wait`` expired
  *         - ESP_OK                on success
  */
 esp_err_t spi_slave_get_trans_result(spi_host_device_t host, spi_slave_transaction_t **trans_desc, uint32_t ticks_to_wait);
@@ -206,6 +208,7 @@ esp_err_t spi_slave_get_trans_result(spi_host_device_t host, spi_slave_transacti
  * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_ERR_INVALID_STATE if dma over/underflow error occurs during psram transfer
+ *         - ESP_ERR_TIMEOUT       if the transaction cannot be queued or finished before ``ticks_to_wait`` expired
  *         - ESP_OK                on success
  */
 esp_err_t spi_slave_transmit(spi_host_device_t host, spi_slave_transaction_t *trans_desc, uint32_t ticks_to_wait);
