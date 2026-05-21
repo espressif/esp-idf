@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -154,6 +154,28 @@ static esp_err_t init_wifi_mac_sleep_retention(void *arg)
 }
 #endif
 
+#if CONFIG_MAC_BB_PD && SOC_PM_MODEM_RETENTION_BY_REGDMA
+esp_err_t esp_wifi_internal_mac_sleep_retention_attach(void)
+{
+    esp_err_t err = sleep_retention_module_attach(SLEEP_RETENTION_MODULE_WIFI_MAC);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "failed to attach sleep retention linked list for wifi mac retention");
+    }
+    esp_wifi_internal_set_mac_sleep(true);
+    return err;
+}
+
+esp_err_t esp_wifi_internal_mac_sleep_retention_detach(void)
+{
+    esp_wifi_internal_set_mac_sleep(false);
+    esp_err_t err = sleep_retention_module_detach(SLEEP_RETENTION_MODULE_WIFI_MAC);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "failed to detach sleep retention linked list for wifi mac retention");
+    }
+    return err;
+}
+#endif
+
 #if CONFIG_MAC_BB_PD
 static void esp_wifi_mac_pd_mem_init(void)
 {
@@ -162,17 +184,19 @@ static void esp_wifi_mac_pd_mem_init(void)
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "failed to allocate sleep retention linked list for wifi mac retention");
     }
-#endif
+#else
     esp_wifi_internal_set_mac_sleep(true);
+#endif
 }
 static void esp_wifi_mac_pd_mem_deinit(void)
 {
-    esp_wifi_internal_set_mac_sleep(false);
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA
     esp_err_t err = sleep_retention_module_free(SLEEP_RETENTION_MODULE_WIFI_MAC);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "failed to free sleep retention linked list for wifi mac retention");
     }
+#else
+    esp_wifi_internal_set_mac_sleep(false);
 #endif
 }
 #endif
@@ -385,6 +409,7 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA
     sleep_retention_module_init_param_t init_param = {
         .cbs     = { .create = { .handle = init_wifi_mac_sleep_retention, .arg = NULL } },
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH
     };
     init_param.depends.bitmap[SLEEP_RETENTION_MODULE_WIFI_BB >> 5] |= BIT(SLEEP_RETENTION_MODULE_WIFI_BB % 32);
     init_param.depends.bitmap[SLEEP_RETENTION_MODULE_CLOCK_MODEM >> 5] |= BIT(SLEEP_RETENTION_MODULE_CLOCK_MODEM % 32);

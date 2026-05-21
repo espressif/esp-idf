@@ -103,6 +103,10 @@ static void sdm_create_retention_module(sdm_group_t *group)
         if (sleep_retention_module_allocate(module) != ESP_OK) {
             // even though the sleep retention module create failed, SDM driver should still work, so just warning here
             ESP_LOGW(TAG, "create retention link failed on SDM Group%d, power domain won't be turned off during sleep", group_id);
+        } else {
+            if (sleep_retention_module_attach(module) != ESP_OK) {
+                ESP_LOGW(TAG, "attach retention link failed on SDM Group%d, power domain won't be turned off during sleep", group_id);
+            }
         }
     }
     _lock_release(&s_platform.mutex);
@@ -135,6 +139,7 @@ static sdm_group_t *sdm_acquire_group_handle(int group_id, sdm_clock_source_t cl
                         .arg = group,
                     },
                 },
+                .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
                 .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
             };
             // retention module init must be called BEFORE the hal init
@@ -192,6 +197,7 @@ static void sdm_release_group_handle(sdm_group_t *group)
 
 #if SDM_USE_RETENTION_LINK
         sleep_retention_module_t module = soc_sdm_retention_infos[group_id].module;
+        sleep_retention_module_detach(module);
         if (sleep_retention_is_module_created(module)) {
             sleep_retention_module_free(module);
         }

@@ -45,6 +45,7 @@ bool clock_domain_pd_allowed(void)
 {
     const sleep_retention_module_bitmap_t inited_modules = sleep_retention_get_inited_modules();
     const sleep_retention_module_bitmap_t created_modules = sleep_retention_get_created_modules();
+    const sleep_retention_module_bitmap_t retained_modules = sleep_retention_get_retained_modules();
     const sleep_retention_module_bitmap_t sys_clk_dep_modules = (sleep_retention_module_bitmap_t){ .bitmap[SLEEP_RETENTION_MODULE_SYS_PERIPH >> 5] = BIT(SLEEP_RETENTION_MODULE_SYS_PERIPH % 32) };
 
     const sleep_retention_module_bitmap_t null_module = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } };
@@ -57,14 +58,17 @@ bool clock_domain_pd_allowed(void)
 
     const sleep_retention_module_bitmap_t clock_domain_inited_modules = sleep_retention_module_bitmap_and(inited_modules, mask);
     const sleep_retention_module_bitmap_t clock_domain_created_modules = sleep_retention_module_bitmap_and(created_modules, mask);
-    return sleep_retention_module_bitmap_eq(clock_domain_inited_modules, clock_domain_created_modules);
+    const sleep_retention_module_bitmap_t clock_domain_retained_modules = sleep_retention_module_bitmap_and(retained_modules, mask);
+    bool ic = sleep_retention_module_bitmap_eq(clock_domain_inited_modules, clock_domain_created_modules);
+    bool cr = sleep_retention_module_bitmap_eq(clock_domain_created_modules, clock_domain_retained_modules);
+    return ic && cr;
 }
 
 ESP_SYSTEM_INIT_FN(sleep_clock_startup_init, SECONDARY, BIT(0), 106)
 {
     sleep_retention_module_init_param_t init_param = {
         .cbs       = { .create = { .handle = sleep_clock_system_retention_init, .arg = NULL } },
-        .attribute = SLEEP_RETENTION_MODULE_ATTR_PASSIVE
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_PASSIVE | SLEEP_RETENTION_MODULE_ATTR_ATTACH
     };
     sleep_retention_module_init(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM, &init_param);
     return ESP_OK;

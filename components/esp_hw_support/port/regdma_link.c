@@ -755,7 +755,7 @@ static void print_info_continuous_wrapper(FILE *out, void *link)
     regdma_link_head_t head = REGDMA_LINK_HEAD(link);
     regdma_link_continuous_t *cons = __containerof(link, regdma_link_continuous_t, head);
     fprintf(out, LOG_COLOR_I " [%02d/%04x] link_ptr:%p, head: {mode:%s len:%d branch:%s skip_r:%s skip_b:%s eof:%s}, next:%p, backup start:%p, restore start:%p, buff_ptr:%p\n" LOG_RESET_COLOR,
-            __builtin_ffs(cons->stat.module) - 1, cons->stat.id, link,
+            cons->stat.module, cons->stat.id, link,
             s_link_mode_str[cons->head.mode], cons->head.length, s_boolean_str[cons->head.branch], s_boolean_str[cons->head.skip_r], s_boolean_str[cons->head.skip_b], s_boolean_str[cons->head.eof],
             cons->body.next,
             cons->body.backup, cons->body.restore,
@@ -768,7 +768,7 @@ static void print_info_addr_map_wrapper(FILE *out, void *link)
     regdma_link_head_t head = REGDMA_LINK_HEAD(link);
     regdma_link_addr_map_t *map = __containerof(link, regdma_link_addr_map_t, head);
     fprintf(out, LOG_COLOR_I " [%02d/%04x] link_ptr:%p, head: {mode:%s len:%d branch:%s skip_r:%s skip_b:%s eof:%s}, next:%p, backup start:%p, restore start:%p, buff_ptr:%p, map:{%"PRIx32",%"PRIx32",%"PRIx32",%"PRIx32"}\n" LOG_RESET_COLOR,
-            __builtin_ffs(map->stat.module) - 1, map->stat.id, link,
+            map->stat.module, map->stat.id, link,
             s_link_mode_str[map->head.mode], map->head.length, s_boolean_str[map->head.branch], s_boolean_str[map->head.skip_r], s_boolean_str[map->head.skip_b], s_boolean_str[map->head.eof],
             map->body.next,
             map->body.backup, map->body.restore,
@@ -780,7 +780,7 @@ static void print_info_write_wait_wrapper(FILE *out, void *link)
 {
     regdma_link_write_wait_t *ww = __containerof(link, regdma_link_write_wait_t, head);
     fprintf(out, LOG_COLOR_I " [%02d/%04x] link_ptr:%p, head: {mode:%s len:%d branch:%s skip_r:%s skip_b:%s eof:%s}, next:%p, backup start:%p, value:%"PRIx32", mask:%"PRIx32"\n" LOG_RESET_COLOR,
-            __builtin_ffs(ww->stat.module) - 1, ww->stat.id, link,
+            ww->stat.module, ww->stat.id, link,
             s_link_mode_str[ww->head.mode], ww->head.length, s_boolean_str[ww->head.branch], s_boolean_str[ww->head.skip_r], s_boolean_str[ww->head.skip_b], s_boolean_str[ww->head.eof],
             ww->body.next,
             ww->body.backup, ww->body.value, ww->body.mask);
@@ -791,7 +791,7 @@ static void print_info_branch_continuous_wrapper(FILE *out, void *link)
     regdma_link_head_t head = REGDMA_LINK_HEAD(link);
     regdma_link_branch_continuous_t *cons = __containerof(link, regdma_link_branch_continuous_t, head);
     fprintf(out, LOG_COLOR_I " [%02d/%04x] link_ptr:%p, head: {mode:%s len:%d branch:%s skip_r:%s skip_b:%s eof:%s}, next:{%p, %p, %p, %p}, backup start:%p, restore start:%p, buff_ptr:%p\n" LOG_RESET_COLOR,
-            __builtin_ffs(cons->stat.module) - 1, cons->stat.id, link,
+            cons->stat.module, cons->stat.id, link,
             s_link_mode_str[cons->head.mode], cons->head.length, s_boolean_str[cons->head.branch], s_boolean_str[cons->head.skip_r], s_boolean_str[cons->head.skip_b], s_boolean_str[cons->head.eof],
             cons->body.next[0], cons->body.next[1], cons->body.next[2], cons->body.next[3],
             cons->body.backup, cons->body.restore,
@@ -804,7 +804,7 @@ static void print_info_branch_addr_map_wrapper(FILE *out, void *link)
     regdma_link_head_t head = REGDMA_LINK_HEAD(link);
     regdma_link_branch_addr_map_t *map = __containerof(link, regdma_link_branch_addr_map_t, head);
     fprintf(out, LOG_COLOR_I " [%02d/%04x] link_ptr:%p, head: {mode:%s len:%d branch:%s skip_r:%s skip_b:%s eof:%s}, next:{%p, %p, %p, %p}, backup start:%p, restore start:%p, buff_ptr:%p, map:{%"PRIx32",%"PRIx32",%"PRIx32",%"PRIx32"}\n" LOG_RESET_COLOR,
-            __builtin_ffs(map->stat.module) - 1, map->stat.id, link,
+            map->stat.module, map->stat.id, link,
             s_link_mode_str[map->head.mode], map->head.length, s_boolean_str[map->head.branch], s_boolean_str[map->head.skip_r], s_boolean_str[map->head.skip_b], s_boolean_str[map->head.eof],
             map->body.next[0], map->body.next[1], map->body.next[2], map->body.next[3],
             map->body.backup, map->body.restore,
@@ -816,7 +816,7 @@ static void print_info_branch_write_wait_wrapper(FILE *out, void *link)
 {
     regdma_link_branch_write_wait_t *ww = __containerof(link, regdma_link_branch_write_wait_t, head);
     fprintf(out, LOG_COLOR_I " [%02d/%04x] link_ptr:%p, head: {mode:%s len:%d branch:%s skip_r:%s skip_b:%s eof:%s}, next:{%p, %p, %p, %p}, backup start:%p, value:%"PRIx32", mask:%"PRIx32"\n" LOG_RESET_COLOR,
-            __builtin_ffs(ww->stat.module) - 1, ww->stat.id, link,
+            ww->stat.module, ww->stat.id, link,
             s_link_mode_str[ww->head.mode], ww->head.length, s_boolean_str[ww->head.branch], s_boolean_str[ww->head.skip_r], s_boolean_str[ww->head.skip_b], s_boolean_str[ww->head.eof],
             ww->body.next[0], ww->body.next[1], ww->body.next[2], ww->body.next[3],
             ww->body.backup, ww->body.value, ww->body.mask);
@@ -824,6 +824,8 @@ static void print_info_branch_write_wait_wrapper(FILE *out, void *link)
 
 static void print_link_info(FILE *out, void *args, int entry, int depth)
 {
+    assert(args && "Invalid argument: args is NULL");
+
     typedef void (*prinf_fn_t)(FILE *, void *);
 
     const static prinf_fn_t prinf_fn[] = {
@@ -844,18 +846,29 @@ static void print_link_info(FILE *out, void *args, int entry, int depth)
     (*prinf_fn[it])(out, args);
 }
 
-void regdma_link_dump(FILE *out, void *link, int entry)
+void regdma_link_dump_sublink(FILE *out, void *link, void *tail, int entry)
 {
     assert(entry < REGDMA_LINK_ENTRY_NUM);
 
-    void *next = link;
     if (link) {
-        do {
-            print_link_info(out, next, entry, 0);
-        } while ((next = regdma_link_get_next(next, entry)) != NULL);
+        if (link != tail) {
+            void *next = link;
+            do {
+                print_link_info(out, next, entry, 0);
+            } while ((next = regdma_link_get_next(next, entry)) != tail);
+        }
+        if (tail) {
+            print_link_info(out, tail, entry, 0);
+        }
     } else {
-        fprintf(out, "This REGDMA linked list is empty!\n");
+        fprintf(out, "This REGDMA linked list (entry[%d]) is empty!\n", entry);
     }
+}
+
+void regdma_link_dump(FILE *out, void *link, int entry)
+{
+    assert(entry < REGDMA_LINK_ENTRY_NUM);
+    regdma_link_dump_sublink(out, link, NULL, entry);
 }
 
 

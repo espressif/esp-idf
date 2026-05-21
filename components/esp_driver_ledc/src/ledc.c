@@ -439,6 +439,7 @@ static bool ledc_speed_mode_ctx_create(ledc_mode_t speed_mode)
                             .arg = NULL,
                         },
                     },
+                    .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
                     .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
                 };
                 if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
@@ -971,9 +972,14 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
     if (slp_retention_alloc) {
         if (sleep_retention_module_allocate(ledc_reg_retention_info[0].module_id) != ESP_OK) {
             ESP_LOGW(LEDC_TAG, "create retention module failed, power domain can't turn off");
+        } else {
+            if (sleep_retention_module_attach(ledc_reg_retention_info[0].module_id) != ESP_OK) {
+                ESP_LOGW(LEDC_TAG, "attach retention module failed, power domain can't turn off");
+            }
         }
     }
     if (slp_retention_free) {
+        sleep_retention_module_detach(ledc_reg_retention_info[0].module_id);
         sleep_retention_module_free(ledc_reg_retention_info[0].module_id);
     }
 #endif

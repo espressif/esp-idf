@@ -170,6 +170,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
                 .arg = bus,
             },
         },
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
         .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
     };
     if (sleep_retention_module_init(module_id, &init_param) != ESP_OK) {
@@ -282,6 +283,7 @@ esp_err_t esp_lcd_del_i80_bus(esp_lcd_i80_bus_handle_t bus)
     }
 #if I80_USE_RETENTION_LINK
     const periph_retention_module_t module_id = soc_i80_lcd_retention_info[bus_id].retention_module;
+    sleep_retention_module_detach(module_id);
     if (sleep_retention_is_module_created(module_id)) {
         assert(sleep_retention_is_module_inited(module_id));
         sleep_retention_module_free(module_id);
@@ -618,6 +620,10 @@ static void lcd_i80_create_retention_module(esp_lcd_i80_bus_t *bus)
         if (sleep_retention_module_allocate(module_id) != ESP_OK) {
             // even though the sleep retention module create failed, LCD driver should still work, so just warning here
             ESP_LOGW(TAG, "create retention module failed, power domain can't turn off");
+        } else {
+            if (sleep_retention_module_attach(module_id) != ESP_OK) {
+                ESP_LOGW(TAG, "attach retention module failed, power domain can't turn off");
+            }
         }
     }
 }

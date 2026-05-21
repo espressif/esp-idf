@@ -262,6 +262,24 @@ void esp_phy_modem_rf_flag_update(void);
 void esp_phy_sleep_data_init(void);
 
 /**
+ * @brief Attach WiFi BB sleep retention linked list (REGDMA) after entries are allocated in `esp_phy_sleep_data_init()`.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - error code from sleep retention otherwise
+ */
+esp_err_t esp_phy_wifi_bb_sleep_retention_attach(void);
+
+/**
+ * @brief Detach WiFi BB sleep retention linked list (REGDMA) before `sleep_retention_module_free()` in `esp_phy_sleep_data_deinit()`.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - error code from sleep retention otherwise
+ */
+esp_err_t esp_phy_wifi_bb_sleep_retention_detach(void);
+
+/**
  * @brief PHY module sleep data de-initialize.
  */
 void esp_phy_sleep_data_deinit(void);

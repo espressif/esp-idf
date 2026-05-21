@@ -7,6 +7,7 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.temp_skip_ci(targets=['esp32s3'], reason='skip due to duplication with test_ledc_psram')
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='BLE power save bringup is not done')
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',

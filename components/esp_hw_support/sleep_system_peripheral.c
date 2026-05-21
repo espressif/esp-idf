@@ -172,6 +172,7 @@ ESP_SYSTEM_INIT_FN(sleep_sys_periph_startup_init, SECONDARY, BIT(0), 107)
 {
     sleep_retention_module_init_param_t init_param = {
         .cbs = { .create = { .handle = sleep_sys_periph_retention_init, .arg = NULL } },
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
         .depends.bitmap[SLEEP_RETENTION_MODULE_CLOCK_SYSTEM >> 5] = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM % 32)
     };
     esp_err_t err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_SYS_PERIPH, &init_param);
@@ -179,6 +180,12 @@ ESP_SYSTEM_INIT_FN(sleep_sys_periph_startup_init, SECONDARY, BIT(0), 107)
         err = sleep_retention_module_allocate(SLEEP_RETENTION_MODULE_SYS_PERIPH);
         if (err != ESP_OK) {
             ESP_LOGW(TAG, "failed to allocate sleep retention linked list for system peripherals retention");
+        }
+        if (err == ESP_OK) {
+            err = sleep_retention_module_attach(SLEEP_RETENTION_MODULE_SYS_PERIPH);
+            if (err != ESP_OK) {
+                ESP_LOGW(TAG, "failed to attach sleep retention linked list for system peripherals retention");
+            }
         }
     }
     return ESP_OK;

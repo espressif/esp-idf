@@ -370,6 +370,7 @@ static void twai_free_driver_obj(twai_obj_t *p_obj)
 
 #if TWAI_USE_RETENTION_LINK
     const periph_retention_module_t retention_id = twai_reg_retention_info[p_obj->controller_id].module_id;
+    sleep_retention_module_detach(retention_id);
     if (sleep_retention_is_module_created(retention_id)) {
         assert(sleep_retention_is_module_inited(retention_id));
         sleep_retention_module_free(retention_id);
@@ -443,6 +444,7 @@ static esp_err_t twai_alloc_driver_obj(const twai_general_config_t *g_config, tw
                 .arg = p_obj,
             },
         },
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
         .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
     };
     if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
@@ -452,6 +454,10 @@ static esp_err_t twai_alloc_driver_obj(const twai_general_config_t *g_config, tw
     if (g_config->general_flags.sleep_allow_pd) {
         if (sleep_retention_module_allocate(module) != ESP_OK) {
             ESP_LOGW(TWAI_TAG, "create retention module failed, power domain can't turn off");
+        } else {
+            if (sleep_retention_module_attach(module) != ESP_OK) {
+                ESP_LOGW(TWAI_TAG, "attach retention module failed, power domain can't turn off");
+            }
         }
     }
 #endif

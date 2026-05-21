@@ -37,6 +37,7 @@ void gdma_acquire_sleep_retention(gdma_pair_t* pair)
     int pair_id = pair->pair_id;
     sleep_retention_module_init_param_t init_param = {
         .cbs = { .create = { .handle = sleep_gdma_channel_retention_init, .arg = pair } },
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
         .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
     };
     sleep_retention_module_t module = gdma_retention_infos[group_id][pair_id].module_id;
@@ -52,6 +53,10 @@ void gdma_acquire_sleep_retention(gdma_pair_t* pair)
             if (err != ESP_OK) {
                 ESP_LOGW(TAG, "fail to allocate retention link list for pair (%d, %d)", group_id, pair_id);
                 // don't call sleep_retention_module_deinit here, otherwise GDMA peripheral may be powered off during sleep
+            } else {
+                if (sleep_retention_module_attach(module) != ESP_OK) {
+                    ESP_LOGW(TAG, "fail to attach retention link list for pair (%d, %d)", group_id, pair_id);
+                }
             }
         }
     }
@@ -69,13 +74,18 @@ void gdma_release_sleep_retention(gdma_pair_t* pair)
     pair_ref_counts[group_id][pair_id]--;
     // Last reference, free the module
     if (pair_ref_counts[group_id][pair_id] == 0) {
-        esp_err_t err = sleep_retention_module_free(module);
-        if (err != ESP_OK) {
-            ESP_LOGW(TAG, "fail to free the retention link list for pair (%d, %d)", group_id, pair_id);
-        }
-        err = sleep_retention_module_deinit(module);
-        if (err != ESP_OK) {
-            ESP_LOGW(TAG, "fail to deinit the retention module for pair (%d, %d)", group_id, pair_id);
+        esp_err_t err = sleep_retention_module_detach(module);
+        if (err == ESP_OK) {
+            err = sleep_retention_module_free(module);
+            if (err != ESP_OK) {
+                ESP_LOGW(TAG, "fail to free the retention link list for pair (%d, %d)", group_id, pair_id);
+            }
+            err = sleep_retention_module_deinit(module);
+            if (err != ESP_OK) {
+                ESP_LOGW(TAG, "fail to deinit the retention module for pair (%d, %d)", group_id, pair_id);
+            }
+        } else {
+            ESP_LOGW(TAG, "fail to detach the retention link list for pair (%d, %d)", group_id, pair_id);
         }
     }
     _lock_release(&gdma_sleep_retention_lock);
