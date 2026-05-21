@@ -29,7 +29,7 @@ endif()
 
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "include"
-                    PRIV_REQUIRES esp_timer esp_driver_gpio
+                    PRIV_REQUIRES esp_timer esp_driver_gpio esp_phy
                     LDFRAGMENTS "${ldfragments}")
 
 if(CONFIG_ESP_COEX_ENABLED)
