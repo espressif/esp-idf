@@ -18,6 +18,10 @@ variables:
 
   # Common parameters for the 'make' during CI tests
   MAKEFLAGS: "-j5 --no-keep-going"
+  # By default, CI build jobs request and limit 4 CPU cores and 4 GB of memory
+  # https://github.com/ninja-build/ninja/blob/def9560a0b6d755936e615ce443a0aec45c39bdb/src/ninja.cc#L262
+  # cpu_cores + 2
+  IDF_PY_BUILD_JOBS: "6"
 
   # GitLab-CI environment
   # Thanks to pack-objects cache, clone strategy should behave faster than fetch
@@ -109,6 +113,11 @@ variables:
   # configure cmake related flags
   source tools/ci/configure_ci_environment.sh
 
+  if [[ "$CI_CCACHE_STATS" == 1 ]] && command -v ccache >/dev/null 2>&1 && [[ -n "$CCACHE_STATSLOG" ]]; then
+    mkdir -p "$(dirname "$CCACHE_STATSLOG")"
+    rm -f "$CCACHE_STATSLOG"
+  fi
+
   # add extra python packages
   export PYTHONPATH="$IDF_PATH/tools:$IDF_PATH/tools/esp_app_trace:$IDF_PATH/components/partition_table:$IDF_PATH/tools/ci/python_packages:$PYTHONPATH"
 
@@ -194,7 +203,19 @@ variables:
 
 .show_ccache_statistics: &show_ccache_statistics |
   # Show ccache statistics if enabled globally
-  test "$CI_CCACHE_STATS" == 1 && test -n "$(which ccache)" && ccache --show-stats || true
+  section_start "ccache_show_stats" "Show ccache statistics"
+  if [[ "$CI_CCACHE_STATS" == 1 ]] && command -v ccache >/dev/null 2>&1; then
+    if ccache --help 2>/dev/null | grep -q -- '--show-log-stats'; then
+      if [[ -n "$CCACHE_STATSLOG" && -f "$CCACHE_STATSLOG" ]]; then
+        ccache --show-log-stats -vv
+      else
+        echo "INFO: No per-job ccache statistics were recorded"
+      fi
+    else
+      ccache --show-stats -vv
+    fi
+  fi || true
+  section_end "ccache_show_stats"
 
 .upload_failed_job_log_artifacts: &upload_failed_job_log_artifacts |
   if [ $CI_JOB_STATUS = "failed" ]; then
