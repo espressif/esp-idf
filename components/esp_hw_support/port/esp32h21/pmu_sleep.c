@@ -22,6 +22,9 @@
 #include "esp_hw_log.h"
 #include "soc/regi2c_bias.h"
 #include "regi2c_ctrl.h"
+#if !SOC_APM_SUPPORTED
+#include "hal/apm_hal.h"
+#endif
 
 ESP_HW_LOG_ATTR_TAG(TAG, "pmu_sleep");
 
@@ -299,6 +302,13 @@ uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp
 bool pmu_sleep_finish(bool dslp)
 {
     (void)dslp;
+
+#if !SOC_APM_SUPPORTED
+    apm_hal_enable_ctrl_filter_all(false);
+#else
+    ESP_STATIC_ASSERT(0, "TEE/APM retention need to be supported!");
+#endif
+
     return pmu_ll_hp_is_sleep_reject(PMU_instance()->hal->dev);
 }
 
