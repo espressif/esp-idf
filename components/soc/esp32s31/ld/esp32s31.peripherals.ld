@@ -13,6 +13,10 @@ PROVIDE ( PPA                 = 0x20345000 );
 PROVIDE ( DMA2D               = 0x20346000 );
 PROVIDE ( AXI_DMA             = 0x20348000 );
 PROVIDE ( GMAC                = 0x20350000 );
+/* Split GMAC into MAC/PTP/DMA for the HAL layer */
+PROVIDE ( EMAC_MAC            = 0x20350000 );
+PROVIDE ( EMAC_PTP            = 0x20350700 );
+PROVIDE ( EMAC_DMA            = 0x20351000 );
 PROVIDE ( PVT                 = 0x20354000 );
 PROVIDE ( RMT                 = 0x20355000 );
 PROVIDE ( RMTMEM              = 0x20355800 );

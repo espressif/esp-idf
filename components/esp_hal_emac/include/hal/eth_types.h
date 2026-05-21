@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@ extern "C" {
 typedef enum {
     EMAC_DATA_INTERFACE_RMII,    /*!< Reduced Media Independent Interface */
     EMAC_DATA_INTERFACE_MII,     /*!< Media Independent Interface */
+    EMAC_DATA_INTERFACE_RGMII,   /*!< Reduced Gigabit Media Independent Interface */
 } eth_data_interface_t;
 
 /**
@@ -32,9 +33,10 @@ typedef enum {
 *
 */
 typedef enum {
-    ETH_SPEED_10M,  /*!< Ethernet speed is 10Mbps */
-    ETH_SPEED_100M, /*!< Ethernet speed is 100Mbps */
-    ETH_SPEED_MAX   /*!< Max speed mode (for checking purpose) */
+    ETH_SPEED_10M,   /*!< Ethernet speed is 10Mbps */
+    ETH_SPEED_100M,  /*!< Ethernet speed is 100Mbps */
+    ETH_SPEED_1000M, /*!< Ethernet speed is 1000Mbps */
+    ETH_SPEED_MAX    /*!< Max speed mode (for checking purpose) */
 } eth_speed_t;
 
 /**
@@ -84,6 +86,25 @@ typedef enum {
     ETH_PTP_BINARY_ROLLOVER         /*!< Binary - subseconds register rolls over after 0x7FFFFFFF value  */
 } eth_mac_ptp_roll_type_t;
 
+/**
+ * @brief EMAC System dedicated pad identifier
+ *
+ */
+typedef enum {
+    ETH_PAD_RMII_CLK = 0,
+    ETH_PAD_RX_CLK,
+    ETH_PAD_PHY_RXDV,
+    ETH_PAD_PHY_RXD3,
+    ETH_PAD_PHY_RXD2,
+    ETH_PAD_PHY_RXD1,
+    ETH_PAD_PHY_RXD0,
+    ETH_PAD_TX_CLK,
+    ETH_PAD_PHY_TXEN,
+    ETH_PAD_PHY_TXD3,
+    ETH_PAD_PHY_TXD2,
+    ETH_PAD_PHY_TXD1,
+    ETH_PAD_PHY_TXD0,
+} eth_pad_t;
 #ifdef __cplusplus
 }
 #endif

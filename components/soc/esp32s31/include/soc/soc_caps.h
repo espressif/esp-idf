@@ -111,6 +111,15 @@
 #define SOC_CORDIC_SUPPORTED            1
 #define SOC_REGI2C_SUPPORTED            1
 #define SOC_JPEG_CODEC_SUPPORTED        1
+#define SOC_EMAC_SUPPORTED              1
+
+/*-------------------------- EMAC CAPS ----------------------------------------*/
+#define SOC_EMAC_SUPPORT_1000M                     (1)      /*!< EMAC Supports 1000Mbps mode */
+#define SOC_EMAC_IEEE1588V2_SUPPORTED              (1)      /*!< EMAC Supports IEEE1588v2 time stamping */
+#define SOC_EMAC_USE_MULTI_IO_MUX                  (1)      /*!< Multiple GPIO pad options exist to connect EMAC signal via IO_MUX */
+#define SOC_EMAC_MII_USE_GPIO_MATRIX               (1)      /*!< EMAC MII signals are connected to GPIO pads via GPIO Matrix */
+#define SOC_EMAC_DEDICATED_GPIO_CTRL_SUPPORTED     (1)      /*!< EMAC has dedicated CNNT-domain pad control registers */
+// #define SOC_EMAC_SUPPORT_SLEEP_RETENTION           (1)   // TODO: [ESP32S31] IDF-14731 - implement sleep retention for EMAC
 
 /*------------------------- Analog Comparator CAPS ---------------------------*/
 #define SOC_ANA_CMPR_SUPPORT_ETM        (1)

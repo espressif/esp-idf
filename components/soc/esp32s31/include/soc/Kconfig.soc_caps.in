@@ -327,6 +327,30 @@ config SOC_JPEG_CODEC_SUPPORTED
     bool
     default y
 
+config SOC_EMAC_SUPPORTED
+    bool
+    default y
+
+config SOC_EMAC_SUPPORT_1000M
+    bool
+    default y
+
+config SOC_EMAC_IEEE1588V2_SUPPORTED
+    bool
+    default y
+
+config SOC_EMAC_USE_MULTI_IO_MUX
+    bool
+    default y
+
+config SOC_EMAC_MII_USE_GPIO_MATRIX
+    bool
+    default y
+
+config SOC_EMAC_DEDICATED_GPIO_CTRL_SUPPORTED
+    bool
+    default y
+
 config SOC_ANA_CMPR_SUPPORT_ETM
     bool
     default y

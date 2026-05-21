@@ -4,7 +4,11 @@ examples/ethernet/basic:
   enable:
     - if: INCLUDE_DEFAULT == 1
   disable:
-    - if: IDF_TARGET not in ["esp32", "esp32p4"]
+    - if: IDF_TARGET not in ["esp32", "esp32p4", "esp32s31"]
+  disable_test:
+    - if: IDF_TARGET == "esp32s31"
+      temporary: true
+      reason: lack of runners
   depends_components:
     - esp_eth
     - esp_netif

@@ -49,6 +49,33 @@ void emac_hal_init(emac_hal_context_t *hal)
 #endif
 }
 
+esp_err_t emac_hal_ref_clock_select(emac_hal_context_t *hal, int sel)
+{
+    if (!emac_ll_ref_clock_supported()) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    emac_ll_ref_clock_select(hal->ext_regs, sel);
+    return ESP_OK;
+}
+
+esp_err_t emac_hal_ref_clock_enable(emac_hal_context_t *hal, bool enable)
+{
+    if (!emac_ll_ref_clock_supported()) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    emac_ll_ref_clock_enable(hal->ext_regs, enable);
+    return ESP_OK;
+}
+
+esp_err_t emac_hal_ref_clock_div(emac_hal_context_t *hal, int div)
+{
+    if (!emac_ll_ref_clock_supported()) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    emac_ll_ref_clock_div(hal->ext_regs, div);
+    return ESP_OK;
+}
+
 void emac_hal_find_set_closest_csr_clock_range(emac_hal_context_t *hal, int mdc_freq_hz, int freq_hz)
 {
     int min_diff = abs(freq_hz / emac_crs_div_table[0] - mdc_freq_hz);
@@ -166,12 +193,12 @@ void emac_hal_init_dma_default(emac_hal_context_t *hal, emac_hal_dma_config_t *h
     /* DMAOMR Configuration */
     /* Enable Dropping of TCP/IP Checksum Error Frames */
     emac_ll_drop_tcp_err_frame_enable(hal->dma_regs, true);
-#if SOC_IS(ESP32P4)
-    /* Disable Receive Store Forward (Rx FIFO is only 256B) */
-    emac_ll_recv_store_forward_enable(hal->dma_regs, false);
-#else
+#if SOC_IS(ESP32)
     /* Enable Receive Store Forward */
     emac_ll_recv_store_forward_enable(hal->dma_regs, true);
+#else
+    /* Disable Receive Store Forward (Rx FIFO is only 256B) */
+    emac_ll_recv_store_forward_enable(hal->dma_regs, false);
 #endif
     /* Enable Flushing of Received Frames because of the unavailability of receive descriptors or buffers */
     emac_ll_flush_recv_frame_enable(hal->dma_regs, true);

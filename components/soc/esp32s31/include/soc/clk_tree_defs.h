@@ -139,9 +139,10 @@ typedef enum {
     SOC_MOD_CLK_RTC_FAST,                      /*!< RTC_FAST_CLK can be sourced from XTAL, or RC_FAST by configuring soc_rtc_fast_clk_src_t */
     SOC_MOD_CLK_RTC_SLOW,                      /*!< RTC_SLOW_CLK can be sourced from RC_SLOW, XTAL32K, or RC32K by configuring soc_rtc_slow_clk_src_t */
     // For digital domain: peripherals
+    SOC_MOD_CLK_SYS,                           /*!< SYS_CLK is the system clock, derived from SOC_CLK clock source */
     SOC_MOD_CLK_PLL_F20M,                      /*!< PLL_F20M_CLK is derived from BBPLL (clock gating + default divider 24), its default frequency is 20MHz */
     SOC_MOD_CLK_PLL_F25M,                      /*!< PLL_F25M_CLK is derived from MPLL (clock gating + configurable divider), it will have a frequency of 25MHz */
-    SOC_MOD_CLK_PLL_F50M,                      /*!< PLL_F50M_CLK is derived from MPLL (clock gating + configurable divider 10), it will have a frequency of 50MHz */
+    SOC_MOD_CLK_PLL_F50M,                      /*!< PLL_F50M_CLK is derived from C/MPLL (clock gating + configurable divider 10), it will have a frequency of 50MHz */
     SOC_MOD_CLK_PLL_F80M,                      /*!< PLL_F80M_CLK is derived from BBPLL (clock gating + default divider 6), its default frequency is 80MHz */
     SOC_MOD_CLK_PLL_F160M,                     /*!< PLL_F160M_CLK is derived from BBPLL (clock gating + default divider 3), its default frequency is 160MHz */
     SOC_MOD_CLK_PLL_F240M,                     /*!< PLL_F240M_CLK is derived from BBPLL (clock gating + default divider 2), its default frequency is 240MHz */
@@ -757,6 +758,41 @@ typedef enum {
     TEMPERATURE_SENSOR_CLK_SRC_LP_PERI = SOC_MOD_CLK_LP_PERI,     /*!< Select LP_PERI as the source clock */
     TEMPERATURE_SENSOR_CLK_SRC_DEFAULT = SOC_MOD_CLK_LP_PERI,    /*!< Select LP_PERI as the default choice */
 } soc_periph_temperature_sensor_clk_src_t;
+
+//////////////////////////////////////////////////EMAC///////////////////////////////////////////////////////////////
+/**
+ * @brief Array initializer for all supported clock sources of EMAC clock output
+ */
+#define SOC_EMAC_OUT_CLK {SOC_MOD_CLK_MPLL, SOC_MOD_CLK_CPLL, SOC_MOD_CLK_APLL}
+
+typedef enum {
+    EMAC_CLK_OUT_SRC_MPLL = SOC_MOD_CLK_MPLL,
+    EMAC_CLK_OUT_SRC_CPLL = SOC_MOD_CLK_CPLL,
+    EMAC_CLK_OUT_SRC_APLL = SOC_MOD_CLK_APLL,
+    EMAC_CLK_OUT_SRC_DEFAULT = SOC_MOD_CLK_MPLL,
+} soc_periph_emac_clk_out_src_t;
+
+/**
+ * @brief Array initializer for all supported clock sources of EMAC REF_PHY clock output
+ */
+#define SOC_EMAC_REF_PHY_CLK {SOC_MOD_CLK_MPLL, SOC_MOD_CLK_CPLL}
+
+typedef enum {
+    EMAC_REF_PHY_CLK_SRC_MPLL = SOC_MOD_CLK_MPLL,
+    EMAC_REF_PHY_CLK_SRC_CPLL = SOC_MOD_CLK_CPLL,
+    EMAC_REF_PHY_CLK_SRC_DEFAULT = SOC_MOD_CLK_MPLL,
+} soc_periph_emac_ref_phy_clk_src_t;
+
+/**
+ * @brief Array initializer for all supported clock sources of EMAC PTP
+ */
+#define SOC_EMAC_PTP_CLK {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F80M}
+
+typedef enum {
+    EMAC_PTP_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,
+    EMAC_PTP_CLK_SRC_PLL_F80M = SOC_MOD_CLK_PLL_F80M,
+    EMAC_PTP_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,
+} soc_periph_emac_ptp_clk_src_t;
 
 #ifdef __cplusplus
 }

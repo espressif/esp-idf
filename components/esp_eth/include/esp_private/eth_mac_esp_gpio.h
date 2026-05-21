@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,12 +18,18 @@ esp_err_t emac_esp_gpio_matrix_init_mii(const eth_mac_mii_gpio_config_t *mii_gpi
 esp_err_t emac_esp_iomux_init_mii(const eth_mac_mii_gpio_config_t *mii_gpio);
 esp_err_t emac_esp_iomux_init_rmii(const eth_mac_rmii_gpio_config_t *rmii_gpio);
 esp_err_t emac_esp_iomux_rmii_clk_input(int num);
-esp_err_t emac_esp_iomux_rmii_clk_ouput(int num);
+esp_err_t emac_esp_iomux_rmii_clk_output(int num);
+esp_err_t emac_esp_iomux_phy_ref_clk_output(int num);
 esp_err_t emac_esp_iomux_rmii_init_tx_er(int num);
 esp_err_t emac_esp_iomux_rmii_init_rx_er(int num);
 esp_err_t emac_esp_iomux_mii_init_tx_er(int num);
 esp_err_t emac_esp_iomux_mii_init_rx_er(int num);
 esp_err_t emac_esp_gpio_matrix_init_ptp_pps(int num);
+#if SOC_EMAC_SUPPORT_1000M
+esp_err_t emac_esp_iomux_init_rgmii(const eth_mac_rgmii_gpio_config_t *rgmii_gpio);
+esp_err_t emac_esp_iomux_rgmii_clk_input(int num);
+esp_err_t emac_esp_iomux_rgmii_clk_output(int num);
+#endif
 esp_err_t emac_esp_gpio_init_smi(const emac_esp_smi_gpio_config_t *smi_gpio);
 esp_err_t emac_esp_gpio_deinit_all(void);
 

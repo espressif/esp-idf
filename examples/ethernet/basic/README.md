@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-P4 |
-| ----------------- | ----- | -------- |
+| Supported Targets | ESP32 | ESP32-P4 | ESP32-S31 |
+| ----------------- | ----- | -------- | --------- |
 
 # Basic Ethernet Example
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -22,14 +22,23 @@ If you have a new simple Ethernet application to go (for example, connect to IoT
 
 ### Hardware Required
 
-To run this example, it's recommended that you have an official Espressif Ethernet capable development board - either [ESP32-Ethernet-Kit](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp32-ethernet-kit/index.html) or [ESP32-P4-Function-EV-Board](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32p4/esp32-p4-function-ev-board/index.html). This example should also work for 3rd party ESP32 board as long as it's integrated with a IEEE 802.3 compliant Ethernet PHY chip and with the default RMII dataplane GPIO configuration.
+To run this example, it's recommended that you have an official Espressif Ethernet capable development board - [ESP32-Ethernet-Kit](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp32-ethernet-kit/index.html), [ESP32-P4-Function-EV-Board](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32p4/esp32-p4-function-ev-board/index.html) or ESP32-S31 Functional-Core Board. This example should also work for 3rd party ESP32 board as long as it's integrated with a IEEE 802.3 compliant Ethernet PHY chip and with the default dataplane GPIO configuration.
 
 > [!NOTE]
 > `Generic 802.3 PHY` basic functionality should always work for PHY compliant with IEEE 802.3. However, some specific features might be limited. A typical example is loopback functionality, where certain PHYs may require setting a specific speed mode to operate correctly. If this is a case, use driver tailored to that specific chip.
 
 #### Pin Assignment
 
-This example uses the default RMII GPIO configuration as defined by `ETH_ESP32_EMAC_DEFAULT_CONFIG` for the specific ESP32 chip (ESP32, ESP32P4, etc.).
+This example uses the default GPIO configuration as defined by `ETH_ESP32_EMAC_DEFAULT_CONFIG` for the specific ESP32 chip (ESP32, ESP32P4, ESP32S31, etc.).
+
+#### ESP32-S31 with YT8531 PHY (RGMII)
+
+The ESP32-S31 Functional-Core Board uses a YT8531 PHY connected via RGMII. While the example uses the Generic 802.3 PHY driver for standard PHY operations, the YT8531 requires additional chip-specific initialization to work correctly in RGMII mode. This is handled automatically when the `CONFIG_EXAMPLE_ETH_PHY_YT8531_INIT` option is enabled (default for ESP32-S31 targets):
+
+- **Auto-negotiation re-enable**: The YT8531 disables auto-negotiation upon hardware reset (undocumented behavior), so it must be explicitly re-enabled after the Generic 802.3 driver finishes initialization.
+- **RGMII clock delay tuning**: Tx and Rx internal clock delays (~2 ns each) are configured via the PHY's extended register interface to ensure reliable RGMII data sampling.
+
+These steps are performed via the standard `esp_eth_ioctl()` API without requiring a dedicated YT8531 driver. The implementation can also serve as a template for configuring other PHYs that need post-init tuning when used with the Generic 802.3 driver.
 
 ### Configure the project
 

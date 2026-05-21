@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -91,6 +91,7 @@ extern "C" {
 
 #define EMAC_LL_DMADESC_OWNER_CPU  (0)
 #define EMAC_LL_DMADESC_OWNER_DMA  (1)
+#define EMAC_LL_DMA_MEM_ALIGNMENT  (4)
 
 /* Interrupt flags (referring to dmastatus register in emac_dma_struct.h) */
 #define EMAC_LL_DMA_TRANSMIT_FINISH_INTR               0x00000001U
@@ -696,6 +697,12 @@ static inline void emac_ll_receive_poll_demand(emac_dma_dev_t *dma_regs, uint32_
     dma_regs->dmarxpolldemand = val;
 }
 
+/* emacstatus */
+static inline uint32_t emac_ll_get_gmii_status(emac_mac_dev_t *mac_regs)
+{
+    return mac_regs->emaccstatus.val;
+}
+
 /*************** End of dma regs operation *********************/
 
 /************** Start of ext regs operation ********************/
@@ -724,6 +731,7 @@ static inline void emac_ll_clock_enable_rmii_input(emac_ext_dev_t *ext_regs)
     config pin as output to generate ref clk by esp32 mac layer or input to obtain the clock from external crystal */
     ext_regs->ex_clk_ctrl.ext_en = 1;
     ext_regs->ex_clk_ctrl.int_en = 0;
+    // 0 for internal clock, 1 for external clock
     ext_regs->ex_oscclk_conf.clk_sel = 1;
 }
 
@@ -735,8 +743,34 @@ static inline void emac_ll_clock_enable_rmii_output(emac_ext_dev_t *ext_regs)
     config pin as output to generate ref clk by esp32 mac layer or input to obtain the clock from external crystal */
     ext_regs->ex_clk_ctrl.ext_en = 0;
     ext_regs->ex_clk_ctrl.int_en = 1;
+    // 0 for internal clock, 1 for external clock
     ext_regs->ex_oscclk_conf.clk_sel = 0;
-    ext_regs->ex_clkout_conf.div_num = 0;
+}
+
+static inline bool emac_ll_ref_clock_supported(void)
+{
+    return true;
+}
+
+static inline void emac_ll_ref_clock_enable(emac_ext_dev_t *ext_regs, bool enable)
+{
+    // do nothing as the ref clock can't be gated
+    (void)ext_regs;
+    (void)enable;
+}
+
+static inline void emac_ll_ref_clock_select(emac_ext_dev_t *ext_regs, int sel)
+{
+    // do nothing as there is only one internal clock source
+    (void)ext_regs;
+    (void)sel;
+}
+
+static inline void emac_ll_ref_clock_div(emac_ext_dev_t *ext_regs, int div)
+{
+    // N_eff ~= integer_part + (half_part / 2)
+    // half part is currently not used
+    ext_regs->ex_clkout_conf.div_num = div;
     ext_regs->ex_clkout_conf.h_div_num = 0;
 }
 
@@ -744,12 +778,19 @@ static inline void emac_ll_pause_frame_enable(emac_ext_dev_t *ext_regs, bool ena
 {
     ext_regs->ex_phyinf_conf.sbd_flowctrl = enable;
 }
+
 /*************** End of ext regs operation *********************/
 
 static inline soc_module_clk_t emac_ll_get_csr_clk_src(void)
 {
     // Source of the ESP32 EMAC CRS clock is APB clock.
     return SOC_MOD_CLK_APB;
+}
+
+static inline void emac_ll_gpio_init(void *ext_regs, uint32_t gpio_num)
+{
+    (void)ext_regs;
+    (void)gpio_num;
 }
 
 #ifdef __cplusplus

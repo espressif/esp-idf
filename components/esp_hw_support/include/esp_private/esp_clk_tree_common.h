@@ -15,6 +15,11 @@
 extern "C" {
 #endif
 
+typedef struct {
+    soc_module_clk_t clk_upstream;
+    uint32_t divider;
+} esp_clk_tree_src_config_t;
+
 #if SOC_CLK_RC_FAST_D256_SUPPORTED
 /**
  * @brief Get frequency of RC_FAST_D256_CLK
@@ -154,6 +159,45 @@ void esp_clk_tree_apll_release(void);
  */
 esp_err_t esp_clk_tree_apll_freq_set(uint32_t expt_freq_hz, uint32_t *real_freq_hz);
 #endif // SOC_CLK_APLL_SUPPORTED
+
+/**
+ * @brief Select the upstream PLL that feeds a derived clock
+ *
+ * Programs the upstream-mux of `clk_src` (e.g. `SOC_MOD_CLK_PLL_F50M`) to
+ * source from `upstream` (e.g. `SOC_MOD_CLK_MPLL`, `SOC_MOD_CLK_CPLL`). The
+ * clock must already be acquired via `esp_clk_tree_enable_src(clk_src, true)`.
+ *
+ * Use `esp_clk_tree_src_set_freq_hz()` afterwards to choose the divider for
+ * the desired output frequency. If `select_upstream` is not called before
+ * `set_freq_hz`, the engine auto-picks the first upstream in the descriptor
+ * whose current frequency divides cleanly to the requested target.
+ *
+ * On targets where the derived clock has no upstream mux (e.g. ESP32-P4
+ * `PLL_F50M` is fixed to MPLL), this function still validates that the
+ * requested upstream matches the fixed source and updates internal state,
+ * but does not touch any hardware register.
+ *
+ * Has effect only on "derived" clocks (those with a descriptor registered
+ * via `esp_clk_tree_get_derived_clk_desc()`). For other clocks returns
+ * `ESP_ERR_NOT_SUPPORTED`.
+ *
+ * Share-lock semantics: when more than one peripheral has acquired
+ * `clk_src`, only a request that matches the upstream already programmed by
+ * the first peer succeeds. Any other request returns
+ * `ESP_ERR_INVALID_STATE`.
+ *
+ * @param[in] clk_src   Derived module clock id (e.g. `SOC_MOD_CLK_PLL_F50M`)
+ * @param[in] upstream  Upstream PLL to route from (e.g. `SOC_MOD_CLK_MPLL`)
+ * @return
+ *      - ESP_OK                 Upstream selected
+ *      - ESP_ERR_INVALID_ARG    `upstream` is not in this clock's allowed list
+ *      - ESP_ERR_INVALID_STATE  Clock is shared and another peripheral has
+ *                               already selected a different upstream
+ *      - ESP_ERR_NOT_SUPPORTED  `clk_src` has no derived-clock descriptor on
+ *                               this target
+ */
+esp_err_t esp_clk_tree_src_select_upstream(soc_module_clk_t clk_src,
+                                           soc_module_clk_t upstream);
 
 #if SOC_CLK_MPLL_SUPPORTED
 /**

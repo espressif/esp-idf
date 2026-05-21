@@ -8,7 +8,9 @@
 #include <stdbool.h>
 #include <freertos/FreeRTOS.h>
 #include "esp_private/esp_clk_tree_common.h"
+#include "esp_private/esp_clk_tree_derived.h"
 #include "esp_private/critical_section.h"
+#include "esp_private/periph_ctrl.h"
 #include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "soc/rtc.h"
@@ -390,3 +392,240 @@ end:
     return ret;
 }
 #endif /* SOC_CLK_MPLL_SUPPORTED */
+
+/* ---------------------------------------------------------------------------
+ * Generic derived-PLL clock engine. Target-agnostic: per-clock descriptor and
+ * state come from `esp_clk_tree_get_derived_clk_desc()` (overridden per target
+ * in port/<target>/esp_clk_tree.c). The engine never references any specific
+ * clock id or chip cap; adding F25M / F20M / F80M / ... is purely a target-side
+ * change.
+ *
+ * Public API entry points:
+ *   - `esp_clk_tree_enable_src(clk, true/false)`     -> acquire / release
+ *   - `esp_clk_tree_src_select_upstream(clk, src)`   -> mux selection
+ *   - `esp_clk_tree_src_set_freq_hz(clk, hz, &real)` -> divider selection
+ * The engine functions below are the internal targets the per-target
+ * dispatchers route into.
+ *
+ * Semantics:
+ *   - acquire: ref_cnt++; on first acquire enable the gate.
+ *   - release: ref_cnt--; on last release disable the gate.
+ *   - select_upstream: program the mux to source from `upstream`.
+ *   - freq_set: pick a divider for `state->cur_upstream` (if `select_upstream`
+ *               was called) or auto-pick an upstream that divides cleanly
+ *               (if no upstream was selected); program the divider (and the
+ *               mux on first call) atomically.
+ * Share-lock (applies to select_upstream and freq_set when ref_cnt > 1):
+ *   request must match the currently applied (upstream / divider) value;
+ *   otherwise return ESP_ERR_INVALID_STATE and report the active frequency.
+ * ------------------------------------------------------------------------- */
+static portMUX_TYPE __attribute__((unused)) s_derived_clk_spinlock = portMUX_INITIALIZER_UNLOCKED;
+
+__attribute__((weak)) const esp_clk_tree_derived_clk_desc_t *
+esp_clk_tree_get_derived_clk_desc(soc_module_clk_t clk_src)
+{
+    (void)clk_src;
+    return NULL;
+}
+
+esp_err_t esp_clk_tree_derived_clk_acquire(soc_module_clk_t clk_src)
+{
+    const esp_clk_tree_derived_clk_desc_t *desc = esp_clk_tree_get_derived_clk_desc(clk_src);
+    if (desc == NULL || desc->state == NULL) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    esp_clk_tree_derived_clk_state_t *state = desc->state;
+
+    esp_os_enter_critical(&s_derived_clk_spinlock);
+    state->ref_cnt++;
+    if (state->ref_cnt == 1) {
+        desc->set_gate(true);
+    }
+    esp_os_exit_critical(&s_derived_clk_spinlock);
+    return ESP_OK;
+}
+
+esp_err_t esp_clk_tree_derived_clk_release(soc_module_clk_t clk_src)
+{
+    const esp_clk_tree_derived_clk_desc_t *desc = esp_clk_tree_get_derived_clk_desc(clk_src);
+    if (desc == NULL || desc->state == NULL) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    esp_clk_tree_derived_clk_state_t *state = desc->state;
+
+    bool released_too_many = false;
+    esp_os_enter_critical(&s_derived_clk_spinlock);
+    if (state->ref_cnt <= 0) {
+        state->ref_cnt = 0;
+        released_too_many = true;
+    } else {
+        state->ref_cnt--;
+        if (state->ref_cnt == 0) {
+            desc->set_gate(false);
+            state->cur_upstream = SOC_MOD_CLK_INVALID;
+            state->cur_divider = 0;
+        }
+    }
+    esp_os_exit_critical(&s_derived_clk_spinlock);
+    if (released_too_many) {
+        ESP_HW_LOGW(TAG, "derived clk %d released without matching acquire", (int)clk_src);
+    }
+    return ESP_OK;
+}
+
+/**
+ * Iterate the descriptor's upstream candidates and pick the first one
+ * (in preference order) whose currently programmed frequency is an integer
+ * multiple of `expt_freq_hz`. When `preferred != SOC_MOD_CLK_INVALID`, only
+ * that single candidate is considered.
+ */
+static esp_err_t s_derived_pick_config(const esp_clk_tree_derived_clk_desc_t *desc,
+                                       soc_module_clk_t preferred,
+                                       uint32_t expt_freq_hz,
+                                       soc_module_clk_t *out_upstream,
+                                       uint32_t *out_divider,
+                                       uint8_t *out_mux_sel)
+{
+    bool any_match = false;
+    for (size_t i = 0; i < desc->upstream_count; i++) {
+        const esp_clk_tree_derived_upstream_t *cand = &desc->upstreams[i];
+        if (preferred != SOC_MOD_CLK_INVALID && cand->upstream != preferred) {
+            continue;
+        }
+        any_match = true;
+        uint32_t up_hz = 0;
+        if (esp_clk_tree_src_get_freq_hz(cand->upstream,
+                                         ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX,
+                                         &up_hz) != ESP_OK || up_hz == 0) {
+            continue;
+        }
+        if (up_hz % expt_freq_hz == 0) {
+            *out_upstream = cand->upstream;
+            *out_divider  = up_hz / expt_freq_hz;
+            *out_mux_sel  = cand->mux_sel;
+            return ESP_OK;
+        }
+    }
+    // Distinguish "not in allowed list" from "in list but doesn't divide cleanly"
+    // so callers get a more useful error.
+    return (preferred != SOC_MOD_CLK_INVALID && !any_match) ? ESP_ERR_INVALID_ARG
+                                                            : ESP_ERR_NOT_FOUND;
+}
+
+esp_err_t esp_clk_tree_derived_clk_freq_set(soc_module_clk_t clk_src,
+                                            uint32_t expt_freq_hz,
+                                            uint32_t *real_freq_hz)
+{
+    const esp_clk_tree_derived_clk_desc_t *desc = esp_clk_tree_get_derived_clk_desc(clk_src);
+    if (desc == NULL || desc->state == NULL || desc->upstreams == NULL) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    esp_clk_tree_derived_clk_state_t *state = desc->state;
+    ESP_RETURN_ON_FALSE(expt_freq_hz > 0, ESP_ERR_INVALID_ARG, TAG, "freq must be > 0");
+
+    // If `esp_clk_tree_src_select_upstream()` was called, honor that choice;
+    // otherwise auto-pick the first upstream in the descriptor that divides
+    // cleanly to the requested frequency.
+    soc_module_clk_t preferred = state->cur_upstream;
+    soc_module_clk_t upstream = SOC_MOD_CLK_INVALID;
+    uint32_t divider = 0;
+    uint8_t mux_sel = 0;
+    ESP_RETURN_ON_ERROR(s_derived_pick_config(desc, preferred, expt_freq_hz,
+                                              &upstream, &divider, &mux_sel),
+                        TAG,
+                        "no upstream divides cleanly to %" PRIu32 " Hz for derived clk %d",
+                        expt_freq_hz, (int)clk_src);
+
+    esp_err_t ret = ESP_OK;
+    soc_module_clk_t reported_upstream = SOC_MOD_CLK_INVALID;
+    uint32_t reported_divider = 0;
+
+    esp_os_enter_critical(&s_derived_clk_spinlock);
+    // Caller must have acquired the clock first.
+    assert(state->ref_cnt > 0);
+
+    bool same_config = (state->cur_upstream == upstream) &&
+                        (state->cur_divider == divider);
+    // Allow the first peer to commit a divider even when ref_cnt > 1
+    // (e.g. another peer ran enable_src already but hasn't called freq_set
+    // yet). Mirrors MPLL's `cur == 0 || ref_cnt < 2` check.
+    bool first_commit = (state->cur_divider == 0);
+    if (state->ref_cnt < 2 || same_config || first_commit) {
+        // First-time configuration: also program the mux. When the caller
+        // already invoked `select_upstream`, `state->cur_upstream` already
+        // matches `upstream` so the mux is left untouched.
+        if (state->cur_upstream != upstream && desc->set_src != NULL) {
+            desc->set_src(mux_sel);
+        }
+        desc->set_divider(divider);
+        state->cur_upstream = upstream;
+        state->cur_divider = divider;
+    } else {
+        ret = ESP_ERR_INVALID_STATE;
+    }
+    esp_os_exit_critical(&s_derived_clk_spinlock);
+    reported_upstream = state->cur_upstream;
+    reported_divider = state->cur_divider;
+
+    if (real_freq_hz != NULL) {
+        uint32_t up_hz = 0;
+        if (reported_upstream != SOC_MOD_CLK_INVALID && reported_divider != 0 &&
+            esp_clk_tree_src_get_freq_hz(reported_upstream,
+                                         ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX,
+                                         &up_hz) == ESP_OK) {
+            *real_freq_hz = up_hz / reported_divider;
+        } else {
+            *real_freq_hz = 0;
+        }
+    }
+    return ret;
+}
+
+esp_err_t esp_clk_tree_src_select_upstream(soc_module_clk_t clk_src,
+                                           soc_module_clk_t upstream)
+{
+    const esp_clk_tree_derived_clk_desc_t *desc = esp_clk_tree_get_derived_clk_desc(clk_src);
+    if (desc == NULL || desc->state == NULL || desc->upstreams == NULL) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    ESP_RETURN_ON_FALSE(upstream > 0 && upstream < SOC_MOD_CLK_INVALID,
+                        ESP_ERR_INVALID_ARG, TAG, "invalid upstream clk %d", (int)upstream);
+
+    // Validate `upstream` is in the descriptor's allowed list and recover its
+    // mux selector value.
+    uint8_t mux_sel = 0;
+    bool found = false;
+    for (size_t i = 0; i < desc->upstream_count; i++) {
+        if (desc->upstreams[i].upstream == upstream) {
+            mux_sel = desc->upstreams[i].mux_sel;
+            found = true;
+            break;
+        }
+    }
+    ESP_RETURN_ON_FALSE(found, ESP_ERR_INVALID_ARG, TAG,
+                        "upstream %d not allowed for derived clk %d",
+                        (int)upstream, (int)clk_src);
+
+    esp_clk_tree_derived_clk_state_t *state = desc->state;
+    esp_err_t ret = ESP_OK;
+    esp_os_enter_critical(&s_derived_clk_spinlock);
+    // Caller must have acquired the clock first.
+    assert(state->ref_cnt > 0);
+
+    // Allow the first peer to commit an upstream even when ref_cnt > 1.
+    bool first_commit = (state->cur_upstream == SOC_MOD_CLK_INVALID);
+    if (state->ref_cnt > 1 && !first_commit && state->cur_upstream != upstream) {
+        // Another peer is already using this clock with a different upstream.
+        ret = ESP_ERR_INVALID_STATE;
+    } else if (state->cur_upstream != upstream) {
+        if (desc->set_src != NULL) {
+            desc->set_src(mux_sel);
+        }
+        state->cur_upstream = upstream;
+        // Divider for the previous upstream is no longer meaningful; the next
+        // `set_freq_hz` call will program a fresh divider for `upstream`.
+        state->cur_divider = 0;
+    }
+    esp_os_exit_critical(&s_derived_clk_spinlock);
+    return ret;
+}

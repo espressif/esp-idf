@@ -19,9 +19,42 @@
 #include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "esp_private/esp_clk_tree_common.h"
+#include "esp_private/esp_clk_tree_derived.h"
 #include "esp_private/periph_ctrl.h"
 
 ESP_LOG_ATTR_TAG(TAG, "esp_clk_tree");
+
+// ESP32-P4 PLL_F50M is fixed-source (MPLL only, no upstream mux); set_src is
+// NULL and the mux_sel value is ignored by the engine.
+static const esp_clk_tree_derived_upstream_t s_pll_f50m_upstreams[] = {
+    { SOC_MOD_CLK_MPLL, 0 },
+};
+
+static esp_clk_tree_derived_clk_state_t s_pll_f50m_state = {
+    .ref_cnt      = 0,
+    .cur_upstream = SOC_MOD_CLK_INVALID,
+    .cur_divider  = 0,
+};
+
+static const esp_clk_tree_derived_clk_desc_t s_pll_f50m_desc = {
+    .clk_id         = SOC_MOD_CLK_PLL_F50M,
+    .set_src        = NULL,
+    .set_divider    = clk_ll_pll_f50m_set_divider,
+    .set_gate       = _clk_gate_ll_ref_50m_clk_en, // using RCC_ATOMIC lock free function version to avoid nesting critical sections
+    .upstreams      = s_pll_f50m_upstreams,
+    .upstream_count = sizeof(s_pll_f50m_upstreams) / sizeof(s_pll_f50m_upstreams[0]),
+    .state          = &s_pll_f50m_state,
+};
+
+const esp_clk_tree_derived_clk_desc_t *esp_clk_tree_get_derived_clk_desc(soc_module_clk_t clk_src)
+{
+    switch (clk_src) {
+    case SOC_MOD_CLK_PLL_F50M:
+        return &s_pll_f50m_desc;
+    default:
+        return NULL;
+    }
+}
 
 esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_src_freq_precision_t precision,
                                        uint32_t *freq_value)
@@ -109,6 +142,12 @@ esp_err_t esp_clk_tree_src_set_freq_hz(soc_module_clk_t clk_src, uint32_t expt_f
     ESP_RETURN_ON_FALSE(clk_src > 0 && clk_src < SOC_MOD_CLK_INVALID, ESP_ERR_INVALID_ARG, TAG, "unknown clk src");
     ESP_RETURN_ON_FALSE(expt_freq_value > 0, ESP_ERR_INVALID_ARG, TAG, "invalid frequency");
 
+    // Derived PLL clocks (PLL_F50M, ...) are configured by the shared engine,
+    // which picks an upstream + divider yielding `expt_freq_value`.
+    if (esp_clk_tree_get_derived_clk_desc(clk_src) != NULL) {
+        return esp_clk_tree_derived_clk_freq_set(clk_src, expt_freq_value, ret_freq_value);
+    }
+
     uint32_t real_freq_value = 0;
     esp_err_t ret = ESP_OK;
     switch (clk_src) {
@@ -178,6 +217,14 @@ esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
         return ESP_OK;
     }
 
+    // Derived PLL clocks (PLL_F50M, ...) that participate in the shared
+    // refcount/lock engine route through that engine instead of the
+    // global s_pll_src_cg_ref_cnt array below.
+    if (esp_clk_tree_get_derived_clk_desc(clk_src) != NULL) {
+        return enable ? esp_clk_tree_derived_clk_acquire(clk_src)
+                      : esp_clk_tree_derived_clk_release(clk_src);
+    }
+
     // these clock sources have their own reference counting
     switch (clk_src) {
         case SOC_MOD_CLK_APLL:
@@ -215,7 +262,6 @@ esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
             case SOC_MOD_CLK_RC_FAST:   enable ? rtc_dig_clk8m_enable() : rtc_dig_clk8m_disable(); break;
             case SOC_MOD_CLK_PLL_F20M:  ENABLE_CLK_GATE(clk_gate_ll_ref_20m_clk_en, enable);  break;
             case SOC_MOD_CLK_PLL_F25M:  ENABLE_CLK_GATE(clk_gate_ll_ref_25m_clk_en, enable);  break;
-            case SOC_MOD_CLK_PLL_F50M:  ENABLE_CLK_GATE(clk_gate_ll_ref_50m_clk_en, enable);  break;
             case SOC_MOD_CLK_PLL_F80M:  ENABLE_CLK_GATE(clk_gate_ll_ref_80m_clk_en, enable);  break;
             case SOC_MOD_CLK_PLL_F120M: ENABLE_CLK_GATE(clk_gate_ll_ref_120m_clk_en, enable); break;
             case SOC_MOD_CLK_PLL_F160M: ENABLE_CLK_GATE(clk_gate_ll_ref_160m_clk_en, enable); break;
