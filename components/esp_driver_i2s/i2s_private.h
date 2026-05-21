@@ -19,6 +19,7 @@
 #if SOC_LP_I2S_SUPPORTED
 #include "hal/lp_i2s_ll.h"
 #endif
+#include "hal/i2s_types.h"
 #include "driver/i2s_types.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp_clock_output.h"
@@ -54,6 +55,11 @@ extern "C" {
 
 #define I2S_NULL_POINTER_CHECK(tag, p)          ESP_RETURN_ON_FALSE((p), ESP_ERR_INVALID_ARG, tag, "input parameter '"#p"' is NULL")
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+
+/**
+ * @brief Whether this channel uses the DMA memory data path
+ */
+#define I2S_CHANNEL_USES_DMA(handle)   ((handle)->destination == I2S_DESTINATION_DMA)
 
 /**
  * @brief i2s channel state for checking if the operation in under right driver state
@@ -158,6 +164,7 @@ struct i2s_channel_obj_t {
     };
     uint32_t                active_slot;    /*!< Active slot number */
     uint32_t                total_slot;     /*!< Total slot number */
+    i2s_destination_t       destination;    /*!< Data path destination (DMA memory path vs Bluetooth controller where supported) */
     i2s_clock_src_t         clk_src;        /*!< Clock source */
     uint32_t                sclk_hz;        /*!< Source clock frequency */
     uint32_t                origin_mclk_hz; /*!< Original mclk frequency */

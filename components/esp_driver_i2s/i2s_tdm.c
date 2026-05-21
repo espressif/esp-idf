@@ -17,6 +17,7 @@
 #endif
 
 #include "hal/i2s_hal.h"
+#include "hal/i2s_types.h"
 #include "driver/gpio.h"
 #include "driver/i2s_tdm.h"
 #include "i2s_private.h"
@@ -156,8 +157,9 @@ static esp_err_t i2s_tdm_set_slot(i2s_chan_handle_t handle, const i2s_tdm_slot_c
                         handle->total_slot, slot_bits, (int)I2S_LL_SLOT_FRAME_BIT_MAX);
     uint32_t buf_size = i2s_get_buf_size(handle, norm_slot_cfg.data_bit_width, handle->dma.frame_num);
     ESP_RETURN_ON_FALSE(buf_size != 0, ESP_ERR_INVALID_ARG, TAG, "invalid data_bit_width");
-    /* The DMA buffer need to re-allocate if the buffer size changed */
-    if (handle->dma.buf_size != buf_size) {
+    /* The DMA buffer need to re-allocate if the buffer size changed.
+     * Skip when GDMA is not the data path (e.g. Bluetooth destination), since the channel never owns a DMA buffer. */
+    if (handle->destination == I2S_DESTINATION_DMA && handle->dma.buf_size != buf_size) {
         ESP_RETURN_ON_ERROR(i2s_free_dma_desc(handle), TAG, "failed to free the old dma descriptor");
         ESP_RETURN_ON_ERROR(i2s_alloc_dma_desc(handle, buf_size),
                             TAG, "allocate memory for dma descriptor failed");
@@ -322,7 +324,9 @@ esp_err_t i2s_channel_init_tdm_mode(i2s_chan_handle_t handle, const i2s_tdm_conf
     ESP_GOTO_ON_ERROR(i2s_tdm_set_clock(handle, &tdm_cfg->clk_cfg), err, TAG, "initialize channel failed while setting clock");
     /* i2s_tdm_set_gpio should be called after i2s_tdm_set_clock as mclk relies on the clock source */
     ESP_GOTO_ON_ERROR(i2s_tdm_set_gpio(handle, &tdm_cfg->gpio_cfg), err, TAG, "initialize channel failed while setting gpio pins");
-    ESP_GOTO_ON_ERROR(i2s_init_dma_intr(handle, I2S_INTR_ALLOC_FLAGS), err, TAG, "initialize dma interrupt failed");
+    if (I2S_CHANNEL_USES_DMA(handle)) {
+        ESP_GOTO_ON_ERROR(i2s_init_dma_intr(handle, I2S_INTR_ALLOC_FLAGS), err, TAG, "initialize dma interrupt failed");
+    }
 
 #if SOC_I2S_HW_VERSION_2
     /* Enable clock to start outputting mclk signal. Some codecs will reset once mclk stop */
@@ -332,6 +336,7 @@ esp_err_t i2s_channel_init_tdm_mode(i2s_chan_handle_t handle, const i2s_tdm_conf
         i2s_ll_rx_enable_tdm(handle->controller->hal.dev);
     }
 #endif
+    i2s_ll_set_destination(handle->controller->hal.dev, handle->dir, handle->destination);
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_type_t pm_type = ESP_PM_APB_FREQ_MAX;
 #if SOC_I2S_SUPPORTS_APLL && SOC_I2S_HW_VERSION_2
@@ -341,7 +346,7 @@ esp_err_t i2s_channel_init_tdm_mode(i2s_chan_handle_t handle, const i2s_tdm_conf
         pm_type = ESP_PM_NO_LIGHT_SLEEP;
     }
 #endif // SOC_I2S_SUPPORTS_APLL
-    ESP_RETURN_ON_ERROR(esp_pm_lock_create(pm_type, 0, "i2s_driver", &handle->pm_lock), TAG, "I2S pm lock create failed");
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(pm_type, 0, "i2s_driver", &handle->pm_lock), err, TAG, "I2S pm lock create failed");
 #endif
 
     /* Initialization finished, mark state as ready */
@@ -435,8 +440,10 @@ esp_err_t i2s_channel_reconfig_tdm_slot(i2s_chan_handle_t handle, const i2s_tdm_
         ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)old_clk_src, false), err, TAG, "clock source disable failed");
     }
 
-    /* Reset queue */
-    xQueueReset(handle->msg_queue);
+    /* Reset queue (skip when no GDMA path is in use) */
+    if (handle->msg_queue) {
+        xQueueReset(handle->msg_queue);
+    }
 
     xSemaphoreGive(handle->mutex);
 

@@ -291,6 +291,15 @@ The data transport of the I2S peripheral, including sending and receiving, is re
 
 Both :cpp:func:`i2s_channel_write` and :cpp:func:`i2s_channel_read` are blocking functions. They keeps waiting until the whole source buffer is sent or the whole destination buffer is loaded, unless they exceed the max blocking time, where the error code ``ESP_ERR_TIMEOUT`` returns. To send or receive data asynchronously, callbacks can be registered by  :cpp:func:`i2s_channel_register_event_callback`. Users are able to access the DMA buffer directly in the callback function instead of transmitting or receiving by the two blocking functions. However, please be aware that it is an interrupt callback, so do not add complex logic, run floating operation, or call non-reentrant functions in the callback.
 
+.. only:: SOC_I2S_SUPPORTS_BT_DEST
+
+    On {IDF_TARGET_NAME}, when calling :cpp:func:`i2s_new_channel`, you can select the data path for TX and RX separately via :cpp:member:`i2s_chan_config_t::tx_destination` and :cpp:member:`i2s_chan_config_t::rx_destination`. For each direction you can choose either **DMA** or **Bluetooth**:
+
+    - **:cpp:enumerator:`i2s_destination_t::I2S_DESTINATION_DMA` (default)**: Use **DMA** as the TX/RX data path, consistent with the mechanisms described above.
+    - **:cpp:enumerator:`i2s_destination_t::I2S_DESTINATION_BT`**: Use **Bluetooth** as the TX/RX data path. Common operations that rely on DMA buffering (such as :cpp:func:`i2s_channel_write`, :cpp:func:`i2s_channel_read`, :cpp:func:`i2s_channel_preload_data`, :cpp:func:`i2s_channel_register_event_callback`, etc.) are not available on that direction. Only **I2S0** can select the Bluetooth path.
+
+    For integration with the Bluetooth stack and audio links, see the :doc:`ESP-IDF Bluetooth API Reference <../bluetooth/index>`.
+
 Configuration
 ^^^^^^^^^^^^^
 

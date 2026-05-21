@@ -23,6 +23,8 @@
 #define I2S_LL_GET(_attr)       I2S_LL_ ## _attr
 #define I2S_LL_SUPPORT(_feat)   I2S_LL_SUPPORT_ ## _feat
 #define I2S_LL_INST_NUM         1
+#define I2S_LL_PDM_SUPPORTED_PORT_MASK        (1U << 0)  // PDM is supported on I2S0
+#define I2S_LL_PCM2PDM_SUPPORTED_PORT_MASK    (1U << 0)  // PCM2PDM is supported on I2S0
 
 #ifdef __cplusplus
 extern "C" {
@@ -1193,6 +1195,50 @@ static inline void i2s_ll_tx_pdm_line_mode(i2s_dev_t *hw, i2s_pdm_tx_line_mode_t
 {
     hw->tx_pcm2pdm_conf.tx_pdm_dac_mode_en = line_mode > I2S_PDM_TX_ONE_LINE_CODEC;
     hw->tx_pcm2pdm_conf.tx_pdm_dac_2out_en = line_mode != I2S_PDM_TX_ONE_LINE_DAC;
+}
+
+/**
+ * @brief Set I2S data destination
+ */
+static inline void i2s_ll_set_destination(i2s_dev_t *hw, i2s_dir_t dir, i2s_destination_t destination)
+{
+    (void)hw;
+    (void)dir;
+    (void)destination;
+}
+
+/**
+ * @brief Check whether an I2S data destination is supported on the specified port
+ */
+static inline bool i2s_ll_is_destination_supported(int port_id, i2s_destination_t destination)
+{
+    (void)port_id;
+    return destination == I2S_DESTINATION_DMA;
+}
+
+/**
+ * @brief Check whether I2S PDM mode is supported on the specified port
+ */
+static inline bool i2s_ll_is_pdm_supported(int port_id)
+{
+    return (I2S_LL_PDM_SUPPORTED_PORT_MASK & (1U << port_id)) != 0;
+}
+
+/**
+ * @brief Check whether I2S TX PCM2PDM converter is supported on the specified port
+ */
+static inline bool i2s_ll_is_pcm2pdm_supported(int port_id)
+{
+    return (I2S_LL_PCM2PDM_SUPPORTED_PORT_MASK & (1U << port_id)) != 0;
+}
+
+/**
+ * @brief Check whether I2S RX PDM2PCM converter is supported on the specified port
+ */
+static inline bool i2s_ll_is_pdm2pcm_supported(int port_id)
+{
+    (void)port_id;
+    return false;
 }
 
 #ifdef __cplusplus

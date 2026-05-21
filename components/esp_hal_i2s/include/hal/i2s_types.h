@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,6 +69,14 @@ typedef soc_periph_i2s_clk_src_t    i2s_clock_src_t; /*!< I2S clock source */
 #else
 typedef int                         i2s_clock_src_t; /*!< Define a default type to avoid compiling warnings */
 #endif
+
+/**
+ * @brief I2S data path destination
+ */
+typedef enum {
+    I2S_DESTINATION_DMA = 0,    /*!< Route I2S sample data through DMA to/from memory (default). On chips without GDMA, this is the legacy I2S DMA path. */
+    I2S_DESTINATION_BT = 1,     /*!< Route I2S data to Bluetooth (I2S0 only; see `SOC_I2S_SUPPORTS_BT_DEST`) */
+} i2s_destination_t;
 
 #if SOC_I2S_SUPPORTS_PCM
 /**

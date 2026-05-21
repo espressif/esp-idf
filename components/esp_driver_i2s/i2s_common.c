@@ -24,6 +24,7 @@
 #include "hal/i2s_periph.h"
 #include "soc/soc_caps.h"
 #include "hal/i2s_hal.h"
+#include "hal/i2s_types.h"
 #include "hal/hal_utils.h"
 #include "hal/dma_types.h"
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
@@ -120,13 +121,17 @@ static void i2s_tx_channel_start(i2s_chan_handle_t handle)
 {
     i2s_hal_tx_reset(&(handle->controller->hal));
 #if SOC_GDMA_SUPPORTED
-    gdma_reset((handle->dma.dma_chan));
+    if (handle->dma.dma_chan) {
+        gdma_reset((handle->dma.dma_chan));
+    }
 #else
     i2s_hal_tx_reset_dma(&(handle->controller->hal));
 #endif
     i2s_hal_tx_reset_fifo(&(handle->controller->hal));
 #if SOC_GDMA_SUPPORTED
-    gdma_start((handle->dma.dma_chan), (uint32_t) handle->dma.desc[0]);
+    if (handle->dma.dma_chan) {
+        gdma_start((handle->dma.dma_chan), (uint32_t) handle->dma.desc[0]);
+    }
 #else
     esp_intr_enable(handle->dma.dma_chan);
     i2s_hal_tx_enable_intr(&(handle->controller->hal));
@@ -142,13 +147,17 @@ static void i2s_rx_channel_start(i2s_chan_handle_t handle)
 {
     i2s_hal_rx_reset(&(handle->controller->hal));
 #if SOC_GDMA_SUPPORTED
-    gdma_reset(handle->dma.dma_chan);
+    if (handle->dma.dma_chan) {
+        gdma_reset(handle->dma.dma_chan);
+    }
 #else
     i2s_hal_rx_reset_dma(&(handle->controller->hal));
 #endif
     i2s_hal_rx_reset_fifo(&(handle->controller->hal));
 #if SOC_GDMA_SUPPORTED
-    gdma_start(handle->dma.dma_chan, (uint32_t) handle->dma.desc[0]);
+    if (handle->dma.dma_chan) {
+        gdma_start(handle->dma.dma_chan, (uint32_t) handle->dma.desc[0]);
+    }
 #else
     esp_intr_enable(handle->dma.dma_chan);
     i2s_hal_rx_enable_intr(&(handle->controller->hal));
@@ -166,7 +175,9 @@ static void i2s_tx_channel_stop(i2s_chan_handle_t handle)
         i2s_hal_tx_stop(&(handle->controller->hal));
     }
 #if SOC_GDMA_SUPPORTED
-    gdma_stop(handle->dma.dma_chan);
+    if (handle->dma.dma_chan) {
+        gdma_stop(handle->dma.dma_chan);
+    }
 #else
     i2s_hal_tx_stop_link(&(handle->controller->hal));
     i2s_hal_tx_disable_intr(&(handle->controller->hal));
@@ -181,7 +192,9 @@ static void i2s_rx_channel_stop(i2s_chan_handle_t handle)
         i2s_hal_rx_stop(&(handle->controller->hal));
     }
 #if SOC_GDMA_SUPPORTED
-    gdma_stop(handle->dma.dma_chan);
+    if (handle->dma.dma_chan) {
+        gdma_stop(handle->dma.dma_chan);
+    }
 #else
     i2s_hal_rx_stop_link(&(handle->controller->hal));
     i2s_hal_rx_disable_intr(&(handle->controller->hal));
@@ -305,7 +318,7 @@ static inline bool i2s_take_available_channel(i2s_controller_t *i2s_obj, uint8_t
     return is_available;
 }
 
-static esp_err_t i2s_register_channel(i2s_controller_t *i2s_obj, i2s_dir_t dir, uint32_t desc_num)
+static esp_err_t i2s_register_channel(i2s_controller_t *i2s_obj, i2s_dir_t dir, uint32_t desc_num, bool use_dma)
 {
     I2S_NULL_POINTER_CHECK(TAG, i2s_obj);
 
@@ -322,12 +335,17 @@ static esp_err_t i2s_register_channel(i2s_controller_t *i2s_obj, i2s_dir_t dir, 
 #if CONFIG_PM_ENABLE
     new_chan->pm_lock = NULL; // Init in i2s_set_clock according to clock source
 #endif
-    new_chan->msg_queue = xQueueCreateWithCaps(desc_num - 1, sizeof(uint8_t *), I2S_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(new_chan->msg_queue, ESP_ERR_NO_MEM, err, TAG, "No memory for message queue");
+    /* The message queue is only used to hand DMA buffer descriptors between the DMA ISR and
+     * read/write/preload tasks. The binary semaphore is only used to block read/write while the
+     * channel is disabled. Both are omitted when the data path does not use memory DMA, to save heap. */
+    if (use_dma) {
+        new_chan->msg_queue = xQueueCreateWithCaps(desc_num - 1, sizeof(uint8_t *), I2S_MEM_ALLOC_CAPS);
+        ESP_GOTO_ON_FALSE(new_chan->msg_queue, ESP_ERR_NO_MEM, err, TAG, "No memory for message queue");
+        new_chan->binary = xSemaphoreCreateBinaryWithCaps(I2S_MEM_ALLOC_CAPS);
+        ESP_GOTO_ON_FALSE(new_chan->binary, ESP_ERR_NO_MEM, err, TAG, "No memory for binary semaphore");
+    }
     new_chan->mutex = xSemaphoreCreateMutexWithCaps(I2S_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(new_chan->mutex, ESP_ERR_NO_MEM, err, TAG, "No memory for mutex semaphore");
-    new_chan->binary = xSemaphoreCreateBinaryWithCaps(I2S_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(new_chan->binary, ESP_ERR_NO_MEM, err, TAG, "No memory for binary semaphore");
 
     new_chan->callbacks.on_recv = NULL;
     new_chan->callbacks.on_recv_q_ovf = NULL;
@@ -410,6 +428,9 @@ esp_err_t i2s_channel_register_event_callback(i2s_chan_handle_t handle, const i2
 {
     I2S_NULL_POINTER_CHECK(TAG, handle);
     I2S_NULL_POINTER_CHECK(TAG, callbacks);
+    /* on_recv/on_sent are dispatched from the DMA ISR. If this channel does not use the DMA memory path, no such callback fires. */
+    ESP_RETURN_ON_FALSE(I2S_CHANNEL_USES_DMA(handle), ESP_ERR_NOT_SUPPORTED, TAG,
+                        "event callbacks require the DMA memory data path on this channel");
     esp_err_t ret = ESP_OK;
 #if CONFIG_I2S_ISR_IRAM_SAFE
     if (callbacks->on_recv) {
@@ -1021,9 +1042,24 @@ esp_err_t i2s_new_channel(const i2s_chan_config_t *chan_cfg, i2s_chan_handle_t *
     ESP_RETURN_ON_FALSE(!chan_cfg->allow_pd, ESP_ERR_NOT_SUPPORTED, TAG, "register back up is not supported");
 #endif
 
+    int id = chan_cfg->id;
+    if (tx_handle) {
+        ESP_RETURN_ON_FALSE(chan_cfg->tx_destination == I2S_DESTINATION_DMA || chan_cfg->tx_destination == I2S_DESTINATION_BT,
+                            ESP_ERR_INVALID_ARG, TAG, "invalid tx destination");
+    }
+    if (rx_handle) {
+        ESP_RETURN_ON_FALSE(chan_cfg->rx_destination == I2S_DESTINATION_DMA || chan_cfg->rx_destination == I2S_DESTINATION_BT,
+                            ESP_ERR_INVALID_ARG, TAG, "invalid rx destination");
+    }
+    if (id != I2S_NUM_AUTO) {
+        ESP_RETURN_ON_FALSE(!tx_handle || i2s_ll_is_destination_supported(id, chan_cfg->tx_destination),
+                            ESP_ERR_NOT_SUPPORTED, TAG, "tx destination is not supported on selected port");
+        ESP_RETURN_ON_FALSE(!rx_handle || i2s_ll_is_destination_supported(id, chan_cfg->rx_destination),
+                            ESP_ERR_NOT_SUPPORTED, TAG, "rx destination is not supported on selected port");
+    }
+
     esp_err_t ret = ESP_OK;
     i2s_controller_t *i2s_obj = NULL;
-    int id = chan_cfg->id;
     bool channel_found = false;
     uint8_t chan_search_mask = 0;
     chan_search_mask |= tx_handle ? I2S_DIR_TX : 0;
@@ -1032,13 +1068,21 @@ esp_err_t i2s_new_channel(const i2s_chan_config_t *chan_cfg, i2s_chan_handle_t *
     /* Channel will be registered to one i2s port automatically if id is I2S_NUM_AUTO
      * Otherwise, the channel will be registered to the specific port. */
     if (id == I2S_NUM_AUTO) {
+        bool has_supported_port = false;
         for (int i = 0; i < I2S_LL_GET(INST_NUM) && !channel_found; i++) {
+            bool tx_dest_supported = !tx_handle || i2s_ll_is_destination_supported(i, chan_cfg->tx_destination);
+            bool rx_dest_supported = !rx_handle || i2s_ll_is_destination_supported(i, chan_cfg->rx_destination);
+            if (!tx_dest_supported || !rx_dest_supported) {
+                continue;
+            }
+            has_supported_port = true;
             i2s_obj = i2s_acquire_controller_obj(i);
             if (!i2s_obj) {
                 continue;
             }
             channel_found = i2s_take_available_channel(i2s_obj, chan_search_mask);
         }
+        ESP_RETURN_ON_FALSE(has_supported_port, ESP_ERR_NOT_SUPPORTED, TAG, "requested destination is not supported");
         ESP_RETURN_ON_FALSE(i2s_obj, ESP_ERR_NOT_FOUND, TAG, "get i2s object failed");
     } else {
         i2s_obj = i2s_acquire_controller_obj(id);
@@ -1048,7 +1092,8 @@ esp_err_t i2s_new_channel(const i2s_chan_config_t *chan_cfg, i2s_chan_handle_t *
     ESP_GOTO_ON_FALSE(channel_found, ESP_ERR_NOT_FOUND, err, TAG, "no available channel found");
     /* Register and specify the tx handle */
     if (tx_handle) {
-        ESP_GOTO_ON_ERROR(i2s_register_channel(i2s_obj, I2S_DIR_TX, chan_cfg->dma_desc_num),
+        const bool tx_use_dma = chan_cfg->tx_destination == I2S_DESTINATION_DMA;
+        ESP_GOTO_ON_ERROR(i2s_register_channel(i2s_obj, I2S_DIR_TX, chan_cfg->dma_desc_num, tx_use_dma),
                           err, TAG, "register I2S tx channel failed");
         i2s_obj->tx_chan->role = chan_cfg->role;
         i2s_obj->tx_chan->is_port_auto = id == I2S_NUM_AUTO;
@@ -1059,12 +1104,14 @@ esp_err_t i2s_new_channel(const i2s_chan_config_t *chan_cfg, i2s_chan_handle_t *
         i2s_obj->tx_chan->dma.frame_num = chan_cfg->dma_frame_num;
         i2s_obj->tx_chan->start = i2s_tx_channel_start;
         i2s_obj->tx_chan->stop = i2s_tx_channel_stop;
+        i2s_obj->tx_chan->destination = chan_cfg->tx_destination;
         *tx_handle = i2s_obj->tx_chan;
         ESP_LOGD(TAG, "tx channel is registered on I2S%d successfully", i2s_obj->id);
     }
     /* Register and specify the rx handle */
     if (rx_handle) {
-        ESP_GOTO_ON_ERROR(i2s_register_channel(i2s_obj, I2S_DIR_RX, chan_cfg->dma_desc_num),
+        const bool rx_use_dma = chan_cfg->rx_destination == I2S_DESTINATION_DMA;
+        ESP_GOTO_ON_ERROR(i2s_register_channel(i2s_obj, I2S_DIR_RX, chan_cfg->dma_desc_num, rx_use_dma),
                           err, TAG, "register I2S rx channel failed");
         i2s_obj->rx_chan->role = chan_cfg->role;
         i2s_obj->rx_chan->is_port_auto = id == I2S_NUM_AUTO;
@@ -1073,6 +1120,7 @@ esp_err_t i2s_new_channel(const i2s_chan_config_t *chan_cfg, i2s_chan_handle_t *
         i2s_obj->rx_chan->dma.frame_num = chan_cfg->dma_frame_num;
         i2s_obj->rx_chan->start = i2s_rx_channel_start;
         i2s_obj->rx_chan->stop = i2s_rx_channel_stop;
+        i2s_obj->rx_chan->destination = chan_cfg->rx_destination;
         *rx_handle = i2s_obj->rx_chan;
         ESP_LOGD(TAG, "rx channel is registered on I2S%d successfully", i2s_obj->id);
     }
@@ -1264,14 +1312,16 @@ esp_err_t i2s_channel_enable(i2s_chan_handle_t handle)
 #endif
     handle->start(handle);
     handle->state = I2S_CHAN_STATE_RUNNING;
-    if (handle->dir == I2S_DIR_RX) {
+    if (handle->dir == I2S_DIR_RX && handle->msg_queue) {
         /* RX queue is reset when the channel is enabled
            In case legacy data received during disable process */
         xQueueReset(handle->msg_queue);
     }
     xSemaphoreGive(handle->mutex);
     /* Give the binary semaphore to enable reading / writing task */
-    xSemaphoreGive(handle->binary);
+    if (handle->binary) {
+        xSemaphoreGive(handle->binary);
+    }
 
     ESP_LOGD(TAG, "i2s %s channel enabled", handle->dir == I2S_DIR_TX ? "tx" : "rx");
     return ret;
@@ -1293,12 +1343,14 @@ esp_err_t i2s_channel_disable(i2s_chan_handle_t handle)
     /* Waiting for reading/wrinting operation quit
      * It should be acquired before assigning the pointer to NULL,
      * otherwise may cause NULL pointer panic while reading/writing threads haven't release the lock */
-    xSemaphoreTake(handle->binary, portMAX_DELAY);
+    if (handle->binary) {
+        xSemaphoreTake(handle->binary, portMAX_DELAY);
+    }
     /* Reset the descriptor pointer */
     handle->dma.curr_ptr = NULL;
     handle->dma.rw_pos = 0;
     handle->stop(handle);
-    if (handle->dir == I2S_DIR_TX) {
+    if (handle->dir == I2S_DIR_TX && handle->msg_queue) {
         /* TX queue is reset when the channel is disabled
            In case the queue is wrongly reset after preload the data */
         xQueueReset(handle->msg_queue);
@@ -1319,6 +1371,8 @@ esp_err_t i2s_channel_preload_data(i2s_chan_handle_t tx_handle, const void *src,
 {
     I2S_NULL_POINTER_CHECK(TAG, tx_handle);
     ESP_RETURN_ON_FALSE(tx_handle->dir == I2S_DIR_TX, ESP_ERR_INVALID_ARG, TAG, "this channel is not tx channel");
+    ESP_RETURN_ON_FALSE(I2S_CHANNEL_USES_DMA(tx_handle), ESP_ERR_NOT_SUPPORTED, TAG,
+                        "preload requires the DMA memory data path on this channel");
     ESP_RETURN_ON_FALSE(tx_handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, TAG, "data can only be preloaded when the channel is READY");
 
     uint8_t *data_ptr = (uint8_t *)src;
@@ -1376,6 +1430,8 @@ esp_err_t i2s_channel_write(i2s_chan_handle_t handle, const void *src, size_t si
 {
     I2S_NULL_POINTER_CHECK(TAG, handle);
     ESP_RETURN_ON_FALSE(handle->dir == I2S_DIR_TX, ESP_ERR_INVALID_ARG, TAG, "this channel is not tx channel");
+    ESP_RETURN_ON_FALSE(I2S_CHANNEL_USES_DMA(handle), ESP_ERR_NOT_SUPPORTED, TAG,
+                        "i2s_channel_write is unavailable when the DMA memory path is not selected");
 
     esp_err_t ret = ESP_OK;
     char *data_ptr;
@@ -1427,6 +1483,8 @@ esp_err_t i2s_channel_read(i2s_chan_handle_t handle, void *dest, size_t size, si
 {
     I2S_NULL_POINTER_CHECK(TAG, handle);
     ESP_RETURN_ON_FALSE(handle->dir == I2S_DIR_RX, ESP_ERR_INVALID_ARG, TAG, "this channel is not rx channel");
+    ESP_RETURN_ON_FALSE(I2S_CHANNEL_USES_DMA(handle), ESP_ERR_NOT_SUPPORTED, TAG,
+                        "i2s_channel_read is unavailable when the DMA memory path is not selected");
 
     esp_err_t ret = ESP_OK;
     uint8_t *data_ptr;
@@ -1549,14 +1607,19 @@ result:
     if (tune_info) {
         tune_info->curr_mclk_hz = handle->curr_mclk_hz;
         tune_info->delta_mclk_hz = (int32_t)handle->curr_mclk_hz - (int32_t)handle->origin_mclk_hz;
-        uint32_t tot_size = handle->dma.buf_size * handle->dma.desc_num;
-        uint32_t used_size = 0;
-        if (handle->dir == I2S_DIR_TX) {
-            used_size = uxQueueSpacesAvailable(handle->msg_queue) * handle->dma.buf_size + handle->dma.rw_pos;
+        /* water_mark reflects DMA buffer occupancy. When this channel does not use the DMA memory path (e.g. Bluetooth), skip. */
+        if (I2S_CHANNEL_USES_DMA(handle)) {
+            uint32_t tot_size = handle->dma.buf_size * handle->dma.desc_num;
+            uint32_t used_size = 0;
+            if (handle->dir == I2S_DIR_TX) {
+                used_size = uxQueueSpacesAvailable(handle->msg_queue) * handle->dma.buf_size + handle->dma.rw_pos;
+            } else {
+                used_size = uxQueueMessagesWaiting(handle->msg_queue) * handle->dma.buf_size + handle->dma.buf_size - handle->dma.rw_pos;
+            }
+            tune_info->water_mark = used_size * 100 / tot_size;
         } else {
-            used_size = uxQueueMessagesWaiting(handle->msg_queue) * handle->dma.buf_size + handle->dma.buf_size - handle->dma.rw_pos;
+            tune_info->water_mark = 0;
         }
-        tune_info->water_mark = used_size * 100 / tot_size;
     }
     xSemaphoreGive(handle->mutex);
     return ret;

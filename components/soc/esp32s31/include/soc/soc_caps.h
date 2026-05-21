@@ -612,6 +612,7 @@
 #define SOC_I2S_SUPPORTS_TX_SYNC_CNT          (1)     // Support TX synchronization count (ideal_cnt)
 #define SOC_I2S_SUPPORTS_RX_RECOMB            (1)     // Support RX recomb for DMA data format reorganization
 #define SOC_I2S_SUPPORTS_TDM                  (1)
+#define SOC_I2S_SUPPORTS_BT_DEST              (1)     // Support routing I2S TX/RX data to Bluetooth (Classic sync link / voice path), not via DMA
 #define SOC_I2S_PDM_MAX_TX_LINES              (2)     // On I2S0
 #define SOC_I2S_PDM_MAX_RX_LINES              (4)     // On I2S0
 
