@@ -24,3 +24,4 @@
 #define ESP_ROM_WDT_INIT_PATCH              (1) // ROM version does not configure the clock
 #define ESP_ROM_RAM_APP_NEEDS_MMU_INIT      (1) // ROM doesn't init cache MMU when it's a RAM APP, needs MMU hal to init
 #define ESP_ROM_BOOTLOADER_OFFSET_FLASH     (0x2000) // Bootloader offset in flash determined by the ROM bootloader
+#define ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_NO_MAP (1) // ROM cache writeback related needs patch to avoid sync loss, no map parameter

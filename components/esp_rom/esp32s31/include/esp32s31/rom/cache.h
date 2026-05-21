@@ -163,6 +163,7 @@ typedef enum {
 
 #define CACHE_MAP_L1_ICACHE_MASK (CACHE_MAP_L1_ICACHE_0 | CACHE_MAP_L1_ICACHE_1)
 #define CACHE_MAP_MASK           (CACHE_MAP_L1_ICACHE_MASK | CACHE_MAP_L1_DCACHE)
+#define CACHE_MAP_DCACHE_MASK    (CACHE_MAP_L1_DCACHE)
 
 struct cache_internal_stub_table {
     uint32_t (*l1_icache_line_size)(void);

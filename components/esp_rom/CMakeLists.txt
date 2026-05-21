@@ -51,6 +51,14 @@ if(CONFIG_SECURE_ENABLE_TEE AND CONFIG_IDF_TARGET_ESP32C5 AND NOT ESP_TEE_BUILD)
     list(APPEND sources "patches/esp_rom_cache_esp32c5.c")
 endif()
 
+if(CONFIG_ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_MAP)
+    list(APPEND sources "patches/esp_rom_cache_writeback_esp32p4_esp32s31.c")
+endif()
+
+if(CONFIG_ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_NO_MAP)
+    list(APPEND sources "patches/esp_rom_cache_writeback_esp32c5_esp32c61_esp32h4.c")
+endif()
+
 idf_component_register(SRCS ${sources}
                        INCLUDE_DIRS ${include_dirs}
                        PRIV_REQUIRES ${private_required_comp}
