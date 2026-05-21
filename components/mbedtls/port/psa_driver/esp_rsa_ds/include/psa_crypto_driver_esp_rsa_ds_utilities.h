@@ -91,7 +91,9 @@ psa_status_t esp_rsa_ds_pad_oaep_unpad(unsigned char *input,
     unsigned char *output,
     size_t output_max_len,
     size_t *olen,
-    psa_algorithm_t hash_alg);
+    psa_algorithm_t hash_alg,
+    const uint8_t *label,
+    size_t label_length);
 #endif /* CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 */
 #ifdef __cplusplus
 }
