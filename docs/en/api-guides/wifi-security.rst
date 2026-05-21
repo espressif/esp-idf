@@ -183,11 +183,13 @@ To use this feature, enable configuration option :ref:`CONFIG_ESP_WIFI_STA_RANDO
 
 .. note::
 
-   The `CONFIG_ESP_WIFI_STA_RANDOM_MAC_AUTO_RESET_INTERVAL` will only generate and set new random mac address when station is not connected to any AP. If the station is connected to any AP, the connection will not be interrupted and same random mac will be used.
+   The `CONFIG_ESP_WIFI_STA_RANDOM_MAC_AUTO_RESET_INTERVAL` will only generate and set new random mac address when station is not connected to any AP. If the station is connected to any AP, the connection will not be interrupted and same random mac will be used. If the periodic auto-reset timer expires while the station is in the connected state, the timer will be armed/triggered at the next disconnect.
 
    For every new connection request, new random mac will be generated and auto reset time interval will be reset if `CONFIG_ESP_WIFI_STA_RANDOM_MAC_ENABLED` is enabled.
 
    PMK caching is not supported when MAC randomization is enabled, as the device's identity changes with each connection attempt.
+
+   MAC Address Randomization is not supported and will not work when Wi-Fi Mesh or ESP-NOW is enabled/used.
 
 
 {IDF_TARGET_NAME} supports MAC randomization while scanning when

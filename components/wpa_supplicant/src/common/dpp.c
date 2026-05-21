@@ -1120,6 +1120,7 @@ struct dpp_authentication * dpp_auth_init(void *msg_ctx,
 	auth = os_zalloc(sizeof(*auth));
 	if (!auth)
 		return NULL;
+	auth->gas_dialog_token = -1;
 	auth->msg_ctx = msg_ctx;
 	auth->initiator = 1;
 	auth->waiting_auth_resp = 1;
@@ -1377,9 +1378,7 @@ struct wpabuf * dpp_build_conf_req(struct dpp_authentication *auth,
 		return NULL;
 	}
 
-	do {
-		dialog_token = os_random() & 0xff;
-	} while (!dialog_token);
+	dialog_token = os_random() & 0xff;
 	auth->gas_dialog_token = dialog_token;
 
 	buf = gas_build_initial_req(dialog_token, 10 + 2 + wpabuf_len(conf_req));
@@ -1769,6 +1768,7 @@ dpp_auth_req_rx(void *msg_ctx, u8 dpp_allowed_roles, int qr_mutual,
 	auth = os_zalloc(sizeof(*auth));
 	if (!auth)
 		goto fail;
+	auth->gas_dialog_token = -1;
 	auth->msg_ctx = msg_ctx;
 	auth->peer_bi = peer_bi;
 	auth->own_bi = own_bi;

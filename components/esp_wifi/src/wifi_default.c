@@ -42,7 +42,7 @@ static bool roaming_ongoing = false;
  */
 static void wifi_start(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data)
 {
-    uint8_t mac[6];
+    uint8_t mac[WIFI_MAC_ADDR_LEN];
     esp_err_t ret;
 
     ESP_LOGD(TAG, "%s esp-netif:%p event-id%" PRId32 "", __func__, esp_netif, event_id);
@@ -53,7 +53,7 @@ static void wifi_start(void *esp_netif, esp_event_base_t base, int32_t event_id,
         ESP_LOGE(TAG, "esp_wifi_get_mac failed with %d", ret);
         return;
     }
-    ESP_LOGD(TAG, "WIFI mac address: %x %x %x %x %x %x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    ESP_LOGD(TAG, "WIFI mac address: " MACSTR, MAC2STR(mac));
 
     if (esp_wifi_is_if_ready_when_started(driver)) {
         if ((ret = esp_wifi_register_if_rxcb(driver,  esp_netif_receive, esp_netif)) != ESP_OK) {
@@ -121,7 +121,7 @@ static void wifi_default_action_sta_connected(void *arg, esp_event_base_t base, 
 
 #if CONFIG_ESP_WIFI_STA_RANDOM_MAC_ENABLED
         /* Sync netif MAC when STA random MAC was set internally by the Wi-Fi driver */
-        uint8_t mac[6];
+        uint8_t mac[WIFI_MAC_ADDR_LEN];
         esp_wifi_get_mac(WIFI_IF_STA, mac);
         esp_netif_set_mac(esp_netif, mac);
 #endif

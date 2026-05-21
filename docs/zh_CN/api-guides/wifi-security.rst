@@ -165,3 +165,40 @@ API 及用法
 ++++++++++++++++++++++++++++++++++++++
 
 配置选项 :ref:`CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_STA` 和 :cpp:type:`wifi_sta_config_t` 中的配置参数 :cpp:type:`owe_enabled` 可以为 station 模式启用 OWE 支持。除上述配置外，请将 :cpp:type:`wifi_scan_threshold_t` 中的 `authmode` 设置为 ``WIFI_AUTH_OPEN`` 以使用 OWE 过渡模式。
+
+MAC 地址随机化
+--------------------------
+
+MAC 地址用于设备连接 Wi-Fi 网络。由于 MAC 地址具有唯一且静态的特点，并且在传输时未加密，因此可能会被捕获和追踪。{IDF_TARGET_NAME} 支持 MAC 地址随机化功能，通过使用随机 MAC 地址增强隐私保护，避免设备在扫描或连接网络时被持续追踪。
+
+要使用此功能，请在 menuconfig 中启用配置选项 :ref:`CONFIG_ESP_WIFI_STA_RANDOM_MAC_ENABLED`。
+
+{IDF_TARGET_NAME} 还支持通过 menuconfig 选项 :ref:`CONFIG_ESP_WIFI_STA_RANDOM_MAC_AUTO_RESET_INTERVAL` 在一段时间后自动重置随机 MAC 地址。
+
+    如果间隔时间 = 0，则禁用自动重置功能（同一随机 MAC 地址会一直使用到下次重启）。
+    如果间隔时间 > 24，则使用默认的 12 小时间隔。
+
+.. note::
+
+   仅当 station 未连接到任何 AP 时，`CONFIG_ESP_WIFI_STA_RANDOM_MAC_AUTO_RESET_INTERVAL` 才会生成并设置新的随机 MAC 地址。如果 station 已连接到 AP，则不会中断连接，并会继续使用相同的随机 MAC 地址。如果定期自动重置定时器在 station 处于连接状态时超时，定时器将在下一次断开连接时被重新装载/触发。
+
+   如果启用了 `CONFIG_ESP_WIFI_STA_RANDOM_MAC_ENABLED`，每次发起新的连接请求时都会生成新的随机 MAC 地址，并重置自动重置时间间隔。
+
+   启用 MAC 地址随机化后，不支持 PMK 缓存，因为设备身份会随每次连接尝试而变化。
+
+   在使用或启用 Wi-Fi Mesh 或 ESP-NOW 时，不支持且无法使用 MAC 地址随机化功能。
+
+
+{IDF_TARGET_NAME} 在满足以下条件时支持扫描过程中的 MAC 地址随机化：
+
+  - 在 menuconfig 中启用配置选项 :ref:`CONFIG_ESP_WIFI_STA_RANDOM_MAC_ENABLED`
+  - scan_type 为 :cpp:enumerator:`WIFI_SCAN_TYPE_ACTIVE`
+  - station 未连接到任何 AP
+
+{IDF_TARGET_NAME} 在满足以下条件时支持连接过程中的 MAC 地址随机化：
+
+  - 在 menuconfig 中启用配置选项 :ref:`CONFIG_ESP_WIFI_STA_RANDOM_MAC_ENABLED`
+  - 使用 :cpp:func:`esp_wifi_set_config` 设置新的 Wi-Fi 配置
+
+
+要获取 MAC 地址，请使用 API :cpp:func:`esp_wifi_get_mac`。
