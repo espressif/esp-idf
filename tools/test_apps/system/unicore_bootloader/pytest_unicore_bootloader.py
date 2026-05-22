@@ -12,7 +12,6 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['multicore', 'multicore_psram'], indirect=True)
 @idf_parametrize('target', soc_filtered_targets('SOC_CPU_CORES_NUM > 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15620
 def test_multicore_app_and_unicore_bootloader(dut: Dut, app_downloader, config) -> None:  # type: ignore
     dut.expect('Multicore bootloader')
     dut.expect('Multicore app')
@@ -37,7 +36,6 @@ def test_multicore_app_and_unicore_bootloader(dut: Dut, app_downloader, config) 
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['unicore', 'unicore_psram'], indirect=True)
 @idf_parametrize('target', soc_filtered_targets('SOC_CPU_CORES_NUM > 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15620
 def test_unicore_app_and_multicore_bootloader(dut: Dut, app_downloader, config) -> None:  # type: ignore
     dut.expect('Unicore bootloader')
     dut.expect('Unicore app')
