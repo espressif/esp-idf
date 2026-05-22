@@ -14,6 +14,9 @@
 #include "soc/soc_caps.h"
 #include "esp_log.h"
 
+#include "mbedtls/ecp.h"
+#include "mbedtls/bignum.h"
+
 #include "esp_assert.h"
 #include "esp_crypto_lock.h"
 #include "esp_crypto_periph_clk.h"
@@ -312,6 +315,61 @@ static psa_status_t validate_ecdsa_sha_alg(psa_algorithm_t alg, const esp_ecdsa_
 }
 
 #if SOC_ECDSA_SUPPORTED
+
+static mbedtls_ecp_group_id ecdsa_curve_to_mbedtls_group(esp_ecdsa_curve_t curve)
+{
+    switch (curve) {
+        case ESP_ECDSA_CURVE_SECP256R1: return MBEDTLS_ECP_DP_SECP256R1;
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+        case ESP_ECDSA_CURVE_SECP384R1: return MBEDTLS_ECP_DP_SECP384R1;
+#endif
+        default:                        return MBEDTLS_ECP_DP_NONE;
+    }
+}
+
+static psa_status_t check_ecdsa_signature_range(const uint8_t *signature, size_t key_len,
+                                                esp_ecdsa_curve_t curve)
+{
+    mbedtls_ecp_group_id grp_id = ecdsa_curve_to_mbedtls_group(curve);
+    if (grp_id == MBEDTLS_ECP_DP_NONE) {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
+    mbedtls_ecp_group grp;
+    mbedtls_mpi r, s;
+    mbedtls_ecp_group_init(&grp);
+    mbedtls_mpi_init(&r);
+    mbedtls_mpi_init(&s);
+
+    psa_status_t status = PSA_ERROR_INVALID_SIGNATURE;
+
+    if (mbedtls_ecp_group_load(&grp, grp_id) != 0) {
+        status = PSA_ERROR_GENERIC_ERROR;
+        goto cleanup;
+    }
+    if (mbedtls_mpi_read_binary(&r, signature, key_len) != 0 ||
+        mbedtls_mpi_read_binary(&s, signature + key_len, key_len) != 0) {
+        status = PSA_ERROR_GENERIC_ERROR;
+        goto cleanup;
+    }
+
+    /* 1 <= scalar <= n-1: equivalently scalar > 0 and scalar < n. */
+    if (mbedtls_mpi_cmp_int(&r, 0) <= 0 ||
+        mbedtls_mpi_cmp_mpi(&r, &grp.N) >= 0 ||
+        mbedtls_mpi_cmp_int(&s, 0) <= 0 ||
+        mbedtls_mpi_cmp_mpi(&s, &grp.N) >= 0) {
+        goto cleanup;
+    }
+
+    status = PSA_SUCCESS;
+
+cleanup:
+    mbedtls_mpi_free(&r);
+    mbedtls_mpi_free(&s);
+    mbedtls_ecp_group_free(&grp);
+    return status;
+}
+
 static void esp_ecdsa_acquire_hardware(void)
 {
     esp_crypto_ecdsa_lock_acquire();
@@ -407,6 +465,11 @@ psa_status_t esp_ecdsa_transparent_verify_hash_start(
 
     if (signature_length != 2 * key_len) {
         return PSA_ERROR_INVALID_SIGNATURE;
+    }
+
+    status = check_ecdsa_signature_range(signature, key_len, curve);
+    if (status != PSA_SUCCESS) {
+        return status;
     }
 
     const uint8_t *public_key_buffer = NULL;
