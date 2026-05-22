@@ -179,7 +179,7 @@ void audio_sink_srv_codec_info_update(esp_a2d_mcc_t *mcc)
 {
     ESP_LOGI(AUDIO_SNK_SRV_DAC_TAG, "A2DP audio stream configuration, codec type: %d", mcc->type);
     audio_sink_srv_stop();
-    /* for now only SBC stream is supported */
+
     if (mcc->type == ESP_A2D_MCT_SBC) {
         int sample_rate = 16000;
         int ch_count = 2;
@@ -217,6 +217,64 @@ void audio_sink_srv_codec_info_update(esp_a2d_mcc_t *mcc)
                  mcc->cie.sbc_info.alloc_mthd,
                  mcc->cie.sbc_info.min_bitpool,
                  mcc->cie.sbc_info.max_bitpool);
+        ESP_LOGI(AUDIO_SNK_SRV_DAC_TAG, "Audio player configured, sample rate: %d", sample_rate);
+    } else if (mcc->type == ESP_A2D_MCT_M24) {
+        int sample_rate = 16000;
+        int ch_count = 2;
+        if (mcc->cie.m24_info.samp_freq2 & ESP_A2D_M24_CIE_SF2_96K) {
+            sample_rate = 96000;
+        } else if (mcc->cie.m24_info.samp_freq2 & ESP_A2D_M24_CIE_SF2_88K) {
+            sample_rate = 88200;
+        } else if (mcc->cie.m24_info.samp_freq2 & ESP_A2D_M24_CIE_SF2_64K) {
+            sample_rate = 64000;
+        } else if (mcc->cie.m24_info.samp_freq2 & ESP_A2D_M24_CIE_SF2_48K) {
+            sample_rate = 48000;
+        } else if (mcc->cie.m24_info.samp_freq1 & ESP_A2D_M24_CIE_SF1_44K) {
+            sample_rate = 44100;
+        } else if (mcc->cie.m24_info.samp_freq1 & ESP_A2D_M24_CIE_SF1_32K) {
+            sample_rate = 32000;
+        } else if (mcc->cie.m24_info.samp_freq1 & ESP_A2D_M24_CIE_SF1_24K) {
+            sample_rate = 24000;
+        } else if (mcc->cie.m24_info.samp_freq1 & ESP_A2D_M24_CIE_SF1_22K) {
+            sample_rate = 22050;
+        } else if (mcc->cie.m24_info.samp_freq1 & ESP_A2D_M24_CIE_SF1_16K) {
+            sample_rate = 16000;
+        } else if (mcc->cie.m24_info.samp_freq1 & ESP_A2D_M24_CIE_SF1_12K) {
+            sample_rate = 12000;
+        } else if (mcc->cie.m24_info.samp_freq1 & ESP_A2D_M24_CIE_SF1_11K) {
+            sample_rate = 11025;
+        } else if (mcc->cie.m24_info.samp_freq1 & ESP_A2D_M24_CIE_SF1_8K) {
+            sample_rate = 8000;
+        }
+
+        if (mcc->cie.m24_info.ch & ESP_A2D_M24_CIE_CH_1) {
+            ch_count = 1;
+        }
+        if (s_dac_cb.tx_chan) {
+            dac_continuous_del_channels(s_dac_cb.tx_chan);
+            s_dac_cb.tx_chan = NULL;
+        }
+        dac_continuous_config_t cont_cfg = {
+            .chan_mask = DAC_CHANNEL_MASK_ALL,
+            .desc_num = 8,
+            .buf_size = 2048,
+            .freq_hz = sample_rate,
+            .offset = 127,
+            .clk_src = DAC_DIGI_CLK_SRC_DEFAULT,   // Using APLL as clock source to get a wider frequency range
+            .chan_mode = (ch_count == 1) ? DAC_CHANNEL_MODE_SIMUL : DAC_CHANNEL_MODE_ALTER,
+        };
+        /* Allocate continuous channels */
+        ESP_ERROR_CHECK(dac_continuous_new_channels(&cont_cfg, &s_dac_cb.tx_chan));
+        ESP_LOGI(AUDIO_SNK_SRV_DAC_TAG, "Configure audio player: 0x%x-0x%x-0x%x-0x%x-0x%x-0x%x-0x%x-0x%x-0x%x",
+                 mcc->cie.m24_info.drc,
+                 mcc->cie.m24_info.obj_type,
+                 mcc->cie.m24_info.samp_freq1,
+                 mcc->cie.m24_info.samp_freq2,
+                 mcc->cie.m24_info.ch,
+                 mcc->cie.m24_info.vbr,
+                 mcc->cie.m24_info.br1,
+                 mcc->cie.m24_info.br2,
+                 mcc->cie.m24_info.br3);
         ESP_LOGI(AUDIO_SNK_SRV_DAC_TAG, "Audio player configured, sample rate: %d", sample_rate);
     }
 }

@@ -2488,26 +2488,21 @@ BOOLEAN bta_av_co_get_peer_sink_caps(tBTA_AV_HNDL hndl, UINT8 *p_codec_caps, UIN
 
 /*******************************************************************************
  **
- ** Function         bta_av_co_get_cur_codec_type
+ ** Function         bta_av_co_get_cur_codec_info
  **
- ** Description      Get current codec type
- **
- ** Returns          codec type
+ ** Description      Get current codec info
  **
  *******************************************************************************/
-UINT8 bta_av_co_get_cur_codec_type(void)
+void bta_av_co_get_cur_codec_info(tBTC_AV_CODEC_INFO *cur_codec_info)
 {
-    UINT8 codec_id = BTC_AV_CODEC_NONE;
-
     /* Protect access to bta_av_co_cb.codec_cfg */
     osi_mutex_global_lock();
 
-    codec_id = bta_av_co_cb.codec_cfg.id;
+    cur_codec_info->id = bta_av_co_cb.codec_cfg.id;
+    memcpy(cur_codec_info->info, bta_av_co_cb.codec_cfg.info, AVDT_CODEC_SIZE);
 
     /* Protect access to bta_av_co_cb.codec_cfg */
     osi_mutex_global_unlock();
-
-    return codec_id;
 }
 
 /* the call out functions for audio stream */

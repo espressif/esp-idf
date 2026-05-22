@@ -13,6 +13,10 @@ Application Examples
 
 - :example:`bluetooth/bluedroid/classic_bt/a2dp_source` demonstrates how to use A2DP APIs to transmit audio streams.
 
+- :example:`bluetooth/bluedroid/classic_bt/a2dp_sink_stream_aac` demonstrates how to use the AAC codec in an A2DP sink.
+
+- :example:`bluetooth/bluedroid/classic_bt/a2dp_source_aac` demonstrates how to use the AAC codec in an A2DP source.
+
 - :example:`bluetooth/bluedroid/coex/a2dp_gatts_coex` demonstrates how to use the ESP-IDF A2DP-GATTS_COEX demo to create a GATT service and A2DP profile.
 
 API Reference

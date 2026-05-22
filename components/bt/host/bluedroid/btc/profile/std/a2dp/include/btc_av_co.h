@@ -293,14 +293,12 @@ BOOLEAN bta_av_co_get_peer_sink_caps(tBTA_AV_HNDL hndl, UINT8 *p_codec_caps, UIN
 
 /*******************************************************************************
  **
- ** Function         bta_av_co_get_cur_codec_type
+ ** Function         bta_av_co_get_cur_codec_info
  **
- ** Description      Get current codec type
- **
- ** Returns          codec type
+ ** Description      Get current codec info
  **
  *******************************************************************************/
-UINT8 bta_av_co_get_cur_codec_type(void);
+void bta_av_co_get_cur_codec_info(tBTC_AV_CODEC_INFO *cur_codec_info);
 
 #endif  ///BTA_AV_INCLUDED == TRUE
 
