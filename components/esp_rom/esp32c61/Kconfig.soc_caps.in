@@ -90,3 +90,7 @@ config ESP_ROM_HAS_SW_FLOAT
 config ESP_ROM_USB_OTG_NUM
     int
     default -1
+
+config ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_NO_MAP
+    bool
+    default y

@@ -78,3 +78,7 @@ config ESP_ROM_HAS_VERSION
 config ESP_ROM_CLIC_INT_TYPE_PATCH
     bool
     default y
+
+config ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_MAP
+    bool
+    default y
