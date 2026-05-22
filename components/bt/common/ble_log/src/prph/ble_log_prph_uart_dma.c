@@ -18,6 +18,7 @@
 #include "esp_timer.h"
 #include "driver/uart.h"
 #include "driver/uart_vfs.h"
+#include "freertos/task.h"
 #endif /* BLE_LOG_PRPH_UART_DMA_REDIR */
 
 /* MACRO */
@@ -146,8 +147,9 @@ bool ble_log_prph_init(size_t trans_cnt)
 
     /* Initialize UART driver for redirection */
     if (!uart_is_driver_installed(UART_NUM_0)) {
-        uart_driver_install(UART_NUM_0, BLE_LOG_UART_RX_BUF_SIZE, 0, 0, NULL, 0);
-        uart_driver_inited = true;
+        if (uart_driver_install(UART_NUM_0, BLE_LOG_UART_RX_BUF_SIZE, 0, 0, NULL, 0) == ESP_OK) {
+            uart_driver_inited = true;
+        }
     }
     uart_vfs_dev_use_driver(UART_NUM_0);
 
@@ -285,6 +287,9 @@ BLE_LOG_IRAM_ATTR void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
 BLE_LOG_IRAM_ATTR BLE_LOG_STATIC
 void ble_log_redir_uart_tx_chars(const char *src, size_t len)
 {
+    if (BLE_LOG_IN_ISR() || xTaskGetSchedulerState() == taskSCHEDULER_SUSPENDED) {
+        return;
+    }
     xSemaphoreTake(redir_lbm->mutex, portMAX_DELAY);
     ble_log_lbm_stream_write(redir_lbm, BLE_LOG_SRC_REDIR,
                               (const uint8_t *)src, len);

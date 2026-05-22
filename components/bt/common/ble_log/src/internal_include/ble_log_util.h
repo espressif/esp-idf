@@ -37,7 +37,11 @@
 #define BLE_LOG_INLINE                          inline
 
 /* Section */
+#if defined(CONFIG_IDF_TARGET_ESP32C2)
+#define BLE_LOG_IRAM_ATTR                       _SECTION_ATTR_IMPL(".ble_log_iram1", __COUNTER__)
+#else
 #define BLE_LOG_IRAM_ATTR                       IRAM_ATTR
+#endif
 
 /* Memory operation */
 #define BLE_LOG_MEM_CAP                         (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA)

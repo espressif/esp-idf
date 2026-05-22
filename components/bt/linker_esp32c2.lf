@@ -14,6 +14,10 @@ entries:
 entries:
     .sleep_iram1+
 
+[sections:bt_ble_log_iram_text]
+entries:
+    .ble_log_iram1+
+
 [sections:bt_bss]
 entries:
     .bss+
@@ -33,6 +37,7 @@ entries:
 entries:
     if BT_CTRL_RUN_IN_FLASH_ONLY = y:
         bt_iram_text -> flash_text
+        bt_ble_log_iram_text -> iram0_bt_text
         bt_bss -> dram0_bt_bss
         bt_common -> dram0_bt_bss
         bt_data -> dram0_bt_data
@@ -49,6 +54,7 @@ entries:
             bt_sleep_iram_text -> flash_text
     else:
         bt_iram_text -> iram0_bt_text
+        bt_ble_log_iram_text -> iram0_bt_text
         bt_bss -> dram0_bt_bss
         bt_common -> dram0_bt_bss
         bt_data -> dram0_bt_data

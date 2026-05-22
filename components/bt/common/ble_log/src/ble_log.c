@@ -72,20 +72,23 @@ void ble_log_deinit(void)
     ble_log_enable(false);
     ble_log_inited = false;
 
-    /* CRITICAL:
-     * BLE Log peripheral interface must be deinitialized at first,
-     * because there's a risky scenario that may cause severe peripheral
-     * driver fault - if a log buffer is sent to peripheral driver, and
-     * ble_log_deinit is called; in this case, if LBM is deinitialized
-     * before peripheral interface, the log buffer may be freed before
-     * peripheral driver completing tx, and the result would be faulty */
-    ble_log_prph_deinit();
-
-    /* Deinitialize BLE Log LBM */
-    ble_log_lbm_deinit();
-
-    /* Deinitialize BLE Log Runtime */
+    /* CRITICAL — Deinit ordering rationale:
+     *
+     * 1. Runtime task must be stopped FIRST to prevent it from sending
+     *    transports to an already-destroyed peripheral driver. The queue
+     *    is drained and pending transports are discarded.
+     *
+     * 2. Peripheral interface is deinitialized SECOND. It waits for any
+     *    in-flight DMA operations (started before the task was killed) to
+     *    complete, then destroys the driver. This is safe because no new
+     *    DMA operations can be started (the task is already dead).
+     *
+     * 3. LBM is deinitialized LAST. At this point all DMA has completed
+     *    (ensured by step 2) and all queued transports have been drained
+     *    (ensured by step 1), so freeing the buffers is safe. */
     ble_log_rt_deinit();
+    ble_log_prph_deinit();
+    ble_log_lbm_deinit();
 
 #if CONFIG_BLE_LOG_TS_ENABLED
     /* Deinitialize BLE Log TS */

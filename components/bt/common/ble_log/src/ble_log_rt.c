@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,7 +31,7 @@ BLE_LOG_STATIC void ble_log_rt_ts_trigger(void *arg);
 #endif /* CONFIG_BLE_LOG_TS_ENABLED */
 
 /* PRIVATE FUNCTION */
-BLE_LOG_IRAM_ATTR BLE_LOG_STATIC void ble_log_rt_task(void *pvParameters)
+BLE_LOG_STATIC void ble_log_rt_task(void *pvParameters)
 {
     (void)pvParameters;
     ble_log_prph_trans_t *trans = NULL;
@@ -162,8 +162,15 @@ void ble_log_rt_deinit(void)
         rt_task_handle = NULL;
     }
 
-    /* Release task queue */
+    /* Drain remaining queue items to clean up transport state */
     if (rt_queue_handle) {
+        ble_log_prph_trans_t *trans = NULL;
+        while (xQueueReceive(rt_queue_handle, &trans, 0) == pdTRUE) {
+            ble_log_lbm_t *lbm = (ble_log_lbm_t *)trans->owner;
+            trans->pos = 0;
+            __atomic_fetch_sub(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
+            __atomic_store_n(&trans->prph_owned, false, __ATOMIC_RELEASE);
+        }
         vQueueDelete(rt_queue_handle);
         rt_queue_handle = NULL;
     }
@@ -185,8 +192,15 @@ BLE_LOG_IRAM_ATTR void ble_log_rt_queue_trans(ble_log_prph_trans_t **trans)
 
     if (BLE_LOG_IN_ISR()) {
         BaseType_t woken = pdFALSE;
+        /* Queue depth == total transport buffer count; queue-full is impossible
+         * for a valid transport, so the return value is not checked. */
         xQueueSendFromISR(rt_queue_handle, trans, &woken);
         portYIELD_FROM_ISR(woken);
+    } else if (xTaskGetSchedulerState() == taskSCHEDULER_SUSPENDED) {
+        /* Non-blocking send to avoid configASSERT when scheduler is suspended
+         * (e.g., during light sleep transitions). Queue-full is impossible;
+         * see comment above. */
+        xQueueSend(rt_queue_handle, trans, 0);
     } else {
         xQueueSend(rt_queue_handle, trans, portMAX_DELAY);
     }
