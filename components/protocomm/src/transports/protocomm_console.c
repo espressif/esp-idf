@@ -94,7 +94,7 @@ static void protocomm_console_task(void *arg)
                 }
             }
             if (event.type == UART_DATA) {
-                while (uart_read_bytes(uart_num, (uint8_t *) &linebuf[i], 1, 0) && (i < LINE_BUF_SIZE)) {
+                while ((i < LINE_BUF_SIZE - 1) && uart_read_bytes(uart_num, (uint8_t *) &linebuf[i], 1, 0)) {
                     if (linebuf[i] == '\r') {
                         uart_write_bytes(uart_num, "\r\n", 2);
                     } else {
@@ -106,7 +106,7 @@ static void protocomm_console_task(void *arg)
             if ((i > 0) && (linebuf[i-1] == '\r')) {
                 break;
             }
-        } while (i < LINE_BUF_SIZE);
+        } while (i < LINE_BUF_SIZE - 1);
         if (stopped()) {
             break;
         }
