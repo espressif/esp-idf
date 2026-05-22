@@ -8,6 +8,7 @@
 #include "esp_wifi.h"
 #include "esp_netif.h"
 #include "esp_log.h"
+#include "esp_mac.h"
 #include "esp_private/wifi.h"
 #include "esp_wifi_netif.h"
 #include <string.h>
@@ -119,8 +120,8 @@ static void wifi_default_action_sta_connected(void *arg, esp_event_base_t base, 
             }
         }
 
-#if CONFIG_ESP_WIFI_STA_RANDOM_MAC_ENABLED
-        /* Sync netif MAC when STA random MAC was set internally by the Wi-Fi driver */
+#if CONFIG_ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED
+        /* Sync netif MAC when STA privacy-enhanced MAC was set internally by the Wi-Fi driver */
         uint8_t mac[WIFI_MAC_ADDR_LEN];
         esp_wifi_get_mac(WIFI_IF_STA, mac);
         esp_netif_set_mac(esp_netif, mac);

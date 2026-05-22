@@ -172,35 +172,31 @@ SoftAP 模式：
 
 需通过 menuconfig 启用配置选项 :ref:`CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_SOFTAP`，并将 :cpp:type:`wifi_ap_config_t` 中的配置参数 `authmode` 设置为 ``WIFI_AUTH_OWE``。SoftAP 不支持 OWE 过渡模式，请仅配置 ``WIFI_AUTH_OWE``。
 
-MAC 地址随机化
+Wi-Fi 隐私增强
 --------------------------
 
-MAC 地址用于设备连接 Wi-Fi 网络。由于 MAC 地址具有唯一且静态的特点，并且在传输时未加密，因此可能会被捕获和追踪。{IDF_TARGET_NAME} 支持 MAC 地址随机化功能，通过使用随机 MAC 地址增强隐私保护，避免设备在扫描或连接网络时被持续追踪。
+MAC 地址用于设备连接 Wi-Fi 网络。由于 MAC 地址具有唯一且静态的特点，并且在传输时未加密，因此可能会被捕获和追踪。{IDF_TARGET_NAME} 支持 Wi-Fi 隐私增强功能，包括 MAC 地址随机化、序列号随机化、GAS 对话令牌多样化和厂商自定义序列号管理。这些功能通过增强隐私保护，避免设备在扫描或连接网络时被持续追踪。
 
-要使用此功能，请在 menuconfig 中启用配置选项 :ref:`CONFIG_ESP_WIFI_STA_RANDOM_MAC_ENABLED`。
+要使用此功能，请在 menuconfig 中启用配置选项 :ref:`CONFIG_ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED`。
 
-{IDF_TARGET_NAME} 还会在未连接网络时，定期自动重置 station 的随机 MAC 地址。重置周期通过 menuconfig 中的 :ref:`CONFIG_ESP_WIFI_STA_RANDOM_MAC_AUTO_RESET_INTERVAL` 选项配置（有效范围：1 至 24 小时，默认值为 12 小时）。
+{IDF_TARGET_NAME} 还会在未连接网络时，定期自动重置随机 MAC 地址。重置周期通过 menuconfig 中的 :ref:`CONFIG_ESP_WIFI_RMAC_AUTO_RESET_INTERVAL` 选项配置（有效范围：1 至 24 小时，默认值为 12 小时）。
 
 .. note::
 
-   仅当 station 未连接到任何 AP 时，:ref:`CONFIG_ESP_WIFI_STA_RANDOM_MAC_AUTO_RESET_INTERVAL` 才会生成并设置新的随机 MAC 地址。如果 station 已连接到 AP，则不会中断连接，并会继续使用相同的随机 MAC 地址。如果定期自动重置定时器在 station 处于连接状态时超时，定时器将在下一次断开连接时被重新装载或触发。
+   仅当 station 未连接到任何 AP 时，:ref:`CONFIG_ESP_WIFI_RMAC_AUTO_RESET_INTERVAL` 才会生成并设置新的随机 MAC 地址。如果 station 已连接到 AP，则不会中断连接，并会继续使用相同的随机 MAC 地址。如果定期自动重置定时器在 station 处于连接状态时超时，定时器将在下一次断开连接时被重新装载或触发。
 
-   如果启用了 :ref:`CONFIG_ESP_WIFI_STA_RANDOM_MAC_ENABLED`，每次发起新的连接请求时都会生成新的随机 MAC 地址，并重置自动重置时间间隔。
-
-   启用 MAC 地址随机化后，不支持 PMK 缓存，因为设备身份会随每次连接尝试而变化。
-
-   在启用 Wi-Fi Mesh 或 ESP-NOW 时，不支持且无法使用 MAC 地址随机化功能。
+   在启用 Wi-Fi Mesh 或 ESP-NOW 时，不支持且无法使用 Wi-Fi 隐私增强功能。
 
 
-{IDF_TARGET_NAME} 在满足以下条件时支持扫描过程中的 MAC 地址随机化：
+{IDF_TARGET_NAME} 在满足以下条件时支持扫描过程中的隐私增强：
 
-  - 在 menuconfig 中启用配置选项 :ref:`CONFIG_ESP_WIFI_STA_RANDOM_MAC_ENABLED`
+  - 在 menuconfig 中启用配置选项 :ref:`CONFIG_ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED`
   - 扫描类型为 :cpp:enumerator:`WIFI_SCAN_TYPE_ACTIVE`
   - station 未连接到任何 AP
 
-{IDF_TARGET_NAME} 在满足以下条件时支持连接过程中的 MAC 地址随机化：
+{IDF_TARGET_NAME} 在满足以下条件时支持连接过程中的隐私增强：
 
-  - 在 menuconfig 中启用配置选项 :ref:`CONFIG_ESP_WIFI_STA_RANDOM_MAC_ENABLED`
+  - 在 menuconfig 中启用配置选项 :ref:`CONFIG_ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED`
   - 使用 :cpp:func:`esp_wifi_set_config` 设置新的 Wi-Fi 配置
 
 

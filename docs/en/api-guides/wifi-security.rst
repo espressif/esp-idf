@@ -172,35 +172,31 @@ For SoftAP mode:
 
 A configuration option :ref:`CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_SOFTAP` from menuconfig should be enabled and configuration parameter `authmode` from :cpp:type:`wifi_ap_config_t` should be set to ``WIFI_AUTH_OWE``. SoftAP does not support OWE Transition Mode; configure ``WIFI_AUTH_OWE`` only.
 
-MAC Address Randomization
+WiFi Privacy Enhancements
 --------------------------
 
-MAC addresses, used by devices to connect to Wi-Fi networks, can be captured and tracked because they are transmitted without encryption and due to their unique and static nature. {IDF_TARGET_NAME} supports the MAC randomization feature which enhances privacy by using a randomized MAC address, preventing devices from being consistently tracked when scanning or connecting to networks.
+MAC addresses, used by devices to connect to Wi-Fi networks, can be captured and tracked because they are transmitted without encryption and due to their unique and static nature. {IDF_TARGET_NAME} supports the WiFi Privacy Enhancements feature which includes MAC randomization, sequence number randomization, diversity in GAS dialogue tokens and vendor sequence numbers. This prevents devices from being consistently tracked when scanning or connecting to networks.
 
-To use this feature, enable configuration option :ref:`CONFIG_ESP_WIFI_STA_RANDOM_MAC_ENABLED` from menuconfig.
+To use this feature, enable configuration option :ref:`CONFIG_ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED` from menuconfig.
 
-{IDF_TARGET_NAME} also rotates the STA random MAC periodically while not connected, using menuconfig option :ref:`CONFIG_ESP_WIFI_STA_RANDOM_MAC_AUTO_RESET_INTERVAL` (valid range: 1 to 24 hours, default 12).
+{IDF_TARGET_NAME} also rotates the STA random MAC periodically while not connected, using menuconfig option :ref:`CONFIG_ESP_WIFI_RMAC_AUTO_RESET_INTERVAL` (valid range: 1 to 24 hours, default 12).
 
 .. note::
 
-   The :ref:`CONFIG_ESP_WIFI_STA_RANDOM_MAC_AUTO_RESET_INTERVAL` will only generate and set new random mac address when station is not connected to any AP. If the station is connected to any AP, the connection will not be interrupted and same random mac will be used. If the periodic auto-reset timer expires while the station is in the connected state, the timer will be armed/triggered at the next disconnect.
+   The :ref:`CONFIG_ESP_WIFI_RMAC_AUTO_RESET_INTERVAL` will only generate and set new random mac address when station is not connected to any AP. If the station is connected to any AP, the connection will not be interrupted and same random mac will be used. If the periodic auto-reset timer expires while the station is in the connected state, the timer will be armed/triggered at the next disconnect.
 
-   For every new connection request, new random mac will be generated and auto reset time interval will be reset if :ref:`CONFIG_ESP_WIFI_STA_RANDOM_MAC_ENABLED` is enabled.
-
-   PMK caching is not supported when MAC randomization is enabled, as the device's identity changes with each connection attempt.
-
-   MAC address randomization is not supported and will not work when Wi-Fi Mesh or ESP-NOW is enabled.
+   WiFi privacy enhancements are not supported and will not work when Wi-Fi Mesh or ESP-NOW is enabled.
 
 
-{IDF_TARGET_NAME} supports MAC randomization while scanning when
+{IDF_TARGET_NAME} supports privacy enhancements while scanning when
 
-  - enable configuration option :ref:`CONFIG_ESP_WIFI_STA_RANDOM_MAC_ENABLED` from menuconfig
+  - enable configuration option :ref:`CONFIG_ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED` from menuconfig
   - scan_type is :cpp:enumerator:`WIFI_SCAN_TYPE_ACTIVE`
   - station is not connected to any Access Point
 
-{IDF_TARGET_NAME} supports MAC randomization while connecting when
+{IDF_TARGET_NAME} supports privacy enhancements while connecting when
 
-  - enable configuration option :ref:`CONFIG_ESP_WIFI_STA_RANDOM_MAC_ENABLED` from menuconfig
+  - enable configuration option :ref:`CONFIG_ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED` from menuconfig
   - new wifi configuration is set using :cpp:func:`esp_wifi_set_config`
 
 

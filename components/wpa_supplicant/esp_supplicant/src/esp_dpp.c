@@ -621,9 +621,9 @@ static void esp_dpp_rx_action(void *data, void *user_ctx)
                public_action->v.pa_gas_resp.status_code == 0) {
 
         if (!s_dpp_ctx.dpp_auth ||
-            s_dpp_ctx.dpp_auth->gas_dialog_token < 0 ||
-            public_action->v.pa_gas_resp.diag_token !=
-            s_dpp_ctx.dpp_auth->gas_dialog_token) {
+                s_dpp_ctx.dpp_auth->gas_dialog_token < 0 ||
+                public_action->v.pa_gas_resp.diag_token !=
+                s_dpp_ctx.dpp_auth->gas_dialog_token) {
             wpa_printf(MSG_DEBUG,
                        "DPP: GAS dialog token mismatch (rx=%u exp=%d) - drop",
                        public_action->v.pa_gas_resp.diag_token,
