@@ -53,7 +53,9 @@ static otRadioCaps s_radio_caps = (OT_RADIO_CAPS_ENERGY_SCAN       |
                                    OT_RADIO_CAPS_RECEIVE_TIMING    |
                                    OT_RADIO_CAPS_TRANSMIT_TIMING   |
                                    OT_RADIO_CAPS_ACK_TIMEOUT       |
-                                   OT_RADIO_CAPS_SLEEP_TO_TX);
+                                   OT_RADIO_CAPS_SLEEP_TO_TX       |
+                                   OT_RADIO_CAPS_CSMA_BACKOFF      |
+                                   OT_RADIO_CAPS_TRANSMIT_RETRIES);
 
 static const char *radiospinel_workflow = "radio_spinel";
 static const esp_openthread_radio_config_t *s_esp_openthread_radio_config = NULL;

@@ -40,7 +40,9 @@ static otRadioCaps s_radio_caps = (OT_RADIO_CAPS_ENERGY_SCAN       |
                                    OT_RADIO_CAPS_RECEIVE_TIMING    |
                                    OT_RADIO_CAPS_TRANSMIT_TIMING   |
                                    OT_RADIO_CAPS_ACK_TIMEOUT       |
-                                   OT_RADIO_CAPS_SLEEP_TO_TX);
+                                   OT_RADIO_CAPS_SLEEP_TO_TX       |
+                                   OT_RADIO_CAPS_CSMA_BACKOFF      |
+                                   OT_RADIO_CAPS_TRANSMIT_RETRIES);
 
 static esp_radio_spinel_compatibility_error_callback s_radio_spinel_compatibility_error_callback = NULL;
 static esp_radio_spinel_coprocessor_reset_failure_callback s_radio_spinel_coprocessor_reset_failure_callback = NULL;
