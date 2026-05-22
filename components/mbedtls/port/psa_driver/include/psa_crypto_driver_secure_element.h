@@ -113,10 +113,12 @@ typedef struct {
  * @brief Register secure element callbacks
  *
  * Must be called once during application initialization, before any PSA
- * operations targeting PSA_KEY_LOCATION_SECURE_ELEMENT. Uses atomic
- * compare-and-swap so only the first call succeeds.
+ * operations targeting PSA_KEY_LOCATION_SECURE_ELEMENT. Only the first
+ * call succeeds; subsequent calls return PSA_ERROR_BAD_STATE.
  *
- * @param callbacks  Pointer to callback table (must remain valid for program lifetime)
+ * @param callbacks  Pointer to callback table. The contents are copied
+ *                   internally, so the struct need not remain valid after
+ *                   this call returns.
  * @return PSA_SUCCESS on success
  * @return PSA_ERROR_BAD_STATE if callbacks were already registered
  * @return PSA_ERROR_INVALID_ARGUMENT if callbacks is NULL

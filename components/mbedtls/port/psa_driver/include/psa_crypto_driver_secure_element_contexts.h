@@ -56,7 +56,7 @@ typedef struct {
     uint8_t sha[SECURE_ELEMENT_MAX_KEY_BYTES];
     size_t key_len;
     size_t sha_len;
-    secure_element_opaque_key_t *opaque_key;
+    secure_element_opaque_key_t opaque_key;
     unsigned int alg;
 } secure_element_opaque_sign_hash_operation_t;
 

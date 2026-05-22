@@ -35,7 +35,7 @@ HTTP 基本请求
 为 TLS 使用安全元件 (ATECC608)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-安全元件 (ATECC608) 可通过 PSA Crypto 不透明驱动接口用于 HTTP 客户端连接中的底层 TLS 连接。有关设置 PSA 密钥的详细内容，请参考 :doc:`ESP-TLS 文档 </api-reference/protocols/esp_tls>` 中的 **ESP-TLS 中的 ATECC608A（安全元件）** 小节。然后通过 :cpp:type:`esp_tls_cfg_t` 中的 ``client_key`` 字段配置 HTTP 客户端使用安全元件：
+安全元件 (ATECC608) 可通过 PSA Crypto 不透明驱动接口用于 HTTP 客户端连接中的底层 TLS 连接。有关设置 PSA 密钥的详细内容，请参考 :doc:`ESP-TLS 文档 </api-reference/protocols/esp_tls>` 中的 **ESP-TLS 中的 ATECC608A（安全元件）** 小节。然后通过 :cpp:type:`esp_http_client_config_t` 中的 ``client_key`` 字段配置 HTTP 客户端使用安全元件：
 
 .. code-block:: c
 
