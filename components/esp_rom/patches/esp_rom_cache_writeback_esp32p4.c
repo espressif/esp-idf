@@ -49,6 +49,11 @@ int Cache_WriteBack_Addr(uint32_t map, uint32_t addr, uint32_t size)
     return 0;
 }
 
+#ifndef BOOTLOADER_BUILD
+/**
+ * ci build no test related case will check backtrace not call functions from .iram.text
+ * so for bootloader still use the rom function. The issue will not occur in uboot stage
+ */
 int Cache_WriteBack_All(uint32_t map)
 {
     /* writeback readonly cache is invalid */
@@ -71,6 +76,7 @@ int Cache_WriteBack_All(uint32_t map)
 
     return 0;
 }
+#endif
 
 int Cache_WriteBack_Invalidate_Addr(uint32_t map, uint32_t addr, uint32_t size)
 {
