@@ -2,3 +2,11 @@
 # U-mode for multicore SoCs. Thus, TEE interrupt tests will
 # run only in unicore mode till then.
 CONFIG_FREERTOS_UNICORE=y
+
+# Enable LP core
+CONFIG_ULP_COPROC_ENABLED=y
+CONFIG_ULP_COPROC_RESERVE_MEM=8192
+CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP=n
+
+# Enable SPIRAM
+CONFIG_SPIRAM=y

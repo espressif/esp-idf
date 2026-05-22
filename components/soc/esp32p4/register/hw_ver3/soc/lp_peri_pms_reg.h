@@ -14,7 +14,7 @@ extern "C" {
  *  Version control register
  */
 #define PMS_LP_PERI_PMS_DATE_REG (DR_REG_LP_PERI_PMS_BASE + 0x0)
-/** PMS_LP_PERI_PMS_DATE : R/W; bitpos: [31:0]; default: 2294537;
+/** PMS_LP_PERI_PMS_DATE : R/W; bitpos: [31:0]; default: 2363943;
  *  Version control register
  */
 #define PMS_LP_PERI_PMS_DATE    0xFFFFFFFFU
@@ -267,6 +267,15 @@ extern "C" {
 #define PMS_LP_MM_LP_SRAM_ALLOW_M  (PMS_LP_MM_LP_SRAM_ALLOW_V << PMS_LP_MM_LP_SRAM_ALLOW_S)
 #define PMS_LP_MM_LP_SRAM_ALLOW_V  0x00000001U
 #define PMS_LP_MM_LP_SRAM_ALLOW_S  23
+/** PMS_LP_MM_LP_TRNG_ALLOW : R/W; bitpos: [24]; default: 1;
+ *  Configures whether LP CPU in machine mode has permission to access RNG.
+ *  0: Not allowed
+ *  1: Allow
+ */
+#define PMS_LP_MM_LP_TRNG_ALLOW    (BIT(24))
+#define PMS_LP_MM_LP_TRNG_ALLOW_M  (PMS_LP_MM_LP_TRNG_ALLOW_V << PMS_LP_MM_LP_TRNG_ALLOW_S)
+#define PMS_LP_MM_LP_TRNG_ALLOW_V  0x00000001U
+#define PMS_LP_MM_LP_TRNG_ALLOW_S  24
 
 /** PMS_PERI_REGION0_LOW_REG register
  *  Region0 start address configuration register
@@ -370,6 +379,205 @@ extern "C" {
 #define PMS_HP_CORE1_MM_REGION_PMS_M  (PMS_HP_CORE1_MM_REGION_PMS_V << PMS_HP_CORE1_MM_REGION_PMS_S)
 #define PMS_HP_CORE1_MM_REGION_PMS_V  0x00000003U
 #define PMS_HP_CORE1_MM_REGION_PMS_S  8
+
+/** PMS_PERI_REGION_2_TO_7_PMS_REG register
+ *  Permission register of region 2 to 7
+ */
+#define PMS_PERI_REGION_2_TO_7_PMS_REG (DR_REG_LP_PERI_PMS_BASE + 0x20)
+/** PMS_LP_CORE_REGION_2_TO_7_PMS : R/W; bitpos: [5:0]; default: 63;
+ *  Configures whether LP core in machine mode has permission to access address region2
+ *  to region7. Bit0 corresponds to region2, bit1 to region3, ..., bit5 to region7.
+ *  0: Not allowed
+ *  1: Allow
+ */
+#define PMS_LP_CORE_REGION_2_TO_7_PMS    0x0000003FU
+#define PMS_LP_CORE_REGION_2_TO_7_PMS_M  (PMS_LP_CORE_REGION_2_TO_7_PMS_V << PMS_LP_CORE_REGION_2_TO_7_PMS_S)
+#define PMS_LP_CORE_REGION_2_TO_7_PMS_V  0x0000003FU
+#define PMS_LP_CORE_REGION_2_TO_7_PMS_S  0
+/** PMS_HP_CORE0_UM_REGION_2_TO_7_PMS : R/W; bitpos: [11:6]; default: 63;
+ *  Configures whether HP CPU0 in user mode has permission to access address region2
+ *  to region7. Bit6 corresponds to region2, bit7 to region3, ..., bit11 to region7.
+ *  0: Not allowed
+ *  1: Allow
+ */
+#define PMS_HP_CORE0_UM_REGION_2_TO_7_PMS    0x0000003FU
+#define PMS_HP_CORE0_UM_REGION_2_TO_7_PMS_M  (PMS_HP_CORE0_UM_REGION_2_TO_7_PMS_V << PMS_HP_CORE0_UM_REGION_2_TO_7_PMS_S)
+#define PMS_HP_CORE0_UM_REGION_2_TO_7_PMS_V  0x0000003FU
+#define PMS_HP_CORE0_UM_REGION_2_TO_7_PMS_S  6
+/** PMS_HP_CORE0_MM_REGION_2_TO_7_PMS : R/W; bitpos: [17:12]; default: 63;
+ *  Configures whether HP CPU0 in machine mode has permission to access address region2
+ *  to region7. Bit12 corresponds to region2, bit13 to region3, ..., bit17 to region7.
+ *  0: Not allowed
+ *  1: Allow
+ */
+#define PMS_HP_CORE0_MM_REGION_2_TO_7_PMS    0x0000003FU
+#define PMS_HP_CORE0_MM_REGION_2_TO_7_PMS_M  (PMS_HP_CORE0_MM_REGION_2_TO_7_PMS_V << PMS_HP_CORE0_MM_REGION_2_TO_7_PMS_S)
+#define PMS_HP_CORE0_MM_REGION_2_TO_7_PMS_V  0x0000003FU
+#define PMS_HP_CORE0_MM_REGION_2_TO_7_PMS_S  12
+/** PMS_HP_CORE1_UM_REGION_2_TO_7_PMS : R/W; bitpos: [23:18]; default: 63;
+ *  Configures whether HP CPU1 in user mode has permission to access address region2
+ *  to region7. Bit18 corresponds to region2, bit19 to region3, ..., bit23 to region7.
+ *  0: Not allowed
+ *  1: Allow
+ */
+#define PMS_HP_CORE1_UM_REGION_2_TO_7_PMS    0x0000003FU
+#define PMS_HP_CORE1_UM_REGION_2_TO_7_PMS_M  (PMS_HP_CORE1_UM_REGION_2_TO_7_PMS_V << PMS_HP_CORE1_UM_REGION_2_TO_7_PMS_S)
+#define PMS_HP_CORE1_UM_REGION_2_TO_7_PMS_V  0x0000003FU
+#define PMS_HP_CORE1_UM_REGION_2_TO_7_PMS_S  18
+/** PMS_HP_CORE1_MM_REGION_2_TO_7_PMS : R/W; bitpos: [29:24]; default: 63;
+ *  Configures whether HP CPU1 in machine mode has permission to access address region2
+ *  to region7. Bit24 corresponds to region2, bit25 to region3, ..., bit29 to region7.
+ *  0: Not allowed
+ *  1: Allow
+ */
+#define PMS_HP_CORE1_MM_REGION_2_TO_7_PMS    0x0000003FU
+#define PMS_HP_CORE1_MM_REGION_2_TO_7_PMS_M  (PMS_HP_CORE1_MM_REGION_2_TO_7_PMS_V << PMS_HP_CORE1_MM_REGION_2_TO_7_PMS_S)
+#define PMS_HP_CORE1_MM_REGION_2_TO_7_PMS_V  0x0000003FU
+#define PMS_HP_CORE1_MM_REGION_2_TO_7_PMS_S  24
+
+/** PMS_PERI_REGION2_LOW_REG register
+ *  Region2 start address configuration register
+ */
+#define PMS_PERI_REGION2_LOW_REG (DR_REG_LP_PERI_PMS_BASE + 0x24)
+/** PMS_PERI_REGION2_LOW : R/W; bitpos: [31:2]; default: 0;
+ *  Configures the high 30 bits of the start address of peripheral register's region2.
+ */
+#define PMS_PERI_REGION2_LOW    0x3FFFFFFFU
+#define PMS_PERI_REGION2_LOW_M  (PMS_PERI_REGION2_LOW_V << PMS_PERI_REGION2_LOW_S)
+#define PMS_PERI_REGION2_LOW_V  0x3FFFFFFFU
+#define PMS_PERI_REGION2_LOW_S  2
+
+/** PMS_PERI_REGION2_HIGH_REG register
+ *  Region2 end address configuration register
+ */
+#define PMS_PERI_REGION2_HIGH_REG (DR_REG_LP_PERI_PMS_BASE + 0x28)
+/** PMS_PERI_REGION2_HIGH : R/W; bitpos: [31:2]; default: 1073741823;
+ *  Configures the high 30 bits of the end address of peripheral register's region2.
+ */
+#define PMS_PERI_REGION2_HIGH    0x3FFFFFFFU
+#define PMS_PERI_REGION2_HIGH_M  (PMS_PERI_REGION2_HIGH_V << PMS_PERI_REGION2_HIGH_S)
+#define PMS_PERI_REGION2_HIGH_V  0x3FFFFFFFU
+#define PMS_PERI_REGION2_HIGH_S  2
+
+/** PMS_PERI_REGION3_LOW_REG register
+ *  Region3 start address configuration register
+ */
+#define PMS_PERI_REGION3_LOW_REG (DR_REG_LP_PERI_PMS_BASE + 0x2c)
+/** PMS_PERI_REGION3_LOW : R/W; bitpos: [31:2]; default: 0;
+ *  Configures the high 30 bits of the start address of peripheral register's region3.
+ */
+#define PMS_PERI_REGION3_LOW    0x3FFFFFFFU
+#define PMS_PERI_REGION3_LOW_M  (PMS_PERI_REGION3_LOW_V << PMS_PERI_REGION3_LOW_S)
+#define PMS_PERI_REGION3_LOW_V  0x3FFFFFFFU
+#define PMS_PERI_REGION3_LOW_S  2
+
+/** PMS_PERI_REGION3_HIGH_REG register
+ *  Region3 end address configuration register
+ */
+#define PMS_PERI_REGION3_HIGH_REG (DR_REG_LP_PERI_PMS_BASE + 0x30)
+/** PMS_PERI_REGION3_HIGH : R/W; bitpos: [31:2]; default: 1073741823;
+ *  Configures the high 30 bits of the end address of peripheral register's region3.
+ */
+#define PMS_PERI_REGION3_HIGH    0x3FFFFFFFU
+#define PMS_PERI_REGION3_HIGH_M  (PMS_PERI_REGION3_HIGH_V << PMS_PERI_REGION3_HIGH_S)
+#define PMS_PERI_REGION3_HIGH_V  0x3FFFFFFFU
+#define PMS_PERI_REGION3_HIGH_S  2
+
+/** PMS_PERI_REGION4_LOW_REG register
+ *  Region4 start address configuration register
+ */
+#define PMS_PERI_REGION4_LOW_REG (DR_REG_LP_PERI_PMS_BASE + 0x34)
+/** PMS_PERI_REGION4_LOW : R/W; bitpos: [31:2]; default: 0;
+ *  Configures the high 30 bits of the start address of peripheral register's region4.
+ */
+#define PMS_PERI_REGION4_LOW    0x3FFFFFFFU
+#define PMS_PERI_REGION4_LOW_M  (PMS_PERI_REGION4_LOW_V << PMS_PERI_REGION4_LOW_S)
+#define PMS_PERI_REGION4_LOW_V  0x3FFFFFFFU
+#define PMS_PERI_REGION4_LOW_S  2
+
+/** PMS_PERI_REGION4_HIGH_REG register
+ *  Region4 end address configuration register
+ */
+#define PMS_PERI_REGION4_HIGH_REG (DR_REG_LP_PERI_PMS_BASE + 0x38)
+/** PMS_PERI_REGION4_HIGH : R/W; bitpos: [31:2]; default: 1073741823;
+ *  Configures the high 30 bits of the end address of peripheral register's region4.
+ */
+#define PMS_PERI_REGION4_HIGH    0x3FFFFFFFU
+#define PMS_PERI_REGION4_HIGH_M  (PMS_PERI_REGION4_HIGH_V << PMS_PERI_REGION4_HIGH_S)
+#define PMS_PERI_REGION4_HIGH_V  0x3FFFFFFFU
+#define PMS_PERI_REGION4_HIGH_S  2
+
+/** PMS_PERI_REGION5_LOW_REG register
+ *  Region5 start address configuration register
+ */
+#define PMS_PERI_REGION5_LOW_REG (DR_REG_LP_PERI_PMS_BASE + 0x3c)
+/** PMS_PERI_REGION5_LOW : R/W; bitpos: [31:2]; default: 0;
+ *  Configures the high 30 bits of the start address of peripheral register's region5.
+ */
+#define PMS_PERI_REGION5_LOW    0x3FFFFFFFU
+#define PMS_PERI_REGION5_LOW_M  (PMS_PERI_REGION5_LOW_V << PMS_PERI_REGION5_LOW_S)
+#define PMS_PERI_REGION5_LOW_V  0x3FFFFFFFU
+#define PMS_PERI_REGION5_LOW_S  2
+
+/** PMS_PERI_REGION5_HIGH_REG register
+ *  Region5 end address configuration register
+ */
+#define PMS_PERI_REGION5_HIGH_REG (DR_REG_LP_PERI_PMS_BASE + 0x40)
+/** PMS_PERI_REGION5_HIGH : R/W; bitpos: [31:2]; default: 1073741823;
+ *  Configures the high 30 bits of the end address of peripheral register's region5.
+ */
+#define PMS_PERI_REGION5_HIGH    0x3FFFFFFFU
+#define PMS_PERI_REGION5_HIGH_M  (PMS_PERI_REGION5_HIGH_V << PMS_PERI_REGION5_HIGH_S)
+#define PMS_PERI_REGION5_HIGH_V  0x3FFFFFFFU
+#define PMS_PERI_REGION5_HIGH_S  2
+
+/** PMS_PERI_REGION6_LOW_REG register
+ *  Region6 start address configuration register
+ */
+#define PMS_PERI_REGION6_LOW_REG (DR_REG_LP_PERI_PMS_BASE + 0x44)
+/** PMS_PERI_REGION6_LOW : R/W; bitpos: [31:2]; default: 0;
+ *  Configures the high 30 bits of the start address of peripheral register's region6.
+ */
+#define PMS_PERI_REGION6_LOW    0x3FFFFFFFU
+#define PMS_PERI_REGION6_LOW_M  (PMS_PERI_REGION6_LOW_V << PMS_PERI_REGION6_LOW_S)
+#define PMS_PERI_REGION6_LOW_V  0x3FFFFFFFU
+#define PMS_PERI_REGION6_LOW_S  2
+
+/** PMS_PERI_REGION6_HIGH_REG register
+ *  Region6 end address configuration register
+ */
+#define PMS_PERI_REGION6_HIGH_REG (DR_REG_LP_PERI_PMS_BASE + 0x48)
+/** PMS_PERI_REGION6_HIGH : R/W; bitpos: [31:2]; default: 1073741823;
+ *  Configures the high 30 bits of the end address of peripheral register's region6.
+ */
+#define PMS_PERI_REGION6_HIGH    0x3FFFFFFFU
+#define PMS_PERI_REGION6_HIGH_M  (PMS_PERI_REGION6_HIGH_V << PMS_PERI_REGION6_HIGH_S)
+#define PMS_PERI_REGION6_HIGH_V  0x3FFFFFFFU
+#define PMS_PERI_REGION6_HIGH_S  2
+
+/** PMS_PERI_REGION7_LOW_REG register
+ *  Region7 start address configuration register
+ */
+#define PMS_PERI_REGION7_LOW_REG (DR_REG_LP_PERI_PMS_BASE + 0x4c)
+/** PMS_PERI_REGION7_LOW : R/W; bitpos: [31:2]; default: 0;
+ *  Configures the high 30 bits of the start address of peripheral register's region7.
+ */
+#define PMS_PERI_REGION7_LOW    0x3FFFFFFFU
+#define PMS_PERI_REGION7_LOW_M  (PMS_PERI_REGION7_LOW_V << PMS_PERI_REGION7_LOW_S)
+#define PMS_PERI_REGION7_LOW_V  0x3FFFFFFFU
+#define PMS_PERI_REGION7_LOW_S  2
+
+/** PMS_PERI_REGION7_HIGH_REG register
+ *  Region7 end address configuration register
+ */
+#define PMS_PERI_REGION7_HIGH_REG (DR_REG_LP_PERI_PMS_BASE + 0x50)
+/** PMS_PERI_REGION7_HIGH : R/W; bitpos: [31:2]; default: 1073741823;
+ *  Configures the high 30 bits of the end address of peripheral register's region7.
+ */
+#define PMS_PERI_REGION7_HIGH    0x3FFFFFFFU
+#define PMS_PERI_REGION7_HIGH_M  (PMS_PERI_REGION7_HIGH_V << PMS_PERI_REGION7_HIGH_S)
+#define PMS_PERI_REGION7_HIGH_V  0x3FFFFFFFU
+#define PMS_PERI_REGION7_HIGH_S  2
 
 #ifdef __cplusplus
 }

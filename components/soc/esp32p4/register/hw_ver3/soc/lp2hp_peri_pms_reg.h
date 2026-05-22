@@ -14,7 +14,7 @@ extern "C" {
  *  Version control register
  */
 #define PMS_LP2HP_PERI_PMS_DATE_REG (DR_REG_LP2HP_PERI_PMS_BASE + 0x0)
-/** PMS_LP2HP_PERI_PMS_DATE : R/W; bitpos: [31:0]; default: 2294790;
+/** PMS_LP2HP_PERI_PMS_DATE : R/W; bitpos: [31:0]; default: 2363943;
  *  Version control register.
  */
 #define PMS_LP2HP_PERI_PMS_DATE    0xFFFFFFFFU
@@ -180,6 +180,15 @@ extern "C" {
 #define PMS_LP_MM_HP_GDMA_ALLOW_M  (PMS_LP_MM_HP_GDMA_ALLOW_V << PMS_LP_MM_HP_GDMA_ALLOW_S)
 #define PMS_LP_MM_HP_GDMA_ALLOW_V  0x00000001U
 #define PMS_LP_MM_HP_GDMA_ALLOW_S  3
+/** PMS_LP_MM_HP_REGDMA_ALLOW : R/W; bitpos: [4]; default: 1;
+ *  Configures whether the LP CPU in machine mode has permission to access HP REGDMA.
+ *  0: Not allowed
+ *  1: Allowed
+ */
+#define PMS_LP_MM_HP_REGDMA_ALLOW    (BIT(4))
+#define PMS_LP_MM_HP_REGDMA_ALLOW_M  (PMS_LP_MM_HP_REGDMA_ALLOW_V << PMS_LP_MM_HP_REGDMA_ALLOW_S)
+#define PMS_LP_MM_HP_REGDMA_ALLOW_V  0x00000001U
+#define PMS_LP_MM_HP_REGDMA_ALLOW_S  4
 /** PMS_LP_MM_HP_SDMMC_ALLOW : R/W; bitpos: [5]; default: 1;
  *  Configures whether the LP CPU in machine mode has permission to access HP SDMMC.
  *  0: Not allowed
@@ -407,6 +416,15 @@ extern "C" {
 #define PMS_LP_MM_HP_H264_DMA2D_ALLOW_M  (PMS_LP_MM_HP_H264_DMA2D_ALLOW_V << PMS_LP_MM_HP_H264_DMA2D_ALLOW_S)
 #define PMS_LP_MM_HP_H264_DMA2D_ALLOW_V  0x00000001U
 #define PMS_LP_MM_HP_H264_DMA2D_ALLOW_S  28
+/** PMS_LP_MM_AXI_PERF_MON_ALLOW : R/W; bitpos: [29]; default: 1;
+ *  Configures whether the LP CPU in machine mode has permission to access AXI-PERFMON.
+ *  0: Not allowed
+ *  1: Allowed
+ */
+#define PMS_LP_MM_AXI_PERF_MON_ALLOW    (BIT(29))
+#define PMS_LP_MM_AXI_PERF_MON_ALLOW_M  (PMS_LP_MM_AXI_PERF_MON_ALLOW_V << PMS_LP_MM_AXI_PERF_MON_ALLOW_S)
+#define PMS_LP_MM_AXI_PERF_MON_ALLOW_V  0x00000001U
+#define PMS_LP_MM_AXI_PERF_MON_ALLOW_S  29
 
 /** PMS_LP_MM_PMS_REG2_REG register
  *  Permission control register2 for the LP CPU in machine mode

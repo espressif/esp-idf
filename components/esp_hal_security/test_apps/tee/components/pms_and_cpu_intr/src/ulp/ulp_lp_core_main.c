@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include "soc/soc.h"
+#include "esp_attr.h"
 #include "riscv/csr.h"
 #include "riscv/rv_utils.h"
 
@@ -53,6 +54,32 @@ void test_panicHandler(void *frame, int exccause)
     return;
 }
 
+NOINLINE_ATTR static uint32_t reg_read(uint32_t addr)
+{
+    uint32_t value;
+    __asm__ volatile(
+        "lw   %0, 0(%1)\n"
+        "fence\n"
+        "nop\nnop\nnop\nnop\n"
+        : "=r"(value)
+        : "r"(addr)
+        : "memory"
+    );
+    return value;
+}
+
+NOINLINE_ATTR static void reg_write(uint32_t addr, uint32_t value)
+{
+    __asm__ volatile(
+        "sw   %1, 0(%0)\n"
+        "fence\n"
+        "nop\nnop\nnop\nnop\n"
+        :
+        : "r"(addr), "r"(value)
+        : "memory"
+    );
+}
+
 /**
  * @brief Test LP CPU access to memory/peripherals
  *
@@ -84,14 +111,14 @@ int main(void)
         }
 
         uint32_t test_addr = RECV_ADDR();
-        uint32_t test_size = RECV_SIZE();
+        uint32_t test_data = RECV_DATA();
 
         switch (test_msg) {
         case MSG_SLAVE_READ:
-            (void)REG_READ(test_addr);
+            (void)reg_read(test_addr);
             break;
         case MSG_SLAVE_WRITE:
-            REG_WRITE(test_addr, test_size);
+            reg_write(test_addr, test_data);
             break;
         case MSG_SLAVE_EXEC: {
             void (*func_ptr)(void) = (void (*)(void))(test_addr);
