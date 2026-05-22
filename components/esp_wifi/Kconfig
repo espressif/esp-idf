@@ -356,12 +356,10 @@ menu "Wi-Fi"
 
         config ESP_WIFI_PASN_SUPPORT
             bool "Enable PASN support"
-            depends on ESP_WIFI_NAN_PAIRING
-            default y if ESP_WIFI_NAN_PAIRING
+            default n
             help
-                Enable PASN for Wi-Fi NAN; the supplicant exposes CONFIG_PASN when this is on.
-                This option is only available when "NAN-Sync pairing bootstrapping"
-                (ESP_WIFI_NAN_PAIRING) is enabled, because NAN PASN builds on that path.
+                Pre-Association Security Negotiation (PASN) for Wi-Fi NAN.
+                The wpa_supplicant exposes CONFIG_PASN when this is on.
 
         config ESP_WIFI_SLP_IRAM_OPT
             bool "WiFi SLP IRAM speed optimization"
@@ -628,12 +626,13 @@ menu "Wi-Fi"
 
         config ESP_WIFI_NAN_PAIRING
             bool "Enable NAN Pairing"
-            depends on ESP_WIFI_NAN_SYNC_ENABLE
+            depends on ESP_WIFI_NAN_SECURITY && IDF_EXPERIMENTAL_FEATURES && ESP_WIFI_MBEDTLS_CRYPTO
+            select ESP_WIFI_PASN_SUPPORT
             default n
             help
                 Enable NAN Pairing support. This allows devices to establish
-                secure pairing using bootstrapping methods like PIN code or
-                opportunistic pairing as defined in Wi-Fi Aware specification.
+                secure pairing using bootstrapping methods like PIN code.
+                Requires PASN in wpa_supplicant (ESP_WIFI_PASN_SUPPORT)
 
         config ESP_WIFI_MBEDTLS_CRYPTO
             bool "Use MbedTLS crypto APIs"

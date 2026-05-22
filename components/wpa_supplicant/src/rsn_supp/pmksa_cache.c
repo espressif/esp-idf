@@ -66,6 +66,7 @@ void pmksa_cache_remove(struct rsn_pmksa_cache *pmksa,
 			e->next = entry->next;
 			break;
 		}
+		e = e->next;
 	}
 
 	if (!e) {
@@ -394,6 +395,8 @@ struct rsn_pmksa_cache_entry *
 pmksa_cache_get_opportunistic(struct rsn_pmksa_cache *pmksa, void *network_ctx,
         const u8 *aa)
 {
+    if (!pmksa)
+        return NULL;
     struct rsn_pmksa_cache_entry *entry = pmksa->pmksa;
 
     wpa_printf(MSG_DEBUG, "RSN: Consider " MACSTR " for OKC", MAC2STR(aa));

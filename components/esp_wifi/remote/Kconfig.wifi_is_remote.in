@@ -152,7 +152,6 @@ endif
 if WIFI_RMT_PASN_SUPPORT
     config ESP_WIFI_PASN_SUPPORT # ignore: multiple-definition
         bool
-        depends on WIFI_RMT_NAN_PAIRING
         default WIFI_RMT_PASN_SUPPORT
 endif
 
@@ -314,7 +313,7 @@ endif
 if WIFI_RMT_NAN_PAIRING
     config ESP_WIFI_NAN_PAIRING # ignore: multiple-definition
         bool
-        depends on WIFI_RMT_NAN_SYNC_ENABLE
+        depends on WIFI_RMT_NAN_SECURITY && IDF_EXPERIMENTAL_FEATURES && WIFI_RMT_MBEDTLS_CRYPTO
         default WIFI_RMT_NAN_PAIRING
 endif
 

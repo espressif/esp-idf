@@ -218,7 +218,7 @@ typedef struct {
     uint8_t inst_id;                    /**< Own service instance id */
     uint8_t peer_inst_id;               /**< Peer's service instance id */
     uint8_t peer_mac[6];                /**< Peer's NAN Management Interface MAC */
-    uint16_t selected_method;           /**< One selected method from wifi_nan_bootstrap_method_t */
+    uint16_t selected_method;           /**< One selected WIFI_NAN_BOOTSTRAP_* method bit */
     wifi_nan_pairing_status_t status;   /**< Set to COMEBACK when resending with cookie */
     uint16_t comeback_after;            /**< Comeback deferral time in TUs (only when status=COMEBACK) */
     uint32_t cookie;                    /**< Opaque cookie from responder (only when status=COMEBACK) */
@@ -235,7 +235,7 @@ typedef struct {
     uint8_t peer_inst_id;               /**< Peer's service instance id */
     uint8_t peer_mac[6];                /**< Peer's NAN Management Interface MAC */
     wifi_nan_pairing_status_t status;   /**< Accepted, Rejected, or Comeback */
-    uint16_t matched_method;            /**< Matched bootstrapping method (valid if accepted) */
+    uint16_t matched_method;            /**< Matched bootstrapping method, one WIFI_NAN_BOOTSTRAP_* bit (valid if accepted) */
     uint8_t reason_code;                /**< Rejection reason code (valid if rejected) */
     uint16_t comeback_after;            /**< Comeback deferral time in TUs (only when status=COMEBACK) */
     uint32_t cookie;                    /**< Opaque cookie for comeback (only when status=COMEBACK) */
@@ -261,7 +261,7 @@ esp_err_t esp_wifi_nan_bootstrap_request(wifi_nan_pairing_bootstrap_req_t *req);
   * @brief      Respond to a NAN Pairing Bootstrapping request from a peer
   *
   * @attention  This API should be called by the Publisher after receiving a
-  *             WIFI_EVENT_NAN_PAIRING_INDICATION event.
+  *             WIFI_EVENT_NAN_BOOTSTRAP_INDICATION event.
   *
   * @param      resp  Pairing bootstrapping response parameters.
   *

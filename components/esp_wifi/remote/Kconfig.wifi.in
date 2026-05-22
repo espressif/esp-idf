@@ -335,12 +335,10 @@ config WIFI_RMT_ENABLE_WPA3_OWE_SOFTAP
 
 config WIFI_RMT_PASN_SUPPORT
     bool "Enable PASN support"
-    depends on WIFI_RMT_NAN_PAIRING
-    default y if WIFI_RMT_NAN_PAIRING
+    default n
     help
-        Enable PASN for Wi-Fi NAN; the supplicant exposes CONFIG_PASN when this is on.
-        This option is only available when "NAN-Sync pairing bootstrapping"
-        (WIFI_RMT_NAN_PAIRING) is enabled, because NAN PASN builds on that path.
+        Pre-Association Security Negotiation (PASN) for Wi-Fi NAN.
+        The wpa_supplicant exposes CONFIG_PASN when this is on.
 
 config WIFI_RMT_SLP_IRAM_OPT
     bool "WiFi SLP IRAM speed optimization"
@@ -607,12 +605,13 @@ config WIFI_RMT_NAN_USD_ENABLE
 
 config WIFI_RMT_NAN_PAIRING
     bool "Enable NAN Pairing"
-    depends on WIFI_RMT_NAN_SYNC_ENABLE
+    depends on WIFI_RMT_NAN_SECURITY && IDF_EXPERIMENTAL_FEATURES && WIFI_RMT_MBEDTLS_CRYPTO
+    select WIFI_RMT_PASN_SUPPORT
     default n
     help
         Enable NAN Pairing support. This allows devices to establish
-        secure pairing using bootstrapping methods like PIN code or
-        opportunistic pairing as defined in Wi-Fi Aware specification.
+        secure pairing using bootstrapping methods like PIN code.
+        Requires PASN in wpa_supplicant (WIFI_RMT_PASN_SUPPORT)
 
 config WIFI_RMT_MBEDTLS_CRYPTO
     bool "Use MbedTLS crypto APIs"

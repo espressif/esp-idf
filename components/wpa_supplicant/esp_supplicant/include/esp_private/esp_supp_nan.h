@@ -27,7 +27,6 @@ extern "C" {
 #endif
 
 struct nan_data;
-typedef void (*esp_nan_pairing_key_installed_cb_t)(const uint8_t *peer_nmi);
 
 #if CONFIG_ESP_WIFI_PASN_SUPPORT
 #ifndef ETH_ALEN
@@ -46,11 +45,33 @@ typedef void (*esp_nan_pairing_key_installed_cb_t)(const uint8_t *peer_nmi);
 #define NAN_PASN_NIK_LEN 16
 #endif
 
+#ifndef ESP_NAN_ROLE_ENUM_DEFINED
+#define ESP_NAN_ROLE_ENUM_DEFINED
 enum nan_role {
     NAN_ROLE_IDLE = 0,
     NAN_ROLE_PAIRING_INITIATOR = 1,
     NAN_ROLE_PAIRING_RESPONDER = 2,
 };
+#endif
+
+/**
+ * Pairing-complete callback. Fires after the PASN pairwise TK is installed and
+ * -- if the PASN PTK carried a KDK -- the ND-PMK has been derived
+ * (Wi-Fi Aware v4.0 section 7.6.4.2: KDF-HASH-256(NM-KDK, "NDP PMK Derivation",
+ * Pairing Initiator NMI || Pairing Responder NMI)).
+ *
+ * @param peer_nmi    Peer NMI (6 bytes).
+ * @param role        enum nan_role value for the local device.
+ * @param ndp_csid    NCS-SK CSID for paired-peer NDP (WIFI_NAN_CSID_NCS_SK_128
+ *                    or _SK_256), 0 if no usable cipher mapping was available.
+ * @param nd_pmk      ND-PMK bytes (32) or NULL if KDK was absent.
+ * @param nd_pmk_len  Length of @a nd_pmk (32 when present, 0 otherwise).
+ */
+typedef void (*esp_nan_pairing_key_installed_cb_t)(const uint8_t *peer_nmi,
+                                                   uint8_t role,
+                                                   uint8_t ndp_csid,
+                                                   const uint8_t *nd_pmk,
+                                                   size_t nd_pmk_len);
 
 /**
  * Last PASN key material after successful pairing (PMK + flattened PTK KCK|KEK|TK|KDK).

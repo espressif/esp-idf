@@ -8,9 +8,10 @@
 
 #include "sdkconfig.h"
 #include "esp_private/esp_supp_nan.h"
-#include "esp_nan_supp_i.h"
 
-#if CONFIG_ESP_WIFI_PASN_SUPPORT
+#if CONFIG_ESP_WIFI_NAN_PAIRING
+
+#include "esp_nan_supp_i.h"
 
 #include "utils/includes.h"
 #include "utils/common.h"
@@ -55,10 +56,26 @@ int temp = 1;
 #define NAN_PASN_AES_WRAP_MIN_CIPHERTEXT (NAN_PASN_AES_WRAP_OVERHEAD + 8)
 
 /**
+ * Map PASN pairwise cipher to the NCS-SK CSID used for paired-peer NDPs
+ * (Wi-Fi Aware v4.0 §7.6.4.2: paired NDP runs NCS-SK style M1-M4, key length
+ * inherits from the PASN cipher).
+ *
+ * Returns 0 when the PASN cipher has no SK equivalent.
+ */
+static uint8_t nan_pasn_pasn_cipher_to_ndp_csid(int pasn_cipher)
+{
+    switch (pasn_cipher) {
+    case WPA_CIPHER_CCMP:       return WIFI_NAN_CSID_NCS_SK_128;
+    case WPA_CIPHER_GCMP_256:   return WIFI_NAN_CSID_NCS_SK_256;
+    default:                    return 0;
+    }
+}
+
+/**
  * Key lengths for NCS-PK-PASN-128 / NCS-PK-PASN-256 (Wi-Fi Aware pairing).
  * Mirrors hostap @c nan_crypto_cipher_*_len in src/nan/nan_crypto.c.
  */
-static size_t nan_pasn_cipher_kck_len(int cipher)
+static size_t __attribute__((unused)) nan_pasn_cipher_kck_len(int cipher)
 {
     switch (cipher) {
     case WPA_CIPHER_CCMP:
@@ -239,8 +256,7 @@ static int nan_pasn_install_nan_pairwise_tk(struct nan_pasn_data *nan, struct pa
         return -1;
     }
 
-    ESP_LOG_BUFFER_HEXDUMP("NAN PASN: NM-TK",
-                           ptk->tk, ptk->tk_len, ESP_LOG_INFO);
+    wpa_hexdump_key(MSG_DEBUG, "NAN PASN: NM-TK", ptk->tk, ptk->tk_len);
     kret = esp_wifi_set_nan_key_internal(
                NAN_PASN_WIFI_ALG_CCMP, pasn->peer_addr, temp, 1, key_rsc, sizeof(key_rsc),
                ptk->tk, ptk->tk_len,
@@ -541,25 +557,17 @@ static int nan_pasn_parse_nik_kdes(const u8 *data, size_t len, int cipher,
         } else if (gtk_key_len && selector == sel_igtk &&
                    kde_body_len >= gtk_kde_min) {
             /* IGTK KDE: KeyID(2 LE) | IPN(6) | IGTK */
-            size_t igtk_len = kde_body_len - 8;
-            wpa_printf(MSG_DEBUG,
-                       "NAN: IGTK KDE KeyID=%u igtk_len=%zu",
-                       WPA_GET_LE16(kde_body), igtk_len);
+            wpa_printf(MSG_DEBUG, "NAN: IGTK KDE KeyID=%u igtk_len=%zu",
+                       WPA_GET_LE16(kde_body), kde_body_len - 8);
             wpa_hexdump(MSG_DEBUG, "NAN: IGTK IPN", kde_body + 2, 6);
-            wpa_hexdump_key(MSG_DEBUG, "NAN: IGTK",
-                            kde_body + 8, igtk_len);
-            ESP_LOG_BUFFER_HEXDUMP("IGTK", kde_body + 8, igtk_len, ESP_LOG_INFO);
+            wpa_hexdump_key(MSG_DEBUG, "NAN: IGTK", kde_body + 8, kde_body_len - 8);
         } else if (gtk_key_len && selector == sel_bigtk &&
                    kde_body_len >= gtk_kde_min) {
             /* BIGTK KDE: KeyID(2 LE) | BIPN(6) | BIGTK */
-            size_t bigtk_len = kde_body_len - 8;
-            wpa_printf(MSG_DEBUG,
-                       "NAN: BIGTK KDE KeyID=%u bigtk_len=%zu",
-                       WPA_GET_LE16(kde_body), bigtk_len);
+            wpa_printf(MSG_DEBUG, "NAN: BIGTK KDE KeyID=%u bigtk_len=%zu",
+                       WPA_GET_LE16(kde_body), kde_body_len - 8);
             wpa_hexdump(MSG_DEBUG, "NAN: BIPN", kde_body + 2, 6);
-            wpa_hexdump_key(MSG_DEBUG, "NAN: BIGTK",
-                            kde_body + 8, bigtk_len);
-            ESP_LOG_BUFFER_HEXDUMP("BIGTK", kde_body + 8, bigtk_len, ESP_LOG_INFO);
+            wpa_hexdump_key(MSG_DEBUG, "NAN: BIGTK", kde_body + 8, kde_body_len - 8);
         }
 
         pos += 2 + elen;
@@ -708,7 +716,6 @@ int nan_pasn_followup_decrypt_keys(const uint8_t *shared_key_attr,
         return -1;
     }
 
-    ESP_LOG_BUFFER_HEXDUMP("Key Data", wpabuf_head(key_data), wpabuf_len(key_data), ESP_LOG_INFO);
     if (nan_pasn_parse_nik_kdes(wpabuf_head(key_data), wpabuf_len(key_data),
                                 saved->cipher, nik, &found_cipher_ver,
                                 &found_lifetime, &lifetime_bitmap) != 0) {
@@ -764,20 +771,6 @@ static int nan_pasn_get_current_freq_mhz(void)
     return nan_chan_to_freq_mhz(primary);
 }
 
-static const char * __attribute__((unused))
-nan_pasn_role_to_str(enum nan_role role)
-{
-    switch (role) {
-    case NAN_ROLE_PAIRING_INITIATOR:
-        return "initiator";
-    case NAN_ROLE_PAIRING_RESPONDER:
-        return "responder";
-    case NAN_ROLE_IDLE:
-    default:
-        return "idle";
-    }
-}
-
 static void nan_pasn_auth_timeout_cancel(struct nan_pasn_data *nan);
 
 static void nan_pasn_auth_timeout_cb(void *eloop_ctx, void *user_data)
@@ -790,7 +783,9 @@ static void nan_pasn_auth_timeout_cb(void *eloop_ctx, void *user_data)
 
     wpa_printf(MSG_INFO,
                "NAN PASN: %s auth timed out after %u seconds",
-               nan_pasn_role_to_str((enum nan_role)(uintptr_t)user_data),
+               ((enum nan_role)(uintptr_t)user_data == NAN_ROLE_PAIRING_INITIATOR) ?
+               "initiator" :
+               "responder",
                NAN_PASN_AUTH_TIMEOUT_SECS);
     nan_pasn_data_deinit(nan);
 }
@@ -1253,7 +1248,13 @@ static int nan_handle_pasn_auth(struct nan_pasn_data *nan,
         nan_pasn_copy_keys_from_pasn(nan, pasn);
         if (nan_pasn_install_nan_pairwise_tk(nan, pasn) == 0 &&
                 nan->pairing_key_installed_cb) {
-            nan->pairing_key_installed_cb(pasn->peer_addr);
+            const uint8_t *nd_pmk = pasn_nd_pmk_global.valid ?
+                                    pasn_nd_pmk_global.nd_pmk : NULL;
+            size_t nd_pmk_len = pasn_nd_pmk_global.valid ? PMK_LEN : 0;
+            nan->pairing_key_installed_cb(pasn->peer_addr,
+                                          (uint8_t)nan->dev_role,
+                                          nan_pasn_pasn_cipher_to_ndp_csid(pasn->cipher),
+                                          nd_pmk, nd_pmk_len);
         }
         forced_memzero(pasn_get_ptk(pasn), sizeof(pasn->ptk));
         nan_pasn_data_deinit(nan);
@@ -1304,7 +1305,13 @@ int nan_pasn_auth_rx(struct nan_pasn_data *nan, const struct ieee80211_auth *mgm
             nan_pasn_copy_keys_from_pasn(nan, pasn);
             if (nan_pasn_install_nan_pairwise_tk(nan, pasn) == 0 &&
                     nan->pairing_key_installed_cb) {
-                nan->pairing_key_installed_cb(pasn->peer_addr);
+                const uint8_t *nd_pmk = pasn_nd_pmk_global.valid ?
+                                        pasn_nd_pmk_global.nd_pmk : NULL;
+                size_t nd_pmk_len = pasn_nd_pmk_global.valid ? PMK_LEN : 0;
+                nan->pairing_key_installed_cb(pasn->peer_addr,
+                                              (uint8_t)nan->dev_role,
+                                              nan_pasn_pasn_cipher_to_ndp_csid(pasn->cipher),
+                                              nd_pmk, nd_pmk_len);
             }
         }
 #ifdef CONFIG_TESTING_OPTIONS
@@ -1809,141 +1816,4 @@ int esp_nan_supp_pasn_responder_init(const uint8_t *peer_nmi, uint32_t pincode,
     return 0;
 }
 
-#else /* !CONFIG_ESP_WIFI_PASN_SUPPORT */
-
-void handle_auth_pasn(uint8_t *buf, size_t len, uint16_t trans_seq, uint16_t status)
-{
-    (void)buf;
-    (void)len;
-    (void)trans_seq;
-    (void)status;
-}
-
-int nan_initiate_pasn_verify(struct nan_pasn_data *pd, const uint8_t *peer_addr,
-                             int freq, int role, const uint8_t *bssid,
-                             const uint8_t *ssid, size_t ssid_len)
-{
-    (void)pd;
-    (void)peer_addr;
-    (void)freq;
-    (void)role;
-    (void)bssid;
-    (void)ssid;
-    (void)ssid_len;
-    return -1;
-}
-
-int nan_initiate_pasn_auth(struct nan_pasn_data *pd, const uint8_t *addr, int freq)
-{
-    (void)pd;
-    (void)addr;
-    (void)freq;
-    return -1;
-}
-
-struct nan_pasn_data *nan_pasn_data_init(void)
-{
-    return NULL;
-}
-
-void nan_pasn_data_deinit(struct nan_pasn_data *pd)
-{
-    (void)pd;
-}
-
-int nan_pasn_auth_initiate(struct nan_pasn_data *pd, const uint8_t *peer_addr, int freq)
-{
-    (void)pd;
-    (void)peer_addr;
-    (void)freq;
-    return -1;
-}
-
-int nan_pasn_auth(struct nan_pasn_data **pd_out, const uint8_t *peer_addr, int freq)
-{
-    (void)pd_out;
-    (void)peer_addr;
-    (void)freq;
-    return -1;
-}
-
-int nan_pasn_auth_eloop(const uint8_t *peer_addr, uint32_t pincode)
-{
-    (void)peer_addr;
-    (void)pincode;
-    return -1;
-}
-
-int nan_pasn_verify_eloop(unsigned int secs, unsigned int usecs,
-                          const uint8_t *peer_addr, int freq, int role,
-                          const uint8_t *bssid,
-                          const uint8_t *ssid, size_t ssid_len)
-{
-    (void)secs;
-    (void)usecs;
-    (void)peer_addr;
-    (void)freq;
-    (void)role;
-    (void)bssid;
-    (void)ssid;
-    (void)ssid_len;
-    return -1;
-}
-
-int pasn_responder_init(const uint8_t *peer_addr, uint32_t pincode)
-{
-    (void)peer_addr;
-    (void)pincode;
-    return -1;
-}
-
-int pasn_responder_init_eloop(const uint8_t *peer_addr, uint32_t pincode)
-{
-    (void)peer_addr;
-    (void)pincode;
-    return -1;
-}
-
-int esp_nan_supp_pasn_responder_init(const uint8_t *peer_nmi, uint32_t pincode,
-                                     esp_nan_pairing_key_installed_cb_t pairing_key_installed_cb)
-{
-    (void)peer_nmi;
-    (void)pincode;
-    (void)pairing_key_installed_cb;
-    return -1;
-}
-
-int esp_nan_supp_pasn_initiator_auth(const uint8_t *peer_nmi, uint32_t pincode,
-                                     esp_nan_pairing_key_installed_cb_t pairing_key_installed_cb)
-{
-    (void)peer_nmi;
-    (void)pincode;
-    (void)pairing_key_installed_cb;
-    return -1;
-}
-
-const struct nan_pasn_key_material *nan_pasn_get_saved_keys(void)
-{
-    return NULL;
-}
-
-void nan_pasn_clear_saved_keys(void)
-{
-}
-
-int nan_pasn_followup_decrypt_keys(const uint8_t *shared_key_attr,
-                                   size_t attr_total_len,
-                                   uint8_t *nik, size_t nik_size,
-                                   uint8_t *cipher_ver,
-                                   uint32_t *lifetime_sec)
-{
-    (void)shared_key_attr;
-    (void)attr_total_len;
-    (void)nik;
-    (void)nik_size;
-    (void)cipher_ver;
-    (void)lifetime_sec;
-    return -1;
-}
-
-#endif /* CONFIG_ESP_WIFI_PASN_SUPPORT */
+#endif /* CONFIG_ESP_WIFI_NAN_PAIRING */

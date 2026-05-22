@@ -15,6 +15,7 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_mac.h"
+#include "esp_timer.h"
 #include "os.h"
 #include "esp_nan.h"
 #include "utils/common.h"
@@ -22,6 +23,44 @@
 #ifdef CONFIG_ESP_WIFI_NAN_USD_ENABLE
 #include "esp_private/esp_nan_usd.h"
 #endif /* CONFIG_ESP_WIFI_NAN_USD_ENABLE */
+
+bool esp_nan_ndp_info_present(void)
+{
+    return true;
+}
+
+uint32_t esp_nan_ndp_get_info_len(void)
+{
+    return 12;
+}
+
+int esp_nan_construct_ndp_info(uint8_t *frm)
+{
+    static const uint8_t ndp_info_attr[] = {
+        0x01, 0x09, 0x00, 0x50, 0x6f, 0x9a, 0x02, 0x00, 0x02, 0x00, 0x05, 0x0d
+    };
+
+    if (!frm) {
+        return 0;
+    }
+
+    memcpy(frm, ndp_info_attr, sizeof(ndp_info_attr));
+    return sizeof(ndp_info_attr);
+}
+
+#if !CONFIG_ESP_WIFI_NAN_PAIRING
+uint32_t esp_nan_get_nira_len(void)
+{
+    return 0;
+}
+
+int esp_nan_construct_nira(uint8_t *frm)
+{
+    (void)frm;
+    return 0;
+}
+#endif
+
 #if defined(CONFIG_ESP_WIFI_NAN_SYNC_ENABLE) && defined(CONFIG_ESP_WIFI_PASN_SUPPORT)
 #include "esp_private/esp_supp_nan.h"
 #include "apps_private/wifi_apps_private.h"
@@ -85,6 +124,118 @@ const uint8_t *nan_pairing_get_null_mac(void)
 {
     return null_mac;
 }
+
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+/* ---- Paired-peer cache ---------------------------------------------------
+ *
+ * Tracks ND-PMK + cipher per peer NMI after PASN/Pairing completes. The
+ * security layer (nan_security.c) consumes these on inbound SDF match and on
+ * NDP request/response to source ND-PMK without an app-provided service
+ * credential. Lifetime accounting is timestamp-based; auto-purge is left to
+ * the consumer (current path: explicit remove or stop).
+ */
+
+static struct nan_paired_peer *nan_app_find_paired_slot_locked(const uint8_t *peer_nmi)
+{
+    for (int i = 0; i < ESP_WIFI_NAN_DATAPATH_MAX_PEERS; i++) {
+        struct nan_paired_peer *p = &s_nan_ctx.paired_peers[i];
+        if (p->valid && memcmp(p->peer_nmi, peer_nmi, MACADDR_LEN) == 0) {
+            return p;
+        }
+    }
+    return NULL;
+}
+
+static struct nan_paired_peer *nan_app_alloc_paired_slot_locked(const uint8_t *peer_nmi)
+{
+    struct nan_paired_peer *p = nan_app_find_paired_slot_locked(peer_nmi);
+    if (p) {
+        return p;
+    }
+    for (int i = 0; i < ESP_WIFI_NAN_DATAPATH_MAX_PEERS; i++) {
+        if (!s_nan_ctx.paired_peers[i].valid) {
+            return &s_nan_ctx.paired_peers[i];
+        }
+    }
+    /* Evict oldest entry by established_us. */
+    int oldest = 0;
+    int64_t oldest_ts = s_nan_ctx.paired_peers[0].established_us;
+    for (int i = 1; i < ESP_WIFI_NAN_DATAPATH_MAX_PEERS; i++) {
+        if (s_nan_ctx.paired_peers[i].established_us < oldest_ts) {
+            oldest_ts = s_nan_ctx.paired_peers[i].established_us;
+            oldest = i;
+        }
+    }
+    return &s_nan_ctx.paired_peers[oldest];
+}
+
+esp_err_t nan_app_register_paired_peer(const uint8_t *peer_nmi,
+                                       uint8_t role,
+                                       uint8_t ndp_csid,
+                                       const uint8_t *nd_pmk,
+                                       size_t nd_pmk_len,
+                                       uint32_t lifetime_sec)
+{
+    if (!peer_nmi || !nd_pmk || nd_pmk_len != ESP_WIFI_NAN_NDP_PMK_LEN) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (ndp_csid != WIFI_NAN_CSID_NCS_SK_128 && ndp_csid != WIFI_NAN_CSID_NCS_SK_256) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    NAN_DATA_LOCK();
+    struct nan_paired_peer *p = nan_app_alloc_paired_slot_locked(peer_nmi);
+    forced_memzero(p->nd_pmk, sizeof(p->nd_pmk));
+    memset(p, 0, sizeof(*p));
+    p->valid = true;
+    MACADDR_COPY(p->peer_nmi, peer_nmi);
+    p->role = role;
+    p->ndp_csid = ndp_csid;
+    memcpy(p->nd_pmk, nd_pmk, nd_pmk_len);
+    p->lifetime_sec = lifetime_sec;
+    p->established_us = esp_timer_get_time();
+    NAN_DATA_UNLOCK();
+
+    ESP_LOGI(TAG, "Paired peer cached: " MACSTR " role=%u csid=%u lifetime=%us",
+             MAC2STR(peer_nmi), role, ndp_csid, lifetime_sec);
+    return ESP_OK;
+}
+
+const struct nan_paired_peer *nan_app_find_paired_peer(const uint8_t *peer_nmi)
+{
+    if (!peer_nmi) {
+        return NULL;
+    }
+    /* Caller holds NAN_DATA_LOCK (see nan_i.h). */
+    return nan_app_find_paired_slot_locked(peer_nmi);
+}
+
+void nan_app_remove_paired_peer(const uint8_t *peer_nmi)
+{
+    if (!peer_nmi) {
+        return;
+    }
+    NAN_DATA_LOCK();
+    struct nan_paired_peer *p = nan_app_find_paired_slot_locked(peer_nmi);
+    if (p) {
+        forced_memzero(p->nd_pmk, sizeof(p->nd_pmk));
+        memset(p, 0, sizeof(*p));
+    }
+    NAN_DATA_UNLOCK();
+}
+
+void nan_app_clear_paired_peers(void)
+{
+    NAN_DATA_LOCK();
+    for (int i = 0; i < ESP_WIFI_NAN_DATAPATH_MAX_PEERS; i++) {
+        forced_memzero(s_nan_ctx.paired_peers[i].nd_pmk,
+                       sizeof(s_nan_ctx.paired_peers[i].nd_pmk));
+    }
+    memset(s_nan_ctx.paired_peers, 0, sizeof(s_nan_ctx.paired_peers));
+    NAN_DATA_UNLOCK();
+}
+#endif /* CONFIG_ESP_WIFI_NAN_SECURITY */
+
 #endif /* CONFIG_ESP_WIFI_NAN_PAIRING */
 
 void esp_wifi_nan_get_ipv6_linklocal_from_mac(ip6_addr_t *ip6, uint8_t *mac_addr)
@@ -575,7 +726,8 @@ void nan_app_post_event(int32_t event_id, void* event_data, size_t event_data_si
     g_wifi_osi_funcs._event_post(WIFI_EVENT, event_id, event_data, event_data_size, OSI_FUNCS_TIME_BLOCKING);
 }
 
-void nan_app_service_match_cb(uint8_t sub_id, struct nan_cb_peer_info *peer_info)
+void nan_app_service_match_cb(uint8_t sub_id, struct nan_cb_peer_info *peer_info,
+                              struct nan_cb_npba_t *npba)
 {
     if (!peer_info) {
         return;
@@ -656,6 +808,19 @@ void nan_app_service_match_cb(uint8_t sub_id, struct nan_cb_peer_info *peer_info
     evt->datapath_reqd = (capab & NAN_SDEA_CTRL_DATAPATH_REQD) ? 1 : 0;
     evt->ndpe_support = (device_caps & NAN_CAPS_NDPE_ATTR) ? 1 : 0;
     evt->security_reqd = (capab & NAN_SDEA_CTRL_SECURITY_REQD) ? 1 : 0;
+
+    if (peer_info->peer_security_params) {
+        const wifi_nan_peer_sdf_security_t *peer_sec = peer_info->peer_security_params;
+
+        evt->csid_bitmap = peer_sec->csid_bitmap;
+        evt->pairing_setup = peer_sec->pairing_setup;
+        evt->npk_nik_caching = peer_sec->npk_nik_caching;
+    }
+
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+    evt->bootstrapping_methods = nan_app_parse_npba_from_publish(npba);
+#endif
+
     evt->ssi_version = ssi_ver;
     if (ssi && ssi_len) {
         if (ssi_ver) {
@@ -712,7 +877,9 @@ void nan_app_replied_cb(uint8_t pub_id, struct nan_cb_peer_info *peer_info)
     os_free(evt);
 }
 
-void nan_app_receive_cb(uint8_t svc_id, struct nan_cb_peer_info *peer_info)
+void nan_app_receive_cb(uint8_t svc_id, struct nan_cb_peer_info *peer_info,
+                        uint8_t *shared_key_attr, uint16_t shared_key_attr_buf_len,
+                        struct nan_cb_npba_t *npba)
 {
     if (!peer_info) {
         return;
@@ -722,7 +889,6 @@ void nan_app_receive_cb(uint8_t svc_id, struct nan_cb_peer_info *peer_info)
     uint8_t *ssi = peer_info->ssi;
     uint16_t ssi_len = peer_info->ssi_len;
     uint32_t device_caps = peer_info->device_caps;
-    uint8_t *shared_key_attr = peer_info->shared_key_attr;
 
     NAN_DATA_LOCK();
     if (!nan_find_peer_svc(svc_id, peer_svc_id, peer_mac)) {
@@ -732,8 +898,15 @@ void nan_app_receive_cb(uint8_t svc_id, struct nan_cb_peer_info *peer_info)
 
 #if defined(CONFIG_ESP_WIFI_NAN_SECURITY) && defined(CONFIG_ESP_WIFI_NAN_PAIRING) && defined(CONFIG_ESP_WIFI_PASN_SUPPORT)
     if (shared_key_attr) {
-        nan_app_receive_pairing_followup(svc_id, peer_svc_id, peer_mac, shared_key_attr);
+        nan_app_receive_pairing_followup(svc_id, peer_svc_id, peer_mac, shared_key_attr,
+                                         shared_key_attr_buf_len);
         return;
+    }
+#endif
+
+#if defined(CONFIG_ESP_WIFI_NAN_PAIRING)
+    if (npba) {
+        nan_app_parse_npba_from_receive(svc_id, peer_svc_id, peer_mac, npba);
     }
 #endif
 
@@ -1260,8 +1433,6 @@ void esp_nan_action_start(esp_netif_t *nan_netif)
         .action_txdone = nan_action_txdone_cb,
         .ndp_response_indication = nan_app_ndp_response_indication_cb,
 #ifdef CONFIG_ESP_WIFI_NAN_PAIRING
-        .pairing_indication = nan_app_bootstrap_indication_cb,
-        .pairing_confirm = nan_app_bootstrap_completed_cb,
         .get_nira_len = esp_nan_get_nira_len,
         .construct_nira = esp_nan_construct_nira,
         .receive_pasn = handle_auth_pasn,
@@ -1287,6 +1458,13 @@ void esp_nan_action_stop(void)
     s_nan_ctx.state &= ~NAN_STARTED_BIT;
     s_nan_ctx.state |= NAN_STOPPED_BIT;
     NAN_DATA_UNLOCK();
+
+#if defined(CONFIG_ESP_WIFI_NAN_PAIRING) && defined(CONFIG_ESP_WIFI_NAN_SECURITY)
+    /* ND-PMKs are bound to the local NMI used at PASN time; a later
+     * sync_start may use a different (randomized) NMI, which would
+     * invalidate every cached derivation. */
+    nan_app_clear_paired_peers();
+#endif
 
     esp_nan_internal_register_callbacks(NULL);
     os_event_group_set_bits(nan_event_group, NAN_STOPPED_BIT);
@@ -1447,9 +1625,14 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
     }
 
 #ifdef CONFIG_ESP_WIFI_NAN_PAIRING
-    if (!nan_pairing_validate_publish_bootstrapping(publish_cfg->pairing.bootstrapping_methods)) {
-        ESP_LOGE(TAG, "Invalid bootstrapping methods for Publisher. Only OPPORTUNISTIC and PIN_CODE_DISPLAY allowed");
-        return 0;
+    {
+        uint16_t bootstrap_methods = publish_cfg->pairing ?
+                                     publish_cfg->pairing->bootstrapping_methods : 0;
+
+        if (!nan_pairing_validate_publish_bootstrapping(bootstrap_methods)) {
+            ESP_LOGE(TAG, "Invalid bootstrapping methods for Publisher. Only OPPORTUNISTIC and PIN_CODE_DISPLAY allowed");
+            return 0;
+        }
     }
 #endif /* CONFIG_ESP_WIFI_NAN_PAIRING */
 
@@ -1523,6 +1706,15 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
         goto fail;
     }
     memcpy(cfg, publish_cfg, sizeof(*cfg));
+    cfg->pairing = NULL;
+    if (publish_cfg->pairing) {
+        cfg->pairing = os_malloc(sizeof(*cfg->pairing));
+        if (!cfg->pairing) {
+            ESP_LOGE(TAG, "Failed to copy pairing config");
+            goto fail;
+        }
+        memcpy(cfg->pairing, publish_cfg->pairing, sizeof(*cfg->pairing));
+    }
 
     /* Pre-claim host slot BEFORE calling into the blob. Reason: the blob
      * invokes our derive_security_params callback on the WiFi task and looks
@@ -1549,12 +1741,20 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
 
     ESP_LOGI(TAG, "Started Publishing %s [Service ID - %u]", publish_cfg->service_name, pub_id);
     nan_finalize_own_svc(publish_cfg->service_name, pub_id, publish_cfg->ndp_resp_needed);
+    if (cfg->pairing) {
+        os_free(cfg->pairing);
+    }
     os_free(cfg);
     NAN_DATA_UNLOCK();
 
     return pub_id;
 fail:
-    os_free(cfg);
+    if (cfg) {
+        if (cfg->pairing) {
+            os_free(cfg->pairing);
+        }
+        os_free(cfg);
+    }
     NAN_DATA_UNLOCK();
     return 0;
 #endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
@@ -1593,9 +1793,14 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
     }
 
 #ifdef CONFIG_ESP_WIFI_NAN_PAIRING
-    if (!nan_pairing_validate_subscribe_bootstrapping(subscribe_cfg->pairing.bootstrapping_methods)) {
-        ESP_LOGE(TAG, "Invalid bootstrapping methods for Subscriber. Only OPPORTUNISTIC and PIN_CODE_KEYPAD allowed");
-        return 0;
+    {
+        uint16_t bootstrap_methods = subscribe_cfg->pairing ?
+                                     subscribe_cfg->pairing->bootstrapping_methods : 0;
+
+        if (!nan_pairing_validate_subscribe_bootstrapping(bootstrap_methods)) {
+            ESP_LOGE(TAG, "Invalid bootstrapping methods for Subscriber. Only OPPORTUNISTIC and PIN_CODE_KEYPAD allowed");
+            return 0;
+        }
     }
 #endif /* CONFIG_ESP_WIFI_NAN_PAIRING */
 
@@ -1665,7 +1870,7 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
         goto fail;
     }
 
-    if (esp_nan_internal_subscribe_service(subscribe_cfg, (uint8_t*) &sub_id, false) != ESP_OK) {
+    if (esp_nan_internal_subscribe_service(subscribe_cfg, (uint8_t *) &sub_id, false) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to subscribe to service '%s'", subscribe_cfg->service_name);
         nan_abort_own_svc(subscribe_cfg->service_name);
         goto fail;
@@ -1899,7 +2104,12 @@ uint8_t esp_wifi_nan_datapath_req(wifi_nan_datapath_req_t *req)
 
     ESP_LOGD(TAG, "Requested NDP with "MACSTR" [NDP ID - %d]", MAC2STR(req->peer_mac), ndp_id);
 
-    EventBits_t bits = os_event_group_wait_bits(nan_event_group, NDP_ACCEPTED | NDP_REJECTED, pdFALSE, pdFALSE, pdMS_TO_TICKS(NAN_ACTION_TIMEOUT));
+    /* At worst, Secured NDP (M1..M4) needs ~2.1s; 4*DW races the confirm.
+     * Pick 6 (~3.1s). Harmless for open NDP - success unblocks instantly;
+     * only failure path waits longer. */
+    EventBits_t bits = os_event_group_wait_bits(nan_event_group, NDP_ACCEPTED | NDP_REJECTED,
+                                                pdFALSE, pdFALSE,
+                                                pdMS_TO_TICKS(6 * NAN_DW_INTVL_MS));
     if (bits & NDP_ACCEPTED) {
         return ndp_id;
     } else if (bits & NDP_REJECTED) {

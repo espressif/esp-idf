@@ -5,6 +5,10 @@
  */
 #pragma once
 
+#include "sdkconfig.h"
+
+#if CONFIG_ESP_WIFI_NAN_PAIRING
+
 #include <stdint.h>
 #include <stddef.h>
 #include "esp_private/esp_supp_nan.h"
@@ -13,7 +17,7 @@ struct wpabuf;
 struct pasn_data;
 struct rsn_pmksa_cache;
 
-typedef void (*nan_pasn_pairing_key_installed_cb_t)(const uint8_t *peer_nmi);
+typedef esp_nan_pairing_key_installed_cb_t nan_pasn_pairing_key_installed_cb_t;
 
 struct nan_config {
     uint8_t dev_addr[ETH_ALEN];
@@ -53,3 +57,5 @@ int nan_pasn_verify_eloop(unsigned int secs, unsigned int usecs,
                           const uint8_t *peer_addr, int freq, int role,
                           const uint8_t *bssid,
                           const uint8_t *ssid, size_t ssid_len);
+
+#endif /* CONFIG_ESP_WIFI_NAN_PAIRING */

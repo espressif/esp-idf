@@ -260,8 +260,16 @@ else()
     set(pasn_src "")
 endif()
 
+if(CONFIG_ESP_WIFI_NAN_PAIRING)
+    set(nan_pair_src
+    "esp_supplicant/src/esp_nan_supplicant.c")
+else()
+    set(nan_pair_src "")
+endif()
+
 idf_component_register(SRCS "${srcs}" "${esp_srcs}" "${tls_src}" "${roaming_src}"
-                            "${crypto_src}" "${mbo_src}" "${dpp_src}" "${wps_registrar_src}" "${usd_src}" "${pasn_src}"
+                            "${crypto_src}" "${mbo_src}" "${dpp_src}" "${wps_registrar_src}"
+                            "${usd_src}" "${pasn_src}" "${nan_pair_src}"
                     INCLUDE_DIRS include port/include esp_supplicant/include
                     PRIV_INCLUDE_DIRS src src/utils src/common esp_supplicant/src src/crypto
                                       ../esp_wifi/wifi_apps/roaming_app/include

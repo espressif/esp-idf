@@ -73,22 +73,26 @@ typedef struct {
 } wifi_nan_security_params_t;
 
 /**
-  * @brief NAN peer security material parsed from Publish/Subscribe SDF SCIA
+  * @brief NAN peer security and pairing material parsed from Publish/Subscribe SDF
   *
   * @note Per Wi-Fi Aware v4.0 §7.1.3.5, a publisher SDF SCIA may advertise
   *       multiple ND-PMKIDs (one per cached PMK). The receiver stores them
   *       and matches against locally-derived PMKID at NDP-initiation time.
+  *       Pairing flags mirror wifi_event_nan_svc_match_t and are filled by the
+  *       NAN blob when parsing CSIA/SCIA/DCEA.
   *       Internal only — not part of the public API. Shared between WiFi
   *       libraries and NAN app layer.
   */
 #define NAN_PEER_MAX_PMKIDS  2  /**< Internal cap; can grow without API impact */
 typedef struct {
-    uint16_t csid_bitmap;              /**< Peer's advertised Cipher Suite ID bitmap */
+    uint16_t csid_bitmap;              /**< Peer's advertised Cipher Suite ID bitmap (WIFI_NAN_CSID_BIT_*) */
     uint8_t num_pmkids;                /**< Number of parsed PMKIDs */
     uint8_t pmkids[NAN_PEER_MAX_PMKIDS][ESP_WIFI_NAN_NDP_PMKID_LEN]; /**< Parsed ND-PMKIDs */
     uint8_t group_data_prot: 1;        /**< Peer advertises group data frame protection */
     uint8_t group_mgmt_prot: 1;        /**< Peer advertises group mgmt frame protection */
-    uint8_t reserved: 6;               /**< Reserved */
+    uint8_t pairing_setup: 1;          /**< Pairing setup: 0 - disabled, 1 - enabled */
+    uint8_t npk_nik_caching: 1;        /**< NPK/NIK caching: 0 - disabled, 1 - enabled (valid if pairing_setup) */
+    uint8_t reserved: 4;               /**< Reserved */
 } wifi_nan_peer_sdf_security_t;
 
 /* NAN Peer info parsed from SDF */
@@ -102,7 +106,6 @@ struct nan_cb_peer_info {
     uint16_t ssi_len;                                       /**< SSI length in bytes */
     wifi_nan_peer_sdf_security_t *peer_security_params;     /**< Peer's discovery security params parsed from SDF */
     nan_vendor_ie_t *vendor_ie;                             /**< Vendor-specific IE, if any */
-    uint8_t *shared_key_attr;                               /**< Shared key descriptor attribute, if any */
 };
 
 /* NDP Peer info parsed from NAF. */
@@ -114,6 +117,13 @@ struct ndp_cb_peer_info {
     uint16_t ssi_len;
 };
 
+/* NAN Pairing Bootstrapping parameters parsed from SDF */
+struct nan_cb_npba_t {
+    uint8_t type;
+    uint8_t status;
+    uint16_t methods;
+};
+
 /* Host-side callbacks the closed-source NAN blob fires up into nan_app.
  * Registered once at nan_app init; all callbacks run in blob/WiFi-task
  * context, so handlers must be non-blocking and avoid heavy work. */
@@ -121,8 +131,10 @@ struct nan_sync_callbacks {
     /* Subscriber side: a Publish SDF matching the local subscribe was
      * received from a peer.
      *   sub_id    -- local subscribe service instance ID
-     *   peer_info -- publisher details (see struct nan_cb_peer_info) */
-    void (* service_match)(uint8_t sub_id, struct nan_cb_peer_info *peer_info);
+     *   peer_info -- publisher details (see struct nan_cb_peer_info)
+     *   npba      -- NPBA parsed from Publish SDF (Advertise), or NULL */
+    void (* service_match)(uint8_t sub_id, struct nan_cb_peer_info *peer_info,
+                           struct nan_cb_npba_t *npba);
 
     /* Publisher side: a Solicited Publish SDF was just transmitted in
      * response to a Subscribe match. Fires once per recipient.
@@ -133,8 +145,14 @@ struct nan_sync_callbacks {
     /* Either side: a Follow-up SDF was received for an existing service
      * match (post-discovery messaging).
      *   svc_id    -- local service instance ID this Follow-up targets
-     *   peer_info -- sender MAC and SSI payload */
-    void (* receive)(uint8_t svc_id, struct nan_cb_peer_info *peer_info);
+     *   peer_info -- sender MAC and SSI payload
+     *   shared_key_attr -- Shared key descriptor attribute, if any
+     *   shared_key_attr_buf_len -- total attribute length for pointer
+     *                          shared_key_attr (0 if shared_key_attr is NULL)
+     *   npba -- NAN Pairing Bootstrapping parameters, if any */
+    void (* receive)(uint8_t svc_id, struct nan_cb_peer_info *peer_info,
+                     uint8_t *shared_key_attr, uint16_t shared_key_attr_len,
+                     struct nan_cb_npba_t *npba);
 
     /* Publisher side (NDP Responder): an NDP Request (M1) was received.
      * Host either auto-accepts or waits for esp_wifi_nan_datapath_resp()
@@ -174,8 +192,6 @@ struct nan_sync_callbacks {
      * host can populate ndl->peer_ndi for spec-correct PTK derivation
      * (§7.1.3.5: PTK uses Data Interface addresses). */
     void (* ndp_response_indication)(struct ndp_cb_peer_info *peer_info);
-    void (* pairing_indication)(uint8_t peer_svc_id, uint8_t pub_id, uint8_t peer_nmi[6], uint16_t selected_method);
-    void (* pairing_confirm)(uint8_t status, uint8_t peer_svc_id, uint8_t sub_id, uint8_t peer_nmi[6], uint16_t matched_method, uint8_t reason_code);
     void (* receive_pasn)(uint8_t *buf, size_t len, uint16_t trans_seq, uint16_t status);
     uint32_t (* get_nira_len)(void);
     int (* construct_nira)(uint8_t *frm);
@@ -1180,23 +1196,6 @@ uint32_t esp_nan_get_nira_len(void);
  * @return     Number of bytes written
  */
 int esp_nan_construct_nira(uint8_t *frm);
-
-/**
- * @brief      Get length of Management MIC Element (MME)
- *
- * @return     Length in bytes
- */
-uint32_t esp_nan_get_mme_len(void);
-
-/**
- * @brief      Construct dummy Management MIC Element (MME)
- *
- * @param[out] frm     Buffer to write the element to
- * @param[in]  ipn     Incremental Packet Number (6-byte IPN, lower 4 bytes used from this param)
- *
- * @return     Number of bytes written
- */
-int esp_nan_construct_mme(uint8_t *frm, uint32_t ipn);
 
 /**
   * @brief Get the time information from the MAC clock. The time is precise only if modem sleep or light sleep is not enabled.

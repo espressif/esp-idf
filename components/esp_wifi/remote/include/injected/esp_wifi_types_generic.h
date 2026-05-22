@@ -979,10 +979,10 @@ typedef struct {
 } wifi_nan_discovery_security_params_t;
 
 /**
-  * @brief NAN Pairing Bootstrapping Method bitmask (per Wi-Fi Aware 4.0 spec)
+  * @brief NAN Pairing Bootstrapping Method bitmap (per Wi-Fi Aware 4.0 spec)
   *
-  * Each bit corresponds to a bootstrapping method capability.
-  * Multiple bits can be set simultaneously in the NPBA attribute.
+  * Each bit corresponds to one bootstrapping method (WIFI_NAN_BOOTSTRAP_*).
+  * Multiple bits may be set in bootstrapping_methods / NPBA.
   */
 #define WIFI_NAN_BOOTSTRAP_OPPORTUNISTIC        BIT(0)  /**< Opportunistic bootstrapping */
 #define WIFI_NAN_BOOTSTRAP_PIN_CODE_DISPLAY     BIT(1)  /**< Pin-code display */
@@ -1003,7 +1003,7 @@ typedef struct {
     uint8_t npk_nik_caching: 1;         /**< 0 - NPK/NIK caching disabled, 1 - enabled */
     uint8_t pairing_verification: 1;    /**< 0 - Pairing verification disabled, 1 - enabled */
     uint8_t reserved: 5;                /**< Reserved bits */
-    uint16_t bootstrapping_methods;     /**< Bitmask of wifi_nan_bootstrap_method_t */
+    uint16_t bootstrapping_methods;     /**< Bitmap of WIFI_NAN_BOOTSTRAP_* method bits */
     uint16_t comeback_delay;            /**< Comeback delay in TUs, 0 if comeback not required */
 } wifi_nan_pairing_cfg_t;
 
@@ -1056,7 +1056,7 @@ typedef struct {
                                                           The driver makes a private copy during esp_wifi_nan_publish_service();
                                                           the caller may free this immediately after the call returns. */
     nan_vendor_ie_t *vendor_ie;                     /**< Vendor specific IE to be added in publish frames */
-    wifi_nan_pairing_cfg_t pairing;                 /**< Pairing configuration parameters */
+    wifi_nan_pairing_cfg_t *pairing;                /**< Pairing configuration parameters */
 } wifi_nan_publish_cfg_t;
 
 /**
@@ -1083,7 +1083,7 @@ typedef struct {
                                                           The driver makes a private copy during esp_wifi_nan_subscribe_service();
                                                           the caller may free this immediately after the call returns. */
     nan_vendor_ie_t *vendor_ie;                     /**< Vendor specific IE to be added in subscribe frames */
-    wifi_nan_pairing_cfg_t pairing;                 /**< Pairing configuration parameters */
+    wifi_nan_pairing_cfg_t *pairing;                /**< Pairing configuration parameters */
 } wifi_nan_subscribe_cfg_t;
 
 /**
@@ -1292,10 +1292,6 @@ typedef enum {
     WIFI_EVENT_NDP_INDICATION,           /**< Received NDP Request from a NAN Peer */
     WIFI_EVENT_NDP_CONFIRM,              /**< NDP Confirm Indication */
     WIFI_EVENT_NDP_TERMINATED,           /**< NAN Datapath terminated indication */
-    WIFI_EVENT_NAN_BOOTSTRAP_INDICATION, /**< Received NAN Pairing Bootstrapping Request from a Peer */
-    WIFI_EVENT_NAN_BOOTSTRAP_COMPLETED,  /**< NAN Pairing Bootstrapping completed (success/failure) */
-    WIFI_EVENT_NAN_PAIRING_INDICATION,   /**< Received NAN Pairing indication (reserved) */
-    WIFI_EVENT_NAN_PAIRING_CONFIRM,      /**< NAN PASN pairwise key installation completed */
     WIFI_EVENT_HOME_CHANNEL_CHANGE,      /**< Wi-Fi home channel change，doesn't occur when scanning */
 
     WIFI_EVENT_STA_NEIGHBOR_REP,         /**< Received Neighbor Report response */
@@ -1306,6 +1302,10 @@ typedef enum {
     WIFI_EVENT_DPP_URI_READY,            /**< DPP URI is ready through Bootstrapping */
     WIFI_EVENT_DPP_CFG_RECVD,            /**< Config received via DPP Authentication */
     WIFI_EVENT_DPP_FAILED,               /**< DPP failed */
+    WIFI_EVENT_NAN_BOOTSTRAP_INDICATION, /**< Received NAN Pairing Bootstrapping Request from a Peer */
+    WIFI_EVENT_NAN_BOOTSTRAP_COMPLETED,  /**< NAN Pairing Bootstrapping completed (success/failure) */
+    WIFI_EVENT_NAN_PAIRING_INDICATION,   /**< Received NAN Pairing indication (reserved) */
+    WIFI_EVENT_NAN_PAIRING_CONFIRM,      /**< NAN PASN pairwise key installation completed */
     WIFI_EVENT_MAX,                      /**< Invalid Wi-Fi event ID */
 } wifi_event_t;
 
@@ -1543,21 +1543,24 @@ typedef struct {
   * @brief Argument structure for WIFI_EVENT_NAN_SVC_MATCH event
   */
 typedef struct {
-    uint8_t subscribe_id;       /**< Subscribe Service Identifier */
-    uint8_t publish_id;         /**< Publish Service Identifier */
-    uint8_t pub_if_mac[6];      /**< NAN Interface MAC of the Publisher */
-    bool update_pub_id;         /**< Indicates whether publisher's service ID needs to be updated */
-    uint8_t datapath_reqd: 1;   /**< NAN Datapath required for the service */
-    uint8_t fsd_reqd: 1;        /**< Further Service Discovery(FSD) required */
-    uint8_t fsd_gas: 1;         /**< 0 - Follow-up used for FSD, 1 - GAS used for FSD */
-    uint8_t ndpe_support: 1;    /**< NDPE supported by peer */
-    uint8_t security_reqd: 1;   /**< Security: 0 - Open, 1 - Required (NDP Security) */
-    uint8_t reserved: 3;        /**< Reserved */
-    uint32_t reserved_1;        /**< Reserved */
-    uint32_t reserved_2;        /**< Reserved */
-    uint8_t ssi_version;        /**< Indicates version of SSI in Publish instance, 0 if not available */
-    uint16_t ssi_len;           /**< Length of service specific info */
-    uint8_t ssi[];              /**< Service specific info of Publisher */
+    uint8_t subscribe_id;           /**< Subscribe Service Identifier */
+    uint8_t publish_id;             /**< Publish Service Identifier */
+    uint8_t pub_if_mac[6];          /**< NAN Interface MAC of the Publisher */
+    bool update_pub_id;             /**< Indicates whether publisher's service ID needs to be updated */
+    uint8_t datapath_reqd: 1;       /**< NAN Datapath required for the service */
+    uint8_t fsd_reqd: 1;            /**< Further Service Discovery(FSD) required */
+    uint8_t fsd_gas: 1;             /**< 0 - Follow-up used for FSD, 1 - GAS used for FSD */
+    uint8_t ndpe_support: 1;        /**< NDPE supported by peer */
+    uint8_t security_reqd: 1;       /**< Security: 0 - Open, 1 - Required (NDP Security) */
+    uint8_t pairing_setup: 1;       /**< Pairing setup: 0 - disabled, 1 - enabled (needs security_reqd:1) */
+    uint8_t npk_nik_caching: 1;     /**< NPK/NIK caching: 0 - disabled, 1 - enabled (valid if pairing_setup:1)*/
+    uint8_t already_paired: 1;      /**< 0 - not paired, 1 - device already paired */
+    uint16_t csid_bitmap;           /**< Supported Cipher Suite bitmap, each bit of type WIFI_NAN_CSID_BIT_[] */
+    uint16_t bootstrapping_methods; /**< Peer advertised bootstrapping methods (WIFI_NAN_BOOTSTRAP_* bitmap) */
+    uint32_t reserved_2;            /**< Reserved */
+    uint8_t ssi_version;            /**< Indicates version of SSI in Publish instance, 0 if not available */
+    uint16_t ssi_len;               /**< Length of service specific info */
+    uint8_t ssi[];                  /**< Service specific info of Publisher */
 } wifi_event_nan_svc_match_t;
 
 /**
@@ -1627,13 +1630,13 @@ typedef struct {
   * @brief Argument structure for WIFI_EVENT_NAN_BOOTSTRAP_INDICATION event
   *
   * Posted when a NAN Pairing Bootstrapping Request is received from a peer.
-  * The application should respond using esp_wifi_nan_pairing_response().
+  * The application should respond using esp_wifi_nan_bootstrap_response().
   */
 typedef struct {
     uint8_t peer_svc_id;                        /**< Peer's service instance id */
     uint8_t own_svc_id;                         /**< Own service instance id */
     uint8_t peer_nmi[6];                        /**< Peer's NAN Management Interface MAC */
-    uint16_t selected_method;                   /**< Bootstrapping method selected by initiator (wifi_nan_bootstrap_method_t) */
+    uint16_t selected_method;                   /**< Bootstrapping method selected by initiator (one WIFI_NAN_BOOTSTRAP_* bit) */
     uint8_t is_comeback;                        /**< 1 if this is a comeback retry with cookie */
     uint32_t cookie;                            /**< Comeback cookie from initiator (0 if none) */
 } wifi_event_nan_bootstrap_indication_t;
@@ -1649,7 +1652,7 @@ typedef struct {
     uint8_t peer_svc_id;                        /**< Peer's service instance id */
     uint8_t own_svc_id;                         /**< Own service instance id */
     uint8_t peer_nmi[6];                        /**< Peer's NAN Management Interface MAC */
-    uint16_t matched_method;                    /**< Matched bootstrapping method (valid if accepted) */
+    uint16_t matched_method;                    /**< Matched bootstrapping method, one WIFI_NAN_BOOTSTRAP_* bit (valid if accepted) */
     uint8_t reason_code;                        /**< Rejection reason (valid if rejected) */
     uint16_t comeback_after;                    /**< Comeback deferral time in TUs (valid if comeback) */
     uint32_t cookie;                            /**< Comeback cookie from responder (0 if none) */

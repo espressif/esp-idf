@@ -10,6 +10,7 @@
 
 #if defined(CONFIG_ESP_WIFI_NAN_PAIRING)
 
+#include <stdint.h>
 #include <string.h>
 #include "esp_wifi.h"
 #include "esp_private/wifi.h"
@@ -28,6 +29,11 @@
 
 static const char *TAG = "nan_pairing";
 
+/* Default NIK / pairing-record lifetime (also reused for paired-peer cache
+ * entries) — matches the NIK Key Lifetime KDE we transmit in the post-pairing
+ * Shared Key Descriptor (Wi-Fi Aware v4.0 §7.6.4.2). */
+#define NAN_PAIRING_DEFAULT_NIK_LIFETIME_SEC 86400U
+
 #if defined(CONFIG_ESP_WIFI_PASN_SUPPORT)
 struct nan_pasn_data *esp_nan_app_get_pasn_data(void)
 {
@@ -39,13 +45,40 @@ void esp_nan_app_set_pasn_data(struct nan_pasn_data *pd)
     s_nan_ctx.nan_pasn_data = pd;
 }
 
-static void nan_pairing_key_installed_cb(const uint8_t *peer_nmi)
+static void nan_pairing_key_installed_cb(const uint8_t *peer_nmi,
+                                         uint8_t role,
+                                         uint8_t ndp_csid,
+                                         const uint8_t *nd_pmk,
+                                         size_t nd_pmk_len)
 {
     wifi_event_nan_pairing_complete_t evt = {0};
 
     if (!peer_nmi) {
         return;
     }
+
+#if defined(CONFIG_ESP_WIFI_NAN_SECURITY)
+    /* Cache ND-PMK for future paired NDPs (Wi-Fi Aware v4.0 §7.6.4.2). The
+     * NDP cipher (CSID) is determined by the PASN cipher and resolved on the
+     * supplicant side before this callback fires; if either is missing, the
+     * pairing event still fires but the security layer will fall back to its
+     * service-credential path for any subsequent NDP. */
+    if (ndp_csid && nd_pmk && nd_pmk_len == ESP_WIFI_NAN_NDP_PMK_LEN) {
+        (void)nan_app_register_paired_peer(peer_nmi, role, ndp_csid,
+                                           nd_pmk, nd_pmk_len,
+                                           NAN_PAIRING_DEFAULT_NIK_LIFETIME_SEC);
+    } else {
+        ESP_LOGW(TAG, "Pairing complete for " MACSTR
+                 ": ND-PMK unavailable (csid=%u nd_pmk_len=%u); "
+                 "paired-peer cache not updated",
+                 MAC2STR(peer_nmi), ndp_csid, (unsigned)nd_pmk_len);
+    }
+#else
+    (void)role;
+    (void)ndp_csid;
+    (void)nd_pmk;
+    (void)nd_pmk_len;
+#endif
 
     evt.status = WIFI_NAN_PAIRING_STATUS_ACCEPTED;
     evt.reason_code = 0;
@@ -72,8 +105,16 @@ bool nan_pairing_validate_subscribe_bootstrapping(uint16_t bootstrapping_methods
     return (bootstrapping_methods & ~valid_methods) == 0;
 }
 
-void nan_app_bootstrap_indication_cb(uint8_t peer_svc_id, uint8_t pub_id,
-                                     uint8_t peer_nmi[6], uint16_t selected_method)
+uint16_t nan_app_parse_npba_from_publish(const struct nan_cb_npba_t *npba)
+{
+    if (!npba || npba->type != WIFI_NAN_NPBA_TYPE_ADVERTISE) {
+        return 0;
+    }
+    return npba->methods;
+}
+
+void nan_app_bootstrap_indication(uint8_t peer_svc_id, uint8_t pub_id,
+                                  uint8_t peer_nmi[6], uint16_t selected_method)
 {
     ESP_LOGI(TAG, "Pairing Bootstrapping Request from "MACSTR" [pub_id=%d, method=0x%x]",
              MAC2STR(peer_nmi), pub_id, selected_method);
@@ -87,9 +128,9 @@ void nan_app_bootstrap_indication_cb(uint8_t peer_svc_id, uint8_t pub_id,
     nan_app_post_event(WIFI_EVENT_NAN_BOOTSTRAP_INDICATION, &evt, sizeof(evt));
 }
 
-void nan_app_bootstrap_completed_cb(uint8_t status, uint8_t peer_svc_id, uint8_t sub_id,
-                                    uint8_t peer_nmi[6], uint16_t matched_method,
-                                    uint8_t reason_code)
+void nan_app_bootstrap_completed(uint8_t status, uint8_t peer_svc_id, uint8_t sub_id,
+                                 uint8_t peer_nmi[6], uint16_t matched_method,
+                                 uint8_t reason_code)
 {
     ESP_LOGI(TAG, "Pairing Bootstrapping Response from "MACSTR" [sub_id=%d, status=%d, method=0x%x]",
              MAC2STR(peer_nmi), sub_id, status, matched_method);
@@ -103,6 +144,26 @@ void nan_app_bootstrap_completed_cb(uint8_t status, uint8_t peer_svc_id, uint8_t
     evt.reason_code = reason_code;
 
     nan_app_post_event(WIFI_EVENT_NAN_BOOTSTRAP_COMPLETED, &evt, sizeof(evt));
+}
+
+bool nan_app_parse_npba_from_receive(uint8_t own_svc_id, uint8_t peer_svc_id,
+                                     uint8_t peer_nmi[6], const struct nan_cb_npba_t *npba)
+{
+    if (!npba || !peer_nmi) {
+        return false;
+    }
+
+    switch (npba->type) {
+    case WIFI_NAN_NPBA_TYPE_REQUEST:
+        nan_app_bootstrap_indication(peer_svc_id, own_svc_id, peer_nmi, npba->methods);
+        return true;
+    case WIFI_NAN_NPBA_TYPE_RESPONSE:
+        nan_app_bootstrap_completed(npba->status, peer_svc_id, own_svc_id, peer_nmi,
+                                    npba->methods, 0);
+        return true;
+    default:
+        return false;
+    }
 }
 
 static esp_err_t nan_send_bootstrap_followup(uint8_t inst_id, uint8_t peer_inst_id,
@@ -339,55 +400,6 @@ int esp_nan_construct_nira(uint8_t *frm)
     return (int)(p - frm);
 }
 
-#define NAN_MME_ELEMENT_ID      0x4C
-/* MME: ElementID(1) + Length(1) + KeyID(2) + IPN(6) + MIC(8) = 18 */
-#define NAN_MME_LEN             18
-
-uint32_t esp_nan_get_mme_len(void)
-{
-    return NAN_MME_LEN;
-}
-
-/**
- * @brief Construct dummy Management MIC Element (MME)
- *
- * Format: Element ID(1) + Length(1) + Key ID(2) + IPN/BIPN(6) + MIC(8)
- * Key ID is set to 4, MIC is 8 bytes random (dummy).
- */
-int esp_nan_construct_mme(uint8_t *frm, uint32_t ipn)
-{
-    if (!frm) {
-        return 0;
-    }
-
-    uint8_t *p = frm;
-
-    /* Element ID */
-    *p++ = NAN_MME_ELEMENT_ID;
-
-    /* Length: KeyID(2) + IPN(6) + MIC(8) = 16 */
-    *p++ = 16;
-
-    /* Key ID: 4 (LE16) */
-    *p++ = 4;
-    *p++ = 0;
-
-    /* IPN/BIPN: 6 bytes from ipn parameter (LE, zero-padded upper 2 bytes) */
-    *p++ = (uint8_t)(ipn & 0xFF);
-    *p++ = (uint8_t)((ipn >> 8) & 0xFF);
-    *p++ = (uint8_t)((ipn >> 16) & 0xFF);
-    *p++ = (uint8_t)((ipn >> 24) & 0xFF);
-    *p++ = 0;
-    *p++ = 0;
-
-    /* MIC: 8 bytes random (dummy) */
-    os_get_random(p, 8);
-    p += 8;
-
-    ESP_LOGI(TAG, "Constructed MME (dummy): len=%d, ipn=0x%lx", (int)(p - frm), (unsigned long)ipn);
-    return (int)(p - frm);
-}
-
 #if defined(CONFIG_ESP_WIFI_NAN_PAIRING) && defined(CONFIG_ESP_WIFI_PASN_SUPPORT) && defined(CONFIG_ESP_WIFI_NAN_SECURITY)
 
 #include "crypto/sha256.h"
@@ -400,7 +412,7 @@ int esp_nan_construct_mme(uint8_t *frm, uint32_t ipn)
 #define NAN_PASN_KDE_OUI_TYPE_NIK       36
 #define NAN_PASN_KDE_OUI_TYPE_LIFETIME  37
 #define NAN_PASN_KEY_LIFETIME_NIK_BIT   BIT(3)
-#define NAN_PAIRING_DEFAULT_NIK_LIFETIME_SEC 86400U
+/* NAN_PAIRING_DEFAULT_NIK_LIFETIME_SEC is defined at file scope above. */
 #define NAN_ATTR_ID_SHARED_KEY_DESC     0x24
 #define GSP_SUBATTR_TRANSPORT_PORT      0x00
 #define GSP_SUBATTR_INSTANCE_NAME       0x03
@@ -770,10 +782,11 @@ static void nan_app_send_pairing_followup_eloop(void *eloop_data, void *user_dat
 
 void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
                                       const uint8_t *peer_mac,
-                                      const uint8_t *shared_key_attr)
+                                      const uint8_t *shared_key_attr,
+                                      size_t shared_key_attr_buf_len)
 {
-    uint16_t attr_len;
-    uint16_t total_len;
+    size_t attr_body_len;
+    size_t total_len;
     uint8_t nik[NAN_APP_PEER_NIK_LEN];
     uint8_t cipher_ver = 0;
     uint32_t lifetime_sec = 0;
@@ -783,13 +796,23 @@ void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
     if (!shared_key_attr || !peer_mac) {
         return;
     }
+    if (shared_key_attr_buf_len < NAN_PAIRING_FUP_MIN_ATTR_LEN) {
+        return;
+    }
     if (shared_key_attr[0] != NAN_ATTR_ID_SHARED_KEY_DESC) {
         return;
     }
 
-    attr_len = shared_key_attr[1] | (shared_key_attr[2] << 8);
-    total_len = attr_len + 3;
-    if (total_len < NAN_PAIRING_FUP_MIN_ATTR_LEN) {
+    const uint16_t *attr_body_len_field = (const uint16_t *)&shared_key_attr[1];
+
+    attr_body_len = *attr_body_len_field;
+    if (attr_body_len > shared_key_attr_buf_len - 3) {
+        ESP_LOGW(TAG, "Pairing follow-up: truncated Shared Key Descriptor (body=%zu, avail=%zu)",
+                 attr_body_len, shared_key_attr_buf_len);
+        return;
+    }
+    total_len = attr_body_len + 3;
+    if (total_len > shared_key_attr_buf_len) {
         return;
     }
     if (nan_pasn_followup_decrypt_keys(shared_key_attr, total_len,
@@ -809,10 +832,12 @@ void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
         p_peer_svc->has_nik = true;
         ESP_LOGI(TAG, "Stored peer NIK from " MACSTR " (cipher_ver=%u, lifetime=%u s)",
                  MAC2STR(peer_mac), cipher_ver, lifetime_sec);
-        ESP_LOG_BUFFER_HEXDUMP("NIK", nik, NAN_APP_PEER_NIK_LEN, ESP_LOG_INFO);
     }
     NAN_DATA_UNLOCK();
 
+    if (total_len > SIZE_MAX - sizeof(*ctx)) {
+        return;
+    }
     alloc_len = sizeof(*ctx) + total_len;
     ctx = os_zalloc(alloc_len);
     if (!ctx) {
