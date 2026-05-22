@@ -33,3 +33,4 @@
 #define ESP_ROM_HAS_OUTPUT_PUTC_FUNC        (1) // ROM has esp_rom_output_putc (or ets_write_char_uart)
 #define ESP_ROM_CLIC_INT_THRESH_PATCH       (1) // ROM version of esprv_intc_int_set_threshold incorrectly assumes lowest MINTTHRESH is 0x1F, should be 0xF
 #define ESP_ROM_SUPPORT_SECURE_BOOT_FAST_WAKEUP (1) // ROM supports the secure boot fast wakeup feature
+#define ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_NO_MAP (1) // ROM cache writeback related needs patch to avoid sync loss, no map parameter

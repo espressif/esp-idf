@@ -67,8 +67,8 @@ if(CONFIG_ESP_ROM_HAS_FLASH_COUNT_PAGES_BUG OR CONFIG_ESP_ROM_HAS_CACHE_WRITEBAC
     list(APPEND sources "patches/esp_rom_cache_esp32s2_esp32s3.c")
 endif()
 
-if(CONFIG_ESP_ROM_CACHE_WB_INVLD_LOW_RANGE)
-    list(APPEND sources "patches/esp_rom_cache_esp32c61.c")
+if(CONFIG_ESP_ROM_CACHE_WB_INVLD_LOW_RANGE OR CONFIG_ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_NO_MAP)
+    list(APPEND sources "patches/esp_rom_cache_esp32c5_esp32c61.c")
 endif()
 
 if(CONFIG_ESP_ROM_HAS_CACHE_WRITEBACK_BUG)
@@ -77,6 +77,10 @@ endif()
 
 if(CONFIG_ESP_ROM_NO_USB_SERIAL_OUTPUT_API)
     list(APPEND sources "patches/esp_rom_usb_serial.c")
+endif()
+
+if(CONFIG_ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_MAP)
+    list(APPEND sources "patches/esp_rom_cache_writeback_esp32p4.c")
 endif()
 
 idf_component_register(SRCS ${sources}

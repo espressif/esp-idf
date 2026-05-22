@@ -26,3 +26,4 @@
 #define ESP_ROM_HAS_VERSION                 (1) // ROM has version/eco information
 #define ESP_ROM_CLIC_INT_TYPE_PATCH         (1) // ROM api esprv_intc_int_set_type configuring edge type interrupt is invalid TODO: IDF-13409
 #define ESP_ROM_HAS_OUTPUT_PUTC_FUNC        (1) // ROM has esp_rom_output_putc (or ets_write_char_uart)
+#define ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_MAP (1) // ROM cache writeback related needs patch to avoid sync loss, need map parameter
