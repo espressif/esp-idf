@@ -660,6 +660,7 @@
 #define SOC_I2S_SUPPORTS_PDM2PCM              (1)     // Support to input PDM format but read PCM format data with the help of PDM to PCM filter (only on I2S0)
 #define SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER     (1)
 #define SOC_I2S_SUPPORTS_TX_SYNC_CNT          (1)     // Support TX synchronization count (ideal_cnt)
+#define SOC_I2S_SUPPORTS_TX_FIFO_SYNC         (1)
 #define SOC_I2S_SUPPORTS_RX_RECOMB            (1)     // Support RX recomb for DMA data format reorganization
 #define SOC_I2S_SUPPORTS_TDM                  (1)
 #define SOC_I2S_SUPPORTS_BT_DEST              (1)     // Support routing I2S TX/RX data to Bluetooth (Classic sync link / voice path), not via DMA

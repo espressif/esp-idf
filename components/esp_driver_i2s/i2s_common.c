@@ -1673,6 +1673,7 @@ esp_err_t i2s_sync_enable_hw_fifo_sync(i2s_chan_handle_t tx_handle, bool enable)
         return ESP_ERR_NOT_SUPPORTED;
     }
     i2s_ll_tx_enable_hw_fifo_sync(tx_handle->controller->hal.dev, enable);
+    i2s_ll_tx_update(tx_handle->controller->hal.dev);
     return ESP_OK;
 }
 
@@ -1695,6 +1696,7 @@ esp_err_t i2s_sync_config_hw_fifo_sync(i2s_chan_handle_t tx_handle, const i2s_sy
     if (config->suppl_mode == I2S_SYNC_SUPPL_MODE_STATIC_DATA) {
         i2s_ll_tx_set_hw_fifo_sync_static_suppl_data(tx_handle->controller->hal.dev, config->suppl_data);
     }
+    i2s_ll_tx_update(tx_handle->controller->hal.dev);
     return ESP_OK;
 }
 #endif
