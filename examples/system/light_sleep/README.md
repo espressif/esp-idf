@@ -10,7 +10,7 @@ This example illustrates usage of light sleep mode. Unlike deep sleep mode, ligh
 The example enables the following wakeup sources:
 
 - Timer: wake up the chip in 2 seconds
-- EXT0: wake up the chip if a button attached to GPIO0 is pressed (i.e. if GPIO0 goes low)
+- GPIO:  wake up the chip if a button attached to a GPIO is pressed (i.e. if GPIO goes low)
 - UART0: wake up the chip when the uart rx pin receive more than or equal to 3 rising edges.
 
 The example also prints time spent in light sleep mode to illustrate that timekeeping continues while the chip is in light sleep.
@@ -64,6 +64,10 @@ If do nothing to the example, the chip will wake-up every 2000 ms by timer, and 
 ### Wake-up by GPIO
 
 For this example, the wake-up GPIO is bound to the 'BOOT' button on the board, we can wake-up the chip from light sleep by pressing the 'BOOT' button, the chip will wake-up immediately after we pressed the button. We can see the wake-up reason is `pin` in this case and the chip will fall into light sleep again if we release the button.
+
+> [!NOTE]
+> On ESP32-H21 and ESP32-H4 boards, the on-board **BOOT** button is not routed to a GPIO pin. This example uses 
+> **GPIO0** for GPIO wake-up; connect external hardware to drive GPIO0 and wake the chip from light sleep.
 
 ### Wake-up by UART
 

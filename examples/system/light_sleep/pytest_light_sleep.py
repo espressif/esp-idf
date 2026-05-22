@@ -10,7 +10,6 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 @pytest.mark.generic
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15611
 def test_light_sleep(dut: Dut) -> None:
     ENTERING_SLEEP_STR = 'Entering light sleep'
     EXIT_SLEEP_REGEX = r'Returned from light sleep, reason: (\w+), t=(\d+) ms, slept for (\d+) ms'
@@ -19,6 +18,8 @@ def test_light_sleep(dut: Dut) -> None:
     WAITING_FOR_GPIO_STR = r'Waiting for GPIO\d+ to go high...'
 
     WAKEUP_INTERVAL_MS = 2000
+    # esp32h4/esp32h21 boot button is not connected to GPIO0; DTR cannot trigger pin wakeup in CI
+    GPIO_WAKEUP_SKIP_TARGETS = ['esp32h4', 'esp32h21']
 
     # Ensure DTR and RTS are de-asserted for proper control of GPIO0
     dut.serial.proc.setDTR(False)
@@ -42,19 +43,21 @@ def test_light_sleep(dut: Dut) -> None:
         and int(match.group(3)) <= WAKEUP_INTERVAL_MS + 1
     )
 
-    # this time we'll test gpio wakeup
-    dut.expect_exact(ENTERING_SLEEP_STR)
-    logging.info('Pulling GPIO0 low using DTR')
-    dut.serial.proc.setDTR(True)
-    time.sleep(1)
-    match = dut.expect(EXIT_SLEEP_PIN_REGEX)
-    logging.info(f'Got third sleep period, wakeup from {match.group(1)}, slept for {match.group(3)}')
-    assert int(match.group(3)) < WAKEUP_INTERVAL_MS
+    if dut.target not in GPIO_WAKEUP_SKIP_TARGETS:
+        # this time we'll test gpio wakeup
+        dut.expect_exact(ENTERING_SLEEP_STR)
+        logging.info('Pulling GPIO0 low using DTR')
+        dut.serial.proc.setDTR(True)
+        time.sleep(1)
+        match = dut.expect(EXIT_SLEEP_PIN_REGEX)
+        logging.info(f'Got third sleep period, wakeup from {match.group(1)}, slept for {match.group(3)}')
+        assert int(match.group(3)) < WAKEUP_INTERVAL_MS
 
-    dut.expect(WAITING_FOR_GPIO_STR)
-    logging.info('Is waiting for GPIO...')
+        dut.expect(WAITING_FOR_GPIO_STR)
+        logging.info('Is waiting for GPIO...')
 
-    dut.serial.proc.setDTR(False)
+        dut.serial.proc.setDTR(False)
+
     dut.expect_exact(ENTERING_SLEEP_STR)
     logging.info('Went to sleep again')
 
