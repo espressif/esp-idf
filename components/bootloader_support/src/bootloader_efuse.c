@@ -42,7 +42,6 @@ int bootloader_clock_get_rated_freq_mhz(void)
     return 96;
 
 #elif CONFIG_IDF_TARGET_ESP32H21
-    //TODO: [ESP32H21] IDF-11556, please check
     return 96;
 
 #elif CONFIG_IDF_TARGET_ESP32H4

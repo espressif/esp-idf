@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,8 +12,6 @@
 #include "soc/efuse_periph.h"
 #include "hal/assert.h"
 #include "rom/efuse.h"
-
-//TODO: [ESP32H21] IDF-11556, inherit from h2
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,12 +38,12 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_wdt_delay_sel
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_mac0(void)
 {
-    return EFUSE.rd_mac_sys_0.mac_0;
+    return EFUSE.rd_mac_sys0.mac_0;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_mac1(void)
 {
-    return EFUSE.rd_mac_sys_1.mac_1;
+    return EFUSE.rd_mac_sys1.mac_1;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_secure_boot_v2_en(void)
@@ -56,51 +54,48 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_secure_boot_v2_en
 // use efuse_hal_get_major_chip_version() to get major chip version
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_major(void)
 {
-    //TODO: [ESP32H21] IDF-11556
-    return 0;
+    return EFUSE.rd_mac_sys5.wafer_version_major;
 }
 
 // use efuse_hal_get_minor_chip_version() to get minor chip version
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_minor(void)
 {
-    //TODO: [ESP32H21] IDF-11556
-    return 0;
+    return EFUSE.rd_mac_sys5.wafer_version_minor;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_disable_wafer_version_major(void)
 {
-    //TODO: [ESP32H21] IDF-11556
-    return 0;
+    return EFUSE.rd_mac_sys5.disable_wafer_version_major;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_major(void)
 {
-    //TODO: [ESP32H21] IDF-11556
-    return 0;
+    return EFUSE.rd_mac_sys3.blk_version_major;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_minor(void)
 {
-    //TODO: [ESP32H21] IDF-11556
-    return 0;
+    return EFUSE.rd_mac_sys3.blk_version_minor;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_disable_blk_version_major(void)
 {
-    //TODO: [ESP32H21] IDF-11556
-    return 0;
+    return EFUSE.rd_mac_sys3.disable_blk_version_major;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_ver_pkg(void)
 {
-    //TODO: [ESP32H21] IDF-11556
-    return 0;
+    return EFUSE.rd_mac_sys5.pkg_version;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_ecdsa_key_blk(void)
 {
-    //TODO: [ESP32H21] IDF-11556
-    return 0;
+    return EFUSE.status.cur_ecdsa_l_blk;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_ecdsa_key_hi_blk(void)
+{
+    return EFUSE.status.cur_ecdsa_h_blk;
 }
 
 /******************* eFuse control functions *************************/
