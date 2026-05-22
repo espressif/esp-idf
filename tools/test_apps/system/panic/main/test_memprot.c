@@ -299,6 +299,23 @@ void test_irom_reg_write_violation(void)
     *test_addr = RND_VAL;
 }
 
+void test_irom_mask_reg_write_violation(void)
+{
+    uint32_t *test_addr = (uint32_t *)(SOC_IROM_MASK_LOW + 0x04);
+    printf("ROM (IROM Mask): Write operation | Address: %p\n", test_addr);
+    *test_addr = RND_VAL;
+}
+
+#ifdef SOC_DROM_MASK_HIGH
+void test_drom_mask_reg_write_violation(void)
+{
+    uint32_t *test_addr = (uint32_t *)(SOC_DROM_MASK_HIGH - 0x04);
+    printf("ROM (DROM Mask): Write operation | Address: %p\n", test_addr);
+    *test_addr = RND_VAL;
+}
+
+#endif
+
 void test_drom_reg_write_violation(void)
 {
     uint32_t *test_addr = (uint32_t *)((uint32_t)(foo_buf));

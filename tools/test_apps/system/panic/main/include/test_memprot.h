@@ -63,6 +63,12 @@ void test_spiram_xip_irom_alignment_reg_execute_violation(void);
 
 void test_spiram_xip_drom_alignment_reg_execute_violation(void);
 
+void test_irom_mask_reg_write_violation(void);
+
+#ifdef SOC_DROM_MASK_HIGH
+void test_drom_mask_reg_write_violation(void);
+#endif
+
 void test_drom_reg_write_violation(void);
 
 void test_drom_reg_execute_violation(void);
