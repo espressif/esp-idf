@@ -1,0 +1,42 @@
+# Overlay applied on top of sdkconfig.defaults to switch the example
+# from the default NimBLE backend to Bluedroid. Use it like:
+#
+#   idf.py -B build_bd \
+#       -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci.bluedroid" \
+#       reconfigure
+#   idf.py -B build_bd build flash monitor
+#
+# When this overlay wins, main/CMakeLists.txt links ble_uart_bluedroid.c
+# instead of ble_uart_nimble.c. The public ble_uart.h API is identical
+# either way.
+
+CONFIG_BT_ENABLED=y
+
+CONFIG_BT_NIMBLE_ENABLED=n
+CONFIG_BT_BLUEDROID_ENABLED=y
+
+# LE Secure Connections + bonding (matches the NimBLE side).
+# CONFIG_BT_SMP_ENABLE is derived from this and BT_CLASSIC_ENABLED, so
+# we don't set it explicitly.
+CONFIG_BT_BLE_SMP_ENABLE=y
+
+# Note: Bluedroid has no compile-time MTU Kconfig (the NimBLE
+# CONFIG_BT_NIMBLE_ATT_PREFERRED_MTU has no Bluedroid counterpart).
+# To negotiate a larger ATT MTU at runtime, the application calls
+# esp_ble_gatt_set_local_mtu(<bytes>) before peers connect.
+# ble_uart_tx auto-fragments to whatever MTU is live, so the default
+# 23 also works — just at lower throughput.
+
+# Service-table API is needed for esp_ble_gatts_create_attr_tab().
+CONFIG_BT_GATTS_ENABLE=y
+
+# CONFIG_BT_GATTC_ENABLE is not set
+
+# CONFIG_BT_BLE_50_FEATURES_SUPPORTED is not set
+CONFIG_BT_BLE_42_FEATURES_SUPPORTED=y
+
+# CONFIG_BT_BLE_42_DTM_TEST_EN is not set
+
+CONFIG_BT_BLE_42_ADV_EN=y
+
+# CONFIG_BT_BLE_42_SCAN_EN is not set
