@@ -41,7 +41,7 @@ variables:
   # --prune --prune-tags: in case remote branch or tag is force pushed
   GIT_FETCH_EXTRA_FLAGS: "--no-recurse-submodules --prune --prune-tags"
 
-  LATEST_GIT_TAG: v6.1-dev
+  LATEST_GIT_TAG: v6.2-dev
 
   SUBMODULE_FETCH_TOOL: "tools/ci/ci_fetch_submodule.py"
   # by default we will fetch all submodules
@@ -56,9 +56,9 @@ variables:
   CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
 
   # Docker images
-  ESP_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v6.1:1"
-  ESP_IDF_DOC_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v6.1-docs:1"
-  TARGET_TEST_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v6.1-target-test:1"
+  ESP_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v6.2:1"
+  ESP_IDF_DOC_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v6.2-docs:1"
+  TARGET_TEST_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v6.2-target-test:1"
   SONARQUBE_SCANNER_IMAGE: "${CI_DOCKER_REGISTRY}/sonarqube-scanner:5"
 
   # cache python dependencies
@@ -70,7 +70,7 @@ variables:
   CI_PYTHON_CONSTRAINT_BRANCH: ""
 
   # Update the filename for a specific ESP-IDF release. It is used only with CI_PYTHON_CONSTRAINT_BRANCH.
-  CI_PYTHON_CONSTRAINT_FILE: "espidf.constraints.v6.1.txt"
+  CI_PYTHON_CONSTRAINT_FILE: "espidf.constraints.v6.2.txt"
 
   # Set this variable to repository name of a Python tool you wish to install and test in the context of ESP-IDF CI.
   # Keep the variable empty when not used.
@@ -284,12 +284,12 @@ variables:
     CCACHE_DIR: "/var/tmp/cache/idf_ccache"
   tags:
     - macos-tart
-  image: macos-sequoia-idf-v6.1
+  image: macos-sequoia-idf-v6.2
   after_script: []  # ccache now is disabled for macos brew runners
   timeout: 30m
 
 .brew-windows-settings:
-  image: windows_11_idf_v6_1
+  image: windows_11_idf_v6_2
   tags: [windows-vm, brew]
   variables:
     GIT_STRATEGY: fetch
