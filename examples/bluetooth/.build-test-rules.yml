@@ -23,7 +23,7 @@ examples/bluetooth/bluedroid/ble:
     - if: IDF_TARGET == "esp32s31"
       temporary: true
       reason: lack of runners
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-10702
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_components+:
@@ -59,7 +59,7 @@ examples/bluetooth/bluedroid/ble/ble_throughput:
     - if: IDF_TARGET == "esp32s31"
       temporary: true
       reason: lack of runners
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-10702
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_components+:
@@ -78,7 +78,7 @@ examples/bluetooth/bluedroid/ble_50:
     - if: IDF_TARGET == "esp32s31"
       temporary: true
       reason: lack of runners
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-10702
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_components+:
@@ -393,7 +393,7 @@ examples/bluetooth/nimble/blecent:
     - if: IDF_TARGET == "esp32s31"
       temporary: true
       reason: lack of runners
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-10702
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_components+:
@@ -442,7 +442,7 @@ examples/bluetooth/nimble/power_save:
     - if: IDF_TARGET == "esp32s31"
       temporary: true
       reason: lack of runners, and light sleep not supported yet
-    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-10702
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
       temporary: true
       reason: lack of runner
   depends_components+:

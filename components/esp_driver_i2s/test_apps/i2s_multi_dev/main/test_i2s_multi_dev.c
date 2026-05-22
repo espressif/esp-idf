@@ -31,7 +31,7 @@ static const char *TAG = "i2s_multi_dev_test";
 #define TEST_I2S_MCK_IO         (GPIO_NUM_1)
 #define TEST_I2S_BCK_IO         (GPIO_NUM_4)
 #define TEST_I2S_WS_IO          (GPIO_NUM_5)
-#if CONFIG_IDF_TARGET_ESP32H2
+#if CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32H4
 #define TEST_I2S_DO_IO          (GPIO_NUM_2)
 #define TEST_I2S_DI_IO          (GPIO_NUM_3) // DI and DO gpio will be reversed on slave runner
 #else

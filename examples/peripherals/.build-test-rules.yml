@@ -790,9 +790,9 @@ examples/peripherals/uart/uart_dma_ota:
     - if: IDF_TARGET in ["esp32s31"]
       temporary: true
       reason: Lack runners
-    - if: IDF_TARGET in ["esp32h4"] # TODO: IDFCI-10702
+    - if: IDF_TARGET in ["esp32h4"] # TODO: IDFCI-10703
       temporary: true
-      reason: lack of runner
+      reason: lack of usj runner
   depends_components:
     - esp_driver_uart
     - esp_driver_dma
