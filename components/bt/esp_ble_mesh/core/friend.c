@@ -1270,12 +1270,11 @@ static void enqueue_friend_pdu(struct bt_mesh_friend *frnd,
     net_buf_slist_put(&seg->queue, buf);
 
     if (type == BLE_MESH_FRIEND_PDU_COMPLETE) {
-        struct net_buf *sbuf;
-        while ((sbuf = (void *)sys_slist_get(&seg->queue))) {
-            sbuf->frags = NULL;
-            sbuf->flags &= ~NET_BUF_FRAGS;
-        }
-
+        /* First merge segments into the main queue (preserves the slist chain),
+         * then clear frags/flags. Note: net_buf.frags and net_buf.node.next
+         * share the same memory (union), so clearing frags before merge would
+         * break the slist chain.
+         */
         sys_slist_merge_slist(&frnd->queue, &seg->queue);
 
         frnd->queue_size += seg->seg_count;
