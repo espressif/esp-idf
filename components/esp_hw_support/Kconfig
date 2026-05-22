@@ -84,6 +84,7 @@ menu "Hardware Settings"
             select ESP_REGI2C_CTRL_FUNC_IN_IRAM
             depends on !SPIRAM || ESP_LDO_RESERVE_PSRAM || SOC_PSRAM_HAS_DEDICATED_LDO
             depends on !(IDF_TARGET_ESP32P4 && (ESP32P4_REV_MIN_FULL < 100))
+            depends on !SOC_PM_FLASH_KEEP_POWER_IN_LSLP
             default n
             help
                 If enabled, chip will try to power down flash as part of esp_light_sleep_start(), which costs
@@ -227,7 +228,7 @@ menu "Hardware Settings"
         config ESP_SLEEP_SET_FLASH_DPD
             bool "Set SPI flash to deep power-down mode in light sleep"
             depends on (!APP_BUILD_TYPE_PURE_RAM_APP && !ESP_SLEEP_POWER_DOWN_FLASH && !SPI_FLASH_ROM_IMPL)
-            default y if (IDF_TARGET_ESP32H4 || IDF_TARGET_ESP32H21)
+            default y if SOC_PM_FLASH_KEEP_POWER_IN_LSLP
             default y if (IDF_TARGET_ESP32P4 && ESP32P4_SELECTS_REV_LESS_V3)
             default n
             help
@@ -237,11 +238,10 @@ menu "Hardware Settings"
                 which will reduce the sleep current by about 10uA. And you can also use this option to reduce power
                 consumption when using PSRAM
 
-                NOTE: We have conducted sufficient testing on ESP32H21, ESP32H4 and ESP32P4(less v3). If you plan to
-                use a customized flash chip, or if you are working with other ESP32-series chips, please make sure to
-                check the corresponding flash datasheet or consult us directly. This is to ensure that using the B9h
-                command to enter Deep Power-Down mode and ABh to exit Deep Power-Down mode will not introduce any
-                potential issues.
+                NOTE: We have conducted sufficient testing on ESP32-C5, ESP32-C61, ESP32-H21, ESP32-H4 and
+                ESP32-P4 (less v3). If you plan to use a customized flash chip, or if you are working with other
+                ESP32-series chips, please make sure to check the corresponding flash datasheet or consult us
+                directly. This is to ensure that using the B9h command to enter Deep Power-Down mode and ABh to exit.
 
         config ESP_SLEEP_SPI_FLASH_ENTER_DPD_MODE_DELAY
             int "SPI Flash enter deep power-down time delay (in us)"

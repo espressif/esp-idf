@@ -1575,6 +1575,7 @@ esp_err_t esp_light_sleep_start(void)
      * will be set in `sleep_flags`.
      */
     if (sleep_flags & RTC_SLEEP_PD_VDDSDIO) {
+#if !SOC_PM_FLASH_KEEP_POWER_IN_LSLP
         /*
         * When VDD_SDIO power domain has to be turned off, the minimum sleep time of the
         * system needs to meet the sum below:
@@ -1610,8 +1611,13 @@ esp_err_t esp_light_sleep_start(void)
                 s_config.sleep_time_adjustment -= flash_enable_time_us;
             }
         }
-    } else if (!(sleep_flags & RTC_SLEEP_PD_VDDSDIO)) {
+#else
+        sleep_flags &= ~RTC_SLEEP_PD_VDDSDIO;
+#endif
+    }
+
 #if CONFIG_ESP_SLEEP_SET_FLASH_DPD
+    if (!(sleep_flags & RTC_SLEEP_PD_VDDSDIO) && (sleep_flags & RTC_SLEEP_FLASH_DPD)) {
         const uint32_t flash_enable_dpd_us = spi_flash_dpd_get_enter_duration() + spi_flash_dpd_get_exit_duration();
         if (s_config.sleep_duration > flash_enable_dpd_us) {
             if (s_config.sleep_time_overhead_out < flash_enable_dpd_us) {
@@ -1626,8 +1632,8 @@ esp_err_t esp_light_sleep_start(void)
                 s_config.sleep_time_adjustment -= flash_enable_dpd_us;
             }
         }
-#endif
     }
+#endif
 
     periph_inform_out_light_sleep_overhead(s_config.sleep_time_adjustment - sleep_time_overhead_in);
 
@@ -2955,9 +2961,20 @@ static SLEEP_FN_ATTR uint32_t get_power_down_flags(void)
 #endif
 
 #if CONFIG_ESP_SLEEP_SET_FLASH_DPD
-    if (!(pd_flags & RTC_SLEEP_PD_VDDSDIO)) {
-        // Flash power domain will disable DPD mode.
-        pd_flags |= RTC_SLEEP_FLASH_DPD;
+    {
+        uint32_t pd_flags_for_dpd = pd_flags;
+#if SOC_PM_FLASH_KEEP_POWER_IN_LSLP
+        /* Light sleep never powers down the flash supply on these targets; an app may still set VDDSDIO
+         * domain to OFF manually, and we later strip RTC_SLEEP_PD_VDDSDIO.
+         * Mask the bit when deriving DPD so flash deep power-down is not suppressed. */
+        pd_flags_for_dpd &= ~RTC_SLEEP_PD_VDDSDIO;
+#endif
+        if (!(pd_flags_for_dpd & RTC_SLEEP_PD_VDDSDIO)) {
+            // Flash power domain will disable DPD mode.
+            pd_flags |= RTC_SLEEP_FLASH_DPD;
+        } else {
+            ESP_LOGW(TAG, "Flash DPD mode cannot be enabled when VDDSDIO is configured to power down.");
+        }
     }
 #endif
 

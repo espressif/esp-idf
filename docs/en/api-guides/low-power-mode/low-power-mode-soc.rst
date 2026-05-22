@@ -282,15 +282,17 @@ This section introduces the recommended configuration and configuration steps fo
 
 .. only:: SOC_PM_SUPPORT_VDDSDIO_PD
 
-    - Power down flash in light sleep (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
+    .. only:: SOC_PM_SUPPORT_VDDSDIO_PD and not SOC_PM_FLASH_KEEP_POWER_IN_LSLP
 
-        .. only:: SOC_SPIRAM_SUPPORTED
+        - Power down flash in light sleep (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
 
-          Due to the shared power pins between flash and PSRAM, cutting power to PSRAM would result in data loss. Therefore, to ensure light sleep does not disrupt program execution, enabling this option requires that the system does not utilize PSRAM.
+            .. only:: SOC_SPIRAM_SUPPORTED
+
+              Due to the shared power pins between flash and PSRAM, cutting power to PSRAM would result in data loss. Therefore, to ensure light sleep does not disrupt program execution, enabling this option requires that the system does not utilize PSRAM.
 
 .. only:: SOC_PM_SUPPORT_TOP_PD
 
-    - Power down Digital Peripheral modules and all child power domains under the TOP power domain in light sleep (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
+    - Power down Digital Peripheral modules and all child power domains under the TOP power domain in light sleep (:ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`)
 
 .. only:: SOC_PM_SUPPORT_RTC_PERIPH_PD
 
@@ -343,7 +345,7 @@ Configuration Steps:
 Recommended Configuration
 +++++++++++++++++++++++++++++
 
-.. only:: esp32c6 or esp32c5
+.. only:: esp32c6
 
   .. list-table::
    :header-rows: 1
@@ -399,6 +401,63 @@ Recommended Configuration
 
   .. note::
       Configurations not mentioned in the above table are set to default.
+
+.. only:: esp32c5
+
+  .. list-table::
+   :header-rows: 1
+   :widths: 30 15
+
+   * - Configuration Name
+     - Configuration Status
+
+   * - Enable power management component (:ref:`CONFIG_PM_ENABLE`)
+     - ON
+
+   * - Enable RTOS Tickless IDLE mode (:ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
+     - ON
+
+   * - RTOS Tick rate (Hz) (:ref:`CONFIG_FREERTOS_HZ`)
+     - 1000
+
+   * - Minimum IDLE Tick count before entering sleep mode (:ref:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
+     - 3
+
+   * - Put light sleep related codes in IRAM (:ref:`CONFIG_PM_SLP_IRAM_OPT`)
+     - ON
+
+   * - Put RTOS IDLE related codes in IRAM (:ref:`CONFIG_PM_RTOS_IDLE_OPT`)
+     - OFF
+
+   * - RTC slow clock source (:ref:`CONFIG_RTC_CLK_SRC`)
+     - Internal 150 kHz OSC
+
+   * - Disable all GPIO when chip at sleep (:ref:`CONFIG_PM_SLP_DISABLE_GPIO`)
+     - ON
+
+   * - Power down MAC and baseband (:ref:`CONFIG_ESP_PHY_MAC_BB_PD`)
+     - ON
+
+   * - Power down CPU (:ref:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
+     - ON
+
+   * - Set flash into deep power-down mode in light sleep (:ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
+     - ON
+
+   * - ``max_freq_mhz``
+     - The maximum CPU frequency supported by {IDF_TARGET_NAME}
+
+   * - ``min_freq_mhz``
+     - {CONFIG_XTAL_FREQ}
+
+   * - ``light_sleep_enable``
+     - true
+
+  .. note::
+      Configurations not mentioned in the above table are set to default.
+
+  .. note::
+      On {IDF_TARGET_NAME}, SPI flash need remains powered during light sleep and :ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` is not available.
 
 .. only:: esp32s3
 

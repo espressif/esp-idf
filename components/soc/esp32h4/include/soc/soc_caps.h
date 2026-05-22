@@ -518,6 +518,8 @@
 #define SOC_PM_BBPLL_PD_IN_MODEM_STATE      (1)
 #define SOC_PM_MODEM_LOCK_CLK_WORKAROUND    (1) // In ESP32H4, the modem lock will lock the xtalx2, bbpll and other xpd state during modem2active.
 
+#define SOC_PM_FLASH_KEEP_POWER_IN_LSLP     (1)  /*!<Keep flash on in light sleep to reduce wake latency*/
+
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 
