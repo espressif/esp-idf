@@ -463,7 +463,6 @@
 #define SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE        (1)
 #define SOC_PM_CPU_RETENTION_BY_SW                 (1)
 #define SOC_PM_MODEM_RETENTION_BY_REGDMA           (1)
-#define SOC_PM_MODEM_CLK_CONF_RETENTION            (1) /*!< In esp32H21, i2c lpcon is placed in top domain*/
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 
 #define SOC_PM_SUPPORT_PMU_CLK_ICG          (1)

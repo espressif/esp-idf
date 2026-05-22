@@ -12,6 +12,10 @@
 #include "soc/pmu_reg.h"
 #include "modem/modem_lpcon_struct.h"
 #include "modem/modem_syscon_struct.h"
+#include "hal/modem_lpcon_ll.h"
+#if SOC_PM_SUPPORT_MODEM_CLOCK_DOMAIN_ICG
+#include "hal/pmu_types.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,6 +28,10 @@ extern "C" {
  */
 static inline __attribute__((always_inline)) void _regi2c_ctrl_ll_master_enable_clock(bool en)
 {
+    /* In ESP32H4, modem_lpcon_reg will lose power after sleep with top pd, so we need to set i2c master and lp_apb clock active and modem st map */
+    const uint32_t icg_bitmap = BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE) | BIT(PMU_HP_ICG_MODEM_CODE_MODEM);
+    modem_lpcon_ll_set_i2c_master_icg_bitmap(&MODEM_LPCON, icg_bitmap);
+    modem_lpcon_ll_set_lp_apb_icg_bitmap(&MODEM_LPCON, icg_bitmap);
     MODEM_LPCON.clk_conf.clk_i2c_mst_en = en;
 }
 

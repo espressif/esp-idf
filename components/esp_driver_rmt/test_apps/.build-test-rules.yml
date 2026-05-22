@@ -3,10 +3,6 @@
 components/esp_driver_rmt/test_apps/rmt:
   disable:
     - if: SOC_RMT_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET in ["esp32h21"]
-      temporary: true
-      reason: BLE power save bringup is not done
   depends_components:
     - esp_driver_rmt
     - esp_driver_dma
