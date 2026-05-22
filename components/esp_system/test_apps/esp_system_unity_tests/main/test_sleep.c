@@ -320,6 +320,24 @@ static void test_psram_accessible_after_lightsleep(void)
     TEST_ESP_OK(sleep_cpu_configure(true));
 #endif
 
+    // Verify PSRAM was not corrupted after light sleep
+    uint8_t *psram_data = (uint8_t *)heap_caps_malloc(1024 * 1024, MALLOC_CAP_SPIRAM);
+    uint8_t test_pattern = 0x5a;
+    for (int i = 0; i < 5; i++) {
+        memset(psram_data, test_pattern, 1024 * 1024);
+        esp_sleep_enable_timer_wakeup(100 * 1000);
+        esp_light_sleep_start();
+        for (int j = 0; j < (1024 * 1024); j++) {
+            TEST_ASSERT_EQUAL(test_pattern, psram_data[j]);
+        }
+        test_pattern = ~test_pattern;
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+        TEST_ASSERT_EQUAL(PMU_SLEEP_PD_TOP, sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP);
+#endif
+    }
+    free(psram_data);
+
+    // Verify that all addresses in PSRAM are accessible after light sleep
     esp_sleep_enable_timer_wakeup(100 * 1000);
     esp_light_sleep_start();
     TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);

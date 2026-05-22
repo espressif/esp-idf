@@ -13,7 +13,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
+#include "esp_cpu.h"
 #include "esp_heap_caps.h"
+#include "esp_ipc_isr.h"
 #include "esp_private/esp_psram_io.h"
 #include "esp_psram.h"
 #include "esp_private/esp_psram_extram.h"
@@ -27,14 +29,14 @@ __attribute__((unused)) const static char *TAG = "PSRAM";
 static void s_test_psram_heap_allocable(void)
 {
     size_t largest_size = heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM);
-    ESP_LOGI(TAG, "largest size is %zu", largest_size);
+    ESP_EARLY_LOGI(TAG, "largest size is 0x%08x", largest_size);
 
     uint32_t *ext_buffer = (uint32_t *)heap_caps_calloc(largest_size, 1, MALLOC_CAP_SPIRAM);
     TEST_ASSERT(ext_buffer);
 
     intptr_t start = (intptr_t)ext_buffer;
     intptr_t end = (intptr_t)ext_buffer + largest_size;
-    ESP_LOGI(TAG, "test ext buffer start addr is 0x%"PRIxPTR", end addr is 0x%"PRIxPTR, start, end);
+    ESP_EARLY_LOGI(TAG, "test ext buffer start addr is %p, end addr is %p", start, end);
     TEST_ASSERT(esp_psram_check_ptr_addr((void *)start) && esp_psram_check_ptr_addr((void *)end));
 
     for (int i = 0; i < largest_size / sizeof(uint32_t); i++) {
@@ -61,16 +63,32 @@ TEST_CASE("stress test psram heap allocable", "[psram][manual][ignore]")
 }
 
 #if !CONFIG_SPIRAM_XIP_FROM_PSRAM
+
+IRAM_ATTR static void s_psram_halfsleep_test(uint32_t rtc_slow_clk_period)
+{
+    // Stall another core and disable branch predictor to prevent it from accessing PSRAM
+    esp_ipc_isr_stall_other_cpu();
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_disable();
+#endif
+    esp_psram_impl_enter_halfsleep_mode();
+    esp_rom_delay_us(1000);
+    esp_psram_impl_exit_halfsleep_mode();
+    esp_psram_impl_resume_from_halfsleep_mode(rtc_slow_clk_period);
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_enable();
+#endif
+    esp_ipc_isr_release_other_cpu();
+
+    s_test_psram_heap_allocable();
+}
+
 TEST_CASE("test psram halfsleep mode (if applicable)", "[psram]")
 {
     uint32_t rtc_slow_clk_period = rtc_clk_cal(CLK_CAL_RTC_SLOW, CONFIG_RTC_CLK_CAL_CYCLES);
     s_test_psram_heap_allocable();
     for (int i = 0; i < 3; i++) {
-        esp_psram_impl_enter_halfsleep_mode();
-        esp_rom_delay_us(1000);
-        esp_psram_impl_exit_halfsleep_mode();
-        esp_psram_impl_resume_from_halfsleep_mode(rtc_slow_clk_period);
-        s_test_psram_heap_allocable();
+        s_psram_halfsleep_test(rtc_slow_clk_period);
     }
 }
 #endif

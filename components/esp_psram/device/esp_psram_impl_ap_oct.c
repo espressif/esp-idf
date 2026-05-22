@@ -558,15 +558,8 @@ void esp_psram_impl_exit_halfsleep_mode(void)
     // Record the tick exiting halfsleep mode
     s_halfsleep_ctx.halfsleep_wakeup_tick = rtc_time_get();
 
-    // Do a SPI dummy write transmission to invalid address to wake up from halfsleep mode
-    uint8_t null = 0;
-    psram_ctrlr_ll_common_transaction(PSRAM_CTRLR_LL_MSPI_ID_3,
-                                      AP_OCT_PSRAM_REG_WRITE, AP_OCT_PSRAM_WR_CMD_BITLEN,
-                                      0xFF, AP_OCT_PSRAM_ADDR_BITLEN,
-                                      0,
-                                      &null, 0,
-                                      NULL, 0,
-                                      false);
+    // Set CE# to active to wakeup PSRAM halfsleep
+    psram_ctrlr_ll_half_sleep_wakeup();
 }
 
 void esp_psram_impl_resume_from_halfsleep_mode(uint32_t slowclk_period)

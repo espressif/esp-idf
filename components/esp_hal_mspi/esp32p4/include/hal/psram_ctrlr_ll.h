@@ -26,6 +26,7 @@
 #include "soc/clk_tree_defs.h"
 #include "soc/hp_system_struct.h"
 #include "rom/opi_flash.h"
+#include "esp_rom_sys.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,6 +60,14 @@ extern "C" {
                                                  PSRAM_CTRLR_LL_EVENT_TX_TRANS_UDF)
 
 #define PSRAM_CTRLR_LL_INTR_EVENT_SUPPORTED      1
+
+/**
+ * ESP32-P4 MSPI revision < 3.0 lacks SPIMEM CS force-control (cs_keep_active /
+ * cs0_dis / cs1_dis) needed to assert CE# and wake PSRAM from half-sleep.
+ * The device driver must issue a dummy MSPI write instead.
+ * Revision >= 3.0 can use psram_ctrlr_ll_half_sleep_wakeup().
+ */
+#define PSRAM_CTRLR_LL_MSPI_WAKEUP_WORKAROUND    (HAL_CONFIG(CHIP_SUPPORT_MIN_REV) < 300)
 
 /**
  * @brief Set PSRAM write cmd
@@ -945,6 +954,29 @@ static inline void psram_ctrlr_ll_enable_core_err_resp(void)
 {
     HP_SYSTEM.core_err_resp_dis.val = 0x0;
 }
+
+#if !PSRAM_CTRLR_LL_MSPI_WAKEUP_WORKAROUND
+/**
+ * @brief Wake PSRAM from half-sleep via MSPI CS controls (P4 MSPI rev >= 3.0).
+ *
+ * MSPI2: mem_cs_oe_ctrl drives CS. MSPI3: cs_keep_active + cs0/cs1_dis for CE#.
+ * Restore MSPI2/MSPI3 cs settings when done.
+ */
+__attribute__((always_inline))
+static inline void psram_ctrlr_ll_half_sleep_wakeup(void)
+{
+    bool old_oe_ctrl = SPIMEM2.mem_misc.mem_cs_oe_ctrl;
+    SPIMEM2.mem_misc.mem_cs_oe_ctrl = 1;
+    SPIMEM3.misc.cs_keep_active = 1;
+    SPIMEM3.misc.cs0_dis = 1;
+    SPIMEM3.misc.cs1_dis = 0;
+    esp_rom_delay_us(3);
+    SPIMEM3.misc.cs1_dis = 1;
+    SPIMEM3.misc.cs0_dis = 0;
+    SPIMEM3.misc.cs_keep_active = 0;
+    SPIMEM2.mem_misc.mem_cs_oe_ctrl = old_oe_ctrl;
+}
+#endif
 
 #ifdef __cplusplus
 }
