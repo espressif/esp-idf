@@ -36,7 +36,7 @@ To allow ESP HTTP client to take full advantage of persistent connections, one s
 Use Secure Element (ATECC608) for TLS
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A secure element (ATECC608) can be used for the underlying TLS connection in the HTTP client connection via the PSA Crypto opaque driver interface. Please refer to the **ATECC608A (Secure Element) with ESP-TLS** section in the :doc:`ESP-TLS documentation </api-reference/protocols/esp_tls>` for details on setting up the PSA key. Then configure the HTTP client to use the secure element via the ``client_key`` field in :cpp:type:`esp_tls_cfg_t`:
+A secure element (ATECC608) can be used for the underlying TLS connection in the HTTP client connection via the PSA Crypto opaque driver interface. Please refer to the **ATECC608A (Secure Element) with ESP-TLS** section in the :doc:`ESP-TLS documentation </api-reference/protocols/esp_tls>` for details on setting up the PSA key. Then configure the HTTP client to use the secure element via the ``client_key`` field in :cpp:type:`esp_http_client_config_t`:
 
 .. code-block:: c
 
