@@ -16,6 +16,14 @@ examples/bluetooth:
   disable:
     - if: SOC_BT_SUPPORTED != 1
 
+examples/bluetooth/ble_uart_service:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+  depends_filepatterns:
+    - examples/bluetooth/common/ble_uart/**/*
+    - examples/bluetooth/ble_uart_service/**/*
+
 examples/bluetooth/bluedroid/ble:
   <<: *bt_default_depends
   disable:
