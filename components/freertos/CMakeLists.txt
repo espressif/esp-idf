@@ -82,7 +82,8 @@ list(APPEND srcs
 
 if(arch STREQUAL "linux")
     list(APPEND srcs
-        "${kernel_impl}/portable/${arch}/utils/wait_for_event.c")
+        "${kernel_impl}/portable/${arch}/utils/wait_for_event.c"
+        "${kernel_impl}/portable/${arch}/utils/linux_port_coop_syscalls.c")
     if(kernel_impl STREQUAL "FreeRTOS-Kernel")
         list(APPEND srcs
             "${kernel_impl}/portable/${arch}/port_idf.c")
@@ -110,7 +111,6 @@ if(arch STREQUAL "linux")
     set(BYPASS_EINTR_ISSUE 0)
     if(NOT CONFIG_LWIP_ENABLE)
         set(BYPASS_EINTR_ISSUE 1)
-        list(APPEND srcs "esp_additions/FreeRTOSSimulator_wrappers.c")
     endif()
 endif()
 
@@ -189,6 +189,39 @@ if(arch STREQUAL "linux")
     if(BYPASS_EINTR_ISSUE)
         target_link_libraries(${COMPONENT_LIB} PRIVATE dl)
     endif()
+
+    set(WRAP_FUNCTIONS
+        read
+        write
+        pread
+        pwrite
+        readv
+        writev
+        recv
+        send
+        recvfrom
+        sendto
+        recvmsg
+        sendmsg
+        connect
+        accept
+        close
+        select
+        pselect
+        poll
+        sleep
+        usleep
+        open
+        socket
+        socketpair
+        pipe
+        pipe2
+        dup
+        dup2)
+
+    foreach(wrap ${WRAP_FUNCTIONS})
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=${wrap}")
+    endforeach()
 
     # Disable strict prototype warnings in upstream code
     # (struct event * event_create() is missing 'void')
