@@ -40,6 +40,12 @@ if((CONFIG_SOC_PM_SUPPORT_MODEM_PD OR CONFIG_SOC_PM_SUPPORT_TOP_PD) AND CONFIG_S
     list(APPEND srcs "port/${target}/sleep_clock.c")
 endif()
 
+if(CONFIG_BT_CTRL_SLEEP_ENABLE AND CONFIG_SOC_PM_MODEM_LOCK_CLK_WORKAROUND)
+    list(APPEND srcs "port/${target}/sleep_power.c")
+    set_property(TARGET ${COMPONENT_LIB}
+            APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-u sleep_power_system_retention_init")
+endif()
+
 if(CONFIG_SOC_PM_SUPPORT_PMU_MODEM_STATE)
     list(APPEND srcs "port/${target}/sleep_modem_state.c")
 endif()

@@ -27,6 +27,13 @@
 #include "soc/uart_pins.h"
 
 #include "hal/rtc_hal.h"
+#if SOC_PMU_SUPPORTED
+#include "hal/pmu_ll.h"
+#include "esp_private/esp_pmu.h"
+#else
+#include "soc/rtc.h"
+#include "hal/rtc_cntl_ll.h"
+#endif
 
 #include "esp_private/esp_gpio_reserve.h"
 #include "esp_private/gpio.h"
@@ -36,6 +43,18 @@
 #include "bootloader_flash.h"
 
 ESP_LOG_ATTR_TAG(TAG, "sleep_gpio");
+
+#if SOC_PM_SUPPORT_EXT0_WAKEUP
+#define _IO_WAKEUP_EXT0     RTC_EXT0_TRIG_EN
+#else
+#define _IO_WAKEUP_EXT0     0
+#endif
+#if SOC_PM_SUPPORT_EXT1_WAKEUP
+#define _IO_WAKEUP_EXT1     RTC_EXT1_TRIG_EN
+#else
+#define _IO_WAKEUP_EXT1     0
+#endif
+#define IO_WAKEUP_ENABLED   (RTC_GPIO_TRIG_EN | _IO_WAKEUP_EXT0 | _IO_WAKEUP_EXT1)
 
 #if CONFIG_IDF_TARGET_ESP32
 /* On ESP32, for IOs with RTC functionality, setting SLP_PU, SLP_PD couldn't change IO status
@@ -373,7 +392,12 @@ ESP_SYSTEM_INIT_FN(esp_sleep_startup_init, SECONDARY, BIT(0), 105)
 {
 #if SOC_DEEP_SLEEP_SUPPORTED
     // Need to unhold the IOs that were hold right before entering deep sleep, which are used as wakeup pins
-    if (esp_reset_reason() == ESP_RST_DEEPSLEEP) {
+#if SOC_PMU_SUPPORTED
+    uint32_t io_wakeup_enabled = pmu_ll_hp_get_wakeup_enable(&PMU) & IO_WAKEUP_ENABLED;
+#else
+    uint32_t io_wakeup_enabled = rtc_cntl_ll_get_wakeup_enable() & IO_WAKEUP_ENABLED;
+#endif
+    if (esp_reset_reason() == ESP_RST_DEEPSLEEP && io_wakeup_enabled) {
         esp_deep_sleep_wakeup_io_reset();
     }
 #endif  //#if SOC_DEEP_SLEEP_SUPPORTED

@@ -68,7 +68,7 @@ extern "C" {
 #define REGDMA_JPEG_LINK(_pri)              ((0x28 << 8) | _pri)
 #define REGDMA_LCDCAM_LINK(_pri)            ((0x29 << 8) | _pri)
 #define REGDMA_H264_LINK(_pri)              ((0x2a << 8) | _pri)
-
+#define REGDMA_POWER_LINK(_pri)             ((0xFD << 8) | _pri)
 #define REGDMA_CLOCK_ICG_LINK(_pri)         ((0xFE << 8) | _pri)
 #define REGDMA_MODEM_FE_LINK(_pri)          ((0xFF << 8) | _pri)
 
@@ -79,6 +79,7 @@ extern "C" {
 #define REGDMA_LINK_PRI_WIFI_MAC_BB             REGDMA_LINK_PRI_3
 #define REGDMA_LINK_PRI_NON_CRITICAL_TEE_APM    REGDMA_LINK_PRI_4
 #define REGDMA_LINK_PRI_BT_MAC_BB               REGDMA_LINK_PRI_5
+#define REGDMA_LINK_PRI_POWER                   REGDMA_LINK_PRI_5
 #define REGDMA_LINK_PRI_SYS_PERIPH_HIGH         REGDMA_LINK_PRI_5 // INT_MTX & HP_SYSTEM & Console UART
 #define REGDMA_LINK_PRI_SYS_PERIPH_LOW          REGDMA_LINK_PRI_6 // TG0 & IO MUX & SPI MEM & Systimer
 #define REGDMA_LINK_PRI_GENERAL_PERIPH          REGDMA_LINK_PRI_7 // Low retenion priority for general peripherals

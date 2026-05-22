@@ -623,6 +623,7 @@ TEST_CASE("allocate 2 handlers for a same source and remove the later one", "[in
 
     // enable SPI2
     PERIPH_RCC_ATOMIC() {
+        spi_ll_enable_clock(1, true);
         spi_ll_enable_bus_clock(1, true);
         spi_ll_reset_register(1);
     }

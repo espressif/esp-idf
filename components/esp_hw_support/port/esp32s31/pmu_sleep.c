@@ -401,7 +401,7 @@ IRAM_ATTR bool pmu_sleep_finish(bool dslp)
 #if !SOC_APM_SUPPORTED
     apm_hal_enable_ctrl_filter_all(false);
 #else
-    ESP_STATIC_ASSERT(0, "TEE/APM retention need to be supported!");
+    ESP_STATIC_ASSERT(0, "TEE/APM retention need to be supported!"); //TODO: IDF-15712
 #endif
 
     return pmu_ll_hp_is_sleep_reject(&PMU);

@@ -152,13 +152,18 @@ static inline void periph_ll_clk_gate_set_default(soc_reset_reason_t rst_reason,
         PCR.parl_clk_tx_conf.parl_clk_tx_en = 0;
         PCR.parl_io_conf.parl_clk_en = 0;
         PCR.gdma_conf.gdma_clk_en = 0;
+        PCR.regdma_conf.regdma_clk_en = 0;
 
         if (config->disable_mspi_flash_clk) {
             PCR.mspi_conf.mspi_clk_en = 0;
+            PCR.mspi_conf.mspi_pll_clk_en = 0;
+            PCR.mspi_clk_conf.mspi_func_clk_en = 0;
         }
 
         PCR.spi2_conf.spi2_clk_en = 0;
+        PCR.spi2_clkm_conf.spi2_clkm_en = 0;
         PCR.spi3_conf.spi3_clk_en = 0;
+        PCR.spi3_clkm_conf.spi3_clkm_en = 0;
         PCR.tsens_clk_conf.tsens_clk_en = 0;
 
         PCR.uhci_conf.uhci_clk_en = 0;
@@ -172,6 +177,7 @@ static inline void periph_ll_clk_gate_set_default(soc_reset_reason_t rst_reason,
             /* Disable ASSIST Debug module clock if PC recording is not used;
              * stack guard may re-enable in esp_hw_stack_guard_init */
             PCR.assist_conf.assist_clk_en = 0;
+            PCR.assist_conf.assist1_clk_en = 0;
         }
 
         if (config->disable_crypto_periph_clk) {
@@ -204,7 +210,6 @@ static inline void periph_ll_clk_gate_set_default(soc_reset_reason_t rst_reason,
     if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_CHIP_BROWN_OUT) \
             || (rst_reason == RESET_REASON_SYS_RTC_WDT) || (rst_reason == RESET_REASON_SYS_SUPER_WDT)) {
         LPPERI.clk_en.val = 0;
-        LPPERI.clk_en.lp_io_ck_en = 1;  // TODO: PM-699
         LPPERI.clk_en.efuse_ck_en = 1;  // keep efuse clock enabled
         LP_CLKRST.lp_clk_po_en.val = 0;
     }

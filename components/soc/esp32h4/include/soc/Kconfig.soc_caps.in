@@ -1223,6 +1223,14 @@ config SOC_PM_TOP_DEPENDS_ON_RTC_PERIPH
     bool
     default y
 
+config SOC_PM_BBPLL_PD_IN_MODEM_STATE
+    bool
+    default y
+
+config SOC_PM_MODEM_LOCK_CLK_WORKAROUND
+    bool
+    default y
+
 config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
     bool
     default y
