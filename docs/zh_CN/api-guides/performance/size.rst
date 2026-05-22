@@ -242,8 +242,9 @@ MbedTLS 功能
 .. only:: CONFIG_ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
 
     启用配置选项 :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` 时 mbedtls 使用由 ROM 提供的加密算法。
+    该选项仅在所选目标芯片和最低芯片版本支持 ROM mbedTLS 加密算法库时可用。
 
-    禁用配置选项 :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` 时mbedtls 完全使用由 ESP-IDF 中提供的加密算法。这会导致二进制文件大小增加。
+    禁用配置选项 :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` 时，mbedtls 完全使用由 ESP-IDF 中提供的加密算法。这会导致二进制文件大小增加。
 
 .. note::
 

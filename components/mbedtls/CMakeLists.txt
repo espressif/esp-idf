@@ -7,14 +7,24 @@ if(esp_tee_build)
     return()
 elseif(BOOTLOADER_BUILD)   # TODO: IDF-11673
     if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER)
-        set(include_dirs "${COMPONENT_DIR}/mbedtls/include"
+        set(include_dirs "${COMPONENT_DIR}/port/include"
+                         "${COMPONENT_DIR}/mbedtls/include"
+                         "${COMPONENT_DIR}/mbedtls/tf-psa-crypto/include"
+                         "${COMPONENT_DIR}/mbedtls/tf-psa-crypto/drivers/builtin/include"
+                         "${COMPONENT_DIR}/port/psa_driver/include"
                          "port/mbedtls_rom")
         set(srcs "port/mbedtls_rom/mbedtls_rom_osi_bootloader.c")
+        set(public_compile_definitions
+            -DMBEDTLS_CONFIG_FILE="mbedtls/esp_config.h"
+            MBEDTLS_CIPHER_MODE_XTS)
     endif()
 
     idf_component_register(SRCS "${srcs}"
                            INCLUDE_DIRS "${include_dirs}"
                            PRIV_REQUIRES esp_hal_dma)
+    if(public_compile_definitions)
+        target_compile_definitions(${COMPONENT_LIB} PUBLIC ${public_compile_definitions})
+    endif()
     return()
 endif()
 
@@ -459,10 +469,10 @@ if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY OR
     endif()
 endif()
 
-# if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL)
-#     target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/mbedtls_rom/mbedtls_rom_osi.c")
-#     target_link_libraries(${COMPONENT_LIB} PRIVATE "-u mbedtls_rom_osi_functions_init")
-# endif()
+if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL)
+    target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/mbedtls_rom/mbedtls_rom_osi.c")
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u mbedtls_rom_osi_functions_init")
+endif()
 
 if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
     target_compile_options(${COMPONENT_LIB} PRIVATE "-fno-analyzer")
