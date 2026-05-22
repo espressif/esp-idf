@@ -149,6 +149,12 @@ if WIFI_RMT_ENABLE_WPA3_OWE_SOFTAP
         default WIFI_RMT_ENABLE_WPA3_OWE_SOFTAP
 endif
 
+if WIFI_RMT_PASN_SUPPORT
+    config ESP_WIFI_PASN_SUPPORT # ignore: multiple-definition
+        bool
+        default WIFI_RMT_PASN_SUPPORT
+endif
+
 if WIFI_RMT_SLP_IRAM_OPT
     config ESP_WIFI_SLP_IRAM_OPT # ignore: multiple-definition
         bool
@@ -302,6 +308,13 @@ if WIFI_RMT_NAN_USD_ENABLE
         bool
         depends on IDF_EXPERIMENTAL_FEATURES
         default WIFI_RMT_NAN_USD_ENABLE
+endif
+
+if WIFI_RMT_NAN_PAIRING
+    config ESP_WIFI_NAN_PAIRING # ignore: multiple-definition
+        bool
+        depends on WIFI_RMT_NAN_SECURITY && IDF_EXPERIMENTAL_FEATURES && WIFI_RMT_MBEDTLS_CRYPTO
+        default WIFI_RMT_NAN_PAIRING
 endif
 
 if WIFI_RMT_MBEDTLS_CRYPTO

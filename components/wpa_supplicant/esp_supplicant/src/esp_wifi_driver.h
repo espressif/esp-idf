@@ -234,6 +234,12 @@ enum key_flag {
     KEY_FLAG_PMK                    = BIT(6),
 };
 
+typedef enum {
+    NAN_KEY_ND_TK = 0,
+    NAN_KEY_ND_GTK,
+    NAN_KEY_NM_TK,
+} nan_key_type_t;
+
 typedef wifi_scan_channel_bitmap_t channel_bitmap_t;
 
 uint8_t *esp_wifi_ap_get_prof_pmk_internal(void);

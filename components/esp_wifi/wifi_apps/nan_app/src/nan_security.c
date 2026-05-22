@@ -94,6 +94,11 @@ static const uint8_t *nan_find_attr(const uint8_t *attrs, size_t attrs_len,
     return NULL;
 }
 
+static bool nan_csid_bitmap_has_pasn(uint16_t csid_bitmap)
+{
+    return (csid_bitmap & WIFI_NAN_CSID_BIT_NCS_PK_PASN_128) != 0;
+}
+
 /*
  * Service ID = first 6 bytes of SHA256(lowercase(service_name))
  * per Wi-Fi Aware v4.0 §5.1.5 (Service Name and Service ID).
@@ -422,6 +427,37 @@ static struct ndl_info *nan_ndl_claim_for_pub_peer(uint8_t pub_id, const uint8_t
 }
 
 /*
+ * Fill NDL security context from paired-peer cache (produced at PASN pairing
+ * completion). Caller must hold NAN_DATA_LOCK.
+ */
+#if defined(CONFIG_ESP_WIFI_NAN_PAIRING)
+static bool nan_security_fill_from_paired_cache(struct ndl_info *ndl, const uint8_t *peer_nmi)
+{
+    const struct nan_paired_peer *paired;
+
+    if (!ndl || !peer_nmi) {
+        return false;
+    }
+
+    paired = nan_app_find_paired_peer(peer_nmi);
+    if (!paired || !paired->valid) {
+        return false;
+    }
+    if (paired->ndp_csid == 0 || paired->ndp_csid > 15) {
+        return false;
+    }
+
+    ndl->security_ctx.type = WIFI_NAN_SECURITY_ENCRYPTED;
+    ndl->security_ctx.csid_bitmap = (uint16_t)(1u << paired->ndp_csid);
+    memcpy(ndl->security_ctx.nd_pmk, paired->nd_pmk, ESP_WIFI_NAN_NDP_PMK_LEN);
+
+    ESP_LOGD(TAG, "Loaded ND-PMK from paired-peer cache for peer "MACSTR" (csid=%u)",
+             MAC2STR(peer_nmi), paired->ndp_csid);
+    return true;
+}
+#endif
+
+/*
  * Build RSNA Key Descriptor payload (95-byte EAPOL-Key layout, see
  * IEEE 802.11-2020 §12.7.2). NAN carries this body inside the NAN
  * Shared Key Descriptor attribute (Wi-Fi Aware v4.0 §9.5.21).
@@ -708,32 +744,36 @@ esp_err_t nan_derive_security_params(const char *service_name,
             goto fail;
         }
 
-        if (cred->use_pmk) {
-            memcpy(pmk, cred->pmk, ESP_WIFI_NAN_NDP_PMK_LEN);
-        } else {
-            if (nan_derive_nd_pmk_from_passphrase(cred->passphrase, cred->csid,
-                                                  service_id, r_addr, pmk) != 0) {
-                ESP_LOGE(TAG, "Cred[%u]: PBKDF2 ND-PMK derivation failed", i);
-                goto fail;
+        if (cred->csid == WIFI_NAN_CSID_NCS_SK_128) {
+            if (cred->use_pmk) {
+                memcpy(pmk, cred->pmk, ESP_WIFI_NAN_NDP_PMK_LEN);
+            } else {
+                if (nan_derive_nd_pmk_from_passphrase(cred->passphrase, cred->csid,
+                                                      service_id, r_addr, pmk) != 0) {
+                    ESP_LOGE(TAG, "Cred[%u]: PBKDF2 ND-PMK derivation failed", i);
+                    goto fail;
+                }
             }
+
+            const unsigned char *addr_pmkid[4] = {(const unsigned char *)NAN_PMK_NAME_LABEL,
+                                                  i_addr, r_addr, service_id
+                                                 };
+            int len_pmkid[4] = {NAN_PMK_NAME_LABEL_LEN, 6, 6, 6};
+
+            g_wifi_default_wpa_crypto_funcs.hmac_sha256_vector(pmk, ESP_WIFI_NAN_NDP_PMK_LEN,
+                                                               4, addr_pmkid, len_pmkid, hash);
+
+            memcpy(out_derived[i].nd_pmk,   pmk,  ESP_WIFI_NAN_NDP_PMK_LEN);
+            memcpy(out_derived[i].nd_pmkid, hash, ESP_WIFI_NAN_NDP_PMKID_LEN);
+            forced_memzero(pmk, sizeof(pmk));
+        } else if (cred->csid == WIFI_NAN_CSID_NCS_PK_PASN_128) {
+            /* Fill PMKID with 0xff before pairing, ND-PMK to be derived at the end of pairing */
+            memset(out_derived[i].nd_pmkid, 0xff, ESP_WIFI_NAN_NDP_PMKID_LEN);
         }
-
-        const unsigned char *addr_pmkid[4] = {(const unsigned char *)NAN_PMK_NAME_LABEL,
-                                              i_addr, r_addr, service_id
-                                             };
-        int len_pmkid[4] = {NAN_PMK_NAME_LABEL_LEN, 6, 6, 6};
-
-        g_wifi_default_wpa_crypto_funcs.hmac_sha256_vector(pmk, ESP_WIFI_NAN_NDP_PMK_LEN,
-                                                           4, addr_pmkid, len_pmkid, hash);
-
         out_derived[i].type            = WIFI_NAN_SECURITY_ENCRYPTED;
         out_derived[i].csid_bitmap     = (uint16_t)(1u << cred->csid);
         out_derived[i].group_data_prot = sec_cfg->group_data_prot;
         out_derived[i].group_mgmt_prot = sec_cfg->group_mgmt_prot;
-        memcpy(out_derived[i].nd_pmk,   pmk,  ESP_WIFI_NAN_NDP_PMK_LEN);
-        memcpy(out_derived[i].nd_pmkid, hash, ESP_WIFI_NAN_NDP_PMKID_LEN);
-
-        forced_memzero(pmk, sizeof(pmk));
     }
 
     /* Mirror the derived material into the host's own_svc_info slot for this
@@ -791,6 +831,27 @@ bool nan_security_service_match(const struct own_svc_info *own_svc,
     if (!own_svc || !peer_svc || !publisher_nmi || !peer_sec) {
         return false;
     }
+
+    const wifi_nan_discovery_security_params_t *cfg = &own_svc->user_cfg;
+
+    if (cfg->num_credentials == 0 ||
+            cfg->num_credentials > ESP_WIFI_NAN_MAX_CREDS_PER_SVC) {
+        return false;
+    }
+
+    if (nan_csid_bitmap_has_pasn(peer_sec->csid_bitmap)) {
+        int c;
+        for (c = 0; c < cfg->num_credentials; c++) {
+            const wifi_nan_credential_t *cred = &cfg->creds[c];
+            if (peer_sec->csid_bitmap & (1 << cred->csid)) {
+                return true;
+            }
+        }
+        if (c == cfg->num_credentials) {
+            return false;
+        }
+    }
+
     if (peer_sec->num_pmkids == 0) {
         return false;
     }
@@ -798,12 +859,6 @@ bool nan_security_service_match(const struct own_svc_info *own_svc,
         return false;
     }
     if (!g_wifi_default_wpa_crypto_funcs.hmac_sha256_vector) {
-        return false;
-    }
-
-    const wifi_nan_discovery_security_params_t *cfg = &own_svc->user_cfg;
-    if (cfg->num_credentials == 0 ||
-            cfg->num_credentials > ESP_WIFI_NAN_MAX_CREDS_PER_SVC) {
         return false;
     }
 
@@ -872,11 +927,23 @@ esp_err_t nan_security_populate_initiator_ndl(struct ndl_info *ndl,
                                               const struct peer_svc_info *peer_svc,
                                               const uint8_t *peer_nmi)
 {
+    const wifi_nan_credential_t *cred = NULL;
+#if defined(CONFIG_ESP_WIFI_NAN_PAIRING)
+    const struct nan_paired_peer *paired = NULL;
+#endif
+
     if (!ndl || !own_svc || !peer_nmi) {
         return ESP_FAIL;
     }
     const wifi_nan_discovery_security_params_t *cfg = &own_svc->user_cfg;
-    if (cfg->num_credentials == 0) {
+#if defined(CONFIG_ESP_WIFI_NAN_PAIRING)
+    paired = nan_app_find_paired_peer(peer_nmi);
+#endif
+    if (cfg->num_credentials == 0
+#if defined(CONFIG_ESP_WIFI_NAN_PAIRING)
+            && (!paired || !paired->valid)
+#endif
+       ) {
         return ESP_OK; /* subscriber didn't request encrypted datapath */
     }
 
@@ -889,12 +956,14 @@ esp_err_t nan_security_populate_initiator_ndl(struct ndl_info *ndl,
     if (cred_idx >= cfg->num_credentials) {
         cred_idx = 0;
     }
-    const wifi_nan_credential_t *cred = &cfg->creds[cred_idx];
-    ESP_LOGD(TAG, "NDP req security: svc='%s' using cred[%u] for peer "MACSTR
-             " (matched_idx=%d, num_creds=%u)",
-             own_svc->svc_name, cred_idx, MAC2STR(peer_nmi),
-             (matched_idx == NAN_NO_MATCHED_CRED) ? -1 : (int)matched_idx,
-             cfg->num_credentials);
+    if (cfg->num_credentials > 0) {
+        cred = &cfg->creds[cred_idx];
+        ESP_LOGD(TAG, "NDP req security: svc='%s' using cred[%u] for peer "MACSTR
+                 " (matched_idx=%d, num_creds=%u)",
+                 own_svc->svc_name, cred_idx, MAC2STR(peer_nmi),
+                 (matched_idx == NAN_NO_MATCHED_CRED) ? -1 : (int)matched_idx,
+                 cfg->num_credentials);
+    }
 
     uint8_t pmk[ESP_WIFI_NAN_NDP_PMK_LEN];
     uint8_t service_id[6];
@@ -910,17 +979,35 @@ esp_err_t nan_security_populate_initiator_ndl(struct ndl_info *ndl,
         goto cleanup;
     }
 
-    if (cred->use_pmk) {
-        memcpy(pmk, cred->pmk, ESP_WIFI_NAN_NDP_PMK_LEN);
-    } else {
-        if (cred->csid == 0) {
+    uint8_t ndp_csid = 0;
+#if defined(CONFIG_ESP_WIFI_NAN_PAIRING)
+    if (paired && paired->valid && paired->ndp_csid >= WIFI_NAN_CSID_NCS_SK_128 &&
+            paired->ndp_csid <= WIFI_NAN_CSID_NCS_SK_256) {
+        memcpy(pmk, paired->nd_pmk, ESP_WIFI_NAN_NDP_PMK_LEN);
+        ndp_csid = paired->ndp_csid;
+        ESP_LOGD(TAG, "NDP req security: using paired-peer cached ND-PMK for " MACSTR
+                 " (csid=%u)", MAC2STR(peer_nmi), ndp_csid);
+    } else
+#endif
+    {
+        if (!cred) {
+            ESP_LOGE(TAG, "NDP req security: no credential and no paired cache for peer " MACSTR,
+                     MAC2STR(peer_nmi));
             goto cleanup;
         }
-        if (nan_derive_nd_pmk_from_passphrase(cred->passphrase, cred->csid, service_id,
-                                              peer_nmi, pmk) != 0) {
-            ESP_LOGE(TAG, "NDP req security: passphrase->PMK failed");
-            goto cleanup;
+        if (cred->use_pmk) {
+            memcpy(pmk, cred->pmk, ESP_WIFI_NAN_NDP_PMK_LEN);
+        } else {
+            if (cred->csid == 0) {
+                goto cleanup;
+            }
+            if (nan_derive_nd_pmk_from_passphrase(cred->passphrase, cred->csid, service_id,
+                                                  peer_nmi, pmk) != 0) {
+                ESP_LOGE(TAG, "NDP req security: passphrase->PMK failed");
+                goto cleanup;
+            }
         }
+        ndp_csid = cred->csid;
     }
 
     uint8_t pair_pmkid[ESP_WIFI_NAN_NDP_PMKID_LEN];
@@ -930,7 +1017,7 @@ esp_err_t nan_security_populate_initiator_ndl(struct ndl_info *ndl,
     }
 
     ndl->security_ctx.type        = WIFI_NAN_SECURITY_ENCRYPTED;
-    ndl->security_ctx.csid_bitmap = (uint16_t)(1u << cred->csid);
+    ndl->security_ctx.csid_bitmap = (uint16_t)(1u << ndp_csid);
     memcpy(ndl->security_ctx.nd_pmk,   pmk,        ESP_WIFI_NAN_NDP_PMK_LEN);
     memcpy(ndl->security_ctx.nd_pmkid, pair_pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN);
 
@@ -967,8 +1054,8 @@ int esp_nan_construct_csia(uint8_t *frm, uint8_t pub_id, uint16_t own_csid_bitma
     *p++ = attr_len & 0xFF;
     *p++ = (attr_len >> 8) & 0xFF;
 
-    /* Capabilities byte (currently 0) */
-    *p++ = 0;
+    /* Capabilities byte (0x4 set for iOS interop) */
+    *p++ = 0x4;
 
     /* Cipher Suite ID list: [CSID(1)] [Publish ID(1)] */
     for (uint8_t csid = 1; csid <= 8; csid++) {
@@ -1020,8 +1107,6 @@ int esp_nan_construct_scia_ndp_resp(uint8_t *frm, uint8_t ndp_id, const uint8_t 
     }
 
     ESP_LOGD(TAG, "Constructing SCIA (NDP Response M2): ndp_id=%d, pub_id=%d", ndp_id, ndl->publisher_id);
-    ESP_LOGD(TAG, "Using pair-specific PMKID from M1 (not Publish PMKID):");
-    ESP_LOG_BUFFER_HEXDUMP(TAG, ndl->security_ctx.nd_pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN, ESP_LOG_DEBUG);
 
     uint8_t pub_id = ndl->publisher_id;
     uint8_t pmkid_one[1][ESP_WIFI_NAN_NDP_PMKID_LEN];
@@ -1107,7 +1192,16 @@ int esp_nan_get_ndp_resp_shared_key_desc(uint8_t *buf, size_t buf_len, uint8_t n
         bool need_pmk = (ndl->security_ctx.type != WIFI_NAN_SECURITY_ENCRYPTED) ||
                         (memcmp(ndl->security_ctx.nd_pmk, zero_pmk, ESP_WIFI_NAN_NDP_PMK_LEN) == 0);
 
-        if (need_pmk && have_peer_pmkid) {
+        bool resolved_from_pairing_cache = false;
+#if defined(CONFIG_ESP_WIFI_NAN_PAIRING)
+        if (need_pmk) {
+            resolved_from_pairing_cache = nan_security_fill_from_paired_cache(ndl, peer_nmi);
+        }
+#endif
+
+        if (resolved_from_pairing_cache) {
+            ESP_LOGD(TAG, "NDP Resp Key Desc: resolved PMK from paired-peer cache");
+        } else if (need_pmk && have_peer_pmkid) {
             struct own_svc_info *p_svc = nan_find_own_svc(ndl->publisher_id);
             int matched_idx = p_svc ? nan_match_pmkid(p_svc, ndl->security_ctx.nd_pmkid,
                                                       ndl->peer_nmi, ndl->peer_ndi) : -1;
@@ -1163,20 +1257,6 @@ int esp_nan_get_ndp_resp_shared_key_desc(uint8_t *buf, size_t buf_len, uint8_t n
         ndl->kek_len = NAN_NCS_SK_128_KEK_LEN;
         ndl->tk_len  = NAN_NCS_SK_128_TK_LEN;
         ndl->ptk_set = 1;
-
-        ESP_LOGD(TAG, "=== PTK Derivation Debug (M2 Responder) ===");
-        ESP_LOGD(TAG, "ND-PMK:");
-        ESP_LOG_BUFFER_HEXDUMP(TAG, ndl->security_ctx.nd_pmk, ESP_WIFI_NAN_NDP_PMK_LEN, ESP_LOG_DEBUG);
-        ESP_LOGD(TAG, "ANonce:");
-        ESP_LOG_BUFFER_HEXDUMP(TAG, ndl->anonce, NAN_NONCE_LEN, ESP_LOG_DEBUG);
-        ESP_LOGD(TAG, "SNonce:");
-        ESP_LOG_BUFFER_HEXDUMP(TAG, ndl->snonce, NAN_NONCE_LEN, ESP_LOG_DEBUG);
-        ESP_LOGD(TAG, "KCK:");
-        ESP_LOG_BUFFER_HEXDUMP(TAG, ndl->nd_kck, NAN_NCS_SK_128_KCK_LEN, ESP_LOG_DEBUG);
-        ESP_LOGD(TAG, "KEK:");
-        ESP_LOG_BUFFER_HEXDUMP(TAG, ndl->nd_kek, NAN_NCS_SK_128_KEK_LEN, ESP_LOG_DEBUG);
-        ESP_LOGD(TAG, "TK:");
-        ESP_LOG_BUFFER_HEXDUMP(TAG, ndl->nd_tk, NAN_NCS_SK_128_TK_LEN, ESP_LOG_DEBUG);
     }
 
     uint8_t *p = buf;
@@ -1574,7 +1654,6 @@ esp_err_t esp_nan_parse_publish_security(const uint8_t *attrs, size_t attrs_len,
     scia = nan_find_attr(attrs, attrs_len, NAN_ATTR_ID_SECURITY_CONTEXT, &scia_len);
     if (scia && scia_len > 0) {
         ESP_LOGD(TAG, "Found SCIA in Publish SDF, len=%d", scia_len);
-        ESP_LOG_BUFFER_HEXDUMP(TAG, scia, scia_len, ESP_LOG_DEBUG);
 
         size_t offset = 0;
         while (offset + 4 <= scia_len && security->num_pmkids < NAN_PEER_MAX_PMKIDS) {
@@ -1634,7 +1713,13 @@ void nan_security_apply_pending(struct ndl_info *ndl,
                        p_own_svc->derived_security[matched_idx].nd_pmk,
                        ESP_WIFI_NAN_NDP_PMK_LEN);
                 ESP_LOGD(TAG, "NDP Indication: PMKID validated via cred slot %d", matched_idx);
-            } else {
+            }
+#if defined(CONFIG_ESP_WIFI_NAN_PAIRING)
+            else if (nan_security_fill_from_paired_cache(ndl, peer_nmi)) {
+                ESP_LOGD(TAG, "NDP Indication: PMK sourced from paired-peer cache");
+            }
+#endif
+            else {
                 ESP_LOGW(TAG, "NDP Indication: PMKID validation failed");
             }
         }

@@ -3036,6 +3036,100 @@ struct wpabuf * crypto_ecdh_set_peerkey(struct crypto_ecdh *ecdh, int inc_y,
     return sh_secret;
 }
 
+mbedtls_ecp_group_id ecc_group_from_psa(psa_ecc_family_t family,
+                                        size_t bits)
+{
+    switch (family) {
+    case PSA_ECC_FAMILY_SECP_R1:
+        switch (bits) {
+#ifdef MBEDTLS_ECP_DP_SECP192R1_ENABLED
+        case 192:
+            return MBEDTLS_ECP_DP_SECP192R1;
+#endif
+        case 256:
+            return MBEDTLS_ECP_DP_SECP256R1;
+        case 384:
+            return MBEDTLS_ECP_DP_SECP384R1;
+        case 521:
+            return MBEDTLS_ECP_DP_SECP521R1;
+        }
+        break;
+
+    case PSA_ECC_FAMILY_BRAINPOOL_P_R1:
+        switch (bits) {
+        case 256:
+            return MBEDTLS_ECP_DP_BP256R1;
+        case 384:
+            return MBEDTLS_ECP_DP_BP384R1;
+        case 512:
+            return MBEDTLS_ECP_DP_BP512R1;
+        }
+        break;
+
+    case PSA_ECC_FAMILY_MONTGOMERY:
+        switch (bits) {
+        case 255:
+            return MBEDTLS_ECP_DP_CURVE25519;
+        case 448:
+            return MBEDTLS_ECP_DP_CURVE448;
+        }
+        break;
+
+    case PSA_ECC_FAMILY_SECP_K1:
+        switch (bits) {
+#ifdef MBEDTLS_ECP_DP_SECP192K1_ENABLED
+        case 192:
+            return MBEDTLS_ECP_DP_SECP192K1;
+#endif
+        case 256:
+            return MBEDTLS_ECP_DP_SECP256K1;
+        }
+        break;
+    }
+
+    return MBEDTLS_ECP_DP_NONE;
+}
+
+size_t crypto_ecdh_prime_len(struct crypto_ecdh *ecdh)
+{
+    mbedtls_ecp_group e;
+    mbedtls_ecp_group_id grp_id;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_ecc_family_t curve;
+    size_t bits;
+    size_t prime_len = 0;
+    int ret;
+
+    if (!ecdh) {
+        return 0;
+    }
+
+    psa_key_id_t key_id = *(psa_key_id_t *)ecdh;
+    psa_status_t status = psa_get_key_attributes(key_id, &attributes);
+    if (status != PSA_SUCCESS) {
+        psa_reset_key_attributes(&attributes);
+        return 0;
+    }
+
+    curve = PSA_KEY_TYPE_ECC_GET_FAMILY(psa_get_key_type(&attributes));
+    bits = psa_get_key_bits(&attributes);
+    psa_reset_key_attributes(&attributes);
+
+    grp_id = ecc_group_from_psa(curve, bits);
+    if (grp_id == MBEDTLS_ECP_DP_NONE) {
+        return 0;
+    }
+
+    mbedtls_ecp_group_init(&e);
+    ret = mbedtls_ecp_group_load(&e, grp_id);
+    if (ret == 0) {
+        prime_len = mbedtls_mpi_size(&e.P);
+    }
+    mbedtls_ecp_group_free(&e);
+
+    return prime_len;
+}
+
 struct crypto_ec_key *crypto_ec_key_parse_pub(const u8 *der, size_t der_len)
 {
     int ret;

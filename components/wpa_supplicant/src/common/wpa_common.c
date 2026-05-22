@@ -320,6 +320,8 @@ static int rsn_selector_to_bitfield(const u8 *s)
 		return WPA_CIPHER_BIP_GMAC_256;
 #endif
 #endif /* CONFIG_IEEE80211W */
+	if (RSN_SELECTOR_GET(s) == RSN_CIPHER_SUITE_NO_GROUP_ADDRESSED)
+		return WPA_CIPHER_GTK_NOT_USED;
 
 	return 0;
 }
@@ -399,8 +401,9 @@ static int wpa_key_mgmt_to_bitfield(const u8 *s)
 
 int wpa_cipher_valid_mgmt_group(int cipher)
 {
-	return cipher == WPA_CIPHER_AES_128_CMAC ||
-		cipher == WPA_CIPHER_BIP_GMAC_128 ||
+    return cipher == WPA_CIPHER_GTK_NOT_USED ||
+        cipher == WPA_CIPHER_AES_128_CMAC ||
+        cipher == WPA_CIPHER_BIP_GMAC_128 ||
 		cipher == WPA_CIPHER_BIP_GMAC_256;
 }
 
@@ -489,6 +492,7 @@ int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 
 	if (left >= RSN_SELECTOR_LEN) {
 		data->group_cipher = rsn_selector_to_bitfield(pos);
+		data->has_group = 1;
 		pos += RSN_SELECTOR_LEN;
 		left -= RSN_SELECTOR_LEN;
 	} else if (left > 0) {
@@ -507,6 +511,8 @@ int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 				   "count %u left %u", __func__, count, left);
 			return -4;
 		}
+		if (count)
+			data->has_pairwise = 1;
 		for (i = 0; i < count; i++) {
 			data->pairwise_cipher |= rsn_selector_to_bitfield(pos);
 			pos += RSN_SELECTOR_LEN;
@@ -1773,6 +1779,494 @@ int wpa_parse_kde_ies(const u8 *buf, size_t len, struct wpa_eapol_ie_parse *ie)
 	return ret;
 }
 
+#ifdef CONFIG_PASN
+
+/*
+ * wpa_pasn_build_auth_header - Add the MAC header and initialize Authentication
+ * frame for PASN
+ *
+ * @buf: Buffer in which the header will be added
+ * @bssid: The BSSID of the AP
+ * @src: Source address
+ * @dst: Destination address
+ * @trans_seq: Authentication transaction sequence number
+ * @status: Authentication status
+ */
+void wpa_pasn_build_auth_header(struct wpabuf *buf, const u8 *bssid,
+				const u8 *src, const u8 *dst,
+				u8 trans_seq, u16 status)
+{
+	struct ieee80211_auth *auth;
+
+	wpa_printf(MSG_DEBUG, "PASN: Add authentication header. trans_seq=%u",
+		   trans_seq);
+
+	auth = wpabuf_put(buf, offsetof(struct ieee80211_auth, auth.variable));
+
+	auth->frame_control = host_to_le16((WLAN_FC_TYPE_MGMT << 2) |
+					   (WLAN_FC_STYPE_AUTH << 4));
+
+	os_memcpy(auth->da, dst, ETH_ALEN);
+	os_memcpy(auth->sa, src, ETH_ALEN);
+	os_memcpy(auth->bssid, bssid, ETH_ALEN);
+	auth->seq_ctrl = 0;
+
+	auth->auth.auth_alg = host_to_le16(WLAN_AUTH_PASN);
+	auth->auth.auth_transaction = host_to_le16(trans_seq);
+	auth->auth.status_code = host_to_le16(status);
+}
+
+
+/*
+ * wpa_pasn_add_rsne - Add an RSNE for PASN authentication
+ * @buf: Buffer in which the IE will be added
+ * @pmkid: Optional PMKID. Can be NULL.
+ * @akmp: Authentication and key management protocol
+ * @cipher: The cipher suite
+ */
+int wpa_pasn_add_rsne(struct wpabuf *buf, const u8 *pmkid, int akmp, int cipher)
+{
+	struct rsn_ie_hdr *hdr;
+	u32 suite;
+	u16 capab;
+	u8 *pos;
+	u8 rsne_len;
+
+	wpa_printf(MSG_DEBUG, "PASN: Add RSNE");
+
+	rsne_len = sizeof(*hdr) + RSN_SELECTOR_LEN +
+		2 + RSN_SELECTOR_LEN + 2 + RSN_SELECTOR_LEN +
+		2 + RSN_SELECTOR_LEN + 2 + (pmkid ? PMKID_LEN : 0);
+
+	if (wpabuf_tailroom(buf) < rsne_len)
+		return -1;
+	hdr = wpabuf_put(buf, rsne_len);
+	hdr->elem_id = WLAN_EID_RSN;
+	hdr->len = rsne_len - 2;
+	WPA_PUT_LE16(hdr->version, RSN_VERSION);
+	pos = (u8 *) (hdr + 1);
+
+	/* Group addressed data is not allowed */
+	RSN_SELECTOR_PUT(pos, RSN_CIPHER_SUITE_NO_GROUP_ADDRESSED);
+	pos += RSN_SELECTOR_LEN;
+
+	/* Add the pairwise cipher */
+	WPA_PUT_LE16(pos, 1);
+	pos += 2;
+	suite = wpa_cipher_to_suite(WPA_PROTO_RSN, cipher);
+	RSN_SELECTOR_PUT(pos, suite);
+	pos += RSN_SELECTOR_LEN;
+
+	/* Add the AKM suite */
+	WPA_PUT_LE16(pos, 1);
+	pos += 2;
+
+	switch (akmp) {
+	case WPA_KEY_MGMT_PASN:
+		RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_PASN);
+		break;
+#if defined(CONFIG_SAE) || defined(CONFIG_WPA3_SAE)
+	case WPA_KEY_MGMT_SAE:
+		RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_SAE);
+		break;
+	case WPA_KEY_MGMT_SAE_EXT_KEY:
+		RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_SAE_EXT_KEY);
+		break;
+#endif /* CONFIG_SAE || CONFIG_WPA3_SAE */
+#ifdef CONFIG_FILS
+	case WPA_KEY_MGMT_FILS_SHA256:
+		RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_FILS_SHA256);
+		break;
+	case WPA_KEY_MGMT_FILS_SHA384:
+		RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_FILS_SHA384);
+		break;
+#endif /* CONFIG_FILS */
+#ifdef CONFIG_IEEE80211R
+	case WPA_KEY_MGMT_FT_PSK:
+		RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_FT_PSK);
+		break;
+	case WPA_KEY_MGMT_FT_IEEE8021X:
+		RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_FT_802_1X);
+		break;
+	case WPA_KEY_MGMT_FT_IEEE8021X_SHA384:
+		RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_FT_802_1X_SHA384);
+		break;
+#endif /* CONFIG_IEEE80211R */
+	default:
+		wpa_printf(MSG_ERROR, "PASN: Invalid AKMP=0x%x", akmp);
+		return -1;
+	}
+	pos += RSN_SELECTOR_LEN;
+
+	/* RSN Capabilities: PASN mandates both MFP capable and required */
+	capab = WPA_CAPABILITY_MFPC | WPA_CAPABILITY_MFPR;
+	capab |= WPA_CAPABILITY_OCVC; /* OCVC: testing — Operating Channel Validation */
+	WPA_PUT_LE16(pos, capab);
+	pos += 2;
+
+	if (pmkid) {
+		wpa_printf(MSG_DEBUG, "PASN: Adding PMKID");
+
+		WPA_PUT_LE16(pos, 1);
+		pos += 2;
+		os_memcpy(pos, pmkid, PMKID_LEN);
+		pos += PMKID_LEN;
+	} else {
+		WPA_PUT_LE16(pos, 0);
+		pos += 2;
+	}
+
+	/* Group addressed management is not allowed */
+	RSN_SELECTOR_PUT(pos, RSN_CIPHER_SUITE_NO_GROUP_ADDRESSED);
+
+	return 0;
+}
+
+
+/*
+ * wpa_pasn_add_parameter_ie - Add PASN Parameters IE for PASN authentication
+ * @buf: Buffer in which the IE will be added
+ * @pasn_group: Finite Cyclic Group ID for PASN authentication
+ * @wrapped_data_format: Format of the data in the Wrapped Data IE
+ * @pubkey: A buffer holding the local public key. Can be NULL
+ * @compressed: In case pubkey is included, indicates if the public key is
+ *     compressed (only x coordinate is included) or not (both x and y
+ *     coordinates are included)
+ * @comeback: A buffer holding the comeback token. Can be NULL
+ * @after: If comeback is set, defined the comeback time in seconds. -1 to not
+ *	include the Comeback After field (frames from non-AP STA).
+ */
+void wpa_pasn_add_parameter_ie(struct wpabuf *buf, u16 pasn_group,
+			       u8 wrapped_data_format,
+			       const struct wpabuf *pubkey, bool compressed,
+			       const struct wpabuf *comeback, int after)
+{
+	struct pasn_parameter_ie *params;
+
+	wpa_printf(MSG_DEBUG, "PASN: Add PASN Parameters element");
+
+	params = wpabuf_put(buf, sizeof(*params));
+
+	params->id = WLAN_EID_EXTENSION;
+	params->len = sizeof(*params) - 2;
+	params->id_ext = WLAN_EID_EXT_PASN_PARAMS;
+	params->control = 0;
+	params->wrapped_data_format = wrapped_data_format;
+
+	if (comeback) {
+		wpa_printf(MSG_DEBUG, "PASN: Adding comeback data");
+
+		/*
+		 * 2 octets for the 'after' field + 1 octet for the length +
+		 * actual cookie data
+		 */
+		if (after >= 0)
+			params->len += 2;
+		params->len += 1 + wpabuf_len(comeback);
+		params->control |= WPA_PASN_CTRL_COMEBACK_INFO_PRESENT;
+
+		if (after >= 0)
+			wpabuf_put_le16(buf, after);
+		wpabuf_put_u8(buf, wpabuf_len(comeback));
+		wpabuf_put_buf(buf, comeback);
+	}
+
+	if (pubkey) {
+		wpa_printf(MSG_DEBUG,
+			   "PASN: Adding public key and group ID %u",
+			   pasn_group);
+
+		/*
+		 * 2 octets for the finite cyclic group + 2 octets public key
+		 * length + 1 octet for the compressed/uncompressed indication +
+		 * the actual key.
+		 */
+		params->len += 2 + 1 + 1 + wpabuf_len(pubkey);
+		params->control |= WPA_PASN_CTRL_GROUP_AND_KEY_PRESENT;
+
+		wpabuf_put_le16(buf, pasn_group);
+
+		/*
+		 * The first octet indicates whether the public key is
+		 * compressed, as defined in RFC 5480 section 2.2.
+		 */
+		wpabuf_put_u8(buf, wpabuf_len(pubkey) + 1);
+		wpabuf_put_u8(buf, compressed ? WPA_PASN_PUBKEY_COMPRESSED_0 :
+			      WPA_PASN_PUBKEY_UNCOMPRESSED);
+
+		wpabuf_put_buf(buf, pubkey);
+	}
+}
+
+/*
+ * wpa_pasn_add_wrapped_data - Add a Wrapped Data IE to PASN Authentication
+ * frame. If needed, the Wrapped Data IE would be fragmented.
+ *
+ * @buf: Buffer in which the IE will be added
+ * @wrapped_data_buf: Buffer holding the wrapped data
+ */
+int wpa_pasn_add_wrapped_data(struct wpabuf *buf,
+			      struct wpabuf *wrapped_data_buf)
+{
+	const u8 *data;
+	size_t data_len;
+	u8 len;
+
+	if (!wrapped_data_buf)
+		return 0;
+
+	wpa_printf(MSG_DEBUG, "PASN: Add wrapped data");
+
+	data = wpabuf_head_u8(wrapped_data_buf);
+	data_len = wpabuf_len(wrapped_data_buf);
+
+	/* nothing to add */
+	if (!data_len)
+		return 0;
+
+	if (data_len <= 254)
+		len = 1 + data_len;
+	else
+		len = 255;
+
+	if (wpabuf_tailroom(buf) < 3 + data_len)
+		return -1;
+
+	wpabuf_put_u8(buf, WLAN_EID_EXTENSION);
+	wpabuf_put_u8(buf, len);
+	wpabuf_put_u8(buf, WLAN_EID_EXT_WRAPPED_DATA);
+	wpabuf_put_data(buf, data, len - 1);
+
+	data += len - 1;
+	data_len -= len - 1;
+
+	while (data_len) {
+		if (wpabuf_tailroom(buf) < 2 + data_len)
+			return -1;
+		wpabuf_put_u8(buf, WLAN_EID_FRAGMENT);
+		len = data_len > 255 ? 255 : data_len;
+		wpabuf_put_u8(buf, len);
+		wpabuf_put_data(buf, data, len);
+		data += len;
+		data_len -= len;
+	}
+
+	return 0;
+}
+
+
+/*
+ * wpa_pasn_validate_rsne - Validate PASN specific data of RSNE
+ * @data: Parsed representation of an RSNE
+ * Returns -1 for invalid data; otherwise 0
+ */
+int wpa_pasn_validate_rsne(const struct wpa_ie_data *data)
+{
+	u16 capab = WPA_CAPABILITY_MFPC | WPA_CAPABILITY_MFPR;
+
+	if (data->proto != WPA_PROTO_RSN)
+		return -1;
+
+	if ((data->capabilities & capab) != capab) {
+		wpa_printf(MSG_DEBUG, "PASN: Invalid RSNE capabilities");
+		return -1;
+	}
+
+	if ((!data->has_group) || (data->group_cipher != WPA_CIPHER_GTK_NOT_USED)) {
+		wpa_printf(MSG_DEBUG, "PASN: Invalid group data cipher");
+		return -1;
+	}
+
+	if (!data->has_pairwise || !data->pairwise_cipher ||
+	    (data->pairwise_cipher & (data->pairwise_cipher - 1))) {
+		wpa_printf(MSG_DEBUG, "PASN: No valid pairwise suite");
+		return -1;
+	}
+
+	switch (data->key_mgmt) {
+#ifdef CONFIG_SAE
+	case WPA_KEY_MGMT_SAE:
+	case WPA_KEY_MGMT_SAE_EXT_KEY:
+	/* fall through */
+#endif /* CONFIG_SAE */
+#ifdef CONFIG_FILS
+	case WPA_KEY_MGMT_FILS_SHA256:
+	case WPA_KEY_MGMT_FILS_SHA384:
+	/* fall through */
+#endif /* CONFIG_FILS */
+#ifdef CONFIG_IEEE80211R
+	case WPA_KEY_MGMT_FT_PSK:
+	case WPA_KEY_MGMT_FT_IEEE8021X:
+	case WPA_KEY_MGMT_FT_IEEE8021X_SHA384:
+	/* fall through */
+#endif /* CONFIG_IEEE80211R */
+	case WPA_KEY_MGMT_PASN:
+		break;
+	default:
+		wpa_printf(MSG_ERROR, "PASN: invalid key_mgmt: 0x%0x",
+			   data->key_mgmt);
+		return -1;
+	}
+
+	if (data->mgmt_group_cipher != WPA_CIPHER_GTK_NOT_USED) {
+		wpa_printf(MSG_DEBUG, "PASN: Invalid group mgmt cipher");
+		return -1;
+	}
+
+	if (data->num_pmkid > 1) {
+		wpa_printf(MSG_DEBUG, "PASN: Invalid number of PMKIDs");
+		return -1;
+	}
+
+	return 0;
+}
+
+
+/*
+ * wpa_pasn_parse_parameter_ie - Validates PASN Parameters IE
+ * @data: Pointer to the PASN Parameters IE (starting with the EID).
+ * @len: Length of the data in the PASN Parameters IE
+ * @from_ap: Whether this was received from an AP
+ * @pasn_params: On successful return would hold the parsed PASN parameters.
+ * Returns: -1 for invalid data; otherwise 0
+ *
+ * Note: On successful return, the pointers in &pasn_params point to the data in
+ * the IE and are not locally allocated (so they should not be freed etc.).
+ */
+int wpa_pasn_parse_parameter_ie(const u8 *data, u8 len, bool from_ap,
+				struct wpa_pasn_params_data *pasn_params)
+{
+	struct pasn_parameter_ie *params = (struct pasn_parameter_ie *) data;
+	const u8 *pos = (const u8 *) (params + 1);
+
+	if (!pasn_params) {
+		wpa_printf(MSG_DEBUG, "PASN: Invalid params");
+		return -1;
+	}
+
+	if (!params || ((size_t) (params->len + 2) < sizeof(*params)) ||
+	    len < sizeof(*params) || params->len + 2 != len) {
+		wpa_printf(MSG_DEBUG,
+			   "PASN: Invalid parameters IE. len=(%u, %u)",
+			   params ? params->len : 0, len);
+		return -1;
+	}
+
+	os_memset(pasn_params, 0, sizeof(*pasn_params));
+
+	switch (params->wrapped_data_format) {
+	case WPA_PASN_WRAPPED_DATA_NO:
+	case WPA_PASN_WRAPPED_DATA_SAE:
+	case WPA_PASN_WRAPPED_DATA_FILS_SK:
+	case WPA_PASN_WRAPPED_DATA_FT:
+		break;
+	default:
+		wpa_printf(MSG_DEBUG, "PASN: Invalid wrapped data format");
+		return -1;
+	}
+
+	pasn_params->wrapped_data_format = params->wrapped_data_format;
+
+	len -= sizeof(*params);
+
+	if (params->control & WPA_PASN_CTRL_COMEBACK_INFO_PRESENT) {
+		if (from_ap) {
+			if (len < 2) {
+				wpa_printf(MSG_DEBUG,
+					   "PASN: Invalid Parameters IE: Truncated Comeback After");
+				return -1;
+			}
+			pasn_params->after = WPA_GET_LE16(pos);
+			pos += 2;
+			len -= 2;
+		}
+
+		if (len < 1 || len < 1 + *pos) {
+			wpa_printf(MSG_DEBUG,
+				   "PASN: Invalid Parameters IE: comeback len");
+			return -1;
+		}
+
+		pasn_params->comeback_len = *pos++;
+		len--;
+		pasn_params->comeback = pos;
+		len -=  pasn_params->comeback_len;
+		pos += pasn_params->comeback_len;
+	}
+
+	if (params->control & WPA_PASN_CTRL_GROUP_AND_KEY_PRESENT) {
+		if (len < 3 || len < 3 + pos[2]) {
+			wpa_printf(MSG_DEBUG,
+				   "PASN: Invalid Parameters IE: group and key");
+			return -1;
+		}
+
+		pasn_params->group = WPA_GET_LE16(pos);
+		pos += 2;
+		len -= 2;
+		pasn_params->pubkey_len = *pos++;
+		len--;
+		pasn_params->pubkey = pos;
+		len -= pasn_params->pubkey_len;
+		pos += pasn_params->pubkey_len;
+	}
+
+	if (len) {
+		wpa_printf(MSG_DEBUG,
+			   "PASN: Invalid Parameters IE. Bytes left=%u", len);
+		return -1;
+	}
+
+	return 0;
+}
+
+
+void wpa_pasn_add_rsnxe(struct wpabuf *buf, u16 capab)
+{
+	size_t flen;
+
+	flen = (capab & 0xff00) ? 2 : 1;
+	if (!capab)
+		return; /* no supported extended RSN capabilities */
+	if (wpabuf_tailroom(buf) < 2 + flen)
+		return;
+	capab |= flen - 1; /* bit 0-3 = Field length (n - 1) */
+
+	wpabuf_put_u8(buf, WLAN_EID_RSNX);
+	wpabuf_put_u8(buf, flen);
+	wpabuf_put_u8(buf, capab & 0x00ff);
+	capab >>= 8;
+	if (capab)
+		wpabuf_put_u8(buf, capab);
+}
+
+
+/*
+ * wpa_pasn_add_extra_ies - Add protocol specific IEs in Authentication
+ * frame for PASN.
+ *
+ * @buf: Buffer in which the elements will be added
+ * @extra_ies: Protocol specific elements to add
+ * @len: Length of the elements
+ * Returns: 0 on success, -1 on failure
+ */
+
+int wpa_pasn_add_extra_ies(struct wpabuf *buf, const u8 *extra_ies, size_t len)
+{
+	if (!buf)
+		return -1;
+	if (!len || !extra_ies)
+		return 0;
+
+	if (wpabuf_tailroom(buf) < len)
+		return -1;
+
+	wpabuf_put_data(buf, extra_ies, len);
+	return 0;
+}
+
+#endif /* CONFIG_PASN */
+
 void rsn_set_snonce_cookie(u8 *snonce)
 {
 	u8 *pos;
@@ -1792,4 +2286,483 @@ bool rsn_is_snonce_cookie(const u8 *snonce)
 	return WPA_GET_BE24(pos) == OUI_WFA &&
 		WPA_GET_BE24(pos + 3) == 0x000029;
 }
+
+#ifdef CONFIG_PASN
+
+/*
+ * pasn_use_sha384 - Should SHA384 be used or SHA256
+ *
+ * @akmp: Authentication and key management protocol
+ * @cipher: The cipher suite
+ *
+ * According to IEEE Std 802.11-2024, 12.13.8 (PTKSA derivation with PASN
+ * authentication), the hash algorithm to use is the
+ * hash algorithm defined for the Base AKM (see Table 9-190 (AKM suite
+ * selectors)). When there is no Base AKM, the hash algorithm is selected based
+ * on the pairwise cipher suite provided in the RSNE by the AP in the second
+ * PASN frame. SHA-256 is used as the hash algorithm, except for the ciphers
+ * 00-0F-AC:9 and 00-0F-AC:10 for which SHA-384 is used.
+ */
+static bool pasn_use_sha384(int akmp, int cipher)
+{
+	return (akmp == WPA_KEY_MGMT_PASN && (cipher == WPA_CIPHER_GCMP_256)) ||
+		wpa_key_mgmt_sha384(akmp);
+}
+
+
+/**
+ * pasn_select_hash_alg - Select hash algorithm for PTK derivation
+ * @akmp: Authentication and key management protocol
+ * @cipher: The cipher suite
+ * @pmk_len: PMK length in octets
+ *
+ * According to IEEE Std 802.11-2024, Table 9-190 (AKM suite selectors), AKMs
+ * 00-0F-AC:24 and 00-0F-AC:25 have the length of the PMK, the length
+ * of the SAE key confirmation key, SAE-KCK, and PTK-KCK, and the length of
+ * PTK-KEK depending on the hash algorithm specified in 12.4.2 (see 12.7.1.3
+ * and 12.7.3), i.e, the hash algorithm depends on the prime length associated
+ * with the selected group per Table 12-1 (Hash algorithm based on length of
+ * prime).
+ */
+static enum rsn_hash_alg pasn_select_hash_alg(int akmp, int cipher,
+					      size_t pmk_len)
+{
+#ifdef CONFIG_SAE
+	if (wpa_key_mgmt_sae_ext_key(akmp)) {
+		if (pmk_len == 48)
+			return RSN_HASH_SHA384;
+	}
+#endif /* CONFIG_SAE */
+
+	if (pasn_use_sha384(akmp, cipher))
+		return RSN_HASH_SHA384;
+
+	return RSN_HASH_SHA256;
+}
+
+struct pasn_nd_pmk_store pasn_nd_pmk_global;
+
+void pasn_nd_pmk_global_clear(void)
+{
+	os_memset(&pasn_nd_pmk_global, 0, sizeof(pasn_nd_pmk_global));
+}
+
+
+/**
+ * pasn_nd_pmk_derive_from_kdk_store - NAN ND-PMK from NM-KDK (hostap equivalent)
+ *
+ * Mirrors hostap nan_crypto_derive_nd_pmk_from_kdk() / nan_crypto_derive_from_kdk():
+ *
+ * ND-PMK = KDF-HASH-NNN(KDK, "NDP PMK Derivation",
+ *			 Pairing Initiator NMI || Pairing Responder NMI)
+ *
+ * NNN follows the NAN PASN cipher suite: SHA-256 for 128-bit suite (e.g. CCMP),
+ * SHA-384 for 256-bit suite (GCMP-256). Output is always PMK_LEN octets.
+ */
+int pasn_nd_pmk_derive_from_kdk_store(const u8 *kdk, size_t kdk_len,
+				      int pairwise_cipher,
+				      const u8 *initiator_nmi,
+				      const u8 *responder_nmi)
+{
+	static const char label[] = "NDP PMK Derivation";
+	u8 data[2 * ETH_ALEN];
+	int ret;
+
+	if (!kdk || !kdk_len || !initiator_nmi || !responder_nmi)
+		return -1;
+
+	os_memcpy(data, initiator_nmi, ETH_ALEN);
+	os_memcpy(data + ETH_ALEN, responder_nmi, ETH_ALEN);
+
+	wpa_printf(MSG_DEBUG, "PASN: Deriving ND-PMK from NM-KDK (NAN pairing)");
+	wpa_hexdump_key(MSG_DEBUG, "PASN: KDK", kdk, kdk_len);
+	wpa_printf(MSG_DEBUG, "PASN: Initiator NMI " MACSTR,
+		   MAC2STR(initiator_nmi));
+	wpa_printf(MSG_DEBUG, "PASN: Responder NMI " MACSTR,
+		   MAC2STR(responder_nmi));
+
+	if (pairwise_cipher == WPA_CIPHER_GCMP_256) {
+#ifdef CONFIG_SHA384
+		wpa_printf(MSG_DEBUG, "PASN: ND-PMK derivation using SHA384");
+
+		ret = sha384_prf(kdk, kdk_len, label, data, sizeof(data),
+				 pasn_nd_pmk_global.nd_pmk, PMK_LEN);
+#else /* CONFIG_SHA384 */
+		wpa_printf(MSG_DEBUG, "PASN: ND-PMK SHA384 not supported");
+		return -1;
+#endif /* CONFIG_SHA384 */
+	} else {
+		wpa_printf(MSG_DEBUG, "PASN: ND-PMK derivation using SHA256");
+
+		ret = sha256_prf(kdk, kdk_len, label, data, sizeof(data),
+				 pasn_nd_pmk_global.nd_pmk, PMK_LEN);
+	}
+
+	if (ret < 0)
+		return -1;
+
+	pasn_nd_pmk_global.valid = 1;
+	wpa_hexdump_key(MSG_DEBUG, "PASN: ND-PMK (global):",
+			pasn_nd_pmk_global.nd_pmk, PMK_LEN);
+
+	return 0;
+}
+
+
+/**
+ * pasn_pmk_to_ptk - Calculate PASN/EPPKE PTK from PMK, addresses, etc.
+ * @pmk: Pairwise master key
+ * @pmk_len: Length of PMK
+ * @spa: For EPPKE authentication, non-AP MLD MAC address is used for MLO. For
+ *	PASN authentication or EPPKE authentication for non-MLO, non-AP STA link
+ *	MAC address is used.
+ * @bssid: For EPPKE authentication, AP MLD MAC address is used for MLO. For
+ *	PASN authentication or EPPKE authentication for non-MLO, AP BSSID is
+ *	used.
+ * @dhss: Is the shared secret (DHss) derived from the PASN ephemeral key
+ *	exchange encoded as an octet string
+ * @dhss_len: The length of dhss in octets
+ * @ptk: Buffer for pairwise transient key
+ * @akmp: Negotiated AKM
+ * @cipher: Negotiated pairwise cipher
+ * @kdk_len: the length in octets that should be derived for HTLK. Can be zero.
+ * @kek_len: The length in octets that should be derived for KEK. Can be zero.
+ * @alg: Output variable for indicating the selected hash algorithm
+ * @is_eppke: EPPKE authentication
+ * Returns: 0 on success, -1 on failure
+ */
+int pasn_pmk_to_ptk(const u8 *pmk, size_t pmk_len,
+		    const u8 *spa, const u8 *bssid,
+		    const u8 *dhss, size_t dhss_len,
+		    struct wpa_ptk *ptk, int akmp, int cipher,
+		    size_t kdk_len, size_t kek_len, enum rsn_hash_alg *alg,
+		    bool is_eppke)
+{
+	u8 tmp[WPA_KCK_MAX_LEN + WPA_KEK_MAX_LEN + WPA_TK_MAX_LEN +
+	       WPA_KDK_MAX_LEN];
+	const u8 *pos;
+	u8 *data;
+	size_t data_len, ptk_len;
+	int ret = -1;
+	const char *label = is_eppke ? "EPPKE PTK Derivation" :
+		"PASN PTK Derivation";
+
+	if (!pmk || !pmk_len) {
+		wpa_printf(MSG_ERROR, "PASN: No PMK set for PTK derivation");
+		return -1;
+	}
+
+	if (!dhss || !dhss_len) {
+		wpa_printf(MSG_ERROR, "PASN: No DHss set for PTK derivation");
+		return -1;
+	}
+
+	/*
+	 * Use "EPPKE PTK Derivation" instead of "PASN PTK Derivation" for
+	 * EPPKE Authentication per IEEE P802.11bi/D4.0, 12.16.9.3.4 (PTKSA
+	 * derivation and MIC computation with EPPKE authentication). For EPPKE
+	 * MLO, the non-AP MLD MAC address is used instead of the SPA and the
+	 * AP MLD MAC address instead of the BSSID.
+	 *
+	 * PASN-PTK = KDF(PMK, "PASN PTK Derivation", SPA || BSSID || DHss)
+	 *
+	 * KCK = L(PASN-PTK, 0, 256)
+	 * TK = L(PASN-PTK, 256, TK_bits)
+	 * KDK = L(PASN-PTK, 256 + TK_bits, kdk_len * 8)
+	 */
+	data_len = 2 * ETH_ALEN + dhss_len;
+	data = os_zalloc(data_len);
+	if (!data)
+		return -1;
+
+	os_memcpy(data, spa, ETH_ALEN);
+	os_memcpy(data + ETH_ALEN, bssid, ETH_ALEN);
+	os_memcpy(data + 2 * ETH_ALEN, dhss, dhss_len);
+
+	ptk->kck_len = WPA_PASN_KCK_LEN;
+	ptk->tk_len = wpa_cipher_key_len(cipher);
+	ptk->kdk_len = kdk_len;
+	ptk->kek_len = kek_len;
+	ptk->kek2_len = 0;
+	ptk->kck2_len = 0;
+
+	if (ptk->tk_len == 0) {
+		wpa_printf(MSG_ERROR,
+			   "PASN: Unsupported cipher (0x%x) used in PTK derivation",
+			   cipher);
+		goto err;
+	}
+
+	ptk_len = ptk->kck_len + ptk->tk_len + ptk->kdk_len + ptk->kek_len;
+	if (ptk_len > sizeof(tmp))
+		goto err;
+
+	*alg = pasn_select_hash_alg(akmp, cipher, pmk_len);
+
+	switch (*alg) {
+	case RSN_HASH_SHA512:
+		wpa_printf(MSG_DEBUG, "PASN: SHA512 PTK derivation not supported");
+		goto err;
+	case RSN_HASH_SHA384:
+#ifdef CONFIG_SHA384
+		wpa_printf(MSG_DEBUG, "PASN: PTK derivation using SHA384");
+
+		if (sha384_prf(pmk, pmk_len, label, data, data_len, tmp,
+			       ptk_len) < 0)
+			goto err;
+		break;
+#endif /* CONFIG_SHA384 */
+	case RSN_HASH_SHA256:
+		wpa_printf(MSG_DEBUG, "PASN: PTK derivation using SHA256");
+
+		if (sha256_prf(pmk, pmk_len, label, data, data_len, tmp,
+			       ptk_len) < 0)
+			goto err;
+		break;
+	default:
+		wpa_printf(MSG_DEBUG, "PASN: Unsupported hash algorithm %d",
+			   *alg);
+		goto err;
+	}
+
+	wpa_printf(MSG_DEBUG,
+		   "PASN: PTK derivation: SPA=" MACSTR " BSSID=" MACSTR,
+		   MAC2STR(spa), MAC2STR(bssid));
+
+	wpa_hexdump_key(MSG_DEBUG, "PASN: DHss", dhss, dhss_len);
+	wpa_hexdump_key(MSG_DEBUG, "PASN: PMK", pmk, pmk_len);
+	wpa_hexdump_key(MSG_DEBUG, "PASN: PASN-PTK", tmp, ptk_len);
+
+	os_memcpy(ptk->kck, tmp, WPA_PASN_KCK_LEN);
+	wpa_hexdump_key(MSG_DEBUG, "PASN: KCK:", ptk->kck, WPA_PASN_KCK_LEN);
+	pos = &tmp[WPA_PASN_KCK_LEN];
+
+	if (kek_len) {
+		os_memcpy(ptk->kek, pos, kek_len);
+		wpa_hexdump_key(MSG_DEBUG, "PASN: KEK:",
+				ptk->kek, ptk->kek_len);
+		pos += kek_len;
+	}
+
+	os_memcpy(ptk->tk, pos, ptk->tk_len);
+	wpa_hexdump_key(MSG_DEBUG, "PASN: TK:", ptk->tk, ptk->tk_len);
+	pos += ptk->tk_len;
+
+	if (kdk_len) {
+		os_memcpy(ptk->kdk, pos, ptk->kdk_len);
+		wpa_hexdump_key(MSG_DEBUG, "PASN: KDK:",
+				ptk->kdk, ptk->kdk_len);
+	}
+
+	ptk->ptk_len = ptk_len;
+	forced_memzero(tmp, sizeof(tmp));
+	ret = 0;
+err:
+	bin_clear_free(data, data_len);
+	return ret;
+}
+
+
+/*
+ * pasn_mic_len - Returns the MIC length for PASN authentication
+ * @alg: Selected hash algorithm from pasn_pmk_to_ptk()
+ */
+size_t pasn_mic_len(enum rsn_hash_alg alg)
+{
+	switch (alg) {
+	case RSN_HASH_SHA512:
+		return 32;
+	case RSN_HASH_SHA384:
+		return 24;
+	case RSN_HASH_SHA256:
+	default:
+		return 16;
+	}
+}
+
+
+/**
+ * wpa_ltf_keyseed - Compute LTF keyseed from KDK
+ * @ptk: Buffer that holds pairwise transient key
+ * @akmp: Negotiated AKM
+ * @cipher: Negotiated pairwise cipher
+ * Returns: 0 on success, -1 on failure
+ */
+int wpa_ltf_keyseed(struct wpa_ptk *ptk, int akmp, int cipher)
+{
+	u8 *buf;
+	size_t buf_len;
+	u8 hash[SHA384_MAC_LEN];
+	const u8 *kdk = ptk->kdk;
+	size_t kdk_len = ptk->kdk_len;
+	const char *label = "Secure LTF key seed";
+
+	if (!kdk || !kdk_len) {
+		wpa_printf(MSG_ERROR, "WPA: No KDK for LTF keyseed generation");
+		return -1;
+	}
+
+	buf = (u8 *)label;
+	buf_len = os_strlen(label);
+
+	if (pasn_use_sha384(akmp, cipher)) {
+		wpa_printf(MSG_DEBUG,
+			   "WPA: Secure LTF keyseed using HMAC-SHA384");
+
+		if (hmac_sha384(kdk, kdk_len, buf, buf_len, hash)) {
+			wpa_printf(MSG_ERROR,
+				   "WPA: HMAC-SHA384 compute failed");
+			return -1;
+		}
+		os_memcpy(ptk->ltf_keyseed, hash, SHA384_MAC_LEN);
+		ptk->ltf_keyseed_len = SHA384_MAC_LEN;
+		wpa_hexdump_key(MSG_DEBUG, "WPA: Secure LTF keyseed: ",
+				ptk->ltf_keyseed, ptk->ltf_keyseed_len);
+
+	} else {
+		wpa_printf(MSG_DEBUG, "WPA: LTF keyseed using HMAC-SHA256");
+
+		if (hmac_sha256(kdk, kdk_len, buf, buf_len, hash)) {
+			wpa_printf(MSG_ERROR,
+				   "WPA: HMAC-SHA256 compute failed");
+			return -1;
+		}
+		os_memcpy(ptk->ltf_keyseed, hash, SHA256_MAC_LEN);
+		ptk->ltf_keyseed_len = SHA256_MAC_LEN;
+		wpa_hexdump_key(MSG_DEBUG, "WPA: Secure LTF keyseed: ",
+				ptk->ltf_keyseed, ptk->ltf_keyseed_len);
+	}
+
+	return 0;
+}
+
+
+/**
+ * pasn_mic - Calculate PASN MIC
+ * @alg: Selected hash algorithm from pasn_pmk_to_ptk()
+ * @kck: The key confirmation key for the PASN PTKSA
+ * @kck_len: KCK length in octets
+ * @addr1: For the 2nd PASN frame supplicant address; for the 3rd frame the
+ *	BSSID
+ * @addr2: For the 2nd PASN frame the BSSID; for the 3rd frame the supplicant
+ *	address
+ * @data: For the 2nd PASN frame, RSNE concatenated with RSNXE (each full IE)
+ *	as present in that Authentication frame, in order. For the 3rd PASN
+ *	frame, this should hold the hash of the body of the PASN 1st frame.
+ * @data_len: The length of data
+ * @frame: The body of the PASN frame including the MIC element with the octets
+ *	in the MIC field of the MIC element set to 0.
+ * @frame_len: The length of frame
+ * @mic: Buffer to hold the MIC on success. Should be big enough to handle the
+ *	maximal MIC length
+ * Returns: 0 on success, -1 on failure
+ */
+int pasn_mic(enum rsn_hash_alg alg, const u8 *kck, size_t kck_len,
+	     const u8 *addr1, const u8 *addr2,
+	     const u8 *data, size_t data_len,
+	     const u8 *frame, size_t frame_len, u8 *mic)
+{
+	u8 *buf;
+	u8 hash[SHA512_MAC_LEN];
+	size_t buf_len = 2 * ETH_ALEN + data_len + frame_len;
+	int ret = -1;
+	size_t mic_len;
+
+	if (!kck) {
+		wpa_printf(MSG_ERROR, "PASN: No KCK for MIC calculation");
+		return -1;
+	}
+
+	if (kck_len != WPA_PASN_KCK_LEN) {
+		wpa_printf(MSG_ERROR,
+			   "PASN: Unexpected KCK length %zu for MIC calculation",
+			   kck_len);
+		return -1;
+	}
+
+	if (!data || !data_len) {
+		wpa_printf(MSG_ERROR, "PASN: invalid data for MIC calculation");
+		return -1;
+	}
+
+	if (!frame || !frame_len) {
+		wpa_printf(MSG_ERROR, "PASN: invalid data for MIC calculation");
+		return -1;
+	}
+
+	buf = os_zalloc(buf_len);
+	if (!buf)
+		return -1;
+
+	os_memcpy(buf, addr1, ETH_ALEN);
+	os_memcpy(buf + ETH_ALEN, addr2, ETH_ALEN);
+
+	wpa_hexdump_key(MSG_DEBUG, "PASN: MIC: data", data, data_len);
+	os_memcpy(buf + 2 * ETH_ALEN, data, data_len);
+
+	wpa_hexdump_key(MSG_DEBUG, "PASN: MIC: frame", frame, frame_len);
+	os_memcpy(buf + 2 * ETH_ALEN + data_len, frame, frame_len);
+
+	wpa_hexdump_key(MSG_DEBUG, "PASN: MIC: KCK", kck, kck_len);
+	wpa_hexdump_key(MSG_DEBUG, "PASN: MIC: buf", buf, buf_len);
+
+	mic_len = pasn_mic_len(alg);
+
+	switch (alg) {
+#ifdef CONFIG_SHA384
+	case RSN_HASH_SHA384:
+		wpa_printf(MSG_DEBUG, "PASN: MIC using HMAC-SHA384");
+		if (hmac_sha384(kck, kck_len, buf, buf_len, hash))
+			goto err;
+		break;
+#endif /* CONFIG_SHA384 */
+	case RSN_HASH_SHA256:
+		wpa_printf(MSG_DEBUG, "PASN: MIC using HMAC-SHA256");
+		if (hmac_sha256(kck, kck_len, buf, buf_len, hash))
+			goto err;
+		break;
+	default:
+		wpa_printf(MSG_ERROR,
+			   "PASN: Unsupported alg=%d for MIC calculation", alg);
+		goto err;
+	}
+
+	os_memcpy(mic, hash, mic_len);
+	wpa_hexdump_key(MSG_DEBUG, "PASN: MIC", mic, mic_len);
+
+	ret = 0;
+err:
+	bin_clear_free(buf, buf_len);
+	return ret;
+}
+
+
+/**
+ * pasn_auth_frame_hash - Computes a hash of an Authentication frame body
+ * @alg: Selected hash algorithm from pasn_pmk_to_ptk()
+ * @data: Pointer to the Authentication frame body
+ * @len: Length of the Authentication frame body
+ * @hash: On return would hold the computed hash. Should be big enough to handle
+ *	SHA512.
+ * Returns: 0 on success, -1 on failure
+ */
+int pasn_auth_frame_hash(enum rsn_hash_alg alg, const u8 *data, size_t len,
+			 u8 *hash)
+{
+	switch (alg) {
+#ifdef CONFIG_SHA384
+	case RSN_HASH_SHA384:
+		wpa_printf(MSG_DEBUG, "PASN: Frame hash using SHA-384");
+		return sha384_vector(1, &data, &len, hash);
+#endif /* CONFIG_SHA384 */
+	case RSN_HASH_SHA256:
+		wpa_printf(MSG_DEBUG, "PASN: Frame hash using SHA-256");
+		return sha256_vector(1, &data, &len, hash);
+	default:
+		wpa_printf(MSG_ERROR, "PASN: Unsupported alg=%d", alg);
+		return -1;
+	}
+}
+
+#endif /* CONFIG_PASN */
 #endif // ESP_SUPPLICANT

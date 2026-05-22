@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * Internal declarations shared between nan_app.c and nan_security.c.
+ * Internal declarations shared between nan_app.c, nan_security.c, and nan_pairing.c.
  */
 
 #pragma once
@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <sys/queue.h>
 #include "esp_err.h"
+#include "esp_bit_defs.h"
 #include "esp_wifi_types_generic.h"
 #include "esp_private/wifi.h"
 #include "esp_nan.h"
@@ -28,6 +29,18 @@ extern "C" {
 #endif
 #define MACADDR_EQUAL(a1, a2)   (memcmp(a1, a2, MACADDR_LEN) == 0)
 #define MACADDR_COPY(dst, src)  (memcpy(dst, src, MACADDR_LEN))
+
+/* NAN sync event-group bits and follow-up TX timeout (nan_app.c, nan_pairing.c). */
+#ifndef NAN_DW_INTVL_MS
+#define NAN_DW_INTVL_MS         524
+#endif
+#ifndef NAN_TX_SUCCESS
+#define NAN_TX_SUCCESS          BIT(2)
+#define NAN_TX_FAILURE          BIT(3)
+#endif
+#ifndef NAN_ACTION_TIMEOUT
+#define NAN_ACTION_TIMEOUT      (4 * NAN_DW_INTVL_MS)
+#endif
 
 /*
  * Shared lock used by both files.
@@ -143,6 +156,28 @@ enum nan_handshake_state {
 };
 #endif /* CONFIG_ESP_WIFI_NAN_SECURITY */
 
+/* NIK length for cipher version 0 (Wi-Fi Aware spec v4.0). */
+#define NAN_APP_PEER_NIK_LEN  16
+
+#if defined(CONFIG_ESP_WIFI_NAN_SECURITY) && defined(CONFIG_ESP_WIFI_NAN_PAIRING)
+/*
+ * Per-peer pairing record: holds the ND-PMK derived from NM-KDK during the
+ * PASN/Pairing handshake, together with the cipher that paired NDPs must use.
+ * Wi-Fi Aware v4.0 §7.6.4.2 — ND-PMK is keyed by (Initiator NMI, Responder NMI)
+ * and shared across all secured NDPs between the same paired peers, so the
+ * cache is keyed by peer NMI alone (independent of svc_id).
+ */
+struct nan_paired_peer {
+    bool     valid;
+    uint8_t  peer_nmi[MACADDR_LEN];
+    uint8_t  role;                              /* enum nan_role value */
+    uint8_t  ndp_csid;                          /* WIFI_NAN_CSID_NCS_SK_128 / _256 */
+    uint8_t  nd_pmk[ESP_WIFI_NAN_NDP_PMK_LEN];
+    uint32_t lifetime_sec;
+    int64_t  established_us;
+};
+#endif /* CONFIG_ESP_WIFI_NAN_SECURITY && CONFIG_ESP_WIFI_NAN_PAIRING */
+
 /* Per-peer service info */
 struct peer_svc_info {
     SLIST_ENTRY(peer_svc_info) next;
@@ -158,6 +193,16 @@ struct peer_svc_info {
      * whose ND-PMKID matched the publisher SCIA. The initiator NDP-req path
      * uses this to pick the right credential for M1's pair-PMKID. */
     uint8_t matched_cred_idx;
+#endif
+#if CONFIG_ESP_WIFI_NAN_PAIRING
+    /* Peer NIK / cipher version / lifetime extracted from a NAN Shared Key
+     * Descriptor attribute received in a follow-up frame. @c has_nik is set
+     * once a valid NIK has been decrypted and stored.
+     */
+    uint8_t peer_nik[NAN_APP_PEER_NIK_LEN];
+    uint8_t peer_nik_cipher_ver;
+    uint32_t peer_nik_lifetime_sec;
+    bool has_nik;
 #endif
 };
 
@@ -231,6 +276,9 @@ struct ndl_info {
 #endif
 };
 
+/* Forward decl for PASN data, used opaquely when CONFIG_ESP_WIFI_PASN_SUPPORT */
+struct nan_pasn_data;
+
 /* NAN context shared between files */
 typedef struct {
     uint8_t state;
@@ -238,6 +286,20 @@ typedef struct {
     struct ndl_info ndl[ESP_WIFI_NAN_DATAPATH_MAX_PEERS];
     struct own_svc_info own_svc[ESP_WIFI_NAN_MAX_SVC_SUPPORTED];
     esp_netif_t *nan_netif;
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+    /* Own NAN Identity Key (NIK) cached for pairing/security flows. */
+    uint8_t own_nik[ESP_WIFI_NAN_NIK_LEN];
+    bool own_nik_valid;
+#endif
+#ifdef CONFIG_ESP_WIFI_PASN_SUPPORT
+    struct nan_pasn_data *nan_pasn_data;
+#endif
+#if defined(CONFIG_ESP_WIFI_NAN_SECURITY) && defined(CONFIG_ESP_WIFI_NAN_PAIRING)
+    /* Pairing records produced by PASN/Pairing key-install. Sized to the
+     * datapath peer cap since paired peers are the population that can
+     * actually run an NDP; LRU-evicted on overflow. */
+    struct nan_paired_peer paired_peers[ESP_WIFI_NAN_DATAPATH_MAX_PEERS];
+#endif
 } nan_ctx_t;
 
 extern nan_ctx_t s_nan_ctx;
@@ -253,6 +315,30 @@ struct ndl_info *nan_find_ndl_by_pub_id_and_peer(uint8_t pub_id, const uint8_t *
 /* Always-present (defined in nan_app.c) */
 void     esp_nan_ndp_tx_done_cb(uint8_t ndp_id, const uint8_t *peer_nmi,
                                 uint8_t msg_type, bool tx_status);
+
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+#include "freertos/FreeRTOS.h"
+#include "freertos/event_groups.h"
+
+void nan_app_post_event(int32_t event_id, void *event_data, size_t event_data_size);
+struct peer_svc_info *nan_find_peer_svc(uint8_t own_svc_id, uint8_t peer_svc_id, uint8_t peer_nmi[]);
+EventGroupHandle_t nan_pairing_get_event_group(void);
+uint32_t *nan_pairing_get_fup_context(void);
+const uint8_t *nan_pairing_get_null_mac(void);
+
+bool nan_pairing_validate_publish_bootstrapping(uint16_t bootstrapping_methods);
+bool nan_pairing_validate_subscribe_bootstrapping(uint16_t bootstrapping_methods);
+
+uint16_t nan_app_parse_npba_from_publish(const struct nan_cb_npba_t *npba);
+
+void nan_app_bootstrap_indication(uint8_t peer_svc_id, uint8_t pub_id,
+                                  uint8_t peer_nmi[6], uint16_t selected_method);
+void nan_app_bootstrap_completed(uint8_t status, uint8_t peer_svc_id, uint8_t sub_id,
+                                 uint8_t peer_nmi[6], uint16_t matched_method,
+                                 uint8_t reason_code);
+bool nan_app_parse_npba_from_receive(uint8_t own_svc_id, uint8_t peer_svc_id,
+                                     uint8_t peer_nmi[6], const struct nan_cb_npba_t *npba);
+#endif /* CONFIG_ESP_WIFI_NAN_PAIRING */
 
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
 /* Security-gated (defined in nan_security.c) */
@@ -346,25 +432,42 @@ esp_err_t nan_security_populate_initiator_ndl(struct ndl_info *ndl,
                                               const uint8_t *peer_nmi);
 
 /*
- * Compare locally derived ND-PMKID (subscriber passphrase, publisher NMI) to
- * peer discovery security params. own_svc identifies the local subscribe
- * (service_name + creds[]) and peer_svc is updated with matched_cred_idx on
- * success. Returns true if any local cred's PMKID matches a peer-advertised one.
+ * Match subscriber discovery security to a publisher's params.
+ * NCS-SK: Compare locally derived ND-PMKID (subscriber passphrase, publisher NMI) to
+ * peer discovery security params. Returns true if any local cred's PMKID matches a peer-advertised one.
+ * NCS-PASN: Returns true for matching cipher in Publisher's csid_bitmap
  */
 bool nan_security_service_match(const struct own_svc_info *own_svc,
                                 struct peer_svc_info *peer_svc,
                                 const uint8_t *publisher_nmi,
                                 const wifi_nan_peer_sdf_security_t *peer_sec);
-#else
-static inline esp_err_t nan_derive_security_params(const char *service_name,
-                                                   const wifi_nan_discovery_security_params_t *sec_cfg,
-                                                   wifi_nan_security_params_t *out_derived)
-{
-    (void)service_name;
-    (void)sec_cfg;
-    (void)out_derived;
-    return ESP_FAIL;
-}
+#endif /* CONFIG_ESP_WIFI_NAN_SECURITY */
+#if CONFIG_ESP_WIFI_NAN_PAIRING
+void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
+                                      const uint8_t *peer_mac,
+                                      const uint8_t *shared_key_attr,
+                                      size_t shared_key_attr_buf_len);
+#endif
+
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+/*
+ * Paired-peer cache API. Called from nan_pairing.c after the PASN install
+ * callback fires; consumed by the NDP security layer to source ND-PMK + cipher
+ * for paired peers (no per-service credential involved).
+ *
+ * Caller of nan_app_find_paired_peer() must hold NAN_DATA_LOCK while using the
+ * returned pointer -- it points into s_nan_ctx storage. Same convention as
+ * nan_find_own_svc() / nan_find_peer_svc().
+ */
+esp_err_t nan_app_register_paired_peer(const uint8_t *peer_nmi,
+                                       uint8_t role,
+                                       uint8_t ndp_csid,
+                                       const uint8_t *nd_pmk,
+                                       size_t nd_pmk_len,
+                                       uint32_t lifetime_sec);
+const struct nan_paired_peer *nan_app_find_paired_peer(const uint8_t *peer_nmi);
+void nan_app_remove_paired_peer(const uint8_t *peer_nmi);
+void nan_app_clear_paired_peers(void);
 #endif /* CONFIG_ESP_WIFI_NAN_SECURITY */
 
 #ifdef __cplusplus

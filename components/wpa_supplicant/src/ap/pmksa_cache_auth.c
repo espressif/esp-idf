@@ -337,7 +337,8 @@ void pmksa_cache_auth_deinit(struct rsn_pmksa_cache *pmksa)
 	pmksa->pmksa = NULL;
 	for (i = 0; i < PMKID_HASH_SIZE; i++)
 		pmksa->pmkid[i] = NULL;
-	os_free(pmksa);
+    if(pmksa)
+        os_free(pmksa);
 }
 
 
