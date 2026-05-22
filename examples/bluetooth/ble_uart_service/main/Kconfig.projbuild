@@ -1,0 +1,47 @@
+menu "BLE UART service example"
+
+    config EXAMPLE_CUSTOM_ADV_DATA
+        bool "Use custom advertising data"
+        default n
+        help
+            Demonstrates `ble_uart_config_t::adv_data` — the field that
+            lets the application fully control the advertising payload
+            instead of relying on the library default.
+
+            When enabled, the example passes a static byte array
+            (`example_adv_payload[]` defined at the top of `main.c`) to
+            `ble_uart_install()`. Edit that array to broadcast anything
+            you want: a different Local Name, Manufacturer Specific
+            Data, custom Service Data, multiple Service UUIDs, etc.
+
+            Format
+                The array is a sequence of standard Bluetooth Core "AD
+                structure" triplets:
+
+                    [length(1)] [AD type(1)] [value(length-1)]
+
+                See the Bluetooth Assigned Numbers (Generic Access
+                Profile) document for the full type list.
+
+            Length budget
+                Total bytes in the array must be
+                ≤ BLE_UART_ADV_DATA_MAX (28). The 3-byte mandatory
+                Flags AD element is prepended automatically by
+                ble_uart and does NOT count against this budget. An
+                oversized buffer makes `ble_uart_install()` fail with
+                BLE_UART_EINVAL.
+
+            Scope
+                Only affects the over-the-air advertising payload.
+                The GAP-service Device Name (UUID 0x2A00, set via
+                `device_name` in the same struct) is independent and
+                stays whatever the application configured — connected
+                centrals read that name regardless of what is in
+                `adv_data`.
+
+            Default value
+                Off. The library default is used (Complete Local Name
+                in the primary packet, 128-bit Service UUID in the
+                scan response).
+
+endmenu
