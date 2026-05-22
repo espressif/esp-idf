@@ -43,6 +43,9 @@ static void (*s_prev_sync_cb)(void) = NULL;
 static struct ble_gap_event_listener nimble_gap_event_listener;
 static void nimble_host_synced(void);
 void nimble_host_reset(int reason);
+static void nimble_report_write_cb(uint16_t attr_handle, uint8_t report_type, uint8_t report_id,
+                                   const uint8_t *data, uint16_t len);
+static void nimble_char_write_cb(uint16_t attr_handle, uint16_t char_uuid16, uint8_t value);
 
 static inline void lock_hidd(void)
 {
@@ -349,6 +352,8 @@ static int nimble_hidd_dev_deinit(void *devp)
         ble_hs_cfg.sync_cb = s_prev_sync_cb;
     }
     ble_hs_cfg.gatts_register_cb = NULL;
+    ble_svc_hid_register_report_write_cb(NULL);
+    ble_svc_hid_register_char_write_cb(NULL);
     unlock_hidd();
 
     /* STOP_EVENT may be discarded because ble_hid_free_config() deletes the event
@@ -421,6 +426,129 @@ static hidd_le_report_item_t* find_report_by_usage_and_type(uint8_t dev_index, u
         }
     }
     return NULL;
+}
+
+static void nimble_report_write_cb(uint16_t attr_handle, uint8_t report_type, uint8_t report_id,
+                                   const uint8_t *data, uint16_t len)
+{
+    lock_hidd();
+    if (s_dev == NULL || s_dev->event_loop_handle == NULL || data == NULL) {
+        unlock_hidd();
+        return;
+    }
+
+    hidd_le_report_item_t *match = NULL;
+    uint8_t map_index = 0;
+    for (uint8_t d = 0; d < s_dev->devices_len && match == NULL; d++) {
+        for (uint8_t r = 0; r < s_dev->devices[d].reports_len; r++) {
+            hidd_le_report_item_t *item = &s_dev->devices[d].reports[r];
+            if (item->handle == attr_handle) {
+                match = item;
+                map_index = d;
+                break;
+            }
+        }
+    }
+
+    if (match == NULL) {
+        unlock_hidd();
+        return;
+    }
+
+    if (report_type != ESP_HID_REPORT_TYPE_OUTPUT &&
+            report_type != ESP_HID_REPORT_TYPE_FEATURE) {
+        ESP_LOGD(TAG, "Ignoring host write for unsupported report type=%u, id=%u, handle=%u",
+                 report_type, report_id, attr_handle);
+        unlock_hidd();
+        return;
+    }
+
+    size_t event_data_size = sizeof(esp_hidd_event_data_t);
+    if (len > 0) {
+        event_data_size += len;
+    }
+    esp_hidd_event_data_t *p_cb_param = (esp_hidd_event_data_t *)calloc(1, event_data_size);
+    if (p_cb_param == NULL) {
+        ESP_LOGE(TAG, "%s malloc event data failed!", __func__);
+        unlock_hidd();
+        return;
+    }
+
+    if (len > 0) {
+        memcpy(((uint8_t *)p_cb_param) + sizeof(esp_hidd_event_data_t), data, len);
+    }
+
+    if (report_type == ESP_HID_REPORT_TYPE_OUTPUT) {
+        p_cb_param->output.dev = s_dev->dev;
+        p_cb_param->output.usage = match->usage;
+        p_cb_param->output.report_id = report_id;
+        p_cb_param->output.length = len;
+        p_cb_param->output.data = (len > 0) ? (uint8_t *)data : NULL; /* fixed by esp_hidd_process_event_data_handler */
+        p_cb_param->output.map_index = map_index;
+        esp_event_post_to(s_dev->event_loop_handle, ESP_HIDD_EVENTS, ESP_HIDD_OUTPUT_EVENT,
+                          p_cb_param, event_data_size, portMAX_DELAY);
+    } else if (report_type == ESP_HID_REPORT_TYPE_FEATURE) {
+        p_cb_param->feature.dev = s_dev->dev;
+        p_cb_param->feature.usage = match->usage;
+        p_cb_param->feature.report_id = report_id;
+        p_cb_param->feature.length = len;
+        p_cb_param->feature.data = (len > 0) ? (uint8_t *)data : NULL; /* fixed by esp_hidd_process_event_data_handler */
+        p_cb_param->feature.map_index = map_index;
+        esp_event_post_to(s_dev->event_loop_handle, ESP_HIDD_EVENTS, ESP_HIDD_FEATURE_EVENT,
+                          p_cb_param, event_data_size, portMAX_DELAY);
+    }
+    free(p_cb_param);
+    unlock_hidd();
+}
+
+static void nimble_char_write_cb(uint16_t attr_handle, uint16_t char_uuid16, uint8_t value)
+{
+    lock_hidd();
+    if (s_dev == NULL || s_dev->event_loop_handle == NULL) {
+        unlock_hidd();
+        return;
+    }
+
+    uint8_t map_index = 0;
+    bool found = false;
+
+    for (uint8_t d = 0; d < s_dev->devices_len; d++) {
+        if (char_uuid16 == BLE_SVC_HID_CHR_UUID16_PROTOCOL_MODE &&
+                s_dev->devices[d].hid_protocol_handle == attr_handle) {
+            found = true;
+            map_index = d;
+            break;
+        }
+        if (char_uuid16 == BLE_SVC_HID_CHR_UUID16_HID_CTRL_PT &&
+                s_dev->devices[d].hid_control_handle == attr_handle) {
+            found = true;
+            map_index = d;
+            break;
+        }
+    }
+
+    if (!found) {
+        unlock_hidd();
+        return;
+    }
+
+    esp_hidd_event_data_t cb_param = {0};
+    if (char_uuid16 == BLE_SVC_HID_CHR_UUID16_PROTOCOL_MODE) {
+        s_dev->protocol = value;
+        cb_param.protocol_mode.dev = s_dev->dev;
+        cb_param.protocol_mode.protocol_mode = value;
+        cb_param.protocol_mode.map_index = map_index;
+        esp_event_post_to(s_dev->event_loop_handle, ESP_HIDD_EVENTS, ESP_HIDD_PROTOCOL_MODE_EVENT,
+                          &cb_param, sizeof(esp_hidd_event_data_t), portMAX_DELAY);
+    } else if (char_uuid16 == BLE_SVC_HID_CHR_UUID16_HID_CTRL_PT) {
+        s_dev->control = value;
+        cb_param.control.dev = s_dev->dev;
+        cb_param.control.control = value;
+        cb_param.control.map_index = map_index;
+        esp_event_post_to(s_dev->event_loop_handle, ESP_HIDD_EVENTS, ESP_HIDD_CONTROL_EVENT,
+                          &cb_param, sizeof(esp_hidd_event_data_t), portMAX_DELAY);
+    }
+    unlock_hidd();
 }
 
 static int nimble_hidd_dev_input_set(void *devp, size_t index, size_t id, uint8_t *data, size_t length)
@@ -840,6 +968,8 @@ esp_err_t esp_ble_hidd_dev_init(esp_hidd_dev_t *dev_p, const esp_hid_device_conf
     ble_hs_cfg.reset_cb = nimble_host_reset;
     ble_hs_cfg.sync_cb = nimble_host_synced;
     ble_hs_cfg.gatts_register_cb = nimble_gatt_svr_register_cb;
+    ble_svc_hid_register_report_write_cb(nimble_report_write_cb);
+    ble_svc_hid_register_char_write_cb(nimble_char_write_cb);
     rc = nimble_hid_start_gatts();
     if (rc != ESP_OK) {
         if (ble_hs_cfg.reset_cb == nimble_host_reset) {
@@ -849,6 +979,8 @@ esp_err_t esp_ble_hidd_dev_init(esp_hidd_dev_t *dev_p, const esp_hid_device_conf
             ble_hs_cfg.sync_cb = s_prev_sync_cb;
         }
         ble_hs_cfg.gatts_register_cb = NULL;
+        ble_svc_hid_register_report_write_cb(NULL);
+        ble_svc_hid_register_char_write_cb(NULL);
         ble_hidd_dev_free();
         return rc;
     }
