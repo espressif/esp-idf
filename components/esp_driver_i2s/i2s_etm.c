@@ -104,7 +104,7 @@ esp_err_t i2s_new_etm_task(i2s_chan_handle_t handle, const i2s_etm_task_config_t
     if (config->task_type == I2S_ETM_TASK_START) {
         // The i2s start will be controlled by etm
         handle->is_etm_start = true;
-    } else {
+    } else if (config->task_type == I2S_ETM_TASK_STOP) {
         // The i2s stop will be controlled by etm
         handle->is_etm_stop = true;
     }
