@@ -65,6 +65,7 @@ typedef struct {
 #define SPI_SLAVE_HD_RXBIT_LSBFIRST     (1<<1)  ///< Receive data LSB first instead of the default MSB first
 #define SPI_SLAVE_HD_BIT_LSBFIRST       (SPI_SLAVE_HD_TXBIT_LSBFIRST|SPI_SLAVE_HD_RXBIT_LSBFIRST) ///< Transmit and receive LSB first
 #define SPI_SLAVE_HD_APPEND_MODE        (1<<2)  ///< Adopt DMA append mode for transactions. In this mode, users can load(append) DMA descriptors without stopping the DMA
+#define SPI_SLAVE_HD_3WIRE_MODE         (1<<3)  ///< Use MOSI (=spid) for both sending and receiving data, and the master should only use the 1-bit mask for SPI Slave HD commands
 
 /// Configuration structure for the SPI Slave HD driver
 typedef struct {
