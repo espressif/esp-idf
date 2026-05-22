@@ -255,8 +255,13 @@ To enable the secure element support, and use it in your project for TLS connect
        };
 
        psa_key_id_t psa_key_id;
-       psa_import_key(&key_attr, (const uint8_t *)&opaque_key,
-                      sizeof(opaque_key), &psa_key_id);
+       psa_status_t status = psa_import_key(&key_attr, (const uint8_t *)&opaque_key,
+                                            sizeof(opaque_key), &psa_key_id);
+       if (status != PSA_SUCCESS) {
+           /* Handle error - typically means the SE callbacks are not registered
+            * or the attributes are invalid. */
+           return;
+       }
 
        /* Configure ESP-TLS to use the PSA key */
        esp_key_config_t key_config = {

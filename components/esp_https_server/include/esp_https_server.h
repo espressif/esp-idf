@@ -219,6 +219,7 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
     HTTPD_SSL_CONFIG_CLIENT_AUTH_OPTIONAL_INIT    \
     .prvtkey_pem = NULL,                          \
     .prvtkey_len = 0,                             \
+    .server_key = NULL,                           \
     .use_ecdsa_peripheral = false,                \
     .ecdsa_key_efuse_blk = 0,                     \
     .ecdsa_key_efuse_blk_high = 0,                \

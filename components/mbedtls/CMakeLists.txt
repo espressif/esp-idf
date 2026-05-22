@@ -485,8 +485,6 @@ if(CONFIG_MBEDTLS_SECURE_ELEMENT_DRIVER_ENABLED)
     target_sources(tfpsacrypto PRIVATE
         "${COMPONENT_DIR}/port/psa_driver/secure_element/psa_crypto_driver_secure_element.c")
     target_include_directories(tfpsacrypto PUBLIC "${COMPONENT_DIR}/port/psa_driver/include")
-    target_compile_definitions(tfpsacrypto PRIVATE
-        SECURE_ELEMENT_DRIVER_ENABLED)
 endif()
 
 if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU")

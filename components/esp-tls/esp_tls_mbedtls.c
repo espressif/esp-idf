@@ -763,8 +763,11 @@ static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
             return esp_ret;
         }
     } else if (cfg->server_key != NULL && cfg->server_key->source == ESP_KEY_SOURCE_PSA) {
+        if (cfg->servercert_buf == NULL) {
+            ESP_LOGE(TAG, "Server certificate is required when using a PSA-backed server key");
+            return ESP_ERR_INVALID_ARG;
+        }
         mbedtls_svc_key_id_t key_id = cfg->server_key->psa.key_id;
-        mbedtls_pk_init(&tls->serverkey);
         ret = mbedtls_pk_wrap_psa(&tls->serverkey, key_id);
         if (ret != 0) {
             ESP_LOGE(TAG, "mbedtls_pk_wrap_psa returned -0x%04X", -ret);
@@ -772,22 +775,19 @@ static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
             return ESP_ERR_MBEDTLS_PK_PARSE_KEY_FAILED;
         }
-        if (cfg->servercert_buf != NULL) {
-            mbedtls_x509_crt_init(&tls->servercert);
-            ret = mbedtls_x509_crt_parse(&tls->servercert, cfg->servercert_buf, cfg->servercert_bytes);
-            if (ret < 0) {
-                ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%04X", -ret);
-                mbedtls_print_error_msg(ret);
-                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
-                return ESP_ERR_MBEDTLS_X509_CRT_PARSE_FAILED;
-            }
-            ret = mbedtls_ssl_conf_own_cert(&tls->conf, &tls->servercert, &tls->serverkey);
-            if (ret != 0) {
-                ESP_LOGE(TAG, "mbedtls_ssl_conf_own_cert returned -0x%04X", -ret);
-                mbedtls_print_error_msg(ret);
-                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
-                return ESP_ERR_MBEDTLS_SSL_CONF_OWN_CERT_FAILED;
-            }
+        ret = mbedtls_x509_crt_parse(&tls->servercert, cfg->servercert_buf, cfg->servercert_bytes);
+        if (ret < 0) {
+            ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%04X", -ret);
+            mbedtls_print_error_msg(ret);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
+            return ESP_ERR_MBEDTLS_X509_CRT_PARSE_FAILED;
+        }
+        ret = mbedtls_ssl_conf_own_cert(&tls->conf, &tls->servercert, &tls->serverkey);
+        if (ret != 0) {
+            ESP_LOGE(TAG, "mbedtls_ssl_conf_own_cert returned -0x%04X", -ret);
+            mbedtls_print_error_msg(ret);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
+            return ESP_ERR_MBEDTLS_SSL_CONF_OWN_CERT_FAILED;
         }
     } else if (cfg->use_ecdsa_peripheral) {
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
@@ -1026,8 +1026,11 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
             return esp_ret;
         }
     } else if (cfg->client_key != NULL && cfg->client_key->source == ESP_KEY_SOURCE_PSA) {
+        if (cfg->clientcert_buf == NULL) {
+            ESP_LOGE(TAG, "Client certificate is required when using a PSA-backed client key");
+            return ESP_ERR_INVALID_ARG;
+        }
         mbedtls_svc_key_id_t key_id = cfg->client_key->psa.key_id;
-        mbedtls_pk_init(&tls->clientkey);
         ret = mbedtls_pk_wrap_psa(&tls->clientkey, key_id);
         if (ret != 0) {
             ESP_LOGE(TAG, "mbedtls_pk_wrap_psa returned -0x%04X", -ret);
@@ -1035,22 +1038,19 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
             return ESP_ERR_MBEDTLS_PK_PARSE_KEY_FAILED;
         }
-        if (cfg->clientcert_buf != NULL) {
-            mbedtls_x509_crt_init(&tls->clientcert);
-            ret = mbedtls_x509_crt_parse(&tls->clientcert, cfg->clientcert_buf, cfg->clientcert_bytes);
-            if (ret < 0) {
-                ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%04X", -ret);
-                mbedtls_print_error_msg(ret);
-                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
-                return ESP_ERR_MBEDTLS_X509_CRT_PARSE_FAILED;
-            }
-            ret = mbedtls_ssl_conf_own_cert(&tls->conf, &tls->clientcert, &tls->clientkey);
-            if (ret != 0) {
-                ESP_LOGE(TAG, "mbedtls_ssl_conf_own_cert returned -0x%04X", -ret);
-                mbedtls_print_error_msg(ret);
-                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
-                return ESP_ERR_MBEDTLS_SSL_CONF_OWN_CERT_FAILED;
-            }
+        ret = mbedtls_x509_crt_parse(&tls->clientcert, cfg->clientcert_buf, cfg->clientcert_bytes);
+        if (ret < 0) {
+            ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%04X", -ret);
+            mbedtls_print_error_msg(ret);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
+            return ESP_ERR_MBEDTLS_X509_CRT_PARSE_FAILED;
+        }
+        ret = mbedtls_ssl_conf_own_cert(&tls->conf, &tls->clientcert, &tls->clientkey);
+        if (ret != 0) {
+            ESP_LOGE(TAG, "mbedtls_ssl_conf_own_cert returned -0x%04X", -ret);
+            mbedtls_print_error_msg(ret);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
+            return ESP_ERR_MBEDTLS_SSL_CONF_OWN_CERT_FAILED;
         }
     } else if (cfg->ds_data != NULL) {
 #ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL

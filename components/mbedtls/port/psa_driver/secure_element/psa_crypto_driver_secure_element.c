@@ -18,10 +18,9 @@
  */
 
 #include <string.h>
-#include <stdatomic.h>
 #include "sdkconfig.h"
 
-#ifdef SECURE_ELEMENT_DRIVER_ENABLED
+#ifdef CONFIG_MBEDTLS_SECURE_ELEMENT_DRIVER_ENABLED
 
 #include "esp_log.h"
 #include "psa_crypto_driver_secure_element.h"
@@ -30,8 +29,10 @@ static const char *TAG = "psa_crypto_driver_secure_element";
 
 #define UNCOMPRESSED_POINT_FORMAT 0x04
 
-/* Runtime-registered SE callbacks (set once via secure_element_register_callbacks) */
-static const secure_element_callbacks_t *s_se_callbacks = NULL;
+/* Runtime-registered SE callbacks (set once via secure_element_register_callbacks).
+ * We keep a value copy so the caller's struct lifetime does not matter. */
+static secure_element_callbacks_t s_se_callbacks;
+static const secure_element_callbacks_t *s_se_callbacks_ptr = NULL;
 
 psa_status_t secure_element_register_callbacks(const secure_element_callbacks_t *callbacks)
 {
@@ -44,13 +45,13 @@ psa_status_t secure_element_register_callbacks(const secure_element_callbacks_t 
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    /* Atomic compare-and-swap: only the first registration succeeds */
-    const secure_element_callbacks_t *expected = NULL;
-    if (!atomic_compare_exchange_strong((volatile _Atomic(const secure_element_callbacks_t *) *)&s_se_callbacks,
-                                       &expected, callbacks)) {
+    if (s_se_callbacks_ptr != NULL) {
         ESP_LOGE(TAG, "Secure element callbacks already registered");
         return PSA_ERROR_BAD_STATE;
     }
+
+    s_se_callbacks = *callbacks;
+    s_se_callbacks_ptr = &s_se_callbacks;
 
     return PSA_SUCCESS;
 }
@@ -60,7 +61,7 @@ psa_status_t secure_element_register_callbacks(const secure_element_callbacks_t 
  */
 static inline const secure_element_callbacks_t *se_get_callbacks(void)
 {
-    return s_se_callbacks;
+    return s_se_callbacks_ptr;
 }
 
 /**
@@ -91,6 +92,11 @@ static psa_status_t validate_request(psa_algorithm_t alg, const psa_key_attribut
         }
     } else if (PSA_ALG_IS_RSA_PKCS1V15_SIGN(registered_alg)) {
         if (!PSA_ALG_IS_RSA_PKCS1V15_SIGN(alg)) {
+            return PSA_ERROR_NOT_SUPPORTED;
+        }
+        /* If registered with a specific hash, check it matches */
+        psa_algorithm_t reg_hash = PSA_ALG_SIGN_GET_HASH(registered_alg);
+        if (reg_hash != PSA_ALG_ANY_HASH && reg_hash != PSA_ALG_SIGN_GET_HASH(alg)) {
             return PSA_ERROR_NOT_SUPPORTED;
         }
     } else if (registered_alg != alg) {
@@ -336,7 +342,7 @@ psa_status_t secure_element_opaque_sign_hash_start(
     memset(operation, 0, sizeof(secure_element_opaque_sign_hash_operation_t));
     operation->key_len = component_len;
     memcpy(operation->sha, hash, component_len);
-    operation->opaque_key = (secure_element_opaque_key_t *) key_buffer;
+    memcpy(&operation->opaque_key, key_buffer, sizeof(secure_element_opaque_key_t));
     operation->alg = alg;
     operation->sha_len = hash_length;
 
@@ -367,7 +373,7 @@ psa_status_t secure_element_opaque_sign_hash_complete(
     /* Sign using registered SE callback */
     uint8_t sig[2 * SECURE_ELEMENT_MAX_KEY_BYTES];
     size_t sig_len = 0;
-    psa_status_t status = cbs->sign(operation->opaque_key->slot_id,
+    psa_status_t status = cbs->sign(operation->opaque_key.slot_id,
                                     operation->sha, operation->sha_len,
                                     sig, sizeof(sig), &sig_len);
 
@@ -376,9 +382,18 @@ psa_status_t secure_element_opaque_sign_hash_complete(
         return status;
     }
 
+    if (sig_len == 0 || sig_len > sizeof(sig)) {
+        ESP_LOGE(TAG, "SE returned invalid signature length: %zu", sig_len);
+        return PSA_ERROR_GENERIC_ERROR;
+    }
+
+    if (sig_len > signature_size) {
+        return PSA_ERROR_BUFFER_TOO_SMALL;
+    }
+
     /* Copy signature to output (R || S format, big-endian - matches PSA) */
-    memcpy(signature, sig, 2 * component_len);
-    *signature_length = 2 * component_len;
+    memcpy(signature, sig, sig_len);
+    *signature_length = sig_len;
 
     return PSA_SUCCESS;
 }
@@ -463,6 +478,14 @@ psa_status_t secure_element_opaque_export_public_key(
         return status;
     }
 
+    /* Callback must have written exactly 2 * key_len bytes (X || Y) - reject anything else
+     * to avoid copying uninitialized stack memory into the caller's buffer. */
+    if (pubkey_len != 2 * key_len) {
+        ESP_LOGE(TAG, "SE export_pubkey returned %u bytes, expected %u",
+                 (unsigned)pubkey_len, (unsigned)(2 * key_len));
+        return PSA_ERROR_HARDWARE_FAILURE;
+    }
+
     /* Format: uncompressed point (0x04 followed by x and y coordinates) */
     data[0] = UNCOMPRESSED_POINT_FORMAT;
     memcpy(data + 1, pubkey, key_len);               /* X coordinate */
@@ -484,4 +507,4 @@ size_t secure_element_opaque_size_function(
     return sizeof(secure_element_opaque_key_t);
 }
 
-#endif /* SECURE_ELEMENT_DRIVER_ENABLED */
+#endif /* CONFIG_MBEDTLS_SECURE_ELEMENT_DRIVER_ENABLED */
