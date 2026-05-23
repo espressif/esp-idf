@@ -28,7 +28,8 @@
 #include "esp_mac.h"
 #include "esp_eth_mac_openeth.h"
 
-static const char *TAG = "opencores.emac";
+// TAG must reside in DRAM so it is accessible when flash cache is disabled (IRAM ISR context)
+static const DRAM_ATTR char TAG[] = "opencores.emac";
 
 // Driver state structure
 typedef struct {
@@ -63,7 +64,8 @@ static IRAM_ATTR void emac_opencores_isr_handler(void *args)
     }
 
     if (status & OPENETH_INT_BUSY) {
-        ESP_EARLY_LOGW(TAG, "%s: RX frame dropped (0x%" PRIx32 ")", __func__, status);
+        // Use ESP_DRAM_LOGW: TAG and format string must be in DRAM when cache is off
+        ESP_DRAM_LOGW(TAG, "RX frame dropped (0x%" PRIx32 ")", status);
     }
 
     // Clear interrupt
