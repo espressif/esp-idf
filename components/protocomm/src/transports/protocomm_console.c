@@ -64,7 +64,8 @@ static void protocomm_console_task(void *arg)
 {
     int uart_num = (int) arg;
     uint8_t linebuf[LINE_BUF_SIZE];
-    int i, cmd_ret;
+    size_t i;
+    int cmd_ret;
     esp_err_t ret;
     QueueHandle_t uart_queue;
     uart_event_t event;
@@ -84,6 +85,8 @@ static void protocomm_console_task(void *arg)
         uart_write_bytes(uart_num, "\n>> ", 4);
         memset(linebuf, 0, sizeof(linebuf));
         i = 0;
+        bool line_too_long = false;
+        bool line_done = false;
         do {
             ret = xQueueReceive(uart_queue, (void * )&event, (TickType_t) 10/portTICK_PERIOD_MS);
             if (ret != pdPASS) {
@@ -94,21 +97,36 @@ static void protocomm_console_task(void *arg)
                 }
             }
             if (event.type == UART_DATA) {
-                while (uart_read_bytes(uart_num, (uint8_t *) &linebuf[i], 1, 0) && (i < LINE_BUF_SIZE)) {
-                    if (linebuf[i] == '\r') {
+                uint8_t byte;
+                while (uart_read_bytes(uart_num, &byte, 1, 0) > 0) {
+                    if (byte == '\r') {
                         uart_write_bytes(uart_num, "\r\n", 2);
-                    } else {
-                        uart_write_bytes(uart_num, (char *) &linebuf[i], 1);
+                        line_done = true;
+                        break;
                     }
+
+                    if (line_too_long) {
+                        continue;
+                    }
+
+                    /* Keep one byte reserved for the string terminator. */
+                    if (i >= LINE_BUF_SIZE - 1) {
+                        ESP_LOGW(TAG, "Input line too long, discarding");
+                        line_too_long = true;
+                        continue;
+                    }
+
+                    linebuf[i] = byte;
+                    uart_write_bytes(uart_num, (char *) &linebuf[i], 1);
                     i++;
                 }
             }
-            if ((i > 0) && (linebuf[i-1] == '\r')) {
-                break;
-            }
-        } while (i < LINE_BUF_SIZE);
+        } while (!line_done);
         if (stopped()) {
             break;
+        }
+        if (line_too_long) {
+            continue;
         }
         ret = esp_console_run((char *) linebuf, &cmd_ret);
         if (ret < 0) {
