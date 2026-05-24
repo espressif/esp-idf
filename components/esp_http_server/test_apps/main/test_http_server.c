@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include <esp_system.h>
 #include <esp_http_server.h>
 #include <esp_heap_caps.h>
@@ -55,6 +56,8 @@ static httpd_uri_t handler_limit_ws_uri(char *path, const char *subprotocol)
 }
 
 static int ws_recv_fail_handler_calls;
+static size_t ws_unmasked_frame_offset;
+static esp_err_t ws_recv_frame_result;
 
 static int ws_recv_fail_override(httpd_handle_t hd, int sockfd, char *buf, size_t buf_len, int flags)
 {
@@ -66,10 +69,39 @@ static int ws_recv_fail_override(httpd_handle_t hd, int sockfd, char *buf, size_
     return HTTPD_SOCK_ERR_FAIL;
 }
 
+static int ws_unmasked_frame_recv_override(httpd_handle_t hd, int sockfd, char *buf, size_t buf_len, int flags)
+{
+    static const uint8_t unmasked_text_frame[] = {
+        0x81, /* FIN, text frame */
+        0x00, /* zero-length payload, no mask bit */
+    };
+
+    (void)hd;
+    (void)sockfd;
+    (void)flags;
+
+    if (ws_unmasked_frame_offset >= sizeof(unmasked_text_frame)) {
+        return HTTPD_SOCK_ERR_FAIL;
+    }
+
+    size_t read_len = MIN(buf_len, sizeof(unmasked_text_frame) - ws_unmasked_frame_offset);
+    memcpy(buf, unmasked_text_frame + ws_unmasked_frame_offset, read_len);
+    ws_unmasked_frame_offset += read_len;
+    return read_len;
+}
+
 static esp_err_t ws_counting_handler(httpd_req_t *req)
 {
     (void)req;
     ws_recv_fail_handler_calls++;
+    return ESP_OK;
+}
+
+static esp_err_t ws_unmasked_frame_handler(httpd_req_t *req)
+{
+    httpd_ws_frame_t frame = {0};
+
+    ws_recv_frame_result = httpd_ws_recv_frame(req, &frame, 0);
     return ESP_OK;
 }
 #endif /* CONFIG_HTTPD_WS_SUPPORT */
@@ -452,6 +484,36 @@ TEST_CASE("WS recv failure marks close without dispatching handler", "[HTTP SERV
     TEST_ASSERT_EQUAL(0, ws_recv_fail_handler_calls);
     TEST_ASSERT_TRUE(session.ws_close);
     TEST_ASSERT_EQUAL(HTTPD_WS_TYPE_CLOSE, hd.hd_req_aux.ws_type);
+
+    free(hd.hd_req_aux.resp_hdrs);
+}
+
+TEST_CASE("WS frame parse failure marks session for close", "[HTTP SERVER][websocket]")
+{
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    struct httpd_data hd = {0};
+    struct sock_db session = {0};
+
+    hd.config = config;
+    hd.hd_req_aux.resp_hdrs = calloc(config.max_resp_headers, sizeof(*hd.hd_req_aux.resp_hdrs));
+    TEST_ASSERT_NOT_NULL(hd.hd_req_aux.resp_hdrs);
+
+    session.fd = 123;
+    session.handle = (httpd_handle_t) &hd;
+    session.recv_fn = ws_unmasked_frame_recv_override;
+    session.ws_handshake_done = true;
+    session.ws_handler = ws_unmasked_frame_handler;
+    session.ws_control_frames = false;
+    session.ws_close = false;
+
+    ws_unmasked_frame_offset = 0;
+    ws_recv_frame_result = ESP_OK;
+
+    esp_err_t ret = httpd_req_new(&hd, &session);
+
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, ws_recv_frame_result);
+    TEST_ASSERT_TRUE(session.ws_close);
 
     free(hd.hd_req_aux.resp_hdrs);
 }
