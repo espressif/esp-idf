@@ -45,10 +45,7 @@ static void esp_gdbstub_send_str_as_hex(const char *str);
 #endif
 
 static void handle_qSupported_command(const unsigned char *cmd, int len);
-
-#if (CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME || CONFIG_ESP_GDBSTUB_SUPPORT_TASKS)
 static bool command_name_matches(const char *pattern, const unsigned char *ucmd, int len);
-#endif // (CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME || CONFIG_ESP_GDBSTUB_SUPPORT_TASKS)
 
 static void send_reason(void);
 
@@ -992,9 +989,6 @@ int gdbstub__swrite(struct _reent *data1, void *data2, const char *buff, int len
 // TODO IDF-11287
 #endif // CONFIG_LIBC_NEWLIB
 
-/* Everything below is related to the support for listing FreeRTOS tasks as threads in GDB */
-
-#if (CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME || CONFIG_ESP_GDBSTUB_SUPPORT_TASKS)
 static bool command_name_matches(const char *pattern, const unsigned char *ucmd, int len)
 {
     const char *cmd = (const char *) ucmd;
@@ -1009,7 +1003,8 @@ static bool command_name_matches(const char *pattern, const unsigned char *ucmd,
     }
     return *pattern == 0 && (cmd == end || *cmd == ',');
 }
-#endif // (CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME || CONFIG_ESP_GDBSTUB_SUPPORT_TASKS)
+
+/* Everything below is related to the support for listing FreeRTOS tasks as threads in GDB */
 
 #ifdef CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 
