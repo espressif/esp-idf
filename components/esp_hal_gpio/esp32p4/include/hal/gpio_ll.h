@@ -45,6 +45,8 @@
 
 #define GPIO_LL_INTR_SOURCE0   ETS_GPIO_INTR0_SOURCE
 
+#define GPIO_LL_CLK_SRC_SELECTABLE 1
+
 #ifdef __cplusplus
 extern "C" {
 #endif

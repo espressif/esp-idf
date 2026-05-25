@@ -13,6 +13,7 @@
 #include "esp_private/gpio.h"
 #include "esp_private/io_mux.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "ana_cmpr_private.h"
 
 /* Global static object of the Analog Comparator unit */
@@ -133,12 +134,22 @@ static void ana_cmpr_destroy_unit(ana_cmpr_handle_t cmpr)
     if (cmpr->intr_handle) {
         esp_intr_free(cmpr->intr_handle);
     }
-    free(cmpr);
-
     // Disable function clock first
     analog_cmpr_ll_enable_function_clock(unit_id, false);
     // Disable bus clock last
     analog_cmpr_ll_enable_bus_clock(unit_id, false);
+    // Disable the clock source if it is enabled by this driver
+#if ANALOG_CMPR_LL_GET(IP_VERSION) <= 1
+    if (cmpr->io_mux_acquired) {
+        io_mux_release_clock_source(cmpr->clk_src);
+        cmpr->io_mux_acquired = false;
+    }
+#endif
+    if (cmpr->clk_src != SOC_MOD_CLK_INVALID) {
+        esp_clk_tree_enable_src(cmpr->clk_src, false);
+    }
+
+    free(cmpr);
 }
 
 #if ANALOG_CMPR_LL_GET(IP_VERSION) > 1
@@ -301,6 +312,8 @@ esp_err_t ana_cmpr_new_unit(const ana_cmpr_config_t *config, ana_cmpr_handle_t *
     // analog comparator unit must be allocated from internal memory because it contains atomic variable
     ana_cmpr_hdl = heap_caps_calloc(1, sizeof(struct ana_cmpr_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(ana_cmpr_hdl, ESP_ERR_NO_MEM, err, TAG, "no memory for analog comparator object");
+    ana_cmpr_hdl->clk_src = SOC_MOD_CLK_INVALID;
+    ana_cmpr_hdl->io_mux_acquired = false;
 
     /* Assign analog comparator unit */
     ana_cmpr_hdl->dev = ANALOG_CMPR_LL_GET_HW(unit_id);
@@ -316,18 +329,27 @@ esp_err_t ana_cmpr_new_unit(const ana_cmpr_config_t *config, ana_cmpr_handle_t *
     analog_cmpr_ll_reset_core(unit_id);
 
     // Set clock source (use default if not specified in config)
-    ana_cmpr_clk_src_t clk_src = config->clk_src ? config->clk_src : ANA_CMPR_CLK_SRC_DEFAULT;
+    soc_module_clk_t clk_src = config->clk_src ? config->clk_src : ANA_CMPR_CLK_SRC_DEFAULT;
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src(clk_src, true), err, TAG, "enable clock source failed");
 #if ANALOG_CMPR_LL_GET(IP_VERSION) > 1
     analog_cmpr_ll_set_clk_src(unit_id, clk_src);
     // Set clock divider to 1
     analog_cmpr_ll_set_clk_div(unit_id, 1);
     // Enable function clock
     analog_cmpr_ll_enable_function_clock(unit_id, true);
+    ana_cmpr_hdl->clk_src = clk_src;
 #else
     // Analog comparator located in the IO MUX module in older chips, so the clock source is shared with IO MUX.
-    ESP_GOTO_ON_ERROR(io_mux_set_clock_source((soc_module_clk_t)clk_src), err, TAG, "clock source conflicts with other IOMUX consumers");
+    ret = io_mux_acquire_clock_source(clk_src);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "clock source conflicts with other IOMUX consumers");
+        esp_clk_tree_enable_src(clk_src, false);
+        goto err;
+    }
+    ana_cmpr_hdl->io_mux_acquired = true;
+    ana_cmpr_hdl->clk_src = clk_src;
 #endif
-    ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &ana_cmpr_hdl->src_clk_freq_hz),
+    ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &ana_cmpr_hdl->src_clk_freq_hz),
                       err, TAG, "get source clock frequency failed");
 
     // init the default source and reference channels according to the config

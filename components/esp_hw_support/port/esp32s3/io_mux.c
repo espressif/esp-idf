@@ -15,12 +15,6 @@
     _rc_cnt ? (esp_os_enter_critical(&rtc_spinlock), 1) : 0;     \
     esp_os_exit_critical(&rtc_spinlock), _rc_cnt--)
 
-esp_err_t io_mux_set_clock_source(soc_module_clk_t clk_src)
-{
-    // IO MUX clock source is not selectable
-    return ESP_OK;
-}
-
 extern portMUX_TYPE rtc_spinlock;
 DEFINE_CRIT_SECTION_LOCK_STATIC(s_io_mux_spinlock);
 

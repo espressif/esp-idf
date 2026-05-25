@@ -30,6 +30,8 @@ esp_err_t esp_lcd_new_dsi_bus(const esp_lcd_dsi_bus_config_t *bus_config, esp_lc
     esp_lcd_dsi_bus_t *dsi_bus = heap_caps_calloc(1, sizeof(esp_lcd_dsi_bus_t), DSI_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(dsi_bus, ESP_ERR_NO_MEM, TAG, "no memory for DSI bus");
     dsi_bus->bus_id = bus_id;
+    dsi_bus->phy_pllref_clk_src = SOC_MOD_CLK_INVALID;
+    dsi_bus->phy_cfg_clk_src = SOC_MOD_CLK_INVALID;
 
     // Enable the APB clock for accessing the DSI host and bridge registers
     PERIPH_RCC_ATOMIC() {
@@ -47,9 +49,11 @@ esp_err_t esp_lcd_new_dsi_bus(const esp_lcd_dsi_bus_config_t *bus_config, esp_lc
 #endif
     }
     ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)phy_clk_src, true), err, TAG, "clock source enable failed");
+    dsi_bus->phy_pllref_clk_src = (soc_module_clk_t)phy_clk_src;
 
     // always use the default clock source for the DSI PHY configuration
     ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)MIPI_DSI_PHY_CFG_CLK_SRC_DEFAULT, true), err, TAG, "clock source enable failed");
+    dsi_bus->phy_cfg_clk_src = (soc_module_clk_t)MIPI_DSI_PHY_CFG_CLK_SRC_DEFAULT;
 
     // enable the clock source for DSI PHY
     PERIPH_RCC_ATOMIC() {
@@ -142,6 +146,14 @@ esp_err_t esp_lcd_del_dsi_bus(esp_lcd_dsi_bus_handle_t bus)
     PERIPH_RCC_ATOMIC() {
         mipi_dsi_ll_enable_phy_pllref_clock(bus_id, false);
         mipi_dsi_ll_enable_phy_config_clock(bus_id, false);
+    }
+    if (bus->phy_pllref_clk_src != SOC_MOD_CLK_INVALID) {
+        esp_clk_tree_enable_src(bus->phy_pllref_clk_src, false);
+        bus->phy_pllref_clk_src = SOC_MOD_CLK_INVALID;
+    }
+    if (bus->phy_cfg_clk_src != SOC_MOD_CLK_INVALID) {
+        esp_clk_tree_enable_src(bus->phy_cfg_clk_src, false);
+        bus->phy_cfg_clk_src = SOC_MOD_CLK_INVALID;
     }
     // disable the APB clock for accessing the DSI peripheral registers
     PERIPH_RCC_ATOMIC() {

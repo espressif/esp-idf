@@ -5,22 +5,24 @@
  */
 
 #include <sys/cdefs.h>
+#include <stdbool.h>
 #include "freertos/FreeRTOS.h"
 #include "esp_check.h"
 #include "esp_pm.h"
-#include "esp_private/glitch_filter_priv.h"
+#include "glitch_filter_priv.h"
 #include "hal/gpio_ll.h"
 #include "esp_clk_tree.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/io_mux.h"
 #include "hal/gpio_caps.h"
-
-static const char *TAG = "gpio-filter";
 
 /**
  * @brief Type of GPIO pin glitch filter
  */
 typedef struct gpio_pin_glitch_filter_t {
     gpio_glitch_filter_t base;
+    soc_module_clk_t clk_src;
+    bool io_mux_clk_acquired;
 #if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;
     char pm_lock_name[GLITCH_FILTER_PM_LOCK_NAME_LEN_MAX]; // pm lock name
@@ -29,6 +31,13 @@ typedef struct gpio_pin_glitch_filter_t {
 
 static esp_err_t gpio_filter_destroy(gpio_pin_glitch_filter_t *filter)
 {
+    if (filter->io_mux_clk_acquired) {
+        io_mux_release_clock_source(filter->clk_src);
+    }
+    if (filter->clk_src != SOC_MOD_CLK_INVALID) {
+        esp_clk_tree_enable_src(filter->clk_src, false);
+    }
+
 #if CONFIG_PM_ENABLE
     if (filter->pm_lock) {
         esp_pm_lock_delete(filter->pm_lock);
@@ -90,12 +99,20 @@ esp_err_t gpio_new_pin_glitch_filter(const gpio_pin_glitch_filter_config_t *conf
 
     filter = heap_caps_calloc(1, sizeof(gpio_pin_glitch_filter_t), FILTER_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(filter, ESP_ERR_NO_MEM, err, TAG, "no memory for pin glitch filter");
+    filter->clk_src = SOC_MOD_CLK_INVALID;
+    filter->io_mux_clk_acquired = false;
+
+    soc_module_clk_t clk_src = config->clk_src ? config->clk_src : GLITCH_FILTER_CLK_SRC_DEFAULT;
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src(clk_src, true), err, TAG, "enable IOMUX clock source failed");
+    filter->clk_src = clk_src;
+    ESP_GOTO_ON_ERROR(io_mux_acquire_clock_source(clk_src), err, TAG, "acquire IOMUX clock source failed");
+    filter->io_mux_clk_acquired = true;
 
     // create pm lock according to different clock source
 #if CONFIG_PM_ENABLE
     esp_pm_lock_type_t lock_type = ESP_PM_NO_LIGHT_SLEEP;
 #if GPIO_CAPS_GET(FILTER_CLK_SUPPORT_APB)
-    if (config->clk_src == GLITCH_FILTER_CLK_SRC_APB) {
+    if (clk_src == (soc_module_clk_t)GLITCH_FILTER_CLK_SRC_APB) {
         lock_type = ESP_PM_APB_FREQ_MAX;
     }
 #endif // GPIO_CAPS_GET(FILTER_CLK_SUPPORT_APB)
@@ -103,9 +120,6 @@ esp_err_t gpio_new_pin_glitch_filter(const gpio_pin_glitch_filter_config_t *conf
     ESP_GOTO_ON_ERROR(esp_pm_lock_create(lock_type, 0, filter->pm_lock_name, &filter->pm_lock),
                       err, TAG, "create pm_lock failed");
 #endif // CONFIG_PM_ENABLE
-
-    // Glitch filter's clock source is same to the IOMUX clock
-    ESP_GOTO_ON_ERROR(io_mux_set_clock_source((soc_module_clk_t)(config->clk_src)), err, TAG, "set IO MUX clock source failed");
 
     filter->base.gpio_num = config->gpio_num;
     filter->base.fsm = GLITCH_FILTER_FSM_INIT;

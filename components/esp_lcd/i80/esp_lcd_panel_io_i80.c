@@ -65,6 +65,7 @@ struct esp_lcd_i80_bus_t {
     uint8_t *format_buffer;  // The driver allocates an internal buffer for DMA to do data format transformer
     uint8_t *format_buffer_nc; // Non-cacheable version of format buffer
     size_t resolution_hz;    // LCD_CLK resolution, determined by selected clock source
+    soc_module_clk_t clk_src; // peripheral clock source, SOC_MOD_CLK_INVALID if not enabled
     size_t max_transfer_bytes; // Maximum number of bytes that can be transferred in one transaction
     gdma_channel_handle_t dma_chan; // DMA channel handle
     gdma_link_list_handle_t dma_link; // DMA link list handle
@@ -139,6 +140,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     ESP_GOTO_ON_FALSE(bus, ESP_ERR_NO_MEM, err, TAG, "no mem for i80 bus");
     bus->bus_width = bus_config->bus_width;
     bus->bus_id = -1;
+    bus->clk_src = SOC_MOD_CLK_INVALID;
     // allocate the format buffer from internal memory, with DMA capability
     bus->format_buffer = heap_caps_calloc(1, LCD_I80_IO_FORMAT_BUF_SIZE,
                                           MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
@@ -262,6 +264,10 @@ err:
         if (bus->format_buffer) {
             free(bus->format_buffer);
         }
+        if (bus->clk_src != SOC_MOD_CLK_INVALID) {
+            esp_clk_tree_enable_src(bus->clk_src, false);
+            bus->clk_src = SOC_MOD_CLK_INVALID;
+        }
 #if CONFIG_PM_ENABLE
         if (bus->pm_lock) {
             esp_pm_lock_delete(bus->pm_lock);
@@ -280,6 +286,10 @@ esp_err_t esp_lcd_del_i80_bus(esp_lcd_i80_bus_handle_t bus)
     int bus_id = bus->bus_id;
     PERIPH_RCC_ATOMIC() {
         lcd_ll_enable_clock(bus->hal.dev, false);
+    }
+    if (bus->clk_src != SOC_MOD_CLK_INVALID) {
+        esp_clk_tree_enable_src(bus->clk_src, false);
+        bus->clk_src = SOC_MOD_CLK_INVALID;
     }
 #if I80_USE_RETENTION_LINK
     const periph_retention_module_t module_id = soc_i80_lcd_retention_info[bus_id].retention_module;
@@ -631,12 +641,12 @@ static void lcd_i80_create_retention_module(esp_lcd_i80_bus_t *bus)
 
 static esp_err_t lcd_i80_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_clock_source_t clk_src)
 {
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), TAG, "clock source enable failed");
+    bus->clk_src = (soc_module_clk_t)clk_src;
     // get clock source frequency
     uint32_t src_clk_hz = 0;
     ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_clk_hz),
                         TAG, "get clock source frequency failed");
-
-    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), TAG, "clock source enable failed");
     PERIPH_RCC_ATOMIC() {
         lcd_ll_select_clk_src(bus->hal.dev, clk_src);
         // force to use integer division, as fractional division might lead to clock jitter

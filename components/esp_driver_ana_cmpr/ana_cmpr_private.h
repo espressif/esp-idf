@@ -103,6 +103,8 @@ struct ana_cmpr_t {
     intr_handle_t               intr_handle;        // Interrupt handle
     uint32_t                    intr_mask;          // Interrupt mask
     int                         intr_priority;      // Interrupt priority
+    soc_module_clk_t            clk_src;            // Clock source of the Analog Comparator unit
+    bool                        io_mux_acquired;    // Whether IO MUX clock source was acquired (IP v1 only)
     uint32_t                    src_clk_freq_hz;    // Source clock frequency of the Analog Comparator unit
     ana_cmpr_src_chan_t         src_chans[ANALOG_CMPR_LL_GET(SRC_CHANNEL_NUM)]; // The source channel objects in the unit
     ana_cmpr_ref_chan_t         ref_chan;           // The reference channel object in the unit
