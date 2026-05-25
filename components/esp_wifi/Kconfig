@@ -447,6 +447,7 @@ menu "Wi-Fi"
 
         config ESP_WIFI_SOFTAP_SUPPORT
             bool "WiFi SoftAP Support"
+            select MBEDTLS_SHA1_C
             default y
             help
                 WiFi module can be compiled without SoftAP to save code size.
