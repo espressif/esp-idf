@@ -1,10 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
+
+#include <stdint.h>
 
 #define PMU_ICG_APB_ENA_PWM0                    0
 #define PMU_ICG_APB_ENA_PWM1                    1
@@ -100,3 +102,16 @@
 #define PMU_ICG_FUNC_ENA_PSRAM_MON              53
 #define PMU_ICG_FUNC_ENA_TCM_MON                54
 #define PMU_ICG_FUNC_ENA_REGDMA                 55
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef uint64_t pmu_sleep_clk_icg_flags_t;
+#define PMU_SLEEP_CLK_ICG_BIT(b)       (((pmu_sleep_clk_icg_flags_t)1) << (b))
+#define PMU_SLEEP_CLK_ICG_FUNC_LO(f)   ((uint32_t)(f))
+#define PMU_SLEEP_CLK_ICG_FUNC_HI(f)   ((uint32_t)((f) >> 32))
+
+#ifdef __cplusplus
+}
+#endif

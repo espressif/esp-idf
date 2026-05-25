@@ -83,7 +83,7 @@ esp_err_t uart_wakeup_setup(uart_port_t uart_num, const uart_wakeup_cfg_t *cfg)
 #if SOC_PM_SUPPORT_PMU_CLK_ICG
             esp_sleep_sub_mode_config(ESP_SLEEP_DIG_USE_XTAL_MODE, true);
             esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_ON);
-            esp_sleep_clock_config(UART_LL_SLEEP_CLOCK(uart_num), ESP_SLEEP_CLOCK_OPTION_UNGATE);
+            esp_sleep_clock_config(SLEEP_UART_ICG(uart_num), ESP_SLEEP_CLOCK_OPTION_UNGATE);
             esp_sleep_clock_config(ESP_SLEEP_CLOCK_IOMUX, ESP_SLEEP_CLOCK_OPTION_UNGATE);
 #endif
 #if (SOC_UART_LP_NUM >= 1)
@@ -154,7 +154,7 @@ esp_err_t uart_wakeup_clear(uart_port_t uart_num, uart_wakeup_mode_t wakeup_mode
         // When hp uarts are utilized, the main XTAL need to be PU and UARTx & IOMX ICG need to be ungate
         if (uart_num < SOC_UART_HP_NUM) {
 #if SOC_PM_SUPPORT_PMU_CLK_ICG
-            esp_sleep_clock_config(UART_LL_SLEEP_CLOCK(uart_num), ESP_SLEEP_CLOCK_OPTION_GATE);
+            esp_sleep_clock_config(SLEEP_UART_ICG(uart_num), ESP_SLEEP_CLOCK_OPTION_GATE);
             esp_sleep_clock_config(ESP_SLEEP_CLOCK_IOMUX, ESP_SLEEP_CLOCK_OPTION_GATE);
             esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_OFF);
             esp_sleep_sub_mode_config(ESP_SLEEP_DIG_USE_XTAL_MODE, false);
