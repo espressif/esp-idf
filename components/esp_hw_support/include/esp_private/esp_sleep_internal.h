@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include "sdkconfig.h"
 #include "esp_sleep.h"
+#include "hal/uart_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -134,7 +135,7 @@ void esp_sleep_restore_isolated_digital_gpio(void);
  */
 typedef enum {
     ESP_SLEEP_CLOCK_IOMUX,  //!< The clock ICG cell mapping of IOMUX
-    ESP_SLEEP_CLOCK_LEDC,   //!< The clock ICG cell mapping of LEDC
+    ESP_SLEEP_CLOCK_LEDC0,   //!< The clock ICG cell mapping of LEDC0
     ESP_SLEEP_CLOCK_UART0,   //!< The clock ICG cell mapping of UART0
     ESP_SLEEP_CLOCK_UART1,   //!< The clock ICG cell mapping of UART1
 #if SOC_UART_HP_NUM > 2
@@ -151,6 +152,9 @@ typedef enum {
 #endif
     ESP_SLEEP_CLOCK_MAX     //!< Number of ICG cells
 } esp_sleep_clock_t;
+
+// Get UART sleep clock with giving uart num (num must be a valid HP UART port)
+#define SLEEP_UART_ICG(num) ((esp_sleep_clock_t)(ESP_SLEEP_CLOCK_UART0 + (num)))
 
 /**
  * @brief Clock ICG options

@@ -1,10 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #ifndef _SOC_ICG_MAP_H_
 #define _SOC_ICG_MAP_H_
+
+#include <stdint.h>
 
 #define PMU_ICG_APB_ENA_CAN0                               18
 #define PMU_ICG_APB_ENA_CAN1                               19
@@ -39,7 +41,7 @@
 #define PMU_ICG_FUNC_ENA_I2S_RX                            2
 #define PMU_ICG_FUNC_ENA_I2S_TX                            7
 #define PMU_ICG_FUNC_ENA_IOMUX                             28
-#define PMU_ICG_FUNC_ENA_LEDC                              27
+#define PMU_ICG_FUNC_ENA_LEDC0                             27
 #define PMU_ICG_FUNC_ENA_MEM_MONITOR                       10
 #define PMU_ICG_FUNC_ENA_MSPI                              26
 #define PMU_ICG_FUNC_ENA_PARL_RX                           25
@@ -65,4 +67,16 @@
 #define PMU_ICG_FUNC_ENA_UHCI                              5
 #define PMU_ICG_FUNC_ENA_HPCORE                            17
 #define PMU_ICG_FUNC_ENA_HPBUS                             15
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef uint32_t pmu_sleep_clk_icg_flags_t;
+#define PMU_SLEEP_CLK_ICG_BIT(b)       (((pmu_sleep_clk_icg_flags_t)1) << (b))
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif  /* _SOC_ICG_MAP_H_ */

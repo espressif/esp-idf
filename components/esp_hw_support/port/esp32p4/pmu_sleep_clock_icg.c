@@ -182,7 +182,7 @@ void pmu_sleep_clock_icg_config(void *icg_context, const uint32_t icg_func)
     if (icg_func & BIT(PMU_ICG_FUNC_ENA_IOMUX)) {
         regdma_link_set_write_wait_content(clock_icg->regdma_desc[28], PERI_CLK_EN(IOMUX), PERI_CLK_MASK(IOMUX));
     }
-    if (icg_func & BIT(PMU_ICG_FUNC_ENA_LEDC)) {
+    if (icg_func & BIT(PMU_ICG_FUNC_ENA_LEDC0)) {
         regdma_link_set_write_wait_content(clock_icg->regdma_desc[24], PERI_CLK_EN(LEDC), PERI_CLK_MASK(LEDC));
     }
     if (icg_func & BIT(PMU_ICG_FUNC_ENA_UART0)) {
