@@ -51,6 +51,14 @@ endfunction()
     3. If the component manager run failed, error out.
 #]]
 function(__fetch_components_from_registry)
+    # __KCONFGEN_QUIET stays YES (set by the bootstrap path in project.cmake)
+    # across intermediate iterations of the loop below, because each
+    # iteration's kconfgen pass runs against a partial component set when the
+    # component manager exits 10. Warnings from those passes are transient.
+    # We only flip the flag to NO on the iteration where the component
+    # manager succeeds, so the final kconfgen pass against the complete
+    # component set emits genuine warnings.
+
     # Iteratively run the component manager and Kconfig until stable or error out.
     set(__cmgr_round 0)
     while(TRUE)
@@ -59,6 +67,11 @@ function(__fetch_components_from_registry)
 
         # Run the component manager for all discovered components
         __download_component_level_managed_components(RESULT cmgr_result)
+
+        # Only the final (successful) iteration should emit kconfgen warnings.
+        if(cmgr_result EQUAL 0)
+            idf_build_set_property(__KCONFGEN_QUIET NO)
+        endif()
 
         # Re-collect Kconfig and regenerate sdkconfig with managed components included
         __generate_sdkconfig()
