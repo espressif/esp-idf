@@ -13,27 +13,6 @@
  * response. The server under test is started/stopped by the test itself using
  * the normal httpd_start() / httpd_stop() APIs; this module only provides the
  * "client" side.
- *
- * Typical usage:
- * @code
- *   // 1. Start the server
- *   httpd_config_t cfg = HTTPD_DEFAULT_CONFIG();
- *   cfg.server_port = 8099;
- *   httpd_handle_t server;
- *   httpd_start(&server, &cfg);
- *   httpd_register_uri_handler(server, &my_handler);
- *
- *   // 2. Send a scripted request and capture the response
- *   mock_server_request_t req = {
- *       .data = "GET /path HTTP/1.1\r\nHost: localhost\r\n\r\n",
- *   };
- *   mock_server_response_t resp = {0};
- *   mock_server_send_request(8099, &req, &resp);
- *   TEST_ASSERT_EQUAL(200, resp.status_code);
- *
- *   // 3. Stop the server
- *   httpd_stop(server);
- * @endcode
  */
 
 #pragma once
