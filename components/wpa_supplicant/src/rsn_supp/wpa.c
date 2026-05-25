@@ -2667,6 +2667,10 @@ int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, uint8_t pairwise_cipher, uint8_
         use_pmk_cache = false;
     }
 
+    if (sm->key_mgmt == WPA_KEY_MGMT_DPP) {
+        use_pmk_cache = true;
+    }
+
     if (os_memcmp(sm->ssid, ssid, ssid_len) == 0) {
 	wpa_printf(MSG_DEBUG, "reassoc same ess and okc is %d", sm->okc);
 	if (sm->okc == 1) {
@@ -2882,7 +2886,7 @@ void wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
     /* This is really SLOW, so just re cacl while reset param */
     if (esp_wifi_sta_get_reset_nvs_pmk_internal() != 0) {
         // check it's psk
-        if (strlen((char *)esp_wifi_sta_get_prof_password_internal()) == 64) {
+        if (os_strlen((char *)esp_wifi_sta_get_prof_password_internal()) == 64) {
             if (hexstr2bin((char *)esp_wifi_sta_get_prof_password_internal(),
                            esp_wifi_sta_get_ap_info_prof_pmk_internal(), PMK_LEN) != 0)
                 return;

@@ -220,7 +220,7 @@ int dpp_connect(uint8_t *bssid, bool pdr_done)
     int res = 0;
     if (!pdr_done) {
         if (esp_wifi_sta_get_prof_authmode_internal() == WPA3_AUTH_DPP) {
-            esp_dpp_start_net_intro_protocol(bssid);
+            res = esp_dpp_start_net_intro_protocol(bssid);
         }
     } else {
         res = wpa_config_bss(bssid);
@@ -555,6 +555,11 @@ int esp_supplicant_init(void)
     ret = esp_supplicant_common_init(wpa_cb);
 
     if (ret != 0) {
+        /* esp_wifi_init() propagates this error to wifi_deinit_internal() which calls
+         * esp_supplicant_deinit(); that path runs eloop_destroy() for eloop cleanup.
+         */
+        os_free(wpa_cb);
+        wpa_cb = NULL;
         return ret;
     }
 
@@ -572,6 +577,7 @@ int esp_supplicant_deinit(void)
     esp_supplicant_common_deinit();
     esp_supplicant_unset_all_appie();
     eloop_destroy();
+    /* wpa_cb is freed by esp_wifi_unregister_wpa_cb_internal() */
     wpa_cb = NULL;
 #if CONFIG_ESP_WIFI_WAPI_PSK
     esp_wifi_internal_wapi_deinit();

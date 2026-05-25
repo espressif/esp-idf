@@ -750,6 +750,17 @@ config WIFI_RMT_DPP_SUPPORT
     help
         Select this option to enable WiFi Easy Connect Support.
 
+config WIFI_RMT_DPP_MAX_CONF_OBJ
+    int "Maximum number of DPP configuration objects"
+    depends on WIFI_RMT_DPP_SUPPORT
+    range 1 10
+    default 3
+    help
+        Maximum number of configuration objects that can be received and stored
+        during a DPP configuration exchange. DPP v2 configurators may send
+        multiple configuration objects (e.g., for different SSIDs or AKMs).
+        Increasing this value will increase the memory usage for DPP events.
+
 config WIFI_RMT_11R_SUPPORT
     bool "Enable 802.11R (Fast Transition) Support"
     default n
