@@ -163,11 +163,41 @@ Enhanced Open™ is used for providing security and privacy to users connecting 
 Setting up OWE with {IDF_TARGET_NAME}
 ++++++++++++++++++++++++++++++++++++++
 
-For station mode :
+For station mode:
 
 A configuration option :ref:`CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_STA` and configuration parameter :cpp:type:`owe_enabled` in :cpp:type:`wifi_sta_config_t` is provided to enable OWE support for the station. To use OWE transition mode, along with the configuration provided above, `authmode` from :cpp:type:`wifi_scan_threshold_t` should be set to ``WIFI_AUTH_OPEN``.
 
 
-For softap mode :
+For SoftAP mode:
 
 A configuration option :ref:`CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_SOFTAP` from menuconfig should be enabled and configuration parameter `authmode` from :cpp:type:`wifi_ap_config_t` should be set to ``WIFI_AUTH_OWE``. SoftAP does not support OWE Transition Mode; configure ``WIFI_AUTH_OWE`` only.
+
+WiFi Privacy Enhancements
+--------------------------
+
+MAC addresses, used by devices to connect to Wi-Fi networks, can be captured and tracked because they are transmitted without encryption and due to their unique and static nature. {IDF_TARGET_NAME} supports the WiFi Privacy Enhancements feature which includes MAC randomization, sequence number randomization, diversity in GAS dialogue tokens and vendor sequence numbers. This prevents devices from being consistently tracked when scanning or connecting to networks.
+
+To use this feature, enable configuration option :ref:`CONFIG_ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED` from menuconfig.
+
+{IDF_TARGET_NAME} also rotates the STA random MAC periodically while not connected, using menuconfig option :ref:`CONFIG_ESP_WIFI_RMAC_AUTO_RESET_INTERVAL` (valid range: 1 to 24 hours, default 12).
+
+.. note::
+
+   The :ref:`CONFIG_ESP_WIFI_RMAC_AUTO_RESET_INTERVAL` will only generate and set new random mac address when station is not connected to any AP. If the station is connected to any AP, the connection will not be interrupted and same random mac will be used. If the periodic auto-reset timer expires while the station is in the connected state, the timer will be armed/triggered at the next disconnect.
+
+   WiFi privacy enhancements are not supported and will not work when Wi-Fi Mesh or ESP-NOW is enabled.
+
+
+{IDF_TARGET_NAME} supports privacy enhancements while scanning when
+
+  - enable configuration option :ref:`CONFIG_ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED` from menuconfig
+  - scan_type is :cpp:enumerator:`WIFI_SCAN_TYPE_ACTIVE`
+  - station is not connected to any Access Point
+
+{IDF_TARGET_NAME} supports privacy enhancements while connecting when
+
+  - enable configuration option :ref:`CONFIG_ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED` from menuconfig
+  - new wifi configuration is set using :cpp:func:`esp_wifi_set_config`
+
+
+To get the MAC address, please use API :cpp:func:`esp_wifi_get_mac`.

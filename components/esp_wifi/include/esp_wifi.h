@@ -120,6 +120,8 @@ typedef struct {
     int                    espnow_max_encrypt_num; /**< Maximum encrypt number of peers supported by espnow */
     int                    tx_hetb_queue_num;      /**< WiFi TX HE TB QUEUE number for STA HE TB PPDU transmission */
     bool                   dump_hesigb_enable;     /**< enable dump sigb field */
+    bool                   privacy_enhancements;   /**< WiFi privacy enhancements (enables random mac, seq number, dialogue token number, vendor seq number cnt). Supported on station interface only; softAP may be added in future */
+    uint8_t                rmac_auto_reset_int;    /**< Random MAC auto-reset interval in hours (1-24) while not connected */
     int                    magic;                  /**< WiFi init magic number, it should be the last field */
 } wifi_init_config_t;
 
@@ -321,6 +323,18 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
                            WIFI_ENABLE_PASSIVE_HIDDEN_AP | \
                            WIFI_ENABLE_OWE_SOFTAP)
 
+#if CONFIG_ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED
+#define WIFI_PRIVACY_ENHANCEMENTS_ENABLED true
+#else
+#define WIFI_PRIVACY_ENHANCEMENTS_ENABLED false
+#endif
+
+#ifdef CONFIG_ESP_WIFI_RMAC_AUTO_RESET_INTERVAL
+#define WIFI_RMAC_AUTO_RESET_INTERVAL CONFIG_ESP_WIFI_RMAC_AUTO_RESET_INTERVAL
+#else
+#define WIFI_RMAC_AUTO_RESET_INTERVAL 0
+#endif
+
 #define WIFI_INIT_CONFIG_DEFAULT() { \
     .osi_funcs = &g_wifi_osi_funcs, \
     .wpa_crypto_funcs = g_wifi_default_wpa_crypto_funcs, \
@@ -347,6 +361,8 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
     .espnow_max_encrypt_num = CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM, \
     .tx_hetb_queue_num = WIFI_TX_HETB_QUEUE_NUM, \
     .dump_hesigb_enable = WIFI_DUMP_HESIGB_ENABLED, \
+    .privacy_enhancements = WIFI_PRIVACY_ENHANCEMENTS_ENABLED, \
+    .rmac_auto_reset_int = WIFI_RMAC_AUTO_RESET_INTERVAL, \
     .magic = WIFI_INIT_CONFIG_MAGIC\
 }
 

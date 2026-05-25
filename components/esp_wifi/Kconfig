@@ -925,6 +925,23 @@ menu "Wi-Fi"
                 Select this option to enable/disable support for station connections
                 to hidden APs using passive scan when the country policy is set to auto.
 
+        config ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED
+            bool "WiFi Privacy Enhancements enabled"
+            default n
+            help
+                Select this option to enable WiFi Privacy Enhancements (enables random mac,
+                seq number, dialogue token number, vendor seq number cnt).
+                Supported on station interface only; softAP may be added in future.
+
+        config ESP_WIFI_RMAC_AUTO_RESET_INTERVAL
+            int "Random MAC Auto-Reset Interval time"
+            depends on ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED
+            range 1 24
+            default 12
+            help
+                Interval in hours to rotate the random MAC while not connected to an AP.
+                Values below 1 or above 24 are not allowed.
+
     endif # wifi enabled
 
 endmenu # Wi-Fi

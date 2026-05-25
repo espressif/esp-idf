@@ -512,3 +512,14 @@ if WIFI_RMT_PASSIVE_HIDDEN_AP_SUPPORT
         bool
         default WIFI_RMT_PASSIVE_HIDDEN_AP_SUPPORT
 endif
+
+if WIFI_RMT_PRIVACY_ENHANCEMENTS_ENABLED
+    config ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED # ignore: multiple-definition
+        bool
+        default WIFI_RMT_PRIVACY_ENHANCEMENTS_ENABLED
+endif
+
+config ESP_WIFI_RMAC_AUTO_RESET_INTERVAL # ignore: multiple-definition
+    int
+    depends on WIFI_RMT_PRIVACY_ENHANCEMENTS_ENABLED
+    default WIFI_RMT_RMAC_AUTO_RESET_INTERVAL
