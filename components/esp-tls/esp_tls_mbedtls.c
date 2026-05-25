@@ -768,6 +768,7 @@ static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
             return ESP_ERR_INVALID_ARG;
         }
         mbedtls_svc_key_id_t key_id = cfg->server_key->psa.key_id;
+        mbedtls_pk_init(&tls->serverkey);
         ret = mbedtls_pk_wrap_psa(&tls->serverkey, key_id);
         if (ret != 0) {
             ESP_LOGE(TAG, "mbedtls_pk_wrap_psa returned -0x%04X", -ret);
@@ -1031,6 +1032,7 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
             return ESP_ERR_INVALID_ARG;
         }
         mbedtls_svc_key_id_t key_id = cfg->client_key->psa.key_id;
+        mbedtls_pk_init(&tls->clientkey);
         ret = mbedtls_pk_wrap_psa(&tls->clientkey, key_id);
         if (ret != 0) {
             ESP_LOGE(TAG, "mbedtls_pk_wrap_psa returned -0x%04X", -ret);
