@@ -37,19 +37,22 @@ menu "mbedTLS"
                 If you do intend to use contexts between threads, you will need to enable
                 this layer to prevent race conditions.
 
-        config MBEDTLS_THREADING_ALT
-            bool "Enable threading alternate implementation"
+        choice MBEDTLS_THREADING_IMPLEMENTATION
+            prompt "Threading implementation"
             depends on MBEDTLS_THREADING_C
-            default n
-            help
-                Enable threading alt to allow your own alternate threading implementation.
+            default MBEDTLS_THREADING_PTHREAD
 
-        config MBEDTLS_THREADING_PTHREAD
-            bool "Enable threading pthread implementation"
-            depends on MBEDTLS_THREADING_C
-            default y
-            help
-                Enable the pthread wrapper layer for the threading layer.
+            config MBEDTLS_THREADING_ALT
+                bool "Enable threading alternate implementation"
+                help
+                    Enable threading alt to allow your own alternate threading implementation.
+
+            config MBEDTLS_THREADING_PTHREAD
+                bool "Enable threading pthread implementation"
+                help
+                    Enable the pthread wrapper layer for the threading layer.
+
+        endchoice
 
         config MBEDTLS_ERROR_STRINGS
             bool "Enable error code to error string conversion"
