@@ -52,7 +52,9 @@ def _request_json(
 
 def run_daemon(device_id: str, host: str, port: int) -> None:
     daemon_app.state.device_id = device_id
-    uvicorn.run(daemon_app, host=host, port=port)
+    server = uvicorn.Server(uvicorn.Config(daemon_app, host=host, port=port))
+    daemon_app.state.uvicorn_server = server
+    server.run()
 
 
 def run_daemon_status(host: str = '127.0.0.1', port: int = 8888) -> None:
