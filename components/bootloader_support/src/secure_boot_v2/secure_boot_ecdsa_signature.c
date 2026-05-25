@@ -58,7 +58,12 @@ esp_err_t verify_ecdsa_signature_block(const ets_secure_boot_signature_t *sig_bl
             return ESP_ERR_INVALID_ARG;
     }
 
-    psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
+#if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+    const psa_algorithm_t alg = PSA_ALG_ECDSA(PSA_ALG_SHA_384);
+#else
+    const psa_algorithm_t alg = PSA_ALG_ECDSA(PSA_ALG_SHA_256);
+#endif
+    psa_set_key_algorithm(&key_attributes, alg);
     psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY(curve_family));
 
     /* Prepare the public key data from X and Y coordinates */
@@ -95,7 +100,7 @@ esp_err_t verify_ecdsa_signature_block(const ets_secure_boot_signature_t *sig_bl
     }
 
     /* Verify the signature */
-    status = psa_verify_hash(key_handle, PSA_ALG_ECDSA(PSA_ALG_SHA_256),
+    status = psa_verify_hash(key_handle, alg,
                              image_digest, ESP_SECURE_BOOT_DIGEST_LEN,
                              signature, 2 * key_size);
 
