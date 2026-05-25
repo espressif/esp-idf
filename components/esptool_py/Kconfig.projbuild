@@ -1,5 +1,5 @@
 menu "Serial flasher config"
-    depends on !APP_BUILD_TYPE_PURE_RAM_APP
+    depends on !APP_BUILD_TYPE_PURE_RAM_APP && !IDF_TARGET_LINUX
 
     config ESPTOOLPY_NO_STUB
         bool "Disable download stub"
