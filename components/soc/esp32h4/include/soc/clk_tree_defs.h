@@ -274,7 +274,7 @@ typedef enum {
  * @brief Type of SPI clock source.
  */
 typedef enum {
-    SPI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F48M,     /*!< Select XTAL as SPI source clock */
+    SPI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F48M,     /*!< Select PLL_F48M as SPI source clock */
     SPI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,            /*!< Select XTAL as SPI source clock */
     SPI_CLK_SRC_PLL_F48M = SOC_MOD_CLK_PLL_F48M,    /*!< Select PLL_48M as SPI source clock */
     SPI_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,      /*!< Select RC_FAST as SPI source clock */
