@@ -231,17 +231,9 @@ config SOC_ADC_PERIPH_NUM
     int
     default 2
 
-config SOC_ADC_MAX_CHANNEL_NUM
-    int
-    default 10
-
 config SOC_ADC_ATTEN_NUM
     int
     default 4
-
-config SOC_ADC_DIGI_CONTROLLER_NUM
-    int
-    default 2
 
 config SOC_ADC_PATT_LEN_MAX
     int
@@ -266,22 +258,6 @@ config SOC_ADC_DIGI_DATA_BYTES_PER_CONV
 config SOC_ADC_DIGI_MONITOR_NUM
     int
     default 0
-
-config SOC_ADC_SAMPLE_FREQ_THRES_HIGH
-    int
-    default 2000000
-
-config SOC_ADC_SAMPLE_FREQ_THRES_LOW
-    int
-    default 20000
-
-config SOC_ADC_RTC_MIN_BITWIDTH
-    int
-    default 9
-
-config SOC_ADC_RTC_MAX_BITWIDTH
-    int
-    default 12
 
 config SOC_ADC_SHARED_POWER
     bool

@@ -32,8 +32,10 @@
 #include "esp_clk_tree.h"
 #include "esp_private/gpio.h"
 #include "esp_adc/adc_continuous.h"
+#include "hal/adc_periph.h"
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
+#include "hal/adc_ll.h"
 #include "hal/dma_types.h"
 #include "soc/soc_caps.h"
 #include "esp_memory_utils.h"
@@ -467,7 +469,7 @@ esp_err_t adc_continuous_config(adc_continuous_handle_t handle, const adc_contin
     for (int i = 0; i < config->pattern_num; i++) {
 #if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
         //we add this error log to hint users what happened
-        if (SOC_ADC_DIG_SUPPORTED_UNIT(config->adc_pattern[i].unit) == 0) {
+        if (ADC_LL_DIG_SUPPORTED_UNIT(config->adc_pattern[i].unit) == 0) {
             ESP_LOGE(ADC_TAG, "ADC2 continuous mode is no longer supported, please use ADC1. Search for errata on espressif website for more details. You can enable CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3 to force use ADC2");
         }
 #endif  //CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
@@ -477,11 +479,11 @@ esp_err_t adc_continuous_config(adc_continuous_handle_t handle, const adc_contin
          * On all continuous mode supported chips, we will always check the unit to see if it's a continuous mode supported unit.
          * However, on ESP32C3 and ESP32S3, we will jump this check, if `CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3` is enabled.
          */
-        ESP_RETURN_ON_FALSE(SOC_ADC_DIG_SUPPORTED_UNIT(config->adc_pattern[i].unit), ESP_ERR_INVALID_ARG, ADC_TAG, "Only support using ADC1 DMA mode");
+        ESP_RETURN_ON_FALSE(ADC_LL_DIG_SUPPORTED_UNIT(config->adc_pattern[i].unit), ESP_ERR_INVALID_ARG, ADC_TAG, "Only support using ADC1 DMA mode");
 #endif  //#if !CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3
     }
 
-    ESP_RETURN_ON_FALSE(config->sample_freq_hz <= SOC_ADC_SAMPLE_FREQ_THRES_HIGH && config->sample_freq_hz >= SOC_ADC_SAMPLE_FREQ_THRES_LOW, ESP_ERR_INVALID_ARG, ADC_TAG, "ADC sampling frequency out of range");
+    ESP_RETURN_ON_FALSE(config->sample_freq_hz <= ADC_LL_SAMPLE_FREQ_THRES_HIGH && config->sample_freq_hz >= ADC_LL_SAMPLE_FREQ_THRES_LOW, ESP_ERR_INVALID_ARG, ADC_TAG, "ADC sampling frequency out of range");
 #if CONFIG_IDF_TARGET_ESP32
     handle->format = ADC_DIGI_OUTPUT_FORMAT_TYPE1;
 #elif CONFIG_IDF_TARGET_ESP32S2

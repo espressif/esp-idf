@@ -7,7 +7,7 @@
 #include "hal/adc_periph.h"
 
 /* Store the GPIO number for each public ADC channel. */
-const int adc_channel_io_map[SOC_ADC_PERIPH_NUM][SOC_ADC_MAX_CHANNEL_NUM] = {
+const int adc_channel_io_map[SOC_ADC_PERIPH_NUM][ADC_LL_MAX_CHANNEL_NUM] = {
     /* ADC1 */
     {
         ADC1_CHANNEL_0_GPIO_NUM, ADC1_CHANNEL_1_GPIO_NUM, ADC1_CHANNEL_2_GPIO_NUM, ADC1_CHANNEL_3_GPIO_NUM,

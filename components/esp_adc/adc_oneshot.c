@@ -89,7 +89,7 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
      * We only check this on ESP32C3, because other adc units are no longer supported on later chips
      * If CONFIG_ADC_ONESHOT_FORCE_USE_ADC2_ON_C3 is enabled, we jump this check
      */
-    ESP_GOTO_ON_FALSE(SOC_ADC_DIG_SUPPORTED_UNIT(init_config->unit_id), ESP_ERR_INVALID_ARG, err, TAG, "adc unit not supported");
+    ESP_GOTO_ON_FALSE(ADC_LL_DIG_SUPPORTED_UNIT(init_config->unit_id), ESP_ERR_INVALID_ARG, err, TAG, "adc unit not supported");
 #endif
 
     unit = heap_caps_calloc(1, sizeof(adc_oneshot_unit_ctx_t), ADC_MEM_ALLOC_CAPS);
@@ -197,7 +197,7 @@ esp_err_t adc_oneshot_config_channel(adc_oneshot_unit_handle_t handle, adc_chann
 {
     ESP_RETURN_ON_FALSE(handle && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(config->atten < SOC_ADC_ATTEN_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid attenuation");
-    ESP_RETURN_ON_FALSE(((config->bitwidth >= SOC_ADC_RTC_MIN_BITWIDTH && config->bitwidth <= SOC_ADC_RTC_MAX_BITWIDTH) || config->bitwidth == ADC_BITWIDTH_DEFAULT), ESP_ERR_INVALID_ARG, TAG, "invalid bitwidth");
+    ESP_RETURN_ON_FALSE(((config->bitwidth >= ADC_LL_RTC_MIN_BITWIDTH && config->bitwidth <= ADC_LL_RTC_MAX_BITWIDTH) || config->bitwidth == ADC_BITWIDTH_DEFAULT), ESP_ERR_INVALID_ARG, TAG, "invalid bitwidth");
     ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(handle->unit_id), ESP_ERR_INVALID_ARG, TAG, "invalid channel");
 
     ESP_RETURN_ON_ERROR(s_adc_io_init(handle->unit_id, channel), TAG, "adc io init failed");
@@ -205,7 +205,7 @@ esp_err_t adc_oneshot_config_channel(adc_oneshot_unit_handle_t handle, adc_chann
     adc_oneshot_hal_ctx_t *hal = &(handle->hal);
     adc_oneshot_hal_chan_cfg_t cfg = {
         .atten = config->atten,
-        .bitwidth = (config->bitwidth == ADC_BITWIDTH_DEFAULT) ? SOC_ADC_RTC_MAX_BITWIDTH : config->bitwidth,
+        .bitwidth = (config->bitwidth == ADC_BITWIDTH_DEFAULT) ? ADC_LL_RTC_MAX_BITWIDTH : config->bitwidth,
     };
     portENTER_CRITICAL(&rtc_spinlock);
     adc_oneshot_hal_channel_config(hal, &cfg, channel);

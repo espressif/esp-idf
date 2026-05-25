@@ -8,6 +8,7 @@
 
 #include "hal/adc_types.h"
 #include "hal/adc_hal_common.h"
+#include "hal/adc_ll.h"
 #include "soc/soc_caps.h"
 
 #ifdef __cplusplus
@@ -40,7 +41,7 @@ typedef struct adc_oneshot_hal_ctx_t {
     adc_oneshot_soc_handle_t dev;    ///< ADC SoC layer handle
     adc_unit_t unit;                 ///< ADC unit
     adc_hal_work_mode_t work_mode;   ///< ADC work mode
-    adc_oneshot_hal_chan_cfg_t chan_configs[SOC_ADC_MAX_CHANNEL_NUM];    ///< ADC configurations per channel
+    adc_oneshot_hal_chan_cfg_t chan_configs[ADC_LL_MAX_CHANNEL_NUM];    ///< ADC configurations per channel
     adc_oneshot_clk_src_t clk_src;   ///< Clock source
     uint32_t clk_src_freq_hz;        ///< Clock source frequency in hz
     bool disable_dac_output;         ///< Whether to disable DAC output, only for chips supporting DAC

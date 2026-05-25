@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include "esp_check.h"
 #include "esp_heap_caps.h"
 #include "soc/soc_caps.h"
+#include "hal/adc_ll.h"
 #include "esp_adc/adc_cali_scheme.h"
 #include "adc_cali_interface.h"
 #include "esp_private/adc_share_hw_ctrl.h"
@@ -134,7 +135,7 @@ static esp_err_t cali_raw_to_voltage(void *arg, int raw, int *voltage)
     int chan_compensation = adc_get_hw_calibration_chan_compens(ctx->unit_id, ctx->chan, ctx->atten);
     raw -= chan_compensation;
     /* Limit the range */
-    int max_val = (1L << SOC_ADC_RTC_MAX_BITWIDTH) - 1;
+    int max_val = (1L << ADC_LL_RTC_MAX_BITWIDTH) - 1;
     raw = raw <= 0 ? 0 :
           raw > max_val ? max_val : raw;
 #endif  // SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED
@@ -222,7 +223,7 @@ static esp_err_t check_valid(const adc_cali_curve_fitting_config_t *config)
     ESP_RETURN_ON_FALSE(config->unit_id < SOC_ADC_PERIPH_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid ADC unit");
     ESP_RETURN_ON_FALSE(config->atten < SOC_ADC_ATTEN_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid ADC attenuation");
 
-    bool available_oneshot_bitwidth = (config->bitwidth >= SOC_ADC_RTC_MIN_BITWIDTH && config->bitwidth <= SOC_ADC_RTC_MAX_BITWIDTH);
+    bool available_oneshot_bitwidth = (config->bitwidth >= ADC_LL_RTC_MIN_BITWIDTH && config->bitwidth <= ADC_LL_RTC_MAX_BITWIDTH);
     bool available_dma_bitwidth = (config->bitwidth >= SOC_ADC_DIGI_MIN_BITWIDTH && config->bitwidth <= SOC_ADC_DIGI_MAX_BITWIDTH);
     bool default_bitwidth_mark = (config->bitwidth == ADC_BITWIDTH_DEFAULT);
     bool available_bitwidth = (available_oneshot_bitwidth || available_dma_bitwidth || default_bitwidth_mark);

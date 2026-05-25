@@ -314,13 +314,13 @@ TEST_CASE("ADC filter exhausted allocation", "[adc_continuous]")
     };
     TEST_ESP_OK(adc_continuous_new_handle(&adc_config, &handle));
 
-    adc_iir_filter_handle_t filter_hdl[SOC_ADC_DIGI_IIR_FILTER_NUM + 1] = {};
+    adc_iir_filter_handle_t filter_hdl[ADC_LL_DIGI_IIR_FILTER_NUM + 1] = {};
     adc_continuous_iir_filter_config_t filter_config = {
         .unit = ADC_UNIT_1,
         .channel = ADC_CHANNEL_0,
         .coeff = ADC_DIGI_IIR_FILTER_COEFF_2,
     };
-    for (int i = 0; i < SOC_ADC_DIGI_IIR_FILTER_NUM; i++) {
+    for (int i = 0; i < ADC_LL_DIGI_IIR_FILTER_NUM; i++) {
 #if SOC_ADC_DIG_IIR_FILTER_UNIT_BINDED
         //On these chips, the unit and the filter_id should be the same
         filter_config.unit = i;
@@ -329,9 +329,9 @@ TEST_CASE("ADC filter exhausted allocation", "[adc_continuous]")
     }
 
     filter_config.unit = ADC_UNIT_1;
-    TEST_ASSERT(adc_new_continuous_iir_filter(handle, &filter_config, &filter_hdl[SOC_ADC_DIGI_IIR_FILTER_NUM]) == ESP_ERR_NOT_FOUND);
+    TEST_ASSERT(adc_new_continuous_iir_filter(handle, &filter_config, &filter_hdl[ADC_LL_DIGI_IIR_FILTER_NUM]) == ESP_ERR_NOT_FOUND);
 
-    for (int i = 0; i < SOC_ADC_DIGI_IIR_FILTER_NUM; i++) {
+    for (int i = 0; i < ADC_LL_DIGI_IIR_FILTER_NUM; i++) {
         TEST_ESP_OK(adc_del_continuous_iir_filter(filter_hdl[i]));
     }
 
