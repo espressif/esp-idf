@@ -5,10 +5,10 @@ idf_component_register(SRCS
                             "../../../private_include"
                             "../../../include"
                             "../../../src/port/riscv/include"
-                            "../../../../esp_hw_support/include"
                             "../../../../soc/esp32c3/include"
                             "../../../../esp_common/include"
                             "../../../../riscv/include"
+                       PRIV_REQUIRES esp_hw_support
                        WHOLE_ARCHIVE)
 
 # Currently 'main' for IDF_TARGET=linux is defined in freertos component.
