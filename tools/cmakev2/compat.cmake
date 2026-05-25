@@ -532,6 +532,13 @@ function(idf_component_register)
                     PRIV_REQUIRES REQUIRED_IDF_TARGETS EMBED_FILES EMBED_TXTFILES)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
 
+    # Some managed components pass their REQUIRES / PRIV_REQUIRES as a single
+    # quoted space-separated string (e.g. PRIV_REQUIRES "log esp_eth").
+    # cmake_parse_arguments stores that as one list element.  Normalise the
+    # lists so that each component name is a separate element.
+    separate_arguments(ARG_REQUIRES)
+    separate_arguments(ARG_PRIV_REQUIRES)
+
     # Initialize and include commonly required components.
     __init_common_components()
 
@@ -592,7 +599,7 @@ function(idf_component_register)
     endforeach()
 
     if(sources OR ARG_EMBED_FILES OR ARG_EMBED_TXTFILES)
-        add_library("${COMPONENT_TARGET}" STATIC "${sources}")
+        add_library("${COMPONENT_TARGET}" STATIC ${sources})
 
         foreach(include_dir IN LISTS include_dirs)
             target_include_directories("${COMPONENT_TARGET}" PUBLIC "${include_dir}")
@@ -659,6 +666,55 @@ function(idf_component_register)
     idf_component_set_property("${COMPONENT_NAME}" REQUIRED_IDF_TARGETS "${ARG_REQUIRED_IDF_TARGETS}")
     idf_component_set_property("${COMPONENT_NAME}" COMPONENT_TYPE "${component_type}")
 endfunction()
+
+#[[
+.. cmakev2:function:: idf_component_add_link_dependency
+
+    Backward-compatible shim for ``idf_component_add_link_dependency()`` used
+    by some managed components (e.g. espressif__esp_flash_nor).
+#]]
+function(idf_component_add_link_dependency)
+    set(single_value FROM TO)
+    cmake_parse_arguments(_ "" "${single_value}" "" ${ARGN})
+
+    idf_component_get_property(from_lib ${__FROM} COMPONENT_LIB)
+    if(__TO)
+        idf_component_get_property(to_lib ${__TO} COMPONENT_LIB)
+    else()
+        set(to_lib ${COMPONENT_LIB})
+    endif()
+    set_property(TARGET ${from_lib} APPEND PROPERTY INTERFACE_LINK_LIBRARIES $<LINK_ONLY:${to_lib}>)
+endfunction()
+
+#[[
+.. cmakev2:macro:: register_component
+
+    Backward-compatible shim for the legacy ``register_component()`` macro used
+    by some older ESP-IDF examples (ULP apps, BLE mesh demos, etc.).  It converts
+    the old-style ``COMPONENT_*`` variables to ``idf_component_register()`` calls.
+#]]
+macro(register_component)
+    # Convert space-separated variables to CMake lists.
+    foreach(_var COMPONENT_SRCS COMPONENT_SRCDIRS COMPONENT_ADD_INCLUDEDIRS
+                 COMPONENT_PRIV_INCLUDEDIRS COMPONENT_REQUIRES COMPONENT_PRIV_REQUIRES
+                 COMPONENT_ADD_LDFRAGMENTS COMPONENT_EMBED_FILES COMPONENT_EMBED_TXTFILES
+                 COMPONENT_SRCEXCLUDE)
+        if(DEFINED ${_var})
+            separate_arguments(${_var})
+        endif()
+    endforeach()
+
+    idf_component_register(SRCS "${COMPONENT_SRCS}"
+                        SRC_DIRS "${COMPONENT_SRCDIRS}"
+                        INCLUDE_DIRS "${COMPONENT_ADD_INCLUDEDIRS}"
+                        PRIV_INCLUDE_DIRS "${COMPONENT_PRIV_INCLUDEDIRS}"
+                        REQUIRES "${COMPONENT_REQUIRES}"
+                        PRIV_REQUIRES "${COMPONENT_PRIV_REQUIRES}"
+                        LDFRAGMENTS "${COMPONENT_ADD_LDFRAGMENTS}"
+                        EMBED_FILES "${COMPONENT_EMBED_FILES}"
+                        EMBED_TXTFILES "${COMPONENT_EMBED_TXTFILES}"
+                        EXCLUDE_SRCS "${COMPONENT_SRCEXCLUDE}")
+endmacro()
 
 #[[
 .. cmakev2:function:: idf_build_component

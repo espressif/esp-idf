@@ -592,6 +592,14 @@ macro(idf_project_init)
         # Only creates a backup when the component manager is enabled.
         __create_sdkconfig_orig_copy()
 
+        # When the component manager is enabled, suppress kconfgen warnings
+        # on this initial pass. Managed component symbols are unknown at this
+        # stage and will be resolved after __fetch_components_from_registry().
+        idf_build_get_property(idf_component_manager IDF_COMPONENT_MANAGER)
+        if(idf_component_manager EQUAL 1)
+            idf_build_set_property(__KCONFGEN_QUIET YES)
+        endif()
+
         # Generate initial sdkconfig with discovered components
         __generate_sdkconfig()
 
