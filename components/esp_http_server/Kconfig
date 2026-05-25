@@ -50,6 +50,26 @@ menu "HTTP Server"
         help
             This sets the WebSocket server support.
 
+    config HTTPD_WS_STRICTER_RFC6455
+        bool "Enforce stricter RFC 6455 WebSocket conformance"
+        default n
+        depends on HTTPD_WS_SUPPORT
+        help
+            Enable stricter RFC 6455 enforcement in the WebSocket server. When enabled,
+            the server validates handshake headers (Host, Sec-WebSocket-Version,
+            Sec-WebSocket-Key), rejects frames with reserved RSV bits, reserved or
+            fragmented control opcodes, non-minimal payload length encodings, and
+            frames whose 64-bit length has the MSB set; sends a CLOSE frame on
+            protocol errors; validates CLOSE frame status codes and UTF-8 reason;
+            validates UTF-8 text payloads; and blocks outbound data frames once a
+            CLOSE has been sent or received.
+
+            This option defaults to off in this release cycle so existing deployments
+            see no behavior change. Enable to opt into stricter enforcement; lenient
+            mode (the default) silently accepts protocol violations that may produce
+            security or interoperability issues, so enable as soon as your clients are
+            verified conformant.
+
     config HTTPD_QUEUE_WORK_BLOCKING
         bool "httpd_queue_work as blocking API"
         help
