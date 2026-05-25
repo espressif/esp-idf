@@ -259,6 +259,10 @@ config SOC_CPU_LOCKUP_DEBUG_SUPPORTED
     bool
     default y
 
+config SOC_DEBUG_PROBE_SUPPORTED
+    bool
+    default y
+
 config SOC_WDT_SUPPORTED
     bool
     default y
@@ -650,6 +654,14 @@ config SOC_GPIO_CLOCKOUT_CHANNEL_NUM
 config SOC_CLOCKOUT_SUPPORT_CHANNEL_DIVIDER
     bool
     default y
+
+config SOC_DEBUG_PROBE_NUM_UNIT
+    int
+    default 2
+
+config SOC_DEBUG_PROBE_MAX_OUTPUT_WIDTH
+    int
+    default 16
 
 config SOC_RTCIO_PIN_COUNT
     int
