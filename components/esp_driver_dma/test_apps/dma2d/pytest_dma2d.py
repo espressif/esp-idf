@@ -19,6 +19,20 @@ def test_dma2d(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
+@pytest.mark.generic
+@pytest.mark.esp32p4_rev1
+@pytest.mark.parametrize(
+    'config',
+    [
+        'esp32p4_rev1',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32p4'], indirect=['target'])
+def test_dma2d_esp32p4_rev1(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
+
+
 @pytest.mark.flash_encryption
 @pytest.mark.parametrize(
     'config',
