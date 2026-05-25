@@ -200,9 +200,17 @@ if(CONFIG_ESP_PHY_ENABLED)
 
         set(phy_name "phy")
 
-        esptool_py_flash_target(${phy_name}-flash "${main_args}" "${sub_args}")
-        esptool_py_flash_target_image(${phy_name}-flash ${phy_name} "${phy_partition_offset}" "${phy_init_data_bin}")
-        esptool_py_flash_target_image(flash ${phy_name} "${phy_partition_offset}" "${phy_init_data_bin}")
+        # When the multiple PHY init data bin is embedded into the application image
+        # (CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN_EMBED=y), the data is already part of
+        # app.bin and there is no need to flash it again to the `phy` data partition.
+        # Skip registering it as a flashable image in that case.
+        if(NOT CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN_EMBED)
+            esptool_py_flash_target(${phy_name}-flash "${main_args}" "${sub_args}")
+            esptool_py_flash_target_image(${phy_name}-flash ${phy_name}
+                "${phy_partition_offset}" "${phy_init_data_bin}")
+            esptool_py_flash_target_image(flash ${phy_name}
+                "${phy_partition_offset}" "${phy_init_data_bin}")
+        endif()
     endif()
 
 endif()
