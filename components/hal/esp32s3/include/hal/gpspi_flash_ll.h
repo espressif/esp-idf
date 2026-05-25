@@ -36,7 +36,6 @@ extern "C" {
                                         )) )
 
 typedef typeof(GPSPI2.clock.val) gpspi_flash_ll_clock_reg_t;
-#define GPSPI_FLASH_LL_PERIPHERAL_FREQUENCY_MHZ 80
 
 /*------------------------------------------------------------------------------
  * Control
