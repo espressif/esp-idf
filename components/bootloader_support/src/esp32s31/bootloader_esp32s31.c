@@ -112,7 +112,7 @@ esp_err_t bootloader_init(void)
 {
     esp_err_t ret = ESP_OK;
 
-    bootloader_hardware_init();       // TODO: IDF-14696
+    bootloader_hardware_init();
     bootloader_ana_reset_config();
 #if SOC_RTC_WDT_SUPPORTED
     bootloader_super_wdt_auto_feed();
