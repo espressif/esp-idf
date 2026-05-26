@@ -1,0 +1,3 @@
+-
+    re: "ESP-Hosted link not yet up"
+    hint: "Your hardware must contain WiFi co-processor and must be properly configured in menuconfig `Component config` → `Wi-Fi Remote`. See ESP-Hosted Troubleshooting Guide for more details: https://github.com/espressif/esp-hosted-mcu/blob/main/docs/troubleshooting.md"
