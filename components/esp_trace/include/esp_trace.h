@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -99,6 +99,27 @@ esp_trace_handle_t esp_trace_get_active_handle(void);
  * @return ESP_OK on success, otherwise see esp_err_t
  */
 esp_err_t esp_trace_write(esp_trace_handle_t handle, const void *data, size_t size, unsigned long tmo);
+
+/**
+ * @brief Resume trace event emission on the active session.
+ *
+ * @return ESP_OK on success, otherwise see esp_err_t
+ */
+esp_err_t esp_trace_start(void);
+
+/**
+ * @brief Pause trace event emission on the active session.
+ *
+ * @return ESP_OK on success, otherwise see esp_err_t
+ */
+esp_err_t esp_trace_stop(void);
+
+/**
+ * @brief Flush pending trace data through the encoder
+ *
+ * @return ESP_OK on success, otherwise see esp_err_t
+ */
+esp_err_t esp_trace_flush(void);
 
 /**
  * @brief Check if the host is connected

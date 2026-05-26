@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,13 @@ typedef struct esp_trace_transport esp_trace_transport_t;
 /**
  * @brief Encoder Virtual Table
  *
- * Defines the interface for trace encoders (libraries)
+ * Defines the interface for trace encoders (libraries).
+ *
+ * @warning Runtime callbacks (write, flush, take_lock, give_lock, panic_handler)
+ *          must not call FreeRTOS / IDF APIs that themselves emit trace hooks
+ *          (e.g. vTaskDelay, xQueue*, xSemaphore*) — doing so re-enters the
+ *          tracing path and can deadlock on the encoder lock or crash in ISR
+ *          context.
  */
 typedef struct {
     /**
@@ -49,8 +55,20 @@ typedef struct {
      */
     void (*panic_handler)(esp_trace_encoder_t *enc, const void *info);
 
+    /** @brief Resume trace event emission */
+    esp_err_t (*start)(esp_trace_encoder_t *enc);
+
+    /** @brief Pause trace event emission */
+    esp_err_t (*stop)(esp_trace_encoder_t *enc);
+
+    /** @brief Flush pending trace data through the encoder */
+    esp_err_t (*flush)(esp_trace_encoder_t *enc);
+
     /**
-     * @brief Take encoder lock
+     * @brief Take encoder lock.
+     *        Callers should pass ESP_TRACE_TMO_INFINITE unless they explicitly
+     *        check the return value — pairing a failed take with give_lock()
+     *        causes a spinlock owner-mismatch assert.
      * @param enc Encoder instance
      * @param tmo Timeout in microseconds
      * @return Lock state (for recursive locking) or 0 on failure
