@@ -55,16 +55,14 @@ static psa_status_t esp_crypto_aes_gcm_setup(
     }
 
     esp_aes_gcm_init(ctx);
+    esp_aes_gcm_driver_ctx->esp_aes_gcm_ctx = (void *) ctx;
 
     status = mbedtls_to_psa_error(esp_aes_gcm_setkey(ctx, 2, key_buffer, key_buffer_size * 8));
-
     if (status != PSA_SUCCESS) {
-        esp_aes_gcm_free(ctx);
-        free(ctx);
+        (void)esp_crypto_aes_gcm_abort(esp_aes_gcm_driver_ctx);
         goto exit;
     }
 
-    esp_aes_gcm_driver_ctx->esp_aes_gcm_ctx = (void *) ctx;
     esp_aes_gcm_driver_ctx->mode = mode;
     esp_aes_gcm_driver_ctx->tag_length = tag_length;
 

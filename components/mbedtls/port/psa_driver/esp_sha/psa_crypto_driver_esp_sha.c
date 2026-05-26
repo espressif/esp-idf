@@ -226,6 +226,9 @@ psa_status_t esp_sha_hash_update(
     if (input == NULL && input_length != 0) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
+    if (input_length == 0) {
+        return PSA_SUCCESS;
+    }
 #ifdef MBEDTLS_PSA_ACCEL_ALG_SHA_1
     if (operation->sha_type == ESP_SHA_OPERATION_TYPE_SHA1) {
         esp_sha1_context *ctx = (esp_sha1_context *)operation->sha_ctx;
@@ -274,11 +277,6 @@ psa_status_t esp_sha_hash_finish(
     }
     if (hash_size < expected_size) {
         return PSA_ERROR_BUFFER_TOO_SMALL;
-    }
-
-    *hash_length = expected_size;
-    if (hash_size != 0) {
-        memset(hash, '!', hash_size);
     }
 
 #ifdef MBEDTLS_PSA_ACCEL_ALG_SHA_1

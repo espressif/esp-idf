@@ -104,6 +104,14 @@ psa_status_t esp_aes_cipher_set_iv(
     const uint8_t *iv,
     size_t iv_length)
 {
+    if (esp_aes_driver_ctx == NULL || esp_aes_driver_ctx->esp_aes_ctx == NULL) {
+        return PSA_ERROR_BAD_STATE;
+    }
+
+    if (iv == NULL && iv_length > 0) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
     if (iv_length != PSA_CIPHER_IV_LENGTH(PSA_KEY_TYPE_AES, esp_aes_driver_ctx->aes_alg)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -274,6 +282,19 @@ psa_status_t esp_aes_cipher_update(
 {
     int ret = -1;
     size_t expected_output_size;
+
+    if (output_length == NULL) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    if ((input == NULL && input_length > 0) ||
+        (output == NULL && output_size > 0)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (esp_aes_driver_ctx == NULL || esp_aes_driver_ctx->esp_aes_ctx == NULL) {
+        return PSA_ERROR_BAD_STATE;
+    }
+
     *output_length = 0;
 
     if (!PSA_ALG_IS_STREAM_CIPHER(esp_aes_driver_ctx->aes_alg)) {
@@ -384,14 +405,14 @@ static void add_pkcs_padding(unsigned char *output, size_t output_len,
     }
 }
 
-static int get_pkcs_padding(unsigned char *input, size_t input_len, size_t *data_len)
+/* Reports PKCS7 padding validity through *invalid_padding (a constant-time
+ * condition) instead of the return value, so esp_aes_cipher_finish can fold it
+ * into the result branchlessly and avoid a padding-oracle branch */
+static void get_pkcs_padding(unsigned char *input, size_t input_len, size_t *data_len,
+                             mbedtls_ct_condition_t *invalid_padding)
 {
     size_t i, pad_idx;
     unsigned char padding_len;
-
-    if (NULL == input || NULL == data_len) {
-        return MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA;
-    }
 
     padding_len = input[input_len - 1];
 
@@ -416,7 +437,7 @@ static int get_pkcs_padding(unsigned char *input, size_t input_len, size_t *data
     /* Gate *data_len on the bad flag so it does not leak padding validity. */
     *data_len = mbedtls_ct_if(bad, 0, pad_idx);
 
-    return mbedtls_ct_error_if_else_0(bad, MBEDTLS_ERR_CIPHER_INVALID_PADDING);
+    *invalid_padding = bad;
 }
 
 psa_status_t esp_aes_cipher_finish(
@@ -428,7 +449,7 @@ psa_status_t esp_aes_cipher_finish(
     int ret = -1;
     psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
     uint8_t temp_output_buffer[ESP_MBEDTLS_AES_MAX_BLOCK_LENGTH] = { 0 };
-    int invalid_padding = 0;
+    mbedtls_ct_condition_t invalid_padding = mbedtls_ct_bool(0);
 
     if (esp_aes_driver_ctx == NULL || esp_aes_driver_ctx->esp_aes_ctx == NULL) {
         return PSA_ERROR_BAD_STATE;
@@ -480,13 +501,8 @@ psa_status_t esp_aes_cipher_finish(
             }
 
             if (esp_aes_driver_ctx->mode == PSA_CRYPTO_DRIVER_DECRYPT) {
-                ret = get_pkcs_padding(temp_output_buffer, esp_aes_driver_ctx->block_length, output_length);
-                if (ret == MBEDTLS_ERR_CIPHER_INVALID_PADDING) {
-                    invalid_padding = 1;
-                } else if (ret != 0) {
-                    status = mbedtls_to_psa_error(ret);
-                    goto exit;
-                }
+                get_pkcs_padding(temp_output_buffer, esp_aes_driver_ctx->block_length,
+                                 output_length, &invalid_padding);
             } else {
                 *output_length = esp_aes_driver_ctx->block_length;
             }
@@ -530,7 +546,7 @@ psa_status_t esp_aes_cipher_finish(
         memcpy(output, temp_output_buffer, output_size);
     }
 
-    status = mbedtls_ct_error_if_else_0(mbedtls_ct_bool(invalid_padding),
+    status = mbedtls_ct_error_if_else_0(invalid_padding,
                                         PSA_ERROR_INVALID_PADDING);
     mbedtls_ct_condition_t buffer_too_small = mbedtls_ct_uint_lt(output_size, *output_length);
     status = mbedtls_ct_error_if(buffer_too_small,

@@ -6,6 +6,7 @@
 
 #include <string.h>
 #include <stdint.h>
+#include "mbedtls/platform_util.h"
 #include "psa/crypto.h"
 #include "psa_crypto_driver_esp_cmac.h"
 #include "psa_crypto_driver_esp_cmac_contexts.h"
@@ -159,12 +160,11 @@ psa_status_t esp_cmac_update(esp_cmac_operation_t *esp_cmac_ctx, const uint8_t *
     if (data == NULL && data_length != 0) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
-    if (data_length == 0) {
-        return PSA_SUCCESS;
-    }
-
     if (esp_cmac_ctx->alg == 0) {
         return PSA_ERROR_BAD_STATE;
+    }
+    if (data_length == 0) {
+        return PSA_SUCCESS;
     }
 
     state = esp_cmac_ctx->state;
@@ -354,6 +354,8 @@ exit:
     mbedtls_platform_zeroize(K1, sizeof(K1));
     mbedtls_platform_zeroize(K2, sizeof(K2));
     mbedtls_platform_zeroize(M_last, sizeof(M_last));
+
+    (void)esp_cmac_abort(esp_cmac_ctx);
 
     return status;
 }

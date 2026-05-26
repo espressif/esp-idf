@@ -82,6 +82,8 @@ psa_status_t esp_rsa_ds_pad_v21_encode(psa_algorithm_t hash_alg,
  * @param output_max_len    Maximum length of the output buffer
  * @param olen  Pointer to the length of the output data
  * @param hash_alg  Hash algorithm identifier
+ * @param label     OAEP label the ciphertext is bound to (may be NULL if label_length is 0)
+ * @param label_length  Length of the label in bytes
  * @return psa_status_t
  *       PSA_ERROR_INVALID_ARGUMENT if arguments are invalid
  *        PSA_SUCCESS on success
