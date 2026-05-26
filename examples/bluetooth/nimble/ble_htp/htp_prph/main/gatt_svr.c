@@ -123,7 +123,7 @@ gatt_svr_init(void)
 #if MYNEWT_VAL(BLE_GATTS)
     ble_svc_gatt_init();
 #endif
-#if CONFIG_BT_NIMBLE_ANS_SERVICE
+#if CONFIG_BT_NIMBLE_HTP_SERVICE
     ble_svc_htp_init();
 #endif
 
