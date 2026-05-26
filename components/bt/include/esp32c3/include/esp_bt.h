@@ -908,6 +908,19 @@ esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t po
  */
 int esp_bt_h4tl_eif_io_event_notify(int event);
 
+#if CONFIG_BT_CTRL_HCI_MODE_UART_H4 && CONFIG_BT_CTRL_HCI_UART_INIT_BY_CONTROLLER
+/**
+ * @brief Reconfigure HCI UART TX/RX pins (for DTM, no flow control)
+ *
+ * @param tx_pin  UART TX GPIO number
+ * @param rx_pin  UART RX GPIO number
+ *
+ * @return
+ *      - ESP_OK: success
+ */
+esp_err_t esp_bt_hci_uart_reconfig_pin(int tx_pin, int rx_pin);
+#endif /* CONFIG_BT_CTRL_HCI_MODE_UART_H4 && CONFIG_BT_CTRL_HCI_UART_INIT_BY_CONTROLLER */
+
 /**
  * @brief Virtual HCI (VHCI) callback functions to notify the Host on the next operation
  */
