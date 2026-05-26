@@ -30,6 +30,7 @@
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_EFUSE_SUPPORTED                 (1)
 #define SOC_EFUSE_KEY_PURPOSE_FIELD         (1)
+#define SOC_WDT_SUPPORTED                   (1)
 
 /*-------------------------- CPU CAPS ----------------------------------------*/
 #define SOC_CPU_CORES_NUM               (1U)

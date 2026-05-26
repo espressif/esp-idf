@@ -306,11 +306,11 @@ menu "ESP System Settings"
 
     config ESP_TASK_WDT_USE_ESP_TIMER
         # Software implementation of Task Watchdog, handy for targets with only a single
-        # Timer Group, such as the ESP32-C2
+        # Timer Group, such as the ESP32-C2, or without hardware watchdog like Linux
         bool
         depends on ESP_TASK_WDT_EN
-        default y if IDF_TARGET_ESP32C2
-        default n if !IDF_TARGET_ESP32C2
+        default y if IDF_TARGET_ESP32C2 || IDF_TARGET_LINUX
+        default n if !IDF_TARGET_ESP32C2 && !IDF_TARGET_LINUX
         select ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
 
     config ESP_TASK_WDT_INIT

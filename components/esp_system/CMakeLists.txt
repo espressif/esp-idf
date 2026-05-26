@@ -3,16 +3,25 @@ idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 
 # On Linux, we only support a few features, hence this simple component registration
 if(${target} STREQUAL "linux")
-    idf_component_register(SRCS "esp_system.c"
-                        "esp_err.c"
-                        "esp_sys_event.c"
-                        "port/soc/linux/reset_reason.c"
-                        "port/soc/linux/system_internal.c"
-                        "port/esp_system_linux.c"
-                        "freertos_hooks.c"
-                        "startup.c"
+    set(linux_srcs "esp_system.c"
+                   "esp_err.c"
+                   "esp_sys_event.c"
+                   "port/soc/linux/reset_reason.c"
+                   "port/soc/linux/system_internal.c"
+                   "port/soc/linux/wdt_simulator.c"
+                   "port/esp_system_linux.c"
+                   "freertos_hooks.c"
+                   "startup.c")
+    set(linux_priv_requires spi_flash esp_timer esp_mspi)
+
+    if(CONFIG_ESP_TASK_WDT_EN)
+        list(APPEND linux_srcs "task_wdt/task_wdt.c"
+                               "task_wdt/task_wdt_impl_esp_timer.c")
+    endif()
+
+    idf_component_register(SRCS ${linux_srcs}
                         INCLUDE_DIRS "include"
-                        PRIV_REQUIRES esp_mspi)
+                        PRIV_REQUIRES ${linux_priv_requires})
 
     # Add custom ld file (used to place system init functions).
     # Mach-O (Apple) does not support linker scripts; section bounds are resolved

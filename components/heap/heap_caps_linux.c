@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
+#include "esp_heap_caps_init.h"
 
 #ifdef CONFIG_HEAP_ABORT_WHEN_ALLOCATION_FAILS
 #include "esp_system.h"
@@ -237,4 +238,13 @@ void *heap_caps_aligned_calloc(size_t alignment, size_t n, size_t size, uint32_t
     }
 
     return ptr;
+}
+
+/*
+ * The Linux simulator uses a plain malloc-backed heap, so there are no
+ * non-OS startup-stack heaps to enable. This is a no-op provided so that the
+ * common startup code (app_startup.c) links on Linux.
+ */
+void heap_caps_enable_nonos_stack_heaps(void)
+{
 }

@@ -86,6 +86,7 @@ if(arch STREQUAL "linux")
         "${kernel_impl}/portable/${arch}/utils/linux_port_coop_syscalls.c")
     if(kernel_impl STREQUAL "FreeRTOS-Kernel")
         list(APPEND srcs
+            "app_startup.c"
             "${kernel_impl}/portable/${arch}/port_idf.c")
     endif()
 else()

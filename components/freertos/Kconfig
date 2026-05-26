@@ -106,6 +106,7 @@ menu "FreeRTOS"
 
         config FREERTOS_USE_IDLE_HOOK
             bool "configUSE_IDLE_HOOK"
+            default y if IDF_TARGET="linux" && ESP_TASK_WDT_EN=y
             default n
             help
                 Enables the idle task application hook (see configUSE_IDLE_HOOK documentation for more details).
@@ -132,6 +133,7 @@ menu "FreeRTOS"
 
         config FREERTOS_USE_TICK_HOOK
             bool "configUSE_TICK_HOOK"
+            default y if IDF_TARGET="linux" && ESP_INT_WDT=y
             default n
             help
                 Enables the tick hook (see configUSE_TICK_HOOK documentation for more details).
