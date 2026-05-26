@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,6 +42,21 @@ typedef enum {
     RTCIO_LL_OUTPUT_NORMAL = 0,    /*!< RTCIO output mode is normal. */
     RTCIO_LL_OUTPUT_OD = 0x1,      /*!< RTCIO output mode is open-drain. */
 } rtcio_ll_out_mode_t;
+
+/**
+ * @brief Enable/Disable LP_GPIO peripheral clock.
+ *
+ * @param enable true to enable the clock / false to disable the clock
+ */
+static inline void _rtcio_ll_enable_io_clock(bool enable)
+{
+    LP_GPIO.clk_en.reg_clk_en = enable;
+    while (LP_GPIO.clk_en.reg_clk_en != enable) {
+        ;
+    }
+}
+
+#define rtcio_ll_enable_io_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _rtcio_ll_enable_io_clock(__VA_ARGS__)
 
 /**
  * @brief Select RTC GPIO input to a signal.
@@ -120,21 +135,6 @@ static inline void rtcio_ll_iomux_func_sel(int rtcio_num, int func)
 }
 
 /**
- * @brief Enable/Disable LP_GPIO peripheral clock.
- *
- * @param enable true to enable the clock / false to disable the clock
- */
-static inline void _rtcio_ll_enable_io_clock(bool enable)
-{
-    LP_GPIO.clk_en.reg_clk_en = enable;
-    while (LP_GPIO.clk_en.reg_clk_en != enable) {
-        ;
-    }
-}
-
-#define rtcio_ll_enable_io_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _rtcio_ll_enable_io_clock(__VA_ARGS__)
-
-/**
  * @brief Select the lp_gpio/hp_gpio function to control the pad.
  *
  * @note The RTC function must be selected before the pad analog function is enabled.
@@ -149,8 +149,6 @@ static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
     if (func == RTCIO_LL_FUNC_RTC) {
         // 0: GPIO connected to digital GPIO module. 1: GPIO connected to analog RTC module.
         LP_IOMUX.pad[rtcio_num].mux_sel = 1;
-        // LP_GPIO is FUNC 1
-        rtcio_ll_iomux_func_sel(rtcio_num, RTCIO_LL_PIN_FUNC);
     } else if (func == RTCIO_LL_FUNC_DIGITAL) {
         // Clear the bit to use digital GPIO module
         LP_IOMUX.pad[rtcio_num].mux_sel = 0;
