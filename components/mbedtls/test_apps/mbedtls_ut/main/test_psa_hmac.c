@@ -41,6 +41,14 @@ static const uint8_t expected_hmac_sha256[] = {
     0x50, 0xd7, 0x15, 0x78, 0x82, 0x10, 0xbe, 0xc6,
 };
 
+/* HMAC-SHA256(key_256, "") — MAC of an empty (zero-length) message. */
+static const uint8_t expected_hmac_sha256_empty[] = {
+    0x46, 0x24, 0x76, 0xa8, 0x97, 0xdd, 0xfd, 0xbd,
+    0x40, 0xd1, 0x42, 0x0e, 0x08, 0xa5, 0xbc, 0xfe,
+    0xeb, 0x25, 0xc3, 0xe2, 0xad, 0xe6, 0xa0, 0xa9,
+    0x08, 0x3b, 0x32, 0x7b, 0x9e, 0xf9, 0xfc, 0xa1,
+};
+
 // Helper function to set up key attributes for HMAC
 static void setup_hmac_key_attributes(psa_key_attributes_t *attributes,
                                        psa_algorithm_t alg,
@@ -160,6 +168,27 @@ TEST_CASE("PSA HMAC SHA-256 test", "[psa_hmac]")
     psa_reset_key_attributes(&attributes);
 }
 
+TEST_CASE("PSA HMAC SHA-256 empty input test", "[psa_hmac]")
+{
+    psa_status_t status;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t key_id = 0;
+    psa_algorithm_t alg = PSA_ALG_HMAC(PSA_ALG_SHA_256);
+
+    setup_hmac_key_attributes(&attributes, alg, PSA_KEY_LIFETIME_VOLATILE);
+
+    status = psa_import_key(&attributes, key_256, sizeof(key_256), &key_id);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
+
+    /* A zero-length input must produce HMAC(key, ""), not an error. */
+    test_hmac_compute_and_verify(key_id, alg, test_data, 0,
+                                 expected_hmac_sha256_empty,
+                                 sizeof(expected_hmac_sha256_empty));
+
+    psa_destroy_key(key_id);
+    psa_reset_key_attributes(&attributes);
+}
+
 TEST_CASE("PSA HMAC SHA-256 multipart test", "[psa_hmac]")
 {
     psa_status_t status;
@@ -252,6 +281,46 @@ TEST_CASE("PSA HMAC opaque driver compute and verify", "[psa_hmac][efuse_hmac_ke
 
     status = psa_mac_verify(key_id, alg, test_data, sizeof(test_data),
                             expected_hmac_sha256, sizeof(expected_hmac_sha256));
+    TEST_ASSERT_EQUAL_HEX32(PSA_SUCCESS, status);
+
+    psa_destroy_key(key_id);
+    psa_reset_key_attributes(&attributes);
+}
+
+TEST_CASE("PSA HMAC opaque driver empty input compute and verify", "[psa_hmac][efuse_hmac_key]")
+{
+    psa_status_t status;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t key_id = 0;
+    psa_algorithm_t alg = PSA_ALG_HMAC(PSA_ALG_SHA_256);
+
+    esp_hmac_opaque_key_t opaque_key = {
+        .efuse_key_id = HMAC_EFUSE_KEY_ID,
+    };
+
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE | PSA_KEY_USAGE_VERIFY_MESSAGE);
+    psa_set_key_algorithm(&attributes, alg);
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_HMAC);
+    psa_set_key_bits(&attributes, 256);
+    psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_ESP_HMAC_VOLATILE);
+
+    status = psa_import_key(&attributes, (uint8_t *)&opaque_key, sizeof(opaque_key), &key_id);
+    TEST_ASSERT_EQUAL_HEX32(PSA_SUCCESS, status);
+
+    /*
+     * Zero-length input: update() no-ops, so finish() must compute HMAC(key, "")
+     * rather than returning PSA_ERROR_BAD_STATE.
+     */
+    uint8_t mac[32] = {0};
+    size_t mac_length = 0;
+    status = psa_mac_compute(key_id, alg, test_data, 0,
+                             mac, sizeof(mac), &mac_length);
+    TEST_ASSERT_EQUAL_HEX32(PSA_SUCCESS, status);
+    TEST_ASSERT_EQUAL(sizeof(expected_hmac_sha256_empty), mac_length);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_hmac_sha256_empty, mac, mac_length);
+
+    status = psa_mac_verify(key_id, alg, test_data, 0,
+                            expected_hmac_sha256_empty, sizeof(expected_hmac_sha256_empty));
     TEST_ASSERT_EQUAL_HEX32(PSA_SUCCESS, status);
 
     psa_destroy_key(key_id);

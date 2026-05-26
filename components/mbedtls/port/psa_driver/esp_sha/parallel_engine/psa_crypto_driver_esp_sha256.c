@@ -123,76 +123,76 @@ static const uint32_t K[] = {
 
 #define R(t)                                    \
 (                                               \
-    W[t] = S1(W[t -  2]) + W[t -  7] +          \
-           S0(W[t - 15]) + W[t - 16]            \
+    local.W[t] = S1(local.W[t -  2]) + local.W[t -  7] +    \
+           S0(local.W[t - 15]) + local.W[t - 16]            \
 )
 
 #define P(a,b,c,d,e,f,g,h,x,K)                  \
 {                                               \
-    temp1 = h + S3(e) + F1(e,f,g) + K + x;      \
-    temp2 = S2(a) + F0(a,b,c);                  \
-    d += temp1; h = temp1 + temp2;              \
+    local.temp1 = h + S3(e) + F1(e,f,g) + (K) + (x);      \
+    local.temp2 = S2(a) + F0(a,b,c);                  \
+    d += local.temp1; h = local.temp1 + local.temp2;              \
 }
 
 static void esp_sha256_software_process(esp_sha256_context *ctx, const unsigned char data[64])
 {
-    uint32_t temp1, temp2, W[64] = {0};
-    uint32_t A[8] = {0};
+    struct {
+        uint32_t temp1, temp2, W[64];
+        uint32_t A[8];
+    } local;
     unsigned int i = 0;
 
     for ( i = 0; i < 8; i++ ) {
-        A[i] = ctx->state[i];
+        local.A[i] = ctx->state[i];
     }
 
 #if defined(MBEDTLS_SHA256_SMALLER)
     for ( i = 0; i < 64; i++ ) {
         if ( i < 16 ) {
-            GET_UINT32_BE( W[i], data, 4 * i );
+            GET_UINT32_BE( local.W[i], data, 4 * i );
         } else {
             R( i );
         }
 
-        P( A[0], A[1], A[2], A[3], A[4], A[5], A[6], A[7], W[i], K[i] );
+        P( local.A[0], local.A[1], local.A[2], local.A[3], local.A[4], local.A[5], local.A[6], local.A[7], local.W[i], K[i] );
 
-        temp1 = A[7]; A[7] = A[6]; A[6] = A[5]; A[5] = A[4]; A[4] = A[3];
-        A[3] = A[2]; A[2] = A[1]; A[1] = A[0]; A[0] = temp1;
+        local.temp1 = local.A[7]; local.A[7] = local.A[6]; local.A[6] = local.A[5]; local.A[5] = local.A[4]; local.A[4] = local.A[3];
+        local.A[3] = local.A[2]; local.A[2] = local.A[1]; local.A[1] = local.A[0]; local.A[0] = local.temp1;
     }
 #else /* MBEDTLS_SHA256_SMALLER */
     for ( i = 0; i < 16; i++ ) {
-        GET_UINT32_BE( W[i], data, 4 * i );
+        GET_UINT32_BE( local.W[i], data, 4 * i );
     }
 
     for ( i = 0; i < 16; i += 8 ) {
-        P( A[0], A[1], A[2], A[3], A[4], A[5], A[6], A[7], W[i + 0], K[i + 0] );
-        P( A[7], A[0], A[1], A[2], A[3], A[4], A[5], A[6], W[i + 1], K[i + 1] );
-        P( A[6], A[7], A[0], A[1], A[2], A[3], A[4], A[5], W[i + 2], K[i + 2] );
-        P( A[5], A[6], A[7], A[0], A[1], A[2], A[3], A[4], W[i + 3], K[i + 3] );
-        P( A[4], A[5], A[6], A[7], A[0], A[1], A[2], A[3], W[i + 4], K[i + 4] );
-        P( A[3], A[4], A[5], A[6], A[7], A[0], A[1], A[2], W[i + 5], K[i + 5] );
-        P( A[2], A[3], A[4], A[5], A[6], A[7], A[0], A[1], W[i + 6], K[i + 6] );
-        P( A[1], A[2], A[3], A[4], A[5], A[6], A[7], A[0], W[i + 7], K[i + 7] );
+        P( local.A[0], local.A[1], local.A[2], local.A[3], local.A[4], local.A[5], local.A[6], local.A[7], local.W[i + 0], K[i + 0] );
+        P( local.A[7], local.A[0], local.A[1], local.A[2], local.A[3], local.A[4], local.A[5], local.A[6], local.W[i + 1], K[i + 1] );
+        P( local.A[6], local.A[7], local.A[0], local.A[1], local.A[2], local.A[3], local.A[4], local.A[5], local.W[i + 2], K[i + 2] );
+        P( local.A[5], local.A[6], local.A[7], local.A[0], local.A[1], local.A[2], local.A[3], local.A[4], local.W[i + 3], K[i + 3] );
+        P( local.A[4], local.A[5], local.A[6], local.A[7], local.A[0], local.A[1], local.A[2], local.A[3], local.W[i + 4], K[i + 4] );
+        P( local.A[3], local.A[4], local.A[5], local.A[6], local.A[7], local.A[0], local.A[1], local.A[2], local.W[i + 5], K[i + 5] );
+        P( local.A[2], local.A[3], local.A[4], local.A[5], local.A[6], local.A[7], local.A[0], local.A[1], local.W[i + 6], K[i + 6] );
+        P( local.A[1], local.A[2], local.A[3], local.A[4], local.A[5], local.A[6], local.A[7], local.A[0], local.W[i + 7], K[i + 7] );
     }
 
     for ( i = 16; i < 64; i += 8 ) {
-        P( A[0], A[1], A[2], A[3], A[4], A[5], A[6], A[7], R(i + 0), K[i + 0] );
-        P( A[7], A[0], A[1], A[2], A[3], A[4], A[5], A[6], R(i + 1), K[i + 1] );
-        P( A[6], A[7], A[0], A[1], A[2], A[3], A[4], A[5], R(i + 2), K[i + 2] );
-        P( A[5], A[6], A[7], A[0], A[1], A[2], A[3], A[4], R(i + 3), K[i + 3] );
-        P( A[4], A[5], A[6], A[7], A[0], A[1], A[2], A[3], R(i + 4), K[i + 4] );
-        P( A[3], A[4], A[5], A[6], A[7], A[0], A[1], A[2], R(i + 5), K[i + 5] );
-        P( A[2], A[3], A[4], A[5], A[6], A[7], A[0], A[1], R(i + 6), K[i + 6] );
-        P( A[1], A[2], A[3], A[4], A[5], A[6], A[7], A[0], R(i + 7), K[i + 7] );
+        P( local.A[0], local.A[1], local.A[2], local.A[3], local.A[4], local.A[5], local.A[6], local.A[7], R(i + 0), K[i + 0] );
+        P( local.A[7], local.A[0], local.A[1], local.A[2], local.A[3], local.A[4], local.A[5], local.A[6], R(i + 1), K[i + 1] );
+        P( local.A[6], local.A[7], local.A[0], local.A[1], local.A[2], local.A[3], local.A[4], local.A[5], R(i + 2), K[i + 2] );
+        P( local.A[5], local.A[6], local.A[7], local.A[0], local.A[1], local.A[2], local.A[3], local.A[4], R(i + 3), K[i + 3] );
+        P( local.A[4], local.A[5], local.A[6], local.A[7], local.A[0], local.A[1], local.A[2], local.A[3], R(i + 4), K[i + 4] );
+        P( local.A[3], local.A[4], local.A[5], local.A[6], local.A[7], local.A[0], local.A[1], local.A[2], R(i + 5), K[i + 5] );
+        P( local.A[2], local.A[3], local.A[4], local.A[5], local.A[6], local.A[7], local.A[0], local.A[1], R(i + 6), K[i + 6] );
+        P( local.A[1], local.A[2], local.A[3], local.A[4], local.A[5], local.A[6], local.A[7], local.A[0], R(i + 7), K[i + 7] );
     }
 #endif /* MBEDTLS_SHA256_SMALLER */
 
     for ( i = 0; i < 8; i++ ) {
-        ctx->state[i] += A[i];
+        ctx->state[i] += local.A[i];
     }
 
-    mbedtls_platform_zeroize(W, sizeof(W));
-    mbedtls_platform_zeroize(A, sizeof(A));
-    temp1 = temp2 = 0;
-    (void)temp1; (void)temp2;
+    /* Zeroise buffers and variables to clear sensitive data from memory. */
+    mbedtls_platform_zeroize(&local, sizeof(local));
 }
 static int esp_internal_sha256_parallel_engine_process(esp_sha256_context *ctx, const unsigned char data[64], bool read_digest)
 {
@@ -325,7 +325,18 @@ static int esp_sha256_finish(esp_sha256_context *ctx, unsigned char *output)
     PUT_UINT32_BE( ctx->state[4], output, 16 );
     PUT_UINT32_BE( ctx->state[5], output, 20 );
     PUT_UINT32_BE( ctx->state[6], output, 24 );
+
+#if SOC_SHA_SUPPORT_SHA224
+    /* SHA-224 output is 28 bytes (7 state words); only SHA-256 emits the 8th
+     * word. Writing state[7] for SHA-224 overflows a contract-valid 28-byte
+     * output buffer by 4 bytes. Mirrors the mbedtls reference !is224 guard and
+     * the esp_sha512_finish SHA2_512 guard in this same engine. */
+    if ( ctx->mode != SHA2_224 ) {
+        PUT_UINT32_BE( ctx->state[7], output, 28 );
+    }
+#else
     PUT_UINT32_BE( ctx->state[7], output, 28 );
+#endif /* SOC_SHA_SUPPORT_SHA224 */
 
 
 out:

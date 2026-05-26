@@ -221,13 +221,13 @@ psa_status_t esp_hmac_update_transparent(esp_hmac_transparent_operation_t *esp_h
     if (data == NULL && data_length != 0) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
+    if (esp_hmac_ctx->alg == 0) {
+        return PSA_ERROR_BAD_STATE;
+    }
     if (data_length == 0) {
         return PSA_SUCCESS;
     }
 
-    if (esp_hmac_ctx->alg == 0) {
-        return PSA_ERROR_BAD_STATE;
-    }
 
 #if defined(ESP_MD5_DRIVER_ENABLED)
     psa_algorithm_t hash_alg = PSA_ALG_GET_HASH(esp_hmac_ctx->alg);
@@ -271,6 +271,7 @@ psa_status_t esp_hmac_finish_transparent(
         status = esp_sha_hash_finish(&esp_hmac_ctx->esp_sha_ctx, tmp, sizeof(tmp), &hash_size);
     }
     if (status != PSA_SUCCESS) {
+        (void)esp_hmac_abort_transparent(esp_hmac_ctx);
         return status;
     }
     /* From here on, tmp needs to be wiped. */
@@ -342,6 +343,7 @@ psa_status_t esp_hmac_finish_transparent(
 
 exit:
     mbedtls_platform_zeroize(tmp, hash_size);
+    (void)esp_hmac_abort_transparent(esp_hmac_ctx);
     return status;
 }
 
