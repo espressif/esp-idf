@@ -146,8 +146,10 @@ static const uint64_t K[80] = {
 static void esp_sha512_software_process(esp_sha512_context *ctx, const unsigned char data[128])
 {
     int i;
-    uint64_t temp1, temp2, W[80];
-    uint64_t A, B, C, D, E, F, G, H;
+    struct {
+        uint64_t temp1, temp2, W[80];
+        uint64_t A[8];
+    } local;
 
 #define  SHR(x,n) (x >> n)
 #define ROTR(x,n) (SHR(x,n) | (x << (64 - n)))
@@ -163,55 +165,42 @@ static void esp_sha512_software_process(esp_sha512_context *ctx, const unsigned 
 
 #define P(a,b,c,d,e,f,g,h,x,K)                  \
 {                                               \
-    temp1 = h + S3(e) + F1(e,f,g) + K + x;      \
-    temp2 = S2(a) + F0(a,b,c);                  \
-    d += temp1; h = temp1 + temp2;              \
+    local.temp1 = h + S3(e) + F1(e,f,g) + (K) + (x);      \
+    local.temp2 = S2(a) + F0(a,b,c);                  \
+    d += local.temp1; h = local.temp1 + local.temp2;              \
 }
 
     for ( i = 0; i < 16; i++ ) {
-        GET_UINT64_BE( W[i], data, i << 3 );
+        GET_UINT64_BE( local.W[i], data, i << 3 );
     }
 
     for ( ; i < 80; i++ ) {
-        W[i] = S1(W[i -  2]) + W[i -  7] +
-               S0(W[i - 15]) + W[i - 16];
+        local.W[i] = S1(local.W[i -  2]) + local.W[i -  7] +
+               S0(local.W[i - 15]) + local.W[i - 16];
     }
 
-    A = ctx->state[0];
-    B = ctx->state[1];
-    C = ctx->state[2];
-    D = ctx->state[3];
-    E = ctx->state[4];
-    F = ctx->state[5];
-    G = ctx->state[6];
-    H = ctx->state[7];
+    for (i = 0; i < 8; i++) {
+        local.A[i] = ctx->state[i];
+    }
+
     i = 0;
 
     do {
-        P( A, B, C, D, E, F, G, H, W[i], K[i] ); i++;
-        P( H, A, B, C, D, E, F, G, W[i], K[i] ); i++;
-        P( G, H, A, B, C, D, E, F, W[i], K[i] ); i++;
-        P( F, G, H, A, B, C, D, E, W[i], K[i] ); i++;
-        P( E, F, G, H, A, B, C, D, W[i], K[i] ); i++;
-        P( D, E, F, G, H, A, B, C, W[i], K[i] ); i++;
-        P( C, D, E, F, G, H, A, B, W[i], K[i] ); i++;
-        P( B, C, D, E, F, G, H, A, W[i], K[i] ); i++;
+        P( local.A[0], local.A[1], local.A[2], local.A[3], local.A[4], local.A[5], local.A[6], local.A[7], local.W[i], K[i] ); i++;
+        P( local.A[7], local.A[0], local.A[1], local.A[2], local.A[3], local.A[4], local.A[5], local.A[6], local.W[i], K[i] ); i++;
+        P( local.A[6], local.A[7], local.A[0], local.A[1], local.A[2], local.A[3], local.A[4], local.A[5], local.W[i], K[i] ); i++;
+        P( local.A[5], local.A[6], local.A[7], local.A[0], local.A[1], local.A[2], local.A[3], local.A[4], local.W[i], K[i] ); i++;
+        P( local.A[4], local.A[5], local.A[6], local.A[7], local.A[0], local.A[1], local.A[2], local.A[3], local.W[i], K[i] ); i++;
+        P( local.A[3], local.A[4], local.A[5], local.A[6], local.A[7], local.A[0], local.A[1], local.A[2], local.W[i], K[i] ); i++;
+        P( local.A[2], local.A[3], local.A[4], local.A[5], local.A[6], local.A[7], local.A[0], local.A[1], local.W[i], K[i] ); i++;
+        P( local.A[1], local.A[2], local.A[3], local.A[4], local.A[5], local.A[6], local.A[7], local.A[0], local.W[i], K[i] ); i++;
     } while ( i < 80 );
 
-    ctx->state[0] += A;
-    ctx->state[1] += B;
-    ctx->state[2] += C;
-    ctx->state[3] += D;
-    ctx->state[4] += E;
-    ctx->state[5] += F;
-    ctx->state[6] += G;
-    ctx->state[7] += H;
+    for (i = 0; i < 8; i++) {
+        ctx->state[i] += local.A[i];
+    }
 
-    mbedtls_platform_zeroize(W, sizeof(W));
-    A = B = C = D = E = F = G = H = 0;
-    temp1 = temp2 = 0;
-    (void)A; (void)B; (void)C; (void)D; (void)E; (void)F; (void)G; (void)H;
-    (void)temp1; (void)temp2;
+    mbedtls_platform_zeroize(&local, sizeof(local));
 }
 
 static int esp_internal_sha512_parallel_engine_process( esp_sha512_context *ctx, const unsigned char data[128], bool read_digest )
@@ -244,6 +233,7 @@ int esp_internal_sha512_process( esp_sha512_context *ctx, const unsigned char da
 {
     return esp_internal_sha512_parallel_engine_process(ctx, data, true);
 }
+
 static int esp_sha512_update(esp_sha512_context *ctx, const unsigned char *input,
                                size_t ilen)
 {

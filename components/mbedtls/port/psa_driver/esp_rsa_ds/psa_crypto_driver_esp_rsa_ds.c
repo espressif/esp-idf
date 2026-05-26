@@ -565,10 +565,12 @@ psa_status_t esp_rsa_ds_opaque_sign_hash_complete(
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
+    psa_status_t status;
     esp_err_t err = esp_ds_finish_sign((void *)operation->sig_buffer, operation->esp_rsa_ds_ctx);
     operation->esp_rsa_ds_ctx = NULL;
     if (err != ESP_OK) {
-        return PSA_ERROR_GENERIC_ERROR;
+        status = PSA_ERROR_GENERIC_ERROR;
+        goto cleanup;
     }
 
     unsigned int words_len = expected_signature_size / 4;
@@ -579,8 +581,11 @@ psa_status_t esp_rsa_ds_opaque_sign_hash_complete(
     }
 
     *signature_length = expected_signature_size;
+    status = PSA_SUCCESS;
 
-    return PSA_SUCCESS;
+cleanup:
+    (void)esp_rsa_ds_opaque_sign_hash_abort(operation);
+    return status;
 }
 
 psa_status_t esp_rsa_ds_opaque_sign_hash_abort(

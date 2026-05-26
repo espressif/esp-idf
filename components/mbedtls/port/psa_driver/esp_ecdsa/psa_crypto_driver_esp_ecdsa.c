@@ -1102,6 +1102,11 @@ psa_status_t esp_ecdsa_opaque_sign_hash_complete(
         ecdsa_curve_t hal_curve = esp_ecdsa_curve_to_hal_curve(curve);
         if (hal_curve == (ecdsa_curve_t)-1) {
             esp_ecdsa_release_hardware();
+#if SOC_KEY_MANAGER_SUPPORTED
+            if (key_recovery_info) {
+                esp_key_mgr_deactivate_key(key_recovery_info->key_type);
+            }
+#endif /* SOC_KEY_MANAGER_SUPPORTED */
             return PSA_ERROR_INVALID_ARGUMENT;
         }
 

@@ -221,6 +221,10 @@ Using an eFuse-based HMAC key:
         // failure calculating HMAC
     }
 
+.. note::
+
+    The ESP-HMAC opaque PSA driver is backed by the one-shot hardware HMAC peripheral, which computes the MAC over the whole message in a single operation and cannot save or restore intermediate state between calls. Multipart streaming is therefore not supported: supply the entire message in a single :cpp:func:`psa_mac_compute` call (as shown above) or in a single multipart update. A second non-empty update on the same operation returns ``PSA_ERROR_BAD_STATE``; the operation fails closed and never produces a MAC computed over only part of the message.
+
 API Reference
 -------------
 
