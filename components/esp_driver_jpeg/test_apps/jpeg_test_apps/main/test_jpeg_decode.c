@@ -139,3 +139,59 @@ TEST_CASE("JPEG decode image without Huffman table JPEG->RGB picture", "[jpeg]")
     free(tx_buf_no_huff);
     TEST_ESP_OK(jpeg_del_decoder_engine(jpgd_handle));
 }
+
+// Malformed JPEG used as a regression guard for the DQT index OOB write.
+// Layout: SOI, then a DQT segment whose table id (Tq) is 4 (> 3). A
+// non-hardened parser would index qt_tbl[4] and smash 256 bytes of stack;
+// the hardened parser must reject it and return an error without crashing.
+static const uint8_t s_malformed_dqt_jpg[] = {
+    0xFF, 0xD8,             // SOI
+    0xFF, 0xDB,             // DQT
+    0x00, 0x43,             // Lq = 67 (2 + 1 id + 64 table bytes)
+    0x04,                   // Pq=0, Tq=4 -> out-of-range table id
+    // 64 quantization-table bytes (content irrelevant; never consumed
+    // because the id is rejected first, but kept so the segment length
+    // is internally consistent and passes the buffer_left check).
+    [7 ... 70] = 0x01,
+};
+
+TEST_CASE("JPEG decode rejects malformed DQT index without crashing", "[jpeg]")
+{
+    jpeg_decoder_handle_t jpgd_handle;
+
+    jpeg_decode_engine_cfg_t decode_eng_cfg = {
+        .intr_priority = 0,
+        .timeout_ms = TIMEOUT_MS,
+    };
+
+    jpeg_decode_cfg_t decode_cfg = {
+        .output_format = JPEG_DECODE_OUT_FORMAT_RGB565,
+    };
+
+    jpeg_decode_memory_alloc_cfg_t rx_mem_cfg = {
+        .buffer_direction = JPEG_DEC_ALLOC_OUTPUT_BUFFER,
+    };
+
+    jpeg_decode_memory_alloc_cfg_t tx_mem_cfg = {
+        .buffer_direction = JPEG_DEC_ALLOC_INPUT_BUFFER,
+    };
+
+    size_t rx_buffer_size;
+    uint8_t *rx_buf = (uint8_t*)jpeg_alloc_decoder_mem(64 * 64 * 2, &rx_mem_cfg, &rx_buffer_size);
+
+    size_t tx_buffer_size;
+    uint8_t *tx_buf = (uint8_t*)jpeg_alloc_decoder_mem(sizeof(s_malformed_dqt_jpg), &tx_mem_cfg, &tx_buffer_size);
+    memcpy(tx_buf, s_malformed_dqt_jpg, sizeof(s_malformed_dqt_jpg));
+
+    TEST_ESP_OK(jpeg_new_decoder_engine(&decode_eng_cfg, &jpgd_handle));
+
+    uint32_t out_size = 0;
+    esp_err_t ret = jpeg_decoder_process(jpgd_handle, &decode_cfg, tx_buf,
+                                         sizeof(s_malformed_dqt_jpg), rx_buf,
+                                         rx_buffer_size, &out_size);
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, ret);
+
+    free(rx_buf);
+    free(tx_buf);
+    TEST_ESP_OK(jpeg_del_decoder_engine(jpgd_handle));
+}
