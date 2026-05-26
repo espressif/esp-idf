@@ -20,6 +20,12 @@
 #define BLE_LOG_SPI_DMA_ALIGN_BYTES         (4U)
 #define BLE_LOG_SPI_ALIGN_LOG_PERIOD        (256U)
 
+#if CONFIG_SPI_MASTER_ISR_IN_IRAM
+#define BLE_LOG_SPI_MASTER_DMA_CB_ATTR      BLE_LOG_IRAM_ATTR
+#else
+#define BLE_LOG_SPI_MASTER_DMA_CB_ATTR
+#endif
+
 /* VARIABLE */
 BLE_LOG_STATIC bool prph_inited = false;
 BLE_LOG_STATIC spi_device_handle_t dev_handle = NULL;
@@ -30,7 +36,7 @@ BLE_LOG_STATIC void spi_master_dma_tx_done_cb(spi_transaction_t *spi_trans);
 BLE_LOG_STATIC void spi_master_dma_pre_tx_cb(spi_transaction_t *spi_trans);
 
 /* PRIVATE FUNCTION */
-BLE_LOG_IRAM_ATTR BLE_LOG_STATIC void spi_master_dma_tx_done_cb(spi_transaction_t *spi_trans)
+BLE_LOG_SPI_MASTER_DMA_CB_ATTR BLE_LOG_STATIC void spi_master_dma_tx_done_cb(spi_transaction_t *spi_trans)
 {
     /* SPI slave performance issue workaround */
     last_tx_done_ts = esp_timer_get_time();
@@ -43,7 +49,7 @@ BLE_LOG_IRAM_ATTR BLE_LOG_STATIC void spi_master_dma_tx_done_cb(spi_transaction_
     __atomic_store_n(&trans->prph_owned, false, __ATOMIC_RELEASE);
 }
 
-BLE_LOG_IRAM_ATTR BLE_LOG_STATIC void spi_master_dma_pre_tx_cb(spi_transaction_t *spi_trans)
+BLE_LOG_SPI_MASTER_DMA_CB_ATTR BLE_LOG_STATIC void spi_master_dma_pre_tx_cb(spi_transaction_t *spi_trans)
 {
     /* SPI slave performance issue workaround */
     while ((esp_timer_get_time() - last_tx_done_ts) < BLE_LOG_SPI_TRANS_ITVL_MIN_US) {}
