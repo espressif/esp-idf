@@ -52,7 +52,15 @@ static void console_none_print(void)
 #endif
 
 #if CONFIG_VFS_SUPPORT_IO
-#if CONFIG_ESP_STDIO_MAX_FDS <= 0 || CONFIG_ESP_STDIO_MAX_FDS > 3
+#if CONFIG_ESP_STDIO_BASIC_MODE
+#define ESP_STDIO_RUN_OPEN_CLOSE_CHECK 1
+#elif CONFIG_ESP_STDIO_MAX_FDS > 3
+#define ESP_STDIO_RUN_OPEN_CLOSE_CHECK 1
+#else
+#define ESP_STDIO_RUN_OPEN_CLOSE_CHECK 0
+#endif
+
+#if ESP_STDIO_RUN_OPEN_CLOSE_CHECK
 static void console_open_close_check(void)
 {
     printf("Opening /dev/console\n");
@@ -72,7 +80,7 @@ static void console_open_close_check(void)
 
 static void stdio_fd_mode_behavior_check(void)
 {
-#if CONFIG_ESP_STDIO_MAX_FDS <= 0
+#if CONFIG_ESP_STDIO_BASIC_MODE
     printf("STDIO_TEST:MODE=BASIC\n");
 
     int fd0 = open("/dev/console", O_RDWR);
@@ -86,6 +94,11 @@ static void stdio_fd_mode_behavior_check(void)
     const char *msg = "STDIO_TEST:BASIC:WRITE_OK\n";
     ssize_t wr = write(fd0, msg, strlen(msg));
     assert(wr == (ssize_t) strlen(msg));
+
+    /* Verify write return value matches actual bytes (primary sink propagation) */
+    const char *short_msg = "ab";
+    wr = write(fd1, short_msg, 2);
+    assert(wr == 2);
 
     assert(close(fd0) == 0);
     assert(close(fd1) == 0);
@@ -127,6 +140,35 @@ static void stdio_fd_mode_behavior_check(void)
     assert(close(fd0) == 0);
     assert(close(fd2) == 0);
     assert(close(fd_reused) == 0);
+
+    int fd_ro = open("/dev/console", O_RDONLY);
+    assert(fd_ro >= 0);
+    errno = 0;
+    assert(write(fd_ro, "x", 1) < 0);
+    assert(errno == EBADF);
+    assert(close(fd_ro) == 0);
+
+    int fd_wo = open("/dev/console", O_WRONLY);
+    assert(fd_wo >= 0);
+    errno = 0;
+    char tmp = 0;
+    assert(read(fd_wo, &tmp, 1) < 0);
+    assert(errno == EBADF);
+    assert(close(fd_wo) == 0);
+
+    int fd_rw = open("/dev/console", O_RDWR);
+    assert(fd_rw >= 0);
+    const char *wmsg = "z";
+    ssize_t wret = write(fd_rw, wmsg, 1);
+    assert(wret == 1);
+    assert(close(fd_rw) == 0);
+    printf("STDIO_TEST:NON_BASIC:FLAGS_OK\n");
+
+    int fd_fsync = open("/dev/console", O_RDWR);
+    assert(fd_fsync >= 0);
+    assert(fsync(fd_fsync) == 0);
+    assert(close(fd_fsync) == 0);
+    printf("STDIO_TEST:NON_BASIC:FSYNC_OK\n");
 
     int fds[CONFIG_ESP_STDIO_MAX_FDS + 2];
     int opened = 0;
@@ -230,7 +272,7 @@ void app_main(void)
 #endif // CONFIG_ESP_CONSOLE_NONE
 
 #if CONFIG_VFS_SUPPORT_IO
-#if CONFIG_ESP_STDIO_MAX_FDS <= 0 || CONFIG_ESP_STDIO_MAX_FDS > 3
+#if ESP_STDIO_RUN_OPEN_CLOSE_CHECK
     console_open_close_check();
 #else
     printf("STDIO_TEST:SKIP:OPEN_CLOSE_CHECK\n");

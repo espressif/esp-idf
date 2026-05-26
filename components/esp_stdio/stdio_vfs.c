@@ -36,6 +36,7 @@
 #include "esp_private/startup_internal.h"
 #include "esp_private/nullfs.h"
 #include "esp_heap_caps.h"
+#include <sys/lock.h>
 #endif
 
 #define STRINGIFY(s) STRINGIFY2(s)
@@ -51,9 +52,11 @@
 
 #if CONFIG_VFS_SUPPORT_IO
 
-_Static_assert(CONFIG_ESP_STDIO_MAX_FDS == 0 || CONFIG_ESP_STDIO_MAX_FDS >= 3, "Invalid value for CONFIG_ESP_STDIO_MAX_FDS");
+#if !CONFIG_ESP_STDIO_BASIC_MODE
+_Static_assert(CONFIG_ESP_STDIO_MAX_FDS >= 3, "Invalid value for CONFIG_ESP_STDIO_MAX_FDS");
+#endif
 
-#define ESP_STDIO_IS_BASIC (CONFIG_ESP_STDIO_MAX_FDS <= 0)
+#define ESP_STDIO_IS_BASIC (CONFIG_ESP_STDIO_BASIC_MODE)
 
 typedef struct {
     const esp_vfs_fs_ops_t *ops;
@@ -80,10 +83,11 @@ typedef struct {
 } context_t;
 
 static context_t s_ctx = {0};
+static _lock_t s_ctx_lock;
 
 static const char *TAG = "esp_stdio";
 
-static inline bool is_fd_valid(int fd)
+static inline bool is_fd_valid_nolock(int fd)
 {
 #if ESP_STDIO_IS_BASIC
     return (fd >= 0) && (s_ctx.fd_count > 0);
@@ -91,6 +95,37 @@ static inline bool is_fd_valid(int fd)
     return (fd >= 0) && (fd < CONFIG_ESP_STDIO_MAX_FDS) && s_ctx.fds[fd].in_use;
 #endif
 }
+
+static inline bool is_fd_valid(int fd)
+{
+    bool valid;
+
+    _lock_acquire(&s_ctx_lock);
+    valid = is_fd_valid_nolock(fd);
+    _lock_release(&s_ctx_lock);
+
+    return valid;
+}
+
+#if !ESP_STDIO_IS_BASIC
+static inline int get_fd_flags_nolock(int fd)
+{
+    assert((fd >= 0) && (fd < CONFIG_ESP_STDIO_MAX_FDS));
+    return s_ctx.fds[fd].flags;
+}
+
+static inline bool fd_allows_read_nolock(int fd)
+{
+    const int flags = get_fd_flags_nolock(fd);
+    return (flags & O_ACCMODE) != O_WRONLY;
+}
+
+static inline bool fd_allows_write_nolock(int fd)
+{
+    const int flags = get_fd_flags_nolock(fd);
+    return (flags & O_ACCMODE) != O_RDONLY;
+}
+#endif
 
 static inline mux_entry_t *get_primary_entry(void)
 {
@@ -169,15 +204,26 @@ int console_open(__attribute__((unused)) void *ctx, const char * path, int flags
 {
 #if ESP_STDIO_IS_BASIC
     (void) path;
+    (void) flags;
+    (void) mode;
+
+    _lock_acquire(&s_ctx_lock);
     s_ctx.fd_count++;
+    _lock_release(&s_ctx_lock);
+
     return 0;
 #else
+    (void) mode;
+
     if (!path || strcmp(path, "/") != 0) {
         errno = ENOENT;
         return -1;
     }
 
+    _lock_acquire(&s_ctx_lock);
+
     if (s_ctx.fd_count >= CONFIG_ESP_STDIO_MAX_FDS) {
+        _lock_release(&s_ctx_lock);
         errno = ENFILE;
         return -1;
     }
@@ -191,24 +237,28 @@ int console_open(__attribute__((unused)) void *ctx, const char * path, int flags
     }
 
     if (fd < 0) {
+        _lock_release(&s_ctx_lock);
         errno = ENFILE;
         return -1;
     }
 
     s_ctx.fd_count++;
-
     s_ctx.fds[fd] = (fd_entry_t) {
         .in_use = true,
         .flags = flags,
     };
 
+    _lock_release(&s_ctx_lock);
     return fd;
 #endif
 }
 
 int console_close(__attribute__((unused)) void *ctx, int fd)
 {
-    if (!is_fd_valid(fd)) {
+    _lock_acquire(&s_ctx_lock);
+
+    if (!is_fd_valid_nolock(fd)) {
+        _lock_release(&s_ctx_lock);
         errno = EBADF;
         return -1;
     }
@@ -220,23 +270,43 @@ int console_close(__attribute__((unused)) void *ctx, int fd)
     s_ctx.fd_count--;
 #endif
 
+    _lock_release(&s_ctx_lock);
     return 0;
 }
 
 ssize_t console_write(__attribute__((unused)) void *ctx, int fd, const void *data, size_t size)
 {
+#if ESP_STDIO_IS_BASIC
     if (!is_fd_valid(fd)) {
         errno = EBADF;
         return -1;
     }
-    for (size_t i = 0; i < s_ctx.used; i++) {
+#else
+    _lock_acquire(&s_ctx_lock);
+    if (!is_fd_valid_nolock(fd)) {
+        _lock_release(&s_ctx_lock);
+        errno = EBADF;
+        return -1;
+    }
+    if (!fd_allows_write_nolock(fd)) {
+        _lock_release(&s_ctx_lock);
+        errno = EBADF;
+        return -1;
+    }
+    _lock_release(&s_ctx_lock);
+#endif
+
+    const mux_entry_t *primary = get_primary_entry();
+    ssize_t ret_val = primary->ops->write_p(primary->vfs_ctx, primary->fd, data, size);
+
+    for (size_t i = 1; i < s_ctx.used; i++) {
         const mux_entry_t *entry = s_ctx.entries + i;
         if (entry->ops->write_p && entry->fd >= 0) {
-            entry->ops->write_p(entry->vfs_ctx, entry->fd, data, size);
+            (void) entry->ops->write_p(entry->vfs_ctx, entry->fd, data, size);
         }
     }
 
-    return size;
+    return ret_val;
 }
 
 int console_fstat(__attribute__((unused)) void *ctx, int fd, struct stat * st)
@@ -256,10 +326,25 @@ int console_fstat(__attribute__((unused)) void *ctx, int fd, struct stat * st)
 
 ssize_t console_read(__attribute__((unused)) void *ctx, int fd, void * dst, size_t size)
 {
+#if ESP_STDIO_IS_BASIC
     if (!is_fd_valid(fd)) {
         errno = EBADF;
         return -1;
     }
+#else
+    _lock_acquire(&s_ctx_lock);
+    if (!is_fd_valid_nolock(fd)) {
+        _lock_release(&s_ctx_lock);
+        errno = EBADF;
+        return -1;
+    }
+    if (!fd_allows_read_nolock(fd)) {
+        _lock_release(&s_ctx_lock);
+        errno = EBADF;
+        return -1;
+    }
+    _lock_release(&s_ctx_lock);
+#endif
 
     const mux_entry_t *entry = get_primary_entry();
     if (!entry->ops->read_p) {
@@ -302,7 +387,7 @@ int console_fsync(__attribute__((unused)) void *ctx, int fd)
     for (size_t i = 1; i < s_ctx.used; i++) {
         const mux_entry_t *entry = s_ctx.entries + i;
         if (entry->ops->fsync_p && entry->fd >= 0) {
-            entry->ops->fsync_p(entry->vfs_ctx, entry->fd);
+            (void) entry->ops->fsync_p(entry->vfs_ctx, entry->fd);
         }
     }
 
@@ -325,13 +410,8 @@ int console_access(__attribute__((unused)) void *ctx, const char *path, int amod
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
 
-/*
- * Logical /dev/console fds (0,1,2,...) are not UART port numbers. uart_vfs select uses fd_set bits as
- * SOC UART indices; without remapping, monitoring stdout/stderr selects UART1/UART2 and corrupts
- * s_uart_select_count / ISR registration (only UART0 is the console sink).
- */
 typedef struct {
-    void *uart_args;
+    void *sink_select_args;
     fd_set *readfds;
     fd_set *writefds;
     fd_set *exceptfds;
@@ -406,7 +486,7 @@ static esp_err_t console_start_select(int nfds, fd_set *readfds, fd_set *writefd
         return ESP_ERR_NO_MEM;
     }
 
-    ctx->uart_args = NULL;
+    ctx->sink_select_args = NULL;
     ctx->readfds = readfds;
     ctx->writefds = writefds;
     ctx->exceptfds = exceptfds;
@@ -415,7 +495,7 @@ static esp_err_t console_start_select(int nfds, fd_set *readfds, fd_set *writefd
     ctx->interested_except = interested_except;
 
     esp_err_t err = entry->ops->select->start_select(forward_nfds, readfds, writefds, exceptfds, select_sem,
-                                                     &ctx->uart_args);
+                                                     &ctx->sink_select_args);
     if (err != ESP_OK) {
         if (readfds) {
             FD_ZERO(readfds);
@@ -477,7 +557,7 @@ esp_err_t console_end_select(void *end_select_args)
 
     esp_err_t ret = ESP_OK;
     if (entry->fd >= 0 && entry->ops->select && entry->ops->select->end_select) {
-        ret = entry->ops->select->end_select(ctx->uart_args);
+        ret = entry->ops->select->end_select(ctx->sink_select_args);
     }
 
     const int hw = entry->fd;
@@ -599,6 +679,7 @@ static const esp_vfs_fs_ops_t s_vfs_console = {
 esp_err_t esp_stdio_register(void)
 {
     esp_err_t err = ESP_OK;
+    _lock_init(&s_ctx_lock);
 // Primary vfs part.
 #if CONFIG_ESP_CONSOLE_UART
     const esp_vfs_fs_ops_t *ops = esp_vfs_uart_get_vfs();
