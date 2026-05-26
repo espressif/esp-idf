@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stddef.h>
 #include "hal/emac_periph.h"
 #include "soc/io_mux_reg.h"
 

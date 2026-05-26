@@ -17,6 +17,9 @@ examples/network/bridge:
 examples/network/eth2ap:
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
+    - if: IDF_TARGET in ["esp32s31"]
+      temporary: true
+      reason: not support yet # TODO: [ESP32S31] IDF-14929
   depends_components:
     - esp_eth
     - esp_wifi
@@ -36,6 +39,9 @@ examples/network/simple_sniffer:
 examples/network/sta2eth:
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
+    - if: IDF_TARGET in ["esp32s31"]
+      temporary: true
+      reason: not support yet # TODO: [ESP32S31] IDF-14929
   depends_components:
     - esp_eth
     - esp_wifi
