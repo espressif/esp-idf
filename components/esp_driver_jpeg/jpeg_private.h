@@ -82,6 +82,7 @@ typedef struct {
     uint8_t mcux;                                               // the best value of minimum coding unit horizontal unit
     uint8_t mcuy;                                               // minimum coding unit vertical unit
     uint8_t qt_tbl_num;                                         // quantization table number
+    uint8_t qt_tbl_seen_mask;                                   // bit i set => qt_tbl[i] populated by a DQT entry
     uint32_t qt_tbl[JPEG_COMPONENT_NUMBER_MAX][JPEG_QUANTIZATION_TABLE_LEN];            // quantization table content [id]
     uint8_t nf;                                                 // number of frames
     uint8_t ci[JPEG_COMPONENT_NUMBER_MAX];                      // Component identifier.
