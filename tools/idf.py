@@ -371,6 +371,10 @@ def init_cli(verbose_output: list | None = None) -> Any:
             Usage + description. Temporarily flip the flag to False while
             rendering options.
             """
+            # default_panels_first=True is introduced in rich-click 1.9.6
+            if not hasattr(formatter.config, 'default_panels_first'):
+                super().format_options(ctx, formatter)
+                return
             prev_default_first = formatter.config.default_panels_first
             try:
                 formatter.config.default_panels_first = False
@@ -476,6 +480,14 @@ def init_cli(verbose_output: list | None = None) -> Any:
             cli_help: str | None = None,
             command_groups: dict[str, list[dict[str, Any]]] | None = None,
         ) -> None:
+            rich_help_config_kwargs: dict[str, Any] = {
+                'max_width': MAX_WIDTH,
+                'command_groups': command_groups if command_groups is not None else {},
+            }
+            # ``default_panels_first`` was added in rich-click 1.9.6; on older
+            # versions passing it raises TypeError.
+            if hasattr(RichHelpConfiguration, 'default_panels_first'):
+                rich_help_config_kwargs['default_panels_first'] = True
             super().__init__(
                 PROG,
                 chain=True,
@@ -484,11 +496,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
                 no_args_is_help=True,
                 context_settings={
                     'help_option_names': ['-h', '--help'],
-                    'rich_help_config': RichHelpConfiguration(
-                        max_width=MAX_WIDTH,
-                        command_groups=command_groups if command_groups is not None else {},
-                        default_panels_first=True,
-                    ),
+                    'rich_help_config': RichHelpConfiguration(**rich_help_config_kwargs),
                 },
                 help=cli_help,
             )
