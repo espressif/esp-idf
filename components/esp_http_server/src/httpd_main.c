@@ -210,10 +210,10 @@ static void httpd_process_ctrl_msg(struct httpd_data *hd)
     int ret = recv(hd->ctrl_fd, &msg, sizeof(msg), 0);
     if (ret <= 0) {
         ESP_LOGW(TAG, LOG_FMT("error in recv (%d)"), errno);
-        /* Returning the mbox slot to the producer side. xSemaphoreGive is a
-         * no-op once the counting semaphore is at its max, which keeps the
-         * accounting safe under producers that don't take (e.g. async
-         * handler wakeups, shutdown). */
+        /* No packet was actually consumed from the mbox here, so this give
+         * is unbalanced. It's tolerated because the counting semaphore is
+         * capped at its max — excess gives become no-ops. Spurious recv
+         * errors after select() are rare in practice. */
         xSemaphoreGive(hd->ctrl_sock_semaphore);
         return;
     }
@@ -561,9 +561,19 @@ esp_err_t httpd_stop(httpd_handle_t handle)
     struct httpd_ctrl_data msg;
     memset(&msg, 0, sizeof(msg));
     msg.hc_msg = HTTPD_CTRL_SHUTDOWN;
-    int ret = 0;
-    if ((ret = cs_send_to_ctrl_sock(hd->msg_fd, hd->config.ctrl_port, &msg, sizeof(msg))) < 0) {
+
+    /* Reserve a slot in the ctrl mbox before sending so we never push past
+     * its capacity. Blocking is safe: the httpd task is the consumer and
+     * keeps draining the mbox until it observes HTTPD_CTRL_SHUTDOWN. */
+    if (xSemaphoreTake(hd->ctrl_sock_semaphore, portMAX_DELAY) != pdTRUE) {
+        ESP_LOGE(TAG, "Failed to acquire ctrl socket semaphore");
+        return ESP_FAIL;
+    }
+
+    int ret = cs_send_to_ctrl_sock(hd->msg_fd, hd->config.ctrl_port, &msg, sizeof(msg));
+    if (ret < 0) {
         ESP_LOGE(TAG, "Failed to send shutdown signal err=%d", ret);
+        xSemaphoreGive(hd->ctrl_sock_semaphore);
         return ESP_FAIL;
     }
 
