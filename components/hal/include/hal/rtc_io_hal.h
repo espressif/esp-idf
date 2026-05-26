@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -197,6 +197,23 @@ void rtcio_hal_set_direction_in_sleep(int rtcio_num, rtc_gpio_mode_t mode);
  * @param func Function to assign to the pin
  */
 #define rtcio_hal_iomux_func_sel(rtcio_num, func) rtcio_ll_iomux_func_sel(rtcio_num, func)
+
+/**
+  * @brief Set pad input to an LP peripheral signal through the LP(RTC) IOMUX
+  *
+  * @param rtcio_num The index of rtcio. 0 ~ SOC_RTCIO_PIN_COUNT.
+  * @param func The index number of the IOMUX function to be selected for the pin.
+  * @param signal_idx Peripheral signal index to input. One of the ``*_IN_IDX`` signals in ``soc/lp_gpio_sig_map.h``.
+  */
+void rtcio_hal_iomux_input(int rtcio_num, int func, uint32_t signal_idx);
+
+/**
+  * @brief Set LP peripheral output to an RTC IO pad through the LP(RTC) IOMUX
+  *
+  * @param rtcio_num The index of rtcio. 0 ~ SOC_RTCIO_PIN_COUNT.
+  * @param func The index number of the LP(RTC) IOMUX function to be selected for the pin
+  */
+void rtcio_hal_iomux_output(int rtcio_num, int func);
 
 #if SOC_LP_GPIO_MATRIX_SUPPORTED
 /**

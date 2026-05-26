@@ -188,6 +188,24 @@ esp_err_t rtc_gpio_iomux_func_sel(gpio_num_t gpio_num, int func)
     return ESP_OK;
 }
 
+esp_err_t rtc_gpio_iomux_input(gpio_num_t gpio_num, int func, uint32_t signal_idx)
+{
+    ESP_RETURN_ON_FALSE(rtc_gpio_is_valid_gpio(gpio_num), ESP_ERR_INVALID_ARG, RTCIO_TAG, "RTCIO number error");
+    RTCIO_ENTER_CRITICAL();
+    rtcio_hal_iomux_input(rtc_io_number_get(gpio_num), func, signal_idx);
+    RTCIO_EXIT_CRITICAL();
+    return ESP_OK;
+}
+
+esp_err_t rtc_gpio_iomux_output(gpio_num_t gpio_num, int func)
+{
+    ESP_RETURN_ON_FALSE(rtc_gpio_is_valid_gpio(gpio_num), ESP_ERR_INVALID_ARG, RTCIO_TAG, "RTCIO number error");
+    RTCIO_ENTER_CRITICAL();
+    rtcio_hal_iomux_output(rtc_io_number_get(gpio_num), func);
+    RTCIO_EXIT_CRITICAL();
+    return ESP_OK;
+}
+
 #if SOC_LP_GPIO_MATRIX_SUPPORTED
 esp_err_t lp_gpio_connect_in_signal(gpio_num_t gpio_num, uint32_t signal_idx, bool inv)
 {
