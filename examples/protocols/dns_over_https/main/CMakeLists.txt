@@ -7,4 +7,5 @@ endif()
 
 idf_component_register(SRCS "example_dns_over_https.c"
                     INCLUDE_DIRS "."
+                    PRIV_REQUIRES time_sync nvs_flash esp_event esp_timer mbedtls
                     EMBED_TXTFILES ${cert_file})

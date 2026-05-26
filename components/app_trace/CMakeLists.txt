@@ -4,8 +4,9 @@ if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
 
+set(srcs)
 if(CONFIG_ESP_TRACE_TRANSPORT_APPTRACE)
-    set(srcs
+    list(APPEND srcs
         "app_trace.c"
         "app_trace_util.c"
         "host_file_io.c"

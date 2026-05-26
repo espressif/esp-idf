@@ -1,7 +1,7 @@
 idf_build_get_property(target IDF_TARGET)
 
 set(srcs "test_event_main.c" "test_event_common.cpp")
-set(priv_requires "esp_event unity")
+set(priv_requires esp_event unity)
 
 if(NOT ${target} STREQUAL "linux")
     list(APPEND srcs
