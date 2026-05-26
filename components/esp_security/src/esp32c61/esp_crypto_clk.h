@@ -9,6 +9,10 @@
 
 #pragma once
 
+#include <stdbool.h>
+
+void esp_crypto_common_clk_enable(bool enable);
+
 static inline void esp_crypto_clk_init(void)
 {
     // Set crypto clock (`clk_sec`) to use 480M SPLL clock
