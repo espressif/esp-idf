@@ -193,7 +193,7 @@ esp_err_t esp_vbat_init(void)
 #endif
         ESP_ERROR_CHECK(debug_probe_new_unit(&unit_config, &lp_probe_hdl));
         ESP_ERROR_CHECK(debug_probe_new_channel(lp_probe_hdl, &chan_config, &lp_probe_channel_hdl));
-        ESP_ERROR_CHECK(debug_probe_chan_add_signal_by_byte(lp_probe_channel_hdl, 1, DEBUG_PROBE_TARGET_LP_PMU));
+        ESP_ERROR_CHECK(debug_probe_chan_add_signal_by_byte(lp_probe_channel_hdl, 1, 0));
         ESP_ERROR_CHECK(debug_probe_unit_merge16(lp_probe_hdl, lp_probe_channel_hdl, DEBUG_PROBE_SPLIT_UPPER16, NULL, 0));
     }
     // The LP Probe & LP IOMUX pathways depend on the LP_PERIPH power domain.

@@ -66,7 +66,7 @@ esp_err_t debug_probe_del_unit(debug_probe_unit_handle_t unit);
  */
 typedef struct {
     union {
-        debug_probe_target_t hp_target;    ///< Target when unit is HP
+        debug_probe_target_hp_t hp_target; ///< Target when unit is HP
         debug_probe_target_lp_t lp_target; ///< Target when unit is LP
     } target_module;
 } debug_probe_channel_config_t;
@@ -106,10 +106,10 @@ esp_err_t debug_probe_del_channel(debug_probe_channel_handle_t chan);
  *       byte_idx = 1: signal 8-15 in the group
  *       ...
  * @note If you add the signals from different groups but with the same byte_idx, only the last added signal will be effective.
- * @note You can save up to 32 signals in a channel, but in the end, only the part of them (e.g. upper or lower 16 signals) can be output to the GPIO pads.
+ * @note You can save up to 32 signals in a channel, but only 16 of them can be routed to GPIO pads at a time.
  *
  * @param[in] chan Handle of the debug probe channel
- * @param[in] byte_idx Byte index (HP: 0-3, LP: 0-1)
+ * @param[in] byte_idx Byte index (0-3)
  * @param[in] sig_group Signal group of the signal, ranges from 0 to 15
  * @return
  *      - ESP_OK on success
