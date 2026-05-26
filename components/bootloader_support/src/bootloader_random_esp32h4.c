@@ -1,97 +1,88 @@
 /*
  * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
-
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "sdkconfig.h"
 #include "bootloader_random.h"
-#include "soc/soc.h"
-#include "soc/rng_reg.h"
-#include "esp_rom_sys.h"
-#include "soc/pcr_reg.h"
-#include "soc/pmu_reg.h"
-#include "soc/apb_saradc_reg.h"
+#include "hal/regi2c_ctrl_ll.h"
+#include "hal/adc_ll.h"
+#include "hal/adc_types.h"
+#include "hal/rng_ll.h"
 #include "esp_private/regi2c_ctrl.h"
-#include "soc/regi2c_saradc.h"
+#include "hal/temperature_sensor_ll.h"
+#include "esp_private/sar_periph_ctrl.h"
 
-static const uint32_t SAR2_CHANNEL = 9;
-static const uint32_t SAR1_CHANNEL = 7;
-static const uint32_t PATTERN_BIT_WIDTH = 6;
-static const uint32_t SAR1_ATTEN = 3;
-static const uint32_t SAR2_ATTEN = 3;
-
-void sar_adc_enable(void)
-{
-    REG_SET_BIT(PCR_SARADC_CONF_REG, PCR_SARADC_RST_EN);
-    REG_CLR_BIT(PCR_SARADC_CONF_REG, PCR_SARADC_RST_EN);
-
-    REG_SET_BIT(PCR_SARADC_CONF_REG, PCR_SARADC_REG_CLK_EN);
-
-    REG_SET_BIT(PCR_SARADC_CONF_REG, PCR_SARADC_REG_RST_EN);
-    REG_CLR_BIT(PCR_SARADC_CONF_REG, PCR_SARADC_REG_RST_EN);
-
-    REG_CLR_BIT(PCR_SARADC_CLKM_CONF_REG, PCR_SARADC_CLKM_EN);
-
-    REG_SET_FIELD(PCR_SARADC_CLKM_CONF_REG, PCR_SARADC_CLKM_SEL, 0);
-
-    REG_SET_FIELD(PCR_SARADC_CLKM_CONF_REG, PCR_SARADC_CLKM_DIV_NUM, 0);
-
-    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_PERIF_I2C);
-
-    REGI2C_WRITE_MASK(I2C_SARADC, I2C_SARADC_DTEST, 0);
-    REGI2C_WRITE_MASK(I2C_SARADC, I2C_SARADC_ENT_SAR, 1);
-    REGI2C_WRITE_MASK(I2C_SARADC, I2C_SARADC_SAR1_EN_TOUT, 1);
-    REGI2C_WRITE_MASK(I2C_SARADC, I2C_SARADC_SAR2_EN_TOUT, 1);
-
-    REGI2C_WRITE_MASK(I2C_SARADC, I2C_SARADC_SAR2_INIT_CODE_MSB, 0x08);
-    REGI2C_WRITE_MASK(I2C_SARADC, I2C_SARADC_SAR2_INIT_CODE_LSB, 0x66);
-    REGI2C_WRITE_MASK(I2C_SARADC, I2C_SARADC_SAR1_INIT_CODE_MSB, 0x08);
-    REGI2C_WRITE_MASK(I2C_SARADC, I2C_SARADC_SAR1_INIT_CODE_LSB, 0x66);
-
-    uint32_t pattern_one = (SAR2_CHANNEL << 2) | SAR2_ATTEN;
-    uint32_t pattern_two = (SAR1_CHANNEL << 2) | SAR1_ATTEN;
-    uint32_t pattern_table = 0 | (pattern_two << 3 * PATTERN_BIT_WIDTH) |pattern_one << 2 * PATTERN_BIT_WIDTH;
-    REG_WRITE(APB_SARADC_SAR_PATT_TAB1_REG, pattern_table);
-
-    REG_SET_FIELD(APB_SARADC_CTRL_REG, APB_SARADC_SARADC_SAR_PATT_LEN, 1);
-    REG_SET_FIELD(APB_SARADC_CTRL_REG, APB_SARADC_SARADC_SAR_CLK_DIV, 15);
-    REG_SET_FIELD(APB_SARADC_CTRL2_REG, APB_SARADC_SARADC_TIMER_TARGET, 200);
-    REG_SET_BIT(APB_SARADC_CTRL2_REG, APB_SARADC_SARADC_TIMER_EN);
-}
-
-void sar_adc_disable(void)
-{
-    REG_CLR_BIT(APB_SARADC_CTRL2_REG, APB_SARADC_SARADC_TIMER_EN);
-}
+#define I2C_SAR_ADC_INIT_CODE_VAL       2150
+#define ADC_RNG_CLKM_DIV_NUM            0
+#define ADC_RNG_CLKM_DIV_B              0
+#define ADC_RNG_CLKM_DIV_A              0
 
 void bootloader_random_enable(void)
 {
-    // Enable source of saradc
-    sar_adc_enable();
+#ifndef BOOTLOADER_BUILD
+    sar_periph_ctrl_adc_reset();
+#else
+    // Save temperature sensor related register values before ADC reset
+    tsens_ll_reg_values_t saved_tsens_regs = {};
+    tsens_ll_backup_registers(&saved_tsens_regs);
+    adc_ll_reset_register();
+    // Restore temperature sensor related register values after ADC reset
+    temperature_sensor_ll_reset_module();
+    tsens_ll_restore_registers(&saved_tsens_regs);
+#endif
 
-    // Enable source of ring
-    REG_SET_BIT(RNG_CFG_REG, RNG_SAMPLE_ENABLE);
+    adc_ll_enable_bus_clock(true);
+    adc_ll_enable_func_clock(false);
+    adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_XTAL);
+    adc_ll_digi_controller_clk_div(ADC_RNG_CLKM_DIV_NUM, ADC_RNG_CLKM_DIV_B, ADC_RNG_CLKM_DIV_A);
 
-    // // For dieharder test
-    // esp_rom_printf("H4: Random bytes (%s) follow:\n", "test");
-    // while (1)
-    // {
-    //     uint32_t random_sync = REG_READ(RNG_DATA_SYNC_REG);
-    //     // esp_rom_printf("sync_random_data: %d\n", random_sync);
+    // some ADC sensor registers are in power group PERIF_I2C and need to be enabled via PMU
+#ifndef BOOTLOADER_BUILD
+    regi2c_saradc_enable();
+#else
+    regi2c_ctrl_ll_i2c_sar_periph_enable();
+#endif
 
-    //     uart_tx_one_char(random_sync >> 24);
-    //     uart_tx_one_char(random_sync >> 16);
-    //     uart_tx_one_char(random_sync >> 8);
-    //     uart_tx_one_char(random_sync);
-    // }
+    // enable analog i2c master clock for RNG runtime
+    ANALOG_CLOCK_ENABLE();
+
+    adc_ll_regi2c_init();
+    adc_ll_set_calibration_param(ADC_UNIT_1, I2C_SAR_ADC_INIT_CODE_VAL);
+    adc_ll_set_calibration_param(ADC_UNIT_2, I2C_SAR_ADC_INIT_CODE_VAL);
+
+    adc_digi_pattern_config_t pattern_config = {};
+    pattern_config.unit = ADC_UNIT_1;
+    pattern_config.atten = ADC_ATTEN_DB_12;
+    pattern_config.channel = ADC_CHANNEL_7;     // Use reserved channel to get internal voltage
+    adc_ll_digi_set_pattern_table(ADC_UNIT_1, 0, pattern_config);
+    pattern_config.unit = ADC_UNIT_2;
+    pattern_config.atten = ADC_ATTEN_DB_12;
+    pattern_config.channel = ADC_CHANNEL_1;     // Use reserved ADC2 and reserved channel to get internal voltage
+    adc_ll_digi_set_pattern_table(ADC_UNIT_2, 1, pattern_config);
+    adc_ll_digi_set_pattern_table_len(ADC_UNIT_1, 2);
+
+    adc_ll_digi_set_clk_div(15);
+    adc_ll_digi_set_trigger_interval(200);
+    adc_ll_digi_trigger_enable();
+
+    rng_ll_enable();
 }
 
 void bootloader_random_disable(void)
 {
-    // Disable source of saradc
-    sar_adc_disable();
+    rng_ll_disable();
+    adc_ll_digi_trigger_disable();
+    adc_ll_digi_reset_pattern_table();
+    adc_ll_set_calibration_param(ADC_UNIT_1, 0x0);
+    adc_ll_set_calibration_param(ADC_UNIT_2, 0x0);
+    adc_ll_regi2c_adc_deinit();
+#ifndef BOOTLOADER_BUILD
+    regi2c_saradc_disable();
+#endif
 
-    // Disable source of ring
-    REG_CLR_BIT(RNG_CFG_REG, RNG_SAMPLE_ENABLE);
+    // disable analog i2c master clock
+    ANALOG_CLOCK_DISABLE();
+    adc_ll_digi_controller_clk_div(4, 0, 0);
+    adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_XTAL);
 }

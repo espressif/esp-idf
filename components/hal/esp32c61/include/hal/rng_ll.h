@@ -19,6 +19,15 @@ static inline uint32_t rng_ll_read_data(void)
     return REG_READ(LPPERI_RNG_DATA_SYNC_REG);
 }
 
+/* For compatibility. */
+static inline void rng_ll_enable(void)
+{
+}
+
+static inline void rng_ll_disable(void)
+{
+}
+
 #ifdef __cplusplus
 }
 #endif

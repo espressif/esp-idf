@@ -13,7 +13,8 @@
 #include "soc/lpperi_struct.h"
 #include "hal/lp_clkrst_ll.h"
 
-#define RNG_LL_DEPENDS_ON_LP_PERIPH 1
+//For ESP32C5, RNG needs to be reset and enabled again when wakeup from sleep
+#define RNG_LL_NEEDS_RESET_WHEN_WAKEUP 1
 
 #ifdef __cplusplus
 extern "C" {

@@ -5,6 +5,7 @@
  */
 #include "sdkconfig.h"
 #include "bootloader_random.h"
+#include "hal/rng_ll.h"
 #include "esp_log.h"
 #include "soc/syscon_reg.h"
 #include "soc/rtc_cntl_reg.h"
@@ -56,10 +57,13 @@ void bootloader_random_enable(void)
     adc_ll_digi_convert_limit_enable(false);
     adc_ll_digi_dma_enable();
     adc_ll_digi_trigger_enable();
+    rng_ll_enable();
 }
 
 void bootloader_random_disable(void)
 {
+    rng_ll_disable();
+
     _adc_ll_enable_bus_clock(false);
     adc_ll_digi_trigger_disable();
     adc_ll_digi_reset_pattern_table();

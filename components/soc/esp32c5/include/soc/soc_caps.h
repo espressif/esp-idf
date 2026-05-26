@@ -510,10 +510,6 @@
 /*------------------------ Anti DPA (Security) CAPS --------------------------*/
 #define SOC_CRYPTO_DPA_PROTECTION_SUPPORTED     1
 
-/*-------------------------- RNG CAPS ---------------------------------------*/
-#define SOC_RNG_BUF_CHAIN_ENTROPY_SOURCE 1
-#define SOC_RNG_RTC_TIMER_ENTROPY_SOURCE 1
-
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-C5 has 3 UARTs (2 HP UART, and 1 LP UART)
 #define SOC_UART_NUM                       (3)

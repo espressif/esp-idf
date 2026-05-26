@@ -727,8 +727,11 @@ static inline void adc_ll_set_ent_param(uint32_t param)
 __attribute__((always_inline))
 static inline void adc_ll_enable_tout_bus(adc_unit_t adc_n, bool en)
 {
-    HAL_ASSERT(adc_n == ADC_UNIT_1);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_EN_TOUT_SAR1_BUS, en);
+    if (adc_n == ADC_UNIT_1) {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_SAR1_EN_TOUT, en);
+    } else {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_SAR2_EN_TOUT, en);
+    }
 }
 
 /**
@@ -740,6 +743,7 @@ static inline void adc_ll_regi2c_init(void)
     adc_ll_set_dtest_param(0);
     adc_ll_set_ent_param(1);
     adc_ll_enable_tout_bus(ADC_UNIT_1, true);
+    adc_ll_enable_tout_bus(ADC_UNIT_2, true);
 }
 
 /**
@@ -751,6 +755,7 @@ static inline void adc_ll_regi2c_adc_deinit(void)
     adc_ll_set_dtest_param(0);
     adc_ll_set_ent_param(0);
     adc_ll_enable_tout_bus(ADC_UNIT_1, false);
+    adc_ll_enable_tout_bus(ADC_UNIT_2, false);
 }
 
 /*---------------------------------------------------------------
