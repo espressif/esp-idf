@@ -31,7 +31,8 @@ custom_gatt_svr_init(void)
 #if MYNEWT_VAL(BLE_GATTS)
     ble_svc_gatt_init();
 #endif
+#if MYNEWT_VAL(BLE_GATTS) && CONFIG_BT_NIMBLE_RAS_SERVICE
     ble_svc_ras_init();
-
+#endif
     return 0;
 }
