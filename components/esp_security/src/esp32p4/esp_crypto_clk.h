@@ -8,6 +8,10 @@
 #include "esp_private/esp_clk_tree_common.h"
 #pragma once
 
+#include <stdbool.h>
+
+void esp_crypto_common_clk_enable(bool enable);
+
 static inline void esp_crypto_clk_init(void)
 {
     // Set crypto clock (`clk_sec`) to use 240M PLL clock
