@@ -211,6 +211,22 @@ typedef union {
 } mmdad_reg_t;
 #define ETH_PHY_MMDAD_REG_ADDR (0x0E)
 
+/**
+ * @brief EXSR(Extended Status Register)
+ *
+ */
+typedef union {
+    struct {
+        uint32_t reserved : 12;        /*!< Reserved */
+        uint32_t base1000_t : 1;       /*!< 1000BASE-T Half Duplex ability */
+        uint32_t base1000_t_fd : 1;    /*!< 1000BASE-T Full Duplex ability */
+        uint32_t base1000_x : 1;       /*!< 1000BASE-X Half Duplex ability */
+        uint32_t base1000_x_fd : 1;    /*!< 1000BASE-X Full Duplex ability */
+    };
+    uint32_t val;
+} exsr_reg_t;
+#define ETH_PHY_EXSR_REG_ADDR (0x0F)
+
 #ifdef __cplusplus
 }
 #endif
