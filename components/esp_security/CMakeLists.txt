@@ -9,7 +9,7 @@ endif()
 
 set(srcs "")
 set(requires esp_hal_security)
-set(priv_requires esp_hw_support hal efuse)
+set(priv_requires esp_hw_support hal efuse esp_hal_clock)
 set(priv_includes "src/${IDF_TARGET}")
 
 if(NOT non_os_build)

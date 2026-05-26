@@ -100,7 +100,7 @@ else()
                         INCLUDE_DIRS include
                         PRIV_REQUIRES spi_flash esp_timer esp_mm
                                       esp_hal_clock esp_hal_mspi esp_hal_wdt esp_hal_debug_assist
-                                      esp_hal_uart esp_hal_dma
+                                      esp_hal_uart esp_hal_dma esp_hal_security
                                       # [refactor-todo] requirements due to init code,
                                       # should be removable once using component init functions
                                       # link-time registration is used.
