@@ -431,12 +431,25 @@ esp_err_t emac_hal_ptp_start(emac_hal_context_t *hal, const emac_hal_ptp_config_
     int32_t to = 0;
     /* If you are using the Fine correction method */
     if (config->upd_method == ETH_PTP_UPDATE_METHOD_FINE) {
-        /**
-         *           2^32                 2^32                      TsysClk(ns)
-         * Addend = ——————— = —————————————————————————— = 2^32 * ——————————————
-         *           ratio     SysClk(MHz)/PTPaccur(MHz)            Taccur(ns)
+        /*
+         * Compute the addend from the actual integer base_increment written
+         * to hardware, not from the ideal ptp_req_accuracy_ns. Because
+         * base_increment is a uint8_t, the cast truncates the fractional
+         * part, making the real sub-second step differ from the requested
+         * accuracy. This is especially required for IEEE 802.1AS where the
+         * uncorrected rate must already be within 200 ppm (neighborRateRatio)
+         * before Sync messages arrive, so we derive the addend from
+         * the truncated value directly.
          */
-        uint32_t base_addend = (1ll << 32) * config->ptp_clk_src_period_ns / config->ptp_req_accuracy_ns;
+        double increment_ns;
+        if (emac_ll_is_ts_digital_roll_set(hal->ptp_regs)) {
+            increment_ns = (double)base_increment;
+        } else {
+            increment_ns = (double)base_increment * 1.0e9 / (double)(1ULL << 31);
+        }
+        uint32_t base_addend = (uint32_t)((double)(1ULL << 32) *
+                                          config->ptp_clk_src_period_ns /
+                                          increment_ns);
         emac_ll_set_ts_addend_val(hal->ptp_regs, base_addend);
         emac_ll_ts_addend_do_update(hal->ptp_regs);
         while (!emac_ll_is_ts_addend_update_done(hal->ptp_regs) && to < EMAC_PTP_INIT_TIMEOUT_US) {
