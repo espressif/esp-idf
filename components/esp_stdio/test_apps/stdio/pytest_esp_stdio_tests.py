@@ -100,6 +100,8 @@ def test_esp_system_stdio_correct_open_and_close(dut: Dut) -> None:
     dut.expect('STDIO_TEST:MODE=NON_BASIC')
     dut.expect('STDIO_TEST:NON_BASIC:UNIQUE_OK')
     dut.expect('STDIO_TEST:NON_BASIC:REUSE_OK')
+    dut.expect('STDIO_TEST:NON_BASIC:FLAGS_OK')
+    dut.expect('STDIO_TEST:NON_BASIC:FSYNC_OK')
     dut.expect('STDIO_TEST:NON_BASIC:LIMIT_OK')
     dut.expect('STDIO_TEST:NON_BASIC:EBADF_OK')
 
@@ -118,6 +120,8 @@ def test_esp_stdio_non_basic_default_qemu(dut: Dut) -> None:
     dut.expect('STDIO_TEST:MODE=NON_BASIC')
     dut.expect('STDIO_TEST:NON_BASIC:UNIQUE_OK')
     dut.expect('STDIO_TEST:NON_BASIC:REUSE_OK')
+    dut.expect('STDIO_TEST:NON_BASIC:FLAGS_OK')
+    dut.expect('STDIO_TEST:NON_BASIC:FSYNC_OK')
     dut.expect('STDIO_TEST:NON_BASIC:LIMIT_OK')
     dut.expect('STDIO_TEST:NON_BASIC:EBADF_OK')
 
