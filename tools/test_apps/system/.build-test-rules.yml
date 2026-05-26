@@ -189,7 +189,3 @@ tools/test_apps/system/unicore_bootloader:
       reason: the test is only relevant for multicore chips
     - if: CONFIG_NAME == "unicore_psram" and SOC_PSRAM_SUPPORTED != 1
     - if: CONFIG_NAME == "multicore_psram" and SOC_PSRAM_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32h4"
-      temporary: true
-      reason: cannot pass # TODO: IDF-15620
