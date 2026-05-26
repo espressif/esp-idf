@@ -256,6 +256,37 @@ menu "HCI UART(H4) Options"
         depends on BTDM_CTRL_HCI_MODE_UART_H4
         default y
 
+    config BTDM_CTRL_HCI_UART_INIT_BY_CONTROLLER
+        bool "Initialize the HCI UART in esp_bt_controller_init()"
+        depends on BTDM_CTRL_HCI_MODE_UART_H4
+        default n
+        help
+            If enabled, esp_bt_controller_init() enables the HCI UART and UHCI bus clocks and
+            routes the HCI UART pins selected below.
+
+            Disable it if the application does this itself before esp_bt_controller_init(),
+            otherwise the controller overrides the pins the application selected.
+
+    if BTDM_CTRL_HCI_UART_INIT_BY_CONTROLLER
+        config BTDM_CTRL_HCI_UART_TX_PIN
+            int "HCI UART TX pin"
+            default 5
+
+        config BTDM_CTRL_HCI_UART_RX_PIN
+            int "HCI UART RX pin"
+            default 18
+
+        if BTDM_CTRL_HCI_UART_FLOW_CTRL_EN
+            config BTDM_CTRL_HCI_UART_RTS_PIN
+                int "HCI UART RTS pin"
+                default 19
+
+            config BTDM_CTRL_HCI_UART_CTS_PIN
+                int "HCI UART CTS pin"
+                default 23
+        endif
+    endif
+
 endmenu
 
 menu "MODEM SLEEP Options"

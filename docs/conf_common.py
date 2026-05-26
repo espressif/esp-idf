@@ -30,6 +30,7 @@ BT_DOCS = [
     'api-reference/bluetooth/controller_vhci.rst',
     'api-reference/bluetooth/index.rst',
     'migration-guides/release-5.x/5.4/bt_common.rst',
+    'migration-guides/release-6.x/6.1/bt_common.rst',
 ]
 
 BLE_DOCS = [

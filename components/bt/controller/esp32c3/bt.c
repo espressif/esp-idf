@@ -61,6 +61,9 @@
 #include "hal/wdt_hal.h"
 #endif // CONFIG_BT_CTRL_LE_LOG_STORAGE_EN
 #include "esp_rom_gpio.h"
+
+#include "hci_uart_h4.h"
+
 #if CONFIG_BT_ENABLED
 #include "esp_private/sleep_modem.h"
 
@@ -1920,6 +1923,23 @@ if ((err = btdm_low_power_mode_init(cfg)) != ESP_OK) {
     }
 #endif // CONFIG_BT_CTRL_LE_LOG_EN
 
+#if CONFIG_BT_CTRL_HCI_MODE_UART_H4 && CONFIG_BT_CTRL_HCI_UART_INIT_BY_CONTROLLER
+    if (cfg->hci_tl_funcs == NULL) {
+        err = btdm_hci_uart_tl_install();
+        if (err != ESP_OK) {
+            goto error;
+        }
+        cfg->hci_tl_funcs = btdm_hci_uart_tl_get_funcs();
+    }
+#elif CONFIG_BT_CTRL_HCI_MODE_UART_H4
+    if (cfg->hci_tl_funcs == NULL) {
+        ESP_LOGE(BT_LOG_TAG, "HCI UART transport missing, either set cfg->hci_tl_funcs or enable "
+                 "CONFIG_BT_CTRL_HCI_UART_INIT_BY_CONTROLLER");
+        err = ESP_ERR_INVALID_ARG;
+        goto error;
+    }
+#endif
+
     err = btdm_controller_init(cfg);
 
     if (err != 0) {
@@ -2043,6 +2063,10 @@ static void btdm_low_power_mode_deinit(void)
 
 static void bt_controller_deinit_internal(void)
 {
+#if CONFIG_BT_CTRL_HCI_MODE_UART_H4 && CONFIG_BT_CTRL_HCI_UART_INIT_BY_CONTROLLER
+    btdm_hci_uart_tl_uninstall();
+#endif
+
     periph_module_disable(PERIPH_BT_MODULE);
 
     btdm_low_power_mode_deinit();

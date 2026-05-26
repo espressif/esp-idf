@@ -7,7 +7,7 @@ The tutorial is focused on how to implement the custom transport in the applicat
 Note: This walkthrough only covers the transport used by the application, for detailed explanation see the [bleprph_walkthrough](../../bleprph/tutorial/bleprph_walkthrough.md)
 ## Hardware Setup
 
-This example uses esp32 chip to run the example `bleprph_host_only` that runs the nimble-host and sends and receives the commands and events using uart. The another chip used is esp32c6 that runs the controller `esp-idf/examples/bluetooth/nimble/hci` example that runs the controller and receives commands and sends events using UART. Below is the setup of esp32 and esp32c6.
+This example uses esp32 chip to run the example `bleprph_host_only` that runs the nimble-host and sends and receives the commands and events using uart. The another chip used is esp32c6 that runs the controller `esp-idf/examples/bluetooth/hci/controller_hci_uart` example that runs the controller and receives commands and sends events using UART. Below is the setup of esp32 and esp32c6.
 
 ![Hardware Setup](hardware_setup.png)
 

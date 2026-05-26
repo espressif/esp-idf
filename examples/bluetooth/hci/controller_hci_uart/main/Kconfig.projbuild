@@ -1,0 +1,24 @@
+menu "Example Configuration"
+
+    config ENABLE_HCI_CONSOLE
+        bool "Enable HCI console REPL"
+        default n
+        depends on !IDF_TARGET_ESP32
+        help
+            Start a console REPL on the log UART for example commands such as
+            HCI UART pin reconfig.
+
+    config ENABLE_BLE_DTM_CONFIGURATION_COMMAND
+        bool
+        prompt "Enable BLE DTM configuration commands"
+        default n
+        depends on ENABLE_HCI_CONSOLE && BT_ENABLED
+        depends on SOC_ESP_NIMBLE_CONTROLLER || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+        select BT_CTRL_AGC_RECORRECT_EN if (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
+        select BT_CTRL_CODED_AGC_RECORRECT_EN if (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
+        select BT_CTRL_HCI_UART_DTM_MODE if BT_CTRL_HCI_UART_INIT_BY_CONTROLLER
+        help
+            Add the BLE DTM command group to the HCI console.
+            On ESP32-C3/S3, HCI UART is configured without flow control for DTM.
+
+endmenu
