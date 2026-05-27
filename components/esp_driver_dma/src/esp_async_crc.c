@@ -45,12 +45,14 @@ esp_err_t esp_async_crc_calc(async_crc_handle_t crc_hdl, const void *data, size_
 typedef struct {
     uint32_t *result;
     SemaphoreHandle_t semaphore;
+    StaticSemaphore_t semaphore_buffer;
 } crc_blocking_context_t;
 
 static bool crc_blocking_callback(async_crc_handle_t crc_hdl, async_crc_event_data_t *event, void *user_data)
 {
     BaseType_t task_woken = pdFALSE;
     crc_blocking_context_t *ctx = (crc_blocking_context_t *)user_data;
+    (void)crc_hdl;
 
     *(ctx->result) = event->crc_result;
 
@@ -65,26 +67,16 @@ esp_err_t esp_crc_calc_blocking(async_crc_handle_t crc_hdl, const void *data, si
 {
     ESP_RETURN_ON_FALSE(crc_hdl && data && size && params && result, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(!xPortInIsrContext(), ESP_ERR_INVALID_STATE, TAG, "called from ISR context is not allowed");
+    ESP_RETURN_ON_FALSE(timeout_ms == -1, ESP_ERR_INVALID_ARG, TAG, "only timeout_ms=-1 is supported");
 
     crc_blocking_context_t ctx = {
         .result = result,
-        .semaphore = xSemaphoreCreateBinary()
     };
-    ESP_RETURN_ON_FALSE(ctx.semaphore, ESP_ERR_NO_MEM, TAG, "create semaphore failed");
+    ctx.semaphore = xSemaphoreCreateBinaryStatic(&ctx.semaphore_buffer);
 
-    esp_err_t ret = esp_async_crc_calc(crc_hdl, data, size, params, crc_blocking_callback, &ctx);
-    if (ret != ESP_OK) {
-        vSemaphoreDelete(ctx.semaphore);
-        return ret;
-    }
+    ESP_RETURN_ON_ERROR(esp_async_crc_calc(crc_hdl, data, size, params, crc_blocking_callback, &ctx), TAG, "failed to start CRC calculation");
 
-    // Wait for completion with timeout (<0 means wait forever)
-    TickType_t ticks = (timeout_ms < 0) ? portMAX_DELAY : pdMS_TO_TICKS(timeout_ms);
-    if (xSemaphoreTake(ctx.semaphore, ticks) != pdTRUE) {
-        vSemaphoreDelete(ctx.semaphore);
-        return ESP_ERR_TIMEOUT;
-    }
-
-    vSemaphoreDelete(ctx.semaphore);
+    // Wait until the callback gives the semaphore
+    xSemaphoreTake(ctx.semaphore, portMAX_DELAY);
     return ESP_OK;
 }
