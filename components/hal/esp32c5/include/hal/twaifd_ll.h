@@ -57,6 +57,10 @@ extern "C" {
 #define TWAIFD_LL_TX_CMD_READY          TWAIFD_TXCR     // Set tx buffer to "Ready" state
 #define TWAIFD_LL_TX_CMD_ABORT          TWAIFD_TXCA     // Set tx buffer to "Aborted" state
 
+#define TWAIFD_LL_TX_STATUS_SUCCESS     0x4     // TX buffer transmitted successfully
+#define TWAIFD_LL_TX_STATUS_FAILED      0x6     // TX buffer transmission failed
+#define TWAIFD_LL_TX_STATUS_ABORTED     0x7     // TX buffer transmission aborted
+
 #define TWAIFD_LL_HW_CMD_RST_ERR_CNT    TWAIFD_ERCRST   // Error Counters Reset
 #define TWAIFD_LL_HW_CMD_RST_RX_CNT     TWAIFD_RXFCRST  // Clear RX bus traffic counter
 #define TWAIFD_LL_HW_CMD_RST_TX_CNT     TWAIFD_TXFCRST  // Clear TX bus traffic counter
@@ -586,7 +590,7 @@ static inline void twaifd_ll_filter_set_range(twaifd_dev_t* hw, uint8_t filter_i
  * @param hw Pointer to the TWAI-FD device hardware.
  * @return The number of TX buffers available.
  */
-static inline uint32_t twaifd_ll_get_tx_buffer_quantity(twaifd_dev_t *hw)
+static inline uint32_t twaifd_ll_get_tx_buffer_total(twaifd_dev_t *hw)
 {
     return hw->tx_command_txtb_info.txt_buffer_count;
 }
@@ -598,11 +602,10 @@ static inline uint32_t twaifd_ll_get_tx_buffer_quantity(twaifd_dev_t *hw)
  * @param buffer_idx Index of the TX buffer (0-7).
  * @return The status of the selected TX buffer.
  */
+__attribute__((always_inline))
 static inline uint32_t twaifd_ll_get_tx_buffer_status(twaifd_dev_t *hw, uint8_t buffer_idx)
 {
-    HAL_ASSERT(buffer_idx < twaifd_ll_get_tx_buffer_quantity(hw));  // Ensure buffer index is valid
-    uint32_t reg_val = hw->tx_status.val;
-    return reg_val & (TWAIFD_TX2S_V << (TWAIFD_TX2S_S * buffer_idx));  // Get status for buffer
+    return (hw->tx_status.val >> (TWAIFD_TX2S_S * buffer_idx)) & TWAIFD_TX2S_V;
 }
 
 /**
@@ -617,7 +620,7 @@ static inline uint32_t twaifd_ll_get_tx_buffer_status(twaifd_dev_t *hw, uint8_t 
  * @param cmd The command want to set, see `TWAIFD_LL_TX_CMD_`
  */
 __attribute__((always_inline))
-static inline void twaifd_ll_set_tx_cmd(twaifd_dev_t *hw, uint8_t buffer_idx, uint32_t cmd)
+static inline void twaifd_ll_set_tx_buffer_cmd(twaifd_dev_t *hw, uint8_t buffer_idx, uint32_t cmd)
 {
     hw->tx_command_txtb_info.val = (cmd | BIT(buffer_idx + TWAIFD_TXB1_S));
 }
@@ -631,7 +634,6 @@ static inline void twaifd_ll_set_tx_cmd(twaifd_dev_t *hw, uint8_t buffer_idx, ui
  */
 static inline void twaifd_ll_set_tx_buffer_priority(twaifd_dev_t *hw, uint8_t buffer_idx, uint32_t priority)
 {
-    HAL_ASSERT(buffer_idx < twaifd_ll_get_tx_buffer_quantity(hw));  // Ensure buffer index is valid
     uint32_t reg_val = hw->tx_priority.val;
     reg_val &= ~(TWAIFD_TXT1P_V << (TWAIFD_TXT2P_S * buffer_idx));  // Clear old priority
     reg_val |= priority << (TWAIFD_TXT2P_S * buffer_idx);           // Set new priority
