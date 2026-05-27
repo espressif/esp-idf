@@ -39,6 +39,18 @@ Secure Boot V2
 
     ``Secure Boot V2`` is available for ESP32-C3 from ECO3 onwards. To use these options in menuconfig, set :ref:`CONFIG_ESP32C3_REV_MIN` greater than or equal to `Rev 3`.
 
+.. only:: CONFIG_SECURE_BOOT_V2_ECDSA_INSECURE and SOC_SECURE_BOOT_V2_RSA
+
+    .. warning::
+
+        On {IDF_TARGET_NAME}, the ECDSA based Secure Boot V2 scheme is not functional for certain input vectors and is therefore **not recommended**. Please use the RSA based Secure Boot V2 scheme instead. To use the ECDSA based scheme regardless of this limitation, enable :ref:`CONFIG_SECURE_BOOT_INSECURE` and :ref:`CONFIG_SECURE_BOOT_V2_FORCE_ENABLE_ECDSA`. This issue will be fixed in a future hardware ECO revision; refer to the hardware errata document for details.
+
+.. only:: CONFIG_SECURE_BOOT_V2_ECDSA_INSECURE and not SOC_SECURE_BOOT_V2_RSA
+
+    .. warning::
+
+        On {IDF_TARGET_NAME}, the ECDSA based Secure Boot V2 scheme is vulnerable for certain input vectors and is therefore **not recommended for production**. To use the ECDSA based Secure Boot V2 scheme regardless of this limitation, enable :ref:`CONFIG_SECURE_BOOT_INSECURE` and :ref:`CONFIG_SECURE_BOOT_V2_FORCE_ENABLE_ECDSA`. This issue will be fixed in a future hardware ECO revision; refer to the hardware errata document for details.
+
 Background
 ----------
 
