@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,13 @@
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/esp_pmu.h"
 
-static bool test_gptimer_alarm_stop_callback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_data)
+#if CONFIG_GPTIMER_ISR_CACHE_SAFE
+#define TEST_ALARM_CALLBACK_ATTR IRAM_ATTR
+#else
+#define TEST_ALARM_CALLBACK_ATTR
+#endif // CONFIG_GPTIMER_ISR_CACHE_SAFE
+
+TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_alarm_stop_callback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_data)
 {
     TaskHandle_t task_handle = (TaskHandle_t)user_data;
     BaseType_t high_task_wakeup;
