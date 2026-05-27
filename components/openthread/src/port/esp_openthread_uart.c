@@ -50,12 +50,10 @@ otError otPlatUartSend(const uint8_t *buf, uint16_t buf_length)
 {
     int rval = write(s_uart_fd, buf, buf_length);
 
+    otPlatUartSendDone();
     if (rval != (int)buf_length) {
         return OT_ERROR_FAILED;
     }
-
-    otPlatUartSendDone();
-
     return OT_ERROR_NONE;
 }
 #endif
