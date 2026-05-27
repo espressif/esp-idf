@@ -593,6 +593,30 @@ menu "FreeRTOS"
                 (no direct calls, but also no Bluetooth/WiFi), you can try enable this to
                 cause xTaskCreateStatic to allow tasks stack in external memory.
 
+        config FREERTOS_PLACE_TASK_STACKS_IN_EXT_RAM
+            bool "Place dynamic task stacks in PSRAM by default"
+            depends on FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
+            default n
+            help
+                When enabled, task stacks allocated by xTaskCreate() / xTaskCreatePinnedToCore() are
+                placed in PSRAM (with internal RAM as fallback). TCBs are still allocated from internal RAM.
+
+                Restrictions that still require user attention:
+
+                - Flash operations cannot be called from tasks a PSRAM stack as they will
+                  run while cache is disabled. This includes all filesystem access and NVS.
+                  The recommended approach here is to use esp-flash-dispatcher,
+
+                  idf.py add-dependency "espressif/esp_flash_dispatcher"
+
+                  which automatically routes all flash API calls to a dedicated task
+                  placed in internal RAM.
+                - Deep-sleep requests issued from a task with a PSRAM stack are rejected at runtime. Auto-light-sleep
+                  is unaffected because it runs from the idle task, whose stack is always in internal RAM.
+                - Components that spawn tasks via xTaskCreate and require cache-disabled-safe stacks
+                  should use xTaskCreateWithCaps(..., MALLOC_CAP_INTERNAL) instead.
+                - xTaskCreateStatic is unaffected; the caller always decides where the stack lives.
+
     endmenu  # Extra
 
     # Hidden or compatibility options

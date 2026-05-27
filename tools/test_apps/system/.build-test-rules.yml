@@ -152,6 +152,11 @@ tools/test_apps/system/panic/panic_base:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32s31", "esp32h4"]
 
+tools/test_apps/system/psram_stack:
+  disable:
+    - if: SOC_PSRAM_SUPPORTED != 1
+      reason: PSRAM stack feature requires a target with PSRAM support
+
 tools/test_apps/system/ram_loadable_app:
   disable:
     - if: IDF_TARGET == "esp32p4"

@@ -102,6 +102,10 @@ Reducing Stack Sizes
 - Avoid allocating large variables on the stack. In C, any large structures or arrays allocated as an automatic variable (i.e., default scope of a C declaration) uses space on the stack. To minimize the sizes of these, allocate them statically and/or see if you can save memory by dynamically allocating them from the heap only when they are needed.
 - Avoid deep recursive function calls. Individual recursive function calls do not always add a lot of stack usage each time they are called, but if each function includes large stack-based variables then the overhead can get quite high.
 
+.. only:: SOC_SPIRAM_SUPPORTED
+
+   If the application uses external RAM, enabling :ref:`CONFIG_FREERTOS_PLACE_TASK_STACKS_IN_EXT_RAM` can move task stacks created by :cpp:func:`xTaskCreate` or :cpp:func:`xTaskCreatePinnedToCore` to PSRAM, reducing internal RAM usage. This option has restrictions for tasks that run while the flash cache is disabled; see :ref:`task-stack-in-external-ram` for details.
+
 Reducing Task Count
 ^^^^^^^^^^^^^^^^^^^
 

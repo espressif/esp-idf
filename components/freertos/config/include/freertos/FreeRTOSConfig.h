@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -136,7 +136,11 @@
 #define configSUPPORT_STATIC_ALLOCATION              1
 #define configSUPPORT_DYNAMIC_ALLOCATION             1
 #define configAPPLICATION_ALLOCATED_HEAP             1
-#define configSTACK_ALLOCATION_FROM_SEPARATE_HEAP    0
+#if CONFIG_FREERTOS_PLACE_TASK_STACKS_IN_EXT_RAM
+    #define configSTACK_ALLOCATION_FROM_SEPARATE_HEAP    1
+#else
+    #define configSTACK_ALLOCATION_FROM_SEPARATE_HEAP    0
+#endif
 
 /* ------------------------ Hooks -------------------------- */
 
