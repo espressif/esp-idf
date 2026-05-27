@@ -36,7 +36,7 @@ if(CONFIG_SOC_DW_GDMA_SUPPORTED)
 endif()
 
 if(CONFIG_SOC_DMA2D_SUPPORTED)
-    list(APPEND srcs "src/dma2d.c")
+    list(APPEND srcs "src/dma2d.c" "src/esp_async_color_convert.c" "src/async_color_convert_dma2d.c")
     if(CONFIG_SOC_PAU_SUPPORTED)
         list(APPEND srcs "${target}/dma2d_retention.c")
     endif()
