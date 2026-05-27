@@ -249,6 +249,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
         def __init__(
             self,
             callback: Callable,
+            check: Callable | None,
             name: str,
             aliases: list,
             dependencies: list | None,
@@ -256,6 +257,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
             action_args: dict,
         ) -> None:
             self.callback = callback
+            self.check = check
             self.name = name
             self.dependencies = dependencies
             self.order_dependencies = order_dependencies
@@ -270,6 +272,15 @@ def init_cli(verbose_output: list | None = None) -> Any:
 
             self.callback(self.name, context, global_args, **action_args)
 
+        def check_requirements(
+            self, context: click.core.Context, global_args: PropertyDict, action_args: dict | None = None
+        ) -> bool:
+            if self.check is None:
+                return True
+            if action_args is None:
+                action_args = self.action_args
+            return bool(self.check(self.name, context, global_args, **action_args))
+
     class Action(click.Command):
         callback: Callable
 
@@ -280,6 +291,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
             deprecated: dict | str | bool = False,
             dependencies: list | None = None,
             order_dependencies: list | None = None,
+            check: Callable | None = None,
             hidden: bool = False,
             **kwargs: Any,
         ) -> None:
@@ -322,6 +334,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
                 def wrapped_callback(**action_args: Any) -> Task:
                     return Task(
                         callback=self.unwrapped_callback,
+                        check=check,
                         name=self.name,
                         dependencies=dependencies,
                         order_dependencies=order_dependencies,
@@ -691,6 +704,9 @@ def init_cli(verbose_output: list | None = None) -> Any:
                 tasks_dict = dict([(t.name, t) for t in tasks])
 
                 dependecies_processed = True
+
+                if not task.check_requirements(ctx, global_args, task.action_args):
+                    raise FatalError(f'Action "{task.name}" cannot run in the current project configuration.')
 
                 # If task have some dependencies they have to be executed before the task.
                 for dep in task.dependencies:

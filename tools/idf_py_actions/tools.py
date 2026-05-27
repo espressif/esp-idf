@@ -982,17 +982,10 @@ def get_sdkconfig_value(sdkconfig_file: str, key: str) -> str | None:
     pattern = re.compile(rf'^{key}=\"?([^\"]*)\"?$')
     with open(sdkconfig_file, encoding='utf-8') as f:
         for line in f:
-            match = re.match(pattern, line)
+            match = re.match(pattern, line.strip())
             if match:
                 value = match.group(1)
     return value
-
-
-def is_target_supported(project_path: str, supported_targets: list) -> bool:
-    """
-    Returns True if the active target is supported, or False otherwise.
-    """
-    return get_target(project_path) in supported_targets
 
 
 def _check_idf_target(
