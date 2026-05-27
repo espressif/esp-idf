@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import fnmatch
 import glob
@@ -28,6 +28,7 @@ from idf_py_actions.tools import PropertyDict
 from idf_py_actions.tools import TargetChoice
 from idf_py_actions.tools import ensure_build_directory
 from idf_py_actions.tools import generate_hints
+from idf_py_actions.tools import get_build_context
 from idf_py_actions.tools import get_target
 from idf_py_actions.tools import idf_version
 from idf_py_actions.tools import merge_action_lists
@@ -131,6 +132,12 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
             force_progression=GENERATORS[args.generator].get('force_progression', False),
             custom_error_handler=tool_error_handler,
         )
+
+        proj_desc = get_build_context().get('proj_desc') or {}
+        if proj_desc.get('target') == 'linux':
+            print("Note: 'idf.py size' is not supported for the 'linux' target; skipping size analysis.")
+            return
+
         run_target(target_name, args, env=env)
 
     def list_build_system_targets(target_name: str, ctx: Context, args: PropertyDict) -> None:
