@@ -9,7 +9,7 @@ This example is to show how to use the APIs of **Serial Port Protocol** (**SPP**
 
 ### Hardware Required
 
-This example is designed to run on commonly available ESP32 development board, e.g. ESP32-DevKitC. To operate the example, you should be connect to an SPP acceptor running on a smartphone, a computer or on another ESP32 development board.
+This example is designed to run on commonly available ESP32 and ESP32-S31 development boards, e.g. ESP32-DevKitC and so on. To operate the example, you should be connect to an SPP acceptor running on a smartphone, a computer or on another ESP32 or ESP32-S31 development board.
 
 ### Configure the project
 1. Open the project configuration menu:

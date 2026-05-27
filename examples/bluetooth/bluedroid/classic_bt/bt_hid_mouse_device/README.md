@@ -11,7 +11,7 @@ This example simulates a Bluetooth HID mouse device that periodically sends repo
 
 ### Hardware Required
 
-* This example is able to run on any commonly available ESP32 development board, e.g. ESP32-DevKitC.
+* This example is able to run on any commonly available ESP32 and ESP32-S31 development board, e.g. ESP32-DevKitC and so on.
 
 * This example is supposed to connect to a Classic Bluetooth HID Host device, e.g. laptop or tablet.
 
@@ -62,9 +62,9 @@ I (3563) bt_address: my bluetooth address is 78:E3:6D:CD:02:2A
 I (3563) app_main: exiting
 ```
 
-The messages show the successful initialization of Bluetooth stack and HID application. ESP32 will become discoverable with the Bluetooth device name as "HID Mouse Example", by nearby Bluetooth HID Host device.
+The messages show the successful initialization of Bluetooth stack and HID application. The device will become discoverable with the Bluetooth device name as "HID Mouse Example", by nearby Bluetooth HID Host device.
 
-Connect to ESP32 on the HID Host side, then finish bonding. After that the HID connection will be established. IDF monitor console will continue to print messages like:
+Connect to the device on the HID Host side, then finish bonding. After that the HID connection will be established. IDF monitor console will continue to print messages like:
 
 ```
 I (50663) esp_bt_gap_cb: authentication success: privacy_k65
@@ -84,7 +84,7 @@ I (51753) esp_bt_hidd_cb: ESP_HIDD_SEND_REPORT_EVT id:0x00, type:1
 I (51803) esp_bt_hidd_cb: ESP_HIDD_SEND_REPORT_EVT id:0x00, type:1
 ```
 
-ESP32 will generate and send HID mouse reports periodically. On the screen of HID Host, the cursor will move horizontally from left to right and then right to left, and so on so forth.
+The device will generate and send HID mouse reports periodically. On the screen of HID Host, the cursor will move horizontally from left to right and then right to left, and so on so forth.
 
 
 ## Troubleshooting

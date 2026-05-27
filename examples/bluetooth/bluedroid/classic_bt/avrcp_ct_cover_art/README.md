@@ -39,16 +39,16 @@ Detailed information can be viewed through the [../common/README.md](../common/R
 
 ### Hardware Required
 
-* An ESP32 development board
+* An ESP32 or ESP32-S31 development board
 * A SPI-interfaced LCD
 * A USB cable for power supply and programming
 
 ### Hardware Connection
 
-The connection between ESP32 Board and the LCD is as follows:
+The connection between development board and the LCD is as follows:
 
 ```
-      ESP32 Board                          LCD Screen
+   Development Board                       LCD Screen
       +---------+              +---------------------------------+
       |         |              |                                 |
       |     3V3 +--------------+ VCC   +----------------------+  |

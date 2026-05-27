@@ -9,7 +9,7 @@ This example is to show how to use the APIs of **Serial Port Protocol** (**SPP**
 
 ### Hardware Required
 
-This example is designed to run on commonly available ESP32 development board, e.g. ESP32-DevKitC. To operate the example, it should be connected to an SPP Initiator running on a smartphone, a computer or on another ESP32 development board.
+This example is designed to run on commonly available ESP32 and ESP32-S31 development boards, e.g. ESP32-DevKitC and so on. To operate the example, it should be connected to an SPP Initiator running on a smartphone, a computer or on another ESP32 or ESP32-S31 development board.
 
 ### Configure the project
 
@@ -50,7 +50,7 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 
 ## Example Description
 
-After the program starts, the example will start an SPP acceptor. The example will print the received data after the SPP connection is established. You can connect to the server and send data with another ESP32 development board, Android phone or computer which performs as the SPP initiator.
+After the program starts, the example will start an SPP acceptor. The example will print the received data after the SPP connection is established. You can connect to the server and send data with another ESP32 or ESP32-S31 development board, Android phone or computer which performs as the SPP initiator.
 
 ## FAQ
 Please refer the FAQ part in the [README.md](../bt_spp_acceptor/README.md)
