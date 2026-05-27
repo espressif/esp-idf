@@ -1,0 +1,6 @@
+# ESP32-C61 has no RSA based Secure Boot V2; the ECDSA scheme is gated behind the
+# insecure option (see SECURE_BOOT_V2_ECDSA_INSECURE), so force-enable it and use an ECDSA key.
+CONFIG_SECURE_BOOT_INSECURE=y
+CONFIG_SECURE_BOOT_V2_FORCE_ENABLE_ECDSA=y
+CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME=y
+CONFIG_SECURE_BOOT_SIGNING_KEY="test/secure_boot_signing_key_ecdsa.pem"

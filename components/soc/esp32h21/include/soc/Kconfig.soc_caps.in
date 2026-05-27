@@ -753,7 +753,7 @@ config SOC_SECURE_BOOT_V2_RSA
 
 config SOC_SECURE_BOOT_V2_ECC
     bool
-    default y
+    default n
 
 config SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS
     int
