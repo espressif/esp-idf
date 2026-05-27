@@ -97,7 +97,7 @@ def write_time_to_nvs(dut: Dut) -> None:
     with dut.serial.disable_redirect_thread():
         dut.serial.esp.connect()
         esptool.main(
-            ['write-flash', '--no-compress', hex(nvs_offset), bin_file],
+            ['write_flash', '--no-compress', hex(nvs_offset), bin_file],
             esp=dut.serial.esp,
         )
         settings = dut.serial.proc.get_settings()
