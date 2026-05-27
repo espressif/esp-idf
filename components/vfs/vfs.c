@@ -833,6 +833,9 @@ const char* translate_path(const vfs_entry_t* vfs, const char* src_path)
 
 const vfs_entry_t* get_vfs_for_path(const char* path)
 {
+    if (path == NULL) {
+        return NULL;
+    }
     const vfs_entry_t* best_match = NULL;
     ssize_t best_match_prefix_len = -1;
     size_t len = strlen(path);
