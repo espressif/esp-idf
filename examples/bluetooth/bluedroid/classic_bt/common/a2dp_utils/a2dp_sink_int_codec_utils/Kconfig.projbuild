@@ -6,6 +6,7 @@ menu "A2DP Sink Internal Codec Example Configuration"
             Select to use Internal DAC or external I2S driver
 
         config EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
+            depends on IDF_TARGET_ESP32
             bool "Internal DAC"
             help
                 Select this to use Internal DAC sink output,

@@ -11,7 +11,7 @@ This is the example of using APIs to perform inquiry to search for a target devi
 
 ### Hardware Required
 
-This example is designed to run on commonly available ESP32 development board, e.g. ESP32-DevKitC.
+This example is designed to run on commonly available ESP32 and ESP32-S31 development boards, e.g. ESP32-DevKitC and so on.
 
 ### Configure the project
 

@@ -10,7 +10,7 @@ This example is to show how to use the APIs of **Logical Link Control and Adapta
 
 ### Hardware Required
 
-This example is designed to run on commonly available ESP32 development board, e.g. ESP32-DevKitC. To operate the example, it should be connected to the L2CAP client running on another ESP32 board.
+This example is designed to run on commonly available ESP32 and ESP32-S31 development boards, e.g. ESP32-DevKitC and so on. To operate the example, it should be connected to the L2CAP client running on another ESP32 or ESP32-S31 board.
 
 ### Configure the project
 
