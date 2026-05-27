@@ -53,6 +53,7 @@ typedef struct {
     uint32_t backlog;         /*!< Maximum number of pending CRC requests that can be queued per driver instance.
                                    Higher values use more memory but provide better throughput for bursty workloads. */
     size_t dma_burst_size;    /*!< DMA transfer burst size, in bytes */
+    uint32_t intr_priority;   /*!< DMA interrupt priority. 0 means default low/medium priority. */
 } async_crc_config_t;
 
 #if SOC_HAS(AHB_GDMA)
@@ -132,21 +133,18 @@ esp_err_t esp_async_crc_calc(async_crc_handle_t crc_hdl, const void *data, size_
  * @brief Blocking CRC calculation function with timeout
  *
  * @note This function is blocking and should not be called from interrupt context.
+ * @note Only `timeout_ms=-1` is supported, which means waiting indefinitely.
  *
  * @param[in] crc_hdl Handle of async CRC driver that returned from install functions
  * @param[in] data Pointer to data buffer for CRC calculation
  * @param[in] size Size of data in bytes
  * @param[in] params CRC calculation parameters
- * @param[in] timeout_ms Timeout in milliseconds:
- *                       - `< 0`: Wait forever (no timeout)
- *                       - `0`: Return immediately (poll once)
- *                       - `> 0`: Wait up to specified milliseconds
+ * @param[in] timeout_ms Timeout in milliseconds. Only -1 is supported.
  * @param[out] result Pointer to store CRC calculation result
  * @return
  *      - ESP_OK: Calculate CRC successfully
  *      - ESP_ERR_INVALID_ARG: Calculate CRC failed because of invalid argument
  *      - ESP_ERR_INVALID_STATE: Function called from ISR context or driver in invalid state
- *      - ESP_ERR_TIMEOUT: Operation timed out
  *      - ESP_FAIL: Calculate CRC failed because of other error
  */
 esp_err_t esp_crc_calc_blocking(async_crc_handle_t crc_hdl, const void *data, size_t size,
