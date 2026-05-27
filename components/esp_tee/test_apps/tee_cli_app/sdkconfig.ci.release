@@ -1,3 +1,6 @@
+# NOTE: This sdkconfig is intended solely for CI build purposes - to verify ESP-TEE
+# builds across various configurations - and is not intended for production use.
+
 # Reducing TEE IRAM size
 # 29KB
 CONFIG_SECURE_TEE_IRAM_SIZE=0x7400
@@ -12,6 +15,9 @@ CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1=n
 # Secure Boot
 CONFIG_PARTITION_TABLE_OFFSET=0xF000
 CONFIG_SECURE_BOOT=y
+# ECDSA Secure Boot V2 is gated behind the insecure option on the affected SoCs
+CONFIG_SECURE_BOOT_INSECURE=y
+CONFIG_SECURE_BOOT_V2_FORCE_ENABLE_ECDSA=y
 CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME=y
 CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES=y
 CONFIG_SECURE_BOOT_SIGNING_KEY="test_keys/secure_boot_signing_key_ecdsa_p256.pem"

@@ -5,11 +5,11 @@ Secure Boot v2
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2, esp32c61, esp32h4="ECDSA", esp32c6, esp32h2, esp32p4, esp32c5, esp32h21="RSA-PSS or ECDSA"}
+{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2, esp32c61, esp32h4="ECDSA", esp32c6, esp32h2, esp32p4, esp32c5="RSA-PSS or ECDSA", esp32h21="RSA-PSS"}
 
-{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2, esp32c61="ECDSA-256", esp32c6, esp32h2, esp32p4, esp32h21="RSA-3072, ECDSA-256", esp32h4="ECDSA-384, ECDSA-256", esp32c5="RSA-3072, ECDSA-384, ECDSA-256"}
+{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2, esp32c61="ECDSA-256", esp32c6, esp32h2, esp32p4="RSA-3072, ECDSA-256", esp32h21="RSA-3072", esp32h4="ECDSA-384, ECDSA-256", esp32c5="RSA-3072, ECDSA-384, ECDSA-256"}
 
-{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6, esp32h2, esp32p4, esp32h21="RSA is recommended for faster verification. You can choose either the RSA or ECDSA scheme from the menu.", esp32c5="ECDSA is recommended for faster verification. You can choose either the RSA or ECDSA scheme from the menu."}
+{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6, esp32h2, esp32p4="RSA is recommended for faster verification. You can choose either the RSA or ECDSA scheme from the menu.", esp32c5="ECDSA is recommended for faster verification. You can choose either the RSA or ECDSA scheme from the menu."}
 
 {IDF_TARGET_SBV2_SCHEME_RECOMMENDATION:default="RSA is recommended for use cases where fast boot-up time is required whereas ECDSA is recommended for use cases where shorter key length is required.", esp32c5="ECDSA is recommended for use cases where fast boot-up time and shorter key length is required."}
 
@@ -51,6 +51,18 @@ Secure Boot v2
 .. note::
 
     In this guide, most used commands are in the form of ``idf.py secure-<command>``, which is a wrapper around corresponding ``espsecure <command>``. The ``idf.py`` based commands provides more user-friendly experience, although may lack some of the advanced functionality of their ``espsecure`` based counterparts.
+
+.. only:: CONFIG_SECURE_BOOT_V2_ECDSA_INSECURE and SOC_SECURE_BOOT_V2_RSA
+
+    .. warning::
+
+        On {IDF_TARGET_NAME}, the ECDSA based Secure Boot V2 scheme is not functional for certain input vectors and is therefore **not recommended**. Please use the RSA based Secure Boot V2 scheme instead. To use the ECDSA based scheme regardless of this limitation, enable :ref:`CONFIG_SECURE_BOOT_INSECURE` and :ref:`CONFIG_SECURE_BOOT_V2_FORCE_ENABLE_ECDSA`. This issue will be fixed in a future hardware ECO revision; refer to the hardware errata document for details.
+
+.. only:: CONFIG_SECURE_BOOT_V2_ECDSA_INSECURE and not SOC_SECURE_BOOT_V2_RSA
+
+    .. warning::
+
+        On {IDF_TARGET_NAME}, the ECDSA based Secure Boot V2 scheme is vulnerable for certain input vectors and is therefore **not recommended for production**. To use the ECDSA based Secure Boot V2 scheme regardless of this limitation, enable :ref:`CONFIG_SECURE_BOOT_INSECURE` and :ref:`CONFIG_SECURE_BOOT_V2_FORCE_ENABLE_ECDSA`. This issue will be fixed in a future hardware ECO revision; refer to the hardware errata document for details.
 
 Background
 ----------

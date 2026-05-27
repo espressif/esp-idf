@@ -38,15 +38,15 @@ SECURE_BOOT_RSA_TARGETS = [
     'esp32c3',
     'esp32c5',
     'esp32c6',
-    'esp32c61',
     'esp32h2',
     'esp32h21',
     'esp32s2',
     'esp32s3',
     'esp32p4',
-    'esp32h4',
 ]
-SECURE_BOOT_ECDSA_TARGETS = ['esp32c2', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32h21', 'esp32p4', 'esp32h4']
+# ESP32-H4/H21 are preview targets with ECDSA based Secure Boot V2 marked unsupported,
+# and ESP32-H4 has Secure Boot disabled entirely, so they are excluded here.
+SECURE_BOOT_ECDSA_TARGETS = ['esp32c2', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4']
 SECURE_BOOT_ECDSA_P384_TARGETS = ['esp32c5']
 
 CONFIGS_SECURE_BOOT_ECDSA = list(

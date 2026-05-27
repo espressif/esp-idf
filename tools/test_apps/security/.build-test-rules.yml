@@ -7,6 +7,8 @@ tools/test_apps/security/secure_boot:
   disable:
     - if: CONFIG_NAME != "qemu" or IDF_TARGET == "linux"
       reason: Skipping redundant CI builds for all the targets.
+    - if: IDF_TARGET == "esp32h4"
+      reason: Secure Boot V2 is disabled on ESP32-H4 (ECDSA-only, vulnerable scheme), so the secure boot test app does not apply.
 
 tools/test_apps/security/signed_app_no_secure_boot:
   enable:
