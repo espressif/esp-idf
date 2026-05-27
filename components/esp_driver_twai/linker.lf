@@ -6,6 +6,9 @@ entries:
         esp_twai_onchip: _node_isr_main (noflash)
         esp_twai_onchip: _node_start_trans (noflash)
         esp_twai_onchip: _node_parse_rx (noflash)
+        esp_twai_onchip: _node_start_tx_batch_from_isr (noflash)
+        esp_twai_onchip: _node_mark_tx_idle (noflash)
+        esp_twai_onchip: _node_is_tx_all_done (noflash)
 
     if TWAI_IO_FUNC_IN_IRAM = y:
         esp_twai_onchip: _node_queue_tx (noflash)
