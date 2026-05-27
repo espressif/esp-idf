@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,7 @@
 #include "esp_private/etm_interface.h"
 #include "esp_private/sleep_retention.h"
 #include "esp_private/critical_section.h"
+#include "esp_private/esp_clk_tree_common.h"
 
 #define ETM_MEM_ALLOC_CAPS   MALLOC_CAP_DEFAULT
 
@@ -63,6 +64,9 @@ struct esp_etm_channel_t {
     _Atomic etm_chan_fsm_t fsm;   // record ETM channel's driver state
     esp_etm_event_handle_t event; // which event is connect to the channel
     esp_etm_task_handle_t task;   // which task is connect to the channel
+#if ETM_LL_SUPPORT(CLOCK_SRC)
+    etm_clock_source_t clk_src;   // function clock source enabled for this channel
+#endif
 };
 
 // ETM driver platform, it's always a singleton
@@ -272,6 +276,8 @@ esp_err_t esp_etm_new_channel(const esp_etm_channel_config_t *config, esp_etm_ch
     if (clk_src == 0) {
         clk_src = ETM_CLK_SRC_DEFAULT;
     }
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), err, TAG, "clock source enable failed");
+    chan->clk_src = clk_src;
     etm_ll_set_clock_source(group_id, clk_src);
 #endif
 
@@ -290,6 +296,11 @@ esp_err_t esp_etm_new_channel(const esp_etm_channel_config_t *config, esp_etm_ch
 
 err:
     if (chan) {
+#if ETM_LL_SUPPORT(CLOCK_SRC)
+        if (chan->clk_src != 0) {
+            esp_clk_tree_enable_src((soc_module_clk_t)chan->clk_src, false);
+        }
+#endif
         etm_chan_destroy(chan);
     }
     return ret;
@@ -310,6 +321,11 @@ esp_err_t esp_etm_del_channel(esp_etm_channel_handle_t chan)
     etm_ll_channel_set_task(group->hal.regs, chan_id, 0);
 
     ESP_LOGD(TAG, "del etm channel (%d,%d)", group_id, chan_id);
+#if ETM_LL_SUPPORT(CLOCK_SRC)
+    // Back to hardware default clock selection, otherwise it might get stuck when stopping the bus during sleep process.
+    etm_ll_set_clock_source(group_id, ETM_CLK_SRC_XTAL);
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)chan->clk_src, false), TAG, "clock source disable failed");
+#endif
     // recycle memory resource
     ESP_RETURN_ON_ERROR(etm_chan_destroy(chan), TAG, "destroy etm channel failed");
     return ESP_OK;

@@ -6,6 +6,8 @@
 
 #include "sdkconfig.h"
 #include "esp_attr.h"
+#include "esp_check.h"
+#include "esp_clk_tree.h"
 #include "soc/soc_caps.h"
 #include "modem/modem_clock_impl.h"
 #include "esp_private/regi2c_ctrl.h"
@@ -212,7 +214,13 @@ static void IRAM_ATTR modem_clock_coex_configure(modem_clock_context_t *ctx, boo
 #if SOC_MODEM_CLOCK_SOC_PLL_SOURCE_CG_SUPPORTED
 static void IRAM_ATTR modem_clock_soc_pll_source_cg_configure(modem_clock_context_t *ctx, bool enable)
 {
+    if (enable) {
+        ESP_ERROR_CHECK(esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F160M, true));
+    }
     modem_clock_hal_enable_soc_pll_source_cg(ctx->hal, enable);
+    if (!enable) {
+        ESP_ERROR_CHECK(esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F160M, false));
+    }
 }
 #endif
 
