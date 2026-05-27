@@ -22,10 +22,6 @@
 
 #include "hal/rtc_timer_hal.h"
 
-#if SOC_RNG_CLOCK_IS_INDEPENDENT
-#include "hal/lp_clkrst_ll.h"
-#endif
-
 #if defined CONFIG_IDF_TARGET_ESP32S3
 #define APB_CYCLE_WAIT_NUM (1778) /* If APB clock is 80 MHz, the maximum sampling frequency is around 45 KHz*/
                                   /* 45 KHz reading frequency is the maximum we have tested so far on S3 */
@@ -113,11 +109,7 @@ void esp_fill_random(void *buf, size_t len)
 #if SOC_RNG_CLOCK_IS_INDEPENDENT && !ESP_TEE_BUILD
 ESP_SYSTEM_INIT_FN(init_rng, SECONDARY, BIT(0), 102)
 {
-#if SOC_RNG_BUF_CHAIN_ENTROPY_SOURCE || SOC_RNG_RTC_TIMER_ENTROPY_SOURCE
     rng_ll_enable();
-#else
-    _lp_clkrst_ll_enable_rng_clock(true);
-#endif
     return ESP_OK;
 }
 #endif

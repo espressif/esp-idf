@@ -42,7 +42,7 @@
 #include "hal/rtc_io_hal.h"
 #include "hal/clk_tree_hal.h"
 
-#if SOC_IS(ESP32C5) // Remove after all chips rng_ll.h implemented
+#if RNG_LL_NEEDS_RESET_WHEN_WAKEUP
 #include "hal/rng_ll.h"
 #endif
 
@@ -755,7 +755,7 @@ static SLEEP_FN_ATTR void misc_modules_wake_prepare(uint32_t sleep_flags)
 #if SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
     temperature_sensor_hal_i2c_saradc_reg_restore();
 #endif
-#if RNG_LL_DEPENDS_ON_LP_PERIPH
+#if RNG_LL_NEEDS_RESET_WHEN_WAKEUP
     if (sleep_flags & PMU_SLEEP_PD_LP_PERIPH) {
         // Re-enable the RNG module.
         rng_ll_reset();

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -60,6 +60,19 @@ static inline void lp_clkrst_ll_select_modem_32k_clock_source(lp_clkrst_dev_t *h
 {
     hw->lpperi.lp_bletimer_32k_sel = src;
 }
+
+__attribute__((always_inline))
+static inline void _lp_clkrst_ll_enable_rng_clock(bool en)
+{
+    LPPERI.clk_en.rng_apb_ck_en = en;
+    LPPERI.clk_en.rng_ck_en = en;
+}
+
+/// LPPERI.clk_en is a shared register, so this function must be used in an atomic way
+#define lp_clkrst_ll_enable_rng_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _lp_clkrst_ll_enable_rng_clock(__VA_ARGS__); \
+    } while(0)
 
 #ifdef __cplusplus
 }

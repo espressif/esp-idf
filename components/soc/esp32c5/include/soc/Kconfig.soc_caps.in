@@ -1255,14 +1255,6 @@ config SOC_CRYPTO_DPA_PROTECTION_SUPPORTED
     bool
     default y
 
-config SOC_RNG_BUF_CHAIN_ENTROPY_SOURCE
-    bool
-    default y
-
-config SOC_RNG_RTC_TIMER_ENTROPY_SOURCE
-    bool
-    default y
-
 config SOC_UART_NUM
     int
     default 3
