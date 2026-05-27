@@ -82,6 +82,10 @@ tools/test_apps/system/no_embedded_paths:
 tools/test_apps/system/panic:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4", "esp32c61"] # preview targets
+  disable_test:
+    - if: CONFIG_NAME == "gdbstub" and IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: gdbstub panic test is constantly failing on release/v5.4 # TODO IDFCI-11699
 
 tools/test_apps/system/rtc_mem_reserve:
   enable:
