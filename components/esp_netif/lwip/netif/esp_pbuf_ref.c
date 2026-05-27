@@ -34,7 +34,9 @@ typedef struct esp_custom_pbuf
 static void esp_pbuf_free(struct pbuf *pbuf)
 {
     esp_custom_pbuf_t* esp_pbuf = (esp_custom_pbuf_t*)pbuf;
-    esp_pbuf->driver_free_rx_buffer(esp_pbuf->driver_handle, esp_pbuf->l2_buf);
+    if (esp_pbuf->driver_free_rx_buffer != NULL) {
+        esp_pbuf->driver_free_rx_buffer(esp_pbuf->driver_handle, esp_pbuf->l2_buf);
+    }
     mem_free(pbuf);
 }
 
