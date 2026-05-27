@@ -161,8 +161,43 @@ def init_cli(verbose_output: list | None = None) -> Any:
     from click.shell_completion import CompletionItem
     from rich_click import Context
     from rich_click import RichHelpConfiguration
-    from rich_click import RichHelpFormatter
     from rich_click.rich_click import MAX_WIDTH
+
+    # ``RichHelpFormatter`` was promoted to the top-level namespace in
+    # rich-click 1.9; the submodule path is stable across 1.8.x/1.9.x. For
+    # positional/option base classes we deliberately use plain ``click.Argument``
+    # / ``click.Option`` rather than the rich-click 1.9 ``RichArgument`` /
+    # ``RichOption`` subclasses: those subclasses are empty wrappers on 1.9.x
+    # (the only observable difference is the ``isinstance(obj, RichArgument)``
+    # gate that auto-populates an Arguments panel when ``obj.help is not None``
+    # -- idf.py never declares ``help=`` on a positional argument), and the
+    # symbols don't exist on 1.8.x at all. Using the click base classes keeps
+    # one code path for both rich-click lines.
+    from rich_click.rich_help_formatter import RichHelpFormatter
+
+    # click 8.2 made ``Parameter.make_metavar(ctx)`` mandatory. rich-click
+    # versions before 1.8.6 still call ``param.make_metavar()`` with no ctx
+    # (see ``rich_click/rich_help_rendering.py``), which crashes with
+    # ``TypeError`` on click >= 8.2. The crash hits *every* parameter rich-click
+    # iterates -- including click's built-in ``--help`` option, which is a
+    # plain ``click.Option`` instance not under our control. So patch the
+    # ``Parameter.make_metavar`` method itself to accept ctx as optional,
+    # fishing the running context from ``click.get_current_context`` when
+    # rich-click forgets to pass it. The patch is a no-op on click < 8.2
+    # (signature already takes only ``self``) and on click >= 8.2 it simply
+    # bridges the old rich-click call site.
+    if click.Parameter.make_metavar.__code__.co_argcount >= 2:
+        _orig_make_metavar = click.Parameter.make_metavar
+
+        def _make_metavar_with_optional_ctx(self: 'click.Parameter', ctx: 'Context | None' = None) -> str:
+            if ctx is None:
+                try:
+                    ctx = click.get_current_context()
+                except RuntimeError:
+                    ctx = click.Context(click.Command(self.name or '_'))
+            return _orig_make_metavar(self, ctx)  # type: ignore[no-any-return]
+
+        click.Parameter.make_metavar = _make_metavar_with_optional_ctx  # type: ignore[method-assign]
 
     class Deprecation:
         """Construct deprecation notice for help messages"""
@@ -343,7 +378,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
             finally:
                 formatter.config.default_panels_first = prev_default_first
 
-    class Argument(click.RichArgument):
+    class Argument(click.Argument):
         """
         Positional argument
 
@@ -386,7 +421,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
         def __str__(self) -> str:
             return self._scope
 
-    class Option(click.RichOption):
+    class Option(click.Option):
         """Option that knows whether it should be global"""
 
         def __init__(
