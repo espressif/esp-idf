@@ -510,6 +510,10 @@ void btm_ble_add_default_entry_to_resolving_list(void);
 void btm_ble_set_privacy_mode_complete(UINT8 *p, UINT16 evt_len);
 #endif
 
+#if (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == TRUE)
+void btm_ble_adjust_conn_addr_for_ext_adv(UINT16 handle);
+#endif
+
 char btm_ble_map_adv_tx_power(int tx_power_index);
 #if (BLE_TOPOLOGY_CHECK == TRUE)
 BOOLEAN btm_ble_topology_check(tBTM_BLE_STATE_MASK request);
@@ -531,6 +535,9 @@ BOOLEAN btm_get_current_conn_params(BD_ADDR bda, UINT16 *interval, UINT16 *laten
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 void btm_ble_update_phy_evt(tBTM_BLE_UPDATE_PHY *params);
 void btm_ble_scan_timeout_evt(void);
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
+void btm_ble_clear_ext_adv_ter_con_handle(UINT16 con_handle);
+#endif
 void btm_ble_adv_set_terminated_evt(tBTM_BLE_ADV_TERMINAT *params);
 void btm_ble_ext_adv_report_evt(tBTM_BLE_EXT_ADV_REPORT *params);
 void btm_ble_scan_req_received_evt(tBTM_BLE_SCAN_REQ_RECEIVED *params);
