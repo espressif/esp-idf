@@ -185,4 +185,34 @@ menu "ESP-STDIO"
             If enabled, esp_rom_printf and ESP_EARLY_LOG output will also be sent over USB CDC.
             Disabling this option saves about 1kB or RAM.
 
+    config ESP_STDIO_BASIC_MODE
+        bool "Use basic /dev/console descriptor handling"
+        depends on VFS_SUPPORT_IO
+        default n
+        help
+            Enable the low-overhead legacy /dev/console descriptor handling.
+
+            In basic mode, all open() calls share a single internal descriptor. This keeps RAM usage
+            lower, but disables checks for per-fd behaviour, such as read-only versus write-only access.
+
+    config ESP_STDIO_MAX_FDS
+        int "Max logical stdio file descriptors"
+        depends on VFS_SUPPORT_IO && !ESP_STDIO_BASIC_MODE
+        range 3 64
+        default 16
+        help
+            Maximum number of logical /dev/console descriptors tracked by esp_stdio VFS.
+
+            stdin, stdout, and stderr each occupy one slot. The default leaves room for additional
+            opens of /dev/console (e.g. dup2, reopen). If set to exactly 3, only the three standard
+            streams fit and further opens fail with ENFILE unless one is closed first.
+
+    config ESP_STDIO_MAX_VFS_ENTRIES
+        int "Maximum number of registerable VFS sinks"
+        depends on VFS_SUPPORT_IO
+        range 1 10
+        default 2
+        help
+            Maximum number of filesystems that can be registered as sinks for console output.
+
 endmenu
