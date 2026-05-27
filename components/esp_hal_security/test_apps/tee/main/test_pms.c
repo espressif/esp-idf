@@ -358,3 +358,13 @@ TEST_CASE("Test GDMA -> EXT_MEM access", "[SYS_APM]")
 }
 #endif /* CONFIG_SPIRAM */
 #endif /* SOC_APM_CTRL_FILTER_SUPPORTED */
+
+#if CONFIG_SOC_SUPPORT_TEE_MSPI_PMS_TEST
+/**
+ * Test HP_CPU access to EXT_MEM (Flash) with MSPI PMS
+ */
+TEST_CASE("Test HP_CPU -> EXT_MEM (Flash) access", "[MSPI_PMS]")
+{
+    test_sys_pms_master_hp_cpu_slave_flash_mspi();
+}
+#endif /* CONFIG_SOC_SUPPORT_TEE_MSPI_PMS_TEST */

@@ -15,6 +15,10 @@ if(CONFIG_SOC_SUPPORT_TEE_SYS_APM_TEST)
     endif()
 endif()
 
+if(CONFIG_SOC_SUPPORT_TEE_MSPI_PMS_TEST)
+    list(APPEND srcs "src/pms/test_mspi_pms.c")
+endif()
+
 if(CONFIG_SOC_SUPPORT_TEE_PERI_APM_TEST)
     list(APPEND srcs "src/pms/test_tee_peri_apm.c")
 endif()
@@ -29,7 +33,8 @@ idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS "include" "priv_include"
                        PRIV_INCLUDE_DIRS "priv_include/${target}"
                        REQUIRES ulp unity esp_hal_security
-                       PRIV_REQUIRES esp_hal_timg esp_mm
+                       PRIV_REQUIRES bootloader_support esp_hal_timg esp_hw_support
+                                     esp_mm esp_partition esp_psram spi_flash
                        LDFRAGMENTS linker.lf)
 
 if(CONFIG_ULP_COPROC_ENABLED)

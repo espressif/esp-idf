@@ -8,6 +8,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 SOC_SUPPORT_SYS_APM_TEST = ['esp32c6', 'esp32h2', 'esp32c5', 'esp32c61', 'esp32p4']
 SOC_SUPPORT_PERI_APM_TEST = ['esp32c5']
+SOC_SUPPORT_MSPI_PMS_TEST = ['esp32c5', 'esp32c61', 'esp32p4']
 SOC_SUPPORT_INTR_TEST = ['esp32c5', 'esp32c61', 'esp32p4']
 
 CONFIG_SYS_APM = [
@@ -20,6 +21,12 @@ CONFIG_PERI_APM = [
     # 'config, target, markers',
     ('default', target, (pytest.mark.generic,))
     for target in SOC_SUPPORT_PERI_APM_TEST
+]
+
+CONFIG_MSPI_PMS = [
+    # 'config, target, markers',
+    ('default', target, (pytest.mark.generic,))
+    for target in SOC_SUPPORT_MSPI_PMS_TEST
 ]
 
 CONFIG_INTR_TEST = [
@@ -47,6 +54,15 @@ def test_tee_sys_apm(dut: IdfDut) -> None:
 )
 def test_tee_peri_apm(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(group='PERI_APM')
+
+
+@idf_parametrize(
+    'config, target, markers',
+    CONFIG_MSPI_PMS,
+    indirect=['config', 'target'],
+)
+def test_tee_mspi_pms(dut: IdfDut) -> None:
+    dut.run_all_single_board_cases(group='MSPI_PMS')
 
 
 # ---------------- TEE Interrupt tests ----------------

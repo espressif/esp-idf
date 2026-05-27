@@ -25,6 +25,7 @@
 #include "esp_intr_alloc.h"
 #include "esp_rom_sys.h"
 
+#include "riscv/csr.h"
 #include "unity.h"
 
 #if SOC_APM_CTRL_FILTER_SUPPORTED
@@ -601,5 +602,82 @@ void test_pms_ctrl_reset_all(void)
     test_lp_peri_pms_reset();
     test_lp2hp_peri_pms_reset();
     test_pms_free_all_intr();
+}
+#endif
+
+/********************************** MSPI PMS *************************************/
+
+#if CONFIG_SOC_SUPPORT_TEE_MSPI_PMS_TEST
+#include "hal/mspi_ll.h"
+#include "hal/mspi_periph.h"
+#include "hal/mspi_pms_ll.h"
+#if MSPI_LL_INTR_SHARED
+#include "esp_private/mspi_intr.h"
+#if CONFIG_SPIRAM
+#include "esp_private/esp_psram_mspi.h"
+#endif
+#endif
+
+#define print_safe(format, ...) esp_rom_printf(DRAM_STR(format), ##__VA_ARGS__)
+
+volatile bool pms_mspi_intr_flag = false;
+static intr_handle_t s_pms_mspi_intr_hdl = NULL;
+
+IRAM_ATTR static void pms_mspi_intr_cb(void *arg)
+{
+    uint32_t reject_addr = mspi_ll_pms_get_reject_addr(MSPI_PMS_MEM_FLASH);
+    uint32_t err_mask = mspi_ll_pms_get_err_mask(MSPI_PMS_MEM_FLASH);
+
+    print_safe("PMS violation: MSPI | Mode: %s\n\r", (RV_READ_CSR(mstatus) & MSTATUS_MPP) ? "TEE" : "REE");
+    print_safe("Access addr: 0x%08x | Type:", reject_addr);
+    switch (err_mask) {
+    case MSPI_PMS_ERR_NONE:       print_safe(" None"); break;
+    case MSPI_PMS_ERR_WRITE:      print_safe(" Write"); break;
+    case MSPI_PMS_ERR_READ:       print_safe(" Read"); break;
+    case MSPI_PMS_ERR_ADDR_MISS:  print_safe(" AddrMiss"); break;
+    case MSPI_PMS_ERR_ADDR_MULTI: print_safe(" AddrMulti"); break;
+    default:                      print_safe(" 0x%x", err_mask); break;
+    }
+    print_safe("\n\r");
+
+    pms_mspi_intr_flag = true;
+    mspi_ll_clear_intr(0, MSPI_LL_EVENT_PMS_REJECT);
+}
+
+void test_pms_mspi_enable_intr(void)
+{
+    int intr_src = mspi_hw_info.instances[MSPI_TIMING_LL_MSPI_ID_0].irq;
+    TEST_ASSERT(intr_src >= 0);
+
+#if MSPI_LL_INTR_SHARED
+    esp_mspi_unregister_isr();
+    uint32_t flags = ESP_INTR_FLAG_IRAM;
+#else
+    uint32_t flags = ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_LEVEL3;
+#endif
+
+    TEST_ESP_OK(esp_intr_alloc(intr_src, flags, &pms_mspi_intr_cb, NULL, &s_pms_mspi_intr_hdl));
+    mspi_ll_enable_intr(0, MSPI_LL_EVENT_PMS_REJECT, true);
+    mspi_ll_pms_enable(MSPI_PMS_MEM_FLASH, true);
+}
+
+void test_pms_mspi_disable_intr(void)
+{
+    mspi_ll_pms_enable(MSPI_PMS_MEM_FLASH, false);
+    mspi_ll_enable_intr(0, MSPI_LL_EVENT_PMS_REJECT, false);
+    mspi_ll_clear_intr(0, MSPI_LL_EVENT_PMS_REJECT);
+
+    if (s_pms_mspi_intr_hdl) {
+        esp_intr_free(s_pms_mspi_intr_hdl);
+        s_pms_mspi_intr_hdl = NULL;
+    }
+
+#if MSPI_LL_INTR_SHARED
+#if CONFIG_SPIRAM
+    esp_psram_mspi_register_isr();
+#else
+    esp_mspi_register_isr(NULL);
+#endif
+#endif
 }
 #endif
