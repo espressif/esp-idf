@@ -231,8 +231,8 @@ static void twai_intr_handler_main(void *arg)
         //Note: This event will never occur if there is a periph reset event
         twai_handle_rx_buffer_frames(p_twai_obj, &task_woken, &alert_req);
     }
-    if (events & TWAI_HAL_EVENT_TX_BUFF_FREE) {
-        twai_handle_tx_buffer_frame(p_twai_obj, (events & TWAI_HAL_EVENT_TX_SUCCESS), &task_woken, &alert_req);
+    if (events & TWAI_HAL_EVENT_TX0_DONE) {
+        twai_handle_tx_buffer_frame(p_twai_obj, (events & TWAI_HAL_EVENT_TX0_SUCCESS), &task_woken, &alert_req);
     }
 
     //Handle events that only require alerting (i.e. no handler)

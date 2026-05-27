@@ -22,6 +22,7 @@ bool twai_hal_init(twai_hal_context_t *hal_ctx, const twai_hal_config_t *config)
     hal_ctx->enable_listen_only = config->enable_listen_only;
 
     twaifd_ll_reset(hal_ctx->dev);
+    hal_ctx->tx_buffer_num = twaifd_ll_get_tx_buffer_total(hal_ctx->dev);
     twaifd_ll_enable_hw(hal_ctx->dev, false);   //mode should be changed under disabled
     twaifd_ll_set_mode(hal_ctx->dev, config->enable_listen_only, config->enable_self_test, config->enable_loopback);
     twaifd_ll_set_tx_retrans_limit(hal_ctx->dev, config->retry_cnt);
@@ -222,9 +223,20 @@ uint32_t twai_hal_get_events(twai_hal_context_t *hal_ctx)
         hal_ctx->timer_overflow_cnt ++;
     }
     if (int_stat & (TWAIFD_LL_INTR_TX_DONE)) {
-        hal_events |= TWAI_HAL_EVENT_TX_BUFF_FREE;
-        if (int_stat & TWAIFD_LL_INTR_TX_FRAME) {
-            hal_events |= TWAI_HAL_EVENT_TX_SUCCESS;
+        for (uint32_t i = 0; i < MIN(hal_ctx->tx_buffer_num, TWAI_HAL_TX_BUFFER_SLOT_NUM); i++) {
+            uint32_t tx_status = twaifd_ll_get_tx_buffer_status(hal_ctx->dev, i);
+            switch (tx_status) {
+            case TWAIFD_LL_TX_STATUS_SUCCESS:
+                hal_events |= TWAI_HAL_EVENT_TX_SUCC_SLOT(i);
+                __attribute__((fallthrough));   // success event must be a done event, just fallthrough
+            case TWAIFD_LL_TX_STATUS_FAILED:
+            case TWAIFD_LL_TX_STATUS_ABORTED:
+                hal_events |= TWAI_HAL_EVENT_TX_DONE_SLOT(i);
+                twaifd_ll_set_tx_buffer_cmd(hal_ctx->dev, i, TWAIFD_LL_TX_CMD_EMPTY);   // clear buffer to empty state
+                break;
+            default:
+                break;
+            }
         }
     }
     if (int_stat & TWAIFD_LL_INTR_RX_NOT_EMPTY) {
