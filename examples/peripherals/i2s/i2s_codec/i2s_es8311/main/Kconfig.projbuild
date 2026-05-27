@@ -10,13 +10,13 @@ menu "Example Configuration"
 
         config EXAMPLE_I2C_SDA_IO
             int "I2C SDA IO"
-            default 17 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+            default 17 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32H4
             default 9 if IDF_TARGET_ESP32H2
             default 7
 
         config EXAMPLE_I2C_SCL_IO
             int "I2C SCL IO"
-            default 16 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+            default 16 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32H4
             default 8 if IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32P4
             default 6
 
