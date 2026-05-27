@@ -11,6 +11,8 @@
 #include <esp_heap_caps.h>
 #include <net/if.h>
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 
 #ifdef CONFIG_HTTPD_WS_SUPPORT
 #include "../../src/esp_httpd_priv.h"
@@ -423,6 +425,68 @@ TEST_CASE("httpd_resp_set_type rejects CRLF in content type", "[HTTP SERVER][sec
                       httpd_resp_set_type(&fake_req, "text/html\r\nX-Injected: pwned"));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
                       httpd_resp_set_type(&fake_req, "text/html\nX-Injected: pwned"));
+}
+
+/* ---- httpd_queue_work backpressure ---- */
+
+static SemaphoreHandle_t s_qw_gate;
+static volatile int s_qw_work_runs;
+
+static void qw_blocking_work(void *arg)
+{
+    /* Hold the httpd thread inside this work fn so the ctrl-socket mbox
+     * stops draining. Auto-release after 2 s as a safety net in case the
+     * test asserts mid-way and never reaches the explicit give. */
+    xSemaphoreTake((SemaphoreHandle_t)arg, pdMS_TO_TICKS(2000));
+}
+
+static void qw_counting_work(void *arg)
+{
+    (void)arg;
+    s_qw_work_runs++;
+}
+
+TEST_CASE("httpd_queue_work fast-fails on ctrl mbox saturation", "[HTTP SERVER]")
+{
+    test_case_uses_tcpip();
+
+    httpd_handle_t hd = NULL;
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_start(&hd, &config));
+
+    s_qw_gate = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(s_qw_gate);
+    s_qw_work_runs = 0;
+
+    /* Park the httpd thread in a blocked work item so the mbox can fill. */
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_queue_work(hd, qw_blocking_work, s_qw_gate));
+    vTaskDelay(pdMS_TO_TICKS(100));
+
+    /* Spam queue_work past the mbox cap; first ones succeed, rest must
+     * return ESP_FAIL synchronously (default non-blocking behavior). */
+    int ok_count = 0;
+    int fail_count = 0;
+    for (int i = 0; i < CONFIG_LWIP_UDP_RECVMBOX_SIZE * 2 + 4; i++) {
+        esp_err_t err = httpd_queue_work(hd, qw_counting_work, NULL);
+        if (err == ESP_OK) {
+            ok_count++;
+        } else {
+            TEST_ASSERT_EQUAL(ESP_FAIL, err);
+            fail_count++;
+        }
+    }
+    TEST_ASSERT_GREATER_THAN(0, ok_count);
+    TEST_ASSERT_LESS_OR_EQUAL(CONFIG_LWIP_UDP_RECVMBOX_SIZE, ok_count);
+    TEST_ASSERT_GREATER_THAN(0, fail_count);
+
+    /* Release the parked work; every accepted item must now actually run. */
+    xSemaphoreGive(s_qw_gate);
+    vTaskDelay(pdMS_TO_TICKS(300));
+    TEST_ASSERT_EQUAL(ok_count, s_qw_work_runs);
+
+    vSemaphoreDelete(s_qw_gate);
+    s_qw_gate = NULL;
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_stop(hd));
 }
 
 #ifdef CONFIG_HTTPD_WS_SUPPORT
