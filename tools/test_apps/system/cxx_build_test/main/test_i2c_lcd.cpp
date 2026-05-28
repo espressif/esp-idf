@@ -73,6 +73,7 @@ void test_i2c_lcd_apis(void)
             .disable_control_phase = false,
         },
         .scl_speed_hz = 10 * 1000,
+        .transaction_timeout_ms = 0,
     };
 
     esp_lcd_new_panel_io_i2c(bus_handle, &io_config, &io_handle);
