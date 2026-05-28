@@ -31,6 +31,7 @@ int Cache_WriteBack_Addr(uint32_t addr, uint32_t size)
     return 0;
 }
 
+#ifndef BOOTLOADER_BUILD
 void Cache_WriteBack_All(void)
 {
     REG_WRITE(CACHE_SYNC_MAP_REG, CACHE_MAP_FLASH_CACHE);
@@ -42,6 +43,7 @@ void Cache_WriteBack_All(void)
     REG_WRITE(CACHE_SYNC_CTRL_REG, CACHE_WRITEBACK_ENA);
     while (!REG_GET_BIT(CACHE_SYNC_CTRL_REG, CACHE_SYNC_DONE));
 }
+#endif
 
 int Cache_WriteBack_Invalidate_Addr(uint32_t addr, uint32_t size)
 {
