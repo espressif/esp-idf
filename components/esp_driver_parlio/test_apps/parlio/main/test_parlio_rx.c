@@ -935,7 +935,7 @@ static void test_gpio_neg_edge_intr(void *arg)
     }
 }
 
-TEST_CASE("parallel_rx_unit_force_trigger_eof_test", "[parlio_rx]")
+TEST_CASE("parallel_rx_unit_force_trigger_eof_test", "[parlio_rx][release_only]")
 {
     parlio_rx_unit_handle_t rx_unit = NULL;
 
