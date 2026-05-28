@@ -703,6 +703,7 @@ Application Examples
     :esp32c3: - :example:`system/deep_sleep` demonstrates the usage of Deep-sleep wakeup triggered by various sources, such as the RTC timer, GPIOs, supported by ESP32-C3.
     :esp32h2: - :example:`system/deep_sleep` demonstrates the usage of Deep-sleep wakeup triggered by various sources, such as the RTC timer and EXT1, supported by ESP32-H2.
     - :example:`system/light_sleep` demonstrates the usage of Light-sleep wakeup triggered by various sources, such as the timer, GPIOs, supported by {IDF_TARGET_NAME}.
+    :SOC_PM_SUPPORT_USB_WAKEUP: - :example:`peripherals/usb/device/tusb_cdc_acm_wakeup` demonstrates the usage of USB 2.0 wakeup from Light-sleep.
     :SOC_TOUCH_SENSOR_SUPPORTED and SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP: - :example:`peripherals/touch_sensor/touch_sens_sleep` demonstrates the usage of Light-sleep and Deep-sleep wakeup triggered by the touch sensor.
     :SOC_VBAT_SUPPORTED: - :example:`lowpower/vbat` demonstrates the use of backup battery power (VBAT) during Deep-sleep, allowing the RTC timer to keep running after the main power is removed.
 
