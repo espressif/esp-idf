@@ -26,10 +26,32 @@ esp_err_t sleep_power_system_retention_init(void *arg)
     return ESP_OK;
 }
 
+static esp_err_t sleep_power_analog_wait_ctrl_init(void *arg)
+{
+    const static sleep_retention_entries_config_t analog_wait_ctrl_retention[] = {
+        /* Sleep to Modem retention has passed hp analog wait duration, so Modem to Sleep retention can reduce this time.
+         * So here Sleep to Modem retention set the analog wait duration to 0, and Modem to Sleep retention set the analog wait duration to origin value. */
+        [0] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_POWER_LINK(2),   PMU_SLP_WAKEUP_CNTL7_REG,   0x200000,   PMU_ANA_WAIT_TARGET_M,  1,  0),  .owner = ENTRY(1) },
+        [1] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_POWER_LINK(3),   PMU_SLP_WAKEUP_CNTL7_REG,   0xE9D0000,  PMU_ANA_WAIT_TARGET_M,  0,  1),  .owner = ENTRY(1) },
+        [2] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_POWER_LINK(4),   PMU_SLP_WAKEUP_CNTL7_REG,   0xE9D0000,  PMU_ANA_WAIT_TARGET_M,  1,  0),  .owner = ENTRY(2) },
+    };
+    esp_err_t err = sleep_retention_entries_create(analog_wait_ctrl_retention, ARRAY_SIZE(analog_wait_ctrl_retention), REGDMA_LINK_PRI_POWER, SLEEP_RETENTION_MODULE_POWER);
+    ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for analog wait ctrl retention");
+    ESP_LOGI(TAG, "Analog wait ctrl sleep retention initialization");
+    return ESP_OK;
+}
+
+static esp_err_t sleep_power_retention_init(void *arg)
+{
+    ESP_RETURN_ON_ERROR(sleep_power_system_retention_init(arg), TAG, "system retention init failed");
+    ESP_RETURN_ON_ERROR(sleep_power_analog_wait_ctrl_init(arg), TAG, "analog wait ctrl retention init failed");
+    return ESP_OK;
+}
+
 ESP_SYSTEM_INIT_FN(sleep_power_startup_init, SECONDARY, BIT(0), 108)
 {
     sleep_retention_module_init_param_t init_param = {
-        .cbs       = { .create = { .handle = sleep_power_system_retention_init, .arg = NULL } },
+        .cbs       = { .create = { .handle = sleep_power_retention_init, .arg = NULL } },
         .attribute = SLEEP_RETENTION_MODULE_ATTR_PASSIVE | SLEEP_RETENTION_MODULE_ATTR_ATTACH
     };
 
