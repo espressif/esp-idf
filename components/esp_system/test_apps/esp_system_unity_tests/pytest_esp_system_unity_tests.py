@@ -184,3 +184,18 @@ def test_frame_pointer_backtracing(dut: Dut) -> None:
     # The backtrace should have two entries
     dut.expect(r'Backtrace: 0x[0-9a-f]{8}:0x[0-9a-f]{8} 0x[0-9a-f]{8}:0x[0-9a-f]{8}\s*[\r]?\n')
     dut.expect_exact('Rebooting...')
+
+
+@pytest.mark.generic
+@idf_parametrize('config', ['framepointer'], indirect=['config'])
+@idf_parametrize('target', ['esp32s31'], indirect=['target'])
+def test_print_all_tasks_backtracing(dut: Dut) -> None:
+    # With frame-pointer mode enabled, esp_backtrace_print_all_tasks() should print a
+    # valid backtrace for each task. Run on a multi-core RISC-V target so the dual-core
+    # IPC path is exercised: the task running on each core is captured via UNW_GET_CONTEXT,
+    # so we expect a well-formed "Backtrace:" line for each of the cores.
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('"Test esp_backtrace_print_all_tasks() on RISC-V"')
+    for _ in range(2):
+        dut.expect(r'Backtrace: 0x[0-9a-f]{8}:0x[0-9a-f]{8}')
+    dut.expect_unity_test_output()
