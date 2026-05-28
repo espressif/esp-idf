@@ -87,14 +87,18 @@ The TX event data is defined in :cpp:type:`uhci_tx_done_event_data_t`:
 
 The RX event data is defined in :cpp:type:`uhci_rx_event_data_t`:
 
-- :cpp:member:`uhci_rx_event_data_t::data` points to the received data. The data is saved in the ``buffer`` parameter of the :cpp:func:`uhci_receive` function. Users should not free this receive buffer before the callback returns.
+- :cpp:member:`uhci_rx_event_data_t::data` points to the received data. The data is stored in the buffer specified by the ``buffer`` parameter of :cpp:func:`uhci_receive`, so users should not free this receive buffer before the callback returns. Data pointed to by ``edata->data`` is typically only guaranteed to be readable during the callback. If application code needs to use the received data after callback returns, copy it to a external buffer first.
 - :cpp:member:`uhci_rx_event_data_t::recv_size` indicates the number of received data. This value is not larger than the ``buffer_size`` parameter of :cpp:func:`uhci_receive` function.
 - :cpp:member:`uhci_rx_event_data_t::flags::totally_received` indicates whether the current received buffer is the last one in the transaction.
+
+.. note::
+
+    Forwarding ``edata->data`` pointer to another task without copying is an advanced zero-copy usage. To keep it safe, user code must understand the chunking and overwrite behavior of the underlying circular DMA buffer, and guarantee the consumer can process data before it gets overwritten.
 
 Initiating UHCI Transmission
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:cpp:func:`uhci_transmit` is a non-blocking function, which means this function will immediately return after you call it. The related callback can be obtained via :cpp:member:`uhci_event_callbacks_t::on_tx_trans_done` to indicate that the transaction is done. The function :cpp:func:`uhci_wait_all_tx_transaction_done` can be used to indicate that all transactions are finished.
+:cpp:func:`uhci_transmit` is a non-blocking function, which means this function will immediately return after you call it. The related callback can be obtained via :cpp:member:`uhci_event_callbacks_t::on_tx_trans_done` to indicate that the transaction is done. The function :cpp:func:`uhci_wait_all_tx_transaction_done` can be used to block the thread until all transactions are finished.
 
 Data can be transmitted via UHCI as follows:
 
@@ -111,9 +115,9 @@ Data can be transmitted via UHCI as follows:
 Initiating UHCI Reception
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:cpp:func:`uhci_receive` is a non-blocking function, which means this function will immediately return after it is called. The related callback can be obtained via :cpp:member:`uhci_rx_event_data_t::recv_size` to indicate the receive event. It can be useful to determine if a transaction has been finished.
+:cpp:func:`uhci_receive` is a non-blocking function, which means this function will immediately return after it is called. The related callback can be obtained via :cpp:member:`uhci_event_callbacks_t::on_rx_trans_event` to indicate the receive event. It can be useful to determine if a transaction has been finished.
 
-Data can be transmitted via UHCI as follows:
+Data can be received via UHCI as follows:
 
 .. code:: c
 
@@ -137,7 +141,7 @@ Data can be transmitted via UHCI as follows:
             ctx->p_receive_data += edata->recv_size;
         }
 
-        xQueueSendFromISR(ctx->uhci_queue, &evt, &xTaskWoken);
+        xQueueSendFromISR(uhci_queue, &evt, &xTaskWoken);
         return xTaskWoken;
     }
 
@@ -153,7 +157,7 @@ Data can be transmitted via UHCI as follows:
     uhci_event_t evt;
     while (1) {
         // A queue in task for receiving event triggered by UHCI.
-        if (xQueueReceive(ctx->uhci_queue, &evt, portMAX_DELAY) == pdTRUE) {
+        if (xQueueReceive(uhci_queue, &evt, portMAX_DELAY) == pdTRUE) {
             if (evt == UHCI_EVT_EOF) {
                 printf("Received size: %d\n", ctx->receive_size);
                 break;
