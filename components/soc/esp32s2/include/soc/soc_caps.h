@@ -54,6 +54,8 @@
 #define SOC_ULP_FSM_SUPPORTED           1
 #define SOC_RISCV_COPROC_SUPPORTED      1
 #define SOC_USB_OTG_SUPPORTED           1
+#define SOC_USB_DFU_SUPPORTED           1
+#define SOC_USB_OTG_CONSOLE_SUPPORTED   1
 #define SOC_PCNT_SUPPORTED              1
 #define SOC_PHY_SUPPORTED               1
 #define SOC_WIFI_SUPPORTED              1

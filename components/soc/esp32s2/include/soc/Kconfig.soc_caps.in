@@ -47,6 +47,14 @@ config SOC_USB_OTG_SUPPORTED
     bool
     default y
 
+config SOC_USB_DFU_SUPPORTED
+    bool
+    default y
+
+config SOC_USB_OTG_CONSOLE_SUPPORTED
+    bool
+    default y
+
 config SOC_PCNT_SUPPORTED
     bool
     default y
