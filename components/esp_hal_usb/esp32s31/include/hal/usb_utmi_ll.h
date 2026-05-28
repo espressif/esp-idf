@@ -12,6 +12,7 @@
 #include "soc/cnnt_sys_struct.h"
 #include "soc/hp_alive_sys_struct.h"
 #include "soc/hp_sys_clkrst_struct.h"
+#include "soc/lp_system_struct.h"
 #include "soc/reg_base.h"
 #include "soc/usb_utmi_struct.h"
 
@@ -144,6 +145,24 @@ FORCE_INLINE_ATTR void usb_utmi_ll_enable_data_pulldowns(bool enable)
 FORCE_INLINE_ATTR void usb_utmi_ll_enable_precise_detection(bool enable)
 {
     HP_ALIVE_SYS.usb_otghs_ctrl.reg_usb_otghs_phy_otg_suspendm = enable;
+}
+
+/**
+ * @brief Set USB OTG2.0 suspend state for PMU USB wakeup logic
+ *
+ * @param[in] in_suspend True if USB OTG2.0 is suspended
+ */
+FORCE_INLINE_ATTR void usb_utmi_ll_set_suspend_state(bool in_suspend)
+{
+    LP_SYS.usb_ctrl.usbotghs_in_suspend = in_suspend;
+}
+
+/**
+ * @brief Clear USB OTG2.0 wakeup status sent to PMU
+ */
+FORCE_INLINE_ATTR void usb_utmi_ll_clear_wakeup_status(void)
+{
+    LP_SYS.usb_ctrl.usbotghs_wakeup_clr = 1;
 }
 
 #ifdef __cplusplus

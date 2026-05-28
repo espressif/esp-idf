@@ -67,6 +67,18 @@ void _usb_utmi_hal_disable(void);
  */
 void usb_utmi_hal_enable_data_pulldowns(bool enable);
 
+/**
+ * @brief Set USB OTG2.0 suspend state for PMU USB wakeup logic
+ *
+ * @param[in] in_suspend True if USB OTG2.0 is suspended
+ */
+void usb_utmi_hal_set_suspend_state(bool in_suspend);
+
+/**
+ * @brief Clear USB OTG2.0 wakeup status sent to PMU
+ */
+void usb_utmi_hal_clear_wakeup_status(void);
+
 #endif // (SOC_USB_UTMI_PHY_NUM > 0)
 
 #ifdef __cplusplus
