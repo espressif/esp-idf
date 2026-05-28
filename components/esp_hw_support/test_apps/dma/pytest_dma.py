@@ -19,7 +19,7 @@ from pytest_embedded_idf.utils import idf_parametrize
     indirect=['target'],
 )
 def test_dma(dut: Dut) -> None:
-    dut.run_all_single_board_cases(reset=True)
+    dut.run_all_single_board_cases()
 
 
 @pytest.mark.octal_psram
@@ -32,7 +32,7 @@ def test_dma(dut: Dut) -> None:
 )
 @idf_parametrize('target', ['esp32s3'], indirect=['target'])
 def test_dma_psram(dut: Dut) -> None:
-    dut.run_all_single_board_cases(reset=True)
+    dut.run_all_single_board_cases()
 
 
 @pytest.mark.flash_encryption
@@ -45,7 +45,7 @@ def test_dma_psram(dut: Dut) -> None:
 )
 @idf_parametrize('target', ['esp32p4'], indirect=['target'])
 def test_dma_ext_mem_encryption(dut: Dut) -> None:
-    dut.run_all_single_board_cases(reset=True)
+    dut.run_all_single_board_cases()
 
 
 @pytest.mark.flash_encryption_f4r8
@@ -58,4 +58,4 @@ def test_dma_ext_mem_encryption(dut: Dut) -> None:
 )
 @idf_parametrize('target', ['esp32s3'], indirect=['target'])
 def test_dma_ext_mem_encryption_s3_f4r8(dut: Dut) -> None:
-    dut.run_all_single_board_cases(reset=True)
+    dut.run_all_single_board_cases()
