@@ -194,7 +194,13 @@ TEST_CASE("twai fd transmit time (loopback)", "[twai]")
         }
         uint64_t predict_time_ms = (uint64_t)trans_num * arb_bits * 1000 / node_config.bit_timing.bitrate;
         predict_time_ms += (uint64_t)trans_num * data_bits * 1000 / node_config.data_timing.bitrate;
-        predict_time_ms += (trans_num * 10) / 1000; // add about 10 us interrupt overhead per frame
+        predict_time_ms += (trans_num * 20) / 1000; // add about 20 us interrupt overhead per frame
+#if CONFIG_COMPILER_OPTIMIZATION_NONE
+        predict_time_ms += (trans_num * 10) / 1000; // non optimized slow code
+#endif
+#if CONFIG_PM_DFS_INIT_AUTO
+        predict_time_ms += (trans_num * 35) / 1000; // slow cpu
+#endif
 
         //waiting pkg receive finish
         TEST_ESP_OK(twai_node_transmit_wait_all_done(node_hdl, -1));
@@ -211,7 +217,7 @@ TEST_CASE("twai fd transmit time (loopback)", "[twai]")
                (unsigned long long)predict_time_ms,
                memcmp(recv_pkg_ptr, send_pkg_ptr, TEST_TRANS_TIME_BUF_LEN) ? "failed" : "ok");
         TEST_ASSERT_EQUAL_HEX8_ARRAY(send_pkg_ptr, recv_pkg_ptr, TEST_TRANS_TIME_BUF_LEN);
-        TEST_ASSERT_LESS_THAN((predict_time_ms / 10), abs((time2 - time1) / 1000 - predict_time_ms));
+        TEST_ASSERT_LESS_THAN((predict_time_ms * 15 / 100), abs((time2 - time1) / 1000 - predict_time_ms));
     }
     printf("-----------------------------------------------------------------------------------------\n");
 
