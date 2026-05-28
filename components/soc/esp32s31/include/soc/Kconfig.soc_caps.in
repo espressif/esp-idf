@@ -387,6 +387,10 @@ config SOC_USB_UTMI_PHY_NUM
     int
     default 1
 
+config SOC_PM_SUPPORT_USB_WAKEUP
+    int
+    default 1
+
 config SOC_PHY_SUPPORTED
     bool
     default y

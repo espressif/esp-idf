@@ -137,6 +137,7 @@ typedef enum {
     ESP_SLEEP_WAKEUP_BT,                //!< Wakeup caused by BT (light sleep only)
     ESP_SLEEP_WAKEUP_VAD,               //!< Wakeup caused by VAD
     ESP_SLEEP_WAKEUP_VBAT_UNDER_VOLT,   //!< Wakeup caused by VDD_BAT under voltage.
+    ESP_SLEEP_WAKEUP_USB,               //!< Wakeup caused by USB (light sleep only)
 } esp_sleep_source_t;
 
 /**
@@ -564,6 +565,22 @@ esp_err_t esp_sleep_enable_bt_wakeup(void);
  *      - ESP_ERR_NOT_SUPPORTED if wakeup from bluetooth is not supported
  */
 esp_err_t esp_sleep_disable_bt_wakeup(void);
+
+/**
+ * @brief Enable wakeup by USB
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_SUPPORTED if wakeup from USB is not supported
+ */
+esp_err_t esp_sleep_enable_usb_wakeup(void);
+
+/**
+ * @brief Disable wakeup by USB
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_SUPPORTED if wakeup from USB is not supported
+ */
+esp_err_t esp_sleep_disable_usb_wakeup(void);
 
 /**
  * @brief Enable wakeup by WiFi MAC
