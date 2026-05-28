@@ -106,15 +106,35 @@ typedef struct {
     uint32_t            water_mark;          /*!< The water mark of the internal buffer, in percent */
 } i2s_tuning_info_t;
 
+typedef struct i2s_channel_obj_t       *i2s_chan_handle_t;     /*!< I2S channel object handle, the control unit of the I2S driver*/
+typedef struct lp_i2s_channel_obj_t    *lp_i2s_chan_handle_t;  /*!< I2S channel object handle, the control unit of the I2S driver*/
+
+#if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
+/**
+ * @brief TX synchronization event data passed to sync callback
+ */
+typedef struct {
+    int32_t  diff_count;                             /*!< Signed difference: I2S_TX_FIFO_CNT - I2S_TX_FIFO_IDEAL_CNT */
+} i2s_sync_event_data_t;
+
+/**
+ * @brief TX synchronization event callback
+ *
+ * @param[in] handle    I2S TX channel handle
+ * @param[in] event     TX synchronization event data
+ * @param[in] user_ctx  User context registered via `i2s_channel_register_intr_event_callback()`
+ *
+ * @return Whether a high priority task has been waken up by this callback function
+ */
+typedef bool (*i2s_sync_callback_t)(i2s_chan_handle_t handle, const i2s_sync_event_data_t *event, void *user_ctx);
+#endif // SOC_I2S_SUPPORTS_TX_FIFO_SYNC
+
 /**
  * @brief Event data structure for LP I2S
  */
 typedef struct {
     lp_i2s_trans_t trans;    ///< LP I2S transaction
 } lp_i2s_evt_data_t;
-
-typedef struct i2s_channel_obj_t       *i2s_chan_handle_t;     /*!< I2S channel object handle, the control unit of the I2S driver*/
-typedef struct lp_i2s_channel_obj_t    *lp_i2s_chan_handle_t;  /*!< I2S channel object handle, the control unit of the I2S driver*/
 
 /**
  * @brief I2S event callback

@@ -47,7 +47,6 @@
 
 #include "driver/gpio.h"
 #include "esp_private/gpio.h"
-#include "esp_private/i2s_sync.h"
 #include "driver/i2s_common.h"
 #include "i2s_private.h"
 
@@ -1222,6 +1221,14 @@ esp_err_t i2s_del_channel(i2s_chan_handle_t handle)
     if (handle->binary) {
         vSemaphoreDeleteWithCaps(handle->binary);
     }
+#if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
+    if (handle->sync_intr) {
+        i2s_ll_enable_interrupt(handle->controller->hal.dev, I2S_LL_TX_SYNC_INT_EVENT, false);
+        esp_intr_disable(handle->sync_intr);
+        esp_intr_free(handle->sync_intr);
+        handle->sync_intr = NULL;
+    }
+#endif
 #if SOC_I2S_HW_VERSION_1
     i2s_obj->chan_occupancy = 0;
 #else
@@ -1635,68 +1642,157 @@ err:
 }
 
 #if SOC_I2S_SUPPORTS_TX_SYNC_CNT
-uint32_t i2s_sync_get_bclk_count(i2s_chan_handle_t tx_handle)
+__attribute__((always_inline))
+static inline esp_err_t i2s_check_tx_handle(i2s_chan_handle_t tx_handle)
 {
-    return i2s_ll_tx_get_bclk_sync_count(tx_handle->controller->hal.dev);
+    I2S_NULL_POINTER_CHECK(TAG, tx_handle);
+    ESP_RETURN_ON_FALSE(tx_handle->dir == I2S_DIR_TX, ESP_ERR_INVALID_ARG, TAG, "channel is not TX");
+    return ESP_OK;
 }
 
-uint32_t i2s_sync_get_fifo_count(i2s_chan_handle_t tx_handle)
+esp_err_t i2s_channel_get_sync_count(i2s_chan_handle_t tx_handle, uint32_t *bclk_count, uint32_t *fifo_count,
+                                     bool reset)
 {
-    return i2s_ll_tx_get_fifo_sync_count(tx_handle->controller->hal.dev);
+    ESP_RETURN_ON_ERROR(i2s_check_tx_handle(tx_handle), TAG, "invalid TX handle");
+    i2s_dev_t *hw = tx_handle->controller->hal.dev;
+    if (bclk_count) {
+        *bclk_count = i2s_ll_tx_get_bclk_sync_count(hw);
+    }
+    if (fifo_count) {
+        *fifo_count = i2s_ll_tx_get_fifo_sync_count(hw);
+    }
+    if (reset) {
+        i2s_ll_tx_reset_bclk_sync_counter(hw);
+        i2s_ll_tx_reset_fifo_sync_counter(hw);
+    }
+    return ESP_OK;
 }
-
-void i2s_sync_reset_bclk_count(i2s_chan_handle_t tx_handle)
-{
-    i2s_ll_tx_reset_bclk_sync_counter(tx_handle->controller->hal.dev);
-}
-
-void i2s_sync_reset_fifo_count(i2s_chan_handle_t tx_handle)
-{
-    i2s_ll_tx_reset_fifo_sync_counter(tx_handle->controller->hal.dev);
-}
-#endif  // SOC_I2S_SUPPORTS_TX_SYNC_CNT
 
 #if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
-uint32_t i2s_sync_get_fifo_sync_diff_count(i2s_chan_handle_t tx_handle)
+__attribute__((always_inline))
+static inline int32_t i2s_sign_extend_sync_diff(uint32_t diff)
 {
-    return i2s_ll_tx_get_fifo_sync_diff_count(tx_handle->controller->hal.dev);
+    return (diff & BIT(30)) ? (int32_t)(diff | BIT(31)) : (int32_t)diff;
 }
 
-void i2s_sync_reset_fifo_sync_diff_count(i2s_chan_handle_t tx_handle)
-{
-    i2s_ll_tx_reset_fifo_sync_diff_counter(tx_handle->controller->hal.dev);
-}
-
-esp_err_t i2s_sync_enable_hw_fifo_sync(i2s_chan_handle_t tx_handle, bool enable)
-{
-    if (tx_handle->dir == I2S_DIR_RX) {
-        return ESP_ERR_NOT_SUPPORTED;
-    }
-    i2s_ll_tx_enable_hw_fifo_sync(tx_handle->controller->hal.dev, enable);
-    i2s_ll_tx_update(tx_handle->controller->hal.dev);
-    return ESP_OK;
-}
-
-esp_err_t i2s_sync_config_hw_fifo_sync(i2s_chan_handle_t tx_handle, const i2s_sync_fifo_sync_config_t *config)
-{
-    if (!(tx_handle && config)) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if (tx_handle->dir == I2S_DIR_RX) {
-        return ESP_ERR_NOT_SUPPORTED;
-    }
-    if (config->sw_high_thresh < config->hw_low_thresh) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    i2s_ll_tx_set_etm_sync_ideal_cnt(tx_handle->controller->hal.dev, config->ideal_cnt);
-    i2s_ll_tx_set_fifo_sync_diff_conter_sw_threshold(tx_handle->controller->hal.dev, config->sw_high_thresh);
-    i2s_ll_tx_set_fifo_sync_diff_conter_hw_threshold(tx_handle->controller->hal.dev, config->hw_low_thresh);
-    i2s_ll_tx_set_hw_fifo_sync_suppl_mode(tx_handle->controller->hal.dev, (uint32_t)config->suppl_mode);
-    if (config->suppl_mode == I2S_SYNC_SUPPL_MODE_STATIC_DATA) {
-        i2s_ll_tx_set_hw_fifo_sync_static_suppl_data(tx_handle->controller->hal.dev, config->suppl_data);
-    }
-    i2s_ll_tx_update(tx_handle->controller->hal.dev);
-    return ESP_OK;
-}
+#if CONFIG_I2S_ISR_IRAM_SAFE
+#define I2S_ISR_HANDLER_ATTR    IRAM_ATTR
+#else
+#define I2S_ISR_HANDLER_ATTR
 #endif
+
+static I2S_ISR_HANDLER_ATTR void i2s_isr_handler(void *args)
+{
+    i2s_chan_handle_t handle = (i2s_chan_handle_t)args;
+    i2s_dev_t *hw = handle->controller->hal.dev;
+
+    if (i2s_ll_get_interrupt_status(hw, I2S_LL_TX_SYNC_INT_EVENT)) {
+        i2s_sync_event_data_t evt = {
+            .diff_count = i2s_sign_extend_sync_diff(i2s_ll_tx_get_fifo_sync_diff_count(hw)),
+        };
+        i2s_ll_tx_reset_fifo_sync_diff_counter(hw);
+        i2s_ll_clear_interrupt_status(hw, I2S_LL_TX_SYNC_INT_EVENT);
+
+        if (handle->on_sync && handle->on_sync(handle, &evt, handle->sync_user_data)) {
+            portYIELD_FROM_ISR();
+        }
+    }
+}
+
+esp_err_t i2s_channel_get_sync_diff_count(i2s_chan_handle_t tx_handle, int32_t *diff_count, bool reset)
+{
+    ESP_RETURN_ON_ERROR(i2s_check_tx_handle(tx_handle), TAG, "invalid TX handle");
+    i2s_dev_t *hw = tx_handle->controller->hal.dev;
+    if (diff_count) {
+        *diff_count = i2s_sign_extend_sync_diff(i2s_ll_tx_get_fifo_sync_diff_count(hw));
+    }
+    if (reset) {
+        i2s_ll_tx_reset_fifo_sync_diff_counter(hw);
+    }
+    return ESP_OK;
+}
+
+esp_err_t i2s_channel_config_tx_fifo_sync(i2s_chan_handle_t tx_handle, const i2s_tx_fifo_sync_config_t *config)
+{
+    esp_err_t ret = ESP_OK;
+    ESP_RETURN_ON_ERROR(i2s_check_tx_handle(tx_handle), TAG, "invalid TX handle");
+    I2S_NULL_POINTER_CHECK(TAG, config);
+    ESP_RETURN_ON_FALSE(config->auto_suppl_thresh == 0 ||
+                        config->auto_suppl_thresh < config->manual_suppl_thresh,
+                        ESP_ERR_INVALID_ARG, TAG,
+                        "auto_suppl_thresh must be 0 or smaller than manual_suppl_thresh");
+
+    i2s_dev_t *hw = tx_handle->controller->hal.dev;
+    xSemaphoreTake(tx_handle->mutex, portMAX_DELAY);
+    ESP_GOTO_ON_FALSE(tx_handle->state < I2S_CHAN_STATE_RUNNING, ESP_ERR_INVALID_STATE, err, TAG,
+                      "invalid state, I2S has enabled");
+    i2s_ll_tx_set_etm_sync_ideal_cnt(hw, config->ideal_cnt);
+    i2s_ll_tx_set_fifo_sync_diff_counter_manual_threshold(hw, config->manual_suppl_thresh);
+    i2s_ll_tx_set_fifo_sync_diff_counter_auto_threshold(hw, config->auto_suppl_thresh);
+    i2s_ll_tx_set_hw_fifo_sync_suppl_mode(hw, config->suppl_mode);
+    if (config->suppl_mode == I2S_TX_FIFO_SYNC_SUPPL_MODE_STATIC_DATA) {
+        i2s_ll_tx_set_hw_fifo_sync_static_suppl_data(hw, config->suppl_data);
+    }
+    i2s_ll_tx_enable_hw_fifo_sync(hw, config->auto_suppl_thresh > 0);
+    i2s_ll_tx_update(hw);
+err:
+    xSemaphoreGive(tx_handle->mutex);
+    return ret;
+}
+
+esp_err_t i2s_channel_register_intr_event_callback(i2s_chan_handle_t tx_handle,
+                                                   const i2s_intr_event_callbacks_t *callbacks, void *user_data)
+{
+    esp_err_t ret = ESP_OK;
+    ESP_RETURN_ON_ERROR(i2s_check_tx_handle(tx_handle), TAG, "invalid TX handle");
+    I2S_NULL_POINTER_CHECK(TAG, callbacks);
+    i2s_sync_callback_t callback = callbacks->on_tx_sync;
+#if CONFIG_I2S_ISR_IRAM_SAFE
+    if (callback) {
+        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(callback), ESP_ERR_INVALID_ARG, TAG, "sync callback not in IRAM");
+    }
+    if (user_data) {
+        ESP_RETURN_ON_FALSE(esp_ptr_internal(user_data), ESP_ERR_INVALID_ARG, TAG, "user context not in internal RAM");
+    }
+#endif
+
+    i2s_dev_t *hw = tx_handle->controller->hal.dev;
+    xSemaphoreTake(tx_handle->mutex, portMAX_DELAY);
+    ESP_GOTO_ON_FALSE(tx_handle->state < I2S_CHAN_STATE_RUNNING, ESP_ERR_INVALID_STATE, err, TAG,
+                      "invalid state, I2S has enabled");
+
+    if (callback) {
+        if (!tx_handle->sync_intr) {
+            int port_id = tx_handle->controller->id;
+            int intr_flag = ESP_INTR_FLAG_INTRDISABLED | tx_handle->intr_prio_flags;
+#if CONFIG_I2S_ISR_IRAM_SAFE
+            intr_flag |= ESP_INTR_FLAG_IRAM;
+#endif
+            ret = esp_intr_alloc_intrstatus(i2s_periph_signal[port_id].irq, intr_flag,
+                                            (uint32_t)i2s_ll_get_interrupt_status_reg(hw),
+                                            I2S_LL_TX_SYNC_INT_EVENT, i2s_isr_handler, tx_handle,
+                                            &tx_handle->sync_intr);
+            ESP_GOTO_ON_ERROR(ret, err, TAG, "allocate TX sync interrupt failed");
+            ESP_GOTO_ON_ERROR(esp_intr_enable(tx_handle->sync_intr), err, TAG, "enable TX sync interrupt failed");
+        }
+        tx_handle->on_sync = callback;
+        tx_handle->sync_user_data = user_data;
+        i2s_ll_clear_interrupt_status(hw, I2S_LL_TX_SYNC_INT_EVENT);
+        i2s_ll_enable_interrupt(hw, I2S_LL_TX_SYNC_INT_EVENT, true);
+    } else {
+        i2s_ll_enable_interrupt(hw, I2S_LL_TX_SYNC_INT_EVENT, false);
+        if (tx_handle->sync_intr) {
+            esp_intr_disable(tx_handle->sync_intr);
+            esp_intr_free(tx_handle->sync_intr);
+            tx_handle->sync_intr = NULL;
+        }
+        tx_handle->on_sync = NULL;
+        tx_handle->sync_user_data = NULL;
+    }
+
+err:
+    xSemaphoreGive(tx_handle->mutex);
+    return ret;
+}
+#endif // SOC_I2S_SUPPORTS_TX_FIFO_SYNC
+#endif // SOC_I2S_SUPPORTS_TX_SYNC_CNT
