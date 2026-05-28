@@ -49,6 +49,8 @@ typedef enum {
     CACHE_SYNC_WRITEBACK_INVALIDATE = BIT(3),
 } cache_sync_t;
 
+#define CACHE_MAP_FLASH_CACHE BIT(4)
+
 typedef enum {
     CACHE_SIZE_HALF = 0,                /*!< 8KB for icache and dcache */
     CACHE_SIZE_FULL = 1,                /*!< 16KB for icache and dcache */
