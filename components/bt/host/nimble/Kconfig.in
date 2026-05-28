@@ -917,6 +917,14 @@ menu "Services"
         help
             Defines maximum number of report characteristics per service instance
 
+    config BT_NIMBLE_RAS_SERVICE
+        depends on BT_NIMBLE_CHANNEL_SOUNDING
+        bool "RAS service"
+        default y
+        help
+            Enable RAS Service
+
+
     menuconfig BT_NIMBLE_BAS_SERVICE
         bool "Battery service"
         default y
