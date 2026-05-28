@@ -459,6 +459,8 @@ ESP-IDF 支持 `CMake presets`_ 以简化多个构建配置的管理。此功能
 
 完整示例请参阅 :example_file:`Multiple Build Configurations Example <build_system/cmake/multi_config/README.md>`。
 
+.. _idf_py_global_options:
+
 全局选项
 ==============
 
@@ -471,6 +473,8 @@ ESP-IDF 支持 `CMake presets`_ 以简化多个构建配置的管理。此功能
 .. important::
 
     注意，某些旧版本 CCache_ 在某些平台上存在 bug，因此如果文件没有按预期重新构建，可禁用 CCache_ 并重新构建。可以通过将环境变量 ``IDF_CCACHE_ENABLE`` 设置为非零值来默认启用 CCache_。
+
+- ``--configdep`` 或 ``--no-configdep`` 用于启用或禁用基于 ``esp-idf-configdep`` 的重建优化。该工具会对编译器生成的依赖文件进行后处理，以减少因 ``sdkconfig.h`` 变更而导致的不必要重建。若重建时仅有少量配置选项频繁变更，这一功能尤为有用。该功能默认启用。若要永久启用 configdep，请将 ``IDF_CONFIGDEP_ENABLE`` 环境变量设置为 ``1``；若要永久禁用，则设置为 ``0``。
 
 - ``-v`` 会使 ``idf.py`` 和构建系统生成详细的构建输出，有助于调试构建错误。
 - ``--cmake-warn-uninitialized`` （或 ``-w``）将使 CMake 只显示在工程目录中发现的变量未初始化的警告，该选项仅控制 CMake 内部的 CMake 变量警告，不控制其他类型的构建警告。将环境变量 ``IDF_CMAKE_WARN_UNINITIALIZED`` 设置为非零值，可永久启用该选项。
