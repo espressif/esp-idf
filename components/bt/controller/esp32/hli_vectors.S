@@ -47,7 +47,7 @@ _l4_save_ctx:
 
 xt_highint4:
 
-#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+#if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
     /*
     Here, Timer2 is used to count a little time(50us).
     The subsequent dram0 write operation is blocked due to live lock, which will
@@ -101,7 +101,7 @@ xt_highint4:
     rsr     a2, EPC1
     s32i    a2, a0, 24
 
-#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+#if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
     movi    a0, 0
     xsr     a0, XT_REG_INTENABLE     /* disable all interrupts */
     movi    a2, ~(1<<16)
