@@ -435,6 +435,7 @@
 // USB PHY Caps
 #define SOC_USB_UTMI_PHY_NUM            (1U)
 #define SOC_USB_UTMI_PHY_NO_POWER_OFF_ISO    1
+#define SOC_PM_SUPPORT_USB_WAKEUP       (1U)
 
 /*-------------------------- PARLIO CAPS --------------------------------------*/
 #define SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH    16  /*!< Number of data lines of the TX unit */

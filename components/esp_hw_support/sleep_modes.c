@@ -1687,6 +1687,11 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
         s_config.wakeup_triggers &= ~RTC_VBAT_UNDER_VOLT_TRIG_EN;
     }
 #endif
+#if SOC_PM_SUPPORT_USB_WAKEUP
+    else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_USB, RTC_USB_TRIG_EN)) {
+        s_config.wakeup_triggers &= ~RTC_USB_TRIG_EN;
+    }
+#endif
     else {
         ESP_LOGE(TAG, "Incorrect wakeup source (%d) to disable.", (int) source);
         return ESP_ERR_INVALID_STATE;
@@ -2287,6 +2292,26 @@ esp_err_t esp_sleep_disable_bt_wakeup(void)
 #endif
 }
 
+esp_err_t esp_sleep_enable_usb_wakeup(void)
+{
+#if SOC_PM_SUPPORT_USB_WAKEUP
+    s_config.wakeup_triggers |= RTC_USB_TRIG_EN;
+    return ESP_OK;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
+
+esp_err_t esp_sleep_disable_usb_wakeup(void)
+{
+#if SOC_PM_SUPPORT_USB_WAKEUP
+    s_config.wakeup_triggers &= (~RTC_USB_TRIG_EN);
+    return ESP_OK;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
+
 esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
 {
     if (esp_rom_get_reset_reason(0) != RESET_REASON_CORE_DEEP_SLEEP && !s_light_sleep_wakeup) {
@@ -2444,6 +2469,11 @@ uint32_t esp_sleep_get_wakeup_causes(void)
 #if SOC_VBAT_SUPPORTED
     if (wakeup_cause_raw & RTC_VBAT_UNDER_VOLT_TRIG_EN) {
         wakeup_cause |= BIT(ESP_SLEEP_WAKEUP_VBAT_UNDER_VOLT);
+    }
+#endif
+#if SOC_PM_SUPPORT_USB_WAKEUP
+    if (wakeup_cause_raw & RTC_USB_TRIG_EN) {
+        wakeup_cause |= BIT(ESP_SLEEP_WAKEUP_USB);
     }
 #endif
     if (wakeup_cause == 0) {
