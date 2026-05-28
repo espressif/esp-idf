@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -119,9 +119,10 @@ typedef enum {
     ESP_SLEEP_WAKEUP_WIFI,              //!< Wakeup caused by WIFI (light sleep only)
     ESP_SLEEP_WAKEUP_COCPU,             //!< Wakeup caused by COCPU int
     ESP_SLEEP_WAKEUP_COCPU_TRAP_TRIG,   //!< Wakeup caused by COCPU crash
-    ESP_SLEEP_WAKEUP_BT,           //!< Wakeup caused by BT (light sleep only)
-    ESP_SLEEP_WAKEUP_VAD,          //!< Wakeup caused by VAD
-    ESP_SLEEP_WAKEUP_VBAT_UNDER_VOLT, //!< Wakeup caused by VDD_BAT under voltage.
+    ESP_SLEEP_WAKEUP_BT,                //!< Wakeup caused by BT (light sleep only)
+    ESP_SLEEP_WAKEUP_VAD,               //!< Wakeup caused by VAD
+    ESP_SLEEP_WAKEUP_VBAT_UNDER_VOLT,   //!< Wakeup caused by VDD_BAT under voltage.
+    ESP_SLEEP_WAKEUP_USB,               //!< Wakeup caused by USB HS (light sleep only)
 } esp_sleep_source_t;
 
 /**
@@ -134,7 +135,6 @@ typedef enum {
 
 /* Leave this type define for compatibility */
 typedef esp_sleep_source_t esp_sleep_wakeup_cause_t;
-
 enum {
     ESP_ERR_SLEEP_REJECT = ESP_ERR_INVALID_STATE,
     ESP_ERR_SLEEP_TOO_SHORT_SLEEP_DURATION = ESP_ERR_INVALID_ARG,
@@ -535,6 +535,22 @@ esp_err_t esp_sleep_enable_bt_wakeup(void);
  *      - ESP_ERR_NOT_SUPPORTED if wakeup from bluetooth is not supported
  */
 esp_err_t esp_sleep_disable_bt_wakeup(void);
+
+/**
+ * @brief Enable wakeup by High-Speed USB-OTG
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_SUPPORTED if wakeup from USB is not supported
+ */
+esp_err_t esp_sleep_enable_usb_wakeup(void);
+
+/**
+ * @brief Disable wakeup by High-Speed USB-OTG
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_SUPPORTED if wakeup from USB is not supported
+ */
+esp_err_t esp_sleep_disable_usb_wakeup(void);
 
 /**
  * @brief Enable wakeup by WiFi MAC
