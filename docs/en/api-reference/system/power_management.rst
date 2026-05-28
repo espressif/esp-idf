@@ -170,6 +170,7 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
             :SOC_TWAI_SUPPORT_SLEEP_RETENTION: - All TWAIs
             :SOC_PARLIO_SUPPORT_SLEEP_RETENTION: - PARL_IO
             :SOC_SPI_SUPPORT_SLEEP_RETENTION: - All GPSPIs
+            :SOC_LCDCAM_LCD_SUPPORT_SLEEP_RETENTION: - I80 LCD
 
         Some peripherals haven't support Light-sleep context retention, or it cannot survive from the register lose. They will prevent the power-down of peripherals even when the feature is enabled.
 

@@ -847,6 +847,9 @@
 #define SOC_LCDCAM_CAM_PERIPH_NUM                   (1U)
 #define SOC_LCDCAM_CAM_DATA_WIDTH_MAX               (16U)
 
+/*--------------------------- LCD ---------------------------------*/
+#define SOC_LCDCAM_LCD_SUPPORT_SLEEP_RETENTION      (1)   /*!< Support back up registers before sleep */
+
 /*--------------------------- I3C ---------------------------------*/
 #define SOC_I3C_MASTER_PERIPH_NUM                   (1)
 #define SOC_I3C_MASTER_ADDRESS_TABLE_NUM            (12)
