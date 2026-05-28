@@ -180,6 +180,11 @@ struct i2s_channel_obj_t {
     uint64_t                reserve_gpio_mask; /*!< The gpio mask that has been reserved by I2S */
     i2s_event_callbacks_internal_t   callbacks;      /*!< Callback functions */
     void                    *user_data;     /*!< User data for callback functions */
+#if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
+    i2s_sync_callback_t     on_sync;        /*!< TX FIFO sync manual supplement threshold callback */
+    void                    *sync_user_data; /*!< User data for TX FIFO sync callback */
+    intr_handle_t           sync_intr;      /*!< I2S peripheral interrupt for TX FIFO sync */
+#endif
     void (*start)(i2s_chan_handle_t);       /*!< start tx/rx channel */
     void (*stop)(i2s_chan_handle_t);        /*!< stop tx/rx channel */
 };
