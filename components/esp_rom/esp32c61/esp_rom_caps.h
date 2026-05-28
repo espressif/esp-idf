@@ -32,3 +32,4 @@
 #define ESP_ROM_USB_OTG_NUM                 (-1) // No USB_OTG CDC in the ROM, set -1 for Kconfig usage.
 #define ESP_ROM_HAS_OUTPUT_PUTC_FUNC        (1) // ROM has esp_rom_output_putc (or ets_write_char_uart)
 #define ESP_ROM_CACHE_WB_INVLD_LOW_RANGE    (1) // ROM `Cache_WriteBack_Addr` and `Cache_Invalidate_Addr` can only access low vaddr parts
+#define ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_NO_MAP (1) // ROM cache writeback related needs patch to avoid sync loss, no map parameter
