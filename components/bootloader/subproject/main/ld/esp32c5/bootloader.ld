@@ -88,6 +88,7 @@ SECTIONS
     *libhal.a:mmu_hal.*(.literal .text .literal.* .text.*)
     *libhal.a:cache_hal.*(.literal .text .literal.* .text.*)
     *libhal.a:efuse_hal.*(.literal .text .literal.* .text.*)
+    *libhal.a:key_mgr_hal.*(.literal.key_mgr_hal_set_key_usage .text.key_mgr_hal_set_key_usage)
     *libesp_hw_support.a:rtc_clk.*(.literal .text .literal.* .text.*)
     *libesp_hw_support.a:rtc_time.*(.literal .text .literal.* .text.*)
     *libesp_hw_support.a:regi2c_ctrl.*(.literal .text .literal.* .text.*)
