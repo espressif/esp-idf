@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -263,6 +263,22 @@ esp_err_t usb_phy_action(usb_phy_handle_t handle, usb_phy_action_t action)
     }
 
     return ret;
+}
+
+void usb_phy_set_otg_suspend_state(bool in_suspend)
+{
+#if SOC_USB_UTMI_PHY_NUM
+    usb_utmi_hal_set_suspend_state(in_suspend);
+#else
+    (void)in_suspend;
+#endif
+}
+
+void usb_phy_clear_otg_wakeup_status(void)
+{
+#if SOC_USB_UTMI_PHY_NUM
+    usb_utmi_hal_clear_wakeup_status();
+#endif
 }
 
 static esp_err_t usb_phy_install(void)

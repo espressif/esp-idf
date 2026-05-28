@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 #include "esp_err.h"
 #include "soc/soc_caps.h"
@@ -157,6 +158,18 @@ esp_err_t __attribute__((deprecated)) usb_phy_otg_dev_set_speed(usb_phy_handle_t
  *     - ESP_FAIL Action cannot be performed.
  */
 esp_err_t __attribute__((deprecated)) usb_phy_action(usb_phy_handle_t handle, usb_phy_action_t action);
+
+/**
+ * @brief Set the USB OTG suspend state for USB wakeup logic
+ *
+ * @param in_suspend True if the USB OTG bus is suspended
+ */
+void usb_phy_set_otg_suspend_state(bool in_suspend);
+
+/**
+ * @brief Clear USB OTG wakeup status from the USB wakeup logic
+ */
+void usb_phy_clear_otg_wakeup_status(void);
 
 /**
  * @brief Delete a USB PHY
