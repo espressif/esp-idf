@@ -1,9 +1,5 @@
 /*
-<<<<<<< HEAD
  * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
-=======
- * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
->>>>>>> 2f524e27834... feat(examples/bluedroid): Add BLE time interval conversion macros for better readability
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
