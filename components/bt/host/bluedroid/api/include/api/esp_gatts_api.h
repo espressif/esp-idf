@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -544,9 +544,11 @@ esp_err_t esp_ble_gatts_set_attr_value(uint16_t attr_handle, uint16_t length, co
  *      2. `attr_handle` must be greater than 0.
  *
  * @return
- *        - ESP_OK: Success
+ *        - ESP_GATT_OK: Success
+ *        - ESP_GATT_WRONG_STATE: Bluedroid stack is not enabled
+ *        - ESP_GATT_INVALID_PDU: NULL pointer to `length` or `value`
  *        - ESP_GATT_INVALID_HANDLE: Invalid `attr_handle`
- *        - ESP_FAIL: Failure due to other reasons
+ *        - Other `esp_gatt_status_t` values: Failure due to other reasons
  */
 esp_gatt_status_t esp_ble_gatts_get_attr_value(uint16_t attr_handle, uint16_t *length, const uint8_t **value);
 
