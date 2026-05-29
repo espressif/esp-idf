@@ -68,6 +68,12 @@ static void print_auth_mode(int authmode)
     case WIFI_AUTH_WPA3_ENT_192:
         ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_WPA3_ENT_192");
         break;
+    case WIFI_AUTH_DPP:
+        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_DPP");
+        break;
+    case WIFI_AUTH_UNKNOWN:
+        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_UNKNOWN");
+        break;
     default:
         ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_UNKNOWN");
         break;
@@ -199,6 +205,9 @@ static void wifi_scan(void)
         ESP_LOGI(TAG, "SSID \t\t%s", ap_info[i].ssid);
         ESP_LOGI(TAG, "RSSI \t\t%d", ap_info[i].rssi);
         print_auth_mode(ap_info[i].authmode);
+        if (ap_info[i].akm_dpp) {
+            ESP_LOGI(TAG, "DPP \t\tSupported%s", (ap_info[i].authmode != WIFI_AUTH_DPP) ? " (mixed mode)" : " (DPP-only)");
+        }
         if (ap_info[i].authmode != WIFI_AUTH_WEP) {
             print_cipher_type(ap_info[i].pairwise_cipher, ap_info[i].group_cipher);
         }
