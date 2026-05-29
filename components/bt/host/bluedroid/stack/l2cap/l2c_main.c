@@ -352,7 +352,7 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
 #if (CLASSIC_BT_INCLUDED == TRUE)
 static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
 {
-    UINT8           *p_pkt_end, *p_next_cmd, *p_cfg_end, *p_cfg_start;
+    UINT8           *p_pkt_end, *p_next_cmd, *p_cfg_end, *p_cfg_start, *p_cfg_opt_end;
     UINT8           cmd_code, cfg_code, cfg_len, id;
     tL2C_CONN_INFO  con_info;
     tL2CAP_CFG_INFO cfg_info;
@@ -526,6 +526,10 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
             break;
 
         case L2CAP_CMD_CONFIG_REQ:
+            if (cmd_len < L2CAP_CONFIG_REQ_LEN) {
+                L2CAP_TRACE_WARNING ("L2CAP - cfg req too short, cmd_len: %d", cmd_len);
+                break;
+            }
             p_cfg_end = p + cmd_len;
             cfg_rej = FALSE;
             cfg_rej_len = 0;
@@ -539,21 +543,47 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
                                             cfg_info.fcr_present = cfg_info.fcs_present = FALSE;
 
             while (p < p_cfg_end) {
+                if ((p_cfg_end - p) < L2CAP_CFG_OPTION_OVERHEAD) {
+                    cfg_rej = TRUE;
+                    break;
+                }
+
                 STREAM_TO_UINT8 (cfg_code, p);
                 STREAM_TO_UINT8 (cfg_len, p);
+                if (cfg_len > (p_cfg_end - p)) {
+                    p = p_cfg_end;
+                    cfg_rej = TRUE;
+                    break;
+                }
+                p_cfg_opt_end = p + cfg_len;
 
                 switch (cfg_code & 0x7F) {
                 case L2CAP_CFG_TYPE_MTU:
+                    if (cfg_len != L2CAP_CFG_MTU_OPTION_LEN) {
+                        p = p_cfg_end;
+                        cfg_rej = TRUE;
+                        break;
+                    }
                     cfg_info.mtu_present = TRUE;
                     STREAM_TO_UINT16 (cfg_info.mtu, p);
                     break;
 
                 case L2CAP_CFG_TYPE_FLUSH_TOUT:
+                    if (cfg_len != L2CAP_CFG_FLUSH_OPTION_LEN) {
+                        p = p_cfg_end;
+                        cfg_rej = TRUE;
+                        break;
+                    }
                     cfg_info.flush_to_present = TRUE;
                     STREAM_TO_UINT16 (cfg_info.flush_to, p);
                     break;
 
                 case L2CAP_CFG_TYPE_QOS:
+                    if (cfg_len != L2CAP_CFG_QOS_OPTION_LEN) {
+                        p = p_cfg_end;
+                        cfg_rej = TRUE;
+                        break;
+                    }
                     cfg_info.qos_present = TRUE;
                     STREAM_TO_UINT8  (cfg_info.qos.qos_flags, p);
                     STREAM_TO_UINT8  (cfg_info.qos.service_type, p);
@@ -565,6 +595,11 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
                     break;
 
                 case L2CAP_CFG_TYPE_FCR:
+                    if (cfg_len != L2CAP_CFG_FCR_OPTION_LEN) {
+                        p = p_cfg_end;
+                        cfg_rej = TRUE;
+                        break;
+                    }
                     cfg_info.fcr_present = TRUE;
                     STREAM_TO_UINT8 (cfg_info.fcr.mode, p);
                     STREAM_TO_UINT8 (cfg_info.fcr.tx_win_sz, p);
@@ -575,11 +610,21 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
                     break;
 
                 case L2CAP_CFG_TYPE_FCS:
+                    if (cfg_len != L2CAP_CFG_FCS_OPTION_LEN) {
+                        p = p_cfg_end;
+                        cfg_rej = TRUE;
+                        break;
+                    }
                     cfg_info.fcs_present = TRUE;
                     STREAM_TO_UINT8 (cfg_info.fcs, p);
                     break;
 
                 case L2CAP_CFG_TYPE_EXT_FLOW:
+                    if (cfg_len != L2CAP_CFG_EXT_FLOW_OPTION_LEN) {
+                        p = p_cfg_end;
+                        cfg_rej = TRUE;
+                        break;
+                    }
                     cfg_info.ext_flow_spec_present = TRUE;
                     STREAM_TO_UINT8  (cfg_info.ext_flow_spec.id, p);
                     STREAM_TO_UINT8  (cfg_info.ext_flow_spec.stype, p);
@@ -590,17 +635,9 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
                     break;
 
                 default:
-                    /* sanity check option length */
-                    if ((cfg_len + L2CAP_CFG_OPTION_OVERHEAD) <= cmd_len) {
-                        p += cfg_len;
-                        if ((cfg_code & 0x80) == 0) {
-                            cfg_rej_len += cfg_len + L2CAP_CFG_OPTION_OVERHEAD;
-                            cfg_rej = TRUE;
-                        }
-                    }
-                    /* bad length; force loop exit */
-                    else {
-                        p = p_cfg_end;
+                    p = p_cfg_opt_end;
+                    if ((cfg_code & 0x80) == 0) {
+                        cfg_rej_len += cfg_len + L2CAP_CFG_OPTION_OVERHEAD;
                         cfg_rej = TRUE;
                     }
                     break;
@@ -621,6 +658,10 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
             break;
 
         case L2CAP_CMD_CONFIG_RSP:
+            if (cmd_len < L2CAP_CONFIG_RSP_LEN) {
+                L2CAP_TRACE_WARNING ("L2CAP - cfg rsp too short, cmd_len: %d", cmd_len);
+                break;
+            }
             p_cfg_end = p + cmd_len;
             STREAM_TO_UINT16 (lcid, p);
             STREAM_TO_UINT16 (cfg_info.flags, p);
@@ -630,21 +671,42 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
                                             cfg_info.fcr_present = cfg_info.fcs_present = FALSE;
 
             while (p < p_cfg_end) {
+                if ((p_cfg_end - p) < L2CAP_CFG_OPTION_OVERHEAD) {
+                    break;
+                }
+
                 STREAM_TO_UINT8 (cfg_code, p);
                 STREAM_TO_UINT8 (cfg_len, p);
+                if (cfg_len > (p_cfg_end - p)) {
+                    p = p_cfg_end;
+                    break;
+                }
+                p_cfg_opt_end = p + cfg_len;
 
                 switch (cfg_code & 0x7F) {
                 case L2CAP_CFG_TYPE_MTU:
+                    if (cfg_len != L2CAP_CFG_MTU_OPTION_LEN) {
+                        p = p_cfg_end;
+                        break;
+                    }
                     cfg_info.mtu_present = TRUE;
                     STREAM_TO_UINT16 (cfg_info.mtu, p);
                     break;
 
                 case L2CAP_CFG_TYPE_FLUSH_TOUT:
+                    if (cfg_len != L2CAP_CFG_FLUSH_OPTION_LEN) {
+                        p = p_cfg_end;
+                        break;
+                    }
                     cfg_info.flush_to_present = TRUE;
                     STREAM_TO_UINT16 (cfg_info.flush_to, p);
                     break;
 
                 case L2CAP_CFG_TYPE_QOS:
+                    if (cfg_len != L2CAP_CFG_QOS_OPTION_LEN) {
+                        p = p_cfg_end;
+                        break;
+                    }
                     cfg_info.qos_present = TRUE;
                     STREAM_TO_UINT8  (cfg_info.qos.qos_flags, p);
                     STREAM_TO_UINT8  (cfg_info.qos.service_type, p);
@@ -656,6 +718,10 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
                     break;
 
                 case L2CAP_CFG_TYPE_FCR:
+                    if (cfg_len != L2CAP_CFG_FCR_OPTION_LEN) {
+                        p = p_cfg_end;
+                        break;
+                    }
                     cfg_info.fcr_present = TRUE;
                     STREAM_TO_UINT8 (cfg_info.fcr.mode, p);
                     STREAM_TO_UINT8 (cfg_info.fcr.tx_win_sz, p);
@@ -666,11 +732,19 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
                     break;
 
                 case L2CAP_CFG_TYPE_FCS:
+                    if (cfg_len != L2CAP_CFG_FCS_OPTION_LEN) {
+                        p = p_cfg_end;
+                        break;
+                    }
                     cfg_info.fcs_present = TRUE;
                     STREAM_TO_UINT8 (cfg_info.fcs, p);
                     break;
 
                 case L2CAP_CFG_TYPE_EXT_FLOW:
+                    if (cfg_len != L2CAP_CFG_EXT_FLOW_OPTION_LEN) {
+                        p = p_cfg_end;
+                        break;
+                    }
                     cfg_info.ext_flow_spec_present = TRUE;
                     STREAM_TO_UINT8  (cfg_info.ext_flow_spec.id, p);
                     STREAM_TO_UINT8  (cfg_info.ext_flow_spec.stype, p);
@@ -678,6 +752,9 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
                     STREAM_TO_UINT32 (cfg_info.ext_flow_spec.sdu_inter_time, p);
                     STREAM_TO_UINT32 (cfg_info.ext_flow_spec.access_latency, p);
                     STREAM_TO_UINT32 (cfg_info.ext_flow_spec.flush_timeout, p);
+                    break;
+                default:
+                    p = p_cfg_opt_end;
                     break;
                 }
             }
