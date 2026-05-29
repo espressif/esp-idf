@@ -507,6 +507,11 @@ static void hidd_l2cif_data_ind(uint16_t cid, BT_HDR *p_msg)
         osi_free(p_msg);
         return;
     }
+    if (p_msg->len < 1) {
+        HIDD_TRACE_WARNING ("HID-Device Rcvd Empty L2CAP data");
+        osi_free(p_msg);
+        return;
+    }
     msg_type = HID_GET_TRANS_FROM_HDR(*p_data);
     param = HID_GET_PARAM_FROM_HDR(*p_data);
     if (msg_type == HID_TRANS_DATA && cid == p_hcon->intr_cid) {
