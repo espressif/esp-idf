@@ -287,7 +287,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         esp_ble_gap_ext_adv_start(NUM_EXT_ADV_SET, &ext_adv[0]);
         break;
     case ESP_GAP_BLE_EXT_ADV_START_COMPLETE_EVT:
-        ESP_LOGI(GATTS_TABLE_TAG, "Extended advertising start, status %d", param->ext_adv_data_set.status);
+        ESP_LOGI(GATTS_TABLE_TAG, "Extended advertising start, status %d", param->ext_adv_start.status);
         break;
     case ESP_GAP_BLE_ADV_TERMINATED_EVT:
         ESP_LOGI(GATTS_TABLE_TAG, "Extended advertising terminated, status %d", param->adv_terminate.status);
