@@ -96,6 +96,16 @@ static struct gattc_profile_inst gl_profile_tab[PROFILE_NUM] = {
     },
 };
 
+/** Clear connect-in-progress flag and restart indefinite extended scan (after failed open or disconnect). */
+static void central_resume_ext_scan(void)
+{
+    connect = false;
+    esp_err_t err = esp_ble_gap_start_ext_scan(0, 0);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "start ext scan failed, error = 0x%x", err);
+    }
+}
+
 /**
  * @brief GATT client event handler
  */
@@ -112,6 +122,10 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
     case ESP_GATTC_REG_EVT:
         ESP_LOGI(TAG, "GATT client register, status %d, app_id %d, gattc_if %d",
                  p_data->reg.status, p_data->reg.app_id, gattc_if);
+        if (p_data->reg.status != ESP_GATT_OK) {
+            ESP_LOGE(TAG, "GATT client register failed, status %d", p_data->reg.status);
+            break;
+        }
         gl_profile_tab[PROFILE_A_APP_ID].gattc_if = gattc_if;
         // Set default subrate parameters
         esp_ble_default_subrate_param_t default_subrate_params = {
@@ -148,11 +162,19 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
             ESP_LOGI(TAG, "Subrate request sent successfully");
         }
         break;
+    case ESP_GATTC_OPEN_EVT:
+        if (p_data->open.status != ESP_GATT_OK) {
+            ESP_LOGE(TAG, "Open failed, status %d", p_data->open.status);
+            central_resume_ext_scan();
+            break;
+        }
+        ESP_LOGI(TAG, "GATT open OK, conn_id %d, MTU %u", p_data->open.conn_id, p_data->open.mtu);
+        break;
     case ESP_GATTC_DISCONNECT_EVT:
-        connect = false;
         g_conn_handle = 0xFFFF;
         ESP_LOGI(TAG, "Disconnected, remote "ESP_BD_ADDR_STR", reason 0x%02x",
                  ESP_BD_ADDR_HEX(p_data->disconnect.remote_bda), p_data->disconnect.reason);
+        central_resume_ext_scan();
         break;
     default:
         break;
@@ -208,10 +230,9 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                 creat_conn_params.phy_1m_conn_params = &phy_1m_conn_params;
                 creat_conn_params.phy_2m_conn_params = &phy_2m_conn_params;
                 creat_conn_params.phy_coded_conn_params = &phy_coded_conn_params;
-                if (esp_ble_gattc_enh_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if, &creat_conn_params) != ESP_OK)
-                {
-                    connect = false;
+                if (esp_ble_gattc_enh_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if, &creat_conn_params) != ESP_OK) {
                     ESP_LOGE(TAG, "Failed to open connection");
+                    central_resume_ext_scan();
                 }
             }
         }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -8,6 +8,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
+#include "freertos/semphr.h"
 #include "esp_system.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
@@ -52,6 +53,7 @@ struct data_source_buffer {
 };
 
 static struct data_source_buffer data_buffer = {0};
+static SemaphoreHandle_t data_buffer_mux;
 
 //In its basic form, the ANCS exposes three characteristics:
 // service UUID: 7905F431-B5CE-4E99-A40F-4B1E122D00D0
@@ -190,8 +192,8 @@ void esp_get_notification_attributes(uint8_t *notificationUID, uint8_t num_attr,
                 ESP_LOGE(BLE_ANCS_TAG, "Command buffer overflow in get_notification_attributes");
                 return;
             }
-            cmd[index ++] = p_attr->attribute_len;
-            cmd[index ++] = (p_attr->attribute_len << 8);
+            cmd[index ++] = p_attr->attribute_len & 0xFF;
+            cmd[index ++] = (p_attr->attribute_len >> 8) & 0xFF;
         }
         p_attr ++;
         num_attr --;
@@ -254,12 +256,23 @@ void esp_perform_notification_action(uint8_t *notificationUID, uint8_t ActionID)
 
 static void periodic_timer_callback(void* arg)
 {
-    esp_timer_stop(periodic_timer);
+    if (data_buffer_mux == NULL) {
+        return;
+    }
+    if (xSemaphoreTake(data_buffer_mux, 0) != pdTRUE) {
+        /* Mutex held by GATT handler; retry soon without blocking esp_timer task */
+        esp_err_t tr = esp_timer_start_once(periodic_timer, 50000);
+        if (tr != ESP_OK) {
+            ESP_LOGE(BLE_ANCS_TAG, "Data source idle timer retry failed: %s", esp_err_to_name(tr));
+        }
+        return;
+    }
     if (data_buffer.len > 0) {
         esp_receive_apple_data_source(data_buffer.buffer, data_buffer.len);
         memset(data_buffer.buffer, 0, data_buffer.len);
         data_buffer.len = 0;
     }
+    xSemaphoreGive(data_buffer_mux);
 }
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
@@ -525,6 +538,10 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
     }
     case ESP_GATTC_NOTIFY_EVT:
         if (param->notify.handle == gl_profile_tab[PROFILE_A_APP_ID].notification_source_handle) {
+            if (!param->notify.value || param->notify.value_len < 8) {
+                ESP_LOGW(BLE_ANCS_TAG, "Notification source too short (%u), need 8 bytes", param->notify.value_len);
+                break;
+            }
             esp_receive_apple_notification_source(param->notify.value, param->notify.value_len);
             uint8_t *notificationUID = &param->notify.value[4];
             if (param->notify.value[0] == EventIDNotificationAdded && param->notify.value[2] == CategoryIDIncomingCall) {
@@ -537,23 +554,35 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                 esp_get_notification_attributes(notificationUID, sizeof(p_attr)/sizeof(esp_noti_attr_list_t), p_attr);
              }
         } else if (param->notify.handle == gl_profile_tab[PROFILE_A_APP_ID].data_source_handle) {
+            if (data_buffer_mux == NULL) {
+                break;
+            }
+            if (xSemaphoreTake(data_buffer_mux, portMAX_DELAY) != pdTRUE) {
+                break;
+            }
             if ((data_buffer.len + param->notify.value_len) > sizeof(data_buffer.buffer)) {
                 ESP_LOGE(BLE_ANCS_TAG, "Data source buffer overflow detected, discarding data");
                 memset(data_buffer.buffer, 0, sizeof(data_buffer.buffer));
                 data_buffer.len = 0;
+                xSemaphoreGive(data_buffer_mux);
                 break;
             }
             memcpy(&data_buffer.buffer[data_buffer.len], param->notify.value, param->notify.value_len);
             data_buffer.len += param->notify.value_len;
             if (param->notify.value_len == (gl_profile_tab[PROFILE_A_APP_ID].MTU_size - 3)) {
-                // copy and wait next packet, start timer 500ms
-                esp_timer_start_periodic(periodic_timer, 500000);
+                /* Retriggerable idle timeout: stop then one-shot so each full fragment resets 500 ms */
+                esp_timer_stop(periodic_timer);
+                esp_err_t tr = esp_timer_start_once(periodic_timer, 500000);
+                if (tr != ESP_OK) {
+                    ESP_LOGE(BLE_ANCS_TAG, "Data source idle timer start failed: %s", esp_err_to_name(tr));
+                }
             } else {
                 esp_timer_stop(periodic_timer);
                 esp_receive_apple_data_source(data_buffer.buffer, data_buffer.len);
                 memset(data_buffer.buffer, 0, data_buffer.len);
                 data_buffer.len = 0;
             }
+            xSemaphoreGive(data_buffer_mux);
         } else {
             ESP_LOGI(BLE_ANCS_TAG, "unknown handle, receive notify value:");
         }
@@ -572,7 +601,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
     }
     case ESP_GATTC_WRITE_CHAR_EVT:
         if (param->write.status != ESP_GATT_OK) {
-            char *Errstr = Errcode_to_String(param->write.status);
+            const char *Errstr = Errcode_to_String(param->write.status);
             if (Errstr) {
                  ESP_LOGE(BLE_ANCS_TAG, "write control point error %s", Errstr);
             }
@@ -582,6 +611,18 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         break;
     case ESP_GATTC_DISCONNECT_EVT:
         ESP_LOGI(BLE_ANCS_TAG, "ESP_GATTC_DISCONNECT_EVT, reason = 0x%x", param->disconnect.reason);
+        if (data_buffer_mux != NULL && xSemaphoreTake(data_buffer_mux, portMAX_DELAY) == pdTRUE) {
+            esp_timer_stop(periodic_timer);
+            memset(data_buffer.buffer, 0, sizeof(data_buffer.buffer));
+            data_buffer.len = 0;
+            xSemaphoreGive(data_buffer_mux);
+        } else {
+            /* Mutex unavailable: only stop the timer (esp_timer_stop is thread-safe).
+             * Skip buffer reset to avoid an unsynchronized write that could race with
+             * NOTIFY_EVT / periodic_timer_callback if the mutex were ever held elsewhere. */
+            ESP_LOGE(BLE_ANCS_TAG, "data_buffer_mux unavailable on disconnect, skip buffer reset");
+            esp_timer_stop(periodic_timer);
+        }
         get_service = false;
         esp_ble_gap_start_advertising(&adv_params);
         break;
@@ -639,6 +680,8 @@ static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
 void init_timer(void)
 {
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
+    data_buffer_mux = xSemaphoreCreateMutex();
+    ESP_ERROR_CHECK(data_buffer_mux != NULL ? ESP_OK : ESP_ERR_NO_MEM);
 }
 
 void app_main(void)

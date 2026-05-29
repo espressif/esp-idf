@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -84,10 +84,13 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         break;
     case ESP_GAP_BLE_EXT_SCAN_STOP_COMPLETE_EVT:
         xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "Extended scanning stop, status %d", param->period_adv_stop.status);
+        ESP_LOGI(LOG_TAG, "Extended scanning stop, status %d", param->ext_scan_stop.status);
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_CREATE_SYNC_COMPLETE_EVT:
         ESP_LOGI(LOG_TAG, "Periodic advertising create sync, status %d", param->period_adv_create_sync.status);
+        if (param->period_adv_create_sync.status != ESP_BT_STATUS_SUCCESS) {
+            periodic_sync = false;
+        }
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_SYNC_CANCEL_COMPLETE_EVT:
         ESP_LOGI(LOG_TAG, "Periodic advertising sync cancel, status %d", param->period_adv_sync_cancel.status);
@@ -97,9 +100,13 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_SYNC_LOST_EVT:
         ESP_LOGI(LOG_TAG, "Periodic advertising sync lost, sync handle %d", param->periodic_adv_sync_lost.sync_handle);
+        periodic_sync = false;
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_SYNC_ESTAB_EVT:
         ESP_LOGI(LOG_TAG, "Periodic advertising sync establish, status %d", param->periodic_adv_sync_estab.status);
+        if (param->periodic_adv_sync_estab.status != ESP_BT_STATUS_SUCCESS) {
+            periodic_sync = false;
+        }
         ESP_LOGI(LOG_TAG, "address "ESP_BD_ADDR_STR"", ESP_BD_ADDR_HEX(param->periodic_adv_sync_estab.adv_addr));
         ESP_LOGI(LOG_TAG, "sync handle %d sid %d perioic adv interval %d adv phy %d", param->periodic_adv_sync_estab.sync_handle,
                                                                                       param->periodic_adv_sync_estab.sid,
@@ -113,13 +120,16 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                                             param->ext_adv_report.params.adv_data_len,
                                             ESP_BLE_AD_TYPE_NAME_CMPL,
                                             &adv_name_len);
-	    if ((adv_name != NULL) && (memcmp(adv_name, remote_device_name, adv_name_len) == 0) && !periodic_sync) {
+        const size_t remote_cap = sizeof(remote_device_name);
+        size_t remote_len = strnlen(remote_device_name, remote_cap);
+	    if ((adv_name != NULL) && (adv_name_len > 0) &&
+	        (adv_name_len <= remote_cap) &&
+	        (adv_name_len == remote_len) &&
+	        (memcmp(adv_name, remote_device_name, adv_name_len) == 0) && !periodic_sync) {
             // Note: If there are multiple devices with the same device name, the device may sync to an unintended one.
             // It is recommended to change the default device name to ensure it is unique.
             periodic_sync = true;
-	        char adv_temp_name[30] = {'0'};
-	        memcpy(adv_temp_name, adv_name, adv_name_len);
-	        ESP_LOGI(LOG_TAG, "Create sync with the peer device %s", adv_temp_name);
+            ESP_LOGI(LOG_TAG, "Create sync with the peer device %.*s", (int)adv_name_len, (const char *)adv_name);
             periodic_adv_sync_params.sid = param->ext_adv_report.params.sid;
 	        periodic_adv_sync_params.addr_type = param->ext_adv_report.params.addr_type;
 	        memcpy(periodic_adv_sync_params.addr, param->ext_adv_report.params.addr, sizeof(esp_bd_addr_t));

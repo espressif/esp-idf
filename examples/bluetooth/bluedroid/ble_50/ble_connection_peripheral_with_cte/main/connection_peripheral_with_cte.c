@@ -35,6 +35,9 @@
 
 #define GATTS_DEMO_CHAR_VAL_LEN_MAX               0x40
 
+/* Connection_Handle is 12-bit (0x0000..0x0EFF); 0xFFFF is outside the valid range. */
+#define BLE_CONN_HDL_INVALID                      ((uint16_t)0xFFFF)
+
 #ifndef MIN
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
@@ -68,18 +71,18 @@ esp_ble_gap_ext_adv_params_t ext_adv_params_2M = {
 
 static uint8_t antenna_ids[2] = {0x00, 0x01};
 static esp_ble_cte_conn_trans_params_t cte_conn_trans_params = {
-    .conn_handle = 0xff,
+    .conn_handle = BLE_CONN_HDL_INVALID,
     .cte_types = ESP_BLE_CTE_TYPES_ALL,
     .switching_pattern_len = sizeof(antenna_ids),
     .antenna_ids = &antenna_ids[0],
 };
 
 static esp_ble_cte_rsp_en_params_t cte_conn_rsp_en = {
-    .conn_handle = 0xff,
+    .conn_handle = BLE_CONN_HDL_INVALID,
     .enable = ESP_BLE_CTE_RESPONSE_FOR_CONNECTION_ENABLE,
 };
 
-uint16_t cur_conn_hdl = 0xff;
+uint16_t cur_conn_hdl = BLE_CONN_HDL_INVALID;
 
 struct gatts_profile_inst {
     esp_gatts_cb_t gatts_cb;
@@ -315,10 +318,14 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
             ESP_LOGI(LOG_TAG, "Pairing failed, reason 0x%x",param->ble_security.auth_cmpl.fail_reason);
         } else {
             ESP_LOGI(LOG_TAG, "Pairing successfully, auth_mode %s",esp_auth_req_to_str(param->ble_security.auth_cmpl.auth_mode));
-            // Setting CTE connection transmit parameters
-            cte_conn_trans_params.conn_handle = cur_conn_hdl;
-            ESP_LOGI(LOG_TAG, "Set CTE connection transmit params, conn_handle %d", cur_conn_hdl);
-            esp_ble_cte_set_connection_transmit_params(&cte_conn_trans_params);
+            if (cur_conn_hdl != BLE_CONN_HDL_INVALID) {
+                // Setting CTE connection transmit parameters
+                cte_conn_trans_params.conn_handle = cur_conn_hdl;
+                ESP_LOGI(LOG_TAG, "Set CTE connection transmit params, conn_handle %d", cur_conn_hdl);
+                esp_ble_cte_set_connection_transmit_params(&cte_conn_trans_params);
+            } else {
+                ESP_LOGW(LOG_TAG, "Skip CTE transmit params: no active connection handle");
+            }
         }
         break;
     }
@@ -385,6 +392,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
         case ESP_GATTS_DISCONNECT_EVT:
             ESP_LOGI(LOG_TAG, "Disconnected, remote "ESP_BD_ADDR_STR", reason 0x%x",
                      ESP_BD_ADDR_HEX(param->disconnect.remote_bda), param->disconnect.reason);
+            cur_conn_hdl = BLE_CONN_HDL_INVALID;
             /* start advertising again when missing the connect */
             esp_ble_gap_ext_adv_start(NUM_EXT_ADV_SET, &ext_adv[0]);
             break;
@@ -399,18 +407,18 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
         case ESP_GATTS_CONGEST_EVT:
             break;
         case ESP_GATTS_CREAT_ATTR_TAB_EVT: {
-            if (param->create.status == ESP_GATT_OK){
-                if(param->add_attr_tab.num_handle == HRS_IDX_NB) {
+            if (param->add_attr_tab.status == ESP_GATT_OK) {
+                if (param->add_attr_tab.num_handle == HRS_IDX_NB) {
                     ESP_LOGI(LOG_TAG, "Attribute table create successfully, num_handle %x", param->add_attr_tab.num_handle);
                     memcpy(profile_handle_table, param->add_attr_tab.handles,
-                    sizeof(profile_handle_table));
+                           sizeof(profile_handle_table));
                     esp_ble_gatts_start_service(profile_handle_table[IDX_SVC]);
-                }else{
+                } else {
                     ESP_LOGE(LOG_TAG, "Attribute table create abnormally, num_handle (%d) doesn't equal to HRS_IDX_NB(%d)",
-                         param->add_attr_tab.num_handle, HRS_IDX_NB);
+                             param->add_attr_tab.num_handle, HRS_IDX_NB);
                 }
-            }else{
-                ESP_LOGE(LOG_TAG, "Attribute table create failed, status %x", param->create.status);
+            } else {
+                ESP_LOGE(LOG_TAG, "Attribute table create failed, status %x", param->add_attr_tab.status);
             }
             break;
         }
@@ -422,15 +430,17 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
 static void cte_event_handler(esp_ble_cte_cb_event_t event, esp_ble_cte_cb_param_t *param)
 {
     switch (event) {
-        case ESP_BLE_CTE_SET_CONN_TRANS_PARAMS_CMPL_EVT:
-            ESP_LOGI(LOG_TAG, "CTE set connection transmit params, status %d", param->conn_trans_params_cmpl.status);
+        case ESP_BLE_CTE_SET_CONN_TRANS_PARAMS_CMPL_EVT: {
+            uint16_t trans_cmpl_conn_hdl = param->conn_trans_params_cmpl.conn_handle;
+            ESP_LOGI(LOG_TAG, "CTE set connection transmit params, status %d, conn_handle %d",
+                     param->conn_trans_params_cmpl.status, trans_cmpl_conn_hdl);
             if (!param->conn_trans_params_cmpl.status) {
-                 ESP_LOGI(LOG_TAG, "Setting CTE connection response enable");
-                // Enable CTE response for connection
-                cte_conn_rsp_en.conn_handle = cur_conn_hdl;
+                ESP_LOGI(LOG_TAG, "Setting CTE connection response enable, conn_handle %d", trans_cmpl_conn_hdl);
+                cte_conn_rsp_en.conn_handle = trans_cmpl_conn_hdl;
                 esp_ble_cte_connection_cte_response_enable(&cte_conn_rsp_en);
             }
             break;
+        }
         case ESP_BLE_CTE_SET_CONN_RECV_PARAMS_CMPL_EVT:
             ESP_LOGI(LOG_TAG, "CTE set connection receive params, status %d", param->conn_recv_params_cmpl.status);
             break;

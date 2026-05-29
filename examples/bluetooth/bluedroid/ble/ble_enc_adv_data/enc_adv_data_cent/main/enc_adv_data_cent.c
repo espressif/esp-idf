@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -19,6 +19,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "esp_bt.h"
@@ -57,12 +58,14 @@ static peer_info_t peers[MAX_PEERS] = {0};
 
 /* GATT client state */
 static bool is_connected = false;
+static bool connect_pending = false; /* enh_open issued; CONNECT_EVT not yet received */
 static bool get_server = false;
 static uint16_t conn_id_stored = 0;
 static uint16_t service_start_handle = 0;
 static uint16_t service_end_handle = 0;
 static uint16_t key_material_char_handle = INVALID_HANDLE;
-static esp_bd_addr_t current_peer_addr = {0};
+/* BDA for the active GATT connection; set in CONNECT_EVT, cleared on disconnect */
+static esp_bd_addr_t gattc_remote_bda = {0};
 
 /* GATT interface */
 static esp_gatt_if_t gattc_if_stored = ESP_GATT_IF_NONE;
@@ -146,27 +149,54 @@ static void decrypt_enc_adv_data(const uint8_t *adv_data, uint8_t adv_len, const
 
             uint8_t dec_data[32];  /* Buffer for decrypted data */
             size_t dec_len = BLE_EAD_DECRYPTED_PAYLOAD_SIZE(enc_data_len);
+            if (dec_len > sizeof(dec_data)) {
+                ESP_LOGW(TAG, "Encrypted AD would yield %zu plaintext bytes; example buffer is %zu — skip",
+                         dec_len, sizeof(dec_data));
+                break;
+            }
 
             int rc = ble_ead_decrypt(
                 peers[peer_idx].key_material.session_key,
                 peers[peer_idx].key_material.iv,
                 enc_data, enc_data_len,
-                dec_data);
+                dec_data, sizeof(dec_data));
 
             if (rc == 0) {
+                size_t safe_dec_len = dec_len;
+                if (safe_dec_len > sizeof(dec_data)) {
+                    ESP_LOGW(TAG, "dec_len %zu > buffer %zu, clamping for log/parse",
+                             dec_len, sizeof(dec_data));
+                    safe_dec_len = sizeof(dec_data);
+                }
                 ESP_LOGI(TAG, "Decryption successful!");
                 ESP_LOGI(TAG, "Decrypted data:");
-                ESP_LOG_BUFFER_HEX(TAG, dec_data, dec_len);
+                ESP_LOG_BUFFER_HEX(TAG, dec_data, safe_dec_len);
 
-                /* Parse decrypted advertising structure */
-                if (dec_len >= 2) {
-                    uint8_t dec_type = dec_data[1];
-                    if (dec_type == ESP_BLE_AD_TYPE_NAME_CMPL || dec_type == ESP_BLE_AD_TYPE_NAME_SHORT) {
-                        char name[32] = {0};
-                        size_t name_len = dec_data[0] - 1;
-                        if (name_len < sizeof(name)) {
-                            memcpy(name, &dec_data[2], name_len);
-                            ESP_LOGI(TAG, "Decrypted device name: %s", name);
+                /* Parse decrypted advertising structure (do not trust length octet past plaintext) */
+                if (safe_dec_len >= 2) {
+                    if (dec_data[0] == 0) {
+                        ESP_LOGW(TAG, "Malformed decrypted AD: zero inner length");
+                    } else {
+                        /* BLE: octet 0 is L = len(type+data); element occupies 1+L octets */
+                        const size_t inner_total = 1U + (size_t)dec_data[0];
+                        if (inner_total > safe_dec_len) {
+                            ESP_LOGW(TAG, "Malformed decrypted AD: inner len claims %zu octets, have %zu",
+                                     inner_total, safe_dec_len);
+                        } else {
+                            uint8_t dec_type = dec_data[1];
+                            if (dec_type == ESP_BLE_AD_TYPE_NAME_CMPL ||
+                                dec_type == ESP_BLE_AD_TYPE_NAME_SHORT) {
+                                char name[32] = {0};
+                                size_t name_len = (size_t)dec_data[0] - 1U;
+                                /* Name in dec_data[2 .. name_copy_end); last index is name_copy_end - 1 */
+                                const size_t name_copy_end = 2U + name_len;
+                                if (name_len < sizeof(name) &&
+                                    name_copy_end <= sizeof(dec_data) &&
+                                    name_copy_end <= safe_dec_len) {
+                                    memcpy(name, &dec_data[2], name_len);
+                                    ESP_LOGI(TAG, "Decrypted device name: %s", name);
+                                }
+                            }
                         }
                     }
                 }
@@ -193,11 +223,14 @@ static bool should_connect(const uint8_t *adv_data, uint8_t adv_len)
 
         uint8_t type = adv_data[offset + 1];
         if (type == ESP_BLE_AD_TYPE_16SRV_CMPL || type == ESP_BLE_AD_TYPE_16SRV_PART) {
-            /* Check for GAP service UUID */
-            for (int i = 0; i < len - 1; i += 2) {
-                uint16_t uuid = adv_data[offset + 2 + i] | (adv_data[offset + 3 + i] << 8);
-                if (uuid == GAP_SERVICE_UUID) {
-                    return true;
+            /* Octets after AD type = len - 1; each 16-bit UUID needs 2 payload bytes */
+            int payload_len = (int)len - 1;
+            if (payload_len >= 2) {
+                for (int i = 0; i + 1 < payload_len; i += 2) {
+                    uint16_t uuid = adv_data[offset + 2 + i] | (adv_data[offset + 3 + i] << 8);
+                    if (uuid == GAP_SERVICE_UUID) {
+                        return true;
+                    }
                 }
             }
         }
@@ -250,26 +283,33 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                     decrypt_enc_adv_data(adv_data, adv_len, scan_result->scan_rst.bda);
                 } else {
                     /* Need to connect and get key */
-                    if (!is_connected) {
-                        ESP_LOGI(TAG, "Connecting to get key material...");
-                        add_peer(scan_result->scan_rst.bda);
-                        memcpy(current_peer_addr, scan_result->scan_rst.bda, sizeof(esp_bd_addr_t));
+                    if (!is_connected && !connect_pending) {
+                        int peer_slot = add_peer(scan_result->scan_rst.bda);
+                        if (peer_slot < 0) {
+                            ESP_LOGE(TAG, "Peer table full (max %d); cannot track key for "
+                                          ESP_BD_ADDR_STR " — skip connection (increase "
+                                          "MAX_PEERS or free a slot)",
+                                     MAX_PEERS, ESP_BD_ADDR_HEX(scan_result->scan_rst.bda));
+                        } else {
+                            ESP_LOGI(TAG, "Connecting to get key material...");
+                            esp_ble_gap_stop_scanning();
 
-                        esp_ble_gap_stop_scanning();
-
-                        esp_ble_gatt_creat_conn_params_t conn_params = {0};
-                        memcpy(conn_params.remote_bda, scan_result->scan_rst.bda, ESP_BD_ADDR_LEN);
-                        conn_params.remote_addr_type = scan_result->scan_rst.ble_addr_type;
-                        conn_params.own_addr_type = BLE_ADDR_TYPE_PUBLIC;
-                        conn_params.is_direct = true;
-                        conn_params.is_aux = false;
-                        esp_ble_gattc_enh_open(gattc_if_stored, &conn_params);
+                            esp_ble_gatt_creat_conn_params_t conn_params = {0};
+                            memcpy(conn_params.remote_bda, scan_result->scan_rst.bda,
+                                   ESP_BD_ADDR_LEN);
+                            conn_params.remote_addr_type = scan_result->scan_rst.ble_addr_type;
+                            conn_params.own_addr_type = BLE_ADDR_TYPE_PUBLIC;
+                            conn_params.is_direct = true;
+                            conn_params.is_aux = false;
+                            connect_pending = true;
+                            esp_ble_gattc_enh_open(gattc_if_stored, &conn_params);
+                        }
                     }
                 }
             }
         } else if (scan_result->scan_rst.search_evt == ESP_GAP_SEARCH_INQ_CMPL_EVT) {
             ESP_LOGI(TAG, "Scan complete");
-            if (!is_connected) {
+            if (!is_connected && !connect_pending) {
                 start_scan();  /* Restart scanning */
             }
         }
@@ -314,6 +354,8 @@ static void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_
     case ESP_GATTC_CONNECT_EVT:
         ESP_LOGI(TAG, "Connected, conn_id %d", param->connect.conn_id);
         conn_id_stored = param->connect.conn_id;
+        connect_pending = false;
+        memcpy(gattc_remote_bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
         is_connected = true;
 
         /* Request MTU exchange */
@@ -324,6 +366,8 @@ static void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_
         if (param->open.status != ESP_GATT_OK) {
             ESP_LOGE(TAG, "Open failed: %d", param->open.status);
             is_connected = false;
+            connect_pending = false;
+            memset(gattc_remote_bda, 0, sizeof(gattc_remote_bda));
             start_scan();
         }
         break;
@@ -360,25 +404,29 @@ static void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_
         if (get_server) {
             /* Get characteristics */
             uint16_t count = 0;
-            esp_ble_gattc_get_attr_count(gattc_if, conn_id_stored,
-                                          ESP_GATT_DB_CHARACTERISTIC,
-                                          service_start_handle,
-                                          service_end_handle,
-                                          INVALID_HANDLE, &count);
+            esp_gatt_status_t gc_st = esp_ble_gattc_get_attr_count(gattc_if, conn_id_stored,
+                                                                   ESP_GATT_DB_CHARACTERISTIC,
+                                                                   service_start_handle,
+                                                                   service_end_handle,
+                                                                   INVALID_HANDLE, &count);
 
-            if (count > 0) {
-                esp_gattc_char_elem_t *char_elem = malloc(sizeof(esp_gattc_char_elem_t) * count);
+            if (gc_st != ESP_GATT_OK) {
+                ESP_LOGE(TAG, "get_attr_count failed: %d", gc_st);
+            } else if (count > 0) {
+                esp_gattc_char_elem_t *char_elem = calloc(count, sizeof(esp_gattc_char_elem_t));
                 if (char_elem) {
                     esp_bt_uuid_t km_uuid = {
                         .len = ESP_UUID_LEN_16,
                         .uuid = {.uuid16 = KEY_MATERIAL_CHAR_UUID},
                     };
-                    esp_ble_gattc_get_char_by_uuid(gattc_if, conn_id_stored,
-                                                    service_start_handle,
-                                                    service_end_handle,
-                                                    km_uuid, char_elem, &count);
+                    gc_st = esp_ble_gattc_get_char_by_uuid(gattc_if, conn_id_stored,
+                                                           service_start_handle,
+                                                           service_end_handle,
+                                                           km_uuid, char_elem, &count);
 
-                    if (count > 0) {
+                    if (gc_st != ESP_GATT_OK) {
+                        ESP_LOGE(TAG, "get_char_by_uuid failed: %d", gc_st);
+                    } else if (count > 0) {
                         key_material_char_handle = char_elem[0].char_handle;
                         ESP_LOGI(TAG, "Key Material characteristic found, handle %d", key_material_char_handle);
 
@@ -402,7 +450,7 @@ static void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_
             if (param->read.handle == key_material_char_handle &&
                 param->read.value_len == sizeof(ble_ead_key_material_t)) {
                 /* Store key material */
-                int peer_idx = find_peer(current_peer_addr);
+                int peer_idx = find_peer(gattc_remote_bda);
                 if (peer_idx >= 0) {
                     memcpy(&peers[peer_idx].key_material, param->read.value,
                            sizeof(ble_ead_key_material_t));
@@ -424,6 +472,8 @@ static void gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_
     case ESP_GATTC_DISCONNECT_EVT:
         ESP_LOGI(TAG, "Disconnected, reason 0x%02x", param->disconnect.reason);
         is_connected = false;
+        connect_pending = false;
+        memset(gattc_remote_bda, 0, sizeof(gattc_remote_bda));
         get_server = false;
         key_material_char_handle = INVALID_HANDLE;
         start_scan();
