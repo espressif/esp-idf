@@ -8,3 +8,8 @@ CONFIG_BT_BLE_42_FEATURES_SUPPORTED=y
 CONFIG_BT_LE_50_FEATURE_SUPPORT=n
 
 CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
+# Disable unused Bluedroid host features for ANCS example
+# (advertises as peripheral and acts as GATT client to ANCS service)
+# CONFIG_BT_GATTS_ENABLE is not set
+# CONFIG_BT_BLE_42_SCAN_EN is not set
+# CONFIG_BT_BLE_42_DTM_TEST_EN is not set
