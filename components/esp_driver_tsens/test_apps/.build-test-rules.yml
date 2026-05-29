@@ -3,10 +3,6 @@
 components/esp_driver_tsens/test_apps/temperature_sensor:
   disable:
     - if: SOC_TEMP_SENSOR_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET in ["esp32h4"]
-      temporary: true
-      reason: cannot pass # TODO: IDF-15617
   depends_components:
     - esp_driver_tsens
     - esp_hal_ana_conv

@@ -538,7 +538,8 @@
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                   (1)
 #define SOC_TEMPERATURE_SENSOR_INTR_SUPPORT                   (1)
-// #define SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION         (1)
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION         (1)
+#define SOC_TEMPERATURE_SENSOR_UNDER_PD_TOP_DOMAIN            (1)
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_VERSION                    (3)     /*!< Hardware version of touch sensor */

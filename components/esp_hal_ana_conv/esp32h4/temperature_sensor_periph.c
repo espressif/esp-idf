@@ -4,10 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdint.h>
-#include "soc/regdma.h"
 #include "hal/temperature_sensor_periph.h"
-#include "soc/apb_saradc_reg.h"
 
 const temperature_sensor_attribute_t temperature_sensor_attributes[TEMPERATURE_SENSOR_ATTR_RANGE_NUM] = {
     /*Offset   reg_val  min  max  error */
