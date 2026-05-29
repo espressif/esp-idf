@@ -7,16 +7,12 @@
       optional: true
   dependencies: null
   variables:
-    PIP_CACHE_DIR: ".cache/pip"
     # Metrics - related env vars
     ESP_METRICS_PROJECT_URL: "$CI_PROJECT_URL"
     ESP_METRICS_PROJECT_ID: "$CI_PROJECT_ID"
     ESP_METRICS_COMMIT_SHA: "$PIPELINE_COMMIT_SHA"
     ESP_METRICS_BRANCH_NAME: "$CI_COMMIT_REF_NAME"
-  cache:
-    key: metrics-pip
-    paths:
-      - .cache/pip
+  cache: []
   before_script:
     - echo "Installing esp-metrics-cli tool"
     - pip install "esp-metrics-cli>=0.3,<1"
