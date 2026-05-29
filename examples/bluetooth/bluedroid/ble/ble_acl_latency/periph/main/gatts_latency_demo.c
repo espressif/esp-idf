@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
@@ -18,6 +19,7 @@
 #include "esp_gatts_api.h"
 #include "esp_bt_main.h"
 #include "esp_gatt_common_api.h"
+#include "esp_gatt_defs.h"
 #include "gatts_latency.h"
 
 #define GATTS_TAG "BLE_ACL_LATENCY_PERIPH"
@@ -191,16 +193,18 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         }
 
         esp_err_t ret = esp_ble_gap_config_adv_data(&adv_data);
-        if (ret){
+        if (ret != ESP_OK) {
             ESP_LOGE(GATTS_TAG, "Config adv data failed, error code = %x", ret);
+        } else {
+            adv_config_done |= adv_config_flag;
         }
-        adv_config_done |= adv_config_flag;
 
         ret = esp_ble_gap_config_adv_data(&scan_rsp_data);
-        if (ret){
+        if (ret != ESP_OK) {
             ESP_LOGE(GATTS_TAG, "Config scan response data failed, error code = %x", ret);
+        } else {
+            adv_config_done |= scan_rsp_config_flag;
         }
-        adv_config_done |= scan_rsp_config_flag;
 
         esp_err_t create_attr_ret = esp_ble_gatts_create_attr_tab(gatt_db, gatts_if, LATENCY_IDX_NB, 0);
         if (create_attr_ret){
@@ -209,7 +213,41 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
     }
         break;
     case ESP_GATTS_READ_EVT:
-        ESP_LOGD(GATTS_TAG, "ESP_GATTS_READ_EVT");
+        ESP_LOGD(GATTS_TAG, "ESP_GATTS_READ_EVT, handle=%d, need_rsp=%d", param->read.handle, param->read.need_rsp);
+        if (!param->read.need_rsp) {
+            break;
+        }
+        {
+            esp_gatt_rsp_t rsp;
+            memset(&rsp, 0, sizeof(rsp));
+            rsp.attr_value.handle = param->read.handle;
+            rsp.attr_value.offset = param->read.offset;
+
+            uint16_t vlen = 0;
+            const uint8_t *v = NULL;
+            esp_gatt_status_t gst = esp_ble_gatts_get_attr_value(param->read.handle, &vlen, &v);
+
+            if (gst != ESP_GATT_OK || v == NULL) {
+                rsp.attr_value.len = 0;
+                esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id,
+                                            ESP_GATT_ERROR, &rsp);
+                break;
+            }
+            if (param->read.offset > vlen) {
+                rsp.attr_value.len = 0;
+                esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id,
+                                            ESP_GATT_INVALID_OFFSET, &rsp);
+                break;
+            }
+
+            uint16_t remain = vlen - param->read.offset;
+            uint16_t copy_len = remain > ESP_GATT_MAX_ATTR_LEN ? ESP_GATT_MAX_ATTR_LEN : remain;
+            if (copy_len > 0) {
+                memcpy(rsp.attr_value.value, v + param->read.offset, copy_len);
+            }
+            rsp.attr_value.len = copy_len;
+            esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id, ESP_GATT_OK, &rsp);
+        }
         break;
     case ESP_GATTS_WRITE_EVT:
         if (!param->write.is_prep){
@@ -220,9 +258,35 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
                 esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, handle_table[LATENCY_IDX_CHAR_VAL],
                                            param->write.len, param->write.value, false);
             }
+            if (param->write.need_rsp) {
+                esp_err_t sr = esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id,
+                                                           ESP_GATT_OK, NULL);
+                if (sr != ESP_OK) {
+                    ESP_LOGE(GATTS_TAG, "send_response failed: %s", esp_err_to_name(sr));
+                }
+            }
+        } else {
+            /* This latency demo does not support Prepare/Long/Reliable Write.
+             * Reply with ATT Error 0x06 (Request Not Supported) instead of leaving
+             * the request unanswered, otherwise the peer would hit an ATT timeout.
+             */
+            ESP_LOGW(GATTS_TAG, "Prepare write not supported, handle=%d, offset=%d, len=%d",
+                     param->write.handle, param->write.offset, param->write.len);
+            if (param->write.need_rsp) {
+                esp_err_t sr = esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id,
+                                                           ESP_GATT_REQ_NOT_SUPPORTED, NULL);
+                if (sr != ESP_OK) {
+                    ESP_LOGE(GATTS_TAG, "send_response (prep reject) failed: %s", esp_err_to_name(sr));
+                }
+            }
         }
         break;
     case ESP_GATTS_EXEC_WRITE_EVT:
+        ESP_LOGD(GATTS_TAG, "ESP_GATTS_EXEC_WRITE_EVT, conn_id=%d, trans_id=%" PRIu32 ", flag=0x%02x",
+                 param->exec_write.conn_id, param->exec_write.trans_id, param->exec_write.exec_write_flag);
+        esp_ble_gatts_send_response(gatts_if, param->exec_write.conn_id, param->exec_write.trans_id,
+                                    ESP_GATT_OK, NULL);
+        break;
     case ESP_GATTS_MTU_EVT:
         ESP_LOGI(GATTS_TAG, "MTU exchange, MTU=%d", param->mtu.mtu);
         break;

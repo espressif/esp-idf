@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -41,16 +41,21 @@
 #define FUNC_SEND_WAIT_SEM(func, sem) do {\
         esp_err_t __err_rc = (func);\
         if (__err_rc != ESP_OK) { \
-            ESP_LOGE(LOG_TAG, "%s, message send fail, error = %d", __func__, __err_rc); \
+            ESP_LOGE(LOG_TAG, "%s failed: %s", #func, esp_err_to_name(__err_rc)); \
+            return; \
         } \
-        xSemaphoreTake(sem, portMAX_DELAY); \
+        xSemaphoreTake((sem), portMAX_DELAY); \
+        if (last_ble_async_status != ESP_BT_STATUS_SUCCESS) { \
+            ESP_LOGE(LOG_TAG, "Async completion after %s failed, status 0x%x", #func, last_ble_async_status); \
+            return; \
+        } \
 } while(0);
 
 #define EXT_ADV_HANDLE      0
 #define NUM_EXT_ADV         1
 
 static SemaphoreHandle_t test_sem = NULL;
-
+static esp_bt_status_t last_ble_async_status = ESP_BT_STATUS_SUCCESS;
 
 uint8_t addr_2m[6] = {0xc0, 0xde, 0x52, 0x00, 0x00, 0x02};
 
@@ -113,44 +118,56 @@ static esp_ble_cte_trans_enable_params_t cte_trans_enable = {
 
 static uint8_t periodic_adv_hdl = 0xff;
 
+static void ble_async_complete_signal(esp_bt_status_t status)
+{
+    last_ble_async_status = status;
+    if (test_sem != NULL) {
+        xSemaphoreGive(test_sem);
+    }
+}
+
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
     switch (event) {
     case ESP_GAP_BLE_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT:
-        xSemaphoreGive(test_sem);
+        ble_async_complete_signal(param->ext_adv_set_rand_addr.status);
         ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT, status %d", param->ext_adv_set_rand_addr.status);
         break;
     case ESP_GAP_BLE_EXT_ADV_SET_PARAMS_COMPLETE_EVT:
-        xSemaphoreGive(test_sem);
+        ble_async_complete_signal(param->ext_adv_set_params.status);
         ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_ADV_SET_PARAMS_COMPLETE_EVT, status %d", param->ext_adv_set_params.status);
         break;
     case ESP_GAP_BLE_EXT_ADV_DATA_SET_COMPLETE_EVT:
-        xSemaphoreGive(test_sem);
+        ble_async_complete_signal(param->ext_adv_data_set.status);
         ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_ADV_DATA_SET_COMPLETE_EVT, status %d", param->ext_adv_data_set.status);
         break;
     case ESP_GAP_BLE_EXT_SCAN_RSP_DATA_SET_COMPLETE_EVT:
-        xSemaphoreGive(test_sem);
+        ble_async_complete_signal(param->scan_rsp_set.status);
         ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_SCAN_RSP_DATA_SET_COMPLETE_EVT, status %d", param->scan_rsp_set.status);
         break;
     case ESP_GAP_BLE_EXT_ADV_START_COMPLETE_EVT:
-        xSemaphoreGive(test_sem);
+        ble_async_complete_signal(param->ext_adv_start.status);
         ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_ADV_START_COMPLETE_EVT, status %d", param->ext_adv_start.status);
         break;
     case ESP_GAP_BLE_EXT_ADV_STOP_COMPLETE_EVT:
-        xSemaphoreGive(test_sem);
+        ble_async_complete_signal(param->ext_adv_stop.status);
         ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_EXT_ADV_STOP_COMPLETE_EVT, status %d", param->ext_adv_stop.status);
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_SET_PARAMS_COMPLETE_EVT:
-        periodic_adv_hdl = param->peroid_adv_set_params.instance;
-        xSemaphoreGive(test_sem);
+        if (param->peroid_adv_set_params.status == ESP_BT_STATUS_SUCCESS) {
+            periodic_adv_hdl = param->peroid_adv_set_params.instance;
+        } else {
+            ESP_LOGE(LOG_TAG, "periodic adv set params failed, not updating periodic_adv_hdl");
+        }
+        ble_async_complete_signal(param->peroid_adv_set_params.status);
         ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_PERIODIC_ADV_SET_PARAMS_COMPLETE_EVT, status %d", param->peroid_adv_set_params.status);
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_DATA_SET_COMPLETE_EVT:
-        xSemaphoreGive(test_sem);
+        ble_async_complete_signal(param->period_adv_data_set.status);
         ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_PERIODIC_ADV_DATA_SET_COMPLETE_EVT, status %d", param->period_adv_data_set.status);
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_START_COMPLETE_EVT:
-        xSemaphoreGive(test_sem);
+        ble_async_complete_signal(param->period_adv_start.status);
         ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_PERIODIC_ADV_START_COMPLETE_EVT, status %d", param->period_adv_start.status);
         break;
     default:
@@ -162,11 +179,11 @@ static void cte_event_handler(esp_ble_cte_cb_event_t event, esp_ble_cte_cb_param
 {
     switch (event) {
         case ESP_BLE_CTE_SET_CONNLESS_TRANS_PARAMS_CMPL_EVT:
-            xSemaphoreGive(test_sem);
+            ble_async_complete_signal(param->set_trans_params_cmpl.status);
             ESP_LOGI(LOG_TAG, "ESP_BLE_CTE_SET_CONNLESS_TRANS_PARAMS_CMPL_EVT, status %d", param->set_trans_params_cmpl.status);
             break;
         case ESP_BLE_CTE_SET_CONNLESS_TRANS_ENABLE_CMPL_EVT:
-            xSemaphoreGive(test_sem);
+            ble_async_complete_signal(param->set_trans_enable_cmpl.status);
             ESP_LOGI(LOG_TAG, "ESP_BLE_CTE_SET_CONNLESS_TRANS_ENABLE_CMPL_EVT, status %d", param->set_trans_enable_cmpl.status);
             break;
         case ESP_BLE_CTE_SET_CONNLESS_IQ_SAMPLING_ENABLE_CMPL_EVT:

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -7,6 +7,19 @@
 #define PEER_MANAGER_TAG "PEER_MANAGER"
 
 static Peer remote_peer_lst[MAX_CONN_NUM];
+
+/* Silent lookup: returns NULL without logging if conn_id is not in the peer list.
+ * Use this when the caller legitimately treats a miss as "not a central peer"
+ * (e.g. disconnect path where peripheral-role conn_ids are intentionally absent). */
+Peer *peer_lookup(uint16_t conn_id)
+{
+    for (int i = 0; i < MAX_CONN_NUM; i++) {
+        if (remote_peer_lst[i].conn_id == conn_id) {
+            return &remote_peer_lst[i];
+        }
+    }
+    return NULL;
+}
 
 void peer_manager_init(void)
 {
@@ -20,6 +33,18 @@ void peer_manager_init(void)
 
 esp_err_t peer_add(Peer *peer)
 {
+    if (peer == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    Peer *existing = peer_lookup(peer->conn_id);
+    if (existing != NULL) {
+        /* Same conn_id already tracked — refresh metadata, do not consume a second slot */
+        existing->conn_handle = peer->conn_handle;
+        existing->gattc_if = peer->gattc_if;
+        memcpy(&existing->peer_addr, &peer->peer_addr, sizeof(esp_bd_addr_t));
+        ESP_LOGW(PEER_MANAGER_TAG, "peer_add: conn_id %u already in list, updated", peer->conn_id);
+        return ESP_OK;
+    }
     for (int i = 0; i < MAX_CONN_NUM; i++) {
         if (remote_peer_lst[i].conn_id == 0xFFFF) {
             remote_peer_lst[i].char_handle = 0xFFFF;
@@ -51,14 +76,11 @@ esp_err_t peer_remove(uint16_t conn_id)
 
 Peer *find_peer(uint16_t conn_id)
 {
-    for (int i = 0; i < MAX_CONN_NUM; i++) {
-        if (remote_peer_lst[i].conn_id == conn_id) {
-            return &remote_peer_lst[i];
-        }
+    Peer *p = peer_lookup(conn_id);
+    if (p == NULL) {
+        ESP_LOGE(PEER_MANAGER_TAG, "peer not found in list, conn_id %d", conn_id);
     }
-
-    ESP_LOGE(PEER_MANAGER_TAG, "peer not found in list, conn_id %d", conn_id);
-    return NULL;
+    return p;
 }
 
 void traverse_send_peer(uint16_t len, uint8_t *value)

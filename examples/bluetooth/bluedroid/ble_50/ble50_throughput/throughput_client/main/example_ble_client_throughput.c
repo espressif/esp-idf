@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -163,6 +163,9 @@ static uint8_t check_sum(uint8_t *addr, uint16_t count)
     if (addr == NULL || count == 0) {
         return 0;
     }
+    if (count > (ESP_GATT_MAX_MTU_SIZE - 3U)) {
+        return 0;
+    }
 
     for(int i = 0; i < count; i++) {
         sum = sum + addr[i];
@@ -173,6 +176,15 @@ static uint8_t check_sum(uint8_t *addr, uint16_t count)
     }
 
     return (uint8_t)~sum;
+}
+
+static void throughput_client_resume_ext_scan(void)
+{
+    connect = false;
+    esp_err_t err = esp_ble_gap_start_ext_scan(EXT_SCAN_DURATION, EXT_SCAN_PERIOD);
+    if (err != ESP_OK) {
+        ESP_LOGE(GATTC_TAG, "start_ext_scan failed: %s", esp_err_to_name(err));
+    }
 }
 
 static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param)
@@ -202,6 +214,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
     case ESP_GATTC_OPEN_EVT:
         if (param->open.status != ESP_GATT_OK){
             ESP_LOGE(GATTC_TAG, "Open failed, status %d", p_data->open.status);
+            throughput_client_resume_ext_scan();
             break;
         }
         ESP_LOGI(GATTC_TAG, "Open successfully, MTU %u", param->open.mtu);
@@ -293,12 +306,13 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                                                                          &count);
             if (ret_status != ESP_GATT_OK){
                 ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_attr_count error");
-            }
-            if (count > 0){
+            } else if (count == 0) {
+                ESP_LOGE(GATTC_TAG, "decsr not found");
+            } else {
                 descr_elem_result = malloc(sizeof(esp_gattc_descr_elem_t) * count);
-                if (!descr_elem_result){
+                if (descr_elem_result == NULL){
                     ESP_LOGE(GATTC_TAG, "malloc error, gattc no mem");
-                }else{
+                } else {
                     ret_status = esp_ble_gattc_get_descr_by_char_handle( gattc_if,
                                                                          gl_profile_tab[PROFILE_A_APP_ID].conn_id,
                                                                          p_data->reg_for_notify.handle,
@@ -307,10 +321,10 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                                                                          &count);
                     if (ret_status != ESP_GATT_OK){
                         ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_descr_by_char_handle error");
-                    }
-
-                    /* Every char has only one descriptor in our 'throughput_server' demo, so we use first 'descr_elem_result' */
-                    if (count > 0 && descr_elem_result[0].uuid.len == ESP_UUID_LEN_16 && descr_elem_result[0].uuid.uuid.uuid16 == ESP_GATT_UUID_CHAR_CLIENT_CONFIG){
+                    } else if (count > 0 &&
+                               descr_elem_result[0].uuid.len == ESP_UUID_LEN_16 &&
+                               descr_elem_result[0].uuid.uuid.uuid16 == ESP_GATT_UUID_CHAR_CLIENT_CONFIG) {
+                        /* Every char has only one descriptor in our 'throughput_server' demo, so we use first 'descr_elem_result' */
                         ret_status = esp_ble_gattc_write_char_descr( gattc_if,
                                                                      gl_profile_tab[PROFILE_A_APP_ID].conn_id,
                                                                      descr_elem_result[0].handle,
@@ -318,29 +332,37 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                                                                      (uint8_t *)&notify_en,
                                                                      ESP_GATT_WRITE_TYPE_RSP,
                                                                      ESP_GATT_AUTH_REQ_NONE);
+                        if (ret_status != ESP_GATT_OK){
+                            ESP_LOGE(GATTC_TAG, "esp_ble_gattc_write_char_descr error");
+                        }
                     }
-
-                    if (ret_status != ESP_GATT_OK){
-                        ESP_LOGE(GATTC_TAG, "esp_ble_gattc_write_char_descr error");
-                    }
-
-                    /* free descr_elem_result */
                     free(descr_elem_result);
+                    descr_elem_result = NULL;
                 }
             }
-            else{
-                ESP_LOGE(GATTC_TAG, "decsr not found");
-            }
-
         }
         break;
     }
     case ESP_GATTC_NOTIFY_EVT: {
 #if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
-        if (p_data->notify.is_notify &&
-            (p_data->notify.value[p_data->notify.value_len - 1] ==
-             check_sum(p_data->notify.value, p_data->notify.value_len - 1))){
-            notify_len += p_data->notify.value_len;
+        if (p_data->notify.is_notify) {
+            uint16_t vlen = p_data->notify.value_len;
+            uint8_t *val = p_data->notify.value;
+            /* value_len == 0 makes (vlen - 1) wrap; never index or pass to check_sum before validating. */
+            const uint16_t max_notify_len = (uint16_t)(ESP_GATT_MAX_MTU_SIZE - 3U);
+            if (val == NULL) {
+                ESP_LOGW(GATTC_TAG, "notify ignored: null value");
+            } else if (vlen == 0) {
+                ESP_LOGW(GATTC_TAG, "notify ignored: zero length");
+            } else if (vlen < 2) {
+                ESP_LOGW(GATTC_TAG, "notify ignored: length too short for payload+checksum");
+            } else if (vlen > max_notify_len) {
+                ESP_LOGW(GATTC_TAG, "notify ignored: length exceeds bound");
+            } else if (val[vlen - 1] == check_sum(val, (uint16_t)(vlen - 1U))) {
+                notify_len += vlen;
+            } else {
+                ESP_LOGE(GATTC_TAG, "notify checksum mismatch");
+            }
         } else {
             ESP_LOGE(GATTC_TAG, "Indication received, value:");
         }
@@ -385,8 +407,14 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         current_time = 0;
         notify_len = 0;
 #endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
+#if (CONFIG_GATTC_WRITE_THROUGHPUT)
+        /* Unblock throughput_client_task if it is waiting on gattc_semaphore while congested. */
+        can_send_write = true;
+        xSemaphoreGive(gattc_semaphore);
+#endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
         ESP_LOGI(GATTC_TAG, "Disconnected, remote "ESP_BD_ADDR_STR", reason 0x%02x",
                  ESP_BD_ADDR_HEX(p_data->disconnect.remote_bda), p_data->disconnect.reason);
+        throughput_client_resume_ext_scan();
         break;
      case ESP_GATTC_CONGEST_EVT:
 #if (CONFIG_GATTC_WRITE_THROUGHPUT)
@@ -517,7 +545,6 @@ static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
 #if (CONFIG_GATTC_WRITE_THROUGHPUT)
 static void throughput_client_task(void *param)
 {
-    vTaskDelay(2000 / portTICK_PERIOD_MS);
     uint8_t sum = check_sum(write_data, sizeof(write_data) - 1);
     write_data[GATTC_WRITE_LEN - 1] = sum;
 
@@ -619,6 +646,17 @@ void app_main(void)
         return;
     }
 
+#if (CONFIG_GATTC_WRITE_THROUGHPUT)
+    /* Create the semaphore before registering the GATTC callback so that any
+     * xSemaphoreGive() invoked from the callback is guaranteed to see a valid handle.
+     */
+    gattc_semaphore = xSemaphoreCreateBinary();
+    if (gattc_semaphore == NULL) {
+        ESP_LOGE(GATTC_TAG, "%s: gattc semaphore create failed", __func__);
+        return;
+    }
+#endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
+
     //register the callback function to the gattc module
     ret = esp_ble_gattc_register_callback(esp_gattc_cb);
     if(ret){
@@ -636,20 +674,11 @@ void app_main(void)
         ESP_LOGE(GATTC_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
     }
 #if (CONFIG_GATTC_WRITE_THROUGHPUT)
-    // The task is only created on the CPU core that Bluetooth is working on,
-    // preventing the sending task from using the un-updated Bluetooth state on another CPU.
+    /* Create the task only after the semaphore exists; never rely on priority or delays. */
     xTaskCreatePinnedToCore(&throughput_client_task, "throughput_client_task", 4096, NULL, 10, NULL, BLUETOOTH_TASK_PINNED_TO_CORE);
 #endif
 
 #if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
     xTaskCreatePinnedToCore(&throughput_cal_task, "throughput_cal_task", 4096, NULL, 9, NULL, BLUETOOTH_TASK_PINNED_TO_CORE);
 #endif
-
-#if (CONFIG_GATTC_WRITE_THROUGHPUT)
-    gattc_semaphore = xSemaphoreCreateBinary();
-    if (!gattc_semaphore) {
-        ESP_LOGE(GATTC_TAG, "%s, init fail, the gattc semaphore create fail.", __func__);
-        return;
-    }
-#endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
 }
