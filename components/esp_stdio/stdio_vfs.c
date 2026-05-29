@@ -151,6 +151,9 @@ int console_close(__attribute__((unused)) void *ctx, int fd)
     }
 
     int ret = entry->ops->close_p(entry->vfs_ctx, fd);
+    if (ret != 0) {
+        return ret;
+    }
 
     /* Close auxiliaries when last console fd is closed */
     _lock_acquire(&s_lock);
@@ -168,7 +171,7 @@ int console_close(__attribute__((unused)) void *ctx, int fd)
     }
     _lock_release(&s_lock);
 
-    return ret;
+    return 0;
 }
 
 ssize_t console_write(__attribute__((unused)) void *ctx, int fd, const void *data, size_t size)
