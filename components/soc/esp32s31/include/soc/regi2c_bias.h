@@ -32,4 +32,3 @@
 #define I2C_BIAS_DREG_2P2_PVT       1
 #define I2C_BIAS_DREG_2P2_PVT_MSB   7
 #define I2C_BIAS_DREG_2P2_PVT_LSB   4
-

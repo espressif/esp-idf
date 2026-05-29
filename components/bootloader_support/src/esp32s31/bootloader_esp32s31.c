@@ -102,6 +102,7 @@ static inline void bootloader_ana_reset_config(void)
 {
     //Enable BOD reset
     brownout_ll_ana_reset_enable(true);
+    bootloader_power_glitch_reset_config(true);
 }
 
 #if SOC_RTC_WDT_SUPPORTED
