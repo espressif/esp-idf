@@ -66,4 +66,16 @@ menu "ESP HTTP client"
             This config option helps in setting the maximum size of response header that
             can be saved in esp_http_client component.
             Note that the same size is used for key and value in the response headers.
+
+    config ESP_HTTP_CLIENT_STRICT_HEADER_BUFFER
+        bool "Fail the request when a header does not fit in the tx buffer"
+        default y
+        help
+            When enabled, esp_http_client_request_send() returns
+            ESP_ERR_HTTP_HEADER_TOO_LONG if any individual header is larger than
+            buffer_size_tx. With this option disabled, the legacy behavior is
+            preserved: oversized headers are silently dropped and the request
+            is emitted without its '\r\n\r\n' terminator, which typically
+            results in the server timing out the connection. The strict check
+            adds two small comparisons in the header send loop.
 endmenu

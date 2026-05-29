@@ -675,6 +675,12 @@ static const esp_err_msg_t esp_err_msg_table[] = {
     ERR_TBL_IT(ESP_ERR_HTTP_REDIRECT_DOWNGRADE),                /* 28685 0x700d HTTPS origin redirected to a non-HTTPS
                                                                                 scheme (downgrade blocked) */
 #   endif
+#   ifdef      ESP_ERR_HTTP_HEADER_TOO_LONG
+    ERR_TBL_IT(ESP_ERR_HTTP_HEADER_TOO_LONG),                   /* 28686 0x700e A single request header is larger than
+                                                                                buffer_size_tx and cannot be sent (only
+                                                                                when CONFIG_ESP_HTTP_CLIENT_STRICT_HEADE
+                                                                                R_BUFFER is enabled) */
+#   endif
     // components/esp-tls/esp_tls_errors.h
 #   ifdef      ESP_ERR_ESP_TLS_BASE
     ERR_TBL_IT(ESP_ERR_ESP_TLS_BASE),                           /* 32768 0x8000 Starting number of ESP-TLS error codes */
