@@ -370,7 +370,7 @@ ets_efuse_usb_device_disabled = 0x40000808;
  ***************************************/
 
 /* Functions */
-ets_ecdsa_verify = 0x40000810;
+_rom_ets_ecdsa_verify = 0x40000810;
 ets_secure_boot_verify_bootloader_with_keys = 0x40000814;
 ets_secure_boot_verify_signature = 0x40000818;
 ets_secure_boot_read_key_digests = 0x4000081c;
