@@ -987,7 +987,14 @@ typedef struct {
     int8_t tx_power;                    /*!< ext adv tx power */
     esp_ble_gap_pri_phy_t primary_phy;  /*!< ext adv primary phy */
     uint8_t max_skip;                   /*!< ext adv maximum skip */
-    esp_ble_gap_phy_t secondary_phy;    /*!< ext adv secondary phy */
+    esp_ble_gap_phy_t secondary_phy;    /*!< ext adv secondary phy.
+                                             Note: If the advertiser sends connectable advertising packets on the LE Coded
+                                             PHY, the peer may then establish the ACL connection on the LE Coded PHY, which
+                                             will significantly degrade Wi-Fi performance in Bluetooth/Wi-Fi coexistence
+                                             scenarios because Coded PHY (S=2/S=8) packets occupy the radio for much longer
+                                             than 1M/2M PHY packets. It is recommended to use the LE 2M PHY (or LE 1M PHY)
+                                             first, and only use the LE Coded PHY when the long-range capability is really
+                                             required. */
     uint8_t sid;                        /*!< ext adv sid */
     bool scan_req_notif;                /*!< ext adv scan request event notify */
 #if (CONFIG_BT_BLE_FEAT_ADV_CODING_SELECTION)
@@ -3632,6 +3639,12 @@ esp_err_t esp_ble_gap_read_phy(esp_bd_addr_t bd_addr);
 * @param[in]       tx_phy_mask : indicates the transmitter PHYs that the Host prefers the Controller to use
 * @param[in]       rx_phy_mask : indicates the receiver PHYs that the Host prefers the Controller to use
 *
+* @note            Including the LE Coded PHY in tx_phy_mask / rx_phy_mask may cause subsequent ACL connections to run on
+*                  the LE Coded PHY, which will significantly degrade Wi-Fi performance in Bluetooth/Wi-Fi coexistence
+*                  scenarios because Coded PHY (S=2/S=8) packets occupy the radio for much longer than 1M/2M PHY packets.
+*                  It is recommended to use the LE 2M PHY (or LE 1M PHY) first, and only include the LE Coded PHY when the
+*                  long-range capability is really required.
+*
 * @return            - ESP_OK : success
 *                    - other  : failed
 *
@@ -3647,6 +3660,11 @@ esp_err_t esp_ble_gap_set_preferred_default_phy(esp_ble_gap_phy_mask_t tx_phy_ma
 * @param[in]       tx_phy_mask : a bit field that indicates the transmitter PHYs that the Host prefers the Controller to use
 * @param[in]       rx_phy_mask : a bit field that indicates the receiver PHYs that the Host prefers the Controller to use
 * @param[in]       phy_options : a bit field that allows the Host to specify options for PHYs
+*
+* @note            Switching an existing ACL connection to the LE Coded PHY via tx_phy_mask / rx_phy_mask will significantly
+*                  degrade Wi-Fi performance in Bluetooth/Wi-Fi coexistence scenarios, because Coded PHY (S=2/S=8) packets
+*                  occupy the radio for much longer than 1M/2M PHY packets. It is recommended to use the LE 2M PHY (or LE 1M
+*                  PHY) first, and only switch to the LE Coded PHY when the long-range capability is really required.
 *
 * @return            - ESP_OK : success
 *                    - other  : failed
@@ -3959,6 +3977,12 @@ esp_err_t esp_ble_gap_get_periodic_list_size(uint8_t *size);
 * @param[in]       phy_1m_conn_params : Scan connectable advertisements on the LE 1M PHY. Connection parameters for the LE 1M PHY are provided.
 * @param[in]       phy_2m_conn_params : Connection parameters for the LE 2M PHY are provided.
 * @param[in]       phy_coded_conn_params : Scan connectable advertisements on the LE Coded PHY. Connection parameters for the LE Coded PHY are provided.
+*
+* @note            Using the LE Coded PHY for the ACL connection will significantly degrade Wi-Fi performance, because
+*                  the on-air transmission time of a Coded PHY packet (S=2 or S=8) is much longer than that of a 1M/2M PHY
+*                  packet, so the Bluetooth controller occupies the radio for a longer time and leaves less airtime for Wi-Fi.
+*                  In Bluetooth/Wi-Fi coexistence scenarios, it is recommended to use the LE 2M PHY or LE 1M PHY first, and
+*                  only fall back to the LE Coded PHY when the long-range capability is really required.
 *
 * @return            - ESP_OK : success
 *                    - other  : failed
