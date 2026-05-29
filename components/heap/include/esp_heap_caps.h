@@ -230,6 +230,9 @@ size_t heap_caps_get_free_size( uint32_t caps );
  * tracked per-region. Individual regions' heaps may have reached their "low watermarks" at different points in time. However,
  * this result still gives a "worst case" indication for all-time minimum free heap.
  *
+ * @note Heaps added at runtime using heap_caps_add_region_with_caps() (i.e., from app_main onwards) are not taken into
+ * account in the minimum free size calculation.
+ *
  * @param caps        Bitwise OR of MALLOC_CAP_* flags indicating the type
  *                    of memory
  *
