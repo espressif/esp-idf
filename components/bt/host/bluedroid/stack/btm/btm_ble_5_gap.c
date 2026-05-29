@@ -334,13 +334,13 @@ tBTM_STATUS BTM_BleConfigExtendedAdvDataRaw(BOOLEAN is_scan_rsp, UINT8 instance,
             }
         }
         if (!is_scan_rsp) {
-            if ((err = btsnd_hcic_ble_set_ext_adv_data(instance, operation, 0, send_data_len, &data[data_offset])) != HCI_SUCCESS) {
+            if ((err = btsnd_hcic_ble_set_ext_adv_data(instance, operation, 0, send_data_len, (data == NULL) ? NULL : &data[data_offset])) != HCI_SUCCESS) {
                 BTM_TRACE_ERROR("LE EA SetAdvData: cmd err=0x%x", err);
                 status = BTM_HCI_ERROR | err;
                 break;
             }
         } else {
-            if ((err = btsnd_hcic_ble_set_ext_adv_scan_rsp_data(instance, operation, 0, send_data_len, &data[data_offset])) != HCI_SUCCESS) {
+            if ((err = btsnd_hcic_ble_set_ext_adv_scan_rsp_data(instance, operation, 0, send_data_len, (data == NULL) ? NULL : &data[data_offset])) != HCI_SUCCESS) {
                 BTM_TRACE_ERROR("LE EA SetScanRspData: cmd err=0x%x", err);
                 status = BTM_HCI_ERROR | err;
                 break;
@@ -1900,7 +1900,6 @@ void btm_ble_cs_read_local_supp_caps_cmpl_evt(uint8_t *p)
         goto _error;
     }
 
-    STREAM_TO_UINT16(cb_params.cs_read_local_supp_caps.conn_handle, p);
     STREAM_TO_UINT8(cb_params.cs_read_local_supp_caps.num_config_supported, p);
     STREAM_TO_UINT16(cb_params.cs_read_local_supp_caps.max_consecutive_proc_supported, p);
     STREAM_TO_UINT8(cb_params.cs_read_local_supp_caps.num_ant_supported, p);
@@ -2011,6 +2010,7 @@ void btm_ble_cs_read_remote_fae_table_cmd_status(UINT8 status)
     tBTM_BLE_CS_READ_REMOTE_FAE_TAB_CMPL_EVT cs_read_remote_fae_tab = {0};
     if (status != HCI_SUCCESS) {
         cs_read_remote_fae_tab.status = (status | BTM_HCI_ERROR);
+        cs_read_remote_fae_tab.conn_handle = 0xFFFF;
         BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_CS_READ_REMOTE_FAE_TABLE_CMPL_EVT, (tBTM_BLE_5_GAP_CB_PARAMS *)&cs_read_remote_fae_tab);
     }
 }

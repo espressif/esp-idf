@@ -2524,7 +2524,6 @@ typedef union {
      */
     struct ble_cs_read_local_supp_caps_evt {
         esp_bt_status_t status;                  /*!< Indicate channel sounding read local supported capabilities command successfully completed */
-        uint16_t conn_handle;                    /*!< Connection Handle */
         uint8_t num_config_supported;            /*!< Number of CS configurations supported per connection */
         uint16_t max_consecutive_proc_supported; /*!< 0x0000: Support for both a fixed number of consecutive CS procedures and for an indefinite number of CS procedures until termination
                                                     0x0001 to 0xFFFF: Maximum number of consecutive CS procedures supported */
@@ -3100,6 +3099,11 @@ esp_err_t esp_ble_gap_add_device_to_resolving_list(esp_bd_addr_t peer_addr, uint
 
 /**
  * @brief           This function clears the random address for the application
+ *
+ * @note            This function shall not be used when:
+ *                  - Advertising is enabled,
+ *                  - Scanning is enabled, or
+ *                  - any LE connection exists / a create connection command is pending.
  *
  * @return
  *                  - ESP_OK : success

@@ -173,7 +173,14 @@ typedef void (tBTM_VSC_CMPL_CB) (tBTM_VSC_CMPL *p1);
 */
 // typedef UINT8 (tBTM_FILTER_CB) (BD_ADDR bd_addr, DEV_CLASS dc);
 
-typedef void (tBTM_DTM_CMD_CMPL_CBACK) (void *p1);
+/*
+ * DTM (Direct Test Mode) command complete callback.
+ *
+ * The controller returns a variable-length parameter block depending on the
+ * specific LE test command. Propagate the parameter length so upper layers can
+ * validate before parsing and avoid OOB reads on malformed/truncated responses.
+ */
+typedef void (tBTM_DTM_CMD_CMPL_CBACK) (UINT8 *p, UINT16 len);
 
 typedef void (tBTM_SET_RAND_ADDR_CBACK) (UINT8 status);
 
