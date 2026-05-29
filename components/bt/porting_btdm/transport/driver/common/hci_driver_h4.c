@@ -113,6 +113,7 @@ hci_h4_sm_w4_header(struct hci_h4_sm *h4sm, struct hci_h4_input_buffer *ib)
 {
     int rc;
     uint16_t conn_handle = 0;
+    uint16_t handle_flags = 0;
 
     rc = hci_h4_ib_pull_min_len(h4sm, ib);
     if (rc) {
@@ -132,7 +133,19 @@ hci_h4_sm_w4_header(struct hci_h4_sm *h4sm, struct hci_h4_input_buffer *ib)
         h4sm->exp_len = h4sm->hdr[2] + 3;
         break;
     case HCI_H4_ACL:
-        conn_handle = btdm_get_le16(&h4sm->hdr[0]) & HCI_INTERNAL_CONN_MASK;
+        handle_flags = btdm_get_le16(&h4sm->hdr[0]);
+        conn_handle = handle_flags & HCI_INTERNAL_CONN_MASK;
+#if UC_BT_CTRL_BR_EDR_IS_ENABLE
+        if (HCI_INTERNAL_ACL_IS_BREDR_BCAST(handle_flags) || HCI_INTERNAL_CONN_IS_BREDR(conn_handle)) {
+            h4sm->exp_len = btdm_get_le16(&h4sm->hdr[2]) + 4;
+            h4sm->pkt = h4sm->allocs->bredr_acl(conn_handle);
+            if (!h4sm->pkt) {
+                return -1;
+            }
+            memcpy(h4sm->pkt->data, h4sm->hdr, h4sm->len);
+            break;
+        }
+#endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
 #if UC_BT_CTRL_BLE_IS_ENABLE
         if (HCI_INTERNAL_CONN_IS_BLE(conn_handle)) {
             h4sm->om = h4sm->allocs->acl();
@@ -147,17 +160,6 @@ hci_h4_sm_w4_header(struct hci_h4_sm *h4sm, struct hci_h4_input_buffer *ib)
             break;
         }
 #endif // UC_BT_CTRL_BLE_IS_ENABLE
-#if UC_BT_CTRL_BR_EDR_IS_ENABLE
-        if (HCI_INTERNAL_CONN_IS_BREDR(conn_handle)) {
-            h4sm->exp_len = btdm_get_le16(&h4sm->hdr[2]) + 4;
-            h4sm->pkt = h4sm->allocs->bredr_acl(conn_handle);
-            if (!h4sm->pkt) {
-                return -1;
-            }
-            memcpy(h4sm->pkt->data, h4sm->hdr, h4sm->len);
-            break;
-        }
-#endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
         return -1;
 #if UC_BT_CTRL_BR_EDR_IS_ENABLE
     case HCI_H4_SYNC:
@@ -226,6 +228,7 @@ hci_h4_sm_w4_payload(struct hci_h4_sm *h4sm,
                      struct hci_h4_input_buffer *ib)
 {
     uint16_t len;
+    uint16_t handle_flags = 0;
 
     len = min(ib->len, h4sm->exp_len - h4sm->len);
     switch (h4sm->pkt_type) {
@@ -246,9 +249,10 @@ hci_h4_sm_w4_payload(struct hci_h4_sm *h4sm,
         }
         break;
     case HCI_H4_ACL:
-        uint16_t conn_handle = btdm_get_le16(&h4sm->hdr[0]) & HCI_INTERNAL_CONN_MASK;
+        handle_flags = btdm_get_le16(&h4sm->hdr[0]);
+        uint16_t conn_handle = handle_flags & HCI_INTERNAL_CONN_MASK;
 #if UC_BT_CTRL_BR_EDR_IS_ENABLE
-        if (HCI_INTERNAL_CONN_IS_BREDR(conn_handle)) {
+        if (HCI_INTERNAL_ACL_IS_BREDR_BCAST(handle_flags) || HCI_INTERNAL_CONN_IS_BREDR(conn_handle)) {
             memcpy(&h4sm->pkt->data[h4sm->len], ib->buf, len);
             break;
         }
@@ -285,11 +289,24 @@ hci_h4_sm_completed(struct hci_h4_sm *h4sm)
 {
     int rc;
     uint8_t data_source = 0xFF;
+    uint16_t handle_flags = 0;
+    uint16_t conn_handle = 0;
 
     switch (h4sm->pkt_type) {
 #if CONFIG_BT_CONTROLLER_ENABLED
     case HCI_H4_ACL:
-        uint16_t conn_handle = btdm_get_le16(&h4sm->hdr[0]) & HCI_INTERNAL_CONN_MASK;
+        handle_flags = btdm_get_le16(&h4sm->hdr[0]);
+        conn_handle = handle_flags & HCI_INTERNAL_CONN_MASK;
+#if UC_BT_CTRL_BR_EDR_IS_ENABLE
+        if (HCI_INTERNAL_ACL_IS_BREDR_BCAST(handle_flags) || HCI_INTERNAL_CONN_IS_BREDR(conn_handle)) {
+            if (h4sm->buf) {
+                rc = h4sm->frame_cb(h4sm->pkt_type, (void *)h4sm->buf, h4sm->len, HCI_DRIVER_BREDR_ACL);
+                HCI_TRANS_ASSERT(rc == 0, rc, 0);
+                h4sm->buf = NULL;
+            }
+            break;
+        }
+#endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
 #if UC_BT_CTRL_BLE_IS_ENABLE
         if (HCI_INTERNAL_CONN_IS_BLE(conn_handle)) {
             if (h4sm->om) {
@@ -299,15 +316,6 @@ hci_h4_sm_completed(struct hci_h4_sm *h4sm)
             }
         }
 #endif // UC_BT_CTRL_BLE_IS_ENABLE
-#if UC_BT_CTRL_BR_EDR_IS_ENABLE
-        if (HCI_INTERNAL_CONN_IS_BREDR(conn_handle)) {
-            if (h4sm->buf) {
-                rc = h4sm->frame_cb(h4sm->pkt_type, (void *)h4sm->buf, h4sm->len, HCI_DRIVER_BREDR_ACL);
-                HCI_TRANS_ASSERT(rc == 0, rc, 0);
-                h4sm->buf = NULL;
-            }
-        }
-#endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
         break;
     case HCI_H4_CMD:
 #if UC_BT_CTRL_BR_EDR_IS_ENABLE
@@ -364,6 +372,9 @@ hci_h4_sm_completed(struct hci_h4_sm *h4sm)
 static int
 hci_h4_sm_free_buf(struct hci_h4_sm *h4sm)
 {
+    uint16_t handle_flags = 0;
+    uint16_t conn_handle = 0;
+
     switch (h4sm->pkt_type) {
         case HCI_H4_CMD:
             if (h4sm->buf) {
@@ -380,19 +391,20 @@ hci_h4_sm_free_buf(struct hci_h4_sm *h4sm)
             break;
 #endif  // (!CONFIG_BT_CONTROLLER_ENABLED)
         case HCI_H4_ACL:
-            uint16_t conn_handle = btdm_get_le16(&h4sm->hdr[0]) & HCI_INTERNAL_CONN_MASK;
-            if (HCI_INTERNAL_CONN_IS_BLE(conn_handle)) {
-#if UC_BT_CTRL_BLE_IS_ENABLE
-                if (h4sm->om) {
-                    h4sm->frees->acl(h4sm->om);
-                    h4sm->om = NULL;
-                }
-#endif
-            } else {
+            handle_flags = btdm_get_le16(&h4sm->hdr[0]);
+            conn_handle = handle_flags & HCI_INTERNAL_CONN_MASK;
+            if (HCI_INTERNAL_ACL_IS_BREDR_BCAST(handle_flags) || HCI_INTERNAL_CONN_IS_BREDR(conn_handle)) {
 #if UC_BT_CTRL_BR_EDR_IS_ENABLE
                 if (h4sm->pkt) {
                     h4sm->frees->bredr_acl(h4sm->pkt);
                     h4sm->pkt = NULL;
+                }
+#endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
+            } else {
+#if UC_BT_CTRL_BLE_IS_ENABLE
+                if (h4sm->om) {
+                    h4sm->frees->acl(h4sm->om);
+                    h4sm->om = NULL;
                 }
 #endif
             }
