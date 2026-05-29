@@ -48,6 +48,9 @@ void esp_system_reset_modules_on_exit(void)
             esp_rom_output_tx_wait_idle(i);
         }
     }
+
+    CLEAR_PERI_REG_MASK(HP_SYSTEM_ECC_MEM_LP_CTRL_REG, HP_SYSTEM_ECC_MEM_LP_EN);
+    SET_PERI_REG_MASK(HP_SYSTEM_ECC_MEM_LP_CTRL_REG, HP_SYSTEM_ECC_MEM_LP_FORCE_CTRL);
 }
 
 static void IRAM_ATTR __attribute__((noinline, noreturn)) esp_restart_noos_inner(void)

@@ -12,6 +12,7 @@
 #include "soc/ecc_mult_reg.h"
 #include "soc/pcr_struct.h"
 #include "soc/pcr_reg.h"
+#include "esp_fault.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,9 +51,11 @@ static inline void ecc_ll_reset_register(void)
 static inline void ecc_ll_power_up(void)
 {
 
-    /* Power up the ECC peripheral (default state is power-down) */
+    /* Power up the ECC peripheral (default state is power-up) */
     REG_CLR_BIT(PCR_ECC_MEM_LP_CTRL_REG, PCR_ECC_MEM_LP_EN);
-    REG_CLR_BIT(PCR_ECC_MEM_LP_CTRL_REG, PCR_ECC_MEM_FORCE_CTRL);
+    REG_SET_BIT(PCR_ECC_MEM_LP_CTRL_REG, PCR_ECC_MEM_FORCE_CTRL);
+    ESP_FAULT_ASSERT(REG_GET_BIT(PCR_ECC_MEM_LP_CTRL_REG, PCR_ECC_MEM_LP_EN) == 0 &&
+                     REG_GET_BIT(PCR_ECC_MEM_LP_CTRL_REG, PCR_ECC_MEM_FORCE_CTRL) != 0);
 }
 
 static inline void ecc_ll_power_down(void)

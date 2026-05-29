@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include "soc/ecc_mult_reg.h"
 #include "soc/pcr_struct.h"
 #include "soc/pcr_reg.h"
+#include "esp_fault.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,11 +48,17 @@ static inline void ecc_ll_reset_register(void)
     PCR.ecdsa_conf.ecdsa_rst_en = 0;
 }
 
+static inline void ecc_ll_clear_force_pd(void)
+{
+    REG_CLR_BIT(PCR_ECC_PD_CTRL_REG, PCR_ECC_MEM_FORCE_PD);
+}
+
 static inline void ecc_ll_power_up(void)
 {
     /* Power up the ECC peripheral (default state is power-down) */
     REG_CLR_BIT(PCR_ECC_PD_CTRL_REG, PCR_ECC_MEM_PD);
     REG_CLR_BIT(PCR_ECC_PD_CTRL_REG, PCR_ECC_MEM_FORCE_PD);
+    ESP_FAULT_ASSERT(REG_GET_BIT(PCR_ECC_PD_CTRL_REG, PCR_ECC_MEM_FORCE_PD) == 0);
 }
 
 static inline void ecc_ll_power_down(void)
