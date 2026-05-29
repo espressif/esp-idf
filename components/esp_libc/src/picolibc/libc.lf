@@ -13,15 +13,14 @@ entries:
     # Thus, they shall always be placed in IRAM.
     libc_stdlib_itoa (noflash)
     libc_string_memcmp (noflash)
-    libc_machine_xtensa_memcpy (noflash)
-    libc_machine_xtensa_memset (noflash)
+    memcpy (noflash)
+    memset (noflash)
     libc_string_strcat (noflash)
-    libc_machine_xtensa_strcmp (noflash)
-    libc_machine_xtensa_strlen (noflash)
+    strcmp (noflash)
+    strlen (noflash)
 
     if SPIRAM_CACHE_LIBJMP_IN_IRAM = y:
-        libc_machine_xtensa_longjmp (noflash)
-        libc_machine_xtensa_setjmp (noflash)
+        setjmp (noflash)
 
     if SPIRAM_CACHE_LIBMATH_IN_IRAM = y:
         libc_stdlib_abs (noflash)
