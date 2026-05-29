@@ -463,7 +463,9 @@ void bta_pba_client_response(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DATA *p
     tOBEX_PARSE_INFO info;
     tBTA_PBA_CLIENT_ERR reason = BTA_PBA_CLIENT_GOEP_ERROR;
 
-    OBEX_ParseResponse(p_data->goep_response.pkt, p_data->goep_response.opcode, &info);
+    if (OBEX_ParseResponse(p_data->goep_response.pkt, p_data->goep_response.opcode, &info) != OBEX_SUCCESS) {
+        goto error;
+    }
     if (p_data->goep_response.opcode == OBEX_OPCODE_GET_FINAL &&
         (info.response_code == OBEX_RESPONSE_CODE_CONTINUE || info.response_code == (OBEX_RESPONSE_CODE_CONTINUE | OBEX_FINAL_BIT_MASK))) {
         UINT8 *header = NULL;
@@ -471,13 +473,15 @@ void bta_pba_client_response(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DATA *p
         UINT16 body_data_len = 0;
         UINT8 *app_param = NULL;
         UINT16 app_param_len = 0;
+        UINT8 *pkt_data = (UINT8 *)(p_data->goep_response.pkt + 1) + p_data->goep_response.pkt->offset;
+        UINT8 *pkt_end = pkt_data + p_data->goep_response.pkt->len;
         while((header = OBEX_GetNextHeader(p_data->goep_response.pkt, &info)) != NULL) {
             switch (*header)
             {
             case OBEX_HEADER_ID_BODY:
             case OBEX_HEADER_ID_END_OF_BODY:
             {
-                UINT16 hi_len = OBEX_GetHeaderLength(header);
+                UINT16 hi_len = OBEX_GetHeaderLength(header, pkt_end);
                 if (hi_len < 3) {
                     reason = BTA_PBA_CLIENT_BAD_REQUEST;
                     goto error;
@@ -497,7 +501,7 @@ void bta_pba_client_response(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_DATA *p
             }
             case OBEX_HEADER_ID_APP_PARAM:
             {
-                UINT16 hi_len = OBEX_GetHeaderLength(header);
+                UINT16 hi_len = OBEX_GetHeaderLength(header, pkt_end);
                 if (hi_len < 3) {
                     reason = BTA_PBA_CLIENT_BAD_REQUEST;
                     goto error;
@@ -544,7 +548,9 @@ void bta_pba_client_response_final(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_D
     UINT8 *header = NULL;
     tBTA_PBA_CLIENT_ERR reason = BTA_PBA_CLIENT_FAIL;
 
-    OBEX_ParseResponse(p_data->goep_response.pkt, p_data->goep_response.opcode, &info);
+    if (OBEX_ParseResponse(p_data->goep_response.pkt, p_data->goep_response.opcode, &info) != OBEX_SUCCESS) {
+        goto error;
+    }
     if (p_data->goep_response.opcode == OBEX_OPCODE_CONNECT) {
         if (info.response_code == (OBEX_RESPONSE_CODE_OK | OBEX_FINAL_BIT_MASK)) {
             /* obex connect success */
@@ -555,8 +561,13 @@ void bta_pba_client_response_final(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_D
                 p_ccb->max_tx = info.max_packet_length;
             }
             BOOLEAN cid_found = false;
+            UINT8 *pkt_data = (UINT8 *)(p_data->goep_response.pkt + 1) + p_data->goep_response.pkt->offset;
+            UINT8 *pkt_end = pkt_data + p_data->goep_response.pkt->len;
             while((header = OBEX_GetNextHeader(p_data->goep_response.pkt, &info)) != NULL) {
                 if (*header == OBEX_HEADER_ID_CONNECTION_ID) {
+                    if (OBEX_GetHeaderLength(header, pkt_end) != 5) {
+                        goto error;
+                    }
                     cid_found = true;
                     memcpy((UINT8 *)(&p_ccb->goep_cid), header + 1, 4);
                     break;
@@ -600,6 +611,8 @@ void bta_pba_client_response_final(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_D
             UINT16 body_data_len = 0;
             UINT8 *app_param = NULL;
             UINT16 app_param_len = 0;
+            UINT8 *pkt_data = (UINT8 *)(p_data->goep_response.pkt + 1) + p_data->goep_response.pkt->offset;
+            UINT8 *pkt_end = pkt_data + p_data->goep_response.pkt->len;
             while((header = OBEX_GetNextHeader(p_data->goep_response.pkt, &info)) != NULL) {
                 switch (*header)
                 {
@@ -607,7 +620,7 @@ void bta_pba_client_response_final(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_D
                 case OBEX_HEADER_ID_BODY:
                 case OBEX_HEADER_ID_END_OF_BODY:
                 {
-                    UINT16 hi_len = OBEX_GetHeaderLength(header);
+                    UINT16 hi_len = OBEX_GetHeaderLength(header, pkt_end);
                     if (hi_len < 3) {
                         reason = BTA_PBA_CLIENT_BAD_REQUEST;
                         goto error;
@@ -627,7 +640,7 @@ void bta_pba_client_response_final(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIENT_D
                 }
                 case OBEX_HEADER_ID_APP_PARAM:
                 {
-                    UINT16 hi_len = OBEX_GetHeaderLength(header);
+                    UINT16 hi_len = OBEX_GetHeaderLength(header, pkt_end);
                     if (hi_len < 3) {
                         reason = BTA_PBA_CLIENT_BAD_REQUEST;
                         goto error;

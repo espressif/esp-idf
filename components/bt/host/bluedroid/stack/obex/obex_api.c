@@ -680,17 +680,29 @@ UINT16 OBEX_ParseResponse(BT_HDR *pkt, UINT8 opcode, tOBEX_PARSE_INFO *info)
     }
 
     UINT8 *p_data = (UINT8 *)(pkt + 1) + pkt->offset;
+    UINT16 len = pkt->len;
+
+    if (len < 1) {
+        return OBEX_FAILURE;
+    }
+
     info->opcode = opcode;
     info->response_code = *p_data;
     switch (opcode)
     {
     case OBEX_OPCODE_CONNECT:
+        if (len < 7) {
+            return OBEX_FAILURE;
+        }
         info->obex_version_number = p_data[3];
         info->flags = p_data[4];
         info->max_packet_length = (p_data[5] << 8) + p_data[6];
         info->next_header_pos = 7;
         break;
     default:
+        if (len < 3) {
+            return OBEX_FAILURE;
+        }
         info->next_header_pos = 3;
         break;
     }
@@ -708,7 +720,7 @@ UINT16 OBEX_ParseResponse(BT_HDR *pkt, UINT8 opcode, tOBEX_PARSE_INFO *info)
 *******************************************************************************/
 BOOLEAN OBEX_CheckFinalBit(BT_HDR *pkt)
 {
-    if (pkt == NULL) {
+    if (pkt == NULL || pkt->len < 1) {
         return FALSE;
     }
     UINT8 *p_data = (UINT8 *)(pkt + 1) + pkt->offset;
@@ -726,7 +738,7 @@ BOOLEAN OBEX_CheckFinalBit(BT_HDR *pkt)
 *******************************************************************************/
 BOOLEAN OBEX_CheckContinueResponse(BT_HDR *pkt)
 {
-    if (pkt == NULL) {
+    if (pkt == NULL || pkt->len < 1) {
         return FALSE;
     }
     UINT8 *p_data = (UINT8 *)(pkt + 1) + pkt->offset;
@@ -742,15 +754,26 @@ BOOLEAN OBEX_CheckContinueResponse(BT_HDR *pkt)
 ** Returns          header length
 **
 *******************************************************************************/
-UINT16 OBEX_GetHeaderLength(UINT8 *header)
+UINT16 OBEX_GetHeaderLength(UINT8 *header, UINT8 *pkt_end)
 {
+    if (header == NULL || pkt_end == NULL || header >= pkt_end) {
+        return 0;
+    }
+
+    UINT16 remaining_len = (UINT16)(pkt_end - header);
     UINT16 header_len = 0;
     UINT8 header_id = *header;
+
     switch (header_id & OBEX_HEADER_ID_U2B_MASK)
     {
     case OBEX_HEADER_ID_U2B_TYPE1:
     case OBEX_HEADER_ID_U2B_TYPE2:
-        header_len = (header[1] << 8) + header[2];
+        if (remaining_len >= 3) {
+            header_len = (header[1] << 8) + header[2];
+        }
+        if (header_len < 3) {
+            header_len = 0;
+        }
         break;
     case OBEX_HEADER_ID_U2B_TYPE3:
         header_len = 2;
@@ -762,6 +785,11 @@ UINT16 OBEX_GetHeaderLength(UINT8 *header)
         /* unreachable */
         break;
     }
+
+    if (header_len > remaining_len) {
+        return 0;
+    }
+
     return header_len;
 }
 
@@ -785,7 +813,11 @@ UINT8 *OBEX_GetNextHeader(BT_HDR *pkt, tOBEX_PARSE_INFO *info)
     }
     UINT8 *p_data = (UINT8 *)(pkt + 1) + pkt->offset;
     UINT8 *header = p_data + info->next_header_pos;
-    UINT16 header_len = OBEX_GetHeaderLength(header);
+    UINT8 *pkt_end = p_data + pkt->len;
+    UINT16 header_len = OBEX_GetHeaderLength(header, pkt_end);
+    if (header_len == 0) {
+        return NULL;
+    }
     info->next_header_pos += header_len;
     return header;
 }
