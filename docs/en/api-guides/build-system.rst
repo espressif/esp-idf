@@ -168,9 +168,9 @@ Configdep Wrapper
 
 The ``esp-idf-configdep`` tool post-processes compiler-generated dependency files to reduce unnecessary rebuilds caused by ``sdkconfig.h`` changes.
 
-Normally, every source file that includes ``sdkconfig.h`` would be rebuilt whenever any configuration option changes, because the compiler records ``sdkconfig.h`` as a direct dependency. The configdep tool edits the dependency files after the initial build so that source files no longer depend directly on ``sdkconfig.h``. Instead, they depend on a special file structure created by ``esp-idf-kconfig``: each configuration option has its own file, and when a given option is changed, only the corresponding file is touched. That way only the source files that actually use the changed option are rebuilt, not the entire project.
+Normally, every source file that includes ``sdkconfig.h`` would be rebuilt whenever any configuration option changes, because the compiler records ``sdkconfig.h`` as a direct dependency. The Configdep tool edits the dependency files after the initial build so that source files no longer depend directly on ``sdkconfig.h``. Instead, they depend on a special file structure created by ``esp-idf-kconfig``: each configuration option has its own file, and when a given option is changed, only the corresponding file is touched. That way only the source files that actually use the changed option are rebuilt, not the entire project.
 
-Important: source files are not modified. They still contain ``#include <sdkconfig.h>`` and there is no need to alter anything in the source code for configdep to work. The tool operates purely on the generated dependency (``.d``) files.
+Important: source files are not modified. They still contain ``#include <sdkconfig.h>`` and there is no need to alter anything in the source code for Configdep to work. The tool operates purely on the generated dependency (``.d``) files.
 
 This is particularly useful when there are frequent changes of a small number of config options between rebuilds. Configdep is enabled by default.
 
@@ -184,7 +184,7 @@ When multiple acceleration tools are enabled, they are chained together as compi
 1. **esp-idf-configdep** (if enabled) - processes dependency files and optimizes rebuilds caused by ``sdkconfig.h`` changes
 2. **ccache** (if enabled) - caches compilations
 
-Each tool in the chain wraps the next, ultimately invoking the actual compiler. This allows combining the benefits of multiple tools. However, combining multiple tools may not always result in optimal performance and it may be needed to experiment with different combinations of the acceleration tools to achieve the best performance for your project.
+Each tool in the chain wraps the next, ultimately invoking the actual compiler. This allows combining the benefits of multiple tools. However, combining multiple tools may not always result in optimal performance, and it may be needed to experiment with different combinations of the acceleration tools to achieve the best performance for your project.
 
 .. _example-project-structure:
 
