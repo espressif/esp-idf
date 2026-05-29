@@ -2,7 +2,7 @@
   extends:
     - .before_script:minimal
   stage: pre_check
-  image: "${CI_DOCKER_REGISTRY}/esp-idf-pre-commit:2"
+  image: "${CI_REGISTRY}/ci/images/pre-commit-idf:1"
   tags: [pre-commit]
   variables:
     # Both shiny and brew runners can pick this job
