@@ -271,7 +271,7 @@ int wps_pin_str_valid(const char *pin)
 		return 0;
 
 	len = p - pin;
-	return len == 4 || len == 8;
+	return len == 8;
 }
 
 
