@@ -17,6 +17,22 @@
  * under the License.
  */
 
+/*
+ * ============================================================================
+ *                                  WARNING
+ * ============================================================================
+ * NOTE: The code in this file is for INTERNAL TEMPORARY TESTING ONLY.
+ *
+ * - DO NOT use it in any product code or user application.
+ * - It is not part of the public/stable API and provides NO compatibility
+ *   guarantees of any kind (behavior, ABI, function signatures, side effects).
+ * - It may be changed, refactored, or REMOVED at any time without notice.
+ *
+ * This file will be deleted in a future release. Any external dependency on
+ * the symbols defined here is unsupported and will break.
+ * ============================================================================
+ */
+
 #include <string.h>
 #include <assert.h>
 #include "hci/ble_hci_iso.h"
