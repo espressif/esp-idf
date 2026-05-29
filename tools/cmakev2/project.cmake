@@ -533,7 +533,9 @@ endfunction()
     esptool_py component.
 #]]
 function(__init_project_flash_targets)
-    if(CONFIG_APP_BUILD_GENERATE_BINARIES)
+    # Skip if esptool_py is not in the build set; the flash-target function
+    # would otherwise be undefined.
+    if(CONFIG_APP_BUILD_GENERATE_BINARIES AND COMMAND esptool_py_flash_target)
         idf_component_get_property(main_args esptool_py FLASH_ARGS)
         idf_component_get_property(sub_args esptool_py FLASH_SUB_ARGS)
         esptool_py_flash_target(flash "${main_args}" "${sub_args}")
