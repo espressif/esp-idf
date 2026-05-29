@@ -27,5 +27,6 @@
 #define ESP_ROM_CLIC_INT_TYPE_PATCH         (1) // ROM api esprv_intc_int_set_type configuring edge type interrupt (old revisions)
 #define ESP_ROM_HAS_OUTPUT_PUTC_FUNC        (1) // ROM has esp_rom_output_putc (or ets_write_char_uart)
 #define ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY  (1) // ROM mem/str functions are not optimized well for misaligned memory access.
+#define ESP_ROM_ECDSA_VERIFY_PATCH (1) // ROM ets_ecdsa_verify API requires a software patch
 #define ESP_ROM_BOOTLOADER_OFFSET_FLASH     (0x2000) // Bootloader offset in flash determined by the ROM bootloader
 #define ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_MAP (1) // ROM cache writeback related needs patch to avoid sync loss, need map parameter

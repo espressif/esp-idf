@@ -467,7 +467,7 @@ esp_rom_recover_key = 0x2f8008b8;
 /* Functions */
 ets_emsa_pss_verify = 0x2f8008bc;
 ets_rsa_pss_verify = 0x2f8008c0;
-ets_ecdsa_verify = 0x2f8008c4;
+_rom_ets_ecdsa_verify = 0x2f8008c4;
 ets_secure_boot_verify_bootloader_with_keys = 0x2f8008c8;
 ets_secure_boot_verify_signature = 0x2f8008cc;
 ets_secure_boot_read_key_digests = 0x2f8008d0;
