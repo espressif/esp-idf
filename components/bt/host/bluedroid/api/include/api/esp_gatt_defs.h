@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -692,7 +692,16 @@ typedef struct {
     esp_ble_phy_mask_t phy_mask;                           /*!< Indicates which PHY connection parameters will be used. When is_aux is false, only the connection params for 1M PHY can be specified */
     const esp_ble_conn_params_t *phy_1m_conn_params;       /*!< Connection parameters for the LE 1M PHY */
     const esp_ble_conn_params_t *phy_2m_conn_params;       /*!< Connection parameters for the LE 2M PHY */
-    const esp_ble_conn_params_t *phy_coded_conn_params;    /*!< Connection parameters for the LE Coded PHY */
+    const esp_ble_conn_params_t *phy_coded_conn_params;    /*!< Connection parameters for the LE Coded PHY.
+                                                                Note: Establishing an ACL connection over the LE Coded PHY
+                                                                will significantly degrade Wi-Fi performance, because the
+                                                                on-air transmission time of a Coded PHY packet (S=2 or S=8)
+                                                                is much longer than that of a 1M/2M PHY packet, so the
+                                                                Bluetooth controller occupies the radio for a longer time
+                                                                and leaves less airtime for Wi-Fi. In Bluetooth/Wi-Fi
+                                                                coexistence scenarios, it is recommended to use the LE 2M
+                                                                PHY or LE 1M PHY first, and only fall back to the LE Coded
+                                                                PHY when the long-range capability is really required. */
 } esp_ble_gatt_creat_conn_params_t;
 
 /** @brief Represents a creat connection element. */
@@ -705,7 +714,16 @@ typedef struct {
     esp_ble_phy_mask_t phy_mask;                           /*!< Indicates which PHY connection parameters will be used. When is_aux is false, only the connection params for 1M PHY can be specified */
     const esp_ble_conn_params_t *phy_1m_conn_params;       /*!< Connection parameters for the LE 1M PHY */
     const esp_ble_conn_params_t *phy_2m_conn_params;       /*!< Connection parameters for the LE 2M PHY */
-    const esp_ble_conn_params_t *phy_coded_conn_params;    /*!< Connection parameters for the LE Coded PHY */
+    const esp_ble_conn_params_t *phy_coded_conn_params;    /*!< Connection parameters for the LE Coded PHY.
+                                                                Note: Establishing an ACL connection over the LE Coded PHY
+                                                                will significantly degrade Wi-Fi performance, because the
+                                                                on-air transmission time of a Coded PHY packet (S=2 or S=8)
+                                                                is much longer than that of a 1M/2M PHY packet, so the
+                                                                Bluetooth controller occupies the radio for a longer time
+                                                                and leaves less airtime for Wi-Fi. In Bluetooth/Wi-Fi
+                                                                coexistence scenarios, it is recommended to use the LE 2M
+                                                                PHY or LE 1M PHY first, and only fall back to the LE Coded
+                                                                PHY when the long-range capability is really required. */
 } esp_ble_gatt_pawr_conn_params_t;
 
 #ifdef __cplusplus

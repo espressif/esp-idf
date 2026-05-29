@@ -21,7 +21,6 @@ r_llc_rem_encrypt_proc_continue_eco = 0x40001cf0;
 r_lld_ext_adv_dynamic_aux_pti_process_eco = 0x40001cfc;
 r_lld_adv_start_eco = 0x40001d04;
 r_lld_con_evt_canceled_cbk_eco = 0x40001d08;
-r_lld_con_start_eco = 0x40001d10;
 r_lld_ext_scan_dynamic_pti_process_eco = 0x40001d28;
 r_lld_scan_frm_eof_isr_eco = 0x40001d2c;
 r_lld_sync_start_eco = 0x40001d30;
@@ -127,4 +126,5 @@ r_lld_con_tx_eco = 0x40001d18;
 r_lld_con_evt_time_update_eco = 0x40001d0c;
 r_lld_con_evt_start_cbk_eco = 0x40001d1c;
 r_lld_con_frm_isr_eco = 0x40001d14;
+r_lld_con_start_eco = 0x40001d10;
 */
