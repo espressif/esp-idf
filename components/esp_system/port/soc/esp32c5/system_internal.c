@@ -99,6 +99,7 @@ void esp_system_reset_modules_on_exit(void)
     CLEAR_PERI_REG_MASK(PCR_RSA_CONF_REG, PCR_RSA_RST_EN);
     SET_PERI_REG_MASK(PCR_SHA_CONF_REG, PCR_SHA_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_SHA_CONF_REG, PCR_SHA_RST_EN);
+    CLEAR_PERI_REG_MASK(PCR_ECC_PD_CTRL_REG, PCR_ECC_MEM_FORCE_PD);
 
     // UART's sclk is controlled in the PCR register and does not reset with the UART module. The ROM missed enabling
     // it when initializing the ROM UART. If it is not turned on, it will trigger LP_WDT in the ROM.

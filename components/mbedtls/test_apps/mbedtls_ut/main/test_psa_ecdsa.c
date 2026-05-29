@@ -10,6 +10,9 @@
 #include <inttypes.h>
 #include <esp_log.h>
 
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+#include "mbedtls/private/ecp.h"
+#include "mbedtls/private/bignum.h"
 #include "psa/crypto.h"
 #include "psa_crypto_driver_esp_ecdsa_contexts.h"
 #include "psa_crypto_driver_esp_ecdsa.h"
@@ -334,6 +337,16 @@ TEST_CASE("mbedtls ECDSA signature verification performance on SECP384R1", "[mbe
 #define ECDSA_RANGE_CHECK_REJECT_STATUS  PSA_ERROR_INVALID_SIGNATURE
 #endif
 
+/* Curve order N in big-endian, taken from mbedtls instead of a hard-coded table. */
+static void ecdsa_get_curve_order_be(mbedtls_ecp_group_id id, uint8_t *n_be, size_t len)
+{
+    mbedtls_ecp_group grp;
+    mbedtls_ecp_group_init(&grp);
+    TEST_ASSERT_EQUAL(0, mbedtls_ecp_group_load(&grp, id));
+    TEST_ASSERT_EQUAL(0, mbedtls_mpi_write_binary(&grp.N, n_be, len));
+    mbedtls_ecp_group_free(&grp);
+}
+
 TEST_CASE("mbedtls ECDSA signature verification rejects out-of-range r, s on SECP256R1", "[mbedtls]")
 {
 #if SOC_ECDSA_SUPPORTED
@@ -341,24 +354,17 @@ TEST_CASE("mbedtls ECDSA signature verification rejects out-of-range r, s on SEC
         TEST_IGNORE_MESSAGE("ECDSA is not supported");
     }
 #endif
-    /* Case A: r = 0, s = 0 -- caught by 'r > 0' / 's > 0' check. */
     static const uint8_t zero32[32] = { 0 };
-    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP256R1, sha,
-                      zero32, zero32,
-                      ecdsa256_pub_x, ecdsa256_pub_y,
-                      ECDSA_RANGE_CHECK_REJECT_STATUS);
+    uint8_t p256_n_be[32];
+    ecdsa_get_curve_order_be(MBEDTLS_ECP_DP_SECP256R1, p256_n_be, sizeof(p256_n_be));
 
-    /* Case B: r = N (SECP256R1 curve order), s = valid -- caught by 'r < N' check. */
-    static const uint8_t p256_n_be[32] = {
-        0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00,
-        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-        0xbc, 0xe6, 0xfa, 0xad, 0xa7, 0x17, 0x9e, 0x84,
-        0xf3, 0xb9, 0xca, 0xc2, 0xfc, 0x63, 0x25, 0x51,
-    };
-    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP256R1, sha,
-                      p256_n_be, ecdsa256_s,
-                      ecdsa256_pub_x, ecdsa256_pub_y,
-                      ECDSA_RANGE_CHECK_REJECT_STATUS);
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP256R1, sha, zero32, zero32,       ecdsa256_pub_x, ecdsa256_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=0, s=0 */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP256R1, sha, zero32, p256_n_be,    ecdsa256_pub_x, ecdsa256_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=0, s=N */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP256R1, sha, p256_n_be, zero32,    ecdsa256_pub_x, ecdsa256_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=N, s=0 */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP256R1, sha, p256_n_be, p256_n_be, ecdsa256_pub_x, ecdsa256_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=N, s=N */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP256R1, sha, ecdsa256_r, zero32,    ecdsa256_pub_x, ecdsa256_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=valid, s=0 */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP256R1, sha, ecdsa256_r, p256_n_be, ecdsa256_pub_x, ecdsa256_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=valid, s=N */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP256R1, sha, p256_n_be, ecdsa256_s, ecdsa256_pub_x, ecdsa256_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=N, s=valid */
 }
 
 #ifdef SOC_ECDSA_SUPPORT_CURVE_P384
@@ -369,26 +375,17 @@ TEST_CASE("mbedtls ECDSA signature verification rejects out-of-range r, s on SEC
         TEST_IGNORE_MESSAGE("ECDSA is not supported");
     }
 #endif
-    /* Case A: r = 0, s = 0 */
     static const uint8_t zero48[48] = { 0 };
-    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP384R1, sha,
-                      zero48, zero48,
-                      ecdsa384_pub_x, ecdsa384_pub_y,
-                      ECDSA_RANGE_CHECK_REJECT_STATUS);
+    uint8_t p384_n_be[48];
+    ecdsa_get_curve_order_be(MBEDTLS_ECP_DP_SECP384R1, p384_n_be, sizeof(p384_n_be));
 
-    /* Case B: r = N (SECP384R1 curve order), s = valid */
-    static const uint8_t p384_n_be[48] = {
-        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-        0xc7, 0x63, 0x4d, 0x81, 0xf4, 0x37, 0x2d, 0xdf,
-        0x58, 0x1a, 0x0d, 0xb2, 0x48, 0xb0, 0xa7, 0x7a,
-        0xec, 0xec, 0x19, 0x6a, 0xcc, 0xc5, 0x29, 0x73,
-    };
-    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP384R1, sha,
-                      p384_n_be, ecdsa384_s,
-                      ecdsa384_pub_x, ecdsa384_pub_y,
-                      ECDSA_RANGE_CHECK_REJECT_STATUS);
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP384R1, sha, zero48, zero48,       ecdsa384_pub_x, ecdsa384_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=0, s=0 */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP384R1, sha, zero48, p384_n_be,    ecdsa384_pub_x, ecdsa384_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=0, s=N */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP384R1, sha, p384_n_be, zero48,    ecdsa384_pub_x, ecdsa384_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=N, s=0 */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP384R1, sha, p384_n_be, p384_n_be, ecdsa384_pub_x, ecdsa384_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=N, s=N */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP384R1, sha, ecdsa384_r, zero48,    ecdsa384_pub_x, ecdsa384_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=valid, s=0 */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP384R1, sha, ecdsa384_r, p384_n_be, ecdsa384_pub_x, ecdsa384_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=valid, s=N */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP384R1, sha, p384_n_be, ecdsa384_s, ecdsa384_pub_x, ecdsa384_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=N, s=valid */
 }
 #endif /* SOC_ECDSA_SUPPORT_CURVE_P384 */
 
