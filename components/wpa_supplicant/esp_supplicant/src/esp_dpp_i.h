@@ -40,6 +40,7 @@ struct esp_dpp_context_t {
     bool dpp_init_done;
     bool bootstrap_done;
     bool dpp_listen_ongoing;
+    bool peer_disc_resp_received;
 };
 
 #ifdef CONFIG_TESTING_OPTIONS
