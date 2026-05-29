@@ -83,7 +83,9 @@ esp_err_t esp_supp_dpp_deinit(void);
   *        Generates Out Of Band Bootstrap information as an Enrollee which can be
   *        used by a DPP Configurator to provision the Enrollee.
   *
-  * @param chan_list List of channels device will be available on for listening (must not be NULL)
+  * @param chan_list Comma-separated list of channels for listening (must not be NULL).
+  *                  A single channel (e.g., "6") is recommended for reliable discovery.
+  *                  If using multiple, prefer non-overlapping channels (e.g., "1,6,11").
   * @param type Bootstrap method type, only QR Code method is supported for now.
   * @param key (Optional) 32 byte Raw Private Key for generating a Bootstrapping Public Key
   * @param info (Optional) Ancillary Device Information like Serial Number
