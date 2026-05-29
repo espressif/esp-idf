@@ -25,7 +25,8 @@ endif()
 # SoC specific implementation for TEE
 list(APPEND srcs "soc/${target}/esp_tee_secure_sys_cfg.c"
                  "soc/${target}/esp_tee_pmp_pma_prot_cfg.c"
-                 "soc/${target}/esp_tee_apm_prot_cfg.c")
+                 "soc/${target}/esp_tee_apm_prot_cfg.c"
+                 "soc/${target}/esp_tee_crypto_reset.c")
 
 list(APPEND srcs "soc/common/esp_tee_apm_intr.c")
 
