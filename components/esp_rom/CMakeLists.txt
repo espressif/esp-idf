@@ -59,6 +59,10 @@ if(CONFIG_ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_NO_MAP)
     list(APPEND sources "patches/esp_rom_cache_writeback_esp32c5_esp32c61_esp32h4.c")
 endif()
 
+if(CONFIG_ESP_ROM_ECDSA_VERIFY_PATCH)
+    list(APPEND sources "patches/esp_rom_ecdsa.c")
+endif()
+
 idf_component_register(SRCS ${sources}
                        INCLUDE_DIRS ${include_dirs}
                        PRIV_REQUIRES ${private_required_comp}
