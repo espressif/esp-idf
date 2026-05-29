@@ -3,3 +3,7 @@
 #
 CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
 CONFIG_BT_ENABLED=y
+
+# Disable unused Bluedroid host features (GATT security client, extended scan only)
+# CONFIG_BT_GATTS_ENABLE is not set
+# CONFIG_BT_BLE_50_DTM_TEST_EN is not set
