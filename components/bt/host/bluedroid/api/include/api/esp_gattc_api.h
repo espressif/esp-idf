@@ -280,7 +280,11 @@ typedef void (* esp_gattc_cb_t)(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_
  *
  * @param[in]      callback The pointer to the application callback function
  *
- * @note            Avoid performing time-consuming operations within the callback functions.
+ * @note            Do NOT perform time-consuming operations in the callback. Time-consuming operations
+ *                  include: taking semaphores that may block for a long time (e.g. xSemaphoreTake with
+ *                  long timeout or portMAX_DELAY), blocking delays (e.g. vTaskDelay), and flash
+ *                  read/write/erase. Such operations may block the Bluetooth stack and lead to
+ *                  instability or deadlock. Defer heavy work to a separate task if needed.
  *
  * @return
  *          - ESP_OK: Success
@@ -330,10 +334,22 @@ esp_err_t esp_ble_gattc_app_unregister(esp_gatt_if_t gattc_if);
  *
  * @note
  *      1. Do not enable `BT_BLE_42_FEATURES_SUPPORTED` and `BT_BLE_50_FEATURES_SUPPORTED` in the menuconfig simultaneously.
- *      1. The function always triggers `ESP_GATTC_CONNECT_EVT` and `ESP_GATTC_OPEN_EVT`.
- *      2. When the device acts as GATT server, besides the above two events, this function triggers `ESP_GATTS_CONNECT_EVT` as well.
- *      3. This function will establish an ACL connection as a Central and a virtual connection as a GATT Client. If the ACL connection already exists, it will create a virtual connection only.
-
+ *      2. The function always triggers `ESP_GATTC_CONNECT_EVT` and `ESP_GATTC_OPEN_EVT`.
+ *      3. When the device acts as GATT server, besides the above two events, this function triggers `ESP_GATTS_CONNECT_EVT` as well.
+ *      4. This function will establish an ACL connection as a Central and a virtual connection as a GATT Client. If the ACL connection already exists, it will create a virtual connection only.
+ *      5. The `is_aux` parameter in `esp_gatt_creat_conn_params_t` determines which connection interface to use:
+ *         - If `is_aux` is true, the BLE 5.0 extended connection interface will be used.
+ *         - If `is_aux` is false, the BLE 4.2 interface (legacy connection) will be used.
+ *         - When connecting to a legacy advertising device using BLE 5.0 interface, `is_aux` should be set to true.
+ *      6. Auto-setting of `is_aux` parameter (handled in L2CAP layer):
+ *         - If only BLE 4.2 feature is enabled, `is_aux` will be automatically set to false.
+ *         - If only BLE 5.0 feature is enabled, `is_aux` will be automatically set to true.
+ *         - If both BLE 4.2 and BLE 5.0 features are enabled (not recommended):
+ *           * The stack will automatically infer whether to use BLE 5.0 or BLE 4.2 interface
+ *             based on previously used APIs.
+ *           * Otherwise, the user-specified value will be used.
+ *         - Note: It is strongly recommended NOT to enable both BLE 4.2 and BLE 5.0 features
+ *           simultaneously in menuconfig.
  *
  * @param[in]       gattc_if: GATT client access interface.
  * @param[in]       esp_gatt_create_conn: Pointer to the structure containing connection parameters.
@@ -887,12 +903,14 @@ esp_err_t esp_ble_gattc_read_char_descr (esp_gatt_if_t gattc_if,
  * @param[in]       value_len  The length of the value to write in bytes
  * @param[in]       value      The value to write
  * @param[in]       write_type The type of Attribute write operation
- * @param[in]       auth_req   Authentication request type
+ * @param[in]       auth_req   Authenticate request type
  *
  * @note
  *      1. This function triggers `ESP_GATTC_WRITE_CHAR_EVT`.
  *      2. This function should be called only after the connection has been established.
  *      3. `handle` must be greater than 0.
+ *      4. If `auth_req` is not `ESP_GATT_AUTH_REQ_NONE`, the stack may start encryption
+ *         or SMP pairing before sending the ATT write.
  *
  * @return
  *       - ESP_OK: Success
