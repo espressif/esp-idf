@@ -6,6 +6,21 @@ config BT_ALARM_MAX_NUM
         This option decides the maximum number of alarms which
         could be used by Bluetooth host.
 
+config BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT
+    bool "Allow BLE connection interval below Bluetooth Core Spec minimum (disable host check)"
+    depends on BT_BLE_ENABLED || BT_NIMBLE_ENABLED
+    default n
+    help
+        When enabled, BLE host-side validation accepts connection interval
+        values below the Bluetooth Core Specification minimum of 0x0006
+        (7.5 ms), down to non-zero values. The BLE controller still enforces
+        what is actually supported in hardware and firmware.
+
+        End users should NOT set this option directly. In typical IDF builds it
+        follows the active Controller integration when that Controller supports
+        this mode; use the Controller's own configuration instead of toggling
+        this host symbol manually.
+
 choice BT_SMP_CRYPTO_STACK
     prompt "SMP cryptographic stack"
     depends on (BT_BLE_SMP_ENABLE || BT_SMP_ENABLE || BT_NIMBLE_SECURITY_ENABLE || BT_LE_SECURITY_ENABLE || \
