@@ -30,6 +30,7 @@
 #include "esp_private/esp_pmu.h"
 #include "esp_rom_serial_output.h"
 #include "esp_rom_sys.h"
+#include "hal/clk_gate_ll.h"
 
 /* Number of cycles to wait from the 32k XTAL oscillator to consider it running.
  * Larger values increase startup delay. Smaller values may cause false positive
@@ -196,5 +197,36 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     modem_clock_select_lp_clock_source(PERIPH_WIFI_MODULE, modem_lpclk_src, 0);
 #endif
 
-    periph_ll_clk_gate_set_default(esp_rom_get_reset_reason(0));
+    soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
+    periph_ll_clk_gate_config_t clk_gate_config = {0};
+
+#if CONFIG_ESP_CONSOLE_UART_NUM != 0
+    clk_gate_config.disable_uart0_clk = true;
+#endif
+#if CONFIG_ESP_CONSOLE_UART_NUM != 1
+    clk_gate_config.disable_uart1_clk = true;
+#endif
+#if CONFIG_ESP_CONSOLE_UART_NUM != 2
+    clk_gate_config.disable_uart2_clk = true;
+#endif
+#if CONFIG_ESP_CONSOLE_UART_NUM != 3
+    clk_gate_config.disable_uart3_clk = true;
+#endif
+#if CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+    clk_gate_config.disable_mspi_flash_clk = true;
+#endif
+#if CONFIG_SPIRAM
+    clk_gate_config.keep_psram_hp_clk = true;
+#endif
+#if !CONFIG_ESP_SYSTEM_HW_PC_RECORD
+    clk_gate_config.disable_assist_clk = true;
+#endif
+#if !CONFIG_SECURE_ENABLE_TEE
+    clk_gate_config.disable_crypto_periph_clk = true;
+#endif
+#if !CONFIG_USJ_ENABLE_USB_SERIAL_JTAG && !CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
+    clk_gate_config.disable_usb_serial_jtag = true;
+#endif
+
+    periph_ll_clk_gate_set_default(rst_reason, &clk_gate_config);
 }

@@ -180,6 +180,7 @@ typedef struct {
     volatile tee_date_reg_t date;
 } tee_dev_t;
 
+extern tee_dev_t TEE;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(tee_dev_t) == 0x400, "Invalid size of tee_dev_t structure");
