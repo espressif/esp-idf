@@ -241,16 +241,20 @@ esp_err_t esp_eth_phy_802_3_updt_link_dup_spd(phy_802_3_t *phy_802_3)
             if (bmcr.en_auto_nego) {
                 bool need_anar_mode = false;
                 if (bmsr.ext_status) {
-                    if (eth->phy_reg_read(eth, addr, ETH_PHY_GBCR_REG_ADDR, &(gbcr.val)) == ESP_OK &&
-                        eth->phy_reg_read(eth, addr, ETH_PHY_GBSR_REG_ADDR, &(gbsr.val)) == ESP_OK) {
-                        if (gbcr.base1000_t_fd && gbsr.lp_base1000_t_fd) {
-                            speed = ETH_SPEED_1000M;
-                            duplex = ETH_DUPLEX_FULL;
-                        } else if (gbcr.base1000_t && gbsr.lp_base1000_t) {
-                            speed = ETH_SPEED_1000M;
-                            duplex = ETH_DUPLEX_HALF;
-                        } else {
-                            need_anar_mode = true;
+                    exsr_reg_t exsr;
+                    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, addr, ETH_PHY_EXSR_REG_ADDR, &(exsr.val)), err, TAG, "read EXSR failed");
+                    if (exsr.base1000_t || exsr.base1000_t_fd) {
+                        if (eth->phy_reg_read(eth, addr, ETH_PHY_GBCR_REG_ADDR, &(gbcr.val)) == ESP_OK &&
+                            eth->phy_reg_read(eth, addr, ETH_PHY_GBSR_REG_ADDR, &(gbsr.val)) == ESP_OK) {
+                            if (gbcr.base1000_t_fd && gbsr.lp_base1000_t_fd) {
+                                speed = ETH_SPEED_1000M;
+                                duplex = ETH_DUPLEX_FULL;
+                            } else if (gbcr.base1000_t && gbsr.lp_base1000_t) {
+                                speed = ETH_SPEED_1000M;
+                                duplex = ETH_DUPLEX_HALF;
+                            } else {
+                                need_anar_mode = true;
+                            }
                         }
                     }
                 }
@@ -400,11 +404,25 @@ esp_err_t esp_eth_phy_802_3_set_speed(phy_802_3_t *phy_802_3, eth_speed_t speed)
     /* Set speed */
     bmcr_reg_t bmcr;
     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, phy_802_3->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+    bmsr_reg_t bmsr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, phy_802_3->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)), err, TAG, "read BMSR failed");
+    bool is_1000_capable = false;
+    if (bmsr.ext_status) {
+        exsr_reg_t exsr;
+        ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, phy_802_3->addr, ETH_PHY_EXSR_REG_ADDR, &(exsr.val)), err, TAG, "read EXSR failed");
+        is_1000_capable = exsr.base1000_t || exsr.base1000_t_fd;
+    }
     if (speed == ETH_SPEED_1000M) {
+        if (!is_1000_capable) {
+            ret = ESP_ERR_NOT_SUPPORTED;
+            goto err;
+        }
         bmcr.speed_1000 = 1;
         bmcr.speed_select = 0;
     } else {
-        bmcr.speed_1000 = 0;
+        if (is_1000_capable) {
+            bmcr.speed_1000 = 0;
+        }
         bmcr.speed_select = speed == ETH_SPEED_100M ? 1 : 0;
     }
     ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, phy_802_3->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
