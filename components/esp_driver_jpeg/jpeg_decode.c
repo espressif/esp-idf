@@ -140,6 +140,7 @@ esp_err_t jpeg_decoder_get_info(const uint8_t *in_buf, uint32_t inbuf_len, jpeg_
 {
     ESP_RETURN_ON_FALSE(in_buf, ESP_ERR_INVALID_ARG, TAG, "jpeg decode input buffer is NULL");
     ESP_RETURN_ON_FALSE(inbuf_len != 0, ESP_ERR_INVALID_ARG, TAG, "jpeg decode input buffer length is 0");
+    ESP_RETURN_ON_FALSE(picture_info, ESP_ERR_INVALID_ARG, TAG, "jpeg decode picture_info is NULL");
 
     jpeg_dec_header_info_t* header_info = (jpeg_dec_header_info_t*)heap_caps_calloc(1, sizeof(jpeg_dec_header_info_t), JPEG_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(header_info, ESP_ERR_NO_MEM, TAG, "no memory for picture info");
@@ -148,33 +149,85 @@ esp_err_t jpeg_decoder_get_info(const uint8_t *in_buf, uint32_t inbuf_len, jpeg_
     header_info->header_size = 0;
     uint16_t height = 0;
     uint16_t width = 0;
-    uint8_t thischar = 0;
-    uint8_t lastchar = 0;
     uint8_t hivi = 0;
     uint8_t nf = 0;
+    bool sof_found = false;
+    esp_err_t ret = ESP_OK;
 
-    while (header_info->buffer_left) {
-        lastchar = thischar;
-        thischar = jpeg_get_bytes(header_info, 1);
-        uint16_t marker = (lastchar << 8 | thischar);
-        switch (marker) {
-        case JPEG_M_SOF0:
+    while (header_info->buffer_left >= 2) {
+        uint8_t b0 = jpeg_get_bytes(header_info, 1);
+        if (b0 != 0xFF) {
+            continue;
+        }
+        uint8_t b1 = jpeg_get_bytes(header_info, 1);
+        // A marker may be preceded by any number of 0xFF fill bytes
+        // (T.81 B.1.1.2). Consume the run of fill bytes so b1 lands on
+        // the marker code; e.g. "FF FF C0" must parse as marker 0xFFC0.
+        while (b1 == 0xFF) {
+            if (header_info->buffer_left < 1) {
+                break;
+            }
+            b1 = jpeg_get_bytes(header_info, 1);
+        }
+        if (b1 == 0x00 || b1 == 0xFF) {
+            continue;
+        }
+        uint16_t marker = (uint16_t)0xFF00u | b1;
+
+        if (marker == JPEG_M_SOF0) {
+            // Need Lf(2)+P(1)+Y(2)+X(2)+Nf(1)+at least 3 bytes of the first component
+            if (header_info->buffer_left < 11) {
+                ESP_LOGE(TAG, "Truncated SOF0 segment");
+                ret = ESP_ERR_INVALID_ARG;
+                goto out;
+            }
             jpeg_get_bytes(header_info, 2);
             jpeg_get_bytes(header_info, 1);
             height = jpeg_get_bytes(header_info, 2);
             width = jpeg_get_bytes(header_info, 2);
-
             nf = jpeg_get_bytes(header_info, 1);
-
             jpeg_get_bytes(header_info, 1);
             hivi = jpeg_get_bytes(header_info, 1);
+            sof_found = true;
             break;
         }
-        // This function only used for get width and height. So only read SOF marker is enough.
-        // Can be extended if picture information is extended.
-        if (marker == JPEG_M_SOF0) {
+
+        // Standalone markers (no length field): SOI, EOI, RST0..RST7.
+        if (marker == JPEG_M_SOI || (b1 >= 0xD0 && b1 <= 0xD7)) {
+            continue;
+        }
+        if (marker == JPEG_M_EOI) {
+            // Reached end of image without SOF0; bail out.
             break;
         }
+        // SOS appearing before SOF0 is malformed for this query API.
+        if (marker == JPEG_M_SOS) {
+            ESP_LOGE(TAG, "SOS encountered before SOF0");
+            ret = ESP_ERR_NOT_FOUND;
+            goto out;
+        }
+
+        // All remaining markers (SOFx variants, DHT, DQT, DRI, APPn, COM, ...)
+        // carry a 2-byte big-endian length immediately after the marker byte.
+        if (header_info->buffer_left < 2) {
+            break;
+        }
+        uint16_t seg_len = jpeg_get_bytes(header_info, 2);
+        if (seg_len < 2 || header_info->buffer_left < (uint32_t)(seg_len - 2)) {
+            ESP_LOGE(TAG, "Truncated/invalid segment for marker 0x%04x, len=%u", marker, seg_len);
+            ret = ESP_ERR_INVALID_ARG;
+            goto out;
+        }
+        uint16_t to_skip = seg_len - 2;
+        header_info->buffer_offset += to_skip;
+        header_info->header_size += to_skip;
+        header_info->buffer_left -= to_skip;
+    }
+
+    if (!sof_found) {
+        ESP_LOGE(TAG, "SOF0 marker not found");
+        ret = ESP_ERR_NOT_FOUND;
+        goto out;
     }
 
     picture_info->height = height;
@@ -193,15 +246,20 @@ esp_err_t jpeg_decoder_get_info(const uint8_t *in_buf, uint32_t inbuf_len, jpeg_
             break;
         default:
             ESP_LOGE(TAG, "Sampling factor cannot be recognized");
-            return ESP_ERR_INVALID_STATE;
+            ret = ESP_ERR_INVALID_STATE;
+            goto out;
         }
-    }
-    if (nf == 1) {
+    } else if (nf == 1) {
         picture_info->sample_method = JPEG_DOWN_SAMPLING_GRAY;
+    } else {
+        ESP_LOGE(TAG, "Unsupported number of frame components: %u", nf);
+        ret = ESP_ERR_INVALID_STATE;
+        goto out;
     }
 
+out:
     free(header_info);
-    return ESP_OK;
+    return ret;
 }
 
 static bool _check_buffer_alignment(void *buffer, uint32_t buffer_size, uint32_t alignment)
@@ -740,7 +798,10 @@ static esp_err_t jpeg_parse_marker(jpeg_decoder_handle_t decoder_engine, const u
     jpeg_ll_set_picture_height(hal->dev, 0);
     jpeg_ll_set_picture_width(hal->dev, 0);
 
-    while (header_info->buffer_left) {
+    // Loop guard requires >=2 bytes so the 2-byte marker read can never underflow.
+    bool sof_found = false;
+    bool sos_found = false;
+    while (header_info->buffer_left >= 2) {
         uint8_t lastchar = jpeg_get_bytes(header_info, 1);
         uint8_t thischar = jpeg_get_bytes(header_info, 1);
         uint16_t marker = (lastchar << 8 | thischar);
@@ -773,6 +834,7 @@ static esp_err_t jpeg_parse_marker(jpeg_decoder_handle_t decoder_engine, const u
             break;
         case JPEG_M_SOF0:
             ESP_RETURN_ON_ERROR(jpeg_parse_sof_marker(header_info), TAG, "deal sof marker failed");
+            sof_found = true;
             break;
         case JPEG_M_SOF1:
         case JPEG_M_SOF2:
@@ -796,15 +858,26 @@ static esp_err_t jpeg_parse_marker(jpeg_decoder_handle_t decoder_engine, const u
             break;
         case JPEG_M_SOS:
             ESP_RETURN_ON_ERROR(jpeg_parse_sos_marker(header_info), TAG, "deal sos marker failed");
+            sos_found = true;
             break;
         case JPEG_M_INV:
             ESP_RETURN_ON_ERROR(jpeg_parse_inv_marker(header_info), TAG, "deal invalid marker failed");
             break;
+        default:
+            // Reject unknown/unsupported markers instead of silently continuing.
+            ESP_LOGE(TAG, "Unsupported or unknown marker 0x%04x", marker);
+            return ESP_ERR_INVALID_ARG;
         }
-        if (marker == JPEG_M_SOS) {
+        if (sos_found) {
             break;
         }
     }
+
+    // SOF0 must precede SOS; without it nf/dimensions/mcu fields would remain zero
+    // from memset and the hardware would be configured with garbage.
+    ESP_RETURN_ON_FALSE(sof_found, ESP_ERR_INVALID_ARG, TAG, "SOF0 marker not found in JPEG stream");
+    // The dispatcher must terminate via SOS; otherwise the stream is truncated/invalid.
+    ESP_RETURN_ON_FALSE(sos_found, ESP_ERR_INVALID_ARG, TAG, "SOS marker not found before end of stream");
 
     // Update information after parse marker finishes
     decoder_engine->header_info->buffer_left = decoder_engine->total_size - decoder_engine->header_info->header_size;
