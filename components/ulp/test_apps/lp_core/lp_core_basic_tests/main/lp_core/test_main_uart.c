@@ -1,11 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include "hal/uart_types.h"
+#include "hal/uart_ll.h"
 #include "test_shared.h"
 #include "ulp_lp_core_utils.h"
 #include "ulp_lp_core_uart.h"
@@ -28,6 +31,12 @@ uint8_t rx_data[LP_UART_BUFFER_LEN] = {};
 volatile uint8_t tx_len = 0;
 volatile uint8_t rx_len = 0;
 
+/* Last lp_core_uart_read_bytes return value for LP UART multi-device tests */
+volatile int32_t read_return_value = 0;
+
+/* Guarded buffer for read_bytes buffer-bounds test (pre + user + post) */
+lp_uart_read_bounds_guard_t read_bounds_guard_region;
+
 /* LP Core print test variables */
 volatile char test_string[25];
 volatile char test_long_string[200];
@@ -35,6 +44,17 @@ volatile int test_signed_integer;
 volatile uint32_t test_unsigned_integer;
 volatile int test_hex;
 volatile char test_character;
+
+/* Wait until the HP peer has filled the LP UART RX FIFO with the full test burst,
+ * then allow the RX timeout condition to settle. This makes read_bytes behaviour
+ * deterministic for multi-device tests that depend on a single large FIFO drain. */
+static void lp_uart_wait_rx_burst_ready(void)
+{
+    uart_dev_t *dev = (uart_dev_t *)UART_LL_GET_HW(LP_UART_PORT_NUM);
+    while ((size_t)uart_ll_get_rxfifo_len(dev) < LP_UART_READ_RETURN_VALUE_BURST_LEN) {
+    }
+    ulp_lp_core_delay_us(400);
+}
 
 int main(void)
 {
@@ -87,6 +107,27 @@ int main(void)
                 bytes_remaining -= bytes_received;
                 idx += bytes_received;
             }
+        }
+
+        if (test_cmd == LP_CORE_LP_UART_READ_BYTES_RETURN_VALUE_TEST) {
+            /* Read a burst that fits in hardware RX FIFO; HP asserts return value
+             * equals requested length (see test_lp_uart_read_bytes_return_value). */
+            lp_uart_wait_rx_burst_ready();
+            read_return_value = lp_core_uart_read_bytes(LP_UART_PORT_NUM, rx_data,
+                                                        LP_UART_READ_RETURN_VALUE_BURST_LEN,
+                                                        LP_UART_TRANS_WAIT_FOREVER);
+        }
+
+        if (test_cmd == LP_CORE_LP_UART_READ_BYTES_BOUNDS_TEST) {
+            /* Request a small user buffer while the link partner sends a larger burst;
+             * read_bytes must not corrupt guard regions past user_buf. */
+            memset(&read_bounds_guard_region, LP_UART_READ_BOUNDS_GUARD_PATTERN,
+                   sizeof(read_bounds_guard_region));
+            lp_uart_wait_rx_burst_ready();
+            read_return_value = lp_core_uart_read_bytes(LP_UART_PORT_NUM,
+                                                        read_bounds_guard_region.user_buf,
+                                                        LP_UART_READ_BOUNDS_USER_BUF_LEN,
+                                                        LP_UART_TRANS_WAIT_FOREVER);
         }
 
         if (test_cmd == LP_CORE_LP_UART_PRINT_TEST) {

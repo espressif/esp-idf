@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf import CaseTester
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
@@ -44,11 +46,35 @@ def test_lp_vad(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='lp_vad')
 
 
-# TODO: Enable LP I2C test for esp32p4 (IDF-9407)
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2], indirect=True)
-@idf_parametrize('target', ['esp32c6'], indirect=['target'])
-def test_lp_core_multi_device(case_tester) -> None:  # type: ignore
-    for case in case_tester.test_menu:
-        if case.attributes.get('test_env', 'generic_multi_device') == 'generic_multi_device':
-            case_tester.run_multi_dev_case(case=case, reset=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'defaults',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', soc_filtered_targets('SOC_LP_I2C_SUPPORTED == 1'), indirect=['target'])
+def test_lp_core_multi_device(case_tester: CaseTester) -> None:
+    # Run only non-UART multi-device cases (e.g. LP I2C); LP UART is covered
+    # by test_lp_uart_multi_device which targets all LP_CORE_SUPPORTED chips.
+    non_uart_cases = [case for case in case_tester.test_menu if 'uart' not in case.groups]
+    for case in non_uart_cases:
+        case_tester.run_multi_dev_case(case=case, reset=True)
+
+
+@pytest.mark.generic_multi_device
+@pytest.mark.parametrize('count', [2], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'defaults',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', soc_filtered_targets('SOC_ULP_LP_UART_SUPPORTED == 1'), indirect=['target'])
+def test_lp_uart_multi_device(case_tester: CaseTester) -> None:
+    uart_cases = [case for case in case_tester.test_menu if 'uart' in case.groups and 'wakeup' not in case.groups]
+    for case in uart_cases:
+        case_tester.run_multi_dev_case(case=case, reset=True)
