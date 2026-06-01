@@ -17,7 +17,6 @@
 extern "C" {
 #endif
 
-
 /**
  * Select CPU reset vector
  * @param boot_from_lp_ram

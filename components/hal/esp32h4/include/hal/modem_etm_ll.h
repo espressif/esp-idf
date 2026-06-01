@@ -37,16 +37,16 @@ extern "C" {
 static inline bool modem_etm_ll_get_group_event_status(int group_id)
 {
     switch (group_id) {
-        case 0:
-            return SOC_ETM.etm_evt_st6.etm_modem_evt_g0_st;
-        case 1:
-            return SOC_ETM.etm_evt_st6.etm_modem_evt_g1_st;
-        case 2:
-            return SOC_ETM.etm_evt_st6.etm_modem_evt_g2_st;
-        case 3:
-            return SOC_ETM.etm_evt_st6.etm_modem_evt_g3_st;
-        default:
-            HAL_ASSERT(false);
+    case 0:
+        return SOC_ETM.etm_evt_st6.etm_modem_evt_g0_st;
+    case 1:
+        return SOC_ETM.etm_evt_st6.etm_modem_evt_g1_st;
+    case 2:
+        return SOC_ETM.etm_evt_st6.etm_modem_evt_g2_st;
+    case 3:
+        return SOC_ETM.etm_evt_st6.etm_modem_evt_g3_st;
+    default:
+        HAL_ASSERT(false);
     }
     return false;
 }
@@ -54,16 +54,16 @@ static inline bool modem_etm_ll_get_group_event_status(int group_id)
 static inline bool modem_etm_ll_get_group_task_status(int group_id)
 {
     switch (group_id) {
-        case 0:
-            return SOC_ETM.etm_task_st5.etm_modem_task_g0_st;
-        case 1:
-            return SOC_ETM.etm_task_st5.etm_modem_task_g1_st;
-        case 2:
-            return SOC_ETM.etm_task_st5.etm_modem_task_g2_st;
-        case 3:
-            return SOC_ETM.etm_task_st5.etm_modem_task_g3_st;
-        default:
-            HAL_ASSERT(false);
+    case 0:
+        return SOC_ETM.etm_task_st5.etm_modem_task_g0_st;
+    case 1:
+        return SOC_ETM.etm_task_st5.etm_modem_task_g1_st;
+    case 2:
+        return SOC_ETM.etm_task_st5.etm_modem_task_g2_st;
+    case 3:
+        return SOC_ETM.etm_task_st5.etm_modem_task_g3_st;
+    default:
+        HAL_ASSERT(false);
     }
     return false;
 }

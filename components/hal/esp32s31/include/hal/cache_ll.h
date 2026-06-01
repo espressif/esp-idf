@@ -50,7 +50,6 @@ typedef enum {
     CACHE_LL_PRELOAD_ARBITRARY = 2,
 } cache_ll_preload_strategy_t;
 
-
 /**
  * @brief Initialize the cache clock
  */
@@ -999,7 +998,7 @@ static inline cache_bus_mask_t cache_ll_l1_get_enabled_bus(uint32_t cache_id)
 __attribute__((always_inline))
 static inline void cache_ll_l1_disable_bus(uint32_t bus_id, cache_bus_mask_t mask)
 {
-    HAL_ASSERT((mask & (CACHE_BUS_IBUS2| CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
+    HAL_ASSERT((mask & (CACHE_BUS_IBUS2 | CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
 
     uint32_t ibus_mask = 0;
     if (bus_id == 0) {
@@ -1031,7 +1030,7 @@ static inline bool cache_ll_vaddr_to_cache_level_id(uint32_t vaddr_start, uint32
     uint32_t vaddr_end = vaddr_start + len - 1;
 
     if (((vaddr_start >= SOC_DRAM_FLASH_ADDRESS_LOW) && (vaddr_end < SOC_DRAM_FLASH_ADDRESS_HIGH)) ||
-        ((vaddr_start >= SOC_DRAM_PSRAM_ADDRESS_LOW) && (vaddr_end < SOC_DRAM_PSRAM_ADDRESS_HIGH))) {
+            ((vaddr_start >= SOC_DRAM_PSRAM_ADDRESS_LOW) && (vaddr_end < SOC_DRAM_PSRAM_ADDRESS_HIGH))) {
         *out_level = 1;
         *out_id = CACHE_LL_ID_ALL;
         valid = true;

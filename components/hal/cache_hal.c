@@ -36,14 +36,12 @@ typedef struct {
 #endif
 } cache_hal_state_t;
 
-
 typedef struct {
     cache_hal_state_t l1;
     cache_hal_state_t l2;
 } cache_hal_context_t;
 
 static cache_hal_context_t ctx;
-
 
 void s_cache_hal_init_ctx(void)
 {

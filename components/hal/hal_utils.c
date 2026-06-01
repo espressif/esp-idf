@@ -119,7 +119,7 @@ uint32_t hal_utils_calc_clk_div_integer(const hal_utils_clk_info_t *clk_info, ui
        Or, do the normal rounding and error >= (src/n + src/(n+1)) / 2,
        then carry the bit */
     if ((freq_error && clk_info->round_opt == HAL_DIV_ROUND_UP) || (clk_info->round_opt == HAL_DIV_ROUND &&
-        (freq_error >= clk_info->src_freq_hz / (2 * div_integ * (div_integ + 1))))) {
+                                                                    (freq_error >= clk_info->src_freq_hz / (2 * div_integ * (div_integ + 1))))) {
         div_integ++;
     }
     /* Check the integral division whether in range [min_integ, max_integ)  */
@@ -186,7 +186,7 @@ int hal_utils_float_to_fixed_point_32b(float flt, const hal_utils_fixed_point_t 
 
     if (ret != 0 && fp_cfg->saturation) {
         *fp_out = (f->sign << (fp_cfg->int_bit + fp_cfg->frac_bit)) |
-                (BIT_MASK(fp_cfg->int_bit + fp_cfg->frac_bit));
+                  (BIT_MASK(fp_cfg->int_bit + fp_cfg->frac_bit));
     } else {
         *fp_out = output;
     }

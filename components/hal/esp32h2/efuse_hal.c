@@ -81,7 +81,7 @@ void efuse_hal_rs_calculate(const void *data, void *rs_values)
 
 uint32_t efuse_hal_get_ecdsa_curve_mode(void)
 {
-     if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102)) {
+    if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102)) {
         return efuse_ll_get_ecdsa_curve_mode();
     } else {
         // Curve mode is not configurable for previous versions

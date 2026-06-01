@@ -188,10 +188,10 @@ FORCE_INLINE_ATTR uint32_t assist_debug_ll_lockup_get_cause(uint32_t core_id, in
 {
     if (core_id) {
         return trap_idx ? BUS_MONITOR.core_1_trace_lockup_cause_1.core_1_trace_lockup_recording_cause_1
-                        : BUS_MONITOR.core_1_trace_lockup_cause_0.core_1_trace_lockup_recording_cause_0;
+               : BUS_MONITOR.core_1_trace_lockup_cause_0.core_1_trace_lockup_recording_cause_0;
     } else {
         return trap_idx ? BUS_MONITOR.core_0_trace_lockup_cause_1.core_0_trace_lockup_recording_cause_1
-                        : BUS_MONITOR.core_0_trace_lockup_cause_0.core_0_trace_lockup_recording_cause_0;
+               : BUS_MONITOR.core_0_trace_lockup_cause_0.core_0_trace_lockup_recording_cause_0;
     }
 }
 
@@ -199,10 +199,10 @@ FORCE_INLINE_ATTR uint32_t assist_debug_ll_lockup_get_tval(uint32_t core_id, int
 {
     if (core_id) {
         return trap_idx ? BUS_MONITOR.core_1_trace_lockup_tval_1.core_1_trace_lockup_recording_tval_1
-                        : BUS_MONITOR.core_1_trace_lockup_tval_0.core_1_trace_lockup_recording_tval_0;
+               : BUS_MONITOR.core_1_trace_lockup_tval_0.core_1_trace_lockup_recording_tval_0;
     } else {
         return trap_idx ? BUS_MONITOR.core_0_trace_lockup_tval_1.core_0_trace_lockup_recording_tval_1
-                        : BUS_MONITOR.core_0_trace_lockup_tval_0.core_0_trace_lockup_recording_tval_0;
+               : BUS_MONITOR.core_0_trace_lockup_tval_0.core_0_trace_lockup_recording_tval_0;
     }
 }
 
@@ -210,10 +210,10 @@ FORCE_INLINE_ATTR uint32_t assist_debug_ll_lockup_get_iaddr(uint32_t core_id, in
 {
     if (core_id) {
         return trap_idx ? BUS_MONITOR.core_1_trace_lockup_iaddr_1.core_1_trace_lockup_recording_iaddr_1
-                        : BUS_MONITOR.core_1_trace_lockup_iaddr_0.core_1_trace_lockup_recording_iaddr_0;
+               : BUS_MONITOR.core_1_trace_lockup_iaddr_0.core_1_trace_lockup_recording_iaddr_0;
     } else {
         return trap_idx ? BUS_MONITOR.core_0_trace_lockup_iaddr_1.core_0_trace_lockup_recording_iaddr_1
-                        : BUS_MONITOR.core_0_trace_lockup_iaddr_0.core_0_trace_lockup_recording_iaddr_0;
+               : BUS_MONITOR.core_0_trace_lockup_iaddr_0.core_0_trace_lockup_recording_iaddr_0;
     }
 }
 
@@ -221,10 +221,10 @@ FORCE_INLINE_ATTR uint32_t assist_debug_ll_lockup_get_priv(uint32_t core_id, int
 {
     if (core_id) {
         return trap_idx ? BUS_MONITOR.core_1_trace_lockup_priv_1.core_1_trace_lockup_recording_priv_1
-                        : BUS_MONITOR.core_1_trace_lockup_priv_0.core_1_trace_lockup_recording_priv_0;
+               : BUS_MONITOR.core_1_trace_lockup_priv_0.core_1_trace_lockup_recording_priv_0;
     } else {
         return trap_idx ? BUS_MONITOR.core_0_trace_lockup_priv_1.core_0_trace_lockup_recording_priv_1
-                        : BUS_MONITOR.core_0_trace_lockup_priv_0.core_0_trace_lockup_recording_priv_0;
+               : BUS_MONITOR.core_0_trace_lockup_priv_0.core_0_trace_lockup_recording_priv_0;
     }
 }
 

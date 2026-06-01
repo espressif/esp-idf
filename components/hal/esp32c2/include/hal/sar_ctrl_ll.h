@@ -73,7 +73,6 @@ static inline void sar_ctrl_ll_set_power_mode_from_pwdet(sar_ctrl_ll_power_t mod
     }
 }
 
-
 #ifdef __cplusplus
 }
 #endif

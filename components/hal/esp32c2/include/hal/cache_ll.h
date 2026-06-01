@@ -19,7 +19,6 @@
 extern "C" {
 #endif
 
-
 #define CACHE_LL_DEFAULT_IBUS_MASK                  CACHE_BUS_IBUS0
 #define CACHE_LL_DEFAULT_DBUS_MASK                  CACHE_BUS_DBUS0
 
@@ -52,7 +51,6 @@ typedef enum {
     CACHE_LL_PRELOAD_AFTER_FETCH = 1,
     CACHE_LL_PRELOAD_ARBITRARY = 2,
 } cache_ll_preload_strategy_t;
-
 
 /**
  * @brief Initialize the cache clock
@@ -302,7 +300,7 @@ __attribute__((always_inline))
 static inline void cache_ll_l1_enable_bus(uint32_t bus_id, cache_bus_mask_t mask)
 {
     //On esp32c2, only `CACHE_BUS_IBUS0` and `CACHE_BUS_DBUS0` are supported. Use `cache_ll_l1_get_bus()` to get your bus first
-    HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2| CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
+    HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2 | CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
 
     uint32_t ibus_mask = 0;
     ibus_mask = ibus_mask | ((mask & CACHE_BUS_IBUS0) ? EXTMEM_ICACHE_SHUT_IBUS : 0);
@@ -323,7 +321,7 @@ __attribute__((always_inline))
 static inline void cache_ll_l1_disable_bus(uint32_t bus_id, cache_bus_mask_t mask)
 {
     //On esp32c2, only `CACHE_BUS_IBUS0` and `CACHE_BUS_DBUS0` are supported. Use `cache_ll_l1_get_bus()` to get your bus first
-    HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2| CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
+    HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2 | CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
 
     uint32_t ibus_mask = 0;
     ibus_mask = ibus_mask | ((mask & CACHE_BUS_IBUS0) ? EXTMEM_ICACHE_SHUT_IBUS : 0);

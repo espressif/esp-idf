@@ -95,7 +95,6 @@ static inline void rng_ll_disable(void)
     _lp_clkrst_ll_enable_rng_clock(false);
 }
 
-
 #ifdef __cplusplus
 }
 #endif

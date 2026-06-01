@@ -43,7 +43,6 @@ typedef enum {
     CACHE_LL_PRELOAD_ARBITRARY = 2,
 } cache_ll_preload_strategy_t;
 
-
 /**
  * @brief Initialize the cache clock
  */
@@ -578,7 +577,6 @@ static inline void cache_ll_writeback_all(uint32_t cache_level, cache_type_t typ
     }
 }
 
-
 /*------------------------------------------------------------------------------
  * Freeze
  *----------------------------------------------------------------------------*/
@@ -889,7 +887,7 @@ __attribute__((always_inline))
 static inline void cache_ll_l1_disable_bus(uint32_t bus_id, cache_bus_mask_t mask)
 {
     //On esp32h4, only `CACHE_BUS_IBUS0` and `CACHE_BUS_DBUS0` are supported. Use `cache_ll_l1_get_bus()` to get your bus first
-    HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2| CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
+    HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2 | CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
 
     uint32_t ibus_mask = 0;
     if (bus_id == 0) {

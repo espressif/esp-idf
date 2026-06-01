@@ -42,7 +42,6 @@ FORCE_INLINE_ATTR void lp_mailbox_ll_reset_register(lp_mb_dev_t *dev)
     (void) dev;
 }
 
-
 /**
  * @brief Get a message (32-bit value) from the LP mailbox.
  *

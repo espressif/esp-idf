@@ -14,7 +14,6 @@
 #include "hal/misc.h"
 #include "esp32h21/rom/rtc.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -68,7 +67,6 @@ static inline uint32_t lp_aon_ll_ext1_get_wakeup_pins(void)
 {
     return HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, aon_ext_wakeup_sel);
 }
-
 
 /**
  *  @brief ROM obtains the wake-up type through LP_AON_STORE9_REG[0].

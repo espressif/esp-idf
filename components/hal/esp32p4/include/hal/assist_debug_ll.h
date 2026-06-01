@@ -58,8 +58,8 @@ extern "C" {
  * interrupt, instead of "ENA".
  */
 
- /* These functions are optimized and designed for internal usage.
-  * So, the API may differ from general ll layer pattern */
+/* These functions are optimized and designed for internal usage.
+ * So, the API may differ from general ll layer pattern */
 
 FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_monitor_enable(uint32_t core_id)
 {

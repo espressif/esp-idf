@@ -184,7 +184,6 @@ typedef uint32_t esp_color_fourcc_t;
  */
 #define ESP_COLOR_FOURCC_RAW16          ESP_COLOR_FOURCC('R', 'A', 'W', 'G') /* 16 bpp, raw16 */
 
-
 /*---------------------------------------------------------------
                       Color Conversion
 ---------------------------------------------------------------*/

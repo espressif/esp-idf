@@ -45,7 +45,7 @@ void efuse_hal_set_timing(uint32_t apb_freq_hz)
         tpgm_inact = 0x4;
         clk_div = 0xA0;
         power_on = 0xA200;
-	    power_off = 0x100;
+        power_off = 0x100;
         tsur_a = 0x2;
         trd = 0x4;
         thr_a = 0x2;
