@@ -13,3 +13,5 @@ idf_component_register(SRCS "esp_http_client.c"
                     # lwip is a public requirement because esp_http_client.h includes sys/socket.h
                     REQUIRES ${req}
                     PRIV_REQUIRES tcp_transport http_parser)
+
+idf_define_esp_err_codes(HEADERS include/esp_http_client.h)

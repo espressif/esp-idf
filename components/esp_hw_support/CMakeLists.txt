@@ -200,6 +200,8 @@ idf_component_register(SRCS ${srcs}
                        PRIV_REQUIRES "${priv_requires}"
                        LDFRAGMENTS linker.lf ldo/linker.lf mspi/linker.lf)
 
+idf_define_esp_err_codes(HEADERS include/esp_memprot_err.h)
+
 idf_build_get_property(target IDF_TARGET)
 add_subdirectory(port/${target})
 if(CONFIG_SOC_SPI_MEM_SUPPORT_TIMING_TUNING)

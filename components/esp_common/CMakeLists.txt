@@ -3,7 +3,7 @@ idf_build_get_property(target IDF_TARGET)
 if(${target} STREQUAL "linux")
     set(ldfragments)
 else()
-    set(ldfragments common.lf soc.lf)
+    set(ldfragments common.lf soc.lf linker.lf)
 endif()
 
 set(srcs "src/esp_err_to_name.c")
@@ -21,34 +21,12 @@ idf_component_register(SRCS "${srcs}"
 # multiplicity property on this universal dependency is the established fix.
 set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 4)
 
-# List of components needed for the error codes list
-set(optional_reqs ulp
-                    efuse
-                    esp_http_client
-                    esp_http_server
-                    bootloader_support
-                    nvs_flash
-                    esp_wifi
-                    app_update
-                    lwip
-                    spi_flash
-                    wpa_supplicant
-                    esp_serial_slave_link
-                    esp_netif
-                    soc
-                    esp-tls
-                    esp_https_ota
-                    esp_hal_mspi
-                    esp_hw_support)
-
-if(IDF_BUILD_V2)
-    idf_component_optional_requires(PRIVATE ${optional_reqs})
-else()
-    idf_build_get_property(build_components BUILD_COMPONENTS)
-    foreach(req ${optional_reqs})
-        if(req IN_LIST build_components)
-            idf_component_get_property(req_lib ${req} COMPONENT_LIB)
-            target_link_libraries(${COMPONENT_LIB} PRIVATE ${req_lib})
-        endif()
-    endforeach()
+if(CONFIG_IDF_TARGET_LINUX AND NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+    # On Linux, provide a linker script that collects specific sections entries (e.g., .esp_err_msg_tbl)
+    # and place them in the final binary, since the linker script used for Linux build doesn't have the usual
+    # memory layout and section placement as in embedded targets.
+    target_link_options(${COMPONENT_LIB} INTERFACE "-Wl,-T,${CMAKE_CURRENT_SOURCE_DIR}/linux/sections.ld")
 endif()
+
+# Register error codes defined in esp_common's own headers
+idf_define_esp_err_codes(HEADERS include/esp_err.h)

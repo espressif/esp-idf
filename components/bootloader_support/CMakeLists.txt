@@ -162,6 +162,8 @@ idf_component_register(SRCS "${srcs}"
                     REQUIRES "${requires}"
                     PRIV_REQUIRES "${priv_requires}")
 
+idf_define_esp_err_codes(HEADERS include/esp_image_format.h)
+
 if(NOT BOOTLOADER_BUILD)
     if(CONFIG_SECURE_SIGNED_ON_UPDATE)
         if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME OR

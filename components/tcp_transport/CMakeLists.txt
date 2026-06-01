@@ -30,6 +30,8 @@ idf_component_register(SRCS "${srcs}"
                     PRIV_INCLUDE_DIRS "private_include"
                     REQUIRES ${req})
 
+idf_define_esp_err_codes(HEADERS include/esp_transport.h)
+
 if(${IDF_TARGET} STREQUAL "linux" AND NOT IDF_BUILD_V2)
     # Check if LWIP in the build for linux target to add esp_timer to the dependencies
     # since socks_proxy transport needs it and lwip & linux build could use it

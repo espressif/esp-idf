@@ -72,6 +72,8 @@ idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS include
                     LDFRAGMENTS linker.lf)
 
+idf_define_esp_err_codes(HEADERS include/spi_flash_mmap.h)
+
 # Avoid cache miss by unexpected inlineing when built by -Os
 set_source_files_properties(${cache_srcs} PROPERTIES COMPILE_FLAGS "-fno-inline-functions")
 if(CMAKE_C_COMPILER_ID MATCHES "GNU")

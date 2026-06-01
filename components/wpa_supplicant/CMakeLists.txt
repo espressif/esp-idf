@@ -279,6 +279,8 @@ idf_component_register(SRCS "${srcs}" "${esp_srcs}" "${tls_src}" "${roaming_src}
                     LDFRAGMENTS   ${linker_fragments}
                     PRIV_REQUIRES mbedtls esp_timer esp_wifi)
 
+idf_define_esp_err_codes(HEADERS esp_supplicant/include/esp_dpp.h esp_supplicant/include/esp_wps.h)
+
 target_compile_definitions(${COMPONENT_LIB} PRIVATE
     __ets__
     ESP_SUPPLICANT

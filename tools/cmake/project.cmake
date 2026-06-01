@@ -831,12 +831,28 @@ macro(project project_name)
         COMMAND ${CMAKE_COMMAND} -E touch ${project_elf_src}
         VERBATIM)
     add_custom_target(_project_elf_src DEPENDS "${project_elf_src}")
+
+    # On the Linux (host) target the standard GNU ld processes static archives
+    # in a single left-to-right pass, which fails when component libraries (or
+    # their transitive dependencies such as the mbedtls sub-libraries) have
+    # circular symbol references.  Wrap all archives in --start-group /
+    # --end-group so the linker re-scans until every symbol is resolved.
+    if(CONFIG_IDF_TARGET_LINUX AND NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+        string(CONCAT _link_exe_template
+            "<CMAKE_C_COMPILER> <FLAGS> <CMAKE_C_LINK_FLAGS> <LINK_FLAGS>"
+            " <OBJECTS> -o <TARGET>"
+            " -Wl,--start-group <LINK_LIBRARIES> -Wl,--end-group")
+        set(CMAKE_C_LINK_EXECUTABLE "${_link_exe_template}")
+        string(REPLACE "<CMAKE_C_COMPILER>" "<CMAKE_CXX_COMPILER>"
+            _link_exe_template "${_link_exe_template}")
+        string(REPLACE "<CMAKE_C_LINK_FLAGS>" "<CMAKE_CXX_LINK_FLAGS>"
+            _link_exe_template "${_link_exe_template}")
+        set(CMAKE_CXX_LINK_EXECUTABLE "${_link_exe_template}")
+        unset(_link_exe_template)
+    endif()
+
     add_executable(${project_elf} "${project_elf_src}")
     add_dependencies(${project_elf} _project_elf_src)
-
-    if(__PROJECT_GROUP_LINK_COMPONENTS)
-        target_link_libraries(${project_elf} PRIVATE "-Wl,--start-group")
-    endif()
 
     if(CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
         # Compiling for the host, and the host is macOS, so the linker is Darwin LD.
@@ -845,6 +861,10 @@ macro(project project_name)
         set(linker_type "Darwin")
     else()
         set(linker_type "GNU")
+    endif()
+
+    if(__PROJECT_GROUP_LINK_COMPONENTS)
+        target_link_libraries(${project_elf} PRIVATE "-Wl,--start-group")
     endif()
 
     if(test_components)
