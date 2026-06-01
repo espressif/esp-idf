@@ -1,4 +1,4 @@
 dependencies:
-  lvgl/lvgl: "9.2.0"
+  lvgl/lvgl: "9.5.0"
   rgb_panel_init:
     path: ${IDF_PATH}/examples/peripherals/lcd/rgb_panel/common_components/rgb_panel_init

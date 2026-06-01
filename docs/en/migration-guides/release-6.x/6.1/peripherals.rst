@@ -3,6 +3,12 @@ Peripherals
 
 :link_to_translation:`zh_CN:[中文]`
 
+LCD
+---
+
+- The :cpp:member:`esp_lcd_dpi_panel_event_callbacks_t::on_refresh_done` callback has been deprecated. Please use :cpp:member:`esp_lcd_dpi_panel_event_callbacks_t::on_frame_buf_complete` to know when a frame buffer can be safely reused.
+- The VSYNC timing event for the MIPI DSI DPI panel is now reported by :cpp:member:`esp_lcd_dpi_panel_event_callbacks_t::on_vsync`.
+
 UART
 -----
 
