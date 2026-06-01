@@ -13,12 +13,20 @@
 
 #include "sdkconfig.h"
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+/* TODO */
+#else
 #include "nimble/gap.h"
 #include "nimble/iso.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* 0xff is out of bt_conn_state_t range — distinguishes NULL conn from any
+ * real state in logs. */
+#define BT_CONN_STATE_GET(_c)   ((_c) ? (_c)->state : 0xff)
 
 void bt_conn_get_acl_conns(struct bt_conn **conns, uint8_t *count);
 

@@ -28,7 +28,7 @@
 #include "host/ble_gatt.h"
 #include "host/ble_hs_mbuf.h"
 
-#include "nimble/profiles/server.h"
+#include "nimble/server.h"
 
 #include "common/host.h"
 
@@ -403,7 +403,10 @@ int bt_le_nimble_gmcs_attr_handle_set(void)
     }
 
     gmcs_svc = lib_mcs_svc_get();
-    assert(gmcs_svc);
+    if (!gmcs_svc) {
+        LOG_ERR("[N]GmcsSvcGetFail");
+        return -ENODEV;
+    }
 
     end_handle = start_handle + gmcs_svc->attr_count - 1;
 
@@ -446,7 +449,10 @@ static int gmcs_svc_check(void)
      */
 
     gmcs_svc = lib_mcs_svc_get();
-    assert(gmcs_svc);
+    if (!gmcs_svc) {
+        LOG_ERR("[N]GmcsSvcGetFail");
+        return -ENODEV;
+    }
 
     LOG_DBG("[N]GmcsSvcCheck");
 

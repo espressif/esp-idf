@@ -9,7 +9,7 @@
 
 This example takes the **TMAP Call Terminal (CT)** and **Unicast Media Receiver (UMR)** roles, registered together via `esp_ble_audio_tmap_register(ESP_BLE_AUDIO_TMAP_ROLE_CT | ESP_BLE_AUDIO_TMAP_ROLE_UMR)`. It runs connectable extended advertising at a 200 ms interval that includes the GAP Earbud appearance, the ASCS/CAS/TMAS UUIDs, an ASCS targeted unicast announcement carrying sink and source contexts (UNSPECIFIED | CONVERSATIONAL | MEDIA | GAME | INSTRUCTIONAL), a CAS targeted announcement, the TMAS UMR|CT role payload, and the device name `tmap_peripheral`. When the Duo earbuds option is selected, a CSIS RSI is added to the advertisement.
 
-The host stack is NimBLE. The example uses the ESP-BLE-AUDIO library pieces for: BAP Unicast Server with PACS (LC3 cap with 16/32/48 kHz, 7.5/10 ms duration, 30–155 octets), VCP Volume Renderer (initial volume 10, unmuted, with VOCS+AICS instances built from Kconfig counts), TBS client (CCP Call Terminal — discovers GTBS, reads URI list, originates/terminates calls), MCC controller (reads player name, track title/duration/position, playback/seeking speed, playing order, media state, opcodes, CCID, plus a `mcp_send_cmd` for PLAY/PAUSE), and optionally CSIP Set Member with SIRK and rank from Kconfig. Sink streams are auto-started from the `enabled` callback. Device name is set to `TMAP Peripheral`.
+The example uses the ESP-BLE-AUDIO library pieces for: BAP Unicast Server with PACS (LC3 cap with 16/32/48 kHz, 7.5/10 ms duration, 30–155 octets), VCP Volume Renderer (initial volume 10, unmuted, with VOCS+AICS instances built from Kconfig counts), TBS client (CCP Call Terminal — discovers GTBS, reads URI list, originates/terminates calls), MCC controller (reads player name, track title/duration/position, playback/seeking speed, playing order, media state, opcodes, CCID, plus a `mcp_send_cmd` for PLAY/PAUSE), and optionally CSIP Set Member with SIRK and rank from Kconfig. Sink streams are auto-started from the `enabled` callback. Device name is set to `TMAP Peripheral`.
 
 ## Requirements
 
@@ -34,10 +34,23 @@ Just-Works pairing (LE Secure Connections, no MITM, no I/O capability) with bond
 
 ## Build & Flash
 
+The base `sdkconfig.defaults` defaults to the **Bluedroid** host; idf.py automatically merges the per-target overlay (`sdkconfig.defaults.$IDF_TARGET`). To build with **NimBLE** host instead, layer `sdkconfig.defaults.nimble` on top via `-DSDKCONFIG_DEFAULTS`.
+
+### Bluedroid host (default)
+
 ```bash
 idf.py set-target esp32h4
 idf.py -p PORT flash monitor
 ```
+
+### NimBLE host
+
+```bash
+idf.py set-target esp32h4
+idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32h4;sdkconfig.defaults.nimble" -p PORT flash monitor
+```
+
+For `esp32s31`, replace the chip overlay accordingly.
 
 (Exit serial monitor with `Ctrl-]`.)
 
@@ -75,6 +88,7 @@ Connection / discovery:
 
 ```
 TMAP_PER: Connected: handle <h> role <r> peer <addr>
+TMAP_PER: Security: handle <h> level <l> bonded <b>
 TMAP_PER: MTU updated: handle <h> mtu <m>
 TMAP_PER: Service discovery started: handle <h>
 TMAP_PER: Service discovery complete: handle <h> status 0
@@ -112,6 +126,19 @@ TMAP_PER: Call <i> originated
 TMAP_PER: Call <i> terminated
 TMAP_PER: Disconnected: handle <h> reason 0x<rr>
 ```
+
+**Note — disconnect race.** On peer-initiated disconnect (e.g. supervision timeout, peer drops the link) with active streams, an additional Bluedroid error may interleave:
+
+```
+W BT_APPL: gattc_conn_cb: if=4 st=0 id=4 rsn=0x8
+W BT_HCI: hcif disc complete: hdl 0x0, rsn 0x8 dev_find 1
+TMAP_PER: [SNK #0] ISO disconnected, reason 0x08
+TMAP_PER: [SNK #0] Stream disabled
+E BT_APPL: Unknown connection ID: 3 fail sending notification
+TMAP_PER: [SNK #0] Stream stopped, reason 0x08
+```
+
+`Unknown connection ID` is harmless. GATT notifications for the ASE state changes are queued for Bluedroid to send. If Bluedroid clears the BTA connection on the ACL disconnect before those queued sends drain, they fail with this error. The peer has already disconnected, so the missed notifications have no effect on either side.
 
 Tag is `TMAP_PER`.
 

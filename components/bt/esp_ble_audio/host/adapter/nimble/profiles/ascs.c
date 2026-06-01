@@ -23,7 +23,7 @@
 #include "host/ble_gatt.h"
 #include "host/ble_hs_mbuf.h"
 
-#include "nimble/profiles/server.h"
+#include "nimble/server.h"
 
 #include "common/host.h"
 
@@ -122,7 +122,10 @@ int bt_le_nimble_ascs_attr_handle_set(void)
     }
 
     ascs_svc = lib_ascs_svc_get();
-    assert(ascs_svc);
+    if (!ascs_svc) {
+        LOG_ERR("[N]AscsSvcGetFail");
+        return -ENODEV;
+    }
 
     assert(ase_control_point_handle >= 2);
     start_handle = ase_control_point_handle - 2;    /* server attr handle & char def handle */
@@ -164,7 +167,10 @@ static int ascs_svc_check(void)
      */
 
     ascs_svc = lib_ascs_svc_get();
-    assert(ascs_svc);
+    if (!ascs_svc) {
+        LOG_ERR("[N]AscsSvcGetFail");
+        return -ENODEV;
+    }
 
     LOG_DBG("[N]AscsSvcCheck");
 

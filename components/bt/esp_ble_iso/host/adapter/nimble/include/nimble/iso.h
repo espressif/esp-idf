@@ -13,6 +13,8 @@
 extern "C" {
 #endif
 
+struct net_buf;
+
 int bt_le_nimble_iso_cmd_send_sync(uint16_t opcode,
                                    struct net_buf *buf,
                                    struct net_buf **rsp);

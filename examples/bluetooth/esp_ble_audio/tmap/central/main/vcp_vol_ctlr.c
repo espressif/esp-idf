@@ -7,7 +7,6 @@
  */
 
 #include <errno.h>
-#include <stddef.h>
 #include <stdint.h>
 
 #include "tmap_central.h"

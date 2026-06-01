@@ -60,7 +60,10 @@ int bt_le_nimble_cas_attr_handle_set(void)
     }
 
     cas_svc = lib_cas_svc_get();
-    assert(cas_svc);
+    if (!cas_svc) {
+        LOG_ERR("[N]CasSvcGetFail");
+        return -ENODEV;
+    }
 
     LOG_DBG("[N]CasAttrHdlSet[%u][%u]", handle, cas_svc->attr_count);
 
@@ -113,7 +116,10 @@ int bt_le_nimble_cas_init(void *csis_svc_p)
     struct bt_gatt_service *cas_svc;
 
     cas_svc = lib_cas_svc_get();
-    assert(cas_svc);
+    if (!cas_svc) {
+        LOG_ERR("[N]CasSvcGetFail");
+        return -ENODEV;
+    }
 
     /* Insert CAS to the GATT db list */
     rc = bt_gatt_service_register_safe(cas_svc);

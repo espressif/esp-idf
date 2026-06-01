@@ -7,7 +7,7 @@
 
 ## Overview
 
-This example implements the **Common Audio Profile (CAP) Acceptor** role on top of the NimBLE host stack with ISO and LE Audio support. It can be built with one or both roles selected at build time: a **CAP Acceptor / BAP Unicast Server**, and / or a **CAP Acceptor / BAP Broadcast Sink** (with the BAP Scan Delegator role enabled). Dual-role builds are supported (BAP spec C.2). PACS is registered in all configurations with LC3 sink and source capabilities (any sampling frequency, 7.5 ms or 10 ms frame, up to 2 channels, 30..155 octets per frame, up to 2 frames per SDU). Sink and source PAC location are set to `FRONT_LEFT | FRONT_RIGHT` (note in `main.c`: with `MONO_AUDIO`, Samsung S24 declines unicast).
+This example implements the **Common Audio Profile (CAP) Acceptor** role on top of the selected BLE host stack (Bluedroid by default; NimBLE via the `sdkconfig.defaults.nimble` overlay) with ISO and LE Audio support. It can be built with one or both roles selected at build time: a **CAP Acceptor / BAP Unicast Server**, and / or a **CAP Acceptor / BAP Broadcast Sink** (with the BAP Scan Delegator role enabled). Dual-role builds are supported (BAP spec C.2). PACS is registered in all configurations with LC3 sink and source capabilities (any sampling frequency, 7.5 ms or 10 ms frame, up to 2 channels, 30..155 octets per frame, up to 2 frames per SDU). Sink and source PAC location are set to `FRONT_LEFT | FRONT_RIGHT` (note in `main.c`: with `MONO_AUDIO`, Samsung S24 declines unicast).
 
 In **unicast** mode (`cap_acceptor_unicast.c`) the acceptor registers BAP unicast-server callbacks (config / reconfig / qos / enable / start / metadata / disable / stop / release) and CAP stream ops, and on enable of a sink ASE automatically issues `bap_stream_start` (Receiver Start Ready). When the source ASE starts, an internal TX scheduler begins sending dummy SDUs. In **broadcast** mode (`cap_acceptor_broadcast.c`) the acceptor registers BAP scan-delegator and broadcast-sink callbacks, drives PA sync (preferring PAST when the Assistant supports it) on request, receives BASE / BIGInfo / broadcast code, then calls `esp_ble_audio_bap_broadcast_sink_sync` on the BIS bitmap selected by the Assistant via BASS Modify Source — up to `CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT` BIS streams. The Broadcast Sink object is created on PA sync and deleted on PA loss; Assistant pause / resume keep the same sink. See **Broadcast Mode Internals** below for sequence, gate flags and sink lifecycle. Optional **self-scan** lets the acceptor scan for a broadcast source named `CAP Broadcast Source` and use a hardcoded broadcast code `1234` instead of waiting for a Broadcast Assistant.
 
@@ -41,10 +41,23 @@ Just-Works pairing (LE Secure Connections, no MITM, `BLE_SM_IO_CAP_NO_IO`) with 
 
 ## Build & Flash
 
+The base `sdkconfig.defaults` defaults to the **Bluedroid** host; idf.py automatically merges the per-target overlay (`sdkconfig.defaults.$IDF_TARGET`). To build with **NimBLE** host instead, layer `sdkconfig.defaults.nimble` on top via `-DSDKCONFIG_DEFAULTS`.
+
+### Bluedroid host (default)
+
 ```bash
 idf.py set-target esp32h4
 idf.py -p PORT flash monitor
 ```
+
+### NimBLE host
+
+```bash
+idf.py set-target esp32h4
+idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32h4;sdkconfig.defaults.nimble" -p PORT flash monitor
+```
+
+For `esp32s31`, replace the chip overlay accordingly.
 
 (Exit serial monitor with `Ctrl-]`.)
 
@@ -195,6 +208,7 @@ TAG: `CAP_ACC`.
 ```
 I (xxx) CAP_ACC: Advertising started (handle 0)
 I (xxx) CAP_ACC: Connected: handle ... role ... peer ...
+I (xxx) CAP_ACC: Security: handle ... level ... bonded ...
 I (xxx) CAP_ACC: MTU updated: handle ... mtu ...
 I (xxx) CAP_ACC: Service discovery started: handle ...
 I (xxx) CAP_ACC: Service discovery complete: handle ...
@@ -227,11 +241,25 @@ I (xxx) CAP_ACC: Disconnected: handle ... reason 0x...
 I (xxx) CAP_ACC: Advertising started (handle 0)
 ```
 
+**Note — disconnect race.** On peer-initiated disconnect (e.g. supervision timeout, peer drops the link) with active streams, an additional Bluedroid error may interleave:
+
+```
+W (xxx) BT_APPL: gattc_conn_cb: if=4 st=0 id=4 rsn=0x8
+W (xxx) BT_HCI: hcif disc complete: hdl 0x0, rsn 0x8 dev_find 1
+I (xxx) CAP_ACC: [SNK #0] ISO disconnected, reason 0x08
+I (xxx) CAP_ACC: [SNK #0] Stream disabled
+E (xxx) BT_APPL: Unknown connection ID: 3 fail sending notification
+I (xxx) CAP_ACC: [SNK #0] Stream stopped, reason 0x08
+```
+
+`Unknown connection ID` is harmless. GATT notifications for the ASE state changes are queued for Bluedroid to send. If Bluedroid clears the BTA connection on the ACL disconnect before those queued sends drain, they fail with this error. The peer has already disconnected, so the missed notifications have no effect on either side.
+
 ### Broadcast mode (Broadcast Assistant)
 
 ```
 I (xxx) CAP_ACC: Advertising started (handle 0)
 I (xxx) CAP_ACC: Connected: handle ... role ... peer ...
+I (xxx) CAP_ACC: Security: handle ... level ... bonded ...
 I (xxx) CAP_ACC: Receive state updated, pa_sync 0x... encrypt 0x...
 I (xxx) CAP_ACC: Received request to sync to PA (PAST not available): ...
 I (xxx) CAP_ACC: Syncing without PAST

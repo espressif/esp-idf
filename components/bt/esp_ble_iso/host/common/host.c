@@ -17,11 +17,14 @@
 #include "common/app/gap.h"
 #include "common/app/gatt.h"
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+#include "bluedroid/gap.h"
+#include "bluedroid/gatt.h"
+#endif
+
 LOG_MODULE_REGISTER(ISO_HOST, CONFIG_BT_ISO_LOG_LEVEL);
 
 static struct k_mutex host_mutex;
-
-#define TIMEOUT_MS  (5000 / portTICK_PERIOD_MS) /* 5s */
 
 #if HOST_LOCK_DEBUG
 void bt_le_host_lock_debug(const char *func, int line)
@@ -31,9 +34,9 @@ void bt_le_host_lock(void)
 {
     /* LOG_DBG("%s: %d", func, line); */
 
-    int err = k_mutex_lock(&host_mutex, TIMEOUT_MS);
+    int err = k_mutex_lock(&host_mutex, K_MUTEX_SHORT);
     if (err) {
-        /* 5s wait failed: the host stack is wedged. k_mutex_lock has
+        /* K_MUTEX_SHORT wait failed: the host stack is wedged. k_mutex_lock has
          * already logged self/holder task names. Use libc abort() rather
          * than assert(0) — assert is a no-op under NDEBUG, which would
          * let the caller enter the critical section without the mutex
@@ -84,9 +87,21 @@ int bt_le_host_init(void)
     }
 #endif /* CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT */
 
-    err = bt_le_iso_init();
+#if CONFIG_BT_BLUEDROID_ENABLED
+    err = bt_le_bluedroid_gap_init();
     if (err) {
         goto deinit_l2cap;
+    }
+
+    err = bt_le_bluedroid_gatt_init();
+    if (err) {
+        goto deinit_bluedroid_gatt;
+    }
+#endif /* CONFIG_BT_BLUEDROID_ENABLED */
+
+    err = bt_le_iso_init();
+    if (err) {
+        goto deinit_bluedroid_gatt;
     }
 
     err = bt_le_iso_task_init();
@@ -98,7 +113,11 @@ int bt_le_host_init(void)
 
 deinit_iso:
     bt_le_iso_deinit();
+deinit_bluedroid_gatt:
+#if CONFIG_BT_BLUEDROID_ENABLED
+    bt_le_bluedroid_gatt_deinit();
 deinit_l2cap:
+#endif /* CONFIG_BT_BLUEDROID_ENABLED */
 #if CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT
     bt_le_l2cap_deinit();
 deinit_scan:    /* only reachable when OTS path is compiled in */
@@ -116,6 +135,9 @@ void bt_le_host_deinit(void)
 
     bt_le_iso_task_deinit();
     bt_le_iso_deinit();
+#if CONFIG_BT_BLUEDROID_ENABLED
+    bt_le_bluedroid_gatt_deinit();
+#endif /* CONFIG_BT_BLUEDROID_ENABLED */
 #if CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT
     bt_le_l2cap_deinit();
 #endif /* CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT */

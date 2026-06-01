@@ -117,7 +117,7 @@ static int gattc_nrp_read_by_uuid_cb_safe(uint16_t conn_handle,
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("[N]GattcNrpNotConn[%d]", __LINE__);
+        LOG_INF("[N]GattcNrpRdByUuidNotConn[%u][%u]", conn_handle, BT_CONN_STATE_GET(conn));
         rc = -ENOTCONN;
         goto end;
     }
@@ -207,7 +207,7 @@ static int gattc_nrp_read_long_cb_safe(uint16_t conn_handle,
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("[N]GattcNrpNotConn[%d]", __LINE__);
+        LOG_INF("[N]GattcNrpRdLongNotConn[%u][%u]", conn_handle, BT_CONN_STATE_GET(conn));
         rc = -ENOTCONN;
         goto end;
     }
@@ -287,7 +287,7 @@ static int gattc_nrp_read_single_cb_safe(uint16_t conn_handle,
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("[N]GattcNrpNotConn[%d]", __LINE__);
+        LOG_INF("[N]GattcNrpRdSingleNotConn[%u][%u]", conn_handle, BT_CONN_STATE_GET(conn));
         rc = -ENOTCONN;
         goto end;
     }
@@ -404,7 +404,7 @@ static int gattc_nrp_write_cb_safe(uint16_t conn_handle,
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("[N]GattcNrpNotConn[%d]", __LINE__);
+        LOG_INF("[N]GattcNrpWrNotConn[%u][%u]", conn_handle, BT_CONN_STATE_GET(conn));
         rc = -ENOTCONN;
         goto end;
     }
@@ -480,7 +480,7 @@ static int gattc_nrp_subscribe_cb_safe(uint16_t conn_handle,
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("[N]GattcNrpNotConn[%d]", __LINE__);
+        LOG_INF("[N]GattcNrpSubNotConn[%u][%u]", conn_handle, BT_CONN_STATE_GET(conn));
         rc = -ENOTCONN;
         goto end;
     }
@@ -560,7 +560,7 @@ void bt_le_nimble_gatts_nrp_indicate_cb(uint16_t conn_handle,
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("[N]GattsNrpNotConn[%d]", __LINE__);
+        LOG_INF("[N]GattsNrpIndNotConn[%u][%u]", conn_handle, BT_CONN_STATE_GET(conn));
         return;
     }
 
@@ -902,17 +902,22 @@ int bt_le_nimble_gatt_nrp_remove(struct bt_conn *conn, uint8_t type, void *param
     case GATTS_NRP_INDICATE:
         assert(nrp_head->indicate.params);
 
+        /* params is the deep copy taken at insert time; cb sees the copy's
+         * address, not the caller's original (which may have been reused).
+         * On match: err propagates the mapped NimBLE status (0 on EDONE,
+         * else err). On handle mismatch the cb event doesn't correspond
+         * to this queue head — we cannot report this head's real outcome,
+         * so fire with BT_ATT_ERR_UNLIKELY to signal failure rather than
+         * silently passing the wrong op's status (could be 0/success and
+         * mislead the lib state machine). */
         if (nrp_head->indicate.params->attr->handle !=
                 ((struct bt_gatt_indicate_params *)params)->attr->handle) {
             LOG_ERR("[N]GattNrpMismatchIndHdl[%u][%u]",
                     ((struct bt_gatt_indicate_params *)params)->attr->handle,
                     nrp_head->indicate.params->attr->handle);
-            assert(0);  /* Should not happen */
+            err = BT_ATT_ERR_UNLIKELY;
         }
 
-        /* params is the deep copy taken at insert time; cb sees the copy's
-         * address, not the caller's original (which may have been reused).
-         * err propagates the mapped NimBLE status (0 on EDONE, else err). */
         nrp_head->indicate.params->func(conn, nrp_head->indicate.params, err);
 
         free(nrp_head->indicate.data_copy);

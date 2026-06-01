@@ -13,10 +13,6 @@
 
 #include "esp_log.h"
 #include "nvs_flash.h"
-#include "esp_system.h"
-
-#include "host/ble_hs.h"
-#include "services/gap/ble_svc_gap.h"
 
 #include "esp_ble_audio_lc3_defs.h"
 #include "esp_ble_audio_bap_api.h"
@@ -25,18 +21,13 @@
 #include "ble_audio_example_init.h"
 #include "ble_audio_example_utils.h"
 
-#define TAG "BAP_BSNK"
+#include "scan.h"
 
 #define TARGET_DEVICE_NAME      "BAP Broadcast Source"
 #define TARGET_DEVICE_NAME_LEN  (sizeof(TARGET_DEVICE_NAME) - 1)
 
 #define TARGET_BROADCAST_CODE   "1234"
 
-#define SCAN_INTERVAL           160     /* 100ms */
-#define SCAN_WINDOW             160     /* 100ms */
-
-#define PA_SYNC_SKIP            0
-#define PA_SYNC_TIMEOUT         1000    /* 1000 * 10ms = 10s */
 #define PA_SYNC_HANDLE_INIT     UINT16_MAX
 
 #define CONN_HANDLE_INIT        UINT16_MAX
@@ -89,61 +80,6 @@ static const esp_ble_audio_codec_cap_t codec_cap =
 static esp_ble_audio_pacs_cap_t cap = {
     .codec_cap = &codec_cap,
 };
-
-static void ext_scan_start(void)
-{
-    struct ble_gap_disc_params params = {0};
-    uint8_t own_addr_type;
-    int err;
-
-    err = ble_hs_id_infer_auto(0, &own_addr_type);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to determine own addr type, err %d", err);
-        return;
-    }
-
-    params.passive = 1;
-    params.itvl = SCAN_INTERVAL;
-    params.window = SCAN_WINDOW;
-
-    err = ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &params,
-                       example_audio_gap_event_cb, NULL);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to start scanning, err %d", err);
-        return;
-    }
-
-    ESP_LOGI(TAG, "Scanning for broadcast source...");
-}
-
-static int pa_sync_create(const bt_addr_le_t *addr, uint8_t adv_sid)
-{
-    struct ble_gap_periodic_sync_params params = {0};
-    ble_addr_t sync_addr = {0};
-
-    sync_addr.type = addr->type;
-    memcpy(sync_addr.val, addr->a.val, sizeof(sync_addr.val));
-    params.skip = PA_SYNC_SKIP;
-    params.sync_timeout = PA_SYNC_TIMEOUT;
-
-    return ble_gap_periodic_adv_sync_create(&sync_addr, adv_sid, &params,
-                                            example_audio_gap_event_cb, NULL);
-}
-
-static int pa_sync_terminate(void)
-{
-    int err;
-
-    err = ble_gap_periodic_adv_sync_terminate(sync_handle);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to terminate PA sync, err %d", err);
-        return err;
-    }
-
-    ESP_LOGI(TAG, "PA sync terminated");
-
-    return 0;
-}
 
 static void recv_state_updated_cb(esp_ble_conn_t *conn,
                                   const esp_ble_audio_bap_scan_delegator_recv_state_t *recv_state)
@@ -199,13 +135,27 @@ static int pa_sync_term_req_cb(esp_ble_conn_t *conn,
 
     req_recv_state = recv_state;
 
-    err = pa_sync_terminate();
+    /* Nothing to terminate if PAST/PA-sync never landed (e.g., PAST setup failed
+     * earlier). Issuing the HCI terminate with the sentinel handle gets 0x12
+     * (Invalid HCI Command Parameters) back from the controller. Mirrors
+     * cap_acceptor_broadcast.c. */
+    if (sync_handle == PA_SYNC_HANDLE_INIT) {
+        ESP_LOGI(TAG, "PA sync never established, skip terminate");
+        return 0;
+    }
+
+    err = pa_sync_terminate(sync_handle);
     if (err) {
+        ESP_LOGE(TAG, "Failed to terminate PA sync, err %d", err);
         return -EIO;
     }
 
-    sync_handle = PA_SYNC_HANDLE_INIT;
+    ESP_LOGI(TAG, "PA sync terminated");
 
+    /* Let the synthesized PA_SYNC_LOST event drive cleanup via pa_sync_lost
+     * (it gates on the original sync_handle). Resetting sync_handle here would
+     * make that gate miss and leak broadcast_sink. Mirrors
+     * cap_acceptor_broadcast.c. */
     return 0;
 }
 
@@ -481,7 +431,6 @@ static bool data_cb(uint8_t type, const uint8_t *data,
 static void ext_scan_recv(esp_ble_audio_gap_app_event_t *event)
 {
     struct scan_recv_data sr = {0};
-    bt_addr_le_t addr;
     int err;
 
     /* Periodic advertising interval. 0 if no periodic advertising. */
@@ -500,10 +449,9 @@ static void ext_scan_recv(esp_ble_audio_gap_app_event_t *event)
     if (pa_syncing == false && req_recv_state == NULL) {
         broadcaster_broadcast_id = sr.broadcast_id;
 
-        addr.type = event->ext_scan_recv.addr.type;
-        memcpy(addr.a.val, event->ext_scan_recv.addr.val, sizeof(addr.a.val));
-
-        err = pa_sync_create(&addr, event->ext_scan_recv.sid);
+        err = pa_sync_create(event->ext_scan_recv.addr.type,
+                             event->ext_scan_recv.addr.val,
+                             event->ext_scan_recv.sid);
         if (err) {
             ESP_LOGE(TAG, "Failed to create PA sync, err %d", err);
             return;
@@ -533,7 +481,7 @@ static void pa_sync(esp_ble_audio_gap_app_event_t *event)
      * via the PA sync channel, so the extended scanner is no longer
      * needed. Stop it now — pa_sync_lost() will restart it on loss.
      */
-    rc = ble_gap_disc_cancel();
+    rc = ext_scan_stop();
     if (rc) {
         ESP_LOGW(TAG, "Failed to stop scanning, err %d", rc);
     }
@@ -615,6 +563,12 @@ void app_main(void)
     err = bluetooth_init();
     if (err) {
         ESP_LOGE(TAG, "Failed to initialize BLE, err %d", err);
+        return;
+    }
+
+    err = app_host_init();
+    if (err) {
+        ESP_LOGE(TAG, "Failed to init host, err %d", err);
         return;
     }
 

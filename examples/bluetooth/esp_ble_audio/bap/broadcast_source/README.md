@@ -9,7 +9,7 @@
 
 This example acts as a **BAP Broadcast Source**. It creates a BAP broadcast source from the LC3 `16_2_1` broadcast preset, encodes the BASE into the periodic advertising payload, places the Broadcast Audio Announcement Service UUID and a fixed 24-bit Broadcast ID (`0x123456`) in the extended advertising payload, and then starts the BIG so that BIS streams transmit synthetic SDU data on a fixed cadence.
 
-The build runs on top of the NimBLE host stack and the ESP BLE Audio component set. Source-side APIs used: `esp_ble_audio_common_init` / `esp_ble_audio_common_start` (common layer), `esp_ble_audio_bap_broadcast_source_create` / `_get_base` / `_start` (BAP), `esp_ble_audio_bap_broadcast_adv_add` (BAP/ISO glue), and the BAP stream callbacks (`started`, `stopped`, `sent`, `disconnected`). PACS, GAP scanner, and the scan delegator are **not** used on this side. Encryption is enabled because the broadcast code `"1234"` is non-empty; packing is `ESP_BLE_ISO_PACKING_SEQUENTIAL`. Channel allocation per stream is hard-coded as `FRONT_LEFT` for stream 0 and `FRONT_RIGHT` for stream 1.
+The build runs on top of the selected BLE host stack (Bluedroid by default; NimBLE via the `sdkconfig.defaults.nimble` overlay) and the ESP BLE Audio component set. Source-side APIs used: `esp_ble_audio_common_init` / `esp_ble_audio_common_start` (common layer), `esp_ble_audio_bap_broadcast_source_create` / `_get_base` / `_start` (BAP), `esp_ble_audio_bap_broadcast_adv_add` (BAP/ISO glue), and the BAP stream callbacks (`started`, `stopped`, `sent`, `disconnected`). PACS, GAP scanner, and the scan delegator are **not** used on this side. Encryption is enabled because the broadcast code `"1234"` is non-empty; packing is `ESP_BLE_ISO_PACKING_SEQUENTIAL`. Channel allocation per stream is hard-coded as `FRONT_LEFT` for stream 0 and `FRONT_RIGHT` for stream 1.
 
 The TX scheduler is built on `example_audio_tx_scheduler_*` helpers; the source comment notes that ESP timer resolution is not accurate enough for the SDU interval, so a `k_work_delayable`-based scheduler is used instead.
 
@@ -34,10 +34,23 @@ The example inherits a Just-Works pairing model (LE Secure Connections, no MITM,
 
 ## Build & Flash
 
+The base `sdkconfig.defaults` defaults to the **Bluedroid** host; idf.py automatically merges the per-target overlay (`sdkconfig.defaults.$IDF_TARGET`). To build with **NimBLE** host instead, layer `sdkconfig.defaults.nimble` on top via `-DSDKCONFIG_DEFAULTS`.
+
+### Bluedroid host (default)
+
 ```bash
-idf.py set-target esp32h4   # or esp32s31
+idf.py set-target esp32h4
 idf.py -p PORT flash monitor
 ```
+
+### NimBLE host
+
+```bash
+idf.py set-target esp32h4
+idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32h4;sdkconfig.defaults.nimble" -p PORT flash monitor
+```
+
+For `esp32s31`, replace the chip overlay accordingly.
 
 (Exit serial monitor with `Ctrl-]`.)
 
@@ -46,7 +59,7 @@ idf.py -p PORT flash monitor
 1. `app_main` initializes NVS, calls `bluetooth_init()`, and calls `esp_ble_audio_common_init(NULL)` (no GAP callback for this role).
 2. `broadcast_source_setup()` registers `source_started` / `source_stopped` callbacks, populates per-stream channel-allocation BIS metadata (left/right), registers `stream_ops` on each stream, and calls `esp_ble_audio_bap_broadcast_source_create()` with the encrypted preset.
 3. `esp_ble_audio_common_start(NULL)` starts the audio stack; each stream's `example_audio_tx_scheduler_init()` is wired with `tx_scheduler_cb`.
-4. `ext_adv_start()` configures non-connectable extended adv (1M primary / 2M secondary, 200 ms interval), writes Broadcast Audio Service Data + Broadcast ID + complete name, configures periodic adv (100 ms), writes the BASE returned by `esp_ble_audio_bap_broadcast_source_get_base()`, then starts periodic and extended advertising.
+4. `adv_init()` performs host-specific GAP setup (Bluedroid: registers the GAP callback for `*_COMPLETE_EVT` semaphore signalling; NimBLE: no-op — adv-instance callback is passed at configure time). `ext_adv_start()` builds the extended (Broadcast Audio Service Data + Broadcast ID + complete name) and periodic (BASE from `esp_ble_audio_bap_broadcast_source_get_base()`) payloads in host-agnostic bytes, then calls `adv_start(ext_data, ext_len, per_data, per_len)`. The host-specific implementation in `main/bluedroid/adv.c` or `main/nimble/adv.c` configures non-connectable extended adv (1M primary / 2M secondary, 200 ms interval), configures periodic adv (100 ms), writes both payloads, and starts periodic and extended advertising.
 5. `broadcast_start()` calls `esp_ble_audio_bap_broadcast_adv_add()` and `esp_ble_audio_bap_broadcast_source_start()` on the same `ADV_HANDLE`, which kicks off BIGInfo + BIS creation.
 6. When each BIS stream goes streaming, `stream_started_cb` allocates an SDU-sized buffer and calls `example_audio_tx_scheduler_start()` at `preset_active.qos.interval`; the scheduler invokes `broadcast_source_tx()`, which fills the buffer with the low byte of `seq_num` and calls `esp_ble_audio_bap_stream_send()`.
 7. `stream_sent_cb` forwards completions to `example_audio_tx_scheduler_on_sent()` for drift accounting; `stream_stopped_cb` and `stream_disconnected_cb` stop the scheduler; `source_stopped_cb` frees all per-stream buffers.

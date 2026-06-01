@@ -95,9 +95,9 @@ void bt_le_nimble_gatt_post_event(void *param)
         break;
 
     default:
+        LOG_WRN("[N]GattPostEvtUnexp[%u]", ev->type);
         free(qev);
-        assert(0);
-        break;
+        return;
     }
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
@@ -209,7 +209,7 @@ static void handle_gattc_notify_rx_event_safe(struct bt_le_gattc_notify_rx_event
 
     conn = bt_le_acl_conn_find(event->conn_handle);
     if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("[N]NotConn[%d]", __LINE__);
+        LOG_INF("[N]GattcNtfRxNotConn[%u][%u]", event->conn_handle, BT_CONN_STATE_GET(conn));
         goto end;
     }
 
@@ -222,6 +222,12 @@ static void handle_gattc_notify_rx_event_safe(struct bt_le_gattc_notify_rx_event
         if (params->ccc_handle != BT_GATT_AUTO_DISCOVER_CCC_HANDLE &&
                 params->value_handle == event->attr_handle) {
             if (params->notify) {
+                /* Return value intentionally ignored. Zephyr unsubscribes on
+                 * BT_GATT_ITER_STOP, but lib clients return STOP on a single
+                 * malformed/short notify (e.g. unicast_client_cp_notify);
+                 * tearing down a core subscription like the ASCS control point
+                 * over one bad PDU would drop every later notification. Tolerate
+                 * the bad PDU and keep the subscription. */
                 params->notify(conn, params, event->value, event->len);
             }
         }
@@ -446,6 +452,16 @@ int bt_le_nimble_gattc_discover(struct bt_conn *conn, struct bt_gatt_discover_pa
     LOG_DBG("[N]GattcDisc[%u]", conn->handle);
 
     if (params->uuid) {
+        /* Downstream gattc_db_disc_*_by_uuid takes ble_uuid16_t — reject
+         * non-16-bit caller UUIDs explicitly. BT_UUID_16 would otherwise
+         * reinterpret a 32/128-bit struct and feed garbage to the lookup.
+         * LE Audio profiles only use SIG-assigned 16-bit UUIDs, so this
+         * gate stays a compile-time-style guard in practice. */
+        if (params->uuid->type != BT_UUID_TYPE_16) {
+            LOG_ERR("[N]DiscNon16BitUuid[%u]", params->uuid->type);
+            return -ENOTSUP;
+        }
+
         uuid.u.type = BLE_UUID_TYPE_16;
         uuid.value = BT_UUID_16(params->uuid)->val;
     }
