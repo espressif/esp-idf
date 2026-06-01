@@ -111,15 +111,16 @@ menu "Example Configuration"
 
         config EXAMPLE_MAX_CPU_FREQ_80
             bool "80 MHz"
+            depends on IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32C61 || IDF_TARGET_ESP32C5
         config EXAMPLE_MAX_CPU_FREQ_120
             bool "120 MHz"
-            depends on IDF_TARGET_ESP32C2
+            depends on IDF_TARGET_ESP32C6
         config EXAMPLE_MAX_CPU_FREQ_160
             bool "160 MHz"
-            depends on !IDF_TARGET_ESP32C2
+            depends on IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32C61 || IDF_TARGET_ESP32C5
         config EXAMPLE_MAX_CPU_FREQ_240
             bool "240 MHz"
-            depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C5
+            depends on IDF_TARGET_ESP32C5
     endchoice
 
     config EXAMPLE_MAX_CPU_FREQ_MHZ
