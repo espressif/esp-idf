@@ -18,8 +18,8 @@
  ***************************************/
 
 /* Functions */
-wdt_hal_init = 0x4fc001fc;
-wdt_hal_deinit = 0x4fc00200;
+rom_wdt_hal_init = 0x4fc001fc;
+rom_wdt_hal_deinit = 0x4fc00200;
 rom_wdt_hal_config_stage = 0x4fc00204;
 wdt_hal_write_protect_disable = 0x4fc00208;
 wdt_hal_write_protect_enable = 0x4fc0020c;
