@@ -1,5 +1,13 @@
 include(ExternalProject)
 
+# Minimum esp-idf-kconfig version that ships the esp_menuconfig module name
+# (renamed from menuconfig in the 3.x series).
+set(ESP_MENUCONFIG_MIN_KCONFIG_VERSION "3.1.0")
+
+# Minimum esp-idf-kconfig version required for the --menuconfig kconfgen flag
+# (fused menuconfig + deprecated-options post-processing in a single invocation).
+set(MENUCONFIG_INLINE_MIN_KCONFIG_VERSION "3.9.0")
+
 function(__kconfig_init)
     idf_build_get_property(idf_path IDF_PATH)
 
@@ -266,19 +274,16 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     idf_build_set_property(SDKCONFIG_JSON_MENUS ${sdkconfig_json_menus})
     idf_build_set_property(CONFIG_DIR ${config_dir})
 
-    # newer versions of esp-idf-kconfig renamed menuconfig to esp_menuconfig
-    # Order matters here, we want to use esp_menuconfig if it is available
-    execute_process(
-        COMMAND ${python} -c "import esp_menuconfig"
-        RESULT_VARIABLE ESP_MENUCONFIG_AVAILABLE
-        OUTPUT_QUIET ERROR_QUIET
-    )
-    if(ESP_MENUCONFIG_AVAILABLE EQUAL 0)
+    __check_python_package_min_version(
+        ${python} esp-idf-kconfig "${ESP_MENUCONFIG_MIN_KCONFIG_VERSION}" _has_esp_menuconfig)
+    if(_has_esp_menuconfig)
         set(MENUCONFIG_CMD ${python} -m esp_menuconfig)
     else()
         set(MENUCONFIG_CMD ${python} -m menuconfig)
     endif()
 
+    __check_python_package_min_version(
+        ${python} esp-idf-kconfig "${MENUCONFIG_INLINE_MIN_KCONFIG_VERSION}" MENUCONFIG_INLINE_SUPPORTED)
 
     set(TERM_CHECK_CMD ${python} ${idf_path}/tools/check_term.py)
 
@@ -286,44 +291,72 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         return()
     endif()
 
-    # Generate the menuconfig target
-    # WARNING: If you change anything here, please ensure that only the necessary files are touched!
-    # If unnecessary files (those not affected by the change from menuconfig) are touched
-    # (their timestamp changed), it will cause unnecessary rebuilds of the whole project!
-    add_custom_target(menuconfig
-        ${menuconfig_depends}
-        # create any missing config file, with defaults if necessary
-        COMMAND ${prepare_kconfig_files_command}
-        COMMAND ${kconfgen_basecommand}
-        --env "IDF_TARGET=${idf_target}"
-        --env "IDF_TOOLCHAIN=${idf_toolchain}"
-        --env "IDF_ENV_FPGA=${idf_env_fpga}"
-        --env "IDF_INIT_VERSION=${idf_init_version}"
-        --env "KCONFIG_REPORT_VERBOSITY=quiet"
-        --dont-write-deprecated
-        --output config ${sdkconfig} # Do NOT regenerate the rest of the config files!
-        COMMAND ${TERM_CHECK_CMD}
-        COMMAND ${CMAKE_COMMAND} -E env
-        "COMPONENT_KCONFIGS_SOURCE_FILE=${kconfigs_path}"
-        "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=${kconfigs_projbuild_path}"
-        "KCONFIG_CONFIG=${sdkconfig}"
-        "IDF_TARGET=${idf_target}"
-        "IDF_TOOLCHAIN=${idf_toolchain}"
-        "IDF_ENV_FPGA=${idf_env_fpga}"
-        "IDF_INIT_VERSION=${idf_init_version}"
-        "IDF_MINIMAL_BUILD=${idf_minimal_build}"
-        ${MENUCONFIG_CMD} ${root_kconfig}
-        USES_TERMINAL
-        # additional run of kconfgen ensures that the deprecated options will be inserted into config files
-        # (for backward compatibility)
-        COMMAND ${kconfgen_basecommand}
-        --env "IDF_TARGET=${idf_target}"
-        --env "IDF_TOOLCHAIN=${idf_toolchain}"
-        --env "IDF_ENV_FPGA=${idf_env_fpga}"
-        --env "IDF_INIT_VERSION=${idf_init_version}"
-        ${kconfgen_output_options}
-        --env "KCONFIG_REPORT_VERBOSITY=${kconfig_report_verbosity}"
-        )
+    ##################################################################################
+    # WARNING: If you change the menuconfig target below, ensure that ONLY the
+    # necessary files are touched!  The target writes sdkconfig, sdkconfig.h,
+    # sdkconfig.cmake, sdkconfig.json and kconfig_menus.json.  Any stray timestamp
+    # change on files not affected by the user's config edit will cause unnecessary
+    # rebuilds of the whole project!
+    ##################################################################################
+    if(MENUCONFIG_INLINE_SUPPORTED)
+        add_custom_target(menuconfig
+            # Ensure kconfig.in and kconfig_projbuild.in are present and up to date.
+            # This is not necessary under normal circumstances, but if the files are manually removed,
+            # it may be possible to regenerate them.
+            COMMAND ${prepare_kconfig_files_command}
+            COMMAND ${TERM_CHECK_CMD}
+            COMMAND ${CMAKE_COMMAND} -E env
+            "COMPONENT_KCONFIGS_SOURCE_FILE=${kconfigs_path}"
+            "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=${kconfigs_projbuild_path}"
+            "KCONFIG_CONFIG=${sdkconfig}"
+            "IDF_TARGET=${idf_target}"
+            "IDF_TOOLCHAIN=${idf_toolchain}"
+            "IDF_ENV_FPGA=${idf_env_fpga}"
+            "IDF_INIT_VERSION=${idf_init_version}"
+            "IDF_MINIMAL_BUILD=${idf_minimal_build}"
+            "KCONFIG_REPORT_VERBOSITY=${kconfig_report_verbosity}"
+            ${kconfgen_basecommand}
+            --menuconfig
+            ${kconfgen_output_options}
+            USES_TERMINAL
+            )
+    else()
+        message(WARNING "esp-idf-kconfig >= ${MENUCONFIG_INLINE_MIN_KCONFIG_VERSION} is required "
+            "for the optimised menuconfig target. Please update your Python packages by re-running the install script.")
+        add_custom_target(menuconfig
+            # Ensure kconfig.in and kconfig_projbuild.in are present and up to date.
+            # This is not necessary under normal circumstances, but if the files are manually removed,
+            # it may be possible to regenerate them.
+            COMMAND ${prepare_kconfig_files_command}
+            COMMAND ${kconfgen_basecommand}
+            --env "IDF_TARGET=${idf_target}"
+            --env "IDF_TOOLCHAIN=${idf_toolchain}"
+            --env "IDF_ENV_FPGA=${idf_env_fpga}"
+            --env "IDF_INIT_VERSION=${idf_init_version}"
+            --env "KCONFIG_REPORT_VERBOSITY=quiet"
+            --dont-write-deprecated
+            --output config ${sdkconfig}
+            COMMAND ${TERM_CHECK_CMD}
+            COMMAND ${CMAKE_COMMAND} -E env
+            "COMPONENT_KCONFIGS_SOURCE_FILE=${kconfigs_path}"
+            "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=${kconfigs_projbuild_path}"
+            "KCONFIG_CONFIG=${sdkconfig}"
+            "IDF_TARGET=${idf_target}"
+            "IDF_TOOLCHAIN=${idf_toolchain}"
+            "IDF_ENV_FPGA=${idf_env_fpga}"
+            "IDF_INIT_VERSION=${idf_init_version}"
+            "IDF_MINIMAL_BUILD=${idf_minimal_build}"
+            ${MENUCONFIG_CMD} ${root_kconfig}
+            USES_TERMINAL
+            COMMAND ${kconfgen_basecommand}
+            --env "IDF_TARGET=${idf_target}"
+            --env "IDF_TOOLCHAIN=${idf_toolchain}"
+            --env "IDF_ENV_FPGA=${idf_env_fpga}"
+            --env "IDF_INIT_VERSION=${idf_init_version}"
+            ${kconfgen_output_options}
+            --env "KCONFIG_REPORT_VERBOSITY=${kconfig_report_verbosity}"
+            )
+    endif()
 
     # Custom target to generate configuration report to JSON
     add_custom_target(config-report
