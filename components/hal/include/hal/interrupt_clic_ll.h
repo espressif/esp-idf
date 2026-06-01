@@ -10,7 +10,6 @@
 #include "soc/soc_caps.h"
 #include "soc/reg_base.h"
 
-
 #if SOC_INT_CLIC_SUPPORTED
 
 #include "soc/clic_reg.h"
@@ -23,7 +22,6 @@ extern "C" {
 
 /* Use the closest upper power of two (minus 1) as a mask for the interrupts mapping */
 #define RV_INT_MASK          63
-
 
 /**
  * @brief Route any interrupt source to any CPU interrupt, including internal ones
@@ -47,7 +45,6 @@ FORCE_INLINE_ATTR void interrupt_clic_ll_route(uint32_t core_id, int intr_src, i
 #endif // SOC_CPU_CORES_NUM > 1
 }
 
-
 /**
  * @brief Get the type for the given interrupt
  *
@@ -59,7 +56,6 @@ FORCE_INLINE_ATTR int interrupt_clic_ll_get_type(int rv_int_num)
 {
     return REG_GET_FIELD(CLIC_INT_CTRL_REG(rv_int_num), CLIC_INT_ATTR_TRIG) & 1;
 }
-
 
 /**
  * @brief Get the priority for the given interrupt
@@ -74,7 +70,6 @@ FORCE_INLINE_ATTR int interrupt_clic_ll_get_priority(int rv_int_num)
     return (priority >> (8 - NLBITS));
 }
 
-
 /**
  * @brief Check if an interrupt is vectored
  *
@@ -87,7 +82,6 @@ FORCE_INLINE_ATTR bool interrupt_clic_ll_is_vectored(int rv_int_num)
     const uint32_t shv = REG_GET_FIELD(CLIC_INT_CTRL_REG(rv_int_num), CLIC_INT_ATTR_SHV);
     return shv != 0;
 }
-
 
 /**
  * @brief Set an interrupt to vectored or non-vectored

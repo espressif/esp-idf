@@ -82,7 +82,7 @@ static inline uint32_t memprot_ll_iram0_get_intr_clr_bit(void)
 //resets automatically on CPU restart
 static inline void memprot_ll_iram0_set_lock(void)
 {
-    DPORT_WRITE_PERI_REG( DPORT_PMS_PRO_IRAM0_0_REG, DPORT_PMS_PRO_IRAM0_LOCK);
+    DPORT_WRITE_PERI_REG(DPORT_PMS_PRO_IRAM0_0_REG, DPORT_PMS_PRO_IRAM0_LOCK);
 }
 
 static inline uint32_t memprot_ll_iram0_get_lock_reg(void)
@@ -393,7 +393,6 @@ static inline void memprot_ll_iram0_sram_set_exec_perm(bool lx, bool hx)
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_IRAM0_2_REG, DPORT_PMS_PRO_IRAM0_SRAM_4_H_F, hx ? 1 : 0);
 }
 
-
 /**
  * ========================================================================================
  * === IRAM0 RTC FAST
@@ -488,7 +487,6 @@ static inline void memprot_ll_iram0_rtcfast_set_exec_perm(bool lx, bool hx)
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_IRAM0_3_REG, DPORT_PMS_PRO_IRAM0_RTCFAST_L_F, lx ? 1 : 0);
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_IRAM0_3_REG, DPORT_PMS_PRO_IRAM0_RTCFAST_H_F, hx ? 1 : 0);
 }
-
 
 /**
  * ========================================================================================
@@ -781,7 +779,6 @@ static inline void memprot_ll_dram0_sram_set_write_perm(bool lw, bool hw)
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_4_L_W, lw ? 1 : 0);
     DPORT_REG_SET_FIELD(DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_4_H_W, hw ? 1 : 0);
 }
-
 
 /**
  * ========================================================================================

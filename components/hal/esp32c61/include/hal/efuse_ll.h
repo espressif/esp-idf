@@ -64,7 +64,7 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_ocode(void)
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_active_hp_dbias(void)
 {
-    return (EFUSE0.rd_mac_sys3.active_hp_dbias_1 << 3)|EFUSE0.rd_mac_sys2.active_hp_dbias;
+    return (EFUSE0.rd_mac_sys3.active_hp_dbias_1 << 3) | EFUSE0.rd_mac_sys2.active_hp_dbias;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_active_lp_dbias(void)
@@ -138,7 +138,6 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_ecdsa_key_blk
 {
     return EFUSE0.conf.cfg_ecdsa_blk;
 }
-
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_recovery_bootloader_sector(void)
 {

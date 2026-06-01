@@ -31,7 +31,6 @@ static inline bool modem_syscon_ll_test_clk_is_enabled(modem_syscon_dev_t *hw)
     return hw->test_conf.clk_en;
 }
 
-
 __attribute__((always_inline))
 static inline void modem_syscon_ll_enable_data_dump_mux_clock(modem_syscon_dev_t *hw, bool en)
 {
@@ -253,11 +252,10 @@ static inline void modem_syscon_ll_reset_all(modem_syscon_dev_t *hw)
     hw->modem_rst_conf.val = 0;
 }
 
-
 __attribute__((always_inline))
 static inline void modem_syscon_ll_clk_conf1_configure(modem_syscon_dev_t *hw, bool en, uint32_t mask)
 {
-    if(en){
+    if (en) {
         hw->clk_conf1.val = hw->clk_conf1.val | mask;
     } else {
         hw->clk_conf1.val = hw->clk_conf1.val & ~mask;

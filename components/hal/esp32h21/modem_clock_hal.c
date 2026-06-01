@@ -65,8 +65,7 @@ void modem_clock_hal_select_ble_rtc_timer_lpclk_source(modem_clock_hal_context_t
 {
     HAL_ASSERT(src < MODEM_CLOCK_LPCLK_SRC_MAX);
 
-    switch (src)
-    {
+    switch (src) {
     case MODEM_CLOCK_LPCLK_SRC_RC_SLOW:
         lp_clkrst_ll_enable_ble_rtc_timer_slow_osc(&LP_CLKRST, true);
         break;
@@ -105,8 +104,7 @@ void modem_clock_hal_select_coex_lpclk_source(modem_clock_hal_context_t *hal, mo
 {
     HAL_ASSERT(src < MODEM_CLOCK_LPCLK_SRC_MAX);
 
-    switch (src)
-    {
+    switch (src) {
     case MODEM_CLOCK_LPCLK_SRC_RC_SLOW:
         modem_lpcon_ll_enable_coex_lpclk_slow_osc(hal->lpcon_dev, true);
         break;

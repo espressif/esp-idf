@@ -42,7 +42,6 @@ typedef enum {
     CACHE_LL_PRELOAD_ARBITRARY = 2,
 } cache_ll_preload_strategy_t;
 
-
 /**
  * @brief Initialize the cache clock
  */

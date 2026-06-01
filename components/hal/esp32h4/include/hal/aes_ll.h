@@ -110,7 +110,7 @@ static inline void aes_ll_read_block(void *output)
     for (size_t i = 0; i < AES_BLOCK_WORDS; i++) {
         output_word = REG_READ(AES_TEXT_OUT_0_REG + (i * REG_WIDTH));
         /* Memcpy to avoid potential unaligned access */
-        memcpy( (uint8_t*)output + i * 4, &output_word, sizeof(output_word));
+        memcpy((uint8_t*)output + i * 4, &output_word, sizeof(output_word));
     }
 }
 
@@ -123,7 +123,6 @@ static inline void aes_ll_start_transform(void)
     REG_WRITE(AES_TRIGGER_REG, 1);
 }
 
-
 /**
  * @brief Read state of AES accelerator
  *
@@ -133,7 +132,6 @@ static inline esp_aes_state_t aes_ll_get_state(void)
 {
     return (esp_aes_state_t)REG_READ(AES_STATE_REG);
 }
-
 
 /**
  * @brief Set mode of operation
@@ -187,7 +185,7 @@ static inline void aes_ll_set_iv(const uint8_t *iv)
     uint32_t *reg_addr_buf = (uint32_t *)(AES_IV_MEM);
     uint32_t iv_word;
 
-    for (int i = 0; i < IV_WORDS; i++ ) {
+    for (int i = 0; i < IV_WORDS; i++) {
         /* Memcpy to avoid potential unaligned access */
         memcpy(&iv_word, iv + 4 * i, sizeof(iv_word));
         REG_WRITE(&reg_addr_buf[i], iv_word);

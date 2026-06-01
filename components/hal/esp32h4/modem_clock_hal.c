@@ -22,8 +22,7 @@ typedef enum {
 void IRAM_ATTR modem_clock_hal_set_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal, modem_clock_domain_t domain, uint32_t bitmap)
 {
     HAL_ASSERT(domain < MODEM_CLOCK_DOMAIN_MAX);
-    switch (domain)
-    {
+    switch (domain) {
     case MODEM_CLOCK_DOMAIN_MODEM_APB:
         modem_syscon_ll_set_modem_apb_icg_bitmap(hal->syscon_dev, bitmap);
         break;
@@ -58,8 +57,7 @@ uint32_t IRAM_ATTR modem_clock_hal_get_clock_domain_icg_bitmap(modem_clock_hal_c
     HAL_ASSERT(domain < MODEM_CLOCK_DOMAIN_MAX);
     uint32_t bitmap = 0;
 
-    switch (domain)
-    {
+    switch (domain) {
     case MODEM_CLOCK_DOMAIN_MODEM_APB:
         bitmap = modem_syscon_ll_get_modem_apb_icg_bitmap(hal->syscon_dev);
         break;
@@ -140,8 +138,7 @@ void modem_clock_hal_select_ble_rtc_timer_lpclk_source(modem_clock_hal_context_t
 {
     HAL_ASSERT(src < MODEM_CLOCK_LPCLK_SRC_MAX);
 
-    switch (src)
-    {
+    switch (src) {
     case MODEM_CLOCK_LPCLK_SRC_RC_SLOW:
         lp_clkrst_ll_enable_ble_rtc_timer_slow_osc(&LP_CLKRST, true);
         break;
@@ -180,8 +177,7 @@ void modem_clock_hal_select_coex_lpclk_source(modem_clock_hal_context_t *hal, mo
 {
     HAL_ASSERT(src < MODEM_CLOCK_LPCLK_SRC_MAX);
 
-    switch (src)
-    {
+    switch (src) {
     case MODEM_CLOCK_LPCLK_SRC_RC_SLOW:
         modem_lpcon_ll_enable_coex_lpclk_slow_osc(hal->lpcon_dev, true);
         break;

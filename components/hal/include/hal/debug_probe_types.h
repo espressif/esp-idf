@@ -10,7 +10,6 @@
 extern "C" {
 #endif
 
-
 /**
  * @brief Debug probe unit identifier (HP vs LP)
  */

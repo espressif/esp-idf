@@ -11,7 +11,6 @@
 extern "C" {
 #endif
 
-
 /**
  * @brief Clear the crosscore interrupt that just occurred on the current core
  */
@@ -23,7 +22,6 @@ FORCE_INLINE_ATTR void crosscore_int_ll_clear_interrupt(int core_id)
         WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_1_REG, 0);
     }
 }
-
 
 /**
  * @brief Trigger a crosscore interrupt on the given core

@@ -14,7 +14,6 @@
 extern "C" {
 #endif
 
-
 /**
  * @brief Enable the bus clock for SHA peripheral module
  *

@@ -24,7 +24,6 @@ FORCE_INLINE_ATTR void crosscore_int_ll_clear_interrupt(int core_id)
     }
 }
 
-
 /**
  * @brief Trigger a crosscore interrupt on the given core
  *
@@ -38,7 +37,6 @@ FORCE_INLINE_ATTR void crosscore_int_ll_trigger_interrupt(int core_id)
         WRITE_PERI_REG(HP_SYSTEM_CPU_INT_FROM_CPU_1_REG, HP_SYSTEM_CPU_INT_FROM_CPU_1);
     }
 }
-
 
 /**
  * @brief Get the state of the crosscore interrupt register for the given core
@@ -60,7 +58,6 @@ FORCE_INLINE_ATTR uint32_t crosscore_int_ll_get_state(int core_id)
 
     return reg;
 }
-
 
 #ifdef __cplusplus
 }

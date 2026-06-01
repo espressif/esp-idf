@@ -15,7 +15,6 @@
 #include "hal/misc.h"
 #include "esp32s31/rom/rtc.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif

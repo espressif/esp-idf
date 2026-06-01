@@ -126,7 +126,7 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_dslp_dbg(void
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_dslp_lp_dbias(void)
 {
-    return (EFUSE.rd_mac_sys4.dslp_lp_dbias_1 << 4)|EFUSE.rd_mac_sys3.dslp_lp_dbias;
+    return (EFUSE.rd_mac_sys4.dslp_lp_dbias_1 << 4) | EFUSE.rd_mac_sys3.dslp_lp_dbias;
 }
 
 __attribute__((always_inline)) static inline int32_t efuse_ll_get_dbias_vol_gap(void)

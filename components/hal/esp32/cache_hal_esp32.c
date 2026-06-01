@@ -29,7 +29,6 @@ void cache_hal_suspend(uint32_t cache_level, cache_type_t type)
 #endif
 }
 
-
 void cache_hal_resume(uint32_t cache_level, cache_type_t type)
 {
     cache_ll_l1_enable_cache(0);
@@ -39,7 +38,6 @@ void cache_hal_resume(uint32_t cache_level, cache_type_t type)
     cache_ll_l1_enable_bus(1, s_cache_status[1]);
 #endif
 }
-
 
 bool cache_hal_is_cache_enabled(uint32_t cache_level, cache_type_t type)
 {

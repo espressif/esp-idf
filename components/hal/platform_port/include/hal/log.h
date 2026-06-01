@@ -44,33 +44,33 @@
 #define HAL_LOG_ATTR_TAG_DRAM(tag, str) static __attribute__((unused)) DRAM_ATTR const char tag[] = str
 
 #if CONFIG_HAL_LOG_LEVEL >= HAL_LOG_ERROR
-    #define HAL_LOGE(tag, fmt, ...) esp_rom_printf("%s(err): " fmt, tag, ##__VA_ARGS__)
+#define HAL_LOGE(tag, fmt, ...) esp_rom_printf("%s(err): " fmt, tag, ##__VA_ARGS__)
 #else
-    #define HAL_LOGE(tag, fmt, ...)
+#define HAL_LOGE(tag, fmt, ...)
 #endif
 
 #if CONFIG_HAL_LOG_LEVEL >= HAL_LOG_WARN
-    #define HAL_LOGW(tag, fmt, ...) esp_rom_printf("%s(warn): " fmt, tag, ##__VA_ARGS__)
+#define HAL_LOGW(tag, fmt, ...) esp_rom_printf("%s(warn): " fmt, tag, ##__VA_ARGS__)
 #else
-    #define HAL_LOGW(tag, fmt, ...)
+#define HAL_LOGW(tag, fmt, ...)
 #endif
 
 #if CONFIG_HAL_LOG_LEVEL >= HAL_LOG_INFO
-    #define HAL_LOGI(tag, fmt, ...) esp_rom_printf("%s(info): " fmt, tag, ##__VA_ARGS__)
+#define HAL_LOGI(tag, fmt, ...) esp_rom_printf("%s(info): " fmt, tag, ##__VA_ARGS__)
 #else
-    #define HAL_LOGI(tag, fmt, ...)
+#define HAL_LOGI(tag, fmt, ...)
 #endif
 
 #if CONFIG_HAL_LOG_LEVEL >= HAL_LOG_DEBUG
-    #define HAL_LOGD(tag, fmt, ...) esp_rom_printf("%s(dbg): " fmt, tag, ##__VA_ARGS__)
+#define HAL_LOGD(tag, fmt, ...) esp_rom_printf("%s(dbg): " fmt, tag, ##__VA_ARGS__)
 #else
-    #define HAL_LOGD(tag, fmt, ...)
+#define HAL_LOGD(tag, fmt, ...)
 #endif
 
 #if CONFIG_HAL_LOG_LEVEL >= HAL_LOG_VERBOSE
-    #define HAL_LOGV(tag, fmt, ...) esp_rom_printf("%s: " fmt, tag, ##__VA_ARGS__)
+#define HAL_LOGV(tag, fmt, ...) esp_rom_printf("%s: " fmt, tag, ##__VA_ARGS__)
 #else
-    #define HAL_LOGV(tag, fmt, ...)
+#define HAL_LOGV(tag, fmt, ...)
 #endif
 
 #define HAL_EARLY_LOGE(...)    HAL_LOGE(__VA_ARGS__)

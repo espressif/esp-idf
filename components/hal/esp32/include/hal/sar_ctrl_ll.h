@@ -24,7 +24,6 @@
 extern "C" {
 #endif
 
-
 typedef enum {
     SAR_CTRL_LL_POWER_FSM,     //SAR power controlled by FSM
     SAR_CTRL_LL_POWER_ON,      //SAR power on
@@ -50,7 +49,6 @@ static inline void sar_ctrl_ll_set_power_mode(sar_ctrl_ll_power_t mode)
         SENS.sar_meas_wait2.force_xpd_sar = 0x2;
     }
 }
-
 
 #ifdef __cplusplus
 }

@@ -17,7 +17,6 @@
 extern "C" {
 #endif
 
-
 /**
  * @brief Route any interrupt source to any CPU interrupt, including internal ones
  *
@@ -29,7 +28,6 @@ FORCE_INLINE_ATTR void interrupt_intc_ll_route(int intr_src, int intr_num)
     REG_WRITE(DR_REG_INTERRUPT_BASE + 4 * intr_src, intr_num);
 }
 
-
 /**
  * @brief Get interrupt enable mask
  *
@@ -39,7 +37,6 @@ FORCE_INLINE_ATTR uint32_t interrupt_intc_ll_get_unmask(void)
 {
     return REG_READ(INTERRUPT_CORE0_CPU_INT_ENABLE_REG);
 }
-
 
 /**
  * @brief Get the type for the given interrupt
@@ -54,7 +51,6 @@ FORCE_INLINE_ATTR int interrupt_intc_ll_get_type(int rv_int_num)
     return (intr_type_reg & (1 << rv_int_num));
 }
 
-
 /**
  * @brief Get the priority for the given interrupt
  *
@@ -66,7 +62,6 @@ FORCE_INLINE_ATTR int interrupt_intc_ll_get_priority(int rv_int_num)
 {
     return REG_READ(INTERRUPT_PRIO_REG(rv_int_num));
 }
-
 
 #ifdef __cplusplus
 }
