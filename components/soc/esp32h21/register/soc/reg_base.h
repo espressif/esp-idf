@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -61,6 +61,5 @@
 #define DR_REG_INTPRI_BASE                        0x600C5000
 #define DR_REG_CACHE_BASE                         0x600C8000
 
-#define PWDET_CONF_REG                            0x600A0810 //TODO: [ESP32H21] IDF-11589, IDF-11592, need check
-
-#define IEEE802154_REG_BASE              0x600A3000
+#define IEEE802154_REG_BASE                       0x600A3000
+#define PWDET_CONF_REG                            0x600A0810
