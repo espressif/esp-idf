@@ -39,7 +39,6 @@
     when: always
     expire_in: 1 week
   script:
-    - echo "$LATEST_GIT_TAG" > version.txt
     # CI specific options start from "--parallel-count xxx". could ignore when running locally
     - run_cmd idf-ci build run
       --parallel-count ${CI_NODE_TOTAL:-1}
