@@ -1,12 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdint.h>
 #include "ulp_test_shared.h"
-// #include "ulp_riscv.h"
 #include "ulp_riscv_utils.h"
 #include "ulp_riscv_i2c_ulp_core.h"
 
@@ -24,7 +23,7 @@ int main(void)
     /* Read from the I2C slave device */
     ulp_riscv_i2c_master_read_from_device(data_rd, RW_TEST_LENGTH);
 
-    /* Signal the main CPU once read is done */
+    /* Signal the main CPU that read is done */
     read_test_reply = RISCV_COMMAND_OK;
 
     /* Wait for write command from main CPU */
