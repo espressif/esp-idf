@@ -75,6 +75,7 @@ void vSystimerSetup(void)
         PERIPH_RCC_ACQUIRE_ATOMIC(PERIPH_SYSTIMER_MODULE, ref_count) {
             if (ref_count == 0) {
                 systimer_ll_enable_bus_clock(true);
+                systimer_ll_enable_sys_clock(true);
                 systimer_ll_reset_register();
             }
         }
