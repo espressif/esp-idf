@@ -474,7 +474,7 @@ _DebugExceptionVector:
     .type       _xt_debugexception,@function
     .align      4
 _xt_debugexception:
-#if (CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
+#if (CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
     s32i    a0, sp, XT_STK_EXIT
 
 #define XT_DEBUGCAUSE_DI        (5)
@@ -489,7 +489,7 @@ _xt_debugexception:
     extui   a0, a0, XT_DEBUGCAUSE_DI, 1
     bnez    a0, _xt_debug_di_exc
 1:
-#endif //(CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
+#endif //(CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
 
     movi    a0,PANIC_RSN_DEBUGEXCEPTION
     wsr     a0,XT_REG_EXCCAUSE
@@ -507,7 +507,7 @@ _xt_debugexception:
 #endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
     rfi     XCHAL_DEBUGLEVEL
 
-#if (CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
+#if (CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
     .align  4
 _xt_debug_di_exc:
 
@@ -566,7 +566,7 @@ _xt_debug_di_exc:
 
     rsr     a0, XT_REG_EXCSAVE+XCHAL_DEBUGLEVEL
     rfi     XCHAL_DEBUGLEVEL
-#endif //(CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
+#endif //(CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
 #endif // XCHAL_HAVE_DEBUG
 
 /*

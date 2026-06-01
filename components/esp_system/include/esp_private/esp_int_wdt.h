@@ -36,7 +36,7 @@ void esp_int_wdt_init(void);
  */
 void esp_int_wdt_cpu_init(void);
 
-#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+#if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
 /**
  * @brief Reconfigure WDT stage timeouts (ticks).
  *
