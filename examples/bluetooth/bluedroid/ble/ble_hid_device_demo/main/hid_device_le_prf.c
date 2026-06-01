@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -170,7 +170,7 @@ static const uint8_t hidReportMap[] = {
     0x09, 0xA6,   // Usage(Vendor defined)
     0x09, 0xA9,   // Usage(Vendor defined)
     0x75, 0x08,   // Report Size
-    0x95, 0x7F,   // Report Count = 127 Btyes
+    0x95, 0x7F,   // Report Count = 127 Bytes
     0x91, 0x02,   // Output(Data, Variable, Absolute)
     0xC0,         // End Collection
 #endif
@@ -285,7 +285,7 @@ static const uint8_t char_prop_read_notify = ESP_GATT_CHAR_PROP_BIT_READ|ESP_GAT
 static const uint8_t char_prop_read_write_notify = ESP_GATT_CHAR_PROP_BIT_READ|ESP_GATT_CHAR_PROP_BIT_WRITE|ESP_GATT_CHAR_PROP_BIT_NOTIFY;
 static const uint8_t char_prop_read_write_write_nr = ESP_GATT_CHAR_PROP_BIT_READ|ESP_GATT_CHAR_PROP_BIT_WRITE|ESP_GATT_CHAR_PROP_BIT_WRITE_NR;
 
-/// battary Service
+/// battery Service
 static const uint16_t battary_svc = ESP_GATT_UUID_BATTERY_SERVICE_SVC;
 
 static const uint16_t bat_lev_uuid = ESP_GATT_UUID_BATTERY_LEVEL;
@@ -296,23 +296,23 @@ static uint8_t battary_lev = 50;
 /// Full HRS Database Description - Used to add attributes into the database
 static const esp_gatts_attr_db_t bas_att_db[BAS_IDX_NB] =
 {
-    // Battary Service Declaration
+    // Battery Service Declaration
     [BAS_IDX_SVC]               =  {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&primary_service_uuid, ESP_GATT_PERM_READ,
                                             sizeof(uint16_t), sizeof(battary_svc), (uint8_t *)&battary_svc}},
 
-    // Battary level Characteristic Declaration
+    // Battery level Characteristic Declaration
     [BAS_IDX_BATT_LVL_CHAR]    = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ,
                                                    CHAR_DECLARATION_SIZE,CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_notify}},
 
-    // Battary level Characteristic Value
+    // Battery level Characteristic Value
     [BAS_IDX_BATT_LVL_VAL]             	= {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&bat_lev_uuid, ESP_GATT_PERM_READ,
                                                                 sizeof(uint8_t),sizeof(uint8_t), &battary_lev}},
 
-    // Battary level Characteristic - Client Characteristic Configuration Descriptor
+    // Battery level Characteristic - Client Characteristic Configuration Descriptor
     [BAS_IDX_BATT_LVL_NTF_CFG]     	=  {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid, ESP_GATT_PERM_READ|ESP_GATT_PERM_WRITE,
                                                           sizeof(uint16_t),sizeof(bat_lev_ccc), (uint8_t *)bat_lev_ccc}},
 
-    // Battary level report Characteristic Declaration
+    // Battery level report Characteristic Declaration
     [BAS_IDX_BATT_LVL_PRES_FMT]  = {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&char_format_uuid, ESP_GATT_PERM_READ,
                                                         sizeof(struct prf_char_pres_fmt), 0, NULL}},
 };
@@ -550,6 +550,7 @@ void esp_hidd_prf_cb_hdl(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
                 }
             }
             if(param->reg.app_id == BATTRAY_APP_ID) {
+                hidd_le_env.bat_gatt_if = gatts_if;
                 hidd_param.init_finish.gatts_if = gatts_if;
                  if(hidd_le_env.hidd_cb != NULL) {
                     (hidd_le_env.hidd_cb)(ESP_BAT_EVENT_REG, &hidd_param);
@@ -587,7 +588,8 @@ void esp_hidd_prf_cb_hdl(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
             break;
         case ESP_GATTS_WRITE_EVT: {
             esp_hidd_cb_param_t cb_param = {0};
-            if (param->write.handle == hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_REPORT_LED_OUT_VAL]) {
+            if (hidd_le_env.hidd_cb != NULL &&
+                param->write.handle == hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_REPORT_LED_OUT_VAL]) {
                 cb_param.led_write.conn_id = param->write.conn_id;
                 cb_param.led_write.report_id = HID_RPT_ID_LED_OUT;
                 cb_param.led_write.length = param->write.len;
@@ -595,8 +597,8 @@ void esp_hidd_prf_cb_hdl(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
                 (hidd_le_env.hidd_cb)(ESP_HIDD_EVENT_BLE_LED_REPORT_WRITE_EVT, &cb_param);
             }
 #if (SUPPORT_REPORT_VENDOR == true)
-            if (param->write.handle == hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_REPORT_VENDOR_OUT_VAL] &&
-                hidd_le_env.hidd_cb != NULL) {
+            if (hidd_le_env.hidd_cb != NULL &&
+                param->write.handle == hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_REPORT_VENDOR_OUT_VAL]) {
                 cb_param.vendor_write.conn_id = param->write.conn_id;
                 cb_param.vendor_write.report_id = HID_RPT_ID_VENDOR_OUT;
                 cb_param.vendor_write.length = param->write.len;
@@ -607,24 +609,26 @@ void esp_hidd_prf_cb_hdl(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
             break;
         }
         case ESP_GATTS_CREAT_ATTR_TAB_EVT: {
-            if (param->add_attr_tab.num_handle == BAS_IDX_NB &&
-                param->add_attr_tab.svc_uuid.uuid.uuid16 == ESP_GATT_UUID_BATTERY_SERVICE_SVC &&
-                param->add_attr_tab.status == ESP_GATT_OK) {
+            if (param->add_attr_tab.status != ESP_GATT_OK) {
+                ESP_LOGE(HID_LE_PRF_TAG, "ATTR_TAB_EVT failed: status=%d num_handle=%d",
+                         param->add_attr_tab.status, param->add_attr_tab.num_handle);
+            } else if (param->add_attr_tab.num_handle == BAS_IDX_NB &&
+                       param->add_attr_tab.svc_uuid.uuid.uuid16 == ESP_GATT_UUID_BATTERY_SERVICE_SVC) {
                 incl_svc.start_hdl = param->add_attr_tab.handles[BAS_IDX_SVC];
-                incl_svc.end_hdl = incl_svc.start_hdl + BAS_IDX_NB -1;
+                incl_svc.end_hdl = incl_svc.start_hdl + BAS_IDX_NB - 1;
                 ESP_LOGI(HID_LE_PRF_TAG, "%s(), start added the hid service to the stack database. incl_handle = %d",
                            __func__, incl_svc.start_hdl);
+                esp_ble_gatts_start_service(param->add_attr_tab.handles[BAS_IDX_SVC]);
                 esp_ble_gatts_create_attr_tab(hidd_le_gatt_db, gatts_if, HIDD_LE_IDX_NB, 0);
-            }
-            if (param->add_attr_tab.num_handle == HIDD_LE_IDX_NB &&
-                param->add_attr_tab.status == ESP_GATT_OK) {
+            } else if (param->add_attr_tab.num_handle == HIDD_LE_IDX_NB) {
                 memcpy(hidd_le_env.hidd_inst.att_tbl, param->add_attr_tab.handles,
-                            HIDD_LE_IDX_NB*sizeof(uint16_t));
-                ESP_LOGI(HID_LE_PRF_TAG, "hid svc handle = %x",hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_SVC]);
+                            HIDD_LE_IDX_NB * sizeof(uint16_t));
+                ESP_LOGI(HID_LE_PRF_TAG, "hid svc handle = %x", hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_SVC]);
                 hid_add_id_tbl();
-		        esp_ble_gatts_start_service(hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_SVC]);
+                esp_ble_gatts_start_service(hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_SVC]);
             } else {
-                esp_ble_gatts_start_service(param->add_attr_tab.handles[0]);
+                ESP_LOGW(HID_LE_PRF_TAG, "ATTR_TAB_EVT unexpected num_handle=%d",
+                         param->add_attr_tab.num_handle);
             }
             break;
          }
@@ -645,8 +649,10 @@ void hidd_le_create_service(esp_gatt_if_t gatts_if)
 void hidd_le_init(void)
 {
 
-    // Reset the hid device target environment
+    /* Reset the hid device target environment */
     memset(&hidd_le_env, 0, sizeof(hidd_le_env_t));
+    hidd_le_env.gatt_if = ESP_GATT_IF_NONE;
+    hidd_le_env.bat_gatt_if = ESP_GATT_IF_NONE;
 }
 
 void hidd_clcb_alloc (uint16_t conn_id, esp_bd_addr_t bda)
@@ -666,16 +672,15 @@ void hidd_clcb_alloc (uint16_t conn_id, esp_bd_addr_t bda)
     return;
 }
 
-bool hidd_clcb_dealloc (uint16_t conn_id)
+bool hidd_clcb_dealloc(uint16_t conn_id)
 {
-    uint8_t              i_clcb = 0;
-    hidd_clcb_t      *p_clcb = NULL;
-
-    for (i_clcb = 0, p_clcb= hidd_le_env.hidd_clcb; i_clcb < HID_MAX_APPS; i_clcb++, p_clcb++) {
+    for (uint8_t i_clcb = 0; i_clcb < HID_MAX_APPS; i_clcb++) {
+        hidd_clcb_t *p_clcb = &hidd_le_env.hidd_clcb[i_clcb];
+        if (p_clcb->in_use && p_clcb->conn_id == conn_id) {
             memset(p_clcb, 0, sizeof(hidd_clcb_t));
             return true;
+        }
     }
-
     return false;
 }
 
@@ -735,12 +740,12 @@ void hidd_set_attr_value(uint16_t handle, uint16_t val_len, const uint8_t *value
     return;
 }
 
-void hidd_get_attr_value(uint16_t handle, uint16_t *length, uint8_t **value)
+void hidd_get_attr_value(uint16_t handle, uint16_t *length, const uint8_t **value)
 {
     hidd_inst_t *hidd_inst = &hidd_le_env.hidd_inst;
     if(hidd_inst->att_tbl[HIDD_LE_IDX_HID_INFO_VAL] <= handle &&
         hidd_inst->att_tbl[HIDD_LE_IDX_REPORT_REP_REF] >= handle){
-        esp_ble_gatts_get_attr_value(handle, length, (const uint8_t **)value);
+        esp_ble_gatts_get_attr_value(handle, length, value);
     } else {
         ESP_LOGE(HID_LE_PRF_TAG, "%s error:Invalid handle value.", __func__);
     }

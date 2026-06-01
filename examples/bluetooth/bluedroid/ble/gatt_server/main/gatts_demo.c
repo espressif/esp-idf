@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -198,6 +198,18 @@ typedef struct {
 static prepare_type_env_t a_prepare_write_env;
 static prepare_type_env_t b_prepare_write_env;
 
+static void prepare_write_env_clear(prepare_type_env_t *env)
+{
+    if (env == NULL) {
+        return;
+    }
+    if (env->prepare_buf != NULL) {
+        free(env->prepare_buf);
+        env->prepare_buf = NULL;
+    }
+    env->prepare_len = 0;
+}
+
 void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param);
 void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param);
 
@@ -206,27 +218,43 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
     switch (event) {
 #ifdef CONFIG_EXAMPLE_SET_RAW_ADV_DATA
     case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT:
+        if (param->adv_data_raw_cmpl.status != ESP_BT_STATUS_SUCCESS) {
+            ESP_LOGE(GATTS_TAG, "Raw adv data set failed, status %d", param->adv_data_raw_cmpl.status);
+            break;
+        }
         adv_config_done &= (~adv_config_flag);
-        if (adv_config_done==0){
+        if (adv_config_done == 0) {
             esp_ble_gap_start_advertising(&adv_params);
         }
         break;
     case ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT:
+        if (param->scan_rsp_data_raw_cmpl.status != ESP_BT_STATUS_SUCCESS) {
+            ESP_LOGE(GATTS_TAG, "Raw scan rsp data set failed, status %d", param->scan_rsp_data_raw_cmpl.status);
+            break;
+        }
         adv_config_done &= (~scan_rsp_config_flag);
-        if (adv_config_done==0){
+        if (adv_config_done == 0) {
             esp_ble_gap_start_advertising(&adv_params);
         }
         break;
 #else
     case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
+        if (param->adv_data_cmpl.status != ESP_BT_STATUS_SUCCESS) {
+            ESP_LOGE(GATTS_TAG, "Adv data set failed, status %d", param->adv_data_cmpl.status);
+            break;
+        }
         adv_config_done &= (~adv_config_flag);
-        if (adv_config_done == 0){
+        if (adv_config_done == 0) {
             esp_ble_gap_start_advertising(&adv_params);
         }
         break;
     case ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT:
+        if (param->scan_rsp_data_cmpl.status != ESP_BT_STATUS_SUCCESS) {
+            ESP_LOGE(GATTS_TAG, "Scan rsp data set failed, status %d", param->scan_rsp_data_cmpl.status);
+            break;
+        }
         adv_config_done &= (~scan_rsp_config_flag);
-        if (adv_config_done == 0){
+        if (adv_config_done == 0) {
             esp_ble_gap_start_advertising(&adv_params);
         }
         break;
@@ -240,7 +268,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         ESP_LOGI(GATTS_TAG, "Advertising start successfully");
         break;
     case ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT:
-        if (param->adv_start_cmpl.status != ESP_BT_STATUS_SUCCESS) {
+        if (param->adv_stop_cmpl.status != ESP_BT_STATUS_SUCCESS) {
             ESP_LOGE(GATTS_TAG, "Advertising stop failed, status %d", param->adv_stop_cmpl.status);
             break;
         }
@@ -274,7 +302,7 @@ void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare
                 status = ESP_GATT_INVALID_ATTR_LEN;
             }
             if (status == ESP_GATT_OK && prepare_write_env->prepare_buf == NULL) {
-                prepare_write_env->prepare_buf = (uint8_t *)malloc(PREPARE_BUF_MAX_SIZE*sizeof(uint8_t));
+                prepare_write_env->prepare_buf = (uint8_t *)calloc(PREPARE_BUF_MAX_SIZE, sizeof(uint8_t));
                 prepare_write_env->prepare_len = 0;
                 if (prepare_write_env->prepare_buf == NULL) {
                     ESP_LOGE(GATTS_TAG, "Gatt_server prep no mem");
@@ -305,7 +333,14 @@ void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare
             memcpy(prepare_write_env->prepare_buf + param->write.offset,
                    param->write.value,
                    param->write.len);
-            prepare_write_env->prepare_len += param->write.len;
+            /* Extent is max(end of this fragment), not sum(len): same offset overwrites, not appends. */
+            int frag_end = (int)param->write.offset + (int)param->write.len;
+            if (frag_end > prepare_write_env->prepare_len) {
+                prepare_write_env->prepare_len = frag_end;
+            }
+            if (prepare_write_env->prepare_len > PREPARE_BUF_MAX_SIZE) {
+                prepare_write_env->prepare_len = PREPARE_BUF_MAX_SIZE;
+            }
 
         }else{
             esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, status, NULL);
@@ -315,15 +350,19 @@ void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare
 
 void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param){
     if (param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC){
-        ESP_LOG_BUFFER_HEX(GATTS_TAG, prepare_write_env->prepare_buf, prepare_write_env->prepare_len);
+        int log_len = prepare_write_env->prepare_len;
+        if (log_len < 0) {
+            log_len = 0;
+        } else if (log_len > PREPARE_BUF_MAX_SIZE) {
+            log_len = PREPARE_BUF_MAX_SIZE;
+        }
+        if (prepare_write_env->prepare_buf != NULL && log_len > 0) {
+            ESP_LOG_BUFFER_HEX(GATTS_TAG, prepare_write_env->prepare_buf, (size_t)log_len);
+        }
     }else{
         ESP_LOGI(GATTS_TAG,"Prepare write cancel");
     }
-    if (prepare_write_env->prepare_buf) {
-        free(prepare_write_env->prepare_buf);
-        prepare_write_env->prepare_buf = NULL;
-    }
-    prepare_write_env->prepare_len = 0;
+    prepare_write_env_clear(prepare_write_env);
 }
 
 static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param) {
@@ -546,12 +585,13 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     case ESP_GATTS_DISCONNECT_EVT:
         ESP_LOGI(GATTS_TAG, "Disconnected, remote "ESP_BD_ADDR_STR", reason 0x%02x",
                  ESP_BD_ADDR_HEX(param->disconnect.remote_bda), param->disconnect.reason);
+        prepare_write_env_clear(&a_prepare_write_env);
         esp_ble_gap_start_advertising(&adv_params);
         local_mtu = 23; // Reset MTU for a single connection
         break;
     case ESP_GATTS_CONF_EVT:
         ESP_LOGI(GATTS_TAG, "Confirm receive, status %d, attr_handle %d", param->conf.status, param->conf.handle);
-        if (param->conf.status != ESP_GATT_OK){
+        if (param->conf.status == ESP_GATT_OK && param->conf.value != NULL && param->conf.len > 0) {
             ESP_LOG_BUFFER_HEX(GATTS_TAG, param->conf.value, param->conf.len);
         }
         break;
@@ -692,11 +732,13 @@ static void gatts_profile_b_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         break;
     case ESP_GATTS_CONF_EVT:
         ESP_LOGI(GATTS_TAG, "Confirm receive, status %d, attr_handle %d", param->conf.status, param->conf.handle);
-        if (param->conf.status != ESP_GATT_OK){
+        if (param->conf.status == ESP_GATT_OK && param->conf.value != NULL && param->conf.len > 0) {
             ESP_LOG_BUFFER_HEX(GATTS_TAG, param->conf.value, param->conf.len);
         }
-    break;
+        break;
     case ESP_GATTS_DISCONNECT_EVT:
+        prepare_write_env_clear(&b_prepare_write_env);
+        break;
     case ESP_GATTS_OPEN_EVT:
     case ESP_GATTS_CANCEL_OPEN_EVT:
     case ESP_GATTS_CLOSE_EVT:

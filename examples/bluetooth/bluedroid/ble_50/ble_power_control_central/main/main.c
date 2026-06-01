@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -180,12 +180,12 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         }
         break;
     case ESP_GATTC_CONNECT_EVT:
-        ESP_LOGI(TAG, "Connected, conn_id %d, remote "ESP_BD_ADDR_STR"",
-                 p_data->connect.conn_id, ESP_BD_ADDR_HEX(p_data->connect.remote_bda));
+        ESP_LOGI(TAG, "Connected, conn_id %d, hci_conn_handle %d, remote "ESP_BD_ADDR_STR"",
+                 p_data->connect.conn_id, p_data->connect.conn_handle,
+                 ESP_BD_ADDR_HEX(p_data->connect.remote_bda));
         gl_profile_tab[PROFILE_A_APP_ID].conn_id = p_data->connect.conn_id;
         memcpy(gl_profile_tab[PROFILE_A_APP_ID].remote_bda, p_data->connect.remote_bda, sizeof(esp_bd_addr_t));
-        conn_handle = p_data->connect.conn_id;
-        // Initialize power control after connection
+        conn_handle = p_data->connect.conn_handle;
         init_power_control(conn_handle);
         break;
     case ESP_GATTC_DISCONNECT_EVT:

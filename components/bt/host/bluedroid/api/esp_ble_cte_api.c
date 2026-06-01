@@ -34,7 +34,7 @@ esp_ble_cte_cb_t esp_ble_cte_get_callback(void)
 #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
 esp_err_t esp_ble_cte_set_connectionless_trans_params(esp_ble_cte_connless_trans_params_t *cte_trans_params)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_cte_args_t arg;
     memset(&arg, 0, sizeof(arg));
 
@@ -42,7 +42,15 @@ esp_err_t esp_ble_cte_set_connectionless_trans_params(esp_ble_cte_connless_trans
         return ESP_ERR_INVALID_STATE;
     }
 
-    if ((cte_trans_params == NULL) || (cte_trans_params->antenna_ids == NULL)) {
+    if (cte_trans_params == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    /*
+     * Per Core Spec, switching_pattern_len and Antenna_IDs is ignored when no switching pattern is used
+     * For AoA CTE type, the transmitter does not
+     * switch antenna, so Antenna_IDs may be omitted as well.
+     */
+    if ((cte_trans_params->cte_type != ESP_BLE_CTE_TYPE_AOA) && (cte_trans_params->antenna_ids == NULL)) {
         return ESP_ERR_INVALID_ARG;
     }
     // The controller has performed parameter checking, and the host will no longer verify the validity of these parameters repeatedly.
@@ -72,15 +80,24 @@ esp_err_t esp_ble_cte_set_connectionless_trans_params(esp_ble_cte_connless_trans
     arg.cte_trans_params.cte_len = cte_trans_params->cte_len;
     arg.cte_trans_params.cte_type = cte_trans_params->cte_type;
     arg.cte_trans_params.cte_count = cte_trans_params->cte_count;
-    arg.cte_trans_params.switching_pattern_len = cte_trans_params->switching_pattern_len;
-    arg.cte_trans_params.antenna_ids = cte_trans_params->antenna_ids;
+    /* For AoA CTE type, the transmitter does not switch antenna; normalize
+     * switching_pattern_len and antenna_ids so the BTC layer does not perform
+     * an unnecessary deep copy of data that the controller will ignore.
+     */
+    if (cte_trans_params->cte_type != ESP_BLE_CTE_TYPE_AOA) {
+        arg.cte_trans_params.switching_pattern_len = cte_trans_params->switching_pattern_len;
+        arg.cte_trans_params.antenna_ids = cte_trans_params->antenna_ids;
+    } else {
+        arg.cte_trans_params.switching_pattern_len = 0;
+        arg.cte_trans_params.antenna_ids = NULL;
+    }
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_cte_args_t), btc_ble_cte_arg_deep_copy, btc_ble_cte_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_cte_set_connectionless_trans_enable(esp_ble_cte_trans_enable_params_t *cte_trans_enable)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_cte_args_t arg;
     memset(&arg, 0, sizeof(arg));
 
@@ -108,7 +125,7 @@ esp_err_t esp_ble_cte_set_connectionless_trans_enable(esp_ble_cte_trans_enable_p
 
 esp_err_t esp_ble_cte_set_connectionless_iq_sampling_enable(esp_ble_cte_iq_sampling_params_t *iq_sampling_en)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_cte_args_t arg;
     memset(&arg, 0, sizeof(arg));
 
@@ -169,7 +186,7 @@ esp_err_t esp_ble_cte_set_connectionless_iq_sampling_enable(esp_ble_cte_iq_sampl
 #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
 esp_err_t esp_ble_cte_set_connection_receive_params(esp_ble_cte_recv_params_params_t *cte_recv_params)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_cte_args_t arg;
     memset(&arg, 0, sizeof(arg));
 
@@ -221,7 +238,7 @@ esp_err_t esp_ble_cte_set_connection_receive_params(esp_ble_cte_recv_params_para
 
 esp_err_t esp_ble_cte_set_connection_transmit_params(esp_ble_cte_conn_trans_params_t *cte_conn_trans_params)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_cte_args_t arg;
     memset(&arg, 0, sizeof(arg));
 
@@ -229,9 +246,19 @@ esp_err_t esp_ble_cte_set_connection_transmit_params(esp_ble_cte_conn_trans_para
         return ESP_ERR_INVALID_STATE;
     }
 
-    if ((cte_conn_trans_params == NULL) || (cte_conn_trans_params->antenna_ids == NULL)) {
+    if (cte_conn_trans_params == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
+    /*
+     * Per Core Spec, switching_pattern_len and Antenna_IDs is ignored when no switching pattern is used
+     * For AoA CTE type, the transmitter does not
+     * switch antenna, so Antenna_IDs may be omitted as well.
+     */
+    if ((cte_conn_trans_params->cte_types & (ESP_BLE_CTE_TYPES_AOD_RESPONSE_WITH_1US | ESP_BLE_CTE_TYPES_AOD_RESPONSE_WITH_2US)) &&
+            (cte_conn_trans_params->antenna_ids == NULL)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     // The controller has performed parameter checking, and the host will no longer verify the validity of these parameters repeatedly.
 #if (0)
     if ((cte_conn_trans_params->switching_pattern_len < ESP_BLE_CTE_MIN_SWITCHING_PATTERN_LENGTH) ||
@@ -251,15 +278,25 @@ esp_err_t esp_ble_cte_set_connection_transmit_params(esp_ble_cte_conn_trans_para
 
     arg.cte_conn_trans_params.conn_handle = cte_conn_trans_params->conn_handle;
     arg.cte_conn_trans_params.cte_types = cte_conn_trans_params->cte_types;
-    arg.cte_conn_trans_params.switching_pattern_len = cte_conn_trans_params->switching_pattern_len;
-    arg.cte_conn_trans_params.antenna_ids = cte_conn_trans_params->antenna_ids;
+    /* Antenna switching is only required for AoD CTE responses; when only AoA
+     * is enabled, normalize switching_pattern_len and antenna_ids so the BTC
+     * layer does not perform an unnecessary deep copy of data that the
+     * controller will ignore.
+     */
+    if (cte_conn_trans_params->cte_types & (ESP_BLE_CTE_TYPES_AOD_RESPONSE_WITH_1US | ESP_BLE_CTE_TYPES_AOD_RESPONSE_WITH_2US)) {
+        arg.cte_conn_trans_params.switching_pattern_len = cte_conn_trans_params->switching_pattern_len;
+        arg.cte_conn_trans_params.antenna_ids = cte_conn_trans_params->antenna_ids;
+    } else {
+        arg.cte_conn_trans_params.switching_pattern_len = 0;
+        arg.cte_conn_trans_params.antenna_ids = NULL;
+    }
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_cte_args_t), btc_ble_cte_arg_deep_copy, btc_ble_cte_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_cte_connection_cte_request_enable(esp_ble_cte_req_en_params_t *cte_conn_req_en)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_cte_args_t arg;
     memset(&arg, 0, sizeof(arg));
 
@@ -302,7 +339,7 @@ esp_err_t esp_ble_cte_connection_cte_request_enable(esp_ble_cte_req_en_params_t 
 
 esp_err_t esp_ble_cte_connection_cte_response_enable(esp_ble_cte_rsp_en_params_t *cte_conn_rsp_en)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_cte_args_t arg;
     memset(&arg, 0, sizeof(arg));
 
@@ -334,7 +371,7 @@ esp_err_t esp_ble_cte_connection_cte_response_enable(esp_ble_cte_rsp_en_params_t
 
 esp_err_t esp_ble_cte_read_antenna_information(void)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
