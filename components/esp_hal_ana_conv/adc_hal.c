@@ -90,9 +90,9 @@ void adc_hal_digi_deinit()
 ---------------------------------------------------------------*/
 static adc_ll_digi_convert_mode_t get_convert_mode(adc_digi_convert_mode_t convert_mode)
 {
-#if SOC_IS(ESP32) || SOC_ADC_DIGI_CONTROLLER_NUM == 1
+#if SOC_IS(ESP32) || ADC_LL_DIGI_CONTROLLER_NUM == 1
     return ADC_LL_DIGI_CONV_ONLY_ADC1;
-#elif (SOC_ADC_DIGI_CONTROLLER_NUM >= 2)
+#elif (ADC_LL_DIGI_CONTROLLER_NUM >= 2)
     switch (convert_mode) {
     case ADC_CONV_SINGLE_UNIT_1:
         return ADC_LL_DIGI_CONV_ONLY_ADC1;
@@ -149,7 +149,7 @@ static void adc_hal_digi_sample_freq_config(adc_hal_dma_ctx_t *hal, adc_continuo
 
 void adc_hal_digi_controller_config(adc_hal_dma_ctx_t *hal, const adc_hal_digi_ctrlr_cfg_t *cfg)
 {
-#if (SOC_ADC_DIGI_CONTROLLER_NUM == 1)
+#if (ADC_LL_DIGI_CONTROLLER_NUM == 1)
     //Only one pattern table, this variable is for readability
     const int pattern_both = 0;
 
@@ -162,7 +162,7 @@ void adc_hal_digi_controller_config(adc_hal_dma_ctx_t *hal, const adc_hal_digi_c
     adc_ll_set_power_manage(0, ADC_LL_POWER_SW_ON);
 #endif
 
-#elif (SOC_ADC_DIGI_CONTROLLER_NUM >= 2)
+#elif (ADC_LL_DIGI_CONTROLLER_NUM >= 2)
     uint32_t adc1_pattern_idx = 0;
     uint32_t adc2_pattern_idx = 0;
 

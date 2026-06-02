@@ -13,6 +13,7 @@
 #include "unity.h"
 #include "esp_log.h"
 #include "soc/soc_caps.h"
+#include "hal/adc_ll.h"
 #include "esp_private/adc_private.h"
 #include "esp_adc/adc_cali.h"
 #include "esp_adc/adc_cali_scheme.h"
@@ -127,6 +128,13 @@ extern "C" {
 #define ADC_TEST_HIGH_VAL_DMA    4393
 #define ADC_TEST_HIGH_THRESH     100
 
+#elif CONFIG_IDF_TARGET_ESP32H21
+#define ADC_TEST_LOW_VAL         1995
+#define ADC_TEST_LOW_THRESH      100
+
+#define ADC_TEST_HIGH_VAL        4095
+#define ADC_TEST_HIGH_VAL_DMA    4095
+#define ADC_TEST_HIGH_THRESH     100
 #endif
 
 /**

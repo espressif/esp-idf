@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include "esp_attr.h"
-#include "esp_rom_sys.h"
 
 #include "soc/apb_saradc_struct.h"
 #include "soc/apb_saradc_reg.h"
@@ -45,7 +44,7 @@ extern "C" {
 #define ADC_LL_ADC_FE_ON_MODEM_DOMAIN               (1)
 
 #define ADC_LL_UNIT2_CHANNEL_SUBSTRATION            0
-#define ADC_LL_MAX_CHANNEL_NUM                      (7)
+#define ADC_LL_MAX_CHANNEL_NUM                      (5)
 
 /*---------------------------------------------------------------
  *                            oneshot
@@ -53,7 +52,7 @@ extern "C" {
 #define ADC_LL_RTC_MIN_BITWIDTH                     (12)
 #define ADC_LL_RTC_MAX_BITWIDTH                     (12)
 #define ADC_LL_DATA_INVERT_DEFAULT(PERIPH_NUM)      (0)
-#define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL        (0)
+#define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL        (5)
 
 /*---------------------------------------------------------------
  *                          continuous
@@ -70,13 +69,14 @@ extern "C" {
 #define ADC_LL_FSM_STANDBY_WAIT_DEFAULT             (100)
 #define ADC_LL_SAMPLE_CYCLE_DEFAULT                 (2)
 #define ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT             (1)
-#define ADC_LL_CLKM_DIV_NUM_DEFAULT                 15
-#define ADC_LL_CLKM_DIV_B_DEFAULT                   1
-#define ADC_LL_CLKM_DIV_A_DEFAULT                   0
+
+#define ADC_LL_CLKM_DIV_NUM_DEFAULT                 18
+#define ADC_LL_CLKM_DIV_B_DEFAULT                   5
+#define ADC_LL_CLKM_DIV_A_DEFAULT                   1
 #define ADC_LL_DEFAULT_CONV_LIMIT_EN                0
 #define ADC_LL_DEFAULT_CONV_LIMIT_NUM               255
 
-#define ADC_LL_POWER_MANAGE_SUPPORTED               1 //ESP32C6 supported to manage power mode
+#define ADC_LL_POWER_MANAGE_SUPPORTED               1 //ESP32H21 supported to manage power mode
 
 /*---------------------------------------------------------------
  *                          calibration
@@ -97,7 +97,7 @@ typedef enum {
  * @brief ADC digital controller (DMA mode) work mode.
  *
  * @note  The conversion mode affects the sampling frequency:
- *        ESP32C6 only support ONLY_ADC1 mode
+ *        ESP32H21 only support ONLY_ADC1 mode
  *        SINGLE_UNIT_1: When the measurement is triggered, only ADC1 is sampled once.
  */
 typedef enum {
@@ -129,12 +129,7 @@ typedef struct  {
  */
 static inline void adc_ll_digi_set_fsm_time(uint32_t rst_wait, uint32_t start_wait, uint32_t standby_wait)
 {
-    // Internal FSM reset wait time
-    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.saradc_fsm_wait, saradc_saradc_rstb_wait, rst_wait);
-    // Internal FSM start wait time
-    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.saradc_fsm_wait, saradc_saradc_xpd_wait, start_wait);
-    // Internal FSM standby wait time
-    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.saradc_fsm_wait, saradc_saradc_standby_wait, standby_wait);
+    //For compatibility
 }
 
 /**
@@ -160,7 +155,7 @@ __attribute__((always_inline))
 static inline void adc_ll_digi_set_clk_div(uint32_t div)
 {
     /* ADC clock divided from digital controller clock clk */
-    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.saradc_ctrl, saradc_saradc_sar_clk_div, div);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.sar_clk_div, sar1_clk_div_num, div);
 }
 
 /**
@@ -188,13 +183,13 @@ static inline void adc_ll_digi_convert_limit_enable(bool enable)
 /**
  * Set adc conversion mode for digital controller.
  *
- * @note ESP32C6 only support ADC1 single mode.
+ * @note ESP32H21 only support ADC1 single mode.
  *
  * @param mode Conversion mode select.
  */
 static inline void adc_ll_digi_set_convert_mode(adc_ll_digi_convert_mode_t mode)
 {
-    //ESP32C6 only supports ADC_LL_DIGI_CONV_ONLY_ADC1 mode
+    //ESP32H21 only supports ADC_LL_DIGI_CONV_ONLY_ADC1 mode
 }
 
 /**
@@ -320,8 +315,8 @@ static inline void adc_ll_digi_trigger_disable(void)
 }
 
 /**
- * Set ADC digital controller clock division factor. The clock divided from `APLL` or `APB` clock.
- * Expression: controller_clk = (APLL or APB) / (div_num + div_a / div_b + 1).
+ * Set ADC digital controller clock division factor (PCR `saradc_clkm` divider after the CLKM MUX).
+ * Expression: controller_clk = f_mux_in / (div_num + div_a / div_b + 1).
  *
  * @param div_num Division factor. Range: 0 ~ 255.
  * @param div_b Division factor. Range: 1 ~ 63.
@@ -347,7 +342,7 @@ static inline void adc_ll_digi_clk_sel(adc_continuous_clk_src_t clk_src)
     case ADC_DIGI_CLK_SRC_XTAL:
         PCR.saradc_clkm_conf.saradc_clkm_sel = 0;
         break;
-    case ADC_DIGI_CLK_SRC_PLL_F80M:
+    case ADC_DIGI_CLK_SRC_PLL_F96M:
         PCR.saradc_clkm_conf.saradc_clkm_sel = 1;
         break;
     case ADC_DIGI_CLK_SRC_RC_FAST:
@@ -622,7 +617,6 @@ static inline void adc_ll_reset_register(void)
     PCR.saradc_conf.saradc_reg_rst_en = 1;
     PCR.saradc_conf.saradc_reg_rst_en = 0;
 }
-
 /**
  * Set ADC module power management.
  *
@@ -648,12 +642,8 @@ static inline void adc_ll_set_power_manage(adc_unit_t adc_n, adc_ll_power_t mana
 __attribute__((always_inline))
 static inline void adc_ll_set_controller(adc_unit_t adc_n, adc_ll_controller_t ctrl)
 {
-    //Not used on ESP32C6
+    //Not used on ESP32H21
 }
-
-/*---------------------------------------------------------------
-                    Calibration
----------------------------------------------------------------*/
 
 /* ADC calibration code. */
 /**
@@ -703,6 +693,7 @@ static inline void adc_ll_calibration_finish(adc_unit_t adc_n)
  * @note  Different ADC units and different attenuation options use different calibration data (initial data).
  *
  * @param adc_n ADC index number.
+ * @param param calibration param
  */
 __attribute__((always_inline))
 static inline void adc_ll_set_calibration_param(adc_unit_t adc_n, uint32_t param)
@@ -714,7 +705,7 @@ static inline void adc_ll_set_calibration_param(adc_unit_t adc_n, uint32_t param
         REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_HIGH_ADDR, msb);
         REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_LOW_ADDR, lsb);
     } else {
-        //C6 doesn't support ADC2, here is for backward compatibility for RNG
+        //H4 doesn't support ADC2, here is for backward compatibility for RNG
         REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_HIGH_ADDR, msb);
         REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_LOW_ADDR, lsb);
     }
@@ -728,7 +719,7 @@ static inline void adc_ll_set_calibration_param(adc_unit_t adc_n, uint32_t param
 __attribute__((always_inline))
 static inline void adc_ll_set_dtest_param(uint32_t param)
 {
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, param);
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_DTEST, param);
 }
 
 /**
@@ -739,24 +730,20 @@ static inline void adc_ll_set_dtest_param(uint32_t param)
 __attribute__((always_inline))
 static inline void adc_ll_set_ent_param(uint32_t param)
 {
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_RTC_ADDR, param);
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_ENT_SAR, param);
 }
 
 /**
- * Enable/disable the calibration voltage reference for ADC unit.
+ * Enable the SAR TOUT bus
  *
  * @param adc_n ADC index number.
- * @param en true to enable, false to disable
+ * @param en true for enable
  */
 __attribute__((always_inline))
-static inline void adc_ll_enable_calibration_ref(adc_unit_t adc_n, bool en)
+static inline void adc_ll_enable_tout_bus(adc_unit_t adc_n, bool en)
 {
-    //C6 doesn't support ADC2, here is for backward compatibility for RNG
-    if (adc_n == ADC_UNIT_1) {
-        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC1_ENCAL_REF_ADDR, en);
-    } else {
-        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC2_ENCAL_REF_ADDR, en);
-    }
+    HAL_ASSERT(adc_n == ADC_UNIT_1);
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_EN_TOUT_SAR1_BUS, en);
 }
 
 /**
@@ -765,11 +752,9 @@ static inline void adc_ll_enable_calibration_ref(adc_unit_t adc_n, bool en)
 __attribute__((always_inline))
 static inline void adc_ll_regi2c_init(void)
 {
-    adc_ll_set_dtest_param(2);
+    adc_ll_set_dtest_param(0);
     adc_ll_set_ent_param(1);
-    // Config ADC circuit (Analog part) with I2C(HOST ID 0x69) and chose internal voltage as sampling source
-    adc_ll_enable_calibration_ref(ADC_UNIT_1, true);
-    adc_ll_enable_calibration_ref(ADC_UNIT_2, true);
+    adc_ll_enable_tout_bus(ADC_UNIT_1, true);
 }
 
 /**
@@ -780,8 +765,7 @@ static inline void adc_ll_regi2c_adc_deinit(void)
 {
     adc_ll_set_dtest_param(0);
     adc_ll_set_ent_param(0);
-    adc_ll_enable_calibration_ref(ADC_UNIT_1, false);
-    adc_ll_enable_calibration_ref(ADC_UNIT_2, false);
+    adc_ll_enable_tout_bus(ADC_UNIT_1, false);
 }
 
 /*---------------------------------------------------------------
@@ -790,13 +774,13 @@ static inline void adc_ll_regi2c_adc_deinit(void)
 /**
  * Set adc output data format for oneshot mode
  *
- * @note ESP32C6 Oneshot mode only supports 12bit.
+ * @note ESP32H21 Oneshot mode only supports 12bit.
  * @param adc_n ADC unit.
  * @param bits  Output data bits width option.
  */
 static inline void adc_oneshot_ll_set_output_bits(adc_unit_t adc_n, adc_bitwidth_t bits)
 {
-    //ESP32C6 only supports 12bit, leave here for compatibility
+    //ESP32H21 only supports 12bit, leave here for compatibility
     HAL_ASSERT(bits == ADC_BITWIDTH_12 || bits == ADC_BITWIDTH_DEFAULT);
 }
 
@@ -915,11 +899,7 @@ static inline void adc_oneshot_ll_output_invert(adc_unit_t adc_n, bool inv_en)
 static inline void adc_oneshot_ll_enable(adc_unit_t adc_n)
 {
     HAL_ASSERT(adc_n == ADC_UNIT_1);
-    // For ESP32C6, it need to delay 50us after enable oneshot mode to ensure the ADC channel select is stable.
-    if (APB_SARADC.saradc_onetime_sample.saradc_saradc1_onetime_sample == 0) {
-        APB_SARADC.saradc_onetime_sample.saradc_saradc1_onetime_sample = 1;
-        esp_rom_delay_us(50);
-    }
+    APB_SARADC.saradc_onetime_sample.saradc_saradc1_onetime_sample = 1;
 }
 
 /**
@@ -927,7 +907,8 @@ static inline void adc_oneshot_ll_enable(adc_unit_t adc_n)
  */
 static inline void adc_oneshot_ll_disable_all_unit(void)
 {
-    // For ESP32C6, we keep saradc_saradc1_onetime_sample as 1 when oneshot mode.
+    APB_SARADC.saradc_onetime_sample.saradc_saradc1_onetime_sample = 0;
+    APB_SARADC.saradc_onetime_sample.saradc_saradc2_onetime_sample = 0;
 }
 
 /**

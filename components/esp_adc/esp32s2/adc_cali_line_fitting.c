@@ -16,6 +16,7 @@
 #include "hal/adc_types.h"
 #include "soc/efuse_periph.h"
 #include "soc/soc_caps.h"
+#include "hal/adc_ll.h"
 #include "esp_adc/adc_cali_scheme.h"
 #include "adc_cali_interface.h"
 
@@ -90,7 +91,7 @@ esp_err_t adc_cali_create_scheme_line_fitting(const adc_cali_line_fitting_config
     ESP_RETURN_ON_FALSE(config->unit_id < SOC_ADC_PERIPH_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid ADC unit");
     ESP_RETURN_ON_FALSE(config->atten < SOC_ADC_ATTEN_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid ADC attenuation");
     //S2 Oneshot read only supports 13 bits, DMA read only supports 12 bits
-    ESP_RETURN_ON_FALSE(((config->bitwidth == SOC_ADC_RTC_MAX_BITWIDTH || config->bitwidth == SOC_ADC_DIGI_MAX_BITWIDTH) || config->bitwidth == ADC_BITWIDTH_DEFAULT), ESP_ERR_INVALID_ARG, TAG, "invalid bitwidth");
+    ESP_RETURN_ON_FALSE(((config->bitwidth == ADC_LL_RTC_MAX_BITWIDTH || config->bitwidth == SOC_ADC_DIGI_MAX_BITWIDTH) || config->bitwidth == ADC_BITWIDTH_DEFAULT), ESP_ERR_INVALID_ARG, TAG, "invalid bitwidth");
     // current version only accepts encoding ver 1 and ver 2.
     uint8_t adc_encoding_version = esp_efuse_rtc_table_read_calib_version();
     ESP_RETURN_ON_FALSE(((adc_encoding_version == 1) || (adc_encoding_version == 2)), ESP_ERR_NOT_SUPPORTED, TAG, "Calibration required eFuse bits not burnt");

@@ -7,7 +7,6 @@
 
 #include <stdbool.h>
 
-#include "hal/adc_periph.h"
 #include "soc/adc_struct.h"
 #include "soc/clk_tree_defs.h"
 #include "soc/lp_peri_clkrst_struct.h"
@@ -22,51 +21,63 @@ extern "C" {
 #endif
 
 /*---------------------------------------------------------------
-                    Macros
----------------------------------------------------------------*/
-#define ADC_LL_EVENT_ADC1_ONESHOT_DONE    BIT(31)
-#define ADC_LL_EVENT_ADC2_ONESHOT_DONE    BIT(30)
+ *                            common
+ *-------------------------------------------------------------*/
+#define ADC_LL_EVENT_ADC1_ONESHOT_DONE              BIT(31)
+#define ADC_LL_EVENT_ADC2_ONESHOT_DONE              BIT(30)
 
-#define ADC_LL_FORCE_XPD_SAR_FSM  0  // Use FSM to control power
-#define ADC_LL_FORCE_XPD_SAR_PD   2  // Force power down
-#define ADC_LL_FORCE_XPD_SAR_PU   3  // Force power up
+#define ADC_LL_FORCE_XPD_SAR_FSM                    0  // Use FSM to control power
+#define ADC_LL_FORCE_XPD_SAR_PD                     2  // Force power down
+#define ADC_LL_FORCE_XPD_SAR_PU                     3  // Force power up
 
 #define ADC_LL_NEED_APB_PERIPH_CLAIM(ADC_UNIT)      (1)
 #define ADC_LL_UNIT2_CHANNEL_SUBSTRATION            (0)
+#define ADC_LL_MAX_CHANNEL_NUM                      (8)
 
-#define ADC_LL_DMA_USE_LP_AHB_GDMA        1
+#define ADC_LL_DMA_USE_LP_AHB_GDMA                  1
 
-#define ADC_LL_DIGI_SAMPLE_FREQ_DYNAMIC_CLK_DIV    1
-#define ADC_LL_RAW_DATA_WEIGHTED_SUM                   (1)
-
-/*---------------------------------------------------------------
-                    Differential
----------------------------------------------------------------*/
-#define ADC_LL_ZERO_DIFF_CODE                          (2198)
+#define ADC_LL_DIGI_SAMPLE_FREQ_DYNAMIC_CLK_DIV     1
+#define ADC_LL_RAW_DATA_WEIGHTED_SUM                (1)
 
 /*---------------------------------------------------------------
-                    Oneshot
----------------------------------------------------------------*/
-#define ADC_LL_DATA_INVERT_DEFAULT(PERIPH_NUM)         (0)
-#define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL           (0)
+ *                            oneshot
+ *-------------------------------------------------------------*/
+#define ADC_LL_RTC_MIN_BITWIDTH                     (17)
+#define ADC_LL_RTC_MAX_BITWIDTH                     (17)
+#define ADC_LL_DATA_INVERT_DEFAULT(PERIPH_NUM)      (0)
+#define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL        (0)
 
-#define ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT                (1)
+/*---------------------------------------------------------------
+ *                          continuous
+ *-------------------------------------------------------------*/
+#define ADC_LL_SAMPLE_FREQ_THRES_HIGH               (83333U)
+#define ADC_LL_SAMPLE_FREQ_THRES_LOW                (611U)
+#define ADC_LL_DIG_SUPPORTED_UNIT(UNIT)             (1)
+#define ADC_LL_DIGI_CONTROLLER_NUM                  (2)
 
-#define ADC_LL_CLKM_DIV_NUM_DEFAULT       4
-#define ADC_LL_CLKM_DIV_B_DEFAULT         1
-#define ADC_LL_CLKM_DIV_A_DEFAULT         0
+#define ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT             (1)
 
-#define ADC_LL_POWER_MANAGE_SUPPORTED     1
+#define ADC_LL_CLKM_DIV_NUM_DEFAULT                 4
+#define ADC_LL_CLKM_DIV_B_DEFAULT                   1
+#define ADC_LL_CLKM_DIV_A_DEFAULT                   0
 
-#define ADC_LL_DIGI_DATA_INVERT_DEFAULT(PERIPH_NUM)    (0)
-#define ADC_LL_FSM_RSTB_WAIT_DEFAULT                   (8)
-#define ADC_LL_FSM_START_WAIT_DEFAULT                  (5)
-#define ADC_LL_FSM_STANDBY_WAIT_DEFAULT                (100)
-#define ADC_LL_SAMPLE_CYCLE_DEFAULT                    (2)
-#define ADC_LL_DEFAULT_CONV_LIMIT_EN                   (0)
-#define ADC_LL_DEFAULT_CONV_LIMIT_NUM                  (255)
-#define ADC_LL_WORKAROUND_CLEAR_EOF_COUNTER            (0)
-#define ADC_LL_PWDET_CCT_DEFAULT                       (4)
+#define ADC_LL_POWER_MANAGE_SUPPORTED               1
+
+#define ADC_LL_DIGI_DATA_INVERT_DEFAULT(PERIPH_NUM) (0)
+#define ADC_LL_FSM_RSTB_WAIT_DEFAULT                (8)
+#define ADC_LL_FSM_START_WAIT_DEFAULT               (5)
+#define ADC_LL_FSM_STANDBY_WAIT_DEFAULT             (100)
+#define ADC_LL_SAMPLE_CYCLE_DEFAULT                 (2)
+#define ADC_LL_DEFAULT_CONV_LIMIT_EN                (0)
+#define ADC_LL_DEFAULT_CONV_LIMIT_NUM               (255)
+#define ADC_LL_WORKAROUND_CLEAR_EOF_COUNTER         (0)
+
+/*---------------------------------------------------------------
+ *                          calibration
+ *-------------------------------------------------------------*/
+#define ADC_LL_ZERO_DIFF_CODE                       (2198)
+
+#define ADC_LL_PWDET_CCT_DEFAULT                    (4)
 
 typedef enum {
     ADC_LL_CTRL_DIG   = 0,    ///< S31 uses unified digital controller
@@ -531,7 +542,7 @@ static inline void adc_ll_set_controller(adc_unit_t adc_n, adc_ll_controller_t c
 static inline void adc_oneshot_ll_set_output_bits(adc_unit_t adc_n, adc_bitwidth_t bits)
 {
     (void)adc_n;
-    HAL_ASSERT(bits == SOC_ADC_RTC_MAX_BITWIDTH || bits == ADC_BITWIDTH_DEFAULT);
+    HAL_ASSERT(bits == ADC_LL_RTC_MAX_BITWIDTH || bits == ADC_BITWIDTH_DEFAULT);
 }
 
 /**

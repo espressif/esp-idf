@@ -223,7 +223,7 @@ typedef struct {
     };
 } adc_digi_output_data_t;
 
-#elif SOC_IS(ESP32C6) || SOC_IS(ESP32H2) || SOC_IS(ESP32C5) || SOC_IS(ESP32C61) || SOC_IS(ESP32H4)
+#elif SOC_IS(ESP32C6) || SOC_IS(ESP32H2) || SOC_IS(ESP32C5) || SOC_IS(ESP32C61) || SOC_IS(ESP32H4) || SOC_IS(ESP32H21)
 /**
  * @brief ADC digital controller (DMA mode) output data format.
  *        Used to analyze the acquired ADC (DMA) data.

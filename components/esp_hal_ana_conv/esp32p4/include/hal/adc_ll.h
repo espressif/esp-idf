@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,6 @@
 #include <stdlib.h>
 #include "esp_attr.h"
 
-#include "hal/adc_periph.h"
 #include "soc/adc_struct.h"
 #include "soc/clk_tree_defs.h"
 #include "soc/hp_sys_clkrst_struct.h"
@@ -27,47 +26,60 @@
 extern "C" {
 #endif
 
-#define ADC_LL_EVENT_ADC1_ONESHOT_DONE    BIT(31)
-#define ADC_LL_EVENT_ADC2_ONESHOT_DONE    BIT(30)
+/*---------------------------------------------------------------
+ *                            common
+ *-------------------------------------------------------------*/
+#define ADC_LL_EVENT_ADC1_ONESHOT_DONE              BIT(31)
+#define ADC_LL_EVENT_ADC2_ONESHOT_DONE              BIT(30)
 
-#define LP_ADC_FORCE_XPD_SAR_FSM 0 // Use FSM to control power down
-#define LP_ADC_FORCE_XPD_SAR_PD  2 // Force power down
-#define LP_ADC_FORCE_XPD_SAR_PU  3 // Force power up
+#define LP_ADC_FORCE_XPD_SAR_FSM                    0 // Use FSM to control power down
+#define LP_ADC_FORCE_XPD_SAR_PD                     2 // Force power down
+#define LP_ADC_FORCE_XPD_SAR_PU                     3 // Force power up
 
 // ESP32P4 ADC2 channel is 2-7, so we need to subtract 2 to get the correct channel
-#define ADC_LL_UNIT2_CHANNEL_SUBSTRATION 2
+#define ADC_LL_UNIT2_CHANNEL_SUBSTRATION            2
+#define ADC_LL_MAX_CHANNEL_NUM                      (8)
 
 #define ADC_LL_NEED_APB_PERIPH_CLAIM(ADC_UNIT)      (((ADC_UNIT) == ADC_UNIT_1) ? 0 : 1)
 
 /*---------------------------------------------------------------
-                    Oneshot
----------------------------------------------------------------*/
-#define ADC_LL_DATA_INVERT_DEFAULT(PERIPH_NUM)         (0)
-#define ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)         (1)
-#define LP_ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)      (2)
-#define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL           (10)
+ *                            oneshot
+ *-------------------------------------------------------------*/
+#define ADC_LL_RTC_MIN_BITWIDTH                     (12)
+#define ADC_LL_RTC_MAX_BITWIDTH                     (12)
+#define ADC_LL_DATA_INVERT_DEFAULT(PERIPH_NUM)      (0)
+#define ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)      (1)
+#define LP_ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)   (2)
+#define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL        (10)
 
 /*---------------------------------------------------------------
-                    DMA
----------------------------------------------------------------*/
-#define ADC_LL_DIGI_DATA_INVERT_DEFAULT(PERIPH_NUM)    (0)
-#define ADC_LL_FSM_RSTB_WAIT_DEFAULT                   (8)
-#define ADC_LL_FSM_START_WAIT_DEFAULT                  (5)
-#define ADC_LL_FSM_STANDBY_WAIT_DEFAULT                (100)
-#define ADC_LL_SAMPLE_CYCLE_DEFAULT                    (2)
-#define ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT                (1)
+ *                          continuous
+ *-------------------------------------------------------------*/
+/*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interval <= 4095 */
+#define ADC_LL_SAMPLE_FREQ_THRES_HIGH               83333
+#define ADC_LL_SAMPLE_FREQ_THRES_LOW                611
+#define ADC_LL_DIG_SUPPORTED_UNIT(UNIT)             1    //Digital controller supported ADC unit
+#define ADC_LL_DIGI_CONTROLLER_NUM                  (2)
+#define ADC_LL_DIGI_IIR_FILTER_NUM                  (2)
+#define ADC_LL_DIGI_DATA_INVERT_DEFAULT(PERIPH_NUM) (0)
+#define ADC_LL_FSM_RSTB_WAIT_DEFAULT                (8)
+#define ADC_LL_FSM_START_WAIT_DEFAULT               (5)
+#define ADC_LL_FSM_STANDBY_WAIT_DEFAULT             (100)
+#define ADC_LL_SAMPLE_CYCLE_DEFAULT                 (2)
+#define ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT             (1)
 
-#define ADC_LL_CLKM_DIV_NUM_DEFAULT       15
-#define ADC_LL_CLKM_DIV_B_DEFAULT         1
-#define ADC_LL_CLKM_DIV_A_DEFAULT         0
-#define ADC_LL_DEFAULT_CONV_LIMIT_EN      0
-#define ADC_LL_DEFAULT_CONV_LIMIT_NUM     255
+#define ADC_LL_CLKM_DIV_NUM_DEFAULT                 15
+#define ADC_LL_CLKM_DIV_B_DEFAULT                   1
+#define ADC_LL_CLKM_DIV_A_DEFAULT                   0
+#define ADC_LL_DEFAULT_CONV_LIMIT_EN                0
+#define ADC_LL_DEFAULT_CONV_LIMIT_NUM               255
 
-#define ADC_LL_POWER_MANAGE_SUPPORTED     1 //ESP32P4 supported to manage power mode
+#define ADC_LL_POWER_MANAGE_SUPPORTED               1 //ESP32P4 supported to manage power mode
+
 /*---------------------------------------------------------------
-                    PWDET (Power Detect)
----------------------------------------------------------------*/
-#define ADC_LL_PWDET_CCT_DEFAULT                       (4)
+ *                          calibration
+ *-------------------------------------------------------------*/
+#define ADC_LL_PWDET_CCT_DEFAULT                    (4)
 
 typedef enum {
     ADC_LL_CTRL_RTC   = 0,    ///< For ADC1 and ADC2. Select RTC controller.

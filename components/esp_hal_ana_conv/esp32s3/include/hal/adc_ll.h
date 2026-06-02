@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include "hal/adc_periph.h"
 #include "hal/adc_types.h"
 #include "hal/adc_types_private.h"
 #include "hal/assert.h"
@@ -28,53 +27,62 @@
 extern "C" {
 #endif
 
-#define ADC_LL_EVENT_ADC1_ONESHOT_DONE    (1 << 0)
-#define ADC_LL_EVENT_ADC2_ONESHOT_DONE    (1 << 1)
+/*---------------------------------------------------------------
+ *                            common
+ *-------------------------------------------------------------*/
+#define ADC_LL_EVENT_ADC1_ONESHOT_DONE              (1 << 0)
+#define ADC_LL_EVENT_ADC2_ONESHOT_DONE              (1 << 1)
 
 #define ADC_LL_THRES_ALL_INTR_ST_M  (APB_SARADC_THRES0_HIGH_INT_ST_M | \
                                      APB_SARADC_THRES1_HIGH_INT_ST_M | \
                                      APB_SARADC_THRES0_LOW_INT_ST_M  | \
                                      APB_SARADC_THRES1_LOW_INT_ST_M)
-#define ADC_LL_GET_HIGH_THRES_MASK(monitor_id)    ((monitor_id == 0) ? APB_SARADC_THRES0_HIGH_INT_ST_M : APB_SARADC_THRES1_HIGH_INT_ST_M)
-#define ADC_LL_GET_LOW_THRES_MASK(monitor_id)     ((monitor_id == 0) ? APB_SARADC_THRES0_LOW_INT_ST_M : APB_SARADC_THRES1_LOW_INT_ST_M)
+#define ADC_LL_GET_HIGH_THRES_MASK(monitor_id)      ((monitor_id == 0) ? APB_SARADC_THRES0_HIGH_INT_ST_M : APB_SARADC_THRES1_HIGH_INT_ST_M)
+#define ADC_LL_GET_LOW_THRES_MASK(monitor_id)       ((monitor_id == 0) ? APB_SARADC_THRES0_LOW_INT_ST_M : APB_SARADC_THRES1_LOW_INT_ST_M)
 
 #define ADC_LL_NEED_APB_PERIPH_CLAIM(ADC_UNIT)      (0)
 
-#define ADC_LL_UNIT2_CHANNEL_SUBSTRATION 0
+#define ADC_LL_UNIT2_CHANNEL_SUBSTRATION            0
+#define ADC_LL_MAX_CHANNEL_NUM                      (10)
 
 /*---------------------------------------------------------------
-                    Oneshot
----------------------------------------------------------------*/
-#define ADC_LL_DATA_INVERT_DEFAULT(PERIPH_NUM)         (0)
-#define ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)         (1)
-#define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL           (0)
+ *                            oneshot
+ *-------------------------------------------------------------*/
+#define ADC_LL_RTC_MIN_BITWIDTH                     (12)
+#define ADC_LL_RTC_MAX_BITWIDTH                     (12)
+#define ADC_LL_DATA_INVERT_DEFAULT(PERIPH_NUM)      (0)
+#define ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)      (1)
+#define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL        (0)
 
 /*---------------------------------------------------------------
-                    DMA
----------------------------------------------------------------*/
-#define ADC_LL_DIGI_DATA_INVERT_DEFAULT(PERIPH_NUM)    (0)
-#define ADC_LL_FSM_RSTB_WAIT_DEFAULT                   (8)
-#define ADC_LL_FSM_START_WAIT_DEFAULT                  (5)
-#define ADC_LL_FSM_STANDBY_WAIT_DEFAULT                (100)
-#define ADC_LL_SAMPLE_CYCLE_DEFAULT                    (2)
-#define ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT                (1)
+ *                          continuous
+ *-------------------------------------------------------------*/
+/*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interval <= 4095 */
+#define ADC_LL_SAMPLE_FREQ_THRES_HIGH               83333
+#define ADC_LL_SAMPLE_FREQ_THRES_LOW                611
+#define ADC_LL_DIG_SUPPORTED_UNIT(UNIT)             ((UNIT == 0) ? 1 : 0)    //Digital controller supported ADC unit
+#define ADC_LL_DIGI_CONTROLLER_NUM                  (2)
+#define ADC_LL_DIGI_IIR_FILTER_NUM                  (2)
+#define ADC_LL_DIGI_DATA_INVERT_DEFAULT(PERIPH_NUM) (0)
+#define ADC_LL_FSM_RSTB_WAIT_DEFAULT                (8)
+#define ADC_LL_FSM_START_WAIT_DEFAULT               (5)
+#define ADC_LL_FSM_STANDBY_WAIT_DEFAULT             (100)
+#define ADC_LL_SAMPLE_CYCLE_DEFAULT                 (2)
+#define ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT             (1)
 
-#define ADC_LL_CLKM_DIV_NUM_DEFAULT       15
-#define ADC_LL_CLKM_DIV_B_DEFAULT         1
-#define ADC_LL_CLKM_DIV_A_DEFAULT         0
-#define ADC_LL_DEFAULT_CONV_LIMIT_EN      0
-#define ADC_LL_DEFAULT_CONV_LIMIT_NUM     255
+#define ADC_LL_CLKM_DIV_NUM_DEFAULT                 15
+#define ADC_LL_CLKM_DIV_B_DEFAULT                   1
+#define ADC_LL_CLKM_DIV_A_DEFAULT                   0
+#define ADC_LL_DEFAULT_CONV_LIMIT_EN                0
+#define ADC_LL_DEFAULT_CONV_LIMIT_NUM               255
 
 /*---------------------------------------------------------------
-                    PWDET (Power Detect)
----------------------------------------------------------------*/
-#define ADC_LL_PWDET_CCT_DEFAULT                       (4)
+ *                          calibration
+ *-------------------------------------------------------------*/
+#define ADC_LL_PWDET_CCT_DEFAULT                    (4)
 
-/*---------------------------------------------------------------
-                    I2C SAR ADC REG PD workaround
----------------------------------------------------------------*/
-#define ADC_LL_ANA_CALI_REG_PD_WORKAROUND    1
-#define ADC_LL_ANA_CALI_REG_BYTE_NUM         8
+#define ADC_LL_ANA_CALI_REG_PD_WORKAROUND           1
+#define ADC_LL_ANA_CALI_REG_BYTE_NUM                8
 
 typedef enum {
     ADC_LL_POWER_BY_FSM,   /*!< ADC XPD controlled by FSM. Used for polling mode */

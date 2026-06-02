@@ -384,9 +384,9 @@ static void test_adc_continuous_sample_freq(uint32_t sample_freq_hz)
 TEST_CASE("ADC continuous sample frequency test", "[adc_continuous][performance]")
 {
     // Test minimum frequency
-    test_adc_continuous_sample_freq(SOC_ADC_SAMPLE_FREQ_THRES_LOW);
+    test_adc_continuous_sample_freq(ADC_LL_SAMPLE_FREQ_THRES_LOW);
     // Test maximum frequency
-    test_adc_continuous_sample_freq(SOC_ADC_SAMPLE_FREQ_THRES_HIGH);
+    test_adc_continuous_sample_freq(ADC_LL_SAMPLE_FREQ_THRES_HIGH);
 }
 
 #endif  //#if SOC_ADC_DMA_SUPPORTED
@@ -411,7 +411,7 @@ static float test_adc_oneshot_std(adc_atten_t atten, bool is_performance_test)
 
     //-------------ADC Channel Config---------------//
     adc_oneshot_chan_cfg_t config = {
-        .bitwidth = SOC_ADC_RTC_MAX_BITWIDTH,
+        .bitwidth = ADC_LL_RTC_MAX_BITWIDTH,
     };
 
     //-------------ADC Calibration Init---------------//
@@ -427,7 +427,7 @@ static float test_adc_oneshot_std(adc_atten_t atten, bool is_performance_test)
     TEST_ESP_OK(adc_oneshot_config_channel(adc1_handle, channel, &config));
     ESP_LOGI("TEST_ADC", "Test with atten: %d", atten);
 
-    s_reset_array(ADC_TEST_RAW_BUCKET_SIZE(SOC_ADC_RTC_MAX_BITWIDTH));
+    s_reset_array(ADC_TEST_RAW_BUCKET_SIZE(ADC_LL_RTC_MAX_BITWIDTH));
 
     if (is_performance_test) {
         test_adc_set_io_middle(ADC_UNIT_1, TEST_STD_ADC1_CHANNEL0);
@@ -511,7 +511,7 @@ static void s_adc_cali_speed(adc_unit_t unit_id, adc_channel_t channel)
     bool do_calibration = false;
     adc_cali_handle_t cali_handle[TEST_ATTEN_NUMS] = {};
     for (int i = 0; i < TEST_ATTEN_NUMS; i++) {
-        do_calibration = test_adc_calibration_init(unit_id, channel, g_test_atten[i], SOC_ADC_RTC_MAX_BITWIDTH, &cali_handle[i]);
+        do_calibration = test_adc_calibration_init(unit_id, channel, g_test_atten[i], ADC_LL_RTC_MAX_BITWIDTH, &cali_handle[i]);
     }
 
     if (!do_calibration) {
@@ -532,7 +532,7 @@ static void s_adc_cali_speed(adc_unit_t unit_id, adc_channel_t channel)
 
         //-------------ADC Channel Config---------------//
         adc_oneshot_chan_cfg_t config = {
-            .bitwidth = SOC_ADC_RTC_MAX_BITWIDTH,
+            .bitwidth = ADC_LL_RTC_MAX_BITWIDTH,
         };
 
         //atten0 ~ atten3

@@ -103,7 +103,7 @@ void IRAM_ATTR adc_set_hw_calibration_code(adc_unit_t adc_n, adc_atten_t atten)
 }
 
 #if SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED
-static int s_adc_cali_chan_compens[SOC_ADC_MAX_CHANNEL_NUM][SOC_ADC_ATTEN_NUM] = {};
+static int s_adc_cali_chan_compens[ADC_LL_MAX_CHANNEL_NUM][SOC_ADC_ATTEN_NUM] = {};
 void adc_load_hw_calibration_chan_compens(adc_unit_t adc_n, adc_channel_t chan, adc_atten_t atten)
 {
     int version = esp_efuse_rtc_calib_get_ver();

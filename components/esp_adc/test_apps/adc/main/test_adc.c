@@ -149,7 +149,7 @@ TEST_CASE("ADC oneshot stress test that get zero even if convent done", "[adc_on
     };
 
     adc_oneshot_chan_cfg_t config = {
-        .bitwidth = SOC_ADC_RTC_MAX_BITWIDTH,
+        .bitwidth = ADC_LL_RTC_MAX_BITWIDTH,
         .atten = atten,
     };
 
@@ -194,14 +194,14 @@ static void s_adc_oneshot_with_sleep(adc_unit_t unit_id, adc_channel_t channel)
 
     //-------------ADC Channel Config---------------//
     adc_oneshot_chan_cfg_t config = {
-        .bitwidth = SOC_ADC_RTC_MAX_BITWIDTH,
+        .bitwidth = ADC_LL_RTC_MAX_BITWIDTH,
     };
 
     //-------------ADC Calibration Init---------------//
     bool do_calibration = false;
     adc_cali_handle_t cali_handle[TEST_ATTEN_NUMS] = {};
     for (int i = 0; i < TEST_ATTEN_NUMS; i++) {
-        do_calibration = test_adc_calibration_init(unit_id, channel, g_test_atten[i], SOC_ADC_RTC_MAX_BITWIDTH, &cali_handle[i]);
+        do_calibration = test_adc_calibration_init(unit_id, channel, g_test_atten[i], ADC_LL_RTC_MAX_BITWIDTH, &cali_handle[i]);
     }
     if (!do_calibration) {
         ESP_LOGW(TAG, "No efuse bits burnt, only test the regi2c analog register values");
@@ -345,7 +345,7 @@ TEST_CASE("ADC continuous monitor init_deinit", "[adc]")
     adc_continuous_config_t dig_cfg = {
         .pattern_num = 1,
         .adc_pattern = adc_pattern,
-        .sample_freq_hz = SOC_ADC_SAMPLE_FREQ_THRES_LOW,
+        .sample_freq_hz = ADC_LL_SAMPLE_FREQ_THRES_LOW,
         .conv_mode = ADC_CONV_SINGLE_UNIT_1,
         .format = TEST_ADC_FORMAT_TYPE,
     };
@@ -445,7 +445,7 @@ TEST_CASE("ADC continuous monitor functionary", "[adc]")
     adc_continuous_config_t dig_cfg = {
         .pattern_num = 2,
         .adc_pattern = adc_pattern,
-        .sample_freq_hz = SOC_ADC_SAMPLE_FREQ_THRES_LOW,
+        .sample_freq_hz = ADC_LL_SAMPLE_FREQ_THRES_LOW,
         .conv_mode = ADC_CONV_SINGLE_UNIT_1,
         .format = TEST_ADC_FORMAT_TYPE,
     };
@@ -492,12 +492,12 @@ TEST_CASE("ADC continuous monitor functionary", "[adc]")
         switch (pull_mode) {
         case GPIO_PULLUP_ONLY:
 #if !CONFIG_IDF_TARGET_ESP32S2
-            TEST_ASSERT_UINT32_WITHIN(SOC_ADC_SAMPLE_FREQ_THRES_LOW * 0.1, SOC_ADC_SAMPLE_FREQ_THRES_LOW, m1h_cnt);
+            TEST_ASSERT_UINT32_WITHIN(ADC_LL_SAMPLE_FREQ_THRES_LOW * 0.1, ADC_LL_SAMPLE_FREQ_THRES_LOW, m1h_cnt);
             TEST_ASSERT_EQUAL(0, m1l_cnt);  //low limit should NOT triggrted when pull_up
 #endif
             break;
         case GPIO_PULLDOWN_ONLY:
-            TEST_ASSERT_UINT32_WITHIN(SOC_ADC_SAMPLE_FREQ_THRES_LOW * 0.1, SOC_ADC_SAMPLE_FREQ_THRES_LOW, m1l_cnt);
+            TEST_ASSERT_UINT32_WITHIN(ADC_LL_SAMPLE_FREQ_THRES_LOW * 0.1, ADC_LL_SAMPLE_FREQ_THRES_LOW, m1l_cnt);
             TEST_ASSERT_EQUAL(0, m1h_cnt);
             break;
         case GPIO_PULLUP_PULLDOWN:
