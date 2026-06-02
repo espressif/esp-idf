@@ -18,6 +18,7 @@ from test_build_system_helpers import EnvDict
 from test_build_system_helpers import IdfPyFunc
 from test_build_system_helpers import find_python
 from test_build_system_helpers import replace_in_file
+from test_build_system_helpers import run_idf_py
 
 from conftest import should_clean_test_dir
 
@@ -188,10 +189,11 @@ def test_extension_from_component(idf_py: IdfPyFunc, test_app_copy: Path) -> Non
     idf_py('reconfigure')
     ret = idf_py('--help')
     assert 'test-component-action' in ret.stdout
-    assert 'INFO: Loaded component extension from "components/test_component"' in ret.stdout
+    expected_info = f'INFO: Loaded component extension from "{os.path.join("components", "test_component")}"'
+    assert expected_info in ret.stdout
     ret = idf_py('test-component-action')
     assert 'Test extension action executed - component extension' in ret.stdout
-    assert 'INFO: Loaded component extension from "components/test_component"' in ret.stdout
+    assert expected_info in ret.stdout
 
 
 def test_extension_from_component_invalid_syntax(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
@@ -240,6 +242,47 @@ def test_extension_from_component_invalid_syntax(idf_py: IdfPyFunc, test_app_cop
     )
     ret = idf_py('--help')
     assert 'Attribute "version" is required in custom extension.' in ret.stderr
+
+
+@pytest.mark.usefixtures('test_app_copy')
+def test_idf_py_help_rich_click_component_extension_panel(
+    idf_py: IdfPyFunc,
+    default_idf_env: dict[str, str],
+) -> None:
+    """Default Commands panel first; component extension gets its own panel after."""
+    idf_py('create-component', '-C', 'components', 'help_group_comp')
+    comp_dir = Path('components') / 'help_group_comp'
+    (comp_dir / 'idf_ext.py').write_text(
+        textwrap.dedent(
+            TEST_EXT_TEMPLATE.format(
+                suffix='help panel comp',
+                global_options='',
+                actions="""'help-group-comp-cmd': {
+                'callback': test_extension_action,
+                'help': 'Component extension command for help panel test'
+            }""",
+            )
+        )
+    )
+    replace_in_file(
+        Path('main') / 'CMakeLists.txt',
+        '# placeholder_inside_idf_component_register',
+        '\n'.join(['INCLUDE_DIRS "." ', 'REQUIRES "help_group_comp" ']),
+    )
+    idf_py('reconfigure')
+
+    env = {**default_idf_env, 'COLUMNS': '120', 'NO_COLOR': '1'}
+    ret = run_idf_py('--help', env=env, workdir=os.getcwd(), check=True)
+
+    idx_commands = ret.stdout.find('Commands')
+    assert idx_commands != -1, 'Root idf.py --help should list the default Commands group.'
+    idx_comp_panel = ret.stdout.find('help_group_comp', idx_commands)
+    assert idx_comp_panel != -1, 'Expected help group for the help_group_comp component extension.'
+    assert idx_comp_panel > idx_commands, 'Component extension group should appear after the default Commands group.'
+
+    # ret.stdout[i:j]: substring from index i (inclusive) to j (exclusive); ':' separates the two bounds.
+    default_block = ret.stdout[idx_commands:idx_comp_panel]
+    assert 'build' in default_block, 'Built-in `build` should still appear under the default Commands panel.'
 
 
 # ----------- Test cases for entry point extension -----------
@@ -371,6 +414,44 @@ def test_extension_entrypoint_conflicting_names(
     assert 'Custom action with conflicting aliases' not in ret.stdout
     assert "Global option ['--project-dir'] already defined. External option will not be added." in ret.stderr
     assert 'This global option conflicts with existing one' not in ret.stdout
+
+
+@pytest.mark.usefixtures('test_app_copy')
+def test_idf_py_help_rich_click_entrypoint_extension_panel(
+    idf_py: IdfPyFunc,
+    default_idf_env: dict[str, str],
+    extension_package_manager: ExtensionPackageManager,
+) -> None:
+    """Default Commands panel first; entry-point extension gets its own panel after."""
+    extension_package_manager.create_package('helpgroup')
+
+    env = {**default_idf_env, 'COLUMNS': '120', 'NO_COLOR': '1'}
+    ret = run_idf_py('--help', env=env, workdir=os.getcwd(), check=True)
+
+    idx_commands = ret.stdout.find('Commands')
+    assert idx_commands != -1, 'Root idf.py --help should list the default Commands group.'
+    idx_ep_panel = ret.stdout.find('test_extension_helpgroup', idx_commands)
+    assert idx_ep_panel != -1, 'Expected help group for the helpgroup entry-point extension.'
+    assert idx_ep_panel > idx_commands, 'Entry-point extension group should appear after the default Commands group.'
+
+    # ret.stdout[i:j]: substring from index i (inclusive) to j (exclusive); ':' separates the two bounds.
+    default_block = ret.stdout[idx_commands:idx_ep_panel]
+    assert 'build' in default_block, 'Built-in `build` should still appear under the default Commands panel.'
+
+
+# ----------- General extension tests -----------
+
+
+@pytest.mark.usefixtures('test_app_copy')
+def test_idf_py_subcommand_help_shows_options(
+    idf_py: IdfPyFunc,
+    default_idf_env: dict[str, str],
+) -> None:
+    """Subcommand --help must list global/action options (rich-click + default_panels_first)."""
+    idf_py('reconfigure')
+    env = {**default_idf_env, 'NO_COLOR': '1', 'COLUMNS': '120'}
+    ret = run_idf_py('flash', '--help', env=env, workdir=os.getcwd(), check=True)
+    assert '--project-dir' in ret.stdout or '-C ' in ret.stdout
 
 
 # ----------- Regression test: idf.py recursion via idf_version clause -----------

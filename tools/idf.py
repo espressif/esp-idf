@@ -157,9 +157,15 @@ def _safe_relpath(path: str, start: str | None = None) -> str:
 
 
 def init_cli(verbose_output: list | None = None) -> Any:
-    # Click is imported here to run it after check_environment()
-    import click
+    # rich-click is imported here to run it after check_environment()
+    import rich_click as click
+    from click.core import ParameterSource
     from click.shell_completion import CompletionItem
+    from rich_click import Context
+    from rich_click import RichHelpConfiguration
+    from rich_click import RichHelpFormatter
+    from rich_click.rich_click import MAX_WIDTH
+    from rich_click.rich_context import RichContext
 
     class Deprecation:
         """Construct deprecation notice for help messages"""
@@ -211,7 +217,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
             text = text or ''
             return ('Deprecated! ' + text) if self.deprecated else text
 
-    def check_deprecation(ctx: click.core.Context) -> None:
+    def check_deprecation(ctx: Context) -> None:
         """Prints deprecation warnings for arguments in given context"""
         for option in ctx.command.params:
             # Skip non-Option parameters
@@ -228,7 +234,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
             if hasattr(ctx, 'get_parameter_source'):
                 source = ctx.get_parameter_source(option.name)
                 # Skip if option was not explicitly provided by user (only warn when actually used)
-                if source not in (click.core.ParameterSource.COMMANDLINE, click.core.ParameterSource.ENVIRONMENT):
+                if source not in (ParameterSource.COMMANDLINE, ParameterSource.ENVIRONMENT):
                     continue
             else:
                 # Fallback: check if value differs from default
@@ -264,9 +270,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
             self.action_args = action_args
             self.aliases = aliases
 
-        def __call__(
-            self, context: click.core.Context, global_args: PropertyDict, action_args: dict | None = None
-        ) -> None:
+        def __call__(self, context: Context, global_args: PropertyDict, action_args: dict | None = None) -> None:
             if action_args is None:
                 action_args = self.action_args
 
@@ -281,7 +285,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
                 action_args = self.action_args
             return bool(self.check(self.name, context, global_args, **action_args))
 
-    class Action(click.Command):
+    class Action(click.RichCommand):
         callback: Callable
 
         def __init__(
@@ -344,7 +348,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
 
                 self.callback: Callable = wrapped_callback
 
-        def invoke(self, ctx: click.core.Context) -> click.core.Context:
+        def invoke(self, ctx: Context) -> Context:
             if self.deprecated:
                 deprecation = Deprecation(self.deprecated)
                 message = deprecation.full_message(f'Command "{self.name}"')
@@ -360,7 +364,23 @@ def init_cli(verbose_output: list | None = None) -> Any:
             check_deprecation(ctx)
             return super().invoke(ctx)
 
-    class Argument(click.Argument):
+        def format_options(self, ctx: Context, formatter: RichHelpFormatter) -> None:
+            """
+            default_panels_first=True causes the
+            renderer to drop `post_default_panels` for options on non-Group
+            commands, which is exactly where the subcommand "Options" panel
+            lives -- `idf.py <subcmd> --help` would otherwise show only
+            Usage + description. Temporarily flip the flag to False while
+            rendering options.
+            """
+            prev_default_first = formatter.config.default_panels_first
+            try:
+                formatter.config.default_panels_first = False
+                super().format_options(ctx, formatter)
+            finally:
+                formatter.config.default_panels_first = prev_default_first
+
+    class Argument(click.RichArgument):
         """
         Positional argument
 
@@ -403,7 +423,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
         def __str__(self) -> str:
             return self._scope
 
-    class Option(click.Option):
+    class Option(click.RichOption):
         """Option that knows whether it should be global"""
 
         def __init__(
@@ -441,14 +461,80 @@ def init_cli(verbose_output: list | None = None) -> Any:
             if self.scope.is_global:
                 self.help += ' This option can be used at most once either globally, or for one subcommand.'
 
-        def get_help_record(self, ctx: click.core.Context) -> Any:
+        def get_help_record(self, ctx: Context) -> Any:
             # Backport "hidden" parameter to click 5.0
             if self.hidden:
                 return None
 
             return super().get_help_record(ctx)
 
-    class CLI(click.Group):
+    def _emit_cmake_custom_targets_help_panel(formatter: RichHelpFormatter, targets: list[tuple[str, str]]) -> None:
+        """Render CMake phony targets as an extra rich-click-looking panel.
+        They are not Click commands/options, so the ordinary help machinery does not list them.
+        """
+        import rich.box
+        from rich.box import Box
+        from rich.panel import Panel
+        from rich.table import Table
+        from rich.text import Text
+
+        # Rich-click adds these boxes on top of rich.box; recreate them locally with the
+        # same eight-line layout so the public rich API is enough.
+        # Otherwise rich-click internal modules would be needed (which can change over time).
+        _RICH_CLICK_EXTRA_BOXES: dict[str, Box] = {
+            'BLANK': Box('    \n' * 8),
+            'HORIZONTALS_TOP': Box(' ── \n' + '    \n' * 7),
+            'HORIZONTALS_DOUBLE_TOP': Box(' ══ \n' + '    \n' * 7),
+        }
+
+        def _resolve_panel_box(raw: Any) -> Box:
+            if isinstance(raw, Box):
+                return raw
+            if isinstance(raw, str):
+                if raw in _RICH_CLICK_EXTRA_BOXES:
+                    return _RICH_CLICK_EXTRA_BOXES[raw]
+                box = getattr(rich.box, raw, None)
+                if isinstance(box, Box):
+                    return box
+            return rich.box.ROUNDED
+
+        cfg = formatter.config
+        panel_box = _resolve_panel_box(cfg.style_commands_panel_box)
+        t_styles = {
+            'show_lines': cfg.style_commands_table_show_lines,
+            'leading': cfg.style_commands_table_leading,
+            'box': None,
+            'border_style': cfg.style_commands_table_border_style,
+            'row_styles': cfg.style_commands_table_row_styles,
+            'pad_edge': cfg.style_commands_table_pad_edge,
+            'padding': cfg.style_commands_table_padding,
+            'expand': cfg.style_commands_table_expand,
+        }
+        table = Table(show_header=False, highlight=False, **t_styles)
+        ratio = cfg.style_commands_table_column_width_ratio
+        r0, r1 = (None, None) if ratio is None else ratio
+        table.add_column(style=cfg.style_command, no_wrap=True, ratio=r0)
+        table.add_column(no_wrap=False, ratio=r1)
+        for name, desc in targets:
+            desc_cell = Text(desc, style=cfg.style_helptext) if desc else Text()
+            table.add_row(Text(name, style=cfg.style_command), desc_cell)
+
+        title = Text(
+            _help_custom_targets.CMAKE_CUSTOM_TARGETS_HELP_PANEL_TITLE,
+            style=cfg.style_commands_panel_title_style,
+        )
+        panel = Panel(
+            table,
+            border_style=cfg.style_commands_panel_border,
+            title_align=cfg.align_commands_panel,
+            box=panel_box,
+            padding=cfg.style_commands_panel_padding,
+            style=cfg.style_commands_panel_style,
+            title=title,
+        )
+        formatter.console.print(panel, highlight=False)
+
+    class CLI(click.RichGroup):
         """Action list contains all actions with options available for CLI"""
 
         def __init__(
@@ -456,13 +542,22 @@ def init_cli(verbose_output: list | None = None) -> Any:
             all_actions: dict | None = None,
             verbose_output: list | None = None,
             cli_help: str | None = None,
+            command_groups: dict[str, list[dict[str, Any]]] | None = None,
         ) -> None:
             super().__init__(
+                PROG,
                 chain=True,
                 invoke_without_command=True,
                 result_callback=self.execute_tasks,
                 no_args_is_help=True,
-                context_settings={'max_content_width': 140},
+                context_settings={
+                    'help_option_names': ['-h', '--help'],
+                    'rich_help_config': RichHelpConfiguration(
+                        max_width=MAX_WIDTH,
+                        command_groups=command_groups if command_groups is not None else {},
+                        default_panels_first=True,
+                    ),
+                },
                 help=cli_help,
             )
             self._actions = {}
@@ -502,6 +597,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
                     options = []
 
                 self._actions[name] = Action(name=name, **action)
+                self.commands[name] = self._actions[name]
                 for alias in [name] + action.get('aliases', []):
                     self.commands_with_aliases[alias] = name
 
@@ -527,10 +623,10 @@ def init_cli(verbose_output: list | None = None) -> Any:
 
                     self._actions[name].params.append(option)
 
-        def list_commands(self, ctx: click.core.Context) -> list:
+        def list_commands(self, ctx: Context) -> list:
             return sorted(filter(lambda name: not self._actions[name].hidden, self._actions))
 
-        def get_command(self, ctx: click.core.Context, name: str) -> Action | None:
+        def get_command(self, ctx: Context, name: str) -> Action | None:
             if name in self.commands_with_aliases:
                 return self._actions.get(self.commands_with_aliases.get(name))
 
@@ -541,7 +637,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
                     return Action(name=name, callback=callback.unwrapped_callback)
                 return None
 
-        def shell_complete(self, ctx: click.core.Context, incomplete: str) -> list[CompletionItem]:
+        def shell_complete(self, ctx: Context, incomplete: str) -> list[CompletionItem]:
             # Enable @-argument completion in bash only if @ is not present in
             # COMP_WORDBREAKS. When @ is included, the @-argument is not considered
             # part of the completion word, causing @-argument completion to function
@@ -863,13 +959,13 @@ def init_cli(verbose_output: list | None = None) -> Any:
 
             return [(n, '') for n in sorted(found, key=str.lower)]
 
-        def format_help(self, ctx: click.core.Context, formatter: click.HelpFormatter) -> None:
-            """Override to append custom CMake targets section."""
+        def format_help(self, ctx: RichContext, formatter: RichHelpFormatter) -> None:
+            """Append CMake custom targets using the same Rich console as the rest of rich-click help."""
             super().format_help(ctx, formatter)
             targets = self._get_custom_targets()
-            if targets:
-                with formatter.section('CMake Custom Targets'):
-                    formatter.write_dl(list(targets))
+            if not targets:
+                return
+            _emit_cmake_custom_targets_help_panel(formatter, targets)
 
     def load_cli_extension_from_dir(ext_dir: str) -> Any | None:
         """Load extension 'idf_ext.py' from directory and return the action_extensions function"""
@@ -944,15 +1040,14 @@ def init_cli(verbose_output: list | None = None) -> Any:
         build_dir: str = args.build_dir
         return os.path.abspath(build_dir)
 
-    def _extract_relevant_path(path: str) -> str:
-        """
-        Returns part of the path starting from 'components' or 'managed_components'.
-        If neither is found, returns the full path.
-        """
-        for keyword in ('components', 'managed_components'):
-            # arg path is loaded from project_description.json, where paths are always defined with '/'
-            if keyword in path.split('/'):
-                return keyword + path.split(keyword, 1)[1]
+    def _path_relative_to_project(path: str, project_dir: str) -> str:
+        """If ``path`` is under ``project_dir``, return its path relative to the project; else ``path`` unchanged."""
+        path_abs = os.path.abspath(os.path.normpath(path))
+        project_abs = os.path.abspath(os.path.normpath(project_dir))
+        parent_prefix = project_abs.rstrip(os.sep) + os.sep
+        if path_abs == project_abs or path_abs.startswith(parent_prefix):
+            return _safe_relpath(path_abs, project_abs)
+
         return path
 
     # Mutable dict used as a cache keyed by lock path
@@ -1023,6 +1118,20 @@ def init_cli(verbose_output: list | None = None) -> Any:
             lock_key = comp_name.replace('__', '/', 1) if '__' in comp_name else comp_name
             return lock_key in _get_trusted_names_from_lock(lock_path)
         return False
+
+    def _build_rich_help_command_groups(
+        external_panels: list[tuple[str, list[str]]],
+    ) -> dict[str, list[dict[str, Any]]]:
+        """Build ``command_groups`` for rich-click's ``RichHelpConfiguration``.
+        ``external_panels`` is a list of ``(title, command_names)`` from ``idf_ext.py`` extension
+        modules and from Python entry-point extensions. Those panels appear on
+        the root ``idf.py --help`` after the default Commands section.
+        """
+        panels: list[dict[str, Any]] = []
+        for title, cmds in external_panels:
+            if cmds:
+                panels.append({'name': title, 'commands': cmds})
+        return {PROG: panels} if panels else {}
 
     # That's a tiny parser that parse project-dir even before constructing
     # fully featured click parser to be sure that extensions are loaded from the right place
@@ -1123,31 +1232,44 @@ def init_cli(verbose_output: list | None = None) -> Any:
                 else:
                     print_warning(
                         f'WARNING: Not loading component extension from untrusted source '
-                        f'"{_extract_relevant_path(comp_dir)}". '
+                        f'"{_path_relative_to_project(comp_dir, project_dir)}". '
                         'Only extensions from trusted sources are loaded. Run '
                         '"idf.py docs -sp api-guides/tools/idf-py.html#extending-idf-py" '
                         'for the list of trusted sources. Set IDF_EXTENSION_ALLOW_UNTRUSTED=1 to load all.'
                     )
 
     # Load extensions from directories that participate in the build (components and project)
+    external_help_panels: list[tuple[str, list[str]]] = []
     for ext_dir in component_idf_ext_dirs + [project_dir]:
         extension_func = load_cli_extension_from_dir(ext_dir)
         if extension_func:
             try:
-                all_actions = merge_action_lists(all_actions, custom_actions=extension_func(all_actions, project_dir))
+                custom_actions = extension_func(all_actions, project_dir)
+                all_actions = merge_action_lists(all_actions, custom_actions=custom_actions)
             except Exception as e:
                 print_warning(f'WARNING: Cannot load directory extension from "{ext_dir}": {e}')
             else:
+                panel_cmds = sorted(n for n in custom_actions.get('actions') or {} if n != 'fallback')
+                if panel_cmds:
+                    panel_title = (
+                        'Project' if ext_dir == project_dir else _path_relative_to_project(ext_dir, project_dir)
+                    )
+                    external_help_panels.append((panel_title, panel_cmds))
                 if ext_dir != project_dir:
-                    print(f'INFO: Loaded component extension from "{_extract_relevant_path(ext_dir)}"')
+                    print(f'INFO: Loaded component extension from "{_path_relative_to_project(ext_dir, project_dir)}"')
 
     # Load extensions from Python entry points
     entry_point_extensions = load_cli_extensions_from_entry_points()
-    for name, extension_func in entry_point_extensions:
+    for ep_name, extension_func in entry_point_extensions:
         try:
-            all_actions = merge_action_lists(all_actions, custom_actions=extension_func(all_actions, project_dir))
+            custom_actions = extension_func(all_actions, project_dir)
+            all_actions = merge_action_lists(all_actions, custom_actions=custom_actions)
         except Exception as e:
-            print_warning(f'WARNING: Cannot load entry point extension "{name}": {e}')
+            print_warning(f'WARNING: Cannot load entry point extension "{ep_name}": {e}')
+        else:
+            panel_cmds = sorted(n for n in (custom_actions.get('actions') or {}) if n != 'fallback')
+            if panel_cmds:
+                external_help_panels.append((ep_name, panel_cmds))
 
     cli_help = (
         'ESP-IDF CLI build management tool. '
@@ -1155,7 +1277,13 @@ def init_cli(verbose_output: list | None = None) -> Any:
         f'Selected target: {get_target(project_dir)}'
     )
 
-    return CLI(cli_help=cli_help, verbose_output=verbose_output, all_actions=all_actions)
+    help_command_groups = _build_rich_help_command_groups(external_help_panels)
+    return CLI(
+        cli_help=cli_help,
+        verbose_output=verbose_output,
+        all_actions=all_actions,
+        command_groups=help_command_groups,
+    )
 
 
 def main(argv: list[Any] | None = None) -> None:

@@ -1,13 +1,10 @@
-# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import sys
 import uuid
 from typing import Any
-from typing import Dict
-from typing import Optional
-from typing import Tuple
 
-import click
+from rich_click import Context
 
 from idf_py_actions.tools import PropertyDict
 from idf_py_actions.tools import RunTool
@@ -16,20 +13,20 @@ from idf_py_actions.tools import yellow_print
 
 def diag(
     action: str,
-    ctx: click.core.Context,
+    ctx: Context,
     args: PropertyDict,
     debug: bool,
     log_prefix: bool,
     force: bool,
     no_color: bool,
-    zip_directory: Optional[str],
+    zip_directory: str | None,
     list_recipes: bool,
     check_recipes: bool,
-    cmdl_recipes: Tuple,
-    cmdl_tags: Tuple,
-    purge_file: Optional[str],
+    cmdl_recipes: tuple,
+    cmdl_tags: tuple,
+    purge_file: str | None,
     append: bool,
-    output: Optional[str],
+    output: str | None,
 ) -> None:
     diag_args: list = [sys.executable, '-m', 'esp_idf_diag']
 
@@ -106,12 +103,10 @@ def diag(
             diag_args += ['--port', args.port]
         else:
             yellow_print(
-                (
-                    'The target serial port is not specified, so '
-                    'autodetection will be used. To set it manually, use '
-                    'the "--port" option. Example: "idf.py --port '
-                    '/dev/ttyUSB0 diag".'
-                )
+                'The target serial port is not specified, so '
+                'autodetection will be used. To set it manually, use '
+                'the "--port" option. Example: "idf.py --port '
+                '/dev/ttyUSB0 diag".'
             )
 
     try:
@@ -121,18 +116,16 @@ def diag(
 
     if command == 'create':
         yellow_print(
-            (
-                f'Please make sure to thoroughly check it for any sensitive '
-                f'information before sharing and remove files you do not want '
-                f'to share. Kindly include any additional files you find '
-                f'relevant that were not automatically added. Please archive '
-                f'the contents of the final report directory using the command:\n'
-                f'"idf.py diag --zip {output}".'
-            )
+            f'Please make sure to thoroughly check it for any sensitive '
+            f'information before sharing and remove files you do not want '
+            f'to share. Kindly include any additional files you find '
+            f'relevant that were not automatically added. Please archive '
+            f'the contents of the final report directory using the command:\n'
+            f'"idf.py diag --zip {output}".'
         )
 
 
-def action_extensions(base_actions: Dict, project_path: str) -> Any:
+def action_extensions(base_actions: dict, project_path: str) -> Any:
     return {
         'actions': {
             'diag': {

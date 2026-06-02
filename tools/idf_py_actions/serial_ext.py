@@ -8,7 +8,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import click
+import rich_click as click
+from click.core import ParameterSource
+from rich_click import Context
 
 from idf_py_actions.errors import FatalError
 from idf_py_actions.global_options import global_options
@@ -50,7 +52,7 @@ def yellow_print(message: str, newline: str | None = '\n') -> None:
 
 
 def action_extensions(base_actions: dict, project_path: str) -> dict:
-    def _get_project_desc(ctx: click.core.Context, args: PropertyDict) -> Any:
+    def _get_project_desc(ctx: Context, args: PropertyDict) -> Any:
         desc_path = os.path.join(args.build_dir, 'project_description.json')
         if not os.path.exists(desc_path):
             ensure_build_directory(args, ctx.info_name)
@@ -83,7 +85,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
             result += ['--no-stub']
         return result
 
-    def _get_commandline_options(ctx: click.core.Context) -> list:
+    def _get_commandline_options(ctx: Context) -> list:
         """Return all the command line options up to first action"""
         # This approach ignores argument parsing done Click
         result = []
@@ -98,7 +100,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
 
     def monitor(
         action: str,
-        ctx: click.core.Context,
+        ctx: Context,
         args: PropertyDict,
         print_filter: str,
         monitor_baud: str,
@@ -136,7 +138,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                 # Use the global baud rate if it has been changed by the command line.
                 # Use project_desc['monitor_baud'] as the last option.
 
-                global_baud_defined = ctx._parameter_source['baud'] == click.core.ParameterSource.COMMANDLINE
+                global_baud_defined = ctx._parameter_source['baud'] == ParameterSource.COMMANDLINE
                 baud = args.baud if global_baud_defined else project_desc['monitor_baud']
 
             monitor_args += ['-b', baud]
@@ -205,7 +207,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
 
     def flash(
         action: str,
-        ctx: click.core.Context,
+        ctx: Context,
         args: PropertyDict,
         flash_all: bool,
         trust_flash_content: bool,
@@ -244,13 +246,13 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
             env['IDF_TRUST_FLASH_CONTENT'] = '1'
         run_target(action, args, env, force_progression=True, interactive=True)
 
-    def erase_flash(action: str, ctx: click.core.Context, args: PropertyDict) -> None:
+    def erase_flash(action: str, ctx: Context, args: PropertyDict) -> None:
         ensure_build_directory(args, ctx.info_name)
         esptool_args = _get_esptool_args(args)
         esptool_args += ['erase-flash']
         RunTool('esptool', esptool_args, args.build_dir, hints=not args.no_hints, interactive=True)()
 
-    def global_callback(ctx: click.core.Context, global_args: dict, tasks: PropertyDict) -> None:
+    def global_callback(ctx: Context, global_args: dict, tasks: PropertyDict) -> None:
         encryption = any([task.name in ('encrypted-flash', 'encrypted-app-flash') for task in tasks])
         if encryption:
             for task in tasks:
@@ -258,7 +260,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     task.action_args['encrypted'] = True
                     break
 
-    def ota_targets(target_name: str, ctx: click.core.Context, args: PropertyDict) -> None:
+    def ota_targets(target_name: str, ctx: Context, args: PropertyDict) -> None:
         """
         Execute the target build system to build target 'target_name'.
         Additionally set global variables for baud and port.
@@ -271,7 +273,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
 
     def merge_bin(
         action: str,
-        ctx: click.core.Context,
+        ctx: Context,
         args: PropertyDict,
         output: str,
         format: str,  # noqa: A002
@@ -319,7 +321,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
 
     def secure_decrypt_flash_data(
         action: str,
-        ctx: click.core.Context,
+        ctx: Context,
         args: PropertyDict,
         aes_xts: bool,
         keyfile: str,
@@ -345,7 +347,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         RunTool('espsecure', decrypt_flash_data_args, args.build_dir)()
 
     def secure_digest_secure_bootloader(
-        action: str, ctx: click.core.Context, args: PropertyDict, keyfile: str, output: str, iv: str, **extra_args: str
+        action: str, ctx: Context, args: PropertyDict, keyfile: str, output: str, iv: str, **extra_args: str
     ) -> None:
         ensure_build_directory(args, ctx.info_name)
         digest_secure_bootloader_args = [PYTHON, '-m', 'espsecure', 'digest-secure-bootloader']
@@ -361,7 +363,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
 
     def secure_encrypt_flash_data(
         action: str,
-        ctx: click.core.Context,
+        ctx: Context,
         args: PropertyDict,
         aes_xts: bool,
         keyfile: str,
@@ -387,7 +389,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         RunTool('espsecure', encrypt_flash_data_args, args.build_dir)()
 
     def secure_generate_flash_encryption_key(
-        action: str, ctx: click.core.Context, args: PropertyDict, keylen: str, **extra_args: str
+        action: str, ctx: Context, args: PropertyDict, keylen: str, **extra_args: str
     ) -> None:
         ensure_build_directory(args, ctx.info_name)
         generate_flash_encryption_key_args = [PYTHON, '-m', 'espsecure', 'generate-flash-encryption-key']
@@ -398,7 +400,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         RunTool('espsecure', generate_flash_encryption_key_args, args.project_dir)()
 
     def secure_generate_signing_key(
-        action: str, ctx: click.core.Context, args: PropertyDict, version: str, scheme: str, **extra_args: str
+        action: str, ctx: Context, args: PropertyDict, version: str, scheme: str, **extra_args: str
     ) -> None:
         ensure_build_directory(args, ctx.info_name)
         generate_signing_key_args = [PYTHON, '-m', 'espsecure', 'generate-signing-key']
@@ -419,7 +421,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         RunTool('espsecure', generate_signing_key_args, args.project_dir)()
 
     def secure_generate_key_digest(
-        action: str, ctx: click.core.Context, args: PropertyDict, keyfile: str, output: str, **extra_args: str
+        action: str, ctx: Context, args: PropertyDict, keyfile: str, output: str, **extra_args: str
     ) -> None:
         ensure_build_directory(args, ctx.info_name)
         generate_key_digest_args = [PYTHON, '-m', 'espsecure', 'digest-sbv2-public-key']
@@ -431,7 +433,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
 
     def secure_sign_data(
         action: str,
-        ctx: click.core.Context,
+        ctx: Context,
         args: PropertyDict,
         version: str,
         keyfile: str,
@@ -460,7 +462,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         RunTool('espsecure', sign_data_args, args.build_dir)()
 
     def secure_verify_signature(
-        action: str, ctx: click.core.Context, args: PropertyDict, version: str, keyfile: str, **extra_args: str
+        action: str, ctx: Context, args: PropertyDict, version: str, keyfile: str, **extra_args: str
     ) -> None:
         ensure_build_directory(args, ctx.info_name)
         verify_signature_args = [PYTHON, '-m', 'espsecure', 'verify-signature']
@@ -474,7 +476,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
 
     def secure_generate_nvs_partition_key(
         action: str,
-        ctx: click.core.Context,
+        ctx: Context,
         args: PropertyDict,
         encryption_scheme: str,
         keyfile: str,
@@ -492,7 +494,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         RunTool('espsecure', generate_nvs_partition_key_args, args.project_dir)()
 
     def secure_encrypt_nvs_partition(
-        action: str, ctx: click.core.Context, args: PropertyDict, keyfile: str, **extra_args: str
+        action: str, ctx: Context, args: PropertyDict, keyfile: str, **extra_args: str
     ) -> None:
         ensure_build_directory(args, ctx.info_name)
         encrypt_nvs_partition_args = [PYTHON, '-m', 'esp_idf_nvs_partition_gen', 'encrypt']
@@ -505,7 +507,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
             encrypt_nvs_partition_args += [extra_args['partition_size']]
         RunTool('espsecure', encrypt_nvs_partition_args, args.project_dir)()
 
-    def _parse_efuse_args(ctx: click.core.Context, args: PropertyDict, extra_args: dict) -> list:
+    def _parse_efuse_args(ctx: Context, args: PropertyDict, extra_args: dict) -> list:
         efuse_args = []
         if args.port:
             efuse_args += ['-p', args.port]
@@ -522,7 +524,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
             efuse_args += ['--do-not-confirm']
         return efuse_args
 
-    def efuse_burn(action: str, ctx: click.core.Context, args: PropertyDict, **extra_args: dict) -> None:
+    def efuse_burn(action: str, ctx: Context, args: PropertyDict, **extra_args: dict) -> None:
         ensure_build_directory(args, ctx.info_name)
         burn_efuse_args = [PYTHON, '-m', 'espefuse']
         burn_efuse_args += _parse_efuse_args(ctx, args, extra_args)
@@ -531,7 +533,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
             burn_efuse_args += list(extra_args['efuse_positional_args'])
         RunTool('espefuse', burn_efuse_args, args.build_dir)()
 
-    def efuse_burn_key(action: str, ctx: click.core.Context, args: PropertyDict, **extra_args: str) -> None:
+    def efuse_burn_key(action: str, ctx: Context, args: PropertyDict, **extra_args: str) -> None:
         ensure_build_directory(args, ctx.info_name)
         burn_key_args = [PYTHON, '-m', 'espefuse']
         burn_key_args += _parse_efuse_args(ctx, args, extra_args)
@@ -546,9 +548,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
             burn_key_args += extra_args['efuse_positional_args']
         RunTool('espefuse', burn_key_args, args.project_dir, build_dir=args.build_dir)()
 
-    def efuse_dump(
-        action: str, ctx: click.core.Context, args: PropertyDict, file_name: str, **extra_args: dict
-    ) -> None:
+    def efuse_dump(action: str, ctx: Context, args: PropertyDict, file_name: str, **extra_args: dict) -> None:
         ensure_build_directory(args, ctx.info_name)
         dump_args = [PYTHON, '-m', 'espefuse']
         dump_args += _parse_efuse_args(ctx, args, extra_args)
@@ -557,7 +557,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
             dump_args += ['--file-name', file_name]
         RunTool('espefuse', dump_args, args.build_dir)()
 
-    def efuse_read_protect(action: str, ctx: click.core.Context, args: PropertyDict, **extra_args: dict) -> None:
+    def efuse_read_protect(action: str, ctx: Context, args: PropertyDict, **extra_args: dict) -> None:
         ensure_build_directory(args, ctx.info_name)
         read_protect_args = [PYTHON, '-m', 'espefuse']
         read_protect_args += _parse_efuse_args(ctx, args, extra_args)
@@ -568,7 +568,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
 
     def efuse_summary(
         action: str,
-        ctx: click.core.Context,
+        ctx: Context,
         args: PropertyDict,
         format: str,  # noqa: A002
         **extra_args: dict,
@@ -583,7 +583,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
             summary_args += [str(extra_args['efuse_name'])]
         RunTool('espefuse', summary_args, args.build_dir)()
 
-    def efuse_write_protect(action: str, ctx: click.core.Context, args: PropertyDict, **extra_args: dict) -> None:
+    def efuse_write_protect(action: str, ctx: Context, args: PropertyDict, **extra_args: dict) -> None:
         ensure_build_directory(args, ctx.info_name)
         write_protect_args = [PYTHON, '-m', 'espefuse']
         write_protect_args += _parse_efuse_args(ctx, args, extra_args)
