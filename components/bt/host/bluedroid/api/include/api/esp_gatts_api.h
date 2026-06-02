@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -283,7 +283,11 @@ typedef void (* esp_gatts_cb_t)(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
  *
  * @param[in] callback The pointer to the application callback function
  *
- * @note            Avoid performing time-consuming operations within the callback functions.
+ * @note            Do NOT perform time-consuming operations in the callback. Time-consuming operations
+ *                  include: taking semaphores that may block for a long time (e.g. xSemaphoreTake with
+ *                  long timeout or portMAX_DELAY), blocking delays (e.g. vTaskDelay), and flash
+ *                  read/write/erase. Such operations may block the Bluetooth stack and lead to
+ *                  instability or deadlock. Defer heavy work to a separate task if needed.
  *
  * @return
  *       - ESP_OK: Success
