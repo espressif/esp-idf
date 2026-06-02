@@ -16,7 +16,7 @@
 #include "flash_qio_mode.h"
 #include "bootloader_flash_config.h"
 #include "bootloader_common.h"
-#include "bootloader_flash_priv.h"
+#include "esp_private/bootloader_flash_internal.h"
 #include "bootloader_init.h"
 #include "hal/mmu_hal.h"
 #include "hal/mmu_ll.h"
@@ -24,6 +24,7 @@
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
 #include "esp_private/bootloader_flash_internal.h"
+#include "spi_flash_defs.h"
 
 void IRAM_ATTR bootloader_flash_update_id(void)
 {

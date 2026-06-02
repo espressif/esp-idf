@@ -65,8 +65,6 @@ extern uint32_t bootloader_flash_execute_command_common(
     uint8_t mosi_len, uint32_t mosi_data,
     uint8_t miso_len);
 
-extern uint32_t IRAM_ATTR bootloader_flash_read_sfdp(uint32_t sfdp_addr, unsigned int miso_byte_num);
-
 //-----------------For flash chips which enter HPM via command-----------------------//
 
 /**

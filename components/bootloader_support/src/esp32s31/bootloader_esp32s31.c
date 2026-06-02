@@ -16,7 +16,7 @@
 #include "bootloader_flash_config.h"
 #include "bootloader_mem.h"
 #include "bootloader_console.h"
-#include "bootloader_flash_priv.h"
+#include "esp_private/bootloader_flash_internal.h"
 #include "bootloader_soc.h"
 #include "esp_efuse.h"
 #include "esp_private/bootloader_flash_internal.h"

@@ -5,7 +5,7 @@
  */
 #include <sys/param.h>
 #include "esp_log.h"
-#include "bootloader_flash_priv.h"
+#include "esp_private/bootloader_flash_internal.h"
 #include "bootloader_sha.h"
 #include "bootloader_sha_flash.h"
 #include "spi_flash_mmap.h"
@@ -57,7 +57,7 @@ static esp_err_t bootloader_sha_flash_contents(esp_sha_type type, uint32_t flash
             return ESP_ERR_NO_MEM;
         }
         uint32_t max_image_len;
-        if (__builtin_mul_overflow(max_pages, SPI_FLASH_MMU_PAGE_SIZE, &max_image_len)) {
+        if (__builtin_mul_overflow(max_pages, CONFIG_MMU_PAGE_SIZE, &max_image_len)) {
             max_image_len = UINT32_MAX;
         }
         uint32_t partial_image_len = MIN(len, max_image_len); /* Read the image that fits in the free MMU pages */

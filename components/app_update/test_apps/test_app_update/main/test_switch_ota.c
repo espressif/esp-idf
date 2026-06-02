@@ -9,7 +9,7 @@
 
 #include "esp_system.h"
 #include "bootloader_common.h"
-#include "../bootloader_flash/include/bootloader_flash_priv.h"
+#include "esp_private/bootloader_flash_internal.h"
 #include "esp_log.h"
 #include "esp_ota_ops.h"
 #include "unity.h"

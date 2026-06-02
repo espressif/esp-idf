@@ -9,6 +9,16 @@ LCD
 - :cpp:member:`esp_lcd_dpi_panel_event_callbacks_t::on_refresh_done` 回调已废弃。请使用 :cpp:member:`esp_lcd_dpi_panel_event_callbacks_t::on_frame_buf_complete` 判断帧缓冲区何时可以被安全复用。
 - MIPI DSI DPI 面板的 VSYNC 时序事件现在通过 :cpp:member:`esp_lcd_dpi_panel_event_callbacks_t::on_vsync` 回调上报。
 
+SPI Flash
+---------
+
+- ``bootloader_flash_priv.h`` 头文件已废弃，其内容已拆分到两个头文件中：
+
+  - ``bootloader_flash_override.h``：面向自定义 flash 芯片支持的工具类 API，例如 ``bootloader_execute_flash_command``、``bootloader_flash_read_sfdp`` 以及状态寄存器读写辅助函数。该头文件不被视为稳定 API，但应用程序和自定义 bootloader 组件仍可使用。
+  - ``esp_private/bootloader_flash_internal.h``：ESP-IDF 内部使用的 API，例如 ``bootloader_mmap``、``bootloader_munmap`` 和 ``bootloader_flash_read``，这些 API 可能在不另行通知的情况下发生变更。
+
+  已废弃的 ``bootloader_flash_priv.h`` 仍会包含上述两个头文件，因此在该头文件被移除之前，现有代码可以继续正常编译。
+
 UART
 ------
 

@@ -16,7 +16,7 @@
 
 #include "esp_image_format.h"
 #include "bootloader_config.h"
-#include "bootloader_flash_priv.h"
+#include "esp_private/bootloader_flash_internal.h"
 
 #include "bootloader_utility.h"
 #include "bootloader_utility_tee.h"

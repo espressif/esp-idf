@@ -17,7 +17,7 @@
 
 #include "sdkconfig.h"
 
-#include "bootloader_flash_priv.h"
+#include "esp_private/bootloader_flash_internal.h"
 #include "bootloader_random.h"
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"

@@ -9,7 +9,7 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "bootloader_init.h"
-#include "bootloader_flash_priv.h"
+#include "esp_private/bootloader_flash_internal.h"
 #include "bootloader_flash_config.h"
 #include "bootloader_random.h"
 #include "bootloader_clock.h"

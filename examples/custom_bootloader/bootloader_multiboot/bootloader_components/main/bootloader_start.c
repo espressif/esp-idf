@@ -11,7 +11,6 @@
 #include "bootloader_init.h"
 #include "bootloader_utility.h"
 #include "bootloader_common.h"
-#include "bootloader_flash_priv.h"
 #include "esp_app_desc.h"
 
 #define MAX_PARTITIONS  8

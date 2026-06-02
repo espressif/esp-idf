@@ -390,7 +390,7 @@ void esp_efuse_init_virtual_mode_in_ram(void)
 
 #ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
 
-#include "../bootloader_flash/include/bootloader_flash_priv.h"
+#include "esp_private/bootloader_flash_internal.h"
 
 static uint32_t esp_efuse_flash_offset = 0;
 static uint32_t esp_efuse_flash_size = 0;
