@@ -1,16 +1,19 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
 #include "driver/gpio.h"
+#include "gpio_pcm_config.h"
+
+#if CONFIG_EXAMPLE_HFP_PCM_GPIO_SUPPORTED
 #include "soc/gpio_reg.h"
 #include "soc/gpio_sig_map.h"
-#include "gpio_pcm_config.h"
 #include "esp_rom_gpio.h"
+#endif
 
-#if CONFIG_BT_HFP_AUDIO_DATA_PATH_PCM
+#if CONFIG_EXAMPLE_HFP_PCM_GPIO_SUPPORTED && CONFIG_BT_HFP_AUDIO_DATA_PATH_PCM
 
 #define GPIO_OUTPUT_PCM_FSYNC      (25)
 #define GPIO_OUTPUT_PCM_CLK_OUT    (5)
@@ -58,7 +61,7 @@ void app_gpio_pcm_io_cfg(void)
     esp_rom_gpio_connect_in_signal(GPIO_INPUT_PCM_DIN, PCMDIN_IDX, false);
 }
 
-#endif /* #if CONFIG_BT_HFP_AUDIO_DATA_PATH_PCM */
+#endif /* CONFIG_EXAMPLE_HFP_PCM_GPIO_SUPPORTED && CONFIG_BT_HFP_AUDIO_DATA_PATH_PCM */
 
 #if ACOUSTIC_ECHO_CANCELLATION_ENABLE
 
