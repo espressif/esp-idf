@@ -984,7 +984,15 @@ typedef struct {
     esp_ble_addr_type_t peer_addr_type; /*!< ext adv peer address type */
     esp_bd_addr_t peer_addr;            /*!< ext adv peer address */
     esp_ble_adv_filter_t filter_policy; /*!< ext adv filter policy */
-    int8_t tx_power;                    /*!< ext adv tx power */
+    int8_t tx_power;                    /*!< ext adv tx power.
+                                             For this advertising set, priority is higher than
+                                             `esp_ble_tx_power_set()`, `esp_ble_tx_power_set_enhanced()`,
+                                             and menuconfig default TX power (`CONFIG_BT_CTRL_DFT_TX_POWER_LEVEL`).
+                                             The actual applied TX power may be different from the requested value,
+                                             depending on the Controller TX power granularity/level mechanism.
+                                             (for example ESP32-C3/ESP32-S3 with 3 dBm step), the actual
+                                             applied TX power may be rounded down and be 0 to 2 dBm lower
+                                             than the requested value.) */
     esp_ble_gap_pri_phy_t primary_phy;  /*!< ext adv primary phy */
     uint8_t max_skip;                   /*!< ext adv maximum skip */
     esp_ble_gap_phy_t secondary_phy;    /*!< ext adv secondary phy */
