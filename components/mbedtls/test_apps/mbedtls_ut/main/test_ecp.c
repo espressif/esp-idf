@@ -25,6 +25,8 @@
 
 #if CONFIG_MBEDTLS_HARDWARE_ECC
 #include "hal/ecc_ll.h"
+#include "soc/soc_caps.h"
+#include "ecc_impl.h"
 #endif
 
 /* Note: negative value here so that assert message prints a grep-able
@@ -397,6 +399,95 @@ TEST_CASE("mbedtls ECP point verify with SECP384R1", "[mbedtls]")
 {
     if (ecc_ll_is_p384_curve_operations_supported()) {
         test_ecp_verify(MBEDTLS_ECP_DP_SECP384R1, ecc_p384_mul_res_x, ecc_p384_mul_res_y);
+    }
+}
+#endif /* SOC_ECC_SUPPORT_CURVE_P384 */
+
+static void ecc_mul_expect_reject(const ecc_point_t *point, const mbedtls_mpi *k)
+{
+    uint8_t scalar[MAX_SIZE] = {0};
+    ecc_point_t result;
+    ecc_point_t zero;
+
+    memset(&zero, 0, sizeof(zero));
+    memset(&result, 0xa5, sizeof(result));
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_write_binary_le(k, scalar, point->len));
+    TEST_ASSERT_EQUAL_INT(-1, esp_ecc_point_multiply(point, scalar, &result, false));
+    TEST_ASSERT_EQUAL_MEMORY(&zero, &result, sizeof(result));
+}
+
+static void ecc_mul_expect_point(const ecc_point_t *point, const mbedtls_mpi *k,
+                                 const mbedtls_mpi *expected_x, const mbedtls_mpi *expected_y)
+{
+    uint8_t scalar[MAX_SIZE] = {0};
+    uint8_t x[MAX_SIZE] = {0};
+    uint8_t y[MAX_SIZE] = {0};
+    ecc_point_t result;
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_write_binary_le(k, scalar, point->len));
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_write_binary_le(expected_x, x, point->len));
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_write_binary_le(expected_y, y, point->len));
+
+    TEST_ASSERT_EQUAL_INT(0, esp_ecc_point_multiply(point, scalar, &result, false));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(x, result.x, point->len);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(y, result.y, point->len);
+}
+
+static void test_ecc_mul_scalar_range(mbedtls_ecp_group_id id)
+{
+    mbedtls_ecp_group grp;
+    mbedtls_mpi k;
+    mbedtls_mpi neg_y;
+    ecc_point_t point;
+
+    mbedtls_ecp_group_init(&grp);
+    mbedtls_mpi_init(&k);
+    mbedtls_mpi_init(&neg_y);
+    memset(&point, 0, sizeof(point));
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_ecp_group_load(&grp, id));
+
+    point.len = grp.pbits / 8;
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_write_binary_le(&grp.G.MBEDTLS_PRIVATE(X), point.x, point.len));
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_write_binary_le(&grp.G.MBEDTLS_PRIVATE(Y), point.y, point.len));
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_lset(&k, 0));
+    ecc_mul_expect_reject(&point, &k);
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_copy(&k, &grp.N));
+    ecc_mul_expect_reject(&point, &k);
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_add_int(&k, &grp.N, 1));
+    ecc_mul_expect_reject(&point, &k);
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_lset(&k, 1));
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_shift_l(&k, grp.pbits));
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_sub_int(&k, &k, 1));
+    ecc_mul_expect_reject(&point, &k);
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_lset(&k, 1));
+    ecc_mul_expect_point(&point, &k, &grp.G.MBEDTLS_PRIVATE(X), &grp.G.MBEDTLS_PRIVATE(Y));
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_sub_int(&k, &grp.N, 1));
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_sub_mpi(&neg_y, &grp.P, &grp.G.MBEDTLS_PRIVATE(Y)));
+    ecc_mul_expect_point(&point, &k, &grp.G.MBEDTLS_PRIVATE(X), &neg_y);
+
+    mbedtls_mpi_free(&neg_y);
+    mbedtls_mpi_free(&k);
+    mbedtls_ecp_group_free(&grp);
+}
+
+TEST_CASE("ECC point multiply rejects out-of-range scalar with SECP256R1", "[mbedtls]")
+{
+    test_ecc_mul_scalar_range(MBEDTLS_ECP_DP_SECP256R1);
+}
+
+#if SOC_ECC_SUPPORT_CURVE_P384
+TEST_CASE("ECC point multiply rejects out-of-range scalar with SECP384R1", "[mbedtls]")
+{
+    if (ecc_ll_is_p384_curve_operations_supported()) {
+        test_ecc_mul_scalar_range(MBEDTLS_ECP_DP_SECP384R1);
     }
 }
 #endif /* SOC_ECC_SUPPORT_CURVE_P384 */
