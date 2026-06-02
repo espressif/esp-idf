@@ -51,7 +51,7 @@ void esp_http_server_dispatch_event(int32_t event_id, const void* event_data, si
 }
 #endif // CONFIG_HTTPD_ENABLE_EVENTS
 
-static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
+static esp_err_t httpd_accept_conn(struct httpd_data *hd)
 {
     /* If no space is available for new session, close the least recently used one */
     if (hd->config.lru_purge_enable == true) {
@@ -74,11 +74,13 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
 
     struct sockaddr_storage addr_from;
     socklen_t addr_from_len = sizeof(addr_from);
-    int new_fd = accept(listen_fd, (struct sockaddr *)&addr_from, &addr_from_len);
+
+    int new_fd = accept(hd->listen_fd, (struct sockaddr *)&addr_from, &addr_from_len);
     if (new_fd < 0) {
         ESP_LOGE(TAG, LOG_FMT("error in accept (%d)"), errno);
         return ESP_FAIL;
     }
+
     ESP_LOGD(TAG, LOG_FMT("newfd = %d"), new_fd);
 
     struct timeval tv;
@@ -321,7 +323,7 @@ static esp_err_t httpd_server(struct httpd_data *hd)
      * process? */
     if (FD_ISSET(hd->listen_fd, &read_set)) {
         ESP_LOGD(TAG, LOG_FMT("processing listen socket %d"), hd->listen_fd);
-        if (httpd_accept_conn(hd, hd->listen_fd) != ESP_OK) {
+        if (httpd_accept_conn(hd) != ESP_OK) {
             ESP_LOGW(TAG, LOG_FMT("error accepting new connection"));
         }
     }
