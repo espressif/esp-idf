@@ -25,6 +25,7 @@ esp-idf-sbom
 pyclang
 construct
 rich
+esp-pylib[cli]
 psutil
 
 # ble's compressed log testing tool
