@@ -60,6 +60,9 @@ typedef struct {
 /**
  * @brief Install async CRC driver, with AHB-GDMA as the backend
  *
+ * @note The GDMA backend reserves one M2M trigger ID and one paired TX/RX GDMA channel.
+ *       TX feeds the CRC calculator, while RX drains the M2M data path.
+ *
  * @param[in] config Configuration of async CRC
  * @param[out] crc_hdl Returned driver handle
  * @return
@@ -74,6 +77,9 @@ esp_err_t esp_async_crc_install_gdma_ahb(const async_crc_config_t *config, async
 #if SOC_HAS(AXI_GDMA)
 /**
  * @brief Install async CRC driver, with AXI-GDMA as the backend
+ *
+ * @note The GDMA backend reserves one M2M trigger ID and one paired TX/RX GDMA channel.
+ *       TX feeds the CRC calculator, while RX drains the M2M data path.
  *
  * @param[in] config Configuration of async CRC
  * @param[out] crc_hdl Returned driver handle
