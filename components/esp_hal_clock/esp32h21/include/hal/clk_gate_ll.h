@@ -153,12 +153,15 @@ static inline void periph_ll_clk_gate_set_default(soc_reset_reason_t rst_reason,
         PCR.parl_clk_tx_conf.parl_clk_tx_en = 0;
         PCR.parl_io_conf.parl_clk_en = 0;
         PCR.gdma_conf.gdma_clk_en = 0;
+        PCR.regdma_conf.regdma_clk_en = 0;
 
         if (config->disable_mspi_flash_clk) {
             PCR.mspi_conf.mspi_clk_en = 0;
+            PCR.mspi_conf.mspi_pll_clk_en = 0;
         }
 
         PCR.spi2_conf.spi2_clk_en = 0;
+        PCR.spi2_clkm_conf.spi2_clkm_en = 0;
         PCR.tsens_clk_conf.tsens_clk_en = 0;
 
         PCR.uhci_conf.uhci_clk_en = 0;
