@@ -40,6 +40,10 @@ WL_Flash::~WL_Flash()
 
 esp_err_t WL_Flash::config(wl_config_t *cfg, Flash_Access *partition)
 {
+    if (cfg == NULL || partition == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     ESP_LOGV(TAG, "%s partition_start_addr=0x%08" PRIx32 ", wl_partition_size=0x%08" PRIx32 ", wl_page_size=0x%08" PRIx32 ", flash_sector_size=0x%08" PRIx32 ", wl_update_rate=0x%08" PRIx32 ", wl_pos_update_record_size=0x%08" PRIx32 ", version=0x%08" PRIx32 ", wl_temp_buff_size=0x%08" PRIx32 , __func__,
              (uint32_t) cfg->wl_partition_start_addr,
              cfg->wl_partition_size,
@@ -57,13 +61,7 @@ esp_err_t WL_Flash::config(wl_config_t *cfg, Flash_Access *partition)
         this->cfg.wl_temp_buff_size = this->cfg.wl_pos_update_record_size;
     }
     this->configured = false;
-    if (cfg == NULL) {
-        result = ESP_ERR_INVALID_ARG;
-    }
     this->partition = partition;
-    if (partition == NULL) {
-        result = ESP_ERR_INVALID_ARG;
-    }
     if ((this->cfg.flash_sector_size % this->cfg.wl_temp_buff_size) != 0) {
         result = ESP_ERR_INVALID_ARG;
     }
