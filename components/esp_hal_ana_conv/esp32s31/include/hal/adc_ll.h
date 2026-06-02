@@ -9,6 +9,7 @@
 
 #include "esp_rom_sys.h"
 #include "soc/adc_struct.h"
+#include "soc/adc_reg.h"
 #include "soc/clk_tree_defs.h"
 #include "soc/lp_peri_clkrst_struct.h"
 #include "hal/misc.h"
