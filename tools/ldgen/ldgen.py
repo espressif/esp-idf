@@ -3,7 +3,6 @@
 # SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
-import argparse
 import errno
 import hashlib
 import json
@@ -15,6 +14,12 @@ import sys
 import tempfile
 from io import StringIO
 
+import rich_click as click
+from esp_pylib.cli_options import MutuallyExclusiveOption
+from esp_pylib.cli_options import OptionEatAll
+from esp_pylib.excepthook import install_exception_reporting
+from esp_pylib.logger import Verbosity
+from esp_pylib.logger import log
 from ldgen.entity import EntityDB
 from ldgen.fragments import parse_fragment_file
 from ldgen.generation import Generation
@@ -23,6 +28,15 @@ from ldgen.linker_script import LinkerScript
 from ldgen.sdkconfig import SDKConfig
 from pyparsing import ParseException
 from pyparsing import ParseFatalException
+
+install_exception_reporting()
+
+
+class MutuallyExclusiveEatAllOption(MutuallyExclusiveOption, OptionEatAll):
+    """Mutually exclusive option that accepts multiple values until the next flag."""
+
+    pass
+
 
 _RE_SECTION_NAME = re.compile(r'^\s*\d+\s+(\.\S+)', re.MULTILINE)
 
@@ -118,109 +132,49 @@ def _save_lf_cache(cache_path, key, fragments):
         pass
 
 
-def _update_environment(args):
-    env = [(name, value) for (name, value) in (e.split('=', 1) for e in args.env)]
-    for name, value in env:
+def _update_environment(env, env_file):
+    for name, value in (e.split('=', 1) for e in env):
         value = ' '.join(value.split())
         os.environ[name] = value
 
-    if args.env_file is not None:
-        env = json.load(args.env_file)
-        os.environ.update(env)
+    if env_file is not None:
+        env_vars = json.load(env_file)
+        os.environ.update(env_vars)
 
 
-def main():
-    argparser = argparse.ArgumentParser(description='ESP-IDF linker script generator')
-
-    argparser.add_argument('--input', '-i', help='Linker template file', type=argparse.FileType('r'))
-
-    fragments_group = argparser.add_mutually_exclusive_group()
-
-    fragments_group.add_argument(
-        '--fragments', '-f', type=argparse.FileType('r'), help='Input fragment files', nargs='+'
-    )
-
-    fragments_group.add_argument(
-        '--fragments-list', help='Input fragment files as a semicolon-separated list', type=str
-    )
-
-    fragments_group.add_argument(
-        '--fragments-list-file',
-        type=argparse.FileType('r'),
-        help='File containing fragment file paths, one per line',
-    )
-
-    argparser.add_argument(
-        '--libraries-file', type=argparse.FileType('r'), help='File that contains the list of libraries in the build'
-    )
-
-    argparser.add_argument(
-        '--mutable-libraries-file',
-        type=argparse.FileType('r'),
-        help='File that contains the list of mutable libraries in the build',
-    )
-
-    argparser.add_argument('--output', '-o', help='Output linker script', type=str)
-
-    argparser.add_argument('--config', '-c', help='Project configuration')
-
-    argparser.add_argument('--kconfig', '-k', help='IDF Kconfig file')
-
-    argparser.add_argument(
-        '--check-mapping', help='Perform a check if a mapping (archive, obj, symbol) exists', action='store_true'
-    )
-
-    argparser.add_argument(
-        '--check-mapping-exceptions', help='Mappings exempted from check', type=argparse.FileType('r')
-    )
-
-    argparser.add_argument(
-        '--env',
-        '-e',
-        action='append',
-        default=[],
-        help='Environment to set when evaluating the config file',
-        metavar='NAME=VAL',
-    )
-
-    argparser.add_argument(
-        '--env-file',
-        type=argparse.FileType('r'),
-        help='Optional file to load environment variables from. Contents '
-        'should be a JSON object where each key/value pair is a variable.',
-    )
-
-    argparser.add_argument('--objdump', help='Path to toolchain objdump')
-
-    argparser.add_argument('--debug', '-d', help='Print debugging information.', action='store_true')
-
-    args = argparser.parse_args()
-
-    input_file = args.input
-    libraries_file = args.libraries_file
-    mutable_libraries_file = args.mutable_libraries_file or []
-    config_file = args.config
-    output_path = args.output
-    kconfig_file = args.kconfig
-    objdump = args.objdump
-
+def _run(
+    input_file,
+    fragments,
+    fragments_list,
+    fragments_list_file,
+    libraries_file,
+    mutable_libraries_file,
+    output_path,
+    config_file,
+    kconfig_file,
+    check_mapping,
+    check_mapping_exceptions,
+    env,
+    env_file,
+    objdump,
+    debug,
+):
     fragment_files = []
-    if args.fragments_list:
-        fragment_files = args.fragments_list.split(';')
-    elif args.fragments_list_file:
-        fragment_files = [line.strip() for line in args.fragments_list_file if line.strip()]
-    elif args.fragments:
-        fragment_files = args.fragments
+    if fragments_list:
+        fragment_files = fragments_list.split(';')
+    elif fragments_list_file:
+        fragment_files = [line.strip() for line in fragments_list_file if line.strip()]
+    elif fragments:
+        fragment_files = list(fragments)
 
-    check_mapping = args.check_mapping
-    if args.check_mapping_exceptions:
-        check_mapping_exceptions = [line.strip() for line in args.check_mapping_exceptions]
+    if check_mapping_exceptions:
+        check_mapping_exceptions = [line.strip() for line in check_mapping_exceptions]
     else:
         check_mapping_exceptions = None
 
     no_cache = os.environ.get('LDGEN_NO_CACHE') == '1'
     if no_cache:
-        print('Linker script generation caches disabled by LDGEN_NO_CACHE')
+        log.print('Linker script generation caches disabled by LDGEN_NO_CACHE')
 
     try:
         sections_infos = EntityDB()
@@ -244,13 +198,13 @@ def main():
             and os.path.exists(output_path)
             and _can_skip_generation(output_path, fingerprint)
         ):
-            print('Skipping linker script generation, section names unchanged')
+            log.print('Skipping linker script generation, section names unchanged')
             sys.exit(0)
 
         mutable_libs = [lib.strip() for lib in mutable_libraries_file]
-        generation_model = Generation(check_mapping, check_mapping_exceptions, mutable_libs, args.debug)
+        generation_model = Generation(check_mapping, check_mapping_exceptions, mutable_libs, debug)
 
-        _update_environment(args)  # assign args.env and args.env_file to os.environ
+        _update_environment(env, env_file)
 
         sdkconfig = SDKConfig(kconfig_file, config_file)
 
@@ -264,7 +218,7 @@ def main():
         if lf_cache_path and lf_cache_key:
             parsed_fragments = _load_lf_cache(lf_cache_path, lf_cache_key)
             if parsed_fragments is not None:
-                print('Skipping linker fragment parsing, fragment files unchanged')
+                log.print('Skipping linker fragment parsing, fragment files unchanged')
 
         if parsed_fragments is None:
             parsed_fragments = []
@@ -308,8 +262,116 @@ def main():
         if output_path and fingerprint:
             _save_fingerprint(output_path, fingerprint)
     except LdGenFailure as e:
-        print(f'linker script generation failed for {input_file.name}\nERROR: {e}')
-        sys.exit(1)
+        log.die(f'linker script generation failed for {input_file.name}\n{e}')
+
+
+@click.command(
+    context_settings={'help_option_names': ['-h', '--help']},
+    help='ESP-IDF linker script generator',
+)
+@click.option('--input', '-i', 'input_file', type=click.File('r'), help='Linker template file')
+@click.option(
+    '--fragments',
+    '-f',
+    multiple=True,
+    type=click.File('r'),
+    cls=MutuallyExclusiveEatAllOption,
+    exclusive_with=['fragments_list', 'fragments_list_file'],
+    help='Input fragment files',
+)
+@click.option(
+    '--fragments-list',
+    cls=MutuallyExclusiveOption,
+    exclusive_with=['fragments', 'fragments_list_file'],
+    help='Input fragment files as a semicolon-separated list',
+)
+@click.option(
+    '--fragments-list-file',
+    type=click.File('r'),
+    cls=MutuallyExclusiveOption,
+    exclusive_with=['fragments', 'fragments_list'],
+    help='File containing fragment file paths, one per line',
+)
+@click.option(
+    '--libraries-file',
+    type=click.File('r'),
+    help='File that contains the list of libraries in the build',
+)
+@click.option(
+    '--mutable-libraries-file',
+    type=click.File('r'),
+    help='File that contains the list of mutable libraries in the build',
+)
+@click.option('--output', '-o', help='Output linker script')
+@click.option('--config', '-c', help='Project configuration')
+@click.option('--kconfig', '-k', help='IDF Kconfig file')
+@click.option(
+    '--check-mapping',
+    is_flag=True,
+    help='Perform a check if a mapping (archive, obj, symbol) exists',
+)
+@click.option(
+    '--check-mapping-exceptions',
+    type=click.File('r'),
+    help='Mappings exempted from check',
+)
+@click.option(
+    '--env',
+    '-e',
+    multiple=True,
+    default=[],
+    metavar='NAME=VAL',
+    help='Environment to set when evaluating the config file',
+)
+@click.option(
+    '--env-file',
+    type=click.File('r'),
+    help='Optional file to load environment variables from. Contents '
+    'should be a JSON object where each key/value pair is a variable.',
+)
+@click.option('--objdump', help='Path to toolchain objdump')
+@click.option('--debug', '-d', is_flag=True, help='Print debugging information.')
+def cli(
+    input_file,
+    fragments,
+    fragments_list,
+    fragments_list_file,
+    libraries_file,
+    mutable_libraries_file,
+    output,
+    config,
+    kconfig,
+    check_mapping,
+    check_mapping_exceptions,
+    env,
+    env_file,
+    objdump,
+    debug,
+):
+    if debug:
+        log.set_verbosity(Verbosity.VERBOSE)
+
+    _run(
+        input_file=input_file,
+        fragments=fragments,
+        fragments_list=fragments_list,
+        fragments_list_file=fragments_list_file,
+        libraries_file=libraries_file,
+        mutable_libraries_file=mutable_libraries_file or [],
+        output_path=output,
+        config_file=config,
+        kconfig_file=kconfig,
+        check_mapping=check_mapping,
+        check_mapping_exceptions=check_mapping_exceptions,
+        env=env,
+        env_file=env_file,
+        objdump=objdump,
+        debug=debug,
+    )
+
+
+def main():
+    cli()
 
 
 if __name__ == '__main__':

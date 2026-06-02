@@ -1,11 +1,13 @@
 #
-# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 import collections
 import fnmatch
 import itertools
 from collections import namedtuple
+
+from esp_pylib.logger import log
 
 from .entity import Entity
 from .fragments import Keep
@@ -622,10 +624,10 @@ class Generation:
         return res
 
     def _dump_entity_tree(self, node, indent=''):
-        print(f'{indent}-> {node.name}')
+        log.debug(f'{indent}-> {node.name}')
         for placement in node.placements.values():
-            print(f'{indent}     {placement}')
-        print()
+            log.debug(f'{indent}     {placement}')
+        log.debug('')
         for child in node.children:
             self._dump_entity_tree(child, ' ' * 8 + indent)
 
