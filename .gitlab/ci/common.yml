@@ -128,8 +128,8 @@ variables:
   # download constraint file for dev
   if [[ -n "$CI_PYTHON_CONSTRAINT_BRANCH" ]]; then
     wget -O /tmp/constraint.txt --header="Authorization:Bearer ${ESPCI_TOKEN}" ${GITLAB_HTTP_SERVER}/api/v4/projects/2581/repository/files/${CI_PYTHON_CONSTRAINT_FILE}/raw?ref=${CI_PYTHON_CONSTRAINT_BRANCH}
-    mkdir -p ~/.espressif
-    mv /tmp/constraint.txt ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+    mkdir -p "${IDF_TOOLS_PATH:-$HOME/.espressif}"
+    mv /tmp/constraint.txt "${IDF_TOOLS_PATH:-$HOME/.espressif}/${CI_PYTHON_CONSTRAINT_FILE}"
   fi
 
   # Mirror
@@ -166,7 +166,7 @@ variables:
 
   # we need the latest DEV release for esptool to be installed in every job without bumping the minimal requirement in
   # the constraint file.
-  pip install --upgrade --pre esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+  pip install --upgrade --pre esptool -c "${IDF_TOOLS_PATH:-$HOME/.espressif}/${CI_PYTHON_CONSTRAINT_FILE}"
 
   # Custom clang
   if [[ ! -z "$CI_CLANG_DISTRO_URL" ]]; then
