@@ -219,7 +219,7 @@ psa_status_t esp_hmac_import_key_opaque(
 
 psa_status_t esp_hmac_abort_opaque(esp_hmac_opaque_operation_t *esp_hmac_ctx)
 {
-    if (!esp_hmac_ctx) {
+    if (esp_hmac_ctx != NULL) {
         mbedtls_platform_zeroize(esp_hmac_ctx, sizeof(esp_hmac_opaque_operation_t));
     }
     return PSA_SUCCESS;
