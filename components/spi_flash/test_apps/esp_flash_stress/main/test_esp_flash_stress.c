@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -127,7 +127,7 @@ TEST_CASE("Flash UniCore: Test ESP Flash API Concurrency [Stress]", "[esp_flash]
         xTaskCreatePinnedToCore(&s_test_flash_ops_task, flash_task_name, 4096, (void *)(&ctx), 5, NULL, 0);
     }
 
-    while(1);
+    while (1);
 }
 
 #if !CONFIG_FREERTOS_UNICORE
@@ -167,7 +167,6 @@ TEST_CASE("Flash DualCore: Test ESP Flash API Concurrency", "[esp_flash]")
     vSemaphoreDelete(s_test_concurrency_smphr);
 }
 
-
 /**
  * esp_flash APIs concurrency pressure test
  * This test is for manually test
@@ -195,6 +194,6 @@ TEST_CASE("Flash DualCore: Test ESP Flash API Concurrency [Stress]", "[esp_flash
         xTaskCreatePinnedToCore(&s_test_flash_ops_task, flash_task_name, 4096, (void *)(&ctx), 5, NULL, 1);
     }
 
-    while(1);
+    while (1);
 }
 #endif  //#if !CONFIG_FREERTOS_UNICORE

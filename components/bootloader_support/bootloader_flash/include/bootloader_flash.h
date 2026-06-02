@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,8 +7,7 @@
 
 #include <stdint.h>
 #include <esp_err.h>
-#include "spi_flash_mmap.h" /* including in bootloader for error values */
-#include "esp_private/spi_flash_os.h"
+#include "esp_rom_spiflash.h"
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "bootloader_flash_override.h"
@@ -59,6 +58,7 @@ esp_err_t bootloader_flash_reset_chip(void);
  *
  * @return True if flash is in octal mode, false else
  */
+__attribute__((deprecated("in favor of spi_flash_is_octal_mode_enabled")))
 bool bootloader_flash_is_octal_mode_enabled(void);
 
 /**

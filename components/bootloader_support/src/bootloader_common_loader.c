@@ -19,9 +19,10 @@
 #include "soc/efuse_reg.h"
 #include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
+#include "hal/misc.h"
 #include "esp_image_format.h"
 #include "sys/param.h"
-#include "bootloader_flash_priv.h"
+#include "esp_private/bootloader_flash_internal.h"
 #include "esp_rom_caps.h"
 #include "esp_macros.h"
 

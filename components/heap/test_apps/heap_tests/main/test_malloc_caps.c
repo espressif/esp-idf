@@ -14,7 +14,6 @@
 #include "esp_heap_caps.h"
 #include "esp_heap_caps_init.h"
 #include "heap_memory_layout.h"
-#include "spi_flash_mmap.h"
 #include "esp_memory_utils.h"
 #include "esp_private/spi_flash_os.h"
 #include <stdlib.h>

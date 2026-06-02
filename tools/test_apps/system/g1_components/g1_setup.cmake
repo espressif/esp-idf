@@ -3,7 +3,7 @@
 # project is configured, since cmakev1 uses COMPONENTS to restrict the build.
 
 set(g0_components soc hal esp_common esp_rom)  # also <arch>, i.e. xtensa or riscv, will be added below
-set(g1_components spi_flash freertos log heap esp_libc esp_system esp_hw_support esp_mm esp_stdio)
+set(g1_components freertos log heap esp_libc esp_system esp_hw_support esp_mm esp_stdio esp_mspi)
 # The HAL components that required by G1 components
 # Most of these HAL components are required by `clk.c` in `esp_system` for peripherals clock initialization.
 set(esp_hal_components

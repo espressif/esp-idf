@@ -86,7 +86,7 @@ This document describes the implementation differences of MSPI interrupt handlin
 
 | File | Description |
 |------|-------------|
-| `components/esp_hw_support/mspi/mspi_intr/mspi_intr.c` | Shared MSPI interrupt management |
+| `components/esp_mspi/mspi_intr/mspi_intr.c` | Shared MSPI interrupt management |
 | `components/esp_psram/system_layer/esp_psram_mspi.c` | PSRAM specific interrupt handling |
 
 ---

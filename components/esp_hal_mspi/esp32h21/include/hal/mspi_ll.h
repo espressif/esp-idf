@@ -25,6 +25,7 @@
 #include "soc/pcr_struct.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
+#include "soc/spi_mem_c_reg.h"
 
 #ifdef __cplusplus
 extern "C" {

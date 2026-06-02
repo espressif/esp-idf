@@ -70,6 +70,9 @@ else()
         file(GENERATE
              OUTPUT "${build_dir}/linux_flash_data.txt"
              CONTENT "$<JOIN:$<TARGET_PROPERTY:linux_flash_data,FLASH_DATA_ENTRIES>,\n>\n")
+    elseif(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
+        # Force linking partition_target.c so the flash region protection init hook is not discarded.
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_partition_flash_region_protection_include_func")
     endif()
 
     if(CMAKE_C_COMPILER_ID MATCHES "GNU")

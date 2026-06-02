@@ -10,7 +10,7 @@
 #include "esp_log.h"
 #include "sdkconfig.h"
 
-#include "esp_flash_chips/spi_flash_defs.h"
+#include "spi_flash_defs.h"
 #include "esp_flash_chips/spi_flash_chip_generic.h"
 #include "esp_flash_chips/spi_flash_chip_gd.h"
 

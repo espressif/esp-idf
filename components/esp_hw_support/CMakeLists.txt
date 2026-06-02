@@ -14,8 +14,6 @@ endif()
 
 set(public_include_dirs "include" "include/soc"
                         "ldo/include" "debug_probe/include" "etm/include"
-                        "mspi/mspi_timing_tuning/include" "mspi/mspi_timing_tuning/tuning_scheme_impl/include"
-                        "mspi/mspi_intr/include"
                         "mspi/esp_mspi_align/include"
                         "mspi/mspi_mem_barrier/include"
                         "power_supply/include" "modem/include")
@@ -44,7 +42,7 @@ endif()
 
 set(requires esp_hal_gpio esp_hal_usb esp_hal_pmu esp_hal_regi2c esp_hal_uart esp_hal_debug_assist)
 set(priv_requires efuse                 # only esp_hw_support/adc_share_hw_ctrl.c requires efuse component
-                  spi_flash
+                  esp_mspi
                   bootloader_support
                   esp_hal_wdt
                   esp_hal_rtc_timer
@@ -156,27 +154,6 @@ if(NOT non_os_build)
                          "port/regdma_link.c")
     endif()
 
-    if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
-        list(APPEND srcs "mspi/mspi_timing_tuning/mspi_timing_tuning.c")
-        if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY AND NOT CONFIG_IDF_TARGET_ESP32S3)
-            set(mspi_delay_file
-                "${CMAKE_CURRENT_LIST_DIR}/mspi/mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_mspi_delay.c"
-            )
-            if(EXISTS "${mspi_delay_file}")
-                list(APPEND srcs "mspi/mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_mspi_delay.c")
-            endif()
-        endif()
-
-        if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_DQS)
-            list(APPEND srcs "mspi/mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_dqs.c")
-        endif()
-        if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY)
-            list(APPEND srcs "mspi/mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_flash_delay.c")
-        endif()
-
-        list(APPEND srcs "mspi/mspi_intr/mspi_intr.c")
-    endif()
-
     if(CONFIG_SOC_RTC_FAST_MEM_SUPPORTED AND CONFIG_ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB)
         list(APPEND srcs "sleep_wake_stub.c")
     endif()
@@ -196,18 +173,6 @@ if(NOT non_os_build)
 else()
     if(ESP_TEE_BUILD)
         list(APPEND srcs "esp_clk.c" "hw_random.c")
-        if(CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1)
-            list(APPEND srcs "mspi/mspi_timing_tuning/mspi_timing_tuning.c")
-            if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY)
-                list(APPEND srcs "mspi/mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_mspi_delay.c")
-            endif()
-            if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_DQS)
-                list(APPEND srcs "mspi/mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_dqs.c")
-            endif()
-            if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY)
-                list(APPEND srcs "mspi/mspi_timing_tuning/tuning_scheme_impl/mspi_timing_by_flash_delay.c")
-            endif()
-        endif()
     endif()
 
     # Requires "_esp_error_check_failed()" function
@@ -230,9 +195,6 @@ idf_define_esp_err_codes(HEADERS include/esp_memprot_err.h)
 
 idf_build_get_property(target IDF_TARGET)
 add_subdirectory(port/${target})
-if(CONFIG_SOC_SPI_MEM_SUPPORT_TIMING_TUNING)
-    add_subdirectory(mspi/mspi_timing_tuning/port/${target})
-endif()
 add_subdirectory(lowpower)
 add_subdirectory(modem)
 

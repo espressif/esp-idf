@@ -33,6 +33,7 @@
 #include "hal/assist_debug_ll.h"
 #include "esp_rom_sys.h"
 #include "soc/regi2c_bias.h"
+#include "soc/regi2c_mpll.h"
 #include "hal/regi2c_ctrl.h"
 #include "hal/psram_ctrlr_ll.h"
 

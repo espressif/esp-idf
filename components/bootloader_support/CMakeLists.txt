@@ -100,8 +100,8 @@ else()
     set(priv_requires spi_flash efuse heap esp_bootloader_format esp_app_format
         esptool_py)
     # `esp_hal_ana_conv` is required by bootloader_random_esp32xx.c
-    list(APPEND priv_requires esp_hal_wdt esp_hal_gpio esp_hal_uart esp_hal_ana_conv esp_hal_rtc_timer
-        esp_hal_clock esp_hal_security esp_hal_debug_assist)
+    list(APPEND priv_requires esp_mspi esp_hal_wdt esp_hal_gpio esp_hal_uart esp_hal_ana_conv
+                              esp_hal_rtc_timer esp_hal_clock esp_hal_security esp_hal_debug_assist)
 endif()
 
 # src/flash_encrypt.c includes esp_security/esp_key_mgr.h on

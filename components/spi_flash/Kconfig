@@ -1,193 +1,112 @@
-menu "Main Flash configuration"
+menu "Optional and Experimental SPI Flash Features (READ DOCS FIRST)"
     depends on !APP_BUILD_TYPE_PURE_RAM_APP
 
-    menu "SPI Flash behavior when brownout"
+    comment "Features here require specific hardware (READ DOCS FIRST!)"
 
-        config SPI_FLASH_BROWNOUT_RESET_XMC
-            bool "Enable sending reset when brownout for XMC flash chips"
-            default y
-            select SPI_FLASH_BROWNOUT_RESET
-            help
-                When this option is selected, the patch will be enabled for XMC.
-                Follow the recommended flow by XMC for better stability.
+    config SPI_FLASH_AUTO_SUSPEND
+        bool "Auto suspend long erase/write operations (READ DOCS FIRST)"
+        default n
+        depends on SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND && !SPI_FLASH_ROM_IMPL
+        help
+            This option is disabled by default because it is supported only
+            for specific flash chips and for specific Espressif chips.
+            To evaluate if you can use this feature refer to
+            `Optional Features for Flash` > `Auto Suspend & Resume` of the `ESP-IDF Programming Guide`.
 
-                DO NOT DISABLE UNLESS YOU KNOW WHAT YOU ARE DOING.
+            CAUTION: If you want to OTA to an app with this feature turned on, please make
+            sure the bootloader has the support for it. (later than IDF v4.3)
 
-        config SPI_FLASH_BROWNOUT_RESET
-            bool
-            default y
-            select ESP_BROWNOUT_USE_INTR
-            help
-                When brownout happens during flash erase/write operations,
-                send reset command to stop the flash operations to improve stability.
+            If you are using an official Espressif module, please contact Espressif Business support
+            to check if the module has the flash that support this feature installed.
+            Also refer to `Concurrency Constraints for Flash on SPI1` > `Flash Auto Suspend Feature`
+            before enabling this option.
 
-    endmenu
+    config SPI_FLASH_SUSPEND_TSUS_VAL_US
+        int "SPI flash tSUS value (refer to chapter AC CHARACTERISTICS)"
+        default 50
+        range 20 100
+        help
+            This config is used for setting Tsus parameter. Tsus means CS# high to next command after
+            suspend. You can refer to the chapter of AC CHARACTERISTICS of flash datasheet.
 
-    menu "Optional and Experimental Features (READ DOCS FIRST)"
+    config SPI_FLASH_SUSPEND_TRS_VAL_US
+        int "SPI flash tRS value (refer to chapter AC CHARACTERISTICS)"
+        default 50
+        range 20 200
+        depends on SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR && (!ESP32P4_SELECTS_REV_LESS_V3)
+        help
+            This config is used for setting Trs parameter. Trs means CS Latency Between Resume And Next Suspend.
+            You can refer to the chapter of AC CHARACTERISTICS of flash datasheet.
+            For high-performance scenarios, some flash chips allow this set value to be smaller than the
+            given value in the datasheet without causing errors in the flash state machine.
+            When you have any related needs, please contact espressif business team.
 
-        comment "Features here require specific hardware (READ DOCS FIRST!)"
+    config SPI_FLASH_FORCE_ENABLE_XMC_C_SUSPEND
+        bool "Enable XMC-C series flash chip suspend feature anyway"
+        default n
+        help
+            XMC-C series is regarded as not qualified for the Suspend feature, since its specification
+            has a tRS >= 1ms restriction. We strongly do not suggest using it for the Suspend feature.
+            However, if your product in field has enabled this feature, you may still enable this
+            config option to keep the legacy behavior.
 
-        config SPI_FLASH_UNDER_HIGH_FREQ
-            bool
-            default y if ESPTOOLPY_FLASHFREQ_120M
-            help
-                This is a helper config for HPM. Invisible for users.
+            For new users, DO NOT enable this config.
 
-        choice SPI_FLASH_HPM
-            prompt "High Performance Mode (READ DOCS FIRST, > 80MHz)"
-            depends on SOC_SPI_MEM_FLASH_SUPPORT_HPM && !ESPTOOLPY_OCT_FLASH
-            default SPI_FLASH_HPM_AUTO
-            help
-                Whether the High Performance Mode of Flash is enabled. As an optional feature, user needs to manually
-                enable this option as a confirmation. To be back-compatible with earlier IDF version, this option is
-                automatically enabled with warning when Flash running > 80Mhz.
+    config SPI_FLASH_FORCE_ENABLE_C6_H2_SUSPEND
+        bool "Enable chip suspend feature on c6 or h2 anyway (DO NOT ENABLE FOR NEW USERS OR APPLICATIONS)"
+        default n
+        help
+            Flash suspend has a defect on ESP32C6 until v0.2 and ESP32H2 until v1.2. If you already use suspend
+            feature for mass production, you can enable this for bypassing check after knowing the risk.
+            But if you are new users, or developing new applications, or producing a new batch,
+            please DO NOT enable this config option.
 
-            config SPI_FLASH_HPM_ENA
-                # Not using name of SPI_FLASH_HPM_ENABLE because it was used as an invisible option and we don't want
-                # to inherit the value of that one
-                bool "Enable"
-            config SPI_FLASH_HPM_AUTO
-                bool "Auto (Not recommended)"
-            config SPI_FLASH_HPM_DIS
-                bool "Disabled"
-        endchoice
+            For more information, please refer to errata or connect to Espressif business support team.
 
-        config SPI_FLASH_HPM_ON
-            bool
-            # For ESP32-S3, it's enabled by default. For later chips it should be disabled by default
-            default y if (IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32P4) && ((SPI_FLASH_HPM_ENA || SPI_FLASH_HPM_AUTO)) || \
-                (!IDF_TARGET_ESP32S3 && SPI_FLASH_HPM_ENA)
-            help
-                This option is invisible, and will be selected automatically
-                when ``ESPTOOLPY_FLASHFREQ_120M`` is selected.
+    config SPI_FLASH_SOFTWARE_RESUME
+        bool "Resume flash program/erase form suspend state by software control"
+        default n
+        depends on SPI_FLASH_AUTO_SUSPEND && FREERTOS_UNICORE && IDF_EXPERIMENTAL_FEATURES
+        help
+            Enable this config will disable auto-resume from hardware. Thus the software will resume the chip
+            after any higher priority task/interrupt which suspend the chip. The benefit is that the suspend-resume
+            will not disturb the higher priority task and interrupt.
 
-        choice SPI_FLASH_HPM_DC
-            prompt "Support HPM using DC (READ DOCS FIRST)"
-            depends on SPI_FLASH_HPM_ON
-            default SPI_FLASH_HPM_DC_AUTO
-            help
-                This feature needs your bootloader to be compiled DC-aware (BOOTLOADER_FLASH_DC_AWARE=y). Otherwise the
-                chip will not be able to boot after a reset.
+            This currently is only valid on single core chip.
 
-            config SPI_FLASH_HPM_DC_AUTO
-                bool "Auto (Enable when bootloader support enabled (BOOTLOADER_FLASH_DC_AWARE))"
-            config SPI_FLASH_HPM_DC_DISABLE
-                bool "Disable (READ DOCS FIRST)"
-        endchoice
+    config SPI_FLASH_DISABLE_SCHEDULER_IN_SUSPEND
+        bool "Disable task scheduler when suspend is enabled when SPI1 operation is ongoing"
+        default n
+        # Only valid on single core because no protection is supported on multi core
+        depends on SPI_FLASH_AUTO_SUSPEND && FREERTOS_UNICORE
+        help
+            Disable freertos task scheduler when CONFIG_SPI_FLASH_AUTO_SUSPEND is enabled.
+            Thus only interrupt can trigger a suspend. When SPI_FLASH_AUTO_SUSPEND is enabled,
+            default behavior is not disable the task scheduler, so both interrupt and high priority
+            task can suspend the erase/program operation. When this option is enabled, task
+            scheduler is disabled, only interrupt can suspend erase/program operation.
 
-        config SPI_FLASH_HPM_DC_ON
-            bool
-            default y if SPI_FLASH_HPM_DC_AUTO && BOOTLOADER_FLASH_DC_AWARE
-            help
-                This is a helper config for HPM. Whether HPM-DC is enabled is also determined by bootloader.
-                Invisible for users.
+    config SPI_FLASH_AUTO_CHECK_SUSPEND_STATUS
+        bool "Check flash status automatically after flash suspend"
+        default n
+        depends on SPI_FLASH_AUTO_SUSPEND
+        help
+            Majority flash supports to use flash register to judge if flash suspend status is
+            done or not. So enable this config, the behavior would use flash register WIP bit to judge
+            whether suspend is valid instead of waiting for a specific long time, which can save a
+            lot of time and benefit for performance improvement.
 
-        config SPI_FLASH_AUTO_SUSPEND
-            bool "Auto suspend long erase/write operations (READ DOCS FIRST)"
-            default n
-            depends on SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND && !SPI_FLASH_ROM_IMPL
-            help
-                This option is disabled by default because it is supported only
-                for specific flash chips and for specific Espressif chips.
-                To evaluate if you can use this feature refer to
-                `Optional Features for Flash` > `Auto Suspend & Resume` of the `ESP-IDF Programming Guide`.
+    config SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM
+        bool "Place spi_flash operation functions into IRAM" if SPI_FLASH_AUTO_SUSPEND
+        default y
+        help
+            When disabled, certain functions in `spi_flash` component will be placed into Flash memory
+            instead of IRAM. Disabling this option will save almost 10KB of IRAM depending on which
+            functions are used.
 
-                CAUTION: If you want to OTA to an app with this feature turned on, please make
-                sure the bootloader has the support for it. (later than IDF v4.3)
+            When enabled, these functions will be placed in internal RAM, with better performance.
 
-                If you are using an official Espressif module, please contact Espressif Business support
-                to check if the module has the flash that support this feature installed.
-                Also refer to `Concurrency Constraints for Flash on SPI1` > `Flash Auto Suspend Feature`
-                before enabling this option.
-
-        config SPI_FLASH_SUSPEND_TSUS_VAL_US
-            int "SPI flash tSUS value (refer to chapter AC CHARACTERISTICS)"
-            default 50
-            range 20 100
-            help
-                This config is used for setting Tsus parameter. Tsus means CS# high to next command after
-                suspend. You can refer to the chapter of AC CHARACTERISTICS of flash datasheet.
-
-        config SPI_FLASH_SUSPEND_TRS_VAL_US
-            int "SPI flash tRS value (refer to chapter AC CHARACTERISTICS)"
-            default 50
-            range 20 200
-            depends on SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR && (!ESP32P4_SELECTS_REV_LESS_V3)
-            help
-                This config is used for setting Trs parameter. Trs means CS Latency Between Resume And Next Suspend.
-                You can refer to the chapter of AC CHARACTERISTICS of flash datasheet.
-                For high-performance scenarios, some flash chips allow this set value to be smaller than the
-                given value in the datasheet without causing errors in the flash state machine.
-                When you have any related needs, please contact espressif business team.
-
-        config SPI_FLASH_FORCE_ENABLE_XMC_C_SUSPEND
-            bool "Enable XMC-C series flash chip suspend feature anyway"
-            default n
-            help
-                XMC-C series is regarded as not qualified for the Suspend feature, since its specification
-                has a tRS >= 1ms restriction. We strongly do not suggest using it for the Suspend feature.
-                However, if your product in field has enabled this feature, you may still enable this
-                config option to keep the legacy behavior.
-
-                For new users, DO NOT enable this config.
-
-        config SPI_FLASH_FORCE_ENABLE_C6_H2_SUSPEND
-            bool "Enable chip suspend feature on c6 or h2 anyway (DO NOT ENABLE FOR NEW USERS OR APPLICATIONS)"
-            default n
-            help
-                Flash suspend has a defect on ESP32C6 until v0.2 and ESP32H2 until v1.2. If you already use suspend
-                feature for mass production, you can enable this for bypassing check after knowing the risk.
-                But if you are new users, or developing new applications, or producing a new batch,
-                please DO NOT enable this config option.
-
-                For more information, please refer to errata or connect to Espressif business support team.
-
-        config SPI_FLASH_SOFTWARE_RESUME
-            bool "Resume flash program/erase form suspend state by software control"
-            default n
-            depends on SPI_FLASH_AUTO_SUSPEND && FREERTOS_UNICORE && IDF_EXPERIMENTAL_FEATURES
-            help
-                Enable this config will disable auto-resume from hardware. Thus the software will resume the chip
-                after any higher priority task/interrupt which suspend the chip. The benefit is that the suspend-resume
-                will not disturb the higher priority task and interrupt.
-
-                This currently is only valid on single core chip.
-
-        config SPI_FLASH_DISABLE_SCHEDULER_IN_SUSPEND
-            bool "Disable task scheduler when suspend is enabled when SPI1 operation is ongoing"
-            default n
-            # Only valid on single core because no protection is supported on multi core
-            depends on SPI_FLASH_AUTO_SUSPEND && FREERTOS_UNICORE
-            help
-                Disable freertos task scheduler when CONFIG_SPI_FLASH_AUTO_SUSPEND is enabled.
-                Thus only interrupt can trigger a suspend. When SPI_FLASH_AUTO_SUSPEND is enabled,
-                default behavior is not disable the task scheduler, so both interrupt and high priority
-                task can suspend the erase/program operation. When this option is enabled, task
-                scheduler is disabled, only interrupt can suspend erase/program operation.
-
-        config SPI_FLASH_AUTO_CHECK_SUSPEND_STATUS
-            bool "Check flash status automatically after flash suspend"
-            default n
-            depends on SPI_FLASH_AUTO_SUSPEND
-            help
-                Majority flash supports to use flash register to judge if flash suspend status is
-                done or not. So enable this config, the behavior would use flash register WIP bit to judge
-                whether suspend is valid instead of waiting for a specific long time, which can save a
-                lot of time and benefit for performance improvement.
-
-        config SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM
-            bool "Place spi_flash operation functions into IRAM" if SPI_FLASH_AUTO_SUSPEND
-            default y
-            help
-                When disabled, certain functions in `spi_flash` component will be placed into Flash memory
-                instead of IRAM. Disabling this option will save almost 10KB of IRAM depending on which
-                functions are used.
-
-                When enabled, these functions will be placed in internal RAM, with better performance.
-
-                For more information please refer to programming guide.
-
-    endmenu
+            For more information please refer to programming guide.
 endmenu
 
 menu "SPI Flash driver"

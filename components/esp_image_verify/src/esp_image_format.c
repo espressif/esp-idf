@@ -10,7 +10,7 @@
 #include <esp_fault.h>
 #include <esp_log.h>
 #include <esp_attr.h>
-#include <bootloader_flash_priv.h>
+#include <esp_private/bootloader_flash_internal.h>
 #include <bootloader_random.h>
 #include <bootloader_sha.h>
 #include "bootloader_util.h"
@@ -22,7 +22,6 @@
 #include "soc/soc_caps.h"
 #include "hal/mmu_types.h"
 #include "hal/cache_ll.h"
-#include "spi_flash_mmap.h"
 #include "hal/efuse_hal.h"
 #include "sdkconfig.h"
 #include "esp_macros.h"
@@ -688,7 +687,7 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
             return ESP_ERR_NO_MEM;
         }
         uint32_t max_image_len;
-        if (__builtin_mul_overflow(max_pages, SPI_FLASH_MMU_PAGE_SIZE, &max_image_len)) {
+        if (__builtin_mul_overflow(max_pages, CONFIG_MMU_PAGE_SIZE, &max_image_len)) {
             max_image_len = UINT32_MAX;
         }
         segment_data.data_len = MIN(data_len_remain, max_image_len);
@@ -899,18 +898,18 @@ static esp_err_t verify_segment_header(int index, const esp_image_segment_header
             metadata->mmu_page_size = (1UL << mmu_page_size);
         } else {
             // Fall back to default MMU page size
-            metadata->mmu_page_size = SPI_FLASH_MMU_PAGE_SIZE;
+            metadata->mmu_page_size = CONFIG_MMU_PAGE_SIZE;
         }
 
-        if (metadata->mmu_page_size != SPI_FLASH_MMU_PAGE_SIZE) {
-            ESP_LOGI(TAG, "MMU page size mismatch, configured: 0x%x, found: 0x%"PRIx32, SPI_FLASH_MMU_PAGE_SIZE, metadata->mmu_page_size);
+        if (metadata->mmu_page_size != CONFIG_MMU_PAGE_SIZE) {
+            ESP_LOGI(TAG, "MMU page size mismatch, configured: 0x%x, found: 0x%"PRIx32, CONFIG_MMU_PAGE_SIZE, metadata->mmu_page_size);
         }
     } else if (index == 0 && is_bootloader(metadata->start_addr)) {
         // Bootloader always uses the default MMU page size
-        metadata->mmu_page_size = SPI_FLASH_MMU_PAGE_SIZE;
+        metadata->mmu_page_size = CONFIG_MMU_PAGE_SIZE;
     }
 #else // SOC_MMU_PAGE_SIZE_CONFIGURABLE
-    metadata->mmu_page_size = SPI_FLASH_MMU_PAGE_SIZE;
+    metadata->mmu_page_size = CONFIG_MMU_PAGE_SIZE;
 #endif // !SOC_MMU_PAGE_SIZE_CONFIGURABLE
 
     const int mmu_page_size = metadata->mmu_page_size;

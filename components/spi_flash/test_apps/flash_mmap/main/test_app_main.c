@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -13,7 +13,6 @@
 
 static size_t before_free_8bit;
 static size_t before_free_32bit;
-
 
 void setUp(void)
 {
@@ -40,7 +39,6 @@ void app_main(void)
     \_|   \_____/\_| |_/\____/\_| |_/ \_|  |_/\_|  |_/\_| |_/\_|
 
     */
-
 
     printf("______ _       ___   _____ _   _  ___  ______  ___  ___  ______\n");
     printf("|  ___| |     / _ \\ /  ___| | | | |  \\/  ||  \\/  | / _ \\ | ___ \\\n");

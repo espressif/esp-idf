@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +20,8 @@
 #include "soc/soc_caps.h"
 #include "flash_qio_mode.h"
 #include "bootloader_flash_config.h"
-#include "bootloader_flash_priv.h"
+#include "esp_private/bootloader_flash_internal.h"
+#include "spi_flash_defs.h"
 #include "bootloader_common.h"
 #include "bootloader_flash.h"
 #include "bootloader_init.h"
@@ -28,6 +29,7 @@
 #include "hal/mmu_ll.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
+#include "hal/efuse_ll.h"
 
 #define FLASH_IO_MATRIX_DUMMY_40M   0
 #define FLASH_IO_MATRIX_DUMMY_80M   0
@@ -50,7 +52,7 @@ void bootloader_flash_update_size(uint32_t size)
 void IRAM_ATTR bootloader_flash_cs_timing_config()
 {
     //SPI0/1 share the cs_hold / cs_setup, cd_hold_time / cd_setup_time, cs_hold_delay registers for FLASH, so we only need to set SPI0 related registers here
-    if (bootloader_flash_is_octal_mode_enabled()) {
+    if (efuse_ll_get_flash_type()) {
 
         SET_PERI_REG_MASK(SPI_MEM_USER_REG(0), SPI_MEM_CS_HOLD_M | SPI_MEM_CS_SETUP_M);
         SET_PERI_REG_BITS(SPI_MEM_CTRL2_REG(0), SPI_MEM_CS_HOLD_TIME_V, FLASH_CS_HOLD_TIME, SPI_MEM_CS_HOLD_TIME_S);
@@ -286,7 +288,7 @@ esp_err_t bootloader_init_spi_flash(void)
     bootloader_flash_unlock();
 
 #if CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_ESPTOOLPY_FLASHMODE_QOUT
-    if (!bootloader_flash_is_octal_mode_enabled()) {
+    if (!efuse_ll_get_flash_type()) {
         bootloader_enable_qio_mode();
     }
 #endif

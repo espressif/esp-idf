@@ -43,7 +43,7 @@ idf_component_register(SRCS "${srcs}"
                     REQUIRES ${requires})
 
 if(CONFIG_UNITY_ENABLE_IDF_TEST_RUNNER)
-    idf_component_optional_requires(PRIVATE spi_flash)
+    idf_component_optional_requires(PRIVATE esp_mspi)
 endif()
 
 target_compile_definitions(${COMPONENT_LIB} PUBLIC

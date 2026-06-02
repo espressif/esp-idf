@@ -6,7 +6,7 @@ endif()
 
 set(srcs)
 set(include "include")
-set(priv_requires esp_driver_gpio esp_driver_dma esp_pm esp_mm esp_hal_clock)
+set(priv_requires esp_driver_gpio esp_driver_dma esp_pm esp_mm esp_hal_clock esp_mspi)
 
 # TODO(IDF-15984): potentially remove __ULP_BUILDV2 handling from esp_driver_i2s
 if(__ULP_BUILDV2)

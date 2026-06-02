@@ -121,7 +121,6 @@
 #include "esp_rom_spiflash.h"
 #include "bootloader_init.h"
 #include "esp_private/bootloader_flash_internal.h"
-#include "spi_flash_mmap.h"
 #endif // CONFIG_APP_BUILD_TYPE_RAM
 
 //This dependency will be removed in the future
@@ -569,7 +568,7 @@ FORCE_INLINE_ATTR IRAM_ATTR void ext_mem_init(void)
     uint32_t cache_mmu_irom_size = 0;
 #if !CONFIG_APP_BUILD_TYPE_ELF_RAM
     uint32_t _instruction_size = (uint32_t)&_instruction_reserved_end - (uint32_t)&_instruction_reserved_start;
-    cache_mmu_irom_size = ((_instruction_size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE) * sizeof(uint32_t);
+    cache_mmu_irom_size = ((_instruction_size + CONFIG_MMU_PAGE_SIZE - 1) / CONFIG_MMU_PAGE_SIZE) * sizeof(uint32_t);
 #endif // !CONFIG_APP_BUILD_TYPE_ELF_RAM
     /* Configure the Cache MMU size for instruction and rodata in flash. */
     Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
@@ -780,10 +779,10 @@ NOINLINE_ATTR static void system_early_init(const soc_reset_reason_t *rst_reas)
     uint32_t cache_mmu_drom_size = 0;
 #if !CONFIG_APP_BUILD_TYPE_ELF_RAM
     uint32_t _instruction_size = (uint32_t)&_instruction_reserved_end - (uint32_t)&_instruction_reserved_start;
-    cache_mmu_irom_size = ((_instruction_size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE) * sizeof(uint32_t);
+    cache_mmu_irom_size = ((_instruction_size + CONFIG_MMU_PAGE_SIZE - 1) / CONFIG_MMU_PAGE_SIZE) * sizeof(uint32_t);
 
     uint32_t _rodata_size = (uint32_t)&_rodata_reserved_end - (uint32_t)&_rodata_reserved_start;
-    cache_mmu_drom_size = ((_rodata_size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE) * sizeof(uint32_t);
+    cache_mmu_drom_size = ((_rodata_size + CONFIG_MMU_PAGE_SIZE - 1) / CONFIG_MMU_PAGE_SIZE) * sizeof(uint32_t);
 #endif // !CONFIG_APP_BUILD_TYPE_ELF_RAM
 
     int s_instr_flash2spiram_off = 0;

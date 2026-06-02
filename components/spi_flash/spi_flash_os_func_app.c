@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <assert.h>
 #include <stdarg.h>
 #include <sys/lock.h>
 #include <sys/param.h>  //For max/min
@@ -19,9 +20,9 @@
 
 #include "esp_flash.h"
 #include "esp_flash_chips/esp_flash_types.h"
-#include "esp_flash_partitions.h"
 
 #include "esp_private/spi_flash_os.h"
+#include "esp_private/esp_flash_internal.h"
 #include "esp_private/cache_utils.h"
 #include "esp_private/flash_mmap.h"
 #include "esp_private/spi_share_hw_ctrl.h"
@@ -61,7 +62,10 @@ typedef struct {
     spi_bus_lock_dev_handle_t dev_lock;
     uint32_t no_protect         : 1;    //to decide whether to check protected region (for the main chip) or not.
     uint32_t current_op_type    : 3;    //Whether the mmap lock is already taken, only for SPI1.
-    uint32_t reserved           : 28;
+    uint32_t require_partition_protection : 1;  // Only the main flash must have partition-aware protection callbacks.
+    uint32_t reserved           : 27;
+    bool (*check_main_flash_region_safe)(size_t start_addr, size_t size);  ///< Callback to check if the main flash region is safe to write/erase. Registered by upper layer (e.g. esp_partition).
+    bool (*check_region_writable)(size_t start_addr, size_t size);  ///< Callback to check if a region is writable/eraseable. Registered by upper layer (e.g. esp_partition).
     uint32_t acquired_since_us;    // Time since last explicit yield()
     uint32_t released_since_us;    // Time since last end() (implicit yield)
     uint32_t start_flags;          // Flags passed to start() function, used to determine if freq_limit was called
@@ -384,11 +388,24 @@ static void release_buffer_malloc(void* arg, void *temp_buf)
 
 static esp_err_t main_flash_region_protected(void* arg, size_t start_addr, size_t size)
 {
-    if (!esp_partition_is_flash_region_writable(start_addr, size)) {
+    app_func_arg_t *func_arg = (app_func_arg_t *)arg;
+    if (!func_arg->require_partition_protection) {
+        /**
+         * - Main flash always register partition protection callbacks.
+         * - External flash chips on SPI1 may omit them
+         *   - because they are not governed by the main flash partition table
+         *   This case just return OK
+         */
+        return ESP_OK;
+    }
+    assert(func_arg->check_region_writable != NULL);
+    assert(func_arg->check_main_flash_region_safe != NULL);
+    if (!func_arg->check_region_writable(start_addr, size)) {
         return ESP_ERR_NOT_ALLOWED;
     }
 #if !CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
-    if (((app_func_arg_t*)arg)->no_protect || esp_partition_main_flash_region_safe(start_addr, size)) {
+    if (func_arg->no_protect ||
+        func_arg->check_main_flash_region_safe(start_addr, size)) {
         //ESP_OK = 0, also means protected==0
         return ESP_OK;
     } else {
@@ -474,13 +491,15 @@ esp_err_t esp_flash_init_os_functions(esp_flash_t *chip, int host_id, spi_bus_lo
             chip->os_func = &esp_flash_spi23_default_os_functions;
             break;
         default:
+            free(chip->os_func_data);
+            chip->os_func_data = NULL;
             return ESP_ERR_INVALID_ARG;
-            break;
     }
 
     *(app_func_arg_t*) chip->os_func_data = (app_func_arg_t) {
         .dev_lock = dev_handle,
         .no_protect = true, // This is OK because this code path isn't used for the main flash chip which requires `no_protect = false`
+        .require_partition_protection = false,
     };
 
     return ESP_OK;
@@ -537,9 +556,29 @@ esp_err_t esp_flash_app_enable_os_functions(esp_flash_t* chip)
     main_flash_arg = (app_func_arg_t) {
         .dev_lock = g_spi_lock_main_flash_dev,
         .no_protect = false, // Required for the main flash chip
+        .require_partition_protection = true,
     };
     chip->os_func = &esp_flash_spi1_default_os_functions;
     chip->os_func_data = &main_flash_arg;
+    return ESP_OK;
+}
+
+esp_err_t esp_flash_register_partition_ops(esp_flash_t *chip, esp_flash_partition_ops_t *ops)
+{
+    // Error checks first
+    if (chip == NULL || ops == NULL ||
+        ops->check_region_writable == NULL || ops->check_main_flash_region_safe == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    // os functions (and thus os_func_data) must be initialized before registering ops
+    if (chip->os_func_data == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    app_func_arg_t *func_arg = (app_func_arg_t *)chip->os_func_data;
+    func_arg->check_region_writable = ops->check_region_writable;
+    func_arg->check_main_flash_region_safe = ops->check_main_flash_region_safe;
+    func_arg->require_partition_protection = true;
     return ESP_OK;
 }
 

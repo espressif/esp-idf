@@ -23,6 +23,7 @@
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/mspi_timing_tuning.h"
 #include "esp_private/esp_gpio_reserve.h"
+#include "esp_private/opi_flash_private.h"
 
 #define OPI_PSRAM_SYNC_READ             0x0000
 #define OPI_PSRAM_SYNC_WRITE            0x8080
@@ -336,6 +337,18 @@ static void s_configure_psram_ecc(void)
 #endif
 }
 
+static void s_set_flash_vendor_required_regs(void)
+{
+    if (spi_flash_is_octal_mode_enabled()) {
+        esp_opiflash_set_required_regs();
+        SET_PERI_REG_BITS(SPI_MEM_CACHE_FCTRL_REG(1), SPI_MEM_CACHE_USR_CMD_4BYTE_V, 1, SPI_MEM_CACHE_USR_CMD_4BYTE_S);
+    } else {
+        //Flash chip requires MSPI specifically, call this function to set them
+        // Set back MSPI registers after Octal PSRAM initialization.
+        SET_PERI_REG_BITS(SPI_MEM_CACHE_FCTRL_REG(1), SPI_MEM_CACHE_USR_CMD_4BYTE_V, 0, SPI_MEM_CACHE_USR_CMD_4BYTE_S);
+    }
+}
+
 esp_err_t esp_psram_impl_enable(void)
 {
     s_init_psram_pins();
@@ -386,7 +399,7 @@ esp_err_t esp_psram_impl_enable(void)
      */
     spi_flash_set_rom_required_regs();
     //Flash chip requires MSPI specifically, call this function to set them
-    spi_flash_set_vendor_required_regs();
+    s_set_flash_vendor_required_regs();
 
     s_config_psram_spi_phases();
     return ESP_OK;

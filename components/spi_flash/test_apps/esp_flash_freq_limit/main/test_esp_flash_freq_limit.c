@@ -903,7 +903,6 @@ static void cleanup_interrupt_timer(void)
     }
 }
 
-
 /**
  * Helper function: Test interrupt during encrypt with PM configuration
  * Common test logic for both PM enabled and disabled scenarios
@@ -1246,6 +1245,5 @@ TEST_CASE("Frequency limit: APB lock released in ISR", "[esp_flash_freq_limit]")
     }
 }
 #endif // CONFIG_PM_ENABLE
-
 
 #endif // CONFIG_IDF_TARGET_ESP32C5

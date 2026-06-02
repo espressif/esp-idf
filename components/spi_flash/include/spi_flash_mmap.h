@@ -21,13 +21,11 @@
 #include "esp_attr.h"
 #include "sdkconfig.h"
 #include "esp_spi_flash_counters.h"
+#include "hal/esp_flash_err.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define ESP_ERR_FLASH_OP_FAIL    (ESP_ERR_FLASH_BASE + 1)
-#define ESP_ERR_FLASH_OP_TIMEOUT (ESP_ERR_FLASH_BASE + 2)
 
 #define SPI_FLASH_SEC_SIZE  4096    /**< SPI Flash sector size */
 
@@ -165,7 +163,6 @@ void spi_flash_mmap_dump(void);
  * @return number of free pages which can be mapped
  */
 uint32_t spi_flash_mmap_get_free_pages(spi_flash_mmap_memory_t memory);
-
 
 #define SPI_FLASH_CACHE2PHYS_FAIL UINT32_MAX /*<! Result from spi_flash_cache2phys() if flash cache address is invalid */
 

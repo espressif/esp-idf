@@ -1,14 +1,15 @@
 idf_build_get_property(target IDF_TARGET)
 idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 
-if(${target} STREQUAL "linux")
-    idf_component_register(INCLUDE_DIRS "include"
-                           REQUIRES soc hal)
-    return()
-endif()
-
 set(srcs)
 set(includes "include" "${target}/include")
+set(requires soc hal esp_hal_gpspi)
+set(priv_requires esp_hal_gpio)
+
+if(NOT "${target}" STREQUAL "linux")
+    # TODO: IDF-15106 remove esp_hal_clock dependency
+    list(APPEND requires "esp_hal_clock")
+endif()
 
 if(esp_tee_build)
     if(CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1)
@@ -35,6 +36,6 @@ list(APPEND srcs "${target}/mspi_periph.c")
 idf_component_register(
     SRCS ${srcs}
     INCLUDE_DIRS ${includes}
-    REQUIRES soc hal esp_hal_gpspi esp_hal_clock # TODO: IDF-15106 remove esp_hal_clock dependency
-    PRIV_REQUIRES esp_hal_gpio
+    REQUIRES ${requires}
+    PRIV_REQUIRES ${priv_requires}
 )

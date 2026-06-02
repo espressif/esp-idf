@@ -12,7 +12,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "spi_flash_mmap.h"
 #include "esp_rom_sys.h"
 #include "esp_private/spi_flash_os.h"
 #include "rom/ets_sys.h"

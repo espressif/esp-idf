@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 
 #include "esp_flash.h"
 #include "esp_flash_chips/esp_flash_types.h"
+#include "esp_private/esp_flash_internal.h"
 
 static IRAM_ATTR esp_err_t start(void *arg, uint32_t flags)
 {
