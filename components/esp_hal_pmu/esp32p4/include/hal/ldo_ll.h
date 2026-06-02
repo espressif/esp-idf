@@ -21,7 +21,6 @@
 extern "C" {
 #endif
 
-#define LDO_LL_NUM_UNITS            4    // Number of LDO units
 #define LDO_LL_ADJUSTABLE_CHAN_MASK 0x0F // all the 4 channels are adjustable by setting "mul" and "dref" registers
 
 #define LDO_LL_RECOMMEND_MAX_VOLTAGE_MV 2700
@@ -51,7 +50,7 @@ typedef enum {
 __attribute__((always_inline))
 static inline bool ldo_ll_is_valid_ldo_channel(int ldo_chan)
 {
-    return (ldo_chan > 0) && (ldo_chan <= LDO_LL_NUM_UNITS);
+    return (ldo_chan > 0) && (ldo_chan <= 4);
 }
 
 /**
@@ -154,7 +153,7 @@ static inline void ldo_ll_voltage_to_dref_mul(int ldo_unit, int voltage_mv, uint
 __attribute__((always_inline))
 static inline void ldo_ll_set_owner(int ldo_unit, ldo_ll_unit_owner_t owner)
 {
-    uint8_t index_array[LDO_LL_NUM_UNITS] = {0, 3, 1, 4};
+    uint8_t index_array[4] = {0, 3, 1, 4};
     /*
      * force_tieh_sel:
      *  - 0: efuse, i.e. by hardware
@@ -185,7 +184,7 @@ static inline void ldo_ll_set_owner(int ldo_unit, ldo_ll_unit_owner_t owner)
 __attribute__((always_inline))
 static inline void ldo_ll_adjust_voltage(int ldo_unit, uint8_t dref, uint8_t mul, bool use_rail_voltage)
 {
-    uint8_t index_array[LDO_LL_NUM_UNITS] = {0, 3, 1, 4};
+    uint8_t index_array[4] = {0, 3, 1, 4};
     /**
      * tieh:
      *  - 0: Vref * Mul
@@ -205,7 +204,7 @@ static inline void ldo_ll_adjust_voltage(int ldo_unit, uint8_t dref, uint8_t mul
 __attribute__((always_inline))
 static inline void ldo_ll_enable(int ldo_unit, bool enable)
 {
-    uint8_t index_array[LDO_LL_NUM_UNITS] = {0, 3, 1, 4};
+    uint8_t index_array[4] = {0, 3, 1, 4};
     if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 100) && (ldo_unit == 0)) {
         // If chip_rev >= v1.0, slp_mem_dbias[3] is used to control the volt output of VO1.
         PMU.hp_sys[PMU_MODE_HP_ACTIVE].regulator0.xpd_0p1a = (enable ? 8 : 0);
@@ -222,7 +221,7 @@ static inline void ldo_ll_enable(int ldo_unit, bool enable)
 __attribute__((always_inline))
 static inline void ldo_ll_enable_power_on_delay(int ldo_unit, bool enable)
 {
-    uint8_t index_array[LDO_LL_NUM_UNITS] = {0, 3, 1, 4};
+    uint8_t index_array[4] = {0, 3, 1, 4};
     PMU.ext_ldo[index_array[ldo_unit]].pmu_ext_ldo.tieh_pos_en = enable;
 }
 
@@ -235,7 +234,7 @@ static inline void ldo_ll_enable_power_on_delay(int ldo_unit, bool enable)
 __attribute__((always_inline))
 static inline void ldo_ll_enable_power_off_delay(int ldo_unit, bool enable)
 {
-    uint8_t index_array[LDO_LL_NUM_UNITS] = {0, 3, 1, 4};
+    uint8_t index_array[4] = {0, 3, 1, 4};
     PMU.ext_ldo[index_array[ldo_unit]].pmu_ext_ldo.tieh_neg_en = enable;
 }
 
@@ -249,7 +248,7 @@ static inline void ldo_ll_enable_power_off_delay(int ldo_unit, bool enable)
 __attribute__((always_inline))
 static inline void ldo_ll_set_delay_target(int ldo_unit, uint8_t target0, uint8_t target1)
 {
-    uint8_t index_array[LDO_LL_NUM_UNITS] = {0, 3, 1, 4};
+    uint8_t index_array[4] = {0, 3, 1, 4};
     HAL_FORCE_MODIFY_U32_REG_FIELD(PMU.ext_ldo[index_array[ldo_unit]].pmu_ext_ldo, target0, target0);
     HAL_FORCE_MODIFY_U32_REG_FIELD(PMU.ext_ldo[index_array[ldo_unit]].pmu_ext_ldo, target1, target1);
 }
@@ -263,7 +262,7 @@ static inline void ldo_ll_set_delay_target(int ldo_unit, uint8_t target0, uint8_
 __attribute__((always_inline))
 static inline void ldo_ll_enable_current_limit(int ldo_unit, bool enable)
 {
-    uint8_t index_array[LDO_LL_NUM_UNITS] = {0, 3, 1, 4};
+    uint8_t index_array[4] = {0, 3, 1, 4};
     PMU.ext_ldo[index_array[ldo_unit]].pmu_ext_ldo_ana.en_cur_lim = enable;
 }
 
@@ -276,7 +275,7 @@ static inline void ldo_ll_enable_current_limit(int ldo_unit, bool enable)
 __attribute__((always_inline))
 static inline void ldo_ll_enable_ripple_suppression(int ldo_unit, bool enable)
 {
-    uint8_t index_array[LDO_LL_NUM_UNITS] = {0, 3, 1, 4};
+    uint8_t index_array[4] = {0, 3, 1, 4};
     PMU.ext_ldo[index_array[ldo_unit]].pmu_ext_ldo_ana.en_vdet = enable;
 }
 
