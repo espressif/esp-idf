@@ -210,7 +210,7 @@ typedef uint8_t esp_link_key[ESP_BT_OCTET16_LEN];      /* Link Key */
 /// Default GATT interface id
 #define ESP_DEFAULT_GATT_IF             0xff
 
-#if BLE_HIGH_DUTY_ADV_INTERVAL
+#if CONFIG_BT_BLE_HIGH_DUTY_ADV_INTERVAL
 #define ESP_BLE_PRIM_ADV_INT_MIN            0x000008     /*!< Minimum advertising interval for undirected and low duty cycle directed advertising */
 #else
 #define ESP_BLE_PRIM_ADV_INT_MIN            0x000020     /*!< Minimum advertising interval for undirected and low duty cycle directed advertising */
