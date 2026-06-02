@@ -560,6 +560,19 @@ static esp_gatt_status_t btc_gatts_check_valid_attr_tab(esp_gatts_attr_db_t *gat
                         return ESP_GATT_INVALID_PDU;
                     }
                 }
+
+                /* Same rule as GATTS_AddCharacteristic(): signed-write perm requires AUTH property */
+                {
+                    uint8_t char_property = (uint8_t)(*(uint8_t *)(gatts_attr_db[i].att_desc.value));
+                    uint16_t perm = gatts_attr_db[i + 1].att_desc.perm;
+
+                    if (((char_property & GATT_CHAR_PROP_BIT_AUTH) && !(perm & GATT_WRITE_SIGNED_PERM)) ||
+                            ((perm & GATT_WRITE_SIGNED_PERM) && !(char_property & GATT_CHAR_PROP_BIT_AUTH))) {
+                        BTC_TRACE_ERROR("%s, Invalid char property=0x%02x perm=0x%04x at table index %d",
+                                        __func__, char_property, perm, i);
+                        return ESP_GATT_ILLEGAL_PARAMETER;
+                    }
+                }
                 break;
             default:
                 break;
