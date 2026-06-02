@@ -1054,6 +1054,36 @@ size_t httpd_req_get_url_query_len(httpd_req_t *r);
 esp_err_t httpd_req_get_url_query_str(httpd_req_t *r, char *buf, size_t buf_len);
 
 /**
+ * @brief   Similar to httpd_req_get_url_query_str() but avoids the string copy
+ *
+ * @note
+ *  - This API is meant to be used with std::string_view or similar
+ *  - Presently, the user can fetch the full URL query string, but decoding
+ *    will have to be performed by the user. Request headers can be read using
+ *    httpd_req_get_hdr_value_str() to know the 'Content-Type' (eg. Content-Type:
+ *    application/x-www-form-urlencoded) and then the appropriate decoding
+ *    algorithm needs to be applied.
+ *  - This API is supposed to be called only from the context of
+ *    a URI handler where httpd_req_t* request pointer is valid
+ *  - The byte range between buf and buf_len should only be used withing
+ *    the URI handler and not after since it will lead to use after free
+ *    errors
+ *
+ * @param[in]  r         The request being responded to
+ * @param[out] buf       Pointer to a pointer that should be updated to the begin of
+ *                       the buffer
+ * @param[out] buf_len   Pointer of length of output buffer
+ *
+ * @return
+ *  - ESP_OK : Query is found in the request URL and copied to buffer
+ *  - ESP_FAIL                   : uri is empty
+ *  - ESP_ERR_NOT_FOUND          : Query not found
+ *  - ESP_ERR_INVALID_ARG        : Null arguments
+ *  - ESP_ERR_HTTPD_INVALID_REQ  : Invalid HTTP request pointer
+ */
+esp_err_t httpd_req_get_url_query_str_ptr(httpd_req_t *r, const char **buf, size_t *buf_len);
+
+/**
  * @brief   Helper function to get a URL query tag from a query
  *          string of the type param1=val1&param2=val2
  *
