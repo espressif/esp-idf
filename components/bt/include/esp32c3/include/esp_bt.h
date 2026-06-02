@@ -537,7 +537,8 @@ typedef enum {
  *           After disconnecting, the corresponding TX power will not be affected.
  *       2. `ESP_BLE_PWR_TYPE_DEFAULT` can be used to set the TX power for power types that have not been set before.
  *          It will not affect the TX power values which have been set for the ADV/SCAN/CONN0-8 power types.
- *       3. If none of power type is set, the system will use `ESP_PWR_LVL_P3` as default for all power types.
+ *       3. If no runtime TX power is configured, the system uses the menuconfig default
+ *          TX power (`CONFIG_BT_CTRL_DFT_TX_POWER_LEVEL`) for all power types.
  */
 typedef enum {
     ESP_BLE_PWR_TYPE_CONN_HDL0  = 0,            /*!< TX power for Connection state handle 0 */
@@ -800,7 +801,19 @@ void esp_bt_controller_wakeup_request(void);
  *
  * It is recommended to use `esp_ble_tx_power_set_enhanced` to set TX power for individual advertising and connection handle.
  *
- * @note Connection TX power should only be set after the connection is established.
+ * @note
+ *      1. Connection TX power should only be set after the connection is established.
+ *      2. Priority from high to low:
+ *         - ADV TX power in `esp_ble_gap_ext_adv_set_params()`.
+ *         - TX power configured by `esp_ble_tx_power_set_enhanced()` / `esp_ble_tx_power_set()`.
+ *         - Menuconfig default TX power (`CONFIG_BT_CTRL_DFT_TX_POWER_LEVEL`).
+ *      3. If TX power is not configured through `esp_ble_gap_ext_adv_set_params()`,
+ *         `esp_ble_tx_power_set_enhanced()`, or `esp_ble_tx_power_set()`,
+ *         the menuconfig default TX power is applied globally.
+ *      4. On ESP32-C3/ESP32-S3, Controller TX power resolution is 3 dBm per step.
+ *         The actual applied TX power may be 0 to 2 dBm lower than requested.
+ *         For example, request 0 dBm -> apply 0 dBm; request 1/2 dBm -> apply 0 dBm;
+ *         request 3 dBm -> apply 3 dBm.
  *
  * @param[in]  power_type The type of TX power. It could be Advertising, Connection, or Default.
  * @param[in]  power_level Power level (index) corresponding to the absolute value (dBm)
@@ -840,6 +853,17 @@ esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type);
  *
  * @note
  *      1. Connection TX power should only be set after connection created.
+ *      2. Priority from high to low:
+ *         - ADV TX power in `esp_ble_gap_ext_adv_set_params()`.
+ *         - TX power configured by `esp_ble_tx_power_set_enhanced()` / `esp_ble_tx_power_set()`.
+ *         - Menuconfig default TX power (`CONFIG_BT_CTRL_DFT_TX_POWER_LEVEL`).
+ *      3. If TX power is not configured through `esp_ble_gap_ext_adv_set_params()`,
+ *         `esp_ble_tx_power_set_enhanced()`, or `esp_ble_tx_power_set()`,
+ *         the menuconfig default TX power is applied globally.
+ *      4. On ESP32-C3/ESP32-S3, Controller TX power resolution is 3 dBm per step.
+ *         The actual applied TX power may be 0 to 2 dBm lower than requested.
+ *         For example, request 0 dBm -> apply 0 dBm; request 1/2 dBm -> apply 0 dBm;
+ *         request 3 dBm -> apply 3 dBm.
  *
  * @param[in]  power_type  The type of TX power
  * @param[in]  handle      The handle of Advertising or Connection
