@@ -392,12 +392,11 @@ psa_status_t esp_cmac_verify_finish(
 
     status = esp_cmac_finish(esp_cmac_ctx, actual_mac, sizeof(actual_mac), &actual_mac_length);
     if (status == PSA_SUCCESS) {
-        if (memcmp(actual_mac, mac, mac_length) == 0) {
-            return PSA_SUCCESS;
-        } else {
-            return PSA_ERROR_INVALID_SIGNATURE;
+        if (mbedtls_ct_memcmp(actual_mac, mac, mac_length) != 0) {
+            status = PSA_ERROR_INVALID_SIGNATURE;
         }
     }
 
+    mbedtls_platform_zeroize(actual_mac, sizeof(actual_mac));
     return status;
 }
