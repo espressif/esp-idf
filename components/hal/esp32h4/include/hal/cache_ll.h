@@ -24,8 +24,8 @@ extern "C" {
 #define CACHE_LL_DEFAULT_IBUS_MASK                  CACHE_BUS_IBUS0
 #define CACHE_LL_DEFAULT_DBUS_MASK                  CACHE_BUS_DBUS0
 
-#define CACHE_LL_L1_ACCESS_EVENT_MASK               (1<<4)
-#define CACHE_LL_L1_ACCESS_EVENT_CACHE_FAIL         (1<<4)
+#define CACHE_LL_L1_ACCESS_EVENT_MASK               (BIT(0) | BIT(1) | BIT(4))
+#define CACHE_LL_L1_ACCESS_EVENT_CACHE_FAIL         CACHE_LL_L1_ACCESS_EVENT_MASK
 
 #define CACHE_LL_ID_ALL                             2   //All of the caches in a type and level, make this value greater than any ID
 #define CACHE_LL_LEVEL_INT_MEM                      0   //Cache level for accessing internal mem
