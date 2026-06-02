@@ -25,6 +25,7 @@ menu "Button"
         default 0 if IDF_TARGET_ESP32S3
         default 8 if IDF_TARGET_ESP32C6
         default 9 if IDF_TARGET_ESP32H2
+        default 9 if IDF_TARGET_ESP32H21
         default 9 if IDF_TARGET_ESP32C61
         default 28 if IDF_TARGET_ESP32C5
         default 9 if IDF_TARGET_ESP32H4
