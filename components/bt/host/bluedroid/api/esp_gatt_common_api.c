@@ -64,6 +64,9 @@ uint16_t esp_ble_get_sendable_packets_num (void)
 /**
  * @brief           This function is used to query the number of available buffers for the current connection.
  *                  When you need to query the current available buffer number, it is recommended to use this API.
+ *
+ * @note            This API can only be called when a direct connection exists.
+ *
  * @param[in]       conn_id: current connection id.
  *
  * @return
