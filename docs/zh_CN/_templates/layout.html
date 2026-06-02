@@ -13,10 +13,12 @@
 
 <script>
     function submitFeedbackForm(user_likes_document) {
-        // Send to GA4 the user reaction
-        gtag('event', 'user_reaction', {
-            'user_likes_document': user_likes_document
-        });
+        // Send to GA4 the user reaction (gtag is only available when google_analytics_id is configured)
+        if (typeof gtag === 'function') {
+            gtag('event', 'user_reaction', {
+                'user_likes_document': user_likes_document
+            });
+        }
 
         if (user_likes_document === 1) {
             document.querySelector('.like-btn').classList.add('click-like-or-dislike');
@@ -50,14 +52,14 @@
 <div class="expand-feedback-content " id="expandContentLike">
     <ul style="text-align:center">
         <li>反馈已收到，谢谢！</li>
-        <li>如果您有其他意见，欢迎填写<a href="https://www.espressif.com/zh-hans/company/documents/documentation_feedback?docId=4286&sections={{ title|striptags|e }} ({{ pagename }})&version={{ idf_target }} {{ release }} ({{ version }})">乐鑫文档反馈表</a>。</li>
+        <li>如果您有其他意见，欢迎填写<a href="https://www.espressif.com/zh-hans/company/documents/documentation_feedback?docId=10759&sections={{ title|striptags|e }} ({{ pagename }})&version={{ idf_target }} {{ release }} ({{ version }})">乐鑫文档反馈表</a>。</li>
     </ul>
 </div>
 
 <div class="expand-feedback-content " id="expandContent">
     <ul style="text-align:center">
         <li>我们重视您的反馈。</li>
-        <li>您可以填写<a href="https://www.espressif.com/zh-hans/company/documents/documentation_feedback?docId=4286&sections={{ title|striptags|e }} ({{ pagename }})&version={{ idf_target }} {{ release }} ({{ version }})">乐鑫文档反馈表</a>告诉我们如何改进该文档。</li>
+        <li>您可以填写<a href="https://www.espressif.com/zh-hans/company/documents/documentation_feedback?docId=10759&sections={{ title|striptags|e }} ({{ pagename }})&version={{ idf_target }} {{ release }} ({{ version }})">乐鑫文档反馈表</a>告诉我们如何改进该文档。</li>
     </ul>
 </div>
 
