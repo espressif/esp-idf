@@ -155,40 +155,40 @@ void esp_sleep_config_gpio_isolate(void)
 void esp_sleep_enable_gpio_switch(bool enable)
 {
     ESP_EARLY_LOGI(TAG, "%s automatic switching of GPIO sleep configuration", enable ? "Enable" : "Disable");
-    for (gpio_num_t gpio_num = GPIO_NUM_0; gpio_num < GPIO_NUM_MAX; gpio_num++) {
-        if (GPIO_IS_VALID_GPIO(gpio_num)) {
+
+    uint64_t gpio_sleep_sel_dis_mask = 0;
 #if CONFIG_ESP_CONSOLE_UART
 #if CONFIG_ESP_CONSOLE_UART_CUSTOM
-            const int uart_tx_gpio = (CONFIG_ESP_CONSOLE_UART_TX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_TX_GPIO : U0TXD_GPIO_NUM;
-            const int uart_rx_gpio = (CONFIG_ESP_CONSOLE_UART_RX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_RX_GPIO : U0RXD_GPIO_NUM;
-            if ((gpio_num == uart_tx_gpio) || (gpio_num == uart_rx_gpio)) {
+    const gpio_num_t uart_tx_gpio = (CONFIG_ESP_CONSOLE_UART_TX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_TX_GPIO : U0TXD_GPIO_NUM;
+    const gpio_num_t uart_rx_gpio = (CONFIG_ESP_CONSOLE_UART_RX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_RX_GPIO : U0RXD_GPIO_NUM;
 #else
-            if ((gpio_num == U0TXD_GPIO_NUM) || (gpio_num == U0RXD_GPIO_NUM)) {
+    const gpio_num_t uart_tx_gpio = U0TXD_GPIO_NUM;
+    const gpio_num_t uart_rx_gpio = U0RXD_GPIO_NUM;
 #endif
-                gpio_sleep_sel_dis(gpio_num);
-                continue;
-            }
+    gpio_sleep_sel_dis_mask |= BIT64(uart_tx_gpio) | BIT64(uart_rx_gpio);
 #endif
-            /* If the PSRAM is disable in ESP32xx chips equipped with PSRAM, there will be a large current leakage. */
+    /* If the PSRAM is disable in ESP32xx chips equipped with PSRAM, there will be a large current leakage. */
 #if CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND && CONFIG_SPIRAM & !SOC_MSPI_HAS_INDEPENT_IOMUX
-            if (gpio_num == esp_mspi_get_io(ESP_MSPI_IO_CS1)) {
-                gpio_sleep_sel_dis(gpio_num);
-                continue;
-            }
-#endif // CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND && CONFIG_SPIRAM
-
+    const gpio_num_t psram_cs_gpio = (gpio_num_t)esp_mspi_get_io(ESP_MSPI_IO_CS1);
+    if (GPIO_IS_VALID_GPIO(psram_cs_gpio)) {
+        gpio_sleep_sel_dis_mask |= BIT64(psram_cs_gpio);
+    }
+#endif
 #if CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND & !SOC_MSPI_HAS_INDEPENT_IOMUX
-            if (gpio_num == esp_mspi_get_io(ESP_MSPI_IO_CS0)) {
-                gpio_sleep_sel_dis(gpio_num);
-                continue;
-            }
-#endif // CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
+    const gpio_num_t flash_cs_gpio = (gpio_num_t)esp_mspi_get_io(ESP_MSPI_IO_CS0);
+    if (GPIO_IS_VALID_GPIO(flash_cs_gpio)) {
+        gpio_sleep_sel_dis_mask |= BIT64(flash_cs_gpio);
+    }
+#endif
 
-            if (enable) {
-                gpio_sleep_sel_en(gpio_num);
-            } else {
-                gpio_sleep_sel_dis(gpio_num);
-            }
+    for (gpio_num_t gpio_num = GPIO_NUM_0; gpio_num < GPIO_NUM_MAX; gpio_num++) {
+        if (!GPIO_IS_VALID_GPIO(gpio_num)) {
+            continue;
+        }
+        if (enable && !(gpio_sleep_sel_dis_mask & BIT64(gpio_num))) {
+            gpio_sleep_sel_en(gpio_num);
+        } else {
+            gpio_sleep_sel_dis(gpio_num);
         }
     }
 }
