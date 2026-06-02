@@ -874,12 +874,14 @@ esp_err_t esp_ble_gattc_read_char_descr (esp_gatt_if_t gattc_if,
  * @param[in]       value_len  The length of the value to write in bytes
  * @param[in]       value      The value to write
  * @param[in]       write_type The type of Attribute write operation
- * @param[in]       auth_req   Authentication request type
+ * @param[in]       auth_req   Authenticate request type
  *
  * @note
  *      1. This function triggers `ESP_GATTC_WRITE_CHAR_EVT`.
  *      2. This function should be called only after the connection has been established.
  *      3. `handle` must be greater than 0.
+ *      4. If `auth_req` is not `ESP_GATT_AUTH_REQ_NONE`, the stack may start encryption
+ *         or SMP pairing before sending the ATT write.
  *
  * @return
  *       - ESP_OK: Success
