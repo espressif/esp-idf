@@ -51,8 +51,11 @@ extern const uint8_t server_pk_end[]   asm("_binary_prvtkey_pem_end");
 extern const uint8_t server_cert_bundle_start[] asm("_binary_server_cert_bundle_start");
 extern const uint8_t server_cert_bundle_end[] asm("_binary_server_cert_bundle_end");
 
-extern const uint8_t bad_md_crt_pem_start[] asm("_binary_bad_md_crt_pem_start");
-extern const uint8_t bad_md_crt_pem_end[]   asm("_binary_bad_md_crt_pem_end");
+extern const uint8_t bad_md_test_chain_pem_start[] asm("_binary_bad_md_test_chain_pem_start");
+extern const uint8_t bad_md_test_chain_pem_end[]   asm("_binary_bad_md_test_chain_pem_end");
+
+extern const uint8_t bad_md_test_bundle_start[] asm("_binary_bad_md_test_bundle_start");
+extern const uint8_t bad_md_test_bundle_end[]   asm("_binary_bad_md_test_bundle_end");
 
 extern const uint8_t wrong_sig_crt_pem_start[] asm("_binary_wrong_sig_crt_esp32_com_pem_start");
 extern const uint8_t wrong_sig_crt_pem_end[]   asm("_binary_wrong_sig_crt_esp32_com_pem_end");
@@ -420,18 +423,26 @@ TEST_CASE("custom certificate bundle", "[mbedtls]")
 
 TEST_CASE("custom certificate bundle - weak hash", "[mbedtls]")
 {
-    /* A weak signature hash on the trusted certificate should not stop
-       us from verifying the chain, since we already trust it a weak signature hash is
-       not a security issue */
+    /* A weak signature hash on the trusted root should not stop verification:
+     * once the root is trusted, its self-signature hash is not a security issue.
+     *
+     * Test fixture: a self-contained SHA-1-self-signed root + leaf generated
+     * specifically for this test (see crts/bad_md_test_chain.pem and
+     * crts/bad_md_test_bundle). Self-contained so the test is decoupled from
+     * cacrt_all.pem churn and from real-world SHA-1 root deprecation. */
 
     mbedtls_x509_crt crt;
     uint32_t flags = 0;
 
     esp_crt_bundle_attach(NULL);
+    esp_crt_bundle_set(bad_md_test_bundle_start,
+                       bad_md_test_bundle_end - bad_md_test_bundle_start);
 
-    mbedtls_x509_crt_init( &crt );
-    mbedtls_x509_crt_parse(&crt, bad_md_crt_pem_start, bad_md_crt_pem_end - bad_md_crt_pem_start);
-    TEST_ASSERT_EQUAL(0, mbedtls_x509_crt_verify(&crt, NULL, NULL, NULL, &flags, esp_crt_verify_callback, NULL));
+    mbedtls_x509_crt_init(&crt);
+    mbedtls_x509_crt_parse(&crt, bad_md_test_chain_pem_start,
+                           bad_md_test_chain_pem_end - bad_md_test_chain_pem_start);
+    TEST_ASSERT_EQUAL(0, mbedtls_x509_crt_verify(&crt, NULL, NULL, NULL, &flags,
+                                                 esp_crt_verify_callback, NULL));
 
     mbedtls_x509_crt_free(&crt);
 
