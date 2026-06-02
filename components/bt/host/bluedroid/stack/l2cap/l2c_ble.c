@@ -1034,7 +1034,27 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
         }
     }
 
-    if (!p_lcb->is_aux) {
+    // Auto-set is_aux based on BLE feature support
+    bool is_aux = p_lcb->is_aux;
+#if (BLE_42_FEATURE_SUPPORT == TRUE) && (BLE_50_FEATURE_SUPPORT == FALSE)
+    if (is_aux) {
+        L2CAP_TRACE_WARNING("is_aux auto-set to false (BLE 4.2 only)");
+        is_aux = false;
+    }
+#elif (BLE_42_FEATURE_SUPPORT == FALSE) && (BLE_50_FEATURE_SUPPORT == TRUE)
+    if (!is_aux) {
+        L2CAP_TRACE_WARNING("is_aux auto-set to true (BLE 5.0 only)");
+        is_aux = true;
+    }
+#else
+    extern bool btm_ble_inter_get(void);
+    if (btm_ble_inter_get() && (!is_aux)) {
+        L2CAP_TRACE_WARNING("is_aux auto-set to true (BLE 5.0 API used)");
+        is_aux = true;
+    }
+#endif
+
+    if (!is_aux) {
         if (!btsnd_hcic_ble_create_ll_conn (scan_int, /* UINT16 scan_int */
                                             scan_win, /* UINT16 scan_win */
                                             FALSE, /* UINT8 white_list */
