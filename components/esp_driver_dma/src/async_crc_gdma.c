@@ -20,6 +20,7 @@
 ESP_LOG_ATTR_TAG(TAG, "async_crc_gdma");
 
 #define CRC_DMA_DESCRIPTOR_BUFFER_MAX_SIZE 4095
+#define CRC_DMA_RX_SINK_BUFFER_SIZE 32
 
 __attribute__((always_inline))
 static inline uint32_t bit_reverse32(uint32_t val)
@@ -34,7 +35,7 @@ static inline uint32_t bit_reverse32(uint32_t val)
 
 /// @brief Transaction object for async CRC
 typedef struct async_crc_transaction {
-    gdma_link_list_handle_t link_list; // DMA link list for user buffer
+    gdma_link_list_handle_t tx_link_list; // DMA link list for user buffer
     const void *data;                  // User data buffer pointer
     size_t size;                       // Size of data buffer
     async_crc_params_t params;         // CRC parameters (polynomial, init value, etc.)
@@ -47,10 +48,13 @@ typedef struct async_crc_transaction {
 typedef struct {
     async_crc_context_t parent;        // Parent IO interface
     gdma_channel_handle_t tx_channel;  // GDMA TX channel handle
+    gdma_channel_handle_t rx_channel;  // GDMA RX channel handle used to drain M2M data
     portMUX_TYPE spin_lock;            // Spinlock for synchronization
     _Atomic async_crc_fsm_t fsm;       // driver state machine, changing state should be atomic
     size_t tx_int_mem_alignment;       // Required DMA buffer alignment for internal TX memory
     size_t tx_ext_mem_alignment;       // Required DMA buffer alignment for external TX memory
+    uint8_t *rx_sink_buffer;           // Sink buffer used to drain the M2M RX path
+    gdma_link_list_handle_t rx_link_list; // Self-loop DMA link list for the RX sink buffer, shared by all crc transactions
     uint32_t gdma_bus_id;              // GDMA bus id (AHB, AXI, etc.)
     uint32_t num_trans_objs;           // number of transaction objects
     async_crc_transaction_t *transaction_pool;    // transaction object pool
@@ -77,16 +81,24 @@ static esp_err_t async_crc_gdma_destroy_context(async_crc_gdma_context_t *crc_gd
     if (crc_gdma->transaction_pool) {
         for (uint32_t i = 0; i < crc_gdma->num_trans_objs; i++) {
             async_crc_transaction_t* trans = &crc_gdma->transaction_pool[i];
-            if (trans->link_list) {
-                gdma_del_link_list(trans->link_list);
+            if (trans->tx_link_list) {
+                gdma_del_link_list(trans->tx_link_list);
             }
         }
         free(crc_gdma->transaction_pool);
     }
-    // Delete GDMA channel
+    if (crc_gdma->rx_link_list) {
+        gdma_del_link_list(crc_gdma->rx_link_list);
+    }
+    free(crc_gdma->rx_sink_buffer);
+    // Delete GDMA channels
     if (crc_gdma->tx_channel) {
         gdma_disconnect(crc_gdma->tx_channel);
         gdma_del_channel(crc_gdma->tx_channel);
+    }
+    if (crc_gdma->rx_channel) {
+        gdma_disconnect(crc_gdma->rx_channel);
+        gdma_del_channel(crc_gdma->rx_channel);
     }
     free(crc_gdma);
     return ESP_OK;
@@ -113,39 +125,76 @@ esp_err_t esp_async_crc_install_gdma_template(const async_crc_config_t *config, 
     crc_gdma->transaction_pool = heap_caps_calloc(trans_queue_len, sizeof(async_crc_transaction_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(crc_gdma->transaction_pool, ESP_ERR_NO_MEM, err, TAG, "no mem for transaction pool");
 
-    // Create TX channel for CRC calculation with optimized allocation strategy
+    // Create a paired M2M channel. TX feeds the CRC calculator and RX drains the data path.
     gdma_channel_alloc_config_t dma_chan_alloc_cfg = {
         .intr_priority = config->intr_priority,
     };
-    ESP_GOTO_ON_ERROR(new_channel_func(&dma_chan_alloc_cfg, &crc_gdma->tx_channel, NULL),
+    ESP_GOTO_ON_ERROR(new_channel_func(&dma_chan_alloc_cfg, &crc_gdma->tx_channel, &crc_gdma->rx_channel),
                       err, TAG, "alloc DMA channel failed");
     gdma_reset(crc_gdma->tx_channel);
+    gdma_reset(crc_gdma->rx_channel);
 
     // get a free DMA trigger ID for CRC calculation, and connect it to the allocated channel
-    gdma_trigger_t m2m_trigger = {
-        .bus_id = gdma_bus_id,
-    };
+    gdma_trigger_t m2m_trigger = GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_M2M, 0);
     uint32_t free_m2m_id_mask = 0;
     gdma_get_free_m2m_trig_id_mask(crc_gdma->tx_channel, &free_m2m_id_mask);
     m2m_trigger.instance_id = __builtin_ctz(free_m2m_id_mask);
-    ESP_GOTO_ON_ERROR(gdma_connect(crc_gdma->tx_channel, m2m_trigger), err, TAG, "connect DMA channel failed");
+    ESP_GOTO_ON_ERROR(gdma_connect(crc_gdma->tx_channel, m2m_trigger), err, TAG, "connect TX DMA channel failed");
+    ESP_GOTO_ON_ERROR(gdma_connect(crc_gdma->rx_channel, m2m_trigger), err, TAG, "connect RX DMA channel failed");
 
-    gdma_strategy_config_t strategy_cfg = {
+    gdma_strategy_config_t tx_strategy_cfg = {
         .owner_check = true,
         .auto_update_desc = true,
-        .eof_till_data_popped = false,
+        .eof_till_data_popped = true,
     };
-    gdma_apply_strategy(crc_gdma->tx_channel, &strategy_cfg);
+    gdma_apply_strategy(crc_gdma->tx_channel, &tx_strategy_cfg);
+    gdma_strategy_config_t rx_strategy_cfg = {
+        // The RX sink uses a single self-loop descriptor, whose owner bit is
+        // overwritten by hardware after each received block.
+        .owner_check = false,
+    };
+    gdma_apply_strategy(crc_gdma->rx_channel, &rx_strategy_cfg);
 
     // Configure DMA transfer
     gdma_transfer_config_t transfer_cfg = {
         .max_data_burst_size = config->dma_burst_size,
         .access_ext_mem = true, // allow to copy data from external memory
     };
-    ESP_GOTO_ON_ERROR(gdma_config_transfer(crc_gdma->tx_channel, &transfer_cfg), err, TAG, "config DMA transfer failed");
+    ESP_GOTO_ON_ERROR(gdma_config_transfer(crc_gdma->tx_channel, &transfer_cfg), err, TAG, "config TX DMA transfer failed");
+    ESP_GOTO_ON_ERROR(gdma_config_transfer(crc_gdma->rx_channel, &transfer_cfg), err, TAG, "config RX DMA transfer failed");
 
     // Get buffer alignment required by GDMA channel
     gdma_get_alignment_constraints(crc_gdma->tx_channel, &crc_gdma->tx_int_mem_alignment, &crc_gdma->tx_ext_mem_alignment);
+    size_t rx_int_mem_alignment = 0;
+    gdma_get_alignment_constraints(crc_gdma->rx_channel, &rx_int_mem_alignment, NULL);
+    size_t rx_buffer_size = (rx_int_mem_alignment > CRC_DMA_RX_SINK_BUFFER_SIZE) ?
+                            rx_int_mem_alignment : CRC_DMA_RX_SINK_BUFFER_SIZE;
+    crc_gdma->rx_sink_buffer = heap_caps_aligned_calloc(rx_int_mem_alignment, 1, rx_buffer_size,
+                                                        MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    ESP_GOTO_ON_FALSE(crc_gdma->rx_sink_buffer, ESP_ERR_NO_MEM, err, TAG, "no mem for RX sink buffer");
+
+    size_t item_alignment = (gdma_bus_id == SOC_GDMA_BUS_AXI) ? GDMA_LL_AXI_DESC_ALIGNMENT : GDMA_LL_AHB_DESC_ALIGNMENT;
+
+    // The RX side only drains the M2M stream for the TX CRC calculator. A single
+    // self-loop descriptor is enough because the sink buffer contents are ignored.
+    gdma_link_list_config_t rx_link_cfg = {
+        .item_alignment = item_alignment,
+        .num_items = 1,
+        .flags = {
+            .items_in_ext_mem = false,
+        },
+    };
+    ESP_GOTO_ON_ERROR(gdma_new_link_list(&rx_link_cfg, &crc_gdma->rx_link_list), err, TAG, "failed to create RX DMA link list");
+    gdma_buffer_mount_config_t rx_buf_mount_config = {
+        .buffer = crc_gdma->rx_sink_buffer,
+        .buffer_alignment = rx_int_mem_alignment,
+        .length = rx_buffer_size,
+        .flags = {
+            .mark_final = GDMA_FINAL_LINK_TO_HEAD,
+        },
+    };
+    ESP_GOTO_ON_ERROR(gdma_link_mount_buffers(crc_gdma->rx_link_list, 0, &rx_buf_mount_config, 1, NULL),
+                      err, TAG, "failed to mount RX sink buffer to DMA link list");
 
     // Register EOF callback for completion detection
     gdma_tx_event_callbacks_t cbs = {
@@ -239,12 +288,14 @@ static void try_start_pending_transaction(async_crc_gdma_context_t *crc_gdma)
             // crc config validation is done in the async_crc_prepare_transaction
             // so no need to check the return value here
             gdma_config_crc_calculator(crc_gdma->tx_channel, &crc_cfg);
+            gdma_reset(crc_gdma->rx_channel);
             gdma_reset(crc_gdma->tx_channel);
 
             atomic_store(&crc_gdma->fsm, CRC_FSM_RUN);
             crc_gdma->current_transaction = trans;
-            // Start DMA operation for CRC calculation
-            gdma_start(crc_gdma->tx_channel, gdma_link_get_head_addr(trans->link_list));
+            // Start RX first so the M2M data path has a sink before TX feeds the CRC calculator.
+            gdma_start(crc_gdma->rx_channel, gdma_link_get_head_addr(crc_gdma->rx_link_list));
+            gdma_start(crc_gdma->tx_channel, gdma_link_get_head_addr(trans->tx_link_list));
             return;
         }
 
@@ -281,7 +332,7 @@ static esp_err_t async_crc_prepare_transaction(async_crc_gdma_context_t *crc_gdm
                         "Data buffer not aligned to %zu bytes", buffer_alignment);
 
     // Calculate number of DMA nodes needed
-    size_t num_dma_nodes = esp_dma_calculate_node_count(trans->size, buffer_alignment, CRC_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
+    size_t tx_num_dma_nodes = esp_dma_calculate_node_count(trans->size, buffer_alignment, CRC_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
 
     // Get descriptor alignment based on GDMA bus type
     size_t item_alignment = (crc_gdma->gdma_bus_id == SOC_GDMA_BUS_AXI) ? GDMA_LL_AXI_DESC_ALIGNMENT : GDMA_LL_AHB_DESC_ALIGNMENT;
@@ -289,13 +340,13 @@ static esp_err_t async_crc_prepare_transaction(async_crc_gdma_context_t *crc_gdm
     // Create DMA link list for the buffer
     gdma_link_list_config_t link_cfg = {
         .item_alignment = item_alignment,
-        .num_items = num_dma_nodes,
+        .num_items = tx_num_dma_nodes,
         .flags = {
             .check_owner = true,
             .items_in_ext_mem = false,
         },
     };
-    ESP_RETURN_ON_ERROR(gdma_new_link_list(&link_cfg, &trans->link_list), TAG, "failed to create DMA link list");
+    ESP_RETURN_ON_ERROR(gdma_new_link_list(&link_cfg, &trans->tx_link_list), TAG, "failed to create TX DMA link list");
 
     // Mount the user buffer to the DMA link list
     gdma_buffer_mount_config_t buf_mount_config[1] = {
@@ -309,7 +360,7 @@ static esp_err_t async_crc_prepare_transaction(async_crc_gdma_context_t *crc_gdm
             }
         }
     };
-    ESP_RETURN_ON_ERROR(gdma_link_mount_buffers(trans->link_list, 0, buf_mount_config, 1, NULL), TAG, "failed to mount buffer to DMA link list");
+    ESP_RETURN_ON_ERROR(gdma_link_mount_buffers(trans->tx_link_list, 0, buf_mount_config, 1, NULL), TAG, "failed to mount buffer to DMA link list");
 
     // write back the source data if it's behind the cache
     size_t cache_line_size = esp_cache_get_line_size_by_addr(trans->data);
@@ -332,6 +383,8 @@ static bool async_crc_gdma_eof_callback(gdma_channel_handle_t dma_chan, gdma_eve
         // Get current transaction that just completed
         // Capture to local var before CAS in case user clears crc_gdma->current_transaction
         async_crc_transaction_t *current_trans = crc_gdma->current_transaction;
+
+        gdma_stop(crc_gdma->rx_channel);
 
         // Get CRC result from DMA peripheral
         uint32_t crc_result;
@@ -405,9 +458,9 @@ static esp_err_t async_crc_gdma_calc(async_crc_context_t *ctx, const void *data,
     ESP_RETURN_ON_FALSE(trans, ESP_ERR_INVALID_STATE, TAG, "no free node in the idle queue");
 
     // clean up the transaction configuration comes from the last one
-    if (trans->link_list) {
-        gdma_del_link_list(trans->link_list);
-        trans->link_list = NULL;
+    if (trans->tx_link_list) {
+        gdma_del_link_list(trans->tx_link_list);
+        trans->tx_link_list = NULL;
     }
 
     // Store transaction data
