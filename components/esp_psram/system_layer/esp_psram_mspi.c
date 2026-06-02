@@ -71,8 +71,7 @@ static void PSRAM_ISR_ATTR mspi_psram_isr_handler_wrapper(void *arg)
     uint32_t intr_events = psram_ctrlr_ll_get_intr_raw(PSRAM_CTRLR_LL_MSPI_ID_SYSTEM);
     psram_ctrlr_ll_clear_intr(PSRAM_CTRLR_LL_MSPI_ID_SYSTEM, intr_events);
 
-    ESP_DRAM_LOGE(TAG, "MSPI PSRAM error");
-    ESP_DRAM_LOGD(TAG, "intr_events: 0x%" PRIx32, intr_events);
+    ESP_DRAM_LOGE(TAG, "MSPI PSRAM error, intr_events: 0x%" PRIx32, intr_events);
 
     mspi_psram_isr_handler(arg, intr_events);
 

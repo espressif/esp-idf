@@ -217,7 +217,6 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_hal_ledc/include/hal/ledc_types.h \
     $(PROJECT_PATH)/components/esp_hal_parlio/include/hal/parlio_types.h \
     $(PROJECT_PATH)/components/esp_hal_mcpwm/include/hal/mcpwm_types.h \
-    $(PROJECT_PATH)/components/esp_hal_mspi/include/hal/esp_flash_err.h \
     $(PROJECT_PATH)/components/esp_hal_mspi/include/hal/spi_flash_types.h \
     $(PROJECT_PATH)/components/esp_hal_pcnt/include/hal/pcnt_types.h \
     $(PROJECT_PATH)/components/esp_hal_rmt/include/hal/rmt_types.h \
@@ -364,6 +363,7 @@ INPUT = \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/uart_pins.h \
     $(PROJECT_PATH)/components/spi_flash/include/esp_flash_spi_init.h \
     $(PROJECT_PATH)/components/spi_flash/include/esp_flash.h \
+    $(PROJECT_PATH)/components/spi_flash/include/esp_flash_err.h \
     $(PROJECT_PATH)/components/spi_flash/include/spi_flash_mmap.h \
     $(PROJECT_PATH)/components/spi_flash/include/esp_spi_flash_counters.h \
     $(PROJECT_PATH)/components/spiffs/include/esp_spiffs.h \
