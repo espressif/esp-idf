@@ -687,7 +687,17 @@ typedef struct {
     esp_bd_addr_t remote_bda;                              /*!< The Bluetooth address of the remote device */
     esp_ble_addr_type_t remote_addr_type;                  /*!< Address type of the remote device */
     bool is_direct;                                        /*!< Direct connection or background auto connection(by now, background auto connection is not supported */
-    bool is_aux;                                           /*!< Set to true for BLE 5.0 or higher to enable auxiliary connections; set to false for BLE 4.2 or lower. */
+    bool is_aux;                                           /*!< Determines whether to use BLE 5.0 or BLE 4.2 create connection interface.
+                                                                - If set to true, the BLE 5.0 interface (extended connection) will be used.
+                                                                - If set to false, the BLE 4.2 interface (legacy connection) will be used.
+                                                                - Note: When connecting to a legacy advertising device using BLE 5.0 interface, is_aux should be set to true.
+                                                                - Auto-setting (handled in L2CAP layer): The system will automatically set this parameter based on the enabled BLE features:
+                                                                  * If only BLE 4.2 feature is enabled, is_aux will be automatically set to false.
+                                                                  * If only BLE 5.0 feature is enabled, is_aux will be automatically set to true.
+                                                                  * If both BLE 4.2 and BLE 5.0 features are enabled (not recommended), the stack will automatically
+                                                                    infer whether to use BLE 5.0 or BLE 4.2 interface based on previously used APIs.
+                                                                    Otherwise, the user-specified value will be used.
+                                                                - Note: It is strongly recommended NOT to enable both BLE 4.2 and BLE 5.0 features simultaneously. */
     esp_ble_addr_type_t own_addr_type;                     /*!< Specifies the address type used in the connection request. Set to 0xFF if the address type is unknown. */
     esp_ble_phy_mask_t phy_mask;                           /*!< Indicates which PHY connection parameters will be used. When is_aux is false, only the connection params for 1M PHY can be specified */
     const esp_ble_conn_params_t *phy_1m_conn_params;       /*!< Connection parameters for the LE 1M PHY */

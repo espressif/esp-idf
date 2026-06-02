@@ -93,7 +93,7 @@ esp_err_t esp_ble_gattc_enh_open(esp_gatt_if_t gattc_if, esp_ble_gatt_creat_conn
     memcpy(arg.open.remote_bda, creat_conn_params->remote_bda, ESP_BD_ADDR_LEN);
     arg.open.remote_addr_type = creat_conn_params->remote_addr_type;
     arg.open.is_direct = creat_conn_params->is_direct;
-    arg.open.is_aux= creat_conn_params->is_aux;
+    arg.open.is_aux = creat_conn_params->is_aux;
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     arg.open.is_pawr_synced = false;
     arg.open.adv_handle = 0xFF;
