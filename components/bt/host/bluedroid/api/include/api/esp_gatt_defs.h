@@ -361,10 +361,15 @@ typedef struct {
 /**
  * @brief Defines the GATT authentication request types.
  *
- * This enumeration lists the types of authentication requests that can be made.
- * It corresponds to the `BTA_GATT_AUTH_REQ_xxx` values defined in `bta/bta_gatt_api.h`.
- * The types include options for no authentication, unauthenticated encryption, authenticated encryption,
- * and both signed versions with and without MITM (Man-In-The-Middle) protection.
+ * Used as the `auth_req` argument in GATT client read/write APIs. It specifies the
+ * link security level required before the ATT request is sent, and is independent
+ * of server-side attribute permission flags (`ESP_GATT_PERM_xxx`).
+ *
+ * @note If `auth_req` is not `ESP_GATT_AUTH_REQ_NONE`, the stack may start link
+ *       encryption or SMP pairing before the GATT operation. Handle
+ *       `ESP_GAP_BLE_PASSKEY_REQ_EVT` and call `esp_ble_passkey_reply()` if needed.
+ *
+ * Corresponds to the `BTA_GATT_AUTH_REQ_xxx` values defined in `bta/bta_gatt_api.h`.
  */
 typedef enum {
     ESP_GATT_AUTH_REQ_NONE                  = 0, /*!< No authentication required. Corresponds to BTA_GATT_AUTH_REQ_NONE. */
