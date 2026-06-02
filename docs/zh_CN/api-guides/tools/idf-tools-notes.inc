@@ -93,6 +93,11 @@ Some ESP-specific instructions for running QEMU for RISC-V chips are here: https
 
 ---
 
+.. tool-esp-idf-configdep-notes
+
+
+---
+
 .. tool-idf-python-notes
 
 

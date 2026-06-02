@@ -531,6 +531,13 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
                 'default': False,
             },
             {
+                'names': ['--configdep/--no-configdep'],
+                'help': 'Use configdep wrapper to optimize rebuild process. Enabled by default.',
+                'is_flag': True,
+                'envvar': 'IDF_CONFIGDEP_ENABLE',
+                'default': True,
+            },
+            {
                 'names': ['-G', '--generator'],
                 'help': 'CMake generator.',
                 'type': click.Choice(GENERATORS.keys()),

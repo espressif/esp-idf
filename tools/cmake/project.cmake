@@ -608,14 +608,50 @@ macro(project project_name)
 
     __target_set_toolchain()
 
+    # Build compiler launcher chain
+    set(compiler_launcher_chain "")
+    # Add custom wrapper if enabled (FIRST in chain)
+    if(CONFIGDEP_ENABLE)
+        # Check that esp-idf-kconfig >= CONFIGDEP_MIN_KCONFIG_VERSION is installed
+        # (required for cdep_tree / configdep support; version is defined in kconfig.cmake)
+        __check_python_package_min_version(${PYTHON} esp-idf-kconfig
+            "${CONFIGDEP_MIN_KCONFIG_VERSION}" _kconfig_version_ok)
+        if(_kconfig_version_ok)
+            find_program(CONFIGDEP_FOUND esp-idf-configdep)
+            if(CONFIGDEP_FOUND)
+                message(STATUS "esp-idf-configdep will be used for faster recompilation")
+                list(APPEND compiler_launcher_chain "esp-idf-configdep")
+            else()
+                message(WARNING "esp-idf-configdep enabled but not found. Re-run install and export scripts.")
+            endif()
+        else()
+            message(WARNING "esp-idf-configdep not supported by esp-idf-kconfig "
+                "(>= ${CONFIGDEP_MIN_KCONFIG_VERSION} required). Re-run install and export scripts.")
+        endif()
+    endif()
+
+    # Add ccache if enabled (SECOND in chain)
     if(CCACHE_ENABLE)
         find_program(CCACHE_FOUND ccache)
         if(CCACHE_FOUND)
             message(STATUS "ccache will be used for faster recompilation")
-            set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+            list(APPEND compiler_launcher_chain "ccache")
         else()
             message(WARNING "enabled ccache in build but ccache program not found")
         endif()
+    endif()
+
+    # Apply the launcher chain - CMake automatically creates semicolon-separated list
+    if(compiler_launcher_chain)
+        set(CMAKE_C_COMPILER_LAUNCHER ${compiler_launcher_chain})
+        set(CMAKE_CXX_COMPILER_LAUNCHER ${compiler_launcher_chain})
+        set(CMAKE_ASM_COMPILER_LAUNCHER ${compiler_launcher_chain})
+
+        # Debug: show what the launcher chain looks like
+        string(REPLACE ";" " -> " launcher_display "${compiler_launcher_chain}")
+        message(STATUS "Compiler launcher chain: ${launcher_display}")
+    else()
+        message(STATUS "No compiler launcher chain will be used.")
     endif()
 
     # The actual call to project()

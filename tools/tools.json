@@ -1150,6 +1150,79 @@
           }
         }
       ]
+    },
+    {
+      "description": "ESP-IDF configuration dependency tool",
+      "export_paths": [
+        [
+          "esp-idf-configdep-0.2.2",
+          "bin"
+        ]
+      ],
+      "export_vars": {},
+      "info_url": "https://github.com/espressif/esp-idf-configdep",
+      "install": "always",
+      "license": "Apache-2.0",
+      "name": "esp-idf-configdep",
+      "supported_targets": [
+        "all"
+      ],
+      "version_cmd": [
+        "esp-idf-configdep",
+        "--version"
+      ],
+      "version_regex": "version: ([0-9.]+)",
+      "versions": [
+        {
+          "linux-amd64": {
+            "sha256": "999aa895c25d5c7edb6823884d3017f146b133f7ae2c580fffe4c989d7ce8c36",
+            "size": 28505,
+            "url": "https://github.com/espressif/esp-idf-configdep/releases/download/v0.2.2/esp-idf-configdep-0.2.2-linux-x86_64.tar.gz"
+          },
+          "linux-arm64": {
+            "sha256": "0ea8f5e0de463ecfa3354a27b32ba34c4b999570e92127952fe7363f034ab7e9",
+            "size": 59608,
+            "url": "https://github.com/espressif/esp-idf-configdep/releases/download/v0.2.2/esp-idf-configdep-0.2.2-linux-arm64.tar.gz"
+          },
+          "linux-armel": {
+            "sha256": "0e1663a6f9d8c030f11feb214aab0ffc3b9f6029ebc7ce10cad974db13667632",
+            "size": 36797,
+            "url": "https://github.com/espressif/esp-idf-configdep/releases/download/v0.2.2/esp-idf-configdep-0.2.2-linux-armel.tar.gz"
+          },
+          "linux-armhf": {
+            "sha256": "98759c0a16e56ec96cc72f2d6b60d2f548194cfcc2adde11cd65c694241912b6",
+            "size": 34310,
+            "url": "https://github.com/espressif/esp-idf-configdep/releases/download/v0.2.2/esp-idf-configdep-0.2.2-linux-armhf.tar.gz"
+          },
+          "linux-i686": {
+            "sha256": "e337582b1570ac90fcfde0b724e41d62b01581ec0a755c97ac38024c5def55ac",
+            "size": 32114,
+            "url": "https://github.com/espressif/esp-idf-configdep/releases/download/v0.2.2/esp-idf-configdep-0.2.2-linux-x86.tar.gz"
+          },
+          "macos": {
+            "sha256": "8e7ad2fd91214219c276c6b371f0cd3e315f22055554d60856e88d84eb6422e9",
+            "size": 12755,
+            "url": "https://github.com/espressif/esp-idf-configdep/releases/download/v0.2.2/esp-idf-configdep-0.2.2-macos-x86_64.tar.gz"
+          },
+          "macos-arm64": {
+            "sha256": "458fa0e3193184ca6360bf35058c63e763545f0ef6cb0b659b01985a5dfafdbf",
+            "size": 13023,
+            "url": "https://github.com/espressif/esp-idf-configdep/releases/download/v0.2.2/esp-idf-configdep-0.2.2-macos-arm64.tar.gz"
+          },
+          "name": "0.2.2",
+          "status": "recommended",
+          "win32": {
+            "sha256": "6bec5711daa5196df8ec3fa2d3c2c79623e7dc6cb5e0b6cede03ef49b71ac6ac",
+            "size": 114156,
+            "url": "https://github.com/espressif/esp-idf-configdep/releases/download/v0.2.2/esp-idf-configdep-0.2.2-win-x86.zip"
+          },
+          "win64": {
+            "sha256": "1827c449c9294036f94fa82f5da65f10be1edbc2de6920ce9837cbee1393cac8",
+            "size": 117734,
+            "url": "https://github.com/espressif/esp-idf-configdep/releases/download/v0.2.2/esp-idf-configdep-0.2.2-win-x86_64.zip"
+          }
+        }
+      ]
     }
   ],
   "version": 3

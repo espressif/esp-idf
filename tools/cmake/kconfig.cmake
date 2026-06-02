@@ -8,6 +8,9 @@ set(ESP_MENUCONFIG_MIN_KCONFIG_VERSION "3.1.0")
 # (fused menuconfig + deprecated-options post-processing in a single invocation).
 set(MENUCONFIG_INLINE_MIN_KCONFIG_VERSION "3.9.0")
 
+# Minimum esp-idf-kconfig version required for cdep_tree / configdep (--output cdep_tree)
+set(CONFIGDEP_MIN_KCONFIG_VERSION "3.6.0")
+
 function(__kconfig_init)
     idf_build_get_property(idf_path IDF_PATH)
 
@@ -238,6 +241,12 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     idf_build_get_property(output_sdkconfig __OUTPUT_SDKCONFIG)
     if(output_sdkconfig)
         list(APPEND kconfgen_output_options --output config ${sdkconfig})
+    endif()
+    # If configdep feature is enabled in ESP-IDF and esp-idf-kconfig version supports cdep_tree,
+    # add output option for configdep (requires esp-idf-kconfig >= CONFIGDEP_MIN_KCONFIG_VERSION)
+    __check_python_package_min_version(${python} esp-idf-kconfig "${CONFIGDEP_MIN_KCONFIG_VERSION}" CONFIGDEP_SUPPORTED)
+    if(CONFIGDEP_SUPPORTED AND CONFIGDEP_ENABLE)
+        list(APPEND kconfgen_output_options --output cdep_tree ${config_dir})
     endif()
 
     execute_process(
