@@ -23,6 +23,8 @@ extern "C"
 {
 #endif
 
+#define SPI_ALIGN_UP(num, align)         (((num) + ((align) - 1)) & ~((align) - 1))
+
 //NOTE!! If both A and B are not defined, '#if (A==B)' is true, because GCC use 0 stand for undefined symbol
 #if SOC_GPSPI_SUPPORTED && defined(SOC_GDMA_BUS_AXI) && (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AXI)
 #define DMA_DESC_MEM_ALIGN_SIZE 8

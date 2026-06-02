@@ -379,6 +379,14 @@ esp_err_t spicommon_dma_desc_alloc(spi_host_device_t host_id, int cfg_max_sz, in
         }
         return ESP_ERR_NO_MEM;
     }
+    // cache sync using align_up length thanks to heap alloc already consider the cache alignment requirement
+    uint8_t aligned_len = SPI_ALIGN_UP(sizeof(spi_dma_desc_t) * dma_desc_ct, bus_ctx[host_id]->bus_attr.cache_align_int);
+    // write back and then invalidate the cache, because later we will read/write the link list items by non-cached address
+    esp_err_t ret = esp_cache_msync(dma_ctx->dmadesc_tx, aligned_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
+    ESP_RETURN_ON_FALSE_ISR((ret == ESP_OK) || (ret == ESP_ERR_NOT_SUPPORTED), ESP_ERR_INVALID_ARG, SPI_TAG, "dma desc sync failed");
+    ret = esp_cache_msync(dma_ctx->dmadesc_rx, aligned_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
+    ESP_RETURN_ON_FALSE_ISR((ret == ESP_OK) || (ret == ESP_ERR_NOT_SUPPORTED), ESP_ERR_INVALID_ARG, SPI_TAG, "dma desc sync failed");
+
     dma_ctx->dma_desc_num = dma_desc_ct;
     *actual_max_sz = dma_desc_ct * DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
     return ESP_OK;
