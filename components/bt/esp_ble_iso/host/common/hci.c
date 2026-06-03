@@ -71,7 +71,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode,
     LOG_DBG("HciCmdSendSync[%04x]", opcode);
 
 #if CONFIG_BT_BLUEDROID_ENABLED
-    return bt_le_bluedroid_hci_iso_cmd_send_sync(opcode, buf, rsp);
+    return bt_le_bluedroid_iso_cmd_send_sync(opcode, buf, rsp);
 #else
     return bt_le_nimble_iso_cmd_send_sync(opcode, buf, rsp);
 #endif

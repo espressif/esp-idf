@@ -749,9 +749,9 @@ static int hci_cmd_remove_iso_data_path(struct net_buf *buf, struct net_buf **rs
     return 0;
 }
 
-int bt_le_bluedroid_hci_iso_cmd_send_sync(uint16_t opcode,
-                                          struct net_buf *buf,
-                                          struct net_buf **rsp)
+int bt_le_bluedroid_iso_cmd_send_sync(uint16_t opcode,
+                                      struct net_buf *buf,
+                                      struct net_buf **rsp)
 {
     int rc;
 
@@ -1197,7 +1197,43 @@ static int iso_enable_cis(void)
 
     return bluedroid_err_to_errno(status);
 }
+
+static int iso_disable_cis(void)
+{
+    tBTM_STATUS status;
+
+#if USE_DIRECT_HCI
+    /* HCI LE Set Host Feature: Bit_Number(1) | Bit_Value(1).
+     * bit 32 = LE ISO Channels (Host Support). */
+    uint8_t cmd_params[2] = { 32, 0 };
+
+    status = bt_le_bluedroid_hci_send_sync(HCI_BLE_SET_HOST_FEATURE,
+                                           cmd_params, sizeof(cmd_params),
+                                           NULL, 0);
+#else /* USE_DIRECT_HCI */
+    status = BTM_BleSetHostFeature(32, 0);
+#endif /* USE_DIRECT_HCI */
+
+    return bluedroid_err_to_errno(status);
+}
 #endif /* CONFIG_BT_ISO_UNICAST */
+
+int bt_le_bluedroid_iso_disconnect(uint16_t conn_handle, uint8_t reason)
+{
+    tBTM_STATUS status;
+
+    LOG_DBG("[B]IsoDisconn[0x%03x][%02x]", conn_handle, reason);
+
+    /* No direct_hci variant: HCI Disconnect returns Command_Status;
+     * outcome arrives via BTM_BLE_ISO_CIS_DISCONNECTED_EVT. */
+    status = BTM_BleDisconCis(conn_handle, reason);
+
+    if (status != BTM_SUCCESS) {
+        LOG_ERR("[B]IsoDisconnFail[0x%03x][%02x]", conn_handle, status);
+    }
+
+    return bluedroid_err_to_errno(status);
+}
 
 int bt_le_bluedroid_iso_init(void)
 {
@@ -1245,17 +1281,7 @@ void bt_le_bluedroid_iso_deinit(void)
 {
 #if CONFIG_BT_ISO_UNICAST
     /* Mirror bt_le_iso_init() which enables bit 32 only on unicast build. */
-#if USE_DIRECT_HCI
-    {
-        uint8_t cmd_params[2] = { 32, 0 };
-
-        bt_le_bluedroid_hci_send_sync(HCI_BLE_SET_HOST_FEATURE,
-                                      cmd_params, sizeof(cmd_params),
-                                      NULL, 0);
-    }
-#else /* USE_DIRECT_HCI */
-    BTM_BleSetHostFeature(32, 0);
-#endif /* USE_DIRECT_HCI */
+    iso_disable_cis();
 #endif /* CONFIG_BT_ISO_UNICAST */
 
 #if CONFIG_BT_ISO_RX
