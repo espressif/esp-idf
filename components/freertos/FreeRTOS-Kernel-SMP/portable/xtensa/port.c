@@ -5,8 +5,10 @@
  */
 
 #include "sdkconfig.h"
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include "esp_compiler.h"
 #include "FreeRTOS.h"
 #include "task.h"   //For vApplicationStackOverflowHook
 #include "port_systick.h"
@@ -102,6 +104,7 @@ Variables used by IDF critical sections only (SMP tracks critical nesting inside
 */
 BaseType_t port_uxCriticalNestingIDF[portNUM_PROCESSORS] = {0};
 BaseType_t port_uxCriticalOldInterruptStateIDF[portNUM_PROCESSORS] = {0};
+volatile bool port_xThreadSafeClaimed = false;
 
 /*
 *******************************************************************************
@@ -113,8 +116,25 @@ volatile StackType_t DRAM_ATTR __attribute__((aligned(16))) port_IntStack[portNU
 /* One flag for each individual CPU. */
 volatile uint32_t port_switch_flag[portNUM_PROCESSORS];
 
+void xPortThreadSafeClaim(void)
+{
+    configASSERT(!xPortCanYield());
+    configASSERT(!port_xThreadSafeClaimed);
+    port_xThreadSafeClaimed = true;
+}
+
+void xPortThreadSafeDisclaim(void)
+{
+    configASSERT(!xPortCanYield());
+    configASSERT(port_xThreadSafeClaimed);
+    port_xThreadSafeClaimed = false;
+}
+
 BaseType_t xPortEnterCriticalTimeout(portMUX_TYPE *lock, BaseType_t timeout)
 {
+    if (unlikely(port_xThreadSafeClaimed)) {
+        return pdPASS;
+    }
     /* Interrupts may already be disabled (if this function is called in nested
      * manner). However, there's no atomic operation that will allow us to check,
      * thus we have to disable interrupts again anyways.
@@ -143,6 +163,9 @@ BaseType_t xPortEnterCriticalTimeout(portMUX_TYPE *lock, BaseType_t timeout)
 
 void vPortExitCriticalIDF(portMUX_TYPE *lock)
 {
+    if (unlikely(port_xThreadSafeClaimed)) {
+        return;
+    }
     /* This function may be called in a nested manner. Therefore, we only need
      * to re-enable interrupts if this is the last call to exit the critical. We
      * can use the nesting count to determine whether this is the last exit call.
@@ -338,6 +361,7 @@ BaseType_t xPortStartScheduler( void )
     BaseType_t coreID = xPortGetCoreID();
     port_xSchedulerRunning[coreID] = 1;
     port_uxCoreStartupDone[coreID] = 0;
+    port_xThreadSafeClaimed = false;
 
 #if configNUM_CORES > 1
     // Workaround for non-thread safe multi-core OS startup (see IDF-4524)
