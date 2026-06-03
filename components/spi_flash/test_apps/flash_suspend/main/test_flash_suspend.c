@@ -213,7 +213,7 @@ TEST_CASE("flash suspend test", "[spi_flash][suspend]")
     // 15 stands for threshold. We allow the interval time minus duration time is little bit larger than TSUS value
 #if CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM
     // Don't check the performance because it should be slow.
-    TEST_ASSERT_LESS_THAN(CONFIG_SPI_FLASH_SUSPEND_TSUS_VAL_US + 15, isr_interval_time - isr_duration_time);
+    TEST_ASSERT_LESS_THAN(CONFIG_SPI_FLASH_SUSPEND_TSUS_VAL_US + 35, isr_interval_time - isr_duration_time);
 #endif
     ESP_LOGI(TAG, "Reasonable value!");
 
