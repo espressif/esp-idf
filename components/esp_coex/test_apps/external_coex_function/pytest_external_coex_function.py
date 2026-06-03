@@ -8,7 +8,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 @pytest.mark.generic
 @idf_parametrize(
     'target',
-    ['esp32h2', 'esp32c3', 'esp32s2', 'esp32s3', 'esp32c6', 'esp32c61', 'esp32c5', 'esp32s31'],
+    ['esp32h2', 'esp32c3', 'esp32s2', 'esp32s3', 'esp32c6', 'esp32c61', 'esp32c5', 'esp32s31', 'esp32h4', 'esp32h21'],
     indirect=['target'],
 )
 def test_external_coex_unit_test(dut: Dut) -> None:
