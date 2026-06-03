@@ -30,6 +30,7 @@
 #include "hal/assist_debug_ll.h"
 #include "hal/apm_ll.h"
 #include "hal/clk_gate_ll.h"
+#include "hal/efuse_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/ds_ll.h"
 #include "hal/ecc_ll.h"
@@ -264,8 +265,17 @@ __attribute__((weak)) void esp_perip_clk_init(void)
             && (rst_reason != RESET_REASON_CPU0_SW) && (rst_reason != RESET_REASON_CPU0_RTC_WDT)    \
             && (rst_reason != RESET_REASON_CPU0_JTAG) && (rst_reason != RESET_REASON_CPU0_LOCKUP)) {
 #if CONFIG_ESP_CONSOLE_UART_NUM != 0
-        uart_ll_enable_bus_clock(UART_NUM_0, false);
-        uart_ll_sclk_disable(&UART0);
+#if defined(CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG) && CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+        /* ESP32-C5 rev <= 1.0: Do not disable UART0 sclk when USB Serial/JTAG is primary console.
+         * Disabling it would cause the chip to end in infinite loop on reset (workaround for rom code issue).
+         * See: IDFGH-17050
+         */
+        if (efuse_hal_chip_revision() > 100)
+#endif
+        {
+            uart_ll_enable_bus_clock(UART_NUM_0, false);
+            uart_ll_sclk_disable(&UART0);
+        }
 #elif CONFIG_ESP_CONSOLE_UART_NUM != 1
         uart_ll_sclk_disable(&UART1);
         uart_ll_enable_bus_clock(UART_NUM_1, false);
