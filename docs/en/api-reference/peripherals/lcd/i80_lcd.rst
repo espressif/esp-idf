@@ -42,6 +42,13 @@ I80 Interfaced LCD
     - :cpp:member:`esp_lcd_panel_io_i80_config_t::lcd_cmd_bits` and :cpp:member:`esp_lcd_panel_io_i80_config_t::lcd_param_bits` set the bit width of the command and parameter that recognized by the LCD controller chip. This is chip specific, you should refer to your LCD spec in advance.
     - :cpp:member:`esp_lcd_panel_io_i80_config_t::trans_queue_depth` sets the maximum number of transactions that can be queued in the LCD IO device. A bigger value means more transactions can be queued up, but it also consumes more memory.
 
+    .. note::
+
+        The output pixel clock PCLK frequency has an upper limit that depends on the data bus width:
+
+        - When :cpp:member:`esp_lcd_i80_bus_config_t::bus_width` is 8, the PCLK frequency is recommended to be less than 80 MHz.
+        - When :cpp:member:`esp_lcd_i80_bus_config_t::bus_width` is 16, the PCLK frequency is recommended to be less than 40 MHz.
+
     .. code-block:: c
 
         esp_lcd_panel_io_handle_t io_handle = NULL;

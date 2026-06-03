@@ -42,6 +42,13 @@ I80 接口的 LCD
     - :cpp:member:`esp_lcd_panel_io_i80_config_t::lcd_cmd_bits` 和 :cpp:member:`esp_lcd_panel_io_i80_config_t::lcd_param_bits` 分别设置 LCD 控制器芯片可识别的命令及参数的位宽。不同芯片对位宽要求不同，请提前参阅 LCD 规格书。
     - :cpp:member:`esp_lcd_panel_io_i80_config_t::trans_queue_depth` 设置在 LCD IO 设备中可以排队的最大传输量。该值越大，可以排队的传输越多，但消耗的内存也越多。
 
+    .. note::
+
+        输出像素时钟 PCLK 频率存在上限，具体取决于数据总线位宽：
+
+        - 当 :cpp:member:`esp_lcd_i80_bus_config_t::bus_width` 为 8 时，PCLK 频率建议值需小于 80 MHz；
+        - 当 :cpp:member:`esp_lcd_i80_bus_config_t::bus_width` 为 16 时，PCLK 频率建议值需小于 40 MHz。
+
     .. code-block:: c
 
         esp_lcd_panel_io_handle_t io_handle = NULL;

@@ -149,6 +149,18 @@
     * 全色彩空间：RGB 和 YUV 的取值范围为 0-255
     * 有限色彩空间：RGB 取值范围为 16-240，YUV Y 分量取值范围为 16-240，U-V 分量取值范围为 16-235
 
+    .. note::
+
+        - 当 :cpp:member:`esp_cam_ctlr_dvp_config_t::cam_data_width` 配置为 8 时：
+
+            - 像素时钟 CAM_PCLK 频率建议值需小于 80 MHz；
+            - 如果同时通过 :cpp:func:`esp_cam_ctlr_format_conversion` 配置了 YUV 与 RGB 之间的格式转换，则 CAM_PCLK 频率建议值需小于 60 MHz。
+
+        - 当 :cpp:member:`esp_cam_ctlr_dvp_config_t::cam_data_width` 配置为 16 时：
+
+            - CAM_PCLK 频率建议值需小于 40 MHz；
+            - 如果同时通过 :cpp:func:`esp_cam_ctlr_format_conversion` 配置了 YUV 与 RGB 之间的格式转换，则 CAM_PCLK 频率建议值需小于 30 MHz。
+
     .. code:: c
 
         #include "esp_err.h"

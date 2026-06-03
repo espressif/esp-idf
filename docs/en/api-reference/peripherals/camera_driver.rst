@@ -149,6 +149,18 @@ You can implement the camera controller driver using one of the following method
     * Full range: 0-255 for both RGB and YUV
     * Limited range: RGB 16-240, YUV Y:16-240, U-V:16-235
 
+    .. note::
+
+        - When :cpp:member:`esp_cam_ctlr_dvp_config_t::cam_data_width` is set to 8:
+
+            - The CAM_PCLK frequency is recommended to be less than 80 MHz.
+            - If YUV-RGB format conversion is also configured via :cpp:func:`esp_cam_ctlr_format_conversion`, the CAM_PCLK frequency is recommended to be less than 60 MHz.
+
+        - When :cpp:member:`esp_cam_ctlr_dvp_config_t::cam_data_width` is set to 16:
+
+            - The CAM_PCLK frequency is recommended to be less than 40 MHz.
+            - If YUV-RGB format conversion is also configured via :cpp:func:`esp_cam_ctlr_format_conversion`, the CAM_PCLK frequency is recommended to be less than 30 MHz.
+
     .. code:: c
 
         #include "esp_err.h"
