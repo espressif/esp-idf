@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,17 +53,19 @@ extern "C" {
   *     LP_SYS_LP_STORE8_REG    sleep mode and wake stub address
   *     LP_SYS_LP_STORE9_REG    LP_UART_INIT_CTRL
   *     LP_SYS_LP_STORE10_REG   LP_ROM_LOG_CTRL
+  *     LP_SYS_LP_STORE11_REG    LP core store wakeup cause
   *************************************************************************************
   */
 
-#define RTC_SLOW_CLK_CAL_REG    LP_SYSTEM_REG_LP_STORE1_REG
-#define RTC_BOOT_TIME_LOW_REG   LP_SYSTEM_REG_LP_STORE2_REG
-#define RTC_BOOT_TIME_HIGH_REG  LP_SYSTEM_REG_LP_STORE3_REG
-#define RTC_XTAL_FREQ_REG       LP_SYSTEM_REG_LP_STORE4_REG
-#define RTC_APB_FREQ_REG        LP_SYSTEM_REG_LP_STORE5_REG
-#define RTC_ENTRY_ADDR_REG      LP_SYSTEM_REG_LP_STORE6_REG
-#define RTC_RESET_CAUSE_REG     LP_SYSTEM_REG_LP_STORE6_REG
-#define RTC_MEMORY_CRC_REG      LP_SYSTEM_REG_LP_STORE7_REG
+#define RTC_SLOW_CLK_CAL_REG          LP_SYSTEM_REG_LP_STORE1_REG
+#define RTC_BOOT_TIME_LOW_REG         LP_SYSTEM_REG_LP_STORE2_REG
+#define RTC_BOOT_TIME_HIGH_REG        LP_SYSTEM_REG_LP_STORE3_REG
+#define RTC_XTAL_FREQ_REG             LP_SYSTEM_REG_LP_STORE4_REG
+#define RTC_APB_FREQ_REG              LP_SYSTEM_REG_LP_STORE5_REG
+#define RTC_ENTRY_ADDR_REG            LP_SYSTEM_REG_LP_STORE6_REG
+#define RTC_RESET_CAUSE_REG           LP_SYSTEM_REG_LP_STORE6_REG
+#define RTC_MEMORY_CRC_REG            LP_SYSTEM_REG_LP_STORE7_REG
+#define RTC_LP_CORE_STORE_WAKEUP_REG  LP_SYSTEM_REG_LP_STORE11_REG
 
 #define RTC_DISABLE_ROM_LOG ((1 << 0) | (1 << 16)) //!< Disable logging from the ROM code.
 

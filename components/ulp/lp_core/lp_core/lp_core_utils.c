@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,10 @@
 
 #include "esp_cpu.h"
 #include "ulp_lp_core_cpu_freq_shared.h"
+#if SOC_LP_CORE_HW_AUTO_CLRWAKEUPCAUSE
+#include "hal/lp_aon_hal.h"
+#include "rom/rtc.h"
+#endif
 
 static uint32_t lp_wakeup_cause = 0;
 
@@ -142,9 +146,22 @@ void ulp_lp_core_lp_uart_reset_wakeup_en(void)
 }
 #endif
 
+void ulp_lp_core_sleep_start_lp_core(void)
+{
+#if SOC_LP_CORE_HW_AUTO_CLRWAKEUPCAUSE
+    /* LP store register to save wakeup cause for HP core to query.
+     * Using a hardware register avoids symbol linking issues between
+     * the independently compiled HP and LP core binaries.
+     * Save PMU wakeup cause to LP store register for HP core to query */
+    lp_aon_hal_store_wakeup_cause(pmu_ll_hp_get_wakeup_cause(&PMU));
+#endif
+
+    lp_core_ll_request_sleep();
+}
+
 void ulp_lp_core_halt(void)
 {
-    lp_core_ll_request_sleep();
+    ulp_lp_core_sleep_start_lp_core();
 
     while (1);
 }
@@ -153,7 +170,7 @@ void ulp_lp_core_stop_lp_core(void)
 {
     /* Disable wake-up source and put lp core to sleep */
     lp_core_ll_set_wakeup_source(0);
-    lp_core_ll_request_sleep();
+    ulp_lp_core_sleep_start_lp_core();
 }
 
 void __attribute__((noreturn)) abort(void)

@@ -2322,3 +2322,7 @@ config SOC_LP_CORE_SUPPORT_LP_VAD
 config SOC_LP_CORE_SUPPORT_STORE_LOAD_EXCEPTIONS
     bool
     default y
+
+config SOC_LP_CORE_HW_AUTO_CLRWAKEUPCAUSE
+    bool
+    default y
