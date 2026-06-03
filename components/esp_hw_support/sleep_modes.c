@@ -1248,10 +1248,18 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
 
     esp_sync_timekeeping_timers();
 
+    // Must acquire all spinlocks which may be acquired during sleep process before stalling other core,
+    // otherwise deadlock may occur.
+    esp_os_enter_critical(&spinlock_rtc_deep_sleep);
+#if !CONFIG_FREERTOS_UNICORE
+    extern portMUX_TYPE rtc_spinlock;
+    esp_os_enter_critical_safe(&rtc_spinlock); // Maybe acquired from temp_sensor_get_raw_value by phy_close_rf callback
+    esp_clk_private_lock(); // Maybe acquired from esp_clk_slowclk_cal_set
+#endif
+
     /* Disable interrupts and stall another core in case another task writes
      * to RTC memory while we calculate RTC memory CRC.
      */
-    esp_os_enter_critical(&spinlock_rtc_deep_sleep);
     esp_ipc_isr_stall_other_cpu();
     esp_ipc_isr_stall_pause();
 #if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
@@ -1348,6 +1356,10 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
 #endif
     esp_ipc_isr_stall_resume();
     esp_ipc_isr_release_other_cpu();
+#if !CONFIG_FREERTOS_UNICORE
+    esp_clk_private_unlock();
+    esp_os_exit_critical_safe(&rtc_spinlock);
+#endif
     esp_os_exit_critical(&spinlock_rtc_deep_sleep);
     return err;
 }
