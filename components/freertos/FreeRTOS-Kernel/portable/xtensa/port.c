@@ -33,6 +33,7 @@
  */
 
 #include "sdkconfig.h"
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,6 +41,7 @@
 #include <xtensa_context.h>
 #include "soc/soc_caps.h"
 #include "esp_attr.h"
+#include "esp_compiler.h"
 #include "esp_private/crosscore_int.h"
 #include "esp_private/esp_int_wdt.h"
 #include "esp_system.h"
@@ -75,6 +77,7 @@ const DRAM_ATTR uint32_t offset_xCoreID = offsetof(StaticTask_t, xDummyCoreID);
 volatile unsigned port_xSchedulerRunning[portNUM_PROCESSORS] = {0}; // Indicates whether scheduler is running on a per-core basis
 unsigned port_interruptNesting[portNUM_PROCESSORS] = {0};  // Interrupt nesting level. Increased/decreased in portasm.c, _frxt_int_enter/_frxt_int_exit
 BaseType_t port_uxCriticalNesting[portNUM_PROCESSORS] = {0};
+volatile bool port_xThreadSafeClaimed = false;
 BaseType_t port_uxOldInterruptState[portNUM_PROCESSORS] = {0};
 volatile unsigned port_uxCoreStartupDone[portNUM_PROCESSORS] = {0};  // Indicates whether the core has completed its startup sequence
 
@@ -479,8 +482,25 @@ BaseType_t xPortInterruptedFromISRContext(void)
 
 // ------------------ Critical Sections --------------------
 
+void xPortThreadSafeClaim(void)
+{
+    configASSERT(!xPortCanYield());
+    configASSERT(!port_xThreadSafeClaimed);
+    port_xThreadSafeClaimed = true;
+}
+
+void xPortThreadSafeDisclaim(void)
+{
+    configASSERT(!xPortCanYield());
+    configASSERT(port_xThreadSafeClaimed);
+    port_xThreadSafeClaimed = false;
+}
+
 BaseType_t __attribute__((optimize("-O3"))) xPortEnterCriticalTimeout(portMUX_TYPE *mux, BaseType_t timeout)
 {
+    if (unlikely(port_xThreadSafeClaimed)) {
+        return pdPASS;
+    }
     /* Interrupts may already be disabled (if this function is called in nested
      * manner). However, there's no atomic operation that will allow us to check,
      * thus we have to disable interrupts again anyways.
@@ -508,6 +528,9 @@ BaseType_t __attribute__((optimize("-O3"))) xPortEnterCriticalTimeout(portMUX_TY
 
 void __attribute__((optimize("-O3"))) vPortExitCritical(portMUX_TYPE *mux)
 {
+    if (unlikely(port_xThreadSafeClaimed)) {
+        return;
+    }
     /* This function may be called in a nested manner. Therefore, we only need
      * to re-enable interrupts if this is the last call to exit the critical. We
      * can use the nesting count to determine whether this is the last exit call.

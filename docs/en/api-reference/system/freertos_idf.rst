@@ -382,6 +382,19 @@ In IDF FreeRTOS, the process of a particular core entering and exiting a critica
   #. The core releases the spinlock by clearing the spinlock's owner value.
   #. The core re-enables interrupts or interrupt nesting.
 
+Thread-Safe Port Critical Bypass
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``xPortThreadSafeClaim()`` and ``xPortThreadSafeDisclaim()`` (``portmacro.h``) skip port-layer critical enter/exit on the current core. **Thread safety between Claim and Disclaim must be guaranteed by the caller.**
+
+.. warning::
+
+    - Caller guarantees thread safety for the Claim–Disclaim window (all cores).
+    - Claim only with interrupts disabled on the current core; one active claim system-wide; pair with Disclaim on every path.
+    - ``pdPASS`` from ``xPortEnterCriticalTimeout()`` does not mean ``mux`` was taken.
+
+Not a substitute for ``taskENTER_CRITICAL(&spinlock)``.
+
 Restrictions and Considerations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

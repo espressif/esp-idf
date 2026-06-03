@@ -142,6 +142,10 @@ The following functions were modified to accommodate SMP behavior:
 - Queues no longer use queue locks (see `queueUSE_LOCKS`)
   - Queues now just use critical sections and skips queue locking
   - Queue functions can now execute within a single critical section block
+- New `xPortThreadSafeClaim()` / `xPortThreadSafeDisclaim()`
+  - While claimed, port-layer vPortEnterCritical/vPortExitCritical on the current core are no-ops
+  - Claim only with interrupts disabled on the current core; one active claim system-wide; must pair with Disclaim
+  - Documented in `portmacro.h` and `docs/en/api-reference/system/freertos_idf.rst`
 
 ## Single Core Differences
 

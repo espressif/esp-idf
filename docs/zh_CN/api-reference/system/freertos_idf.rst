@@ -382,6 +382,19 @@ IDF FreeRTOS 中，特定核进入和退出临界区的过程如下：
   #. 核通过清除自旋锁的所有者值释放自旋锁。
   #. 核重新启用中断或中断嵌套。
 
+线程安全 Port 临界区旁路
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+``xPortThreadSafeClaim()`` 与 ``xPortThreadSafeDisclaim()`` （``portmacro.h``） 使当前核上 port 层临界区进入/退出变为 no-op。**Claim 与 Disclaim 之间的线程安全须由调用方保证。**
+
+.. warning::
+
+    - 调用方保证 Claim–Disclaim 窗口内的线程安全（含多核）。
+    - 仅在当前核已关中断时 Claim；全局至多一个 Claim；所有路径须与 Disclaim 成对。
+    - ``xPortEnterCriticalTimeout()`` 返回 ``pdPASS`` 不表示已获取 ``mux``。
+
+不能替代 ``taskENTER_CRITICAL(&spinlock)``。
+
 限制与注意事项
 ^^^^^^^^^^^^^^
 
