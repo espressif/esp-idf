@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -92,43 +92,14 @@ err:
          * So we suspend the task before deleting it. */
         vTaskSuspend( xTaskToDelete );
 
-        /* Wait until the task is no longer the current task on any core.
-         *
-         * Polling on pxCurrentTCBs[] (via xTaskGetCurrentTaskHandleForCore())
-         * matches the predicate vTaskDelete() uses to choose between immediate
-         * and IDLE-deferred TCB cleanup. By waiting on it here, we guarantee
-         * that the vTaskDelete() call below takes the immediate path and that
-         * prvDeleteTCB() runs synchronously before vTaskDelete() returns, so
-         * the heap_caps_free() / vPortFree() that follow cannot race with the
-         * IDLE task. */
-        for( ;; )
+        /* Wait for the task to be suspended */
+        while( eRunning == eTaskGetState( xTaskToDelete ) )
         {
-            BaseType_t xStillOnCore = pdFALSE;
-
-            for( BaseType_t xCoreID = 0; xCoreID < configNUMBER_OF_CORES; xCoreID++ )
-            {
-                if( xTaskGetCurrentTaskHandleForCore( xCoreID ) == xTaskToDelete )
-                {
-                    xStillOnCore = pdTRUE;
-                    break;
-                }
-            }
-
-            if( xStillOnCore == pdFALSE )
-            {
-                break;
-            }
-
             taskYIELD();
         }
 
-        /* We can delete the task and free the memory buffers.
-         * First, we must call `vTaskDelete` so that the port task delete callback is called.
-         * On targets that have coprocessors, it may be possible that the stack pointer is modified (restored)
-         * during this phase, hence, it must be done before getting the statuc buffers out of the task. */
-        vTaskDelete( xTaskToDelete );
+        configASSERT( eRunning != eTaskGetState( xTaskToDelete ) );
 
-        /* Free the memory buffers */
         xResult = xTaskGetStaticBuffers( xTaskToDelete, &puxStackBuffer, &pxTaskBuffer );
         configASSERT( xResult == pdTRUE );
         configASSERT( puxStackBuffer != NULL );
