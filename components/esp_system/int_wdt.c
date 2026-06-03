@@ -29,7 +29,7 @@
 #include "esp_private/sleep_retention.h"
 #endif
 
-#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+#if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
 #include "esp_private/eco3_livelock_workaround.h"
 #endif
 
@@ -102,7 +102,7 @@ static void ESP_SYSTEM_IRAM_ATTR reconfigure_ticks(uint32_t stage0_ticks, uint32
     wdt_hal_write_protect_enable(&iwdt_context);
 }
 
-#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+#if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
 static portMUX_TYPE s_iwdt_configure_lock = portMUX_INITIALIZER_UNLOCKED;
 void ESP_SYSTEM_IRAM_ATTR esp_int_wdt_reconfigure_ticks(uint32_t stage0_ticks, uint32_t stage1_ticks)
 {
@@ -131,7 +131,7 @@ static void ESP_SYSTEM_IRAM_ATTR tick_hook(void)
         return;
     }
 #endif
-#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+#if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
     esp_int_wdt_set_livelock_params(CONFIG_ESP_INT_WDT_TIMEOUT_MS);
     esp_int_wdt_reconfigure_ticks(esp_int_wdt_livelock_get_feed_stage0_ticks(), IWDT_STAGE1_TIMEOUT_US);
 #else
@@ -163,7 +163,7 @@ void esp_int_wdt_init(void)
     esp_int_wdt_retention_enable(IWDT_TIMER_GROUP);
 #endif
 
-#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+#if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
     /*
      * This is a workaround for issue WDT-3.15 in "ESP32 ECO and workarounds for
      * Bugs" document.

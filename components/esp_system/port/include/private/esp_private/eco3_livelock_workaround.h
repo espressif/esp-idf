@@ -14,7 +14,7 @@
 extern "C" {
 #endif
 
-#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+#if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
 
 /**
  * @brief Enable or disable the livelock workaround and reconfigure the interrupt WDT.
@@ -49,7 +49,7 @@ void esp_int_wdt_set_livelock_params(uint32_t timeout_ms);
  */
 void esp_int_wdt_reset_livelock_params(void);
 
-#endif // CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+#endif // (CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX)
 
 #ifdef __cplusplus
 }
