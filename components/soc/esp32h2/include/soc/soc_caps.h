@@ -502,7 +502,6 @@
 
 /*-------------------------- EXTERNAL COEXISTENCE CAPS -------------------------------------*/
 #define SOC_EXTERNAL_COEX_ADVANCE              (1) /*!< HARDWARE ADVANCED EXTERNAL COEXISTENCE CAPS */
-#define SOC_EXTERNAL_COEX_LEADER_TX_LINE       (0) /*!< EXTERNAL COEXISTENCE TX LINE CAPS */
 
 // TODO: IDF-6337
 /*--------------- PHY REGISTER AND MEMORY SIZE CAPS --------------------------*/
