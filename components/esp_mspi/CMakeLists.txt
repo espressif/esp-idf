@@ -83,14 +83,6 @@ idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS ${include_dirs}
                        LDFRAGMENTS ${ldfragments})
 
-# Avoid cache miss by unexpected inlineing when built by -Os
-set_source_files_properties(${cache_srcs} PROPERTIES COMPILE_FLAGS "-fno-inline-functions")
-if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-    # These flags are GCC specific
-    set_property(SOURCE ${cache_srcs} APPEND_STRING PROPERTY COMPILE_FLAGS
-        " -fno-inline-small-functions -fno-inline-functions-called-once")
-endif()
-
 if(NOT non_os_build AND NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
     if(CONFIG_SPIRAM)
         # esp_mspi_get_io() queries esp_psram_io_get_cs_io() for the PSRAM CS pin
