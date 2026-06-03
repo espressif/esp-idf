@@ -203,14 +203,14 @@ static void s_flash_init_mxic(esp_rom_spiflash_read_mode_t mode)
 #if CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE_STR
     s_set_pin_drive_capability(3);
     s_set_flash_dtr_str_opi_mode(1, 0x1);
-    esp_rom_opiflash_cache_mode_config(mode, &rom_opiflash_cmd_def->cache_rd_cmd);
+    esp_rom_spiflash_cache_mode_config(mode, &rom_opiflash_cmd_def->cache_rd_cmd);
     esp_rom_spi_set_dtr_swap_mode(0, false, false);
     esp_rom_spi_set_dtr_swap_mode(1, false, false);
 #else //CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE_DTR
     s_set_pin_drive_capability(3);
     bool need_swap = s_mxic_dtr_need_swap();
     s_set_flash_dtr_str_opi_mode(1, 0x2);
-    esp_rom_opiflash_cache_mode_config(mode, &rom_opiflash_cmd_def->cache_rd_cmd);
+    esp_rom_spiflash_cache_mode_config(mode, &rom_opiflash_cmd_def->cache_rd_cmd);
     esp_rom_spi_set_dtr_swap_mode(0, need_swap, need_swap);
     esp_rom_spi_set_dtr_swap_mode(1, need_swap, need_swap);
 #endif

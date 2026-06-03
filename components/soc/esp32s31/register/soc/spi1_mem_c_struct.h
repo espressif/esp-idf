@@ -367,14 +367,8 @@ typedef union {
          *  After PER command is sent, SPI1 waits (SPI1_MEM_C_CS_HOLD_DLY_PER[8:0] * 128)
          *  SPI_CLK cycles.
          */
-        uint32_t cs_hold_dly_per:9;
-        uint32_t reserved_21:2;
-        /** cs_hold_dly_per_en : R/W; bitpos: [23]; default: 0;
-         *  1: use SPI1_MEM_C_CS_HOLD_DLY_PER for per, use SPI1_MEM_C_CS_HOLD_DELAY_RES for
-         *  pes/dp/hpm . 0: use SPI1_MEM_C_CS_HOLD_DELAY_RES for pes/dp/hpm/per .
-         */
-        uint32_t cs_hold_dly_per_en:1;
-        uint32_t reserved_24:8;
+        uint32_t cs_hold_dly_per:10;
+        uint32_t reserved_22:10;
     };
     uint32_t val;
 } spi1_mem_c_ctrl1_reg_t;
@@ -462,7 +456,17 @@ typedef union {
          *  This field is only for internal debugging purposes. Do not use it in applications.
          */
         uint32_t wb_mode:8;
-        uint32_t reserved_24:8;
+        /** wb_mode_bitlen : R/W; bitpos: [26:24]; default: 0;
+         *  Mode bits length for flash fast read mode.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t wb_mode_bitlen:3;
+        /** wb_mode_en : R/W; bitpos: [27]; default: 0;
+         *  Mode bits is valid while this bit is enable. 1: enable 0: disable.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t wb_mode_en:1;
+        uint32_t reserved_28:4;
     };
     uint32_t val;
 } spi1_mem_c_rd_status_reg_t;
@@ -742,6 +746,24 @@ typedef union {
     };
     uint32_t val;
 } spi1_mem_c_sus_status_reg_t;
+
+/** Type of flash_waiti_ctrl1 register
+ *  SPI1 wait idle control register
+ */
+typedef union {
+    struct {
+        /** waiti_idle_delay_time : R/W; bitpos: [9:0]; default: 0;
+         *  SPI1 wait idle gap time configuration. SPI1 slv fsm will count during SPI1 IDLE.
+         */
+        uint32_t waiti_idle_delay_time:10;
+        /** waiti_idle_delay_time_en : R/W; bitpos: [10]; default: 0;
+         *  Enable SPI1 wait idle gap time count function. 1: Enable. 0: Disable.
+         */
+        uint32_t waiti_idle_delay_time_en:1;
+        uint32_t reserved_11:21;
+    };
+    uint32_t val;
+} spi1_mem_c_flash_waiti_ctrl1_reg_t;
 
 /** Type of ddr register
  *  SPI1 DDR control register
