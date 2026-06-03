@@ -1012,8 +1012,6 @@ esp_err_t ieee802154_transmit(const uint8_t *frame, bool cca)
 
 esp_err_t ieee802154_transmit_at(const uint8_t *frame, bool cca, uint32_t time)
 {
-    uint32_t rampup_time = cca ? IEEE802154_ED_TRIG_TX_RAMPUP_TIME_US : IEEE802154_TX_RAMPUP_TIME_US;
-    uint32_t tx_target_time = (time >= rampup_time) ? time - rampup_time : 0;
     IEEE802154_RF_ENABLE();
     tx_init(frame);
     IEEE802154_SET_TXRX_PTI(IEEE802154_SCENE_TX_AT);
@@ -1023,12 +1021,8 @@ esp_err_t ieee802154_transmit_at(const uint8_t *frame, bool cca, uint32_t time)
     ieee802154_set_state(cca ? IEEE802154_STATE_TX_CCA : IEEE802154_STATE_TX);
     ieee802154_enter_critical();
     ieee802154_etm_set_event_task(IEEE802154_ETM_CHANNEL0, ETM_EVENT_TIMER0_OVERFLOW, cca ? ETM_TASK_ED_TRIG_TX : ETM_TASK_TX_START);
-    ieee802154_timer0_fire_at(tx_target_time);
+    ieee802154_timer0_fire_at(time - (cca ? IEEE802154_ED_TRIG_TX_RAMPUP_TIME_US : IEEE802154_TX_RAMPUP_TIME_US));
     ieee802154_exit_critical();
-    if (time < rampup_time) {
-        // First start the transmit at and then print some logs.
-        ESP_EARLY_LOGE(IEEE802154_TAG, "Time should be longer than %d us to account for the TX ramp-up", rampup_time);
-    }
     return ESP_OK;
 }
 
@@ -1076,7 +1070,6 @@ IEEE802154_NOINLINE static void ieee802154_start_receive_at(void* ctx)
 esp_err_t ieee802154_receive_at(uint32_t time, uint32_t duration)
 {
     // TODO: Light sleep current optimization, TZ-1613.
-    uint32_t target_time = (time >= IEEE802154_RX_RAMPUP_TIME_US) ? time - IEEE802154_RX_RAMPUP_TIME_US : 0;
     IEEE802154_RF_ENABLE();
     ieee802154_enter_critical();
     rx_init();
@@ -1085,15 +1078,11 @@ esp_err_t ieee802154_receive_at(uint32_t time, uint32_t duration)
     ieee802154_set_state(IEEE802154_STATE_RX);
     ieee802154_etm_set_event_task(IEEE802154_ETM_CHANNEL1, ETM_EVENT_TIMER1_OVERFLOW, ETM_TASK_RX_START);
     if (duration) {
-        ieee802154_timer1_fire_at_with_callback(target_time, ieee802154_start_receive_at, (void*)(time + duration));
+        ieee802154_timer1_fire_at_with_callback(time - IEEE802154_RX_RAMPUP_TIME_US, ieee802154_start_receive_at, (void*)(time + duration));
     } else {
-        ieee802154_timer1_fire_at(target_time);
+        ieee802154_timer1_fire_at(time - IEEE802154_RX_RAMPUP_TIME_US);
     }
     ieee802154_exit_critical();
-    if (time < IEEE802154_RX_RAMPUP_TIME_US) {
-        // First start the receive at and then print some logs.
-        ESP_EARLY_LOGE(IEEE802154_TAG, "Time should be longer than %d us to account for the RX ramp-up", IEEE802154_RX_RAMPUP_TIME_US);
-    }
     return ESP_OK;
 }
 
