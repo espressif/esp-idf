@@ -149,7 +149,7 @@ TEST_CASE("heap_caps metadata test", "[heap]")
     void *b = heap_caps_malloc(original.largest_free_block, MALLOC_CAP_8BIT);
     TEST_ASSERT_NOT_NULL(b);
 
-    printf("After allocating %d bytes:\n", original.largest_free_block);
+    printf("After allocating %zu bytes:\n", original.largest_free_block);
     heap_caps_print_heap_info(MALLOC_CAP_8BIT);
 
     multi_heap_info_t after;

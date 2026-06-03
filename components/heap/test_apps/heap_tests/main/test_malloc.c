@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -9,6 +9,7 @@
 
 #include <esp_types.h>
 #include <stdio.h>
+#include <stddef.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -208,8 +209,8 @@ TEST_CASE("test get allocated size", "[heap]")
         ptr_array[i] = heap_caps_malloc(alloc_sizes[i], MALLOC_CAP_INTERNAL);
         TEST_ASSERT_NOT_NULL(ptr_array[i]);
 
-        // test that the heap_caps_get_allocated_size() returns the right number of bytes (aligned to 4 bytes
-        // since the heap component aligns to 4 bytes)
+        // test that the heap_caps_get_allocated_size() returns at least the requested size
+        // rounded up to the TLSF block granularity (4 bytes)
         const size_t aligned_size = (alloc_sizes[i] + 3) & ~3;
         const size_t real_size = heap_caps_get_allocated_size(ptr_array[i]);
         TEST_ASSERT(aligned_size <= real_size);
@@ -292,3 +293,53 @@ TEST_CASE("test allocation and free function hooks", "[heap]")
     TEST_ASSERT_TRUE(test_success);
 }
 #endif
+
+TEST_CASE("malloc/calloc/realloc return memory aligned to alignof(max_align_t)", "[heap]")
+{
+    /* Keep all pointers live so successive calls get different blocks.
+     * Freeing immediately would recycle the same block and hide misalignment. */
+    const int N = 32;
+    void *ptrs[N];
+
+    for (int i = 0; i < N; i++) {
+        ptrs[i] = malloc(256 + i);
+        TEST_ASSERT_NOT_NULL(ptrs[i]);
+        TEST_ASSERT_MESSAGE(
+            ((uintptr_t)ptrs[i] % _Alignof(max_align_t)) == 0,
+            "malloc() returned memory not aligned to alignof(max_align_t)");
+    }
+    for (int i = 0; i < N; i++) {
+        free(ptrs[i]);
+    }
+
+    for (int i = 0; i < N; i++) {
+        ptrs[i] = calloc(1, 256 + i);
+        TEST_ASSERT_NOT_NULL(ptrs[i]);
+        TEST_ASSERT_MESSAGE(
+            ((uintptr_t)ptrs[i] % _Alignof(max_align_t)) == 0,
+            "calloc() returned memory not aligned to alignof(max_align_t)");
+    }
+    for (int i = 0; i < N; i++) {
+        free(ptrs[i]);
+    }
+
+    /* realloc: check both the fresh allocation and the grown pointer */
+    for (int i = 0; i < N; i++) {
+        ptrs[i] = realloc(NULL, 256 + i);
+        TEST_ASSERT_NOT_NULL(ptrs[i]);
+        TEST_ASSERT_MESSAGE(
+            ((uintptr_t)ptrs[i] % _Alignof(max_align_t)) == 0,
+            "realloc(NULL) returned memory not aligned to alignof(max_align_t)");
+    }
+    for (int i = 0; i < N; i++) {
+        void *grown = realloc(ptrs[i], 512 + i);
+        TEST_ASSERT_NOT_NULL(grown);
+        TEST_ASSERT_MESSAGE(
+            ((uintptr_t)grown % _Alignof(max_align_t)) == 0,
+            "realloc(grow) returned memory not aligned to alignof(max_align_t)");
+        ptrs[i] = grown;
+    }
+    for (int i = 0; i < N; i++) {
+        free(ptrs[i]);
+    }
+}

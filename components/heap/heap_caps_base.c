@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <sys/param.h>
 #include "esp_attr.h"
 #include "multi_heap.h"
@@ -33,6 +34,11 @@ extern void esp_heap_adjust_alignment_to_hw(size_t *p_alignment, size_t *p_size,
 
 //Default alignment the multiheap allocator / tlsf will align 'unaligned' memory to, in bytes
 #define UNALIGNED_MEM_ALIGNMENT_BYTES 4
+
+// Default malloc must be at least as strict as TLSF's natural alignment for the routing
+// in aligned_or_unaligned_alloc to be correct.
+_Static_assert(_Alignof(max_align_t) >= UNALIGNED_MEM_ALIGNMENT_BYTES,
+               "malloc alignment must be >= TLSF natural alignment (UNALIGNED_MEM_ALIGNMENT_BYTES)");
 
 /*
   This takes a memory chunk in a region that can be addressed as both DRAM as well as IRAM. It will convert it to
@@ -89,7 +95,7 @@ HEAP_IRAM_ATTR void heap_caps_free( void *ptr)
 }
 
 HEAP_IRAM_ATTR static inline void *aligned_or_unaligned_alloc(multi_heap_handle_t heap, size_t size, size_t alignment, size_t offset) {
-    if (alignment<=UNALIGNED_MEM_ALIGNMENT_BYTES) { //alloc and friends align to 32-bit by default
+    if (alignment<=UNALIGNED_MEM_ALIGNMENT_BYTES) { //use TLSF's natural (4-byte) alloc path
         return multi_heap_malloc(heap, size);
     } else {
         return multi_heap_aligned_alloc_offs(heap, size, alignment, offset);
@@ -98,8 +104,9 @@ HEAP_IRAM_ATTR static inline void *aligned_or_unaligned_alloc(multi_heap_handle_
 
 /*
 This function should not be called directly as it does not check for failure / call heap_caps_alloc_failed()
-Note that this function does 'unaligned' alloc calls if alignment <= UNALIGNED_MEM_ALIGNMENT_BYTES (=4) as the
-allocator will align to that value by default.
+Note that this function uses TLSF's natural (4-byte) alloc path when alignment <= UNALIGNED_MEM_ALIGNMENT_BYTES,
+and the aligned-alloc path otherwise. Default malloc requests alignof(max_align_t), which on 32-bit targets
+is 8 and so always takes the aligned path.
 */
 HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_aligned_alloc_base(size_t alignment, size_t size, uint32_t caps)
 {
@@ -204,7 +211,7 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_aligned_alloc_base(size_t alignment
 
 //Wrapper for heap_caps_aligned_alloc_base as that can also do unaligned allocs.
 HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_malloc_base( size_t size, uint32_t caps) {
-    return heap_caps_aligned_alloc_base(UNALIGNED_MEM_ALIGNMENT_BYTES, size, caps);
+    return heap_caps_aligned_alloc_base(_Alignof(max_align_t), size, caps);
 }
 
 /*
@@ -218,7 +225,7 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_realloc_base( void *ptr, size_t siz
     void *dram_ptr = NULL;
 
     //See if memory needs alignment because of hardware reasons.
-    size_t alignment = UNALIGNED_MEM_ALIGNMENT_BYTES;
+    size_t alignment = _Alignof(max_align_t);
     esp_heap_adjust_alignment_to_hw(&alignment, &size, &caps);
 
     if (ptr == NULL) {
@@ -267,8 +274,24 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_realloc_base( void *ptr, size_t siz
     bool compatible_caps = (caps & get_all_caps(heap)) == caps;
 
     //Note we don't try realloc() on memory that needs to be aligned, that is handled
-    //by the fallthrough code.
-    if (compatible_caps && !ptr_in_diram_case && alignment<=UNALIGNED_MEM_ALIGNMENT_BYTES) {
+    //by the fallthrough code. multi_heap_realloc uses TLSF's natural 4-byte alignment
+    //for any internal alloc+copy fallback, so skip this fast path for stricter alignments.
+    //Exception: a shrink always returns the same pointer (TLSF trims in-place without a
+    //new alloc), so the existing alignment is preserved and the fast path is safe.
+    //Under CONFIG_HEAP_POISONING_COMPREHENSIVE however, multi_heap_realloc always allocates
+    //a new block via multi_heap_malloc_impl (4-byte aligned) even for shrinks, so the
+    //same-pointer invariant does not hold and is_shrink must be disabled to preserve alignment.
+    //For ptr_in_diram_case, heap is set to the DRAM heap while ptr is still the IRAM address,
+    //so multi_heap_get_allocated_size cannot be called with this heap/ptr combination.
+#if defined(CONFIG_HEAP_POISONING_COMPREHENSIVE)
+    const bool is_shrink = false;
+#else
+    const bool is_shrink = !ptr_in_diram_case &&
+                           (MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(size) <=
+                            multi_heap_get_allocated_size(heap->heap, ptr));
+#endif
+    if (compatible_caps && !ptr_in_diram_case &&
+            (alignment <= UNALIGNED_MEM_ALIGNMENT_BYTES || is_shrink)) {
         // try to reallocate this memory within the same heap
         // (which will resize the block if it can)
 

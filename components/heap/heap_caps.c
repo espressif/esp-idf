@@ -7,6 +7,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <sys/param.h>
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
@@ -23,6 +24,9 @@ allocation possible, this code makes it possible to request memory that has cert
 its knowledge of how the memory is configured along with a priority scheme to allocate that memory in the most sane way
 possible. This should optimize the amount of RAM accessible to the code without hardwiring addresses.
 */
+
+//This is normally provided by the heap-memalign-hw component.
+extern void esp_heap_adjust_alignment_to_hw(size_t *p_alignment, size_t *p_size, uint32_t *p_caps);
 
 static esp_alloc_failed_hook_t alloc_failed_callback;
 
@@ -401,6 +405,28 @@ void heap_caps_get_info( multi_heap_info_t *info, uint32_t caps )
             info->allocated_blocks += hinfo.allocated_blocks;
             info->free_blocks += hinfo.free_blocks;
             info->total_blocks += hinfo.total_blocks;
+        }
+    }
+
+    if (info->largest_free_block > 0) {
+        /* heap_caps_malloc() uses aligned allocation (via heap_caps_malloc_base).
+         * tlsf_memalign_offs() inflates the block search by (alignment + sizeof(block_header_t))
+         * bytes regardless of whether a front-split is actually needed, so
+         * largest_free_block would overestimate the true malloc-able size without
+         * this adjustment.  Use esp_heap_adjust_alignment_to_hw() so that caps
+         * requiring stricter hardware alignment (e.g. MALLOC_CAP_DMA) are also
+         * handled correctly. */
+        size_t alignment = _Alignof(max_align_t);
+        size_t dummy_size = 1;
+        esp_heap_adjust_alignment_to_hw(&alignment, &dummy_size, &caps);
+        if (alignment > sizeof(size_t)) { //sizeof(size_t) is TLSF's natural alignment granularity
+            /* sizeof(block_header_t) = block_size_min + block_header_overhead
+             *                        = 2*sizeof(void*) + 2*sizeof(size_t) */
+            const size_t block_header = 2 * sizeof(void *) + 2 * sizeof(size_t);
+            const size_t overhead = alignment + block_header;
+            info->largest_free_block = info->largest_free_block > overhead
+                                       ? info->largest_free_block - overhead
+                                       : 0;
         }
     }
 }
