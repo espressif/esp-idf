@@ -365,6 +365,65 @@ class TestFlashProject:
         assert cmd[cmd.index('-C') + 1] == str(proj)
 
 
+class TestCreateProject:
+    def test_creates_project_with_explicit_path(
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        mod, mock_mcp = mcp_ext
+        monkeypatch.setenv('IDF_PATH', str(tmp_path))
+        # Start from a non-project directory — that is the whole point of this tool
+        tools, _ = _start_server(mcp_ext, mock_mcp, str(tmp_path))
+
+        with mock.patch('subprocess.run') as mock_run:
+            mock_run.return_value = mock.Mock(returncode=0, stdout='', stderr='')
+            result = tools['create_project']('my_app', path=str(tmp_path))
+
+        assert 'my_app' in result
+        assert str(tmp_path) in result
+        cmd = mock_run.call_args[0][0]
+        assert 'create-project' in cmd
+        assert 'my_app' in cmd
+        assert '-C' in cmd
+        assert cmd[cmd.index('-C') + 1] == str(tmp_path)
+
+    def test_uses_project_path_when_no_path_given(
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        mod, mock_mcp = mcp_ext
+        monkeypatch.setenv('IDF_PATH', str(tmp_path))
+        tools, _ = _start_server(mcp_ext, mock_mcp, str(tmp_path))
+
+        with mock.patch('subprocess.run') as mock_run:
+            mock_run.return_value = mock.Mock(returncode=0, stdout='', stderr='')
+            tools['create_project']('my_app')
+
+        cmd = mock_run.call_args[0][0]
+        assert cmd[cmd.index('-C') + 1] == str(tmp_path)
+
+    def test_returns_error_when_parent_dir_missing(
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        mod, mock_mcp = mcp_ext
+        tools, _ = _start_server(mcp_ext, mock_mcp, str(tmp_path))
+
+        result = tools['create_project']('my_app', path=str(tmp_path / 'nonexistent'))
+        assert 'does not exist' in result
+
+    def test_returns_error_on_idf_failure(
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        mod, mock_mcp = mcp_ext
+        monkeypatch.setenv('IDF_PATH', str(tmp_path))
+        tools, _ = _start_server(mcp_ext, mock_mcp, str(tmp_path))
+
+        with mock.patch('subprocess.run') as mock_run:
+            mock_run.return_value = mock.Mock(returncode=3, stdout='', stderr='directory not empty')
+            result = tools['create_project']('my_app', path=str(tmp_path))
+
+        assert 'Failed to create project' in result
+        assert 'directory not empty' in result
+
+
 class TestCleanProject:
     def test_returns_error_when_no_valid_dir(
         self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
