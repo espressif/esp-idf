@@ -273,13 +273,13 @@ typedef struct {
 #define PMU_SLEEP_POWER_CONFIG_DEFAULT(sleep_flags) {                               \
     .hp_sys = {                                                                     \
         .dig_power = {                                                              \
-            .vdd_spi_pd_en      = ((sleep_flags) & PMU_SLEEP_PD_VDDSDIO) ? 1 : 0,   \
-            .pd_hp_alive_pd_en  = 0,                                                \
-            .pd_modem_top_pd_en = ((sleep_flags) & PMU_SLEEP_PD_MODEM) ? 1 : 0,     \
-            .pd_hp_cnnt_pd_en   = ((sleep_flags) & PMU_SLEEP_PD_CNNT) ? 1 : 0,      \
-            .pd_hp_cpu_pd_en    = ((sleep_flags) & PMU_SLEEP_PD_CPU) ? 1 : 0,       \
-            .pd_modem_pwr_pd_en = ((sleep_flags) & PMU_SLEEP_PD_MEM) ? 1 : 0,     \
-            .pd_top_pd_en       = ((sleep_flags) & PMU_SLEEP_PD_TOP) ? 1 : 0,       \
+            .vdd_spi_pd_en      = ((sleep_flags) & PMU_SLEEP_PD_VDDSDIO)   ? 1 : 0, \
+            .pd_hp_alive_pd_en  = ((sleep_flags) & PMU_SLEEP_PD_MEM)       ? 1 : 0, \
+            .pd_modem_top_pd_en = ((sleep_flags) & PMU_SLEEP_PD_MODEM)     ? 1 : 0, \
+            .pd_hp_cnnt_pd_en   = ((sleep_flags) & PMU_SLEEP_PD_CNNT)      ? 1 : 0, \
+            .pd_hp_cpu_pd_en    = ((sleep_flags) & PMU_SLEEP_PD_CPU)       ? 1 : 0, \
+            .pd_modem_pwr_pd_en = ((sleep_flags) & PMU_SLEEP_PD_MEM)       ? 1 : 0, \
+            .pd_top_pd_en       = ((sleep_flags) & PMU_SLEEP_PD_TOP)       ? 1 : 0, \
             .pd_hp_mem_pd_en    = 0,                                                \
             .mem_dslp           = 0,                                                \
         },                                                                          \
