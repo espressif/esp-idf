@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,10 +29,6 @@ typedef enum {
     ETS_EFUSE_KEY_PURPOSE_USER = 0,
     ETS_EFUSE_KEY_PURPOSE_RESERVED = 1,
     ETS_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY = 4,
-    ETS_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL = 5,
-    ETS_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG = 6,
-    ETS_EFUSE_KEY_PURPOSE_HMAC_DOWN_DIGITAL_SIGNATURE = 7,
-    ETS_EFUSE_KEY_PURPOSE_HMAC_UP = 8,
     ETS_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST0 = 9,
     ETS_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST1 = 10,
     ETS_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2 = 11,
@@ -245,21 +241,6 @@ uint32_t ets_efuse_get_flash_delay_us(void);
 #define EFUSE_SPICONFIG_RET_SPIHD_MASK          0x3f
 #define EFUSE_SPICONFIG_RET_SPIHD_SHIFT         24
 #define EFUSE_SPICONFIG_RET_SPIHD(ret)          (((ret) >> EFUSE_SPICONFIG_RET_SPIHD_SHIFT) & EFUSE_SPICONFIG_RET_SPIHD_MASK)
-
-/**
- * @brief Enable JTAG temporarily by writing a JTAG HMAC "key" into
- * the JTAG_CTRL registers.
- *
- * Works if JTAG has been "soft" disabled by burning the EFUSE_SOFT_DIS_JTAG efuse.
- *
- * Will enable the HMAC module to generate a "downstream" HMAC value from a key already saved in efuse, and then write the JTAG HMAC "key" which will enable JTAG if the two keys match.
- *
- * @param jtag_hmac_key Pointer to a 32 byte array containing a valid key. Supplied by user.
- * @param key_block Index of a key block containing the source for this key.
- *
- * @return ETS_FAILED if HMAC operation fails or invalid parameter, ETS_OK otherwise. ETS_OK doesn't necessarily mean that JTAG was enabled.
- */
-int ets_jtag_enable_temporarily(const uint8_t *jtag_hmac_key, ets_efuse_block_t key_block);
 
 /**
   * @brief  A crc8 algorithm used for MAC addresses in efuse
