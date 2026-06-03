@@ -3015,6 +3015,10 @@ def action_add_version(args: Any) -> None:
     )
     updated_tools = []
     for file_size, file_sha256, file_name in checksum_info:
+        skip_files = ['debug-sections', 'esp8266-multilib']
+        if any(skip_file in file_name for skip_file in skip_files):
+            continue
+
         xz_file = file_name.replace('.tar.gz', '.tar.xz')
         if xz_file in updated_tools:
             # .tar.xz archives are preferable, but .tar.gz is needed, for example, when using PlatformIO
