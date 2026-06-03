@@ -55,13 +55,25 @@ if(IGNORE_EXTRA_COMPONENT)
          OUTPUT_VARIABLE EXTRA_COMPONENT_EXCLUDE_DIRS)
 endif()
 
-# Consider each directory in the project's bootloader_components as a component to be compiled
-file(GLOB proj_components RELATIVE ${PROJECT_EXTRA_COMPONENTS} ${PROJECT_EXTRA_COMPONENTS}/*)
-foreach(component ${proj_components})
-  # Only directories are considered components
-  if(IS_DIRECTORY "${PROJECT_EXTRA_COMPONENTS}/${component}" AND NOT ${component} IN_LIST IGNORE_EXTRA_COMPONENT)
-    list(APPEND COMPONENTS ${component})
-  endif()
+foreach(extra_component_dir ${EXTRA_COMPONENT_DIRS})
+    if(EXISTS "${extra_component_dir}/CMakeLists.txt")
+        # BOOTLOADER_EXTRA_COMPONENT_DIRS may point directly to a single component.
+        # Add the directory name so the bootloader COMPONENTS filter keeps it.
+        get_filename_component(component "${extra_component_dir}" NAME)
+        if(NOT ${component} IN_LIST IGNORE_EXTRA_COMPONENT)
+            list(APPEND COMPONENTS ${component})
+        endif()
+    else()
+        # BOOTLOADER_EXTRA_COMPONENT_DIRS may also point to a directory containing
+        # multiple component directories. Add each child directory to the filter.
+        file(GLOB proj_components RELATIVE ${extra_component_dir} ${extra_component_dir}/*)
+        foreach(component ${proj_components})
+            # Only directories are considered components.
+            if(IS_DIRECTORY "${extra_component_dir}/${component}" AND NOT ${component} IN_LIST IGNORE_EXTRA_COMPONENT)
+                list(APPEND COMPONENTS ${component})
+            endif()
+        endforeach()
+    endif()
 endforeach()
 
 set(BOOTLOADER_BUILD 1)
