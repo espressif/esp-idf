@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -247,19 +247,20 @@ typedef struct {
 typedef enum {
     WIFI_FAST_SCAN = 0,                   /**< Do fast scan, scan will end after find SSID match AP */
     WIFI_ALL_CHANNEL_SCAN,                /**< All channel scan, scan will end after scan all the channel */
-}wifi_scan_method_t;
+} wifi_scan_method_t;
 
 typedef enum {
     WIFI_CONNECT_AP_BY_SIGNAL = 0,        /**< Sort match AP in scan list by RSSI */
     WIFI_CONNECT_AP_BY_SECURITY,          /**< Sort match AP in scan list by security mode */
-}wifi_sort_method_t;
+} wifi_sort_method_t;
 
-/** @brief Structure describing parameters for a WiFi fast scan */
+/** @brief Structure describing parameters for Wi-Fi scan during connection */
 typedef struct {
-    int8_t              rssi;             /**< The minimum rssi to accept in the fast scan mode. Defaults to -127 if set to >= 0 */
-    wifi_auth_mode_t    authmode;         /**< The weakest authmode to accept in the fast scan mode
-                                               Note: Incase this value is not set and password is set as per WPA2 standards(password len >= 8), it will be defaulted to WPA2 and device won't connect to deprecated WEP/WPA networks. Please set authmode threshold as WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK to connect to WEP/WPA networks */
-}wifi_scan_threshold_t;
+    int8_t              rssi;             /**< The minimum rssi to accept in Wi-Fi scan. Defaults to -127 if set to >= 0 */
+    wifi_auth_mode_t    authmode;         /**< The weakest authentication mode to accept when scanning for Wi-Fi during connection.
+                                               Note: In case this value is not set and password is set as per WPA2 standards(password len >= 8), it will be defaulted to WPA2 and device won't connect to deprecated WEP/WPA networks. Please set auth mode threshold as WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK to connect to WEP/WPA networks.
+                                               If this is set to a mixed mode (for example, WPA_WPA2 or WPA2_WPA3), the minimum mode becomes the stronger of the two. For example, WPA_WPA2 becomes WPA2, and WPA2_WPA3 becomes WPA3. See `wifi_auth_mode_t` for details on relative strengths. */
+} wifi_scan_threshold_t;
 
 typedef enum {
     WIFI_PS_NONE,        /**< No power save */
@@ -307,7 +308,7 @@ typedef struct {
     uint8_t channel;                          /**< Channel of soft-AP. Set to 0 for auto selection (min channel: typically 1 for 2.4G). Other invalid values return ESP_ERR_INVALID_ARG. */
     wifi_auth_mode_t authmode;                /**< Auth mode of soft-AP. Do not support AUTH_WEP, AUTH_WAPI_PSK and AUTH_OWE in soft-AP mode. When the auth mode is set to WPA2_PSK, WPA2_WPA3_PSK or WPA3_PSK, the pairwise cipher will be overwritten with WIFI_CIPHER_TYPE_CCMP by default, unless explicitly set.  */
     uint8_t ssid_hidden;                      /**< Broadcast SSID or not, default 0, broadcast the SSID */
-    uint8_t max_connection;                   /**< Max number of stations allowed to connect in */
+    uint8_t max_connection;                   /**< Max number of stations allowed to connect in. Please note that soft-AP and ESP-NOW share the same encryption hardware keys, so the max_connection parameter will be affected by CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM. */
     uint16_t beacon_interval;                 /**< Beacon interval which should be multiples of 100. Unit: TU(time unit, 1 TU = 1024 us). Range: 100 ~ 60000. Default value: 100 */
     uint8_t csa_count;                        /**< Channel Switch Announcement Count. Notify the station that the channel will switch after the csa_count beacon intervals. Default value: 3 */
     uint8_t dtim_period;                      /**< Dtim period of soft-AP. Range: 1 ~ 10. Default value: 1 */
@@ -393,10 +394,8 @@ typedef struct {
 
 #if CONFIG_IDF_TARGET_ESP32C2
 #define ESP_WIFI_MAX_CONN_NUM  (4)        /**< max number of stations which can connect to ESP32C2 soft-AP */
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C6
-#define ESP_WIFI_MAX_CONN_NUM  (10)       /**< max number of stations which can connect to ESP32C3 soft-AP */
 #else
-#define ESP_WIFI_MAX_CONN_NUM  (15)       /**< max number of stations which can connect to ESP32/ESP32S3/ESP32S2 soft-AP */
+#define ESP_WIFI_MAX_CONN_NUM  (15)
 #endif
 
 /** @brief List of stations associated with the Soft-AP */
