@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -36,11 +36,14 @@ TEST_CASE("enable external coex", "[external_coex]")
 #elif CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32C61
 #define EXTERNAL_COEX_CONF 0x600AF4A0
 #define WDEV_RW_BT_COEX_EN (BIT(9))
-#elif CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32H21
 #define EXTERNAL_COEX_CONF 0x600AD4A0
 #define WDEV_RW_BT_COEX_EN (BIT(9))
 #elif CONFIG_IDF_TARGET_ESP32S31
 #define EXTERNAL_COEX_CONF 0x2010F4A0
+#define WDEV_RW_BT_COEX_EN (BIT(9))
+#elif CONFIG_IDF_TARGET_ESP32H4
+#define EXTERNAL_COEX_CONF 0x600CF4A0
 #define WDEV_RW_BT_COEX_EN (BIT(9))
 #endif
 
