@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -1165,32 +1165,6 @@ extern "C" {
 #define PCR_SPI2_CLKM_EN_V  0x00000001U
 #define PCR_SPI2_CLKM_EN_S  22
 
-/** PCR_AES_CONF_REG register
- *  AES configuration register
- */
-#define PCR_AES_CONF_REG (DR_REG_PCR_BASE + 0x9c)
-/** PCR_AES_CLK_EN : R/W; bitpos: [0]; default: 1;
- *  Set 1 to enable aes clock
- */
-#define PCR_AES_CLK_EN    (BIT(0))
-#define PCR_AES_CLK_EN_M  (PCR_AES_CLK_EN_V << PCR_AES_CLK_EN_S)
-#define PCR_AES_CLK_EN_V  0x00000001U
-#define PCR_AES_CLK_EN_S  0
-/** PCR_AES_RST_EN : R/W; bitpos: [1]; default: 0;
- *  Set 1 to reset aes module
- */
-#define PCR_AES_RST_EN    (BIT(1))
-#define PCR_AES_RST_EN_M  (PCR_AES_RST_EN_V << PCR_AES_RST_EN_S)
-#define PCR_AES_RST_EN_V  0x00000001U
-#define PCR_AES_RST_EN_S  1
-/** PCR_AES_READY : RO; bitpos: [2]; default: 1;
- *  Query this field after reset aes module
- */
-#define PCR_AES_READY    (BIT(2))
-#define PCR_AES_READY_M  (PCR_AES_READY_V << PCR_AES_READY_S)
-#define PCR_AES_READY_V  0x00000001U
-#define PCR_AES_READY_S  2
-
 /** PCR_SHA_CONF_REG register
  *  SHA configuration register
  */
@@ -1216,58 +1190,6 @@ extern "C" {
 #define PCR_SHA_READY_M  (PCR_SHA_READY_V << PCR_SHA_READY_S)
 #define PCR_SHA_READY_V  0x00000001U
 #define PCR_SHA_READY_S  2
-
-/** PCR_RSA_CONF_REG register
- *  RSA configuration register
- */
-#define PCR_RSA_CONF_REG (DR_REG_PCR_BASE + 0xa4)
-/** PCR_RSA_CLK_EN : R/W; bitpos: [0]; default: 1;
- *  Set 1 to enable rsa clock
- */
-#define PCR_RSA_CLK_EN    (BIT(0))
-#define PCR_RSA_CLK_EN_M  (PCR_RSA_CLK_EN_V << PCR_RSA_CLK_EN_S)
-#define PCR_RSA_CLK_EN_V  0x00000001U
-#define PCR_RSA_CLK_EN_S  0
-/** PCR_RSA_RST_EN : R/W; bitpos: [1]; default: 0;
- *  Set 1 to reset rsa module
- */
-#define PCR_RSA_RST_EN    (BIT(1))
-#define PCR_RSA_RST_EN_M  (PCR_RSA_RST_EN_V << PCR_RSA_RST_EN_S)
-#define PCR_RSA_RST_EN_V  0x00000001U
-#define PCR_RSA_RST_EN_S  1
-/** PCR_RSA_READY : RO; bitpos: [2]; default: 1;
- *  Query this field after reset rsa module
- */
-#define PCR_RSA_READY    (BIT(2))
-#define PCR_RSA_READY_M  (PCR_RSA_READY_V << PCR_RSA_READY_S)
-#define PCR_RSA_READY_V  0x00000001U
-#define PCR_RSA_READY_S  2
-
-/** PCR_RSA_PD_CTRL_REG register
- *  RSA power control register
- */
-#define PCR_RSA_PD_CTRL_REG (DR_REG_PCR_BASE + 0xa8)
-/** PCR_RSA_MEM_PD : R/W; bitpos: [0]; default: 0;
- *  Set this bit to power down rsa internal memory.
- */
-#define PCR_RSA_MEM_PD    (BIT(0))
-#define PCR_RSA_MEM_PD_M  (PCR_RSA_MEM_PD_V << PCR_RSA_MEM_PD_S)
-#define PCR_RSA_MEM_PD_V  0x00000001U
-#define PCR_RSA_MEM_PD_S  0
-/** PCR_RSA_MEM_FORCE_PU : R/W; bitpos: [1]; default: 1;
- *  Set this bit to force power up rsa internal memory
- */
-#define PCR_RSA_MEM_FORCE_PU    (BIT(1))
-#define PCR_RSA_MEM_FORCE_PU_M  (PCR_RSA_MEM_FORCE_PU_V << PCR_RSA_MEM_FORCE_PU_S)
-#define PCR_RSA_MEM_FORCE_PU_V  0x00000001U
-#define PCR_RSA_MEM_FORCE_PU_S  1
-/** PCR_RSA_MEM_FORCE_PD : R/W; bitpos: [2]; default: 0;
- *  Set this bit to force power down rsa internal memory.
- */
-#define PCR_RSA_MEM_FORCE_PD    (BIT(2))
-#define PCR_RSA_MEM_FORCE_PD_M  (PCR_RSA_MEM_FORCE_PD_V << PCR_RSA_MEM_FORCE_PD_S)
-#define PCR_RSA_MEM_FORCE_PD_V  0x00000001U
-#define PCR_RSA_MEM_FORCE_PD_S  2
 
 /** PCR_ECC_CONF_REG register
  *  ECC configuration register
@@ -1320,58 +1242,6 @@ extern "C" {
 #define PCR_ECC_MEM_FORCE_PD_M  (PCR_ECC_MEM_FORCE_PD_V << PCR_ECC_MEM_FORCE_PD_S)
 #define PCR_ECC_MEM_FORCE_PD_V  0x00000001U
 #define PCR_ECC_MEM_FORCE_PD_S  2
-
-/** PCR_DS_CONF_REG register
- *  DS configuration register
- */
-#define PCR_DS_CONF_REG (DR_REG_PCR_BASE + 0xb4)
-/** PCR_DS_CLK_EN : R/W; bitpos: [0]; default: 1;
- *  Set 1 to enable ds clock
- */
-#define PCR_DS_CLK_EN    (BIT(0))
-#define PCR_DS_CLK_EN_M  (PCR_DS_CLK_EN_V << PCR_DS_CLK_EN_S)
-#define PCR_DS_CLK_EN_V  0x00000001U
-#define PCR_DS_CLK_EN_S  0
-/** PCR_DS_RST_EN : R/W; bitpos: [1]; default: 0;
- *  Set 1 to reset ds module
- */
-#define PCR_DS_RST_EN    (BIT(1))
-#define PCR_DS_RST_EN_M  (PCR_DS_RST_EN_V << PCR_DS_RST_EN_S)
-#define PCR_DS_RST_EN_V  0x00000001U
-#define PCR_DS_RST_EN_S  1
-/** PCR_DS_READY : RO; bitpos: [2]; default: 1;
- *  Query this field after reset ds module
- */
-#define PCR_DS_READY    (BIT(2))
-#define PCR_DS_READY_M  (PCR_DS_READY_V << PCR_DS_READY_S)
-#define PCR_DS_READY_V  0x00000001U
-#define PCR_DS_READY_S  2
-
-/** PCR_HMAC_CONF_REG register
- *  HMAC configuration register
- */
-#define PCR_HMAC_CONF_REG (DR_REG_PCR_BASE + 0xb8)
-/** PCR_HMAC_CLK_EN : R/W; bitpos: [0]; default: 1;
- *  Set 1 to enable hmac clock
- */
-#define PCR_HMAC_CLK_EN    (BIT(0))
-#define PCR_HMAC_CLK_EN_M  (PCR_HMAC_CLK_EN_V << PCR_HMAC_CLK_EN_S)
-#define PCR_HMAC_CLK_EN_V  0x00000001U
-#define PCR_HMAC_CLK_EN_S  0
-/** PCR_HMAC_RST_EN : R/W; bitpos: [1]; default: 0;
- *  Set 1 to reset hmac module
- */
-#define PCR_HMAC_RST_EN    (BIT(1))
-#define PCR_HMAC_RST_EN_M  (PCR_HMAC_RST_EN_V << PCR_HMAC_RST_EN_S)
-#define PCR_HMAC_RST_EN_V  0x00000001U
-#define PCR_HMAC_RST_EN_S  1
-/** PCR_HMAC_READY : RO; bitpos: [2]; default: 1;
- *  Query this field after reset hmac module
- */
-#define PCR_HMAC_READY    (BIT(2))
-#define PCR_HMAC_READY_M  (PCR_HMAC_READY_V << PCR_HMAC_READY_S)
-#define PCR_HMAC_READY_V  0x00000001U
-#define PCR_HMAC_READY_S  2
 
 /** PCR_ECDSA_CONF_REG register
  *  ECDSA configuration register
