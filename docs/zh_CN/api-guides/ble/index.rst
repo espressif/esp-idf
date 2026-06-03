@@ -46,4 +46,4 @@
 
    :SOC_BLE_MESH_SUPPORTED: ../esp-ble-mesh/ble-mesh-index
    :SOC_BLUFI_SUPPORTED: blufi
-   :SOC_BLE_AUDIO_SUPPORTED: ble-audio
+   :SOC_BLE_AUDIO_SUPPORTED: ../esp-ble-audio/ble-audio-index
