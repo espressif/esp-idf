@@ -258,6 +258,48 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                 print(f'ERROR: Flash failed: {str(e)}', file=sys.stderr)
                 return f'Error flashing: {str(e)}'
 
+        @mcp.tool(
+            description=(
+                'Create a new ESP-IDF project from the sample template (runs `idf.py create-project`). '
+                'A directory named <name> is created inside <path>. Use this only when the user asks '
+                'to bootstrap a new project; do not use it on an existing project.'
+            )
+        )
+        def create_project(name: str, path: str | None = None) -> str:
+            """Create a new ESP-IDF project from the sample template.
+
+            Args:
+                name: Name of the new project; also becomes the subdirectory name.
+                path: Optional absolute path to the parent directory in which the
+                    <name>/ subdirectory will be created. Leave as None to create
+                    it in the directory the MCP server was launched from.
+            """
+            parent_dir = path or project_path or os.getcwd()
+            if not os.path.isdir(parent_dir):
+                return f'Parent directory does not exist: {parent_dir}'
+            try:
+                cmd = [
+                    sys.executable,
+                    os.path.join(os.environ['IDF_PATH'], 'tools', 'idf.py'),
+                    '-C',
+                    parent_dir,
+                    'create-project',
+                    name,
+                ]
+                print(f'INFO: Creating project "{name}" in {parent_dir}', file=sys.stderr)
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                if result.returncode == 0:
+                    project_path_new = os.path.join(parent_dir, name)
+                    print(f'INFO: Project "{name}" created at {project_path_new}', file=sys.stderr)
+                    return f'Project "{name}" created at {project_path_new}'
+                else:
+                    output = result.stderr or result.stdout
+                    print(f'ERROR: Failed to create project: {output}', file=sys.stderr)
+                    return f'Failed to create project "{name}": {output}'
+            except Exception as e:
+                print(f'ERROR: Failed to create project: {str(e)}', file=sys.stderr)
+                return f'Failed to create project "{name}": {str(e)}'
+
         @mcp.tool(description=f'Remove build artifacts from the ESP-IDF project (runs `idf.py clean`). {bound_hint}')
         def clean_project(project_dir: str | None = None) -> str:
             """Remove build artifacts from the ESP-IDF project.
