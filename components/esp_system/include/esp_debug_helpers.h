@@ -103,10 +103,11 @@ esp_err_t esp_backtrace_print_from_frame(int depth, const esp_backtrace_frame_t*
  *
  * @param depth The maximum number of stack frames to print (should be > 0)
  *
- * @note On RISC-V targets printing backtrace at run-time is only available if
- *       CONFIG_ESP_SYSTEM_USE_EH_FRAME is selected. Otherwise we simply print
- *       a register dump. Function assumes it is called in a context where the
- *       calling task will not migrate to another core, e.g. interrupts disabled/panic handler.
+ * @note On RISC-V targets printing a backtrace at run-time is only available if
+ *       CONFIG_ESP_SYSTEM_USE_EH_FRAME or CONFIG_ESP_SYSTEM_USE_FRAME_POINTER is
+ *       selected. Otherwise we simply print a register dump. Function assumes it is
+ *       called in a context where the calling task will not migrate to another core,
+ *       e.g. interrupt context or panic handler.
  *
  * @return
  *      - ESP_OK    Backtrace successfully printed to completion or to depth limit
@@ -121,10 +122,19 @@ esp_err_t esp_backtrace_print(int depth);
  *
  * @note Users must ensure that no tasks are created or deleted while this function is running.
  * @note This function must be called from a task context.
+ * @note On RISC-V targets, the 'depth' argument is not honored and the output depends on the
+ *       selected backtracing method (ESP_BACKTRACING_METHOD):
+ *       - CONFIG_ESP_SYSTEM_USE_FRAME_POINTER or CONFIG_ESP_SYSTEM_USE_EH_FRAME: a full
+ *         backtrace is printed for each task (the unwinders always unwind to completion).
+ *       - Otherwise (no backtracing method selected): only a register dump is printed.
+ *       Because the underlying RISC-V print routines do not report frame corruption,
+ *       this function does not return ESP_FAIL on corrupt stacks.
  *
  * @return
- *      - ESP_OK    All backtraces successfully printed to completion or to depth limit
- *      - ESP_FAIL  One or more backtraces are corrupt
+ *      - ESP_OK              All backtraces printed
+ *      - ESP_ERR_INVALID_ARG depth was <= 0
+ *      - ESP_ERR_NO_MEM      Failed to allocate the task snapshot buffer
+ *      - ESP_FAIL            One or more backtraces are corrupt (Xtensa only)
  */
 esp_err_t esp_backtrace_print_all_tasks(int depth);
 
