@@ -481,23 +481,6 @@ int bt_le_bluedroid_scan_stop(void)
     return bluedroid_err_to_errno(status);
 }
 
-int bt_le_bluedroid_iso_disconnect(uint16_t conn_handle, uint8_t reason)
-{
-    tBTM_STATUS status;
-
-    LOG_DBG("[B]IsoDisconn[0x%03x][%02x]", conn_handle, reason);
-
-    /* No direct_hci variant: HCI Disconnect returns Command_Status;
-     * outcome arrives via BTM_BLE_ISO_CIS_DISCONNECTED_EVT. */
-    status = BTM_BleDisconCis(conn_handle, reason);
-
-    if (status != BTM_SUCCESS) {
-        LOG_ERR("[B]IsoDisconnFail[0x%03x][%02x]", conn_handle, status);
-    }
-
-    return bluedroid_err_to_errno(status);
-}
-
 int bt_le_bluedroid_gap_init(void)
 {
     BTM_BleGapRegisterCallback(gap_app_cb);
