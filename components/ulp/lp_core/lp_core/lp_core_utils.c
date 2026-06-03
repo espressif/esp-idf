@@ -112,10 +112,12 @@ void ulp_lp_core_delay_us(uint32_t us)
     if (us == 0) {
         return;
     }
+
     uint32_t start = RV_READ_CSR(mcycle) - ULP_LP_CORE_DELAY_CALL_OVERHEAD_IN_CYCLES;
     uint32_t req_delay = us * LP_CORE_CYCLES_PER_US_NUM / LP_CORE_CYCLES_PER_US_DENOM;
+    uint32_t end = start + req_delay;
 
-    while ((uint32_t)(RV_READ_CSR(mcycle) - start) < req_delay) {
+    while (RV_READ_CSR(mcycle) < end) {
         /* busy wait */
     }
 }
@@ -132,7 +134,9 @@ void ulp_lp_core_delay_cycles(uint32_t cycles)
     }
 
     uint32_t start = RV_READ_CSR(mcycle) - ULP_LP_CORE_DELAY_CALL_OVERHEAD_IN_CYCLES;
-    while ((uint32_t)(RV_READ_CSR(mcycle) - start) < cycles) {
+    uint32_t end = start + cycles;
+
+    while (RV_READ_CSR(mcycle) < end) {
         /* busy wait */
     }
 }
