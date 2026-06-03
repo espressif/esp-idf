@@ -287,8 +287,3 @@ int bt_le_nimble_scan_stop(void)
 
     return nimble_err_to_errno(rc);
 }
-
-int bt_le_nimble_iso_disconnect(uint16_t conn_handle, uint8_t reason)
-{
-    return nimble_err_to_errno(ble_gap_iso_disconnect(conn_handle, reason));
-}
