@@ -91,6 +91,15 @@ patterns = [
 ]
 if_clause = 'CI_JOB_GROUP_NAME != "build_non_test_related_apps"'
 
+[gitlab.artifacts.s3.configs.app_extra]
+bucket = "idf-artifacts"
+# App-dir files needed at target-test time but outside build_* (uploaded without --build-dir).
+# Add patterns here as needed, e.g. coverage info produced during build.
+patterns = [
+    '**/managed_components/**/*.py',
+]
+if_clause = 'CI_JOB_GROUP_NAME != "build_non_test_related_apps"'
+
 [gitlab.artifacts.s3.configs.log]
 bucket = "idf-artifacts"
 patterns = [
