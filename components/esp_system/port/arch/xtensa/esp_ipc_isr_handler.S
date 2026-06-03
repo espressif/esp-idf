@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include "sdkconfig.h"
 #include "soc/soc.h"
 #include "soc/dport_reg.h"
+#include "esp_private/esp_ipc_isr.h"
 
 /* High-priority interrupt - IPC_ISR handler */
 
@@ -22,6 +23,7 @@
 #define LX_INTR_A3_OFFSET   8
 #define LX_INTR_A4_OFFSET   12
 #define XT_REG_EXCSAVE_X    XT_REG_EXCSAVE_5
+#define XT_REG_EPS_X        XT_REG_EPS_5
 #define RFI_X               5
 
 #elif CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_4
@@ -32,6 +34,7 @@
 #define LX_INTR_A3_OFFSET   8
 #define LX_INTR_A4_OFFSET   12
 #define XT_REG_EXCSAVE_X    XT_REG_EXCSAVE_4
+#define XT_REG_EPS_X        XT_REG_EPS_4
 #define RFI_X               4
 
 #endif /* CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5 */
@@ -57,6 +60,20 @@ esp_ipc_isr_handler:
     s32i    a4, a0, LX_INTR_A4_OFFSET
     rsr     a2, XT_REG_EXCSAVE_X
     s32i    a2, a0, LX_INTR_A0_OFFSET
+
+    /*
+     * Snapshot the interrupted context before this handler changes PS.
+     * A non-zero INTLEVEL means the other CPU was in an ISR or an
+     * interrupt-masked section, so safe stall must retry later.
+     */
+    movi    a0, esp_ipc_isr_stall_args                                /* a0 = base address of stall args struct */
+    rsr     a3, XT_REG_EPS_X                                          /* a3 = interrupted PS (processor status) */
+    extui   a3, a3, PS_INTLEVEL_SHIFT, 4                              /* a3 = extracted PS.INTLEVEL field */
+    beqz    a3, .Lipc_isr_xtensa_context_unsafe_done                  /* if INTLEVEL == 0, leave unsafe value as 0 */
+    movi    a3, 1                                                     /* else interrupted context is unsafe to stall */
+.Lipc_isr_xtensa_context_unsafe_done:
+    s32i    a3, a0, ESP_IPC_ISR_ARGS_INTERRUPTED_CONTEXT_UNSAFE_OFFSET /* store interrupted-context unsafe value */
+    memw                                                              /* enforce memory ordering/visibility before continuing */
 
     /* disable nested interrupts */
     /* PS.EXCM is changed from 1 to 0 . It allows using usually exception handler instead of the Double exception handler. */

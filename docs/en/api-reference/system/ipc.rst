@@ -97,6 +97,11 @@ The IPC feature offers the API listed below to execute a callback in a High Prio
 - :cpp:func:`esp_ipc_isr_call` triggers an IPC call on the target core. This function will busy-wait until the target core **begins** execution of the callback.
 - :cpp:func:`esp_ipc_isr_call_blocking` triggers an IPC call on the target core. This function will busy-wait until the target core **completes** execution of the callback.
 
+These functions interrupt the other CPU and execute the callback in the context of a High Priority Interrupt. There are two common usage patterns:
+
+- For simple callbacks that do not enter critical sections shared with the other CPU, call :cpp:func:`esp_ipc_isr_call` or :cpp:func:`esp_ipc_isr_call_blocking` directly.
+- If the calling CPU may enter critical sections used by the other CPU, or if several callbacks must run while the other CPU remains stopped, first stall the other CPU using :cpp:func:`esp_ipc_isr_stall_other_cpu` or :cpp:func:`esp_ipc_isr_stall_other_cpu_safe`. Then use :cpp:func:`esp_ipc_isr_call` or :cpp:func:`esp_ipc_isr_call_blocking` to execute callbacks. After the operation is complete, release the other CPU with :cpp:func:`esp_ipc_isr_release_other_cpu`.
+
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
     The following code-blocks demonstrates a High Priority Interrupt IPC callback written in assembly that simply reads the target core's cycle count:
@@ -117,10 +122,23 @@ The IPC feature offers the API listed below to execute a callback in a High Prio
         s32i    a3, a2, 0
         ret
 
+    The callback can be called directly when no shared critical section can deadlock:
+
     .. code-block:: c
 
-        unit32_t cycle_count;
-        esp_ipc_isr_call_blocking(esp_test_ipc_isr_get_cycle_count_other_cpu, (void *)cycle_count);
+        uint32_t cycle_count;
+        esp_ipc_isr_call_blocking(esp_test_ipc_isr_get_cycle_count_other_cpu, (void *)&cycle_count);
+
+    Alternatively, safely stall the other CPU before making one or more IPC calls:
+
+    .. code-block:: c
+
+        while (esp_ipc_isr_stall_other_cpu_safe() != ESP_OK) {
+            // Optionally, add a timeout or yield to avoid infinite loop
+        }
+        uint32_t cycle_count;
+        esp_ipc_isr_call_blocking(esp_test_ipc_isr_get_cycle_count_other_cpu, (void *)&cycle_count);
+        esp_ipc_isr_release_other_cpu();
 
     .. note::
 
@@ -144,6 +162,7 @@ The High Priority Interrupt IPC API also provides the following convenience func
 
     :CONFIG_IDF_TARGET_ARCH_RISCV: - :cpp:func:`esp_ipc_isr_stall_other_cpu` stalls the target core. The calling core disables interrupts of level 3 and lower, while the target core will busy-wait with all interrupts disabled. The target core will busy-wait until :cpp:func:`esp_ipc_isr_release_other_cpu` is called.
     :CONFIG_IDF_TARGET_ARCH_XTENSA: - :cpp:func:`esp_ipc_isr_stall_other_cpu` stalls the target core. The calling core disables interrupts of level 3 and lower while the target core will busy-wait with interrupts of level 5 and lower disabled. The target core will busy-wait until :cpp:func:`esp_ipc_isr_release_other_cpu` is called.
+    - :cpp:func:`esp_ipc_isr_stall_other_cpu_safe` attempts to stall the other core only if it is not in a critical section or ISR context. If the other core is in such a state, the function considers it unsafe to stall, releases the core, and returns an error.
     - :cpp:func:`esp_ipc_isr_release_other_cpu` resumes the target core.
 
 Application Examples

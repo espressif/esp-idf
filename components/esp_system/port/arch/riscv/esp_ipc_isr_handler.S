@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,8 @@ esp_ipc_isr_handler:
     sw      ra, 60(sp)
 
     /* MIE is cleared, so nested interrupts are disabled */
+
+    call    esp_ipc_isr_record_interrupted_context
 
     /* Reset isr interrupt flags */
     li      a1, SYSTEM_CPU_INTR_FROM_CPU_2_REG
