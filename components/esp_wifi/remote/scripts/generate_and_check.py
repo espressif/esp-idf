@@ -15,11 +15,14 @@ from typing import cast
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 current_dir = os.path.abspath(os.getcwd())
+if script_dir != current_dir:
+    print(f'Error: This script must be run from its own directory: {script_dir}')
+    print(f'Current working directory is: {current_dir}')
+    sys.exit(1)
 
 idf_path = os.getenv('IDF_PATH')
 if idf_path is None:
     idf_path = os.path.realpath(os.path.join(script_dir, '..', '..', '..', '..'))
-
 
 Param = namedtuple('Param', ['ptr', 'array', 'qual', 'type', 'name'])
 
@@ -111,43 +114,10 @@ def exec_cmd(what: list[str], out_file: IO[str] | None = None) -> tuple[int, str
     return rc, output, err, ' '.join(what)
 
 
-def _has_related_changes() -> bool:
-    try:
-        # Check if we are in a git repository
-        rc, _, _, _ = exec_cmd(['git', 'rev-parse', '--is-inside-work-tree'])
-        if rc != 0:
-            return True
-
-        # Get changes in tracked files (staged and unstaged) relative to HEAD
-        rc, output, _, _ = exec_cmd(['git', 'diff', 'HEAD', '--name-only'])
-        if rc != 0:
-            return True
-    except Exception:
-        return True
-
-    # Patterns from .pre-commit-config.yaml plus the script itself
-    related_files_re = re.compile(
-        r"""(?x)^(
-        components/esp_wifi/remote/scripts/(generate_and_check\.py|ignore_extensions\.h|copyright_header\.h)|
-        components/esp_wifi/include/(esp_wifi.*|esp_mesh.*|esp_now.*)\.h|
-        components/esp_wifi/Kconfig|
-        components/wpa_supplicant/esp_supplicant/include/esp_eap_client\.h|
-        components/soc/.+/include/soc/Kconfig\.soc_caps\.in
-    )$"""
-    )
-
-    for line in output.splitlines():
-        if related_files_re.match(line):
-            return True
-    return False
-
-
 _cached_include_dir_flags: list[str] | None = None
 
 
 def _handle_missing_tool(msg: str) -> None:
-    if not _has_related_changes():
-        sys.exit(0)
     YELLOW = '\033[33m'
     RESET = '\033[0m'
     full_msg = (
@@ -160,6 +130,13 @@ def _handle_missing_tool(msg: str) -> None:
     )
     print(f'{YELLOW}SKIPPED: {full_msg}{RESET}')
     sys.exit(0)
+
+
+try:
+    import idf_build_apps  # noqa: F401
+    import pycparser  # noqa: F401
+except ImportError:
+    _handle_missing_tool('ESP-IDF environment not found (missing python dependencies)')
 
 
 def preprocess(idf_path: str, header: str) -> str:
@@ -242,8 +219,6 @@ def preprocess(idf_path: str, header: str) -> str:
     from pycparser import preprocess_file
 
     preprocessed_code = preprocess_file(temp_file)
-    if os.path.exists(temp_file):
-        os.remove(temp_file)
     return cast(str, preprocessed_code)
 
 
@@ -293,9 +268,8 @@ def get_vars(parameters: list[Any]) -> tuple[str, str]:
 
 
 def generate_kconfig_wifi_caps(idf_path: str, component_path: str) -> list[str]:
-    sys.path.append(os.path.join(idf_path, 'tools'))
-    from idf_py_actions.constants import PREVIEW_TARGETS
-    from idf_py_actions.constants import SUPPORTED_TARGETS
+    from idf_build_apps.constants import PREVIEW_TARGETS
+    from idf_build_apps.constants import SUPPORTED_TARGETS
 
     kconfig = os.path.join(component_path, 'Kconfig.soc_wifi_caps.in')
     slave_select = os.path.join(component_path, 'Kconfig.slave_select.in')
@@ -731,25 +705,8 @@ making changes you might need to modify 'copyright_header.h' in the script direc
     parser.add_argument(
         '-s', '--skip-check', help='Skip checking the versioned files against the re-generated', action='store_true'
     )
-    parser.add_argument('-k', '--keep-test', help='Keep the generated test directory', action='store_true')
     parser.add_argument('--base-dir', help='Base directory to compare generated files against')
     args = parser.parse_args()
-
-    # Skip work if no related files have changed, unless we are in CI or doing a base-dir comparison.
-    # CI environments usually require a full check to ensure repository integrity even if
-    # no local uncommitted changes are present.
-    if args.base_dir is None and not os.getenv('CI') and not _has_related_changes():
-        sys.exit(0)
-
-    if script_dir != current_dir:
-        print(f'Error: This script must be run from its own directory: {script_dir}')
-        print(f'Current working directory is: {current_dir}')
-        sys.exit(1)
-
-    try:
-        import pycparser  # noqa: F401
-    except ImportError:
-        _handle_missing_tool('ESP-IDF environment not found (missing python dependencies)')
 
     header = os.path.join(idf_path, 'components', 'esp_wifi', 'include', 'esp_wifi.h')
     eap_header = os.path.join(idf_path, 'components', 'wpa_supplicant', 'esp_supplicant', 'include', 'esp_eap_client.h')
@@ -774,15 +731,6 @@ making changes you might need to modify 'copyright_header.h' in the script direc
             rc, _, _, _ = exec_cmd(['git', 'diff', '--exit-code', f])
             if rc != 0:
                 modified_files.append(f)
-
-    # Cleanup test directory if not requested to keep it
-    if not args.keep_test:
-        test_dir = os.path.join(component_path, 'test')
-        if os.path.exists(test_dir):
-            try:
-                shutil.rmtree(test_dir)
-            except Exception as e:
-                print(f'Warning: Failed to clean up test directory {test_dir}: {e}')
 
     if modified_files:
         print('WiFi-remote API files were updated:')
