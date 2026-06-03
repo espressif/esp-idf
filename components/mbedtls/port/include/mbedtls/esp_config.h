@@ -810,7 +810,9 @@
 #else
 #undef MBEDTLS_FS_IO
 #undef MBEDTLS_PSA_ITS_FILE_C
+#if !defined(ESP_PSA_ITS_AVAILABLE)
 #undef MBEDTLS_PSA_CRYPTO_STORAGE_C
+#endif
 #endif
 
 #ifndef CONFIG_IDF_TARGET_LINUX
