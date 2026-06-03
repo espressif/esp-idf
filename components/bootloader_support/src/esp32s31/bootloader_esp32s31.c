@@ -32,6 +32,8 @@
 #include "soc/reset_reasons.h"
 #include "hal/assist_debug_ll.h"
 #include "esp_rom_sys.h"
+#include "soc/regi2c_bias.h"
+#include "hal/regi2c_ctrl.h"
 
 ESP_LOG_ATTR_TAG(TAG, "boot.esp32s31");
 
@@ -53,6 +55,9 @@ static inline void bootloader_hardware_init(void)
     regi2c_ctrl_ll_master_force_enable_clock(true); // TODO: IDF-14678 Remove this?
     regi2c_ctrl_ll_master_configure_clock();
 #endif
+
+    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1, 10);
+    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1_PVT, 10);
 }
 
 void bootloader_enable_cpu_reset_info(void)
@@ -97,6 +102,7 @@ static inline void bootloader_ana_reset_config(void)
 {
     //Enable BOD reset
     brownout_ll_ana_reset_enable(true);
+    bootloader_power_glitch_reset_config(true);
 }
 
 #if SOC_RTC_WDT_SUPPORTED
