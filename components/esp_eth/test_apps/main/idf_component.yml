@@ -2,3 +2,5 @@
 dependencies:
   espressif/ethernet_init:
     version: "^1.3.0"
+  espressif/eth_test_app:
+    version: "*"
