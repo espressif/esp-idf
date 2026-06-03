@@ -1248,20 +1248,17 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
 
     esp_sync_timekeeping_timers();
 
-    // Must acquire all spinlocks which may be acquired during sleep process before stalling other core,
-    // otherwise deadlock may occur.
-    esp_os_enter_critical(&spinlock_rtc_deep_sleep);
-#if !CONFIG_FREERTOS_UNICORE
-    extern portMUX_TYPE rtc_spinlock;
-    esp_os_enter_critical_safe(&rtc_spinlock); // Maybe acquired from temp_sensor_get_raw_value by phy_close_rf callback
-    esp_clk_private_lock(); // Maybe acquired from esp_clk_slowclk_cal_set
-#endif
-
     /* Disable interrupts and stall another core in case another task writes
      * to RTC memory while we calculate RTC memory CRC.
      */
+    esp_os_enter_critical(&spinlock_rtc_deep_sleep);
     esp_ipc_isr_stall_other_cpu();
     esp_ipc_isr_stall_pause();
+    /* Another core is stalled and interrupts are disabled, so we can safely claim the thread-safe
+       critical section to avoid deadlocks and fastup the sleep process.
+    */
+    xPortThreadSafeClaim();
+
 #if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
     // The other core will be stalled by high-priority interrupt and spins on variables in internal RAM,
     // which naturally avoids cache livelock, so the 20ms livelock workaround timeout is not needed.
@@ -1354,12 +1351,11 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     // Configure WDT to use livelock workaround timeout after releasing other CPU
     esp_int_wdt_livelock_workaround(true);
 #endif
+
+    /* Restore port critical before unstalling other CPU */
+    xPortThreadSafeDisclaim();
     esp_ipc_isr_stall_resume();
     esp_ipc_isr_release_other_cpu();
-#if !CONFIG_FREERTOS_UNICORE
-    esp_clk_private_unlock();
-    esp_os_exit_critical_safe(&rtc_spinlock);
-#endif
     esp_os_exit_critical(&spinlock_rtc_deep_sleep);
     return err;
 }
@@ -1459,30 +1455,8 @@ esp_err_t esp_light_sleep_start(void)
     timerret = esp_task_wdt_stop();
 #endif // CONFIG_ESP_TASK_WDT_USE_ESP_TIMER
 
-    esp_os_enter_critical(&s_config.lock);
-    /*
-    Note: We are about to stall the other CPU via the esp_ipc_isr_stall_other_cpu(). However, there is a chance of
-    deadlock if after stalling the other CPU, we attempt to take spinlocks already held by the other CPU that is.
-
-    Thus any functions that we call after stalling the other CPU will need to have the locks taken first to avoid
-    deadlock.
-
-    Todo: IDF-5257
-    */
-
-    /* We will be calling esp_timer_private_set inside DPORT access critical
-     * section. Make sure the code on the other CPU is not holding esp_timer
-     * lock, otherwise there will be deadlock.
-     */
     esp_timer_private_lock();
-
-    /* We will be calling esp_rtc_get_time_us() below. Make sure the code on the other CPU is not holding the
-     * esp_rtc_get_time_us() lock, otherwise there will be deadlock. esp_rtc_get_time_us() is called via:
-     *
-     * - esp_clk_slowclk_cal_set() -> esp_rtc_get_time_us()
-     */
-    esp_clk_private_lock();
-
+    esp_os_enter_critical(&s_config.lock);
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
     uint32_t ccount_at_sleep_start = esp_cpu_get_cycle_count();
     esp_sleep_execute_event_callbacks(SLEEP_EVENT_HW_TIME_START, (void *)0);
@@ -1508,6 +1482,10 @@ esp_err_t esp_light_sleep_start(void)
 #endif
     esp_ipc_isr_stall_pause();
 #endif
+    /* Another core is stalled and interrupts are disabled, so we can safely claim the thread-safe
+       critical section to avoid deadlocks and fastup the sleep process.
+    */
+    xPortThreadSafeClaim();
 
 #if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION && CONFIG_PM_SLP_IRAM_OPT
     /* Cache Suspend 0: if CONFIG_PM_SLP_IRAM_OPT is enabled, suspend cache here so that the access to flash
@@ -1709,9 +1687,6 @@ esp_err_t esp_light_sleep_start(void)
 #endif
     }
 
-    esp_clk_private_unlock();
-    esp_timer_private_unlock();
-
 #if CONFIG_PM_SLP_SPIRAM_HALFSLEEP_ENABLED && !CONFIG_SPIRAM_XIP_FROM_PSRAM && CONFIG_PM_SLP_IRAM_OPT
     // If CONFIG_SPIRAM_XIP_FROM_PSRAM is not enabled and CONFIG_PM_SLP_IRAM_OPT is enable,
     // the sleep-wake process prior to this point does not access the PSRAM, so we can postpone waiting
@@ -1727,6 +1702,9 @@ esp_err_t esp_light_sleep_start(void)
     }
 #endif
 
+    /* Restore port critical before unstalling other CPU */
+    xPortThreadSafeDisclaim();
+    esp_timer_private_unlock();
 #if !CONFIG_FREERTOS_UNICORE
     esp_ipc_isr_stall_resume();
 #if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && SOC_PM_CPU_RETENTION_BY_SW
