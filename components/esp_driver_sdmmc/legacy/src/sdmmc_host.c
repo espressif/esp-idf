@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -77,6 +77,11 @@ esp_err_t sdmmc_host_set_input_delayline(int slot, sdmmc_delay_line_t delay_line
 
 esp_err_t sdmmc_host_init(void)
 {
+    if (s_ctlr) {
+        ESP_LOGI(TAG, "SDMMC host controller already created, returning existing handle");
+        return ESP_OK;
+    }
+
     sd_host_sdmmc_cfg_t cfg = {
         .event_queue_items = SDMMC_EVENT_QUEUE_LENGTH,
     };
@@ -158,6 +163,8 @@ esp_err_t sdmmc_host_deinit_slot(int slot)
     //for backward compatibility, return ESP_OK when only slot is removed and host is still there
     if (ret == ESP_ERR_INVALID_STATE) {
         ret = ESP_OK;
+    } else if (ret == ESP_OK) {
+        s_ctlr = NULL;
     }
 
     return ret;
@@ -176,6 +183,7 @@ esp_err_t sdmmc_host_deinit(void)
         }
     }
     ESP_RETURN_ON_ERROR(sd_host_del_controller(s_ctlr), TAG, "failed to delete controller");
+    s_ctlr = NULL;
 
     return ESP_OK;
 }
