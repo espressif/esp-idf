@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -997,28 +997,6 @@ typedef union {
     uint32_t val;
 } pcr_spi2_clkm_conf_reg_t;
 
-/** Type of aes_conf register
- *  AES configuration register
- */
-typedef union {
-    struct {
-        /** aes_clk_en : R/W; bitpos: [0]; default: 1;
-         *  Set 1 to enable aes clock
-         */
-        uint32_t aes_clk_en:1;
-        /** aes_rst_en : R/W; bitpos: [1]; default: 0;
-         *  Set 1 to reset aes module
-         */
-        uint32_t aes_rst_en:1;
-        /** aes_ready : RO; bitpos: [2]; default: 1;
-         *  Query this field after reset aes module
-         */
-        uint32_t aes_ready:1;
-        uint32_t reserved_3:29;
-    };
-    uint32_t val;
-} pcr_aes_conf_reg_t;
-
 /** Type of sha_conf register
  *  SHA configuration register
  */
@@ -1040,50 +1018,6 @@ typedef union {
     };
     uint32_t val;
 } pcr_sha_conf_reg_t;
-
-/** Type of rsa_conf register
- *  RSA configuration register
- */
-typedef union {
-    struct {
-        /** rsa_clk_en : R/W; bitpos: [0]; default: 1;
-         *  Set 1 to enable rsa clock
-         */
-        uint32_t rsa_clk_en:1;
-        /** rsa_rst_en : R/W; bitpos: [1]; default: 0;
-         *  Set 1 to reset rsa module
-         */
-        uint32_t rsa_rst_en:1;
-        /** rsa_ready : RO; bitpos: [2]; default: 1;
-         *  Query this field after reset rsa module
-         */
-        uint32_t rsa_ready:1;
-        uint32_t reserved_3:29;
-    };
-    uint32_t val;
-} pcr_rsa_conf_reg_t;
-
-/** Type of rsa_pd_ctrl register
- *  RSA power control register
- */
-typedef union {
-    struct {
-        /** rsa_mem_pd : R/W; bitpos: [0]; default: 0;
-         *  Set this bit to power down rsa internal memory.
-         */
-        uint32_t rsa_mem_pd:1;
-        /** rsa_mem_force_pu : R/W; bitpos: [1]; default: 1;
-         *  Set this bit to force power up rsa internal memory
-         */
-        uint32_t rsa_mem_force_pu:1;
-        /** rsa_mem_force_pd : R/W; bitpos: [2]; default: 0;
-         *  Set this bit to force power down rsa internal memory.
-         */
-        uint32_t rsa_mem_force_pd:1;
-        uint32_t reserved_3:29;
-    };
-    uint32_t val;
-} pcr_rsa_pd_ctrl_reg_t;
 
 /** Type of ecc_conf register
  *  ECC configuration register
@@ -1128,50 +1062,6 @@ typedef union {
     };
     uint32_t val;
 } pcr_ecc_pd_ctrl_reg_t;
-
-/** Type of ds_conf register
- *  DS configuration register
- */
-typedef union {
-    struct {
-        /** ds_clk_en : R/W; bitpos: [0]; default: 1;
-         *  Set 1 to enable ds clock
-         */
-        uint32_t ds_clk_en:1;
-        /** ds_rst_en : R/W; bitpos: [1]; default: 0;
-         *  Set 1 to reset ds module
-         */
-        uint32_t ds_rst_en:1;
-        /** ds_ready : RO; bitpos: [2]; default: 1;
-         *  Query this field after reset ds module
-         */
-        uint32_t ds_ready:1;
-        uint32_t reserved_3:29;
-    };
-    uint32_t val;
-} pcr_ds_conf_reg_t;
-
-/** Type of hmac_conf register
- *  HMAC configuration register
- */
-typedef union {
-    struct {
-        /** hmac_clk_en : R/W; bitpos: [0]; default: 1;
-         *  Set 1 to enable hmac clock
-         */
-        uint32_t hmac_clk_en:1;
-        /** hmac_rst_en : R/W; bitpos: [1]; default: 0;
-         *  Set 1 to reset hmac module
-         */
-        uint32_t hmac_rst_en:1;
-        /** hmac_ready : RO; bitpos: [2]; default: 1;
-         *  Query this field after reset hmac module
-         */
-        uint32_t hmac_ready:1;
-        uint32_t reserved_3:29;
-    };
-    uint32_t val;
-} pcr_hmac_conf_reg_t;
 
 /** Type of ecdsa_conf register
  *  ECDSA configuration register
@@ -1952,14 +1842,14 @@ typedef struct {
     volatile pcr_gdma_conf_reg_t gdma_conf;
     volatile pcr_spi2_conf_reg_t spi2_conf;
     volatile pcr_spi2_clkm_conf_reg_t spi2_clkm_conf;
-    volatile pcr_aes_conf_reg_t aes_conf;
+    uint32_t reserved_9c;
     volatile pcr_sha_conf_reg_t sha_conf;
-    volatile pcr_rsa_conf_reg_t rsa_conf;
-    volatile pcr_rsa_pd_ctrl_reg_t rsa_pd_ctrl;
+    uint32_t reserved_a4;
+    uint32_t reserved_a8;
     volatile pcr_ecc_conf_reg_t ecc_conf;
     volatile pcr_ecc_pd_ctrl_reg_t ecc_pd_ctrl;
-    volatile pcr_ds_conf_reg_t ds_conf;
-    volatile pcr_hmac_conf_reg_t hmac_conf;
+    uint32_t reserved_b4;
+    uint32_t reserved_b8;
     volatile pcr_ecdsa_conf_reg_t ecdsa_conf;
     volatile pcr_iomux_conf_reg_t iomux_conf;
     volatile pcr_iomux_clk_conf_reg_t iomux_clk_conf;
