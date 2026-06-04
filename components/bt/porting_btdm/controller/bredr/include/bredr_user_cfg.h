@@ -59,6 +59,12 @@ extern "C" {
 #define UC_BR_EDR_APB_EXT_PCA_EN 0
 #endif
 
+#if defined(CONFIG_BT_CTRL_BR_EDR_HOLD_EN) && CONFIG_BT_CTRL_BR_EDR_HOLD_EN
+#define UC_BR_EDR_HOLD_EN 1
+#else
+#define UC_BR_EDR_HOLD_EN 0
+#endif
+
 #if defined(CONFIG_BT_CTRL_BR_EDR_LK_STORE_EN) && CONFIG_BT_CTRL_BR_EDR_LK_STORE_EN
 #define UC_BR_EDR_LK_STORE_EN 1
 #else

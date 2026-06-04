@@ -130,6 +130,7 @@ typedef int (*btdm_hci_trans_tx_func_t)(hci_driver_packet_t *pkt);
 #define HCI_INTERNAL_CONN_IS_BREDR(conn_handle)         (conn_handle & 0x0800)
 #define HCI_INTERNAL_CONN_IS_BREDR_ACL(conn_handle)     ((conn_handle & 0x0800) && (conn_handle & 0x000f))
 #define HCI_INTERNAL_CONN_IS_BREDR_SYNC(conn_handle)    ((conn_handle & 0x0800) && (conn_handle & 0x00f0))
+#define HCI_INTERNAL_ACL_IS_BREDR_BCAST(handle_flags)   (((handle_flags) >> 14 & 0x03) == 0x01)
 
 int r_btdm_hci_trans_register_tx(btdm_hci_trans_tx_func_t *tx_func, bool async);
 
