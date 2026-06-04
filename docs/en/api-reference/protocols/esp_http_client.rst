@@ -17,6 +17,7 @@ Application Examples
 --------------------
 
 - :example:`protocols/esp_http_client` demonstrates how to use the ESP HTTP Client to make HTTP/S requests.
+- :example:`protocols/esp_http_client_mutual_auth` demonstrates how to configure mutual TLS authentication with the ESP HTTP Client.
 
 
 Basic HTTP Request
