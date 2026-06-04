@@ -26,9 +26,10 @@
 
 #define GDMA_LL_CHANNEL_MAX_PRIORITY 5 // supported priority levels: [0,5]
 
-#define GDMA_LL_RX_EVENT_MASK       (0x1F)
-#define GDMA_LL_TX_EVENT_MASK       (0x0F)
-
+// the following event bits are only supported by axi-dma
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+#define GDMA_LL_EVENT_TX_LINK_SWITCH (1<<10)
+#endif
 // the following event bits are identical for ahb-dma and axi-dma
 #define GDMA_LL_EVENT_TX_TOTAL_EOF  (1<<3)
 #define GDMA_LL_EVENT_TX_DESC_ERROR (1<<2)

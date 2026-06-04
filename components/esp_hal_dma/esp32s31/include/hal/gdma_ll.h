@@ -20,9 +20,8 @@
 
 #define GDMA_LL_CHANNEL_MAX_PRIORITY 5 // supported priority levels: [0,5]
 
-#define GDMA_LL_RX_EVENT_MASK       (0x7F)
-#define GDMA_LL_TX_EVENT_MASK       (0x3F)
-
+// the following event bits are only supported by axi-dma
+#define GDMA_LL_EVENT_TX_LINK_SWITCH (1<<10)
 // the following event bits are identical for ahb-dma, axi-dma and lp-ahb-dma
 #define GDMA_LL_EVENT_TX_FIFO_UDF   (1<<5)
 #define GDMA_LL_EVENT_TX_FIFO_OVF   (1<<4)
