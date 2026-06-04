@@ -2,16 +2,16 @@
 # SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
-import argparse
 import os
 import struct
 from enum import Enum
 from enum import IntFlag
-from typing import Any
 
+import rich_click as click
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
+from esp_pylib.logger import log
 
 # === Constants ===
 SEC_STG_KEY_DATA_SZ = 256
@@ -86,56 +86,63 @@ def generate_key_data(key_type: KeyType, flags: Flags, input_file: str | None) -
 # === CLI ===
 
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description='Generate or import a cryptographic key structure for secure storage')
-    parser.add_argument(
-        '-k',
-        '--key-type',
-        type=str,
-        choices=[e.name.lower() for e in KeyType],
-        required=True,
-        help='key type to be processed',
-    )
-    parser.add_argument(
-        '-o',
-        '--output',
-        required=True,
-        help='output binary file name',
-    )
-    parser.add_argument(
-        '-i',
-        '--input',
-        help='input key file (.pem for ecdsa, .bin for aes)',
-    )
-    parser.add_argument(
-        '--write-once',
-        action='store_true',
-        help='make key persistent - cannot be modified or deleted once written',
-    )
-    return parser.parse_args()
-
-
-def main() -> None:
-    args: Any = parse_args()
-
-    key_type = KeyType[args.key_type.upper()]
+@click.command(context_settings=dict(help_option_names=['-h', '--help']))
+@click.option(
+    '-k',
+    '--key-type',
+    'key_type',
+    type=click.Choice([e.name.lower() for e in KeyType], case_sensitive=False),
+    required=True,
+    help='key type to be processed',
+)
+@click.option(
+    '-o',
+    '--output',
+    required=True,
+    help='output binary file name',
+)
+@click.option(
+    '-i',
+    '--input',
+    'input_file',
+    default=None,
+    help='input key file (.pem for ecdsa, .bin for aes)',
+)
+@click.option(
+    '--write-once',
+    is_flag=True,
+    default=False,
+    help='make key persistent - cannot be modified or deleted once written',
+)
+def main(key_type: str, output: str, input_file: str | None, write_once: bool) -> None:
+    """Generate or import a cryptographic key structure for secure storage."""
+    selected_type = KeyType[key_type.upper()]
     flags = Flags.NONE
-    if args.write_once:
+    if write_once:
         flags |= Flags.WRITE_ONCE
 
-    print(f'[+] Generating key of type: {key_type.name} (value: {key_type.value})')
-    if args.input:
-        print(f'[+] Using user-provided key file: {args.input}')
-    if args.write_once:
-        print('[+] WRITE_ONCE flag is set')
+    log.print(
+        f'[+] Generating key of type: {selected_type.name} (value: {selected_type.value})',
+        markup=False,
+        soft_wrap=True,
+    )
+    if input_file:
+        log.print(f'[+] Using user-provided key file: {input_file}', markup=False, soft_wrap=True)
+    if write_once:
+        log.print('[+] WRITE_ONCE flag is set', markup=False, soft_wrap=True)
 
-    key_data = generate_key_data(key_type, flags, args.input)
+    try:
+        key_data = generate_key_data(selected_type, flags, input_file)
+        with open(output, 'wb') as f:
+            f.write(key_data)
+    except (ValueError, OSError) as e:
+        raise click.ClickException(str(e))
 
-    with open(args.output, 'wb') as f:
-        f.write(key_data)
-
-    print(f'[✓] Key written to {args.output}')
+    log.print(f'[✓] Key written to {output}', markup=False, soft_wrap=True)
 
 
 if __name__ == '__main__':
+    from esp_pylib.excepthook import install_exception_reporting
+
+    install_exception_reporting()
     main()

@@ -7,17 +7,18 @@
 
 ```
 $ python esp_tee_sec_stg_keygen.py --help
-usage: esp_tee_sec_stg_keygen.py [-h] -k {aes256,ecdsa_p256,ecdsa_p384} -o OUTPUT [-i INPUT] [--write-once]
 
-Generate or import a cryptographic key structure for secure storage
+ Usage: esp_tee_sec_stg_keygen.py [OPTIONS]
 
-options:
-  -h, --help            show this help message and exit
-  -k, --key-type {aes256,ecdsa_p256,ecdsa_p384}
-                        key type to be processed
-  -o, --output OUTPUT   output binary file name
-  -i, --input INPUT     input key file (.pem for ecdsa, .bin for aes)
+ Generate or import a cryptographic key structure for secure storage.
+
+Options:
+  -k, --key-type [aes256|ecdsa_p256|ecdsa_p384]
+                        key type to be processed  [required]
+  -o, --output TEXT     output binary file name  [required]
+  -i, --input TEXT      input key file (.pem for ecdsa, .bin for aes)
   --write-once          make key persistent - cannot be modified or deleted once written
+  -h, --help            Show this message and exit.
 ```
 
 ### ECDSA Keys
