@@ -102,7 +102,7 @@ static int buffer_hexdump(const char *label, const void *buffer, size_t length)
 
     const uint8_t *bytes = (const uint8_t *)buffer;
     const size_t max_bytes_per_line = 16;
-    char hexbuf[max_bytes_per_line * 3];
+    char hexbuf[max_bytes_per_line * 3 + 2];
 
     ESP_LOGD(TAG, "%s -", label);
 
