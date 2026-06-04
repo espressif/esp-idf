@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -89,10 +89,10 @@ phy_reg_init = 0x400010e8;
 phy_xpd_rf = 0x400010ec;
 phy_get_mac_addr = 0x400010f4;
 phy_set_mac_data = 0x400010f8;
-phy_rfcal_data_sub = 0x400010fc;
-phy_rf_cal_data_recovery = 0x40001100;
-phy_rf_cal_data_backup = 0x40001104;
-phy_rfcal_data_check = 0x40001108;
+//phy_rfcal_data_sub = 0x400010fc;
+//phy_rf_cal_data_recovery = 0x40001100;
+//phy_rf_cal_data_backup = 0x40001104;
+//phy_rfcal_data_check = 0x40001108;
 phy_pwdet_reg_init = 0x4000110c;
 phy_pwdet_sar2_init = 0x40001110;
 phy_en_pwdet = 0x40001114;
