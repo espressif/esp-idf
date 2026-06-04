@@ -279,18 +279,6 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
     endif()
 endif()
 
-if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
-  list(APPEND compile_options "-fasynchronous-unwind-tables")
-  list(APPEND link_options "-Wl,--eh-frame-hdr")
-endif()
-
-if(CONFIG_ESP_SYSTEM_USE_FRAME_POINTER)
-    list(APPEND compile_options "-fno-omit-frame-pointer")
-    if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-        list(APPEND compile_options "-mno-omit-leaf-frame-pointer")
-    endif()
-endif()
-
 if(CONFIG_COMPILER_LTO_LINKTIME AND NOT BOOTLOADER_BUILD AND NOT ESP_TEE_BUILD)
     list(APPEND link_options "-flto=auto")
 

@@ -180,6 +180,17 @@ else()
                         PROCESS "${CMAKE_CURRENT_BINARY_DIR}/ld/sections.ld")
 endif()
 
+if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
+    idf_build_set_property(COMPILE_OPTIONS "-fasynchronous-unwind-tables" APPEND)
+endif()
+
+if(CONFIG_ESP_SYSTEM_USE_FRAME_POINTER)
+    idf_build_set_property(COMPILE_OPTIONS "-fno-omit-frame-pointer" APPEND)
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+        idf_build_set_property(COMPILE_OPTIONS "-mno-omit-leaf-frame-pointer" APPEND)
+    endif()
+endif()
+
 if(CONFIG_IDF_ENV_FPGA OR CONFIG_ESP_BRINGUP_BYPASS_CPU_CLK_SETTING)
     # Forces the linker to include fpga stubs from this component
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_common_include_fpga_overrides_clk")
@@ -241,6 +252,10 @@ endif()
 # For P4, since P4 REV2, the SRAM is contiguous
 if(CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
     target_link_options(${COMPONENT_LIB} INTERFACE "-Wl,--enable-non-contiguous-regions")
+endif()
+
+if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
+    target_link_options(${COMPONENT_LIB} INTERFACE "-Wl,--eh-frame-hdr")
 endif()
 
 if(CONFIG_ESP_DEBUG_INCLUDE_OCD_STUB_BINS)

@@ -422,18 +422,6 @@ function(__init_project_configuration)
         endif()
     endif()
 
-    if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
-      list(APPEND compile_options "-fasynchronous-unwind-tables")
-      list(APPEND link_options "-Wl,--eh-frame-hdr")
-    endif()
-
-    if(CONFIG_ESP_SYSTEM_USE_FRAME_POINTER)
-        list(APPEND compile_options "-fno-omit-frame-pointer")
-        if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-            list(APPEND compile_options "-mno-omit-leaf-frame-pointer")
-        endif()
-    endif()
-
     # A subproject that must not use LTO (for example the bootloader) opts out by
     # setting the SET_COMPILER_LTO build property to NO, the same way it uses
     # SET_COMPILER_OPTIMIZATION; an unset property means LTO is allowed.
