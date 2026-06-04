@@ -755,12 +755,6 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
         should_skip_sleep = light_sleep_uart_prepare(pd_flags, sleep_duration);
     }
 
-    // Do deep-sleep PHY related callback, which need to be executed when the PLL clock is exists.
-    // For light-sleep, PHY state is managed by the upper layer of the wifi/bt protocol stack.
-    if (deep_sleep) {
-        s_do_deep_sleep_phy_callback();
-    }
-
     // Will switch to XTAL turn down MSPI speed
     mspi_timing_change_speed_mode_cache_safe(true);
 
@@ -1029,6 +1023,17 @@ static esp_err_t IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
 
     esp_sync_timekeeping_timers();
 
+    /* Close PHY/RF before stalling the other CPU. phy_close_rf() (registered via
+     * esp_deep_sleep_register_phy_hook) takes s_phy_int_mux and may take rtc_spinlock;
+     * those can be held by the other core.
+     */
+    s_do_deep_sleep_phy_callback();
+
+    // Must acquire spinlocks used after stall before stalling the other core.
+#if !CONFIG_FREERTOS_UNICORE
+    esp_clk_private_lock(); // Maybe acquired from esp_clk_slowclk_cal_set
+#endif
+
     /* Disable interrupts and stall another core in case another task writes
      * to RTC memory while we calculate RTC memory CRC.
      */
@@ -1098,6 +1103,10 @@ static esp_err_t IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     }
     // Never returns here, except that the sleep is rejected.
     esp_ipc_isr_release_other_cpu();
+
+#if !CONFIG_FREERTOS_UNICORE
+    esp_clk_private_unlock();
+#endif
     portEXIT_CRITICAL(&s_config.lock);
     return err;
 }
