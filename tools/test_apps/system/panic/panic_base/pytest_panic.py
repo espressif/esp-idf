@@ -625,8 +625,9 @@ CONFIGS_MEMPROT_IDRAM = list(
             'memprot_esp32h2',
             'memprot_esp32p4',
             'memprot_esp32h21',
+            'memprot_esp32s31',
         ],
-        ['esp32s2', 'esp32c3', 'esp32c2', 'esp32c5', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32h21'],
+        ['esp32s2', 'esp32c3', 'esp32c2', 'esp32c5', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32h21', 'esp32s31'],
     )
 ) + [
     ('memprot_esp32p4_rev_less_than_v3', 'esp32p4', P4_REV_LESS_THAN_V3_MARKER),
@@ -646,8 +647,9 @@ CONFIGS_MEMPROT_RTC_FAST_MEM = list(
             'memprot_esp32h2',
             'memprot_esp32p4',
             'memprot_esp32h21',
+            'memprot_esp32s31',
         ],
-        ['esp32s2', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32h21'],
+        ['esp32s2', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32h21', 'esp32s31'],
     )
 ) + [
     ('memprot_esp32p4_rev_less_than_v3', 'esp32p4', P4_REV_LESS_THAN_V3_MARKER),
@@ -664,8 +666,9 @@ CONFIGS_MEMPROT_FLASH_IDROM = list(
             'memprot_esp32h2',
             'memprot_esp32p4',
             'memprot_esp32h21',
+            'memprot_esp32s31',
         ],
-        ['esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32h21'],
+        ['esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32h21', 'esp32s31'],
     )
 ) + [
     ('memprot_esp32p4_rev_less_than_v3', 'esp32p4', P4_REV_LESS_THAN_V3_MARKER),
@@ -679,8 +682,9 @@ CONFIGS_MEMPROT_SPIRAM_XIP_IROM_ALIGNMENT_HEAP = list(
             'memprot_spiram_xip_esp32c5',
             'memprot_spiram_xip_esp32c61',
             'memprot_spiram_xip_esp32p4',
+            'memprot_spiram_xip_esp32s31',
         ],
-        ['esp32c5', 'esp32c61', 'esp32p4'],
+        ['esp32c5', 'esp32c61', 'esp32p4', 'esp32s31'],
     )
 ) + [
     ('memprot_spiram_xip_esp32p4_rev_less_than_v3', 'esp32p4', P4_REV_LESS_THAN_V3_MARKER),
@@ -701,8 +705,9 @@ CONFIGS_MEMPROT_SPIRAM_XIP_DROM_ALIGNMENT_HEAP = list(
             'memprot_spiram_xip_esp32c5',
             'memprot_spiram_xip_esp32c61',
             'memprot_spiram_xip_esp32p4',
+            'memprot_spiram_xip_esp32s31',
         ],
-        ['esp32s3', 'esp32c5', 'esp32c61', 'esp32p4'],
+        ['esp32s3', 'esp32c5', 'esp32c61', 'esp32p4', 'esp32s31'],
     )
 ) + [
     ('memprot_spiram_xip_esp32p4_rev_less_than_v3', 'esp32p4', P4_REV_LESS_THAN_V3_MARKER),
@@ -724,8 +729,9 @@ CONFIGS_MEMPROT_INVALID_REGION_PROTECTION_USING_PMA = list(
             'memprot_esp32h2',
             'memprot_esp32p4',
             'memprot_esp32h21',
+            'memprot_esp32s31',
         ],
-        ['esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32h21'],
+        ['esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32h21', 'esp32s31'],
     )
 ) + [
     ('memprot_esp32p4_rev_less_than_v3', 'esp32p4', P4_REV_LESS_THAN_V3_MARKER),
@@ -972,7 +978,7 @@ def test_rtc_fast_reg1_execute_violation(dut: PanicTestDut, test_func_name: str)
 
 @pytest.mark.generic
 @pytest.mark.temp_skip(
-    targets=['esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32h21'],
+    targets=['esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32h21', 'esp32s31'],
     reason='Not a violation condition, no PMS peripheral cases',
 )
 @idf_parametrize('config, target', CONFIGS_MEMPROT_RTC_FAST_MEM, indirect=['config', 'target'])
@@ -1144,6 +1150,7 @@ def spiram_xip_irom_alignment_reg_execute_violation(dut: PanicTestDut, test_func
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='no PSRAM-equipped runner for v0.0 silicon yet')
 @idf_parametrize('config, target', CONFIGS_MEMPROT_SPIRAM_XIP_IROM_ALIGNMENT_HEAP, indirect=['config', 'target'])
 def test_spiram_xip_irom_alignment_reg_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     spiram_xip_irom_alignment_reg_execute_violation(dut, test_func_name)
@@ -1168,6 +1175,7 @@ def spiram_xip_drom_alignment_reg_execute_violation(dut: PanicTestDut, test_func
 
 
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='no PSRAM-equipped runner for v0.0 silicon yet')
 @idf_parametrize('config, target', CONFIGS_MEMPROT_SPIRAM_XIP_DROM_ALIGNMENT_HEAP, indirect=['config', 'target'])
 def test_spiram_xip_drom_alignment_reg_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     spiram_xip_drom_alignment_reg_execute_violation(dut, test_func_name)
