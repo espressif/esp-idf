@@ -91,7 +91,7 @@
 #define SOC_CLK_TREE_SUPPORTED          1
 #define SOC_ASSIST_DEBUG_SUPPORTED      1
 #define SOC_CPU_LOCKUP_DEBUG_SUPPORTED  1
-// #define SOC_DEBUG_PROBE_SUPPORTED       1      // TODO: [ESP32S31] IDF-14798
+#define SOC_DEBUG_PROBE_SUPPORTED       1
 #define SOC_WDT_SUPPORTED               1
 #define SOC_RTC_WDT_SUPPORTED           1
 #define SOC_SPI_FLASH_SUPPORTED         1
@@ -246,6 +246,10 @@
 #define SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX         (1)
 #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM            (3)
 #define SOC_CLOCKOUT_SUPPORT_CHANNEL_DIVIDER     (1)
+
+/*-------------------------- DEBUG PROBE CAPS ---------------------------------*/
+#define SOC_DEBUG_PROBE_NUM_UNIT                 (2U)  // Unit 0: HP probe, Unit 1: LP probe
+#define SOC_DEBUG_PROBE_MAX_OUTPUT_WIDTH         (16)  // Maximum width of the debug probe output in each unit
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 #define SOC_RTCIO_PIN_COUNT                 8

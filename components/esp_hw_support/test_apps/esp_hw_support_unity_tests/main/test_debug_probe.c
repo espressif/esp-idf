@@ -34,9 +34,9 @@ TEST_CASE("debug probe install & uninstall", "[debug_probe]")
     for (int i = 0; i < SOC_DEBUG_PROBE_NUM_UNIT; i++) {
         debug_probe_channel_config_t chan_config = {0};
         if (i == 0) {
-            chan_config.target_module.hp_target = DEBUG_PROBE_TARGET_AXI_GDMA;
+            chan_config.target_module.hp_target = DEBUG_PROBE_TARGET_HP_CORE;
         } else {
-            chan_config.target_module.lp_target = DEBUG_PROBE_TARGET_LP_PMU;
+            chan_config.target_module.lp_target = DEBUG_PROBE_TARGET_LP_CORE;
         }
         for (int j = 0; j < DEBUG_PROBE_LL_CHANNELS_PER_UNIT; j++) {
             TEST_ESP_OK(debug_probe_new_channel(probe_units[i], &chan_config, &probe_chans[i][j]));
@@ -52,7 +52,7 @@ TEST_CASE("debug probe install & uninstall", "[debug_probe]")
     }
 }
 
-TEST_CASE("debug probe read", "[debug_probe]")
+TEST_CASE("debug probe HP read", "[debug_probe]")
 {
     debug_probe_unit_config_t unit_config = {
         .unit_id = DEBUG_PROBE_UNIT_HP,
@@ -63,9 +63,13 @@ TEST_CASE("debug probe read", "[debug_probe]")
 
     // allocate two channels from the unit, each channel monitor different target module
     debug_probe_channel_handle_t probe_chans[2] = {0};
+    const debug_probe_target_hp_t targets[2] = {
+        DEBUG_PROBE_TARGET_HP_MSPI_FLASH,
+        DEBUG_PROBE_TARGET_HP_CORE,
+    };
     for (int i = 0; i < 2; i++) {
         debug_probe_channel_config_t chan_config = {0};
-        chan_config.target_module.hp_target = (debug_probe_target_t)(i + 1);
+        chan_config.target_module.hp_target = targets[i];
         TEST_ESP_OK(debug_probe_new_channel(probe_unit, &chan_config, &probe_chans[i]));
 
         // group15[7:0] contains the debug target module ID
@@ -81,9 +85,48 @@ TEST_CASE("debug probe read", "[debug_probe]")
     uint32_t probe_result = 0;
     TEST_ESP_OK(debug_probe_unit_read(probe_unit, &probe_result));
     printf("probe result: 0x%"PRIx32"\r\n", probe_result);
-    TEST_ASSERT_EQUAL_HEX32(0x20001, probe_result);
+    TEST_ASSERT_EQUAL_HEX32(0xE0006, probe_result);
 
     // free resources
+    for (int i = 0; i < 2; i++) {
+        TEST_ESP_OK(debug_probe_del_channel(probe_chans[i]));
+    }
+    TEST_ESP_OK(debug_probe_del_unit(probe_unit));
+}
+
+TEST_CASE("debug probe LP read", "[debug_probe]")
+{
+    debug_probe_unit_config_t unit_config = {
+        .unit_id = DEBUG_PROBE_UNIT_LP,
+        .probe_out_gpio_nums = DEBUG_PROBE_GPIO_NUMS_NONE,
+    };
+    debug_probe_unit_handle_t probe_unit = NULL;
+    TEST_ESP_OK(debug_probe_new_unit(&unit_config, &probe_unit));
+
+    debug_probe_channel_handle_t probe_chans[2] = {0};
+    const debug_probe_target_lp_t targets[2] = {
+        DEBUG_PROBE_TARGET_LP_PMU,
+        DEBUG_PROBE_TARGET_LP_CORE,
+    };
+    for (int i = 0; i < 2; i++) {
+        debug_probe_channel_config_t chan_config = {0};
+        chan_config.target_module.lp_target = targets[i];
+        TEST_ESP_OK(debug_probe_new_channel(probe_unit, &chan_config, &probe_chans[i]));
+
+        TEST_ESP_OK(debug_probe_chan_add_signal_by_byte(probe_chans[i], 0, 15));
+        TEST_ESP_OK(debug_probe_chan_add_signal_by_byte(probe_chans[i], 1, 15));
+        TEST_ESP_OK(debug_probe_chan_add_signal_by_byte(probe_chans[i], 2, 15));
+        TEST_ESP_OK(debug_probe_chan_add_signal_by_byte(probe_chans[i], 3, 15));
+    }
+
+    TEST_ESP_OK(debug_probe_unit_merge16(probe_unit,
+                                         probe_chans[0], DEBUG_PROBE_SPLIT_LOWER16,
+                                         probe_chans[1], DEBUG_PROBE_SPLIT_LOWER16));
+    uint32_t probe_result = 0;
+    TEST_ESP_OK(debug_probe_unit_read(probe_unit, &probe_result));
+    printf("LP probe result: 0x%"PRIx32"\r\n", probe_result);
+    TEST_ASSERT_EQUAL_HEX32(0x1F0025, probe_result);
+
     for (int i = 0; i < 2; i++) {
         TEST_ESP_OK(debug_probe_del_channel(probe_chans[i]));
     }

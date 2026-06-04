@@ -224,8 +224,7 @@ esp_err_t debug_probe_chan_add_signal_by_byte(debug_probe_channel_handle_t chan,
 {
     ESP_RETURN_ON_FALSE(chan, ESP_ERR_INVALID_ARG, TAG, "invalid args");
     debug_probe_unit_t *unit = chan->unit;
-    ESP_RETURN_ON_FALSE(byte_idx < ((unit->unit_id == DEBUG_PROBE_UNIT_LP) ? 2 : 4),
-                        ESP_ERR_INVALID_ARG, TAG, "byte_idx out of range");
+    ESP_RETURN_ON_FALSE(byte_idx < 4, ESP_ERR_INVALID_ARG, TAG, "byte_idx out of range");
     ESP_RETURN_ON_FALSE(sig_group < 16, ESP_ERR_INVALID_ARG, TAG, "sig_group out of range");
     debug_probe_ll_channel_add_signal_group(unit->unit_id, chan->chan_id, byte_idx, sig_group);
     return ESP_OK;
