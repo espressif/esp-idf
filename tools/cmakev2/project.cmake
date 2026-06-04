@@ -117,9 +117,7 @@ function(__init_project_configuration)
     endif()
     idf_build_set_property(LINKER_TYPE "${linker_type}")
 
-    list(APPEND compile_definitions "_GLIBCXX_USE_POSIX_SEMAPHORE"  # These two lines enable libstd++ to use
-                                    "_GLIBCXX_HAVE_POSIX_SEMAPHORE" # posix-semaphores from components/pthread
-                                    "_GNU_SOURCE")
+    list(APPEND compile_definitions "_GNU_SOURCE")
 
     list(APPEND compile_definitions "ESP_PLATFORM")
     list(APPEND compile_definitions "IDF_VER=\"${idf_ver}\"")

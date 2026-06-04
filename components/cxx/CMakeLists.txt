@@ -17,6 +17,11 @@ endif()
 idf_component_register(SRCS ${srcs}
                        PRIV_REQUIRES ${priv_requires})
 
+# These two definitions enable libstd++ to use posix-semaphores from components/pthread
+set(cxx_compile_definitions "_GLIBCXX_USE_POSIX_SEMAPHORE"
+                            "_GLIBCXX_HAVE_POSIX_SEMAPHORE")
+idf_build_set_property(COMPILE_DEFINITIONS "${cxx_compile_definitions}" APPEND)
+
 if(esp_tee_build OR NOT CONFIG_CXX_EXCEPTIONS)
     set(WRAP_FUNCTIONS
         __register_frame_info_bases
