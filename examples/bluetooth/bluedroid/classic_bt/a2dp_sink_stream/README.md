@@ -34,6 +34,8 @@ Detailed information can be viewed through the [../common/README.md](../common/R
 
 ### Hardware Required
 
+#### ESP32
+
 To play the sound, there is a need of loudspeaker and possibly an external I2S codec. Otherwise the example will only show a count of audio data packets received silently. Internal DAC can be selected and in this case external I2S codec may not be needed.
 
 For the I2S codec, pick whatever chip or board works for you; this code was written using a PCM5102 chip, but other I2S boards and chips will probably work as well. The default I2S connections are shown below, but these can be changed in menuconfig:
@@ -45,6 +47,10 @@ For the I2S codec, pick whatever chip or board works for you; this code was writ
 | GPIO26    | BCK          |
 
 If the internal DAC is selected, analog audio will be available on GPIO25 and GPIO26. The output resolution on these pins will always be limited to 8 bit because of the internal structure of the DACs.
+
+#### ESP32-S31
+
+The default output is idle. If I2S is used, it can be configured through menuconfig. Currently, DAC is not supported.
 
 ### Configure the project
 
@@ -84,8 +90,8 @@ I (126697) BT_AV: Audio packet count 300
 I (128697) BT_AV: Audio packet count 400
 ```
 
-Also, the sound will be heard if a loudspeaker is connected and possible external I2S codec is correctly configured. For ESP32 A2DP source example, the sound is noise as the audio source generates the samples with a random sequence.
+Also, the sound will be heard if a loudspeaker is connected and possible external I2S codec is correctly configured. For [A2DP source example](../a2dp_source), the sound is noise as the audio source generates the samples with a random sequence.
 
 ## Troubleshooting
-* For current stage, the supported audio codec in ESP32 A2DP is SBC. SBC data stream is transmitted to A2DP sink and then decoded into PCM samples as output. The PCM data format is normally of 44.1kHz sampling rate, two-channel 16-bit sample stream. Other SBC configurations in ESP32 A2DP sink is supported but need additional modifications of protocol stack settings.
-* As a usage limitation, ESP32 A2DP sink can support at most one connection with remote A2DP source devices. Also, A2DP sink cannot be used together with A2DP source at the same time, but can be used with other profiles such as SPP and HFP.
+* At the current stage, the supported audio codecs are SBC and AAC. If the internal A2DP codec is used, only SBC is supported; if the external A2DP codec is used, both SBC and AAC are supported, which can be achieved by registering Stream Endpoints (SEPs). Additionally, both internal and external codec options can be reconfigured via API calls.
+* As a usage limitation, A2DP sink can support at most one connection with remote A2DP source devices. Also, A2DP sink cannot be used together with A2DP source at the same time, but can be used with other profiles such as SPP and HFP.

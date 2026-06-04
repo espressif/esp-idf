@@ -11,7 +11,7 @@ This demo sends back the audio data back to the HFP AG device, so you can hear y
 
 ### Hardware Required
 
-This example is designed to run on commonly available ESP32 development board, e.g. ESP32-DevKitC. To operate it should be connected to an AG running on a smartphone or on another ESP32 development board loaded with Hands Free Audio Gateway (hfp_ag) example from ESP-IDF.
+This example is designed to run on commonly available ESP32 and ESP32-S31 development boards, e.g. ESP32-DevKitC and so on. To operate it should be connected to an AG running on a smartphone or on another ESP32 or ESP32-S31 development board loaded with Hands Free Audio Gateway (hfp_ag) example from ESP-IDF.
 
 ### Configure the project
 
@@ -25,7 +25,7 @@ idf.py menuconfig
 
 #### Data Path
 
-ESP32 HFP supports two types of audio datapath: PCM and HCI.
+ESP32 HFP supports two types of audio datapath: PCM and HCI. Currently, ESP32-S31 HFP only supports HCI.
 
 The default configuration is `PCM`, if you want to use `vHCI` you should configure the data path before building and downloading the binary.
 
@@ -37,7 +37,7 @@ The default configuration is `PCM`, if you want to use `vHCI` you should configu
 
     `Component config --> Bluetooth --> Bluedroid Options --> Hands Free/Handset Profile --> audio(SCO) data path --> PCM`.
 
-- `vHCI`: To use vHCI, audio data stream will be directed from Bluetooth Controller through vHCI on ESP32 and go through the Bluedroid to the Application layer. In menuconfig, you should choose vHCI in `menuconfig`:
+- `vHCI`: To use vHCI, audio data stream will be directed from Bluetooth Controller through vHCI and go through the Bluedroid to the Application layer. In menuconfig, you should choose vHCI in `menuconfig`:
 
     `Component config --> Bluetooth controller --> BR/EDR Sync(SCO/eSCO) default data path --> HCI`
 
@@ -78,7 +78,7 @@ Step to initialize PBA Client connection:
 
 ### Codec Choice
 
-ESP32 supports two types of codec for HFP audio data: `CVSD` and `mSBC`.
+Supported targets provide two types of codec for HFP audio data: `CVSD` and `mSBC`.
 
 `CVSD` is the default setting and is also the widely used codec for voice audio. But, `mSBC` is designed to have a better voice quality through `HFP`. To select which one is in use, we provide `Wide Band Speech` item in the `menuconfig` path:
 
@@ -200,12 +200,12 @@ I (133262) BT_HF: --audio state disconnected
 
 #### Choice of Codec
 
-ESP32 supports both CVSD and mSBC codec. HF Unit and AG device determine which codec to use by exchanging features during service level connection. The choice of codec also depends on the your configuration in `menuconfig`.
+Supported targets support both CVSD and mSBC codec. HF Unit and AG device determine which codec to use by exchanging features during service level connection. The choice of codec also depends on the your configuration in `menuconfig`.
 
 Since CVSD is the default codec in HFP, we just show the scenarios using mSBC:
 
 - If you enable `BT_HFP_WBS_ENABLE` in `menuconfig`, mSBC will be available.
-- If both HF Unit and AG support mSBC and `BT_HFP_WBS_ENABLE` is enabled, ESP32 chooses mSBC.
+- If both HF Unit and AG support mSBC and `BT_HFP_WBS_ENABLE` is enabled, the local device chooses mSBC.
 - If you use PCM data path, mSBC is not available.
 
 ### Answer or Reject an incoming call

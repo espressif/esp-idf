@@ -23,6 +23,8 @@ Detailed information can be viewed through the [../common/README.md](../common/R
 
 ### Hardware Required
 
+#### ESP32
+
 To play the sound, there is a need of loudspeaker and possibly an external I2S codec. Otherwise the example will only show a count of audio data packets received silently. Internal DAC can be selected and in this case external I2S codec may not be needed.
 
 For the I2S codec, pick whatever chip or board works for you; this code was written using a PCM5102 chip, but other I2S boards and chips will probably work as well. The default I2S connections are shown below, but these can be changed in menuconfig:
@@ -34,6 +36,10 @@ For the I2S codec, pick whatever chip or board works for you; this code was writ
 | GPIO26    | BCK          |
 
 If the internal DAC is selected, analog audio will be available on GPIO25 and GPIO26. The output resolution on these pins will always be limited to 8 bit because of the internal structure of the DACs.
+
+#### ESP32-S31
+
+The default output is idle. If I2S is used, it can be configured through menuconfig. Currently, DAC is not supported.
 
 ### Configure the project
 

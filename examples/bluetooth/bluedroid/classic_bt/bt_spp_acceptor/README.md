@@ -9,7 +9,7 @@ This example is to show how to use the APIs of **Serial Port Protocol** (**SPP**
 
 ### Hardware Required
 
-This example is designed to run on commonly available ESP32 development board, e.g. ESP32-DevKitC. To operate the example, it should be connected to an SPP Initiator running on a smartphone, a computer or on another ESP32 development board.
+This example is designed to run on commonly available ESP32 and ESP32-S31 development boards, e.g. ESP32-DevKitC and so on. To operate the example, it should be connected to an SPP Initiator running on a smartphone, a computer or on another ESP32 or ESP32-S31 development board.
 
 ### Configure the project
 
@@ -50,7 +50,7 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 
 ## Example Description
 
-After the program starts, the example will start an SPP acceptor. The example will calculate the data rate or just print the received data after the SPP connection is established. You can connect to the server and send data with another ESP32 development board, Android phone or computer which performs as the SPP initiator.
+After the program starts, the example will start an SPP acceptor. The example will calculate the data rate or just print the received data after the SPP connection is established. You can connect to the server and send data with another ESP32 or ESP32-S31 development board, Android phone or computer which performs as the SPP initiator.
 
 ## Trouble shooting
 
@@ -58,10 +58,10 @@ After the program starts, the example will start an SPP acceptor. The example wi
 
 ## FAQ
 Q: How to change the process of SSP?
-A: Users can set the IO Capability and Security Mask for their device (fixed Security Mode, Security Mode 4). In short, the Security Mask sets the security level for authentication stage and the IO Capability determines the way of user interaction during pairing. The default Security Mask of this demo is `ESP_SPP_SEC_AUTHENTICATE` which support MITM (Man In The Middle) protection. For more information about Security Simple Pair on ESP32, please refer to [ESP32_SSP](./ESP32_SSP.md).
+A: Users can set the IO Capability and Security Mask for their device (fixed Security Mode, Security Mode 4). In short, the Security Mask sets the security level for authentication stage and the IO Capability determines the way of user interaction during pairing. The default Security Mask of this demo is `ESP_SPP_SEC_AUTHENTICATE` which support MITM (Man In The Middle) protection. For more information about Security Simple Pair on supported chips, please refer to [ESP32_SSP](./ESP32_SSP.md).
 
 
-Q: How many SPP servers does ESP32 support?
+Q: How many SPP servers does esp-idf Bluedroid support?
 A: For now, the maximum number of SPP servers is 6, which is limited by the maximum number of SDP records. When the SPP server is successfully started, the unique SCN (Server Channel Number) will be mapped to the SPP server.
 
 Q: Is SPP absolutely reliable?

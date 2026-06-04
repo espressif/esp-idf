@@ -209,9 +209,11 @@ void app_main(void)
     /* Bluetooth device name, connection mode and profile set up */
     bt_app_work_dispatch(bt_hf_client_hdl_stack_evt, BT_APP_EVT_STACK_UP, NULL, 0, NULL, NULL);
 
-#if CONFIG_BT_HFP_AUDIO_DATA_PATH_PCM
+#if CONFIG_EXAMPLE_HFP_PCM_GPIO_SUPPORTED && CONFIG_BT_HFP_AUDIO_DATA_PATH_PCM
     /* configure the PCM interface and PINs used */
     app_gpio_pcm_io_cfg();
+#elif CONFIG_BT_HFP_AUDIO_DATA_PATH_PCM
+    ESP_LOGW(BT_HF_TAG, "PCM GPIO is not supported on this chip; use HCI SCO data path");
 #endif
 
     /* configure external chip for acoustic echo cancellation */
