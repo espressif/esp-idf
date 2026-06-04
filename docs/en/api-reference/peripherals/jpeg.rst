@@ -233,126 +233,247 @@ Both decoder and encoder are not cause too much CPU involvement. Only header par
 JPEG decoder performance
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. list-table::
-    :header-rows: 1
-    :widths: 25 25 25 25 25
-    :align: center
+.. only:: esp32p4
 
-    * - JPEG Height
-      - JPEG Width
-      - Pixel Format in [#]_
-      - Pixel Format out [#]_
-      - Performance (fps)
-    * - 1080
-      - 1920
-      - YUV422
-      - RGB888/RGB565
-      - 48
-    * - 720
-      - 1280
-      - YUV422
-      - RGB888/RGB565
-      - 109
-    * - 480
-      - 800
-      - YUV422
-      - RGB888/RGB565
-      - 253
-    * - 480
-      - 640
-      - YUV422
-      - RGB888/RGB565
-      - 307
-    * - 480
-      - 320
-      - YUV422
-      - RGB888/RGB565
-      - 571
-    * - 720
-      - 1280
-      - GRAY
-      - GRAY
-      - 161
+  .. list-table::
+      :header-rows: 1
+      :widths: 25 25 25 25 25
+      :align: center
 
-.. [#] Format of the already compressed image
-.. [#] Format after decompressing
+      * - JPEG Height
+        - JPEG Width
+        - Pixel Format in [#]_
+        - Pixel Format out [#]_
+        - Performance (fps)
+      * - 1080
+        - 1920
+        - YUV422
+        - RGB888/RGB565
+        - 48
+      * - 720
+        - 1280
+        - YUV422
+        - RGB888/RGB565
+        - 109
+      * - 480
+        - 800
+        - YUV422
+        - RGB888/RGB565
+        - 253
+      * - 480
+        - 640
+        - YUV422
+        - RGB888/RGB565
+        - 307
+      * - 480
+        - 320
+        - YUV422
+        - RGB888/RGB565
+        - 571
+      * - 720
+        - 1280
+        - GRAY
+        - GRAY
+        - 161
+
+  .. [#] Format of the already compressed image
+  .. [#] Format after decompressing
+
+.. only:: esp32s31
+
+  .. list-table::
+      :header-rows: 1
+      :widths: 25 25 25 25 25
+      :align: center
+
+      * - JPEG Height
+        - JPEG Width
+        - Pixel Format in [#]_
+        - Pixel Format out [#]_
+        - Performance (fps)
+      * - 1080
+        - 1920
+        - YUV422
+        - RGB888/RGB565
+        - 28
+      * - 720
+        - 1280
+        - YUV422
+        - RGB888/RGB565
+        - 62
+      * - 480
+        - 800
+        - YUV422
+        - RGB888/RGB565
+        - 138
+      * - 480
+        - 320
+        - YUV422
+        - RGB888/RGB565
+        - 286
+      * - 720
+        - 1280
+        - GRAY
+        - GRAY
+        - 96
+
+  .. [#] Format of the already compressed image
+  .. [#] Format after decompressing
 
 JPEG encoder performance
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. list-table::
-    :header-rows: 1
-    :widths: 25 25 25 25 25
-    :align: center
+.. only:: esp32p4
 
-    * - JPEG Height
-      - JPEG Width
-      - Pixel Format in [#]_
-      - Pixel Format out [#]_
-      - Performance (fps)
-    * - 1080
-      - 1920
-      - RGB888
-      - YUV422
-      - 26
-    * - 1080
-      - 1920
-      - RGB565
-      - YUV422
-      - 36
-    * - 1080
-      - 1920
-      - RGB565
-      - YUV420
-      - 40
-    * - 1080
-      - 1920
-      - RGB565
-      - YUV444
-      - 24
-    * - 1080
-      - 1920
-      - RGB888
-      - YUV422
-      - 26
-    * - 720
-      - 1280
-      - RGB565
-      - YUV420
-      - 88
-    * - 720
-      - 1280
-      - RGB565
-      - YUV444
-      - 55
-    * - 720
-      - 1280
-      - RGB565
-      - YUV422
-      - 81
-    * - 480
-      - 800
-      - RGB888
-      - YUV420
-      - 142
-    * - 640
-      - 800
-      - RGB888
-      - YUV420
-      - 174
-    * - 480
-      - 320
-      - RGB888
-      - YUV420
-      - 315
-    * - 720
-      - 1280
-      - GRAY
-      - GRAY
-      - 163
+  .. list-table::
+      :header-rows: 1
+      :widths: 25 25 25 25 25
+      :align: center
 
-.. [#] Format of Original Image
-.. [#] Down sampling method
+      * - JPEG Height
+        - JPEG Width
+        - Pixel Format in [#]_
+        - Pixel Format out [#]_
+        - Performance (fps)
+      * - 1080
+        - 1920
+        - RGB888
+        - YUV422
+        - 26
+      * - 1080
+        - 1920
+        - RGB565
+        - YUV422
+        - 36
+      * - 1080
+        - 1920
+        - RGB565
+        - YUV420
+        - 40
+      * - 1080
+        - 1920
+        - RGB565
+        - YUV444
+        - 24
+      * - 1080
+        - 1920
+        - RGB888
+        - YUV422
+        - 26
+      * - 720
+        - 1280
+        - RGB565
+        - YUV420
+        - 88
+      * - 720
+        - 1280
+        - RGB565
+        - YUV444
+        - 55
+      * - 720
+        - 1280
+        - RGB565
+        - YUV422
+        - 81
+      * - 480
+        - 800
+        - RGB888
+        - YUV420
+        - 142
+      * - 640
+        - 800
+        - RGB888
+        - YUV420
+        - 174
+      * - 480
+        - 320
+        - RGB888
+        - YUV420
+        - 315
+      * - 720
+        - 1280
+        - GRAY
+        - GRAY
+        - 163
+
+  .. [#] Format of Original Image
+  .. [#] Down sampling method
+
+.. only:: esp32s31
+
+  .. list-table::
+      :header-rows: 1
+      :widths: 25 25 25 25 25
+      :align: center
+
+      * - JPEG Height
+        - JPEG Width
+        - Pixel Format in [#]_
+        - Pixel Format out [#]_
+        - Performance (fps)
+      * - 1080
+        - 1920
+        - RGB888
+        - YUV422
+        - 21
+      * - 1080
+        - 1920
+        - RGB565
+        - YUV422
+        - 21
+      * - 1080
+        - 1920
+        - RGB565
+        - YUV420
+        - 25
+      * - 720
+        - 1280
+        - RGB565
+        - YUV420
+        - 62
+      * - 720
+        - 1280
+        - RGB565
+        - YUV422
+        - 47
+      * - 480
+        - 800
+        - RGB888
+        - YUV444
+        - 74
+      * - 480
+        - 800
+        - RGB888
+        - YUV422
+        - 108
+      * - 480
+        - 800
+        - RGB888
+        - YUV420
+        - 126
+      * - 480
+        - 320
+        - RGB888
+        - YUV444
+        - 173
+      * - 480
+        - 320
+        - RGB888
+        - YUV422
+        - 241
+      * - 480
+        - 320
+        - RGB888
+        - YUV420
+        - 273
+      * - 720
+        - 1280
+        - GRAY
+        - GRAY
+        - 92
+
+  .. [#] Format of Original Image
+  .. [#] Down sampling method
 
 .. _jpeg-pixel-storage-layout:
 
