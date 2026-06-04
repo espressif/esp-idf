@@ -32,31 +32,44 @@ Keys and Values
 
 NVS operates on key-value pairs. Keys are ASCII strings; the maximum key length is currently 15 characters. Values can have one of the following types:
 
--  integer types: ``uint8_t``, ``int8_t``, ``uint16_t``, ``int16_t``, ``uint32_t``, ``int32_t``, ``uint64_t``, ``int64_t``
--  zero-terminated string
--  variable length binary data (blob)
--  floating point types: ``float`` and ``double``
+- integer types: ``uint8_t``, ``int8_t``, ``uint16_t``, ``int16_t``, ``uint32_t``, ``int32_t``, ``uint64_t``, ``int64_t``
+- floating point types: ``float`` and ``double``
+- zero-terminated C-like string
+- variable length binary data - blob
 
 .. note::
 
-    NVS works best for storing many small values, rather than a few large values of the type ``string`` and ``blob``. If you need to store large blobs or strings, consider using the facilities provided by the FAT filesystem on top of the wear levelling library.
-
-.. note::
-
-    String values are currently limited to 4000 bytes. This includes the null terminator. Blob values are limited to 508,000 bytes or 97.6% of the partition size - 4000 bytes, whichever is lower.
-
-.. note::
-
-    Before setting new or updating existing key-value pair, free entries in nvs pages have to be available. For integer types, at least one free entry has to be available. For the string value, at least one page capable of keeping the whole string in a contiguous row of free entries has to be available. For the blob value, the size of new data has to be available in free entries.
+    NVS works best for storing a moderate, relatively stable set of small values — such as device configuration, calibration data or state flags — rather than a few large ``string`` or ``blob`` values. "Small values" here does not imply that NVS is a good fit for continuously growing or frequently rewritten datasets, such as event logs or periodic running measurements: accumulating such records quickly fills and fragments the partition, makes space reclaim run more often, and increases flash wear. If you need to store large blobs or strings, or to keep appending data over time, consider using one of the filesystems available in ESP-IDF instead.
 
 .. note::
 
     The floating point types ``float`` and ``double`` are supported regardless of the FPU presence on a particular SoC.
 
-Keys are required to be unique. Assigning a new value to an existing key replaces the old value and data type with the value and data type specified by a write operation.
+Keys must be unique within their namespace. Writing a new value to an existing key replaces the previous key-value pair. The actual data type is determined by the most recent write operation.
 
-A data type check is performed when reading a value. An error is returned if the data type expected by read operation does not match the data type of entry found for the key provided.
+A data type check is performed when reading a value. An error ``ESP_ERR_NVS_TYPE_MISMATCH`` is returned if the data type expected by the read operation does not match the data type of the entry found for the key provided.
 
+Record Size Limitations
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The maximum size of a single stored value depends on its data type:
+
+.. list-table::
+    :header-rows: 1
+    :widths: 30 70
+
+    * - Data type
+      - Maximum value size
+    * - Integer and floating point
+      - Fixed by the type (1 to 8 bytes); always stored in a single entry.
+    * - String
+      - 4000 bytes, including the null terminator.
+    * - Blob
+      - 508,000 bytes, or 97.6% of the partition size minus 4000 bytes, whichever is lower.
+
+.. note::
+
+    The string and blob limits above are absolute upper bounds valid on an empty (non-fragmented) data partition. The size that can actually be stored at run time is typically lower and depends on how the partition is fragmented. See :ref:`nvs_space_consumption` for how NVS allocates entries and why fragmentation matters.
 
 Namespaces
 ^^^^^^^^^^
@@ -261,6 +274,8 @@ You can find code examples in the :example:`storage/nvs` directory of ESP-IDF ex
 
   Usage statistics are obtained prior to and post writing, with the differences being compared to expected values of newly used entries.
 
+  The second part of example shows the effect of NVS partition fragmentation to the blob storage overhead.
+
 :example:`storage/nvs/nvs_iteration`
 
   This example demonstrates how to iterate over entries of specific (or any) NVS data type and how to obtain info about such entries.
@@ -281,7 +296,7 @@ NVS stores key-value pairs sequentially, with new key-value pairs being added at
 
 .. note::
 
-    NVS component includes flash wear levelling by design. Set operations are appending new data to the free space after existing entries. Invalidation of old values doesn't require immediate flash erase operations. The organization of NVS space to pages and entries effectively reduces the frequency of flash erase to flash write operations for data types fitting one entry by a factor of 126.
+    The NVS component includes flash wear levelling by design. Set operations append new data to the free space after existing entries, and invalidation of old values does not trigger immediate flash erase operations. The organization of NVS space into pages and entries reduces the frequency of flash erase to flash write operations for data types fitting one entry by up to a factor of 126 in the ideal case (one page of single-entry writes per erase). The actual factor is lower in practice and is primarily driven by how full the partition is: as live data grows, NVS space reclaim runs more often, and the erase/write ratio worsens. Large, never-overwritten data chunks may occupy the same NVS page indefinitely — reclaim only selects pages that contain erased entries, so such pages never participate in the erase cycle and therefore reduce the share of flash memory subject to wear levelling.
 
 Pages and Entries
 ^^^^^^^^^^^^^^^^^
@@ -440,6 +455,29 @@ Data
         (Only for strings and blobs.) Checksum calculated over all bytes of data.
 
 Variable length values (strings and blobs) are written into subsequent entries, 32 bytes per entry. The ``Span`` field of the first entry indicates how many entries are used.
+
+
+.. _nvs_space_consumption:
+
+Space Consumption
+^^^^^^^^^^^^^^^^^
+
+NVS stores every record as one or more 32-byte entries within a 4096-byte data page (126 usable entries per page). The number of entries a value occupies, and the number of free entries required to store it, depends on the data type:
+
+- Integer and floating point values use one self-contained entry; a single free entry available anywhere is enough to store them.
+- A string uses one metadata entry followed by ``ceil(payload_size / entry_size)`` data entries (the null terminator counts toward the payload). All of them have to be available as a contiguous run within a single page.
+- A blob uses one ``BLOB_INDEX`` metadata entry plus one or more data chunks; each chunk is a metadata entry followed by its payload entries and lives on a different page. Storing a blob therefore needs ``1 + k + ceil(blob_size / entry_size)`` entries, where ``k`` is the number of pages the data is split across.
+
+Before setting a new key-value pair or updating an existing one, NVS looks for a page with enough free (or reclaimable) entries. The space reclaim algorithm is designed for sudden-power-off resiliency and consolidates free space on a single candidate page per call, so the largest contiguous run of available entries is determined on a per-page basis. This has two consequences:
+
+- The effective maximum string length is bound by the highest sum of free and deleted entries offered by any single page.
+- A blob is split into chunks sized to the entries available on each page after reclaim, and the split continues until the whole value is stored. This lets NVS reuse pages with as few as two free entries, at the cost of one metadata entry per chunk. In the extreme case, the metadata overhead can exceed 100% of the payload size.
+
+Because of this per-page behavior, the actual limits are lower than the absolute maximums listed in `Record Size Limitations`_ and get tighter as the partition fills up and fragments. The related effect on flash endurance is described in the wear levelling note under `Log of Key-Value Pairs`_.
+
+.. note::
+
+    As it is difficult to resize the NVS partition on devices deployed in the field, make its initial size large enough to accommodate the current needs as well as the potential growth of keys or their data. It is also recommended to run a sufficient number of tests that realistically reflect the frequency of writing and updating NVS keys. Before testing a software update (e.g., via OTA), start these tests on a data partition already fragmented by the previous version of the software.
 
 
 Namespaces

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -15,7 +15,10 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <inttypes.h>
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_check.h"
@@ -26,6 +29,26 @@
 
 #define MOCK_DATA_NAMESPACE "_mock_data"
 #define MOCK_DATA_BACKUP_NAMESPACE "_mock_backup"
+
+/* NVS on-flash geometry. These are by-design constants of the NVS format (one
+ * 4096-byte flash sector per page, 32-byte entries, 126 usable entries per
+ * page). They are not exposed through the public API, so they are mirrored here
+ * to allow precise control over page-level fragmentation below. */
+#define NVS_ENTRY_SIZE              32
+#define NVS_ENTRIES_PER_PAGE        126
+#define NVS_PAGE_CHUNK_MAX_SIZE     (NVS_ENTRY_SIZE * (NVS_ENTRIES_PER_PAGE - 1)) // 4000 B
+
+/* String lengths (strlen, excluding the NUL terminator) used to fragment a
+ * partition. A string of length L occupies 1 header entry + ceil((L+1)/32) data
+ * entries and must fit contiguously within a single page.
+ *  - FRAG_STR_LEN fills a fresh page to 124 entries, leaving exactly 2 free.
+ *  - FRAG_STR_FIRST_LEN is one entry shorter to account for the namespace entry
+ *    that is written on the first page, so that page also keeps 2 free entries. */
+#define FRAG_STR_LEN                (123 * NVS_ENTRY_SIZE - 1) // 3935 -> 124 entries
+#define FRAG_STR_FIRST_LEN          (122 * NVS_ENTRY_SIZE - 1) // 3903 -> 123 entries
+
+#define FRAG_NAMESPACE              "_frag"
+#define BLOB_NAMESPACE              "_blobs"
 
 static const char *TAG = "nvs_statistics_example";
 
@@ -195,6 +218,200 @@ static esp_err_t read_mock_data_from_namespace(const char* namespace_name)
     return ESP_OK;
 }
 
+#if CONFIG_EXAMPLE_RUN_OVERHEAD_MEASUREMENT
+
+// Partitions of various sizes (declared in partitions.csv) swept by the measurement.
+static const char* measured_partitions[] = {
+    "nvs_16k",
+    "nvs_32k",
+    "nvs_64k",
+};
+
+// Blob sizes (in bytes) measured for each partition.
+static const size_t blob_sizes[] = {128, 256, 512, 1024, 2048, 4096};
+
+// Theoretical entries consumed by a single blob in a non-fragmented partition:
+// 1 BLOB_INDEX entry + 'chunks' chunk-header entries + ceil(size/32) data entries.
+static size_t entries_per_blob_ideal(size_t blob_size)
+{
+    size_t chunks = (blob_size + NVS_PAGE_CHUNK_MAX_SIZE - 1) / NVS_PAGE_CHUNK_MAX_SIZE;
+    if (chunks == 0) {
+        chunks = 1;
+    }
+    size_t data_entries = (blob_size + NVS_ENTRY_SIZE - 1) / NVS_ENTRY_SIZE;
+    return 1 + chunks + data_entries;
+}
+
+// Pre-populate a partition with large strings so that every page is filled up to
+// its last 2 entries. Returns the number of strings written.
+static size_t fragment_partition(const char* partition_name)
+{
+    nvs_handle_t handle;
+    esp_err_t err = nvs_open_from_partition(partition_name, FRAG_NAMESPACE, NVS_READWRITE, &handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Error (%s) opening fragmentation handle on '%s'!", esp_err_to_name(err), partition_name);
+        return 0;
+    }
+
+    char* buffer = malloc(FRAG_STR_LEN + 1);
+    if (buffer == NULL) {
+        ESP_LOGE(TAG, "Failed to allocate fragmentation buffer!");
+        nvs_close(handle);
+        return 0;
+    }
+    memset(buffer, 'A', FRAG_STR_LEN);
+    buffer[FRAG_STR_LEN] = '\0';
+
+    size_t count = 0;
+    char key[16];
+
+    // First string is one entry shorter to compensate for the namespace entry
+    // written on page 0, so that page also retains exactly 2 free entries.
+    buffer[FRAG_STR_FIRST_LEN] = '\0';
+    snprintf(key, sizeof(key), "f%05u", (unsigned)count);
+    err = nvs_set_str(handle, key, buffer);
+    buffer[FRAG_STR_FIRST_LEN] = 'A';
+    if (err == ESP_OK && nvs_commit(handle) == ESP_OK) {
+        count++;
+    }
+
+    // Remaining full-page strings until the partition cannot hold another one.
+    while (true) {
+        snprintf(key, sizeof(key), "f%05u", (unsigned)count);
+        err = nvs_set_str(handle, key, buffer);
+        if (err == ESP_ERR_NVS_NOT_ENOUGH_SPACE) {
+            break;
+        }
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Error (%s) writing fragmentation string!", esp_err_to_name(err));
+            break;
+        }
+        if (nvs_commit(handle) != ESP_OK) {
+            break;
+        }
+        count++;
+    }
+
+    free(buffer);
+    nvs_close(handle);
+    return count;
+}
+
+// Fill a partition with same-sized blobs until it runs out of space.
+// Returns the number of blobs successfully stored.
+static size_t fill_with_blobs(const char* partition_name, size_t blob_size)
+{
+    nvs_handle_t handle;
+    esp_err_t err = nvs_open_from_partition(partition_name, BLOB_NAMESPACE, NVS_READWRITE, &handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Error (%s) opening blob handle on '%s'!", esp_err_to_name(err), partition_name);
+        return 0;
+    }
+
+    uint8_t* blob = malloc(blob_size);
+    if (blob == NULL) {
+        ESP_LOGE(TAG, "Failed to allocate %u B blob buffer!", (unsigned)blob_size);
+        nvs_close(handle);
+        return 0;
+    }
+    memset(blob, 0x5A, blob_size);
+
+    size_t count = 0;
+    char key[16];
+    while (true) {
+        snprintf(key, sizeof(key), "b%05u", (unsigned)count);
+        err = nvs_set_blob(handle, key, blob, blob_size);
+        if (err == ESP_ERR_NVS_NOT_ENOUGH_SPACE) {
+            break;
+        }
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Error (%s) writing blob!", esp_err_to_name(err));
+            break;
+        }
+        err = nvs_commit(handle);
+        if (err == ESP_ERR_NVS_NOT_ENOUGH_SPACE) {
+            break;
+        }
+        count++;
+    }
+
+    free(blob);
+    nvs_close(handle);
+    return count;
+}
+
+// Run one measurement cell: erase + init a partition, optionally fragment it,
+// fill it with blobs of the given size and report heap/entry/overhead statistics.
+static void measure_blob_overhead(const char* partition_name, size_t blob_size, bool fragment)
+{
+    ESP_ERROR_CHECK(nvs_flash_erase_partition(partition_name));
+
+    uint32_t heap_before_init = esp_get_free_heap_size();
+    ESP_ERROR_CHECK(nvs_flash_init_partition(partition_name));
+    uint32_t heap_after_init = esp_get_free_heap_size();
+
+    nvs_stats_t stats;
+    ESP_ERROR_CHECK(nvs_get_stats(partition_name, &stats));
+    size_t total_entries = stats.total_entries;
+
+    size_t frag_strings = 0;
+    if (fragment) {
+        frag_strings = fragment_partition(partition_name);
+    }
+
+    size_t stored = fill_with_blobs(partition_name, blob_size);
+    uint32_t heap_after_fill = esp_get_free_heap_size();
+
+    ESP_ERROR_CHECK(nvs_get_stats(partition_name, &stats));
+
+    size_t per_blob = entries_per_blob_ideal(blob_size);
+    size_t expected = (per_blob != 0) ? (total_entries / per_blob) : 0;
+    size_t payload = stored * blob_size;
+    size_t capacity = total_entries * NVS_ENTRY_SIZE;
+    int overhead_pct = (capacity != 0) ? (int)(100 - (100ULL * payload) / capacity) : 0;
+
+    printf("\n");
+    printf("NVS BLOB TEST - %u B (partition '%s', %s):\n",
+           (unsigned)blob_size, partition_name, fragment ? "fragmented" : "pristine");
+    printf("======================\n");
+    printf("heap before NVS init: %" PRIu32 " B\n", heap_before_init);
+    printf("heap after NVS init:  %" PRIu32 " B (diff %" PRId32 " B)\n",
+           heap_after_init, (int32_t)(heap_before_init - heap_after_init));
+    if (fragment) {
+        printf("fragmentation strings written: %u\n", (unsigned)frag_strings);
+    }
+    printf("\n");
+    printf("available heap after fill: %" PRIu32 " B (diff %" PRId32 " B)\n",
+           heap_after_fill, (int32_t)(heap_after_init - heap_after_fill));
+    printf("expected blobs count: %u\n", (unsigned)expected);
+    printf("stored blobs count:   %u\n", (unsigned)stored);
+    printf("used_entries:  %u (%u B)\n", stats.used_entries, (unsigned)(stats.used_entries * NVS_ENTRY_SIZE));
+    printf("free_entries:  %u (%u B)\n", stats.free_entries, (unsigned)(stats.free_entries * NVS_ENTRY_SIZE));
+    printf("total_entries: %u (%u B)\n", stats.total_entries, (unsigned)(stats.total_entries * NVS_ENTRY_SIZE));
+    printf("STORAGE OVERHEAD: %d%%\n", overhead_pct);
+
+    ESP_ERROR_CHECK(nvs_flash_deinit_partition(partition_name));
+}
+
+static void run_overhead_measurement(void)
+{
+    const size_t partition_count = sizeof(measured_partitions) / sizeof(measured_partitions[0]);
+    const size_t blob_size_count = sizeof(blob_sizes) / sizeof(blob_sizes[0]);
+
+    ESP_LOGI(TAG, "Starting NVS blob storage-overhead measurement...");
+    for (size_t p = 0; p < partition_count; p++) {
+        for (size_t b = 0; b < blob_size_count; b++) {
+            measure_blob_overhead(measured_partitions[p], blob_sizes[b], false);
+#if CONFIG_EXAMPLE_INDUCE_FRAGMENTATION
+            measure_blob_overhead(measured_partitions[p], blob_sizes[b], true);
+#endif
+        }
+    }
+    ESP_LOGI(TAG, "NVS blob storage-overhead measurement done.");
+}
+
+#endif // CONFIG_EXAMPLE_RUN_OVERHEAD_MEASUREMENT
+
 void app_main(void)
 {
     // Erase the contents of the default NVS partition for clean run of this example
@@ -229,6 +446,10 @@ void app_main(void)
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Error (%s) reading back stored data from namespace '%s'!", esp_err_to_name(ret), MOCK_DATA_BACKUP_NAMESPACE);
     }
+
+#if CONFIG_EXAMPLE_RUN_OVERHEAD_MEASUREMENT
+    run_overhead_measurement();
+#endif
 
     ESP_LOGI(TAG, "Returning from app_main().");
 }

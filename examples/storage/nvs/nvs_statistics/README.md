@@ -18,6 +18,42 @@ Statistics obtained via [nvs_get_stats()](https://docs.espressif.com/projects/es
 
 Detailed functional description of NVS and API is provided in [documentation](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/storage/nvs_flash.html).
 
+## Blob Storage-Overhead Measurement
+
+In addition to the basic statistics demonstration, the example can measure how much usable storage a blob actually consumes, taking the NVS metadata and free-space fragmentation into account. This part is enabled by default and can be turned off via `idf.py menuconfig` → *Example Configuration* → *Run NVS blob storage-overhead measurement*.
+
+The measurement sweeps a matrix of **partition sizes** × **blob sizes** and, for each cell, fills the partition to capacity and reports the heap demand, NVS entry usage and the resulting storage overhead.
+
+### Variable partition size
+
+The example uses a custom partition table (`partitions.csv`) that defines several NVS partitions of different sizes (`nvs_16k`, `nvs_32k`, `nvs_64k`). The measurement iterates over them using `nvs_flash_init_partition()` / `nvs_get_stats()`, so the influence of the partition size on the relative overhead becomes directly visible.
+
+### Variable blob size
+
+For each partition, blobs of increasing size (128, 256, 512, 1024, 2048 and 4096 bytes) are stored with unique keys until `nvs_set_blob()` returns `ESP_ERR_NVS_NOT_ENOUGH_SPACE`. The number of stored blobs is then compared against the theoretical (ideal) count derived from the documented per-blob entry cost:
+
+```
+entries_per_blob = 1 (BLOB_INDEX) + k (per-page BLOB_DATA chunk headers) + ceil(blob_size / 32)
+```
+
+where `k` is the number of pages the blob data is split across.
+
+### Worst-case fragmentation
+
+By design, each NVS page is a 4096-byte flash sector holding 126 usable 32-byte entries. A string occupies `1 + ceil((len + 1) / 32)` entries and must fit contiguously within a single page, while a blob may split its data into per-page chunks.
+
+To demonstrate the worst case, the example optionally pre-populates a partition so that **every page is filled up to its last 2 entries** (enabled via *Add a worst-case (pre-fragmented) measurement pass*). This is achieved by writing large strings:
+
+* the first string is sized to leave 2 free entries on page 0 while accounting for the namespace entry,
+* every following string fills a fresh page to 124 entries, leaving exactly 2 free.
+
+After this step the partition reports a large amount of `free_entries`, but the largest contiguous run of free entries on any page is only 2. The consequences are then measured by filling the partition with blobs:
+
+* each blob chunk can only use 1 chunk-header + 1 data entry per page, so roughly half of the consumed space becomes metadata overhead,
+* because the number of chunks per blob is bounded, large blobs may become unstoreable even though many `free_entries` remain.
+
+This makes the relationship between fragmentation, remaining free space and resulting overhead measurable, instead of presenting a single (best-case) number that could create false expectations.
+
 ## How to use example
 
 ### Hardware required
@@ -38,6 +74,8 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example Output
 
+The first part of the output shows the basic statistics demonstration:
+
 ```
 ...
 I (265) nvs_statistics_example: Erasing the contents of the default NVS partition...
@@ -49,71 +87,49 @@ I (485) nvs_statistics_example: Free NVS entries: 755
 I (495) nvs_statistics_example: Available NVS entries: 629
 I (495) nvs_statistics_example: Total NVS entries: 756
 I (505) nvs_statistics_example: Namespace count: 1
-I (505) nvs_statistics_example: Writing mock data key-value pairs to NVS namespace '_mock_data'...
-I (525) nvs_statistics_example: Committing data in NVS namespace '_mock_data'...
-I (525) nvs_statistics_example: Getting post-commit NVS statistics...
-I (525) nvs_statistics_example: NVS statistics:
-I (535) nvs_statistics_example: Used NVS entries: 30
-I (535) nvs_statistics_example: Free NVS entries: 726
-I (545) nvs_statistics_example: Available NVS entries: 600
-I (545) nvs_statistics_example: Total NVS entries: 756
-I (555) nvs_statistics_example: Namespace count: 1
-I (555) nvs_statistics_example: Newly used entries match expectation.
-I (565) nvs_statistics_example: Newly used entries: 29, expected: 29.
-I (575) nvs_statistics_example: NVS handle for namespace '_mock_data' closed.
-I (575) nvs_statistics_example: Opening Non-Volatile Storage (NVS) handle for namespace '_mock_data'...
-I (585) nvs_statistics_example: Reading stored data from NVS namespace '_mock_data'...
-I (595) nvs_statistics_example: Read key-value pair from NVS: 'wifi_ssid':'HomeNetwork'
-I (605) nvs_statistics_example: Read key-value pair from NVS: 'wifi_pass':'MySecretPass'
-I (605) nvs_statistics_example: Read key-value pair from NVS: 'dev_name':'LivingRoomThermostat'
-I (615) nvs_statistics_example: Read key-value pair from NVS: 'temp_unit':'Celsius'
-I (625) nvs_statistics_example: Read key-value pair from NVS: 'target_temp':'22'
-I (635) nvs_statistics_example: Read key-value pair from NVS: 'eco_mode':'false'
-I (635) nvs_statistics_example: Read key-value pair from NVS: 'fw_version':'1.2.3'
-I (645) nvs_statistics_example: Read key-value pair from NVS: 'led_bright':'80'
-I (655) nvs_statistics_example: Read key-value pair from NVS: 'auto_update':'true'
-I (665) nvs_statistics_example: Read key-value pair from NVS: 'last_sync':'2025-01-01T08:00:00Z'
-I (665) nvs_statistics_example: Read key-value pair from NVS: 'user_lang':'en'
-I (675) nvs_statistics_example: Read key-value pair from NVS: 'long_token':'2f8c1e7b5a4d9c6e3b0f1a8e5d7c2b6f4e1a9c7b'
-I (685) nvs_statistics_example: Read key-value pair from NVS: 'very_long_token':'7e2b1c9f5a4d8e3b0f1a6c7e2d9b5a4c8e1f7b2d6c3a9e5b0f1a8c7e2d9b5a4c8e1f7b2d6c3a9e5b'
-I (705) nvs_statistics_example: NVS handle for namespace '_mock_data' closed.
-I (705) nvs_statistics_example: Opening Non-Volatile Storage (NVS) handle for namespace '_mock_backup'...
-I (715) nvs_statistics_example: Getting NVS statistics...
-I (725) nvs_statistics_example: NVS statistics:
-I (725) nvs_statistics_example: Used NVS entries: 31
-I (735) nvs_statistics_example: Free NVS entries: 725
-I (735) nvs_statistics_example: Available NVS entries: 599
-I (745) nvs_statistics_example: Total NVS entries: 756
-I (745) nvs_statistics_example: Namespace count: 2
-I (755) nvs_statistics_example: Writing mock data key-value pairs to NVS namespace '_mock_backup'...
-I (765) nvs_statistics_example: Committing data in NVS namespace '_mock_backup'...
-I (765) nvs_statistics_example: Getting post-commit NVS statistics...
-I (775) nvs_statistics_example: NVS statistics:
-I (775) nvs_statistics_example: Used NVS entries: 60
-I (785) nvs_statistics_example: Free NVS entries: 696
-I (785) nvs_statistics_example: Available NVS entries: 570
-I (795) nvs_statistics_example: Total NVS entries: 756
-I (795) nvs_statistics_example: Namespace count: 2
-I (805) nvs_statistics_example: Newly used entries match expectation.
-I (805) nvs_statistics_example: Newly used entries: 29, expected: 29.
-I (815) nvs_statistics_example: NVS handle for namespace '_mock_backup' closed.
-I (825) nvs_statistics_example: Opening Non-Volatile Storage (NVS) handle for namespace '_mock_backup'...
-I (835) nvs_statistics_example: Reading stored data from NVS namespace '_mock_backup'...
-I (835) nvs_statistics_example: Read key-value pair from NVS: 'wifi_ssid':'HomeNetwork'
-I (845) nvs_statistics_example: Read key-value pair from NVS: 'wifi_pass':'MySecretPass'
-I (855) nvs_statistics_example: Read key-value pair from NVS: 'dev_name':'LivingRoomThermostat'
-I (865) nvs_statistics_example: Read key-value pair from NVS: 'temp_unit':'Celsius'
-I (865) nvs_statistics_example: Read key-value pair from NVS: 'target_temp':'22'
-I (875) nvs_statistics_example: Read key-value pair from NVS: 'eco_mode':'false'
-I (885) nvs_statistics_example: Read key-value pair from NVS: 'fw_version':'1.2.3'
-I (895) nvs_statistics_example: Read key-value pair from NVS: 'led_bright':'80'
-I (895) nvs_statistics_example: Read key-value pair from NVS: 'auto_update':'true'
-I (905) nvs_statistics_example: Read key-value pair from NVS: 'last_sync':'2025-01-01T08:00:00Z'
-I (915) nvs_statistics_example: Read key-value pair from NVS: 'user_lang':'en'
-I (925) nvs_statistics_example: Read key-value pair from NVS: 'long_token':'2f8c1e7b5a4d9c6e3b0f1a8e5d7c2b6f4e1a9c7b'
-I (935) nvs_statistics_example: Read key-value pair from NVS: 'very_long_token':'7e2b1c9f5a4d8e3b0f1a6c7e2d9b5a4c8e1f7b2d6c3a9e5b0f1a8c7e2d9b5a4c8e1f7b2d6c3a9e5b'
-I (945) nvs_statistics_example: NVS handle for namespace '_mock_backup' closed.
-I (955) nvs_statistics_example: Returning from app_main().
-I (955) main_task: Returned from app_main()
+...
+I (565) nvs_statistics_example: Newly used entries match expectation.
 ...
 ```
+
+The second part reports the blob storage overhead for each partition / blob size, in both a pristine and a pre-fragmented partition:
+
+```
+...
+I (1265) nvs_statistics_example: Starting NVS blob storage-overhead measurement...
+
+NVS BLOB TEST - 128 B (partition 'nvs_16k', pristine):
+======================
+heap before NVS init: 299220 B
+heap after NVS init:  255472 B (diff 43748 B)
+
+available heap after fill: 254100 B (diff 1372 B)
+expected blobs count: 21
+stored blobs count:   20
+used_entries:  120 (3840 B)
+free_entries:  6 (192 B)
+total_entries: 126 (4032 B)
+STORAGE OVERHEAD: 36%
+
+NVS BLOB TEST - 128 B (partition 'nvs_16k', fragmented):
+======================
+heap before NVS init: 299220 B
+heap after NVS init:  255472 B (diff 43748 B)
+fragmentation strings written: 3
+
+available heap after fill: 254100 B (diff 1372 B)
+expected blobs count: 21
+stored blobs count:   2
+used_entries:  124 (3968 B)
+free_entries:  2 (64 B)
+total_entries: 126 (4032 B)
+STORAGE OVERHEAD: 98%
+...
+I (9000) nvs_statistics_example: NVS blob storage-overhead measurement done.
+I (9010) nvs_statistics_example: Returning from app_main().
+...
+```
+
+> The exact numbers depend on the target, partition size and blob size; the values above are illustrative. The key takeaway is the difference in `STORAGE OVERHEAD` and `stored blobs count` between the pristine and fragmented passes.
+
+To reset NVS data, erase the contents of flash memory using `idf.py erase-flash`, then upload the program again as described above.

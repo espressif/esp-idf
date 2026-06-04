@@ -1,0 +1,21 @@
+menu "Example Configuration"
+
+    config EXAMPLE_RUN_OVERHEAD_MEASUREMENT
+        bool "Run NVS blob storage-overhead measurement"
+        default y
+        help
+            When enabled, the example sweeps several NVS partition sizes and blob
+            sizes, fills each partition to capacity with blobs and reports the
+            resulting heap demand, entry usage and storage overhead.
+
+    config EXAMPLE_INDUCE_FRAGMENTATION
+        bool "Add a worst-case (pre-fragmented) measurement pass"
+        depends on EXAMPLE_RUN_OVERHEAD_MEASUREMENT
+        default y
+        help
+            When enabled, every measured partition is first pre-populated with
+            large strings that leave only two free entries per NVS page. This
+            scatters the free space into non-coalescable gaps and demonstrates
+            the worst-case blob storage overhead caused by fragmentation.
+
+endmenu

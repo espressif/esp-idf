@@ -1,0 +1,8 @@
+# Name,     Type, SubType,  Offset,    Size
+factory,    app,  factory,  0x10000,   1M
+nvs,        data, nvs,      ,          0x6000
+phy_init,   data, phy,      ,          0x1000
+# Partitions of different sizes used by the storage-overhead measurement.
+nvs_16k,    data, nvs,      ,          0x4000
+nvs_32k,    data, nvs,      ,          0x8000
+nvs_64k,    data, nvs,      ,          0x10000
