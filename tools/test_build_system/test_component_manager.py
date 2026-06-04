@@ -227,10 +227,13 @@ class TestIdfRootDependency:
             '#include "mdns.h"',
         )
 
+        # Intentional dependency on the cmake-level name of the managed component because
+        # idf_extra_components.yml installs espressif/mdns and we verify REQUIRES pulls
+        # espressif__mdns into the build — not something application code should do.
         replace_in_file(
             (test_app_copy / 'main' / 'CMakeLists.txt'),
             '# placeholder_inside_idf_component_register',
-            'REQUIRES mdns',
+            'REQUIRES espressif__mdns',
         )
 
         idf_py('build')
@@ -251,10 +254,13 @@ class TestIdfRootDependency:
         assert 'espressif__mdns' not in data['build_components']
         assert 'example__cmp' not in data['build_components']
 
+        # Intentional dependency on the cmake-level name of the managed component because
+        # we assert espressif__mdns enters build_components only after REQUIRES — not
+        # something application code should do.
         replace_in_file(
             (test_app_copy / 'main' / 'CMakeLists.txt'),
             '# placeholder_inside_idf_component_register',
-            'REQUIRES mdns',
+            'REQUIRES espressif__mdns',
         )
 
         idf_py('reconfigure')

@@ -94,11 +94,21 @@ function(__ldgen_process_template)
         set(mutable_libs_option "--mutable-libraries-file" "${mutable_libs_path}")
     endif()
 
+    # Write fragment paths to a file (one per line) and pass the file to ldgen,
+    # mirroring the --libraries-file pattern. Avoids cmd/CRT argv-quoting of a
+    # long semicolon-separated list with paths containing spaces and backslashes
+    # on Windows (test_spaces_bundle4).
+    set(ldgen_fragments_file "${build_dir}/ldgen_fragments${ARG_SUFFIX}")
+    list(JOIN ldgen_fragment_files "\n" ldgen_fragments_str)
+    file(WRITE "${ldgen_fragments_file}" "${ldgen_fragments_str}")
+    set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        APPEND PROPERTY ADDITIONAL_CLEAN_FILES
+        "${ldgen_fragments_file}")
     add_custom_command(
         OUTPUT "${ARG_OUTPUT}"
         COMMAND ${python} "${idf_path}/tools/ldgen/ldgen.py"
         --config    "${sdkconfig}"
-        --fragments-list "${ldgen_fragment_files}"
+        --fragments-list-file "${ldgen_fragments_file}"
         --input     "${ARG_TEMPLATE}"
         --output    "${ARG_OUTPUT}"
         --kconfig   "${root_kconfig}"

@@ -76,7 +76,7 @@ pytest_build_system_win:
   extends:
     - .test_build_system_template_win
     - .rules:labels:windows_pytest_build_system
-  parallel: 10
+  parallel: 6
 
 pytest_build_system_win_minimal_cmake:
   extends:
@@ -102,7 +102,7 @@ pytest_buildv2_system_win:
   extends:
     - .test_build_system_template_win
     - .rules:labels:buildv2
-  parallel: 10
+  parallel: 6
   script:
     - cd tools\test_build_system
     - idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}

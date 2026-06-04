@@ -314,12 +314,27 @@ variables:
     - pip install --upgrade --pre @extraIndex esptool -c "$env:USERPROFILE\.espressif\$env:CI_PYTHON_CONSTRAINT_FILE"
     - $env:PYTHONPATH = "$env:PYTHONPATH;$env:IDF_PATH\tools;$env:IDF_PATH\tools\esp_app_trace;$env:IDF_PATH\components\partition_table;$env:IDF_PATH\tools\ci\python_packages"
     - python "${SUBMODULE_FETCH_TOOL}" -s "${SUBMODULES_TO_FETCH}"
-    # The time in VM may not be synced, since it's built a long time ago, so we need to sync time
-    - net start w32time
-    - w32tm /config /manualpeerlist:"time.google.com,0x9 pool.ntp.org,0x9" /syncfromflags:manual /reliable:yes /update
-    - net stop w32time
-    - net start w32time
-    - w32tm /resync
+    # Sync VM clock. net start/stop exit 2 when the service is already in that state; do not fail CI.
+    - |
+      function Invoke-NetService($Action, $Name) {
+        $output = net $Action $Name 2>&1
+        if ($LASTEXITCODE -eq 2) {
+          Write-Host "net $Action $Name already in requested state: $output"
+          $global:LASTEXITCODE = 0
+          return
+        }
+        if ($LASTEXITCODE -ne 0) {
+          Write-Host $output
+          exit $LASTEXITCODE
+        }
+      }
+      Invoke-NetService start w32time
+      w32tm /config /manualpeerlist:"time.google.com,0x9 pool.ntp.org,0x9" /syncfromflags:manual /reliable:yes /update
+      if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      Invoke-NetService stop w32time
+      Invoke-NetService start w32time
+      w32tm /resync
+      if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   after_script: []
 
 #############
