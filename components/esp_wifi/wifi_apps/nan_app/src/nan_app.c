@@ -59,6 +59,14 @@ int esp_nan_construct_nira(uint8_t *frm)
     (void)frm;
     return 0;
 }
+
+bool esp_nan_verify_nira(uint8_t *peer_mac, uint8_t *nira_attr, uint16_t nira_attr_len)
+{
+    (void)peer_mac;
+    (void)nira_attr;
+    (void)nira_attr_len;
+    return false;
+}
 #endif
 
 #if defined(CONFIG_ESP_WIFI_NAN_SYNC_ENABLE) && defined(CONFIG_ESP_WIFI_PASN_SUPPORT)
@@ -1435,6 +1443,7 @@ void esp_nan_action_start(esp_netif_t *nan_netif)
 #ifdef CONFIG_ESP_WIFI_NAN_PAIRING
         .get_nira_len = esp_nan_get_nira_len,
         .construct_nira = esp_nan_construct_nira,
+        .verify_nira = esp_nan_verify_nira,
         .receive_pasn = handle_auth_pasn,
 #endif
     };

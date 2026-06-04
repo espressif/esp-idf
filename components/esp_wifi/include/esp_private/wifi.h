@@ -195,6 +195,7 @@ struct nan_sync_callbacks {
     void (* receive_pasn)(uint8_t *buf, size_t len, uint16_t trans_seq, uint16_t status);
     uint32_t (* get_nira_len)(void);
     int (* construct_nira)(uint8_t *frm);
+    bool (*verify_nira)(uint8_t *peer_mac, uint8_t *nira_attr, uint16_t nira_attr_len);
 };
 
 /* Host helpers for NAN encrypted-datapath, registered via
@@ -1196,6 +1197,17 @@ uint32_t esp_nan_get_nira_len(void);
  * @return     Number of bytes written
  */
 int esp_nan_construct_nira(uint8_t *frm);
+
+/**
+ * @brief      Verify a received NAN Identity Resolution Attribute (NIRA)
+ *
+ * @param[in]  peer_mac      NMI of the sender
+ * @param[in]  nira_attr     NIRA attribute buffer
+ * @param[in]  nira_attr_len Attribute length in bytes
+ *
+ * @return     true if the tag matches, false otherwise
+ */
+bool esp_nan_verify_nira(uint8_t *peer_mac, uint8_t *nira_attr, uint16_t nira_attr_len);
 
 /**
   * @brief Get the time information from the MAC clock. The time is precise only if modem sleep or light sleep is not enabled.

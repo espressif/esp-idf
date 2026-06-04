@@ -21,6 +21,7 @@
 #include "nan_i.h"
 #include "os.h"
 #include "utils/common.h"
+#include "utils/eloop.h"
 
 #if defined(CONFIG_ESP_WIFI_PASN_SUPPORT)
 #include "esp_private/esp_supp_nan.h"
@@ -49,42 +50,7 @@ static void nan_pairing_key_installed_cb(const uint8_t *peer_nmi,
                                          uint8_t role,
                                          uint8_t ndp_csid,
                                          const uint8_t *nd_pmk,
-                                         size_t nd_pmk_len)
-{
-    wifi_event_nan_pairing_complete_t evt = {0};
-
-    if (!peer_nmi) {
-        return;
-    }
-
-#if defined(CONFIG_ESP_WIFI_NAN_SECURITY)
-    /* Cache ND-PMK for future paired NDPs (Wi-Fi Aware v4.0 §7.6.4.2). The
-     * NDP cipher (CSID) is determined by the PASN cipher and resolved on the
-     * supplicant side before this callback fires; if either is missing, the
-     * pairing event still fires but the security layer will fall back to its
-     * service-credential path for any subsequent NDP. */
-    if (ndp_csid && nd_pmk && nd_pmk_len == ESP_WIFI_NAN_NDP_PMK_LEN) {
-        (void)nan_app_register_paired_peer(peer_nmi, role, ndp_csid,
-                                           nd_pmk, nd_pmk_len,
-                                           NAN_PAIRING_DEFAULT_NIK_LIFETIME_SEC);
-    } else {
-        ESP_LOGW(TAG, "Pairing complete for " MACSTR
-                 ": ND-PMK unavailable (csid=%u nd_pmk_len=%u); "
-                 "paired-peer cache not updated",
-                 MAC2STR(peer_nmi), ndp_csid, (unsigned)nd_pmk_len);
-    }
-#else
-    (void)role;
-    (void)ndp_csid;
-    (void)nd_pmk;
-    (void)nd_pmk_len;
-#endif
-
-    evt.status = WIFI_NAN_PAIRING_STATUS_ACCEPTED;
-    evt.reason_code = 0;
-    MACADDR_COPY(evt.peer_nmi, peer_nmi);
-    nan_app_post_event(WIFI_EVENT_NAN_PAIRING_CONFIRM, &evt, sizeof(evt));
-}
+                                         size_t nd_pmk_len);
 #endif
 
 bool nan_pairing_validate_publish_bootstrapping(uint16_t bootstrapping_methods)
@@ -334,53 +300,66 @@ uint32_t esp_nan_get_nira_len(void)
 
 int esp_nan_construct_nira(uint8_t *frm)
 {
-    uint8_t nonce[NAN_NIRA_NONCE_LEN];
-    uint8_t tag[NAN_NIRA_TAG_LEN];
+    const uint8_t *nonce;
+    const uint8_t *tag;
+    uint8_t fresh_nonce[NAN_NIRA_NONCE_LEN];
+    uint8_t fresh_tag[NAN_NIRA_TAG_LEN];
 
     if (!frm) {
         return 0;
     }
 
-    if (os_get_random(nonce, sizeof(nonce)) != 0) {
-        ESP_LOGE(TAG, "NIRA: failed to generate nonce");
-        return 0;
-    }
-
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
-    uint8_t own_nmi[MACADDR_LEN];
-    const unsigned char *addr[3];
-    int len_arr[3];
-    uint8_t digest[32];
+    if (s_nan_ctx.cached_nira_valid) {
+        nonce = s_nan_ctx.cached_nira_nonce;
+        tag = s_nan_ctx.cached_nira_tag;
+    } else {
+        uint8_t own_nmi[MACADDR_LEN];
+        const unsigned char *addr[3];
+        int len_arr[3];
+        uint8_t digest[32];
 
-    if (!s_nan_ctx.own_nik_valid) {
-        ESP_LOGW(TAG, "NIRA: own NIK is not available");
-        return 0;
-    }
-    if (!g_wifi_default_wpa_crypto_funcs.hmac_sha256_vector) {
-        ESP_LOGE(TAG, "NIRA: hmac_sha256_vector not registered");
-        return 0;
-    }
-    if (esp_wifi_get_mac(WIFI_IF_NAN, own_nmi) != ESP_OK) {
-        ESP_LOGE(TAG, "NIRA: failed to read NAN NMI");
-        return 0;
-    }
+        if (!s_nan_ctx.own_nik_valid) {
+            ESP_LOGW(TAG, "NIRA: own NIK is not available");
+            return 0;
+        }
+        if (!g_wifi_default_wpa_crypto_funcs.hmac_sha256_vector) {
+            ESP_LOGE(TAG, "NIRA: hmac_sha256_vector not registered");
+            return 0;
+        }
+        if (esp_wifi_get_mac(WIFI_IF_NAN, own_nmi) != ESP_OK) {
+            ESP_LOGE(TAG, "NIRA: failed to read NAN NMI");
+            return 0;
+        }
+        if (os_get_random(fresh_nonce, sizeof(fresh_nonce)) != 0) {
+            ESP_LOGE(TAG, "NIRA: failed to generate nonce");
+            return 0;
+        }
 
-    /* Tag = Truncate-64(HMAC-SHA-256(NIK, "NIR" || NMI || Nonce)) */
-    addr[0] = (const unsigned char *)NAN_NIRA_STR;
-    len_arr[0] = NAN_NIRA_STR_LEN;
-    addr[1] = own_nmi;
-    len_arr[1] = MACADDR_LEN;
-    addr[2] = nonce;
-    len_arr[2] = NAN_NIRA_NONCE_LEN;
-    if (g_wifi_default_wpa_crypto_funcs.hmac_sha256_vector(s_nan_ctx.own_nik,
-                                                           ESP_WIFI_NAN_NIK_LEN,
-                                                           3, addr, len_arr,
-                                                           digest) != 0) {
-        ESP_LOGE(TAG, "NIRA: tag derivation failed");
-        return 0;
+        /* Tag = Truncate-64(HMAC-SHA-256(NIK, "NIR" || NMI || Nonce)) */
+        addr[0] = (const unsigned char *)NAN_NIRA_STR;
+        len_arr[0] = NAN_NIRA_STR_LEN;
+        addr[1] = own_nmi;
+        len_arr[1] = MACADDR_LEN;
+        addr[2] = fresh_nonce;
+        len_arr[2] = NAN_NIRA_NONCE_LEN;
+        if (g_wifi_default_wpa_crypto_funcs.hmac_sha256_vector(s_nan_ctx.own_nik,
+                                                               ESP_WIFI_NAN_NIK_LEN,
+                                                               3, addr, len_arr,
+                                                               digest) != 0) {
+            ESP_LOGE(TAG, "NIRA: tag derivation failed");
+            return 0;
+        }
+        memcpy(fresh_tag, digest, NAN_NIRA_TAG_LEN);
+        memset(digest, 0, sizeof(digest));
+
+        memcpy(s_nan_ctx.cached_nira_nonce, fresh_nonce, NAN_NIRA_NONCE_LEN);
+        memcpy(s_nan_ctx.cached_nira_tag, fresh_tag, NAN_NIRA_TAG_LEN);
+        s_nan_ctx.cached_nira_valid = true;
+
+        nonce = fresh_nonce;
+        tag = fresh_tag;
     }
-    memcpy(tag, digest, NAN_NIRA_TAG_LEN);
-    memset(digest, 0, sizeof(digest));
 #else
     /* NIRA requires an available NIK; skip when NAN security is not enabled. */
     return 0;
@@ -403,7 +382,6 @@ int esp_nan_construct_nira(uint8_t *frm)
 #if defined(CONFIG_ESP_WIFI_NAN_PAIRING) && defined(CONFIG_ESP_WIFI_PASN_SUPPORT) && defined(CONFIG_ESP_WIFI_NAN_SECURITY)
 
 #include "crypto/sha256.h"
-#include "utils/eloop.h"
 #include "crypto/aes_wrap.h"
 #include "common/ieee802_11_defs.h"
 #include "common/wpa_common.h"
@@ -680,9 +658,14 @@ static esp_err_t nan_app_send_pairing_followup(uint8_t svc_id, uint8_t peer_svc_
     (void)shared_key_attr;
     (void)shared_key_attr_len;
 
-    if (!peer_mac || os_get_random(nik, sizeof(nik)) != 0) {
+    if (!peer_mac) {
         return ESP_ERR_INVALID_ARG;
     }
+    if (!s_nan_ctx.own_nik_valid) {
+        ESP_LOGW(TAG, "Pairing follow-up: own NIK is not available");
+        return ESP_ERR_INVALID_STATE;
+    }
+    memcpy(nik, s_nan_ctx.own_nik, sizeof(nik));
 
     saved = nan_pasn_get_saved_keys();
     if (!saved || !saved->kek_len) {
@@ -773,11 +756,68 @@ static void nan_app_send_pairing_followup_eloop(void *eloop_data, void *user_dat
     if (!ctx) {
         return;
     }
+
     (void) nan_app_send_pairing_followup(ctx->svc_id, ctx->peer_svc_id,
                                          ctx->peer_mac,
                                          ctx->shared_key_attr,
                                          ctx->shared_key_attr_len);
     os_free(ctx);
+}
+
+static void nan_pairing_key_installed_cb(const uint8_t *peer_nmi,
+                                         uint8_t role,
+                                         uint8_t ndp_csid,
+                                         const uint8_t *nd_pmk,
+                                         size_t nd_pmk_len)
+{
+    if (!peer_nmi) {
+        return;
+    }
+
+#if defined(CONFIG_ESP_WIFI_NAN_SECURITY)
+    /* Cache ND-PMK for future paired NDPs (Wi-Fi Aware v4.0 §7.6.4.2). */
+    if (ndp_csid && nd_pmk && nd_pmk_len == ESP_WIFI_NAN_NDP_PMK_LEN) {
+        (void)nan_app_register_paired_peer(peer_nmi, role, ndp_csid,
+                                           nd_pmk, nd_pmk_len,
+                                           NAN_PAIRING_DEFAULT_NIK_LIFETIME_SEC);
+    } else {
+        ESP_LOGW(TAG, "Pairing complete for " MACSTR
+                 ": ND-PMK unavailable (csid=%u nd_pmk_len=%u); "
+                 "paired-peer cache not updated",
+                 MAC2STR(peer_nmi), ndp_csid, (unsigned)nd_pmk_len);
+    }
+#else
+    (void)ndp_csid;
+    (void)nd_pmk;
+    (void)nd_pmk_len;
+#endif
+
+    if (role == NAN_ROLE_PAIRING_INITIATOR) {
+        struct nan_pairing_fup_ctx *ctx = os_zalloc(sizeof(*ctx));
+        if (!ctx) {
+            ESP_LOGW(TAG, "Pairing key installed: failed to alloc fup ctx for " MACSTR,
+                     MAC2STR(peer_nmi));
+            return;
+        }
+
+        NAN_DATA_LOCK();
+        struct peer_svc_info *peer = nan_find_peer_svc(0, 0, (uint8_t *)peer_nmi);
+        if (peer) {
+            ctx->svc_id      = peer->own_svc_id;
+            ctx->peer_svc_id = peer->svc_id;
+        }
+        NAN_DATA_UNLOCK();
+
+        MACADDR_COPY(ctx->peer_mac, peer_nmi);
+        ctx->shared_key_attr_len = 0;
+
+        if (eloop_register_timeout(0, 0, nan_app_send_pairing_followup_eloop, NULL, ctx) != 0) {
+            ESP_LOGW(TAG, "Pairing key installed: failed to schedule initiator follow-up");
+            os_free(ctx);
+        }
+        return;
+    }
+    (void)role;
 }
 
 void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
@@ -792,7 +832,6 @@ void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
     uint32_t lifetime_sec = 0;
     struct nan_pairing_fup_ctx *ctx;
     size_t alloc_len;
-
     if (!shared_key_attr || !peer_mac) {
         return;
     }
@@ -802,7 +841,6 @@ void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
     if (shared_key_attr[0] != NAN_ATTR_ID_SHARED_KEY_DESC) {
         return;
     }
-
     const uint16_t *attr_body_len_field = (const uint16_t *)&shared_key_attr[1];
 
     attr_body_len = *attr_body_len_field;
@@ -823,17 +861,38 @@ void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
         return;
     }
 
+    bool already_had_nik = false;
+
     NAN_DATA_LOCK();
     struct peer_svc_info *p_peer_svc = nan_find_peer_svc_exact(svc_id, peer_svc_id, peer_mac);
     if (p_peer_svc) {
+        already_had_nik = p_peer_svc->has_nik;
         memcpy(p_peer_svc->peer_nik, nik, NAN_APP_PEER_NIK_LEN);
         p_peer_svc->peer_nik_cipher_ver = cipher_ver;
         p_peer_svc->peer_nik_lifetime_sec = lifetime_sec;
         p_peer_svc->has_nik = true;
         ESP_LOGI(TAG, "Stored peer NIK from " MACSTR " (cipher_ver=%u, lifetime=%u s)",
                  MAC2STR(peer_mac), cipher_ver, lifetime_sec);
+
+        if (!already_had_nik) {
+            wifi_event_nan_pairing_complete_t evt = {0};
+            evt.status = WIFI_NAN_PAIRING_STATUS_ACCEPTED;
+            evt.reason_code = 0;
+            MACADDR_COPY(evt.peer_nmi, peer_mac);
+            esp_nan_disable_pairing();
+            nan_app_post_event(WIFI_EVENT_NAN_PAIRING_CONFIRM, &evt, sizeof(evt));
+        }
     }
     NAN_DATA_UNLOCK();
+
+    /* Only reply with our own NIK the first time we receive the peer's.
+     * If has_nik was already true this is a redundant echo — don't reply
+     * or we create an infinite ping-pong of follow-ups. */
+    if (already_had_nik) {
+        ESP_LOGD(TAG, "Pairing follow-up: NIK already known for " MACSTR ", skipping reply",
+                 MAC2STR(peer_mac));
+        return;
+    }
 
     if (total_len > SIZE_MAX - sizeof(*ctx)) {
         return;
@@ -853,6 +912,51 @@ void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
         os_free(ctx);
         ESP_LOGW(TAG, "Pairing follow-up: failed to schedule response");
     }
+}
+
+bool esp_nan_verify_nira(uint8_t *peer_mac, uint8_t *nira_attr, uint16_t nira_attr_len)
+{
+    uint8_t expected_tag[NAN_NIRA_TAG_LEN];
+    const uint8_t *nonce;
+    const uint8_t *received_tag;
+    struct peer_svc_info *p_peer_svc;
+    bool match;
+
+    if (!peer_mac || !nira_attr) {
+        return false;
+    }
+
+    if (nira_attr_len < NAN_NIRA_ATTR_LEN) {
+        ESP_LOGW(TAG, "NIRA verify: attribute too short (%u < %u)",
+                 (unsigned)nira_attr_len, (unsigned)NAN_NIRA_ATTR_LEN);
+        return false;
+    }
+
+    nonce        = nira_attr + 4;
+    received_tag = nira_attr + 4 + NAN_NIRA_NONCE_LEN;
+
+    NAN_DATA_LOCK();
+    p_peer_svc = nan_find_peer_svc(0, 0, peer_mac);
+    if (!p_peer_svc || !p_peer_svc->has_nik) {
+        NAN_DATA_UNLOCK();
+        ESP_LOGD(TAG, "NIRA verify: no stored NIK for "MACSTR, MAC2STR(peer_mac));
+        return false;
+    }
+
+    if (nan_pairing_derive_nira_tag(p_peer_svc->peer_nik, peer_mac, nonce, expected_tag) != 0) {
+        NAN_DATA_UNLOCK();
+        ESP_LOGE(TAG, "NIRA verify: tag derivation failed for "MACSTR, MAC2STR(peer_mac));
+        return false;
+    }
+    NAN_DATA_UNLOCK();
+
+    match = (os_memcmp_const(expected_tag, received_tag, NAN_NIRA_TAG_LEN) == 0);
+    if (match) {
+        ESP_LOGD(TAG, "NIRA verify: OK for "MACSTR, MAC2STR(peer_mac));
+    } else {
+        ESP_LOGW(TAG, "NIRA verify: tag mismatch for "MACSTR, MAC2STR(peer_mac));
+    }
+    return match;
 }
 
 #endif /* CONFIG_ESP_WIFI_NAN_PAIRING && CONFIG_ESP_WIFI_PASN_SUPPORT && CONFIG_ESP_WIFI_NAN_SECURITY */

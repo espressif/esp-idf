@@ -287,9 +287,11 @@ typedef struct {
     struct own_svc_info own_svc[ESP_WIFI_NAN_MAX_SVC_SUPPORTED];
     esp_netif_t *nan_netif;
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
-    /* Own NAN Identity Key (NIK) cached for pairing/security flows. */
     uint8_t own_nik[ESP_WIFI_NAN_NIK_LEN];
     bool own_nik_valid;
+    uint8_t cached_nira_nonce[8];
+    uint8_t cached_nira_tag[8];
+    bool cached_nira_valid;
 #endif
 #ifdef CONFIG_ESP_WIFI_PASN_SUPPORT
     struct nan_pasn_data *nan_pasn_data;
