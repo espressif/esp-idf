@@ -27,7 +27,10 @@ union ble_store_key;
 #define BLECENT_CHR_UNR_ALERT_STAT_UUID     0x2A45
 #define BLECENT_CHR_ALERT_NOT_CTRL_PT       0x2A44
 
+#define PEER_ADDR_VAL_SIZE                                  6
+
 /** Misc. */
+int peer_addr_parse(const char *addr_str, uint8_t addr[PEER_ADDR_VAL_SIZE]);
 void print_bytes(const uint8_t *bytes, int len);
 void print_mbuf(const struct os_mbuf *om);
 char *addr_str(const void *addr);

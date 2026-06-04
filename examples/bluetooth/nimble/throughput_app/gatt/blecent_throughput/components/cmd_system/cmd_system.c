@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -331,7 +332,7 @@ static int light_sleep(int argc, char **argv)
     uint32_t causes = esp_sleep_get_wakeup_causes();
     if (causes & BIT(ESP_SLEEP_WAKEUP_UNDEFINED)) {
         ESP_LOGI(TAG, "Woke up from: unknown");
-        printf("%lx\n", causes);
+        printf("%" PRIx32 "\n", causes);
         return 0;
     }
     if (causes & BIT(ESP_SLEEP_WAKEUP_GPIO)) {

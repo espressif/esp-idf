@@ -196,8 +196,8 @@ bleprph_l2cap_coc_accept(uint16_t conn_handle, uint16_t peer_mtu,
 {
     struct os_mbuf *sdu_rx;
 
-    console_printf("LE CoC accepting, chan: 0x%08lx, peer_mtu %d\n",
-                   (uint32_t) chan, peer_mtu);
+    console_printf("LE CoC accepting, chan: 0x%08x, peer_mtu %d\n",
+                   (unsigned) (uint32_t) chan, peer_mtu);
 
     sdu_rx = os_mbuf_get_pkthdr(&sdu_os_mbuf_pool, 0);
     if (!sdu_rx) {

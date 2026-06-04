@@ -235,10 +235,6 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
     int offset = 0;
     int ad_struct_len = 0;
     uint8_t test_addr[6];
-    uint32_t peer_addr[6];
-
-    memset(peer_addr, 0x0, sizeof peer_addr);
-
     if (disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
             disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_DIR_IND) {
         return 0;
@@ -246,13 +242,10 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
         ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
         /* Convert string to address */
-        sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%lx:%lx:%lx:%lx:%lx:%lx",
-               &peer_addr[5], &peer_addr[4], &peer_addr[3],
-               &peer_addr[2], &peer_addr[1], &peer_addr[0]);
-
-	/* Conversion */
-        for (int i=0; i<6; i++) {
-            test_addr[5 - i] = (uint8_t )peer_addr[i];
+        uint8_t parsed_addr[6];
+        peer_addr_parse(CONFIG_EXAMPLE_PEER_ADDR, parsed_addr);
+        for (int i = 0; i < 6; i++) {
+            test_addr[5 - i] = parsed_addr[i];
         }
 
         if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
@@ -472,10 +465,6 @@ blecent_on_sync(void)
     int ii, rc;
     uint8_t all_phy;
     uint8_t test_addr[6];
-    uint32_t peer_addr[6];
-
-    memset(peer_addr, 0x0, sizeof peer_addr);
-
     /* Make sure we have proper identity address set (public preferred) */
     rc = ble_hs_util_ensure_addr(0);
     assert(rc == 0);
@@ -487,15 +476,7 @@ blecent_on_sync(void)
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) &&
 	(strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
         /* User wants to connect on 2M or coded phy directly */
-        sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%lx:%lx:%lx:%lx:%lx:%lx",
-               &peer_addr[5], &peer_addr[4], &peer_addr[3],
-               &peer_addr[2], &peer_addr[1], &peer_addr[0]);
-
-        /* Conversion */
-        for (int i=0; i<6; i++) {
-            test_addr[i] = (uint8_t )peer_addr[i];
-        }
-
+        peer_addr_parse(CONFIG_EXAMPLE_PEER_ADDR, test_addr);
         for(ii = 0 ;ii < 6; ii++)
             conn_addr.val[ii] = test_addr[ii];
 

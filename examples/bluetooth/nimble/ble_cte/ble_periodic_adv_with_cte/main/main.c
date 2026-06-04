@@ -19,6 +19,11 @@
 static const char *TAG = "CTE_ADV_EXAMPLE";
 static uint8_t s_periodic_adv_raw_data[] = {0x0D, BLE_HS_ADV_TYPE_COMP_NAME, 'C','T','E',' ','P','e','r','i','o','d','i','c'};
 
+#if !(MYNEWT_VAL(BLE_EXT_ADV) && MYNEWT_VAL(BLE_PERIODIC_ADV) && MYNEWT_VAL(BLE_AOA_AOD))
+#error "This example requires NimBLE Extended Advertising, Periodic Advertising, and CTE (AoA/AoD). " \
+       "Use a supported target from README.md (e.g. esp32h2, esp32c5, esp32c61) and run idf.py set-target before build."
+#endif
+
 /**
  * @brief Configure and start periodic advertising with CTE
  */
