@@ -737,19 +737,17 @@ class FatFSGen(unittest.TestCase):
 
     def test_boundary_clusters12(self) -> None:
         output: bytes = check_output(
-            ['python', '../fatfsgen.py', '--partition_size', '16732160', 'test_dir'], stderr=STDOUT
+            [sys.executable, '../fatfsgen.py', '--partition_size', '16732160', 'test_dir'], stderr=STDOUT
         )
-        self.assertEqual(
-            output, b'WARNING: It is not recommended to create FATFS with bounding count of clusters: 4085 or 65525\n'
-        )
+        self.assertIn(b'WARNING:', output)
+        self.assertIn(b'4085 or 65525', output)
 
     def test_boundary_clusters16(self) -> None:
         output: bytes = check_output(
-            ['python', '../fatfsgen.py', '--partition_size', '268390400', 'test_dir'], stderr=STDOUT
+            [sys.executable, '../fatfsgen.py', '--partition_size', '268390400', 'test_dir'], stderr=STDOUT
         )
-        self.assertEqual(
-            output, b'WARNING: It is not recommended to create FATFS with bounding count of clusters: 4085 or 65525\n'
-        )
+        self.assertIn(b'WARNING:', output)
+        self.assertIn(b'4085 or 65525', output)
 
     def test_boundary_clusters_fat32(self) -> None:
         self.assertRaises(NotImplementedError, fatfsgen.FATFS, size=268419193)

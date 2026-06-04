@@ -227,7 +227,7 @@ class WLFATFS:
             output.write(bytearray(self.fatfs_binary_image))
 
 
-if __name__ == '__main__':
+def main() -> None:
     desc = 'Create a FAT filesystem with support for wear levelling and populate it with directory content'
     args = get_args_for_partition_generator(desc, wl=True)
     wl_fatfs = WLFATFS(
@@ -245,3 +245,10 @@ if __name__ == '__main__':
     wl_fatfs.plain_fatfs.generate(args.input_directory)
     wl_fatfs.init_wl()
     wl_fatfs.wl_write_filesystem(args.output_file)
+
+
+if __name__ == '__main__':
+    from esp_pylib.excepthook import install_exception_reporting
+
+    install_exception_reporting()
+    main()

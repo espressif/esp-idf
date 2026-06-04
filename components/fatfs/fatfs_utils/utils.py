@@ -1,15 +1,18 @@
 # SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-import argparse
 import binascii
 import os
 import re
 import uuid
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
+from typing import cast
 
 from construct import BitsInteger
 from construct import BitStruct
 from construct import Int16ul
+from esp_pylib.logger import log
 
 # the regex pattern defines symbols that are allowed by long file names but not by short file names
 INVALID_SFN_CHARS_PATTERN = re.compile(r'[.+,;=\[\]]')
@@ -203,77 +206,174 @@ def split_content_into_sectors(content: bytes, sector_size: int) -> list[bytes]:
     return result
 
 
-def get_args_for_partition_generator(desc: str, wl: bool) -> argparse.Namespace:
-    parser: argparse.ArgumentParser = argparse.ArgumentParser(description=desc)
-    parser.add_argument('input_directory', help='Path to the directory that will be encoded into fatfs image')
-    parser.add_argument('--output_file', default='fatfs_image.img', help='Filename of the generated fatfs image')
-    parser.add_argument(
+@dataclass
+class PartitionGeneratorArgs:
+    input_directory: str
+    output_file: str
+    partition_size: int
+    sector_size: int
+    sectors_per_cluster: int
+    root_entry_count: int
+    long_name_support: bool
+    use_default_datetime: bool
+    fat_type: int | None
+    fat_count: int
+    wl_mode: str | None
+
+
+def _normalize_partition_size(partition_size: str | int, wl: bool) -> int:
+    if partition_size == 'detect' and not wl:
+        return -1
+    return int(str(partition_size), 0)
+
+
+def _partition_generator_args(  # type: ignore[no-untyped-def]
+    input_directory,
+    output_file,
+    partition_size,
+    sector_size,
+    sectors_per_cluster,
+    root_entry_count,
+    long_name_support,
+    use_default_datetime,
+    fat_type,
+    fat_count,
+    wl_mode,
+    wl: bool,
+) -> PartitionGeneratorArgs:
+    if not os.path.isdir(input_directory):
+        log.die(f'The target directory `{input_directory}` does not exist!')
+    if wl_mode is not None and sector_size != 512:
+        log.die('Wear levelling mode can be set only for sector size 512')
+    return PartitionGeneratorArgs(
+        input_directory=input_directory,
+        output_file=output_file,
+        partition_size=_normalize_partition_size(partition_size, wl),
+        sector_size=sector_size,
+        sectors_per_cluster=sectors_per_cluster,
+        root_entry_count=int(root_entry_count),
+        long_name_support=long_name_support,
+        use_default_datetime=use_default_datetime,
+        fat_type=None if fat_type == 0 else fat_type,
+        fat_count=fat_count,
+        wl_mode=wl_mode,
+    )
+
+
+def _build_partition_generator_cli(desc: str, wl: bool) -> Any:
+    import rich_click as click
+    from esp_pylib.cli_types import AnyIntType
+
+    sector_choices = ALLOWED_WL_SECTOR_SIZES if wl else ALLOWED_SECTOR_SIZES
+    partition_size_help = 'Size of the partition in bytes.'
+    if not wl:
+        partition_size_help += ' Use `--partition_size detect` for detecting the minimal partition size.'
+
+    @click.command(
+        context_settings={'help_option_names': ['-h', '--help']},
+        help=desc,
+    )
+    @click.argument('input_directory', type=click.Path(exists=False, file_okay=False))
+    @click.option(
+        '--output_file',
+        default='fatfs_image.img',
+        show_default=True,
+        help='Filename of the generated fatfs image',
+    )
+    @click.option(
         '--partition_size',
-        default=FATDefaults.SIZE,
-        help='Size of the partition in bytes.'
-        + ('' if wl else ' Use `--partition_size detect` for detecting the minimal partition size.'),
+        default=str(FATDefaults.SIZE),
+        show_default=True,
+        help=partition_size_help,
     )
-    parser.add_argument(
+    @click.option(
         '--sector_size',
-        default=FATDefaults.SECTOR_SIZE,
-        type=int,
-        choices=ALLOWED_WL_SECTOR_SIZES if wl else ALLOWED_SECTOR_SIZES,
-        help='Size of the partition in bytes',
+        type=click.Choice([str(s) for s in sector_choices], case_sensitive=False),
+        default=str(FATDefaults.SECTOR_SIZE),
+        show_default=True,
+        help='Size of the partition sector in bytes',
     )
-    parser.add_argument(
+    @click.option(
         '--sectors_per_cluster',
-        default=1,
-        type=int,
-        choices=ALLOWED_SECTORS_PER_CLUSTER,
+        type=click.Choice([str(s) for s in ALLOWED_SECTORS_PER_CLUSTER], case_sensitive=False),
+        default='1',
+        show_default=True,
         help='Number of sectors per cluster',
     )
-    parser.add_argument(
-        '--root_entry_count', default=FATDefaults.ROOT_ENTRIES_COUNT, help='Number of entries in the root directory'
+    @click.option(
+        '--root_entry_count',
+        default=str(FATDefaults.ROOT_ENTRIES_COUNT),
+        show_default=True,
+        type=AnyIntType(),
+        help='Number of entries in the root directory',
     )
-    parser.add_argument('--long_name_support', action='store_true', help='Set flag to enable long names support.')
-    parser.add_argument(
+    @click.option(
+        '--long_name_support',
+        is_flag=True,
+        default=False,
+        help='Set flag to enable long names support.',
+    )
+    @click.option(
         '--use_default_datetime',
-        action='store_true',
+        is_flag=True,
+        default=False,
         help='For test purposes. If the flag is set the files are created with '
         'the default timestamp that is the 1st of January 1980',
     )
-    parser.add_argument(
+    @click.option(
         '--fat_type',
-        default=0,
-        type=int,
-        choices=[FAT12, FAT16, 0],
-        help="""
-                        Type of the FAT file-system. Select '12' for FAT12, '16' for FAT16.
-                        Leave unset or select 0 for automatic file-system type detection.
-                        """,
+        type=click.Choice(['12', '16', '0'], case_sensitive=False),
+        default='0',
+        show_default=True,
+        help='Type of the FAT file-system. Select 12 for FAT12, 16 for FAT16. '
+        'Leave unset or select 0 for automatic file-system type detection.',
     )
-    parser.add_argument(
+    @click.option(
         '--fat_count',
-        default=FATDefaults.FAT_TABLES_COUNT,
-        type=int,
-        choices=[1, 2],
+        type=click.Choice(['1', '2'], case_sensitive=False),
+        default=str(FATDefaults.FAT_TABLES_COUNT),
+        show_default=True,
         help='Number of file allocation tables (FATs) in the filesystem.',
     )
-    parser.add_argument(
+    @click.option(
         '--wl_mode',
+        type=click.Choice(['safe', 'perf'], case_sensitive=False),
         default=None,
-        type=str,
-        choices=['safe', 'perf'],
         help='Wear levelling mode to use. Safe or performance. Only for sector size of 512',
     )
+    def cli(  # type: ignore[no-untyped-def]
+        input_directory,
+        output_file,
+        partition_size,
+        sector_size,
+        sectors_per_cluster,
+        root_entry_count,
+        long_name_support,
+        use_default_datetime,
+        fat_type,
+        fat_count,
+        wl_mode,
+    ):
+        return _partition_generator_args(
+            input_directory=input_directory,
+            output_file=output_file,
+            partition_size=partition_size,
+            sector_size=int(sector_size),
+            sectors_per_cluster=int(sectors_per_cluster),
+            root_entry_count=root_entry_count,
+            long_name_support=long_name_support,
+            use_default_datetime=use_default_datetime,
+            fat_type=int(fat_type),
+            fat_count=int(fat_count),
+            wl_mode=wl_mode,
+            wl=wl,
+        )
 
-    args = parser.parse_args()
-    if args.fat_type == 0:
-        args.fat_type = None
-    if args.partition_size == 'detect' and not wl:
-        args.partition_size = -1
-    args.partition_size = int(str(args.partition_size), 0)
-    if not os.path.isdir(args.input_directory):
-        raise NotADirectoryError(f'The target directory `{args.input_directory}` does not exist!')
-    if args.wl_mode is not None:
-        if args.sector_size != 512:
-            raise ValueError('Wear levelling mode can be set only for sector size 512')
-    return args
+    return cli
+
+
+def get_args_for_partition_generator(desc: str, wl: bool) -> PartitionGeneratorArgs:
+    return cast(PartitionGeneratorArgs, _build_partition_generator_cli(desc, wl)(standalone_mode=False))
 
 
 def read_filesystem(path: str) -> bytearray:
