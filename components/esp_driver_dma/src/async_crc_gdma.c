@@ -114,7 +114,9 @@ esp_err_t esp_async_crc_install_gdma_template(const async_crc_config_t *config, 
     ESP_GOTO_ON_FALSE(crc_gdma->transaction_pool, ESP_ERR_NO_MEM, err, TAG, "no mem for transaction pool");
 
     // Create TX channel for CRC calculation with optimized allocation strategy
-    gdma_channel_alloc_config_t dma_chan_alloc_cfg = {0};
+    gdma_channel_alloc_config_t dma_chan_alloc_cfg = {
+        .intr_priority = config->intr_priority,
+    };
     ESP_GOTO_ON_ERROR(new_channel_func(&dma_chan_alloc_cfg, &crc_gdma->tx_channel, NULL),
                       err, TAG, "alloc DMA channel failed");
     gdma_reset(crc_gdma->tx_channel);
