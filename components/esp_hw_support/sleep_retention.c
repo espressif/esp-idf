@@ -766,6 +766,10 @@ static void retention_entries_join(void)
 #if SOC_LIGHT_SLEEP_SUPPORTED && SOC_DEEP_SLEEP_SUPPORTED
         ESP_ERROR_CHECK(esp_deep_sleep_register_hook(&pmu_sleep_disable_regdma_backup));
 #endif
+    } else {
+#if SOC_LIGHT_SLEEP_SUPPORTED
+        pmu_sleep_disable_regdma_backup();
+#endif
     }
     _lock_release_recursive(&s_retention.lock);
 }
