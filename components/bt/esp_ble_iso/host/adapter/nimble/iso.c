@@ -780,6 +780,7 @@ int bt_le_nimble_iso_cmd_send_sync(uint16_t opcode,
 static void iso_evt_rx(uint8_t event, const void *data,
                        unsigned int len, bool le_meta)
 {
+    enum iso_queue_item_type q_type;
     size_t qdata_len;
     uint8_t *qdata;
     int err;
@@ -797,7 +798,14 @@ static void iso_evt_rx(uint8_t event, const void *data,
     qdata[1] = event;
     memcpy(qdata + 2, data, len);
 
-    err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_ISO_HCI_EVENT, qdata, qdata_len);
+    /* BIGInfo reports arrive at the PA interval rate (one per PA report that
+     * carries a BIGInfo field): route them to the droppable floodable queue.
+     * Other ISO HCI events (CIS/BIG lifecycle) stay reliable. Keep the
+     * classification in sync with bluedroid/iso.c. */
+    q_type = (event == BT_HCI_EVT_LE_BIGINFO_ADV_REPORT)
+             ? ISO_QUEUE_ITEM_TYPE_BIGINFO_ADV_REPORT : ISO_QUEUE_ITEM_TYPE_ISO_HCI_EVENT;
+
+    err = bt_le_iso_task_post(q_type, qdata, qdata_len);
     if (err) {
         LOG_ERR("[N]IsoPostEvtFail[%d][%02x]", err, event);
         free(qdata);

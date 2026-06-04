@@ -178,6 +178,7 @@ static void bt_le_bluedroid_gap_post_event_bta(tBTA_DM_BLE_5_GAP_EVENT event,
                                                tBTA_DM_BLE_5_GAP_CB_PARAMS *params)
 {
     struct bt_le_gap_app_param *qev = NULL;
+    enum iso_queue_item_type q_type;
     int err;
 
     qev = calloc(1, sizeof(*qev));
@@ -350,9 +351,31 @@ static void bt_le_bluedroid_gap_post_event_bta(tBTA_DM_BLE_5_GAP_EVENT event,
         return;
     }
 
-    err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GAP_EVENT, qev, sizeof(*qev));
+    /* High-volume reports go to the droppable floodable queue (named 1:1 after
+     * the HCI report event); connection / PA-sync lifecycle events stay
+     * reliable on the normal queue. Keep this mapping in sync with
+     * nimble/gap.c. */
+    switch (qev->type) {
+    case BT_LE_GAP_APP_PARAM_EXT_SCAN_RECV:
+        q_type = ISO_QUEUE_ITEM_TYPE_EXT_ADV_REPORT;
+        break;
+    case BT_LE_GAP_APP_PARAM_PA_SYNC_RECV:
+        q_type = ISO_QUEUE_ITEM_TYPE_PER_ADV_REPORT;
+        break;
+    default:
+        q_type = ISO_QUEUE_ITEM_TYPE_GAP_EVENT;
+        break;
+    }
+
+    err = bt_le_iso_task_post(q_type, qev, sizeof(*qev));
     if (err) {
-        LOG_ERR("[B]GapPostEvtBtaFail[%d][%u]", err, qev->type);
+        /* Floodable reports drop by design when the queue is full; only a
+         * failure on the reliable (normal-queue) path is a real error. */
+        if (q_type == ISO_QUEUE_ITEM_TYPE_GAP_EVENT) {
+            LOG_ERR("[B]GapPostEvtBtaFail[%d][%u]", err, qev->type);
+        } else {
+            LOG_DBG("[B]GapRptDrop[%u]", qev->type);
+        }
         goto free;
     }
 
