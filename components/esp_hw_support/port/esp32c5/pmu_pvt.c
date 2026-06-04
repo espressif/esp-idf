@@ -88,6 +88,8 @@ void pvt_auto_dbias_init(void)
         if (pvt_enable_flag == true) {
             return;
         }
+        REG_SET_BIT(PCR_PVT_MONITOR_CONF_REG, PCR_PVT_MONITOR_RST_EN); // Must reset after pd_cpu
+        REG_CLR_BIT(PCR_PVT_MONITOR_CONF_REG, PCR_PVT_MONITOR_RST_EN);
         SET_PERI_REG_MASK(PCR_PVT_MONITOR_CONF_REG, PCR_PVT_MONITOR_CLK_EN);
         SET_PERI_REG_MASK(PCR_PVT_MONITOR_FUNC_CLK_CONF_REG, PCR_PVT_MONITOR_FUNC_CLK_EN);
         /*config for dbias func*/
