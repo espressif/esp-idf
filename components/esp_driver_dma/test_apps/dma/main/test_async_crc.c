@@ -31,14 +31,14 @@ typedef struct {
 
 static void test_async_crc_various_poly(async_crc_handle_t driver)
 {
-    static const char test_input_string[] __attribute__((aligned(16))) = "GDMACRC Share::Connect::Innovate";
+    static const char test_input_string[] __attribute__((aligned(16))) = "GDMACRC::TEST::X";
     // CRC online: https://www.lddgo.net/en/encrypt/crc
     static test_crc_case_t crc_test_cases[] = {
         {
             .crc_bit_width = 8,
             .init_value = 0x00,
             .poly_hex = 0x07,
-            .expected_result = 0xB8,
+            .expected_result = 0x1C,
         },
         {
             .crc_bit_width = 8,
@@ -47,13 +47,13 @@ static void test_async_crc_various_poly(async_crc_handle_t driver)
             .reverse_data_mask = true,
             .reverse_result = true,
             .final_xor = 0x1F,
-            .expected_result = 0xB7,
+            .expected_result = 0xC8,
         },
         {
             .crc_bit_width = 16,
             .init_value = 0xFFFF,
             .poly_hex = 0x1021,
-            .expected_result = 0xA9B2,
+            .expected_result = 0x7563,
         },
         {
             .crc_bit_width = 16,
@@ -62,7 +62,7 @@ static void test_async_crc_various_poly(async_crc_handle_t driver)
             .reverse_data_mask = true,
             .reverse_result = true,
             .final_xor = 0xABCD,
-            .expected_result = 0x9C6B,
+            .expected_result = 0xD5B9,
         }
     };
     uint32_t result = 0;
@@ -128,7 +128,7 @@ static bool test_async_crc_result_cb(async_crc_handle_t crc_hdl, async_crc_event
 
 static void test_async_crc_calc_with_callback(async_crc_handle_t driver)
 {
-    static const char test_input_string[] __attribute__((aligned(16))) = "GDMACRC Share::Connect::Innovate";
+    static const char test_input_string[] __attribute__((aligned(16))) = "GDMACRC::TEST::X";
     SemaphoreHandle_t sem = xSemaphoreCreateBinary();
     crc_async_user_context_t user_ctx = {
         .sem = sem,
@@ -143,8 +143,8 @@ static void test_async_crc_calc_with_callback(async_crc_handle_t driver)
 
     TEST_ESP_OK(esp_async_crc_calc(driver, test_input_string, strlen(test_input_string), &params, test_async_crc_result_cb, &user_ctx));
     TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(sem, pdMS_TO_TICKS(100)));
-    printf("CRC Result: 0x%"PRIx32", Expected: 0x9D1B\r\n", user_ctx.crc_result);
-    TEST_ASSERT_EQUAL(0x9D1B, user_ctx.crc_result);
+    printf("CRC Result: 0x%"PRIx32", Expected: 0xE69A\r\n", user_ctx.crc_result);
+    TEST_ASSERT_EQUAL(0xE69A, user_ctx.crc_result);
     vSemaphoreDelete(sem);
 }
 
@@ -172,7 +172,7 @@ TEST_CASE("async_crc calculation with callback", "[async_crc]")
 
 static void test_async_crc_multiple_requests(async_crc_handle_t driver)
 {
-    static const char test_input_string[] __attribute__((aligned(16))) = "GDMACRC Share::Connect::Innovate";
+    static const char test_input_string[] __attribute__((aligned(16))) = "GDMACRC::TEST::X";
     SemaphoreHandle_t sem = xSemaphoreCreateCounting(TEST_ASYNC_CRC_BENCH_COUNTS, 0);
     crc_async_user_context_t user_ctx = {
         .sem = sem,
@@ -192,7 +192,7 @@ static void test_async_crc_multiple_requests(async_crc_handle_t driver)
         TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(sem, pdMS_TO_TICKS(100)));
     }
     printf("CRC Result of request 0x%"PRIx32"\r\n", user_ctx.crc_result);
-    TEST_ASSERT_EQUAL(0x692F6C7E, user_ctx.crc_result);
+    TEST_ASSERT_EQUAL(0x069A43E6, user_ctx.crc_result);
     vSemaphoreDelete(sem);
 };
 
