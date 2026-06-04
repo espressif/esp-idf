@@ -87,6 +87,8 @@ void pvt_auto_dbias_init(void)
         if (pvt_enable_flag == true) {
             return;
         }
+        REG_SET_BIT(PCR_PVT_MONITOR_CONF_REG, PCR_PVT_MONITOR_RST_EN); // Must reset after pd_cpu
+        REG_CLR_BIT(PCR_PVT_MONITOR_CONF_REG, PCR_PVT_MONITOR_RST_EN);
         SET_PERI_REG_MASK(PCR_PVT_MONITOR_CONF_REG, PCR_PVT_MONITOR_CLK_EN);
         SET_PERI_REG_MASK(PCR_PVT_MONITOR_FUNC_CLK_CONF_REG, PCR_PVT_MONITOR_FUNC_CLK_EN);
         /*config for dbias func*/
@@ -109,7 +111,7 @@ void pvt_auto_dbias_init(void)
         SET_PERI_REG_BITS(PVT_COMB_PD_SITE2_UNIT0_VT2_CONF2_REG, PVT_MONITOR_EDG_MOD_VT2_PD_SITE2_UNIT0, PVT_EDG_MODE, PVT_MONITOR_EDG_MOD_VT2_PD_SITE2_UNIT0_S);  // Select edge_mode
         SET_PERI_REG_BITS(PVT_COMB_PD_SITE2_UNIT0_VT2_CONF1_REG, PVT_DELAY_LIMIT_VT2_PD_SITE2_UNIT0, PVT_DELAY_NUM_HIGH, PVT_DELAY_LIMIT_VT2_PD_SITE2_UNIT0_S); // The threshold for determining whether the voltage is too high
         SET_PERI_REG_BITS(PVT_COMB_PD_SITE2_UNIT1_VT2_CONF1_REG, PVT_DELAY_LIMIT_VT2_PD_SITE2_UNIT1, PVT_DELAY_NUM_LOW, PVT_DELAY_LIMIT_VT2_PD_SITE2_UNIT1_S); // The threshold for determining whether the voltage is too low
-        SET_PERI_REG_BITS(PVT_COMB_PD_SITE2_UNIT2_VT1_CONF1_REG, PVT_DELAY_LIMIT_VT1_PD_SITE2_UNIT2, PVT_DELAY_NUM_PUMP, PVT_DELAY_LIMIT_VT1_PD_SITE2_UNIT2_S); // The threshold for chargepump
+        SET_PERI_REG_BITS(PVT_COMB_PD_SITE2_UNIT2_VT2_CONF1_REG, PVT_DELAY_LIMIT_VT2_PD_SITE2_UNIT2, PVT_DELAY_NUM_PUMP, PVT_DELAY_LIMIT_VT2_PD_SITE2_UNIT2_S); // The threshold for chargepump
 
         /*config lp offset for pvt func*/
         uint8_t lp_hp_gap = get_lp_hp_gap();
