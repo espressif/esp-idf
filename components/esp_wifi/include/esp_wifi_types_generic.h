@@ -1308,6 +1308,7 @@ typedef enum {
     WIFI_EVENT_NAN_BOOTSTRAP_COMPLETED,  /**< NAN Pairing Bootstrapping completed (success/failure) */
     WIFI_EVENT_NAN_PAIRING_INDICATION,   /**< Received NAN Pairing indication (reserved) */
     WIFI_EVENT_NAN_PAIRING_CONFIRM,      /**< NAN PASN pairwise key installation completed */
+    WIFI_EVENT_NAN_CLUSTER_JOIN,         /**< NAN Cluster joined/started successfully */
     WIFI_EVENT_MAX,                      /**< Invalid Wi-Fi event ID */
 } wifi_event_t;
 
@@ -1577,6 +1578,13 @@ typedef struct {
     uint16_t ssi_len;           /**< Length of service specific info */
     uint8_t ssi[];              /**< Service specific info of Subscriber */
 } wifi_event_nan_replied_t;
+
+/**
+ * @brief Argument structure for WIFI_EVENT_NAN_CLUSTER_JOIN event
+ */
+typedef struct {
+    uint8_t cluster_id[6];              /**< Cluster ID (BSSID) that was joined/started */
+} wifi_event_nan_cluster_join_t;
 
 /**
   * @brief Argument structure for WIFI_EVENT_NAN_RECEIVE event
