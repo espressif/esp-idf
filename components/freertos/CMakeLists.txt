@@ -177,6 +177,11 @@ idf_component_register(SRCS ${srcs}
                     LDFRAGMENTS ${ldfragments}
                     PRIV_REQUIRES ${private_requirements})
 
+# Allows users to provide their own vApplicationPassiveIdleHook().
+if(CONFIG_FREERTOS_USE_PASSIVE_IDLE_HOOK)
+    target_link_options(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=vApplicationPassiveIdleHook")
+endif()
+
 if(arch STREQUAL "linux")
     target_compile_definitions(${COMPONENT_LIB} PUBLIC "projCOVERAGE_TEST=0")
     target_link_libraries(${COMPONENT_LIB} PUBLIC pthread)

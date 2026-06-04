@@ -478,12 +478,6 @@ function(__init_project_configuration)
         list(APPEND link_options "-Wl,--warn-common")
     endif()
 
-    # SMP FreeRTOS user provided minimal idle hook. This allows the user to provide
-    # their own copy of vApplicationPassiveIdleHook()
-    if(CONFIG_FREERTOS_USE_PASSIVE_IDLE_HOOK)
-        list(APPEND link_options "-Wl,--wrap=vApplicationPassiveIdleHook")
-    endif()
-
     # Placing jump tables in flash would cause issues with code that required
     # to be placed in IRAM
     list(APPEND compile_options "-fno-jump-tables")
