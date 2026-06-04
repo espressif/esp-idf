@@ -189,6 +189,34 @@ class TestIsValidProjectDir:
         proj = _make_invalid_project(tmp_path / 'plain')
         assert mod._is_valid_project_dir(str(proj)) is False
 
+    def test_cmakelists_with_spaces_in_include(
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP]
+    ) -> None:
+        mod, _ = mcp_ext
+        path = tmp_path / 'spaced'
+        path.mkdir()
+        (path / 'CMakeLists.txt').write_text(
+            'cmake_minimum_required(VERSION 3.16)\n'
+            'include( $ENV{IDF_PATH}/tools/cmake/project.cmake )\n'
+            'project(hello_world)\n',
+            encoding='utf-8',
+        )
+        assert mod._is_valid_project_dir(str(path)) is True
+
+    def test_commented_out_include_is_rejected(
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP]
+    ) -> None:
+        mod, _ = mcp_ext
+        path = tmp_path / 'commented'
+        path.mkdir()
+        (path / 'CMakeLists.txt').write_text(
+            'cmake_minimum_required(VERSION 3.16)\n'
+            '# include($ENV{IDF_PATH}/tools/cmake/project.cmake)\n'
+            'project(hello_world)\n',
+            encoding='utf-8',
+        )
+        assert mod._is_valid_project_dir(str(path)) is False
+
     def test_empty_string(self, mcp_ext: tuple[types.ModuleType, _MockFastMCP]) -> None:
         mod, _ = mcp_ext
         assert mod._is_valid_project_dir('') is False

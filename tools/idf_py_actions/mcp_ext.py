@@ -47,10 +47,16 @@ def _is_valid_project_dir(directory: str) -> bool:
     if not cmakelists_path.is_file():
         return False
 
+    # Normalised patterns (whitespace removed) for whitespace-insensitive matching.
+    # CMake treats whitespace inside include(...) as insignificant, so
+    # `include( $ENV{...} )` must be accepted alongside `include($ENV{...})`.
+    normalised_patterns = [''.join(p.split()) for p in CMAKE_PROJECT_LINE]
+
     try:
         with open(str(cmakelists_path), encoding='utf-8') as f:
             for line in f:
-                if any(proj_line in line for proj_line in CMAKE_PROJECT_LINE):
+                line_normalised = ''.join(line.split())
+                if any(line_normalised.startswith(pattern) for pattern in normalised_patterns):
                     return True
     except Exception:
         return False
