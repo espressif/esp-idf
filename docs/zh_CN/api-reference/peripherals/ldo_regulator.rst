@@ -3,12 +3,10 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_LDO_CHANNELS:default="unknown", esp32p4="4"}
-
 简介
 ----
 
-{IDF_TARGET_NAME} 芯片内部集成了 {IDF_TARGET_LDO_CHANNELS} 路低压差线性稳压器 (LDO)，每路的电压都是可编程调节的。在硬件的参考设计中，我们通常会将其中一些的 LDO 输出作为内部 Flash 和 PSRAM 的电源，剩余的一些 LDO 可以用于给外部设备供电。
+{IDF_TARGET_NAME} 芯片内部集成了 {IDF_TARGET_SOC_GP_LDO_NUM_UNITS} 路低压差线性稳压器 (LDO)，每路的电压都是可编程调节的。在硬件的参考设计中，我们通常会将其中一些的 LDO 输出作为内部 Flash 和 PSRAM 的电源，剩余的一些 LDO 可以用于给外部设备供电。
 
 .. note::
 
