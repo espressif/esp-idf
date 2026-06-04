@@ -104,6 +104,40 @@ if BT_ISO
 
     endif # BT_ISO_BROADCAST
 
+    config BT_ISO_DISPATCH_MONITOR
+        bool "Monitor ISO task callback dispatch latency"
+        depends on !BT_ISO_NO_LOG
+        default n
+        help
+            Time every callback dispatched by the ISO task and keep per-event-
+            type stats (count / max / slow-count), logged periodically and at
+            deinit. Used to find callbacks that run long enough to delay the
+            latency-critical ISO data path.
+
+            Off by default: it adds per-dispatch timing overhead, and the
+            measurement is wall-clock, so callbacks that log over UART read as
+            "slow". Enable only while profiling.
+
+    config BT_ISO_DISPATCH_THRESHOLD_US
+        int "ISO dispatch threshold (in microseconds)"
+        depends on BT_ISO_DISPATCH_MONITOR
+        range 100 100000
+        default 2000
+        help
+            A callback dispatched by the ISO task that runs longer than this
+            many microseconds is counted as slow in the stats. Default 2000 is
+            ~1/4 of a 7.5-10ms SDU interval, well above any healthy callback.
+
+    config BT_ISO_DISPATCH_DUMP_PERIOD_S
+        int "ISO dispatch stats dump period (in seconds)"
+        depends on BT_ISO_DISPATCH_MONITOR
+        range 1 600
+        default 10
+        help
+            The ISO task logs the per-type timing table (count / max / slow-
+            count) every this many seconds while running, in addition to the
+            dump at deinit.
+
     config BT_ISO_NO_LOG
         bool "Disable BLE ISO Debug Log"
         default n
