@@ -931,6 +931,9 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
         }
         free(use_host);
     } else {
+        ESP_LOGW(TAG, "skip_common_name=true: hostname matching and SNI disabled. "
+                 "This disables ALL server-name authentication (CN/SAN/SNI), not just CN. "
+                 "Only intended for loopback / debug clients.");
         mbedtls_ssl_set_hostname(&tls->ssl, NULL);
     }
 
@@ -1003,10 +1006,6 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
             return ESP_ERR_MBEDTLS_SSL_CONF_PSK_FAILED;
         }
-#endif
-#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
-    } else if (cfg->client_session != NULL) {
-        ESP_LOGD(TAG, "Reusing the saved client session");
 #endif
     } else {
 #ifdef CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY
