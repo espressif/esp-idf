@@ -65,6 +65,8 @@ function(idf_create_dfu binary)
         set(dfu_pid "9")
     elseif("${target}" STREQUAL "esp32p4")
         set(dfu_pid "12")
+    elseif("${target}" STREQUAL "esp32s31")
+        set(dfu_pid "20")
     else()
         # DFU not supported on this target
         idf_msg("DFU not supported on ${target}, skipping DFU target creation")
