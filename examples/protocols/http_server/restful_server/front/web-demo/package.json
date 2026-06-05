@@ -27,7 +27,7 @@
     "unplugin-fonts": "~1.4.0",
     "unplugin-vue-components": "~30.0.0",
     "unplugin-vue-router": "~0.16.0",
-    "vite": "~7.1.11",
+    "vite": "~7.3.2",
     "vite-plugin-vue-layouts-next": "~1.0.0",
     "vite-plugin-vuetify": "~2.1.2",
     "vue-router": "~4.6.3"
