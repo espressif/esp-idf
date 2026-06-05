@@ -14,6 +14,10 @@
 #if CONFIG_BLE_MESH_LIGHTING_CLIENT
 esp_err_t esp_ble_mesh_register_light_client_callback(esp_ble_mesh_light_client_cb_t callback)
 {
+    if (callback == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     return (btc_profile_cb_set(BTC_PID_LIGHTING_CLIENT, callback) == 0 ? ESP_OK : ESP_FAIL);

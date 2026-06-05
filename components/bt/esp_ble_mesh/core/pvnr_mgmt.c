@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -378,11 +378,7 @@ static int provisioner_remove_node(uint16_t index, bool erase)
     /* Reset corresponding transport info when removing the node */
     for (i = 0; i < node->element_num; i++) {
         bt_mesh_rx_reset_single(node->unicast_addr + i);
-    }
-    for (i = 0; i < node->element_num; i++) {
         bt_mesh_tx_reset_single(node->unicast_addr + i);
-    }
-    for (i = 0; i < node->element_num; i++) {
         bt_mesh_rpl_reset_single(node->unicast_addr + i, erase);
     }
 
@@ -543,6 +539,11 @@ int bt_mesh_provisioner_delete_node_with_node_addr(uint16_t unicast_addr)
 int bt_mesh_provisioner_delete_node_with_dev_addr(const bt_mesh_addr_t *addr)
 {
     int i;
+
+    if (addr == NULL) {
+        BT_ERR("Invalid device address");
+        return -EINVAL;
+    }
 
     bt_mesh_provisioner_lock();
 
