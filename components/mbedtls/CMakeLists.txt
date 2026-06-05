@@ -6,15 +6,18 @@ if(esp_tee_build)
     include(${COMPONENT_DIR}/esp_tee/esp_tee_mbedtls.cmake)
     return()
 elseif(BOOTLOADER_BUILD)   # TODO: IDF-11673
+    set(srcs)
+    set(include_dirs)
+    set(public_compile_definitions)
     if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER)
-        set(include_dirs "${COMPONENT_DIR}/port/include"
+        list(APPEND include_dirs "${COMPONENT_DIR}/port/include"
                          "${COMPONENT_DIR}/mbedtls/include"
                          "${COMPONENT_DIR}/mbedtls/tf-psa-crypto/include"
                          "${COMPONENT_DIR}/mbedtls/tf-psa-crypto/drivers/builtin/include"
                          "${COMPONENT_DIR}/port/psa_driver/include"
                          "port/mbedtls_rom")
-        set(srcs "port/mbedtls_rom/mbedtls_rom_osi_bootloader.c")
-        set(public_compile_definitions
+        list(APPEND srcs "port/mbedtls_rom/mbedtls_rom_osi_bootloader.c")
+        list(APPEND public_compile_definitions
             -DMBEDTLS_CONFIG_FILE="mbedtls/esp_config.h"
             MBEDTLS_CIPHER_MODE_XTS)
     endif()
