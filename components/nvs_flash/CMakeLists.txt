@@ -91,8 +91,12 @@ else()
         target_link_libraries(${COMPONENT_LIB} PRIVATE idf::mbedtls)
     endif()
 
-    if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO IDF-10088
-        target_compile_options(${COMPONENT_LIB} PUBLIC "-fno-analyzer")
+    if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
+        # GCC fanalyzer false-positive on std::unique_ptr return path in nvs_cxx_api.cpp (TODO GCC-366)
+        set_source_files_properties(
+            src/nvs_cxx_api.cpp
+            PROPERTIES COMPILE_OPTIONS
+            "-Wno-error=analyzer-use-of-uninitialized-value;-Wno-analyzer-use-of-uninitialized-value")
     endif()
 
 endif() #non-OS build
