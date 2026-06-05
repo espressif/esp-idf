@@ -6,27 +6,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stddef.h>
 #include <stdint.h>
-#include <errno.h>
 #include <stdlib.h>
-
-#include "esp_timer.h"
-#include "esp_random.h"
+#include <string.h>
+#include <errno.h>
 
 #include "tmap_bms.h"
 
-#define ADV_HANDLE              0x00
-#define ADV_SID                 0
-#define ADV_TX_POWER            127
-#define ADV_ADDRESS             BLE_OWN_ADDR_PUBLIC
-#define ADV_PRIMARY_PHY         BLE_HCI_LE_PHY_1M
-#define ADV_SECONDARY_PHY       BLE_HCI_LE_PHY_2M
-#define ADV_INTERVAL            BLE_GAP_ADV_ITVL_MS(200)
-
-#define PER_ADV_INTERVAL        BLE_GAP_ADV_ITVL_MS(100)
-
-#define LOCAL_DEVICE_NAME       "TMAP Broadcast Source"
 #define LOCAL_BROADCAST_ID      0x123456
 
 static esp_ble_audio_cap_initiator_broadcast_subgroup_param_t subgroup_param;
@@ -233,144 +219,6 @@ static uint8_t *per_adv_data_get(uint8_t *data_len)
     return data;
 }
 
-static int ext_adv_start(void)
-{
-    struct ble_gap_periodic_adv_params per_params = {0};
-    struct ble_gap_ext_adv_params ext_params = {0};
-    struct os_mbuf *data = NULL;
-    uint8_t *ext_data = NULL;
-    uint8_t *per_data = NULL;
-    uint8_t data_len = 0;
-    int err;
-
-    ext_params.connectable = 0;
-    ext_params.scannable = 0;
-    ext_params.legacy_pdu = 0;
-    ext_params.own_addr_type = ADV_ADDRESS;
-    ext_params.primary_phy = ADV_PRIMARY_PHY;
-    ext_params.secondary_phy = ADV_SECONDARY_PHY;
-    ext_params.tx_power = ADV_TX_POWER;
-    ext_params.sid = ADV_SID;
-    ext_params.itvl_min = ADV_INTERVAL;
-    ext_params.itvl_max = ADV_INTERVAL;
-
-    err = ble_gap_ext_adv_configure(ADV_HANDLE, &ext_params, NULL,
-                                    example_audio_gap_event_cb, NULL);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to configure ext adv params, err %d", err);
-        goto end;
-    }
-
-    ext_data = ext_adv_data_get(&data_len);
-    if (ext_data == NULL) {
-        err = -ENOMEM;
-        goto end;
-    }
-
-    data = os_msys_get_pkthdr(data_len, 0);
-    if (data == NULL) {
-        ESP_LOGE(TAG, "Failed to get ext adv mbuf");
-        err = -ENOMEM;
-        goto end;
-    }
-
-    err = os_mbuf_append(data, ext_data, data_len);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to append ext adv data, err %d", err);
-        os_mbuf_free_chain(data);
-        goto end;
-    }
-
-    err = ble_gap_ext_adv_set_data(ADV_HANDLE, data);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to set ext adv data, err %d", err);
-        goto end;
-    }
-
-    per_params.include_tx_power = 0;
-    per_params.itvl_min = PER_ADV_INTERVAL;
-    per_params.itvl_max = PER_ADV_INTERVAL;
-
-    err = ble_gap_periodic_adv_configure(ADV_HANDLE, &per_params);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to configure per adv params, err %d", err);
-        goto end;
-    }
-
-    per_data = per_adv_data_get(&data_len);
-    if (per_data == NULL) {
-        err = -ENOMEM;
-        goto end;
-    }
-
-    data = os_msys_get_pkthdr(data_len, 0);
-    if (data == NULL) {
-        ESP_LOGE(TAG, "Failed to get per adv mbuf");
-        err = -ENOMEM;
-        goto end;
-    }
-
-    err = os_mbuf_append(data, per_data, data_len);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to append per adv data, err %d", err);
-        os_mbuf_free_chain(data);
-        goto end;
-    }
-
-    err = ble_gap_periodic_adv_set_data(ADV_HANDLE, data);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to set per adv data, err %d", err);
-        goto end;
-    }
-
-    err = ble_gap_periodic_adv_start(ADV_HANDLE);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to start per advertising, err %d", err);
-        goto end;
-    }
-
-    err = ble_gap_ext_adv_start(ADV_HANDLE, 0, 0);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to start ext advertising, err %d", err);
-        goto end;
-    }
-
-    ESP_LOGI(TAG, "Advertising started (handle %u)", ADV_HANDLE);
-
-end:
-    if (ext_data) {
-        free(ext_data);
-    }
-    if (per_data) {
-        free(per_data);
-    }
-    return err;
-}
-
-static int ext_adv_stop(void)
-{
-    int ret = 0;
-    int err;
-
-    err = ble_gap_periodic_adv_stop(ADV_HANDLE);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to stop per advertising, err %d", err);
-        ret = err;
-    }
-
-    err = ble_gap_ext_adv_stop(ADV_HANDLE);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to stop ext advertising, err %d", err);
-        ret = err;
-    }
-
-    if (ret == 0) {
-        ESP_LOGI(TAG, "Advertising stopped (handle %u)", ADV_HANDLE);
-    }
-
-    return ret;
-}
-
 int cap_initiator_setup(void)
 {
     esp_ble_audio_bap_broadcast_adv_info_t info = {
@@ -378,6 +226,11 @@ int cap_initiator_setup(void)
     };
     bool adv_started = false;
     bool adv_added = false;
+    /* BASE (per_adv_data_get) needs broadcast_source to exist — build after create. */
+    uint8_t *ext_data = NULL;
+    uint8_t *per_data = NULL;
+    uint8_t ext_len = 0;
+    uint8_t per_len = 0;
     int err;
 
     stream_params.stream = &broadcast_stream;
@@ -402,7 +255,19 @@ int cap_initiator_setup(void)
         return err;
     }
 
-    err = ext_adv_start();
+    ext_data = ext_adv_data_get(&ext_len);
+    if (ext_data == NULL) {
+        err = -ENOMEM;
+        goto end;
+    }
+
+    per_data = per_adv_data_get(&per_len);
+    if (per_data == NULL) {
+        err = -ENOMEM;
+        goto end;
+    }
+
+    err = ext_adv_start(ext_data, ext_len, per_data, per_len);
     if (err) {
         goto end;
     }
@@ -420,18 +285,25 @@ int cap_initiator_setup(void)
     err = esp_ble_audio_cap_initiator_broadcast_audio_start(broadcast_source, ADV_HANDLE);
     if (err) {
         ESP_LOGE(TAG, "Failed to start broadcast source, err %d", err);
-        goto end;
     }
 
-    ESP_LOGI(TAG, "CAP initiator setup");
-
-    return 0;
-
 end:
+    if (ext_data != NULL) {
+        free(ext_data);
+    }
+    if (per_data != NULL) {
+        free(per_data);
+    }
+
+    if (err == 0) {
+        ESP_LOGI(TAG, "CAP initiator setup");
+        return 0;
+    }
+
     if (adv_added) {
-        err = esp_ble_audio_bap_broadcast_adv_delete(&info);
-        if (err) {
-            ESP_LOGE(TAG, "Failed to delete adv for broadcast source, err %d", err);
+        esp_err_t e = esp_ble_audio_bap_broadcast_adv_delete(&info);
+        if (e) {
+            ESP_LOGE(TAG, "Failed to delete adv for broadcast source, err %d", e);
         }
     }
 

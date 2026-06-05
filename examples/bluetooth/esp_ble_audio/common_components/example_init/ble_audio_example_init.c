@@ -4,16 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdio.h>
-#include <string.h>
+#include "sdkconfig.h"
 
 #include "esp_log.h"
-#include "sdkconfig.h"
 
 #if CONFIG_BLE_LOG_ENABLED
 #include "ble_log.h"
 #endif
 
+#ifdef CONFIG_BT_BLUEDROID_ENABLED
+#include "esp_bt.h"
+#include "esp_bt_main.h"
+#include "esp_gap_ble_api.h"
+#endif /* CONFIG_BT_BLUEDROID_ENABLED */
+
+#ifdef CONFIG_BT_NIMBLE_ENABLED
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 
@@ -24,9 +29,109 @@
 
 #include "services/gap/ble_svc_gap.h"
 #include "services/gatt/ble_svc_gatt.h"
+#endif /* CONFIG_BT_NIMBLE_ENABLED */
+
+#include "ble_audio_example_init.h"
 
 #define TAG "EXAMPLE_INIT"
 
+#ifdef CONFIG_BT_BLUEDROID_ENABLED
+esp_err_t bluetooth_init(void)
+{
+    esp_err_t ret;
+
+    /* When controller log is disabled (or running in v1 mode), the
+     * automatic ble_log_init() inside esp_bt_controller_init() is skipped.
+     * Init manually here so HOST/ISO/AUDIO compressed logs aren't dropped
+     * during host bring-up. The function is idempotent.
+     *
+     * TODO: Remove this block (and the ble_log_flush() below) once
+     *       ble_log_init() is decoupled from the controller log path and
+     *       owns its own initialization independently. */
+#if CONFIG_BLE_LOG_ENABLED && \
+    !(CONFIG_BT_LE_CONTROLLER_LOG_ENABLED && CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2)
+    if (!ble_log_init()) {
+        ESP_LOGE(TAG, "Failed to init ble_log");
+        return ESP_FAIL;
+    }
+#endif
+
+    ret = esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
+    if (ret && ret != ESP_ERR_INVALID_STATE) {
+        ESP_LOGE(TAG, "Failed to release classic BT memory, err %d", ret);
+        goto err_log;
+    }
+
+    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+    ret = esp_bt_controller_init(&bt_cfg);
+    if (ret) {
+        ESP_LOGE(TAG, "Failed to init controller, err %d", ret);
+        goto err_log;
+    }
+
+    ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
+    if (ret) {
+        ESP_LOGE(TAG, "Failed to enable controller, err %d", ret);
+        goto err_controller_init;
+    }
+
+    esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&cfg);
+    if (ret) {
+        ESP_LOGE(TAG, "Failed to init bluedroid, err %d", ret);
+        goto err_controller_enable;
+    }
+
+    ret = esp_bluedroid_enable();
+    if (ret) {
+        ESP_LOGE(TAG, "Failed to enable bluedroid, err %d", ret);
+        goto err_bluedroid_init;
+    }
+
+    /* Just Works pairing (no MITM, SC + bond, IO_CAP=NONE).
+     * Matches the NimBLE ble_hs_cfg defaults below. */
+    esp_ble_auth_req_t auth_req = ESP_LE_AUTH_REQ_SC_BOND;
+    esp_ble_io_cap_t iocap = ESP_IO_CAP_NONE;
+    uint8_t key_size = 16;
+    uint8_t init_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
+    uint8_t rsp_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
+
+    esp_ble_gap_set_security_param(ESP_BLE_SM_AUTHEN_REQ_MODE, &auth_req, sizeof(auth_req));
+    esp_ble_gap_set_security_param(ESP_BLE_SM_IOCAP_MODE, &iocap, sizeof(iocap));
+    esp_ble_gap_set_security_param(ESP_BLE_SM_MAX_KEY_SIZE, &key_size, sizeof(key_size));
+    esp_ble_gap_set_security_param(ESP_BLE_SM_SET_INIT_KEY, &init_key, sizeof(init_key));
+    esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(rsp_key));
+
+    /* Drain startup-phase log buffers and emit a FLUSH boundary so the
+     * parser resets stats here — the example's runtime logs start clean.
+     *
+     * TODO: Remove together with the manual ble_log_init() above once
+     *       ble_log_init() is decoupled from the controller log path. */
+#if CONFIG_BLE_LOG_ENABLED
+    ble_log_flush();
+#endif
+
+    return ESP_OK;
+
+err_bluedroid_init:
+    esp_bluedroid_deinit();
+err_controller_enable:
+    esp_bt_controller_disable();
+err_controller_init:
+    esp_bt_controller_deinit();
+err_log:
+    /* Mirror the manual ble_log_init() block above — same Kconfig gate so
+     * we only deinit what we initialized; the controller-owned path is
+     * left alone. */
+#if CONFIG_BLE_LOG_ENABLED && \
+    !(CONFIG_BT_LE_CONTROLLER_LOG_ENABLED && CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2)
+    ble_log_deinit();
+#endif
+    return ret;
+}
+#endif /* CONFIG_BT_BLUEDROID_ENABLED */
+
+#ifdef CONFIG_BT_NIMBLE_ENABLED
 static SemaphoreHandle_t example_audio_sem;
 
 void ble_store_config_init(void);
@@ -228,7 +333,7 @@ esp_err_t bluetooth_init(void)
     /* When controller log is disabled (or running in v1 mode), the
      * automatic ble_log_init() inside esp_bt_controller_init() is skipped.
      * Init manually here so HOST/ISO/AUDIO compressed logs aren't dropped
-     * during NimBLE bring-up. The function is idempotent.
+     * during host bring-up. The function is idempotent.
      *
      * TODO: Remove this block (and the ble_log_flush() below) once
      *       ble_log_init() is decoupled from the controller log path and
@@ -297,3 +402,4 @@ err_log:
 #endif
     return ret;
 }
+#endif /* CONFIG_BT_NIMBLE_ENABLED */

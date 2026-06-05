@@ -382,11 +382,12 @@ int bt_le_acl_conn_delete(uint16_t conn_handle)
 {
     struct bt_conn *conn;
 
-    LOG_DBG("AclConnDel[%u]", conn_handle);
+    LOG_INF("AclConnDel[%u]", conn_handle);
 
+    /* disconnected_listener already flipped state to DISCONNECTED. */
     conn = bt_le_acl_conn_find(conn_handle);
-    if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("NotConn[%d]", __LINE__);
+    if (conn == NULL || conn->state != BT_CONN_DISCONNECTED) {
+        LOG_ERR("AclConnDelNotDisc[%u][%u]", conn_handle, BT_CONN_STATE_GET(conn));
         return -ENOTCONN;
     }
 
@@ -406,7 +407,7 @@ int bt_le_acl_conn_update(uint16_t conn_handle,
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("NotConn[%d]", __LINE__);
+        LOG_ERR("AclConnUpdNotConn[%u][%u]", conn_handle, BT_CONN_STATE_GET(conn));
         return -ENOTCONN;
     }
 
@@ -543,7 +544,7 @@ int bt_le_acl_conn_connected_listener(uint16_t conn_handle)
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("NotConn[%d]", __LINE__);
+        LOG_ERR("AclConnConnectedListenerNotConn[%u][%u]", conn_handle, BT_CONN_STATE_GET(conn));
         return -ENOTCONN;
     }
 
@@ -566,9 +567,14 @@ int bt_le_acl_conn_disconnected_listener(uint16_t conn_handle, uint8_t reason)
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("NotConn[%d]", __LINE__);
+        LOG_ERR("AclConnDisconnectedListenerNotConn[%u][%u]", conn_handle, BT_CONN_STATE_GET(conn));
         return -ENOTCONN;
     }
+
+    /* Flip before dispatch — lib disconnect cbs guard late notifies on
+     * bt_conn_get_info().state. Otherwise BTA queues the send and the conn
+     * is gone by the time BTU drains it ("Unknown connection ID"). */
+    conn->state = BT_CONN_DISCONNECTED;
 
     SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, listener, _node) {
         if (listener->disconnected) {
@@ -593,7 +599,7 @@ int bt_le_acl_conn_security_changed_listener(uint16_t conn_handle, bt_security_t
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("NotConn[%d]", __LINE__);
+        LOG_ERR("AclConnSecChgListenerNotConn[%u][%u]", conn_handle, BT_CONN_STATE_GET(conn));
         return -ENOTCONN;
     }
 
@@ -621,7 +627,7 @@ int bt_le_acl_conn_identity_resolved_listener(uint16_t conn_handle,
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("NotConn[%d]", __LINE__);
+        LOG_ERR("AclConnIdResolvedListenerNotConn[%u][%u]", conn_handle, BT_CONN_STATE_GET(conn));
         return -ENOTCONN;
     }
 
@@ -644,7 +650,7 @@ int bt_le_acl_conn_pairing_completed_listener(uint16_t conn_handle, bool bonded)
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("NotConn[%d]", __LINE__);
+        LOG_ERR("AclConnPairingCompletedListenerNotConn[%u][%u]", conn_handle, BT_CONN_STATE_GET(conn));
         return -ENOTCONN;
     }
 

@@ -13,7 +13,11 @@
 
 #include "sdkconfig.h"
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+#include "bluedroid/gap.h"
+#else
 #include "nimble/gap.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {

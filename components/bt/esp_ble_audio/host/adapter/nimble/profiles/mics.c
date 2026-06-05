@@ -23,7 +23,7 @@
 #include "host/ble_gatt.h"
 #include "host/ble_hs_mbuf.h"
 
-#include "nimble/profiles/server.h"
+#include "nimble/server.h"
 
 #include "common/host.h"
 
@@ -159,7 +159,10 @@ static int mics_svc_check(void)
     bool chr_found;
 
     mics_svc = lib_mics_svc_get();
-    assert(mics_svc);
+    if (!mics_svc) {
+        LOG_ERR("[N]MicsSvcGetFail");
+        return -ENODEV;
+    }
 
     LOG_DBG("[N]MicsSvcCheck");
 
@@ -244,7 +247,10 @@ int bt_le_nimble_mics_attr_handle_set(void)
     }
 
     mics_svc = lib_mics_svc_get();
-    assert(mics_svc);
+    if (!mics_svc) {
+        LOG_ERR("[N]MicsSvcGetFail");
+        return -ENODEV;
+    }
 
     end_handle = start_handle + mics_svc->attr_count - 1;
 
@@ -379,6 +385,11 @@ int bt_le_nimble_mics_init(void *micp_inc)
                 inc_aics_svc_init(&inc_aics_insts[i], &gatt_svc_inc_aics[i]);
 
                 inc_aics_insts[i].svc_p = lib_aics_svc_get(micp_included->aics[i]);
+                if (!inc_aics_insts[i].svc_p) {
+                    LOG_ERR("[N]AicsSvcGetFail[%u]", i);
+                    rc = -ENODEV;
+                    goto free;
+                }
 
                 mics_inc_svcs[i] = &gatt_svc_inc_aics[i];
             }

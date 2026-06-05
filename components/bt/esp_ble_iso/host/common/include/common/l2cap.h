@@ -13,7 +13,11 @@
 
 #include "sdkconfig.h"
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+/* TODO */
+#else
 #include "nimble/l2cap.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {

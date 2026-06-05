@@ -313,13 +313,18 @@ static int nimble_gatt_csis_init(struct bt_le_audio_start_info *info,
         }
 
         csis_svc[count] = lib_csip_set_member_svc_get(info->csis_insts[i].svc_inst);
-        assert(csis_svc[count]);
+        if (!csis_svc[count]) {
+            LOG_ERR("[N]CsisSvcGetFail[%u]", i);
+            return -ENODEV;
+        }
 
         if (info->csis_insts[i].included_by_cas) {
             if (*inc_csis_svc == NULL) {
                 *inc_csis_svc = csis_svc[count];
             } else {
-                assert(0);
+                /* CAS may include at most one CSIS — caller misconfigured. */
+                LOG_ERR("[N]CsisMultiIncByCas");
+                return -EINVAL;
             }
         }
 

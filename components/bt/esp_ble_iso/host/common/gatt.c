@@ -100,7 +100,11 @@ uint16_t bt_gatt_get_mtu(struct bt_conn *conn)
 
     assert(conn);
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    mtu = bt_le_bluedroid_gatt_get_mtu(conn);
+#else
     mtu = bt_le_nimble_gatt_get_mtu(conn);
+#endif
 
     LOG_DBG("GattGetMtu[%u]", mtu);
 
@@ -141,13 +145,12 @@ uint16_t bt_gatt_attr_get_handle(const struct bt_gatt_attr *attr)
 {
     uint16_t handle = 0;
 
-    LOG_DBG("GattAttrGetHdl");
-
     if (attr && attr->handle) {
         handle = attr->handle;
     }
 
-    LOG_DBG("Hdl[%u]", handle);
+    LOG_DBG("GattAttrGetHdl[%u]", handle);
+
     return handle;
 }
 
@@ -162,32 +165,29 @@ uint16_t bt_gatt_attr_value_handle(const struct bt_gatt_attr *attr)
      * Currently this function is only used by TMAP.
      */
 
-    LOG_DBG("GattAttrValHdl");
-
     if (attr) {
+        LOG_DBG("GattAttrUuid[%s]", attr->uuid ? bt_uuid_str(attr->uuid) : "Null");
+
         if (attr->uuid == NULL) {
             handle = (attr->handle + 1);
         } else {
-            LOG_DBG("Uuid[%s]", bt_uuid_str(attr->uuid));
-
             if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CHRC) == 0) {
                 struct bt_gatt_chrc *chrc = attr->user_data;
 
                 assert(chrc);
                 handle = chrc->value_handle;
 
-                LOG_DBG("ValHdl[%u]", handle);
-
                 if (handle == 0) {
                     /* Fall back to Zephyr value handle policy */
                     handle = bt_gatt_attr_get_handle(attr) + 1;
-                    LOG_INF("ValHdlNew[%u]", handle);
+                    LOG_INF("GattAttrValHdlNew[%u]", handle);
                 }
             }
         }
     }
 
-    LOG_DBG("Hdl[%u]", handle);
+    LOG_DBG("GattAttrValHdl[%u]", handle);
+
     return handle;
 }
 
@@ -401,8 +401,13 @@ ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
         return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
     }
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_gatts_attr_read(conn, attr, buf, buf_len,
+                                           offset, value, value_len);
+#else
     return bt_le_nimble_gatts_attr_read(conn, attr, buf, buf_len,
                                         offset, value, value_len);
+#endif
 }
 
 _LIB_ONLY
@@ -415,11 +420,15 @@ int bt_gatt_notify_cb(struct bt_conn *conn, struct bt_gatt_notify_params *params
     LOG_DBG("GattNtfCb[%u]", params->len);
 
     if (conn && conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("NotConn[%d]", __LINE__);
+        LOG_ERR("GattNtfNotConn[%u][%u]", conn->handle, conn->state);
         return -ENOTCONN;
     }
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    err = bt_le_bluedroid_gatts_notify(conn, params);
+#else
     err = bt_le_nimble_gatts_notify(conn, params);
+#endif
 
     /* gatts_notify is synchronous (mbuf-copy + dispatch on return); fire the
      * caller's completion cb here so state machines like PACS_FLAG_NOTIFY_RDY
@@ -440,7 +449,7 @@ int bt_gatt_indicate(struct bt_conn *conn, struct bt_gatt_indicate_params *param
     LOG_DBG("GattInd[%s]", bt_uuid_str(params->attr->uuid));
 
     if (conn && conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("NotConn[%d]", __LINE__);
+        LOG_ERR("GattIndNotConn[%u][%u]", conn->handle, conn->state);
         return -ENOTCONN;
     }
 
@@ -454,7 +463,11 @@ int bt_gatt_indicate(struct bt_conn *conn, struct bt_gatt_indicate_params *param
         return -ENOTSUP;
     }
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_gatts_indicate(conn, params);
+#else
     return bt_le_nimble_gatts_indicate(conn, params);
+#endif
 }
 
 _LIB_IDF
@@ -774,7 +787,8 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
     LOG_DBG("GattIsSub[%04x][%s]", ccc_type, bt_uuid_str(attr->uuid));
 
     if (conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("NotConn[%d]", __LINE__);
+        /* Query — disconnected conn is "not subscribed", not an error. */
+        LOG_INF("GattIsSubNotConn[%u][%u]", conn->handle, conn->state);
         return false;
     }
 
@@ -952,7 +966,7 @@ int bt_gatts_sub_changed(uint16_t conn_handle,
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("NotConn[%d]", __LINE__);
+        LOG_ERR("GattsSubChgNotConn[%u][%u]", conn_handle, BT_CONN_STATE_GET(conn));
         return -ENOTCONN;
     }
 
@@ -975,7 +989,11 @@ int bt_gattc_disc_start_safe(uint16_t conn_handle)
     int err;
     LOG_DBG("GattcDiscStart[%u]", conn_handle);
     bt_le_host_lock();
+#if CONFIG_BT_BLUEDROID_ENABLED
+    err = bt_le_bluedroid_gattc_disc_start(conn_handle);
+#else
     err = bt_le_nimble_gattc_disc_start(conn_handle);
+#endif
     bt_le_host_unlock();
     return err;
 }
@@ -991,7 +1009,7 @@ int bt_gatt_discover(struct bt_conn *conn, struct bt_gatt_discover_params *param
     LOG_DBG("GattDisc[%u][%u]", params->start_handle, params->end_handle);
 
     if (conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("NotConn[%d]", __LINE__);
+        LOG_ERR("GattDiscNotConn[%u][%u]", conn->handle, conn->state);
         return -ENOTCONN;
     }
 
@@ -1000,7 +1018,11 @@ int bt_gatt_discover(struct bt_conn *conn, struct bt_gatt_discover_params *param
         return -ENOTSUP;
     }
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_gattc_discover(conn, params);
+#else
     return bt_le_nimble_gattc_discover(conn, params);
+#endif
 }
 
 static struct gattc_sub *gattc_sub_find(struct bt_conn *conn)
@@ -1141,7 +1163,11 @@ static int gattc_write_ccc(struct bt_conn *conn, struct bt_gatt_subscribe_params
 {
     LOG_DBG("GattcWrCcc[%u][%04x]", params->ccc_handle, params->value);
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_gattc_write_ccc(conn, params);
+#else
     return bt_le_nimble_gattc_write_ccc(conn, params);
+#endif
 }
 
 _LIB_ONLY
@@ -1167,7 +1193,7 @@ int bt_gatt_subscribe(struct bt_conn *conn, struct bt_gatt_subscribe_params *par
      * can resubscribe.
      */
     if (conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("NotConn[%d]", __LINE__);
+        LOG_ERR("GattSubNotConn[%u][%u]", conn->handle, conn->state);
         params->value_handle = 0; /* unlinked: clear retry guard */
         return -ENOTCONN;
     }
@@ -1251,7 +1277,7 @@ int bt_gatt_unsubscribe(struct bt_conn *conn, struct bt_gatt_subscribe_params *p
             params->value, params->value_handle, params->ccc_handle, params->end_handle);
 
     if (conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("NotConn[%d]", __LINE__);
+        LOG_ERR("GattUnsubNotConn[%u][%u]", conn->handle, conn->state);
         return -ENOTCONN;
     }
 
@@ -1327,7 +1353,7 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
     LOG_DBG("GattRd[%u]", params->handle_count);
 
     if (conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("NotConn[%d]", __LINE__);
+        LOG_ERR("GattRdNotConn[%u][%u]", conn->handle, conn->state);
         return -ENOTCONN;
     }
 
@@ -1345,7 +1371,11 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
         }
     }
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_gattc_read(conn, params);
+#else
     return bt_le_nimble_gattc_read(conn, params);
+#endif
 }
 
 _LIB_IDF
@@ -1360,7 +1390,7 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
     LOG_DBG("GattWr[%u][%u][%u]", params->handle, params->length, params->offset);
 
     if (conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("NotConn[%d]", __LINE__);
+        LOG_ERR("GattWrNotConn[%u][%u]", conn->handle, conn->state);
         return -ENOTCONN;
     }
 
@@ -1369,7 +1399,11 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
         return -ENOTSUP;
     }
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_gattc_write(conn, params);
+#else
     return bt_le_nimble_gattc_write(conn, params);
+#endif
 }
 
 _LIB_ONLY
@@ -1388,7 +1422,7 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
     LOG_DBG("GattWrCmd[%u][%u][%u]", handle, length, sign);
 
     if (conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("NotConn[%d]", __LINE__);
+        LOG_ERR("GattWrCmdNotConn[%u][%u]", conn->handle, conn->state);
         return -ENOTCONN;
     }
 
@@ -1397,7 +1431,11 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
         return -ENOTSUP;
     }
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_gattc_write_without_rsp(conn, handle, data, length);
+#else
     return bt_le_nimble_gattc_write_without_rsp(conn, handle, data, length);
+#endif
 }
 
 _LIB_ONLY
@@ -1407,6 +1445,7 @@ void bt_le_acl_conn_disconnected_gatt_listener(uint16_t conn_handle)
 
     LOG_DBG("AclConnDisconnectedGattListener[%u]", conn_handle);
 
+#if !CONFIG_BT_BLUEDROID_ENABLED
     bt_le_nimble_gatt_nrp_clear(conn_handle);
 
     /* Drop the cached GATT client database so the next connection runs a
@@ -1420,10 +1459,12 @@ void bt_le_acl_conn_disconnected_gatt_listener(uint16_t conn_handle)
      * and Service Changed handling end-to-end.
      */
     bt_le_nimble_gattc_db_remove(conn_handle);
+#endif
 
-    /* The cached DB is dropped above, so the app will rediscover and call
-     * bt_gatt_subscribe() again on reconnect with the BAP library's reused
-     * `bt_gatt_subscribe_params` pointers. Drop those nodes from the
+    /* On NimBLE the cached DB was dropped above; on Bluedroid no client-side
+     * DB cache cleanup is performed here. Either way the app will rediscover
+     * and call bt_gatt_subscribe() again on reconnect with the BAP library's
+     * reused `bt_gatt_subscribe_params` pointers. Drop those nodes from the
      * tracking list (and zero their value) so the duplicate check in
      * bt_gatt_subscribe() doesn't short-circuit with -EALREADY, which
      * would otherwise skip the CCCD write and starve notifications.
@@ -1438,5 +1479,9 @@ void bt_le_gatt_handle_event(uint8_t *data, size_t data_len)
 {
     assert(data && data_len);
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    bt_le_bluedroid_gatt_handle_event(data, data_len);
+#else
     bt_le_nimble_gatt_handle_event(data, data_len);
+#endif
 }

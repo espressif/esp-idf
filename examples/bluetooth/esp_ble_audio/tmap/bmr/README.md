@@ -9,7 +9,7 @@
 
 This example implements the **Telephony and Media Audio Profile (TMAP) Broadcast Media Receiver (BMR)** role. The device scans for non-connectable extended advertisers that carry both the Broadcast Audio Announcement service (with a 24-bit broadcast ID) and the TMAS service with the **BMS** role bit set, then synchronizes to periodic advertising and the BIG to receive broadcast audio.
 
-The implementation runs on the **NimBLE** host stack and uses ESP-BLE-AUDIO for TMAP role registration, the BAP broadcast sink, the BAP scan delegator, the PACS sink (LC3 capability: 48 kHz, 10 ms, 1 channel, 100 octets/frame, media context — sized for the 48_2_1 preset that the paired BMS sends), and a VCP **Volume Renderer** (initial volume 10, unmuted, step 1). Up to `CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT` streams are pre-allocated and reused for every BIG sync; received SDUs are accounted for via `example_audio_rx_metrics_*`.
+The implementation uses ESP-BLE-AUDIO for TMAP role registration, the BAP broadcast sink, the BAP scan delegator, the PACS sink (LC3 capability: 48 kHz, 10 ms, 1 channel, 100 octets/frame, media context — sized for the 48_2_1 preset that the paired BMS sends), and a VCP **Volume Renderer** (initial volume 10, unmuted, step 1). Up to `CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT` streams are pre-allocated and reused for every BIG sync; received SDUs are accounted for via `example_audio_rx_metrics_*`.
 
 ## Requirements
 
@@ -26,14 +26,27 @@ No build-time options — runtime defaults are baked into source.
 
 ### Security & Pairing
 
-NimBLE host security is inherited from `../../common_components/example_init/ble_audio_example_init.c`: LE Secure Connections with bonding enabled, no MITM, **Just-Works** pairing (`BLE_SM_IO_CAP_NO_IO`). The BMR receives broadcast (unencrypted) audio, so these settings only apply if a peer (e.g. a Broadcast Assistant) opens an ATT connection to the scan delegator / VCP renderer.
+Security is inherited from `../../common_components/example_init/ble_audio_example_init.c`: LE Secure Connections with bonding enabled, no MITM, **Just-Works** pairing (`BLE_SM_IO_CAP_NO_IO`). The BMR receives broadcast (unencrypted) audio, so these settings only apply if a peer (e.g. a Broadcast Assistant) opens an ATT connection to the scan delegator / VCP renderer.
 
 ## Build & Flash
+
+The base `sdkconfig.defaults` defaults to the **Bluedroid** host; idf.py automatically merges the per-target overlay (`sdkconfig.defaults.$IDF_TARGET`). To build with **NimBLE** host instead, layer `sdkconfig.defaults.nimble` on top via `-DSDKCONFIG_DEFAULTS`.
+
+### Bluedroid host (default)
 
 ```bash
 idf.py set-target esp32h4
 idf.py -p PORT flash monitor
 ```
+
+### NimBLE host
+
+```bash
+idf.py set-target esp32h4
+idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32h4;sdkconfig.defaults.nimble" -p PORT flash monitor
+```
+
+For `esp32s31`, replace the chip overlay accordingly.
 
 (Exit serial monitor with `Ctrl-]`.)
 

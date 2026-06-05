@@ -23,7 +23,7 @@
 #include "host/ble_gatt.h"
 #include "host/ble_hs_mbuf.h"
 
-#include "nimble/profiles/server.h"
+#include "nimble/server.h"
 
 #include "common/host.h"
 
@@ -98,7 +98,10 @@ int bt_le_nimble_bass_attr_handle_set(void)
     }
 
     bass_svc = lib_bap_bass_svc_get();
-    assert(bass_svc);
+    if (!bass_svc) {
+        LOG_ERR("[N]BassSvcGetFail");
+        return -ENODEV;
+    }
 
     assert(bass_control_point_handle >= 2);
     start_handle = bass_control_point_handle - 2;     /* server attr handle & char def handle */
@@ -134,7 +137,10 @@ static int bass_svc_check(void)
      */
 
     bass_svc = lib_bap_bass_svc_get();
-    assert(bass_svc);
+    if (!bass_svc) {
+        LOG_ERR("[N]BassSvcGetFail");
+        return -ENODEV;
+    }
 
     LOG_DBG("[N]BassSvcCheck");
 

@@ -106,6 +106,7 @@ void bt_le_gatts_app_subscribe_event(struct bt_le_gatts_subscribe_event *param)
     bt_le_gatt_app_cb_evt(&event);
 }
 
+#if !CONFIG_BT_BLUEDROID_ENABLED
 void bt_le_gatt_app_post_event(uint8_t type, void *param)
 {
     /* Currently type is not used */
@@ -113,3 +114,24 @@ void bt_le_gatt_app_post_event(uint8_t type, void *param)
 
     bt_le_nimble_gatt_post_event(param);
 }
+#endif /* !CONFIG_BT_BLUEDROID_ENABLED */
+
+#if CONFIG_BT_BLUEDROID_ENABLED
+/* Bluedroid-only: GATTC open completion carries the BTA gattc_if, which has
+ * no NimBLE analogue. MTU and disc-cmpl events reuse the host-agnostic
+ * helpers above (bt_le_gatt_app_mtu_change_event / bt_le_gattc_app_disc_cmpl_event). */
+void bt_le_gattc_app_open_event(struct bt_le_gattc_open_event *param, uint8_t gattc_if)
+{
+    struct bt_le_gatt_app_event event = {
+        .type = BT_LE_GATT_APP_EVENT_GATTC_OPEN,
+    };
+
+    LOG_DBG("GattcOpenAppEvt[%u][%02x][%u]", param->conn_handle, param->status, gattc_if);
+
+    event.gattc_open.status = param->status;
+    event.gattc_open.conn_handle = param->conn_handle;
+    event.gattc_open.gattc_if = gattc_if;
+
+    bt_le_gatt_app_cb_evt(&event);
+}
+#endif /* CONFIG_BT_BLUEDROID_ENABLED */

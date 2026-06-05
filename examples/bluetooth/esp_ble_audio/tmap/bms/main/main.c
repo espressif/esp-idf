@@ -6,13 +6,8 @@
  */
 
 #include <stdint.h>
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
-#include <errno.h>
 
 #include "nvs_flash.h"
-#include "esp_system.h"
 
 #include "tmap_bms.h"
 
@@ -38,6 +33,12 @@ void app_main(void)
         return;
     }
 
+    err = app_host_init();
+    if (err) {
+        ESP_LOGE(TAG, "Failed to init host, err %d", err);
+        return;
+    }
+
     err = esp_ble_audio_common_init(&init_info);
     if (err) {
         ESP_LOGE(TAG, "Failed to initialize audio, err %d", err);
@@ -58,6 +59,12 @@ void app_main(void)
     err = esp_ble_audio_common_start(NULL);
     if (err) {
         ESP_LOGE(TAG, "Failed to start audio, err %d", err);
+        return;
+    }
+
+    err = set_device_name();
+    if (err) {
+        ESP_LOGE(TAG, "Failed to set device name, err %d", err);
         return;
     }
 

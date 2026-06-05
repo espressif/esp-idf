@@ -9,7 +9,7 @@
 
 This example takes the **TMAP Call Gateway (CG)** and **Unicast Media Sender (UMS)** roles, registered together via `esp_ble_audio_tmap_register(ESP_BLE_AUDIO_TMAP_ROLE_CG | ESP_BLE_AUDIO_TMAP_ROLE_UMS)`. It scans for connectable extended advertising that carries TMAS service data with the **UMR** role bit set, connects to the first match, pairs, exchanges MTU, and then drives TMAP and VCP discovery before bringing up unicast audio.
 
-The host stack is NimBLE. The example uses the ESP-BLE-AUDIO library pieces for: CAP initiator with the BAP Unicast Client (LC3 preset 48_2_1, sink direction, FRONT_LEFT, MEDIA context), VCP Volume Controller, MCP server backed by the media proxy player, and CCP server registering a single GTBS bearer (`Generic TBS`, UCI `un000`, `tel,wechat` URI schemes, 5G technology). A periodic TX scheduler in the ISO task feeds dummy ISO SDUs filled with the sequence number. Device name is set to `TMAP Central`.
+The example uses the ESP-BLE-AUDIO library pieces for: CAP initiator with the BAP Unicast Client (LC3 preset 48_2_1, sink direction, FRONT_LEFT, MEDIA context), VCP Volume Controller, MCP server backed by the media proxy player, and CCP server registering a single GTBS bearer (`Generic TBS`, UCI `un000`, `tel,wechat` URI schemes, 5G technology). A periodic TX scheduler in the ISO task feeds dummy ISO SDUs filled with the sequence number. Device name is set to `TMAP Central`.
 
 ## Requirements
 
@@ -30,10 +30,23 @@ Just-Works pairing (LE Secure Connections, no MITM, no I/O capability) with bond
 
 ## Build & Flash
 
+The base `sdkconfig.defaults` defaults to the **Bluedroid** host; idf.py automatically merges the per-target overlay (`sdkconfig.defaults.$IDF_TARGET`). To build with **NimBLE** host instead, layer `sdkconfig.defaults.nimble` on top via `-DSDKCONFIG_DEFAULTS`.
+
+### Bluedroid host (default)
+
 ```bash
 idf.py set-target esp32h4
 idf.py -p PORT flash monitor
 ```
+
+### NimBLE host
+
+```bash
+idf.py set-target esp32h4
+idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32h4;sdkconfig.defaults.nimble" -p PORT flash monitor
+```
+
+For `esp32s31`, replace the chip overlay accordingly.
 
 (Exit serial monitor with `Ctrl-]`.)
 

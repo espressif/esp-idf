@@ -11,8 +11,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "esp_timer.h"
-
 #include "esp_ble_audio_bap_lc3_preset_defs.h"
 
 #include "tmap_central.h"

@@ -87,7 +87,11 @@ static int ots_l2cap_event_cb(struct ble_l2cap_event *event, void *arg)
         ots_chan = event->connect.chan;
 
         if (ble_l2cap_get_chan_info(event->connect.chan, &chan_info)) {
-            assert(0);
+            LOG_ERR("[N]CocGetChanInfoFail");
+            /* Roll back the latch so the next COC_CONNECTED isn't refused
+             * by the if (ots_chan) guard above. */
+            ots_chan = NULL;
+            return -EIO;
         }
 
         LOG_DBG("[N]CocConnect[%u][%04x][%04x][%04x][%u][%u][%u][%u]",
@@ -320,7 +324,7 @@ int bt_le_nimble_l2cap_init(void)
 
 void bt_le_nimble_l2cap_deinit(void)
 {
-    LOG_DBG("NimbleL2capDeinit");
+    LOG_DBG("[N]L2capDeinit");
 
     /* TODO: free the ots_mbuf_pool and ots_mbuf_mempool */
 

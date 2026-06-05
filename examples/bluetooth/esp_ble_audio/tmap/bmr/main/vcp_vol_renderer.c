@@ -9,13 +9,6 @@
  */
 
 #include <stdint.h>
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
-#include <errno.h>
-
-#include "nvs_flash.h"
-#include "esp_system.h"
 
 #include "tmap_bmr.h"
 

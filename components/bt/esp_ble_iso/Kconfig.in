@@ -6,6 +6,7 @@
 config BT_ISO
     bool
     select BT_NIMBLE_ISO if BT_NIMBLE_ENABLED
+    select BT_BLE_FEAT_ISO_EN if BT_BLUEDROID_ENABLED
 
 config BT_ISO_TX
     bool
@@ -44,7 +45,6 @@ config BT_ISO_BROADCASTER
     bool "Bluetooth Isochronous Broadcaster Support"
     select BT_ISO_BROADCAST
     select BT_ISO_TX
-    select BT_BROADCASTER
     help
         This option enables support for the Bluetooth Isochronous Broadcaster.
 
@@ -68,6 +68,7 @@ if BT_ISO
 
     config BT_ISO_TEST_PARAMS
         bool "ISO test parameters support"
+        default y if BT_BLUEDROID_ENABLED
         default BT_NIMBLE_ISO_TEST if BT_NIMBLE_ENABLED
         help
             Enabling advanced ISO parameters will allow the use of the ISO test
@@ -79,7 +80,10 @@ if BT_ISO
 
         config BT_ISO_MAX_CIG
             int "Maximum number of Connected Isochronous Groups (CIGs) to support"
-            range 1 BT_NIMBLE_ISO_CIG
+            range 1 1 if BT_BLUEDROID_ENABLED
+            range 1 BT_NIMBLE_ISO_CIG if BT_NIMBLE_ENABLED
+            default 1 if BT_BLUEDROID_ENABLED
+            default BT_NIMBLE_ISO_CIG if BT_NIMBLE_ENABLED
             help
                 Maximum number of CIGs that are supported by the host. A CIG can be
                 used for either transmitting or receiving.
@@ -90,7 +94,10 @@ if BT_ISO
 
         config BT_ISO_MAX_BIG
             int "Maximum number of Broadcast Isochronous Groups (BIGs) to support"
-            range 1 BT_NIMBLE_ISO_BIG
+            range 1 1 if BT_BLUEDROID_ENABLED
+            range 1 BT_NIMBLE_ISO_BIG if BT_NIMBLE_ENABLED
+            default 1 if BT_BLUEDROID_ENABLED
+            default BT_NIMBLE_ISO_BIG if BT_NIMBLE_ENABLED
             help
                 Maximum number of BIGs that are supported by the host. A BIG can be
                 used for either transmitting or receiving, but not at the same time.

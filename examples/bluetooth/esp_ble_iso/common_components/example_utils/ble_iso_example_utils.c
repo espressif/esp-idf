@@ -7,9 +7,7 @@
  */
 
 #include <assert.h>
-#include <stdio.h>
 #include <string.h>
-#include <stdbool.h>
 
 #include "esp_log.h"
 
@@ -21,61 +19,6 @@
  * At 10 ms SDU interval this is ~60 s; at 7.5 ms ~45 s.
  */
 #define LOG_INTERVAL_PACKETS    6000
-
-int example_iso_gap_event_cb(struct ble_gap_event *event, void *arg)
-{
-    if (event->type == BLE_GAP_EVENT_EXT_DISC ||
-            event->type == BLE_GAP_EVENT_PERIODIC_SYNC ||
-            event->type == BLE_GAP_EVENT_PERIODIC_REPORT ||
-            event->type == BLE_GAP_EVENT_PERIODIC_SYNC_LOST ||
-            event->type == BLE_GAP_EVENT_PERIODIC_TRANSFER ||
-            event->type == BLE_GAP_EVENT_PERIODIC_TRANSFER_V2 ||
-            event->type == BLE_GAP_EVENT_CONNECT ||
-            event->type == BLE_GAP_EVENT_DISCONNECT ||
-            event->type == BLE_GAP_EVENT_ENC_CHANGE) {
-        esp_ble_iso_gap_app_post_event(event->type, event);
-    } else if (event->type == BLE_GAP_EVENT_REPEAT_PAIRING) {
-        /* Peer wants to re-pair on top of an existing bond (e.g. phone
-         * cleared its LTK via "Forget device" but our NVS still has it).
-         * Delete our stale bond and tell NimBLE to retry pairing.
-         */
-        struct ble_gap_conn_desc desc = {0};
-        int rc = ble_gap_conn_find(event->repeat_pairing.conn_handle, &desc);
-        if (rc == 0) {
-            ble_store_util_delete_peer(&desc.peer_id_addr);
-        }
-        return BLE_GAP_REPEAT_PAIRING_RETRY;
-    }
-
-    return 0;
-}
-
-void example_iso_security_failed_recover(const char *tag, uint16_t conn_handle, uint8_t status)
-{
-    struct ble_gap_conn_desc desc = {0};
-    int rc;
-
-    /* status 13 = BLE_HS_ETIMEOUT: SMP exchange did not complete. Typical
-     * cause is asymmetric bond state — the two sides bonded previously,
-     * then one side erased its NVS while the other kept the LTK. The side
-     * that still has the bond tries encryption with the cached key; the
-     * other side has nothing to match it against, so SMP times out. Drop
-     * our entry for this peer and disconnect; the next connection runs
-     * fresh pairing (peer side recovers via REPEAT_PAIRING).
-     */
-    ESP_LOGE(tag, "Security change failed, status %u, clearing local bond and reconnecting", status);
-
-    rc = ble_gap_conn_find(conn_handle, &desc);
-    if (rc == 0) {
-        ble_store_util_delete_peer(&desc.peer_id_addr);
-    }
-
-    /* Tear down the link: SMP cannot be retried on the same connection
-     * after a failed/timed-out exchange. The next reconnect starts a
-     * fresh SMP procedure with the now-cleared bond state.
-     */
-    ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
-}
 
 static void example_iso_tx_work_handler(struct k_work *work)
 {

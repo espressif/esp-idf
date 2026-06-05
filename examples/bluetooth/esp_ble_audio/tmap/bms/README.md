@@ -9,7 +9,7 @@
 
 This example implements the **Telephony and Media Audio Profile (TMAP) Broadcast Media Sender (BMS)** role. The device acts as a non-connectable BAP Broadcast Source: extended advertising carries the TMAS service UUID with the BMS role flag, the Broadcast Audio Announcement service with a 24-bit broadcast ID (`0x123456`), and the complete local name (`"TMAP Broadcast Source"`); periodic advertising carries the encoded BASE.
 
-The implementation runs on the **NimBLE** host stack and uses the ESP-BLE-AUDIO library for the TMAP role registration and the CAP initiator broadcast pieces. A single subgroup with one stream is configured from the LC3 `48_2_1` broadcast preset (front-left location, media context). After the broadcast source is created and the BIG is started, a periodic TX scheduler (`example_audio_tx_scheduler_*`) drives ISO SDU transmission at the stream's QoS interval, and a sent callback tracks packet counts and drift.
+The implementation uses the ESP-BLE-AUDIO library for the TMAP role registration and the CAP initiator broadcast pieces. A single subgroup with one stream is configured from the LC3 `48_2_1` broadcast preset (front-left location, media context). After the broadcast source is created and the BIG is started, a periodic TX scheduler (`example_audio_tx_scheduler_*`) drives ISO SDU transmission at the stream's QoS interval, and a sent callback tracks packet counts and drift.
 
 ## Requirements
 
@@ -26,14 +26,27 @@ No build-time options — runtime defaults are baked into source.
 
 ### Security & Pairing
 
-NimBLE host security is inherited from `../../common_components/example_init/ble_audio_example_init.c`: LE Secure Connections with bonding enabled, no MITM, **Just-Works** pairing (`BLE_SM_IO_CAP_NO_IO`). The BMS broadcast itself is non-connectable and unencrypted, so these settings only apply if a peer ever opens an ATT connection.
+Security is inherited from `../../common_components/example_init/ble_audio_example_init.c`: LE Secure Connections with bonding enabled, no MITM, **Just-Works** pairing (`BLE_SM_IO_CAP_NO_IO`). The BMS broadcast itself is non-connectable and unencrypted, so these settings only apply if a peer ever opens an ATT connection.
 
 ## Build & Flash
+
+The base `sdkconfig.defaults` defaults to the **Bluedroid** host; idf.py automatically merges the per-target overlay (`sdkconfig.defaults.$IDF_TARGET`). To build with **NimBLE** host instead, layer `sdkconfig.defaults.nimble` on top via `-DSDKCONFIG_DEFAULTS`.
+
+### Bluedroid host (default)
 
 ```bash
 idf.py set-target esp32h4
 idf.py -p PORT flash monitor
 ```
+
+### NimBLE host
+
+```bash
+idf.py set-target esp32h4
+idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32h4;sdkconfig.defaults.nimble" -p PORT flash monitor
+```
+
+For `esp32s31`, replace the chip overlay accordingly.
 
 (Exit serial monitor with `Ctrl-]`.)
 

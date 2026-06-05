@@ -20,18 +20,32 @@
 extern "C" {
 #endif
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+#if CONFIG_BT_BLUEDROID_PINNED_TO_CORE
+#define ISO_TASK_CORE           CONFIG_BT_BLUEDROID_PINNED_TO_CORE
+#else /* CONFIG_BT_BLUEDROID_PINNED_TO_CORE */
+#define ISO_TASK_CORE           (0)
+#endif /* CONFIG_BT_BLUEDROID_PINNED_TO_CORE */
+#else /* CONFIG_BT_BLUEDROID_ENABLED */
 #if CONFIG_BT_NIMBLE_PINNED_TO_CORE
 #define ISO_TASK_CORE           CONFIG_BT_NIMBLE_PINNED_TO_CORE
 #else /* CONFIG_BT_NIMBLE_PINNED_TO_CORE */
 #define ISO_TASK_CORE           (0)
 #endif /* CONFIG_BT_NIMBLE_PINNED_TO_CORE */
+#endif /* CONFIG_BT_BLUEDROID_ENABLED */
 
 #define ISO_TASK_STACK_SIZE     4096
 #define ISO_TASK_NAME           "iso_task"
 /* Ref:
+ * - Bluedroid BTC task: configMAX_PRIORITIES - 6
+ * - Bluedroid BTU task: configMAX_PRIORITIES - 5
  * - NimBLE Host task:   configMAX_PRIORITIES - 4
  */
+#if CONFIG_BT_BLUEDROID_ENABLED
+#define ISO_TASK_PRIO           (configMAX_PRIORITIES - 5)
+#else
 #define ISO_TASK_PRIO           (configMAX_PRIORITIES - 4)
+#endif
 
 enum iso_queue_item_type {
     ISO_QUEUE_ITEM_TYPE_TIMER_EVENT,
