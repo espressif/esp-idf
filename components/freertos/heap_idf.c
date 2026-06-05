@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -93,6 +93,18 @@ bool xPortCheckValidTCBMem(const void * ptr)
     return esp_ptr_internal(ptr) && esp_ptr_byte_accessible(ptr);
 #endif /* CONFIG_IDF_TARGET_LINUX */
 }
+
+#if CONFIG_FREERTOS_PLACE_TASK_STACKS_IN_EXT_RAM
+void * pvPortMallocStack(size_t xWantedSize)
+{
+    return heap_caps_malloc_prefer(xWantedSize, 2, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+}
+
+void vPortFreeStack(void * pv)
+{
+    heap_caps_free(pv);
+}
+#endif /* CONFIG_FREERTOS_PLACE_TASK_STACKS_IN_EXT_RAM */
 
 bool xPortcheckValidStackMem(const void * ptr)
 {

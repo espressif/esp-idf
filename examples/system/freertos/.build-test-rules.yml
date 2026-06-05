@@ -6,6 +6,13 @@ examples/system/freertos/basic_freertos_smp_usage:
     - *common_components
     - freertos
 
+examples/system/freertos/psram_stack:
+  disable:
+    - if: SOC_SPIRAM_SUPPORTED != 1
+      reason: test requires PSRAM, and these are the targets with PSRAM support
+  depends_components:
+    - freertos
+
 examples/system/freertos/real_time_stats:
   disable:
     - if: IDF_TARGET != "esp32" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")

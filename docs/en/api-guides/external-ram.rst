@@ -221,10 +221,30 @@ External RAM use has the following restrictions:
 
     - External RAM uses the same cache region as the external flash. This means that frequently accessed variables in external RAM can be read and modified almost as quickly as in internal RAM. However, when accessing large chunks of data (> 32 KB), the cache can be insufficient, and speeds will fall back to the access speed of the external RAM. Moreover, accessing large chunks of data can "push out" cached flash, possibly making the execution of code slower afterwards.
 
-    - In general, external RAM will not be used as task stack memory. :cpp:func:`xTaskCreate` and similar functions will always allocate internal memory for stack and task TCBs.
+    - In general, external RAM will not be used as task stack memory. :cpp:func:`xTaskCreate` and similar functions will always allocate internal memory for stack and task TCBs. Task stacks can optionally be placed in external RAM — see :ref:`task-stack-in-external-ram` below.
 
-The option :ref:`CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM` can be used to allow placing task stacks into external memory. In these cases :cpp:func:`xTaskCreateStatic` must be used to specify a task stack buffer allocated from external memory, otherwise task stacks will still be allocated from internal memory.
+.. _task-stack-in-external-ram:
 
+Task Stack Placement in External RAM
+-------------------------------------
+
+There are three ways to place task stacks in external RAM:
+
+1. **Per-task (explicit)** – Use :cpp:func:`xTaskCreateWithCaps` with ``MALLOC_CAP_SPIRAM``.  Requires :ref:`CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM`.
+
+2. **Per-task (static)** – Use :cpp:func:`xTaskCreateStatic` with a caller-supplied buffer in external RAM.  Requires :ref:`CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM`.
+
+3. **Global default (automatic)** – Enable :ref:`CONFIG_FREERTOS_PLACE_TASK_STACKS_IN_EXT_RAM`.  When set, every call to :cpp:func:`xTaskCreate` / :cpp:func:`xTaskCreatePinnedToCore` allocates the stack from PSRAM first, falling back to internal RAM if PSRAM is exhausted.  TCBs are always kept in internal DRAM.
+
+
+When :ref:`CONFIG_FREERTOS_PLACE_TASK_STACKS_IN_EXT_RAM` is enabled, the following additional restrictions apply:
+
+- **Flash operations** – Any code path that temporarily disables the CPU cache (flash erase/write, NVS, OTA) must run on a task whose stack is in internal RAM, or the operations must be routed through the `espressif/esp_flash_dispatcher <https://components.espressif.com/components/espressif/esp_flash_dispatcher>`__ component, which executes flash operations on a dedicated internal-RAM task.
+- **Deep sleep** – Calling :cpp:func:`esp_deep_sleep_start` from a task with a PSRAM stack logs an error and proceeds anyway, which will likely crash when the cache is disabled during the sleep transition.  Use :cpp:func:`esp_deep_sleep_try_to_start` instead: it returns :c:macro:`ESP_ERR_NOT_ALLOWED` cleanly when called from a PSRAM-stacked task.  If deep sleep is required, trigger it from a task whose stack is in internal RAM.
+- **Light sleep** – Calling :cpp:func:`esp_light_sleep_start` directly from a PSRAM-stacked task is also rejected with :c:macro:`ESP_ERR_NOT_ALLOWED`.  Tickless-idle light sleep (auto-light-sleep) is safe because it is initiated by the idle task, whose stack is always in internal RAM; PSRAM-stacked tasks simply block and resume normally after wake-up.
+- **pthread** – :cpp:func:`pthread_create` delegates to :cpp:func:`xTaskCreate`, so pthread stacks will also move to PSRAM when this option is on.
+
+See the :example:`system/freertos/psram_stack` example for a working demonstration.
 
 Failure to Initialize
 =====================
