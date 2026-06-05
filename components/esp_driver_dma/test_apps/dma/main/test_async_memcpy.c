@@ -12,7 +12,6 @@
 #include "soc/soc_caps.h"
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "ccomp_timer.h"
 #include "esp_async_memcpy.h"
@@ -102,8 +101,7 @@ static void test_memory_copy_with_same_buffer(async_memcpy_handle_t driver, asyn
     TEST_ASSERT_NOT_NULL(dbuf);
 
     for (int j = 0; j < 20; j++) {
-        TEST_ESP_OK(esp_async_memcpy(driver, dbuf, sbuf, 256, NULL, NULL));
-        vTaskDelay(pdMS_TO_TICKS(10));
+        TEST_ESP_OK(esp_memcpy_blocking(driver, dbuf, sbuf, 256, -1));
         for (int i = 0; i < 256; i++) {
             if (sbuf[i] != dbuf[i]) {
                 printf("location[%d]:s=%d,d=%d\r\n", i, sbuf[i], dbuf[i]);
@@ -151,17 +149,8 @@ TEST_CASE("memory copy the same buffer with different content", "[async mcp]")
 #endif // SOC_HAS(LP_AHB_GDMA)
 }
 
-static bool test_async_memcpy_cb_v1(async_memcpy_handle_t mcp_hdl, async_memcpy_event_t *event, void *cb_args)
-{
-    SemaphoreHandle_t sem = (SemaphoreHandle_t)cb_args;
-    BaseType_t high_task_wakeup = pdFALSE;
-    xSemaphoreGiveFromISR(sem, &high_task_wakeup);
-    return high_task_wakeup == pdTRUE;
-}
-
 static void test_memory_copy_blocking(async_memcpy_handle_t driver)
 {
-    SemaphoreHandle_t sem = xSemaphoreCreateBinary();
     const uint32_t test_buffer_size[] = {256, 512, 1024, 2048, 4096, 5008};
     memcpy_testbench_context_t test_context = {
         .align = 16,
@@ -177,13 +166,11 @@ static void test_memory_copy_blocking(async_memcpy_handle_t driver)
             }
             async_memcpy_setup_testbench(&test_context);
 
-            TEST_ESP_OK(esp_async_memcpy(driver, test_context.to_addr, test_context.from_addr, test_context.copy_size, test_async_memcpy_cb_v1, sem));
-            TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(sem, pdMS_TO_TICKS(10)));
+            TEST_ESP_OK(esp_memcpy_blocking(driver, test_context.to_addr, test_context.from_addr, test_context.copy_size, -1));
             async_memcpy_verify_and_clear_testbench(test_context.copy_size, test_context.src_buf, test_context.dst_buf,
                                                     test_context.from_addr, test_context.to_addr);
         }
     }
-    vSemaphoreDelete(sem);
 }
 
 TEST_CASE("memory copy by DMA (blocking)", "[async mcp]")
@@ -225,7 +212,6 @@ TEST_CASE("memory copy by DMA (blocking)", "[async mcp]")
 
 [[maybe_unused]] static void test_memcpy_with_dest_addr_unaligned(async_memcpy_handle_t driver, bool src_in_psram, bool dst_in_psram)
 {
-    SemaphoreHandle_t sem = xSemaphoreCreateBinary();
     const uint32_t test_buffer_size[] = {256, 512, 1024, 2048, 4096, 5012};
     memcpy_testbench_context_t test_context = {
         .align = 4,
@@ -241,13 +227,11 @@ TEST_CASE("memory copy by DMA (blocking)", "[async mcp]")
             test_context.dst_offset = off + 1;
             async_memcpy_setup_testbench(&test_context);
 
-            TEST_ESP_OK(esp_async_memcpy(driver, test_context.to_addr, test_context.from_addr, test_context.copy_size, test_async_memcpy_cb_v1, sem));
-            TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(sem, pdMS_TO_TICKS(10)));
+            TEST_ESP_OK(esp_memcpy_blocking(driver, test_context.to_addr, test_context.from_addr, test_context.copy_size, -1));
             async_memcpy_verify_and_clear_testbench(test_context.copy_size, test_context.src_buf, test_context.dst_buf,
                                                     test_context.from_addr, test_context.to_addr);
         }
     }
-    vSemaphoreDelete(sem);
 }
 
 TEST_CASE("memory copy with dest address unaligned", "[async mcp]")

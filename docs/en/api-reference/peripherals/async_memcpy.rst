@@ -67,6 +67,14 @@ The prototype of the callback function is :cpp:type:`async_memcpy_isr_cb_t`. The
     // Do something else here
     xSemaphoreTake(my_semaphore, portMAX_DELAY); // Wait until the buffer copy is done
 
+For simpler use cases where the task only needs to wait until one copy finishes, use :cpp:func:`esp_memcpy_blocking`. This API is built on top of the async request path and waits internally for the completion callback.
+
+.. code-block:: c
+
+    ESP_ERROR_CHECK(esp_memcpy_blocking(driver_handle, to, from, copy_len, -1));
+
+The blocking API must not be called from ISR context. Currently, it only supports ``timeout_ms = -1``, which means waiting indefinitely until the memory copy completes.
+
 
 Uninstall Driver
 ----------------
