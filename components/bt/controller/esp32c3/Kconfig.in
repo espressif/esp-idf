@@ -2,6 +2,15 @@ config BT_CTRL_MODE_EFF
     int
     default 1
 
+config BT_CTRL_CHECK_CONFIG_EFF
+    int
+    default 1
+    help
+        Marker that controller Kconfig is active (always set in sdkconfig).
+        Must not be unset in normal IDF builds. Controller-only integrations
+        that do not export this symbol rely on esp_bt.h to apply compile-time
+        defaults for missing BLE feature CONFIG_* names.
+
 config BT_CTRL_BLE_MAX_ACT
     int "BLE Max Instances"
     default 6

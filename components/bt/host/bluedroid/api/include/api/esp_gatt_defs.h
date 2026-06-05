@@ -361,10 +361,15 @@ typedef struct {
 /**
  * @brief Defines the GATT authentication request types.
  *
- * This enumeration lists the types of authentication requests that can be made.
- * It corresponds to the `BTA_GATT_AUTH_REQ_xxx` values defined in `bta/bta_gatt_api.h`.
- * The types include options for no authentication, unauthenticated encryption, authenticated encryption,
- * and both signed versions with and without MITM (Man-In-The-Middle) protection.
+ * Used as the `auth_req` argument in GATT client read/write APIs. It specifies the
+ * link security level required before the ATT request is sent, and is independent
+ * of server-side attribute permission flags (`ESP_GATT_PERM_xxx`).
+ *
+ * @note If `auth_req` is not `ESP_GATT_AUTH_REQ_NONE`, the stack may start link
+ *       encryption or SMP pairing before the GATT operation. Handle
+ *       `ESP_GAP_BLE_PASSKEY_REQ_EVT` and call `esp_ble_passkey_reply()` if needed.
+ *
+ * Corresponds to the `BTA_GATT_AUTH_REQ_xxx` values defined in `bta/bta_gatt_api.h`.
  */
 typedef enum {
     ESP_GATT_AUTH_REQ_NONE                  = 0, /*!< No authentication required. Corresponds to BTA_GATT_AUTH_REQ_NONE. */
@@ -687,7 +692,17 @@ typedef struct {
     esp_bd_addr_t remote_bda;                              /*!< The Bluetooth address of the remote device */
     esp_ble_addr_type_t remote_addr_type;                  /*!< Address type of the remote device */
     bool is_direct;                                        /*!< Direct connection or background auto connection(by now, background auto connection is not supported */
-    bool is_aux;                                           /*!< Set to true for BLE 5.0 or higher to enable auxiliary connections; set to false for BLE 4.2 or lower. */
+    bool is_aux;                                           /*!< Determines whether to use BLE 5.0 or BLE 4.2 create connection interface.
+                                                                - If set to true, the BLE 5.0 interface (extended connection) will be used.
+                                                                - If set to false, the BLE 4.2 interface (legacy connection) will be used.
+                                                                - Note: When connecting to a legacy advertising device using BLE 5.0 interface, is_aux should be set to true.
+                                                                - Auto-setting (handled in L2CAP layer): The system will automatically set this parameter based on the enabled BLE features:
+                                                                  * If only BLE 4.2 feature is enabled, is_aux will be automatically set to false.
+                                                                  * If only BLE 5.0 feature is enabled, is_aux will be automatically set to true.
+                                                                  * If both BLE 4.2 and BLE 5.0 features are enabled (not recommended), the stack will automatically
+                                                                    infer whether to use BLE 5.0 or BLE 4.2 interface based on previously used APIs.
+                                                                    Otherwise, the user-specified value will be used.
+                                                                - Note: It is strongly recommended NOT to enable both BLE 4.2 and BLE 5.0 features simultaneously. */
     esp_ble_addr_type_t own_addr_type;                     /*!< Specifies the address type used in the connection request. Set to 0xFF if the address type is unknown. */
     esp_ble_phy_mask_t phy_mask;                           /*!< Indicates which PHY connection parameters will be used. When is_aux is false, only the connection params for 1M PHY can be specified */
     const esp_ble_conn_params_t *phy_1m_conn_params;       /*!< Connection parameters for the LE 1M PHY */
