@@ -262,8 +262,8 @@ static void bta_av_rc_msg_cback(UINT8 handle, UINT8 label, UINT8 opcode, tAVRC_M
     }
 
     /* Create a copy of the message */
-    tBTA_AV_RC_MSG *p_buf =
-        (tBTA_AV_RC_MSG *)osi_malloc((UINT16)(sizeof(tBTA_AV_RC_MSG) + data_len));
+    size_t buf_size = sizeof(tBTA_AV_RC_MSG) + data_len;
+    tBTA_AV_RC_MSG *p_buf = (tBTA_AV_RC_MSG *)osi_malloc(buf_size);
     if (p_buf != NULL) {
         p_buf->hdr.event = BTA_AV_AVRC_MSG_EVT;
         p_buf->handle = handle;
