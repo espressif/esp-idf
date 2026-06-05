@@ -330,11 +330,6 @@ static void pmu_sleep_param_init(pmu_context_t *ctx, const pmu_sleep_param_confi
     pmu_ll_set_pll_stable_wait_cycle(ctx->hal->dev, param->hp_sys.pll_stable_wait_cycle);
 }
 
-bool pmu_sleep_pll_already_enabled(void)
-{
-    return (pmu_ll_get_sysclk_sleep_select_state(PMU_instance()->hal->dev) != 0);
-}
-
 void pmu_sleep_init(const pmu_sleep_config_t *config, bool dslp)
 {
     assert(PMU_instance());

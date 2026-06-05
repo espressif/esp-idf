@@ -572,6 +572,8 @@
 #define SOC_PM_MODEM_RETENTION_BY_REGDMA           (1)
 #define SOC_PM_SUPPORT_PMU_MODEM_STATE             (1)
 #define MAC_SUPPORT_PMU_MODEM_STATE                SOC_PM_SUPPORT_PMU_MODEM_STATE
+/* Since SOC APB and MODEM APB on ESP32-S31 are decoupled, XTAL can be used as SOC clock in modem state */
+#define SOC_PM_MODEM_STATE_USE_XTAL                (1)
 
 /*
  * min_slp_val is derived from slow clock period (450us / slow_clk).
