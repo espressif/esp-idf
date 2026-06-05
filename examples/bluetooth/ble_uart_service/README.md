@@ -1,4 +1,4 @@
-# BLE UART Service Example — NimBLE / Bluedroid
+# ESP-BLE-UART Example — NimBLE / Bluedroid
 
 | Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-S3 | ESP32-S31 |
 | ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | --------- |
@@ -58,7 +58,7 @@ The `_ENC | _AUTHEN` flags are turned on only when `cfg.encrypted = true`
 | `../common/ble_uart/ble_uart.h`        | ~155 | Stack-agnostic public API: 3-field config + 4 lifecycle functions + TX/status + UUID + `BLE_UART_E*` return codes. No NimBLE / Bluedroid types leak through. |
 | `../common/ble_uart/ble_uart_nimble.c`     | ~650 | NimBLE backend: host bring-up, BLE UART GATT service via `ble_gatts_add_svcs`, advertising, pairing, install/open/close/uninstall. Active when `CONFIG_BT_NIMBLE_ENABLED=y`. |
 | `../common/ble_uart/ble_uart_bluedroid.c`  | ~1020 | Bluedroid backend: controller + host enable, BLE UART GATT service via `esp_ble_gatts_create_attr_tab` (service-table API), advertising, pairing, full PREP/EXEC long-write reassembly, install/open/close/uninstall. Active when `CONFIG_BT_BLUEDROID_ENABLED=y`. |
-| `../common/ble_uart/Kconfig` | ~30 | Device-name prefix + RX scratch size (`menuconfig → Component configuration → BLE UART library`). |
+| `../common/ble_uart/Kconfig` | ~30 | Device-name prefix + RX scratch size (`menuconfig → Component configuration → ESP-BLE-UART library`). |
 | `../common/ble_uart/PORTING.md` | ~724 | Porting and API guide (integration, CMake, sdkconfig, thread safety). |
 | `sdkconfig.defaults`         | —    | Default: NimBLE backend, MTU 512, SC + bonding + persistent NVS. |
 | `sdkconfig.bluedroid`     | —    | Overlay: switch to Bluedroid backend (used via `-D SDKCONFIG_DEFAULTS=...`, see "Choosing the host stack" below). |
@@ -133,7 +133,7 @@ When neither is enabled the build fails up-front with a clear error.
 ```bash
 idf.py set-target esp32c3      # or esp32, esp32s3, esp32c6, esp32h2 ...
 idf.py menuconfig              # optional
-#   Component configuration -> BLE UART library
+#   Component configuration -> ESP-BLE-UART library
 #     - BLE device name prefix    (default: BleUart)
 #     - RX scratch buffer size      (default: 1024 bytes)
 ```
@@ -248,6 +248,16 @@ ble_uart_open();
 ```
 
 That's it — encrypted serial-over-BLE in 4 lines.
+
+## OpenCode Companion
+
+This example serves as the transport layer for the [OpenCode Companion tutorial](OPENCODE_COMPANION.md), which walks through building a physical companion device for OpenCode using ESP-BLE-UART and ESP-VoCat. The tutorial covers:
+
+- **Part 1:** Using ESP-BLE-UART Console to verify the BLE UART data path (Echo Server mode).
+- **Part 2:** Using the `ble_uart_service` example on ESP-VoCat with the ESP-BLE-UART Daemon and OpenCode Plugin for session status display and physical permission approval.
+
+See the full guide in English: [OPENCODE_COMPANION.md](OPENCODE_COMPANION.md)
+Chinese version: [OPENCODE_COMPANION_CN.md](OPENCODE_COMPANION_CN.md)
 
 ## Troubleshooting
 

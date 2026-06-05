@@ -15,7 +15,7 @@ export type PermissionDecision = "once" | "reject"
  *
  * Several ID field names are optional because OpenCode permission events have
  * changed across API versions. The bridge normalizes them before talking to the
- * BLE daemon or replying back to OpenCode.
+ * ESP-BLE-UART Daemon or replying back to OpenCode.
  */
 export type PermissionEventProperties = {
   id?: string
@@ -32,7 +32,7 @@ export type PermissionEventProperties = {
 }
 
 /**
- * Normalized response expected from the BLE daemon after a permission request.
+ * Normalized response expected from the ESP-BLE-UART Daemon after a permission request.
  *
  * `decision` is optional at the type level because the daemon response is parsed
  * from JSON. Runtime code validates it before using it as a permission reply.
@@ -44,7 +44,7 @@ export type BridgeResponse = {
 }
 
 /**
- * Envelope formats the BLE daemon may return.
+ * Envelope formats the ESP-BLE-UART Daemon may return.
  *
  * The daemon can wrap the actual payload in either `data` or `response`, and it
  * may encode that payload as an object or a JSON string. Keeping this type loose
@@ -55,7 +55,7 @@ export type DaemonResponse = {
   response?: unknown
 }
 
-/** Status payload returned by the BLE UART daemon `/status` endpoint. */
+/** Status payload returned by the ESP-BLE-UART Daemon `/status` endpoint. */
 export type DaemonStatus = {
   device_id?: string
   connection_state?: "DISCONNECTED" | "CONNECTING" | "CONNECTED" | string
