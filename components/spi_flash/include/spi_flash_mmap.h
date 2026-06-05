@@ -21,7 +21,7 @@
 #include "esp_attr.h"
 #include "sdkconfig.h"
 #include "esp_spi_flash_counters.h"
-#include "hal/esp_flash_err.h"
+#include "esp_flash_err.h"
 
 #ifdef __cplusplus
 extern "C" {

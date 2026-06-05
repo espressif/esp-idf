@@ -83,6 +83,8 @@ idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS ${include_dirs}
                        LDFRAGMENTS ${ldfragments})
 
+idf_define_esp_err_codes(HEADERS include/spi_flash_err.h)
+
 if(NOT non_os_build AND NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
     if(CONFIG_SPIRAM)
         # esp_mspi_get_io() queries esp_psram_io_get_cs_io() for the PSRAM CS pin

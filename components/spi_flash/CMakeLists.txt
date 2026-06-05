@@ -6,8 +6,7 @@ if(${target} STREQUAL "linux")
                           "linux/flash_mmap.c"
                           "spi_flash_blockdev.c"
                            INCLUDE_DIRS include
-                           REQUIRES esp_hal_mspi esp_blockdev
-                           PRIV_REQUIRES esp_mspi)
+                           REQUIRES esp_hal_mspi esp_mspi esp_blockdev)
     return()
 endif()
 

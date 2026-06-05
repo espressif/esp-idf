@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include "esp_err.h"
+#include "spi_flash_err.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,8 +31,6 @@ enum {
 };
 
 //The ROM code has already taken 1 and 2, to avoid possible conflicts, start from 3.
-#define ESP_ERR_FLASH_OP_FAIL           (ESP_ERR_FLASH_BASE+1) ///< aligned with rom
-#define ESP_ERR_FLASH_OP_TIMEOUT        (ESP_ERR_FLASH_BASE+2) ///< aligned with rom
 #define ESP_ERR_FLASH_NOT_INITIALISED   (ESP_ERR_FLASH_BASE+3) ///< esp_flash_chip_t structure not correctly initialised by esp_flash_init().
 #define ESP_ERR_FLASH_UNSUPPORTED_HOST  (ESP_ERR_FLASH_BASE+4) ///< Requested operation isn't supported via this host SPI bus (chip->spi field).
 #define ESP_ERR_FLASH_UNSUPPORTED_CHIP  (ESP_ERR_FLASH_BASE+5) ///< Requested operation isn't supported by this model of SPI flash chip.

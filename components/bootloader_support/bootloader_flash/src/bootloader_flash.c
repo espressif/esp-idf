@@ -13,8 +13,8 @@
 #include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
 #include "hal/spi_flash_types.h"
-#include "hal/esp_flash_err.h"
 #include "spi_flash_defs.h"
+#include "spi_flash_err.h"
 
 #if !NON_OS_BUILD
 #include "spi_flash_mmap.h"
