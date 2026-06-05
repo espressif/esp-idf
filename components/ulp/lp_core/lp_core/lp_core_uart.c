@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include "ulp_lp_core_utils.h"
 #include "soc/lp_uart_struct.h"
 #include "hal/uart_hal.h"
+#include "hal/lp_core_ll.h"
 
 #define LP_UART_ERR_INT_FLAG        (UART_INTR_PARITY_ERR | UART_INTR_FRAM_ERR)
 #define LP_UART_TX_INT_FLAG         (UART_INTR_TX_DONE)
@@ -21,6 +22,14 @@
 uart_hal_context_t hal = {
     .dev = (uart_dev_t *)UART_LL_GET_HW(LP_UART_NUM_0),
 };
+
+#if SOC_ULP_LP_UART_SUPPORTED
+void lp_core_uart_reset_wakeup_en(void)
+{
+    lp_core_ll_enable_lp_uart_wakeup(false);
+    lp_core_ll_enable_lp_uart_wakeup(true);
+}
+#endif
 
 static esp_err_t lp_core_uart_check_timeout(uint32_t intr_mask, int32_t timeout, uint32_t *ticker)
 {

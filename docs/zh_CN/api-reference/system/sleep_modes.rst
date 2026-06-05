@@ -407,6 +407,24 @@ UART 唤醒（仅适用于 Light-sleep 模式）
 
            在 Light-sleep 模式下，设置 Kconfig 选项 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` 将使 UART 唤醒失效。
 
+.. only:: SOC_ULP_LP_UART_SUPPORTED
+
+    LP_UART 可以将 ULP LP 内核协处理器唤醒。LP_UART 支持的唤醒模式与上述 HP UART 唤醒模式相同，包括边沿阈值唤醒、RX FIFO 阈值唤醒、起始位检测唤醒和字符序列检测唤醒。
+
+    要使用 LP_UART 唤醒 ULP LP 内核，需要执行以下步骤：
+
+    #. 在 :cpp:type:`ulp_lp_core_cfg_t` 结构体的 ``wakeup_source`` 字段中设置 :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_LP_UART` 标志位。
+    #. 初始化 LP UART（调用 :cpp:func:`lp_core_uart_init`）。
+    #. 使用 :cpp:func:`lp_core_uart_wakeup_setup` 函数配置 LP_UART 的唤醒模式，参数使用 :cpp:type:`uart_wakeup_cfg_t` 结构体，配置方式与 HP UART 相同。
+
+    .. only:: SOC_LP_CORE_LP_UART_WAKEUP_KEEP_TRIGGERED
+
+       .. note::
+
+           在支持 ``SOC_LP_CORE_LP_UART_WAKEUP_KEEP_TRIGGERED`` 的芯片上，LP UART 唤醒后唤醒信号会保持触发状态。LP 核启动流程（:cpp:func:`ulp_lp_core_update_wakeup_cause`）会自动调用 :cpp:func:`ulp_lp_core_lp_uart_reset_wakeup_en` 和 :cpp:func:`lp_core_uart_clear_buf` 清除该状态。若未走标准启动流程，则需手动处理，否则会被重复唤醒。
+
+    有关 LP_UART 唤醒的示例代码，请参考 :example:`system/ulp/lp_core/lp_uart/lp_uart_char_seq_wakeup`。
+
 .. _disable_sleep_wakeup_source:
 
 禁用睡眠模式唤醒源
