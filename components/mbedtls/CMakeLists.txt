@@ -149,6 +149,14 @@ endif()
 # clang produces an unreachable-code warning.
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     target_compile_options(mbedcrypto PRIVATE "-Wno-unreachable-code")
+    # While building mbedtls/library/x509_crt.c, clang 21 produces an
+    # uninitialized-const-pointer warning. The warning flag only exists in
+    # newer clang versions, so probe for it before use.
+    include(CheckCCompilerFlag)
+    check_c_compiler_flag("-Wuninitialized-const-pointer" C_COMPILER_HAS_UNINIT_CONST_PTR_WARNING)
+    if(C_COMPILER_HAS_UNINIT_CONST_PTR_WARNING)
+        target_compile_options(mbedx509 PRIVATE "-Wno-uninitialized-const-pointer")
+    endif()
 endif()
 
 # net_sockets.c should only be compiled if BSD socket functions are available.
