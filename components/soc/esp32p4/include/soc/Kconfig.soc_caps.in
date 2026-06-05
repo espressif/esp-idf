@@ -1986,3 +1986,7 @@ config SOC_LP_CORE_SUPPORT_LP_ADC
 config SOC_LP_CORE_SUPPORT_STORE_LOAD_EXCEPTIONS
     bool
     default y
+
+config SOC_LP_CORE_LP_UART_WAKEUP_KEEP_TRIGGERED
+    bool
+    default y

@@ -769,3 +769,4 @@
 #define SOC_LP_CORE_SUPPORT_ETM                     (1) /*!< LP Core supports ETM */
 #define SOC_LP_CORE_SUPPORT_LP_ADC                  (1) /*!< LP ADC can be accessed from the LP-Core */
 #define SOC_LP_CORE_SUPPORT_STORE_LOAD_EXCEPTIONS   (1) /*!< LP Core will raise exceptions if accessing invalid addresses */
+#define SOC_LP_CORE_LP_UART_WAKEUP_KEEP_TRIGGERED   (1) /*!< LP UART wakeup source is kept triggered */
