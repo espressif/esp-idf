@@ -8,7 +8,15 @@ idf_build_get_property(project_dir PROJECT_DIR)
 idf_build_get_property(non_os_build NON_OS_BUILD)
 idf_build_get_property(custom_secure_service_dir CUSTOM_SECURE_SERVICE_COMPONENT_DIR)
 idf_build_get_property(custom_secure_service_component CUSTOM_SECURE_SERVICE_COMPONENT)
-idf_build_get_property(partition_table_bin PARTITION_TABLE_BIN_PATH)
+
+if(IDF_BUILD_V2)
+    # Under build system v2, partition_table/project_include.cmake may run
+    # after this file, so PARTITION_TABLE_BIN_PATH is not yet set. Defer the
+    # read to CMake's generate phase via a generator expression.
+    idf_build_get_property(partition_table_bin PARTITION_TABLE_BIN_PATH GENERATOR_EXPRESSION)
+else()
+    idf_build_get_property(partition_table_bin PARTITION_TABLE_BIN_PATH)
+endif()
 
 if(NOT CONFIG_SECURE_ENABLE_TEE OR non_os_build)
     return()
