@@ -1182,7 +1182,7 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, uint32_t cl
     }
 #endif
     // Restore CPU frequency
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE && !SOC_PM_BBPLL_PD_IN_MODEM_STATE
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE && !SOC_PM_BBPLL_PD_IN_MODEM_STATE && !SOC_PM_MODEM_STATE_USE_XTAL
     if (pmu_sleep_pll_already_enabled()) {
         rtc_clk_cpu_freq_to_pll_and_pll_lock_release(esp_pm_impl_get_cpu_freq(PM_MODE_CPU_MAX));
     } else
