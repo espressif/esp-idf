@@ -2281,11 +2281,8 @@ BOOLEAN smp_calculate_link_key_from_long_term_key(tSMP_CB *p_cb)
         SMP_TRACE_ERROR("%s failed", __func__);
     } else {
         UINT8 link_key_type;
-        if (btm_cb.security_mode == BTM_SEC_MODE_SC) {
-            /* Secure Connections Only Mode */
-            link_key_type = BTM_LKEY_TYPE_AUTH_COMB_P_256;
-        } else if (controller_get_interface()->supports_secure_connections()) {
-            /* both transports are SC capable */
+        if ((btm_cb.security_mode == BTM_SEC_MODE_SC) ||
+            (controller_get_interface()->supports_secure_connections())) {
             if (p_cb->sec_level == SMP_SEC_AUTHENTICATED) {
                 link_key_type = BTM_LKEY_TYPE_AUTH_COMB_P_256;
             } else {
