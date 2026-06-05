@@ -11,7 +11,7 @@ def run_list_devices() -> None:
 
 
 def run_connection_check(device_id: str) -> None:
-    # Initialize BLE UART Bridge
+    # Initialize ESP-BLE-UART Bridge
     bridge = BLEUARTBridge(device_id)
 
     # Connection check

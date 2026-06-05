@@ -16,7 +16,7 @@ def run_console(
     encoding: ConsoleEncoding | str = ConsoleEncoding.text,
     with_response: bool = False,
 ) -> None:
-    # Initialize BLE UART Console
+    # Initialize ESP-BLE-UART Console
     console = BLEUARTConsole(
         device_id,
         terminator=terminator,

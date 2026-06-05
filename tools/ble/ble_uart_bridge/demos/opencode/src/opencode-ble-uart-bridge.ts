@@ -39,12 +39,12 @@ function stateMessage(state: BLEPluginState, status?: DaemonStatus): string {
       status?.reconnect_failures !== undefined && status.max_reconnect_failures !== undefined
         ? ` (${status.reconnect_failures}/${status.max_reconnect_failures} reconnect failures)`
         : ""
-    return `BLE UART daemon is reachable, but the device is disconnected${attempts}. The next BLE send will try to reconnect.`
+    return `ESP-BLE-UART Daemon is reachable, but the device is disconnected${attempts}. The next BLE send will try to reconnect.`
   }
   if (status?.daemon_state === "exiting") {
-    return "BLE UART daemon is exiting after repeated reconnect failures. BLE forwarding is disabled."
+    return "ESP-BLE-UART Daemon is exiting after repeated reconnect failures. BLE forwarding is disabled."
   }
-  return "BLE UART daemon is unreachable. BLE forwarding is disabled until the daemon is available."
+  return "ESP-BLE-UART Daemon is unreachable. BLE forwarding is disabled until the daemon is available."
 }
 
 async function notifyStateChange(
@@ -54,7 +54,7 @@ async function notifyStateChange(
 ): Promise<void> {
   const variant = state === "connected" ? "success" : state === "degraded" ? "warning" : "error"
   const message = stateMessage(state, status)
-  await showToastBestEffort(client, variant, "OpenCode BLE UART Bridge", message)
+  await showToastBestEffort(client, variant, "OpenCode ESP-BLE-UART Bridge", message)
   await appLogBestEffort(client, variant === "error" ? "error" : variant === "warning" ? "warn" : "info", message, {
     state,
     status,
@@ -95,7 +95,7 @@ export const BLEDeviceBridgePlugin: Plugin = async ({ client, serverUrl, directo
       bleState = "disabled"
       if (shouldNotify) {
         await notifyStateChange(openCodeClient, "disabled")
-        await appLogBestEffort(openCodeClient, "warn", "BLE UART daemon status check failed", { error: String(error) })
+        await appLogBestEffort(openCodeClient, "warn", "ESP-BLE-UART Daemon status check failed", { error: String(error) })
       }
     }
     return bleState
@@ -124,7 +124,7 @@ export const BLEDeviceBridgePlugin: Plugin = async ({ client, serverUrl, directo
 
         // Forwarding session status is best-effort background work. Do not
         // await this async IIFE from the OpenCode event callback; otherwise a
-        // slow or unavailable BLE daemon could block OpenCode's own event loop.
+        // slow or unavailable ESP-BLE-UART Daemon could block OpenCode's own event loop.
         void (async () => {
           try {
             const previousState = bleState
@@ -139,7 +139,7 @@ export const BLEDeviceBridgePlugin: Plugin = async ({ client, serverUrl, directo
               await showToastBestEffort(
                 openCodeClient,
                 "success",
-                "OpenCode BLE UART Bridge",
+                "OpenCode ESP-BLE-UART Bridge",
                 "BLE UART device is connected for this OpenCode session.",
               )
             }
@@ -149,8 +149,8 @@ export const BLEDeviceBridgePlugin: Plugin = async ({ client, serverUrl, directo
 
             if (
               // If the session became idle while a BLE permission prompt is
-              // active, mark that prompt as externally resolved and ask the BLE
-              // daemon to dismiss it. This prevents an old prompt from being
+              // active, mark that prompt as externally resolved and ask the
+              // ESP-BLE-UART Daemon to dismiss it. This prevents an old prompt from being
               // answered after OpenCode no longer needs the decision. Only idle
               // triggers this cancellation: busy/retry are normal activity
               // transitions and should not dismiss an actively displayed prompt.
