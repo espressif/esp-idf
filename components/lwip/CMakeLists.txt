@@ -143,17 +143,14 @@ if(CONFIG_LWIP_ENABLE)
     endif()
 
 
-if(NOT ${target} STREQUAL "linux")
-        # Support for vfs and linker fragments only for target builds
+    if(NOT ${target} STREQUAL "linux")
         set(linker_fragments linker.lf)
-        if(CONFIG_VFS_SUPPORT_IO)
-            list(APPEND srcs "port/${target}/vfs_lwip.c")
-        else()
-            list(APPEND srcs "port/${target}/no_vfs_syscalls.c")
-        endif()
+    endif()
+
+    if(CONFIG_VFS_SUPPORT_IO)
+        list(APPEND srcs "port/vfs_lwip.c")
     else()
-        # This wraps some posix IO functions to conditionally pass control to lwip
-        list(APPEND srcs "port/${target}/vfs_lwip.c")
+        list(APPEND srcs "port/${target}/no_vfs_syscalls.c")
     endif()
 
     if(CONFIG_LWIP_ICMP)
@@ -179,9 +176,7 @@ if(NOT ${target} STREQUAL "linux")
     endif()
 endif() # CONFIG_LWIP_ENABLE
 
-if(NOT ${target} STREQUAL "linux")
-    set(priv_requires vfs)
-endif()
+set(priv_requires vfs)
 
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS  ${include_dirs}
@@ -229,14 +224,5 @@ if(CONFIG_LWIP_ENABLE)
         set(THREADS_PREFER_PTHREAD_FLAG ON)
         find_package(Threads REQUIRED)
         target_link_libraries(${COMPONENT_LIB} PRIVATE Threads::Threads)
-        set(WRAP_FUNCTIONS      select
-                                read
-                                fcntl
-                                write
-                                close)
-        foreach(wrap ${WRAP_FUNCTIONS})
-                    target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=${wrap}")
-                    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u __wrap_${wrap}")
-        endforeach()
     endif()
 endif()

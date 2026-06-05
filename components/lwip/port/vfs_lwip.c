@@ -65,12 +65,12 @@ int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct
 
 #endif // CONFIG_VFS_SUPPORT_SELECT
 
-static int lwip_write_r_wrapper(__attribute__((unused)) void *ctx, int fd, const void *data, size_t size)
+static ssize_t lwip_write_r_wrapper(__attribute__((unused)) void *ctx, int fd, const void *data, size_t size)
 {
     return lwip_write(fd, data, size);
 }
 
-static int lwip_read_r_wrapper(__attribute__((unused)) void *ctx, int fd, void *data, size_t size)
+static ssize_t lwip_read_r_wrapper(__attribute__((unused)) void *ctx, int fd, void *data, size_t size)
 {
     return lwip_read(fd, data, size);
 }

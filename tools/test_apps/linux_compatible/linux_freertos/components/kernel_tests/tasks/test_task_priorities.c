@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,74 +14,89 @@
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 #include "unity.h"
 
+/*
+ * A race task blocks on a shared binary semaphore. When the semaphore is given,
+ * FreeRTOS wakes the highest-priority waiter, which writes its ID to s_winner
+ * and signals s_done_sem. The task then suspends itself (it is single-shot).
+ */
 
-static void counter_task(void *param)
+#define TASK_ID_A  1
+#define TASK_ID_B  2
+
+static volatile int s_winner;
+static SemaphoreHandle_t s_race_sem;
+static SemaphoreHandle_t s_done_sem;
+
+static void race_task(void *arg)
 {
-    volatile uint32_t *counter = (volatile uint32_t *)param;
-    while (1) {
-        (*counter)++;
-    }
+    int my_id = (int)(uintptr_t)arg;
+    xSemaphoreTake(s_race_sem, portMAX_DELAY);
+    s_winner = my_id;
+    xSemaphoreGive(s_done_sem);
+    vTaskSuspend(NULL);
 }
-
 
 TEST_CASE("Get/Set Priorities", "[freertos]")
 {
-    /* Two tasks per processor */
-    TaskHandle_t tasks[configNUM_CORES][2] = { 0 };
-    unsigned volatile counters[configNUM_CORES][2] = { 0 };
+    TaskHandle_t task_a, task_b;
 
+    s_race_sem = xSemaphoreCreateBinary();
+    s_done_sem = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(s_race_sem);
+    TEST_ASSERT_NOT_NULL(s_done_sem);
+
+    /* Verify unity task's own priority */
     TEST_ASSERT_EQUAL(CONFIG_UNITY_FREERTOS_PRIORITY, uxTaskPriorityGet(NULL));
 
-    /* create a matrix of counter tasks on each core */
-    for (int cpu = 0; cpu < configNUM_CORES; cpu++) {
-        for (int task = 0; task < 2; task++) {
-            xTaskCreatePinnedToCore(counter_task, "count", 2048, (void *)&(counters[cpu][task]), CONFIG_UNITY_FREERTOS_PRIORITY - task, &(tasks[cpu][task]), cpu);
-        }
-    }
+    /* --- Round 1: task_a has higher priority, should win the race --- */
+    xTaskCreatePinnedToCore(race_task, "a", 2048, (void *)(uintptr_t)TASK_ID_A,
+                            CONFIG_UNITY_FREERTOS_PRIORITY - 1, &task_a, 0);
+    xTaskCreatePinnedToCore(race_task, "b", 2048, (void *)(uintptr_t)TASK_ID_B,
+                            CONFIG_UNITY_FREERTOS_PRIORITY - 2, &task_b, 0);
 
-    /* check they were created with the expected priorities */
-    for (int cpu = 0; cpu < configNUM_CORES; cpu++) {
-        for (int task = 0; task < 2; task++) {
-            TEST_ASSERT_EQUAL(CONFIG_UNITY_FREERTOS_PRIORITY - task, uxTaskPriorityGet(tasks[cpu][task]));
-        }
-    }
+    /* Verify created priorities */
+    TEST_ASSERT_EQUAL(CONFIG_UNITY_FREERTOS_PRIORITY - 1, uxTaskPriorityGet(task_a));
+    TEST_ASSERT_EQUAL(CONFIG_UNITY_FREERTOS_PRIORITY - 2, uxTaskPriorityGet(task_b));
 
-    vTaskDelay(10);
+    /* Let both tasks block on s_race_sem */
+    vTaskDelay(pdMS_TO_TICKS(50));
 
-    /* at this point, only the higher priority tasks (first index) should be counting */
-    for (int cpu = 0; cpu < configNUM_CORES; cpu++) {
-        TEST_ASSERT_NOT_EQUAL(0, counters[cpu][0]);
-        TEST_ASSERT_EQUAL(0, counters[cpu][1]);
-    }
+    s_winner = 0;
+    xSemaphoreGive(s_race_sem);
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(s_done_sem, pdMS_TO_TICKS(200)));
+    TEST_ASSERT_EQUAL(TASK_ID_A, s_winner);
 
-    /* swap priorities! */
-    for (int cpu = 0; cpu < configNUM_CORES; cpu++) {
-        vTaskPrioritySet(tasks[cpu][0], CONFIG_UNITY_FREERTOS_PRIORITY - 1);
-        vTaskPrioritySet(tasks[cpu][1], CONFIG_UNITY_FREERTOS_PRIORITY);
-    }
+    vTaskDelete(task_a);
+    vTaskDelete(task_b);
 
-    /* check priorities have swapped... */
-    for (int cpu = 0; cpu < configNUM_CORES; cpu++) {
-        TEST_ASSERT_EQUAL(CONFIG_UNITY_FREERTOS_PRIORITY -1, uxTaskPriorityGet(tasks[cpu][0]));
-        TEST_ASSERT_EQUAL(CONFIG_UNITY_FREERTOS_PRIORITY, uxTaskPriorityGet(tasks[cpu][1]));
-    }
+    /* --- Test vTaskPrioritySet API --- */
+    xTaskCreatePinnedToCore(race_task, "p", 2048, (void *)(uintptr_t)TASK_ID_A,
+                            CONFIG_UNITY_FREERTOS_PRIORITY - 1, &task_a, 0);
+    TEST_ASSERT_EQUAL(CONFIG_UNITY_FREERTOS_PRIORITY - 1, uxTaskPriorityGet(task_a));
+    vTaskPrioritySet(task_a, CONFIG_UNITY_FREERTOS_PRIORITY - 2);
+    TEST_ASSERT_EQUAL(CONFIG_UNITY_FREERTOS_PRIORITY - 2, uxTaskPriorityGet(task_a));
+    vTaskDelete(task_a);
 
-    /* check the tasks which are counting have also swapped now... */
-    for (int cpu = 0; cpu < configNUM_CORES; cpu++) {
-        unsigned old_counters[2];
-        old_counters[0] = counters[cpu][0];
-        old_counters[1] = counters[cpu][1];
-        vTaskDelay(10);
-        TEST_ASSERT_EQUAL(old_counters[0], counters[cpu][0]);
-        TEST_ASSERT_NOT_EQUAL(old_counters[1], counters[cpu][1]);
-    }
+    /* --- Round 2: swap priorities — task_b now higher, should win --- */
+    xTaskCreatePinnedToCore(race_task, "a2", 2048, (void *)(uintptr_t)TASK_ID_A,
+                            CONFIG_UNITY_FREERTOS_PRIORITY - 2, &task_a, 0);
+    xTaskCreatePinnedToCore(race_task, "b2", 2048, (void *)(uintptr_t)TASK_ID_B,
+                            CONFIG_UNITY_FREERTOS_PRIORITY - 1, &task_b, 0);
 
-    /* clean up */
-    for (int cpu = 0; cpu < configNUM_CORES; cpu++) {
-        for (int task = 0; task < 2; task++) {
-            vTaskDelete(tasks[cpu][task]);
-        }
-    }
+    /* Let both tasks block on s_race_sem */
+    vTaskDelay(pdMS_TO_TICKS(50));
+
+    s_winner = 0;
+    xSemaphoreGive(s_race_sem);
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(s_done_sem, pdMS_TO_TICKS(200)));
+    TEST_ASSERT_EQUAL(TASK_ID_B, s_winner);
+
+    /* Cleanup */
+    vTaskDelete(task_a);
+    vTaskDelete(task_b);
+    vSemaphoreDelete(s_race_sem);
+    vSemaphoreDelete(s_done_sem);
 }

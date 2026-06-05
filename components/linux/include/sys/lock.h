@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,30 +12,23 @@
 extern "C" {
 #endif
 
-/* newlib locks implementation for CONFIG_IDF_TARGET_LINUX, single threaded.
- * Note, currently this doesn't implement the functions required
- * when _RETARGETABLE_LOCKING is defined. They should be added.
+/**
+ * Lock type backed by pthread mutexes.  A zero-initialized _lock_t is valid
+ * and will be lazily created on first acquire (matching newlib/esp_libc
+ * semantics).
  */
+typedef void * _lock_t;
 
-/* Compatibility definitions for legacy newlib locking functions */
-typedef int _lock_t;
-
-static inline void _lock_init(_lock_t *plock) {}
-static inline void _lock_init_recursive(_lock_t *plock) {}
-static inline void _lock_close(_lock_t *plock) {}
-static inline void _lock_close_recursive(_lock_t *plock) {}
-static inline void _lock_acquire(_lock_t *plock) {}
-static inline void _lock_acquire_recursive(_lock_t *plock) {}
-static inline int _lock_try_acquire(_lock_t *plock)
-{
-    return 1;
-}
-static inline int _lock_try_acquire_recursive(_lock_t *plock)
-{
-    return 1;
-}
-static inline void _lock_release(_lock_t *plock) {}
-static inline void _lock_release_recursive(_lock_t *plock) {}
+void _lock_init(_lock_t *plock);
+void _lock_init_recursive(_lock_t *plock);
+void _lock_close(_lock_t *plock);
+void _lock_close_recursive(_lock_t *plock);
+void _lock_acquire(_lock_t *plock);
+void _lock_acquire_recursive(_lock_t *plock);
+int  _lock_try_acquire(_lock_t *plock);
+int  _lock_try_acquire_recursive(_lock_t *plock);
+void _lock_release(_lock_t *plock);
+void _lock_release_recursive(_lock_t *plock);
 
 #ifdef __cplusplus
 }

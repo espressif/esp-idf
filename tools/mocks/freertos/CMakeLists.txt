@@ -16,6 +16,7 @@ set(include_dirs
     "${original_freertos_dir}/esp_additions/include/freertos"
     "${kernel_dir}/portable/linux/include" # For "spinlock.h"
     "${kernel_dir}/portable/linux/include/freertos" # For "portmacro.h"
+    "${kernel_dir}/portable/linux/include/esp_private" # CMock strips directory prefixes from includes
     "${kernel_dir}/include/freertos" # this is due to the way includes are generated in CMock (without freertos prefix)
 )
 
@@ -26,7 +27,8 @@ idf_component_mock(INCLUDE_DIRS ${include_dirs}
     ${original_freertos_dir}/FreeRTOS-Kernel/include/freertos/task.h
     ${original_freertos_dir}/FreeRTOS-Kernel/include/freertos/event_groups.h
     ${original_freertos_dir}/FreeRTOS-Kernel/include/freertos/queue.h
-    ${original_freertos_dir}/FreeRTOS-Kernel/portable/linux/include/freertos/portmacro.h)
+    ${original_freertos_dir}/FreeRTOS-Kernel/portable/linux/include/freertos/portmacro.h
+    ${kernel_dir}/portable/linux/include/esp_private/freertos_linux_coop_syscalls.h)
 
 idf_component_get_property(freertos_lib freertos COMPONENT_LIB)
 target_compile_definitions(${freertos_lib} PUBLIC "projCOVERAGE_TEST=0")

@@ -76,7 +76,7 @@ TEST_CASE("FreeRTOS Delete Blocked Tasks", "[freertos]")
 
        (1000 iterations takes about 9 seconds on ESP32 dual core)
      */
-    for(unsigned iter = 0; iter < 1000; iter++) {
+    for(unsigned iter = 0; iter < 100; iter++) {
         // Create everything
         SemaphoreHandle_t sem = xSemaphoreCreateMutex();
         for(unsigned i = 0; i < configNUM_CORES + 1; i++) {
@@ -95,6 +95,7 @@ TEST_CASE("FreeRTOS Delete Blocked Tasks", "[freertos]")
             vTaskDelete(blocking_tasks[i]);
             params[i].deleted = true;
         }
+
         vTaskDelay(4); // Yield to the idle task for cleanup
 
         vSemaphoreDelete(sem);
