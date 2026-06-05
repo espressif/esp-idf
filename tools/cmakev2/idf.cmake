@@ -94,7 +94,9 @@ function(__init_idf_path)
     endif()
 
     idf_build_set_property(IDF_PATH "${idf_path}")
+    # Components reference either ${IDF_PATH} or ${idf_path}; publish both.
     set(IDF_PATH ${idf_path} PARENT_SCOPE)
+    set(idf_path ${idf_path} PARENT_SCOPE)
     set(ENV{IDF_PATH} ${idf_path})
 endfunction()
 

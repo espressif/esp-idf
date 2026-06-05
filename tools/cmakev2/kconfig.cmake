@@ -752,14 +752,45 @@ function(__run_kconfgen)
     set(kconfgen_cmd ${base_kconfgen_cmd} ${kconfgen_outputs_cmd})
 
     idf_dbg("Running kconfgen: ${kconfgen_cmd}")
-    execute_process(
-        COMMAND ${kconfgen_cmd}
-        --env-file "${config_env_path}"
-        RESULT_VARIABLE kconfgen_result
-    )
 
-    if(kconfgen_result)
-        idf_die("Failed to run kconfgen: ${kconfgen_result}")
+    # kconfgen runs once during the bootstrap pass (before the component
+    # manager fetches managed components) and again on every iteration of
+    # the component-manager loop in __fetch_components_from_registry. Every
+    # pass except the converged one operates on an incomplete component
+    # set and can emit spurious "unknown kconfig symbol" warnings for
+    # symbols defined in not-yet-downloaded components, which
+    # idf-build-apps would otherwise treat as build failures. The quiet
+    # path captures stdout/stderr instead of streaming them; the
+    # converged pass flips __KCONFGEN_QUIET to NO and reaches the else
+    # branch, where warnings are emitted normally.
+    idf_build_get_property(quiet __KCONFGEN_QUIET)
+    if(quiet)
+        # Capture stdout/stderr into variables instead of discarding them.
+        # On success the captured output is dropped (so transient warnings
+        # never reach the build log). On non-zero exit we re-emit both
+        # streams so genuine errors (Kconfig parse errors, FatalError, etc.)
+        # remain debuggable.
+        execute_process(
+            COMMAND ${kconfgen_cmd}
+            --env-file "${config_env_path}"
+            RESULT_VARIABLE kconfgen_result
+            OUTPUT_VARIABLE kconfgen_stdout
+            ERROR_VARIABLE kconfgen_stderr
+        )
+        if(kconfgen_result)
+            message("${kconfgen_stdout}")
+            message("${kconfgen_stderr}")
+            idf_die("Failed to run kconfgen: ${kconfgen_result}")
+        endif()
+    else()
+        execute_process(
+            COMMAND ${kconfgen_cmd}
+            --env-file "${config_env_path}"
+            RESULT_VARIABLE kconfgen_result
+        )
+        if(kconfgen_result)
+            idf_die("Failed to run kconfgen: ${kconfgen_result}")
+        endif()
     endif()
 endfunction()
 
