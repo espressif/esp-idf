@@ -1871,6 +1871,9 @@ esp_err_t esp_deep_sleep_enable_gpio_wakeup(uint64_t gpio_pin_mask, esp_deepslee
         ESP_LOGE(TAG, "invalid mode");
         return ESP_ERR_INVALID_ARG;
     }
+    if (gpio_pin_mask == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
     gpio_int_type_t intr_type = ((mode == ESP_GPIO_WAKEUP_GPIO_LOW) ? GPIO_INTR_LOW_LEVEL : GPIO_INTR_HIGH_LEVEL);
     esp_err_t err = ESP_OK;
     for (gpio_num_t gpio_idx = GPIO_NUM_0; gpio_idx < GPIO_NUM_MAX; gpio_idx++, gpio_pin_mask >>= 1) {
