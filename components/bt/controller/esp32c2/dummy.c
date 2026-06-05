@@ -455,6 +455,8 @@ void r_ble_lll_conn_event_delete_and_reschedule(void){}
 void r_ble_lll_conn_event_delete_and_reschedule_eco4(void){}
 void r_ble_ll_utils_verify_aa(void){}
 void r_ble_ll_utils_verify_aa_eco4(void){}
+int r_ble_lll_conn_process_rx_data_after_halt(void){return 0;}
+int r_ble_lll_conn_process_rx_data_after_halt_eco4(void){return 0;}
 #endif // !DEFAULT_BT_LE_ROLE_PERIPHERAL
 
 #if !DEFAULT_BT_LE_ROLE_CENTROL && !DEFAULT_BT_LE_ROLE_PERIPHERAL
