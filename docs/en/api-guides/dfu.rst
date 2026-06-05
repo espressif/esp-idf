@@ -29,7 +29,7 @@ Device Firmware Upgrade (DFU) is a mechanism for upgrading the firmware of {IDF_
 USB Connection
 --------------
 
-.. only:: esp32p4
+.. only:: esp32p4 or esp32s31
 
     {IDF_TARGET_NAME} routes the USB D+ and D- signals to their dedicated pins. For USB device functionality, these pins must be connected to the USB bus (e.g., via a Micro-B port, USB-C port, or directly to standard-A plug).
 

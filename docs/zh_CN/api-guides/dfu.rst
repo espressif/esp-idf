@@ -29,7 +29,7 @@
 USB 连接
 --------------
 
-.. only:: esp32p4
+.. only:: esp32p4 or esp32s31
 
     {IDF_TARGET_NAME} 将 USB D+ 和 D- 信号连接到其专用引脚。为了实现 USB 设备功能，这些引脚必须连接到 USB 总线，如，通过 Micro-B 接口、USB-C 接口进行连接，或直接连接到标准 A 型插头。
 
