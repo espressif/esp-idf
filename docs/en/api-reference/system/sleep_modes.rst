@@ -454,9 +454,11 @@ The UART wakeup supports the following modes:
     #. Initialize the LP UART (call :cpp:func:`lp_core_uart_init`).
     #. Configure the LP_UART wakeup mode using the :cpp:func:`lp_core_uart_wakeup_setup` function with a :cpp:type:`uart_wakeup_cfg_t` structure, using the same configuration method as HP UART.
 
-    .. note::
+    .. only:: SOC_LP_CORE_LP_UART_WAKEUP_KEEP_TRIGGERED
 
-        Once the LP core wakes up due to LP_UART, you must call :cpp:func:`ulp_lp_core_lp_uart_reset_wakeup_en` or reset the LP UART module to clear the wakeup signal before the LP core goes to sleep, otherwise, it will be repeated wakeup.
+       .. note::
+
+           On chips with ``SOC_LP_CORE_LP_UART_WAKEUP_KEEP_TRIGGERED``, the LP UART wakeup signal remains triggered after a wakeup event. The LP core startup flow (:cpp:func:`ulp_lp_core_update_wakeup_cause`) automatically calls :cpp:func:`ulp_lp_core_lp_uart_reset_wakeup_en` and :cpp:func:`lp_core_uart_clear_buf` to clear this state. If the standard startup flow is not used, you must handle this manually; otherwise, repeated wakeups will occur.
 
     For example code on LP_UART wakeup, refer to :example:`system/ulp/lp_core/lp_uart/lp_uart_char_seq_wakeup`.
 
