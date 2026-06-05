@@ -1511,6 +1511,10 @@ config SOC_LP_CORE_HAS_PMP
     bool
     default y
 
+config SOC_LP_CORE_LP_UART_WAKEUP_KEEP_TRIGGERED
+    bool
+    default y
+
 config SOC_LP_TIMER_BIT_WIDTH_LO
     int
     default 32
