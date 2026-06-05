@@ -145,6 +145,10 @@ static esp_err_t emac_create_retention_module(emac_esp32_t *emac)
     if (sleep_retention_is_module_inited(module) && !sleep_retention_is_module_created(module)) {
         if ((ret = sleep_retention_module_allocate(module)) != ESP_OK) {
             ESP_LOGW(TAG, "create retention link failed on EMAC, power domain won't be turned off during sleep");
+        } else {
+            if ((ret = sleep_retention_module_attach(module)) != ESP_OK) {
+                ESP_LOGW(TAG, "attach retention link failed on EMAC, power domain won't be turned off during sleep");
+            }
         }
     }
     return ret;
@@ -172,6 +176,7 @@ static void emac_free_retention_module(emac_esp32_t *emac)
 {
     sleep_retention_module_t module = emac_reg_retention_info.module_id;
     if (sleep_retention_is_module_created(module)) {
+        sleep_retention_module_detach(module);
         sleep_retention_module_free(module);
     }
 }
@@ -862,6 +867,7 @@ static esp_err_t emac_esp_alloc_driver_obj(const eth_mac_config_t *config, emac_
                 .arg = (void *)emac
             },
         },
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
         .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
     };
     if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
