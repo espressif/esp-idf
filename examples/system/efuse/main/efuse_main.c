@@ -8,6 +8,7 @@
 */
 
 #include <stdio.h>
+#include <string.h>
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -37,6 +38,9 @@ typedef struct {
     uint16_t reserve;               /*!< Reserve */
 } device_desc_t;
 
+static char token[1024];
+// Option, used only to demonstrate how to read custom eFuse table
+static const char *add_custom_efuse_table = "--extend-efuse-table main/esp_efuse_custom_table.csv";
 
 static void print_device_desc(device_desc_t *desc)
 {
@@ -107,7 +111,18 @@ static void write_efuse_fields(device_desc_t *desc, esp_efuse_coding_scheme_t co
     ESP_ERROR_CHECK(esp_efuse_write_field_cnt(ESP_EFUSE_CUSTOM_SECURE_VERSION, desc->custom_secure_version));
 
     if (coding_scheme == coding_scheme_for_batch_mode) {
-        ESP_ERROR_CHECK(esp_efuse_batch_write_commit());
+        ESP_LOGI(TAG, "Token dump of staged eFuse writes:");
+        ESP_LOGW(TAG, "STAGED token dump can expose sensitive data, as it includes pending writes that are not yet burned and not yet read-protected.");
+        ESP_ERROR_CHECK(esp_efuse_token_dump(ESP_EFUSE_TOKEN_FROM_STAGED, token, sizeof(token)));
+        ESP_LOGI(TAG, "%s %s %s", ESP_EFUSE_MONITOR_EXECUTE_ESPEFUSE_SUMMARY, token, add_custom_efuse_table);
+        memset(token, 0, sizeof(token));
+
+        if (esp_efuse_batch_write_commit() != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to commit staged eFuses. Run the following command in console to see the state of eFuses:");
+            ESP_ERROR_CHECK(esp_efuse_token_dump(ESP_EFUSE_TOKEN_FROM_READ, token, sizeof(token)));
+            ESP_LOGI(TAG, "%s %s", ESP_EFUSE_MONITOR_EXECUTE_ESPEFUSE_DUMP, token);
+            memset(token, 0, sizeof(token));
+        }
     }
 }
 #endif // defined(CONFIG_EFUSE_VIRTUAL) || defined(CONFIG_EXAMPLE_TEST_RUN_USING_QEMU)
@@ -138,6 +153,15 @@ static esp_efuse_coding_scheme_t get_coding_scheme(void)
 void app_main(void)
 {
     ESP_LOGI(TAG, "Start eFuse example");
+
+    ESP_LOGI(TAG, "Initial token dump to log");
+    ESP_LOGW(TAG, "The token dump from the READ includes only the final, permanently programmed values that are read-protected.");
+    ESP_LOGW(TAG, "But it still should be handled securely, as it can include sensitive data such as unique identifiers, secure version numbers, etc.");
+    ESP_LOGW(TAG, "Clear the token after dumping");
+    ESP_LOGW(TAG, "Share this token only with trusted parties and keep it secure");
+    ESP_ERROR_CHECK(esp_efuse_token_dump(ESP_EFUSE_TOKEN_FROM_READ, token, sizeof(token)));
+    ESP_LOGI(TAG, "%s %s %s", ESP_EFUSE_MONITOR_EXECUTE_ESPEFUSE_SUMMARY, token, add_custom_efuse_table);
+    memset(token, 0, sizeof(token));
 
 #ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
     if (esp_flash_encryption_cfg_verify_release_mode()) {

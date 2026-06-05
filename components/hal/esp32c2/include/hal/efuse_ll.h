@@ -149,6 +149,14 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_rtc_ldo_act_d
     return EFUSE.rd_blk2_data5.rtc_ldo_act_dbias13;
 }
 
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_coding_error(unsigned index)
+{
+    if (index == 0) {
+        return EFUSE.rd_repeat_err.val;
+    }
+    return EFUSE.rd_rs_err.val;
+}
+
 /******************* eFuse control functions *************************/
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_read_cmd(void)

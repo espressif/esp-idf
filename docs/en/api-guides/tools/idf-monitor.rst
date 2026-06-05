@@ -361,6 +361,46 @@ Configuration File
 
 For more details on the configuration file, see the `IDF Monitor documentation`_.
 
+Host-side Command Markers
+=========================
+
+IDF Monitor can execute host-side helper commands when a device log line starts with a supported marker.
+
+For eFuse token decoding, print one of the following from firmware logs:
+
+* ``IDF_MONITOR_EXECUTE_ESPEFUSE_SUMMARY <TOKEN> [extra arguments]``
+* ``IDF_MONITOR_EXECUTE_ESPEFUSE_DUMP <TOKEN>``
+
+When a marker is detected, monitor invokes ``espefuse`` on the host and prints the decoded output inline.
+
+Example 1 (summary with custom table):
+
+.. code-block:: text
+
+  I (441) app: IDF_MONITOR_EXECUTE_ESPEFUSE_SUMMARY EFSR:esp32c3:100:... --extend-efuse-table main/esp_efuse_custom_table.csv
+
+This line triggers a host-side command equivalent to:
+
+.. code-block:: text
+
+  espefuse --token EFSR:esp32c3:100:... --extend-efuse-table main/esp_efuse_custom_table.csv summary --active
+
+Example 2 (raw dump):
+
+.. code-block:: text
+
+  I (442) app: IDF_MONITOR_EXECUTE_ESPEFUSE_DUMP EFSR:esp32c3:100:...
+
+This line triggers a host-side command equivalent to:
+
+.. code-block:: text
+
+  espefuse --token EFSR:esp32c3:100:... dump
+
+.. important::
+
+    Treat token payloads as sensitive data (especially ``EFSW``/``EFSRW``), because they can expose key values in plaintext while those values are still staged, not yet burned, and not yet read-protected. For token formats and generation APIs, see :doc:`eFuse Manager <../../api-reference/system/efuse>`.
+
 
 Known Issues with IDF Monitor
 =============================
