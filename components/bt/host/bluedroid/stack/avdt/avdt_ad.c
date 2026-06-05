@@ -110,6 +110,11 @@ void avdt_ad_init(void)
     tAVDT_TC_TBL    *p_tbl = avdt_cb.ad.tc_tbl;
     memset(&avdt_cb.ad, 0, sizeof(tAVDT_AD));
 
+    /* 0 is a valid tc_tbl index; use invalid marker for unassigned LCIDs */
+    for (i = 0; i < MAX_L2CAP_CHANNELS; i++) {
+        avdt_cb.ad.lcid_tbl[i] = 0xFF;
+    }
+
     /* make sure the peer_mtu is a valid value */
     for (i = 0; i < AVDT_NUM_TC_TBL; i++, p_tbl++) {
         p_tbl->peer_mtu = L2CAP_DEFAULT_MTU;
