@@ -383,6 +383,12 @@ tAVDT_CCB *avdt_ccb_alloc(BD_ADDR bd_addr)
             memcpy(p_ccb->peer_addr, bd_addr, BD_ADDR_LEN);
             p_ccb->cmd_q = fixed_queue_new(QUEUE_SIZE_MAX);
             p_ccb->rsp_q = fixed_queue_new(QUEUE_SIZE_MAX);
+            if (p_ccb->cmd_q == NULL || p_ccb->rsp_q == NULL) {
+                AVDT_TRACE_ERROR("avdt_ccb_alloc: queue alloc failed");
+                avdt_ccb_dealloc(p_ccb, NULL);
+                p_ccb = NULL;
+                break;
+            }
             p_ccb->timer_entry.param = (UINT32) p_ccb;
             AVDT_TRACE_DEBUG("avdt_ccb_alloc %d\n", i);
             break;

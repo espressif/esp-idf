@@ -909,6 +909,7 @@ UINT16 AVDT_WriteReqOpt(UINT8 handle, BT_HDR *p_pkt, UINT32 time_stamp, UINT8 m_
     }
     /* map handle to scb */
     if ((p_scb = avdt_scb_by_hdl(handle)) == NULL) {
+        osi_free(p_pkt);
         result = AVDT_BAD_HANDLE;
     } else {
         evt.apiwrite.p_buf = p_pkt;
