@@ -48,6 +48,14 @@ config BT_CLASSIC_ENABLED
     help
         For now this option needs "SMP_ENABLE" to be set to yes
 
+config BT_CLASSIC_MAX_RECONNECT_ON_COLLISION
+    int "Maximum number of reconnection attempts in case of collision"
+    depends on BT_CLASSIC_ENABLED
+    default 5
+    help
+        The maximum number of reconnection attempts when encountering rejection of connection
+        request with error code 0x0B(Connection Already Exists) from peer device
+
 config BT_CLASSIC_ENABLE_POWER_CTRL_VSC
     bool "Enable Espressif Vendor-specific HCI commands for power control of Classic Bluetooth"
     depends on BT_CLASSIC_ENABLED

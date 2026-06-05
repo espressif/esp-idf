@@ -25,6 +25,7 @@
 #define L2C_INT_H
 
 #include <stdbool.h>
+#include "common/bt_target.h"
 #include "stack/btm_api.h"
 #include "stack/l2c_api.h"
 #include "stack/l2cdefs.h"
@@ -74,6 +75,12 @@
 #define L2CAP_FCR_ACK_TOUT           200          /* 200 milliseconds */
 
 #define L2CAP_CACHE_ATT_ACL_NUM      10
+
+/* Maximum number of host-driven Create_Connection retries before reporting
+ * connection_exist failure to the application layer. */
+#define L2CAP_MAX_RECONNECT_ON_COLLISION   BR_EDR_MAX_RECONNECT_ON_COLLISION
+/* Back-off (in seconds) between two host-driven Create_Connection retries. */
+#define L2C_LP_CONN_RETRY_DELAY_TOUT 1            /* 1 second */
 
 /* Define the possible L2CAP channel states. The names of
 ** the states may seem a bit strange, but they are taken from
@@ -393,6 +400,13 @@ typedef struct t_l2c_linkcb {
     TIMER_LIST_ENT      info_timer_entry;           /* Timer entry for info resp timeout evt */
     TIMER_LIST_ENT      upda_con_timer;             /* Timer entry for update connection parameter */
     BD_ADDR             remote_bd_addr;             /* The BD address of the remote     */
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    UINT8               br_edr_create_con_retries;  /* Host-driven Create_Connection retry counter,
+                                                     * incremented for each non-success Connection
+                                                     * Complete that keeps CCBs on this LCB. */
+    TIMER_LIST_ENT      retry_timer_entry;          /* Back-off timer between host-driven
+                                                     * Create_Connection retries.       */
+#endif
 
     UINT8               link_role;                  /* Master or slave                  */
     UINT8               id;
@@ -733,6 +747,9 @@ extern BOOLEAN  l2c_link_hci_conn_comp (UINT8 status, UINT16 handle, BD_ADDR p_b
 extern BOOLEAN  l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason);
 extern BOOLEAN  l2c_link_hci_qos_violation (UINT16 handle);
 extern void     l2c_link_timeout (tL2C_LCB *p_lcb);
+#if (CLASSIC_BT_INCLUDED == TRUE)
+extern void     l2c_link_create_conn_retry (tL2C_LCB *p_lcb);
+#endif
 extern void     l2c_info_timeout (tL2C_LCB *p_lcb);
 extern void     l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf);
 extern void     l2c_link_adjust_allocation (void);
