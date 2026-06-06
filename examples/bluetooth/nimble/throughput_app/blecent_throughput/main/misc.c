@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,17 @@
 #include "host/ble_hs.h"
 #include "host/ble_uuid.h"
 #include "gattc.h"
+
+int
+peer_addr_parse(const char *addr_str, uint8_t addr[PEER_ADDR_VAL_SIZE])
+{
+    if (addr_str == NULL) {
+        return 0;
+    }
+    return sscanf(addr_str, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+                  &addr[5], &addr[4], &addr[3],
+                  &addr[2], &addr[1], &addr[0]);
+}
 
 /**
  * Utility function to log an array of bytes.
