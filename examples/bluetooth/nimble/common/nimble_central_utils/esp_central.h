@@ -15,6 +15,7 @@ extern "C" {
 #define PEER_ADDR_VAL_SIZE                                  6
 
 /** Misc. */
+int peer_addr_parse(const char *addr_str, uint8_t addr[PEER_ADDR_VAL_SIZE]);
 void print_bytes(const uint8_t *bytes, int len);
 void print_mbuf(const struct os_mbuf *om);
 void print_mbuf_data(const struct os_mbuf *om);
