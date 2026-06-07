@@ -101,6 +101,7 @@ static esp_err_t es8311_codec_init(void)
         .channel = 2,
         .channel_mask = 0x03,
         .sample_rate = EXAMPLE_SAMPLE_RATE,
+        .mclk_multiple = EXAMPLE_MCLK_MULTIPLE,
     };
     if (esp_codec_dev_open(codec_handle, &sample_cfg) != ESP_CODEC_DEV_OK) {
         ESP_LOGE(TAG, "Open codec device failed");
