@@ -504,11 +504,11 @@ static inline void adc_ll_digi_filter_enable(adc_digi_iir_filter_t idx, adc_unit
 static inline void adc_ll_digi_monitor_set_thres(adc_monitor_id_t monitor_id, adc_unit_t adc_n, uint8_t channel, int32_t h_thresh, int32_t l_thresh)
 {
     if (monitor_id == ADC_MONITOR_0) {
-        APB_SARADC.thres0_ctrl.thres0_channel = (adc_n << 3) | (channel & 0x7);
+        APB_SARADC.thres0_ctrl.thres0_channel = (adc_n << 4) | (channel & 0xF);
         APB_SARADC.thres0_ctrl.thres0_high = h_thresh;
         APB_SARADC.thres0_ctrl.thres0_low = l_thresh;
     } else { // ADC_MONITOR_1
-        APB_SARADC.thres1_ctrl.thres1_channel = (adc_n << 3) | (channel & 0x7);
+        APB_SARADC.thres1_ctrl.thres1_channel = (adc_n << 4) | (channel & 0xF);
         APB_SARADC.thres1_ctrl.thres1_high = h_thresh;
         APB_SARADC.thres1_ctrl.thres1_low = l_thresh;
     }
