@@ -54,7 +54,7 @@ void esp_flash_encryption_init_checks()
             esp_efuse_read_field_blob(CRYPT_CNT, &flash_crypt_cnt,  CRYPT_CNT[0]->bit_count);
             if (flash_crypt_cnt == (1<<(CRYPT_CNT[0]->bit_count))-1) {
                 // If encryption counter is already max, no need to write protect it
-                // (this distinction is important on ESP32 ECO3 where write-procted FLASH_CRYPT_CNT also write-protects UART_DL_DIS)
+                // (this distinction is important on ESP32 ECO3 where write-protected FLASH_CRYPT_CNT also write-protects UART_DL_DIS)
             } else {
                 ESP_LOGE(TAG, "Flash encryption & Secure Boot together requires FLASH_CRYPT_CNT efuse to be write protected. Fixing now...");
                 esp_flash_write_protect_crypt_cnt();
@@ -284,13 +284,13 @@ bool esp_flash_encryption_cfg_verify_release_mode(void)
     secure = esp_efuse_read_field_bit(ESP_EFUSE_RD_DIS_BLK1);
     result &= secure;
     if (!secure) {
-        ESP_LOGW(TAG, "Not read-protected flash ecnryption key (set RD_DIS_BLK1->1)");
+        ESP_LOGW(TAG, "Not read-protected flash encryption key (set RD_DIS_BLK1->1)");
     }
 
     secure = esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_BLK1);
     result &= secure;
     if (!secure) {
-        ESP_LOGW(TAG, "Not write-protected flash ecnryption key (set WR_DIS_BLK1->1)");
+        ESP_LOGW(TAG, "Not write-protected flash encryption key (set WR_DIS_BLK1->1)");
     }
     return result;
 }
@@ -405,7 +405,7 @@ bool esp_flash_encryption_cfg_verify_release_mode(void)
     secure = esp_efuse_read_field_bit(ESP_EFUSE_DIS_LEGACY_SPI_BOOT);
     result &= secure;
     if (!secure) {
-        ESP_LOGW(TAG, "Not disabled Legcy SPI boot (set DIS_LEGACY_SPI_BOOT->1)");
+        ESP_LOGW(TAG, "Not disabled Legacy SPI boot (set DIS_LEGACY_SPI_BOOT->1)");
     }
 #endif
 
