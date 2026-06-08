@@ -16,6 +16,18 @@ RGB LCD 面板的分配步骤只需一步，即调用函数 :cpp:func:`esp_lcd_n
     - :cpp:member:`esp_lcd_rgb_panel_config_t::num_fbs` 设置由驱动程序分配的 frame buffer 的数量。为了向后兼容，``0`` 表示分配 ``一个`` frame buffer。如果不想分配任何 frame buffer，请设置 :cpp:member:`esp_lcd_rgb_panel_config_t::no_fb`。
     - :cpp:member:`esp_lcd_rgb_panel_config_t::no_fb` 可决定是否分配 frame buffer。设置该字段后将不分配 frame buffer。这也被称为 :ref:`bounce_buffer_only` 模式。
 
+.. note::
+
+    - 当 :cpp:member:`esp_lcd_rgb_panel_config_t::data_width` 为 8 时：
+
+        - 像素时钟 PCLK 频率建议值需小于 80 MHz；
+        - 如果同时通过 :cpp:func:`esp_lcd_rgb_panel_set_yuv_conversion` 配置了 YUV 与 RGB 之间的格式转换，则 PCLK 频率建议值需小于 60 MHz。
+
+    - 当 :cpp:member:`esp_lcd_rgb_panel_config_t::data_width` 为 16 时：
+
+        - PCLK 频率建议值需小于 40 MHz；
+        - 如果同时配置了 YUV 与 RGB 之间的格式转换，则 PCLK 频率建议值需小于 30 MHz。
+
 GPIO 矩阵与 IOMUX 管脚
 ----------------------
 

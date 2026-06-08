@@ -16,6 +16,18 @@ RGB LCD panel is created by :cpp:func:`esp_lcd_new_rgb_panel`, with various conf
     - :cpp:member:`esp_lcd_rgb_panel_config_t::num_fbs` specifies how many frame buffers the driver should allocate. For backward compatibility, setting this to ``0`` will allocate a single frame buffer. If you don't want to allocate any frame buffer, use :cpp:member:`esp_lcd_rgb_panel_config_t::no_fb` instead.
     - :cpp:member:`esp_lcd_rgb_panel_config_t::no_fb` determines whether frame buffer will be allocated. When it is set, no frame buffer will be allocated. This is also called the :ref:`bounce_buffer_only` mode.
 
+.. note::
+
+    - When :cpp:member:`esp_lcd_rgb_panel_config_t::data_width` is 8:
+
+        - The PCLK frequency is recommended to be less than 80 MHz.
+        - If YUV-RGB format conversion is also configured via :cpp:func:`esp_lcd_rgb_panel_set_yuv_conversion`, the PCLK frequency is recommended to be less than 60 MHz.
+
+    - When :cpp:member:`esp_lcd_rgb_panel_config_t::data_width` is 16:
+
+        - The PCLK frequency is recommended to be less than 40 MHz.
+        - If YUV-RGB format conversion is also configured, the PCLK frequency is recommended to be less than 30 MHz.
+
 GPIO Matrix and IOMUX Pins
 --------------------------
 
