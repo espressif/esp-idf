@@ -45,6 +45,20 @@ extern const regdma_entries_config_t cache_regs_retention[CACHE_RETENTION_LINK_L
 #define TEE_APM_RETENTION_LINK_LEN   14
 extern const regdma_entries_config_t tee_apm_regs_retention[TEE_APM_RETENTION_LINK_LEN];
 
+#if !SOC_APM_SUPPORTED
+/**
+ * @brief Provide access to the APM control filter disable retention context.
+ *
+ * Workaround (IDF-14620): until full TEE/APM retention is supported, this only disables all APM
+ * control filters at the retention backup/restore stages.
+ *
+ * This is an internal function of the sleep retention driver, and is not
+ * useful for external use.
+ */
+#define TEE_APM_FILTER_DISABLE_RETENTION_LINK_LEN   3
+extern const regdma_entries_config_t tee_apm_filter_disable_regs_retention[TEE_APM_FILTER_DISABLE_RETENTION_LINK_LEN];
+#endif // !SOC_APM_SUPPORTED
+
 /**
  * @brief Provide access to hp_system configuration registers retention
  * context definition.

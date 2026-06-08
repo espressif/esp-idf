@@ -45,6 +45,16 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_tee_apm_retention_init
 #endif
     return ESP_OK;
 }
+#elif CONFIG_IDF_TARGET_ESP32S31
+/* Workaround (IDF-14620): full TEE/APM retention is not supported yet on ESP32S31, only disable all
+ * APM control filters at the retention backup/restore stages here. */
+static __attribute__((unused)) esp_err_t sleep_sys_periph_tee_apm_retention_init(void *arg)
+{
+    esp_err_t err = sleep_retention_entries_create(tee_apm_filter_disable_regs_retention, ARRAY_SIZE(tee_apm_filter_disable_regs_retention), REGDMA_LINK_PRI_NON_CRITICAL_TEE_APM, SLEEP_RETENTION_MODULE_SYS_PERIPH);
+    ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for digital peripherals (%s) retention", "TEE/APM");
+    ESP_LOGD(TAG, "TEE/APM sleep retention initialization");
+    return ESP_OK;
+}
 #endif
 
 #if CONFIG_ESP_CONSOLE_UART
@@ -136,7 +146,7 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_retention_init(void *a
     err = sleep_sys_periph_cache_retention_init();
     if(err) goto error;
 #endif
-#if SOC_APM_SUPPORTED
+#if SOC_APM_SUPPORTED || CONFIG_IDF_TARGET_ESP32S31
     err = sleep_sys_periph_tee_apm_retention_init(arg);
     if(err) goto error;
 #endif
