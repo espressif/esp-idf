@@ -9,6 +9,7 @@ import secrets
 import subprocess
 import threading
 import time
+from typing import Generator
 from typing import Optional
 from typing import Tuple
 
@@ -105,6 +106,25 @@ PORT_MAPPING = {
     'ESPPORT2': 'esp32s3',
     'ESPPORT3': 'esp32c6'
 }
+
+
+@pytest.fixture(scope='module', autouse=True)
+def erase_flash_after_all_cases() -> Generator[None, None, None]:
+    yield
+
+    serial_ports = list(dict.fromkeys(filter(None, map(os.getenv, PORT_MAPPING))))
+    failed_ports = []
+    for serial_port in serial_ports:
+        command = ['python', '-m', 'esptool', '--port', serial_port, 'erase_flash']
+        print(f'Erasing flash on {serial_port}: {" ".join(command)}')
+        result = subprocess.run(command, capture_output=True, text=True)
+        print(f'Erase flash stdout on {serial_port}:\n{result.stdout}')
+        if result.stderr:
+            print(f'Erase flash stderr on {serial_port}:\n{result.stderr}')
+        if result.returncode != 0:
+            failed_ports.append(serial_port)
+
+    assert not failed_ports, f'Failed to erase flash on ports: {failed_ports}'
 
 
 # Case 1: Thread network formation and attaching
