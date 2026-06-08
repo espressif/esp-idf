@@ -431,17 +431,23 @@ typedef enum {
 } soc_periph_mwdt_clk_src_t;
 
 //////////////////////////////////////////////CLOCK OUTPUT///////////////////////////////////////////////////////////
+/**
+ * @brief Clock output signal ID
+ */
 typedef enum {
-    CLKOUT_SIG_XTAL    = 5,     /*!< Main crystal oscillator clock */
-    CLKOUT_SIG_CPU     = 16,    /*!< CPU clock */
-    CLKOUT_SIG_AHB     = 17,    /*!< AHB clock */
-    CLKOUT_SIG_APB     = 18,    /*!< APB clock */
-    CLKOUT_SIG_XTAL32K = 21,    /*!< External 32kHz crystal clock */
-    CLKOUT_SIG_EXT32K  = 22,    /*!< External slow clock input through XTAL_32K_P */
-    CLKOUT_SIG_RC_FAST = 23,    /*!< RC fast clock, about 17.5MHz */
-    CLKOUT_SIG_RC_32K  = 24,    /*!< Internal slow RC oscillator */
-    CLKOUT_SIG_RC_SLOW = 25,    /*!< RC slow clock, depends on the RTC_CLK_SRC configuration */
-    CLKOUT_SIG_INVALID = 0xFF,
+    CLKOUT_SIG_MODEM_32M        = 0x0,  /*!< 32MHz clock for modem (clk8M) */
+    CLKOUT_SIG_MODEM_16M        = 0x1,  /*!< 16MHz clock for modem (clk16) */
+    CLKOUT_SIG_MODEM_8M         = 0x2,  /*!< 8MHz clock for modem (clk32) */
+    CLKOUT_SIG_XTAL             = 0x6,  /*!< 32MHz CPU debug mode clock */
+    CLKOUT_SIG_RTC_FAST         = 0xA,  /*!< RTC fast clock from LP system */
+    CLKOUT_SIG_CPU              = 0xB,  /*!< CPU clock */
+    CLKOUT_SIG_AHB              = 0xC,  /*!< AHB clock */
+    CLKOUT_SIG_APB              = 0xD,  /*!< APB clock */
+    CLKOUT_SIG_XTAL32K          = 0x10, /*!< 32KHz external crystal clock */
+    CLKOUT_SIG_EXT32K           = 0x11, /*!< 32KHz external slow clock input */
+    CLKOUT_SIG_RC_FAST          = 0x12, /*!< 20MHz FOSC clock (RTC fast clock) */
+    CLKOUT_SIG_RC_SLOW          = 0x13, /*!< 600KHz SOSC clock (RTC slow clock) */
+    CLKOUT_SIG_INVALID          = 0xFF,
 } soc_clkout_sig_id_t;
 
 //////////////////////////////////////////////////FLASH///////////////////////////////////////////////////////////////////
