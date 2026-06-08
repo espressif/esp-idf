@@ -165,16 +165,28 @@ static void l2c_csm_closed (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
                                   p_ccb->p_lcb->handle, TRUE, &l2c_link_sec_comp, p_ccb);
         break;
 
-    case L2CEVT_LP_CONNECT_CFM_NEG:                     /* Link failed          */
+    case L2CEVT_LP_CONNECT_CFM_NEG: {                   /* Link failed          */
         tL2C_CONN_INFO *p_ci = (tL2C_CONN_INFO *)p_data;
-        /* Disconnect unless ACL collision and upper layer wants to handle it */
-        if (p_ci->status != HCI_ERR_CONNECTION_EXISTS
-                || !btm_acl_notif_conn_collision(p_ccb->p_lcb->remote_bd_addr)) {
+        BOOLEAN keep_for_collision = FALSE;
+#if (CLASSIC_BT_INCLUDED == TRUE)
+        if (p_ci->status == HCI_ERR_CONNECTION_EXISTS
+            && p_ccb->p_lcb->br_edr_create_con_retries <= L2CAP_MAX_RECONNECT_ON_COLLISION
+            && btm_acl_notif_conn_collision(p_ccb->p_lcb->remote_bd_addr)) {
+            keep_for_collision = TRUE;
+        }
+#else
+        if (p_ci->status == HCI_ERR_CONNECTION_EXISTS
+            && btm_acl_notif_conn_collision(p_ccb->p_lcb->remote_bd_addr)) {
+            keep_for_collision = TRUE;
+        }
+#endif
+        if (!keep_for_collision) {
             L2CAP_TRACE_API ("L2CAP - Calling ConnectCfm_Cb(), CID: 0x%04x  Status: %d", p_ccb->local_cid, p_ci->status);
             l2cu_release_ccb (p_ccb);
             (*connect_cfm)(local_cid, p_ci->status);
         }
         break;
+    }
 
     case L2CEVT_L2CA_CONNECT_REQ:                       /* API connect request  */
         /* Cancel sniff mode if needed */
