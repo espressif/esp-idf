@@ -723,7 +723,7 @@ esp_rom_spiflash_result_t esp_rom_spiflash_write_disable(void)
 
 #elif CONFIG_IDF_TARGET_ESP32S3
 extern void esp_rom_spi_set_address_bit_len(int spi, int addr_bits);
-void esp_rom_opiflash_cache_mode_config(esp_rom_spiflash_read_mode_t mode, const esp_rom_opiflash_spi0rd_t *cache)
+void esp_rom_spiflash_cache_mode_config(esp_rom_spiflash_read_mode_t mode, const esp_rom_opiflash_spi0rd_t *cache)
 {
     esp_rom_spi_set_op_mode(0, mode);
     REG_CLR_BIT(SPI_MEM_USER_REG(0), SPI_MEM_USR_MOSI);
@@ -748,7 +748,7 @@ void esp_rom_opiflash_cache_mode_config(esp_rom_spiflash_read_mode_t mode, const
 
 #elif CONFIG_IDF_TARGET_ESP32P4
 extern void esp_rom_spi_set_address_bit_len(int spi, int addr_bits);
-void esp_rom_opiflash_cache_mode_config(esp_rom_spiflash_read_mode_t mode, const esp_rom_opiflash_spi0rd_t *cache)
+void esp_rom_spiflash_cache_mode_config(esp_rom_spiflash_read_mode_t mode, const esp_rom_opiflash_spi0rd_t *cache)
 {
     esp_rom_spi_set_op_mode(0, mode);
 
@@ -776,7 +776,7 @@ void esp_rom_opiflash_cache_mode_config(esp_rom_spiflash_read_mode_t mode, const
 }
 #elif CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
 extern void esp_rom_spi_set_address_bit_len(int spi, int addr_bits);
-void esp_rom_opiflash_cache_mode_config(esp_rom_spiflash_read_mode_t mode, const esp_rom_opiflash_spi0rd_t *cache)
+void esp_rom_spiflash_cache_mode_config(esp_rom_spiflash_read_mode_t mode, const esp_rom_opiflash_spi0rd_t *cache)
 {
     esp_rom_spi_set_op_mode(0, mode);
 
