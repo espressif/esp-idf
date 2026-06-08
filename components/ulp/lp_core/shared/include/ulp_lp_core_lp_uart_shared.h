@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,9 +19,10 @@ extern "C" {
  *
  * @note This function configures the LP UART wakeup mode. Ensure that the UART has already been initialized
  *       with the lp_core_uart_init() call.
- *       Once the LP Core wakes up due to the LP UART, the wakeup feature is disabled.
- *       To re-enable the wakeup from the LP UART, you must call
- *       ulp_lp_core_lp_uart_reset_wakeup_en() again before the LP core goes to sleep.
+ *       Once the LP Core wakes up due to the LP UART, the wakeup will be kept triggered in the chips with
+ *       SOC_LP_CORE_LP_UART_WAKEUP_KEEP_TRIGGERED. You need to call ulp_lp_core_lp_uart_reset_wakeup_en()
+ *       to reset the wakeup signal and the UART buffer manually after waking up, which is done in ulp
+ *       startup phase.
  *       Also be aware of limitations in different modes mentioned in the uart_wakeup_cfg_t struct.
  *
  *

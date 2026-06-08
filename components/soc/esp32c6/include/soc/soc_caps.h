@@ -544,6 +544,7 @@
 #define SOC_LP_CORE_SUPPORT_ETM               (1) /*!< LP Core supports ETM */
 #define SOC_LP_CORE_SUPPORT_I2C               (1) /*!< LP Core supports I2C */
 #define SOC_LP_CORE_HW_AUTO_CLRWAKEUPCAUSE    (1) /*!< LP core requests sleep, PMU clears both HP and LP wakeup causes */
+#define SOC_LP_CORE_LP_UART_WAKEUP_KEEP_TRIGGERED   (1) /*!< LP UART wakeup source is kept triggered */
 
 /*------------------------------------- DEBUG CAPS -------------------------------------*/
 #define SOC_DEBUG_HAVE_OCD_STUB_BINS    (1)
