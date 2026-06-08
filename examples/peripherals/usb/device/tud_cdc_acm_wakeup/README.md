@@ -6,6 +6,7 @@
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 This example shows how to set up an ESP chip as a USB CDC ACM device that enters light sleep when the USB bus is suspended and wakes up from USB activity.
+The wakeup source is available only on USB-OTG capable targets with High-Speed USB support. It is not supported by USB Serial/JTAG-only peripherals.
 
 As a USB stack, a TinyUSB component is used.
 
@@ -15,7 +16,7 @@ The example implements a USB CDC ACM echo device. When the host suspends the USB
 
 ### Hardware Required
 
-Any ESP board that supports USB wakeup from light sleep.
+Any ESP board that supports High-Speed USB-OTG wakeup from light sleep.
 
 #### Pin Assignment
 
@@ -49,6 +50,8 @@ I (465) tud_cdc_acm_wakeup: USB initialization DONE
 
 Connect to the serial port (e.g. on Linux, it should be `/dev/ttyACM0`) by any terminal application (e.g. `picocom /dev/ttyACM0`).
 Now you can send data strings to the device, the device will echo back the same data string.
+
+To trigger USB suspend from the host, disable or suspend the CDC ACM device on the host side. On Windows, open Device Manager, find the COM port for the device, and disable it. On Linux, you can unbind the CDC ACM driver for the device or put the USB device into autosuspend. On macOS, disconnecting the terminal application and letting the host suspend the interface can also trigger suspend depending on the host power policy.
 
 When the USB host suspends and resumes the bus, the monitor output should include:
 

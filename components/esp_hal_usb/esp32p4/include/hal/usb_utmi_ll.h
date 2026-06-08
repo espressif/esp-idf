@@ -11,11 +11,9 @@
 #include "soc/lp_clkrst_struct.h"
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/hp_system_struct.h"
+#include "soc/lp_system_struct.h"
 #include "soc/usb_utmi_struct.h"
 #include "hal/config.h"
-#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
-#include "soc/lp_system_struct.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {

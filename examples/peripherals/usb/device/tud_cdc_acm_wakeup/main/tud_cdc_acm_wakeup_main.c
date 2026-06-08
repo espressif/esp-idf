@@ -10,10 +10,10 @@
 #include "esp_log.h"
 #include "esp_rom_serial_output.h"
 #include "esp_sleep.h"
+#include "esp_private/usb_phy.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
-#include "hal/usb_utmi_hal.h"
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "tinyusb.h"
@@ -85,7 +85,7 @@ void tud_suspend_cb(bool remote_wakeup_en)
     (void) remote_wakeup_en;
 
     ESP_LOGI(TAG, "USB suspended, entering light sleep");
-    usb_utmi_hal_set_suspend_state(true);
+    usb_phy_set_otg_suspend_state(true);
 
     esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 
@@ -95,16 +95,13 @@ void tud_suspend_cb(bool remote_wakeup_en)
     } else {
         uint32_t causes = esp_sleep_get_wakeup_causes();
         if (causes & BIT(ESP_SLEEP_WAKEUP_UNDEFINED)) {
-            ESP_LOGI(TAG, "Woke up from: unknown");
-            printf("%lx\n", causes);
-            return;
-        }
-        if (causes & BIT(ESP_SLEEP_WAKEUP_USB)) {
+            ESP_LOGW(TAG, "Woke up from an unknown source: 0x%lx", causes);
+        } else if (causes & BIT(ESP_SLEEP_WAKEUP_USB)) {
             ESP_LOGI(TAG, "Woke up from: USB");
         }
     }
-    usb_utmi_hal_set_suspend_state(false);
-    usb_utmi_hal_clear_wakeup_status();
+    usb_phy_set_otg_suspend_state(false);
+    usb_phy_clear_otg_wakeup_status();
 }
 
 void tud_resume_cb(void)
