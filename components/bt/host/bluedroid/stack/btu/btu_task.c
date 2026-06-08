@@ -321,6 +321,7 @@ static void btu_general_alarm_process(void *param)
         break;
 
     case BTU_TTYPE_L2CAP_LINK:
+    case BTU_TTYPE_L2CAP_LINK_RETRY:
     case BTU_TTYPE_L2CAP_CHNL:
     case BTU_TTYPE_L2CAP_HOLD:
     case BTU_TTYPE_L2CAP_INFO:
