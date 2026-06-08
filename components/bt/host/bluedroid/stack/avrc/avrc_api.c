@@ -435,18 +435,17 @@ static UINT8 avrc_proc_far_msg(UINT8 handle, UINT8 label, UINT8 cr, BT_HDR **pp_
                     /* Free original START packet, replace with pointer to reassembly buffer  */
                     osi_free(p_pkt);
                     *pp_pkt = p_rcb->p_rmsg;
-                } else {
-                    /* Unable to allocate buffer for fragmented avrc message. Reuse START
-                                      buffer for reassembly (re-assembled message may fit into ACL buf) */
-                    AVRC_TRACE_DEBUG ("Unable to allocate buffer for fragmented avrc message, \
-                                       reusing START buffer for reassembly");
-                    p_rcb->rasm_offset = p_pkt->offset;
-                    p_rcb->p_rmsg = p_pkt;
-                }
 
-                /* set offset to point to where to copy next - use the same re-asm logic as AVCT */
-                p_rcb->p_rmsg->offset += p_rcb->p_rmsg->len;
-                req_continue = TRUE;
+                    /* set offset to point to where to copy next - use the same re-asm logic as AVCT */
+                    p_rcb->p_rmsg->offset += p_rcb->p_rmsg->len;
+                    req_continue = TRUE;
+                } else {
+                    /* do not reuse START buffer; it is smaller than BT_DEFAULT_BUFFER_SIZE */
+                    AVRC_TRACE_ERROR("Unable to allocate buffer for fragmented avrc message");
+                    drop_code = 5;
+                    osi_free(p_pkt);
+                    *pp_pkt = NULL;
+                }
             } else if (p_rcb->p_rmsg == NULL) {
                 /* Received a CONTINUE/END, but no corresponding START
                               (or previous fragmented response was dropped) */
