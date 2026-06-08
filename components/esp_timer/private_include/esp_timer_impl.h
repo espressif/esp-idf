@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,8 @@
 #include <stdint.h>
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "sdkconfig.h"
 
 #if CONFIG_ESP_TIMER_IN_IRAM
@@ -148,3 +150,11 @@ void esp_timer_impl_init_system_time(void);
  */
 void esp_timer_impl_try_to_set_next_alarm(void);
 #endif
+
+/**
+ * @brief Get the task handle used to dispatch esp_timer task callbacks.
+ *
+ * This is used by linux timer implementations to notify the esp_timer task
+ * without exposing the task handle outside the component implementation.
+ */
+TaskHandle_t esp_timer_impl_get_timer_task_handle(void);

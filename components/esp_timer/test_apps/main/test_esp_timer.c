@@ -6,6 +6,7 @@
 #include "sdkconfig.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <inttypes.h>
 #include <time.h>
 #include <sys/time.h>
@@ -14,6 +15,9 @@
 #include "esp_timer_impl.h"
 #include "unity.h"
 #include "soc/soc_caps.h"
+#if !CONFIG_IDF_TARGET_LINUX
+#include "soc/timer_group_reg.h"
+#endif
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -30,6 +34,8 @@
 #define WITH_PROFILING 1
 #endif
 
+#define ESP_TIMER_TEST_LINUX_TOLERANCE_MS 50
+
 static void dummy_cb(void* arg)
 {
 }
@@ -42,7 +48,8 @@ TEST_CASE("esp_timer orders timers correctly", "[esp_timer]")
     esp_timer_handle_t handles[num_timers];
     char* names[num_timers];
     for (size_t i = 0; i < num_timers; ++i) {
-        asprintf(&names[i], "timer%d", i);
+        int ret = asprintf(&names[i], "timer%zu", i);
+        assert(ret != -1);
         esp_timer_create_args_t args = {
             .callback = &dummy_cb,
             .name = names[i]
@@ -50,7 +57,8 @@ TEST_CASE("esp_timer orders timers correctly", "[esp_timer]")
         TEST_ESP_OK(esp_timer_create(&args, &handles[i]));
         TEST_ESP_OK(esp_timer_start_once(handles[i], timeouts[i] * 100));
     }
-    char* stream_str[1024];
+    static char stream_str[2048];
+    memset(stream_str, 0, sizeof(stream_str));
     FILE* stream = fmemopen(stream_str, sizeof(stream_str), "r+");
     TEST_ESP_OK(esp_timer_dump(stream));
     for (size_t i = 0; i < num_timers; ++i) {
@@ -150,12 +158,19 @@ TEST_CASE("esp_timer produces correct delay", "[esp_timer]")
 
         TEST_ESP_OK(esp_timer_start_once(timer1, delays_ms[i] * 1000));
 
-        vTaskDelay(delays_ms[i] * 2 / portTICK_PERIOD_MS);
+#if CONFIG_IDF_TARGET_LINUX
+        const int wait_multiplier = 4;
+        const int32_t tolerance_ms = ESP_TIMER_TEST_LINUX_TOLERANCE_MS;
+#else
+        const int wait_multiplier = 2;
+        const int32_t tolerance_ms = portTICK_PERIOD_MS;
+#endif
+        vTaskDelay(pdMS_TO_TICKS(delays_ms[i] * wait_multiplier));
         TEST_ASSERT(t_end != 0);
         int32_t ms_diff = (t_end - t_start) / 1000;
         printf("%d %"PRIi32"\n", delays_ms[i], ms_diff);
 
-        TEST_ASSERT_INT32_WITHIN(portTICK_PERIOD_MS, delays_ms[i], ms_diff);
+        TEST_ASSERT_INT32_WITHIN(tolerance_ms, delays_ms[i], ms_diff);
     }
     ref_clock_deinit();
 
@@ -181,7 +196,7 @@ static void test_periodic_correct_delays_timer_func(void* arg)
     test_periodic_correct_delays_args_t* p_args = (test_periodic_correct_delays_args_t*) arg;
     int64_t t_end = ref_clock_get();
     int32_t ms_diff = (t_end - p_args->t_start) / 1000;
-    printf("timer #%d %"PRIi32"ms\n", p_args->cur_interval, ms_diff);
+    printf("timer #%zu %"PRIi32"ms\n", p_args->cur_interval, ms_diff);
     p_args->intervals[p_args->cur_interval++] = ms_diff;
     // Deliberately make timer handler run longer.
     // We check that this doesn't affect the result.
@@ -213,8 +228,13 @@ TEST_CASE("periodic esp_timer produces correct delays", "[esp_timer]")
     TEST_ASSERT(xSemaphoreTake(args.done, delay_ms * NUM_INTERVALS * 2));
 
     TEST_ASSERT_EQUAL_UINT32(NUM_INTERVALS, args.cur_interval);
+#if CONFIG_IDF_TARGET_LINUX
+    const int32_t tolerance_ms = ESP_TIMER_TEST_LINUX_TOLERANCE_MS;
+#else
+    const int32_t tolerance_ms = portTICK_PERIOD_MS;
+#endif
     for (size_t i = 0; i < NUM_INTERVALS; ++i) {
-        TEST_ASSERT_INT32_WITHIN(portTICK_PERIOD_MS, (i + 1) * delay_ms, args.intervals[i]);
+        TEST_ASSERT_INT32_WITHIN(tolerance_ms, (i + 1) * delay_ms, args.intervals[i]);
     }
     ref_clock_deinit();
     TEST_ESP_OK(esp_timer_dump(stdout));
@@ -250,7 +270,7 @@ static void test_timers_ordered_correctly_timer_func(void* arg)
     size_t count = p_args->common->count;
     int expected_index = p_args->common->order[count];
     int ms_since_start = (ref_clock_get() - p_args->t_start) / 1000;
-    printf("Time %dms, at count %d, expected timer %d, got timer %d\n",
+    printf("Time %dms, at count %zu, expected timer %d, got timer %d\n",
            ms_since_start, count, expected_index, p_args->timer_index);
     if (expected_index != p_args->timer_index) {
         p_args->pass = false;
@@ -265,7 +285,7 @@ static void test_timers_ordered_correctly_timer_func(void* arg)
         return;
     }
     int next_interval = p_args->intervals[p_args->intervals_count];
-    printf("starting timer %d interval #%d, %d ms\n",
+    printf("starting timer %d interval #%zu, %d ms\n",
            p_args->timer_index, p_args->intervals_count, next_interval);
     esp_timer_start_once(p_args->timer, next_interval * 1000);
 }
@@ -373,12 +393,17 @@ TEST_CASE("esp_timer for very short intervals", "[esp_timer]")
     ESP_ERROR_CHECK(esp_timer_create(&timer_args, &timer1));
     ESP_ERROR_CHECK(esp_timer_create(&timer_args, &timer2));
     const int timeout_ms = 10;
+    TickType_t wait_timeout_ticks = pdMS_TO_TICKS(timeout_ms * 2);
+#if CONFIG_IDF_TARGET_LINUX
+    // Use a longer timeout for Linux to avoid test instability due to scheduling delays.
+    wait_timeout_ticks *= 10;
+#endif
     for (int timeout_delta_us = -150; timeout_delta_us < 150; timeout_delta_us++) {
         printf("delta=%d", timeout_delta_us);
         ESP_ERROR_CHECK(esp_timer_start_once(timer1, timeout_ms * 1000));
         ESP_ERROR_CHECK(esp_timer_start_once(timer2, timeout_ms * 1000 + timeout_delta_us));
-        TEST_ASSERT_EQUAL(pdPASS, xSemaphoreTake(semaphore, timeout_ms * 2));
-        TEST_ASSERT_EQUAL(pdPASS, xSemaphoreTake(semaphore, timeout_ms * 2));
+        TEST_ASSERT_EQUAL(pdPASS, xSemaphoreTake(semaphore, wait_timeout_ticks));
+        TEST_ASSERT_EQUAL(pdPASS, xSemaphoreTake(semaphore, wait_timeout_ticks));
         printf("\n");
         TEST_ESP_ERR(ESP_ERR_INVALID_STATE, esp_timer_stop(timer1));
         TEST_ESP_ERR(ESP_ERR_INVALID_STATE, esp_timer_stop(timer2));
@@ -455,7 +480,7 @@ static void timer_test_monotonic_values_task(void* arg)
             error_repeat_cnt = 0;
         }
         if (error_repeat_cnt > 2) {
-            printf("diff=%lld\n", diff);
+            printf("diff=%" PRId64 "\n", diff);
             state->pass = false;
         }
         state->avg_diff += diff;
@@ -622,12 +647,12 @@ TEST_CASE("esp_timer_impl_advance moves time base correctly", "[esp_timer]")
     esp_timer_impl_advance(diff_us);
     int64_t t1 = esp_timer_get_time();
     int64_t t_delta = t1 - t0;
-    printf("diff_us=%lld t0=%lld t1=%lld t1-t0=%lld\n", diff_us, t0, t1, t_delta);
+    printf("diff_us=%" PRId64 " t0=%" PRId64 " t1=%" PRId64 " t1-t0=%" PRId64 "\n", diff_us, t0, t1, t_delta);
     TEST_ASSERT_INT_WITHIN(1000, diff_us, (int) t_delta);
 }
 
 typedef struct {
-    int64_t cb_time;
+    volatile int64_t cb_time;
 } test_run_when_expected_state_t;
 
 static void test_run_when_expected_timer_func(void* varg)
@@ -649,8 +674,15 @@ TEST_CASE("after esp_timer_impl_advance, timers run when expected", "[esp_timer]
     esp_timer_handle_t timer;
     TEST_ESP_OK(esp_timer_create(&timer_args, &timer));
 
+#if CONFIG_IDF_TARGET_LINUX
+    const int64_t interval = 50000;
+    const int64_t advance = 30000;
+    const int32_t tolerance_us = 10000;
+#else
     const int64_t interval = 10000;
     const int64_t advance = 2000;
+    const int32_t tolerance_us = portTICK_PERIOD_MS * 1000;
+#endif
 
     printf("test 1\n");
     int64_t t_start = ref_clock_get();
@@ -658,22 +690,25 @@ TEST_CASE("after esp_timer_impl_advance, timers run when expected", "[esp_timer]
     esp_timer_impl_advance(advance);
     vTaskDelay(2 * interval / 1000 / portTICK_PERIOD_MS);
 
-    TEST_ASSERT_INT_WITHIN(portTICK_PERIOD_MS * 1000, interval - advance, state.cb_time - t_start);
+    TEST_ASSERT_INT_WITHIN(tolerance_us, interval - advance, state.cb_time - t_start);
 
     printf("test 2\n");
     state.cb_time = 0;
     t_start = ref_clock_get();
     esp_timer_start_once(timer, interval);
     esp_timer_impl_advance(interval);
-    vTaskDelay(1);
+    while (state.cb_time == 0) {
+        vTaskDelay(1);
+    }
 
-    TEST_ASSERT(state.cb_time > t_start);
+    TEST_ASSERT_GREATER_THAN(t_start, state.cb_time);
 
     ref_clock_deinit();
     TEST_ESP_OK(esp_timer_delete(timer));
     vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
 
+#if CONFIG_FREERTOS_USE_TICK_HOOK
 static esp_timer_handle_t timer1;
 static SemaphoreHandle_t sem;
 static void IRAM_ATTR test_tick_hook(void)
@@ -711,6 +746,7 @@ TEST_CASE("Can start/stop timer from ISR context", "[esp_timer]")
     vSemaphoreDelete(sem);
     vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
+#endif // CONFIG_FREERTOS_USE_TICK_HOOK
 
 #if !defined(CONFIG_FREERTOS_UNICORE) && SOC_DPORT_WORKAROUND
 
@@ -841,6 +877,7 @@ TEST_CASE("esp_timer_impl_set_alarm and using start_once do not lead that the Sy
 
 #endif // !defined(CONFIG_FREERTOS_UNICORE) && SOC_DPORT_WORKAROUND
 
+#ifdef CONFIG_IDF_TARGET_ESP32
 TEST_CASE("Test case when esp_timer_impl_set_alarm needs set timer < now_time", "[esp_timer]")
 {
     esp_timer_impl_advance(50331648); // 0xefffffff/80 = 50331647
@@ -855,9 +892,10 @@ TEST_CASE("Test case when esp_timer_impl_set_alarm needs set timer < now_time", 
 
     const uint32_t offset = 2;
 
-    printf("alarm_reg = 0x%llx, count_reg 0x%llx\n", alarm_reg, count_reg);
+    printf("alarm_reg = 0x%" PRIx64 ", count_reg 0x%" PRIx64 "\n", alarm_reg, count_reg);
     TEST_ASSERT(alarm_reg <= (count_reg + offset));
 }
+#endif // CONFIG_IDF_TARGET_ESP32
 
 static void timer_callback5(void* arg)
 {
@@ -887,11 +925,18 @@ TEST_CASE("Test a latency between a call of callback and real event", "[esp_time
         }
         int diff = callback_time - expected_time;
         esp_rom_printf(DRAM_STR("%d us\n"), diff);
+
 #ifndef CONFIG_IDF_ENV_FPGA
         if (i != 0) {
+#if CONFIG_IDF_TARGET_LINUX
+            // It may be very big due to OS scheduling, the value is taken with big margin
+            const int max_latency_us = 5000;
+#else
+            const int max_latency_us = 50;
+#endif
             // skip the first measurement
             // if CPU_FREQ = 240MHz. 14 - 16us
-            TEST_ASSERT_LESS_OR_EQUAL(50, diff);
+            TEST_ASSERT_LESS_OR_EQUAL(max_latency_us, diff);
         }
 #endif // not CONFIG_IDF_ENV_FPGA
     }
@@ -997,7 +1042,9 @@ static void timer_isr_callback(void* arg)
     old_time[num_timer] = now;
     if (num_timer == 0) {
         esp_rom_printf("(%lld): \t\t\t\t timer ISR, dt: %lld us\n", now, dt);
+#ifndef CONFIG_IDF_TARGET_LINUX
         assert(xPortInIsrContext());
+#endif
     } else {
         esp_rom_printf("(%lld): timer TASK, dt: %lld us\n", now, dt);
         assert(!xPortInIsrContext());
@@ -1056,7 +1103,9 @@ static void dump_task(void* arg)
 
 static void isr_callback(void* arg)
 {
+#ifndef CONFIG_IDF_TARGET_LINUX
     assert(xPortInIsrContext());
+#endif
 }
 
 static void task_callback(void* arg)
@@ -1108,7 +1157,9 @@ TEST_CASE("Test ESP_TIMER_ISR dispatch method is not blocked", "[esp_timer]")
 
 static void isr_callback1(void* arg)
 {
+#ifndef CONFIG_IDF_TARGET_LINUX
     assert(xPortInIsrContext());
+#endif
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     esp_rom_printf("isr_callback1: timer ISR\n");
     SemaphoreHandle_t done = *(SemaphoreHandle_t*) arg;
@@ -1262,6 +1313,8 @@ TEST_CASE("Test that CPU1 can handle esp_timer ISR even when CPU0 is blocked", "
 }
 #endif // not CONFIG_FREERTOS_UNICORE
 
+#ifndef CONFIG_IDF_TARGET_LINUX
+
 volatile uint64_t task_t1;
 volatile uint64_t isr_t1;
 const uint64_t period_task_ms = 200;
@@ -1332,6 +1385,7 @@ TEST_CASE("Test ISR dispatch callbacks are not blocked even if TASK callbacks ta
     TEST_ESP_OK(esp_timer_delete(isr_timer_handle));
     vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
+#endif // CONFIG_IDF_TARGET_LINUX
 
 #endif // CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
 
@@ -1420,7 +1474,7 @@ static void test_stop_blocking_callback_stop_inside(void* arg)
 
     // Call stop_blocking from the timer's own callback:
     // This must NOT block (otherwise we deadlock waiting for ourselves).
-    TEST_ESP_OK(esp_timer_stop_blocking(state->timer, portMAX_DELAY));
+    TEST_ESP_OK(esp_timer_stop_blocking(state->timer, (uint32_t) portMAX_DELAY));
 
     // Signal to the test that stop_blocking has returned from inside callback
     xSemaphoreGive(state->stop_called_from_cb);

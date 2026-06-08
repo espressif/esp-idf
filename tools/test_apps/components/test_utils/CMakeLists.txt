@@ -1,3 +1,4 @@
+idf_build_get_property(target IDF_TARGET)
 idf_build_get_property(arch IDF_TARGET_ARCH)
 
 set(srcs "memory_checks.c"
@@ -13,12 +14,18 @@ if(CONFIG_IDF_TARGET_ESP32)
     list(APPEND srcs "ref_clock_impl_rmt_pcnt.c")
 elseif(CONFIG_SOC_GPTIMER_SUPPORTED)
     list(APPEND srcs "ref_clock_impl_timergroup.c")
+elseif(CONFIG_IDF_TARGET_LINUX)
+    list(APPEND srcs "ref_clock_impl_linux.c")
 endif()
 
-if("${arch}" STREQUAL "xtensa")
-    set(priv_requires perfmon esp_driver_pcnt esp_driver_gptimer esp_driver_rmt esp_netif)
+if(${target} STREQUAL "linux")
+    set(priv_requires "")
 else()
-    set(priv_requires esp_driver_pcnt esp_driver_gptimer esp_driver_rmt esp_netif)
+    if("${arch}" STREQUAL "xtensa")
+        set(priv_requires perfmon esp_driver_pcnt esp_driver_gptimer esp_driver_rmt esp_netif)
+    else()
+        set(priv_requires esp_driver_pcnt esp_driver_gptimer esp_driver_rmt esp_netif)
+    endif()
 endif()
 
 idf_component_register(SRCS ${srcs}

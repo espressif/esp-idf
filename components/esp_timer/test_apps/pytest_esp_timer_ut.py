@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import pytest
 from pytest_embedded import Dut
@@ -24,6 +24,13 @@ from pytest_embedded_idf.utils import idf_parametrize
 )
 def test_esp_timer(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=120)
+
+
+@pytest.mark.host_test
+@pytest.mark.parametrize('config', ['default'], indirect=True)
+@idf_parametrize('target', ['linux'], indirect=['target'])
+def test_esp_timer_linux(dut: Dut) -> None:
+    dut.run_all_single_board_cases(timeout=180)
 
 
 @pytest.mark.generic

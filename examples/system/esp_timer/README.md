@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-P4 | ESP32-S2 | ESP32-S3 | ESP32-S31 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | -------- | -------- | --------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-P4 | ESP32-S2 | ESP32-S3 | ESP32-S31 | Linux |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | -------- | -------- | --------- | ----- |
 
 # ESP Timer Example (High Resolution Timer)
 
@@ -90,8 +90,8 @@ I (266) example: Started timers, time since boot: 30808 us
 Timer stats:
 Name                  Period      Alarm         Times_armed   Times_trigg   Times_skip    Cb_exec_time
 periodic              500000      530773        1             0             0             0
-timed periodic        500000      3000000       1             0             0             0
-one-shot              0           5030792       1             0             0             0
+timed periodic        500000      3050000       1             0             0             0
+one-shot              0           5130792       1             0             0             0
 timed one-shot        0           6000000       1             0             0             0
 I (766) example: Periodic timer called, time since boot: 530850 us
 I (1266) example: Periodic timer called, time since boot: 1030802 us
@@ -100,58 +100,58 @@ I (2266) example: Periodic timer called, time since boot: 2030802 us
 Timer stats:
 Name                  Period      Alarm         Times_armed   Times_trigg   Times_skip    Cb_exec_time
 periodic              500000      2530773       1             4             0             999
-timed periodic        500000      3000000       1             0             0             0
-one-shot              0           5030792       1             0             0             0
+timed periodic        500000      3050000       1             0             0             0
+one-shot              0           5130792       1             0             0             0
 timed one-shot        0           6000000       1             0             0             0
 I (2766) example: Periodic timer called, time since boot: 2530826 us
-I (3236) example: Timed periodic timer called, time since boot: 3000029 us
+I (3286) example: Timed periodic timer called, time since boot: 3050029 us
 I (3266) example: Periodic timer called, time since boot: 3030802 us
-I (3736) example: Timed periodic timer called, time since boot: 3500029 us
+I (3786) example: Timed periodic timer called, time since boot: 3550029 us
 I (3766) example: Periodic timer called, time since boot: 3530802 us
-I (4236) example: Timed periodic timer called, time since boot: 4000029 us
+I (4286) example: Timed periodic timer called, time since boot: 4050029 us
 I (4266) example: Periodic timer called, time since boot: 4030802 us
 Timer stats:
 Name                  Period      Alarm         Times_armed   Times_trigg   Times_skip    Cb_exec_time
-timed periodic        500000      4500000       1             3             0             709
+timed periodic        500000      4550000       1             3             0             709
 periodic              500000      4530773       1             8             0             1947
-one-shot              0           5030792       1             0             0             0
+one-shot              0           5130792       1             0             0             0
 timed one-shot        0           6000000       1             0             0             0
-I (4736) example: Timed periodic timer called, time since boot: 4500053 us
+I (4786) example: Timed periodic timer called, time since boot: 4550053 us
 I (4766) example: Periodic timer called, time since boot: 4530802 us
-I (5236) example: Timed periodic timer called, time since boot: 5000030 us
+I (5286) example: Timed periodic timer called, time since boot: 5050030 us
 I (5266) example: Periodic timer called, time since boot: 5030803 us
-I (5266) example: One-shot timer called, time since boot: 5031025 us
-I (5266) example: Restarted periodic timer with 1s period, time since boot: 5031920 us
-I (5736) example: Timed periodic timer called, time since boot: 5500029 us
+I (5366) example: One-shot timer called, time since boot: 5131025 us
+I (5366) example: Restarted periodic timer with 1s period, time since boot: 5131920 us
+I (5786) example: Timed periodic timer called, time since boot: 5550029 us
 I (6236) example: Timed one-shot timer called, time since boot: 6000028 us
 I (6236) example: Restarted timed periodic timer with 1s period, time since boot: 6000268 us
-I (6266) example: Periodic timer called, time since boot: 6031945 us
+I (6366) example: Periodic timer called, time since boot: 6131945 us
 Timer stats:
 Name                  Period      Alarm         Times_armed   Times_trigg   Times_skip    Cb_exec_time
 timed periodic        1000000     7000000       1             6             0             1438
-periodic              1000000     7031916       2             11            0             2644
+periodic              1000000     7131916       2             11            0             2644
 timed one-shot        0           0             1             1             0             3722
 one-shot              0           0             1             1             0             8517
 I (7236) example: Timed periodic timer called, time since boot: 7000053 us
-I (7266) example: Periodic timer called, time since boot: 7031945 us
+I (7366) example: Periodic timer called, time since boot: 7131945 us
 I (8236) example: Timed periodic timer called, time since boot: 8000029 us
-I (8266) example: Periodic timer called, time since boot: 8031945 us
+I (8366) example: Periodic timer called, time since boot: 8131945 us
 Timer stats:
 Name                  Period      Alarm         Times_armed   Times_trigg   Times_skip    Cb_exec_time
 timed periodic        1000000     9000000       1             8             0             1940
-periodic              1000000     9031916       2             13            0             3106
+periodic              1000000     9131916       2             13            0             3106
 timed one-shot        0           0             1             1             0             3722
 one-shot              0           0             1             1             0             8517
 I (9236) example: Timed periodic timer called, time since boot: 9000053 us
-I (9266) example: Periodic timer called, time since boot: 9031945 us
+I (9366) example: Periodic timer called, time since boot: 9131945 us
 I (10236) example: Timed periodic timer called, time since boot: 10000029 us
-I (10266) example: Periodic timer called, time since boot: 10031945 us
+I (10366) example: Periodic timer called, time since boot: 10131945 us
 I (10476) example: Entering light sleep for 0.5s, time since boot: 10239360 us
 I (10476) example: Woke up from light sleep, time since boot: 10739673 us
 I (10736) example: Timed periodic timer called, time since boot: 11000033 us
-I (10766) example: Periodic timer called, time since boot: 11031945 us
+I (10866) example: Periodic timer called, time since boot: 11131945 us
 I (11736) example: Timed periodic timer called, time since boot: 12000029 us
-I (11766) example: Periodic timer called, time since boot: 12031945 us
+I (11866) example: Periodic timer called, time since boot: 12131945 us
 I (12486) example: Stopped and deleted timers
 ...
 ```

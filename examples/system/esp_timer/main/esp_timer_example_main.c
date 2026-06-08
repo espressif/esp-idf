@@ -12,7 +12,9 @@
 #include <unistd.h>
 #include "esp_timer.h"
 #include "esp_log.h"
+#if SOC_LIGHT_SLEEP_SUPPORTED
 #include "esp_sleep.h"
+#endif
 #include "sdkconfig.h"
 
 static void periodic_timer_callback(void* arg);
@@ -26,13 +28,13 @@ void app_main(void)
 {
     /* Create four timers:
      * 1. a periodic timer which will run every 0.5s, and print a message
-     * 2. a periodic timer which will run every 0.5s, starting at time 3s from
-     *    boot, and print a message
-     * 3. a one-shot timer which will fire after 5s, and re-start periodic
+     * 2. a periodic timer which will run every 0.5s, starting 3.05s from now
+     *    using an absolute timestamp, and print a message
+     * 3. a one-shot timer which will fire after 5.1s, and re-start periodic
      *    timer 1 with period of 1s.
-     * 4. a one-shot timer which will fire at time 6s from boot, and re-start
-     *    periodic timer 2 with period of 1s, firing for the first time at 7s
-     *    after boot.
+     * 4. a one-shot timer which will fire 6s from now using an absolute
+     *    timestamp, and re-start periodic timer 2 with period of 1s, firing
+     *    for the first time 1s later.
      */
 
     const esp_timer_create_args_t periodic_timer_args = {
@@ -69,10 +71,14 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_timer_create(&timed_oneshot_timer_args, &timed_oneshot_timer));
 
     /* Start the timers */
+    int64_t start_time = esp_timer_get_time();
     ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 500000));
-    ESP_ERROR_CHECK(esp_timer_start_periodic_at(timed_periodic_timer, 500000, 3000000));
-    ESP_ERROR_CHECK(esp_timer_start_once(oneshot_timer, 5000000));
-    ESP_ERROR_CHECK(esp_timer_start_once_at(timed_oneshot_timer, 6000000));
+    /* Keep callback times staggered so logging/restart work in one callback
+     * does not delay another callback and make the example test flaky.
+     */
+    ESP_ERROR_CHECK(esp_timer_start_periodic_at(timed_periodic_timer, 500000, start_time + 3050000));
+    ESP_ERROR_CHECK(esp_timer_start_once(oneshot_timer, 5100000));
+    ESP_ERROR_CHECK(esp_timer_start_once_at(timed_oneshot_timer, start_time + 6000000));
     ESP_LOGI(TAG, "Started timers, time since boot: %lld us", esp_timer_get_time());
 
     /* Print debugging information about timers to console every 2 seconds */
@@ -141,7 +147,7 @@ static void timed_oneshot_timer_callback(void* arg)
     ESP_LOGI(TAG, "Timed one-shot timer called, time since boot: %lld us", time_since_boot);
     esp_timer_handle_t timed_periodic_timer_handle = (esp_timer_handle_t) arg;
     /* To start the timer which is running, need to stop it first */
-    ESP_ERROR_CHECK(esp_timer_restart_at(timed_periodic_timer_handle, 1000000, 7000000));
+    ESP_ERROR_CHECK(esp_timer_restart_at(timed_periodic_timer_handle, 1000000, time_since_boot + 1000000));
     time_since_boot = esp_timer_get_time();
     ESP_LOGI(TAG, "Restarted timed periodic timer with 1s period, time since boot: %lld us",
             time_since_boot);

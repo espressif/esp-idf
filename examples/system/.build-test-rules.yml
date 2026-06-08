@@ -60,6 +60,8 @@ examples/system/esp_event/user_event_loops:
     - esp_event
 
 examples/system/esp_timer:
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
   depends_components:
     - esp_timer
 

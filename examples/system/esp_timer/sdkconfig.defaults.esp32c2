@@ -1,0 +1,3 @@
+# LIBC_NEWLIB_NANO_FORMAT is enabled by default on ESP32-C2
+# This example needs 64-bit integer formatting, this is why this option is disabled
+CONFIG_LIBC_NEWLIB_NANO_FORMAT=n

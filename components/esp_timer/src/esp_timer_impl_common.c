@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,8 +29,21 @@ void esp_timer_impl_unlock(void)
     portEXIT_CRITICAL(&s_time_update_lock);
 }
 
+#ifndef CONFIG_IDF_TARGET_LINUX
 void esp_timer_private_lock(void) __attribute__((alias("esp_timer_impl_lock")));
 void esp_timer_private_unlock(void) __attribute__((alias("esp_timer_impl_unlock")));
+#else // CONFIG_IDF_TARGET_LINUX
+// Avoid using __attribute(alias) here since linux target builds on MacOS fail to compile.
+void esp_timer_private_lock(void)
+{
+    esp_timer_impl_lock();
+}
+
+void esp_timer_private_unlock(void)
+{
+    esp_timer_impl_unlock();
+}
+#endif // CONFIG_IDF_TARGET_LINUX
 
 void ESP_TIMER_IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
 {

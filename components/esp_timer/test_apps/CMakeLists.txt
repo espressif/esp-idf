@@ -3,6 +3,10 @@ cmake_minimum_required(VERSION 3.22)
 
 list(PREPEND SDKCONFIG_DEFAULTS "$ENV{IDF_PATH}/tools/test_apps/configs/sdkconfig.debug_helpers" "sdkconfig.defaults")
 
+if(NOT "${IDF_TARGET}" STREQUAL "linux")
+    list(APPEND SDKCONFIG_DEFAULTS "sdkconfig.defaults.no_linux")
+endif()
+
 # "Trim" the build. Include the minimal set of components, main, and anything it depends on.
 set(COMPONENTS main)
 set(EXTRA_COMPONENT_DIRS "$ENV{IDF_PATH}/tools/test_apps/components")
