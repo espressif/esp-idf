@@ -64,14 +64,19 @@ enum nan_role {
  * @param role        enum nan_role value for the local device.
  * @param ndp_csid    NCS-SK CSID for paired-peer NDP (WIFI_NAN_CSID_NCS_SK_128
  *                    or _SK_256), 0 if no usable cipher mapping was available.
- * @param nd_pmk      ND-PMK bytes (32) or NULL if KDK was absent.
- * @param nd_pmk_len  Length of @a nd_pmk (32 when present, 0 otherwise).
+ * @param nd_pmk           ND-PMK bytes (32) or NULL if KDK was absent.
+ * @param nd_pmk_len       Length of @a nd_pmk (32 when present, 0 otherwise).
+ * @param nik_lifetime_sec NIK / paired-peer cache lifetime in seconds, as supplied
+ *                         to @ref esp_nan_supp_pasn_initiator_auth or
+ *                         @ref esp_nan_supp_pasn_responder_init. The NAN app
+ *                         substitutes 86400 s when this is 0.
  */
 typedef void (*esp_nan_pairing_key_installed_cb_t)(const uint8_t *peer_nmi,
                                                    uint8_t role,
                                                    uint8_t ndp_csid,
                                                    const uint8_t *nd_pmk,
-                                                   size_t nd_pmk_len);
+                                                   size_t nd_pmk_len,
+                                                   uint32_t nik_lifetime_sec);
 
 /**
  * Last PASN key material after successful pairing (PMK + flattened PTK KCK|KEK|TK|KDK).
@@ -98,11 +103,15 @@ struct nan_pasn_key_material {
  * pairing responder. Runs on the wpa_supplicant eloop thread.
  *
  * @param  peer_nmi  Peer NMI (6 bytes).
- * @param  pincode   6-digit PIN (0..999999), or @c UINT32_MAX for the default PIN.
+ * @param  pincode           6-digit PIN (0..999999), or @c UINT32_MAX for the default PIN.
+ * @param  nik_lifetime_sec  NIK lifetime in seconds; forwarded unchanged to
+ *                           @c pairing_key_installed_cb (NAN app currently
+ *                           passes 86400).
  * @param  pairing_key_installed_cb Callback invoked after pairwise key installation with peer NMI.
  * @return 0 on success, -1 on failure.
  */
 int esp_nan_supp_pasn_responder_init(const uint8_t *peer_nmi, uint32_t pincode,
+                                     uint32_t nik_lifetime_sec,
                                      esp_nan_pairing_key_installed_cb_t pairing_key_installed_cb);
 
 /**
@@ -113,11 +122,15 @@ int esp_nan_supp_pasn_responder_init(const uint8_t *peer_nmi, uint32_t pincode,
  * Runs on the wpa_supplicant eloop thread.
  *
  * @param  peer_nmi  Peer NMI (6 bytes).
- * @param  pincode   6-digit PIN (0..999999), or @c UINT32_MAX for the default PIN.
+ * @param  pincode           6-digit PIN (0..999999), or @c UINT32_MAX for the default PIN.
+ * @param  nik_lifetime_sec  NIK lifetime in seconds; forwarded unchanged to
+ *                           @c pairing_key_installed_cb (NAN app currently
+ *                           passes 86400).
  * @param  pairing_key_installed_cb Callback invoked after pairwise key installation with peer NMI.
  * @return 0 on success, -1 on failure.
  */
 int esp_nan_supp_pasn_initiator_auth(const uint8_t *peer_nmi, uint32_t pincode,
+                                     uint32_t nik_lifetime_sec,
                                      esp_nan_pairing_key_installed_cb_t pairing_key_installed_cb);
 
 /**

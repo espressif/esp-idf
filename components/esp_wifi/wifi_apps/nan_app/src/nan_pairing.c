@@ -50,7 +50,8 @@ static void nan_pairing_key_installed_cb(const uint8_t *peer_nmi,
                                          uint8_t role,
                                          uint8_t ndp_csid,
                                          const uint8_t *nd_pmk,
-                                         size_t nd_pmk_len);
+                                         size_t nd_pmk_len,
+                                         uint32_t nik_lifetime_sec);
 #endif
 
 bool nan_pairing_validate_publish_bootstrapping(uint16_t bootstrapping_methods)
@@ -259,6 +260,7 @@ esp_err_t esp_wifi_nan_pairing_start(wifi_nan_pairing_config_t *cfg)
     switch (cfg->self_role) {
     case NAN_PAIRING_ROLE_RESPONDER:
         ret = esp_nan_supp_pasn_responder_init(cfg->peer_nmi, cfg->cred.pincode,
+                                               NAN_PAIRING_DEFAULT_NIK_LIFETIME_SEC,
                                                nan_pairing_key_installed_cb);
         if (ret != 0) {
             ESP_LOGE(TAG, "NAN PASN responder init failed for "MACSTR, MAC2STR(cfg->peer_nmi));
@@ -267,6 +269,7 @@ esp_err_t esp_wifi_nan_pairing_start(wifi_nan_pairing_config_t *cfg)
         break;
     case NAN_PAIRING_ROLE_INITIATOR:
         ret = esp_nan_supp_pasn_initiator_auth(cfg->peer_nmi, cfg->cred.pincode,
+                                               NAN_PAIRING_DEFAULT_NIK_LIFETIME_SEC,
                                                nan_pairing_key_installed_cb);
         if (ret != 0) {
             ESP_LOGE(TAG, "NAN PASN initiator auth failed for "MACSTR, MAC2STR(cfg->peer_nmi));
@@ -310,7 +313,7 @@ int esp_nan_construct_nira(uint8_t *frm)
     }
 
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
-    if (s_nan_ctx.cached_nira_valid) {
+    if (s_nan_ctx.nira_cached) {
         nonce = s_nan_ctx.cached_nira_nonce;
         tag = s_nan_ctx.cached_nira_tag;
     } else {
@@ -355,7 +358,7 @@ int esp_nan_construct_nira(uint8_t *frm)
 
         memcpy(s_nan_ctx.cached_nira_nonce, fresh_nonce, NAN_NIRA_NONCE_LEN);
         memcpy(s_nan_ctx.cached_nira_tag, fresh_tag, NAN_NIRA_TAG_LEN);
-        s_nan_ctx.cached_nira_valid = true;
+        s_nan_ctx.nira_cached = true;
 
         nonce = fresh_nonce;
         tag = fresh_tag;
@@ -768,18 +771,22 @@ static void nan_pairing_key_installed_cb(const uint8_t *peer_nmi,
                                          uint8_t role,
                                          uint8_t ndp_csid,
                                          const uint8_t *nd_pmk,
-                                         size_t nd_pmk_len)
+                                         size_t nd_pmk_len,
+                                         uint32_t nik_lifetime_sec)
 {
     if (!peer_nmi) {
         return;
     }
 
 #if defined(CONFIG_ESP_WIFI_NAN_SECURITY)
+    uint32_t lifetime_sec = nik_lifetime_sec ?
+                            nik_lifetime_sec : NAN_PAIRING_DEFAULT_NIK_LIFETIME_SEC;
+
     /* Cache ND-PMK for future paired NDPs (Wi-Fi Aware v4.0 §7.6.4.2). */
     if (ndp_csid && nd_pmk && nd_pmk_len == ESP_WIFI_NAN_NDP_PMK_LEN) {
         (void)nan_app_register_paired_peer(peer_nmi, role, ndp_csid,
                                            nd_pmk, nd_pmk_len,
-                                           NAN_PAIRING_DEFAULT_NIK_LIFETIME_SEC);
+                                           lifetime_sec);
     } else {
         ESP_LOGW(TAG, "Pairing complete for " MACSTR
                  ": ND-PMK unavailable (csid=%u nd_pmk_len=%u); "
@@ -790,6 +797,7 @@ static void nan_pairing_key_installed_cb(const uint8_t *peer_nmi,
     (void)ndp_csid;
     (void)nd_pmk;
     (void)nd_pmk_len;
+    (void)nik_lifetime_sec;
 #endif
 
     if (role == NAN_ROLE_PAIRING_INITIATOR) {
@@ -879,7 +887,7 @@ void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
             evt.status = WIFI_NAN_PAIRING_STATUS_ACCEPTED;
             evt.reason_code = 0;
             MACADDR_COPY(evt.peer_nmi, peer_mac);
-            esp_nan_disable_pairing();
+            esp_nan_disable_pairing(p_peer_svc->own_svc_id);
             nan_app_post_event(WIFI_EVENT_NAN_PAIRING_CONFIRM, &evt, sizeof(evt));
         }
     }

@@ -291,7 +291,7 @@ typedef struct {
     bool own_nik_valid;
     uint8_t cached_nira_nonce[8];
     uint8_t cached_nira_tag[8];
-    bool cached_nira_valid;
+    bool nira_cached;
 #endif
 #ifdef CONFIG_ESP_WIFI_PASN_SUPPORT
     struct nan_pasn_data *nan_pasn_data;

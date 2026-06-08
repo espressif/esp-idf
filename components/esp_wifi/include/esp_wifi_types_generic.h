@@ -1583,7 +1583,7 @@ typedef struct {
   * @brief Argument structure for WIFI_EVENT_NAN_CLUSTER_JOIN event
   */
 typedef struct {
-    uint8_t cluster_id[6];              /**< Cluster ID (BSSID) that was joined/started */
+    uint8_t cluster_id[6];              /**< NAN Cluster ID (BSSID) that was joined/started by the device */
 } wifi_event_nan_cluster_join_t;
 
 /**
