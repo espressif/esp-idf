@@ -43,6 +43,7 @@ struct nan_pasn_data {
     size_t pasn_ptk_len;
     struct pasn_data *pasn;
     nan_pasn_pairing_key_installed_cb_t pairing_key_installed_cb;
+    uint32_t nik_lifetime_sec;
 };
 
 int nan_initiate_pasn_verify(struct nan_pasn_data *pd, const uint8_t *peer_addr,
