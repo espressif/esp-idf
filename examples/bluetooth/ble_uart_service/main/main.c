@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  *
- * BLE UART Service example. Backend (NimBLE / Bluedroid) is picked
+ * ESP-BLE-UART example. Backend (NimBLE / Bluedroid) is picked
  * by the host-stack Kconfig at compile time. Whatever the central
  * writes to the RX characteristic is echoed back over TX.
  */
