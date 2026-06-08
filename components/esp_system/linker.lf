@@ -1,3 +1,34 @@
+# ============== esp_sys_event sections ==============
+
+[sections:esysev_shdn]
+entries:
+    .esysev_shdn+
+
+[sections:esysev_initc]
+entries:
+    .esysev_initc+
+
+[sections:esysev_inits]
+entries:
+    .esysev_inits+
+
+# Default placements (overridden below with ALIGN/SURROUND flags)
+[scheme:esp_sys_event_default]
+entries:
+    esysev_shdn  -> flash_rodata
+    esysev_initc -> flash_rodata
+    esysev_inits -> flash_rodata
+
+[mapping:esp_sys_event]
+archive: *
+entries:
+    * (esp_sys_event_default);
+        esysev_shdn  -> flash_rodata ALIGN(4, pre) KEEP() SORT(init_priority) SURROUND(esysev_shdn),
+        esysev_initc -> flash_rodata ALIGN(4, pre) KEEP() SORT(init_priority) SURROUND(esysev_initc),
+        esysev_inits -> flash_rodata ALIGN(4, pre) KEEP() SORT(init_priority) SURROUND(esysev_inits)
+
+# ============== esp_system component mappings ==============
+
 [mapping:esp_system]
 archive: libesp_system.a
 entries:

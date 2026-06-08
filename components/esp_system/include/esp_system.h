@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,27 +46,53 @@ typedef enum {
 typedef void (*shutdown_handler_t)(void);
 
 /**
-  * @brief  Register shutdown handler
-  *
-  * This function allows you to register a handler that gets invoked before
-  * the application is restarted using esp_restart function.
-  * @param handle function to execute on restart
-  * @return
-  *   - ESP_OK on success
-  *   - ESP_ERR_INVALID_STATE if the handler has already been registered
-  *   - ESP_ERR_NO_MEM if no more shutdown handler slots are available
-  */
+ * @brief Register a shutdown handler
+ *
+ * Registers a handler invoked before the application is restarted via
+ * esp_restart(). The dispatch order between handlers registered through
+ * this function is unspecified; if a deterministic order is required,
+ * use ESP_SHUTDOWN_HANDLER_REGISTER instead, which dispatches in priority
+ * order and runs before any handlers registered here.
+ *
+ * The number of registrations is bounded only by available heap.
+ *
+ * @param handle Function to execute at shutdown. Must not be NULL.
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if `handle` is NULL
+ *      - ESP_ERR_INVALID_STATE if the handler is already registered
+ *      - ESP_ERR_NO_MEM if memory allocation failed
+ */
 esp_err_t esp_register_shutdown_handler(shutdown_handler_t handle);
 
 /**
-  * @brief  Unregister shutdown handler
-  *
-  * This function allows you to unregister a handler which was previously
-  * registered using esp_register_shutdown_handler function.
-  *   - ESP_OK on success
-  *   - ESP_ERR_INVALID_STATE if the given handler hasn't been registered before
-  */
+ * @brief Unregister a shutdown handler
+ *
+ * Removes a handler previously registered via esp_register_shutdown_handler().
+ *
+ * @param handle The handler to unregister. Must not be NULL.
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if `handle` is NULL
+ *      - ESP_ERR_INVALID_STATE if the handler is not currently registered
+ */
 esp_err_t esp_unregister_shutdown_handler(shutdown_handler_t handle);
+
+/**
+ * @brief Register a static (link-time) shutdown handler
+ *
+ * Handlers registered with this macro are called at shutdown time in
+ * priority order (lower priority values run first), before any handlers
+ * registered dynamically via esp_register_shutdown_handler().
+ *
+ * @param fn Handler function name (signature: esp_err_t fn(void *user_arg, void *ctx))
+ * @param prio Priority (lower runs first)
+ */
+#define ESP_SHUTDOWN_HANDLER_REGISTER(fn, prio) \
+    static esp_err_t fn(void *user_arg, void *ctx); \
+    static _SECTION_ATTR_IMPL_GENERIC("esysev_shdn", prio) \
+        struct { esp_err_t (*handler)(void *user_arg, void *ctx); } _esysev_SHUTDOWN_##fn = { .handler = fn }; \
+    static esp_err_t fn(void *user_arg, void *ctx)
 
 /**
   * @brief  Restart PRO and APP CPUs.

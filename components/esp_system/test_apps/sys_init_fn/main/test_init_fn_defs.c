@@ -8,9 +8,9 @@
  * This file defines system init functions whose execution is verified
  * by the test cases in test_sys_init_fn.c.
  *
- * The functions are placed into the esp_sys_init_fn linker section via the
- * system init macro.  On Linux this uses ELF section sorting; on macOS
- * the same section is resolved at runtime via getsectiondata().
+ * The functions are placed into esp_sys_event linker sections via the system
+ * init macro. On Linux this uses ELF section sorting; on macOS the same
+ * sections are resolved at runtime via getsectiondata().
  *
  * Important: this file must be compiled into the same binary as the test
  * runner so the linker/loader sees the section entries.
