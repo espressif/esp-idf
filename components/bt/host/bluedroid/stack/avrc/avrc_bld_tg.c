@@ -314,12 +314,6 @@ static tAVRC_STS avrc_bld_app_setting_text_rsp (tAVRC_GET_APP_ATTR_TXT_RSP *p_rs
     p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
     p_data = p_len = p_start + 2; /* pdu + rsvd */
 
-    /*
-     * NOTE: The buffer is allocated within avrc_bld_init_rsp_buffer(), and is
-     * always of size BT_DEFAULT_BUFFER_SIZE.
-     */
-    len_left = BT_DEFAULT_BUFFER_SIZE - BT_HDR_SIZE - p_pkt->offset - p_pkt->len;
-
     BE_STREAM_TO_UINT16(len, p_data);
     p_count = p_data;
 
@@ -331,6 +325,7 @@ static tAVRC_STS avrc_bld_app_setting_text_rsp (tAVRC_GET_APP_ATTR_TXT_RSP *p_rs
     }
 
     for (xx = 0; xx < p_rsp->num_attr; xx++) {
+        len_left = (UINT16)(((UINT8 *)p_pkt + BT_DEFAULT_BUFFER_SIZE) - p_data);
         if  (len_left < (p_rsp->p_attrs[xx].str_len + 4)) {
             AVRC_TRACE_ERROR("avrc_bld_app_setting_text_rsp out of room %d(str_len:%d, left:%d)",
                              xx, p_rsp->p_attrs[xx].str_len, len_left);
