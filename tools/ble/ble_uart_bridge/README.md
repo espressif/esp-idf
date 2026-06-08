@@ -1,9 +1,11 @@
 <!-- SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD -->
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-# BLE UART Bridge
+# ESP-BLE-UART Bridge
 
-BLE UART Bridge is a host-side utility for talking to ESP-IDF applications that expose a BLE UART-style GATT service. It provides a reusable Python transport layer, an interactive console for manual testing, and a daemon mode for simple local IPC request/response workflows.
+ESP-BLE-UART Bridge is a host-side utility for talking to ESP-IDF applications that expose a BLE UART-style GATT service. It provides a reusable Python transport layer, an interactive console for manual testing, and a daemon mode for simple local IPC request/response workflows.
+
+> **Naming convention:** Use **ESP-BLE-UART** for Espressif-owned product names (Bridge, Console, Daemon, Echo Server, the `ble_uart` component, and the `ble_uart_service` example). Use **BLE UART** for the generic GATT service convention, transport layer, and compatible third-party devices. This follows the same pattern as ESP-BLE-MESH.
 
 ## Table of contents
 
@@ -26,7 +28,7 @@ BLE UART Bridge is a host-side utility for talking to ESP-IDF applications that 
 
 ## Quick Start
 
-You can reuse the ESP-IDF Python environment, or use your own Python virtual environment. If you reuse the ESP-IDF environment, export it first and then install the additional BLE UART Bridge dependencies:
+You can reuse the ESP-IDF Python environment, or use your own Python virtual environment. If you reuse the ESP-IDF environment, export it first and then install the additional ESP-BLE-UART Bridge dependencies:
 
 ```bash
 cd $IDF_PATH
@@ -56,15 +58,15 @@ Check whether the device can be connected:
 python main.py connection-check DEVICE_ID
 ```
 
-Open an interactive BLE UART Console:
+Open an interactive ESP-BLE-UART Console:
 
 ```bash
 python main.py console DEVICE_ID
 ```
 
-For Console options such as line endings, hex mode, and write-with-response, see [Quick-Start-BLE-UART-Console.md](docs/Quick-Start-BLE-UART-Console.md). If you need firmware to test against, use the [BLE UART Service example](../../../examples/bluetooth/ble_uart_service) as an Echo Server: it advertises the default BLE UART-over-GATT UUIDs and echoes RX writes back through TX notifications.
+For Console options such as line endings, hex mode, and write-with-response, see [Quick-Start-BLE-UART-Console.md](docs/Quick-Start-BLE-UART-Console.md). If you need firmware to test against, use the [ESP-BLE-UART example](../../../examples/bluetooth/ble_uart_service) as an Echo Server: it advertises the default BLE UART-over-GATT UUIDs and echoes RX writes back through TX notifications.
 
-Run the BLE UART Daemon:
+Run the ESP-BLE-UART Daemon:
 
 ```bash
 python main.py daemon DEVICE_ID
@@ -111,7 +113,7 @@ python main.py daemon-notify DATA
 
 ### Typical Console workflow
 
-Use Console when you want to manually test a BLE UART device from a terminal UI. For a known-compatible target, build and flash the [BLE UART Service example](../../../examples/bluetooth/ble_uart_service), which acts as an Echo Server for Console smoke tests:
+Use Console when you want to manually test a BLE UART device from a terminal UI. For a known-compatible target, build and flash the [ESP-BLE-UART example](../../../examples/bluetooth/ble_uart_service), which acts as an Echo Server for Console smoke tests:
 
 ```bash
 python main.py list-devices
@@ -194,7 +196,7 @@ Main responsibilities:
 - Connect and disconnect with a BLE UART GATT profile.
 - Subscribe to device-to-host notifications.
 - Send host-to-device data as `str`, `bytes`, or `bytearray`.
-- Support a default BLE-UART UUID profile and user-defined BLE UART profiles.
+- Support a default BLE UART UUID profile and user-defined BLE UART profiles.
 
 Important APIs:
 
@@ -241,10 +243,10 @@ By default, the daemon binds to `127.0.0.1`. Keep it on a loopback address unles
 
 ## Demos
 
-The `demos/` directory contains example integrations that build on BLE UART
+The `demos/` directory contains example integrations that build on ESP-BLE-UART
 Bridge components.
 
-- [BLE UART Bridge Demo - OpenCode Integration](demos/opencode/README.md) shows
+- [ESP-BLE-UART Bridge Demo - OpenCode Integration](demos/opencode/README.md) shows
   how an OpenCode plugin can forward session status and permission requests to a
   BLE device through the daemon. It also includes a firmware-side protocol
   reference for devices, such as the planned `esp-vocat` / MiaoBan (喵伴)
@@ -294,6 +296,6 @@ The tool depends on:
 
 - [Quick-Start-BLE-UART-Console.md](docs/Quick-Start-BLE-UART-Console.md)
 - [Quick-Start-BLE-UART-Daemon.md](docs/Quick-Start-BLE-UART-Daemon.md)
-- [BLE UART Bridge Demo - OpenCode Integration](demos/opencode/README.md)
+- [ESP-BLE-UART Bridge Demo - OpenCode Integration](demos/opencode/README.md)
 - [Profile-Compatibility.md](docs/Profile-Compatibility.md)
 - [PORTING.md](docs/PORTING.md)
