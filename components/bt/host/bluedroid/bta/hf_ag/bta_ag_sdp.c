@@ -266,7 +266,10 @@ void bta_ag_del_records(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
                 SDP_DeleteRecord(bta_ag_cb.profile[i].sdp_handle);
                 bta_ag_cb.profile[i].sdp_handle = 0;
             }
-            BTM_FreeSCN(bta_ag_cb.profile[i].scn);
+            if (bta_ag_cb.profile[i].scn != 0) {
+                BTM_FreeSCN(bta_ag_cb.profile[i].scn);
+                bta_ag_cb.profile[i].scn = 0;
+            }
             BTM_SecClrService(bta_ag_sec_id[i]);
             bta_sys_remove_uuid(bta_ag_uuid[i]);
         }
