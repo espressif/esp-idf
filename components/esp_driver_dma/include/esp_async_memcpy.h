@@ -174,6 +174,25 @@ esp_err_t esp_async_memcpy_uninstall(async_memcpy_handle_t mcp);
  */
 esp_err_t esp_async_memcpy(async_memcpy_handle_t mcp, void *dst, void *src, size_t n, async_memcpy_isr_cb_t cb_isr, void *cb_args);
 
+/**
+ * @brief Blocking memory copy function with timeout
+ *
+ * @note This function is blocking and should not be called from interrupt context.
+ * @note Only `timeout_ms=-1` is supported, which means waiting indefinitely.
+ *
+ * @param[in] mcp Handle of async memcpy driver that returned from `esp_async_memcpy_install`
+ * @param[in] dst Destination address (copy to)
+ * @param[in] src Source address (copy from)
+ * @param[in] n Number of bytes to copy
+ * @param[in] timeout_ms Timeout in milliseconds. Only -1 is supported.
+ * @return
+ *      - ESP_OK: Copy memory successfully
+ *      - ESP_ERR_INVALID_ARG: Copy memory failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Function called from ISR context or driver in invalid state
+ *      - ESP_FAIL: Copy memory failed because of other error
+ */
+esp_err_t esp_memcpy_blocking(async_memcpy_handle_t mcp, void *dst, void *src, size_t n, int32_t timeout_ms);
+
 #if SOC_ETM_SUPPORTED
 /**
  * @brief Async memory copy specific events that supported by the ETM module
