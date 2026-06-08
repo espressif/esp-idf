@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.bridge = BLEUARTBridge(app.state.device_id)
     app.state.request_lock = asyncio.Lock()
 
-    # Set BLE UART Bridge RX callback
+    # Set ESP-BLE-UART Bridge RX callback
     loop = asyncio.get_running_loop()
     app.state.rx_buffer = bytearray()
     app.state.pending_requests = {}
@@ -53,8 +53,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     # Try to connect to the device
     if not await app.state.bridge.connect():
-        logger.error('Failed to start BLE UART Daemon!')
-        raise RuntimeError('Failed to start BLE UART Daemon!')
+        logger.error('Failed to start ESP-BLE-UART Daemon!')
+        raise RuntimeError('Failed to start ESP-BLE-UART Daemon!')
 
     yield
 
@@ -62,7 +62,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await app.state.bridge.disconnect()
 
 
-app = FastAPI(title='BLE UART Daemon', lifespan=lifespan)
+app = FastAPI(title='ESP-BLE-UART Daemon', lifespan=lifespan)
 
 
 def _request_data_size(data: object) -> int:
