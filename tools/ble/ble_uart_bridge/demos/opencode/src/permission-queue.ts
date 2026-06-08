@@ -174,7 +174,7 @@ async function handlePermissionQueueItem(item: PermissionQueueItem): Promise<Per
       await showToastBestEffort(
         item.client,
         "error",
-        "OpenCode BLE UART Bridge",
+        "OpenCode ESP-BLE-UART Bridge",
         "Failed to get a BLE permission decision. The request was rejected.",
       )
     } finally {

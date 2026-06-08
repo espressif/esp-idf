@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  *
- * BLE UART — Bluedroid backend. Implements the lifecycle declared in
+ * ESP-BLE-UART — Bluedroid backend. Implements the lifecycle declared in
  * ble_uart.h on top of the Bluedroid host using the service-table API
  * (esp_ble_gatts_create_attr_tab). Active when
  * CONFIG_BT_BLUEDROID_ENABLED=y; otherwise ble_uart_nimble.c is used.

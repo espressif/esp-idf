@@ -1,4 +1,4 @@
-menu "BLE UART library"
+menu "ESP-BLE-UART library"
 
     config BLE_UART_DEVICE_NAME_PREFIX
         string "BLE device name prefix"

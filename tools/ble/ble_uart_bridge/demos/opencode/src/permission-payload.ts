@@ -9,7 +9,7 @@ import {
 } from "./config"
 import type { PermissionEventProperties } from "./types"
 
-/** Create a unique event ID for messages sent to the BLE daemon. */
+/** Create a unique event ID for messages sent to the ESP-BLE-UART Daemon. */
 function eventID() {
   return crypto.randomUUID()
 }
@@ -116,7 +116,7 @@ export function permissionRequestID(permission: PermissionEventProperties): stri
 }
 
 /**
- * Build the protocol message sent to the BLE daemon whenever OpenCode's session
+ * Build the protocol message sent to the ESP-BLE-UART Daemon whenever OpenCode's session
  * state changes. This is a one-way notification, so the BLE device can update
  * its UI but is not expected to send a reply.
  */
@@ -135,7 +135,7 @@ export function buildSessionStatusPayload(
 }
 
 /**
- * Tell the BLE daemon to dismiss any permission prompt for this session.
+ * Tell the ESP-BLE-UART Daemon to dismiss any permission prompt for this session.
  *
  * This is used when OpenCode has already moved on, for example after the
  * session becomes idle before the BLE device returns a decision.
@@ -156,7 +156,7 @@ export function buildPermissionCancelPayload(sessionID: string) {
 /**
  * Build the BLE permission prompt payload from an OpenCode permission event.
  *
- * This is the main protocol boundary between OpenCode and the BLE daemon. The
+ * This is the main protocol boundary between OpenCode and the ESP-BLE-UART Daemon. The
  * outer fields describe routing and reply behavior; the nested `payload` fields
  * are intentionally small and display-oriented for the device UI.
  */

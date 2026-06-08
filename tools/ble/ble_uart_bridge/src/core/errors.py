@@ -5,15 +5,15 @@ from __future__ import annotations
 
 
 class BUBError(Exception):
-    """Base exception for the BLE UART Bridge."""
+    """Base exception for the ESP-BLE-UART Bridge."""
 
 
 class DeviceNotFoundError(BUBError):
-    """Raised when the requested BLE UART device cannot be found."""
+    """Raised when the requested device cannot be found."""
 
 
 class ConnectionTimeout(BUBError):
-    """Raised when the client cannot connect to a BLE UART device."""
+    """Raised when the client cannot connect to the device."""
 
 
 class NotConnectedError(BUBError):

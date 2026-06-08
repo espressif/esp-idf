@@ -1,16 +1,16 @@
 <!-- SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD -->
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-# Quick Start: BLE UART Daemon
+# Quick Start: ESP-BLE-UART Daemon
 
-This guide shows how to use BLE UART Daemon mode and the lightweight JSONL RPC protocol used between the host and the BLE device.
+This guide shows how to use ESP-BLE-UART Daemon mode and the lightweight JSONL RPC protocol used between the host and the BLE device.
 
 Daemon mode is useful when another local process needs to communicate with a BLE UART device without owning the BLE connection itself.
 
 ## Prerequisites
 
 1. A host machine with Bluetooth access.
-2. Python environment prepared. You can reuse the ESP-IDF Python environment, or use your own Python virtual environment. If you reuse the ESP-IDF environment, export it first and then install the BLE UART Bridge dependencies:
+2. Python environment prepared. You can reuse the ESP-IDF Python environment, or use your own Python virtual environment. If you reuse the ESP-IDF environment, export it first and then install the ESP-BLE-UART Bridge dependencies:
 
    ```bash
    cd $IDF_PATH

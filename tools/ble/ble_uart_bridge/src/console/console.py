@@ -130,14 +130,14 @@ class BLEUARTConsole(App):
         try:
             # Should try connection to catch KeyInterrupt during connection establishment
             if not await self._bridge.connect():
-                logger.error(f'Failed to open BLE UART Console for {self._device_id}')
+                logger.error(f'Failed to open ESP-BLE-UART Console for {self._device_id}')
                 return
 
             # Run UI event loop
             await self.run_async()
         finally:
             # Disconnect from device
-            logger.info(f'Closing BLE UART Console for {self._device_id}...')
+            logger.info(f'Closing ESP-BLE-UART Console for {self._device_id}...')
             await self._bridge.disconnect()
 
     # Textual lifecycle hook: build the widget tree before the app is mounted.
@@ -166,7 +166,7 @@ class BLEUARTConsole(App):
     # Textual lifecycle hook: widgets are ready, so BLE can be connected and UI updated.
     async def on_mount(self) -> None:
         self._ui_ready = True
-        self.title = f'BLE UART — {self._device_id}'
+        self.title = f'ESP-BLE-UART — {self._device_id}'
         self.query_one('#input', Input).focus()
         self._write_info(f'Connected to {self._device_id}')
         self._drain_rx_pending()
