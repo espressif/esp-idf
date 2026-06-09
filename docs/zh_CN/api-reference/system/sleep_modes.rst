@@ -454,9 +454,11 @@ UART 唤醒支持以下模式：
     #. 初始化 LP UART（调用 :cpp:func:`lp_core_uart_init`）。
     #. 使用 :cpp:func:`lp_core_uart_wakeup_setup` 函数配置 LP_UART 的唤醒模式，参数使用 :cpp:type:`uart_wakeup_cfg_t` 结构体，配置方式与 HP UART 相同。
 
-    .. note::
+    .. only:: SOC_LP_CORE_LP_UART_WAKEUP_KEEP_TRIGGERED
 
-        当 LP 核因 LP_UART 唤醒后，必须在 LP 核进入睡眠前调用 :cpp:func:`ulp_lp_core_lp_uart_reset_wakeup_en` 函数或是复位整个 LP UART 模块以清除唤醒信号，否则会被重复唤醒。
+       .. note::
+
+           在支持 ``SOC_LP_CORE_LP_UART_WAKEUP_KEEP_TRIGGERED`` 的芯片上，LP UART 唤醒后唤醒信号会保持触发状态。LP 核启动流程（:cpp:func:`ulp_lp_core_update_wakeup_cause`）会自动调用 :cpp:func:`ulp_lp_core_lp_uart_reset_wakeup_en` 和 :cpp:func:`lp_core_uart_clear_buf` 清除该状态。若未走标准启动流程，则需手动处理，否则会被重复唤醒。
 
     有关 LP_UART 唤醒的示例代码，请参考 :example:`system/ulp/lp_core/lp_uart/lp_uart_char_seq_wakeup`。
 
