@@ -476,6 +476,18 @@ menu "Security features"
         default y
         depends on SOC_SECURE_BOOT_V2_ECC
 
+    # ECDSA based Secure Boot V2 is not functional for certain input vectors on these
+    # SoCs. The scheme stays available but, for hardware Secure Boot, must be explicitly
+    # turned on via SECURE_BOOT_V2_FORCE_ENABLE_ECDSA under "Allow potentially insecure
+    # options" (CONFIG_SECURE_BOOT_INSECURE).
+    #
+    # TODO: IDF-15721 - drop a SoC from this list once a fixing hardware ECO revision
+    # ships, gating on the selected minimum chip revision, e.g.:
+    #     default y if IDF_TARGET_ESP32C5 && ESP32C5_REV_MIN_FULL < <fixed_rev>
+    config SECURE_BOOT_V2_ECDSA_INSECURE
+        bool
+        default y if IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32C61 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32P4
+
     config SECURE_BOOT_V1_SUPPORTED
         bool
         default y
@@ -547,6 +559,10 @@ menu "Security features"
         config SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
             bool "ECDSA (V2)"
             depends on SECURE_BOOT_V2_ECC_SUPPORTED && (SECURE_SIGNED_APPS_NO_SECURE_BOOT || SECURE_BOOT_V2_ENABLED)
+            # On the affected SoCs (SECURE_BOOT_V2_ECDSA_INSECURE), hardware Secure Boot with ECDSA
+            # is offered only when SECURE_BOOT_V2_FORCE_ENABLE_ECDSA is explicitly set. App signing
+            # without hardware Secure Boot is not affected by this gate.
+            depends on !SECURE_BOOT_V2_ENABLED || (!SECURE_BOOT_V2_ECDSA_INSECURE || SECURE_BOOT_V2_FORCE_ENABLE_ECDSA)
             help
                 For Secure boot V2 (e.g., ESP32-C2 SoC), appends ECDSA based signature block to the application.
                 Refer to documentation before enabling.
@@ -928,6 +944,19 @@ menu "Security features"
         # itself doesn't enable/disable its children (if it's not set,
         # it's possible for the insecure menu to be disabled but the insecure option
         # to remain on which is very bad.)
+
+        config SECURE_BOOT_V2_FORCE_ENABLE_ECDSA
+            bool "Force enable ECDSA based Secure Boot V2"
+            depends on SECURE_BOOT_INSECURE && SECURE_BOOT_V2_ECDSA_INSECURE
+            default n
+            help
+                ECDSA based Secure Boot V2 is not functional for certain input vectors on this SoC
+                and is therefore not offered by default. Refer to the hardware errata document for
+                details.
+
+                Setting this option re-enables the ECDSA based Secure Boot V2 signing scheme despite
+                the known vulnerability. Only set this option if you fully understand the risk. RSA
+                based Secure Boot V2 is the recommended scheme on SoCs that support it.
 
         config SECURE_BOOT_ALLOW_ROM_BASIC
             bool "Leave ROM BASIC Interpreter available on reset"
