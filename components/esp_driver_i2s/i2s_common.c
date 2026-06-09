@@ -878,16 +878,16 @@ static esp_err_t i2s_resolve_apll_freq(i2s_chan_handle_t handle, uint32_t mclk_f
 #if CONFIG_PM_ENABLE
 esp_pm_lock_type_t i2s_select_pm_lock_type(bool dma_buf_in_psram, i2s_clock_src_t clk_src)
 {
-    if (dma_buf_in_psram) {
-        /* Keep the CPU at its maximum frequency to ensure PSRAM availability and
-         * sufficient DMA bandwidth during DFS. */
-        return ESP_PM_CPU_FREQ_MAX;
-    }
 #ifdef I2S_LL_DEFAULT_CLK_SRC
     if (clk_src == I2S_CLK_SRC_DEFAULT) {
         clk_src = I2S_LL_DEFAULT_CLK_SRC;
     }
 #endif
+    if (dma_buf_in_psram || i2s_clk_src_requires_cpu_lock(clk_src)) {
+        /* Keep the CPU at its maximum frequency when the DMA buffer is in PSRAM,
+         * or when the target requires a fixed CPU frequency for this clock source. */
+        return ESP_PM_CPU_FREQ_MAX;
+    }
     if (i2s_clk_src_requires_apb_lock(clk_src)) {
         /* Keep APB fixed for target-specific clock sources that cannot tolerate
          * APB frequency scaling. An APB frequency change can cause timing issues

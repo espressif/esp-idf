@@ -53,7 +53,10 @@ static uint32_t i2s_pm_test_lock_delta(const esp_pm_lock_stats_t *after,
 
 static esp_pm_lock_type_t i2s_pm_test_expected_lock(i2s_clock_src_t clk_src)
 {
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32P4
+    (void)clk_src;
+    return ESP_PM_CPU_FREQ_MAX;
+#elif CONFIG_IDF_TARGET_ESP32
     if (clk_src == I2S_CLK_SRC_PLL_160M || clk_src == I2S_CLK_SRC_APLL) {
         return ESP_PM_APB_FREQ_MAX;
     }
@@ -83,7 +86,7 @@ static void i2s_pm_test_check_acquired_lock(esp_pm_lock_type_t expected_type, co
 {
     esp_pm_lock_stats_t after[ESP_PM_LOCK_MAX] = {};
     TEST_ESP_OK(esp_pm_get_lock_stats_all(after));
-    for (esp_pm_lock_type_t type = ESP_PM_APB_FREQ_MAX; type < ESP_PM_LOCK_MAX; type++) {
+    for (esp_pm_lock_type_t type = ESP_PM_CPU_FREQ_MAX; type < ESP_PM_LOCK_MAX; type++) {
         TEST_ASSERT_EQUAL_UINT32(type == expected_type ? 1 : 0,
                                  i2s_pm_test_lock_delta(after, before, type, true));
     }
