@@ -190,7 +190,7 @@ JTAG
 
     - 如果启用了任一安全功能，则 JTAG 接口将保持禁用。更多详情请参阅 :ref:`jtag-debugging-security-features`。
     - 如果不启用其他安全功能，也可以使用 :ref:`efuse_API` 禁用 JTAG 接口。
-    :SOC_HMAC_SUPPORTED: - {IDF_TARGET_NAME} 支持软禁用 JTAG 接口，并且可以通过 HMAC 烧录密钥重新启用，请参阅 :ref:`hmac_for_enabling_jtag`。
+    :SOC_HMAC_SUPPORTED: - {IDF_TARGET_NAME} 支持软禁用 JTAG 接口，并且可以通过 HMAC 烧录密钥重新启用，请参阅 :ref:`HMAC 启用 JTAG 接口 <hmac_for_enabling_jtag>`。
 
 UART 下载模式
 ^^^^^^^^^^^^^^^^^^
