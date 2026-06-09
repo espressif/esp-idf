@@ -15,3 +15,9 @@ bool i2s_clk_src_requires_apb_lock(i2s_clock_src_t clk_src)
      */
     return clk_src == I2S_CLK_SRC_PLL_160M || clk_src == I2S_CLK_SRC_APLL;
 }
+
+bool i2s_clk_src_requires_cpu_lock(i2s_clock_src_t clk_src)
+{
+    (void)clk_src;
+    return false;
+}
