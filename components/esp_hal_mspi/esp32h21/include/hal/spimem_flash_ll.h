@@ -671,10 +671,10 @@ static inline uint8_t spimem_flash_ll_get_source_freq_mhz(void)
     uint8_t clock_val = 0;
     switch (PCR.mspi_conf.mspi_clk_sel) {
     case 0:
-        clock_val = 48;
+        clock_val = 32;
         break;
     case 1:
-        clock_val = 8;
+        clock_val = 20;
         break;
     case 2:
         clock_val = 64;

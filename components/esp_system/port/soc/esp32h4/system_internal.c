@@ -96,7 +96,7 @@ static void IRAM_ATTR __attribute__((noinline, noreturn)) esp_restart_noos_inner
     const uint32_t core_id = esp_cpu_get_core_id();
 
     // Disable cache
-    Cache_Disable_Cache(CACHE_MAP_ALL);
+    Cache_Disable_Cache(CACHE_MAP_MASK);
 
     esp_system_reset_modules_on_exit();
 
