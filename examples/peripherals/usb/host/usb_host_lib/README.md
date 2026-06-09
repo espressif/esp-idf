@@ -3,30 +3,41 @@
 
 # USB Host Library Example
 
-(See the README.md file in the upper level 'examples' directory for more information about examples.)
+(See the README.md file in the upper level `examples` directory for more information about examples.)
 
-This example demonstrates the basic usage of the [USB Host Library API](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/api-reference/peripherals/usb_host.html) by implementing a pseudo class driver and a Host Library task. The example does the following:
+This example demonstrates the [USB Host Library API](https://docs.espressif.com/projects/esp-usb/en/latest/esp32s2/usb_host.html) using a pseudo class driver and a dedicated USB Host Library task, together with an **interactive console** (ESP-IDF `esp_console` REPL). On boot it:
 
-1. Install Host Library and register a client
-2. Waits for a device connection
-3. Prints the device's information (such as device/configuration/string descriptors)
-4. Waits for the device to disconnect
-5. Repeats steps 2 to 4 until a user pressess a button, which quits the `app`
-6. If the button has been pressed, while a USB device is still connected, the user will be prompted to remove the device and push the button again to quit the `app`
-7. Deregister the client, uninstall the Host Library and quit the `app`
+1. Starts a read-eval-print loop on the configured primary serial console (UART or USB Serial/JTAG, depending on your hardware and project settings).
+2. Registers common system commands from the [advanced console example](../../../../system/console/advanced/README.md) (`help`, `tasks`, and sleep-related commands where the chip supports them) plus USB-specific commands (see below).
+3. Installs the USB Host stack and runs the class driver task, which waits for a device, prints descriptor information, and handles connect/disconnect.
+4. Keeps running until reset; you can uninstall the USB stack from the shell and reinstall it later with `usb_install`.
 
 The example demonstrates the following aspects of the USB Host Library API:
 
 - How to use the Library API to:
     - Install and uninstall the USB Host Library
-    - Run the library event handler function and usb host library task
+    - Run the library event handler function and USB Host Library task
     - How to handle library events
 - How to use the Client API from a client task to:
     - Register and deregister a client of the USB Host Library
     - Run the client event handler functions
-    - How to handle client events via various callbacks
+    - How to handle client events via various callbacks (including suspend/resume notifications when supported)
     - Open and close a device
     - Get a device's descriptors
+- How to drive **root port power, suspend, and resume** from application code via the console commands
+
+## Console commands (USB)
+
+| Command | Description |
+| ------- | ----------- |
+| `usb_install` | Install the USB Host stack and start the class driver. On ESP32-P4 it accepts argument `HS\|FS\|both` for USB peripheral selection. |
+| `usb_uninstall` | Request teardown of the class client and uninstall the Host Library. |
+| `usb_info` | Print host library state (device/client counts, root port state) and bus addresses of connected devices. |
+| `usb_suspend` | Suspend the USB root port. On ESP32-P4, only 1 port is suspended. |
+| `usb_resume` | Resume the USB root port. On ESP32-P4, only 1 port is resumed. |
+| `usb_power` | Set root port power: argument `0` (off) or `1` (on). On ESP32-P4, both ports are turned on/off. |
+
+Type `help` in the monitor for all registered commands.
 
 ## How to use example
 
@@ -41,18 +52,20 @@ The example demonstrates the following aspects of the USB Host Library API:
 idf.py menuconfig
 ```
 
-* The USB Host Stack has a maximum supported transfer size for control transfer during device enumeration. This size is specified via the USB_HOST_CONTROL_TRANSFER_MAX_SIZE configuration option and has a default value of 256 bytes. Therefore, if devices with length config/string descriptors are used, users may want to increase the size of this configuration.
-* Push button GPIO selection
+Under **Example Configuration**:
+
+* **Store command history in flash** — When enabled, mounts a small FAT partition (`storage` in `partitions.csv`) via wear levelling and saves linenoise history to `/data/history.txt`.
+* **Maximum command line length** — Upper bound for a single console input line.
 
 ### Build and Flash
 
-Build the project and flash it to the board, then run monitor tool to view serial output:
+Build the project and flash it to the board, then run monitor tool to view serial output and use the console:
 
 ```
 idf.py -p PORT flash monitor
 ```
 
-(Replace PORT with the name of the serial port to use.)
+(Replace `PORT` with the name of the serial port to use.)
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 
@@ -60,117 +73,38 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example Output
 
+After flashing, you should see startup logs similar to the following (exact ordering and timestamps vary), then the REPL prompt (by default `<IDF_TARGET>>`, e.g. `esp32s3>`):
+
 ```
 I (305) main_task: Started on CPU0
 I (315) main_task: Calling app_main()
 I (315) USB host lib: USB host library example
-I (315) gpio: GPIO[0]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:2
-I (325) USB host lib: Installing USB Host Library
-I (365) CLASS: Registering Client
+I (325) USB host lib: Command history enabled
+I (365) USB host lib: Installing USB Host Library
+I (395) USB host lib: USB Host installed with peripheral map 0x1
+I (405) USB host lib: USB host stack installed (class driver running)
+I (745) CLASS: Registering Client
 I (745) CLASS: Opening device at address 1
 I (745) CLASS: Getting device information
-I (745) CLASS: 	Full speed
-I (745) CLASS: 	bConfigurationValue 1
-I (745) CLASS: Getting device descriptor
-*** Device descriptor ***
-bLength 18
-bDescriptorType 1
-bcdUSB 2.00
-bDeviceClass 0xef
-bDeviceSubClass 0x2
-bDeviceProtocol 0x1
-bMaxPacketSize0 64
-idVendor 0x303a
-idProduct 0x1001
-bcdDevice 1.00
-iManufacturer 1
-iProduct 2
-iSerialNumber 3
-bNumConfigurations 1
-I (775) CLASS: Getting config descriptor
-*** Configuration descriptor ***
-bLength 9
-bDescriptorType 2
-wTotalLength 98
-bNumInterfaces 3
-bConfigurationValue 1
-iConfiguration 0
-bmAttributes 0xc0
-bMaxPower 500mA
-	*** Interface descriptor ***
-	bLength 9
-	bDescriptorType 4
-	bInterfaceNumber 0
-	bAlternateSetting 0
-	bNumEndpoints 1
-	bInterfaceClass 0x0
-	iInterface 0
-		*** Endpoint descriptor ***
-		bLength 7
-		bDescriptorType 5
-		bEndpointAddress 0x82	EP 2 IN
-		bmAttributes 0x3	INT
-		wMaxPacketSize 64
-		bInterval 1
-	*** Interface descriptor ***
-	bLength 9
-	bDescriptorType 4
-	bInterfaceNumber 1
-	bAlternateSetting 0
-	bNumEndpoints 2
-	bInterfaceClass 0x0
-	iInterface 0
-		*** Endpoint descriptor ***
-		bLength 7
-		bDescriptorType 5
-		bEndpointAddress 0x1	EP 1 OUT
-		bmAttributes 0x2	BULK
-		wMaxPacketSize 64
-		bInterval 1
-		*** Endpoint descriptor ***
-		bLength 7
-		bDescriptorType 5
-		bEndpointAddress 0x81	EP 1 IN
-		bmAttributes 0x2	BULK
-		wMaxPacketSize 64
-		bInterval 1
-	*** Interface descriptor ***
-	bLength 9
-	bDescriptorType 4
-	bInterfaceNumber 2
-	bAlternateSetting 0
-	bNumEndpoints 2
-	bInterfaceClass 0x1
-	iInterface 0
-		*** Endpoint descriptor ***
-		bLength 7
-		bDescriptorType 5
-		bEndpointAddress 0x2	EP 2 OUT
-		bmAttributes 0x2	BULK
-		wMaxPacketSize 64
-		bInterval 1
-		*** Endpoint descriptor ***
-		bLength 7
-		bDescriptorType 5
-		bEndpointAddress 0x83	EP 3 IN
-		bmAttributes 0x2	BULK
-		wMaxPacketSize 64
-		bInterval 1
-I (855) CLASS: Getting Manufacturer string descriptor
-Espressif
-I (855) CLASS: Getting Product string descriptor
-USB JTAG/serial debug unit
-I (865) CLASS: Getting Serial Number string descriptor
-7C:DF:A1:E0:10:50
-W (2855) USB host lib: To shutdown example, remove all USB devices and press button again.
-E (6135) USBH: Device 1 gone
-I (9545) CLASS: Deregistering Client
-I (9545) USB host lib: No more clients
-I (9545) USB host lib: All devices marked as free
-I (9545) USB host lib: No more clients and devices
-I (9645) USB host lib: End of the example
-I (9645) main_task: Returned from app_main()
+...
 ```
+
+When a device is attached, the class driver prints device, configuration, and string descriptors (same style as in previous revisions of this example). On disconnect you may see host stack messages such as:
+
+```
+E (6135) USBH: Device 1 gone
+```
+
+After `usb_uninstall` (with no devices and the client released), the host task uninstalls the library:
+
+```
+I (9545) USB host lib: Get FLAGS_NO_CLIENTS
+I (9545) USB host lib: All devices marked as free, no need to wait FLAGS_ALL_FREE event
+I (9545) USB host lib: No more clients and devices, uninstall USB Host library
+I (9645) USB host lib: USB host stack uninstalled
+```
+
+The console keeps running so you can run `usb_install` again or other commands.
 
 ## Troubleshooting
 
@@ -190,4 +124,4 @@ The log output demonstrates a device that has failed. The Hub Driver will output
 
 ### Blank String Descriptors
 
-The current USB Host Library will automatically cache the Manufacturer, Product, and Serial Number string descriptors of the device during enumeration. However, when fetching the string descriptors, the USB Host Library will only fetch those strings descriptors of they of LANGID code 0x0409 (i.e., English - United States). Therefore, if the example does not print a particular descriptor, it is likely that the string descriptor was not cached during enumeration.
+The current USB Host Library will automatically cache the Manufacturer, Product, and Serial Number string descriptors of the device during enumeration. However, when fetching the string descriptors, the USB Host Library will only fetch those string descriptors if they use LANGID code 0x0409 (i.e., English - United States). Therefore, if the example does not print a particular descriptor, it is likely that the string descriptor was not cached during enumeration.
