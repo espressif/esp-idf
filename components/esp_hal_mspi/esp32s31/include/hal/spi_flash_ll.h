@@ -24,7 +24,7 @@ extern "C" {
 #define spi_flash_ll_calculate_clock_reg(host_id, clock_div) (((host_id)<=SPI1_HOST) ? spimem_flash_ll_calculate_clock_reg(clock_div) \
                                             : gpspi_flash_ll_calculate_clock_reg(clock_div))
 
-#define spi_flash_ll_get_source_clock_freq_mhz(host_id)  (((host_id)<=SPI1_HOST) ? spimem_flash_ll_get_source_freq_mhz() : GPSPI_FLASH_LL_PERIPHERAL_FREQUENCY_MHZ)
+#define spi_flash_ll_get_source_clock_freq_mhz(host_id)  (((host_id)<=SPI1_HOST) ? spimem_flash_ll_get_source_freq_mhz() : -1)
 
 #define spi_flash_ll_get_hw(host_id)  (((host_id)<=SPI1_HOST ? (spi_dev_t*) spimem_flash_ll_get_hw(host_id) \
                                       : gpspi_flash_ll_get_hw(host_id)))
@@ -35,7 +35,7 @@ extern "C" {
                                      }\
                                      dev_id; \
                                     })
-// Since ESP32-P4, WB_mode is available, we extend 8 bits to occupy `Continuous Read Mode` bits.
+// WB_mode is available, we extend 8 bits to occupy `Continuous Read Mode` bits.
 #define SPI_FLASH_LL_CONTINUOUS_MODE_BIT_NUMS  (8)
 
 typedef union  {

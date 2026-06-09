@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -417,6 +417,30 @@ extern "C" {
 #define SPI_MEM_STATUS_M  (SPI_MEM_STATUS_V << SPI_MEM_STATUS_S)
 #define SPI_MEM_STATUS_V  0x0000FFFFU
 #define SPI_MEM_STATUS_S  0
+/** SPI_MEM_WB_MODE : R/W; bitpos: [23:16]; default: 0;
+ *  Mode bits in the flash fast read mode  it is combined with spi_mem_fastrd_mode bit.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define SPI_MEM_WB_MODE    0x000000FFU
+#define SPI_MEM_WB_MODE_M  (SPI_MEM_WB_MODE_V << SPI_MEM_WB_MODE_S)
+#define SPI_MEM_WB_MODE_V  0x000000FFU
+#define SPI_MEM_WB_MODE_S  16
+/** SPI_MEM_WB_MODE_BITLEN : R/W; bitpos: [26:24]; default: 0;
+ *  Mode bits length for flash fast read mode.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define SPI_MEM_WB_MODE_BITLEN    0x00000007U
+#define SPI_MEM_WB_MODE_BITLEN_M  (SPI_MEM_WB_MODE_BITLEN_V << SPI_MEM_WB_MODE_BITLEN_S)
+#define SPI_MEM_WB_MODE_BITLEN_V  0x00000007U
+#define SPI_MEM_WB_MODE_BITLEN_S  24
+/** SPI_MEM_WB_MODE_EN : R/W; bitpos: [27]; default: 0;
+ *  Mode bits is valid while this bit is enable. 1: enable 0: disable.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define SPI_MEM_WB_MODE_EN    (BIT(27))
+#define SPI_MEM_WB_MODE_EN_M  (SPI_MEM_WB_MODE_EN_V << SPI_MEM_WB_MODE_EN_S)
+#define SPI_MEM_WB_MODE_EN_V  0x00000001U
+#define SPI_MEM_WB_MODE_EN_S  27
 
 /** SPI_MEM_MISC_REG register
  *  SPI1 misc register

@@ -740,7 +740,7 @@ static inline void cache_ll_preload(uint32_t cache_level, cache_type_t type, uin
         break;
     case CACHE_TYPE_ALL:
     default:
-        map = CACHE_MAP_ALL;
+        map = CACHE_MAP_MASK;
         break;
     }
     Cache_Start_Preload(map, vaddr, size, order);
@@ -764,7 +764,7 @@ static inline void cache_ll_preload_wait_done(uint32_t cache_level, cache_type_t
         break;
     case CACHE_TYPE_ALL:
     default:
-        map = CACHE_MAP_ALL;
+        map = CACHE_MAP_MASK;
         break;
     }
     while (Cache_Preload_Done(map) == 0) {

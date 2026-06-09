@@ -123,7 +123,7 @@ static void update_flash_config(const esp_image_header_t *bootloader_hdr)
         size = 2;
     }
     // Set flash chip size
-    esp_rom_spiflash_config_param(rom_spiflash_legacy_data->chip.device_id, size * 0x100000, 0x10000, 0x1000, 0x100, 0xffff);    // TODO: set mode
+    esp_rom_spiflash_config_param(rom_spiflash_legacy_data->chip.device_id, size * 0x100000, 0x10000, 0x1000, 0x100, 0xffff);    // TODO: IDF-15747 set mode
 }
 
 static void print_flash_info(const esp_image_header_t *bootloader_hdr)
@@ -137,10 +137,10 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
     const char *str;
     switch (bootloader_hdr->spi_speed) {
     case ESP_IMAGE_SPI_SPEED_DIV_2:
-        str = ESP_LOG_ATTR_STR("24MHz");
+        str = ESP_LOG_ATTR_STR("32MHz");
         break;
     case ESP_IMAGE_SPI_SPEED_DIV_1:
-        str = ESP_LOG_ATTR_STR("48MHz");
+        str = ESP_LOG_ATTR_STR("64MHz");
         break;
     default:
         str = ESP_LOG_ATTR_STR("16MHz");
