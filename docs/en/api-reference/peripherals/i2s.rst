@@ -315,7 +315,9 @@ To satisfy the high quality audio requirement, following advanced APIs are provi
 
 .. only:: SOC_I2S_SUPPORTS_TX_SYNC_CNT
 
-    - :cpp:func:`i2s_channel_get_sync_count`: Read the TX BCLK/FIFO synchronization counters. This API can also actively clear them through the ``reset`` argument.
+    - :cpp:func:`i2s_channel_get_sync_count`: Read the TX synchronization counters through
+      :cpp:type:`i2s_sync_count_t`. When TX FIFO synchronization is supported, ``diff_count`` is also returned.
+      This API can also actively clear the counters through the ``reset`` argument.
 
 .. only:: SOC_I2S_SUPPORTS_TX_FIFO_SYNC
 
@@ -326,12 +328,15 @@ To satisfy the high quality audio requirement, following advanced APIs are provi
 
     TX FIFO synchronization related APIs include:
 
-    - :cpp:func:`i2s_channel_get_sync_diff_count`: Read the TX FIFO synchronization difference counter. The value is signed and means ``I2S_TX_FIFO_CNT - I2S_TX_FIFO_IDEAL_CNT``.
+    - :cpp:func:`i2s_channel_get_sync_count`: Read the TX synchronization counters through :cpp:type:`i2s_sync_count_t`.
+      When TX FIFO synchronization is supported, ``diff_count`` is also returned as ``I2S_TX_FIFO_CNT - I2S_TX_FIFO_IDEAL_CNT``.
     - :cpp:func:`i2s_channel_config_tx_fifo_sync`: Configure the expected count, automatic supplement threshold,
-      manual supplement threshold, and hardware supplement mode. After automatic hardware supplementation is
-      enabled, hardware automatically supplements or deletes data according to ``diff_count`` so that the actual
-      count approaches ``ideal_cnt``.
-    - :cpp:func:`i2s_channel_register_intr_event_callback`: Register the manual supplement threshold interrupt callback. When
+      manual supplement threshold, and hardware supplement mode.
+    - :cpp:func:`i2s_channel_enable_tx_fifo_sync`: Enable or disable TX FIFO synchronization. When enabled,
+      both automatic hardware data supplementation and manual interrupt are activated simultaneously.
+      When disabled, both are deactivated. This API must be called after
+      :cpp:func:`i2s_channel_config_tx_fifo_sync`.
+    - :cpp:func:`i2s_channel_register_event_callback`: Register the manual supplement threshold interrupt callback. When
       ``diff_count`` exceeds the manual supplement threshold, the driver calls this callback in the ISR and provides
       ``diff_count`` through :cpp:type:`i2s_sync_event_data_t`.
 
@@ -340,18 +345,15 @@ To satisfy the high quality audio requirement, following advanced APIs are provi
     1. Create and initialize an I2S TX channel.
     2. Call :cpp:func:`i2s_channel_config_tx_fifo_sync` to configure :cpp:type:`i2s_tx_fifo_sync_config_t`. ``ideal_cnt``
        is the expected number of transmitted data units at each ETM synchronization check. ``auto_suppl_thresh`` is
-       the automatic hardware supplement threshold: set it to ``0`` to disable automatic hardware supplementation, or
-       set it to a value greater than ``0`` and smaller than ``manual_suppl_thresh`` to enable automatic hardware
-       supplementation. ``manual_suppl_thresh`` is the threshold for triggering the callback for manual handling. Once
-       enabled, if the difference exceeds the automatic supplement threshold but has not reached the manual supplement
-       threshold, hardware automatically supplements or deletes the corresponding amount of data to synchronize with
-       ``ideal_cnt``.
-    3. To handle severe out-of-sync conditions, call :cpp:func:`i2s_channel_register_intr_event_callback` to register a callback.
-       After the callback is registered, the driver enables the TX synchronization interrupt. If the difference exceeds
-       the manual supplement threshold, the driver calls this callback in the ISR and provides ``diff_count`` through
-       :cpp:type:`i2s_sync_event_data_t`.
-    4. Call :cpp:func:`i2s_new_etm_task` to create the ``I2S_ETM_TASK_SYNC_FIFO`` task, and connect an external ETM event to this task.
-    5. Enable the ETM channel and I2S TX channel, so that ETM events periodically trigger synchronization checks.
+       the automatic hardware supplement threshold and must be smaller than ``manual_suppl_thresh``.
+       ``manual_suppl_thresh`` is the threshold for triggering the callback for manual handling. If the difference
+       exceeds the automatic supplement threshold but has not reached the manual supplement threshold, hardware
+       automatically supplements or deletes the corresponding amount of data to synchronize with ``ideal_cnt``.
+    3. To handle severe out-of-sync conditions, call :cpp:func:`i2s_channel_register_event_callback` to register a callback.
+    4. Call :cpp:func:`i2s_channel_enable_tx_fifo_sync` with ``enable`` set to ``true`` to activate both automatic
+       hardware supplementation and manual interrupt simultaneously.
+    5. Call :cpp:func:`i2s_new_etm_task` to create the ``I2S_ETM_TASK_SYNC_FIFO`` task, and connect an external ETM event to this task.
+    6. Enable the ETM channel and I2S TX channel, so that ETM events periodically trigger synchronization checks.
 
     The following example shows how to use a GPTimer alarm event to trigger the I2S TX FIFO synchronization check, and
     get ``diff_count`` in the manual supplement threshold interrupt:
@@ -372,7 +374,7 @@ To satisfy the high quality audio requirement, following advanced APIs are provi
                                                    const i2s_sync_event_data_t *event,
                                                    void *user_ctx)
         {
-            // event->diff_count = I2S_TX_FIFO_CNT - I2S_TX_FIFO_IDEAL_CNT
+            // Applications can use event->diff_count to adjust the data source, choose a compensation policy, or report it to upper layers.
             return false;
         }
 
@@ -382,11 +384,12 @@ To satisfy the high quality audio requirement, following advanced APIs are provi
             .auto_suppl_thresh = 32,
             .suppl_mode = I2S_TX_FIFO_SYNC_SUPPL_MODE_LAST_DATA,
         };
-        i2s_intr_event_callbacks_t intr_cbs = {
-            .on_tx_sync = i2s_tx_sync_callback,
+        i2s_event_callbacks_t cbs = {
+            .on_tx_sync_evt = i2s_tx_sync_callback,
         };
         i2s_channel_config_tx_fifo_sync(tx_handle, &sync_cfg);
-        i2s_channel_register_intr_event_callback(tx_handle, &intr_cbs, NULL);
+        i2s_channel_register_event_callback(tx_handle, &cbs, NULL);
+        i2s_channel_enable_tx_fifo_sync(tx_handle, true);
 
         i2s_etm_task_config_t i2s_task_cfg = {
             .task_type = I2S_ETM_TASK_SYNC_FIFO,

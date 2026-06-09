@@ -240,6 +240,9 @@ esp_err_t i2s_channel_init_pdm_tx_mode(i2s_chan_handle_t handle, const i2s_pdm_t
     if (I2S_CHANNEL_USES_DMA(handle)) {
         ESP_GOTO_ON_ERROR(i2s_init_dma_intr(handle, I2S_INTR_ALLOC_FLAGS), err, TAG, "initialize dma interrupt failed");
     }
+#if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
+    ESP_GOTO_ON_ERROR(i2s_init_i2s_intr(handle), err, TAG, "initialize I2S interrupt failed");
+#endif
 
     i2s_ll_tx_enable_pdm(handle->controller->hal.dev, pdm_tx_cfg->slot_cfg.data_fmt == I2S_PDM_DATA_FMT_PCM);
     i2s_ll_set_destination(handle->controller->hal.dev, handle->dir, handle->destination);

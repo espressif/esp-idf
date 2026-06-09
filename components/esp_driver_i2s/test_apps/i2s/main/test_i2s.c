@@ -1348,21 +1348,18 @@ TEST_CASE("I2S TX sync callback is triggered by GPTimer ETM alarm", "[i2s][etm]"
         .ideal_cnt = I2S_TX_SYNC_TEST_IDEAL_CNT,
         .suppl_mode = I2S_TX_FIFO_SYNC_SUPPL_MODE_LAST_DATA,
     };
-    i2s_intr_event_callbacks_t intr_cbs = {
-        .on_tx_sync = i2s_tx_sync_test_callback,
+    i2s_event_callbacks_t cbs = {
+        .on_tx_sync_evt = i2s_tx_sync_test_callback,
     };
     TEST_ESP_OK(i2s_channel_config_tx_fifo_sync(tx_handle, &sync_cfg));
-    TEST_ESP_OK(i2s_channel_register_intr_event_callback(tx_handle, &intr_cbs, &cb_ctx));
+    TEST_ESP_OK(i2s_channel_register_event_callback(tx_handle, &cbs, &cb_ctx));
+    TEST_ESP_OK(i2s_channel_enable_tx_fifo_sync(tx_handle, true));
 
-    uint32_t bclk_count = 0;
-    uint32_t fifo_count = 0;
-    int32_t diff_count = 0;
-    TEST_ESP_OK(i2s_channel_get_sync_count(tx_handle, &bclk_count, &fifo_count, true));
-    TEST_ESP_OK(i2s_channel_get_sync_count(tx_handle, NULL, NULL, false));
-    TEST_ESP_OK(i2s_channel_get_sync_diff_count(tx_handle, &diff_count, true));
-    TEST_ESP_OK(i2s_channel_get_sync_diff_count(tx_handle, NULL, false));
+    i2s_sync_count_t sync_count = {};
+    TEST_ESP_OK(i2s_channel_get_sync_count(tx_handle, &sync_count, true));
+    TEST_ESP_OK(i2s_channel_get_sync_count(tx_handle, &sync_count, false));
     printf("TX sync API before start: diff=%"PRId32", fifo=%"PRIu32", bclk=%"PRIu32"\n",
-           diff_count, fifo_count, bclk_count);
+           sync_count.diff_count, sync_count.fifo_count, sync_count.bclk_count);
 
     i2s_etm_task_config_t i2s_task_cfg = {
         .task_type = I2S_ETM_TASK_SYNC_FIFO,
@@ -1399,8 +1396,9 @@ TEST_CASE("I2S TX sync callback is triggered by GPTimer ETM alarm", "[i2s][etm]"
 
     TEST_ESP_OK(gptimer_stop(timer));
     TEST_ESP_OK(i2s_channel_disable(tx_handle));
-    intr_cbs.on_tx_sync = NULL;
-    TEST_ESP_OK(i2s_channel_register_intr_event_callback(tx_handle, &intr_cbs, NULL));
+    TEST_ESP_OK(i2s_channel_enable_tx_fifo_sync(tx_handle, false));
+    cbs.on_tx_sync_evt = NULL;
+    TEST_ESP_OK(i2s_channel_register_event_callback(tx_handle, &cbs, NULL));
     TEST_ESP_OK(gptimer_disable(timer));
     TEST_ESP_OK(esp_etm_channel_disable(etm_channel));
 

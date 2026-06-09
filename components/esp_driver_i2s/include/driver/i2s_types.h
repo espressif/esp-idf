@@ -122,11 +122,11 @@ typedef struct {
  *
  * @param[in] handle    I2S TX channel handle
  * @param[in] event     TX synchronization event data
- * @param[in] user_ctx  User context registered via `i2s_channel_register_intr_event_callback()`
+ * @param[in] user_ctx  User context registered via `i2s_channel_register_event_callback()`
  *
  * @return Whether a high priority task has been waken up by this callback function
  */
-typedef bool (*i2s_sync_callback_t)(i2s_chan_handle_t handle, const i2s_sync_event_data_t *event, void *user_ctx);
+typedef bool (*i2s_tx_fifo_sync_callback_t)(i2s_chan_handle_t handle, const i2s_sync_event_data_t *event, void *user_ctx);
 #endif // SOC_I2S_SUPPORTS_TX_FIFO_SYNC
 
 /**

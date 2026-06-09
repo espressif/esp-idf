@@ -53,6 +53,9 @@ typedef struct {
     i2s_isr_callback_t on_send_q_ovf;       /**< Callback of sending queue overflowed event, only for TX channel
                                              *   The event data includes buffer size that has been overwritten
                                              */
+#if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
+    i2s_tx_fifo_sync_callback_t on_tx_sync_evt;      /**< Callback when the TX sync difference count exceeds the manual threshold */
+#endif
 } i2s_event_callbacks_t;
 
 /**
@@ -244,7 +247,7 @@ esp_err_t i2s_channel_read(i2s_chan_handle_t handle, void *dest, size_t size, si
  *      - ESP_OK                Set event callbacks successfully
  *      - ESP_ERR_INVALID_ARG   Set event callbacks failed because of invalid argument
  *      - ESP_ERR_INVALID_STATE Set event callbacks failed because the current channel state is not REGISTERED or READY
- *      - ESP_ERR_NOT_SUPPORTED Set event callbacks failed because the channel does not use the DMA data path
+ *      - ESP_ERR_NOT_SUPPORTED Set event callbacks failed because the requested event is not supported by this channel
  */
 esp_err_t i2s_channel_register_event_callback(i2s_chan_handle_t handle, const i2s_event_callbacks_t *callbacks, void *user_data);
 
@@ -292,45 +295,40 @@ esp_err_t i2s_channel_tune_rate(i2s_chan_handle_t handle, const i2s_tuning_confi
 
 #if SOC_I2S_SUPPORTS_TX_SYNC_CNT
 /**
+ * @brief TX synchronization counter values
+ */
+typedef struct {
+    uint32_t bclk_count;                             /*!< BCLK sync counter */
+    uint32_t fifo_count;                             /*!< FIFO sync counter */
+#if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
+    int32_t diff_count;                              /*!< Signed difference: I2S_TX_FIFO_CNT - I2S_TX_FIFO_IDEAL_CNT */
+#endif
+} i2s_sync_count_t;
+
+/**
  * @brief Get TX synchronization counters
  *
  * @note  `fifo_count` reflects how many data have been read from TX FIFO.
  *        Normally, `bclk_count = fifo_count * slot_bit_width`.
- *        Both counters are reset automatically when `I2S_ETM_TASK_SYNC_FIFO` is triggered.
+ *        BCLK/FIFO counters are reset automatically when `I2S_ETM_TASK_SYNC_FIFO` is triggered.
+ * @note  When `SOC_I2S_SUPPORTS_TX_FIFO_SYNC` is supported, `diff_count` is a signed 31-bit value
+ *        equal to `I2S_TX_FIFO_CNT - I2S_TX_FIFO_IDEAL_CNT`.
  *
  * @param[in]  tx_handle   I2S TX channel handle
- * @param[out] bclk_count  Pointer to receive BCLK sync counter, set NULL to ignore
- * @param[out] fifo_count  Pointer to receive FIFO sync counter, set NULL to ignore
- * @param[in]  reset       Whether to reset both counters after reading
+ * @param[out] count       Pointer to receive TX synchronization counters
+ * @param[in]  reset       Whether to reset the counters after reading
  * @return
  *      - ESP_OK              Success
- *      - ESP_ERR_INVALID_ARG Invalid handle or channel is not TX
+ *      - ESP_ERR_INVALID_ARG Invalid handle, channel is not TX, or NULL count pointer
  */
-esp_err_t i2s_channel_get_sync_count(i2s_chan_handle_t tx_handle, uint32_t *bclk_count, uint32_t *fifo_count,
-                                     bool reset);
+esp_err_t i2s_channel_get_sync_count(i2s_chan_handle_t tx_handle, i2s_sync_count_t *count, bool reset);
 
 #if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
-/**
- * @brief Get TX FIFO synchronization difference counter
- *
- * @note  `diff_count` is a signed 31-bit value equal to `I2S_TX_FIFO_CNT - I2S_TX_FIFO_IDEAL_CNT`.
- *
- * @param[in]  tx_handle   I2S TX channel handle
- * @param[out] diff_count  Pointer to receive signed difference counter, set NULL to ignore
- * @param[in]  reset       Whether to reset the difference counter after reading
- * @return
- *      - ESP_OK              Success
- *      - ESP_ERR_INVALID_ARG Invalid handle or channel is not TX
- */
-esp_err_t i2s_channel_get_sync_diff_count(i2s_chan_handle_t tx_handle, int32_t *diff_count, bool reset);
-
 /**
  * @brief TX FIFO synchronization configuration
  */
 typedef struct {
-    uint32_t auto_suppl_thresh;                       /*!< Threshold to enable automatic FIFO data supplement;
-                                                       *   0 disables automatic supplement
-                                                       */
+    uint32_t auto_suppl_thresh;                       /*!< Threshold for automatic FIFO data supplement */
     uint32_t manual_suppl_thresh;                     /*!< Threshold to trigger the callback for manual FIFO data supplement */
     uint32_t ideal_cnt;                               /*!< Ideal FIFO count when ETM sync task is triggered */
     i2s_tx_fifo_sync_suppl_mode_t suppl_mode;         /*!< Data supplement mode for automatic supplement */
@@ -340,22 +338,10 @@ typedef struct {
 } i2s_tx_fifo_sync_config_t;
 
 /**
- * @brief Group of I2S peripheral interrupt event callbacks
- *
- * @note The callbacks are all running under ISR environment.
- */
-typedef struct {
-    i2s_sync_callback_t on_tx_sync;                   /*!< Callback when the sync difference count exceeds
-                                                       *   `manual_suppl_thresh`
-                                                       */
-} i2s_intr_event_callbacks_t;
-
-/**
  * @brief Configure TX FIFO synchronization
  *
- * @note  Set `auto_suppl_thresh` to 0 to disable automatic hardware supplementation.
- * @note  When automatic hardware supplementation is enabled, `auto_suppl_thresh` must be smaller than
- *        `manual_suppl_thresh`.
+ * @note  `auto_suppl_thresh` must be smaller than `manual_suppl_thresh`.
+ * @note  Use i2s_channel_enable_tx_fifo_sync() to activate/deactivate after configuration.
  * @note  Only allowed when channel state is REGISTERED or READY (before channel starts).
  *
  * @param[in] tx_handle     I2S TX channel handle
@@ -368,24 +354,21 @@ typedef struct {
 esp_err_t i2s_channel_config_tx_fifo_sync(i2s_chan_handle_t tx_handle, const i2s_tx_fifo_sync_config_t *config);
 
 /**
- * @brief Register I2S peripheral interrupt event callbacks
+ * @brief Enable or disable TX FIFO synchronization
  *
- * @note  `on_tx_sync` is invoked when `tx_cnt_diff` exceeds `manual_suppl_thresh`.
- * @note  Only allowed when channel state is REGISTERED or READY (before channel starts).
- * @note  When CONFIG_I2S_ISR_IRAM_SAFE is enabled, the callback and user_data must reside in internal RAM.
- * @note  Set `callbacks->on_tx_sync` to NULL to deregister the callback and uninstall the TX sync interrupt.
+ * @note  When enabled, both automatic hardware data supplementation and manual interrupt
+ *        are activated simultaneously. When disabled, both are deactivated.
+ * @note  Must be called after i2s_channel_config_tx_fifo_sync().
  *
- * @param[in] tx_handle     I2S TX channel handle
- * @param[in] callbacks     Group of I2S peripheral interrupt callbacks
- * @param[in] user_data     User context passed to callback
+ * @param[in] tx_handle  I2S TX channel handle
+ * @param[in] enable     true to enable, false to disable
  * @return
  *      - ESP_OK              Success
  *      - ESP_ERR_INVALID_ARG Invalid handle or channel is not TX
- *      - ESP_ERR_INVALID_STATE Channel is already running
- *      - ESP_ERR_NO_MEM        Failed to allocate interrupt
+ *      - ESP_ERR_INVALID_STATE FIFO sync not configured
  */
-esp_err_t i2s_channel_register_intr_event_callback(i2s_chan_handle_t tx_handle,
-                                                   const i2s_intr_event_callbacks_t *callbacks, void *user_data);
+esp_err_t i2s_channel_enable_tx_fifo_sync(i2s_chan_handle_t tx_handle, bool enable);
+
 #endif // SOC_I2S_SUPPORTS_TX_FIFO_SYNC
 #endif // SOC_I2S_SUPPORTS_TX_SYNC_CNT
 

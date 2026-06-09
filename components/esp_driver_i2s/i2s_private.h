@@ -90,6 +90,9 @@ typedef struct {
     i2s_isr_callback_t on_send_q_ovf;       /**< Callback of sending queue overflowed event, only for tx channel
                                              *   The event data includes buffer size that has been overwritten
                                              */
+#if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
+    i2s_tx_fifo_sync_callback_t on_tx_sync_evt;      /**< Callback when the TX sync difference count exceeds the manual threshold */
+#endif
 } i2s_event_callbacks_internal_t;
 
 /**
@@ -181,9 +184,9 @@ struct i2s_channel_obj_t {
     i2s_event_callbacks_internal_t   callbacks;      /*!< Callback functions */
     void                    *user_data;     /*!< User data for callback functions */
 #if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
-    i2s_sync_callback_t     on_sync;        /*!< TX FIFO sync manual supplement threshold callback */
+    i2s_tx_fifo_sync_callback_t     on_tx_sync;        /*!< TX FIFO sync manual supplement threshold callback */
     void                    *sync_user_data; /*!< User data for TX FIFO sync callback */
-    intr_handle_t           sync_intr;      /*!< I2S peripheral interrupt for TX FIFO sync */
+    intr_handle_t           i2s_intr;       /*!< I2S peripheral interrupt handle */
 #endif
     void (*start)(i2s_chan_handle_t);       /*!< start tx/rx channel */
     void (*stop)(i2s_chan_handle_t);        /*!< stop tx/rx channel */
@@ -243,6 +246,18 @@ extern i2s_platform_t g_i2s;  /*!< Global i2s instance for driver internal use *
  *      - ESP_ERR_INVALID_ARG   Wrong port id or NULL pointer
  */
 esp_err_t i2s_init_dma_intr(i2s_chan_handle_t handle, int intr_flag);
+
+#if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
+/**
+ * @brief Initialize I2S peripheral interrupt
+ *
+ * @param handle        I2S channel handle
+ * @return
+ *      - ESP_OK                Initialize interrupt success
+ *      - ESP_ERR_INVALID_ARG   Wrong port id or NULL pointer
+ */
+esp_err_t i2s_init_i2s_intr(i2s_chan_handle_t handle);
+#endif
 
 /**
  * @brief Free I2S DMA descriptor and DMA buffer
