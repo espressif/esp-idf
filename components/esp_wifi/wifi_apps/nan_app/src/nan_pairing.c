@@ -816,6 +816,15 @@ static void nan_pairing_key_installed_cb(const uint8_t *peer_nmi,
         }
         NAN_DATA_UNLOCK();
 
+        /* Without a peer service entry the follow-up would carry zero service
+         * IDs; drop it rather than send an invalid frame. */
+        if (!ctx->svc_id || !ctx->peer_svc_id) {
+            ESP_LOGW(TAG, "Pairing key installed: peer service not found for " MACSTR
+                     ", skipping initiator follow-up", MAC2STR(peer_nmi));
+            os_free(ctx);
+            return;
+        }
+
         MACADDR_COPY(ctx->peer_mac, peer_nmi);
         ctx->shared_key_attr_len = 0;
 
@@ -870,6 +879,8 @@ void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
     }
 
     bool already_had_nik = false;
+    bool pairing_completed = false;
+    uint8_t own_svc_id_to_disable = 0;
 
     NAN_DATA_LOCK();
     struct peer_svc_info *p_peer_svc = nan_find_peer_svc_exact(svc_id, peer_svc_id, peer_mac);
@@ -883,15 +894,21 @@ void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
                  MAC2STR(peer_mac), cipher_ver, lifetime_sec);
 
         if (!already_had_nik) {
-            wifi_event_nan_pairing_complete_t evt = {0};
-            evt.status = WIFI_NAN_PAIRING_STATUS_ACCEPTED;
-            evt.reason_code = 0;
-            MACADDR_COPY(evt.peer_nmi, peer_mac);
-            esp_nan_disable_pairing(p_peer_svc->own_svc_id);
-            nan_app_post_event(WIFI_EVENT_NAN_PAIRING_CONFIRM, &evt, sizeof(evt));
+            pairing_completed = true;
+            own_svc_id_to_disable = p_peer_svc->own_svc_id;
         }
     }
     NAN_DATA_UNLOCK();
+
+    /* Invoke blocking calls outside NAN_DATA_LOCK to avoid deadlock. */
+    if (pairing_completed) {
+        wifi_event_nan_pairing_complete_t evt = {0};
+        evt.status = WIFI_NAN_PAIRING_STATUS_ACCEPTED;
+        evt.reason_code = 0;
+        MACADDR_COPY(evt.peer_nmi, peer_mac);
+        esp_nan_disable_pairing(own_svc_id_to_disable);
+        nan_app_post_event(WIFI_EVENT_NAN_PAIRING_CONFIRM, &evt, sizeof(evt));
+    }
 
     /* Only reply with our own NIK the first time we receive the peer's.
      * If has_nik was already true this is a redundant echo — don't reply

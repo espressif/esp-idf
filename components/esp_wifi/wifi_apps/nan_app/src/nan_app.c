@@ -1525,6 +1525,8 @@ esp_err_t esp_wifi_nan_sync_start(const wifi_nan_sync_config_t *nan_cfg)
         }
         s_nan_ctx.own_nik_valid = true;
     }
+    /* Drop the cached NIRA tag; it was derived from the previous NIK. */
+    s_nan_ctx.nira_cached = false;
 #endif
     NAN_DATA_UNLOCK();
 
