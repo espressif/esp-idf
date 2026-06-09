@@ -216,7 +216,7 @@ extern void test_ecdsa_export_pubkey_inner(bool is_p256, uint8_t *exported_pub_x
 #endif
 
 extern void test_ecdsa_sign(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* s_le, bool use_km_key, ecdsa_sign_type_t k_type);
-extern int test_ecdsa_verify(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* s_le, uint8_t *pub_x, uint8_t *pub_y);
+extern int test_ecdsa_verify(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* s_le, uint8_t *pub_x, uint8_t *pub_y, int expected_ret);
 extern void test_ecdsa_sign_and_verify(bool is_p256, uint8_t* sha, uint8_t* pub_x, uint8_t* pub_y, bool use_km_key, ecdsa_sign_type_t k_type);
 
 /*
@@ -253,7 +253,7 @@ void key_mgr_test_ecdsa_key(bool is_p256, ecdsa_sign_type_t k_type)
 
     ESP_LOG_BUFFER_HEXDUMP("ECDSA key pubx", pub_x, pubkey_len, ESP_LOG_DEBUG);
     ESP_LOG_BUFFER_HEXDUMP("ECDSA key puby", pub_y, pubkey_len, ESP_LOG_DEBUG);
-    TEST_ASSERT_EQUAL(0, test_ecdsa_verify(is_p256, sha256_digest, r_le, s_le, pub_x, pub_y));
+    TEST_ASSERT_EQUAL(0, test_ecdsa_verify(is_p256, sha256_digest, r_le, s_le, pub_x, pub_y, 0));
 }
 
 static void key_mgr_test_ecdsa_p256_aes_mode(void)
