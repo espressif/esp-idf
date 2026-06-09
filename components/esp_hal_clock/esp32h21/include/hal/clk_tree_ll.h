@@ -10,7 +10,9 @@
 #include "soc/soc.h"
 #include "soc/clk_tree_defs.h"
 #include "soc/pcr_struct.h"
+#include "soc/gpio_ext_reg.h"
 #include "soc/lp_clkrst_struct.h"
+#include "hal/clkout_channel.h"
 #include "soc/pmu_reg.h"
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_bbpll.h"
@@ -620,6 +622,69 @@ static inline __attribute__((always_inline)) void clk_ll_rtc_slow_store_cal(uint
 static inline __attribute__((always_inline)) uint32_t clk_ll_rtc_slow_load_cal(void)
 {
     return REG_READ(RTC_SLOW_CLK_CAL_REG);
+}
+
+/************************** CLOCK OUTPUT **************************/
+/**
+ * @brief Clock output channel configuration
+ *
+ * @param clk_sig The clock signal source to be mapped to GPIOs
+ * @param channel_id The clock output channel ID
+ */
+static inline __attribute__((always_inline)) void clk_ll_bind_output_channel(soc_clkout_sig_id_t clk_sig, clock_out_channel_t channel_id)
+{
+    SET_PERI_REG_BITS(GPIO_EXT_PIN_CTRL_REG, CLKOUT_CHANNEL_MASK(channel_id), clk_sig, CLKOUT_CHANNEL_SHIFT(channel_id));
+}
+
+/**
+ * @brief Enable the clock output channel
+ *
+ * @param channel_id The clock output channel ID
+ * @param enable Enable or disable the clock output channel
+ */
+static inline __attribute__((always_inline)) void clk_ll_enable_output_channel(clock_out_channel_t channel_id, bool enable)
+{
+    // No such gating on the target
+    (void)channel_id;
+    (void)enable;
+}
+
+/**
+ * @brief Output the mapped clock after frequency division
+ *
+ * @param channel_id The clock output channel ID
+ * @param divider Clock frequency division value
+ */
+static inline __attribute__((always_inline)) void clk_ll_set_output_channel_divider(clock_out_channel_t channel_id, uint32_t divider)
+{
+    // No divider on the target
+    HAL_ASSERT(divider == 1);
+}
+
+/**
+ * @brief Enable/Disable the clock gate for clock output signal source
+ *
+ * @param clk_src The clock output signal source
+ * @param en Enable or disable the clock output signal source
+ */
+static inline void clk_ll_enable_clkout_source(soc_clkout_sig_id_t clk_src, bool en)
+{
+    switch (clk_src) {
+    case CLKOUT_SIG_MODEM_8M:
+        PCR.ctrl_clk_out_en.clk8_oen = en;
+        break;
+    case CLKOUT_SIG_MODEM_16M:
+        PCR.ctrl_clk_out_en.clk16_oen = en;
+        break;
+    case CLKOUT_SIG_MODEM_32M:
+        PCR.ctrl_clk_out_en.clk32_oen = en;
+        break;
+    case CLKOUT_SIG_XTAL:
+        PCR.ctrl_clk_out_en.clk_xtal_oen = en;
+        break;
+    default:
+        break;
+    }
 }
 
 #ifdef __cplusplus

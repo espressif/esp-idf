@@ -216,9 +216,9 @@
 #define SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP  (1)
 
 // The Clock Out signal is route to the pin by GPIO matrix
-// #define SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX    (1)
-// #define SOC_CLOCKOUT_HAS_SOURCE_GATE        (1)
-// #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM       (3)
+#define SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX        (1)
+#define SOC_CLOCKOUT_HAS_SOURCE_GATE            (1)
+#define SOC_GPIO_CLOCKOUT_CHANNEL_NUM           (3)
 
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
 #define SOC_SDM_SUPPORT_SLEEP_RETENTION 1

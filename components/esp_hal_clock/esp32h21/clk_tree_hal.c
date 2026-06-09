@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,4 +64,14 @@ uint32_t clk_hal_xtal_get_freq_mhz(void)
     uint32_t freq = clk_ll_xtal_get_freq_mhz();
     HAL_ASSERT(freq == SOC_XTAL_FREQ_32M);
     return freq;
+}
+
+void clk_hal_clock_output_setup(soc_clkout_sig_id_t clk_sig, clock_out_channel_t channel_id)
+{
+    clk_ll_bind_output_channel(clk_sig, channel_id);
+}
+
+void clk_hal_clock_output_teardown(clock_out_channel_t channel_id)
+{
+    clk_ll_bind_output_channel(0, channel_id);
 }
