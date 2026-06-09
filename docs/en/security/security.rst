@@ -190,7 +190,7 @@ JTAG
 
     - JTAG interface stays disabled if any of the security features are enabled. Please refer to :ref:`jtag-debugging-security-features` for more information.
     - JTAG interface can also be disabled in the absence of any other security features using :ref:`efuse_API`.
-    :SOC_HMAC_SUPPORTED: - {IDF_TARGET_NAME} supports soft disabling the JTAG interface and it can be re-enabled by programming a secret key through HMAC. (:ref:`hmac_for_enabling_jtag`)
+    :SOC_HMAC_SUPPORTED: - {IDF_TARGET_NAME} supports soft disabling the JTAG interface and it can be re-enabled by programming a secret key through HMAC. (:ref:`HMAC for Enabling JTAG <hmac_for_enabling_jtag>`)
 
 UART Download Mode
 ^^^^^^^^^^^^^^^^^^
