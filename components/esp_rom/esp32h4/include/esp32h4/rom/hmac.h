@@ -11,8 +11,6 @@
 extern "C" {
 #endif
 
-//TODO: [ESP32H4] IDF-12257 inherit from verification branch, need check
-
 #include <stdint.h>
 #include <stdlib.h>
 #include "efuse.h"
