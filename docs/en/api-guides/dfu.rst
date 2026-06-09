@@ -161,7 +161,7 @@ Common Errors and Known Issues
 
 - The reason for ``No DFU capable USB device available`` could be that the USB driver was not properly installed on Windows (see :ref:`api_guide_dfu_flash_win`), udev rule was not setup on Linux (see :ref:`api_guide_dfu_flash_udev`) or the device is not in bootloader mode.
 
-- Flashing with ``dfu-util`` on Windows fails on the first attempt with error ``Lost device after RESET?``. Please retry the flashing and it should succeed the next time.
+- Flashing with ``dfu-util`` on Windows or macOS may fail on the first attempt with error ``Lost device after RESET?``. ``idf.py dfu-flash`` retries once automatically. If flashing still fails, run ``idf.py dfu-flash`` again manually.
 
 
 .. only:: SOC_SUPPORTS_SECURE_DL_MODE
