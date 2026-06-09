@@ -86,6 +86,7 @@ examples/wifi/power_save:
     - if: SOC_WIFI_SUPPORTED != 1
       temporary: true
       reason: requires hardware support
+  disable_test:
     - if: IDF_TARGET in ["esp32s31"]
       temporary: true
       reason: lack of runners

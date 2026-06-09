@@ -20,19 +20,19 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
 
     const static sleep_retention_entries_config_t pcr_regs_retention[] = {
         /* Enable i2c master clock */
-        [0] = { .config = REGDMA_LINK_WRITE_INIT (REGDMA_PCR_LINK(0),     LP_PERICLKRST_I2CMST_CTRL_REG,            LP_PERICLKRST_LP_I2CMST_CLK_EN,                LP_PERICLKRST_LP_I2CMST_CLK_EN_M,                1, 0), .owner = ENTRY(0) },
+        [0] = { .config = REGDMA_LINK_WRITE_INIT (REGDMA_PCR_LINK(0),     LP_PERICLKRST_I2CMST_CTRL_REG,            LP_PERICLKRST_LP_I2CMST_CLK_EN,                LP_PERICLKRST_LP_I2CMST_CLK_EN_M,                1, 0), .owner = ENTRY(0) | ENTRY(1)},
         /* Start SYSPLL self-calibration */
-        [1] = { .config = REGDMA_LINK_WRITE_INIT (REGDMA_PCR_LINK(1),     HP_SYS_CLKRST_ANA_PLL_CTRL0_REG,          0,                                             HP_SYS_CLKRST_REG_CPU_PLL_CAL_STOP_M,            1, 0), .owner = ENTRY(0) },
+        [1] = { .config = REGDMA_LINK_WRITE_INIT (REGDMA_PCR_LINK(1),     HP_SYS_CLKRST_ANA_PLL_CTRL0_REG,          0,                                             HP_SYS_CLKRST_REG_CPU_PLL_CAL_STOP_M,            1, 0), .owner = ENTRY(0) | ENTRY(1)},
         /* Wait calibration done */
-        [2] = { .config = REGDMA_LINK_WAIT_INIT  (REGDMA_PCR_LINK(2),     HP_SYS_CLKRST_ANA_PLL_CTRL0_REG,          HP_SYS_CLKRST_REG_CPU_PLL_CAL_END,             HP_SYS_CLKRST_REG_CPU_PLL_CAL_END_M,             1, 0), .owner = ENTRY(0) },
+        [2] = { .config = REGDMA_LINK_WAIT_INIT  (REGDMA_PCR_LINK(2),     HP_SYS_CLKRST_ANA_PLL_CTRL0_REG,          HP_SYS_CLKRST_REG_CPU_PLL_CAL_END,             HP_SYS_CLKRST_REG_CPU_PLL_CAL_END_M,             1, 0), .owner = ENTRY(0) | ENTRY(1)},
         /* Stop SYSPLL self-calibration */
-        [3] = { .config = REGDMA_LINK_WRITE_INIT (REGDMA_PCR_LINK(3),     HP_SYS_CLKRST_ANA_PLL_CTRL0_REG,          HP_SYS_CLKRST_REG_CPU_PLL_CAL_STOP,            HP_SYS_CLKRST_REG_CPU_PLL_CAL_STOP_M,            1, 0), .owner = ENTRY(0) },
+        [3] = { .config = REGDMA_LINK_WRITE_INIT (REGDMA_PCR_LINK(3),     HP_SYS_CLKRST_ANA_PLL_CTRL0_REG,          HP_SYS_CLKRST_REG_CPU_PLL_CAL_STOP,            HP_SYS_CLKRST_REG_CPU_PLL_CAL_STOP_M,            1, 0), .owner = ENTRY(0) | ENTRY(1)},
         /* Clock configuration retention */
-        [4] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(4), DR_REG_HP_SYS_CLKRST_BASE,                DR_REG_HP_SYS_CLKRST_BASE,                     N_REGS_PCR(),                                    0, 0), .owner = ENTRY(0) },  /* pcr */
-        [5] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(5), HP_SYS_CLKRST_ROOT_CLK_CTRL0_REG,         HP_SYS_CLKRST_REG_SOC_CLK_UPDATE,              HP_SYS_CLKRST_REG_SOC_CLK_UPDATE_M,              1, 0), .owner = ENTRY(0) },
-        [6] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(6), HP_SYS_CLKRST_ROOT_CLK_CTRL0_REG,         0x0,                                           HP_SYS_CLKRST_REG_SOC_CLK_UPDATE_M,              1, 0), .owner = ENTRY(0) },
-        [7] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(7), HP_SYS_CLKRST_SDIO_HOST_FUNC_CTRL0_REG,   HP_SYS_CLKRST_REG_SDIO_LS_CLK_EDGE_CFG_UPDATE, HP_SYS_CLKRST_REG_SDIO_LS_CLK_EDGE_CFG_UPDATE_M, 1, 0), .owner = ENTRY(0) },
-        [8] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(8), HP_SYS_CLKRST_SDIO_HOST_FUNC_CTRL0_REG,   0x0,                                           HP_SYS_CLKRST_REG_SDIO_LS_CLK_EDGE_CFG_UPDATE_M, 1, 0), .owner = ENTRY(0) },
+        [4] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(4), DR_REG_HP_SYS_CLKRST_BASE,                DR_REG_HP_SYS_CLKRST_BASE,                     N_REGS_PCR(),                                    0, 0), .owner = ENTRY(0) | ENTRY(1)},  /* pcr */
+        [5] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(5), HP_SYS_CLKRST_ROOT_CLK_CTRL0_REG,         HP_SYS_CLKRST_REG_SOC_CLK_UPDATE,              HP_SYS_CLKRST_REG_SOC_CLK_UPDATE_M,              1, 0), .owner = ENTRY(0) | ENTRY(1)},
+        [6] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(6), HP_SYS_CLKRST_ROOT_CLK_CTRL0_REG,         0x0,                                           HP_SYS_CLKRST_REG_SOC_CLK_UPDATE_M,              1, 0), .owner = ENTRY(0) | ENTRY(1)},
+        [7] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(7), HP_SYS_CLKRST_SDIO_HOST_FUNC_CTRL0_REG,   HP_SYS_CLKRST_REG_SDIO_LS_CLK_EDGE_CFG_UPDATE, HP_SYS_CLKRST_REG_SDIO_LS_CLK_EDGE_CFG_UPDATE_M, 1, 0), .owner = ENTRY(0) | ENTRY(1)},
+        [8] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(8), HP_SYS_CLKRST_SDIO_HOST_FUNC_CTRL0_REG,   0x0,                                           HP_SYS_CLKRST_REG_SDIO_LS_CLK_EDGE_CFG_UPDATE_M, 1, 0), .owner = ENTRY(0) | ENTRY(1)},
     };
 
     esp_err_t err = sleep_retention_entries_create(pcr_regs_retention, ARRAY_SIZE(pcr_regs_retention), REGDMA_LINK_PRI_SYS_CLK, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
@@ -44,14 +44,13 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
 }
 
 #if CONFIG_MAC_BB_PD || CONFIG_BT_CTRL_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE
-#include "rom/ets_sys.h"
 esp_err_t sleep_clock_modem_retention_init(void *arg)
 {
     #define N_REGS_SYSCON() (((MODEM_SYSCON_MEM_RF2_CONF_REG - MODEM_SYSCON_TEST_CONF_REG) / 4) + 1)
     #define N_REGS_LPCON() (((MODEM_LPCON_MODEM_INTR_STATUS_REG - MODEM_LPCON_TEST_CONF_REG) / 4) + 1)
     const static sleep_retention_entries_config_t modem_regs_retention[] = {
-        [0] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_MODEMSYSCON_LINK(0), 0x20109c30, 0xf, 0xffffffff, 1, 0), .owner = ENTRY(0) | ENTRY(1) },
-        [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEMSYSCON_LINK(1), MODEM_SYSCON_TEST_CONF_REG, MODEM_SYSCON_TEST_CONF_REG, 12, 0, 0), .owner = ENTRY(0) | ENTRY(1) }, /* MODEM SYSCON */
+        [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEMSYSCON_LINK(0), MODEM_SYSCON_TEST_CONF_REG, MODEM_SYSCON_TEST_CONF_REG, 12, 0, 0), .owner = ENTRY(0) | ENTRY(1) }, /* MODEM SYSCON */
+        [1] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CLOCK_ICG_LINK(0), HP_SYS_CLKRST_MODEM_CONF_REG, 0x3d, 0x3d, 0, 0), .owner = ENTRY(1)},
         [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEMLPCON_LINK(0), MODEM_LPCON_TEST_CONF_REG, MODEM_LPCON_TEST_CONF_REG, N_REGS_LPCON(), 0, 0), .owner = ENTRY(0) | ENTRY(1) }, /* MODEM SYSCON */
     };
 
