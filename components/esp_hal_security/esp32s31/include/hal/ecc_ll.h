@@ -11,6 +11,8 @@
 #include "hal/ecc_types.h"
 #include "soc/ecc_mult_reg.h"
 #include "soc/hp_sys_clkrst_struct.h"
+#include "soc/hp_system_reg.h"
+#include "esp_fault.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,8 +64,21 @@ static inline void ecc_ll_reset_register(void)
         ecc_ll_reset_register(__VA_ARGS__); \
     } while(0)
 
-static inline void ecc_ll_power_up(void) {}
-static inline void ecc_ll_power_down(void) {}
+static inline void ecc_ll_power_up(void)
+{
+    /* Power up the ECC peripheral (default state is power-up) */
+    REG_CLR_BIT(HP_SYSTEM_ECC_MEM_LP_CTRL_REG, HP_SYSTEM_ECC_MEM_LP_EN);
+    REG_SET_BIT(HP_SYSTEM_ECC_MEM_LP_CTRL_REG, HP_SYSTEM_ECC_MEM_LP_FORCE_CTRL);
+    /* Anti-FI: confirm the clears took effect. */
+    ESP_FAULT_ASSERT(REG_GET_BIT(HP_SYSTEM_ECC_MEM_LP_CTRL_REG, HP_SYSTEM_ECC_MEM_LP_EN) == 0 &&
+                     REG_GET_BIT(HP_SYSTEM_ECC_MEM_LP_CTRL_REG, HP_SYSTEM_ECC_MEM_LP_FORCE_CTRL) != 0);
+}
+
+static inline void ecc_ll_power_down(void)
+{
+    /* Power down the ECC peripheral */
+    REG_SET_BIT(HP_SYSTEM_ECC_MEM_LP_CTRL_REG, HP_SYSTEM_ECC_MEM_LP_EN);
+}
 
 static inline void ecc_ll_enable_interrupt(void)
 {

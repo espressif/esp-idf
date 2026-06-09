@@ -34,4 +34,5 @@
 #define ESP_ROM_NO_USB_SERIAL_OUTPUT_API    (1) // ROM does not export the usb-serial-jtag write char function
 #define ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY  (1) // ROM mem/str functions are not optimized well for misaligned memory access.
 #define ESP_ROM_SUPPORT_SECURE_BOOT_FAST_WAKEUP     (1) // ROM supports the secure boot fast wakeup feature
+#define ESP_ROM_ECDSA_VERIFY_PATCH (1) // ROM ets_ecdsa_verify API requires a software patch
 #define ESP_ROM_BOOTLOADER_OFFSET_FLASH     (0x0) // Bootloader offset in flash determined by the ROM bootloader
