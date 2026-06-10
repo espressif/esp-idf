@@ -1285,6 +1285,11 @@ typedef struct {
 #define HCIC_PARAM_SIZE_SET_PA_RESPONSE_DATA_PARAMS_LEN             8
 #define HCIC_PARAM_SIZE_SET_PA_SYNC_SUBEVT_PARAMS_LEN               5
 
+/** Max rsp_data octets in LE Set Periodic Advertising Response Data (HCI command param total ≤ HCI_COMMAND_SIZE). */
+#define HCIC_PA_RSP_DATA_PAYLOAD_MAX    (HCI_COMMAND_SIZE - HCIC_PARAM_SIZE_SET_PA_RESPONSE_DATA_PARAMS_LEN)
+/** Max Num_Subevents_To_Sync in LE Set Periodic Advertising Sync Subevents (BT Core Spec §7.8.127: 0x01–0x80). */
+#define HCIC_PA_SYNC_SUBEVT_NUM_MAX       128
+
 #define HCIC_PARAM_SIZE_SET_PERIODIC_ADV_PARAMS_V2                  12
 UINT8 btsnd_hcic_ble_set_periodic_adv_params_v2(UINT8 adv_handle, UINT16 interval_min, UINT16 interval_max,
                                                 UINT16 propertics, UINT8 num_subevents, UINT8 subevent_interval,
