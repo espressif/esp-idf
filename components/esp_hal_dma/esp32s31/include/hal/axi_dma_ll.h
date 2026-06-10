@@ -21,11 +21,12 @@ extern "C" {
 #endif
 
 #define AXI_DMA_LL_GET_HW(id) (((id) == 0) ? (&AXI_DMA) : NULL)
+#define AXI_DMA_LL_SUPPORT(_feat) AXI_DMA_LL_SUPPORT_ ## _feat
 
 // any "dummy" peripheral ID can be used for M2M mode
 #define AXI_DMA_LL_M2M_FREE_PERIPH_ID_MASK (0xFFC0)
 #define AXI_DMA_LL_RX_EVENT_MASK    (0x7F)
-#define AXI_DMA_LL_SUPPORT_TX_LINK_SWITCH_EVENT 1
+#define AXI_DMA_LL_SUPPORT_TX_LINK_SWITCH 1
 #define AXI_DMA_LL_TX_EVENT_MASK    (0x43F)
 
 ///////////////////////////////////// Common /////////////////////////////////////////
