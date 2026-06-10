@@ -120,13 +120,11 @@ void btm_dev_init (void)
 *******************************************************************************/
 static void btm_db_reset (void)
 {
-    tBTM_CMPL_CB    *p_cb;
-    tBTM_STATUS      status = BTM_DEV_RESET;
-
     btm_inq_db_reset();
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
     if (btm_cb.devcb.p_rln_cmpl_cb) {
+        tBTM_CMPL_CB    *p_cb;
         p_cb = btm_cb.devcb.p_rln_cmpl_cb;
         btm_cb.devcb.p_rln_cmpl_cb = NULL;
 
@@ -137,12 +135,14 @@ static void btm_db_reset (void)
 #endif // (CLASSIC_BT_INCLUDED == TRUE)
 
     if (btm_cb.devcb.p_rssi_cmpl_cb) {
-        p_cb = btm_cb.devcb.p_rssi_cmpl_cb;
-        btm_cb.devcb.p_rssi_cmpl_cb = NULL;
+        tBTM_CMPL_CB     *p_cb = btm_cb.devcb.p_rssi_cmpl_cb;
+        tBTM_RSSI_RESULTS results = {0};
 
-        if (p_cb) {
-            (*p_cb)((tBTM_RSSI_RESULTS *) &status);
-        }
+        results.status = BTM_DEV_RESET;
+        btm_cb.devcb.p_rssi_cmpl_cb = NULL;
+        btu_stop_timer(&btm_cb.devcb.rssi_timer);
+
+        (*p_cb)(&results);
     }
 }
 
