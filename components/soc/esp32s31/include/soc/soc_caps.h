@@ -73,8 +73,8 @@
 #define SOC_ECC_SUPPORTED               1
 #define SOC_ECC_EXTENDED_MODES_SUPPORTED   1
 #define SOC_ECDSA_SUPPORTED             1
-// #define SOC_FLASH_ENC_SUPPORTED         1         // TODO: [ESP32S31] IDF-14628
-// #define SOC_SECURE_BOOT_SUPPORTED       1      // TODO: [ESP32S31] IDF-14629
+#define SOC_FLASH_ENC_SUPPORTED         1
+#define SOC_SECURE_BOOT_SUPPORTED       1
 #define SOC_BOD_SUPPORTED               1
 // #define SOC_APM_SUPPORTED               1      // TODO: [ESP32S31] IDF-14620
 #define SOC_PAU_SUPPORTED                  1
@@ -437,29 +437,38 @@
 #define SOC_EFUSE_ECDSA_KEY 1
 #define SOC_EFUSE_ECDSA_KEY_P192 1
 #define SOC_EFUSE_ECDSA_KEY_P384 1
+#define SOC_EFUSE_XTS_AES_KEY_128 1
+#define SOC_EFUSE_XTS_AES_KEY_256 1
 
 /*-------------------------- HUK CAPS----------------------------*/
 #define SOC_HUK_SUPPORTED                       1
 
 /*-------------------------- Key Manager CAPS----------------------------*/
-// TODO: [ESP32S31] IDF-14626
 #define SOC_KEY_MANAGER_SUPPORTED                   1
 #define SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT      1 /*!< Key manager supports key deployment */
 #define SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY            1 /*!< Key manager responsible to deploy ECDSA key */
+#define SOC_KEY_MANAGER_FE_KEY_DEPLOY               1 /*!< Key manager responsible to deploy Flash Encryption key */
+#define SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128   1 /*!< Key manager responsible to deploy the XTS-AES-128 key */
+#define SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_256   1 /*!< Key manager responsible to deploy the XTS-AES-256 key */
 #define SOC_KEY_MANAGER_HMAC_KEY_DEPLOY             1 /*!< Key manager responsible to deploy HMAC key */
 #define SOC_KEY_MANAGER_DS_KEY_DEPLOY               1 /*!< Key manager responsible to deploy DS key */
-// SOC_KEY_MANAGER_FE_KEY_DEPLOY (incl. XTS-AES-128/256) will be enabled along with Flash Encryption support.
 
 /*--------------------------- CAM ---------------------------------*/
 #define SOC_LCDCAM_CAM_SUPPORT_RGB_YUV_CONV         (1)
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
-// TODO: [ESP32S31] IDF-14629
+#define SOC_SECURE_BOOT_V2_RSA              1
+#define SOC_SECURE_BOOT_V2_ECC              0
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3
+#define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS   1
+#define SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY  1
 
 /*-------------------------- Flash Encryption CAPS----------------------------*/
-// TODO: [ESP32S31] IDF-14628
-#define SOC_FLASH_ENCRYPTION_XTS_AES        1
+#define SOC_FLASH_ENCRYPTION_XTS_AES                       1
+#define SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS               1
+#define SOC_FLASH_ENCRYPTION_XTS_AES_128                   1  /* SOC_EFUSE_XTS_AES_KEY_128 (1) || SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_128 (1) */
+#define SOC_FLASH_ENCRYPTION_XTS_AES_256                   1  /* SOC_EFUSE_XTS_AES_KEY_256 (1) || SOC_KEY_MANAGER_FE_KEY_DEPLOY_XTS_AES_256 (1) */
+#define SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND  1
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)
 
 /*------------------------Bootloader CAPS---------------------------------*/
