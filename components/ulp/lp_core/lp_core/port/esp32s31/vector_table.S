@@ -41,7 +41,7 @@ _vector_table:
 	j ulp_lp_core_mailbox_intr_handler
 	j ulp_lp_core_lp_timer_intr_handler
 	j ulp_lp_core_lp_wdt_intr_handler
-	j ulp_lp_core_lp_rtc_intr_handler
+	j ulp_lp_core_lp_pdma_intr_handler
 	j _panic_handler
 	j _panic_handler
 

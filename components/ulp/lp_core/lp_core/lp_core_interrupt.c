@@ -66,6 +66,7 @@ void __attribute__((weak, alias("ulp_lp_core_default_intr_handler"))) ulp_lp_cor
 void __attribute__((weak, alias("ulp_lp_core_default_intr_handler"))) ulp_lp_core_mailbox_intr_handler(void);
 void __attribute__((weak, alias("ulp_lp_core_default_intr_handler"))) ulp_lp_core_lp_wdt_intr_handler(void);
 void __attribute__((weak, alias("ulp_lp_core_default_intr_handler"))) ulp_lp_core_lp_rtc_intr_handler(void);
+void __attribute__((weak, alias("ulp_lp_core_default_intr_handler"))) ulp_lp_core_lp_pdma_intr_handler(void);
 void __attribute__((weak, alias("ulp_lp_core_default_intr_handler"))) ulp_lp_core_sw_intr_handler(void);
 
 #if SOC_LP_CORE_SINGLE_INTERRUPT_VECTOR
