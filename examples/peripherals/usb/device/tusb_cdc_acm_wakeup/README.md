@@ -43,9 +43,9 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 After the flashing you should see this output:
 
 ```
-I (285) tud_cdc_acm_wakeup: USB initialization
+I (285) tusb_cdc_acm_wakeup: USB initialization
 I (455) TinyUSB: TinyUSB Driver installed
-I (465) tud_cdc_acm_wakeup: USB initialization DONE
+I (465) tusb_cdc_acm_wakeup: USB initialization DONE
 ```
 
 Connect to the serial port (e.g. on Linux, it should be `/dev/ttyACM0`) by any terminal application (e.g. `picocom /dev/ttyACM0`).
@@ -56,31 +56,31 @@ To trigger USB suspend from the host, disable or suspend the CDC ACM device on t
 When the USB host suspends and resumes the bus, the monitor output should include:
 
 ```
-I (122142) tud_cdc_acm_wakeup: 0x4ff3afa4   48 65 6c 6c 6f                                    |Hello|
-I (122272) tud_cdc_acm_wakeup: Data from channel 0:
-I (122272) tud_cdc_acm_wakeup: 0x4ff3afa4   48 65 6c 6c 6f                                    |Hello|
-I (122402) tud_cdc_acm_wakeup: Data from channel 0:
-I (122402) tud_cdc_acm_wakeup: 0x4ff3afa4   48 65 6c 6c 6f                                    |Hello|
-I (122622) tud_cdc_acm_wakeup: Data from channel 0:
-I (122622) tud_cdc_acm_wakeup: 0x4ff3afa4   48 65 6c 6c 6f                                    |Hello|
-I (127432) tud_cdc_acm_wakeup: Line state changed on channel 0: DTR:0, RTS:0
-I (132402) tud_cdc_acm_wakeup: USB suspended, entering light sleep
-I (132422) tud_cdc_acm_wakeup: Woke up from: USB
-I (132422) tud_cdc_acm_wakeup: USB resumed
-I (145762) tud_cdc_acm_wakeup: Line state changed on channel 0: DTR:0, RTS:0
-I (145812) tud_cdc_acm_wakeup: Line state changed on channel 0: DTR:0, RTS:0
-I (145812) tud_cdc_acm_wakeup: Line state changed on channel 0: DTR:0, RTS:0
-I (145822) tud_cdc_acm_wakeup: Line state changed on channel 0: DTR:0, RTS:0
-I (145822) tud_cdc_acm_wakeup: Line state changed on channel 0: DTR:0, RTS:0
-I (145832) tud_cdc_acm_wakeup: Line state changed on channel 0: DTR:0, RTS:0
-I (148762) tud_cdc_acm_wakeup: Data from channel 0:
-I (148762) tud_cdc_acm_wakeup: 0x4ff3afa4   48 65 6c 6c 6f                                    |Hello|
-I (148902) tud_cdc_acm_wakeup: Data from channel 0:
-I (148902) tud_cdc_acm_wakeup: 0x4ff3afa4   48 65 6c 6c 6f                                    |Hello|
-I (149032) tud_cdc_acm_wakeup: Data from channel 0:
-I (149032) tud_cdc_acm_wakeup: 0x4ff3afa4   48 65 6c 6c 6f                                    |Hello|
-I (149252) tud_cdc_acm_wakeup: Data from channel 0:
-I (149252) tud_cdc_acm_wakeup: 0x4ff3afa4   48 65 6c 6c 6f                                    |Hello|
-I (151382) tud_cdc_acm_wakeup: Line state changed on channel 0: DTR:0, RTS:0
-I (155312) tud_cdc_acm_wakeup: USB suspended, entering light sleep
+I (122142) tusb_cdc_acm_wakeup: 0x4ff3afa4   48 65 6c 6c 6f                                    |Hello|
+I (122272) tusb_cdc_acm_wakeup: Data from channel 0:
+I (122272) tusb_cdc_acm_wakeup: 0x4ff3afa4   48 65 6c 6c 6f                                    |Hello|
+I (122402) tusb_cdc_acm_wakeup: Data from channel 0:
+I (122402) tusb_cdc_acm_wakeup: 0x4ff3afa4   48 65 6c 6c 6f                                    |Hello|
+I (122622) tusb_cdc_acm_wakeup: Data from channel 0:
+I (122622) tusb_cdc_acm_wakeup: 0x4ff3afa4   48 65 6c 6c 6f                                    |Hello|
+I (127432) tusb_cdc_acm_wakeup: Line state changed on channel 0: DTR:0, RTS:0
+I (132402) tusb_cdc_acm_wakeup: USB suspended, entering light sleep
+I (132422) tusb_cdc_acm_wakeup: Woke up from: USB
+I (132422) tusb_cdc_acm_wakeup: USB resumed
+I (145762) tusb_cdc_acm_wakeup: Line state changed on channel 0: DTR:0, RTS:0
+I (145812) tusb_cdc_acm_wakeup: Line state changed on channel 0: DTR:0, RTS:0
+I (145812) tusb_cdc_acm_wakeup: Line state changed on channel 0: DTR:0, RTS:0
+I (145822) tusb_cdc_acm_wakeup: Line state changed on channel 0: DTR:0, RTS:0
+I (145822) tusb_cdc_acm_wakeup: Line state changed on channel 0: DTR:0, RTS:0
+I (145832) tusb_cdc_acm_wakeup: Line state changed on channel 0: DTR:0, RTS:0
+I (148762) tusb_cdc_acm_wakeup: Data from channel 0:
+I (148762) tusb_cdc_acm_wakeup: 0x4ff3afa4   48 65 6c 6c 6f                                    |Hello|
+I (148902) tusb_cdc_acm_wakeup: Data from channel 0:
+I (148902) tusb_cdc_acm_wakeup: 0x4ff3afa4   48 65 6c 6c 6f                                    |Hello|
+I (149032) tusb_cdc_acm_wakeup: Data from channel 0:
+I (149032) tusb_cdc_acm_wakeup: 0x4ff3afa4   48 65 6c 6c 6f                                    |Hello|
+I (149252) tusb_cdc_acm_wakeup: Data from channel 0:
+I (149252) tusb_cdc_acm_wakeup: 0x4ff3afa4   48 65 6c 6c 6f                                    |Hello|
+I (151382) tusb_cdc_acm_wakeup: Line state changed on channel 0: DTR:0, RTS:0
+I (155312) tusb_cdc_acm_wakeup: USB suspended, entering light sleep
 ```

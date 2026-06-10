@@ -24,7 +24,7 @@
 #error This example requires a target with SOC_PM_SUPPORT_USB_WAKEUP.
 #endif
 
-static const char *TAG = "tud_cdc_acm_wakeup";
+static const char *TAG = "tusb_cdc_acm_wakeup";
 static uint8_t rx_buf[CONFIG_TINYUSB_CDC_RX_BUFSIZE + 1];
 
 /**
