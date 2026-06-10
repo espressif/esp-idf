@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,12 +10,15 @@
 #include "esp_err.h"
 #include "esp_log.h"
 
+#include "bootloader_flash_priv.h"
 #include "bootloader_utility_tee.h"
 #include "esp_tee_ota_utils.h"
 
 #include "esp_tee.h"
 #include "esp_tee_flash.h"
 #include "sdkconfig.h"
+
+#define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
 static const char *TAG = "esp_tee_flash";
 
@@ -169,8 +172,8 @@ esp_err_t esp_tee_flash_setup_prot_ctx(uint8_t tee_boot_part)
             if (subtype == PART_SUBTYPE_DATA_TEE_OTA) {
                 needs_protection = true;
             } else if (subtype == PART_SUBTYPE_DATA_WIFI) {
-                size_t label_len = strlen(ESP_TEE_SEC_STG_PART_LABEL);
-                if (memcmp(partition_entry->partition.label, ESP_TEE_SEC_STG_PART_LABEL, label_len) == 0) {
+                if (strncmp((const char *)partition_entry->partition.label, ESP_TEE_SEC_STG_PART_LABEL,
+                            sizeof(partition_entry->partition.label)) == 0) {
                     needs_protection = true;
                 }
             }
@@ -240,4 +243,31 @@ bool esp_tee_flash_check_prange_in_active_tee_part(const size_t paddr, const siz
     }
 
     return ((paddr < tee_prot_ctx.active_part_end_paddr) && (paddr_end > tee_prot_ctx.active_part_start_paddr));
+}
+
+bool esp_tee_flash_check_prange_write_protected(const size_t paddr, const size_t len)
+{
+    size_t paddr_start = paddr;
+    if (len == FLASH_SECTOR_SIZE || len == FLASH_BLOCK_SIZE) {
+        paddr_start &= ~(len - 1);
+    }
+
+    size_t paddr_end = paddr_start + len;
+    if (paddr_end < paddr_start) {
+        return true;
+    }
+
+    const size_t ptb_start = CONFIG_PARTITION_TABLE_OFFSET;
+    const size_t ptb_end   = ALIGN_UP(CONFIG_PARTITION_TABLE_OFFSET + ESP_PARTITION_TABLE_MAX_LEN, FLASH_SECTOR_SIZE);
+    bool ptb_overlap = (paddr_start < ptb_end) && (paddr_end > ptb_start);
+
+    /* Bootloader: write-protected unless dangerous writes are explicitly allowed. */
+    bool btl_overlap = false;
+#if !CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
+    const size_t btl_start = CONFIG_BOOTLOADER_OFFSET_IN_FLASH;
+    const size_t btl_end   = CONFIG_PARTITION_TABLE_OFFSET;
+    btl_overlap = (paddr_start < btl_end) && (paddr_end > btl_start);
+#endif
+
+    return (ptb_overlap || btl_overlap);
 }
