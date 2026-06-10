@@ -754,8 +754,7 @@ void gatt_process_read_multi_req (tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, U
 
             for (ll = 0; ll < p_tcb->sr_cmd.multi_req.num_handles; ll ++) {
                 if ((p_msg = (tGATTS_RSP *)osi_malloc(sizeof(tGATTS_RSP))) != NULL) {
-                    memset(p_msg, 0, sizeof(tGATTS_RSP))
-                    ;
+                    memset(p_msg, 0, sizeof(tGATTS_RSP));
                     handle = p_tcb->sr_cmd.multi_req.handles[ll];
                     i_rcb = gatt_sr_find_i_rcb_by_handle(handle);
 
@@ -1496,10 +1495,17 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
         }
     }
 
+    /* sr_cmd enqueued at handle but no attribute branch ran (null DB/list or no exact handle). */
+    if (trans_id != 0 && !is_need_prepare_write_rsp && !is_need_queue_data &&
+            status == GATT_SUCCESS) {
+        status = GATT_INVALID_HANDLE;
+    }
+
     if (is_need_queue_data){
         queue_data = (tGATT_PREPARE_WRITE_QUEUE_DATA *)osi_malloc(len + sizeof(tGATT_PREPARE_WRITE_QUEUE_DATA));
         if (queue_data == NULL){
             status = GATT_PREPARE_Q_FULL;
+            is_need_prepare_write_rsp = FALSE;
         } else {
             queue_data->p_attr = p_attr_temp;
             queue_data->len = len;
@@ -1509,7 +1515,16 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
             if (prepare_record->queue == NULL) {
                 prepare_record->queue = fixed_queue_new(QUEUE_SIZE_MAX);
             }
-            fixed_queue_enqueue(prepare_record->queue, queue_data, FIXED_QUEUE_MAX_TIMEOUT);
+            if (prepare_record->queue == NULL ||
+                fixed_queue_length(prepare_record->queue) >=
+                    fixed_queue_capacity(prepare_record->queue)) {
+                osi_free(queue_data);
+                queue_data = NULL;
+                status = GATT_PREPARE_Q_FULL;
+                is_need_prepare_write_rsp = FALSE;
+            } else {
+                fixed_queue_enqueue(prepare_record->queue, queue_data, FIXED_QUEUE_MAX_TIMEOUT);
+            }
         }
     }
 
