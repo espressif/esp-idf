@@ -285,8 +285,14 @@ UINT16 L2CA_ErtmConnectReq (UINT16 psm, BD_ADDR p_bd_addr, tL2CAP_ERTM_INFO *p_e
             p_ccb->ertm_info.user_tx_buf_size = L2CAP_USER_TX_BUF_SIZE;
         }
 
-        p_ccb->max_rx_mtu = p_ertm_info->user_rx_buf_size -
-            (L2CAP_MIN_OFFSET + L2CAP_SDU_LEN_OFFSET + L2CAP_FCS_LEN);
+        UINT16 overhead = L2CAP_MIN_OFFSET + L2CAP_SDU_LEN_OFFSET + L2CAP_FCS_LEN;
+        if (p_ccb->ertm_info.user_rx_buf_size > overhead) {
+            p_ccb->max_rx_mtu = p_ccb->ertm_info.user_rx_buf_size - overhead;
+        } else {
+            L2CAP_TRACE_ERROR ("L2CAP - Req rx mtu (0) invalid");
+            l2cu_release_ccb(p_ccb);
+            return (0);
+        }
     }
 
 
@@ -434,8 +440,13 @@ BOOLEAN L2CA_ErtmConnectRsp (BD_ADDR p_bd_addr, UINT8 id, UINT16 lcid, UINT16 re
             p_ccb->ertm_info.user_tx_buf_size = L2CAP_USER_TX_BUF_SIZE;
         }
 
-        p_ccb->max_rx_mtu = p_ertm_info->user_rx_buf_size -
-            (L2CAP_MIN_OFFSET + L2CAP_SDU_LEN_OFFSET + L2CAP_FCS_LEN);
+        UINT16 overhead = L2CAP_MIN_OFFSET + L2CAP_SDU_LEN_OFFSET + L2CAP_FCS_LEN;
+        if (p_ccb->ertm_info.user_rx_buf_size > overhead) {
+            p_ccb->max_rx_mtu = p_ccb->ertm_info.user_rx_buf_size - overhead;
+        } else {
+            L2CAP_TRACE_ERROR ("L2CAP - Rsp rx mtu invalid");
+            return (FALSE);
+        }
     }
 
     if (result == L2CAP_CONN_OK) {
@@ -684,7 +695,8 @@ BOOLEAN  L2CA_Ping (BD_ADDR p_bd_addr, tL2CA_ECHO_RSP_CB *p_callback)
 BOOLEAN  L2CA_Echo (BD_ADDR p_bd_addr, BT_HDR *p_data, tL2CA_ECHO_DATA_CB *p_callback)
 {
     tL2C_LCB    *p_lcb;
-    UINT8       *pp;
+    UINT8       *pp = NULL;
+    UINT16      len = 0;
 
     L2CAP_TRACE_API ("L2CA_Echo() BDA: %08X%04X",
                      ((p_bd_addr[0] << 24) + (p_bd_addr[1] << 16) + (p_bd_addr[2] <<  8) + (p_bd_addr[3])),
@@ -716,9 +728,12 @@ BOOLEAN  L2CA_Echo (BD_ADDR p_bd_addr, BT_HDR *p_data, tL2CA_ECHO_DATA_CB *p_cal
     l2cb.p_echo_data_cb = p_callback;
 
     /* Set the pointer to the beginning of the data */
-    pp = (UINT8 *)(p_data + 1) + p_data->offset;
+    if (p_data) {
+        pp = (UINT8 *)(p_data + 1) + p_data->offset;
+        len = p_data->len;
+    }
     l2cu_adj_id(p_lcb, L2CAP_ADJ_BRCM_ID);  /* Make sure not using Broadcom ID */
-    l2cu_send_peer_echo_req (p_lcb, pp, p_data->len);
+    l2cu_send_peer_echo_req (p_lcb, pp, len);
 
     return (TRUE);
 
@@ -730,7 +745,7 @@ BOOLEAN  L2CA_Echo (BD_ADDR p_bd_addr, BT_HDR *p_data, tL2CA_ECHO_DATA_CB *p_cal
 bool L2CA_GetIdentifiers(uint16_t lcid, uint16_t *rcid, uint16_t *handle)
 {
     tL2C_CCB *control_block = l2cu_find_ccb_by_cid(NULL, lcid);
-    if (!control_block) {
+    if (!control_block || !control_block->p_lcb) {
         return false;
     }
 
@@ -829,7 +844,7 @@ BOOLEAN L2CA_SetIdleTimeoutByBdAddr(BD_ADDR bd_addr, UINT16 timeout, tBT_TRANSPO
     } else {
 	for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
 	    p_lcb = list_node(p_node);
-            if ((p_lcb->in_use) && (p_lcb->link_state == LST_CONNECTED)) {
+            if ((p_lcb->in_use) && (p_lcb->link_state == LST_CONNECTED) && p_lcb->transport == transport) {
                 p_lcb->idle_timeout = timeout;
 
                 if (!p_lcb->ccb_queue.p_first_ccb) {
@@ -945,6 +960,8 @@ UINT16 L2CA_LocalLoopbackReq (UINT16 psm, UINT16 handle, BD_ADDR p_bd_addr)
     /* Allocate a channel control block */
     if ((p_ccb = l2cu_allocate_ccb (p_lcb, 0)) == NULL) {
         L2CAP_TRACE_WARNING ("L2CAP - no CCB for L2CA_conn_req");
+        p_lcb->link_state = LST_DISCONNECTED;
+        l2cu_release_lcb(p_lcb);
         return (0);
     }
 
@@ -1046,7 +1063,7 @@ BOOLEAN L2CA_SendTestSFrame (UINT16 cid, UINT8 sup_type, UINT8 back_track)
         return (FALSE);
     }
 
-    p_ccb->fcrb.next_seq_expected -= back_track;
+    p_ccb->fcrb.next_seq_expected = (p_ccb->fcrb.next_seq_expected - back_track) & L2CAP_FCR_SEQ_MODULO;
 
     l2c_fcr_send_S_frame (p_ccb, (UINT16)(sup_type & 3), (UINT16)(sup_type & (L2CAP_FCR_P_BIT | L2CAP_FCR_F_BIT)));
 
@@ -1171,14 +1188,13 @@ BOOLEAN L2CA_SetFlushTimeout (BD_ADDR bd_addr, UINT16 flush_tout)
 
         if ((p_lcb) && (p_lcb->in_use) && (p_lcb->link_state == LST_CONNECTED)) {
             if (p_lcb->link_flush_tout != flush_tout) {
-                p_lcb->link_flush_tout = flush_tout;
-
                 L2CAP_TRACE_API ("L2CA_SetFlushTimeout 0x%04x ms for bd_addr [...;%02x%02x%02x]",
                                  flush_tout, bd_addr[3], bd_addr[4], bd_addr[5]);
 
                 if (!btsnd_hcic_write_auto_flush_tout (p_lcb->handle, hci_flush_to)) {
                     return (FALSE);
                 }
+                p_lcb->link_flush_tout = flush_tout;
             }
         } else {
             L2CAP_TRACE_WARNING ("WARNING L2CA_SetFlushTimeout No lcb for bd_addr [...;%02x%02x%02x]",
@@ -1191,8 +1207,6 @@ BOOLEAN L2CA_SetFlushTimeout (BD_ADDR bd_addr, UINT16 flush_tout)
 	    p_lcb = list_node(p_node);
             if ((p_lcb->in_use) && (p_lcb->link_state == LST_CONNECTED)) {
                 if (p_lcb->link_flush_tout != flush_tout) {
-                    p_lcb->link_flush_tout = flush_tout;
-
                     L2CAP_TRACE_API ("L2CA_SetFlushTimeout 0x%04x ms for bd_addr [...;%02x%02x%02x]",
                                      flush_tout, p_lcb->remote_bd_addr[3],
                                      p_lcb->remote_bd_addr[4], p_lcb->remote_bd_addr[5]);
@@ -1200,6 +1214,7 @@ BOOLEAN L2CA_SetFlushTimeout (BD_ADDR bd_addr, UINT16 flush_tout)
                     if (!btsnd_hcic_write_auto_flush_tout(p_lcb->handle, hci_flush_to)) {
                         return (FALSE);
                     }
+                    p_lcb->link_flush_tout = flush_tout;
                 }
             }
         }
@@ -2020,7 +2035,7 @@ BOOLEAN L2CA_SetFixedChannelTout (BD_ADDR rem_bda, UINT16 fixed_cid, UINT16 idle
         transport = BT_TRANSPORT_LE;
     }
 #endif
-    if (fixed_cid<L2CAP_FIRST_FIXED_CHNL) {
+    if ((fixed_cid < L2CAP_FIRST_FIXED_CHNL) || (fixed_cid > L2CAP_LAST_FIXED_CHNL)) {
         return (FALSE);
     }
 
@@ -2065,6 +2080,11 @@ BOOLEAN L2CA_GetCurrentConfig (UINT16 lcid,
     tL2C_CCB    *p_ccb;
 
     L2CAP_TRACE_API ("L2CA_GetCurrentConfig()  CID: 0x%04x", lcid);
+
+    if (!pp_our_cfg || !p_our_cfg_bits || !pp_peer_cfg || !p_peer_cfg_bits) {
+        L2CAP_TRACE_ERROR ("L2CA_GetCurrentConfig() - NULL output pointer");
+        return FALSE;
+    }
 
     p_ccb = l2cu_find_ccb_by_cid(NULL, lcid);
 
@@ -2166,7 +2186,7 @@ void l2cap_bqb_write_data(UINT16 cid)
     BT_HDR *p_buf;
     uint8_t *p;
 
-    if ((p_buf = (BT_HDR *)osi_malloc(SDP_DATA_BUF_SIZE)) != NULL) {
+    if ((p_buf = (BT_HDR *)osi_calloc(SDP_DATA_BUF_SIZE)) != NULL) {
         p_buf->len = 30;
         p_buf->offset = L2CAP_MIN_OFFSET;
         p = (UINT8 *)(p_buf + 1) + p_buf->offset;

@@ -41,6 +41,12 @@ tGAP_CB  *gap_cb_ptr;
 *******************************************************************************/
 UINT8 GAP_SetTraceLevel (UINT8 new_level)
 {
+#if GAP_DYNAMIC_MEMORY == TRUE
+    if (!gap_cb_ptr) {
+        return GAP_INITIAL_TRACE_LEVEL;
+    }
+#endif
+
     if (new_level != 0xFF) {
         gap_cb.trace_level = new_level;
     }

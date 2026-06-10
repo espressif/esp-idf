@@ -217,14 +217,18 @@ static void hci_layer_deinit_env(void)
 
     if (hci_host_env.command_queue) {
         fixed_pkt_queue_free(hci_host_env.command_queue, (fixed_pkt_queue_free_cb)osi_free_func);
+        hci_host_env.command_queue = NULL;
     }
     if (hci_host_env.packet_queue) {
         fixed_queue_free(hci_host_env.packet_queue, osi_free_func);
+        hci_host_env.packet_queue = NULL;
     }
 
     cmd_wait_q = &hci_host_env.cmd_waiting_q;
     list_free(cmd_wait_q->commands_pending_response);
+    cmd_wait_q->commands_pending_response = NULL;
     osi_mutex_free(&cmd_wait_q->commands_pending_response_lock);
+    cmd_wait_q->commands_pending_response_lock = NULL;
     osi_alarm_free(cmd_wait_q->command_response_timer);
     cmd_wait_q->command_response_timer = NULL;
 #if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
@@ -407,10 +411,16 @@ static void command_timed_out(void *context)
 {
     command_waiting_response_t *cmd_wait_q = (command_waiting_response_t *)context;
     pkt_linked_item_t *wait_entry;
+    uint16_t opcode = 0;
 
     osi_mutex_lock(&cmd_wait_q->commands_pending_response_lock, OSI_MUTEX_MAX_TIMEOUT);
     wait_entry = (list_is_empty(cmd_wait_q->commands_pending_response) ?
                   NULL : list_front(cmd_wait_q->commands_pending_response));
+    if (wait_entry != NULL) {
+        hci_cmd_metadata_t *metadata = (hci_cmd_metadata_t *)(wait_entry->data);
+        opcode = metadata->opcode;
+        UNUSED(opcode);
+    }
     osi_mutex_unlock(&cmd_wait_q->commands_pending_response_lock);
 
     if (wait_entry == NULL) {
@@ -419,9 +429,7 @@ static void command_timed_out(void *context)
         // We shouldn't try to recover the stack from this command timeout.
         // If it's caused by a software bug, fix it. If it's a hardware bug, fix it.
     {
-        hci_cmd_metadata_t *metadata = (hci_cmd_metadata_t *)(wait_entry->data);
-        HCI_TRACE_ERROR("%s hci layer timeout waiting for response to a command. opcode: 0x%x", __func__, metadata->opcode);
-        UNUSED(metadata);
+        HCI_TRACE_ERROR("%s hci layer timeout waiting for response to a command. opcode: 0x%x", __func__, opcode);
     }
 }
 
@@ -744,11 +752,7 @@ const char *hci_status_code_to_string(uint8_t status)
         case HCI_ERR_CONN_TOUT_DUE_TO_MIC_FAILURE:   return "MIC Failure";           /* 0x3D */
         case HCI_ERR_CONN_FAILED_ESTABLISHMENT:      return "Conn Failed";           /* 0x3E */
         case HCI_ERR_MAC_CONNECTION_FAILED:          return "Previously Used";       /* 0x3F */
-        default: {
-            static char buf[24];
-            snprintf(buf, sizeof(buf), "Unknown Status (0x%02X)", status);
-            return buf;
-        }
+        default:                                     return "Unknown Status";
     }
 }
 #endif

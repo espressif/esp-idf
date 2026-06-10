@@ -322,7 +322,7 @@ tBTA_STATUS bta_hd_bqb_set_local_di_record(void)
 {
     tBTA_STATUS status = BTA_FAILURE;
 
-    tBTA_DI_RECORD bqb_device_info;
+    tBTA_DI_RECORD bqb_device_info = {0};
     bqb_device_info.vendor = 0;
     bqb_device_info.vendor_id_source = 0xff; // BTA_HH_VENDOR_ID_INVALID
     bqb_device_info.product = 1;
