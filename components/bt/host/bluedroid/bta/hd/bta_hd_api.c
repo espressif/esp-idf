@@ -49,6 +49,17 @@ void BTA_HdEnable(tBTA_HD_CBACK *p_cback)
 {
     tBTA_HD_API_ENABLE *p_buf;
     APPL_TRACE_API("%s", __func__);
+
+    if (bta_sys_is_register(BTA_ID_HD) == TRUE) {
+        APPL_TRACE_WARNING("%s HD already enable", __func__);
+        if (p_cback) {
+            tBTA_HD param = {0};
+            param.status = BTA_HD_OK;
+            (*p_cback)(BTA_HD_ENABLE_EVT, &param);
+        }
+        return;
+    }
+
     p_buf = (tBTA_HD_API_ENABLE *)osi_malloc(sizeof(tBTA_HD_API_ENABLE));
     if (p_buf != NULL) {
         bta_sys_register(BTA_ID_HD, &bta_hd_reg);
@@ -71,8 +82,8 @@ void BTA_HdDisable(void)
 {
     BT_HDR *p_buf;
     APPL_TRACE_API("%s", __func__);
-    bta_sys_deregister(BTA_ID_HD);
     if ((p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR))) != NULL) {
+        bta_sys_deregister(BTA_ID_HD);
         p_buf->event = BTA_HD_API_DISABLE_EVT;
         bta_sys_sendmsg(p_buf);
     }
