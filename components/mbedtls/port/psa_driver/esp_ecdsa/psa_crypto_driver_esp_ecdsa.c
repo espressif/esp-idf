@@ -18,6 +18,7 @@
 #include "mbedtls/bignum.h"
 
 #include "esp_assert.h"
+#include "esp_fault.h"
 #include "esp_crypto_lock.h"
 #include "esp_crypto_periph_clk.h"
 
@@ -353,13 +354,22 @@ static psa_status_t check_ecdsa_signature_range(const uint8_t *signature, size_t
         goto cleanup;
     }
 
-    /* 1 <= scalar <= n-1: equivalently scalar > 0 and scalar < n. */
-    if (mbedtls_mpi_cmp_int(&r, 0) <= 0 ||
-        mbedtls_mpi_cmp_mpi(&r, &grp.N) >= 0 ||
-        mbedtls_mpi_cmp_int(&s, 0) <= 0 ||
-        mbedtls_mpi_cmp_mpi(&s, &grp.N) >= 0) {
+    /* 1 <= scalar <= n-1: that is, scalar > 0 and scalar < n. */
+    #define RANGE_OK   0x6A6A6A6AU
+    #define RANGE_FAIL 0x95959595U
+    volatile uint32_t verdict = RANGE_FAIL;
+    if (mbedtls_mpi_cmp_int(&r, 0) > 0 &&
+        mbedtls_mpi_cmp_mpi(&r, &grp.N) < 0 &&
+        mbedtls_mpi_cmp_int(&s, 0) > 0 &&
+        mbedtls_mpi_cmp_mpi(&s, &grp.N) < 0) {
+        verdict = RANGE_OK;
+    }
+    if (verdict != RANGE_OK) {
         goto cleanup;
     }
+    ESP_FAULT_ASSERT(verdict == RANGE_OK);
+    #undef RANGE_OK
+    #undef RANGE_FAIL
 
     status = PSA_SUCCESS;
 
@@ -561,6 +571,8 @@ psa_status_t esp_ecdsa_transparent_verify_hash_complete(esp_ecdsa_transparent_ve
     if (ret != 0) {
         return PSA_ERROR_INVALID_SIGNATURE;
     }
+
+    ESP_FAULT_ASSERT(ret == 0);
 
     return PSA_SUCCESS;
 }
