@@ -53,6 +53,9 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
         .uuid = BLE_UUID16_DECLARE(BLUFI_SERVICE_UUID),
         .characteristics = (struct ble_gatt_chr_def[])
         { {
+                /* FALSE POSITIVE: No BLE_GATT_CHR_F_WRITE_ENC/READ_ENC by design.
+                 * BLUFI uses its own app-layer security (DH key exchange + AES + CRC).
+                 * BLE link-layer pairing is impossible before provisioning credentials exist. */
                 /*** Characteristic: P2E */
                 .uuid = BLE_UUID16_DECLARE(BLUFI_CHAR_P2E_UUID),
                 .access_cb = gatt_svr_access_cb,
@@ -89,7 +92,7 @@ void esp_blufi_gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *a
 
     case BLE_GATT_REGISTER_OP_CHR:
         ESP_LOGI(TAG, "registering characteristic %s with "
-                 "def_handle=%d val_handle=%d\n",
+                 "def_handle=%d val_handle=%d",
                  ble_uuid_to_str(ctxt->chr.chr_def->uuid, buf),
                  ctxt->chr.def_handle,
                  ctxt->chr.val_handle);
@@ -174,26 +177,23 @@ static size_t read_value(uint16_t conn_handle, uint16_t attr_handle,
                          void *arg)
 {
     const struct gatt_value *value = (const struct gatt_value *) arg;
-    char str[BLE_UUID_STR_LEN];
     int rc;
-
-    memset(str, '\0', sizeof(str));
 
     if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR) {
         if (ctxt->chr->flags & BLE_GATT_CHR_F_READ_AUTHOR) {
             return BLE_ATT_ERR_INSUFFICIENT_AUTHOR;
         }
-
-        ble_uuid_to_str(ctxt->chr->uuid, str);
     } else {
         if (ctxt->dsc->att_flags & BLE_ATT_F_READ_AUTHOR) {
             return BLE_ATT_ERR_INSUFFICIENT_AUTHOR;
         }
-
-        ble_uuid_to_str(ctxt->dsc->uuid, str);
     }
 
-    rc = os_mbuf_append(ctxt->om, value->buf->om_data, value->buf->om_len);
+    if (value->buf == NULL) {
+        return BLE_ATT_ERR_UNLIKELY;
+    }
+
+    rc = os_mbuf_appendfrom(ctxt->om, value->buf, 0, OS_MBUF_PKTLEN(value->buf));
     return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 }
 
@@ -259,14 +259,14 @@ static void deinit_gatt_values(void)
     for (svc = gatt_svr_svcs; svc && svc->uuid; svc++) {
         for (chr = svc->characteristics; chr && chr->uuid; chr++) {
             if (i < SERVER_MAX_VALUES && gatt_values[i].buf != NULL) {
-                os_mbuf_free(gatt_values[i].buf);  /* Free the buffer */
+                os_mbuf_free_chain(gatt_values[i].buf);  /* Free the buffer */
                 gatt_values[i].buf = NULL;         /* Nullify the pointer to avoid dangling references */
             }
             ++i;
 
             for (dsc = chr->descriptors; dsc && dsc->uuid; dsc++) {
                 if (i < SERVER_MAX_VALUES && gatt_values[i].buf != NULL) {
-                    os_mbuf_free(gatt_values[i].buf);  /* Free the buffer */
+                    os_mbuf_free_chain(gatt_values[i].buf);  /* Free the buffer */
                     gatt_values[i].buf = NULL;         /* Nullify the pointer to avoid dangling references */
                 }
                 ++i;
@@ -349,6 +349,7 @@ esp_blufi_gap_event(struct ble_gap_event *event, void *arg)
         ESP_LOGI(TAG, "disconnect; reason=%d", event->disconnect.reason);
         memcpy(blufi_env.remote_bda, event->disconnect.conn.peer_id_addr.val, ESP_BLUFI_BD_ADDR_LEN);
         blufi_env.is_connected = false;
+        blufi_env.notify_enabled = false;
         blufi_env.recv_seq = blufi_env.send_seq = 0;
         blufi_env.sec_mode = 0x0;
         blufi_env.offset = 0;
@@ -377,14 +378,14 @@ esp_blufi_gap_event(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_ADV_COMPLETE:
         ESP_LOGI(TAG, "advertise complete; reason=%d",
                  event->adv_complete.reason);
-        if (arg != NULL) {
+        if (event->adv_complete.reason != 0 && arg != NULL) {
             ((void(*)(void))arg)();
         }
         return 0;
 
     case BLE_GAP_EVENT_SUBSCRIBE:
         ESP_LOGI(TAG, "subscribe event; conn_handle=%d attr_handle=%d "
-                 "reason=%d prevn=%d curn=%d previ=%d curi=%d\n",
+                 "reason=%d prevn=%d curn=%d previ=%d curi=%d",
                  event->subscribe.conn_handle,
                  event->subscribe.attr_handle,
                  event->subscribe.reason,
@@ -392,6 +393,9 @@ esp_blufi_gap_event(struct ble_gap_event *event, void *arg)
                  event->subscribe.cur_notify,
                  event->subscribe.prev_indicate,
                  event->subscribe.cur_indicate);
+        if (event->subscribe.attr_handle == gatt_values[1].val_handle) {
+            blufi_env.notify_enabled = (event->subscribe.cur_notify == 1);
+        }
         return 0;
 
     case BLE_GAP_EVENT_MTU:
@@ -454,9 +458,11 @@ void esp_blufi_adv_start(void)
     fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
 
     name = ble_svc_gap_device_name();
-    fields.name = (uint8_t *)name;
-    fields.name_len = strlen(name);
-    fields.name_is_complete = 1;
+    if (name != NULL) {
+        fields.name = (uint8_t *)name;
+        fields.name_len = strlen(name);
+        fields.name_is_complete = 1;
+    }
 
     fields.uuids16 = (ble_uuid16_t[]) {
         BLE_UUID16_INIT(BLUFI_APP_UUID)
@@ -496,12 +502,18 @@ uint8_t esp_blufi_init(void)
     esp_blufi_cb_param_t param;
     param.init_finish.state = ESP_BLUFI_INIT_OK;
     btc_blufi_cb_to_app(ESP_BLUFI_EVENT_INIT_FINISH, &param);
-    return ESP_BLUFI_ERROR;
+    return ESP_BLUFI_SUCCESS;
 }
 
 void esp_blufi_deinit(void)
 {
     blufi_env.enabled = false;
+
+    if (blufi_env.aggr_buf != NULL) {
+        osi_free(blufi_env.aggr_buf);
+        blufi_env.aggr_buf = NULL;
+    }
+
     esp_blufi_cb_param_t param;
     btc_msg_t msg;
     memset (&msg, 0x0, sizeof (msg));
@@ -516,6 +528,12 @@ void esp_blufi_send_notify(void *arg)
 {
     struct pkt_info *pkts = (struct pkt_info *) arg;
     struct os_mbuf *om;
+
+    if (!blufi_env.notify_enabled) {
+        ESP_LOGW(TAG, "esp_blufi_send_notify: client has not subscribed, dropping notification");
+        return;
+    }
+
     om = ble_hs_mbuf_from_flat(pkts->pkt, pkts->pkt_len);
     if (om == NULL) {
         ESP_LOGE(TAG, "Error in allocating memory");
@@ -530,7 +548,9 @@ void esp_blufi_send_notify(void *arg)
 
 void esp_blufi_disconnect(void)
 {
-    ble_gap_terminate(blufi_env.conn_id, BLE_ERR_REM_USER_CONN_TERM);
+    if(blufi_env.is_connected) {
+       ble_gap_terminate(blufi_env.conn_id, BLE_ERR_REM_USER_CONN_TERM);
+    }
 }
 
 void esp_blufi_adv_stop(void)
@@ -560,6 +580,9 @@ void esp_blufi_btc_init(void)
 
 void esp_blufi_btc_deinit(void)
 {
+    /* btc_deinit() destroys the shared global BTC thread. In the NimBLE path
+     * BTC is only used by BLUFI, so this is safe. If another profile ever uses
+     * BTC alongside BLUFI, add reference counting to btc_init/btc_deinit. */
     btc_deinit();
 }
 
@@ -596,6 +619,7 @@ int esp_blufi_handle_gap_events(struct ble_gap_event *event, void *arg)
             esp_blufi_cb_param_t param;
 
             blufi_env.is_connected = false;
+            blufi_env.notify_enabled = false;
             blufi_env.recv_seq = blufi_env.send_seq = 0;
             blufi_env.sec_mode = 0x0;
             blufi_env.offset = 0;
@@ -622,6 +646,12 @@ int esp_blufi_handle_gap_events(struct ble_gap_event *event, void *arg)
         case BLE_GAP_EVENT_MTU:
             blufi_env.frag_size = (event->mtu.value < BLUFI_MAX_DATA_LEN ? event->mtu.value :
                                    BLUFI_MAX_DATA_LEN) - BLUFI_MTU_RESERVED_SIZE;
+            return 0;
+
+        case BLE_GAP_EVENT_SUBSCRIBE:
+            if (event->subscribe.attr_handle == gatt_values[1].val_handle) {
+                blufi_env.notify_enabled = (event->subscribe.cur_notify == 1);
+            }
             return 0;
         }
     }
