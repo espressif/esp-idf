@@ -819,7 +819,7 @@ examples/peripherals/usb/device/cherryusb_serial_device:
 
 examples/peripherals/usb/device/tud_cdc_acm_wakeup:
   disable:
-    - if: IDF_TARGET not in ["esp32p4", "esp32s31"]
+    - if: SOC_USB_OTG_SUPPORTED != 1 or SOC_PM_SUPPORT_USB_WAKEUP != 1
 
 examples/peripherals/usb/device/tusb_ncm:
   disable:
