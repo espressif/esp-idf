@@ -8,12 +8,12 @@ from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.temp_skip_ci(targets=['esp32s3', 'esp32s31'], reason='lack of runners with usb_device tag')
+@pytest.mark.temp_skip_ci(targets=['esp32s3', 'esp32s31', 'esp32p4'], reason='lack of runners with usb_device tag')
 @pytest.mark.usb_device
-@idf_parametrize('target', ['esp32s2', 'esp32s3', 'esp32s31'], indirect=['target'])
+@idf_parametrize('target', ['esp32s2', 'esp32s3', 'esp32p4', 'esp32s31'], indirect=['target'])
 def test_usb_device_ncm_example(dut: Dut) -> None:
     netif_mac = dut.expect(
-        r'Network interface HW address: '
+        r'WiFi interface MAC address: '
         r'([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:'
         r'[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})'
     )
