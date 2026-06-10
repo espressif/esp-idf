@@ -219,7 +219,7 @@ static esp_err_t s_psram_chip_init(void)
     ret = esp_psram_impl_enable();
     if (ret != ESP_OK) {
 #if CONFIG_SPIRAM_IGNORE_NOTFOUND
-        ESP_EARLY_LOGE(TAG, "PSRAM enabled but initialization failed. Bailing out.");
+        ESP_EARLY_LOGW(TAG, "PSRAM enabled but initialization failed. Bailing out.");
 #endif
         return ret;
     }

@@ -657,7 +657,7 @@ MSPI_INIT_ATTR void mspi_init(void)
 #if CONFIG_SPIRAM_BOOT_HW_INIT
     if (esp_psram_chip_init() != ESP_OK) {
 #if CONFIG_SPIRAM_IGNORE_NOTFOUND
-        ESP_DRAM_LOGE(TAG, "Failed to init external RAM; continuing without it.");
+        ESP_DRAM_LOGW(TAG, "Failed to init external RAM; continuing without it.");
 #else
         ESP_DRAM_LOGE(TAG, "Failed to init external RAM!");
         abort();

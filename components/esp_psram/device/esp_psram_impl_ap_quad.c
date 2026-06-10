@@ -356,7 +356,7 @@ esp_err_t esp_psram_impl_enable(void)
     psram_disable_qio_mode(PSRAM_CTRLR_LL_MSPI_ID_1);
 
     if (s_check_psram_connected(PSRAM_CTRLR_LL_MSPI_ID_1) != ESP_OK) {
-        ESP_EARLY_LOGE(TAG, "PSRAM chip is not connected, or wrong PSRAM line mode");
+        PSRAM_LOG_NOTFOUND(TAG, "PSRAM chip is not connected, or wrong PSRAM line mode");
         return ESP_ERR_NOT_SUPPORTED;
     }
 
