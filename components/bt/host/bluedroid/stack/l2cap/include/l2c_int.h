@@ -755,7 +755,7 @@ extern void     l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_H
 extern void     l2c_link_adjust_allocation (void);
 extern void     l2c_link_process_num_completed_pkts (UINT8 *p, UINT8 evt_len);
 extern void     l2c_link_process_num_completed_blocks (UINT8 controller_id, UINT8 *p, UINT16 evt_len);
-extern void     l2c_link_processs_num_bufs (UINT16 num_lm_acl_bufs);
+extern void     l2c_link_process_num_bufs (UINT16 num_lm_acl_bufs);
 extern UINT8    l2c_link_pkts_rcvd (UINT16 *num_pkts, UINT16 *handles);
 extern void     l2c_link_role_changed (BD_ADDR bd_addr, UINT8 new_role, UINT8 hci_status);
 extern void     l2c_link_sec_comp (BD_ADDR p_bda, tBT_TRANSPORT transport, void *p_ref_data, UINT8 status);

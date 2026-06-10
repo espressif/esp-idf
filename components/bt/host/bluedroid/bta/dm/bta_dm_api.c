@@ -584,7 +584,6 @@ void BTA_DmWriteBredrTxPwrLvl(tBTM_TX_PWR_LVL_TYPE type, INT8 tx_power, tBTA_CMP
 *******************************************************************************/
 void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode, tBTA_DM_CONN conn_mode, UINT8 pairable_mode, UINT8 conn_filter )
 {
-
     tBTA_DM_API_SET_VISIBILITY    *p_msg;
 
     if ((p_msg = (tBTA_DM_API_SET_VISIBILITY *) osi_malloc(sizeof(tBTA_DM_API_SET_VISIBILITY))) != NULL) {
@@ -594,11 +593,8 @@ void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode, tBTA_DM_CONN conn_mode, UINT8 p
         p_msg->pair_mode = pairable_mode;
         p_msg->conn_paired_only = conn_filter;
 
-
         bta_sys_sendmsg(p_msg);
     }
-
-
 }
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
@@ -616,7 +612,6 @@ void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode, tBTA_DM_CONN conn_mode, UINT8 p
 *******************************************************************************/
 void BTA_DmSearch(tBTA_DM_INQ *p_dm_inq, tBTA_SERVICE_MASK services, tBTA_DM_SEARCH_CBACK *p_cback)
 {
-
     tBTA_DM_API_SEARCH    *p_msg;
 
     if ((p_msg = (tBTA_DM_API_SEARCH *) osi_malloc(sizeof(tBTA_DM_API_SEARCH))) != NULL) {
@@ -629,7 +624,6 @@ void BTA_DmSearch(tBTA_DM_INQ *p_dm_inq, tBTA_SERVICE_MASK services, tBTA_DM_SEA
         p_msg->rs_res  = BTA_DM_RS_NONE;
         bta_sys_sendmsg(p_msg);
     }
-
 }
 
 

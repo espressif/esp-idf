@@ -435,7 +435,7 @@ BOOLEAN btsnd_hcic_sniff_sub_rate(UINT16 handle, UINT16 max_lat,
 #endif  /* BTM_SSR_INCLUDED */
 
 /* Extended Inquiry Response */
-void btsnd_hcic_write_ext_inquiry_response(BT_HDR *buffer, UINT8 fec_req);
+BOOLEAN btsnd_hcic_write_ext_inquiry_response(BT_HDR *buffer, UINT8 fec_req);
 
 #define HCIC_PARAM_SIZE_EXT_INQ_RESP        241
 
@@ -670,7 +670,7 @@ BOOLEAN btsnd_hcic_write_link_super_tout(UINT8 local_controller_id, UINT16 handl
 /* Write Link Supervision Timeout */
 
 BOOLEAN btsnd_hcic_write_cur_iac_lap (UINT8 num_cur_iac,
-                                      LAP *const iac_lap);   /* Write Current IAC LAP */
+                                      const LAP *iac_lap);   /* Write Current IAC LAP */
 
 #define MAX_IAC_LAPS    0x40
 

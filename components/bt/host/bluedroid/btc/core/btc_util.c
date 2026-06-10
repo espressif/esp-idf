@@ -297,7 +297,7 @@ void uuid128_be_to_esp_uuid(esp_bt_uuid_t *u, uint8_t* uuid128)
     return;
 }
 
-void uuid_to_string_legacy(bt_uuid_t *p_uuid, char *str)
+void uuid_to_string_legacy(const bt_uuid_t *p_uuid, char *str)
 {
     uint32_t uuid0, uuid4;
     uint16_t uuid1, uuid2, uuid3, uuid5;

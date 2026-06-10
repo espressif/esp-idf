@@ -79,6 +79,10 @@ tL2C_LCB *l2cu_allocate_lcb (BD_ADDR p_bd_addr, BOOLEAN is_bonding, tBT_TRANSPOR
 	    if (p_lcb) {
 	        memset (p_lcb, 0, sizeof(tL2C_LCB));
             list_ret = list_append(l2cb.p_lcb_pool, p_lcb);
+            if (!list_ret) {
+                osi_free(p_lcb);
+                return NULL;
+            }
 	    }else {
 	        L2CAP_TRACE_ERROR("Error in allocating L2CAP Link Control Block");
 	    }
@@ -444,10 +448,14 @@ BOOLEAN l2c_is_cmd_rejected (UINT8 cmd_code, UINT8 id, tL2C_LCB *p_lcb)
 *******************************************************************************/
 BT_HDR *l2cu_build_header (tL2C_LCB *p_lcb, UINT16 len, UINT8 cmd, UINT8 id)
 {
-    BT_HDR  *p_buf = (BT_HDR *)osi_malloc(L2CAP_CMD_BUF_SIZE);
+    BT_HDR  *p_buf;
     UINT8   *p;
 
-    if (!p_buf) {
+    if (len + BT_HDR_SIZE + HCI_DATA_PREAMBLE_SIZE + L2CAP_PKT_OVERHEAD + L2CAP_CMD_OVERHEAD > L2CAP_CMD_BUF_SIZE) {
+        return NULL;
+    }
+
+    if ((p_buf = (BT_HDR *)osi_malloc(L2CAP_CMD_BUF_SIZE)) == NULL) {
         return (NULL);
     }
 
@@ -654,7 +662,7 @@ void l2cu_reject_connection (tL2C_LCB *p_lcb, UINT16 remote_cid, UINT8 rem_id, U
     UINT8   *p;
 
     if ((p_buf = l2cu_build_header(p_lcb, L2CAP_CONN_RSP_LEN, L2CAP_CMD_CONN_RSP, rem_id)) == NULL ) {
-        L2CAP_TRACE_WARNING ("L2CAP - no buffer for conn_req");
+        L2CAP_TRACE_WARNING ("L2CAP - no buffer for conn_rsp");
         return;
     }
 
@@ -711,7 +719,7 @@ void l2cu_send_peer_config_req (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
 
     if ((p_buf = l2cu_build_header (p_ccb->p_lcb, (UINT16) (L2CAP_CONFIG_REQ_LEN + cfg_len),
                                     L2CAP_CMD_CONFIG_REQ, p_ccb->local_id)) == NULL ) {
-        L2CAP_TRACE_WARNING ("L2CAP - no buffer for conn_req");
+        L2CAP_TRACE_WARNING ("L2CAP - no buffer for cfg_req");
         return;
     }
 
@@ -809,7 +817,7 @@ void l2cu_send_peer_config_rsp (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
 
     if ((p_buf = l2cu_build_header (p_ccb->p_lcb, (UINT16)(L2CAP_CONFIG_RSP_LEN + cfg_len),
                                     L2CAP_CMD_CONFIG_RSP, p_ccb->remote_id)) == NULL ) {
-        L2CAP_TRACE_WARNING ("L2CAP - no buffer for conn_req");
+        L2CAP_TRACE_WARNING ("L2CAP - no buffer for cfg_rsp");
         return;
     }
 
@@ -1002,6 +1010,10 @@ void l2cu_send_peer_disc_req (tL2C_CCB *p_ccb)
     BT_HDR  *p_buf, *p_buf2;
     UINT8   *p;
 
+    if (!p_ccb || !p_ccb->p_lcb) {
+        return;
+    }
+
     /* Create an identifier for this packet */
     p_ccb->p_lcb->id++;
     l2cu_adj_id(p_ccb->p_lcb, L2CAP_ADJ_ID);
@@ -1021,7 +1033,7 @@ void l2cu_send_peer_disc_req (tL2C_CCB *p_ccb)
     /* Move all queued data packets to the LCB. In FCR mode, assume the higher
        layer checks that all buffers are sent before disconnecting.
     */
-    if (p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_BASIC_MODE) {
+    if (p_ccb->xmit_hold_q && (p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_BASIC_MODE)) {
         while ((p_buf2 = (BT_HDR *)fixed_queue_dequeue(p_ccb->xmit_hold_q, 0)) != NULL) {
             l2cu_set_acl_hci_header (p_buf2, p_ccb);
             l2c_link_check_send_pkts (p_ccb->p_lcb, p_ccb, p_buf2);
@@ -1211,14 +1223,11 @@ void l2cu_send_peer_info_rsp (tL2C_LCB *p_lcb, UINT8 remote_id, UINT16 info_type
 
 #if (L2CAP_CONFORMANCE_TESTING == TRUE)
     if ((info_type == L2CAP_EXTENDED_FEATURES_INFO_TYPE)
-            && (l2cb.test_info_resp & (L2CAP_EXTFEA_ENH_RETRANS   | L2CAP_EXTFEA_STREAM_MODE |
-                                       L2CAP_EXTFEA_NO_CRC | L2CAP_EXTFEA_EXT_FLOW_SPEC |
-                                       L2CAP_EXTFEA_FIXED_CHNLS | L2CAP_EXTFEA_EXT_WINDOW |
+            && (l2cb.test_info_resp & (L2CAP_EXTFEA_ENH_RETRANS | L2CAP_EXTFEA_STREAM_MODE |
                                        L2CAP_EXTFEA_UCD_RECEPTION )) )
 #else
     if ((info_type == L2CAP_EXTENDED_FEATURES_INFO_TYPE)
             && (L2CAP_EXTFEA_SUPPORTED_MASK & (L2CAP_EXTFEA_ENH_RETRANS | L2CAP_EXTFEA_STREAM_MODE |
-                    L2CAP_EXTFEA_NO_CRC | L2CAP_EXTFEA_FIXED_CHNLS |
                     L2CAP_EXTFEA_UCD_RECEPTION )) )
 #endif
     {
@@ -1468,6 +1477,10 @@ void l2cu_dequeue_ccb (tL2C_CCB *p_ccb)
 *******************************************************************************/
 void l2cu_change_pri_ccb (tL2C_CCB *p_ccb, tL2CAP_CHNL_PRIORITY priority)
 {
+    if ((priority >= L2CAP_NUM_CHNL_PRIORITY) || (p_ccb->ccb_priority >= L2CAP_NUM_CHNL_PRIORITY)) {
+        return;
+    }
+
     if (p_ccb->ccb_priority != priority) {
         /* If CCB is not the only guy on the queue */
         if ( (p_ccb->p_next_ccb != NULL) || (p_ccb->p_prev_ccb != NULL) ) {
@@ -1523,7 +1536,10 @@ tL2C_CCB *l2cu_allocate_ccb (tL2C_LCB *p_lcb, UINT16 cid)
 
             if (p_ccb) {
                 memset (p_ccb, 0, sizeof(tL2C_CCB));
-                list_append(l2cb.p_ccb_pool, p_ccb);
+                if (!list_append(l2cb.p_ccb_pool, p_ccb)) {
+                    osi_free(p_ccb);
+                    return NULL;
+                }
             }
         }
      }
@@ -1834,6 +1850,7 @@ tL2C_RCB *l2cu_allocate_rcb (UINT16 psm)
 
     for (xx = 0; xx < MAX_L2CAP_CLIENTS; xx++, p_rcb++) {
         if (!p_rcb->in_use) {
+            memset(p_rcb, 0, sizeof(tL2C_RCB));
             p_rcb->in_use = TRUE;
             p_rcb->psm    = psm;
 #if (L2CAP_UCD_INCLUDED == TRUE)
@@ -2598,7 +2615,10 @@ BOOLEAN l2cu_set_acl_priority (BD_ADDR bd_addr, UINT8 priority, BOOLEAN reset_af
             UINT16_TO_STREAM (pp, p_lcb->handle);
             UINT8_TO_STREAM  (pp, vs_param);
 
-            BTM_VendorSpecificCommand (HCI_BRCM_SET_ACL_PRIORITY, HCI_BRCM_ACL_PRIORITY_PARAM_SIZE, command, NULL);
+            tBTM_STATUS status = BTM_VendorSpecificCommand (HCI_BRCM_SET_ACL_PRIORITY, HCI_BRCM_ACL_PRIORITY_PARAM_SIZE, command, NULL);
+            if (status != BTM_SUCCESS) {
+                return FALSE;
+            }
 
             /* Adjust lmp buffer allocation for this channel if priority changed */
             if (p_lcb->acl_priority != priority) {
@@ -2686,7 +2706,7 @@ void l2cu_resubmit_pending_sec_req (BD_ADDR p_bda)
 ** Description      This function allows the script wrapper to change the
 **                  info resp mask for conformance testing.
 **
-** Returns          pointer to CCB, or NULL if none
+** Returns          void
 **
 *******************************************************************************/
 void l2cu_set_info_rsp_mask (UINT32 mask)
@@ -2765,9 +2785,9 @@ BOOLEAN l2cu_initialize_fixed_ccb (tL2C_LCB *p_lcb, UINT16 fixed_cid, tL2CAP_FCR
     /* Set CID for the connection */
     p_ccb->local_cid  = fixed_cid;
     p_ccb->remote_cid = fixed_cid;
-
+#if (L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE)
     p_ccb->is_flushable = FALSE;
-
+#endif
     p_ccb->timer_entry.param  = (TIMER_PARAM_TYPE)p_ccb;
 
 
@@ -2844,11 +2864,6 @@ void l2cu_no_dynamic_ccbs (tL2C_LCB *p_lcb)
             /* BTM SEC will make sure that link is release (probably after pairing is done) */
             p_lcb->link_state = LST_DISCONNECTING;
             timeout = 0xFFFF;
-        } else if ( (p_lcb->is_bonding)
-                    &&   (btsnd_hcic_disconnect (p_lcb->handle, HCI_ERR_PEER_USER)) ) {
-            l2cu_process_fixed_disc_cback(p_lcb);
-            p_lcb->link_state = LST_DISCONNECTING;
-            timeout = L2CAP_LINK_DISCONNECT_TOUT;
         } else {
             /* probably no buffer to send disconnect */
             timeout = BT_1SEC_TIMEOUT;
@@ -2955,7 +2970,8 @@ void l2cu_process_fixed_disc_cback (tL2C_LCB *p_lcb)
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
 
     /* Select peer channels mask to use depending on transport */
-    UINT8 peer_channel_mask = p_lcb->peer_chnl_mask[0];
+    UINT8 peer_chnl_mask[L2CAP_FIXED_CHNL_ARRAY_SIZE] = {0};
+    memcpy(peer_chnl_mask, p_lcb->peer_chnl_mask, sizeof(peer_chnl_mask));
 
     // For LE, reset the stored peer channel mask
     if (p_lcb->transport == BT_TRANSPORT_LE) {
@@ -2977,7 +2993,7 @@ void l2cu_process_fixed_disc_cback (tL2C_LCB *p_lcb)
                         p_lcb->remote_bd_addr, FALSE, p_lcb->disc_reason, BT_TRANSPORT_BR_EDR);
 #endif
             }
-        } else if ( (peer_channel_mask & (1 << (xx + L2CAP_FIRST_FIXED_CHNL)))
+        } else if ( (peer_chnl_mask[(xx + L2CAP_FIRST_FIXED_CHNL) / 8] & (1 << ((xx + L2CAP_FIRST_FIXED_CHNL) % 8)))
                     && (l2cb.fixed_reg[xx].pL2CA_FixedConn_Cb != NULL) ) {
 #if BLE_INCLUDED == TRUE
             (*l2cb.fixed_reg[xx].pL2CA_FixedConn_Cb)(xx + L2CAP_FIRST_FIXED_CHNL,
@@ -3165,6 +3181,11 @@ void l2cu_send_peer_ble_credit_based_conn_res (tL2C_CCB *p_ccb, UINT16 result)
     UINT8   *p;
 
     L2CAP_TRACE_DEBUG ("l2cu_send_peer_ble_credit_based_conn_res");
+
+    if (!p_ccb || !p_ccb->p_lcb) {
+        L2CAP_TRACE_WARNING ("l2cu_send_peer_ble_credit_based_conn_res - no link");
+        return;
+    }
     if ((p_buf = l2cu_build_header(p_ccb->p_lcb, L2CAP_CMD_BLE_CREDIT_BASED_CONN_RES_LEN,
                     L2CAP_CMD_BLE_CREDIT_BASED_CONN_RES, p_ccb->remote_id)) == NULL )
     {
@@ -3290,6 +3311,11 @@ tL2C_LCB  *l2cu_find_lcb_by_handle (UINT16 handle)
 {
     list_node_t *p_node = NULL;
     tL2C_LCB    *p_lcb  = NULL;
+
+    if (!l2cb.p_lcb_pool) {
+        return NULL;
+    }
+
     for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
         p_lcb = list_node(p_node);
         if ((p_lcb->in_use) && (p_lcb->handle == handle)) {
@@ -3490,11 +3516,11 @@ static tL2C_CCB *l2cu_get_next_channel(tL2C_LCB *p_lcb)
             continue;
         }
 
-        if (!fixed_queue_is_empty(p_ccb->fcrb.retrans_q))
+        if (!fixed_queue_is_empty(p_ccb->fcrb.retrans_q)) {
             return p_ccb;
         }
 
-        if (fixed_queue_is_empty(p_ccb->xmit_hold_q))
+        if (fixed_queue_is_empty(p_ccb->xmit_hold_q)) {
             continue;
         }
 
