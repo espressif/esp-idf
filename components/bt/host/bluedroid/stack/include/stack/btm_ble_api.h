@@ -1528,7 +1528,6 @@ typedef struct {
 
 typedef struct {
     UINT8 status;
-    UINT16 conn_handle;
     UINT8 num_config_supported;
     UINT16 max_consecutive_proc_supported;
     UINT8 num_ant_supported;
@@ -2726,7 +2725,7 @@ void BTM_BleClearWhitelist(void);
 **               p_cmd_cmpl_cback - Command Complete callback
 **
 *******************************************************************************/
-void BTM_BleReceiverTest(UINT8 rx_freq, tBTM_CMPL_CB *p_cmd_cmpl_cback);
+void BTM_BleReceiverTest(UINT8 rx_freq, tBTM_DTM_CMD_CMPL_CBACK *p_cmd_cmpl_cback);
 
 
 /*******************************************************************************
@@ -2742,7 +2741,7 @@ void BTM_BleReceiverTest(UINT8 rx_freq, tBTM_CMPL_CB *p_cmd_cmpl_cback);
 **
 *******************************************************************************/
 void BTM_BleTransmitterTest(UINT8 tx_freq, UINT8 test_data_len,
-                            UINT8 packet_payload, tBTM_CMPL_CB *p_cmd_cmpl_cback);
+                            UINT8 packet_payload, tBTM_DTM_CMD_CMPL_CBACK *p_cmd_cmpl_cback);
 
 /*******************************************************************************
 **
@@ -2753,7 +2752,7 @@ void BTM_BleTransmitterTest(UINT8 tx_freq, UINT8 test_data_len,
 ** Parameter       p_cmd_cmpl_cback - Command complete callback
 **
 *******************************************************************************/
-void BTM_BleTestEnd(tBTM_CMPL_CB *p_cmd_cmpl_cback);
+void BTM_BleTestEnd(tBTM_DTM_CMD_CMPL_CBACK *p_cmd_cmpl_cback);
 
 /*******************************************************************************
 **
@@ -3087,9 +3086,9 @@ tBTM_STATUS BTM_BleEnableMonitorAdv(UINT8 enable);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 #if (BLE_50_DTM_TEST_EN == TRUE)
-void BTM_BleEnhancedReceiverTest(UINT8 rx_freq, UINT8 phy, UINT8 modulation_index, tBTM_CMPL_CB *p_cmd_cmpl_cback);
+void BTM_BleEnhancedReceiverTest(UINT8 rx_freq, UINT8 phy, UINT8 modulation_index, tBTM_DTM_CMD_CMPL_CBACK *p_cmd_cmpl_cback);
 
-void BTM_BleEnhancedTransmitterTest(UINT8 tx_freq, UINT8 test_data_len, UINT8 packet_payload, UINT8 phy, tBTM_CMPL_CB *p_cmd_cmpl_cback);
+void BTM_BleEnhancedTransmitterTest(UINT8 tx_freq, UINT8 test_data_len, UINT8 packet_payload, UINT8 phy, tBTM_DTM_CMD_CMPL_CBACK *p_cmd_cmpl_cback);
 #endif // #if (BLE_50_DTM_TEST_EN == TRUE)
 
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
