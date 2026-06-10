@@ -291,8 +291,8 @@ DEV_CLASS            dev_class;         /* Local device class                   
 
 TIMER_LIST_ENT       ble_channels_timer;
 
-tBTM_CMPL_CB        *p_le_test_cmd_cmpl_cb;   /* Callback function to be called when
-                                                  LE test mode command has been sent successfully */
+tBTM_DTM_CMD_CMPL_CBACK *p_le_test_cmd_cmpl_cb; /* Callback function to be called when
+                                                   LE test mode command has been sent successfully */
 
 BD_ADDR                 read_tx_pwr_addr;   /* read TX power target address     */
 
