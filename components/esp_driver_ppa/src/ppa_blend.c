@@ -152,6 +152,8 @@ bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_trans_chann
         ppa_ll_blend_set_tx_yuv_range(platform->hal.dev, blend_trans_desc->out.yuv_range);
         ppa_ll_blend_set_tx_rgb2yuv_std(platform->hal.dev, blend_trans_desc->out.yuv_std);
     }
+    // For YUV420/YUV422 background input and output, blend_tx_size.blend_hb/vb must be set to make the Blending engine and 2D-DMA work properly
+    ppa_ll_blend_set_block_size(platform->hal.dev, blend_trans_desc->in_bg.block_w, blend_trans_desc->in_bg.block_h); // in_bg.block_w == in_fg.block_w && in_bg.block_h == in_fg.block_h
 
     // Color keying
     color_pixel_rgb888_data_t rgb888_min = {.b = 0x00, .g = 0x00, .r = 0x00};
