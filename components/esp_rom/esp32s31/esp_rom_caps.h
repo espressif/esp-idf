@@ -29,5 +29,6 @@
 #define ESP_ROM_HAS_VERSION                 (1) // ROM has version/eco information
 #define ESP_ROM_HAS_OUTPUT_PUTC_FUNC        (1) // ROM has esp_rom_output_putc (or ets_write_char_uart)
 #define ESP_ROM_PRINTS_LOCKUP_STATUS        (1) // ROM bootloader already prints CPU lockup diagnostic status
+#define ESP_ROM_ECDSA_VERIFY_PATCH (1) // ROM ets_ecdsa_verify API requires a software patch
 #define ESP_ROM_BOOTLOADER_OFFSET_FLASH     (0x2000) // Bootloader offset in flash determined by the ROM bootloader
 #define ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_MAP (1) // ROM cache writeback related needs patch to avoid sync loss, need map parameter

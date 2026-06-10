@@ -207,6 +207,10 @@ static void test_ecc_point_mul_inner_constant_time(void)
     uint32_t max_time = 0, min_time = UINT32_MAX;
     int loop_count = 10;
 
+    /* Warm-up: the first call is otherwise an I-cache / branch-predictor
+     * outlier that dominates max_time and thus creating deviations */
+    ecc_point_mul(scalar_le, x_le, y_le, ECC_P256_SIZE_BYTES, 0, x_res_le, y_res_le);
+
     for (int i = 0; i < loop_count; i++) {
         ccomp_timer_start();
         ecc_point_mul(scalar_le, x_le, y_le, ECC_P256_SIZE_BYTES, 0, x_res_le, y_res_le);
@@ -229,6 +233,9 @@ static void test_ecc_point_mul_inner_constant_time(void)
     max_time = 0;
     min_time = UINT32_MAX;
     total_elapsed_time = 0;
+
+    /* Warm-up — see comment on the P256 loop. */
+    ecc_point_mul(scalar_le, x_le, y_le, ECC_P192_SIZE_BYTES, 0, x_res_le, y_res_le);
 
     for (int i = 0; i < loop_count; i++) {
         ccomp_timer_start();
@@ -254,6 +261,9 @@ static void test_ecc_point_mul_inner_constant_time(void)
         max_time = 0;
         min_time = UINT32_MAX;
         total_elapsed_time = 0;
+
+        /* Warm-up — see comment on the P256 loop. */
+        ecc_point_mul(scalar_le, x_le, y_le, ECC_P384_SIZE_BYTES, 0, x_res_le, y_res_le);
 
         for (int i = 0; i < loop_count; i++) {
             ccomp_timer_start();
