@@ -1307,7 +1307,7 @@ typedef enum {
     WIFI_EVENT_NAN_BOOTSTRAP_INDICATION, /**< Received NAN Pairing Bootstrapping Request from a Peer */
     WIFI_EVENT_NAN_BOOTSTRAP_COMPLETED,  /**< NAN Pairing Bootstrapping completed (success/failure) */
     WIFI_EVENT_NAN_PAIRING_INDICATION,   /**< Received NAN Pairing indication (reserved) */
-    WIFI_EVENT_NAN_PAIRING_CONFIRM,      /**< NAN PASN pairwise key installation completed */
+    WIFI_EVENT_NAN_PAIRING_CONFIRM,      /**< NAN pairing completed after NIK follow-up exchange */
     WIFI_EVENT_NAN_CLUSTER_JOIN,         /**< NAN Cluster joined/started successfully */
     WIFI_EVENT_MAX,                      /**< Invalid Wi-Fi event ID */
 } wifi_event_t;
@@ -1668,11 +1668,10 @@ typedef struct {
     uint32_t cookie;                            /**< Comeback cookie from responder (0 if none) */
 } wifi_event_nan_bootstrap_complete_t;
 
+#define WIFI_NAN_PAIRING_REASON_NIK_FUP_TIMEOUT  1  /**< Peer NIK follow-up not received (Wi-Fi Aware v4.0 §7.6.4.2) */
+
 /**
   * @brief Argument structure for WIFI_EVENT_NAN_PAIRING_CONFIRM event
-  *
- * Posted when PASN pairwise key installation completes.
- * Distinct from WIFI_EVENT_NAN_BOOTSTRAP_COMPLETED (NPBA follow-up bootstrapping).
   */
 typedef struct {
     uint8_t status;                             /**< 0=Accepted, 1=Rejected (wifi_nan_pairing_status_t) */

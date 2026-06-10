@@ -400,6 +400,7 @@ int esp_nan_construct_nira(uint8_t *frm)
 #define NAN_PAIRING_SRV_PORT            3333
 #define NAN_PAIRING_SRV_HOSTNAME        "ESP-SRV-1234"
 #define NAN_PAIRING_SSI_BUF_LEN         64
+#define NAN_PAIRING_NIK_FUP_TIMEOUT_SEC 2
 
 struct nan_pairing_fup_ctx {
     uint8_t svc_id;
@@ -435,6 +436,56 @@ static struct peer_svc_info *nan_find_peer_svc_exact(uint8_t own_svc_id, uint8_t
     }
 
     return NULL;
+}
+
+static void nan_pairing_nik_fup_timeout_cb(void *eloop_data, void *user_ctx);
+
+void nan_pairing_cancel_svc_pending(struct own_svc_info *own)
+{
+    if (!own || !own->nik_fup_pending) {
+        return;
+    }
+
+    eloop_cancel_timeout(nan_pairing_nik_fup_timeout_cb, NULL, own);
+    own->nik_fup_pending = false;
+}
+
+static void nan_pairing_arm_pending(struct own_svc_info *own, const uint8_t *peer_mac)
+{
+    if (!own || !peer_mac) {
+        return;
+    }
+
+    nan_pairing_cancel_svc_pending(own);
+    MACADDR_COPY(own->nik_fup_pending_peer_nmi, peer_mac);
+    own->nik_fup_pending = true;
+
+    if (eloop_register_timeout(NAN_PAIRING_NIK_FUP_TIMEOUT_SEC, 0,
+                               nan_pairing_nik_fup_timeout_cb, NULL,
+                               own) != 0) {
+        own->nik_fup_pending = false;
+    }
+}
+
+static void nan_pairing_nik_fup_timeout_cb(void *eloop_data, void *user_ctx)
+{
+    struct own_svc_info *own = user_ctx;
+    wifi_event_nan_pairing_complete_t evt = {0};
+
+    (void)eloop_data;
+
+    if (!own || !own->nik_fup_pending) {
+        return;
+    }
+
+    own->nik_fup_pending = false;
+    evt.status = WIFI_NAN_PAIRING_STATUS_REJECTED;
+    evt.reason_code = WIFI_NAN_PAIRING_REASON_NIK_FUP_TIMEOUT;
+    MACADDR_COPY(evt.peer_nmi, own->nik_fup_pending_peer_nmi);
+    esp_nan_disable_pairing(own->svc_id);
+    nan_app_post_event(WIFI_EVENT_NAN_PAIRING_CONFIRM, &evt, sizeof(evt));
+    ESP_LOGW(TAG, "Pairing NIK follow-up timed out for peer " MACSTR,
+             MAC2STR(own->nik_fup_pending_peer_nmi));
 }
 
 /**
@@ -828,13 +879,35 @@ static void nan_pairing_key_installed_cb(const uint8_t *peer_nmi,
         MACADDR_COPY(ctx->peer_mac, peer_nmi);
         ctx->shared_key_attr_len = 0;
 
+        struct own_svc_info *own = nan_find_own_svc(ctx->svc_id);
+        if (own) {
+            nan_pairing_arm_pending(own, peer_nmi);
+        }
+
         if (eloop_register_timeout(0, 0, nan_app_send_pairing_followup_eloop, NULL, ctx) != 0) {
             ESP_LOGW(TAG, "Pairing key installed: failed to schedule initiator follow-up");
+            if (own) {
+                nan_pairing_cancel_svc_pending(own);
+            }
             os_free(ctx);
         }
         return;
     }
-    (void)role;
+
+    if (role == NAN_ROLE_PAIRING_RESPONDER) {
+        struct own_svc_info *own = NULL;
+
+        NAN_DATA_LOCK();
+        struct peer_svc_info *peer = nan_find_peer_svc(0, 0, (uint8_t *)peer_nmi);
+        if (peer) {
+            own = nan_find_own_svc(peer->own_svc_id);
+        }
+        NAN_DATA_UNLOCK();
+
+        if (own) {
+            nan_pairing_arm_pending(own, peer_nmi);
+        }
+    }
 }
 
 void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
@@ -903,6 +976,11 @@ void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
     /* Invoke blocking calls outside NAN_DATA_LOCK to avoid deadlock. */
     if (pairing_completed) {
         wifi_event_nan_pairing_complete_t evt = {0};
+
+        struct own_svc_info *own = nan_find_own_svc(own_svc_id_to_disable);
+        if (own) {
+            nan_pairing_cancel_svc_pending(own);
+        }
         evt.status = WIFI_NAN_PAIRING_STATUS_ACCEPTED;
         evt.reason_code = 0;
         MACADDR_COPY(evt.peer_nmi, peer_mac);

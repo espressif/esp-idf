@@ -223,6 +223,10 @@ struct own_svc_info {
 #endif
     uint8_t num_peer_records;
     SLIST_HEAD(peer_list_t, peer_svc_info) peer_list;
+#if CONFIG_ESP_WIFI_NAN_PAIRING
+    bool nik_fup_pending;
+    uint8_t nik_fup_pending_peer_nmi[MACADDR_LEN];
+#endif
 };
 
 /* Per-NDP link state */
@@ -340,6 +344,7 @@ void nan_app_bootstrap_completed(uint8_t status, uint8_t peer_svc_id, uint8_t su
                                  uint8_t reason_code);
 bool nan_app_parse_npba_from_receive(uint8_t own_svc_id, uint8_t peer_svc_id,
                                      uint8_t peer_nmi[6], const struct nan_cb_npba_t *npba);
+void nan_pairing_cancel_svc_pending(struct own_svc_info *own);
 #endif /* CONFIG_ESP_WIFI_NAN_PAIRING */
 
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
