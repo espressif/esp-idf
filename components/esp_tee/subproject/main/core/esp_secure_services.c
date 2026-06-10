@@ -379,10 +379,15 @@ esp_err_t _ss_esp_hmac_jtag_disable(void)
 #if SOC_DIG_SIGN_SUPPORTED
 static size_t get_ds_msg_sign_len(esp_digital_signature_length_t rsa_length)
 {
-    if (rsa_length != ESP_DS_RSA_1024 && rsa_length != ESP_DS_RSA_2048 &&
-            rsa_length != ESP_DS_RSA_3072 && rsa_length != ESP_DS_RSA_4096) {
+
+    if (rsa_length != ESP_DS_RSA_1024 && rsa_length != ESP_DS_RSA_2048 && rsa_length != ESP_DS_RSA_3072
+#if SOC_DS_SIGNATURE_MAX_BIT_LEN == 4096
+            && rsa_length != ESP_DS_RSA_4096
+#endif
+       ) {
         return 0;
     }
+
     return (size_t)(rsa_length + 1) * 4;
 }
 
@@ -418,6 +423,7 @@ esp_err_t _ss_esp_ds_start_sign(const void *message,
                                 esp_ds_context_t **esp_ds_ctx)
 {
     bool valid_addr = (esp_tee_buf_in_ree(esp_ds_ctx, sizeof(esp_ds_context_t *)) &&
+                       esp_tee_buf_in_ree(*esp_ds_ctx, sizeof(esp_ds_context_t)) &&
                        esp_tee_buf_in_ree(data, sizeof(esp_ds_data_t)));
     if (!valid_addr) {
         return ESP_ERR_INVALID_ARG;
@@ -446,8 +452,16 @@ bool _ss_esp_ds_is_busy(void)
 
 esp_err_t _ss_esp_ds_finish_sign(void *signature, esp_ds_context_t *esp_ds_ctx)
 {
-    const size_t max_sign = get_ds_msg_sign_len(ESP_DS_RSA_4096);
-    bool valid_addr = esp_tee_buf_in_ree(signature, max_sign);
+    const size_t max_sign = SOC_DS_SIGNATURE_MAX_BIT_LEN / 8;
+    bool valid_addr = (esp_tee_buf_in_ree(signature, max_sign) &&
+                       esp_tee_buf_in_ree(esp_ds_ctx, sizeof(esp_ds_context_t)));
+    if (!valid_addr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    const esp_ds_data_t *data = (const esp_ds_data_t *)esp_ds_ctx->data;
+    valid_addr &= esp_tee_buf_in_ree(data, sizeof(esp_ds_data_t)) &&
+                  (get_ds_msg_sign_len(data->rsa_length) > 0);
 
     if (!valid_addr) {
         return ESP_ERR_INVALID_ARG;

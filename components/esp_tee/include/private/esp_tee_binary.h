@@ -20,6 +20,11 @@ extern "C" {
 #define TEE_SECURE_INUM    (31)
 #if SOC_INT_CLIC_SUPPORTED
 #define TEE_PASS_INUM      (30)
+/* CLIC: 3 effective priority bits (NLBITS=3), max priority = 7 */
+#define TEE_SECURE_INUM_PRIO    (7)
+#else
+/* PLIC: 4-bit priority field, max priority = 15 */
+#define TEE_SECURE_INUM_PRIO    (15)
 #endif
 
 #define ESP_TEE_M2U_SWITCH_MAGIC  0xfedef
