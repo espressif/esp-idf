@@ -462,7 +462,7 @@ esp_err_t esp_psram_impl_enable(void)
     s_init_psram_mode_reg(PSRAM_CTRLR_LL_MSPI_ID_3, &mode_reg);
 
     if (s_check_psram_connected(PSRAM_CTRLR_LL_MSPI_ID_3) != ESP_OK) {
-        ESP_EARLY_LOGE(TAG, "PSRAM chip is not connected");
+        PSRAM_LOG_NOTFOUND(TAG, "PSRAM chip is not connected");
         return ESP_ERR_NOT_SUPPORTED;
     }
 
