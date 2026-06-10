@@ -353,7 +353,10 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
 
     memcpy(lmsg, msg, sizeof(btc_msg_t));
     if (arg) {
-        memset(lmsg->arg, 0x00, arg_len);    //important, avoid arg which have no length
+        /* memcpy below covers exactly arg_len bytes, which is the full size of
+         * the destination buffer (it was sized as sizeof(btc_msg_t) + arg_len),
+         * so a prior memset would be redundant. Deep-copy callbacks must only
+         * read fields that were written by the caller-supplied arg. */
         memcpy(lmsg->arg, arg, arg_len);
         if (copy_func) {
             copy_func(lmsg, lmsg->arg, arg);
