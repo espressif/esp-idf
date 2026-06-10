@@ -46,6 +46,7 @@
 #endif /* SOC_MPI_SUPPORTED && SOC_ECDSA_USES_MPI */
 
 #include "psa_crypto_driver_esp_ecdsa.h"
+#include "include/psa_crypto_driver_esp_ecdsa_utilities.h"
 #include "psa_crypto_driver_esp_opaque_common.h"
 #include "psa_crypto_driver_wrappers_no_static.h"
 #include "sdkconfig.h"
@@ -244,7 +245,7 @@ static psa_status_t esp_ecdsa_get_expected_storage_size(const uint8_t *key_buffe
 #endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM */
 
 // Helper function to get curve from mbedtls group ID
-static esp_ecdsa_curve_t psa_bits_to_ecdsa_curve(size_t key_len)
+esp_ecdsa_curve_t esp_ecdsa_bits_to_curve(size_t key_len)
 {
     switch (key_len) {
         case ECDSA_KEY_LEN_P192:
@@ -260,11 +261,12 @@ static esp_ecdsa_curve_t psa_bits_to_ecdsa_curve(size_t key_len)
     }
 }
 
-#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || (CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN && SOC_ECDSA_SUPPORT_EXPORT_PUBKEY)
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || defined(ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED) \
+    || (CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN && SOC_ECDSA_SUPPORT_EXPORT_PUBKEY)
 /**
  * @brief Map the driver's esp_ecdsa_curve_t enum to the HAL's ecdsa_curve_t enum.
  */
-static ecdsa_curve_t esp_ecdsa_curve_to_hal_curve(esp_ecdsa_curve_t curve)
+ecdsa_curve_t esp_ecdsa_curve_to_hal_curve(esp_ecdsa_curve_t curve)
 {
     switch (curve) {
         case ESP_ECDSA_CURVE_SECP192R1: return ECDSA_CURVE_SECP192R1;
@@ -275,7 +277,7 @@ static ecdsa_curve_t esp_ecdsa_curve_to_hal_curve(esp_ecdsa_curve_t curve)
         default: return (ecdsa_curve_t)-1;
     }
 }
-#endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || (CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN && SOC_ECDSA_SUPPORT_EXPORT_PUBKEY) */
+#endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED || (CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN && SOC_ECDSA_SUPPORT_EXPORT_PUBKEY) */
 
 #if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
 static esp_tee_sec_storage_type_t esp_ecdsa_curve_to_tee_sec_storage_type(esp_ecdsa_curve_t curve)
@@ -293,7 +295,7 @@ static esp_tee_sec_storage_type_t esp_ecdsa_curve_to_tee_sec_storage_type(esp_ec
 }
 #endif /* CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN */
 
-static void change_endianess(const uint8_t *old_point, uint8_t *new_point, uint8_t len)
+void esp_ecdsa_change_endianness(const uint8_t *old_point, uint8_t *new_point, uint8_t len)
 {
     /* When the size is less than MAX_ECDSA_COMPONENT_LEN, it should be padded with 0 bytes*/
     memset(new_point, 0x0, len);
@@ -303,7 +305,7 @@ static void change_endianess(const uint8_t *old_point, uint8_t *new_point, uint8
     }
 }
 
-static psa_status_t validate_ecdsa_sha_alg(psa_algorithm_t alg, const esp_ecdsa_curve_t curve)
+psa_status_t esp_ecdsa_validate_sha_alg(psa_algorithm_t alg, const esp_ecdsa_curve_t curve)
 {
     if ((PSA_ALG_SIGN_GET_HASH(alg) != PSA_ALG_SHA_256 && (curve == ESP_ECDSA_CURVE_SECP192R1 || curve == ESP_ECDSA_CURVE_SECP256R1))
 #if SOC_ECDSA_SUPPORT_CURVE_P384
@@ -381,7 +383,7 @@ cleanup:
     return status;
 }
 
-static void esp_ecdsa_acquire_hardware(void)
+void esp_ecdsa_acquire_hardware(void)
 {
     esp_crypto_ecdsa_lock_acquire();
 
@@ -412,7 +414,7 @@ static void esp_ecdsa_acquire_hardware(void)
 #endif /* SOC_ECDSA_USES_MPI */
 }
 
-static void esp_ecdsa_release_hardware(void)
+void esp_ecdsa_release_hardware(void)
 {
     esp_crypto_ecdsa_enable_periph_clk(false);
 
@@ -469,12 +471,12 @@ psa_status_t esp_ecdsa_transparent_verify_hash_start(
     }
 
     size_t key_len = PSA_BITS_TO_BYTES(psa_get_key_bits(attributes));
-    esp_ecdsa_curve_t curve = psa_bits_to_ecdsa_curve(key_len);
+    esp_ecdsa_curve_t curve = esp_ecdsa_bits_to_curve(key_len);
     if (curve == ESP_ECDSA_CURVE_MAX) {
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
-    status = validate_ecdsa_sha_alg(alg, curve);
+    status = esp_ecdsa_validate_sha_alg(alg, curve);
     if (status != PSA_SUCCESS) {
         return status;
     }
@@ -540,8 +542,8 @@ psa_status_t esp_ecdsa_transparent_verify_hash_start(
     ecc_point_t point;
     memset(&point, 0, sizeof(ecc_point_t));
 
-    change_endianess(public_key_buffer + 1, point.x, key_len);
-    change_endianess(public_key_buffer + 1 + key_len, point.y, key_len);
+    esp_ecdsa_change_endianness(public_key_buffer + 1, point.x, key_len);
+    esp_ecdsa_change_endianness(public_key_buffer + 1 + key_len, point.y, key_len);
     point.len = key_len;
 
     /* Reject the identity (point at infinity, all-zero coords) explicitly —
@@ -563,15 +565,15 @@ psa_status_t esp_ecdsa_transparent_verify_hash_start(
     operation->curve = curve;
     operation->key_len = key_len;
     operation->sha_len = hash_length;
-    change_endianess(hash, operation->sha, key_len);
-    change_endianess(signature, operation->r, key_len);
-    change_endianess(signature + key_len, operation->s, key_len);
+    esp_ecdsa_change_endianness(hash, operation->sha, key_len);
+    esp_ecdsa_change_endianness(signature, operation->r, key_len);
+    esp_ecdsa_change_endianness(signature + key_len, operation->s, key_len);
     /* The public key buffer is in the format 0x04 followed by the 2*key_len bytes public key */
     /* The first byte is the format byte, which is ECDSA_UNCOMPRESSED_POINT_FORMAT */
     /* The next key_len bytes are the x coordinate */
     /* The next key_len bytes are the y coordinate */
-    change_endianess(public_key_buffer + 1, operation->qx, key_len);
-    change_endianess(public_key_buffer + 1 + key_len, operation->qy, key_len);
+    esp_ecdsa_change_endianness(public_key_buffer + 1, operation->qx, key_len);
+    esp_ecdsa_change_endianness(public_key_buffer + 1 + key_len, operation->qy, key_len);
 
     return PSA_SUCCESS;
 }
@@ -633,6 +635,7 @@ psa_status_t esp_ecdsa_transparent_verify_hash(
     esp_ecdsa_transparent_verify_hash_abort(&operation);
     return status;
 }
+
 #endif /* SOC_ECDSA_SUPPORTED */
 
 #if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
@@ -738,7 +741,7 @@ static psa_status_t validate_ecdsa_opaque_key_attributes(const psa_key_attribute
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
-    esp_ecdsa_curve_t expected_curve = psa_bits_to_ecdsa_curve(PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)));
+    esp_ecdsa_curve_t expected_curve = esp_ecdsa_bits_to_curve(PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)));
 
     if (expected_curve == ESP_ECDSA_CURVE_MAX || expected_curve != opaque_key->curve) {
         return PSA_ERROR_INVALID_ARGUMENT;
@@ -775,7 +778,7 @@ static psa_status_t validate_storage_curve(const psa_key_attributes_t *attribute
         PSA_KEY_TYPE_ECC_GET_FAMILY(key_type) != PSA_ECC_FAMILY_SECP_R1) {
         return PSA_ERROR_NOT_SUPPORTED;
     }
-    esp_ecdsa_curve_t expected_curve = psa_bits_to_ecdsa_curve(PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)));
+    esp_ecdsa_curve_t expected_curve = esp_ecdsa_bits_to_curve(PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)));
     if (expected_curve == ESP_ECDSA_CURVE_MAX || expected_curve != stored_curve) {
         ESP_LOGE(TAG, "Invalid curve expected");
         return PSA_ERROR_INVALID_ARGUMENT;
@@ -941,7 +944,7 @@ psa_status_t esp_ecdsa_opaque_sign_hash_start(
         return status;
     }
 
-    status = validate_ecdsa_sha_alg(alg, curve);
+    status = esp_ecdsa_validate_sha_alg(alg, curve);
     if (status != PSA_SUCCESS) {
         return status;
     }
@@ -979,7 +982,7 @@ psa_status_t esp_ecdsa_opaque_sign_hash_start(
     } else
 #endif /* CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN */
     {
-        change_endianess(hash, operation->sha, component_len);
+        esp_ecdsa_change_endianness(hash, operation->sha, component_len);
     }
 
     operation->key_buffer = key_buffer;
@@ -1186,9 +1189,9 @@ psa_status_t esp_ecdsa_opaque_sign_hash_complete(
 #endif /* SOC_KEY_MANAGER_SUPPORTED */
 
         // Convert r from little-endian to big-endian and copy to output
-        change_endianess(operation->r, signature, component_len);
+        esp_ecdsa_change_endianness(operation->r, signature, component_len);
         // Convert s from little-endian to big-endian and copy to output
-        change_endianess(operation->s, signature + component_len, component_len);
+        esp_ecdsa_change_endianness(operation->s, signature + component_len, component_len);
 #else
         // This is an invalid operation as the hardware ECDSA signing is not supported on this chip
         // and still the key is opaque.
@@ -1403,10 +1406,10 @@ psa_status_t esp_ecdsa_opaque_export_public_key(
         data[0] = ECDSA_UNCOMPRESSED_POINT_FORMAT;
 
         // Convert qx from little-endian to big-endian and copy to output
-        change_endianess(qx, data + 1, key_len);
+        esp_ecdsa_change_endianness(qx, data + 1, key_len);
 
         // Convert qy from little-endian to big-endian and copy to output
-        change_endianess(qy, data + 1 + key_len, key_len);
+        esp_ecdsa_change_endianness(qy, data + 1 + key_len, key_len);
 #else
         // This is an invalid operation as the export public key is not supported on this chip
         // and still the key is opaque

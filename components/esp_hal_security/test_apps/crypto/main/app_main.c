@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -36,6 +36,13 @@ static void run_all_tests(void)
     RUN_TEST_GROUP(key_manager);
 #endif
 
+#if (CONFIG_SOC_ECDSA_SUPPORTED && CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS && CONFIG_CRYPTO_TEST_APP_ENABLE_ECDSA_TESTS) \
+    || CONFIG_SOC_ECDSA_SUPPORT_SOFTWARE_KEY
+    /* The eFuse-key test cases additionally need CONFIG_CRYPTO_TEST_APP_ENABLE_ECDSA_TESTS,
+     * see the gating inside the group runner; the software-key test cases need no eFuse */
+    RUN_TEST_GROUP(ecdsa)
+#endif
+
 #if CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS
 
 #if CONFIG_SOC_HMAC_SUPPORTED && CONFIG_CRYPTO_TEST_APP_ENABLE_HMAC_TESTS
@@ -44,10 +51,6 @@ static void run_all_tests(void)
 
 #if CONFIG_SOC_DIG_SIGN_SUPPORTED && CONFIG_CRYPTO_TEST_APP_ENABLE_DS_TESTS
     RUN_TEST_GROUP(ds);
-#endif
-
-#if CONFIG_SOC_ECDSA_SUPPORTED && CONFIG_CRYPTO_TEST_APP_ENABLE_ECDSA_TESTS
-    RUN_TEST_GROUP(ecdsa)
 #endif
 
 #if CONFIG_SOC_FLASH_ENCRYPTION_XTS_AES && CONFIG_CRYPTO_TEST_APP_ENABLE_XTS_AES_TESTS

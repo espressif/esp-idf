@@ -122,6 +122,15 @@ bool esp_efuse_is_ecdsa_p256_curve_supported(void)
     return true;
 #endif /* SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED */
 }
+
+bool esp_efuse_is_ecdsa_software_key_allowed(void)
+{
+#if SOC_ECDSA_SUPPORT_SOFTWARE_KEY
+    return !esp_efuse_read_field_bit(ESP_EFUSE_ECDSA_DISABLE_SOFT_K);
+#else
+    return false;
+#endif /* SOC_ECDSA_SUPPORT_SOFTWARE_KEY */
+}
 #endif /* SOC_ECDSA_SUPPORTED */
 
 #if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED

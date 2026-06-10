@@ -423,6 +423,7 @@
 #define SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP      (1)
 #define SOC_ECDSA_SUPPORT_CURVE_P384                 (1)
 #define SOC_ECDSA_SUPPORT_CURVE_SPECIFIC_KEY_PURPOSES (1)  /*!< Support individual key purposes for different ECDSA curves (P192, P256, P384) */
+#define SOC_ECDSA_SUPPORT_SOFTWARE_KEY               (1)  /*!< Support software supplied private key written into the ECDSA key registers */
 
 /*-------------------------- Digital Signature CAPS ----------------------------------------*/
 #define SOC_DS_SIGNATURE_MAX_BIT_LEN    (4096)

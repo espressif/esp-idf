@@ -254,13 +254,13 @@ static void key_mgr_test_xts_aes_256_random_mode(void)
 
 #if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
 #if SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
-extern void test_ecdsa_export_pubkey(ecdsa_curve_t curve, uint8_t *ecdsa_pub_x, uint8_t *ecdsa_pub_y, bool use_km_key);
-extern void test_ecdsa_export_pubkey_inner(ecdsa_curve_t curve, uint8_t *exported_pub_x, uint8_t *exported_pub_y, bool use_km_key, uint16_t *len);
+extern void test_ecdsa_export_pubkey(ecdsa_curve_t curve, uint8_t *ecdsa_pub_x, uint8_t *ecdsa_pub_y, bool use_km_key, const uint8_t *sw_key);
+extern void test_ecdsa_export_pubkey_inner(ecdsa_curve_t curve, uint8_t *exported_pub_x, uint8_t *exported_pub_y, bool use_km_key, const uint8_t *sw_key, uint16_t *len);
 #endif
 
-extern void test_ecdsa_sign(ecdsa_curve_t curve, uint8_t* sha, uint8_t* r_le, uint8_t* s_le, bool use_km_key, ecdsa_sign_type_t k_type);
+extern void test_ecdsa_sign(ecdsa_curve_t curve, uint8_t* sha, uint8_t* r_le, uint8_t* s_le, bool use_km_key, ecdsa_sign_type_t k_type, const uint8_t *sw_key);
 extern int test_ecdsa_verify(ecdsa_curve_t curve, uint8_t* sha, uint8_t* r_le, uint8_t* s_le, uint8_t *pub_x, uint8_t *pub_y);
-extern void test_ecdsa_sign_and_verify(ecdsa_curve_t curve, uint8_t* sha, uint8_t* pub_x, uint8_t* pub_y, bool use_km_key, ecdsa_sign_type_t k_type);
+extern void test_ecdsa_sign_and_verify(ecdsa_curve_t curve, uint8_t* sha, uint8_t* pub_x, uint8_t* pub_y, bool use_km_key, ecdsa_sign_type_t k_type, const uint8_t *sw_key);
 
 /*
 const uint8_t message[32] = { 0xDF, 0xDE, 0xD7, 0x4A, 0x47, 0xB1, 0x4F, 0x73, 0x00, 0x21, 0x62, 0xC7, 0x66, 0x6D, 0xA3, 0x95, 0x66, 0x19, 0x62, 0x7F, 0x71, 0x7B, 0x3C, 0x66, 0x82, 0xD3, 0x9F, 0x71, 0xAC, 0x9C, 0xC3, 0x39 };
@@ -270,9 +270,9 @@ uint8_t sha_digest[48] = { 0xF0, 0x94, 0xC4, 0x4A, 0xF0, 0xEE, 0x68, 0xDB, 0x5B,
 
 void test_ecdsa_key_aes_mode(ecdsa_curve_t curve, uint8_t *sha_digest, uint8_t *pub_x, uint8_t *pub_y, ecdsa_sign_type_t k_type)
 {
-    test_ecdsa_sign_and_verify(curve, sha_digest, pub_x, pub_y, 1, k_type);
+    test_ecdsa_sign_and_verify(curve, sha_digest, pub_x, pub_y, 1, k_type, NULL);
 #ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
-    test_ecdsa_export_pubkey(curve, pub_x, pub_y, 1);
+    test_ecdsa_export_pubkey(curve, pub_x, pub_y, 1, NULL);
 #endif
 }
 
@@ -307,7 +307,7 @@ void key_mgr_test_ecdsa_key(esp_key_mgr_key_len_t key_len, ecdsa_sign_type_t k_t
         return;
     }
 
-    test_ecdsa_sign(curve, sha_digest, r_le, s_le, 1, k_type);
+    test_ecdsa_sign(curve, sha_digest, r_le, s_le, 1, k_type, NULL);
 
     ESP_LOG_BUFFER_HEXDUMP("ECDSA message digest", sha_digest, sha_digest_len, ESP_LOG_DEBUG);
     ESP_LOG_BUFFER_HEXDUMP("ECDSA signature r_le", r_le, sizeof(r_le), ESP_LOG_DEBUG);
@@ -315,7 +315,7 @@ void key_mgr_test_ecdsa_key(esp_key_mgr_key_len_t key_len, ecdsa_sign_type_t k_t
 
     // Export the pubkey from ECDSA peripheral
     uint16_t pubkey_len = 0;
-    test_ecdsa_export_pubkey_inner(curve, pub_x, pub_y, 1, &pubkey_len);
+    test_ecdsa_export_pubkey_inner(curve, pub_x, pub_y, 1, NULL, &pubkey_len);
 
     ESP_LOG_BUFFER_HEXDUMP("ECDSA key pubx", pub_x, pubkey_len, ESP_LOG_DEBUG);
     ESP_LOG_BUFFER_HEXDUMP("ECDSA key puby", pub_y, pubkey_len, ESP_LOG_DEBUG);
@@ -407,11 +407,11 @@ static void key_mgr_test_ecdsa_key_ecdh0_mode(esp_key_mgr_key_len_t key_len)
     if (key_len == ESP_KEY_MGR_ECDSA_LEN_256) {
         uint8_t pub_x_le[32], pub_y_le[32];
         km_verify_ecdsa_pubkey_from_scalar(P256_LEN, x_be_stage0, 32, pub_x_le, pub_y_le);
-        test_ecdsa_export_pubkey(ECDSA_CURVE_SECP256R1, pub_x_le, pub_y_le, 1);
+        test_ecdsa_export_pubkey(ECDSA_CURVE_SECP256R1, pub_x_le, pub_y_le, 1, NULL);
     } else if (key_len == ESP_KEY_MGR_ECDSA_LEN_192) {
         uint8_t pub_x_le[24], pub_y_le[24];
         km_verify_ecdsa_pubkey_from_scalar(P192_LEN, x_be_stage0 + 8, 24, pub_x_le, pub_y_le);
-        test_ecdsa_export_pubkey(ECDSA_CURVE_SECP192R1, pub_x_le, pub_y_le, 1);
+        test_ecdsa_export_pubkey(ECDSA_CURVE_SECP192R1, pub_x_le, pub_y_le, 1, NULL);
     }
 #if SOC_ECDSA_SUPPORT_CURVE_P384
     else if (key_len == ESP_KEY_MGR_ECDSA_LEN_384) {
@@ -423,7 +423,7 @@ static void key_mgr_test_ecdsa_key_ecdh0_mode(esp_key_mgr_key_len_t key_len)
         memcpy(scalar_be + 16, x_be_stage1, 32);
         uint8_t pub_x_le[48], pub_y_le[48];
         km_verify_ecdsa_pubkey_from_scalar(P384_LEN, scalar_be, 48, pub_x_le, pub_y_le);
-        test_ecdsa_export_pubkey(ECDSA_CURVE_SECP384R1, pub_x_le, pub_y_le, 1);
+        test_ecdsa_export_pubkey(ECDSA_CURVE_SECP384R1, pub_x_le, pub_y_le, 1, NULL);
     }
 #endif
 #endif /* SOC_ECDSA_SUPPORT_EXPORT_PUBKEY */

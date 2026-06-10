@@ -11,6 +11,7 @@
 #include "esp_crypto_lock.h"
 #include "esp_efuse_chip.h"
 #include "esp_crypto_periph_clk.h"
+#include "esp_private/esp_crypto_lock_internal.h"
 #include "esp_random.h"
 #include "esp_err.h"
 #include "esp_efuse.h"
@@ -143,7 +144,7 @@ static void test_ecdsa_corrupt_data(ecdsa_curve_t curve, uint8_t* sha, uint8_t* 
     pub_y[r_bit / 8] ^= 1 << (r_bit % 8);
 }
 
-void test_ecdsa_sign(ecdsa_curve_t curve, uint8_t* sha, uint8_t* r_le, uint8_t* s_le, bool use_km_key, ecdsa_sign_type_t k_type)
+void test_ecdsa_sign(ecdsa_curve_t curve, uint8_t* sha, uint8_t* r_le, uint8_t* s_le, bool use_km_key, ecdsa_sign_type_t k_type, const uint8_t *sw_key)
 {
     uint8_t sha_le[48] = {0};
     uint8_t zeroes[48] = {0};
@@ -159,6 +160,14 @@ void test_ecdsa_sign(ecdsa_curve_t curve, uint8_t* sha, uint8_t* r_le, uint8_t* 
         .use_km_key = use_km_key,
         .sign_type = k_type,
     };
+
+#if SOC_ECDSA_SUPPORT_SOFTWARE_KEY
+    if (sw_key) {
+        conf.use_sw_key = true;
+        conf.sw_key = sw_key;
+    }
+#endif /* SOC_ECDSA_SUPPORT_SOFTWARE_KEY */
+
     switch (curve) {
     case ECDSA_CURVE_SECP192R1:
         conf.curve = ECDSA_CURVE_SECP192R1;
@@ -219,22 +228,29 @@ void test_ecdsa_sign(ecdsa_curve_t curve, uint8_t* sha, uint8_t* r_le, uint8_t* 
     ecdsa_disable();
 }
 
-void test_ecdsa_sign_and_verify(ecdsa_curve_t curve, uint8_t* sha, uint8_t* pub_x, uint8_t* pub_y, bool use_km_key, ecdsa_sign_type_t k_type)
+void test_ecdsa_sign_and_verify(ecdsa_curve_t curve, uint8_t* sha, uint8_t* pub_x, uint8_t* pub_y, bool use_km_key, ecdsa_sign_type_t k_type, const uint8_t *sw_key)
 {
     uint8_t r_le[48] = {0};
     uint8_t s_le[48] = {0};
-    test_ecdsa_sign(curve, sha, r_le, s_le, use_km_key, k_type);
+    test_ecdsa_sign(curve, sha, r_le, s_le, use_km_key, k_type, sw_key);
     TEST_ASSERT_EQUAL(0, test_ecdsa_verify(curve, sha, r_le, s_le, pub_x, pub_y));
 }
 
 #ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
-void test_ecdsa_export_pubkey_inner(ecdsa_curve_t curve, uint8_t *exported_pub_x, uint8_t *exported_pub_y, bool use_km_key, uint16_t *len)
+void test_ecdsa_export_pubkey_inner(ecdsa_curve_t curve, uint8_t *exported_pub_x, uint8_t *exported_pub_y, bool use_km_key, const uint8_t *sw_key, uint16_t *len)
 {
     uint8_t zeroes[48] = {0};
     ecdsa_hal_config_t conf = {
         .mode = ECDSA_MODE_EXPORT_PUBKEY,
         .use_km_key = use_km_key,
     };
+
+#if SOC_ECDSA_SUPPORT_SOFTWARE_KEY
+    if (sw_key) {
+        conf.use_sw_key = true;
+        conf.sw_key = sw_key;
+    }
+#endif /* SOC_ECDSA_SUPPORT_SOFTWARE_KEY */
 
     switch (curve) {
     case ECDSA_CURVE_SECP192R1:
@@ -279,12 +295,12 @@ void test_ecdsa_export_pubkey_inner(ecdsa_curve_t curve, uint8_t *exported_pub_x
 
     ecdsa_disable();
 }
-void test_ecdsa_export_pubkey(ecdsa_curve_t curve, uint8_t *ecdsa_pub_x, uint8_t *ecdsa_pub_y, bool use_km_key)
+void test_ecdsa_export_pubkey(ecdsa_curve_t curve, uint8_t *ecdsa_pub_x, uint8_t *ecdsa_pub_y, bool use_km_key, const uint8_t *sw_key)
 {
     uint8_t pub_x[48] = {0};
     uint8_t pub_y[48] = {0};
     uint16_t len;
-    test_ecdsa_export_pubkey_inner(curve, pub_x, pub_y, use_km_key, &len);
+    test_ecdsa_export_pubkey_inner(curve, pub_x, pub_y, use_km_key, sw_key, &len);
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(ecdsa_pub_x, pub_x, len);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(ecdsa_pub_y, pub_y, len);
@@ -321,7 +337,7 @@ TEST(ecdsa, ecdsa_SECP192R1_sign_and_verify)
     } else if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
     } else {
-        test_ecdsa_sign_and_verify(ECDSA_CURVE_SECP192R1, sha, ecdsa192_pub_x, ecdsa192_pub_y, false, ECDSA_K_TYPE_TRNG);
+        test_ecdsa_sign_and_verify(ECDSA_CURVE_SECP192R1, sha, ecdsa192_pub_x, ecdsa192_pub_y, false, ECDSA_K_TYPE_TRNG, NULL);
     }
 }
 
@@ -346,7 +362,7 @@ TEST(ecdsa, ecdsa_SECP256R1_sign_and_verify)
     if (!ecdsa_ll_is_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA is not supported.");
     } else {
-        test_ecdsa_sign_and_verify(ECDSA_CURVE_SECP256R1, sha, ecdsa256_pub_x, ecdsa256_pub_y, false, ECDSA_K_TYPE_TRNG);
+        test_ecdsa_sign_and_verify(ECDSA_CURVE_SECP256R1, sha, ecdsa256_pub_x, ecdsa256_pub_y, false, ECDSA_K_TYPE_TRNG, NULL);
     }
 }
 
@@ -369,7 +385,7 @@ TEST(ecdsa, ecdsa_SECP192R1_det_sign_and_verify)
     } else if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
     } else {
-        test_ecdsa_sign_and_verify(ECDSA_CURVE_SECP192R1, sha, ecdsa192_pub_x, ecdsa192_pub_y, false, ECDSA_K_TYPE_DETERMINISITIC);
+        test_ecdsa_sign_and_verify(ECDSA_CURVE_SECP192R1, sha, ecdsa192_pub_x, ecdsa192_pub_y, false, ECDSA_K_TYPE_DETERMINISITIC, NULL);
     }
 }
 
@@ -380,7 +396,7 @@ TEST(ecdsa, ecdsa_SECP256R1_det_sign_and_verify)
     } else if (!ecdsa_ll_is_deterministic_mode_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA deterministic mode is not supported.");
     } else {
-        test_ecdsa_sign_and_verify(ECDSA_CURVE_SECP256R1, sha, ecdsa256_pub_x, ecdsa256_pub_y, false, ECDSA_K_TYPE_DETERMINISITIC);
+        test_ecdsa_sign_and_verify(ECDSA_CURVE_SECP256R1, sha, ecdsa256_pub_x, ecdsa256_pub_y, false, ECDSA_K_TYPE_DETERMINISITIC, NULL);
     }
 }
 #endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
@@ -393,7 +409,7 @@ TEST(ecdsa, ecdsa_SECP192R1_export_pubkey)
     } else if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
     } else {
-        test_ecdsa_export_pubkey(ECDSA_CURVE_SECP192R1, ecdsa192_pub_x, ecdsa192_pub_y, 0);
+        test_ecdsa_export_pubkey(ECDSA_CURVE_SECP192R1, ecdsa192_pub_x, ecdsa192_pub_y, 0, NULL);
     }
 }
 
@@ -402,7 +418,7 @@ TEST(ecdsa, ecdsa_SECP256R1_export_pubkey)
     if (!ecdsa_ll_is_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA is not supported.");
     } else {
-        test_ecdsa_export_pubkey(ECDSA_CURVE_SECP256R1, ecdsa256_pub_x, ecdsa256_pub_y, 0);
+        test_ecdsa_export_pubkey(ECDSA_CURVE_SECP256R1, ecdsa256_pub_x, ecdsa256_pub_y, 0, NULL);
     }
 }
 #endif /* SOC_ECDSA_SUPPORT_EXPORT_PUBKEY */
@@ -422,7 +438,7 @@ TEST(ecdsa, ecdsa_SECP384R1_sign_and_verify)
     if (!ecdsa_ll_is_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA is not supported.");
     } else {
-        test_ecdsa_sign_and_verify(ECDSA_CURVE_SECP384R1, sha, ecdsa384_pub_x, ecdsa384_pub_y, false, ECDSA_K_TYPE_TRNG);
+        test_ecdsa_sign_and_verify(ECDSA_CURVE_SECP384R1, sha, ecdsa384_pub_x, ecdsa384_pub_y, false, ECDSA_K_TYPE_TRNG, NULL);
     }
 }
 
@@ -443,7 +459,7 @@ TEST(ecdsa, ecdsa_SECP384R1_det_sign_and_verify)
     } else if (!ecdsa_ll_is_deterministic_mode_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA deterministic mode is not supported.");
     } else {
-        test_ecdsa_sign_and_verify(ECDSA_CURVE_SECP384R1, sha, ecdsa384_pub_x, ecdsa384_pub_y, false, ECDSA_K_TYPE_DETERMINISITIC);
+        test_ecdsa_sign_and_verify(ECDSA_CURVE_SECP384R1, sha, ecdsa384_pub_x, ecdsa384_pub_y, false, ECDSA_K_TYPE_DETERMINISITIC, NULL);
     }
 }
 #endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
@@ -454,14 +470,89 @@ TEST(ecdsa, ecdsa_SECP384R1_export_pubkey)
     if (!ecdsa_ll_is_supported()) {
         ESP_LOGI(TAG, "Skipping test because ECDSA is not supported.");
     } else {
-        test_ecdsa_export_pubkey(ECDSA_CURVE_SECP384R1, ecdsa384_pub_x, ecdsa384_pub_y, 0);
+        test_ecdsa_export_pubkey(ECDSA_CURVE_SECP384R1, ecdsa384_pub_x, ecdsa384_pub_y, 0, NULL);
     }
 }
 #endif /* SOC_ECDSA_SUPPORT_EXPORT_PUBKEY */
 #endif /* SOC_ECDSA_SUPPORT_CURVE_P384 */
 
+#if SOC_ECDSA_SUPPORT_SOFTWARE_KEY
+/* Software-key test cases do not need any key burnt in eFuse, so they are kept
+ * in a separate test group that runs without CONFIG_CRYPTO_TEST_APP_ENABLE_ECDSA_TESTS */
+
+static void test_ecdsa_sw_key_on_curve(ecdsa_curve_t curve, uint8_t *pub_x, uint8_t *pub_y, const uint8_t *priv)
+{
+    test_ecdsa_sign_and_verify(curve, sha, pub_x, pub_y, false, ECDSA_K_TYPE_TRNG, priv);
+#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+    test_ecdsa_sign_and_verify(curve, sha, pub_x, pub_y, false, ECDSA_K_TYPE_DETERMINISITIC, priv);
+#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
+#ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
+    test_ecdsa_export_pubkey(curve, pub_x, pub_y, 0, priv);
+#endif /* SOC_ECDSA_SUPPORT_EXPORT_PUBKEY */
+}
+
+TEST(ecdsa, sw_key_SECP192R1_operations)
+{
+    if (!esp_efuse_is_ecdsa_software_key_allowed()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA software key is disabled by eFuse.");
+    } else if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
+    } else {
+        test_ecdsa_sw_key_on_curve(ECDSA_CURVE_SECP192R1, ecdsa192_pub_x, ecdsa192_pub_y, ecdsa192_priv);
+    }
+}
+
+TEST(ecdsa, sw_key_SECP256R1_operations)
+{
+    if (!esp_efuse_is_ecdsa_software_key_allowed()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA software key is disabled by eFuse.");
+    } else {
+        test_ecdsa_sw_key_on_curve(ECDSA_CURVE_SECP256R1, ecdsa256_pub_x, ecdsa256_pub_y, ecdsa256_priv);
+    }
+}
+
+#ifdef SOC_ECDSA_SUPPORT_CURVE_P384
+TEST(ecdsa, sw_key_SECP384R1_operations)
+{
+    if (!esp_efuse_is_ecdsa_software_key_allowed()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA software key is disabled by eFuse.");
+    } else {
+        test_ecdsa_sw_key_on_curve(ECDSA_CURVE_SECP384R1, ecdsa384_pub_x, ecdsa384_pub_y, ecdsa384_priv);
+    }
+}
+#endif /* SOC_ECDSA_SUPPORT_CURVE_P384 */
+
+TEST(ecdsa, sw_key_registers_cleared_after_use)
+{
+    if (!esp_efuse_is_ecdsa_software_key_allowed()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA software key is disabled by eFuse.");
+        return;
+    }
+
+    uint8_t r_le[48] = {0};
+    uint8_t s_le[48] = {0};
+    test_ecdsa_sign(ECDSA_CURVE_SECP256R1, sha, r_le, s_le, false, ECDSA_K_TYPE_DETERMINISITIC, ecdsa256_priv);
+
+    /* Releasing the peripheral must have scrubbed the key registers.
+     * Re-enable only the bus clock (without the reset that a regular acquire
+     * performs) so that any leftover key material would still be visible. */
+    ECDSA_RCC_ATOMIC() {
+        ecdsa_ll_enable_bus_clock(true);
+    }
+    for (uint16_t i = 0; i < ECDSA_LL_KEY_REG_BYTES; i += 4) {
+        TEST_ASSERT_EQUAL_HEX32(0, REG_READ(ECDSA_KEY_0_REG + i));
+    }
+    ECDSA_RCC_ATOMIC() {
+        ecdsa_ll_enable_bus_clock(false);
+    }
+}
+#endif /* SOC_ECDSA_SUPPORT_SOFTWARE_KEY */
+
 TEST_GROUP_RUNNER(ecdsa)
 {
+    /* The following test cases need keys provisioned in eFuse,
+     * see CONFIG_CRYPTO_TEST_APP_ENABLE_ECDSA_TESTS */
+#if CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS && CONFIG_CRYPTO_TEST_APP_ENABLE_ECDSA_TESTS
     /* SECP192R1 test cases */
     RUN_TEST_CASE(ecdsa, ecdsa_SECP192R1_signature_verification)
     RUN_TEST_CASE(ecdsa, ecdsa_SECP192R1_sign_and_verify)
@@ -496,4 +587,15 @@ TEST_GROUP_RUNNER(ecdsa)
     RUN_TEST_CASE(ecdsa, ecdsa_SECP384R1_export_pubkey)
 #endif /* SOC_ECDSA_SUPPORT_EXPORT_PUBKEY */
 #endif /* SOC_ECDSA_SUPPORT_CURVE_P384 */
+#endif /* CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS && CONFIG_CRYPTO_TEST_APP_ENABLE_ECDSA_TESTS */
+
+#if SOC_ECDSA_SUPPORT_SOFTWARE_KEY
+    /* Software-key test cases need no key provisioned in eFuse */
+    RUN_TEST_CASE(ecdsa, sw_key_SECP192R1_operations)
+    RUN_TEST_CASE(ecdsa, sw_key_SECP256R1_operations)
+#ifdef SOC_ECDSA_SUPPORT_CURVE_P384
+    RUN_TEST_CASE(ecdsa, sw_key_SECP384R1_operations)
+#endif /* SOC_ECDSA_SUPPORT_CURVE_P384 */
+    RUN_TEST_CASE(ecdsa, sw_key_registers_cleared_after_use)
+#endif /* SOC_ECDSA_SUPPORT_SOFTWARE_KEY */
 }

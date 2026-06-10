@@ -80,6 +80,20 @@ typedef struct {
     size_t key_len;
     bool is_persistent;                 /**< Cached persistence flag for use in complete */
 } esp_ecdsa_opaque_sign_hash_operation_t;
+
+#if defined(ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED)
+/* The buffers are stored in the little-endian format */
+typedef struct {
+    psa_algorithm_t alg;
+    esp_ecdsa_curve_t curve;
+    uint8_t key[MAX_ECDSA_COMPONENT_LEN];   /**< Plaintext private key copy, zeroized by the abort function */
+    uint8_t r[MAX_ECDSA_COMPONENT_LEN];     /**< Must be 4-byte aligned for ECDSA HAL MMIO reads */
+    uint8_t s[MAX_ECDSA_COMPONENT_LEN];
+    uint8_t sha[MAX_ECDSA_SHA_LEN];
+    size_t sha_len;
+    size_t key_len;
+} esp_ecdsa_transparent_sign_hash_operation_t;
+#endif /* ESP_ECDSA_TRANSPARENT_SIGN_DRIVER_ENABLED */
 #endif /* !(__DOXYGEN__) */
 #endif /* ESP_ECDSA_DRIVER_ENABLED */
 #ifdef __cplusplus
