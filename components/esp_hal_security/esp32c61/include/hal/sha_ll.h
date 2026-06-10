@@ -32,9 +32,7 @@ static inline void sha_ll_reset_register(void)
     PCR.sha_conf.sha_rst_en = 1;
     PCR.sha_conf.sha_rst_en = 0;
 
-    // Clear reset on digital signature, hmac and ecdsa also, otherwise SHA is held in reset
-    PCR.ds_conf.ds_rst_en = 0;
-    PCR.hmac_conf.hmac_rst_en = 0;
+    // Clear reset on ecdsa also, otherwise SHA is held in reset
     PCR.ecdsa_conf.ecdsa_rst_en = 0;
 }
 
