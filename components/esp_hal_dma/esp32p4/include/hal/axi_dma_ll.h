@@ -22,14 +22,16 @@ extern "C" {
 #endif
 
 #define AXI_DMA_LL_GET_HW(id) (((id) == 0) ? (&AXI_DMA) : NULL)
+#define AXI_DMA_LL_SUPPORT(_feat) AXI_DMA_LL_SUPPORT_ ## _feat
 
 // any "dummy" peripheral ID can be used for M2M mode
 #define AXI_DMA_LL_M2M_FREE_PERIPH_ID_MASK (0xFFC0)
 #define AXI_DMA_LL_RX_EVENT_MASK (0x1F)
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
-#define AXI_DMA_LL_SUPPORT_TX_LINK_SWITCH_EVENT 1
+#define AXI_DMA_LL_SUPPORT_TX_LINK_SWITCH 1
 #define AXI_DMA_LL_TX_EVENT_MASK (0x40F)
 #else
+#define AXI_DMA_LL_SUPPORT_TX_LINK_SWITCH 0
 #define AXI_DMA_LL_TX_EVENT_MASK (0x0F)
 #endif
 
@@ -484,7 +486,7 @@ static inline void axi_dma_ll_tx_restart(axi_dma_dev_t *dev, uint32_t channel)
     dev->out[channel].conf.out_link1.outlink_restart_chn = 1;
 }
 
-#if AXI_DMA_LL_SUPPORT_TX_LINK_SWITCH_EVENT
+#if AXI_DMA_LL_SUPPORT(TX_LINK_SWITCH)
 /**
  * @brief Request link switch done indication for TX channel
  */
@@ -513,7 +515,7 @@ __attribute__((always_inline))
 static inline bool axi_dma_ll_tx_is_link_switch_event_supported(axi_dma_dev_t *dev)
 {
     (void)dev;
-#if AXI_DMA_LL_SUPPORT_TX_LINK_SWITCH_EVENT
+#if AXI_DMA_LL_SUPPORT(TX_LINK_SWITCH)
     return true;
 #else
     return false;
