@@ -1,0 +1,5 @@
+CONFIG_IDF_TARGET="esp32c2"
+
+# ESP32-C2 has no RSA based Secure Boot V2 support, so use the ECDSA scheme.
+CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME=y
+CONFIG_SECURE_BOOT_SIGNING_KEY="test/secure_boot_signing_key_ecdsa.pem"
