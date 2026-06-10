@@ -67,10 +67,10 @@ extern void btm_ble_test_command_complete(UINT8 *p, UINT16 len);
 /*              L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /********************************************************************************/
 #if (CLASSIC_BT_INCLUDED == TRUE)
-static void btu_hcif_inquiry_comp_evt (UINT8 *p);
-static void btu_hcif_inquiry_result_evt (UINT8 *p);
-static void btu_hcif_inquiry_rssi_result_evt (UINT8 *p);
-static void btu_hcif_extended_inquiry_result_evt (UINT8 *p);
+static void btu_hcif_inquiry_comp_evt (UINT8 *p, UINT16 evt_len);
+static void btu_hcif_inquiry_result_evt (UINT8 *p, UINT16 evt_len);
+static void btu_hcif_inquiry_rssi_result_evt (UINT8 *p, UINT16 evt_len);
+static void btu_hcif_extended_inquiry_result_evt (UINT8 *p, UINT16 evt_len);
 
 static void btu_hcif_connection_comp_evt (UINT8 *p);
 static void btu_hcif_connection_request_evt (UINT8 *p);
@@ -89,7 +89,7 @@ static void btu_hcif_encryption_change_evt (UINT8 *p);
 static void btu_hcif_read_rmt_features_comp_evt (UINT8 *p);
 static void btu_hcif_read_rmt_ext_features_comp_evt (UINT8 *p);
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
-static void btu_hcif_read_rmt_version_comp_evt (UINT8 *p);
+static void btu_hcif_read_rmt_version_comp_evt (UINT8 *p, UINT16 evt_len);
 #if (CLASSIC_BT_INCLUDED == TRUE)
 static void btu_hcif_qos_setup_comp_evt (UINT8 *p);
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
@@ -134,9 +134,9 @@ static void btu_hcif_io_cap_request_evt (UINT8 *p);
 static void btu_hcif_io_cap_response_evt (UINT8 *p);
 static void btu_hcif_user_conf_request_evt (UINT8 *p);
 static void btu_hcif_user_passkey_request_evt (UINT8 *p);
-static void btu_hcif_simple_pair_complete_evt (UINT8 *p);
+static void btu_hcif_simple_pair_complete_evt (UINT8 *p, UINT16 evt_len);
 static void btu_hcif_user_passkey_notif_evt (UINT8 *p);
-static void btu_hcif_keypress_notif_evt (UINT8 *p);
+static void btu_hcif_keypress_notif_evt (UINT8 *p, UINT16 evt_len);
 #endif  /* (CLASSIC_BT_INCLUDED == TRUE) */
 #if BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE
 static void btu_hcif_rem_oob_request_evt (UINT8 *p);
@@ -305,16 +305,16 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
     switch (hci_evt_code) {
 #if (CLASSIC_BT_INCLUDED == TRUE)
     case HCI_INQUIRY_COMP_EVT:
-        btu_hcif_inquiry_comp_evt (p);
+        btu_hcif_inquiry_comp_evt (p, hci_evt_len);
         break;
     case HCI_INQUIRY_RESULT_EVT:
-        btu_hcif_inquiry_result_evt (p);
+        btu_hcif_inquiry_result_evt (p, hci_evt_len);
         break;
     case HCI_INQUIRY_RSSI_RESULT_EVT:
-        btu_hcif_inquiry_rssi_result_evt (p);
+        btu_hcif_inquiry_rssi_result_evt (p, hci_evt_len);
         break;
     case HCI_EXTENDED_INQUIRY_RESULT_EVT:
-        btu_hcif_extended_inquiry_result_evt (p);
+        btu_hcif_extended_inquiry_result_evt (p, hci_evt_len);
         break;
     case HCI_CONNECTION_COMP_EVT:
         btu_hcif_connection_comp_evt (p);
@@ -357,7 +357,7 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
         break;
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     case HCI_READ_RMT_VERSION_COMP_EVT:
-        btu_hcif_read_rmt_version_comp_evt (p);
+        btu_hcif_read_rmt_version_comp_evt (p, hci_evt_len);
         break;
 #if (CLASSIC_BT_INCLUDED == TRUE)
     case HCI_QOS_SETUP_COMP_EVT:
@@ -461,13 +461,13 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
 #endif
 #if (CLASSIC_BT_INCLUDED == TRUE)
     case HCI_SIMPLE_PAIRING_COMPLETE_EVT:
-        btu_hcif_simple_pair_complete_evt (p);
+        btu_hcif_simple_pair_complete_evt (p, hci_evt_len);
         break;
     case HCI_USER_PASSKEY_NOTIFY_EVT:
         btu_hcif_user_passkey_notif_evt (p);
         break;
     case HCI_KEYPRESS_NOTIFY_EVT:
-        btu_hcif_keypress_notif_evt (p);
+        btu_hcif_keypress_notif_evt (p, hci_evt_len);
         break;
     case HCI_LINK_SUPER_TOUT_CHANGED_EVT:
         btu_hcif_link_supv_to_changed_evt (p);
@@ -842,11 +842,13 @@ void btu_hcif_send_host_rdy_for_data(void)
 ** Returns          void
 **
 *******************************************************************************/
-static void btu_hcif_inquiry_comp_evt (UINT8 *p)
+static void btu_hcif_inquiry_comp_evt (UINT8 *p, UINT16 evt_len)
 {
-    UINT8   status;
+    UINT8 status = HCI_ERR_HW_FAILURE;
 
-    STREAM_TO_UINT8    (status, p);
+    if (evt_len >= 1) {
+        STREAM_TO_UINT8 (status, p);
+    }
 
     /* Tell inquiry processing that we are done */
     btm_process_inq_complete(status, BTM_BR_INQUIRY_MASK);
@@ -862,10 +864,10 @@ static void btu_hcif_inquiry_comp_evt (UINT8 *p)
 ** Returns          void
 **
 *******************************************************************************/
-static void btu_hcif_inquiry_result_evt (UINT8 *p)
+static void btu_hcif_inquiry_result_evt (UINT8 *p, UINT16 evt_len)
 {
     /* Store results in the cache */
-    btm_process_inq_results (p, BTM_INQ_RESULT_STANDARD);
+    btm_process_inq_results (p, evt_len, BTM_INQ_RESULT_STANDARD);
 }
 
 /*******************************************************************************
@@ -877,10 +879,10 @@ static void btu_hcif_inquiry_result_evt (UINT8 *p)
 ** Returns          void
 **
 *******************************************************************************/
-static void btu_hcif_inquiry_rssi_result_evt (UINT8 *p)
+static void btu_hcif_inquiry_rssi_result_evt (UINT8 *p, UINT16 evt_len)
 {
     /* Store results in the cache */
-    btm_process_inq_results (p, BTM_INQ_RESULT_WITH_RSSI);
+    btm_process_inq_results (p, evt_len, BTM_INQ_RESULT_WITH_RSSI);
 }
 
 /*******************************************************************************
@@ -892,10 +894,10 @@ static void btu_hcif_inquiry_rssi_result_evt (UINT8 *p)
 ** Returns          void
 **
 *******************************************************************************/
-static void btu_hcif_extended_inquiry_result_evt (UINT8 *p)
+static void btu_hcif_extended_inquiry_result_evt (UINT8 *p, UINT16 evt_len)
 {
     /* Store results in the cache */
-    btm_process_inq_results (p, BTM_INQ_RESULT_EXTENDED);
+    btm_process_inq_results (p, evt_len, BTM_INQ_RESULT_EXTENDED);
 }
 
 /*******************************************************************************
@@ -1097,7 +1099,6 @@ static void btu_hcif_rmt_name_request_comp_evt (UINT8 *p, UINT16 evt_len)
 
     STREAM_TO_UINT8 (status, p);
     STREAM_TO_BDADDR (bd_addr, p);
-
     evt_len -= (1 + BD_ADDR_LEN);
 
     btm_process_remote_name (bd_addr, p, evt_len, status);
@@ -1182,9 +1183,9 @@ static void btu_hcif_read_rmt_ext_features_comp_evt (UINT8 *p)
 ** Returns          void
 **
 *******************************************************************************/
-static void btu_hcif_read_rmt_version_comp_evt (UINT8 *p)
+static void btu_hcif_read_rmt_version_comp_evt (UINT8 *p, UINT16 evt_len)
 {
-    btm_read_remote_version_complete (p);
+    btm_read_remote_version_complete (p, evt_len);
 }
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
@@ -1346,10 +1347,10 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
     case HCI_READ_INQ_TX_POWER_LEVEL:
-        btm_read_iscan_tx_power_complete (p);
+        btm_read_iscan_tx_power_complete (p, evt_len);
         break;
     case HCI_WRITE_INQ_TX_POWER_LEVEL:
-        btm_write_inq_tx_power_complete(p);
+        btm_write_inq_tx_power_complete(p, evt_len);
         break;
     case HCI_SET_AFH_CHANNELS:
         btm_set_afh_channels_complete(p);
@@ -2438,9 +2439,9 @@ static void btu_hcif_user_passkey_request_evt (UINT8 *p)
 ** Returns          void
 **
 *******************************************************************************/
-static void btu_hcif_simple_pair_complete_evt (UINT8 *p)
+static void btu_hcif_simple_pair_complete_evt (UINT8 *p, UINT16 evt_len)
 {
-    btm_simple_pair_complete(p);
+    btm_simple_pair_complete(p, evt_len);
 }
 
 /*******************************************************************************
@@ -2466,9 +2467,9 @@ static void btu_hcif_user_passkey_notif_evt (UINT8 *p)
 ** Returns          void
 **
 *******************************************************************************/
-static void btu_hcif_keypress_notif_evt (UINT8 *p)
+static void btu_hcif_keypress_notif_evt (UINT8 *p, UINT16 evt_len)
 {
-    btm_keypress_notif_evt(p);
+    btm_keypress_notif_evt(p, evt_len);
 }
 #endif /* (CLASSIC_BT_INCLUDED == TRUE) */
 
