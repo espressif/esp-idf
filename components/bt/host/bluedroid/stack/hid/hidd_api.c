@@ -103,6 +103,12 @@ void HID_DevDeinit(void)
  ******************************************************************************/
 uint8_t HID_DevSetTraceLevel(uint8_t new_level)
 {
+#if (HID_DYNAMIC_MEMORY)
+    if (!hidd_cb_ptr) {
+        return BT_TRACE_LEVEL_NONE;
+    }
+#endif /* #if (HID_DYNAMIC_MEMORY) */
+
     if (new_level != 0xFF) {
         hd_cb.trace_level = new_level;
     }
@@ -159,15 +165,20 @@ tHID_STATUS HID_DevDeregister(void)
 {
     HIDD_TRACE_API("%s", __func__);
 
-    if (!hd_cb.reg_flag)
+    if (!hd_cb.reg_flag) {
         return (HID_ERR_NOT_REGISTERED);
+    }
+    if (hd_cb.pending_data) {
+        osi_free(hd_cb.pending_data);
+        hd_cb.pending_data = NULL;
+    }
     hidd_conn_dereg();
     hd_cb.reg_flag = FALSE;
 
     return (HID_SUCCESS);
 }
 
-tHID_STATUS HID_DevSetSecurityLevel(uint8_t sec_lvl)
+tHID_STATUS HID_DevSetSecurityLevel(uint16_t sec_lvl)
 {
     HIDD_TRACE_API("%s", __func__);
     if (!BTM_SetSecurityLevel(FALSE, "", BTM_SEC_SERVICE_HIDD_SEC_CTRL, sec_lvl, HID_PSM_CONTROL, BTM_SEC_PROTO_HID,
@@ -203,6 +214,53 @@ tHID_STATUS HID_DevSetSecurityLevel(uint8_t sec_lvl)
     return (HID_SUCCESS);
 }
 
+#define HIDD_MAX_DESCRIPTOR_LEN 2048
+
+static size_t hidd_descriptor_list_buf_size(uint16_t desc_len)
+{
+    size_t text_elem_len = (desc_len <= 255) ? (2 + desc_len) : (3 + desc_len);
+    size_t inner_len = 2 + text_elem_len;
+
+    return inner_len + ((inner_len <= 255) ? 2 : 3);
+}
+
+static uint8_t *hidd_build_descriptor_list(uint16_t desc_len, uint8_t *p_desc_data, uint16_t *p_list_len)
+{
+    static uint8_t cdt = 0x22;
+    size_t text_elem_len = (desc_len <= 255) ? (2 + desc_len) : (3 + desc_len);
+    size_t inner_len = 2 + text_elem_len;
+    uint8_t *p_buf = (uint8_t *)osi_malloc(hidd_descriptor_list_buf_size(desc_len));
+    uint8_t *p;
+
+    if (p_buf == NULL) {
+        return NULL;
+    }
+
+    p = p_buf;
+    if (inner_len <= 255) {
+        UINT8_TO_BE_STREAM(p, (DATA_ELE_SEQ_DESC_TYPE << 3) | SIZE_IN_NEXT_BYTE);
+        UINT8_TO_BE_STREAM(p, (uint8_t)inner_len);
+    } else {
+        UINT8_TO_BE_STREAM(p, (DATA_ELE_SEQ_DESC_TYPE << 3) | SIZE_IN_NEXT_WORD);
+        UINT16_TO_BE_STREAM(p, (uint16_t)inner_len);
+    }
+
+    UINT8_TO_BE_STREAM(p, (UINT_DESC_TYPE << 3) | SIZE_ONE_BYTE);
+    UINT8_TO_BE_STREAM(p, cdt);
+
+    if (desc_len <= 255) {
+        UINT8_TO_BE_STREAM(p, (TEXT_STR_DESC_TYPE << 3) | SIZE_IN_NEXT_BYTE);
+        UINT8_TO_BE_STREAM(p, (uint8_t)desc_len);
+    } else {
+        UINT8_TO_BE_STREAM(p, (TEXT_STR_DESC_TYPE << 3) | SIZE_IN_NEXT_WORD);
+        UINT16_TO_BE_STREAM(p, desc_len);
+    }
+    ARRAY_TO_BE_STREAM(p, p_desc_data, (int)desc_len);
+
+    *p_list_len = (uint16_t)(p - p_buf);
+    return p_buf;
+}
+
 /*******************************************************************************
  *
  * Function         HID_DevAddRecord
@@ -218,6 +276,13 @@ tHID_STATUS HID_DevAddRecord(uint32_t handle, char *p_name, char *p_description,
     bool result = TRUE;
 
     HIDD_TRACE_API("%s", __func__);
+
+    if (desc_len > HIDD_MAX_DESCRIPTOR_LEN) {
+        return HID_ERR_INVALID_PARAM;
+    }
+    if (desc_len > 0 && p_desc_data == NULL) {
+        return HID_ERR_INVALID_PARAM;
+    }
 
     // Service Class ID List
     if (result) {
@@ -292,23 +357,16 @@ tHID_STATUS HID_DevAddRecord(uint32_t handle, char *p_name, char *p_description,
         result &= SDP_AddAttribute(handle, ATTR_ID_HID_VIRTUAL_CABLE, BOOLEAN_DESC_TYPE, 1, (uint8_t *)&bool_true);
         result &= SDP_AddAttribute(handle, ATTR_ID_HID_RECONNECT_INITIATE, BOOLEAN_DESC_TYPE, 1, (uint8_t *)&bool_true);
         {
-            static uint8_t cdt = 0x22;
             uint8_t *p_buf;
-            uint8_t seq_len = 4 + desc_len;
-            p_buf = (uint8_t *)osi_malloc(2048);
+            uint16_t list_len;
+
+            p_buf = hidd_build_descriptor_list(desc_len, p_desc_data, &list_len);
             if (p_buf == NULL) {
-                HIDD_TRACE_ERROR("%s: Buffer allocation failure for size = 2048 ", __func__);
-                return HID_ERR_NOT_REGISTERED;
+                HIDD_TRACE_ERROR("%s: Buffer allocation failure for descriptor list size = %u", __func__,
+                                 (unsigned)hidd_descriptor_list_buf_size(desc_len));
+                return HID_ERR_NO_RESOURCES;
             }
-            p = p_buf;
-            UINT8_TO_BE_STREAM(p, (DATA_ELE_SEQ_DESC_TYPE << 3) | SIZE_IN_NEXT_BYTE);
-            UINT8_TO_BE_STREAM(p, seq_len);
-            UINT8_TO_BE_STREAM(p, (UINT_DESC_TYPE << 3) | SIZE_ONE_BYTE);
-            UINT8_TO_BE_STREAM(p, cdt);
-            UINT8_TO_BE_STREAM(p, (TEXT_STR_DESC_TYPE << 3) | SIZE_IN_NEXT_BYTE);
-            UINT8_TO_BE_STREAM(p, desc_len);
-            ARRAY_TO_BE_STREAM(p, p_desc_data, (int)desc_len);
-            result &= SDP_AddAttribute(handle, ATTR_ID_HID_DESCRIPTOR_LIST, DATA_ELE_SEQ_DESC_TYPE, p - p_buf, p_buf);
+            result &= SDP_AddAttribute(handle, ATTR_ID_HID_DESCRIPTOR_LIST, DATA_ELE_SEQ_DESC_TYPE, list_len, p_buf);
             osi_free(p_buf);
         }
         {
@@ -416,6 +474,7 @@ tHID_STATUS HID_DevUnplugDevice(BD_ADDR addr)
 {
     if (!memcmp(hd_cb.device.addr, addr, sizeof(BD_ADDR))) {
         hd_cb.device.in_use = FALSE;
+        hd_cb.device.state = HIDD_DEV_NO_CONN;
         hd_cb.device.conn.conn_state = HID_CONN_STATE_UNUSED;
         hd_cb.device.conn.ctrl_cid = 0;
         hd_cb.device.conn.intr_cid = 0;
@@ -480,6 +539,12 @@ tHID_STATUS HID_DevDisconnect(void)
  ******************************************************************************/
 tHID_STATUS HID_DevSetIncomingPolicy(bool allow)
 {
+#if (HID_DYNAMIC_MEMORY)
+    if (!hidd_cb_ptr) {
+        return HID_ERR_NO_RESOURCES;
+    }
+#endif /* #if (HID_DYNAMIC_MEMORY) */
+
     hd_cb.allow_incoming = allow;
     return HID_SUCCESS;
 }
@@ -551,7 +616,14 @@ tHID_STATUS HID_DevGetDevice(BD_ADDR *addr)
 tHID_STATUS HID_DevSetIncomingQos(uint8_t service_type, uint32_t token_rate, uint32_t token_bucket_size,
                                   uint32_t peak_bandwidth, uint32_t latency, uint32_t delay_variation)
 {
+#if (HID_DYNAMIC_MEMORY)
+    if (!hidd_cb_ptr) {
+        return HID_ERR_NO_RESOURCES;
+    }
+#endif /* #if (HID_DYNAMIC_MEMORY) */
+
     HIDD_TRACE_API("%s", __func__);
+
     hd_cb.use_in_qos = TRUE;
     hd_cb.in_qos.service_type = service_type;
     hd_cb.in_qos.token_rate = token_rate;
@@ -573,7 +645,14 @@ tHID_STATUS HID_DevSetIncomingQos(uint8_t service_type, uint32_t token_rate, uin
 tHID_STATUS HID_DevSetOutgoingQos(uint8_t service_type, uint32_t token_rate, uint32_t token_bucket_size,
                                   uint32_t peak_bandwidth, uint32_t latency, uint32_t delay_variation)
 {
+#if (HID_DYNAMIC_MEMORY)
+    if (!hidd_cb_ptr) {
+        return HID_ERR_NO_RESOURCES;
+    }
+#endif /* #if (HID_DYNAMIC_MEMORY) */
+
     HIDD_TRACE_API("%s", __func__);
+
     hd_cb.l2cap_intr_cfg.qos_present = TRUE;
     hd_cb.l2cap_intr_cfg.qos.service_type = service_type;
     hd_cb.l2cap_intr_cfg.qos.token_rate = token_rate;

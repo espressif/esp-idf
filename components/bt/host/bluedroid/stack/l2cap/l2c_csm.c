@@ -50,7 +50,7 @@ static void l2c_csm_w4_l2cap_disconnect_rsp (tL2C_CCB *p_ccb, UINT16 event, void
 static void l2c_csm_w4_l2ca_disconnect_rsp (tL2C_CCB *p_ccb, UINT16 event, void *p_data);
 
 #if (BT_TRACE_VERBOSE == TRUE)
-static char *l2c_csm_get_event_name (UINT16 event);
+static const char *l2c_csm_get_event_name (UINT16 event);
 #endif
 
 /*******************************************************************************
@@ -221,7 +221,7 @@ static void l2c_csm_closed (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
             /* Need to have at least one compatible channel to continue */
             if (!l2c_fcr_chk_chan_modes(p_ccb)) {
                 l2cu_release_ccb (p_ccb);
-                (*p_ccb->p_rcb->api.pL2CA_ConnectCfm_Cb)(local_cid, L2CAP_CONN_NO_LINK);
+                (*connect_cfm)(local_cid, L2CAP_CONN_NO_LINK);
             } else {
                 l2cu_send_peer_connect_req (p_ccb);
                 btu_start_timer (&p_ccb->timer_entry, BTU_TTYPE_L2CAP_CHNL, L2CAP_CHNL_CONNECT_TOUT);
@@ -757,13 +757,17 @@ static void l2c_csm_config (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
         break;
 
     case L2CEVT_L2CAP_CONFIG_RSP_NEG:              /* Peer config error rsp */
-        /* Disable the Timer */
-        btu_stop_timer (&p_ccb->timer_entry);
-
-        /* If failure was channel mode try to renegotiate */
-        if (l2c_fcr_renegotiate_chan(p_ccb, p_cfg) == FALSE) {
-            L2CAP_TRACE_API ("L2CAP - Calling Config_Rsp_Cb(), CID: 0x%04x, Failure: %d", p_ccb->local_cid, p_cfg->result);
-            (*p_ccb->p_rcb->api.pL2CA_ConfigCfm_Cb)(p_ccb->local_cid, p_cfg);
+        if (p_ccb && p_ccb->in_use) {
+            /* Disable the Timer */
+            btu_stop_timer (&p_ccb->timer_entry);
+            tL2CA_CONFIG_CFM_CB *config_cfm = p_ccb->p_rcb->api.pL2CA_ConfigCfm_Cb;
+            /* If failure was channel mode try to renegotiate */
+            if (l2c_fcr_renegotiate_chan(p_ccb, p_cfg) == FALSE) {
+                L2CAP_TRACE_API ("L2CAP - Calling Config_Rsp_Cb(), CID: 0x%04x, Failure: %d", p_ccb->local_cid, p_cfg->result);
+                if (p_ccb->in_use) {
+                    (*config_cfm)(p_ccb->local_cid, p_cfg);
+                }
+            }
         }
         break;
 
@@ -897,6 +901,7 @@ static void l2c_csm_open (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
     tL2C_CHNL_STATE         tempstate;
     UINT8                   tempcfgdone;
     UINT8                   cfg_result = L2CAP_PEER_CFG_DISCONNECT;
+    tL2CA_DISCONNECT_IND_CB *disconnect_ind = NULL;
 
 #if (BT_TRACE_VERBOSE == TRUE)
     L2CAP_TRACE_EVENT ("L2CAP - LCID: 0x%04x  st: OPEN  evt: %s",
@@ -919,9 +924,12 @@ static void l2c_csm_open (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
     case L2CEVT_LP_DISCONNECT_IND:                  /* Link was disconnected */
         L2CAP_TRACE_API ("L2CAP - Calling Disconnect_Ind_Cb(), CID: 0x%04x  No Conf Needed",
                          p_ccb->local_cid);
-        l2cu_release_ccb (p_ccb);
         if (p_ccb->p_rcb) {
-            (*p_ccb->p_rcb->api.pL2CA_DisconnectInd_Cb)(local_cid, FALSE);
+            disconnect_ind = p_ccb->p_rcb->api.pL2CA_DisconnectInd_Cb;
+        }
+        l2cu_release_ccb (p_ccb);
+        if (disconnect_ind) {
+            (*disconnect_ind)(local_cid, FALSE);
         }
         break;
 
@@ -985,6 +993,8 @@ static void l2c_csm_open (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
     case L2CEVT_L2CAP_DATA:                         /* Peer data packet rcvd    */
         if (p_data && (p_ccb->p_rcb) && (p_ccb->p_rcb->api.pL2CA_DataInd_Cb)) {
             (*p_ccb->p_rcb->api.pL2CA_DataInd_Cb)(p_ccb->local_cid, (BT_HDR *)p_data);
+        } else if (p_data) {
+            osi_free(p_data);
         }
         break;
 
@@ -1136,7 +1146,6 @@ static void l2c_csm_w4_l2ca_disconnect_rsp (tL2C_CCB *p_ccb, UINT16 event, void 
         break;
     }
 }
-#endif /// (L2CAP_COC_INCLUDED == TRUE)
 
 #if (BT_TRACE_VERBOSE == TRUE)
 /*******************************************************************************
@@ -1150,7 +1159,7 @@ static void l2c_csm_w4_l2ca_disconnect_rsp (tL2C_CCB *p_ccb, UINT16 event, void 
 ** Returns          pointer to the name
 **
 *******************************************************************************/
-static char *l2c_csm_get_event_name (UINT16 event)
+static const char *l2c_csm_get_event_name (UINT16 event)
 {
     switch (event) {
     case L2CEVT_LP_CONNECT_CFM:                  /* Lower layer connect confirm          */
@@ -1228,6 +1237,7 @@ static char *l2c_csm_get_event_name (UINT16 event)
     }
 }
 #endif /* (BT_TRACE_VERBOSE == TRUE) */
+#endif /// (L2CAP_COC_INCLUDED == TRUE)
 
 
 /*******************************************************************************

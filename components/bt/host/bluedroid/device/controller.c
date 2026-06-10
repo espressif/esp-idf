@@ -435,6 +435,12 @@ static bool supports_interlaced_inquiry_scan(void)
     return HCI_LMP_INTERLACED_INQ_SCAN_SUPPORTED(controller_param.features_classic[0].as_array);
 }
 
+static bool supports_interlaced_page_scan(void)
+{
+    assert(controller_param.readable);
+    return HCI_LMP_INTERLACED_PAGE_SCAN_SUPPORTED(controller_param.features_classic[0].as_array);
+}
+
 static bool supports_rssi_with_inquiry_results(void)
 {
     assert(controller_param.readable);
@@ -604,6 +610,7 @@ static const controller_t interface = {
     supports_simultaneous_le_bredr,
     supports_reading_remote_extended_features,
     supports_interlaced_inquiry_scan,
+    supports_interlaced_page_scan,
     supports_rssi_with_inquiry_results,
     supports_extended_inquiry_response,
     supports_master_slave_role_switch,
