@@ -287,11 +287,10 @@ typedef struct {
     } lp_sys[PMU_MODE_LP_MAX];
 } pmu_sleep_power_config_t;
 
-/* ESP32H21 ECO1 doesn't allow flash_ldo off or standby mode, todo PM-678 */
 #define PMU_SLEEP_POWER_CONFIG_DEFAULT(sleep_flags) {                       \
     .hp_sys = {                                                             \
         .dig_power = {                                                      \
-            .vdd_flash_mode = ((sleep_flags) & PMU_SLEEP_PD_VDDSDIO) ? 1 : 0, \
+            .vdd_flash_mode = ((sleep_flags) & PMU_SLEEP_PD_VDDSDIO) ? 1 : 3, \
             .wifi_pd_en     = ((sleep_flags) & PMU_SLEEP_PD_MODEM)  ? 1 : 0,\
             .cpu_pd_en      = ((sleep_flags) & PMU_SLEEP_PD_CPU)    ? 1 : 0,\
             .top_pd_en      = ((sleep_flags) & PMU_SLEEP_PD_TOP)    ? 1 : 0,\
@@ -559,14 +558,14 @@ typedef struct pmu_sleep_machine_constant {
     },                                          \
     .hp = {                                     \
         .min_slp_time_us                = 450,  \
-        .analog_wait_time_us            = 190,  \
+        .analog_wait_time_us            = 140,  \
         .isolate_wait_time_us           = 1,    \
         .reset_wait_time_us             = 1,    \
         .power_supply_wait_time_us      = 2,    \
         .power_up_wait_time_us          = 2,    \
         .regdma_s2a_work_time_us        = PMU_REGDMA_S2A_WORK_TIME_US, \
         .regdma_a2s_work_time_us        = PMU_REGDMA_A2S_WORK_TIME_US, \
-        .xtal_wait_stable_time_us       = 160,  \
+        .xtal_wait_stable_time_us       = 110,  \
         .pll_wait_stable_time_us        = 1     \
     }                                           \
 }
