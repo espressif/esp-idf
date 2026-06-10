@@ -223,7 +223,11 @@ static void start_periodic_adv(void)
 {
     // Create static random address
     esp_bd_addr_t rand_addr;
-    esp_ble_gap_addr_create_static(rand_addr);
+    esp_err_t addr_ret = esp_ble_gap_addr_create_static(rand_addr);
+    if (addr_ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_ble_gap_addr_create_static failed: %s", esp_err_to_name(addr_ret));
+        return;
+    }
 
     ESP_LOG_BUFFER_HEX(TAG, rand_addr, ESP_BD_ADDR_LEN);
 

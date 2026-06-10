@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -164,6 +164,18 @@ typedef struct {
 
 static prepare_type_env_t a_prepare_write_env;
 
+static void prepare_write_env_clear(prepare_type_env_t *env)
+{
+    if (env == NULL) {
+        return;
+    }
+    if (env->prepare_buf != NULL) {
+        free(env->prepare_buf);
+        env->prepare_buf = NULL;
+    }
+    env->prepare_len = 0;
+}
+
 extern void esp_ble_switch_phy_coded(bool phy_500k);
 void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param);
 void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param);
@@ -173,6 +185,9 @@ static uint8_t check_sum(uint8_t *addr, uint16_t count)
     uint32_t sum = 0;
 
     if (addr == NULL || count == 0) {
+        return 0;
+    }
+    if (count > (ESP_GATT_MAX_MTU_SIZE - 3U)) {
         return 0;
     }
 
@@ -228,6 +243,8 @@ void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare
                 status = ESP_GATT_INVALID_OFFSET;
             } else if ((param->write.offset + param->write.len) > PREPARE_BUF_MAX_SIZE) {
                 status = ESP_GATT_INVALID_ATTR_LEN;
+            } else if (param->write.len > ESP_GATT_MAX_ATTR_LEN) {
+                status = ESP_GATT_INVALID_ATTR_LEN;
             }
 
             if (status == ESP_GATT_OK && prepare_write_env->prepare_buf == NULL) {
@@ -239,13 +256,19 @@ void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare
                 }
             }
 
-            esp_gatt_rsp_t *gatt_rsp = (esp_gatt_rsp_t *)malloc(sizeof(esp_gatt_rsp_t));
+            esp_gatt_rsp_t *gatt_rsp = (esp_gatt_rsp_t *)calloc(1, sizeof(esp_gatt_rsp_t));
             if (gatt_rsp) {
-                gatt_rsp->attr_value.len = param->write.len;
                 gatt_rsp->attr_value.handle = param->write.handle;
                 gatt_rsp->attr_value.offset = param->write.offset;
                 gatt_rsp->attr_value.auth_req = ESP_GATT_AUTH_REQ_NONE;
-                memcpy(gatt_rsp->attr_value.value, param->write.value, param->write.len);
+                if (status == ESP_GATT_OK) {
+                    if (param->write.value == NULL) {
+                        status = ESP_GATT_INVALID_ATTR_LEN;
+                    } else {
+                        gatt_rsp->attr_value.len = param->write.len;
+                        memcpy(gatt_rsp->attr_value.value, param->write.value, param->write.len);
+                    }
+                }
                 esp_err_t response_err = esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, status, gatt_rsp);
 
                 if (response_err != ESP_OK) {
@@ -275,11 +298,7 @@ void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble
     if (param->exec_write.exec_write_flag != ESP_GATT_PREP_WRITE_EXEC){
         ESP_LOGI(GATTS_TAG,"Prepare write cancel");
     }
-    if (prepare_write_env->prepare_buf) {
-        free(prepare_write_env->prepare_buf);
-        prepare_write_env->prepare_buf = NULL;
-    }
-    prepare_write_env->prepare_len = 0;
+    prepare_write_env_clear(prepare_write_env);
 }
 
 static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param) {
@@ -356,9 +375,22 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
 #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
         if (param->write.handle == gl_profile_tab[PROFILE_A_APP_ID].char_handle) {
             // The last value byte is the checksum data, should used to check the data is received corrected or not.
-            if (param->write.value[param->write.len - 1] ==
-                check_sum(param->write.value, param->write.len - 1)) {
-                write_len += param->write.len;
+            uint16_t wlen = param->write.len;
+            uint8_t *wval = param->write.value;
+            /* len==0 makes (wlen-1) wrap; cap len before indexing or passing to check_sum. */
+            const uint16_t max_write_len = (uint16_t)(ESP_GATT_MAX_MTU_SIZE - 3U);
+            if (wval == NULL) {
+                ESP_LOGW(GATTS_TAG, "write ignored: null value");
+            } else if (wlen == 0) {
+                ESP_LOGW(GATTS_TAG, "write ignored: zero length");
+            } else if (wlen < 2) {
+                ESP_LOGW(GATTS_TAG, "write ignored: length too short for payload+checksum");
+            } else if (wlen > max_write_len) {
+                ESP_LOGW(GATTS_TAG, "write ignored: length exceeds bound");
+            } else if (wval[wlen - 1] == check_sum(wval, (uint16_t)(wlen - 1U))) {
+                write_len += wlen;
+            } else {
+                ESP_LOGE(GATTS_TAG, "write checksum mismatch");
             }
 
             if (start == false) {
@@ -451,10 +483,12 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         ESP_LOGI(GATTS_TAG, "Connected, conn_id %u, remote "ESP_BD_ADDR_STR"",
                      param->connect.conn_id, ESP_BD_ADDR_HEX(param->connect.remote_bda));
         gl_profile_tab[PROFILE_A_APP_ID].conn_id = param->connect.conn_id;
+        prepare_write_env_clear(&a_prepare_write_env);
         break;
     }
     case ESP_GATTS_DISCONNECT_EVT:
         is_connect = false;
+        prepare_write_env_clear(&a_prepare_write_env);
         ESP_LOGI(GATTS_TAG, "Disconnected, remote "ESP_BD_ADDR_STR", reason 0x%x",
                  ESP_BD_ADDR_HEX(param->disconnect.remote_bda), param->disconnect.reason);
         esp_ble_gap_ext_adv_start(NUM_EXT_ADV_SET, &ext_adv[0]);

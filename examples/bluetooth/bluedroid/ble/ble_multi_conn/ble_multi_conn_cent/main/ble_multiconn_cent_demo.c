@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -219,6 +219,22 @@ static const esp_gatts_attr_db_t gatt_db[HRS_IDX_NB] =
 };
 static uint16_t profile_handle_table[HRS_IDX_NB];
 
+/** After a prepared write is executed, read committed value from GATT DB and relay to peers. */
+static void relay_demo_char_value_to_peers(void)
+{
+    uint16_t len = 0;
+    const uint8_t *value = NULL;
+    uint16_t h = profile_handle_table[IDX_CHAR_VAL_A];
+
+    if (h == 0) {
+        return;
+    }
+    if (esp_ble_gatts_get_attr_value(h, &len, &value) != ESP_GATT_OK || value == NULL || len == 0) {
+        return;
+    }
+    traverse_send_peer(len, (uint8_t *)value);
+}
+
 #if (BLE50_SUPPORTED == 1)
 static esp_ble_gap_ext_adv_t ext_adv[1] = {
     [0] = {ADV_HANDLE_INST, ADV_DURATION, ADV_MAX_EVTS},
@@ -238,8 +254,9 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         break;
     case ESP_GATTC_CONNECT_EVT:
         if (param->connect.link_role == 0) {
+            ++multi_conn_num;
             ESP_LOGI(DEMO_TAG, "Connected, conn_id %d, remote "ESP_BD_ADDR_STR", total %u", param->connect.conn_id,
-                     ESP_BD_ADDR_HEX(param->connect.remote_bda), ++multi_conn_num);
+                     ESP_BD_ADDR_HEX(param->connect.remote_bda), (unsigned)multi_conn_num);
             Peer new_peer;
             new_peer.conn_id = param->connect.conn_id;
             new_peer.conn_handle = param->connect.conn_handle;
@@ -261,20 +278,33 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
             }
         }
         break;
-    case ESP_GATTC_DISCONNECT_EVT:
-        ESP_LOGI(DEMO_TAG, "Disconnected, remote "ESP_BD_ADDR_STR", reason 0x%02x, total %u",
-            ESP_BD_ADDR_HEX(param->disconnect.remote_bda), param->disconnect.reason,
-            (multi_conn_num ? --multi_conn_num : multi_conn_num));
-        if (param->disconnect.conn_id != prph_conn_id) {
-            Peer *peer = find_peer(param->disconnect.conn_id);
-            if (peer) {
-                peer_remove(peer->conn_id);
+    case ESP_GATTC_DISCONNECT_EVT: {
+        /* Only central-role connections are added to the peer list (see ESP_GATTC_CONNECT_EVT);
+         * peripheral-role connections are tracked separately via prph_conn_id and cleaned up
+         * entirely in ESP_GATTS_DISCONNECT_EVT. Use peer_lookup() as the role oracle here:
+         * a non-NULL result is the unambiguous proof that this disconnect belongs to a
+         * central-role peer, regardless of GATTC/GATTS event ordering.
+         *
+         * Note: Bluedroid posts ESP_GATTS_DISCONNECT_EVT to the BTC queue before
+         * ESP_GATTC_DISCONNECT_EVT (the GATTS path is delivered directly, while the GATTC
+         * path is relayed through the BTA queue), so by the time we get here for a
+         * peripheral disconnect, prph_conn_id has already been reset to 0xFFFF. Relying on
+         * (conn_id != prph_conn_id) would therefore mis-classify the peripheral disconnect
+         * as a central one and incorrectly decrement multi_conn_num / give restart_scan_sem.
+         * peer_lookup() is used instead of find_peer() so peripheral disconnects don't
+         * trigger a spurious "peer not found" ERROR log. */
+        Peer *peer = peer_lookup(param->disconnect.conn_id);
+        if (peer) {
+            peer_remove(peer->conn_id);
+            if (multi_conn_num) {
+                --multi_conn_num;
             }
+            ESP_LOGI(DEMO_TAG, "Disconnected, remote "ESP_BD_ADDR_STR", reason 0x%02x, total %u",
+                     ESP_BD_ADDR_HEX(param->disconnect.remote_bda), param->disconnect.reason, (unsigned)multi_conn_num);
             xSemaphoreGive(restart_scan_sem);
-        } else {
-            prph_conn_id = 0xFFFF;
         }
         break;
+    }
     case ESP_GATTC_OPEN_EVT:
         ESP_LOGI(DEMO_TAG, "Open, conn_id %d, status %d", param->open.conn_id, param->open.status);
         break;
@@ -340,14 +370,27 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         esp_ble_gatts_create_attr_tab(gatt_db, gatts_if, HRS_IDX_NB, SVC_INST_ID);
         break;
     case ESP_GATTS_WRITE_EVT:
-        ESP_LOGI(DEMO_TAG, "Characteristic write received, conn_id %u, value", param->write.conn_id);
+        ESP_LOGI(DEMO_TAG, "Characteristic write received, conn_id %u, prep=%d", param->write.conn_id,
+                 (int)param->write.is_prep);
         ESP_LOG_BUFFER_HEX(DEMO_TAG, param->write.value, param->write.len);
-        traverse_send_peer(param->write.len, param->write.value);
+        /* Prepared writes must be relayed only after ESP_GATTS_EXEC_WRITE_EVT (EXEC). */
+        if (param->write.is_prep) {
+            break;
+        }
+        if (param->write.handle == profile_handle_table[IDX_CHAR_VAL_A]) {
+            traverse_send_peer(param->write.len, param->write.value);
+        }
+        break;
+    case ESP_GATTS_EXEC_WRITE_EVT:
+        if (param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC) {
+            relay_demo_char_value_to_peers();
+        }
         break;
     case ESP_GATTS_CONNECT_EVT:
         if (param->connect.link_role == 1) {
+            ++multi_conn_num;
             ESP_LOGI(DEMO_TAG, "Connected, conn_id %u, remote "ESP_BD_ADDR_STR", total %u",
-                param->connect.conn_id, ESP_BD_ADDR_HEX(param->connect.remote_bda), ++multi_conn_num);
+                     param->connect.conn_id, ESP_BD_ADDR_HEX(param->connect.remote_bda), (unsigned)multi_conn_num);
             prph_conn_id = param->connect.conn_id;
             advertising_state = DISABLED;
 #if (BLE50_SUPPORTED == 1)
@@ -361,9 +404,17 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         break;
     case ESP_GATTS_DISCONNECT_EVT:
         if (param->disconnect.conn_id == prph_conn_id) {
+            unsigned total_after;
+            if (multi_conn_num) {
+                --multi_conn_num;
+                total_after = (unsigned)multi_conn_num;
+            } else {
+                total_after = 0;
+            }
             ESP_LOGI(DEMO_TAG, "Disconnected, remote "ESP_BD_ADDR_STR", reason 0x%x, total %u",
-                ESP_BD_ADDR_HEX(param->disconnect.remote_bda), param->disconnect.reason,
-                (multi_conn_num ? --multi_conn_num : multi_conn_num));
+                     ESP_BD_ADDR_HEX(param->disconnect.remote_bda), param->disconnect.reason, total_after);
+            /* Clear before SET_STATIC_RAND_ADDR_EVT: esp_gap_cb requires 0xFFFF to restart advertising */
+            prph_conn_id = 0xFFFF;
             advertising_state = PENDING;
 #if (BLE50_SUPPORTED == 1)
             esp_ble_gap_addr_create_static(adv_rand_addr);
@@ -376,7 +427,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         break;
     case ESP_GATTS_CREAT_ATTR_TAB_EVT:
         ESP_LOGI(DEMO_TAG, "The number handle = %x", param->add_attr_tab.num_handle);
-        if (param->create.status == ESP_GATT_OK) {
+        if (param->add_attr_tab.status == ESP_GATT_OK) {
             if (param->add_attr_tab.num_handle == HRS_IDX_NB) {
                 memcpy(profile_handle_table, param->add_attr_tab.handles,
                        sizeof(profile_handle_table));
@@ -386,7 +437,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
                          param->add_attr_tab.num_handle, HRS_IDX_NB);
             }
         } else {
-            ESP_LOGE(DEMO_TAG, " Create attribute table failed, status %x", param->create.status);
+            ESP_LOGE(DEMO_TAG, "Create attribute table failed, status %x", param->add_attr_tab.status);
         }
         break;
     default:
@@ -484,7 +535,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
                                             ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
         // ESP_LOGI(DEMO_TAG, "Scan result, device "ESP_BD_ADDR_STR", name len %u", ESP_BD_ADDR_HEX(param->ext_adv_report.params.addr), adv_name_len);
         // ESP_LOG_BUFFER_CHAR(DEMO_TAG, adv_name, adv_name_len);
-        if (strlen(remote_target_name) == adv_name_len && strncmp((char *)adv_name, remote_target_name, adv_name_len) == 0)
+        if (adv_name != NULL && strlen(remote_target_name) == adv_name_len && strncmp((char *)adv_name, remote_target_name, adv_name_len) == 0)
         {
             esp_ble_gap_stop_ext_scan();
             scan_state = DISABLED;
@@ -532,13 +583,17 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
         if (scan_result->scan_rst.search_evt == ESP_GAP_SEARCH_INQ_RES_EVT) {
             uint8_t *adv_name = NULL;
             uint8_t adv_name_len = 0;
+            const unsigned buf_cap = sizeof(scan_result->scan_rst.ble_adv);
+            unsigned comb = (unsigned)scan_result->scan_rst.adv_data_len +
+                            (unsigned)scan_result->scan_rst.scan_rsp_len;
+            uint16_t safe_adv_len = (comb > buf_cap) ? (uint16_t)buf_cap : (uint16_t)comb;
             adv_name = esp_ble_resolve_adv_data_by_type(scan_result->scan_rst.ble_adv,
-                                                        scan_result->scan_rst.adv_data_len + scan_result->scan_rst.scan_rsp_len,
+                                                        safe_adv_len,
                                                         ESP_BLE_AD_TYPE_NAME_CMPL,
                                                         &adv_name_len);
             // ESP_LOGI(DEMO_TAG, "Scan result, device "ESP_BD_ADDR_STR", name len %u", ESP_BD_ADDR_HEX(scan_result->scan_rst.bda), adv_name_len);
             // ESP_LOG_BUFFER_CHAR(DEMO_TAG, adv_name, adv_name_len);
-            if (strlen(remote_target_name) == adv_name_len && strncmp((char *)adv_name, remote_target_name, adv_name_len) == 0) {
+            if (adv_name != NULL && strlen(remote_target_name) == adv_name_len && strncmp((char *)adv_name, remote_target_name, adv_name_len) == 0) {
                 esp_ble_gap_stop_scanning();
                 scan_state = DISABLED;
 
@@ -712,10 +767,12 @@ void app_main(void)
             if (multi_conn_num < BLE_PEER_MAX_NUM && scan_state == DISABLED) {
                 scan_state = PENDING;
     #if (BLE50_SUPPORTED == 0)
+                /* Legacy: cannot set scan random addr until adv stops; completion continues in
+                 * ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT. Do not break out of while(1) or app_main exits. */
                 if (advertising_state != DISABLED) {
                     advertising_state = DISABLED;
                     esp_ble_gap_stop_advertising();
-                    break;
+                    continue;
                 }
     #endif
                 esp_ble_gap_addr_create_static(new_rand_addr);

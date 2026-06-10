@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -22,9 +22,10 @@ static latency_record_t records[TEST_PACKET_COUNT];
 static uint16_t test_conn_id = 0;
 static uint16_t char_handle = 0;
 static test_packet_t send_packets[TEST_PACKET_COUNT];
-static bool test_running = false;
+/* Polled by latency_test_task and written by latency_test_stop() from another context. */
+static volatile bool test_running = false;
 static bool test_initialized = false;
-static esp_gatt_if_t test_gattc_if = 0;
+static esp_gatt_if_t test_gattc_if = ESP_GATT_IF_NONE;
 
 /**
  * Fill random data
@@ -45,7 +46,6 @@ latency_test_init(uint16_t conn_id, uint16_t handle)
 {
     test_conn_id = conn_id;
     char_handle = handle;
-    test_running = false;
     test_initialized = true;
 
     memset(records, 0, sizeof(records));
@@ -69,7 +69,7 @@ latency_test_set_gattc_if(esp_gatt_if_t gattc_if)
 static int
 send_test_packet(uint16_t seq)
 {
-    if (char_handle == 0 || test_gattc_if == 0) {
+    if (char_handle == 0 || test_gattc_if == ESP_GATT_IF_NONE) {
         ESP_LOGE(TAG, "Test not initialized");
         return -1;
     }
@@ -113,21 +113,19 @@ latency_test_task(void *arg)
 
     test_running = true;
 
-    /* Send all test packets */
-    for (int i = 0; i < TEST_PACKET_COUNT; i++) {
+    /* Send all test packets, abort early if latency_test_stop() is called */
+    for (int i = 0; i < TEST_PACKET_COUNT && test_running; i++) {
         int rc = send_test_packet(i);
         if (rc != 0) {
             ESP_LOGW(TAG, "Send failed for seq=%d", i);
         }
-
-        /* Wait interval */
         vTaskDelay(pdMS_TO_TICKS(TEST_PACKET_INTERVAL_MS));
     }
 
-    ESP_LOGI(TAG, "All packets sent, waiting for responses...");
-
-    /* Wait for all responses */
-    vTaskDelay(pdMS_TO_TICKS(2000));
+    if (test_running) {
+        ESP_LOGI(TAG, "All packets sent, waiting for responses...");
+        vTaskDelay(pdMS_TO_TICKS(2000));
+    }
 
     /* Print results */
     latency_test_print_results();
@@ -152,7 +150,24 @@ latency_test_start(void)
         return;
     }
 
+    if (test_gattc_if == ESP_GATT_IF_NONE) {
+        ESP_LOGE(TAG, "GATT client interface not set");
+        return;
+    }
+
     xTaskCreate(latency_test_task, "latency_test", 4096, NULL, 5, NULL);
+}
+
+/**
+ * Stop latency test
+ *
+ * Only raises the stop flag; the task observes it at the next loop iteration
+ * (or vTaskDelay boundary) and self-terminates via vTaskDelete(NULL).
+ */
+void
+latency_test_stop(void)
+{
+    test_running = false;
 }
 
 /**
@@ -186,6 +201,11 @@ latency_test_handle_notify(uint8_t *data, uint16_t len)
     /* Verify data consistency */
     if (memcmp(recv_pkt, &send_packets[seq], sizeof(test_packet_t)) != 0) {
         ESP_LOGW(TAG, "Data mismatch for seq=%d", seq);
+        return;
+    }
+
+    if (records[seq].received) {
+        ESP_LOGD(TAG, "Duplicate notify for seq=%d, ignored", seq);
         return;
     }
 
