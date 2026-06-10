@@ -1056,7 +1056,7 @@ static inline void ppa_ll_blend_configure_rx_fg_alpha(ppa_dev_t *dev, ppa_alpha_
 }
 
 /**
- * @brief Configure PPA blending pixel filling image block
+ * @brief Configure PPA blending pixel filling image block color
  *
  * The color to be filled is directly relying on the blend_tx_fix_pixel register field value.
  * For fill operation, the data does not go through any color space conversion in the blending engine.
@@ -1064,12 +1064,9 @@ static inline void ppa_ll_blend_configure_rx_fg_alpha(ppa_dev_t *dev, ppa_alpha_
  * @param dev Peripheral instance address
  * @param color_mode One of the values in ppa_fill_color_mode_t
  * @param data The point of the fix data to be filled to the image block pixels
- * @param hb The horizontal width of image block that would be filled in fix pixel filling mode. The unit is pixel.
- * @param vb The vertical height of image block that would be filled in fix pixel filling mode. The unit is pixel.
  */
-static inline void ppa_ll_blend_configure_filling_block(ppa_dev_t *dev, ppa_fill_color_mode_t color_mode, void *data, uint32_t hb, uint32_t vb)
+static inline void ppa_ll_blend_configure_filling_block_color(ppa_dev_t *dev, ppa_fill_color_mode_t color_mode, void *data)
 {
-    HAL_ASSERT(hb <= PPA_BLEND_HB_V && vb <= PPA_BLEND_VB_V);
     uint32_t fill_color_data = 0;
     switch (color_mode) {
     case PPA_FILL_COLOR_MODE_ARGB8888:
@@ -1097,6 +1094,18 @@ static inline void ppa_ll_blend_configure_filling_block(ppa_dev_t *dev, ppa_fill
         abort();
     }
     dev->blend_fix_pixel.blend_tx_fix_pixel = fill_color_data;
+}
+
+/**
+ * @brief Set PPA blending block size
+ *
+ * @param dev Peripheral instance address
+ * @param hb The horizontal width of image block that would be filled in fix pixel filling mode or blend mode. The unit is pixel.
+ * @param vb The vertical height of image block that would be filled in fix pixel filling mode or blend mode. The unit is pixel.
+ */
+static inline void ppa_ll_blend_set_block_size(ppa_dev_t *dev, uint32_t hb, uint32_t vb)
+{
+    HAL_ASSERT(hb <= PPA_BLEND_HB_V && vb <= PPA_BLEND_VB_V);
     dev->blend_tx_size.blend_hb = hb;
     dev->blend_tx_size.blend_vb = vb;
 }
