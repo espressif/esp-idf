@@ -91,6 +91,7 @@ void BTA_GATTC_AppRegister(tBT_UUID *p_app_uuid, tBTA_GATTC_CBACK *p_client_cb)
     }
 
     if ((p_buf = (tBTA_GATTC_API_REG *) osi_malloc(sizeof(tBTA_GATTC_API_REG))) != NULL) {
+        memset(p_buf, 0, sizeof(*p_buf));
         p_buf->hdr.event    = BTA_GATTC_API_REG_EVT;
         if (p_app_uuid != NULL) {
             memcpy(&p_buf->app_uuid, p_app_uuid, sizeof(tBT_UUID));
@@ -206,6 +207,7 @@ void BTA_GATTC_CancelOpen(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, BOOLEAN i
     tBTA_GATTC_API_CANCEL_OPEN  *p_buf;
 
     if ((p_buf = (tBTA_GATTC_API_CANCEL_OPEN *) osi_malloc(sizeof(tBTA_GATTC_API_CANCEL_OPEN))) != NULL) {
+        memset(p_buf, 0, sizeof(tBTA_GATTC_API_CANCEL_OPEN));
         p_buf->hdr.event = BTA_GATTC_API_CANCEL_OPEN_EVT;
 
         p_buf->client_if = client_if;
@@ -780,6 +782,7 @@ void BTA_GATTC_PrepareWrite  (UINT16 conn_id, UINT16 handle,
         p_buf->handle = handle;
 
         p_buf->write_type = BTA_GATTC_WRITE_PREPARE;
+        p_buf->cmpl_evt = BTA_GATTC_PREP_WRITE_EVT;
         p_buf->offset   = offset;
         p_buf->len = len;
 
@@ -827,6 +830,7 @@ void BTA_GATTC_PrepareWriteCharDescr  (UINT16 conn_id, UINT16 handle,
         p_buf->auth_req = auth_req;
         p_buf->handle = handle;
         p_buf->write_type = BTA_GATTC_WRITE_PREPARE;
+        p_buf->cmpl_evt = BTA_GATTC_PREP_WRITE_EVT;
         p_buf->offset = offset;
 
         if (p_data && p_data->len != 0) {
@@ -1043,12 +1047,6 @@ tBTA_GATT_STATUS BTA_GATTC_DeregisterForNotifications (tBTA_GATTC_IF client_if,
 *******************************************************************************/
 void BTA_GATTC_Refresh(BD_ADDR remote_bda, bool erase_flash)
 {
-#if(GATTC_CACHE_NVS == TRUE)
-    if(erase_flash) {
-        /* used to reset cache in application */
-        bta_gattc_cache_reset(remote_bda);
-    }
-#endif
     //If the registration callback is NULL, return
     if(bta_sys_is_register(BTA_ID_GATTC) == FALSE) {
         return;
@@ -1056,8 +1054,10 @@ void BTA_GATTC_Refresh(BD_ADDR remote_bda, bool erase_flash)
     tBTA_GATTC_API_CACHE_REFRESH  *p_buf;
 
     if ((p_buf = (tBTA_GATTC_API_CACHE_REFRESH *) osi_malloc(sizeof(tBTA_GATTC_API_CACHE_REFRESH))) != NULL) {
+        memset(p_buf, 0, sizeof(tBTA_GATTC_API_CACHE_REFRESH));
         p_buf->hdr.event = BTA_GATTC_API_REFRESH_EVT;
         memcpy(p_buf->remote_bda, remote_bda, BD_ADDR_LEN);
+        p_buf->erase_flash = erase_flash ? TRUE : FALSE;
 
         bta_sys_sendmsg(p_buf);
     }
@@ -1106,11 +1106,6 @@ void BTA_GATTC_CacheGetAddrList(tBTA_GATTC_IF client_if)
 *******************************************************************************/
 void BTA_GATTC_Clean(BD_ADDR remote_bda)
 {
-#if(GATTC_CACHE_NVS == TRUE)
-    /* used to reset cache in application */
-    bta_gattc_cache_reset(remote_bda);
-#endif
-
     tBTA_GATTC_API_CACHE_CLEAN  *p_buf;
 
     if ((p_buf = (tBTA_GATTC_API_CACHE_CLEAN *) osi_malloc(sizeof(tBTA_GATTC_API_CACHE_CLEAN))) != NULL) {

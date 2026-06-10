@@ -211,6 +211,7 @@ typedef struct {
 typedef struct {
     BT_HDR             hdr;
     BD_ADDR            remote_bda;
+    BOOLEAN            erase_flash;
 } tBTA_GATTC_API_CACHE_REFRESH;
 
 typedef struct {
@@ -399,6 +400,8 @@ typedef struct {
     BOOLEAN             in_use;
     BD_ADDR             remote_bda;
     UINT16              svc_change_descr_handle;
+    /* Tracks the in-flight internal write to the Service Changed CCC descriptor */
+    BOOLEAN             write_remote_svc_change_ccc_in_progress;
     BOOLEAN             write_remote_svc_change_ccc_done;
 } tBTA_GATTC_CONN;
 
@@ -558,7 +561,7 @@ extern void bta_gattc_get_db_with_operation(UINT16 conn_id,
 extern void bta_gattc_get_gatt_db(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle, btgatt_db_element_t **db, UINT16 *count);
 
 extern tBTA_GATT_STATUS bta_gattc_init_cache(tBTA_GATTC_SERV *p_srvc_cb);
-extern void bta_gattc_rebuild_cache(tBTA_GATTC_SERV *p_srcv, UINT16 num_attr, tBTA_GATTC_NV_ATTR *attr);
+extern tBTA_GATT_STATUS bta_gattc_rebuild_cache(tBTA_GATTC_SERV *p_srcv, UINT16 num_attr, tBTA_GATTC_NV_ATTR *attr);
 extern void bta_gattc_cache_save(tBTA_GATTC_SERV *p_srvc_cb, UINT16 conn_id);
 extern void bta_gattc_reset_discover_st(tBTA_GATTC_SERV *p_srcb, tBTA_GATT_STATUS status);
 
