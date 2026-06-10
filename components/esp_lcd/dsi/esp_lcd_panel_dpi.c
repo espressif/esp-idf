@@ -6,11 +6,11 @@
 #include <sys/param.h>
 #include "esp_lcd_panel_interface.h"
 #include "esp_lcd_mipi_dsi.h"
+#include "esp_async_color_convert.h"
 #include "esp_intr_alloc.h"
 #include "esp_clk_tree.h"
 #include "esp_cache.h"
 #include "mipi_dsi_priv.h"
-#include "esp_async_fbcpy.h"
 #include "esp_memory_utils.h"
 #include "esp_private/dw_gdma.h"
 #include "hal/color_hal.h"
@@ -45,8 +45,7 @@ struct esp_lcd_dpi_panel_t {
     esp_lcd_panel_draw_bitmap_hook_t draw_bitmap_hook; // Draw bitmap hook function
     void* hook_ctx; // Hook context
     bool (*on_hook_end)(esp_lcd_panel_handle_t panel); // Callback to be invoked when the draw bitmap hook completes its operation
-    esp_async_fbcpy_handle_t fbcpy_handle; // Use DMA2D to do frame buffer copy (only when using DMA2D draw bitmap hook)
-    SemaphoreHandle_t draw_sem;            // A semaphore used to synchronize the draw operations when DMA2D is used
+    async_color_convert_handle_t fbcpy_handle; // Async color convert handle used for same-format DMA2D frame buffer copy
 
 #if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;          // Power management lock
@@ -66,24 +65,18 @@ static bool dpi_panel_draw_bitmap_hook_end(esp_lcd_panel_t *panel)
     return false;
 }
 
-static bool async_fbcpy_done_cb(esp_async_fbcpy_handle_t mcp, esp_async_fbcpy_event_data_t *event, void *cb_args)
+static bool async_fbcpy_done_cb(async_color_convert_handle_t conv_hdl, async_color_convert_event_data_t *event, void *cb_args)
 {
     bool need_yield = false;
     esp_lcd_dpi_panel_t *dpi_panel = (esp_lcd_dpi_panel_t *)cb_args;
-
-    // release the draw semaphore first
-    BaseType_t task_woken = pdFALSE;
-    xSemaphoreGiveFromISR(dpi_panel->draw_sem, &task_woken);
-    if (task_woken == pdTRUE) {
-        need_yield = true;
-    }
+    (void)conv_hdl;
+    (void)event;
 
     if (dpi_panel->on_hook_end) {
         if (dpi_panel->on_hook_end(&dpi_panel->base)) {
             need_yield = true;
         }
     }
-
     return need_yield;
 }
 
@@ -489,28 +482,31 @@ static esp_err_t dpi_panel_draw_bitmap_dma2d_hook(esp_lcd_panel_t *panel, const 
 {
     ESP_LOGV(TAG, "copy draw buffer by DMA2D");
     esp_lcd_dpi_panel_t *dpi_panel = __containerof(panel, esp_lcd_dpi_panel_t, base);
-    // ensure the previous draw operation is finished
-    ESP_RETURN_ON_FALSE(xSemaphoreTake(dpi_panel->draw_sem, 0) == pdTRUE, ESP_ERR_INVALID_STATE,
-                        TAG, "previous draw operation is not finished");
+    (void)hook_ctx;
 
-    esp_async_fbcpy_trans_desc_t fbcpy_trans_config = {
+    async_color_convert_request_t fbcpy_trans_config = {
         .src_buffer = hook_data->src_data,
         .dst_buffer = hook_data->dst_data,
-        .src_buffer_size_x = hook_data->src_x_size,
-        .src_buffer_size_y = hook_data->src_y_size,
-        .dst_buffer_size_x = hook_data->dst_x_size,
-        .dst_buffer_size_y = hook_data->dst_y_size,
-        .src_offset_x = hook_data->src_x_start,
-        .src_offset_y = hook_data->src_y_start,
-        .dst_offset_x = hook_data->dst_x_start,
-        .dst_offset_y = hook_data->dst_y_start,
-        .copy_size_x = hook_data->src_x_end - hook_data->src_x_start,
-        .copy_size_y = hook_data->src_y_end - hook_data->src_y_start,
-        .pixel_format_fourcc_id = dpi_panel->in_color_format,
+        .src_stride = hook_data->src_x_size,
+        .src_height = hook_data->src_y_size,
+        .dst_stride = hook_data->dst_x_size,
+        .dst_height = hook_data->dst_y_size,
+        .src_x = hook_data->src_x_start,
+        .src_y = hook_data->src_y_start,
+        .dst_x = hook_data->dst_x_start,
+        .dst_y = hook_data->dst_y_start,
+        .copy_width = hook_data->src_x_end - hook_data->src_x_start,
+        .copy_height = hook_data->src_y_end - hook_data->src_y_start,
+        // For this DMA2D hook we only do window copy from draw buffer to frame buffer.
+        // Source and destination color formats are intentionally set to the same value to disable CSC.
+        .src_color_format = dpi_panel->in_color_format,
+        .dst_color_format = dpi_panel->in_color_format,
     };
-    // save the on_hook_end callback, and invoke it when the async memcpy is done
+    // The async color convert backend owns source/destination cache sync for the
+    // DMA2D copy path, so the LCD driver should not perform extra cache sync here.
+    // Save the completion callback and invoke it when the async frame buffer copy finishes.
     dpi_panel->on_hook_end = hook_data->on_hook_end;
-    ESP_RETURN_ON_ERROR(esp_async_fbcpy(dpi_panel->fbcpy_handle, &fbcpy_trans_config, async_fbcpy_done_cb, dpi_panel), TAG, "async memcpy failed");
+    ESP_RETURN_ON_ERROR(esp_async_color_convert(dpi_panel->fbcpy_handle, &fbcpy_trans_config, async_fbcpy_done_cb, dpi_panel), TAG, "async frame buffer copy failed");
     return ESP_OK;
 }
 
@@ -535,13 +531,11 @@ esp_err_t esp_lcd_dpi_panel_enable_dma2d(esp_lcd_panel_handle_t panel)
     // Check if built-in DMA2D draw bitmap hook is registered
     ESP_RETURN_ON_FALSE(!dpi_panel->fbcpy_handle, ESP_ERR_INVALID_STATE, TAG, "draw bitmap DMA2D hook is already registered");
 
-    // Initialize DMA2D resources
-    esp_async_fbcpy_config_t fbcpy_config = {};
-    ESP_RETURN_ON_ERROR(esp_async_fbcpy_install(&fbcpy_config, &dpi_panel->fbcpy_handle), TAG, "install async memcpy 2d failed");
+    // Initialize the async color convert backend used by the built-in DMA2D copy hook.
+    // Use its default backlog to queue multiple frame buffer copy requests.
+    async_color_convert_config_t fbcpy_config = {};
+    ESP_RETURN_ON_ERROR(esp_async_color_convert_install_dma2d(&fbcpy_config, &dpi_panel->fbcpy_handle), TAG, "install async frame buffer copy backend failed");
 
-    dpi_panel->draw_sem = xSemaphoreCreateBinaryWithCaps(DSI_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(dpi_panel->draw_sem, ESP_ERR_NO_MEM, err, TAG, "no memory for draw semaphore");
-    xSemaphoreGive(dpi_panel->draw_sem);
     // Register the DMA2D draw bitmap hook
     esp_lcd_panel_hooks_t hooks = {
         .draw_bitmap_hook = dpi_panel_draw_bitmap_dma2d_hook,
@@ -552,13 +546,10 @@ esp_err_t esp_lcd_dpi_panel_enable_dma2d(esp_lcd_panel_handle_t panel)
 
 err:
     if (dpi_panel->fbcpy_handle) {
-        esp_async_fbcpy_uninstall(dpi_panel->fbcpy_handle);
+        esp_async_color_convert_uninstall(dpi_panel->fbcpy_handle);
         dpi_panel->fbcpy_handle = NULL;
     }
-    if (dpi_panel->draw_sem) {
-        vSemaphoreDeleteWithCaps(dpi_panel->draw_sem);
-        dpi_panel->draw_sem = NULL;
-    }
+    dpi_panel->on_hook_end = NULL;
     return ret;
 }
 
@@ -575,13 +566,10 @@ esp_err_t esp_lcd_dpi_panel_disable_dma2d(esp_lcd_panel_handle_t panel)
     };
     ESP_RETURN_ON_ERROR(esp_lcd_dpi_panel_register_hooks(panel, &hooks, NULL), TAG, "unregister DMA2D draw bitmap hook failed");
     if (dpi_panel->fbcpy_handle) {
-        ESP_RETURN_ON_ERROR(esp_async_fbcpy_uninstall(dpi_panel->fbcpy_handle), TAG, "uninstall DMA2D failed");
+        ESP_RETURN_ON_ERROR(esp_async_color_convert_uninstall(dpi_panel->fbcpy_handle), TAG, "uninstall DMA2D failed");
         dpi_panel->fbcpy_handle = NULL;
     }
-    if (dpi_panel->draw_sem) {
-        vSemaphoreDeleteWithCaps(dpi_panel->draw_sem);
-        dpi_panel->draw_sem = NULL;
-    }
+    dpi_panel->on_hook_end = NULL;
 
     return ESP_OK;
 }
@@ -647,7 +635,9 @@ static esp_err_t dpi_panel_draw_bitmap_2d(esp_lcd_panel_t *panel, int x_start, i
         }
     } else if (dpi_panel->draw_bitmap_hook) { // copy using draw bitmap hook
         ESP_LOGV(TAG, "copy draw buffer by draw bitmap hook");
-        // Note, whether the previous draw operation is finished should be ensured by the hook
+        // Note, whether the previous draw operation is finished should be ensured by the hook.
+        // For the built-in DMA2D hook, cache maintenance of the source and destination
+        // buffers is handled inside the async color convert driver.
 
         esp_lcd_draw_bitmap_hook_data_t hook_data = {
             .dst_data = frame_buffer,
