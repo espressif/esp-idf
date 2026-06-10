@@ -76,6 +76,38 @@ if(CONFIG_SECURE_SIGNED_APPS)
             endif()
         else()
             add_custom_target(gen_secure_boot_signing_key)
+
+            # Re-run CMake if the signing key file changes, so the key type check below is re-evaluated
+            set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${secure_boot_signing_key}")
+
+            # Check that the signing key type matches the selected app signing scheme,
+            # as the signing step derives the signature type from the key itself.
+            if(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
+                set(key_check_args --scheme rsa)
+            elseif(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
+                set(key_check_args --scheme ecdsa_v1)
+            elseif(CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME)
+                if(CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_256_BITS)
+                    set(key_check_args --scheme ecdsa_v2 --ecdsa-key-size 256)
+                elseif(CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS)
+                    set(key_check_args --scheme ecdsa_v2 --ecdsa-key-size 384)
+                else()
+                    set(key_check_args --scheme ecdsa_v2)
+                endif()
+            endif()
+
+            if(key_check_args)
+                idf_build_get_property(python PYTHON)
+                execute_process(
+                    COMMAND ${python} "${CMAKE_CURRENT_LIST_DIR}/scripts/check_secure_boot_signing_key.py"
+                            ${key_check_args} "${secure_boot_signing_key}"
+                    RESULT_VARIABLE key_check_result
+                    ERROR_VARIABLE key_check_error
+                    OUTPUT_QUIET)
+                if(NOT key_check_result EQUAL 0)
+                    message(FATAL_ERROR "CONFIG_SECURE_BOOT_SIGNING_KEY check failed: ${key_check_error}")
+                endif()
+            endif()
         endif()
 
         set(SECURE_BOOT_SIGNING_KEY ${secure_boot_signing_key}) # needed by some other components
