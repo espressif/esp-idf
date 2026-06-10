@@ -101,6 +101,7 @@ typedef struct {
     bool enable_self_test;
     bool enable_loopback;
     bool enable_listen_only;
+    bool enable_time_trigger_tx;
 } twai_hal_config_t;
 
 /**

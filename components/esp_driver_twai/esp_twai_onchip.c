@@ -53,6 +53,7 @@ typedef struct {
     uint32_t src_freq_hz;
     uint32_t timestamp_freq_hz;
     uint32_t valid_fd_timing;
+    bool enable_scheduled_tx;
     twai_event_callbacks_t cbs;
     void *user_data;
 #ifdef CONFIG_PM_ENABLE
@@ -601,7 +602,7 @@ static esp_err_t _node_queue_tx(twai_node_handle_t node, const twai_frame_t *fra
     ESP_RETURN_ON_FALSE_ISR(!frame->header.fdf || frame->buffer_len <= TWAI_FRAME_MAX_LEN, ESP_ERR_INVALID_ARG, TAG, "fdf flag or buffer_len not supported");
 #endif
     ESP_RETURN_ON_FALSE_ISR((frame->header.dlc <= TWAIFD_FRAME_MAX_DLC) && \
-                            (frame->buffer_len <= (frame->header.fdf ? TWAIFD_FRAME_MAX_LEN : TWAI_FRAME_MAX_LEN)), ESP_ERR_INVALID_ARG, TAG, "illegal transfer length (buffer_len %ld)", frame->buffer_len);
+                            (frame->buffer_len <= (frame->header.fdf ? TWAIFD_FRAME_MAX_LEN : TWAI_FRAME_MAX_LEN)), ESP_ERR_INVALID_ARG, TAG, "illegal transfer length (buffer_len %ld, dlc %d)", frame->buffer_len, frame->header.dlc);
     ESP_RETURN_ON_FALSE_ISR((!frame->header.brs) || (twai_ctx->valid_fd_timing), ESP_ERR_INVALID_ARG, TAG, "brs can't be used without config data_timing");
     ESP_RETURN_ON_FALSE_ISR(!twai_ctx->hal->enable_listen_only, ESP_ERR_NOT_SUPPORTED, TAG, "node is config as listen only");
     ESP_RETURN_ON_FALSE_ISR(atomic_load(&twai_ctx->state) != TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "node is bus off");
@@ -679,6 +680,11 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
 #if !SOC_TWAI_SUPPORT_SLEEP_RETENTION
     ESP_RETURN_ON_FALSE(!node_config->flags.sleep_allow_pd, ESP_ERR_NOT_SUPPORTED, TAG, "sleep retention is not supported on this target");
 #endif
+#if TWAI_LL_SUPPORT(TIMESTAMP)
+    ESP_RETURN_ON_FALSE(!node_config->flags.enable_scheduled_tx || node_config->timestamp_resolution_hz, ESP_ERR_INVALID_ARG, TAG, "enable_scheduled_tx requires timestamp_resolution_hz");
+#else
+    ESP_RETURN_ON_FALSE(!node_config->flags.enable_scheduled_tx, ESP_ERR_NOT_SUPPORTED, TAG, "enable_scheduled_tx is not supported on this chip");
+#endif
     // Allocate TWAI node from internal memory because it contains atomic variable
     twai_onchip_ctx_t *node = heap_caps_calloc(1, sizeof(twai_onchip_ctx_t) + twai_hal_get_mem_requirment(), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_RETURN_ON_FALSE(node, ESP_ERR_NO_MEM, TAG, "No mem");
@@ -689,6 +695,7 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
     node->ctrlr_id = ctrlr_id;
     node->hal = (twai_hal_context_t *)(node + 1);   //hal context is place at end of driver context
     node->curr_clk_src = node_config->clk_src ? node_config->clk_src : TWAI_CLK_SRC_DEFAULT;
+    node->enable_scheduled_tx = node_config->flags.enable_scheduled_tx;
     ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz(node->curr_clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &node->src_freq_hz), err, TAG, "get clock source frequency failed");
 
     // state is in bus_off before enabled
@@ -776,6 +783,7 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
         .enable_listen_only = node_config->flags.enable_listen_only,
         .enable_self_test = node_config->flags.enable_self_test,
         .enable_loopback = node_config->flags.enable_loopback,
+        .enable_time_trigger_tx = node->enable_scheduled_tx,
     };
     ESP_GOTO_ON_FALSE(twai_hal_init(node->hal, &hal_config), ESP_ERR_INVALID_STATE, err, TAG, "hardware not in reset state");
     node->tx_slot_num = twai_hal_get_tx_slot_num(node->hal);
