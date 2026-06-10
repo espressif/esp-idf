@@ -132,6 +132,16 @@ BOOLEAN bta_gatts_hdl_event(BT_HDR *p_msg)
         if (p_srvc_cb != NULL) {
             bta_gatts_srvc_build_act[p_msg->event - BTA_GATTS_API_ADD_INCL_SRVC_EVT](p_srvc_cb, (tBTA_GATTS_DATA *) p_msg);
         } else {
+            tBTA_GATTS_DATA *p_data = (tBTA_GATTS_DATA *)p_msg;
+            if (p_msg->event == BTA_GATTS_API_ADD_CHAR_EVT &&
+                    p_data->api_add_char.attr_val.attr_val != NULL) {
+                osi_free(p_data->api_add_char.attr_val.attr_val);
+                p_data->api_add_char.attr_val.attr_val = NULL;
+            } else if (p_msg->event == BTA_GATTS_API_ADD_DESCR_EVT &&
+                    p_data->api_add_char_descr.attr_val.attr_val != NULL) {
+                osi_free(p_data->api_add_char_descr.attr_val.attr_val);
+                p_data->api_add_char_descr.attr_val.attr_val = NULL;
+            }
             APPL_TRACE_ERROR("service not created\n");
         }
         break;

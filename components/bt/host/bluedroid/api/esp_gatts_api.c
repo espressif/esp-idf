@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -384,7 +384,9 @@ esp_err_t esp_ble_gatts_set_attr_value(uint16_t attr_handle, uint16_t length, co
 
 esp_gatt_status_t esp_ble_gatts_get_attr_value(uint16_t attr_handle, uint16_t *length, const uint8_t **value)
 {
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_GATT_WRONG_STATE;
+    }
 
     if (length == NULL || value == NULL) {
         return ESP_GATT_INVALID_PDU;
@@ -463,20 +465,44 @@ esp_err_t esp_ble_gatts_send_service_change_indication(esp_gatt_if_t gatts_if, e
 
 static esp_err_t esp_ble_gatts_add_char_desc_param_check(esp_attr_value_t *char_val, esp_attr_control_t *control)
 {
-    if ((control != NULL) && ((control->auto_rsp != ESP_GATT_AUTO_RSP) && (control->auto_rsp != ESP_GATT_RSP_BY_APP))){
-            LOG_ERROR("Error in %s, line=%d, control->auto_rsp should be set to ESP_GATT_AUTO_RSP or ESP_GATT_RSP_BY_APP\n",\
-                            __func__, __LINE__);
-            return ESP_ERR_INVALID_ARG;
+    if ((control != NULL) &&
+        (control->auto_rsp != ESP_GATT_AUTO_RSP) &&
+        (control->auto_rsp != ESP_GATT_RSP_BY_APP)) {
+        return ESP_ERR_INVALID_ARG;
     }
 
-    if ((control != NULL) && (control->auto_rsp == ESP_GATT_AUTO_RSP)){
-        if (char_val == NULL){
-            LOG_ERROR("Error in %s, line=%d, for stack respond attribute, char_val should not be NULL here\n",\
-                            __func__, __LINE__);
+    /* Validate attribute value regardless of auto_rsp to avoid deep-copy waste and leaks. */
+    if (char_val != NULL) {
+        bool invalid = false;
+
+        if (char_val->attr_max_len > ESP_GATT_MAX_ATTR_LEN) {
+            invalid = true;
+        }
+        if (char_val->attr_len > ESP_GATT_MAX_ATTR_LEN) {
+            invalid = true;
+        }
+        /* Always require attr_len <= attr_max_len to avoid leaks and wasteful allocations. */
+        if (char_val->attr_len > char_val->attr_max_len) {
+            invalid = true;
+        }
+
+        if (invalid) {
+            LOG_ERROR("%s bad attr len=%u/%u lim=%u",
+                      __func__,
+                      (unsigned)char_val->attr_len,
+                      (unsigned)char_val->attr_max_len,
+                      (unsigned)ESP_GATT_MAX_ATTR_LEN);
             return ESP_ERR_INVALID_ARG;
-        } else if (char_val->attr_max_len == 0){
-            LOG_ERROR("Error in %s, line=%d, for stack respond attribute,  attribute max length should not be 0\n",\
-                            __func__, __LINE__);
+        }
+    }
+
+    if ((control != NULL) && (control->auto_rsp == ESP_GATT_AUTO_RSP)) {
+        if (char_val == NULL) {
+            return ESP_ERR_INVALID_ARG;
+        }
+
+        /* For stack auto response, attr_max_len must be non-zero. */
+        if (char_val->attr_max_len == 0) {
             return ESP_ERR_INVALID_ARG;
         }
     }
