@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -59,6 +59,7 @@ static bool start = false;
 static uint64_t write_len = 0;
 static uint64_t start_time = 0;
 static uint64_t current_time = 0;
+static portMUX_TYPE s_write_throughput_stats_mux = portMUX_INITIALIZER_UNLOCKED;
 #endif /* #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT) */
 
 static bool is_connect = false;
@@ -204,11 +205,26 @@ static prepare_type_env_t a_prepare_write_env;
 void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param);
 void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param);
 
+static void prepare_write_env_clear(prepare_type_env_t *env)
+{
+    if (env == NULL) {
+        return;
+    }
+    if (env->prepare_buf != NULL) {
+        free(env->prepare_buf);
+        env->prepare_buf = NULL;
+    }
+    env->prepare_len = 0;
+}
+
 static uint8_t check_sum(uint8_t *addr, uint16_t count)
 {
     uint32_t sum = 0;
 
     if (addr == NULL || count == 0) {
+        return 0;
+    }
+    if (count > (ESP_GATT_MAX_MTU_SIZE - 3U)) {
         return 0;
     }
 
@@ -334,14 +350,14 @@ void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare
 }
 
 void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param){
+    if (prepare_write_env == NULL) {
+        ESP_LOGE(GATTS_TAG, "exec_write: prepare_write_env is NULL");
+        return;
+    }
     if (param->exec_write.exec_write_flag != ESP_GATT_PREP_WRITE_EXEC){
         ESP_LOGI(GATTS_TAG,"Prepare write cancel");
     }
-    if (prepare_write_env->prepare_buf) {
-        free(prepare_write_env->prepare_buf);
-        prepare_write_env->prepare_buf = NULL;
-    }
-    prepare_write_env->prepare_len = 0;
+    prepare_write_env_clear(prepare_write_env);
 }
 
 static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param) {
@@ -442,17 +458,32 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         example_write_event_env(gatts_if, &a_prepare_write_env, param);
 #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
         if (param->write.handle == gl_profile_tab[PROFILE_A_APP_ID].char_handle) {
-            // The last value byte is the checksum data, should used to check the data is received corrected or not.
-            if (param->write.value[param->write.len - 1] ==
-                check_sum(param->write.value, param->write.len - 1)) {
-                write_len += param->write.len;
+            uint16_t wlen = param->write.len;
+            uint8_t *wval = param->write.value;
+            /* len==0 makes (wlen-1) wrap; cap len before indexing or passing to check_sum. */
+            const uint16_t max_write_len = (uint16_t)(ESP_GATT_MAX_MTU_SIZE - 3U);
+            if (wval == NULL) {
+                ESP_LOGW(GATTS_TAG, "write ignored: null value");
+            } else if (wlen == 0) {
+                ESP_LOGW(GATTS_TAG, "write ignored: zero length");
+            } else if (wlen < 2) {
+                ESP_LOGW(GATTS_TAG, "write ignored: length too short for payload+checksum");
+            } else if (wlen > max_write_len) {
+                ESP_LOGW(GATTS_TAG, "write ignored: length exceeds bound");
+            } else if (wval[wlen - 1] == check_sum(wval, (uint16_t)(wlen - 1U))) {
+                portENTER_CRITICAL(&s_write_throughput_stats_mux);
+                write_len += wlen;
+                portEXIT_CRITICAL(&s_write_throughput_stats_mux);
+            } else {
+                ESP_LOGE(GATTS_TAG, "write checksum mismatch");
             }
 
+            portENTER_CRITICAL(&s_write_throughput_stats_mux);
             if (start == false) {
                 start_time = esp_timer_get_time();
                 start = true;
-                break;
             }
+            portEXIT_CRITICAL(&s_write_throughput_stats_mux);
         }
 #endif /* #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT) */
 
@@ -462,11 +493,13 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         ESP_LOGI(GATTS_TAG,"Execute write");
 #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
         if (param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_CANCEL) {
+            portENTER_CRITICAL(&s_write_throughput_stats_mux);
             if (write_len > a_prepare_write_env.prepare_len) {
                 write_len -= a_prepare_write_env.prepare_len;
             } else {
                 write_len = 0;
             }
+            portEXIT_CRITICAL(&s_write_throughput_stats_mux);
         }
 #endif /* #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT) */
         esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
@@ -538,10 +571,34 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         ESP_LOGI(GATTS_TAG, "Connected, conn_id %d, remote "ESP_BD_ADDR_STR"",
                  param->connect.conn_id, ESP_BD_ADDR_HEX(param->connect.remote_bda));
         gl_profile_tab[PROFILE_A_APP_ID].conn_id = param->connect.conn_id;
+        prepare_write_env_clear(&a_prepare_write_env);
+#if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
+        portENTER_CRITICAL(&s_write_throughput_stats_mux);
+        write_len = 0;
+        start_time = 0;
+        start = false;
+        current_time = 0;
+        portEXIT_CRITICAL(&s_write_throughput_stats_mux);
+#endif
+#if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
+        can_send_notify = false;
+#endif
         break;
     }
     case ESP_GATTS_DISCONNECT_EVT:
         is_connect = false;
+        prepare_write_env_clear(&a_prepare_write_env);
+#if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
+        portENTER_CRITICAL(&s_write_throughput_stats_mux);
+        write_len = 0;
+        start_time = 0;
+        start = false;
+        current_time = 0;
+        portEXIT_CRITICAL(&s_write_throughput_stats_mux);
+#endif
+#if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
+        can_send_notify = false;
+#endif
         ESP_LOGI(GATTS_TAG, "Disconnected, remote "ESP_BD_ADDR_STR", reason 0x%02x",
                  ESP_BD_ADDR_HEX(param->disconnect.remote_bda), param->disconnect.reason);
         esp_ble_gap_start_advertising(&adv_params);
@@ -637,11 +694,22 @@ void throughput_cal_task(void *param)
     {
         uint32_t bit_rate = 0;
         vTaskDelay(2000 / portTICK_PERIOD_MS);
-        if (is_connect && start_time) {
-            current_time = esp_timer_get_time();
-            bit_rate = write_len * SECOND_TO_USECOND / (current_time - start_time);
-            ESP_LOGI(GATTS_TAG, "GATTC write Bit rate = %" PRIu32 " Byte/s, = %" PRIu32 " bit/s, time %d",
-                     bit_rate, bit_rate<<3, (int)((current_time - start_time) / SECOND_TO_USECOND));
+        if (is_connect) {
+            uint64_t snap_write_len;
+            uint64_t snap_start_time;
+            portENTER_CRITICAL(&s_write_throughput_stats_mux);
+            snap_start_time = start_time;
+            snap_write_len = write_len;
+            portEXIT_CRITICAL(&s_write_throughput_stats_mux);
+            if (snap_start_time != 0) {
+                current_time = esp_timer_get_time();
+                uint64_t elapsed_us = current_time - snap_start_time;
+                if (elapsed_us > 0) {
+                    bit_rate = (uint32_t)(snap_write_len * SECOND_TO_USECOND / elapsed_us);
+                    ESP_LOGI(GATTS_TAG, "GATTC write Bit rate = %" PRIu32 " Byte/s, = %" PRIu32 " bit/s, time %d",
+                             bit_rate, bit_rate << 3, (int)(elapsed_us / SECOND_TO_USECOND));
+                }
+            }
         }
 
     }

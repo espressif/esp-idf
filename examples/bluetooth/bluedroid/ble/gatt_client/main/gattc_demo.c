@@ -204,6 +204,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                 }
                 /* free char_elem_result */
                 free(char_elem_result);
+                char_elem_result = NULL;
             }else{
                 ESP_LOGE(GATTC_TAG, "no char found");
             }
@@ -262,6 +263,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
 
                     /* free descr_elem_result */
                     free(descr_elem_result);
+                    descr_elem_result = NULL;
                 }
             }
             else{
@@ -488,7 +490,7 @@ void app_main(void)
     }
 
     esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
-    ret = esp_bluedroid_init_with_cfg(&cfg);;
+    ret = esp_bluedroid_init_with_cfg(&cfg);
     if (ret) {
         ESP_LOGE(GATTC_TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;

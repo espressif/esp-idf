@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -17,6 +17,7 @@
 #include "driver/uart.h"
 
 #include "esp_bt.h"
+#include "esp_err.h"
 #include "nvs_flash.h"
 #include "esp_bt_device.h"
 #include "esp_gap_ble_api.h"
@@ -110,6 +111,7 @@ static bool connect = false;
 static char * notify_value_p = NULL;
 static int notify_value_offset = 0;
 static int notify_value_count = 0;
+static size_t notify_value_alloc_size = 0;
 static bool start = false;
 static uint64_t notify_len = 0;
 static uint64_t start_time = 0;
@@ -125,60 +127,71 @@ static esp_bt_uuid_t spp_service_uuid = {
     .uuid = {.uuid16 = ESP_GATT_SPP_SERVICE_UUID,},
 };
 
+/* Drop any in-flight notify reassembly buffer/counters. Used both on errors and on disconnect. */
+static void reset_notify_reasm(void)
+{
+    if (notify_value_p != NULL) {
+        free(notify_value_p);
+        notify_value_p = NULL;
+    }
+    notify_value_offset = 0;
+    notify_value_count = 0;
+    notify_value_alloc_size = 0;
+}
+
 static void notify_event_handler(esp_ble_gattc_cb_param_t * p_data)
 {
-    uint8_t handle = 0;
+    uint16_t handle = p_data->notify.handle;
 
-    handle = p_data->notify.handle;
     if (db == NULL) {
         ESP_LOGE(GATTC_TAG, " %s db is NULL", __func__);
         return;
     }
 
     if (handle == db[SPP_IDX_SPP_DATA_NTY_VAL].attribute_handle) {
-        if ((p_data->notify.value[0] == '#') && (p_data->notify.value[1] == '#')) {
-            if ((++notify_value_count) != p_data->notify.value[3]) {
-                if(notify_value_p != NULL){
-                    free(notify_value_p);
-                }
-                notify_value_count = 0;
-                notify_value_p = NULL;
-                notify_value_offset = 0;
-                ESP_LOGE(GATTC_TAG,"notify value count is not continuous, %s", __func__);
+        /* Fragment header is 4 bytes: "##", total_frags, seq. */
+        if (p_data->notify.value_len >= 4 &&
+            p_data->notify.value[0] == '#' && p_data->notify.value[1] == '#') {
+            uint8_t total_frags = p_data->notify.value[2];
+            uint8_t seq = p_data->notify.value[3];
+            uint16_t payload_len = p_data->notify.value_len - 4;
+
+            if ((++notify_value_count) != seq) {
+                ESP_LOGE(GATTC_TAG, "notify value count is not continuous, %s", __func__);
+                reset_notify_reasm();
                 return;
             }
-            if (p_data->notify.value[3] == 1) {
-                notify_value_p = (char *)malloc(((spp_mtu_size-7)*(p_data->notify.value[2]))*sizeof(char));
+            if (seq == 1) {
+                notify_value_alloc_size = (size_t)(spp_mtu_size - 7) * total_frags;
+                notify_value_p = (char *)malloc(notify_value_alloc_size);
                 if (notify_value_p == NULL) {
                     ESP_LOGE(GATTC_TAG, "malloc failed, %s L#%d", __func__, __LINE__);
-                    notify_value_count = 0;
+                    reset_notify_reasm();
                     return;
                 }
-                memcpy((notify_value_p + notify_value_offset), (p_data->notify.value + 4), (p_data->notify.value_len - 4));
-                if (p_data->notify.value[2] == p_data->notify.value[3]) {
-                    uart_write_bytes(UART_NUM_0, (char *)(notify_value_p), (p_data->notify.value_len - 4 + notify_value_offset));
-                    free(notify_value_p);
-                    notify_value_p = NULL;
-                    notify_value_offset = 0;
-                    return;
-                }
-                notify_value_offset += (p_data->notify.value_len - 4);
-            } else if (p_data->notify.value[3] <= p_data->notify.value[2]) {
-                memcpy((notify_value_p + notify_value_offset), (p_data->notify.value + 4), (p_data->notify.value_len - 4));
-                if (p_data->notify.value[3] == p_data->notify.value[2]) {
-                    uart_write_bytes(UART_NUM_0, (char *)(notify_value_p), (p_data->notify.value_len - 4 + notify_value_offset));
-                    free(notify_value_p);
-                    notify_value_count = 0;
-                    notify_value_p = NULL;
-                    notify_value_offset = 0;
-                    return;
-                }
-                notify_value_offset += (p_data->notify.value_len - 4);
+            } else if (notify_value_p == NULL) {
+                ESP_LOGE(GATTC_TAG, "fragment %u without start, %s", seq, __func__);
+                reset_notify_reasm();
+                return;
             }
+            /* Bound the write against the actually allocated reasm buffer to defeat
+             * malicious peers that send total_frags=0 or grow total_frags mid-stream. */
+            if ((size_t)notify_value_offset + payload_len > notify_value_alloc_size) {
+                ESP_LOGE(GATTC_TAG, "fragment payload would overflow reasm buffer, %s", __func__);
+                reset_notify_reasm();
+                return;
+            }
+            memcpy(notify_value_p + notify_value_offset, p_data->notify.value + 4, payload_len);
+            if (seq == total_frags) {
+                uart_write_bytes(UART_NUM_0, notify_value_p, payload_len + notify_value_offset);
+                reset_notify_reasm();
+                return;
+            }
+            notify_value_offset += payload_len;
         } else {
             uart_write_bytes(UART_NUM_0, (char *)(p_data->notify.value), p_data->notify.value_len);
         }
-    } else if (handle == ((db+SPP_IDX_SPP_STATUS_VAL)->attribute_handle)) {
+    } else if (handle == db[SPP_IDX_SPP_STATUS_VAL].attribute_handle) {
         ESP_LOG_BUFFER_CHAR(GATTC_TAG, (char *)p_data->notify.value, p_data->notify.value_len);
         //TODO:server notify status characteristic
     } else {
@@ -196,13 +209,42 @@ static void free_gattc_srv_db(void)
     cmd = 0;
     spp_srv_start_handle = 0;
     spp_srv_end_handle = 0;
-    notify_value_p = NULL;
-    notify_value_offset = 0;
-    notify_value_count = 0;
+    reset_notify_reasm();
     if (db) {
         free(db);
         db = NULL;
     }
+    count = SPP_IDX_NB;
+}
+
+/**
+ * Resolve the CCCD handle for a known notify-capable characteristic value index by looking up the
+ * adjacent ESP_GATT_UUID_CHAR_CLIENT_CONFIG descriptor. Returns 0 on mismatch.
+ *
+ * This is safer than `(db+cmd+1)->attribute_handle` because the descriptor slot is verified.
+ */
+static uint16_t spp_get_cccd_handle(uint16_t char_val_idx)
+{
+    size_t cfg_idx;
+
+    if (db == NULL) {
+        return 0;
+    }
+    switch (char_val_idx) {
+    case SPP_IDX_SPP_DATA_NTY_VAL: cfg_idx = SPP_IDX_SPP_DATA_NTF_CFG; break;
+    case SPP_IDX_SPP_STATUS_VAL:   cfg_idx = SPP_IDX_SPP_STATUS_CFG;   break;
+#ifdef SUPPORT_HEARTBEAT
+    case SPP_IDX_SPP_HEARTBEAT_VAL: cfg_idx = SPP_IDX_SPP_HEARTBEAT_CFG; break;
+#endif
+    default: return 0;
+    }
+    const esp_gattc_db_elem_t *d = &db[cfg_idx];
+    if (d->type != ESP_GATT_DB_DESCRIPTOR ||
+        d->uuid.len != ESP_UUID_LEN_16 ||
+        d->uuid.uuid.uuid16 != ESP_GATT_UUID_CHAR_CLIENT_CONFIG) {
+        return 0;
+    }
+    return d->attribute_handle;
 }
 
 static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
@@ -246,7 +288,9 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
                             ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
             ESP_LOGI(GATTC_TAG, "Scan result, device "ESP_BD_ADDR_STR", name len %u", ESP_BD_ADDR_HEX(scan_result->scan_rst.bda), adv_name_len);
             ESP_LOG_BUFFER_CHAR(GATTC_TAG, adv_name, adv_name_len);
-            if (adv_name != NULL && strncmp((char *)adv_name, device_name, adv_name_len) == 0) {
+            /* Full-name match (strncmp(adv_name, device_name, adv_name_len) would also accept prefixes). */
+            if (adv_name != NULL && adv_name_len == (sizeof(device_name) - 1) &&
+                memcmp(adv_name, device_name, adv_name_len) == 0) {
                 if (connect == false) {
                     connect = true;
                     esp_ble_gap_stop_scanning();
@@ -373,6 +417,11 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         if (p_data->reg_for_notify.status != ESP_GATT_OK) {
             break;
         }
+        uint16_t descr_handle = spp_get_cccd_handle(cmd);
+        if (descr_handle == 0) {
+            ESP_LOGW(GATTC_TAG, "CCCD handle not resolved for char index %u", (unsigned)cmd);
+            break;
+        }
         uint16_t notify_en = 0x01;
 #ifdef CONFIG_EXAMPLE_SPP_RELIABLE
         if (cmd == SPP_IDX_SPP_DATA_NTY_VAL) {
@@ -382,7 +431,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         esp_ble_gattc_write_char_descr(
                 spp_gattc_if,
                 spp_conn_id,
-                (db+cmd+1)->attribute_handle,
+                descr_handle,
                 sizeof(notify_en),
                 (uint8_t *)&notify_en,
                 ESP_GATT_WRITE_TYPE_RSP,
@@ -438,26 +487,35 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         break;
     case ESP_GATTC_CFG_MTU_EVT:
         ESP_LOGI(GATTC_TAG, "MTU exchange, status %d, MTU %d", param->cfg_mtu.status, param->cfg_mtu.mtu);
-        if(p_data->cfg_mtu.status != ESP_OK){
+        if (param->cfg_mtu.status != ESP_GATT_OK) {
             break;
         }
-        spp_mtu_size = p_data->cfg_mtu.mtu;
+        spp_mtu_size = param->cfg_mtu.mtu;
 
-        db = (esp_gattc_db_elem_t *)malloc(count*sizeof(esp_gattc_db_elem_t));
-        if(db == NULL){
+        if (db != NULL) {
+            free(db);
+            db = NULL;
+        }
+        count = SPP_IDX_NB;
+        db = (esp_gattc_db_elem_t *)malloc(count * sizeof(esp_gattc_db_elem_t));
+        if (db == NULL) {
             ESP_LOGE(GATTC_TAG, "Malloc db failed");
             break;
         }
-        if(esp_ble_gattc_get_db(spp_gattc_if, spp_conn_id, spp_srv_start_handle, spp_srv_end_handle, db, &count) != ESP_GATT_OK){
+        if (esp_ble_gattc_get_db(spp_gattc_if, spp_conn_id, spp_srv_start_handle, spp_srv_end_handle, db, &count) != ESP_GATT_OK) {
             ESP_LOGE(GATTC_TAG, "Get db failed");
+            free(db);
+            db = NULL;
             break;
         }
-        if(count != SPP_IDX_NB){
+        if (count != SPP_IDX_NB) {
             ESP_LOGE(GATTC_TAG, "Get db count != SPP_IDX_NB, count = %d, SPP_IDX_NB = %d", count, SPP_IDX_NB);
+            free(db);
+            db = NULL;
             break;
         }
-        for(int i = 0;i < SPP_IDX_NB;i++){
-            switch((db+i)->type){
+        for (int i = 0; i < SPP_IDX_NB; i++) {
+            switch ((db + i)->type) {
             case ESP_GATT_DB_PRIMARY_SERVICE:
                 ESP_LOGI(GATTC_TAG, "PRIMARY_SERVICE, attribute_handle %d, start_handle %d, end_handle %d, properties 0x%x, uuid 0x%04x",
                         (db+i)->attribute_handle, (db+i)->start_handle, (db+i)->end_handle, (db+i)->properties, (db+i)->uuid.uuid.uuid16);
@@ -572,11 +630,11 @@ void ble_client_appRegister(void)
         ESP_LOGE(GATTC_TAG, "set local  MTU failed: %s", esp_err_to_name_r(local_mtu_ret, err_msg, sizeof(err_msg)));
     }
 
-    cmd_reg_queue = xQueueCreate(10, sizeof(uint32_t));
+    cmd_reg_queue = xQueueCreate(10, sizeof(uint16_t));
     xTaskCreate(spp_client_reg_task, "spp_client_reg_task", 2048, NULL, 10, NULL);
 
 #ifdef SUPPORT_HEARTBEAT
-    cmd_heartbeat_queue = xQueueCreate(10, sizeof(uint32_t));
+    cmd_heartbeat_queue = xQueueCreate(10, sizeof(uint16_t));
     xTaskCreate(spp_heart_beat_task, "spp_heart_beat_task", 2048, NULL, 10, NULL);
 #endif
     esp_ble_gattc_app_register(PROFILE_APP_ID);

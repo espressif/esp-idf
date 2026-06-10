@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -40,9 +40,10 @@
 #define FUNC_SEND_WAIT_SEM(func, sem) do {\
         esp_err_t __err_rc = (func);\
         if (__err_rc != ESP_OK) { \
-            ESP_LOGE(LOG_TAG, "%s, message send fail, error = %d", __func__, __err_rc); \
+            ESP_LOGE(LOG_TAG, "%s failed: %s", #func, esp_err_to_name(__err_rc)); \
+            return; \
         } \
-        xSemaphoreTake(sem, portMAX_DELAY); \
+        xSemaphoreTake((sem), portMAX_DELAY); \
 } while(0);
 
 #define EXT_ADV_HANDLE      0
@@ -95,43 +96,50 @@ static esp_ble_gap_ext_adv_t ext_adv[1] = {
     [0] = {EXT_ADV_HANDLE, 0, 0},
 };
 
+static void periodic_adv_gap_sem_give(void)
+{
+    if (test_sem != NULL) {
+        xSemaphoreGive(test_sem);
+    }
+}
+
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
     switch (event) {
     case ESP_GAP_BLE_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT:
-        xSemaphoreGive(test_sem);
+        periodic_adv_gap_sem_give();
         ESP_LOGI(LOG_TAG, "Extended advertising random address set, status %d, instance %d", param->ext_adv_set_rand_addr.status, param->ext_adv_set_rand_addr.instance);
         break;
     case ESP_GAP_BLE_EXT_ADV_SET_PARAMS_COMPLETE_EVT:
-        xSemaphoreGive(test_sem);
+        periodic_adv_gap_sem_give();
         ESP_LOGI(LOG_TAG, "Extended advertising params set, status %d, instance %d", param->ext_adv_set_params.status, param->ext_adv_set_params.instance);
         break;
     case ESP_GAP_BLE_EXT_ADV_DATA_SET_COMPLETE_EVT:
-        xSemaphoreGive(test_sem);
+        periodic_adv_gap_sem_give();
         ESP_LOGI(LOG_TAG, "Extended advertising data set, status %d, instance %d", param->ext_adv_data_set.status, param->ext_adv_data_set.instance);
         break;
     case ESP_GAP_BLE_EXT_SCAN_RSP_DATA_SET_COMPLETE_EVT:
-        xSemaphoreGive(test_sem);
+        periodic_adv_gap_sem_give();
         ESP_LOGI(LOG_TAG, "Extended advertising scan response data set, status %d, instance %d", param->scan_rsp_set.status, param->scan_rsp_set.instance);
         break;
     case ESP_GAP_BLE_EXT_ADV_START_COMPLETE_EVT:
-        xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "Extended advertising start, status %d, instance numble %d", param->ext_adv_start.status, param->ext_adv_start.instance_num);
+        periodic_adv_gap_sem_give();
+        ESP_LOGI(LOG_TAG, "Extended advertising start, status %d, instance number %d", param->ext_adv_start.status, param->ext_adv_start.instance_num);
         break;
     case ESP_GAP_BLE_EXT_ADV_STOP_COMPLETE_EVT:
-        xSemaphoreGive(test_sem);
-        ESP_LOGI(LOG_TAG, "Extended advertising start, status %d, instance numble %d", param->ext_adv_stop.status, param->ext_adv_stop.instance_num);
+        periodic_adv_gap_sem_give();
+        ESP_LOGI(LOG_TAG, "Extended advertising stop, status %d, instance number %d", param->ext_adv_stop.status, param->ext_adv_stop.instance_num);
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_SET_PARAMS_COMPLETE_EVT:
-        xSemaphoreGive(test_sem);
+        periodic_adv_gap_sem_give();
         ESP_LOGI(LOG_TAG, "Periodic advertising params set, status %d, instance %d", param->peroid_adv_set_params.status, param->peroid_adv_set_params.instance);
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_DATA_SET_COMPLETE_EVT:
-        xSemaphoreGive(test_sem);
+        periodic_adv_gap_sem_give();
         ESP_LOGI(LOG_TAG, "Periodic advertising data set, status %d, instance %d", param->period_adv_data_set.status, param->period_adv_data_set.instance);
         break;
     case ESP_GAP_BLE_PERIODIC_ADV_START_COMPLETE_EVT:
-        xSemaphoreGive(test_sem);
+        periodic_adv_gap_sem_give();
         ESP_LOGI(LOG_TAG, "Periodic advertising start, status %d, instance %d", param->period_adv_start.status, param->period_adv_start.instance);
         break;
     default:
@@ -185,17 +193,24 @@ void app_main(void)
         ESP_LOGE(LOG_TAG, "%s enable bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
+
+    test_sem = xSemaphoreCreateBinary();
+    if (test_sem == NULL) {
+        ESP_LOGE(LOG_TAG, "Failed to create semaphore");
+        return;
+    }
+
     ret = esp_ble_gap_register_callback(gap_event_handler);
     if (ret){
         ESP_LOGE(LOG_TAG, "gap register error, error code = %x", ret);
+        vSemaphoreDelete(test_sem);
+        test_sem = NULL;
         return;
     }
 
     // create static random address
     esp_bd_addr_t rand_addr;
     esp_ble_gap_addr_create_static(rand_addr);
-
-    test_sem = xSemaphoreCreateBinary();
 
     // 2M phy extend adv, Non-Connectable and Non-Scannable Undirected advertising
     ESP_LOG_BUFFER_HEX(LOG_TAG, rand_addr, ESP_BD_ADDR_LEN);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -124,6 +124,9 @@ static uint8_t check_sum(uint8_t *addr, uint16_t count)
     uint32_t sum = 0;
 
     if (addr == NULL || count == 0) {
+        return 0;
+    }
+    if (count > (ESP_GATT_MAX_MTU_SIZE - 3U)) {
         return 0;
     }
 
@@ -288,6 +291,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
 
                     /* free descr_elem_result */
                     free(descr_elem_result);
+                    descr_elem_result = NULL;
                 }
             }
             else{
@@ -299,10 +303,23 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
     }
     case ESP_GATTC_NOTIFY_EVT: {
 #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
-        if (p_data->notify.is_notify &&
-            (p_data->notify.value[p_data->notify.value_len - 1] ==
-             check_sum(p_data->notify.value, p_data->notify.value_len - 1))){
-            notify_len += p_data->notify.value_len;
+        if (p_data->notify.is_notify) {
+            uint16_t vlen = p_data->notify.value_len;
+            uint8_t *val = p_data->notify.value;
+            const uint16_t max_notify_len = (uint16_t)(ESP_GATT_MAX_MTU_SIZE - 3U);
+            if (val == NULL) {
+                ESP_LOGW(GATTC_TAG, "notify ignored: null value");
+            } else if (vlen == 0) {
+                ESP_LOGW(GATTC_TAG, "notify ignored: zero length");
+            } else if (vlen < 2) {
+                ESP_LOGW(GATTC_TAG, "notify ignored: length too short for payload+checksum");
+            } else if (vlen > max_notify_len) {
+                ESP_LOGW(GATTC_TAG, "notify ignored: length exceeds bound");
+            } else if (val[vlen - 1] == check_sum(val, (uint16_t)(vlen - 1U))) {
+                notify_len += vlen;
+            } else {
+                ESP_LOGE(GATTC_TAG, "notify checksum mismatch");
+            }
         } else {
             ESP_LOGE(GATTC_TAG, "Indication received, value:");
         }
@@ -347,6 +364,11 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         current_time = 0;
         notify_len = 0;
 #endif /* #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT) */
+#if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
+        /* Unblock throughput_client_task if it is waiting on gattc_semaphore while congested. */
+        can_send_write = true;
+        xSemaphoreGive(gattc_semaphore);
+#endif /* #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT) */
         ESP_LOGI(GATTC_TAG, "Disconnected, remote "ESP_BD_ADDR_STR", reason 0x%02x",
                  ESP_BD_ADDR_HEX(p_data->disconnect.remote_bda), p_data->disconnect.reason);
         break;
@@ -405,7 +427,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
 
                         esp_ble_conn_params_t phy_1m_conn_params = {0};
 #if(CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT && CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
-                        phy_1m_conn_params.interval_max = 34;
+                        phy_1m_conn_params.interval_min = 34;
                         phy_1m_conn_params.interval_max = 34;
 #else
                         phy_1m_conn_params.interval_max = 32;
@@ -540,9 +562,14 @@ static void throughput_cal_task(void *param)
             uint32_t bit_rate = 0;
             if (start_time) {
                 current_time = esp_timer_get_time();
-                bit_rate = notify_len * SECOND_TO_USECOND / (current_time - start_time);
-                ESP_LOGI(GATTC_TAG, "Notify Bit rate = %" PRIu32 " Byte/s, = %" PRIu32 " bit/s, time = %ds",
-                        bit_rate, bit_rate<<3, (int)((current_time - start_time) / SECOND_TO_USECOND));
+                uint64_t elapsed_us = current_time - start_time;
+                if (elapsed_us > 0) {
+                    bit_rate = (uint32_t)(notify_len * SECOND_TO_USECOND / elapsed_us);
+                    ESP_LOGI(GATTC_TAG, "Notify Bit rate = %" PRIu32 " Byte/s, = %" PRIu32 " bit/s, time = %ds",
+                            bit_rate, bit_rate << 3, (int)(elapsed_us / SECOND_TO_USECOND));
+                } else {
+                    ESP_LOGI(GATTC_TAG, "Notify Bit rate = 0 Byte/s, = 0 bit/s (elapsed 0 us)");
+                }
             } else {
                 ESP_LOGI(GATTC_TAG, "Notify Bit rate = 0 Byte/s, = 0 bit/s");
             }
@@ -601,6 +628,17 @@ void app_main(void)
         return;
     }
 
+#if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
+    /* Create the semaphore before registering the GATTC callback so that any
+     * xSemaphoreGive() invoked from the callback is guaranteed to see a valid handle.
+     */
+    gattc_semaphore = xSemaphoreCreateBinary();
+    if (!gattc_semaphore) {
+        ESP_LOGE(GATTC_TAG, "%s, init fail, the gattc semaphore create fail.", __func__);
+        return;
+    }
+#endif /* #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT) */
+
     //register the callback function to the gattc module
     ret = esp_ble_gattc_register_callback(esp_gattc_cb);
     if(ret){
@@ -626,12 +664,4 @@ void app_main(void)
 #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
     xTaskCreatePinnedToCore(&throughput_cal_task, "throughput_cal_task", 4096, NULL, 9, NULL, BLUETOOTH_TASK_PINNED_TO_CORE);
 #endif
-
-#if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
-    gattc_semaphore = xSemaphoreCreateBinary();
-    if (!gattc_semaphore) {
-        ESP_LOGE(GATTC_TAG, "%s, init fail, the gattc semaphore create fail.", __func__);
-        return;
-    }
-#endif /* #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT) */
 }

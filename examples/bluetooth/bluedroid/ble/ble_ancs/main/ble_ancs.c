@@ -29,9 +29,9 @@ A GATT notification delivered through the Notification Source characteristic con
                    Control Point characteristic to interact with the iOS notification.
 */
 
-char *EventID_to_String(uint8_t EventID)
+const char *EventID_to_String(uint8_t EventID)
 {
-    char *str = NULL;
+    const char *str = NULL;
     switch (EventID)
     {
         case EventIDNotificationAdded:
@@ -50,9 +50,9 @@ char *EventID_to_String(uint8_t EventID)
     return str;
 }
 
-char *CategoryID_to_String(uint8_t CategoryID)
+const char *CategoryID_to_String(uint8_t CategoryID)
 {
-    char *Cidstr = NULL;
+    const char *Cidstr = NULL;
     switch(CategoryID) {
         case CategoryIDOther:
             Cidstr = "Other";
@@ -103,17 +103,20 @@ char *CategoryID_to_String(uint8_t CategoryID)
 
 void esp_receive_apple_notification_source(uint8_t *message, uint16_t message_len)
 {
-    if (!message || message_len < 5) {
+    if (!message || message_len < 8) {
         return;
     }
 
     uint8_t EventID    = message[0];
-    char    *EventIDS  = EventID_to_String(EventID);
+    const char *EventIDS  = EventID_to_String(EventID);
     uint8_t EventFlags = message[1];
     uint8_t CategoryID = message[2];
-    char    *Cidstr    = CategoryID_to_String(CategoryID);
+    const char *Cidstr    = CategoryID_to_String(CategoryID);
     uint8_t CategoryCount = message[3];
-    uint32_t NotificationUID = (message[4]) | (message[5]<< 8) | (message[6]<< 16) | (message[7] << 24);
+    uint32_t NotificationUID = (uint32_t)message[4]
+        | ((uint32_t)message[5] << 8)
+        | ((uint32_t)message[6] << 16)
+        | ((uint32_t)message[7] << 24);
     ESP_LOGI(BLE_ANCS_TAG, "EventID:%s EventFlags:0x%x CategoryID:%s CategoryCount:%d NotificationUID:%" PRIu32, EventIDS, EventFlags, Cidstr, CategoryCount, NotificationUID);
 }
 
@@ -131,7 +134,10 @@ void esp_receive_apple_data_source(uint8_t *message, uint16_t message_len)
                 ESP_LOGE(BLE_ANCS_TAG, "Message too short for NotificationAttributes");
                 break;
             }
-            uint32_t NotificationUID = (message[1]) | (message[2]<< 8) | (message[3]<< 16) | (message[4] << 24);
+            uint32_t NotificationUID = (uint32_t)message[1]
+                | ((uint32_t)message[2] << 8)
+                | ((uint32_t)message[3] << 16)
+                | ((uint32_t)message[4] << 24);
             uint32_t remian_attr_len = message_len - 5;
             uint8_t *attrs = &message[5];
             ESP_LOGI(BLE_ANCS_TAG, "recevice Notification Attributes response Command_id %d NotificationUID %" PRIu32, Command_id, NotificationUID);
@@ -142,7 +148,7 @@ void esp_receive_apple_data_source(uint8_t *message, uint16_t message_len)
                     break;
                 }
                 uint8_t AttributeID = attrs[0];
-                uint16_t len = attrs[1] | (attrs[2] << 8);
+                uint16_t len = (uint16_t)attrs[1] | ((uint16_t)attrs[2] << 8);
                 if(len > (remian_attr_len - 3)) {
                     ESP_LOGE(BLE_ANCS_TAG, "data error");
                     break;
@@ -197,9 +203,9 @@ void esp_receive_apple_data_source(uint8_t *message, uint16_t message_len)
     }
 }
 
-char *Errcode_to_String(uint16_t status)
+const char *Errcode_to_String(uint16_t status)
 {
-    char *Errstr = NULL;
+    const char *Errstr = NULL;
     switch (status) {
         case Unknown_command:
             Errstr = "Unknown_command";
@@ -212,6 +218,9 @@ char *Errcode_to_String(uint16_t status)
             break;
         case Action_failed:
             Errstr = "Action_failed";
+            break;
+        case Internal_error:
+            Errstr = "Internal_error";
             break;
         default:
             Errstr = "unknown_failed";
