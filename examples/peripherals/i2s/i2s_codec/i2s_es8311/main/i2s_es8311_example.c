@@ -143,7 +143,6 @@ static esp_err_t i2s_driver_init(void)
             },
         },
     };
-    std_cfg.clk_cfg.mclk_multiple = EXAMPLE_MCLK_MULTIPLE;
 
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_handle, &std_cfg));
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
