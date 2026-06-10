@@ -269,7 +269,7 @@ static void btc_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
         }
 
 #if BLE_SMP_BOND_NVS_FLASH
-        int addr_type;
+        int addr_type = BLE_ADDR_PUBLIC;
 
         if (btc_dm_cb.pairing_cb.ble.is_pid_key_rcvd) {
             // delete unused section in NVS
