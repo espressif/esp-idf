@@ -388,6 +388,7 @@ conditional_include_dict = {
     'SOC_HMAC_SUPPORTED': ['api-reference/peripherals/hmac.rst'],
     'SOC_GDMA_SUPPORT_CRC': ['api-reference/peripherals/async_crc.rst'],
     'SOC_ASYNC_MEMCPY_SUPPORTED': ['api-reference/peripherals/async_memcpy.rst'],
+    'SOC_DMA2D_SUPPORTED': ['api-reference/peripherals/async_color_convert.rst'],
     'SOC_KEY_MANAGER_SUPPORTED': ['api-reference/peripherals/key_manager.rst'],
     'CONFIG_IDF_TARGET_ARCH_XTENSA': XTENSA_DOCS,
     'CONFIG_IDF_TARGET_ARCH_RISCV': RISCV_DOCS,
