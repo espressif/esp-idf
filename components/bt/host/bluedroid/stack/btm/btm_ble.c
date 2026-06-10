@@ -736,7 +736,7 @@ BOOLEAN BTM_ReadConnectedTransportAddress(BD_ADDR remote_bda, tBT_TRANSPORT tran
 **               p_cmd_cmpl_cback - Command Complete callback
 **
 *******************************************************************************/
-void BTM_BleReceiverTest(UINT8 rx_freq, tBTM_CMPL_CB *p_cmd_cmpl_cback)
+void BTM_BleReceiverTest(UINT8 rx_freq, tBTM_DTM_CMD_CMPL_CBACK *p_cmd_cmpl_cback)
 {
     btm_cb.devcb.p_le_test_cmd_cmpl_cb = p_cmd_cmpl_cback;
 
@@ -758,7 +758,7 @@ void BTM_BleReceiverTest(UINT8 rx_freq, tBTM_CMPL_CB *p_cmd_cmpl_cback)
 **
 *******************************************************************************/
 void BTM_BleTransmitterTest(UINT8 tx_freq, UINT8 test_data_len,
-                            UINT8 packet_payload, tBTM_CMPL_CB *p_cmd_cmpl_cback)
+                            UINT8 packet_payload, tBTM_DTM_CMD_CMPL_CBACK *p_cmd_cmpl_cback)
 {
     btm_cb.devcb.p_le_test_cmd_cmpl_cb = p_cmd_cmpl_cback;
     if (btsnd_hcic_ble_transmitter_test(tx_freq, test_data_len, packet_payload) == FALSE) {
@@ -776,7 +776,7 @@ void BTM_BleTransmitterTest(UINT8 tx_freq, UINT8 test_data_len,
 ** Parameter       p_cmd_cmpl_cback - Command complete callback
 **
 *******************************************************************************/
-void BTM_BleTestEnd(tBTM_CMPL_CB *p_cmd_cmpl_cback)
+void BTM_BleTestEnd(tBTM_DTM_CMD_CMPL_CBACK *p_cmd_cmpl_cback)
 {
     btm_cb.devcb.p_le_test_cmd_cmpl_cb = p_cmd_cmpl_cback;
 
@@ -788,14 +788,14 @@ void BTM_BleTestEnd(tBTM_CMPL_CB *p_cmd_cmpl_cback)
 /*******************************************************************************
 ** Internal Functions
 *******************************************************************************/
-void btm_ble_test_command_complete(UINT8 *p)
+void btm_ble_test_command_complete(UINT8 *p, UINT16 len)
 {
-    tBTM_CMPL_CB   *p_cb = btm_cb.devcb.p_le_test_cmd_cmpl_cb;
+    tBTM_DTM_CMD_CMPL_CBACK *p_cb = btm_cb.devcb.p_le_test_cmd_cmpl_cb;
 
     btm_cb.devcb.p_le_test_cmd_cmpl_cb = NULL;
 
     if (p_cb) {
-        (*p_cb)(p);
+        (*p_cb)(p, len);
     }
 }
 #endif // #if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
@@ -813,7 +813,7 @@ void btm_ble_test_command_complete(UINT8 *p)
 **                 p_cmd_cmpl_cback - Command Complete callback
 **
 *******************************************************************************/
-void BTM_BleEnhancedReceiverTest(UINT8 rx_freq, UINT8 phy, UINT8 modulation_index, tBTM_CMPL_CB *p_cmd_cmpl_cback)
+void BTM_BleEnhancedReceiverTest(UINT8 rx_freq, UINT8 phy, UINT8 modulation_index, tBTM_DTM_CMD_CMPL_CBACK *p_cmd_cmpl_cback)
 {
     btm_cb.devcb.p_le_test_cmd_cmpl_cb = p_cmd_cmpl_cback;
 
@@ -836,7 +836,7 @@ void BTM_BleEnhancedReceiverTest(UINT8 rx_freq, UINT8 phy, UINT8 modulation_inde
 **
 *******************************************************************************/
 void BTM_BleEnhancedTransmitterTest(UINT8 tx_freq, UINT8 test_data_len,
-                            UINT8 packet_payload, UINT8 phy, tBTM_CMPL_CB *p_cmd_cmpl_cback)
+                            UINT8 packet_payload, UINT8 phy, tBTM_DTM_CMD_CMPL_CBACK *p_cmd_cmpl_cback)
 {
     btm_cb.devcb.p_le_test_cmd_cmpl_cb = p_cmd_cmpl_cback;
     if (btsnd_hcic_ble_enhand_tx_test(tx_freq, test_data_len, packet_payload, phy) == FALSE) {
