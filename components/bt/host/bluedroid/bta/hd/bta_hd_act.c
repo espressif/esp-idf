@@ -71,28 +71,47 @@ static bool check_descriptor(uint8_t *data, uint16_t length, bool *has_report_id
  ******************************************************************************/
 void bta_hd_api_enable(tBTA_HD_DATA *p_data)
 {
-    tBTA_HD_STATUS status = BTA_HD_ERROR;
     tHID_STATUS ret;
+    tBTA_HD_STATUS status = BTA_HD_ERROR;
+    tBTA_HD_CBACK *p_cback = p_data->api_enable.p_cback;
 
     APPL_TRACE_API("%s", __func__);
 
-    HID_DevInit();
+    do {
+        ret = HID_DevInit();
+        if (ret != HID_SUCCESS) {
+            APPL_TRACE_ERROR("%HID_DevInit failed (%d)", ret);
+            break;
+        }
+        memset(&bta_hd_cb, 0, sizeof(tBTA_HD_CB));
 
-    memset(&bta_hd_cb, 0, sizeof(tBTA_HD_CB));
+        ret = HID_DevSetSecurityLevel(BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT);
+        if (ret != HID_SUCCESS) {
+            APPL_TRACE_ERROR("HD ailed to set security level (%d)", ret);
+            HID_DevDeinit();
+            break;
+        }
 
-    HID_DevSetSecurityLevel(BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT);
-    /* store parameters */
-    bta_hd_cb.p_cback = p_data->api_enable.p_cback;
+        ret = HID_DevRegister(bta_hd_cback);
+        if (ret != HID_SUCCESS) {
+            APPL_TRACE_ERROR("%s: Failed to register HID device (%d)", __func__, ret);
+            HID_DevDeinit();
+            break;
+        }
 
-    ret = HID_DevRegister(bta_hd_cback);
-    if (ret == HID_SUCCESS) {
+        /* store parameters */
+        bta_hd_cb.p_cback = p_data->api_enable.p_cback;
         status = BTA_HD_OK;
-    } else {
-        APPL_TRACE_ERROR("%s: Failed to register HID device (%d)", __func__, ret);
+    } while (0);
+
+    if (ret != HID_SUCCESS) {
+        bta_sys_deregister(BTA_ID_HD);
     }
 
     /* signal BTA call back event */
-    (*bta_hd_cb.p_cback)(BTA_HD_ENABLE_EVT, (tBTA_HD *)&status);
+    if (p_cback) {
+        (*p_cback)(BTA_HD_ENABLE_EVT, (tBTA_HD *)&status);
+    }
 }
 
 /*******************************************************************************
@@ -145,52 +164,73 @@ void bta_hd_api_disable(void)
  ******************************************************************************/
 void bta_hd_register_act(tBTA_HD_DATA *p_data)
 {
-    tBTA_HD ret;
+    tBTA_HD ret = {0};
     tBTA_HD_REGISTER_APP *p_app_data = (tBTA_HD_REGISTER_APP *)p_data;
     bool use_report_id = FALSE;
+    bool old_use_report_id = bta_hd_cb.use_report_id;
 
     APPL_TRACE_API("%s", __func__);
 
-    ret.reg_status.in_use = FALSE;
+    do {
+        if (!p_app_data) {
+            ret.reg_status.status = BTA_HD_ERROR;
+            break;
+        }
 
-    /* Check if len doesn't exceed BTA_HD_APP_DESCRIPTOR_LEN and descriptor
-     * itself is well-formed. Also check if descriptor has Report Id item so we
-     * know if report will have prefix or not. */
-    if (p_app_data->d_len > BTA_HD_APP_DESCRIPTOR_LEN ||
-        !check_descriptor(p_app_data->d_data, p_app_data->d_len, &use_report_id)) {
-        APPL_TRACE_ERROR("%s: Descriptor is too long or malformed", __func__);
-        ret.reg_status.status = BTA_HD_ERROR;
-        (*bta_hd_cb.p_cback)(BTA_HD_REGISTER_APP_EVT, &ret);
-        return;
-    }
+        ret.reg_status.in_use = FALSE;
 
-    ret.reg_status.status = BTA_HD_OK;
+        /* Check if len doesn't exceed BTA_HD_APP_DESCRIPTOR_LEN and descriptor
+        * itself is well-formed. Also check if descriptor has Report Id item so we
+        * know if report will have prefix or not. */
+        if (p_app_data->d_len > BTA_HD_APP_DESCRIPTOR_LEN ||
+            !check_descriptor(p_app_data->d_data, p_app_data->d_len, &use_report_id)) {
+            APPL_TRACE_ERROR("%s: Descriptor is too long or malformed", __func__);
+            ret.reg_status.status = BTA_HD_ERROR;
+            break;
+        }
 
-    /* Remove old record if for some reason it's already registered */
-    if (bta_hd_cb.sdp_handle != 0) {
-        SDP_DeleteRecord(bta_hd_cb.sdp_handle);
-    }
+        /* Remove old record if for some reason it's already registered */
+        if (bta_hd_cb.sdp_handle != 0) {
+            SDP_DeleteRecord(bta_hd_cb.sdp_handle);
+            bta_hd_cb.sdp_handle = 0;
+        }
 
-    bta_hd_cb.use_report_id = use_report_id;
-    bta_hd_cb.sdp_handle = SDP_CreateRecord();
-    HID_DevAddRecord(bta_hd_cb.sdp_handle, p_app_data->name, p_app_data->description, p_app_data->provider,
-                     p_app_data->subclass, p_app_data->d_len, p_app_data->d_data);
-    bta_sys_add_uuid(UUID_SERVCLASS_HUMAN_INTERFACE);
+        bta_hd_cb.use_report_id = use_report_id;
+        bta_hd_cb.sdp_handle = SDP_CreateRecord();
+        if (bta_hd_cb.sdp_handle == 0) {
+            bta_hd_cb.use_report_id = old_use_report_id;
+            ret.reg_status.status = BTA_HD_ERROR;
+            break;
+        }
+        tHID_STATUS status = HID_DevAddRecord(bta_hd_cb.sdp_handle, p_app_data->name, p_app_data->description, p_app_data->provider,
+                                              p_app_data->subclass, p_app_data->d_len, p_app_data->d_data);
+        if (status != HID_SUCCESS) {
+            SDP_DeleteRecord(bta_hd_cb.sdp_handle);
+            bta_hd_cb.sdp_handle = 0;
+            bta_hd_cb.use_report_id = old_use_report_id;
+            ret.reg_status.status = BTA_HD_ERROR;
+            break;
+        }
 
-    HID_DevSetIncomingQos(p_app_data->in_qos.service_type, p_app_data->in_qos.token_rate,
-                          p_app_data->in_qos.token_bucket_size, p_app_data->in_qos.peak_bandwidth,
-                          p_app_data->in_qos.access_latency, p_app_data->in_qos.delay_variation);
+        bta_sys_add_uuid(UUID_SERVCLASS_HUMAN_INTERFACE);
 
-    HID_DevSetOutgoingQos(p_app_data->out_qos.service_type, p_app_data->out_qos.token_rate,
-                          p_app_data->out_qos.token_bucket_size, p_app_data->out_qos.peak_bandwidth,
-                          p_app_data->out_qos.access_latency, p_app_data->out_qos.delay_variation);
+        HID_DevSetIncomingQos(p_app_data->in_qos.service_type, p_app_data->in_qos.token_rate,
+                            p_app_data->in_qos.token_bucket_size, p_app_data->in_qos.peak_bandwidth,
+                            p_app_data->in_qos.access_latency, p_app_data->in_qos.delay_variation);
 
-    // application is registered so we can accept incoming connections
-    HID_DevSetIncomingPolicy(TRUE);
+        HID_DevSetOutgoingQos(p_app_data->out_qos.service_type, p_app_data->out_qos.token_rate,
+                            p_app_data->out_qos.token_bucket_size, p_app_data->out_qos.peak_bandwidth,
+                            p_app_data->out_qos.access_latency, p_app_data->out_qos.delay_variation);
 
-    if (HID_DevGetDevice(&ret.reg_status.bda) == HID_SUCCESS) {
-        ret.reg_status.in_use = TRUE;
-    }
+        // application is registered so we can accept incoming connections
+        HID_DevSetIncomingPolicy(TRUE);
+
+        if (HID_DevGetDevice(&ret.reg_status.bda) == HID_SUCCESS) {
+            ret.reg_status.in_use = TRUE;
+        }
+
+        ret.reg_status.status = BTA_HD_OK;
+    } while (0);
 
     (*bta_hd_cb.p_cback)(BTA_HD_REGISTER_APP_EVT, &ret);
 }
@@ -260,14 +300,14 @@ extern void bta_hd_connect_act(tBTA_HD_DATA *p_data)
 {
     tHID_STATUS ret;
     tBTA_HD_DEVICE_CTRL *p_ctrl = (tBTA_HD_DEVICE_CTRL *)p_data;
-    tBTA_HD cback_data;
+    tBTA_HD cback_data = {0};
 
     APPL_TRACE_API("%s", __func__);
     do {
         ret = HID_DevPlugDevice(p_ctrl->addr);
         if (ret != HID_SUCCESS) {
             APPL_TRACE_WARNING("%s: HID_DevPlugDevice returned %d", __func__, ret);
-            return;
+            break;
         }
 
         ret = HID_DevConnect();
@@ -279,7 +319,7 @@ extern void bta_hd_connect_act(tBTA_HD_DATA *p_data)
 
     bdcpy(cback_data.conn.bda, p_ctrl->addr);
     cback_data.conn.status = (ret == HID_SUCCESS ? BTA_HD_OK : BTA_HD_ERROR);
-    cback_data.conn.conn_status = BTA_HD_CONN_STATE_CONNECTING;
+    cback_data.conn.conn_status = (ret == HID_SUCCESS ? BTA_HD_CONN_STATE_CONNECTING : BTA_HD_CONN_STATE_DISCONNECTED);
     bta_hd_cb.p_cback(BTA_HD_OPEN_EVT, &cback_data);
 }
 
@@ -441,11 +481,13 @@ extern void bta_hd_vc_unplug_act(UNUSED_ATTR tBTA_HD_DATA *p_data)
         }
         APPL_TRACE_DEBUG("%s local VUP, remove bda: %02x:%02x:%02x:%02x:%02x:%02x", __func__, plugged_addr[0],
                          plugged_addr[1], plugged_addr[2], plugged_addr[3], plugged_addr[4], plugged_addr[5]);
+        bdcpy(cback_data.conn.bda, plugged_addr);
         cback_data.conn.status = BTA_HD_OK;
         cback_data.conn.conn_status = BTA_HD_CONN_STATE_DISCONNECTED;
         bta_hd_cb.p_cback(BTA_HD_VC_UNPLUG_EVT, &cback_data);
         return;
     } else if (ret != HID_SUCCESS) {
+        bta_hd_cb.vc_unplug = FALSE;
         APPL_TRACE_WARNING("%s: HID_DevVirtualCableUnplug returned %d", __func__, ret);
     }
 
@@ -532,7 +574,7 @@ extern void bta_hd_intr_data_act(tBTA_HD_DATA *p_data)
     BT_HDR *p_msg = p_cback->p_data;
     uint16_t len = p_msg->len;
     uint8_t *p_buf = (uint8_t *)(p_msg + 1) + p_msg->offset;
-    tBTA_HD_INTR_DATA ret;
+    tBTA_HD_INTR_DATA ret = {0};
 
     APPL_TRACE_API("%s", __func__);
 
@@ -636,7 +678,7 @@ extern void bta_hd_set_report_act(tBTA_HD_DATA *p_data)
     BT_HDR *p_msg = p_cback->p_data;
     uint16_t len = p_msg->len;
     uint8_t *p_buf = (uint8_t *)(p_msg + 1) + p_msg->offset;
-    tBTA_HD_SET_REPORT ret = {0, 0, 0, NULL};
+    tBTA_HD ret = {0};
 
     APPL_TRACE_API("%s", __func__);
 
@@ -644,7 +686,7 @@ extern void bta_hd_set_report_act(tBTA_HD_DATA *p_data)
         goto _exit;
     }
 
-    ret.report_type = *p_buf & HID_PAR_REP_TYPE_MASK;
+    ret.set_report.report_type = *p_buf & HID_PAR_REP_TYPE_MASK;
     p_buf++;
     len--;
 
@@ -652,16 +694,16 @@ extern void bta_hd_set_report_act(tBTA_HD_DATA *p_data)
         if (len < 1) {
             goto _exit;
         }
-        ret.report_id = *p_buf;
+        ret.set_report.report_id = *p_buf;
         len--;
         p_buf++;
     } else {
-        ret.report_id = 0;
+        ret.set_report.report_id = 0;
     }
 
-    ret.len = len;
-    ret.p_data = p_buf;
-    (*bta_hd_cb.p_cback)(BTA_HD_SET_REPORT_EVT, (tBTA_HD *)&ret);
+    ret.set_report.len = len;
+    ret.set_report.p_data = p_buf;
+    (*bta_hd_cb.p_cback)(BTA_HD_SET_REPORT_EVT, &ret);
 
 _exit:
     if (p_msg) {

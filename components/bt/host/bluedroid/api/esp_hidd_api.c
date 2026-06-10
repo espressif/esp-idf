@@ -31,7 +31,7 @@ esp_err_t esp_bt_hid_device_init(void)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HD;
     msg.act = BTC_HD_INIT_EVT;
@@ -45,7 +45,7 @@ esp_err_t esp_bt_hid_device_deinit(void)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HD;
     msg.act = BTC_HD_DEINIT_EVT;
@@ -68,9 +68,8 @@ esp_err_t esp_bt_hid_device_register_app(esp_hidd_app_param_t* app_param, esp_hi
         return ESP_ERR_INVALID_ARG;
     }
 
-    btc_msg_t msg;
-    btc_hidd_args_t args;
-    memset(&args, 0, sizeof(btc_hidd_args_t));
+    btc_msg_t msg = {0};
+    btc_hidd_args_t args = {0};
     args.register_app.app_param = app_param;
     args.register_app.in_qos = in_qos;
     args.register_app.out_qos = out_qos;
@@ -88,7 +87,7 @@ esp_err_t esp_bt_hid_device_unregister_app(void)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HD;
     msg.act = BTC_HD_UNREGISTER_APP_EVT;
@@ -105,9 +104,8 @@ esp_err_t esp_bt_hid_device_connect(esp_bd_addr_t bd_addr)
         return ESP_ERR_INVALID_ARG;
     }
 
-    btc_msg_t msg;
-    btc_hidd_args_t args;
-    memset(&args, 0, sizeof(btc_hidd_args_t));
+    btc_msg_t msg = {0};
+    btc_hidd_args_t args = {0};
     memcpy(args.connect.bd_addr, bd_addr, sizeof(esp_bd_addr_t));
 
     msg.sig = BTC_SIG_API_CALL;
@@ -122,7 +120,7 @@ esp_err_t esp_bt_hid_device_disconnect(void)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HD;
     msg.act = BTC_HD_DISCONNECT_EVT;
@@ -139,13 +137,12 @@ esp_err_t esp_bt_hid_device_send_report(esp_hidd_report_type_t type, uint8_t id,
         return ESP_ERR_INVALID_ARG;
     }
 
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HD;
     msg.act = BTC_HD_SEND_REPORT_EVT;
 
-    btc_hidd_args_t args;
-    memset(&args, 0, sizeof(btc_hidd_args_t));
+    btc_hidd_args_t args = {0};
     args.send_report.type = type;
     args.send_report.id = id;
     args.send_report.len = len;
@@ -165,13 +162,12 @@ esp_err_t esp_bt_hid_device_report_error(esp_hidd_handshake_error_t error)
         return ESP_ERR_INVALID_ARG;
     }
 
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HD;
     msg.act = BTC_HD_REPORT_ERROR_EVT;
 
-    btc_hidd_args_t args;
-    memset(&args, 0, sizeof(btc_hidd_args_t));
+    btc_hidd_args_t args = {0};
     args.error = error;
 
     bt_status_t stat = btc_transfer_context(&msg, &args, sizeof(btc_hidd_args_t), NULL, NULL);
@@ -182,7 +178,7 @@ esp_err_t esp_bt_hid_device_virtual_cable_unplug(void)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HD;
     msg.act = BTC_HD_UNPLUG_EVT;
