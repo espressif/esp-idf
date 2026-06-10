@@ -48,6 +48,7 @@ struct gatt_nrp_node {
         } read_long;
 
         struct {
+            struct bt_gatt_read_params params_copy;
             struct bt_gatt_read_params *params;
         } read_single;
 
@@ -271,15 +272,20 @@ static int gattc_nrp_read_single_cb_safe(uint16_t conn_handle,
                                          struct ble_gatt_attr *attr,
                                          void *arg)
 {
-    struct bt_gatt_read_params *read_params;
+    struct bt_gatt_read_params *params_copy = arg;
+    struct bt_gatt_read_params *original;
+    struct gatt_nrp_node *nrp_node;
+    bt_gatt_read_func_t func;
     struct bt_conn *conn;
     int rc = 0;
 
-    read_params = arg;
-    assert(read_params);
-    assert(read_params->func);
-    assert(read_params->handle_count == 1);
-    assert(read_params->single.offset == 0);
+    nrp_node = CONTAINER_OF(params_copy, struct gatt_nrp_node, read_single.params_copy);
+    original = nrp_node->read_single.params;
+    func = params_copy->func;
+
+    assert(func);
+    assert(params_copy->handle_count == 1);
+    assert(params_copy->single.offset == 0);
 
     LOG_DBG("[N]GattcNrpRdSingleCb[%u][%04x]", conn_handle, error->status);
 
@@ -292,8 +298,8 @@ static int gattc_nrp_read_single_cb_safe(uint16_t conn_handle,
         goto end;
     }
 
-    /* Shall be invoked before the read_params->func is invoked */
-    bt_le_nimble_gatt_nrp_remove(conn, GATTC_NRP_READ_SINGLE, read_params, 0);
+    /* Frees nrp_node (and params_copy); func and original are locals. */
+    bt_le_nimble_gatt_nrp_remove(conn, GATTC_NRP_READ_SINGLE, original, 0);
 
     switch (error->status) {
     case 0:
@@ -301,27 +307,24 @@ static int gattc_nrp_read_single_cb_safe(uint16_t conn_handle,
         assert(attr->om);
 
         LOG_DBG("[N]GattcNrpHdl[%u][%u]Len[%u]",
-                attr->handle, read_params->single.handle, attr->om->om_len);
+                attr->handle, original->single.handle, attr->om->om_len);
 
-        if (read_params->func(conn, 0, read_params,
-                              attr->om->om_data,
-                              attr->om->om_len) == BT_GATT_ITER_CONTINUE) {
-            /* Workaround for completing the handling of ATT Read Response
-             * by BAP Unicast Client.
-             */
-            read_params->func(conn, 0, read_params, NULL, 0);
+        if (func(conn, 0, original,
+                 attr->om->om_data,
+                 attr->om->om_len) == BT_GATT_ITER_CONTINUE) {
+            func(conn, 0, original, NULL, 0);
         }
         break;
 
     case BLE_HS_EDONE:
-        read_params->func(conn, 0, read_params, NULL, 0);
+        func(conn, 0, original, NULL, 0);
         break;
 
     default:
         LOG_WRN("[N]GattcNrpStatus[%04x]", error->status);
 
         if (error->status & BLE_HS_ERR_ATT_BASE) {
-            read_params->func(conn, (uint8_t)error->status, read_params, NULL, 0);
+            func(conn, (uint8_t)error->status, original, NULL, 0);
         }
 
         rc = error->status;
@@ -736,6 +739,7 @@ static int gatt_nrp_insert(struct bt_conn *conn, uint8_t type, void *params)
         nrp_node->read_long.params = params;
         break;
     case GATTC_NRP_READ_SINGLE:
+        nrp_node->read_single.params_copy = *(struct bt_gatt_read_params *)params;
         nrp_node->read_single.params = params;
         break;
     case GATTC_NRP_WRITE_REQ: {
@@ -784,9 +788,10 @@ static int gatt_nrp_insert(struct bt_conn *conn, uint8_t type, void *params)
         LOG_DBG("[N]GattNrpListEmpty");
 
         if (type == GATTC_NRP_READ_BY_UUID ||
-                type == GATTC_NRP_READ_LONG ||
-                type == GATTC_NRP_READ_SINGLE) {
+                type == GATTC_NRP_READ_LONG) {
             rc = gattc_nrp_read(conn, params);
+        } else if (type == GATTC_NRP_READ_SINGLE) {
+            rc = gattc_nrp_read(conn, &nrp_node->read_single.params_copy);
         } else if (type == GATTC_NRP_WRITE_REQ) {
             rc = gattc_nrp_write(conn, params,
                                  nrp_node->write_req.data_copy,
@@ -957,12 +962,13 @@ int bt_le_nimble_gatt_nrp_remove(struct bt_conn *conn, uint8_t type, void *param
                 nrp_head->read_long.params->func(conn, rc, nrp_head->read_long.params, NULL, 0);
             }
         } else if (nrp_head->type == GATTC_NRP_READ_SINGLE) {
-            rc = gattc_nrp_read(conn, nrp_head->read_single.params);
+            rc = gattc_nrp_read(conn, &nrp_head->read_single.params_copy);
             if (rc) {
                 LOG_ERR("[N]GattcNrpRdSingleFail[%d]", rc);
 
-                assert(nrp_head->read_single.params->func);
-                nrp_head->read_single.params->func(conn, rc, nrp_head->read_single.params, NULL, 0);
+                assert(nrp_head->read_single.params_copy.func);
+                nrp_head->read_single.params_copy.func(conn, rc,
+                                                       nrp_head->read_single.params, NULL, 0);
             }
         } else if (nrp_head->type == GATTC_NRP_WRITE_REQ) {
             rc = gattc_nrp_write(conn, nrp_head->write_req.params,

@@ -182,7 +182,7 @@ static const uint16_t ext_structs[] = {
     sizeof(struct bt_bond_info),
 };
 
-#define LEA_VERSION     (0x20260514)
+#define LEA_VERSION     (0x20260616)
 
 struct lib_ext_cfgs {
     /* BLE */
@@ -2087,8 +2087,11 @@ int bt_le_audio_init(void)
         return err;
     }
 
-    printf(BT_ISO_LOG_COLOR_I "BLE Audio lib commit: [%s]" \
-           BT_ISO_LOG_RESET_COLOR "\n", lib_ext_commit_get());
+    esp_log_write(ESP_LOG_INFO, LEA_TAG,
+                  BT_ISO_LOG_COLOR_I
+                  "I (%lu) %s: BLE Audio lib commit: [%s]"
+                  BT_ISO_LOG_RESET_COLOR "\n",
+                  esp_log_timestamp(), LEA_TAG, lib_ext_commit_get());
 
     err = lib_resources_init();
     if (err) {
