@@ -21,8 +21,6 @@ int bt_le_bluedroid_scan_start(const struct bt_le_scan_param *param);
 
 int bt_le_bluedroid_scan_stop(void);
 
-int bt_le_bluedroid_iso_disconnect(uint16_t conn_handle, uint8_t reason);
-
 int bt_le_bluedroid_gap_init(void);
 
 #ifdef __cplusplus

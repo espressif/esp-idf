@@ -14,6 +14,7 @@
 #include <../host/iso_internal.h>
 
 #include "../src/ble_hs_priv.h"
+#include "host/ble_gap.h"
 #include "host/ble_hs_iso.h"
 #include "host/ble_hs_iso_hci.h"
 
@@ -837,6 +838,11 @@ static int iso_disable_cis(void)
     return err;
 }
 #endif /* CONFIG_BT_ISO_UNICAST */
+
+int bt_le_nimble_iso_disconnect(uint16_t conn_handle, uint8_t reason)
+{
+    return nimble_err_to_errno(ble_gap_iso_disconnect(conn_handle, reason));
+}
 
 int bt_le_nimble_iso_init(void)
 {
