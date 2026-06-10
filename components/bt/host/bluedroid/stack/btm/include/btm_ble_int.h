@@ -444,7 +444,7 @@ void btm_ble_increment_sign_ctr(BD_ADDR bd_addr, BOOLEAN is_local );
 BOOLEAN btm_get_local_div (BD_ADDR bd_addr, UINT16 *p_div);
 BOOLEAN btm_ble_get_enc_key_type(BD_ADDR bd_addr, UINT8 *p_key_types);
 
-void btm_ble_test_command_complete(UINT8 *p);
+void btm_ble_test_command_complete(UINT8 *p, UINT16 len);
 void btm_ble_rand_enc_complete (UINT8 *p, UINT16 op_code, tBTM_RAND_ENC_CB *p_enc_cplt_cback);
 
 void btm_sec_save_le_key(BD_ADDR bd_addr, tBTM_LE_KEY_TYPE key_type, tBTM_LE_KEY_VALUE *p_keys, BOOLEAN pass_to_application);
