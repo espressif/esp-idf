@@ -32,9 +32,9 @@ TEST_CASE("ppa_client_do_ppa_operation", "[PPA]")
 
     uint32_t buf_1_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth(buf_1_color_type_id) / 8, 64);
     uint32_t buf_2_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth(buf_2_color_type_id) / 8, 64);
-    uint8_t *buf_1 = heap_caps_aligned_calloc(4, buf_1_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA); // cache alignment is implicited by MALLOC_CAP_DMA
+    uint8_t *buf_1 = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, buf_1_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA)); // cache alignment is implicited by MALLOC_CAP_DMA
     TEST_ASSERT_NOT_NULL(buf_1);
-    uint8_t *buf_2 = heap_caps_aligned_calloc(4, buf_2_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
+    uint8_t *buf_2 = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, buf_2_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA));
     TEST_ASSERT_NOT_NULL(buf_2);
 
     // Register different types of PPA clients
@@ -42,9 +42,8 @@ TEST_CASE("ppa_client_do_ppa_operation", "[PPA]")
     ppa_client_handle_t ppa_client_blend_handle;
     ppa_client_handle_t ppa_client_fill_handle_a;
     ppa_client_handle_t ppa_client_fill_handle_b;
-    ppa_client_config_t ppa_client_config = {
-        .oper_type = PPA_OPERATION_SRM,
-    };
+    ppa_client_config_t ppa_client_config = {};
+    ppa_client_config.oper_type = PPA_OPERATION_SRM;
     TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_srm_handle));
     ppa_client_config.oper_type = PPA_OPERATION_BLEND;
     TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_blend_handle));
@@ -52,30 +51,26 @@ TEST_CASE("ppa_client_do_ppa_operation", "[PPA]")
     TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_fill_handle_a));
     TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_fill_handle_b));
 
-    ppa_srm_oper_config_t srm_oper_config = {
-        .in.buffer = buf_1,
-        .in.pic_w = w,
-        .in.pic_h = h,
-        .in.block_w = w,
-        .in.block_h = h,
-        .in.block_offset_x = 0,
-        .in.block_offset_y = 0,
-        .in.srm_cm = buf_1_color_type_id,
-
-        .out.buffer = buf_2,
-        .out.buffer_size = buf_2_size,
-        .out.pic_w = w,
-        .out.pic_h = h,
-        .out.block_offset_x = 0,
-        .out.block_offset_y = 0,
-        .out.srm_cm = buf_2_color_type_id,
-
-        .rotation_angle = PPA_SRM_ROTATION_ANGLE_0,
-        .scale_x = 1.0,
-        .scale_y = 1.0,
-
-        .mode = PPA_TRANS_MODE_BLOCKING,
-    };
+    ppa_srm_oper_config_t srm_oper_config = {};
+    srm_oper_config.in.buffer = buf_1;
+    srm_oper_config.in.pic_w = w;
+    srm_oper_config.in.pic_h = h;
+    srm_oper_config.in.block_w = w;
+    srm_oper_config.in.block_h = h;
+    srm_oper_config.in.block_offset_x = 0;
+    srm_oper_config.in.block_offset_y = 0;
+    srm_oper_config.in.srm_cm = static_cast<ppa_srm_color_mode_t>(buf_1_color_type_id);
+    srm_oper_config.out.buffer = buf_2;
+    srm_oper_config.out.buffer_size = buf_2_size;
+    srm_oper_config.out.pic_w = w;
+    srm_oper_config.out.pic_h = h;
+    srm_oper_config.out.block_offset_x = 0;
+    srm_oper_config.out.block_offset_y = 0;
+    srm_oper_config.out.srm_cm = static_cast<ppa_srm_color_mode_t>(buf_2_color_type_id);
+    srm_oper_config.rotation_angle = PPA_SRM_ROTATION_ANGLE_0;
+    srm_oper_config.scale_x = 1.0;
+    srm_oper_config.scale_y = 1.0;
+    srm_oper_config.mode = PPA_TRANS_MODE_BLOCKING;
     // A SRM client can request to do a SRM operation
     if (!esp_efuse_is_flash_encryption_enabled()) {
         TEST_ESP_OK(ppa_do_scale_rotate_mirror(ppa_client_srm_handle, &srm_oper_config));
@@ -83,57 +78,48 @@ TEST_CASE("ppa_client_do_ppa_operation", "[PPA]")
     // A non-SRM client can not request to do a SRM operation
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, ppa_do_scale_rotate_mirror(ppa_client_blend_handle, &srm_oper_config));
 
-    ppa_blend_oper_config_t blend_oper_config = {
-        .in_bg.buffer = buf_1,
-        .in_bg.pic_w = w,
-        .in_bg.pic_h = h,
-        .in_bg.block_w = w,
-        .in_bg.block_h = h,
-        .in_bg.block_offset_x = 0,
-        .in_bg.block_offset_y = 0,
-        .in_bg.blend_cm = buf_1_color_type_id,
-
-        .in_fg.buffer = buf_2,
-        .in_fg.pic_w = w,
-        .in_fg.pic_h = h,
-        .in_fg.block_w = w,
-        .in_fg.block_h = h,
-        .in_fg.block_offset_x = 0,
-        .in_fg.block_offset_y = 0,
-        .in_fg.blend_cm = buf_2_color_type_id,
-
-        .out.buffer = buf_1,
-        .out.buffer_size = buf_1_size,
-        .out.pic_w = w,
-        .out.pic_h = h,
-        .out.block_offset_x = 0,
-        .out.block_offset_y = 0,
-        .out.blend_cm = buf_1_color_type_id,
-
-        .mode = PPA_TRANS_MODE_BLOCKING,
-    };
+    ppa_blend_oper_config_t blend_oper_config = {};
+    blend_oper_config.in_bg.buffer = buf_1;
+    blend_oper_config.in_bg.pic_w = w;
+    blend_oper_config.in_bg.pic_h = h;
+    blend_oper_config.in_bg.block_w = w;
+    blend_oper_config.in_bg.block_h = h;
+    blend_oper_config.in_bg.block_offset_x = 0;
+    blend_oper_config.in_bg.block_offset_y = 0;
+    blend_oper_config.in_bg.blend_cm = static_cast<ppa_blend_color_mode_t>(buf_1_color_type_id);
+    blend_oper_config.in_fg.buffer = buf_2;
+    blend_oper_config.in_fg.pic_w = w;
+    blend_oper_config.in_fg.pic_h = h;
+    blend_oper_config.in_fg.block_w = w;
+    blend_oper_config.in_fg.block_h = h;
+    blend_oper_config.in_fg.block_offset_x = 0;
+    blend_oper_config.in_fg.block_offset_y = 0;
+    blend_oper_config.in_fg.blend_cm = static_cast<ppa_blend_color_mode_t>(buf_2_color_type_id);
+    blend_oper_config.out.buffer = buf_1;
+    blend_oper_config.out.buffer_size = buf_1_size;
+    blend_oper_config.out.pic_w = w;
+    blend_oper_config.out.pic_h = h;
+    blend_oper_config.out.block_offset_x = 0;
+    blend_oper_config.out.block_offset_y = 0;
+    blend_oper_config.out.blend_cm = static_cast<ppa_blend_color_mode_t>(buf_1_color_type_id);
+    blend_oper_config.mode = PPA_TRANS_MODE_BLOCKING;
     // A blend client can request to do a blend operation
     TEST_ESP_OK(ppa_do_blend(ppa_client_blend_handle, &blend_oper_config));
     // A non-blend client can not request to do a blend operation
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, ppa_do_blend(ppa_client_fill_handle_b, &blend_oper_config));
 
-    ppa_fill_oper_config_t fill_oper_config = {
-        .out.buffer = buf_1,
-        .out.buffer_size = buf_1_size,
-        .out.pic_w = w,
-        .out.pic_h = h,
-        .out.block_offset_x = 0,
-        .out.block_offset_y = 0,
-        .out.fill_cm = buf_1_color_type_id,
-
-        .fill_block_w = w,
-        .fill_block_h = h,
-        .fill_argb_color = {
-            .val = 0xFF00FF00,
-        },
-
-        .mode = PPA_TRANS_MODE_NON_BLOCKING,
-    };
+    ppa_fill_oper_config_t fill_oper_config = {};
+    fill_oper_config.out.buffer = buf_1;
+    fill_oper_config.out.buffer_size = buf_1_size;
+    fill_oper_config.out.pic_w = w;
+    fill_oper_config.out.pic_h = h;
+    fill_oper_config.out.block_offset_x = 0;
+    fill_oper_config.out.block_offset_y = 0;
+    fill_oper_config.out.fill_cm = static_cast<ppa_fill_color_mode_t>(buf_1_color_type_id);
+    fill_oper_config.fill_block_w = w;
+    fill_oper_config.fill_block_h = h;
+    fill_oper_config.fill_argb_color.val = 0xFF00FF00;
+    fill_oper_config.mode = PPA_TRANS_MODE_NON_BLOCKING;
     // A fill client can request to do a fill operation
     TEST_ESP_OK(ppa_do_fill(ppa_client_fill_handle_a, &fill_oper_config));
     // Another fill client can also request another fill operation at the same time
@@ -175,53 +161,47 @@ TEST_CASE("ppa_pending_transactions_in_queue", "[PPA]")
 
     uint32_t buf_1_size = w * h * color_hal_pixel_format_fourcc_get_bit_depth(buf_1_color_type_id) / 8;
     uint32_t buf_2_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth(buf_2_color_type_id) / 8, 64);
-    uint8_t *buf_1 = heap_caps_aligned_calloc(4, buf_1_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
+    uint8_t *buf_1 = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, buf_1_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA));
     TEST_ASSERT_NOT_NULL(buf_1);
-    uint8_t *buf_2 = heap_caps_aligned_calloc(4, buf_2_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
+    uint8_t *buf_2 = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, buf_2_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA));
     TEST_ASSERT_NOT_NULL(buf_2);
 
     // Register two PPA SRM clients with different max_pending_trans_num
     ppa_client_handle_t ppa_client_a_handle;
     ppa_client_handle_t ppa_client_b_handle;
-    ppa_client_config_t ppa_client_config = {
-        .oper_type = PPA_OPERATION_SRM,
-    };
+    ppa_client_config_t ppa_client_config = {};
+    ppa_client_config.oper_type = PPA_OPERATION_SRM;
     TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_a_handle));
     ppa_client_config.max_pending_trans_num = 3;
     TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_b_handle));
 
-    ppa_event_callbacks_t cbs = {
-        .on_trans_done = ppa_trans_done_cb,
-    };
+    ppa_event_callbacks_t cbs = {};
+    cbs.on_trans_done = ppa_trans_done_cb;
     ppa_client_register_event_callbacks(ppa_client_a_handle, &cbs);
 
     SemaphoreHandle_t sem = xSemaphoreCreateBinary();
 
-    ppa_srm_oper_config_t oper_config = {
-        .in.buffer = buf_1,
-        .in.pic_w = w,
-        .in.pic_h = h,
-        .in.block_w = w,
-        .in.block_h = h,
-        .in.block_offset_x = 0,
-        .in.block_offset_y = 0,
-        .in.srm_cm = buf_1_color_type_id,
-
-        .out.buffer = buf_2,
-        .out.buffer_size = buf_2_size,
-        .out.pic_w = w,
-        .out.pic_h = h,
-        .out.block_offset_x = 0,
-        .out.block_offset_y = 0,
-        .out.srm_cm = buf_2_color_type_id,
-
-        .rotation_angle = PPA_SRM_ROTATION_ANGLE_0,
-        .scale_x = 1.0,
-        .scale_y = 1.0,
-
-        .user_data = (void *)sem,
-        .mode = PPA_TRANS_MODE_NON_BLOCKING,
-    };
+    ppa_srm_oper_config_t oper_config = {};
+    oper_config.in.buffer = buf_1;
+    oper_config.in.pic_w = w;
+    oper_config.in.pic_h = h;
+    oper_config.in.block_w = w;
+    oper_config.in.block_h = h;
+    oper_config.in.block_offset_x = 0;
+    oper_config.in.block_offset_y = 0;
+    oper_config.in.srm_cm = static_cast<ppa_srm_color_mode_t>(buf_1_color_type_id);
+    oper_config.out.buffer = buf_2;
+    oper_config.out.buffer_size = buf_2_size;
+    oper_config.out.pic_w = w;
+    oper_config.out.pic_h = h;
+    oper_config.out.block_offset_x = 0;
+    oper_config.out.block_offset_y = 0;
+    oper_config.out.srm_cm = static_cast<ppa_srm_color_mode_t>(buf_2_color_type_id);
+    oper_config.rotation_angle = PPA_SRM_ROTATION_ANGLE_0;
+    oper_config.scale_x = 1.0;
+    oper_config.scale_y = 1.0;
+    oper_config.user_data = (void *)sem;
+    oper_config.mode = PPA_TRANS_MODE_NON_BLOCKING;
     TEST_ESP_OK(ppa_do_scale_rotate_mirror(ppa_client_a_handle, &oper_config));
 
     // Another transaction cannot be accept since client_a can only hold one transaction
@@ -275,7 +255,7 @@ TEST_CASE("ppa_srm_basic_data_correctness_check", "[PPA]")
 
     const uint32_t buf_len = w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)cm) / 8; // 32
     uint32_t out_buf_size = ALIGN_UP(buf_len, 64);
-    uint8_t *out_buf = heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA); // located in internal RAM so even w/ flash encrypted, it won't be affected
+    uint8_t *out_buf = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA)); // located in internal RAM so even w/ flash encrypted, it won't be affected
     TEST_ASSERT_NOT_NULL(out_buf);
     esp_cache_msync((void *)out_buf, out_buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
     const uint16_t in_buf[16] = {
@@ -297,39 +277,33 @@ TEST_CASE("ppa_srm_basic_data_correctness_check", "[PPA]")
     };
 
     ppa_client_handle_t ppa_client_handle;
-    ppa_client_config_t ppa_client_config = {
-        .oper_type = PPA_OPERATION_SRM,
-        .max_pending_trans_num = 1,
-    };
+    ppa_client_config_t ppa_client_config = {};
+    ppa_client_config.oper_type = PPA_OPERATION_SRM;
+    ppa_client_config.max_pending_trans_num = 1;
     TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_handle));
 
-    ppa_srm_oper_config_t oper_config = {
-        .in.buffer = in_buf,
-        .in.pic_w = w,
-        .in.pic_h = h,
-        .in.block_w = block_w,
-        .in.block_h = block_h,
-        .in.block_offset_x = in_block_offset_x,
-        .in.block_offset_y = in_block_offset_y,
-        .in.srm_cm = cm,
-
-        .out.buffer = out_buf,
-        .out.buffer_size = out_buf_size,
-        .out.pic_w = w,
-        .out.pic_h = h,
-        .out.block_offset_x = out_block_offset_x,
-        .out.block_offset_y = out_block_offset_y,
-        .out.srm_cm = cm,
-
-        .rotation_angle = rotation,
-        .scale_x = scale_x,
-        .scale_y = scale_y,
-
-        .rgb_swap = 0,
-        .byte_swap = 0,
-
-        .mode = PPA_TRANS_MODE_BLOCKING,
-    };
+    ppa_srm_oper_config_t oper_config = {};
+    oper_config.in.buffer = in_buf;
+    oper_config.in.pic_w = w;
+    oper_config.in.pic_h = h;
+    oper_config.in.block_w = block_w;
+    oper_config.in.block_h = block_h;
+    oper_config.in.block_offset_x = in_block_offset_x;
+    oper_config.in.block_offset_y = in_block_offset_y;
+    oper_config.in.srm_cm = cm;
+    oper_config.out.buffer = out_buf;
+    oper_config.out.buffer_size = out_buf_size;
+    oper_config.out.pic_w = w;
+    oper_config.out.pic_h = h;
+    oper_config.out.block_offset_x = out_block_offset_x;
+    oper_config.out.block_offset_y = out_block_offset_y;
+    oper_config.out.srm_cm = cm;
+    oper_config.rotation_angle = rotation;
+    oper_config.scale_x = scale_x;
+    oper_config.scale_y = scale_y;
+    oper_config.rgb_swap = 0;
+    oper_config.byte_swap = 0;
+    oper_config.mode = PPA_TRANS_MODE_BLOCKING;
 
     TEST_ESP_OK(ppa_do_scale_rotate_mirror(ppa_client_handle, &oper_config));
 
@@ -414,7 +388,7 @@ TEST_CASE("ppa_blend_basic_data_correctness_check", "[PPA]")
         0xFF, 0xFF, 0xFF, 0xFF, /**/ 0x00, 0x80, 0x80, 0xC0, /**/
         //                      /*    (B)   (G)   (R)   (A)    */
         //                      /*******************************/
-        [16 ... 63] = 0,
+        // remaining bytes [16 ... 63] are value-initialized to 0
     };
     uint8_t *out_buf = in_fg_buf;
     // Expected blend output
@@ -432,49 +406,41 @@ TEST_CASE("ppa_blend_basic_data_correctness_check", "[PPA]")
     };
 
     ppa_client_handle_t ppa_client_handle;
-    ppa_client_config_t ppa_client_config = {
-        .oper_type = PPA_OPERATION_BLEND,
-        .max_pending_trans_num = 1,
-    };
+    ppa_client_config_t ppa_client_config = {};
+    ppa_client_config.oper_type = PPA_OPERATION_BLEND;
+    ppa_client_config.max_pending_trans_num = 1;
     TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_handle));
 
-    ppa_blend_oper_config_t oper_config = {
-        .in_bg.buffer = in_bg_buf,
-        .in_bg.pic_w = w,
-        .in_bg.pic_h = h,
-        .in_bg.block_w = block_w,
-        .in_bg.block_h = block_h,
-        .in_bg.block_offset_x = block_offset_x,
-        .in_bg.block_offset_y = block_offset_y,
-        .in_bg.blend_cm = in_bg_cm,
-
-        .in_fg.buffer = in_fg_buf,
-        .in_fg.pic_w = w,
-        .in_fg.pic_h = h,
-        .in_fg.block_w = block_w,
-        .in_fg.block_h = block_h,
-        .in_fg.block_offset_x = block_offset_x,
-        .in_fg.block_offset_y = block_offset_y,
-        .in_fg.blend_cm = in_fg_cm,
-
-        .out.buffer = out_buf,
-        .out.buffer_size = out_buf_size,
-        .out.pic_w = w,
-        .out.pic_h = h,
-        .out.block_offset_x = block_offset_x,
-        .out.block_offset_y = block_offset_y,
-        .out.blend_cm = out_cm,
-
-        .bg_alpha_update_mode = PPA_ALPHA_SCALE,
-        .bg_alpha_scale_ratio = bg_alpha_scale_ratio,
-
-        .fg_alpha_update_mode = PPA_ALPHA_INVERT,
-
-        .bg_ck_en = false,
-        .fg_ck_en = false,
-
-        .mode = PPA_TRANS_MODE_BLOCKING,
-    };
+    ppa_blend_oper_config_t oper_config = {};
+    oper_config.in_bg.buffer = in_bg_buf;
+    oper_config.in_bg.pic_w = w;
+    oper_config.in_bg.pic_h = h;
+    oper_config.in_bg.block_w = block_w;
+    oper_config.in_bg.block_h = block_h;
+    oper_config.in_bg.block_offset_x = block_offset_x;
+    oper_config.in_bg.block_offset_y = block_offset_y;
+    oper_config.in_bg.blend_cm = in_bg_cm;
+    oper_config.in_fg.buffer = in_fg_buf;
+    oper_config.in_fg.pic_w = w;
+    oper_config.in_fg.pic_h = h;
+    oper_config.in_fg.block_w = block_w;
+    oper_config.in_fg.block_h = block_h;
+    oper_config.in_fg.block_offset_x = block_offset_x;
+    oper_config.in_fg.block_offset_y = block_offset_y;
+    oper_config.in_fg.blend_cm = in_fg_cm;
+    oper_config.out.buffer = out_buf;
+    oper_config.out.buffer_size = out_buf_size;
+    oper_config.out.pic_w = w;
+    oper_config.out.pic_h = h;
+    oper_config.out.block_offset_x = block_offset_x;
+    oper_config.out.block_offset_y = block_offset_y;
+    oper_config.out.blend_cm = out_cm;
+    oper_config.bg_alpha_update_mode = PPA_ALPHA_SCALE;
+    oper_config.bg_alpha_scale_ratio = bg_alpha_scale_ratio;
+    oper_config.fg_alpha_update_mode = PPA_ALPHA_INVERT;
+    oper_config.bg_ck_en = false;
+    oper_config.fg_ck_en = false;
+    oper_config.mode = PPA_TRANS_MODE_BLOCKING;
 
     TEST_ESP_OK(ppa_do_blend(ppa_client_handle, &oper_config));
 
@@ -501,11 +467,14 @@ TEST_CASE("ppa_blend_basic_data_correctness_check", "[PPA]")
 
     // RGB888 mid-grey background (12B) and ARGB8888 foreground (16B). The foreground alpha is
     // inverted to 0, so it contributes nothing and the blend output equals the background color.
-    const uint8_t rgb_grey[12] = {[0 ... 11] = grey};
-    const uint8_t fg_buf[16] = {[0 ... 15] = 0xFF};
+    uint8_t rgb_grey[12];
+    memset(rgb_grey, grey, sizeof(rgb_grey));
+    uint8_t fg_buf[16];
+    memset(fg_buf, 0xFF, sizeof(fg_buf));
     // DMA outputs require cache-line alignment; yuv_mid is also reused as input for the YUV->RGB pass.
-    uint8_t yuv_mid[64] __attribute__((aligned(64))) = {[0 ... 63] = 0};
-    uint8_t rgb_back[64] __attribute__((aligned(64))) = {[0 ... 63] = 0xCC};
+    uint8_t yuv_mid[64] __attribute__((aligned(64))) = {};
+    uint8_t rgb_back[64] __attribute__((aligned(64)));
+    memset(rgb_back, 0xCC, sizeof(rgb_back));
     const uint32_t yuv_buf_size = sizeof(yuv_mid);
 
     const ppa_blend_color_mode_t yuv_cms[] = {
@@ -516,17 +485,16 @@ TEST_CASE("ppa_blend_basic_data_correctness_check", "[PPA]")
         const ppa_blend_color_mode_t yuv_cm = yuv_cms[c];
 
         // Foreground contributes nothing: alpha 0xFF inverted to 0, so output == background.
-        ppa_blend_oper_config_t yuv_oper_config = {
-            .in_fg.buffer = fg_buf,
-            .in_fg.pic_w = w,
-            .in_fg.pic_h = h,
-            .in_fg.block_w = w,
-            .in_fg.block_h = h,
-            .in_fg.blend_cm = PPA_BLEND_COLOR_MODE_ARGB8888,
-            .bg_alpha_update_mode = PPA_ALPHA_NO_CHANGE,
-            .fg_alpha_update_mode = PPA_ALPHA_INVERT,
-            .mode = PPA_TRANS_MODE_BLOCKING,
-        };
+        ppa_blend_oper_config_t yuv_oper_config = {};
+        yuv_oper_config.in_fg.buffer = fg_buf;
+        yuv_oper_config.in_fg.pic_w = w;
+        yuv_oper_config.in_fg.pic_h = h;
+        yuv_oper_config.in_fg.block_w = w;
+        yuv_oper_config.in_fg.block_h = h;
+        yuv_oper_config.in_fg.blend_cm = PPA_BLEND_COLOR_MODE_ARGB8888;
+        yuv_oper_config.bg_alpha_update_mode = PPA_ALPHA_NO_CHANGE;
+        yuv_oper_config.fg_alpha_update_mode = PPA_ALPHA_INVERT;
+        yuv_oper_config.mode = PPA_TRANS_MODE_BLOCKING;
 
         // 1) RGB888 grey -> YUV (exercises YUV as blend output; must not hang)
         yuv_oper_config.in_bg.buffer = rgb_grey;
@@ -576,52 +544,55 @@ TEST_CASE("ppa_fill_basic_data_correctness_check", "[PPA]")
     const uint32_t block_offset_x = 0;
     const uint32_t block_offset_y = 40;
     const ppa_fill_color_mode_t out_cm = PPA_FILL_COLOR_MODE_RGB565;
-    const color_pixel_argb8888_data_t fill_color = {.a = 0x80, .r = 0xFF, .g = 0x55, .b = 0xAA};
+    color_pixel_argb8888_data_t fill_color = {};
+    fill_color.a = 0x80;
+    fill_color.r = 0xFF;
+    fill_color.g = 0x55;
+    fill_color.b = 0xAA;
 
     uint32_t out_pixel_depth = color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)out_cm); // bits
     uint32_t out_buf_len = w * h * out_pixel_depth / 8;
     uint32_t out_buf_size = ALIGN_UP(out_buf_len, 64);
-    uint8_t *out_buf = heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
+    uint8_t *out_buf = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA));
     TEST_ASSERT_NOT_NULL(out_buf);
 
     memset(out_buf, 0xFF, out_buf_len);
 
     ppa_client_handle_t ppa_client_handle;
-    ppa_client_config_t ppa_client_config = {
-        .oper_type = PPA_OPERATION_FILL,
-        .max_pending_trans_num = 1,
-    };
+    ppa_client_config_t ppa_client_config = {};
+    ppa_client_config.oper_type = PPA_OPERATION_FILL;
+    ppa_client_config.max_pending_trans_num = 1;
     TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_handle));
 
-    ppa_fill_oper_config_t oper_config = {
-        .out.buffer = out_buf,
-        .out.buffer_size = out_buf_size,
-        .out.pic_w = w,
-        .out.pic_h = h,
-        .out.block_offset_x = block_offset_x,
-        .out.block_offset_y = block_offset_y,
-        .out.fill_cm = out_cm,
-
-        .fill_block_w = block_w,
-        .fill_block_h = block_h,
-        .fill_argb_color = fill_color,
-
-        .mode = PPA_TRANS_MODE_BLOCKING,
-    };
+    ppa_fill_oper_config_t oper_config = {};
+    oper_config.out.buffer = out_buf;
+    oper_config.out.buffer_size = out_buf_size;
+    oper_config.out.pic_w = w;
+    oper_config.out.pic_h = h;
+    oper_config.out.block_offset_x = block_offset_x;
+    oper_config.out.block_offset_y = block_offset_y;
+    oper_config.out.fill_cm = out_cm;
+    oper_config.fill_block_w = block_w;
+    oper_config.fill_block_h = block_h;
+    oper_config.fill_argb_color = fill_color;
+    oper_config.mode = PPA_TRANS_MODE_BLOCKING;
 
     TEST_ESP_OK(ppa_do_fill(ppa_client_handle, &oper_config));
 
     // Check result
-    const color_pixel_rgb565_data_t fill_pixel_expected = {.r = fill_color.r >> 3,
-                                                           .g = fill_color.g >> 2,
-                                                           .b = fill_color.b >> 3,
-                                                          };
+    color_pixel_rgb565_data_t fill_pixel_expected = {};
+    fill_pixel_expected.r = fill_color.r >> 3;
+    fill_pixel_expected.g = fill_color.g >> 2;
+    fill_pixel_expected.b = fill_color.b >> 3;
     TEST_ASSERT_EACH_EQUAL_UINT16(fill_pixel_expected.val, (void *)((uint32_t)out_buf + w * block_offset_y * out_pixel_depth / 8), block_w * block_h);
 
 #if !(CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
     // Test a yuv color fill
     oper_config.out.fill_cm = PPA_FILL_COLOR_MODE_YUV422_UYVY; // output YUV422 is with UYVY packed order
-    const color_macroblock_yuv_data_t fill_yuv_color = {.y = 0xFF, .u = 0x55, .v = 0xAA};
+    color_macroblock_yuv_data_t fill_yuv_color = {};
+    fill_yuv_color.y = 0xFF;
+    fill_yuv_color.u = 0x55;
+    fill_yuv_color.v = 0xAA;
     oper_config.fill_yuv_color = fill_yuv_color;
     out_pixel_depth = color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)PPA_FILL_COLOR_MODE_YUV422_UYVY); // bits
     TEST_ESP_OK(ppa_do_fill(ppa_client_handle, &oper_config));
@@ -667,9 +638,9 @@ TEST_CASE("ppa_srm_performance", "[PPA]")
 
     uint32_t in_buf_size = w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)in_cm) / 8;
     uint32_t out_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)out_cm) / 8, 64);
-    uint8_t *out_buf = heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
+    uint8_t *out_buf = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA));
     TEST_ASSERT_NOT_NULL(out_buf);
-    uint8_t *in_buf = heap_caps_aligned_calloc(4, in_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
+    uint8_t *in_buf = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, in_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA));
     TEST_ASSERT_NOT_NULL(in_buf);
 
     uint8_t *ptr = in_buf;
@@ -678,41 +649,35 @@ TEST_CASE("ppa_srm_performance", "[PPA]")
     }
 
     ppa_client_handle_t ppa_client_handle;
-    ppa_client_config_t ppa_client_config = {
-        .oper_type = PPA_OPERATION_SRM,
-        .max_pending_trans_num = 1,
-    };
+    ppa_client_config_t ppa_client_config = {};
+    ppa_client_config.oper_type = PPA_OPERATION_SRM;
+    ppa_client_config.max_pending_trans_num = 1;
     TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_handle));
 
     uint32_t out_pic_w = (rotation == PPA_SRM_ROTATION_ANGLE_0 || rotation == PPA_SRM_ROTATION_ANGLE_180) ? w : h;
     uint32_t out_pic_h = (rotation == PPA_SRM_ROTATION_ANGLE_0 || rotation == PPA_SRM_ROTATION_ANGLE_180) ? h : w;
-    ppa_srm_oper_config_t oper_config = {
-        .in.buffer = in_buf,
-        .in.pic_w = w,
-        .in.pic_h = h,
-        .in.block_w = block_w,
-        .in.block_h = block_h,
-        .in.block_offset_x = 0,
-        .in.block_offset_y = 0,
-        .in.srm_cm = in_cm,
-
-        .out.buffer = out_buf,
-        .out.buffer_size = out_buf_size,
-        .out.pic_w = out_pic_w,
-        .out.pic_h = out_pic_h,
-        .out.block_offset_x = 0,
-        .out.block_offset_y = 0,
-        .out.srm_cm = out_cm,
-
-        .rotation_angle = rotation,
-        .scale_x = scale_x,
-        .scale_y = scale_y,
-
-        .rgb_swap = 0,
-        .byte_swap = 0,
-
-        .mode = PPA_TRANS_MODE_BLOCKING,
-    };
+    ppa_srm_oper_config_t oper_config = {};
+    oper_config.in.buffer = in_buf;
+    oper_config.in.pic_w = w;
+    oper_config.in.pic_h = h;
+    oper_config.in.block_w = block_w;
+    oper_config.in.block_h = block_h;
+    oper_config.in.block_offset_x = 0;
+    oper_config.in.block_offset_y = 0;
+    oper_config.in.srm_cm = in_cm;
+    oper_config.out.buffer = out_buf;
+    oper_config.out.buffer_size = out_buf_size;
+    oper_config.out.pic_w = out_pic_w;
+    oper_config.out.pic_h = out_pic_h;
+    oper_config.out.block_offset_x = 0;
+    oper_config.out.block_offset_y = 0;
+    oper_config.out.srm_cm = out_cm;
+    oper_config.rotation_angle = rotation;
+    oper_config.scale_x = scale_x;
+    oper_config.scale_y = scale_y;
+    oper_config.rgb_swap = 0;
+    oper_config.byte_swap = 0;
+    oper_config.mode = PPA_TRANS_MODE_BLOCKING;
 
     ccomp_timer_start();
 
@@ -751,11 +716,11 @@ TEST_CASE("ppa_blend_performance", "[PPA]")
     uint32_t in_bg_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)in_bg_cm) / 8, in_buf_alignment);
     uint32_t in_fg_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)in_fg_cm) / 8, in_buf_alignment);
     uint32_t out_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)out_cm) / 8, 64);
-    uint8_t *out_buf = heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
+    uint8_t *out_buf = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA));
     TEST_ASSERT_NOT_NULL(out_buf);
-    uint8_t *in_bg_buf = heap_caps_aligned_calloc(4, in_bg_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
+    uint8_t *in_bg_buf = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, in_bg_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA));
     TEST_ASSERT_NOT_NULL(in_bg_buf);
-    uint8_t *in_fg_buf = heap_caps_aligned_calloc(4, in_fg_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
+    uint8_t *in_fg_buf = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, in_fg_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA));
     TEST_ASSERT_NOT_NULL(in_fg_buf);
 
     uint8_t *ptr = in_bg_buf;
@@ -768,44 +733,38 @@ TEST_CASE("ppa_blend_performance", "[PPA]")
     }
 
     ppa_client_handle_t ppa_client_handle;
-    ppa_client_config_t ppa_client_config = {
-        .oper_type = PPA_OPERATION_BLEND,
-        .max_pending_trans_num = 1,
-    };
+    ppa_client_config_t ppa_client_config = {};
+    ppa_client_config.oper_type = PPA_OPERATION_BLEND;
+    ppa_client_config.max_pending_trans_num = 1;
     TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_handle));
 
-    ppa_blend_oper_config_t oper_config = {
-        .in_bg.buffer = in_bg_buf,
-        .in_bg.pic_w = w,
-        .in_bg.pic_h = h,
-        .in_bg.block_w = block_w,
-        .in_bg.block_h = block_h,
-        .in_bg.block_offset_x = 0,
-        .in_bg.block_offset_y = 0,
-        .in_bg.blend_cm = in_bg_cm,
-
-        .in_fg.buffer = in_fg_buf,
-        .in_fg.pic_w = w,
-        .in_fg.pic_h = h,
-        .in_fg.block_w = block_w,
-        .in_fg.block_h = block_h,
-        .in_fg.block_offset_x = 0,
-        .in_fg.block_offset_y = 0,
-        .in_fg.blend_cm = in_fg_cm,
-
-        .out.buffer = out_buf,
-        .out.buffer_size = out_buf_size,
-        .out.pic_w = w,
-        .out.pic_h = h,
-        .out.block_offset_x = 0,
-        .out.block_offset_y = 0,
-        .out.blend_cm = out_cm,
-
-        .bg_ck_en = false,
-        .fg_ck_en = false,
-
-        .mode = PPA_TRANS_MODE_BLOCKING,
-    };
+    ppa_blend_oper_config_t oper_config = {};
+    oper_config.in_bg.buffer = in_bg_buf;
+    oper_config.in_bg.pic_w = w;
+    oper_config.in_bg.pic_h = h;
+    oper_config.in_bg.block_w = block_w;
+    oper_config.in_bg.block_h = block_h;
+    oper_config.in_bg.block_offset_x = 0;
+    oper_config.in_bg.block_offset_y = 0;
+    oper_config.in_bg.blend_cm = in_bg_cm;
+    oper_config.in_fg.buffer = in_fg_buf;
+    oper_config.in_fg.pic_w = w;
+    oper_config.in_fg.pic_h = h;
+    oper_config.in_fg.block_w = block_w;
+    oper_config.in_fg.block_h = block_h;
+    oper_config.in_fg.block_offset_x = 0;
+    oper_config.in_fg.block_offset_y = 0;
+    oper_config.in_fg.blend_cm = in_fg_cm;
+    oper_config.out.buffer = out_buf;
+    oper_config.out.buffer_size = out_buf_size;
+    oper_config.out.pic_w = w;
+    oper_config.out.pic_h = h;
+    oper_config.out.block_offset_x = 0;
+    oper_config.out.block_offset_y = 0;
+    oper_config.out.blend_cm = out_cm;
+    oper_config.bg_ck_en = false;
+    oper_config.fg_ck_en = false;
+    oper_config.mode = PPA_TRANS_MODE_BLOCKING;
 
     ccomp_timer_start();
 
@@ -839,33 +798,27 @@ TEST_CASE("ppa_fill_performance", "[PPA]")
     const ppa_fill_color_mode_t out_cm = PPA_FILL_COLOR_MODE_RGB565;
 
     uint32_t out_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)out_cm) / 8, 64);
-    uint8_t *out_buf = heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
+    uint8_t *out_buf = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA));
     TEST_ASSERT_NOT_NULL(out_buf);
 
     ppa_client_handle_t ppa_client_handle;
-    ppa_client_config_t ppa_client_config = {
-        .oper_type = PPA_OPERATION_FILL,
-        .max_pending_trans_num = 1,
-    };
+    ppa_client_config_t ppa_client_config = {};
+    ppa_client_config.oper_type = PPA_OPERATION_FILL;
+    ppa_client_config.max_pending_trans_num = 1;
     TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_handle));
 
-    ppa_fill_oper_config_t oper_config = {
-        .out.buffer = out_buf,
-        .out.buffer_size = out_buf_size,
-        .out.pic_w = w,
-        .out.pic_h = h,
-        .out.block_offset_x = 0,
-        .out.block_offset_y = 0,
-        .out.fill_cm = out_cm,
-
-        .fill_block_w = block_w,
-        .fill_block_h = block_h,
-        .fill_argb_color = {
-            .val = 0xFF00FFFF,
-        },
-
-        .mode = PPA_TRANS_MODE_BLOCKING,
-    };
+    ppa_fill_oper_config_t oper_config = {};
+    oper_config.out.buffer = out_buf;
+    oper_config.out.buffer_size = out_buf_size;
+    oper_config.out.pic_w = w;
+    oper_config.out.pic_h = h;
+    oper_config.out.block_offset_x = 0;
+    oper_config.out.block_offset_y = 0;
+    oper_config.out.fill_cm = out_cm;
+    oper_config.fill_block_w = block_w;
+    oper_config.fill_block_h = block_h;
+    oper_config.fill_argb_color.val = 0xFF00FFFF;
+    oper_config.mode = PPA_TRANS_MODE_BLOCKING;
 
     ccomp_timer_start();
 
@@ -905,16 +858,15 @@ TEST_CASE("ppa_srm_stress_test", "[PPA]")
 
     uint32_t in_buf_size = w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)in_cm) / 8;
     uint32_t out_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)out_cm) / 8, 64);
-    uint8_t *out_buf = heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
+    uint8_t *out_buf = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA));
     TEST_ASSERT_NOT_NULL(out_buf);
-    uint8_t *in_buf = heap_caps_aligned_calloc(4, in_buf_size, sizeof(uint8_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
+    uint8_t *in_buf = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, in_buf_size, sizeof(uint8_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA));
     TEST_ASSERT_NOT_NULL(in_buf);
 
     ppa_client_handle_t ppa_client_handle;
-    ppa_client_config_t ppa_client_config = {
-        .oper_type = PPA_OPERATION_SRM,
-        .max_pending_trans_num = 1,
-    };
+    ppa_client_config_t ppa_client_config = {};
+    ppa_client_config.oper_type = PPA_OPERATION_SRM;
+    ppa_client_config.max_pending_trans_num = 1;
     TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_handle));
 
     // Test on different sizes of the block
@@ -930,33 +882,28 @@ TEST_CASE("ppa_srm_stress_test", "[PPA]")
             block_w = block_w_initial + i;
             block_h = block_h_initial + i;
             // printf("block_w = %ld, block_h = %ld\n", block_w, block_h);
-            ppa_srm_oper_config_t oper_config = {
-                .in.buffer = in_buf,
-                .in.pic_w = w,
-                .in.pic_h = h,
-                .in.block_w = block_w,
-                .in.block_h = block_h,
-                .in.block_offset_x = 0,
-                .in.block_offset_y = 0,
-                .in.srm_cm = in_cm,
-
-                .out.buffer = out_buf,
-                .out.buffer_size = out_buf_size,
-                .out.pic_w = block_w,
-                .out.pic_h = block_h,
-                .out.block_offset_x = 0,
-                .out.block_offset_y = 0,
-                .out.srm_cm = out_cm,
-
-                .rotation_angle = rotation,
-                .scale_x = scale_x,
-                .scale_y = scale_y,
-
-                .rgb_swap = 0,
-                .byte_swap = 0,
-
-                .mode = PPA_TRANS_MODE_BLOCKING,
-            };
+            ppa_srm_oper_config_t oper_config = {};
+            oper_config.in.buffer = in_buf;
+            oper_config.in.pic_w = w;
+            oper_config.in.pic_h = h;
+            oper_config.in.block_w = block_w;
+            oper_config.in.block_h = block_h;
+            oper_config.in.block_offset_x = 0;
+            oper_config.in.block_offset_y = 0;
+            oper_config.in.srm_cm = in_cm;
+            oper_config.out.buffer = out_buf;
+            oper_config.out.buffer_size = out_buf_size;
+            oper_config.out.pic_w = block_w;
+            oper_config.out.pic_h = block_h;
+            oper_config.out.block_offset_x = 0;
+            oper_config.out.block_offset_y = 0;
+            oper_config.out.srm_cm = out_cm;
+            oper_config.rotation_angle = rotation;
+            oper_config.scale_x = scale_x;
+            oper_config.scale_y = scale_y;
+            oper_config.rgb_swap = 0;
+            oper_config.byte_swap = 0;
+            oper_config.mode = PPA_TRANS_MODE_BLOCKING;
 
             TEST_ESP_OK(ppa_do_scale_rotate_mirror(ppa_client_handle, &oper_config));
         }
