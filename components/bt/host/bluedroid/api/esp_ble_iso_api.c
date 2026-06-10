@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,7 +63,8 @@ esp_err_t esp_ble_iso_create_big(esp_ble_iso_big_creat_params_t *big_creat_param
     if (big_creat_param->rtn > 0x1E) {
         return ESP_ERR_INVALID_ARG;
     }
-    if ((big_creat_param->phy != 0x01) && (big_creat_param->phy != 0x02) && (big_creat_param->phy != 0x04)) {
+    /* phy is a bit field: bit0=1M, bit1=2M, bit2=Coded (HCI_LE_Create_BIG, Core Spec): at least one bit. */
+    if ((big_creat_param->phy == 0) || (big_creat_param->phy & ~0x07)) {
         return ESP_ERR_INVALID_ARG;
     }
     if (big_creat_param->packing > 0x01) {
@@ -118,7 +119,9 @@ esp_err_t esp_ble_iso_create_big_test(esp_ble_iso_big_creat_test_params_t *big_c
     if (big_creat_test_param->max_pdu < 0x0001 || big_creat_test_param->max_pdu > 0x00FB) {
         return ESP_ERR_INVALID_ARG;
     }
-    if ((big_creat_test_param->phy != 0x01) && (big_creat_test_param->phy != 0x02) && (big_creat_test_param->phy != 0x04)) {
+    /* HCI_LE_Create_BIG_Test (Core Spec): host shall set exactly one of 1M / 2M / Coded PHY. */
+    if ((big_creat_test_param->phy != 0x01) && (big_creat_test_param->phy != 0x02) &&
+            (big_creat_test_param->phy != 0x04)) {
         return ESP_ERR_INVALID_ARG;
     }
     if (big_creat_test_param->framing > BLE_ISO_FRAMING_FRAMED_PDU_UNSEGMENTABLE_MODE) {
