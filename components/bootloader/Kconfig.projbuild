@@ -1010,13 +1010,8 @@ menu "Security features"
                 Revoking unused digest slots makes ensures that no trusted keys can be added later by an attacker.
                 If set, it means that you have a plan to use unused digests slots later.
 
-                Note that if you plan to enable secure boot during the first boot up, the bootloader will intentionally
-                revoke the unused digest slots while enabling secure boot, even if the above config is enabled because
-                keeping the unused key slots un-revoked would a security hazard.
-                In case for any development workflow if you need to avoid this revocation, you should enable
-                secure boot externally (host based mechanism) rather than enabling it during the boot up,
-                so that the bootloader would not need to enable secure boot and thus you could avoid its revocation
-                strategy.
+                This config is honored both at runtime in the app and while enabling secure boot during the first
+                boot up in the bootloader. When set, the unused digest slots are left un-revoked in both cases.
 
         config SECURE_BOOT_SKIP_WRITE_PROTECTION_SCA
             bool "Skip write-protection of SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH"
