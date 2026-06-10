@@ -397,7 +397,7 @@
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_RSA              1
-#define SOC_SECURE_BOOT_V2_ECC              1
+#define SOC_SECURE_BOOT_V2_ECC              0
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3
 #define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS   1
 #define SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY  1
