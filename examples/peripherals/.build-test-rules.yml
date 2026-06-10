@@ -100,6 +100,12 @@ examples/peripherals/dac/dac_cosine_wave:
     - esp_driver_dac
     - soc
 
+examples/peripherals/dma/async_color_convert:
+  disable:
+    - if: SOC_DMA2D_SUPPORTED != 1
+  depends_components:
+    - esp_driver_dma
+
 examples/peripherals/dma/async_crc:
   disable:
     - if: SOC_GDMA_SUPPORT_CRC != 1
