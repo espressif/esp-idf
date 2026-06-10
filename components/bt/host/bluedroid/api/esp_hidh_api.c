@@ -29,7 +29,7 @@ esp_err_t esp_bt_hid_host_register_callback(esp_hh_cb_t callback)
 esp_err_t esp_bt_hid_host_init(void)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HH;
@@ -42,7 +42,7 @@ esp_err_t esp_bt_hid_host_init(void)
 esp_err_t esp_bt_hid_host_deinit(void)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HH;
@@ -55,8 +55,8 @@ esp_err_t esp_bt_hid_host_deinit(void)
 esp_err_t esp_bt_hid_host_connect(esp_bd_addr_t bd_addr)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
-    btc_msg_t msg;
-    btc_hidh_args_t arg;
+    btc_msg_t msg = {0};
+    btc_hidh_args_t arg = {0};
 
     if (bd_addr == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -75,8 +75,8 @@ esp_err_t esp_bt_hid_host_connect(esp_bd_addr_t bd_addr)
 esp_err_t esp_bt_hid_host_disconnect(esp_bd_addr_t bd_addr)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
-    btc_msg_t msg;
-    btc_hidh_args_t arg;
+    btc_msg_t msg = {0};
+    btc_hidh_args_t arg = {0};
 
     if (bd_addr == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -95,8 +95,8 @@ esp_err_t esp_bt_hid_host_disconnect(esp_bd_addr_t bd_addr)
 esp_err_t esp_bt_hid_host_virtual_cable_unplug(esp_bd_addr_t bd_addr)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
-    btc_msg_t msg;
-    btc_hidh_args_t arg;
+    btc_msg_t msg = {0};
+    btc_hidh_args_t arg = {0};
 
     if (bd_addr == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -115,12 +115,12 @@ esp_err_t esp_bt_hid_host_virtual_cable_unplug(esp_bd_addr_t bd_addr)
 esp_err_t esp_bt_hid_host_set_info(esp_bd_addr_t bd_addr, esp_hidh_hid_info_t *hid_info)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
-    if ((bd_addr == NULL) || (hid_info == NULL) || (hid_info->dl_len < 0) || (hid_info->dl_len > BTHH_MAX_DSC_LEN)) {
+    if ((bd_addr == NULL) || (hid_info == NULL) || (hid_info->dl_len <= 0) || (hid_info->dl_len > BTHH_MAX_DSC_LEN)) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    btc_msg_t msg;
-    btc_hidh_args_t arg;
+    btc_msg_t msg = {0};
+    btc_hidh_args_t arg = {0};
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HH;
@@ -137,8 +137,8 @@ esp_err_t esp_bt_hid_host_set_info(esp_bd_addr_t bd_addr, esp_hidh_hid_info_t *h
 esp_err_t esp_bt_hid_host_get_protocol(esp_bd_addr_t bd_addr)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
-    btc_msg_t msg;
-    btc_hidh_args_t arg;
+    btc_msg_t msg = {0};
+    btc_hidh_args_t arg = {0};
 
     if (bd_addr == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -157,8 +157,8 @@ esp_err_t esp_bt_hid_host_get_protocol(esp_bd_addr_t bd_addr)
 esp_err_t esp_bt_hid_host_set_protocol(esp_bd_addr_t bd_addr, esp_hidh_protocol_mode_t protocol_mode)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
-    btc_msg_t msg;
-    btc_hidh_args_t arg;
+    btc_msg_t msg = {0};
+    btc_hidh_args_t arg = {0};
 
     if (bd_addr == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -178,8 +178,8 @@ esp_err_t esp_bt_hid_host_set_protocol(esp_bd_addr_t bd_addr, esp_hidh_protocol_
 esp_err_t esp_bt_hid_host_get_idle(esp_bd_addr_t bd_addr)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
-    btc_msg_t msg;
-    btc_hidh_args_t arg;
+    btc_msg_t msg = {0};
+    btc_hidh_args_t arg = {0};
 
     if (bd_addr == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -198,8 +198,8 @@ esp_err_t esp_bt_hid_host_get_idle(esp_bd_addr_t bd_addr)
 esp_err_t esp_bt_hid_host_set_idle(esp_bd_addr_t bd_addr, uint16_t idle_time)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
-    btc_msg_t msg;
-    btc_hidh_args_t arg;
+    btc_msg_t msg = {0};
+    btc_hidh_args_t arg = {0};
 
     if (bd_addr == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -220,8 +220,8 @@ esp_err_t esp_bt_hid_host_get_report(esp_bd_addr_t bd_addr, esp_hidh_report_type
                                      int buffer_size)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
-    btc_msg_t msg;
-    btc_hidh_args_t arg;
+    btc_msg_t msg = {0};
+    btc_hidh_args_t arg = {0};
 
     if (bd_addr == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -248,8 +248,8 @@ esp_err_t esp_bt_hid_host_set_report(esp_bd_addr_t bd_addr, esp_hidh_report_type
         return ESP_ERR_INVALID_ARG;
     }
 
-    btc_msg_t msg;
-    btc_hidh_args_t arg;
+    btc_msg_t msg = {0};
+    btc_hidh_args_t arg = {0};
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HH;
@@ -272,8 +272,8 @@ esp_err_t esp_bt_hid_host_send_data(esp_bd_addr_t bd_addr, uint8_t *data, size_t
         return ESP_ERR_INVALID_ARG;
     }
 
-    btc_msg_t msg;
-    btc_hidh_args_t arg;
+    btc_msg_t msg = {0};
+    btc_hidh_args_t arg = {0};
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HH;

@@ -408,6 +408,11 @@ UINT16 L2CA_UcdDataWrite (UINT16 psm, BD_ADDR rem_bda, BT_HDR *p_buf, UINT16 fla
         }
     }
 
+    if (p_buf->offset < L2CAP_UCD_OVERHEAD) {
+        osi_free(p_buf);
+        return L2CAP_DW_FAILED;
+    }
+
     /* write PSM */
     p_buf->offset -= L2CAP_UCD_OVERHEAD;
     p_buf->len += L2CAP_UCD_OVERHEAD;
@@ -774,9 +779,15 @@ void l2c_ucd_discard_pending_out_sec_q(tL2C_CCB  *p_ccb)
 *******************************************************************************/
 BOOLEAN l2c_ucd_check_pending_in_sec_q(tL2C_CCB  *p_ccb)
 {
-    BT_HDR *p_buf = (BT_HDR*)fixed_queue_dequeue(p_ccb->p_lcb->ucd_in_sec_pending_q, 0);
+    BT_HDR *p_buf = NULL;
 
-    if (p_buf != NULL) {
+    while ((p_buf = (BT_HDR*)fixed_queue_try_peek_first(p_ccb->p_lcb->ucd_in_sec_pending_q)) != NULL) {
+        if (p_buf->len < L2CAP_UCD_OVERHEAD) {
+            fixed_queue_dequeue(p_ccb->p_lcb->ucd_in_sec_pending_q, 0);
+            osi_free(p_buf);
+            continue;
+        }
+
         UINT16 psm;
         UINT8 *p = (UINT8 *)(p_buf + 1) + p_buf->offset;
         STREAM_TO_UINT16(psm, p)
@@ -787,6 +798,7 @@ BOOLEAN l2c_ucd_check_pending_in_sec_q(tL2C_CCB  *p_ccb)
 
         return (TRUE);
     }
+
     return (FALSE);
 }
 

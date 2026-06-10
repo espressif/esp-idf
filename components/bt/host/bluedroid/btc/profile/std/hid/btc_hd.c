@@ -233,7 +233,7 @@ static void btc_hd_init(void)
     } while (0);
 
     if (ret != ESP_HIDD_SUCCESS) {
-        esp_hidd_cb_param_t param;
+        esp_hidd_cb_param_t param = {0};
         param.init.status = ret;
         btc_hd_cb_to_app(ESP_HIDD_INIT_EVT, &param);
     }
@@ -279,7 +279,7 @@ static void btc_hd_deinit(void)
     } while (0);
 
     if (ret != ESP_HIDD_SUCCESS) {
-        esp_hidd_cb_param_t param;
+        esp_hidd_cb_param_t param = {0};
         param.deinit.status = ret;
         btc_hd_cb_to_app(ESP_HIDD_DEINIT_EVT, &param);
     }
@@ -365,7 +365,7 @@ static void btc_hd_register_app(esp_hidd_app_param_t *p_app_param, esp_hidd_qos_
     } while(0);
 
     if (ret != ESP_HIDD_SUCCESS) {
-        esp_hidd_cb_param_t param;
+        esp_hidd_cb_param_t param = {0};
         param.register_app.status = ret;
         param.register_app.in_use = false;
         memset(param.register_app.bd_addr, 0, BD_ADDR_LEN);

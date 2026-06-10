@@ -194,11 +194,15 @@ extern UINT16 GAP_ConnReadData (UINT16 gap_handle, UINT8 *p_data,
 **
 ** Function         GAP_GetRxQueueCnt
 **
-** Description      This function return number of bytes on the rx queue.
+** Description      Return the number of bytes waiting on the connection rx queue.
 **
-** Parameters:      handle     - Handle returned in the GAP_ConnOpen
-**                  p_rx_queue_count - Pointer to return queue count in.
+** Parameters:      handle           - Handle returned from GAP_ConnOpen
+**                  p_rx_queue_count - Pointer to receive queue byte count
 **
+** Returns          BT_PASS             - success, count stored in *p_rx_queue_count
+**                  GAP_ERR_ILL_PARM    - p_rx_queue_count is NULL
+**                  GAP_ERR_BAD_HANDLE  - handle is invalid
+**                  GAP_ERR_BAD_STATE   - connection is not established
 **
 *******************************************************************************/
 extern int GAP_GetRxQueueCnt (UINT16 handle, UINT32 *p_rx_queue_count);
