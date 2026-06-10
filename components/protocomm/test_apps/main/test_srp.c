@@ -91,8 +91,11 @@ static void test_srp_set_salt_verifier(void) {
     int len_B = 0;
     err = esp_srp_srv_pubkey_from_salt_verifier(handle, &bytes_B, &len_B);
     TEST_ASSERT_EQUAL(ESP_OK, err);
-    // Verify B length is correct for 3072-bit SRP (384 bytes)
-    TEST_ASSERT_EQUAL(384, len_B);
+    // B is a value modulo N (3072-bit, 384 bytes), so its serialized length
+    // is at most 384 bytes and may be shorter when the leading byte(s) are
+    // zero. Assert a valid, bounded length instead of a fixed one.
+    TEST_ASSERT_GREATER_THAN(0, len_B);
+    TEST_ASSERT_LESS_OR_EQUAL(384, len_B);
 
     esp_srp_free(handle);
 }
@@ -111,9 +114,11 @@ static void test_srp_srv_pubkey(void) {
     TEST_ASSERT_NOT_NULL(bytes_B);
     TEST_ASSERT_NOT_NULL(bytes_salt);
 
-    // Verify salt and B length
+    // Verify salt and B length. B is a value modulo N (384 bytes) and may
+    // serialize to fewer bytes when its leading byte(s) are zero.
     TEST_ASSERT_EQUAL(16, 16);
-    TEST_ASSERT_EQUAL(384, len_B);
+    TEST_ASSERT_GREATER_THAN(0, len_B);
+    TEST_ASSERT_LESS_OR_EQUAL(384, len_B);
 
     // Log for debugging
     ESP_LOG_BUFFER_HEXDUMP("Generated Salt", bytes_salt, 16, ESP_LOG_INFO);
@@ -233,8 +238,11 @@ static void test_srp_verifier_consistency(void) {
     // Salts should be different (randomly generated)
     TEST_ASSERT_NOT_EQUAL(0, memcmp(bytes_salt1, bytes_salt2, 16));
 
-    // Verifiers should also be different since they depend on the salt
-    TEST_ASSERT_NOT_EQUAL(0, memcmp(verifier1, verifier2, verifier_len1));
+    // Verifiers should also be different since they depend on the salt.
+    // Each verifier is a value modulo N and may serialize to a different
+    // length, so guard the comparison against differing lengths.
+    TEST_ASSERT_TRUE((verifier_len1 != verifier_len2) ||
+                     (memcmp(verifier1, verifier2, verifier_len1) != 0));
 
     free(bytes_salt1);
     free(verifier1);
@@ -256,7 +264,10 @@ static void test_srp_pubkey_randomness(void) {
     err = esp_srp_srv_pubkey_from_salt_verifier(handle, &bytes_B1, &len_B1);
     TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_NOT_NULL(bytes_B1);
-    TEST_ASSERT_EQUAL(384, len_B1);
+    // B is a value modulo N (384 bytes); a leading zero byte makes the
+    // serialized length 383 (or shorter), so accept any 0 < len <= 384.
+    TEST_ASSERT_GREATER_THAN(0, len_B1);
+    TEST_ASSERT_LESS_OR_EQUAL(384, len_B1);
 
     // Generate second public key with same salt/verifier
     char *bytes_B2 = NULL;
@@ -264,16 +275,20 @@ static void test_srp_pubkey_randomness(void) {
     err = esp_srp_srv_pubkey_from_salt_verifier(handle, &bytes_B2, &len_B2);
     TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_NOT_NULL(bytes_B2);
-    TEST_ASSERT_EQUAL(384, len_B2);
+    TEST_ASSERT_GREATER_THAN(0, len_B2);
+    TEST_ASSERT_LESS_OR_EQUAL(384, len_B2);
 
-    // Keys should be different due to random b generation
-    TEST_ASSERT_NOT_EQUAL(0, memcmp(bytes_B1, bytes_B2, len_B1));
+    // Keys should be different due to random b generation. Differing lengths
+    // already imply different keys; otherwise compare the serialized bytes.
+    TEST_ASSERT_TRUE((len_B1 != len_B2) ||
+                     (memcmp(bytes_B1, bytes_B2, len_B1) != 0));
 
     // Calculate CRCs for logging
     uint32_t crc1 = esp_rom_crc32_le(0, (uint8_t*)bytes_B1, len_B1);
     uint32_t crc2 = esp_rom_crc32_le(0, (uint8_t*)bytes_B2, len_B2);
     ESP_LOGI(TAG, "Public key CRCs: %u, %u (should be different)", crc1, crc2);
 
+    /* bytes_B2 is owned by the handle and freed by esp_srp_free() */
     free(bytes_B1);
     bytes_B1 = NULL;
     esp_srp_free(handle);
