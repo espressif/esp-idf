@@ -491,6 +491,12 @@ static char *gattc_evt_code(tBTA_GATTC_INT_EVT evt_code)
         return "BTA_GATTC_API_READ_BY_TYPE_EVT";
     case BTA_GATTC_API_READ_MULTI_VAR_EVT:
         return "BTA_GATTC_API_READ_MULTI_VAR_EVT";
+    case BTA_GATTC_ENC_CMPL_EVT:
+        return "BTA_GATTC_ENC_CMPL_EVT";
+    case BTA_GATTC_API_CACHE_ASSOC_EVT:
+        return "BTA_GATTC_API_CACHE_ASSOC_EVT";
+    case BTA_GATTC_API_CACHE_GET_ADDR_LIST_EVT:
+        return "BTA_GATTC_API_CACHE_GET_ADDR_LIST_EVT";
     default:
         return "unknown GATTC event code";
     }
@@ -541,7 +547,8 @@ uint8_t bta_gattc_cl_rcb_active_count(void)
 
     for (uint8_t i = 0; i < BTA_GATTC_CL_MAX; i ++) {
         if (bta_gattc_cb.cl_rcb[i].in_use &&
-            memcmp(bta_gattc_cb.cl_rcb[i].app_uuid.uu.uuid128, dm_gattc_uuid, 16)) {
+            (bta_gattc_cb.cl_rcb[i].app_uuid.len != LEN_UUID_128 ||
+             memcmp(bta_gattc_cb.cl_rcb[i].app_uuid.uu.uuid128, dm_gattc_uuid, LEN_UUID_128))) {
             count++;
         }
     }
