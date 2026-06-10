@@ -414,6 +414,9 @@ static void nan_reset_service(uint8_t svc_id, bool reset_all)
     while (idx < ESP_WIFI_NAN_MAX_SVC_SUPPORTED) {
         p_own_svc = &s_nan_ctx.own_svc[idx++];
         if (reset_all || (svc_id && p_own_svc->svc_id == svc_id)) {
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+            nan_pairing_cancel_svc_pending(p_own_svc);
+#endif
             SLIST_FOREACH_SAFE(p_peer_svc, &(p_own_svc->peer_list), next, temp) {
                 SLIST_REMOVE(&(p_own_svc->peer_list), p_peer_svc, peer_svc_info, next);
                 os_free(p_peer_svc);
