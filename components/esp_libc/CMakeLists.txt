@@ -77,7 +77,6 @@ else()
     list(APPEND srcs
          "src/picolibc/picolibc_init.c"
          "src/picolibc/rand.c"
-         "src/picolibc/open_memstream.c"
          "src/picolibc/errno.c"
          "src/picolibc/bufio_setvbuf.c") # TODO IDF-15494: remove this and the following lines
          list(APPEND EXTRA_LINK_FLAGS "-Wl,--wrap=__bufio_setvbuf")

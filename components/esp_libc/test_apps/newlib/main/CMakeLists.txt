@@ -3,7 +3,6 @@ set(srcs
     "test_atomic.c"
     "test_locks.c"
     "test_misc.c"
-    "test_memstream.c"
     "test_newlib.c"
     "test_printf.c"
     "test_setjmp.c"
