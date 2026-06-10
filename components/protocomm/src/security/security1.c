@@ -555,6 +555,7 @@ static esp_err_t sec1_crypt(protocomm_security_handle_t handle,
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "psa_cipher_update failed with status=%d", status);
         free(*outbuf);
+        *outbuf = NULL;
         return ESP_FAIL;
     }
     return ESP_OK;
