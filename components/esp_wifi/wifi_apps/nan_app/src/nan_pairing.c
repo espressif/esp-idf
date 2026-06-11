@@ -301,6 +301,47 @@ uint32_t esp_nan_get_nira_len(void)
     return NAN_NIRA_ATTR_LEN;
 }
 
+/**
+ * Derive a NIRA tag for cipher version 0 (Wi-Fi Aware v4.0):
+ *   Tag = Truncate-64(HMAC-SHA-256(NIK, "NIR" || NMI || Nonce))
+ *
+ * Ported from hostap @c nan_crypto_derive_nira_tag (src/nan/nan_crypto.c),
+ * adapted to the ESP-IDF crypto trampoline.
+ */
+static int nan_pairing_derive_nira_tag(const uint8_t nik[NAN_PASN_NIK_LEN],
+                                       const uint8_t nmi_addr[ETH_ALEN],
+                                       const uint8_t nira_nonce[NAN_NIRA_NONCE_LEN],
+                                       uint8_t tag_out[NAN_NIRA_TAG_LEN])
+{
+    const unsigned char *addr[3];
+    int len_arr[3];
+    uint8_t digest[32];
+
+    if (!nik || !nmi_addr || !nira_nonce || !tag_out) {
+        return -1;
+    }
+    if (!g_wifi_default_wpa_crypto_funcs.hmac_sha256_vector) {
+        return -1;
+    }
+
+    addr[0] = (const unsigned char *)NAN_NIRA_STR;
+    len_arr[0] = NAN_NIRA_STR_LEN;
+    addr[1] = nmi_addr;
+    len_arr[1] = ETH_ALEN;
+    addr[2] = nira_nonce;
+    len_arr[2] = NAN_NIRA_NONCE_LEN;
+
+    if (g_wifi_default_wpa_crypto_funcs.hmac_sha256_vector(nik, NAN_PASN_NIK_LEN,
+                                                           3, addr, len_arr,
+                                                           digest) != 0) {
+        return -1;
+    }
+
+    memcpy(tag_out, digest, NAN_NIRA_TAG_LEN);
+    memset(digest, 0, sizeof(digest));
+    return 0;
+}
+
 int esp_nan_construct_nira(uint8_t *frm)
 {
     const uint8_t *nonce;
@@ -312,22 +353,14 @@ int esp_nan_construct_nira(uint8_t *frm)
         return 0;
     }
 
-#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
     if (s_nan_ctx.nira_cached) {
         nonce = s_nan_ctx.cached_nira_nonce;
         tag = s_nan_ctx.cached_nira_tag;
     } else {
         uint8_t own_nmi[MACADDR_LEN];
-        const unsigned char *addr[3];
-        int len_arr[3];
-        uint8_t digest[32];
 
         if (!s_nan_ctx.own_nik_valid) {
             ESP_LOGW(TAG, "NIRA: own NIK is not available");
-            return 0;
-        }
-        if (!g_wifi_default_wpa_crypto_funcs.hmac_sha256_vector) {
-            ESP_LOGE(TAG, "NIRA: hmac_sha256_vector not registered");
             return 0;
         }
         if (esp_wifi_get_mac(WIFI_IF_NAN, own_nmi) != ESP_OK) {
@@ -338,23 +371,12 @@ int esp_nan_construct_nira(uint8_t *frm)
             ESP_LOGE(TAG, "NIRA: failed to generate nonce");
             return 0;
         }
-
         /* Tag = Truncate-64(HMAC-SHA-256(NIK, "NIR" || NMI || Nonce)) */
-        addr[0] = (const unsigned char *)NAN_NIRA_STR;
-        len_arr[0] = NAN_NIRA_STR_LEN;
-        addr[1] = own_nmi;
-        len_arr[1] = MACADDR_LEN;
-        addr[2] = fresh_nonce;
-        len_arr[2] = NAN_NIRA_NONCE_LEN;
-        if (g_wifi_default_wpa_crypto_funcs.hmac_sha256_vector(s_nan_ctx.own_nik,
-                                                               ESP_WIFI_NAN_NIK_LEN,
-                                                               3, addr, len_arr,
-                                                               digest) != 0) {
+        if (nan_pairing_derive_nira_tag(s_nan_ctx.own_nik, own_nmi,
+                                        fresh_nonce, fresh_tag) != 0) {
             ESP_LOGE(TAG, "NIRA: tag derivation failed");
             return 0;
         }
-        memcpy(fresh_tag, digest, NAN_NIRA_TAG_LEN);
-        memset(digest, 0, sizeof(digest));
 
         memcpy(s_nan_ctx.cached_nira_nonce, fresh_nonce, NAN_NIRA_NONCE_LEN);
         memcpy(s_nan_ctx.cached_nira_tag, fresh_tag, NAN_NIRA_TAG_LEN);
@@ -363,10 +385,6 @@ int esp_nan_construct_nira(uint8_t *frm)
         nonce = fresh_nonce;
         tag = fresh_tag;
     }
-#else
-    /* NIRA requires an available NIK; skip when NAN security is not enabled. */
-    return 0;
-#endif
 
     uint8_t *p = frm;
     *p++ = NAN_ATTR_ID_IDENTITY_RESOLUTION;
@@ -553,82 +571,6 @@ static size_t nan_pairing_build_srv_ssi(uint8_t *buf, size_t buf_len,
     return (size_t)(p - buf);
 }
 
-/**
- * Derive a NIRA tag for cipher version 0 (Wi-Fi Aware v4.0):
- *   Tag = Truncate-64(HMAC-SHA-256(NIK, "NIR" || NMI || Nonce))
- *
- * Ported from hostap @c nan_crypto_derive_nira_tag (src/nan/nan_crypto.c),
- * adapted to the ESP-IDF crypto trampoline.
- */
-static int nan_pairing_derive_nira_tag(const uint8_t nik[NAN_PASN_NIK_LEN],
-                                       const uint8_t nmi_addr[ETH_ALEN],
-                                       const uint8_t nira_nonce[NAN_NIRA_NONCE_LEN],
-                                       uint8_t tag_out[NAN_NIRA_TAG_LEN])
-{
-    const unsigned char *addr[3];
-    int len_arr[3];
-    uint8_t digest[32];
-
-    if (!nik || !nmi_addr || !nira_nonce || !tag_out) {
-        return -1;
-    }
-    if (!g_wifi_default_wpa_crypto_funcs.hmac_sha256_vector) {
-        return -1;
-    }
-
-    addr[0] = (const unsigned char *)NAN_NIRA_STR;
-    len_arr[0] = NAN_NIRA_STR_LEN;
-    addr[1] = nmi_addr;
-    len_arr[1] = ETH_ALEN;
-    addr[2] = nira_nonce;
-    len_arr[2] = NAN_NIRA_NONCE_LEN;
-
-    if (g_wifi_default_wpa_crypto_funcs.hmac_sha256_vector(nik, NAN_PASN_NIK_LEN,
-                                                           3, addr, len_arr,
-                                                           digest) != 0) {
-        return -1;
-    }
-
-    memcpy(tag_out, digest, NAN_NIRA_TAG_LEN);
-    memset(digest, 0, sizeof(digest));
-    return 0;
-}
-
-/**
- * Build a NIRA attribute (ID 0x2B) into @a buf using the NIK and our NMI.
- * Returns total attribute length on success, 0 on failure.
- */
-static size_t nan_pairing_build_nira_attr(uint8_t *buf, size_t buf_len,
-                                          const uint8_t nik[NAN_PASN_NIK_LEN],
-                                          const uint8_t nmi_addr[ETH_ALEN])
-{
-    uint8_t nonce[NAN_NIRA_NONCE_LEN];
-    uint8_t tag[NAN_NIRA_TAG_LEN];
-    uint8_t *p = buf;
-
-    if (!buf || !nik || !nmi_addr || buf_len < NAN_NIRA_ATTR_LEN) {
-        return 0;
-    }
-    if (os_get_random(nonce, sizeof(nonce)) != 0) {
-        return 0;
-    }
-    if (nan_pairing_derive_nira_tag(nik, nmi_addr, nonce, tag) != 0) {
-        return 0;
-    }
-
-    *p++ = NAN_ATTR_ID_IDENTITY_RESOLUTION;
-    /* Attribute Length (LE16): CipherVersion(1) + Nonce(8) + Tag(8) = 17 */
-    WPA_PUT_LE16(p, 1 + NAN_NIRA_NONCE_LEN + NAN_NIRA_TAG_LEN);
-    p += 2;
-    *p++ = NAN_NIRA_CIPHER_VER;
-    memcpy(p, nonce, NAN_NIRA_NONCE_LEN);
-    p += NAN_NIRA_NONCE_LEN;
-    memcpy(p, tag, NAN_NIRA_TAG_LEN);
-    p += NAN_NIRA_TAG_LEN;
-
-    return (size_t)(p - buf);
-}
-
 static size_t nan_pairing_build_plain_key_data(uint8_t *buf, size_t buf_len,
                                                const uint8_t nik[NAN_PASN_NIK_LEN])
 {
@@ -696,7 +638,6 @@ static esp_err_t nan_app_send_pairing_followup(uint8_t svc_id, uint8_t peer_svc_
     uint8_t shared_key_wrapped[sizeof(struct wpa_eapol_key) + sizeof(wrapped)] = {0};
     uint8_t nira_attr[NAN_NIRA_ATTR_LEN] = {0};
     uint8_t srv_ssi[NAN_PAIRING_SSI_BUF_LEN] = {0};
-    uint8_t our_nmi[ETH_ALEN] = {0};
     uint8_t nik[NAN_PASN_NIK_LEN];
     size_t plain_len;
     size_t wrapped_len;
@@ -784,13 +725,9 @@ static esp_err_t nan_app_send_pairing_followup(uint8_t svc_id, uint8_t peer_svc_
 
     /* NIRA proves possession of the NIK we just wrapped above; iPhone uses
      * it to bind the NIK to the sender and won't commit the pairing record
-     * without it. */
-    if (esp_wifi_get_mac(WIFI_IF_NAN, our_nmi) != ESP_OK) {
-        ESP_LOGW(TAG, "Pairing follow-up: cannot read NAN NMI for NIRA");
-        return ESP_FAIL;
-    }
-    nira_len = nan_pairing_build_nira_attr(nira_attr, sizeof(nira_attr),
-                                           nik, our_nmi);
+     * without it. esp_nan_construct_nira() reuses the same cached nonce/tag we
+     * advertise in sync discovery. */
+    nira_len = (size_t)esp_nan_construct_nira(nira_attr);
     if (nira_len == 0) {
         ESP_LOGW(TAG, "Pairing follow-up: NIRA attribute build failed");
         return ESP_FAIL;
