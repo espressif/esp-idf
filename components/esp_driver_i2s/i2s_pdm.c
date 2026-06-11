@@ -129,6 +129,12 @@ static esp_err_t i2s_pdm_tx_set_slot(i2s_chan_handle_t handle, const i2s_pdm_tx_
     ESP_RETURN_ON_FALSE(slot_cfg->data_fmt != I2S_PDM_DATA_FMT_PCM ||
                         i2s_ll_is_pcm2pdm_supported(handle->controller->id),
                         ESP_ERR_NOT_SUPPORTED, TAG, "PCM2PDM converter is not supported on selected port");
+#if SOC_I2S_PDM_MAX_TX_LINES > 1
+    int id = handle->controller->id;
+    ESP_RETURN_ON_FALSE(slot_cfg->line_mode != I2S_PDM_TX_TWO_LINE_DAC ||
+                        i2s_periph_signal[id].data_out_sigs[1] != (uint8_t) -1,
+                        ESP_ERR_NOT_SUPPORTED, TAG, "PDM TX dual-line mode is not supported on selected port");
+#endif
     /* Update the total slot num and active slot num */
     handle->is_raw_pdm = slot_cfg->data_fmt == I2S_PDM_DATA_FMT_RAW;
     handle->total_slot = 2;
@@ -214,8 +220,6 @@ esp_err_t i2s_channel_init_pdm_tx_mode(i2s_chan_handle_t handle, const i2s_pdm_t
 #endif
     I2S_NULL_POINTER_CHECK(TAG, handle);
     ESP_RETURN_ON_FALSE(handle->dir == I2S_DIR_TX, ESP_ERR_INVALID_ARG, TAG, "This channel handle is not a TX handle");
-    ESP_RETURN_ON_FALSE(i2s_ll_is_pdm_supported(handle->controller->id),
-                        ESP_ERR_NOT_SUPPORTED, TAG, "PDM TX mode is not supported on selected port");
 
     esp_err_t ret = ESP_OK;
 
@@ -478,6 +482,15 @@ static esp_err_t i2s_pdm_rx_set_slot(i2s_chan_handle_t handle, const i2s_pdm_rx_
     ESP_RETURN_ON_FALSE(slot_cfg->data_fmt != I2S_PDM_DATA_FMT_PCM ||
                         i2s_ll_is_pdm2pcm_supported(handle->controller->id),
                         ESP_ERR_NOT_SUPPORTED, TAG, "PDM2PCM converter is not supported on selected port");
+#if SOC_I2S_PDM_MAX_RX_LINES > 1
+    int id = handle->controller->id;
+    for (int i = 0; i < SOC_I2S_PDM_MAX_RX_LINES; i++) {
+        if (slot_cfg->slot_mask & (0x03 << (i * 2))) {
+            ESP_RETURN_ON_FALSE(i2s_periph_signal[id].data_in_sigs[i] != (uint8_t) -1,
+                                ESP_ERR_NOT_SUPPORTED, TAG, "PDM RX line %d is not supported on selected port", i);
+        }
+    }
+#endif
     /* Update the total slot num and active slot num */
     handle->is_raw_pdm = slot_cfg->data_fmt == I2S_PDM_DATA_FMT_RAW;
     handle->total_slot = 2;
@@ -565,8 +578,6 @@ esp_err_t i2s_channel_init_pdm_rx_mode(i2s_chan_handle_t handle, const i2s_pdm_r
 #endif
     I2S_NULL_POINTER_CHECK(TAG, handle);
     ESP_RETURN_ON_FALSE(handle->dir == I2S_DIR_RX, ESP_ERR_INVALID_ARG, TAG, "This channel handle is not a RX handle");
-    ESP_RETURN_ON_FALSE(i2s_ll_is_pdm_supported(handle->controller->id),
-                        ESP_ERR_NOT_SUPPORTED, TAG, "PDM RX mode is not supported on selected port");
 
     esp_err_t ret = ESP_OK;
 
