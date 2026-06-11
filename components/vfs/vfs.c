@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,7 +72,7 @@ typedef struct {
 } fds_triple_t;
 
 static vfs_entry_t* s_vfs[VFS_MAX_COUNT] = { 0 };
-static size_t s_vfs_count = 0;
+static size_t s_vfs_upper_bound = 0; // upper bound of indices in s_vfs which can be occupied by VFS entries; always equal to the index of the last non-NULL entry + 1
 
 static fd_table_t s_fd_table[MAX_FDS] = { [0 ... MAX_FDS-1] = FD_TABLE_ENTRY_UNUSED };
 static _lock_t s_fd_table_lock;
@@ -410,8 +410,9 @@ static esp_err_t esp_vfs_register_fs_common(
     void *ctx,
     int *vfs_index)
 {
-    if (s_vfs_count >= VFS_MAX_COUNT) {
-        return  ESP_ERR_NO_MEM;
+    ssize_t index = esp_get_free_index();
+    if (index < 0) { // Check for free slot before doing any other work
+        return ESP_ERR_NO_MEM;
     }
 
     if (vfs == NULL) {
@@ -432,17 +433,12 @@ static esp_err_t esp_vfs_register_fs_common(
         }
     }
 
-    ssize_t index = esp_get_free_index();
-    if (index < 0) {
-        return ESP_ERR_NO_MEM;
-    }
-
     if (s_vfs[index] != NULL) {
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (index == s_vfs_count) {
-        s_vfs_count++;
+    if (index == s_vfs_upper_bound) {
+        s_vfs_upper_bound++;
     }
 
     vfs_entry_t *entry = heap_caps_malloc(sizeof(vfs_entry_t) + base_path_len + 1, VFS_MALLOC_FLAGS);
@@ -620,6 +616,10 @@ esp_err_t esp_vfs_unregister_with_id(esp_vfs_id_t vfs_id)
     }
     _lock_release(&s_fd_table_lock);
 
+    while (s_vfs_upper_bound > 0 && s_vfs[s_vfs_upper_bound - 1] == NULL) { // Move the upper bound down if we just removed the last entry
+        s_vfs_upper_bound--;
+    }
+
     return ESP_OK;
 
 }
@@ -629,7 +629,7 @@ esp_err_t esp_vfs_unregister_fs_with_id(esp_vfs_id_t vfs_id) __attribute__((alia
 esp_err_t esp_vfs_unregister(const char* base_path)
 {
     const size_t base_path_len = strlen(base_path);
-    for (size_t i = 0; i < s_vfs_count; ++i) {
+    for (size_t i = 0; i < s_vfs_upper_bound; ++i) {
         vfs_entry_t* vfs = s_vfs[i];
         if (vfs == NULL) {
             continue;
@@ -651,7 +651,7 @@ esp_err_t esp_vfs_register_fd(esp_vfs_id_t vfs_id, int *fd)
 
 esp_err_t esp_vfs_register_fd_with_local_fd(esp_vfs_id_t vfs_id, int local_fd, bool permanent, int *fd)
 {
-    if (vfs_id < 0 || vfs_id >= s_vfs_count || fd == NULL) {
+    if (vfs_id < 0 || vfs_id >= s_vfs_upper_bound || fd == NULL) {
         ESP_LOGD(TAG, "Invalid arguments for esp_vfs_register_fd_with_local_fd(%d, %d, %d, 0x%p)",
                  vfs_id, local_fd, permanent, fd);
         return ESP_ERR_INVALID_ARG;
@@ -685,7 +685,7 @@ esp_err_t esp_vfs_unregister_fd(esp_vfs_id_t vfs_id, int fd)
 {
     esp_err_t ret = ESP_ERR_INVALID_ARG;
 
-    if (vfs_id < 0 || vfs_id >= s_vfs_count || fd < 0 || fd >= MAX_FDS) {
+    if (vfs_id < 0 || vfs_id >= s_vfs_upper_bound || fd < 0 || fd >= MAX_FDS) {
         ESP_LOGD(TAG, "Invalid arguments for esp_vfs_unregister_fd(%d, %d)", vfs_id, fd);
         return ret;
     }
@@ -748,7 +748,7 @@ void esp_vfs_dump_registered_paths(FILE *fp)
 esp_err_t esp_vfs_set_readonly_flag(const char* base_path)
 {
     const size_t base_path_len = strlen(base_path);
-    for (size_t i = 0; i < s_vfs_count; ++i) {
+    for (size_t i = 0; i < s_vfs_upper_bound; ++i) {
         vfs_entry_t* vfs = s_vfs[i];
         if (vfs == NULL) {
             continue;
@@ -764,11 +764,10 @@ esp_err_t esp_vfs_set_readonly_flag(const char* base_path)
 
 const vfs_entry_t *get_vfs_for_index(int index)
 {
-    if (index < 0 || index >= s_vfs_count) {
+    if (index < 0 || index >= VFS_MAX_COUNT) {
         return NULL;
-    } else {
-        return s_vfs[index];
     }
+    return s_vfs[index];
 }
 
 static inline bool fd_valid(int fd)
@@ -812,7 +811,7 @@ const vfs_entry_t* get_vfs_for_path(const char* path)
     const vfs_entry_t* best_match = NULL;
     ssize_t best_match_prefix_len = -1;
     size_t len = strlen(path);
-    for (size_t i = 0; i < s_vfs_count; ++i) {
+    for (size_t i = 0; i < s_vfs_upper_bound; ++i) {
         const vfs_entry_t* vfs = s_vfs[i];
         if (vfs == NULL || vfs->path_prefix_len == LEN_PATH_PREFIX_IGNORED) {
             continue;
@@ -836,7 +835,7 @@ const vfs_entry_t* get_vfs_for_path(const char* path)
         // Out of all matching path prefixes, select the longest one;
         // i.e. if "/dev" and "/dev/uart" both match, for "/dev/uart/1" path,
         // choose "/dev/uart",
-        // This causes all s_vfs_count VFS entries to be scanned when opening
+        // This causes all s_vfs_upper_bound VFS entries to be scanned when opening
         // a file by name. This can be optimized by introducing a table for
         // FS search order, sorted so that longer prefixes are checked first.
         if (best_match_prefix_len < (ssize_t) vfs->path_prefix_len) {
@@ -1482,10 +1481,10 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
         return -1;
     }
 
-    // Capture s_vfs_count to a local variable in case a new driver is registered or removed during this actual select()
-    // call. s_vfs_count cannot be protected with a mutex during a select() call (which can be one without a timeout)
+    // Capture s_vfs_upper_bound to a local variable in case a new driver is registered or removed during this actual select()
+    // call. s_vfs_upper_bound cannot be protected with a mutex during a select() call (which can be one without a timeout)
     // because that could block the registration of new driver.
-    const size_t vfs_count = s_vfs_count;
+    const size_t vfs_count = s_vfs_upper_bound;
     fds_triple_t *vfs_fds_triple;
     if ((vfs_fds_triple = heap_caps_calloc(vfs_count, sizeof(fds_triple_t), VFS_MALLOC_FLAGS)) == NULL) {
         __errno_r(r) = ENOMEM;
@@ -1691,8 +1690,8 @@ void esp_vfs_select_triggered(esp_vfs_select_sem_t sem)
         // Another way would be to go through s_fd_table and find the VFS
         // which has a permanent FD. But in order to avoid to lock
         // s_fd_table_lock we go through the VFS table.
-        for (int i = 0; i < s_vfs_count; ++i) {
-            // Note: s_vfs_count could have changed since the start of vfs_select() call. However, that change doesn't
+        for (int i = 0; i < s_vfs_upper_bound; ++i) {
+            // Note: s_vfs_upper_bound could have changed since the start of vfs_select() call. However, that change doesn't
             // matter here stop_socket_select() will be called for only valid VFS drivers.
             const vfs_entry_t *vfs = s_vfs[i];
             if (vfs != NULL
@@ -1714,8 +1713,8 @@ void esp_vfs_select_triggered_isr(esp_vfs_select_sem_t sem, BaseType_t *woken)
         // Another way would be to go through s_fd_table and find the VFS
         // which has a permanent FD. But in order to avoid to lock
         // s_fd_table_lock we go through the VFS table.
-        for (int i = 0; i < s_vfs_count; ++i) {
-            // Note: s_vfs_count could have changed since the start of vfs_select() call. However, that change doesn't
+        for (int i = 0; i < s_vfs_upper_bound; ++i) {
+            // Note: s_vfs_upper_bound could have changed since the start of vfs_select() call. However, that change doesn't
             // matter here stop_socket_select() will be called for only valid VFS drivers.
             const vfs_entry_t *vfs = s_vfs[i];
             if (vfs != NULL
