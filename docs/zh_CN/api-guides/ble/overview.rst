@@ -229,6 +229,17 @@ ESP-NimBLE 仅支持低功耗蓝牙，不支持经典蓝牙。
   - :example:`应用示例 <bluetooth/blufi>`
 
 
+.. only:: SOC_BLE_AUDIO_SUPPORTED
+
+  ESP-BLE-AUDIO
+  ^^^^^^^^^^^^^
+
+  蓝牙低功耗音频是蓝牙核心规范 5.2 引入的音频架构。ESP-BLE-AUDIO 在 ESP-BLE-ISO 传输层之上提供通用音频框架 (Generic Audio Framework) 的规范和服务。两者均可运行在 ESP-Bluedroid 或 ESP-NimBLE 主机协议栈上。
+
+  - :doc:`ESP-IDF 低功耗音频文档 <../esp-ble-audio/ble-audio-index>`：标准概述、架构、功能支持状态等。
+  - :example:`应用示例 <bluetooth/esp_ble_audio>`
+
+
 应用
 ----
 

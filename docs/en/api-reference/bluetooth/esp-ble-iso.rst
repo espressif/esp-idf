@@ -10,6 +10,8 @@ ESP-BLE-ISO provides APIs for Bluetooth LE Isochronous Channels, enabling time-s
 
 With these APIs you can create or join Connected ISO Groups (CIG), create or synchronize to Broadcast ISO Groups (BIG), set up ISO data paths, and send or receive isochronous data (e.g., LC3 audio). For higher-level LE Audio profiles and codec APIs, see :doc:`esp-ble-audio`.
 
+For an architectural overview and integration details, see the :doc:`Bluetooth LE Audio documentation <../../api-guides/esp-ble-audio/ble-audio-index>`, in particular the :doc:`ESP-BLE-ISO architecture <../../api-guides/esp-ble-audio/ble-audio-architecture-iso>`.
+
 .. warning::
 
     This is a **preview release**. The ESP-BLE-ISO APIs, data structures, and configuration parameters are subject to change in future releases. Breaking changes — such as renamed or restructured types, modified function signatures, or removed fields — may be introduced without prior notice.

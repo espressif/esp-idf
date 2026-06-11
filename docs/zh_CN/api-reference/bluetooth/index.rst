@@ -69,7 +69,7 @@ ESP-IDF 默认的主机协议栈，支持经典蓝牙和低功耗蓝牙。
 
     **ESP-BLE-ISO API**
 
-    低功耗蓝牙等时通道（CIS/BIS），用于 LE Audio 及时间同步流传输。
+    低功耗蓝牙等时通道（CIS/BIS），用于蓝牙低功耗音频及时间同步流传输。
 
     .. toctree::
         :maxdepth: 1
@@ -80,7 +80,7 @@ ESP-IDF 默认的主机协议栈，支持经典蓝牙和低功耗蓝牙。
 
     **ESP-BLE-AUDIO API**
 
-    低功耗蓝牙 LE Audio 配置与服务（BAP、PACS、VCP、HAS、CSIP 等）。
+    蓝牙低功耗音频配置与服务（BAP、PACS、VCP、HAS、CSIP 等）。
 
     .. toctree::
         :maxdepth: 1
