@@ -621,7 +621,7 @@ To use a host generated key and program it into the eFuses of the device, take t
 
 .. only:: SOC_KEY_MANAGER_SUPPORTED
 
-  To use a host generated key and deploy it into the device's Key Manager of the device, take the following steps:
+  To use a host generated key and deploy it into the device's Key Manager, take the following steps:
 
   1. Ensure that you have an {IDF_TARGET_NAME} device with default flash encryption eFuse settings as shown in :ref:`flash-encryption-efuse`.
 
@@ -1224,11 +1224,11 @@ Manually Encrypting Files
 
 .. only:: SOC_KEY_MANAGER_SUPPORTED
 
-  Manually encrypting or decrypting files require the flash encryption key to be deployed in the Key Manager or pre-burned in eFuses (see :ref:`pregenerated-flash-encryption-key`) and a copy to be kept on the host. If the flash encryption is configured in development mode, then it is not necessary to keep a copy of the key or follow these steps. The simpler :ref:`encrypt-partitions` steps can be used.
+  Manually encrypting or decrypting files requires the flash encryption key to be deployed in the Key Manager or pre-burned in eFuses (see :ref:`pregenerated-flash-encryption-key`) and a copy to be kept on the host. If the flash encryption is configured in development mode, then it is not necessary to keep a copy of the key or follow these steps. The simpler :ref:`encrypt-partitions` steps can be used.
 
 .. only:: not SOC_KEY_MANAGER_SUPPORTED
 
-  Manually encrypting or decrypting files require the flash encryption key to be pre-burned in eFuse (see :ref:`pregenerated-flash-encryption-key`) and a copy to be kept on the host. If the flash encryption is configured in development mode, then it is not necessary to keep a copy of the key or follow these steps. The simpler :ref:`encrypt-partitions` steps can be used.
+  Manually encrypting or decrypting files requires the flash encryption key to be pre-burned in eFuse (see :ref:`pregenerated-flash-encryption-key`) and a copy to be kept on the host. If the flash encryption is configured in development mode, then it is not necessary to keep a copy of the key or follow these steps. The simpler :ref:`encrypt-partitions` steps can be used.
 
 The key file should be a single raw binary file (example: ``key.bin``).
 

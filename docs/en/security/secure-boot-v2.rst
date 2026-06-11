@@ -741,9 +741,7 @@ Secure Boot Best Practices
 
     .. note::
 
-        Note that enabling the config :ref:`CONFIG_SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS` only makes sure that the **app** does not revoke the unused digest slots.
-        But if you plan to enable secure boot during the fist boot up, the bootloader will intentionally revoke the unused digest slots while enabling secure boot, even if the above config is enabled. Because keeping the unused key slots unrevoked would be a security hazard.
-        In case for any development workflow if you need to avoid this revocation, you should :ref:`enable-secure-boot-v2-externally`, rather than enabling it during the boot up, so that the bootloader would not need to enable secure boot, and thus you could avoid its revocation strategy.
+        Enabling the config :ref:`CONFIG_SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS` keeps the unused digest slots un-revoked in both cases: at runtime in the **app**, and in the **bootloader** when secure boot is enabled during the first boot up. Note that leaving unused key slots un-revoked could pose a security risk, unless the debug and download interfaces are completely disabled and remote interfaces are fully audited for security risks.
 
     Conservative Approach
     ~~~~~~~~~~~~~~~~~~~~~~
