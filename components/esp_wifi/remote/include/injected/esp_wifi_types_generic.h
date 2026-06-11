@@ -604,9 +604,8 @@ typedef struct {
     uint8_t scan_time;      /**< Scan time in seconds while searching for a NAN cluster */
     uint16_t warm_up_sec;   /**< Warm up time before assuming NAN Anchor Master role */
     bool disable_random_mac;/**< Disable the MAC Randomisation in NAN */
-    uint8_t nik[ESP_WIFI_NAN_NIK_LEN];  /**< Optional NIK. Auto-generated when nik_valid is false. */
-    uint8_t nik_valid: 1;               /**< NIK present in nik[] and should be used as-is. */
-    uint8_t reserved: 7;                /**< Reserved for future use. */
+    bool reset_current_nvs_creds; /**< Erase all NAN credentials (own NIK and cached peer NIK/NPK entries) saved in NVS before starting. */
+    bool use_nvs_for_caching;     /**< Persist newly-learned peer credentials (NIK/NPK) to NVS so they survive across reboots. */
 } wifi_nan_sync_config_t;
 
 /**
@@ -874,7 +873,9 @@ typedef struct {
 #define ESP_WIFI_NDP_ROLE_RESPONDER     2      /**< Responder role for NAN Data Path */
 
 #define ESP_WIFI_NAN_NDP_PMK_LEN        32     /**< Length of NAN Datapath PMK */
+#define ESP_WIFI_NAN_NPK_LEN            ESP_WIFI_NAN_NDP_PMK_LEN  /**< Length of NAN Pairwise Key (same as NDP PMK) */
 #define ESP_WIFI_NAN_NDP_PMKID_LEN      16     /**< Length of NAN Datapath PMKID */
+#define ESP_WIFI_NAN_MAX_PEER_CREDS     2      /**< Maximum number of NAN peer credentials that can be stored */
 #define ESP_WIFI_NAN_MAX_CREDS_PER_SVC  4      /**< Maximum number of NAN security credentials per service (passphrase/PMK entries) */
 
 #define ESP_WIFI_MAX_SVC_NAME_LEN       256    /**< Maximum length of NAN service name */

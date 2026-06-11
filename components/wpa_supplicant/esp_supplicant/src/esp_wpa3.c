@@ -441,7 +441,11 @@ void esp_wifi_unregister_wpa3_cb(void)
 }
 #endif /* CONFIG_WPA3_SAE */
 
-#ifdef CONFIG_SAE
+/* AP-side (hostap) SAE authentication. CONFIG_SAE may also be enabled for PASN
+ * with SoftAP disabled, but this block both defines and calls SoftAP-only
+ * primitives (esp_send_sae_auth_reply, handle_auth_sae), so additionally gate
+ * it on CONFIG_ESP_WIFI_SOFTAP_SUPPORT. */
+#if defined(CONFIG_SAE) && defined(CONFIG_ESP_WIFI_SOFTAP_SUPPORT)
 
 static TaskHandle_t g_wpa3_hostap_task_hdl = NULL;
 static QueueHandle_t g_wpa3_hostap_evt_queue = NULL;
@@ -861,4 +865,4 @@ void esp_wifi_register_wpa3_ap_cb(struct wpa_funcs *wpa_cb)
     wpa_cb->wpa3_hostap_handle_auth = wpa3_hostap_handle_auth;
 }
 
-#endif /* CONFIG_SAE */
+#endif /* CONFIG_SAE && CONFIG_ESP_WIFI_SOFTAP_SUPPORT */

@@ -847,6 +847,39 @@ static void nan_pairing_key_installed_cb(const uint8_t *peer_nmi,
     }
 }
 
+/* Insert or refresh a (peer NIK, NPK) entry in the in-RAM credential cache used
+ * for NIRA identity resolution. Caller holds NAN_DATA_LOCK. A @a npk of NULL
+ * stores a zeroed key. When the cache is full the oldest entry (slot 0) is
+ * reused. */
+static void nan_app_update_peer_creds(const uint8_t *peer_nik, const uint8_t *npk)
+{
+    wifi_nan_peer_creds_t *slot = NULL;
+
+    /* Reuse the slot already holding this NIK, if any. */
+    for (uint8_t i = 0; i < s_nan_ctx.num_peer_creds; i++) {
+        if (s_nan_ctx.peer_creds[i].is_valid &&
+            os_memcmp(s_nan_ctx.peer_creds[i].peer_nik, peer_nik, ESP_WIFI_NAN_NIK_LEN) == 0) {
+            slot = &s_nan_ctx.peer_creds[i];
+            break;
+        }
+    }
+    if (!slot) {
+        if (s_nan_ctx.num_peer_creds < ESP_WIFI_NAN_MAX_PEER_CREDS) {
+            slot = &s_nan_ctx.peer_creds[s_nan_ctx.num_peer_creds++];
+        } else {
+            slot = &s_nan_ctx.peer_creds[0];
+        }
+    }
+
+    memcpy(slot->peer_nik, peer_nik, ESP_WIFI_NAN_NIK_LEN);
+    if (npk) {
+        memcpy(slot->npk, npk, ESP_WIFI_NAN_NPK_LEN);
+    } else {
+        memset(slot->npk, 0, ESP_WIFI_NAN_NPK_LEN);
+    }
+    slot->is_valid = true;
+}
+
 void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
                                       const uint8_t *peer_mac,
                                       const uint8_t *shared_key_attr,
@@ -891,6 +924,8 @@ void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
     bool already_had_nik = false;
     bool pairing_completed = false;
     uint8_t own_svc_id_to_disable = 0;
+    bool persist_creds = false;
+    uint8_t persist_npk[ESP_WIFI_NAN_NPK_LEN] = {0};
 
     NAN_DATA_LOCK();
     struct peer_svc_info *p_peer_svc = nan_find_peer_svc_exact(svc_id, peer_svc_id, peer_mac);
@@ -903,12 +938,26 @@ void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
         ESP_LOGI(TAG, "Stored peer NIK from " MACSTR " (cipher_ver=%u, lifetime=%u s)",
                  MAC2STR(peer_mac), cipher_ver, lifetime_sec);
 
+        /* Refresh the NIRA credential cache with this peer's NIK and, if the
+         * pairing record is available, its NPK. */
+        const struct nan_paired_peer *paired = nan_app_find_paired_peer(peer_mac);
+        if (paired) {
+            memcpy(persist_npk, paired->nd_pmk, ESP_WIFI_NAN_NPK_LEN);
+        }
+        nan_app_update_peer_creds(nik, paired ? paired->nd_pmk : NULL);
+        persist_creds = s_nan_ctx.use_nvs_for_caching;
+
         if (!already_had_nik) {
             pairing_completed = true;
             own_svc_id_to_disable = p_peer_svc->own_svc_id;
         }
     }
     NAN_DATA_UNLOCK();
+
+    /* Persist outside the lock; NVS writes can block. */
+    if (persist_creds) {
+        esp_wifi_nan_save_creds_for_peer(nik, persist_npk);
+    }
 
     /* Invoke blocking calls outside NAN_DATA_LOCK to avoid deadlock. */
     if (pairing_completed) {
@@ -959,8 +1008,7 @@ bool esp_nan_verify_nira(uint8_t *peer_mac, uint8_t *nira_attr, uint16_t nira_at
     uint8_t expected_tag[NAN_NIRA_TAG_LEN];
     const uint8_t *nonce;
     const uint8_t *received_tag;
-    struct peer_svc_info *p_peer_svc;
-    bool match;
+    bool match = false;
 
     if (!peer_mac || !nira_attr) {
         return false;
@@ -975,26 +1023,28 @@ bool esp_nan_verify_nira(uint8_t *peer_mac, uint8_t *nira_attr, uint16_t nira_at
     nonce        = nira_attr + 4;
     received_tag = nira_attr + 4 + NAN_NIRA_NONCE_LEN;
 
+    /* The peer derives its NIRA tag from one of its NIKs; the sending MAC may be
+     * randomised, so resolve the identity by trying every cached peer NIK. */
     NAN_DATA_LOCK();
-    p_peer_svc = nan_find_peer_svc(0, 0, peer_mac);
-    if (!p_peer_svc || !p_peer_svc->has_nik) {
-        NAN_DATA_UNLOCK();
-        ESP_LOGD(TAG, "NIRA verify: no stored NIK for "MACSTR, MAC2STR(peer_mac));
-        return false;
-    }
-
-    if (nan_pairing_derive_nira_tag(p_peer_svc->peer_nik, peer_mac, nonce, expected_tag) != 0) {
-        NAN_DATA_UNLOCK();
-        ESP_LOGE(TAG, "NIRA verify: tag derivation failed for "MACSTR, MAC2STR(peer_mac));
-        return false;
+    for (uint8_t i = 0; i < s_nan_ctx.num_peer_creds; i++) {
+        if (!s_nan_ctx.peer_creds[i].is_valid) {
+            continue;
+        }
+        if (nan_pairing_derive_nira_tag(s_nan_ctx.peer_creds[i].peer_nik, peer_mac,
+                                        nonce, expected_tag) != 0) {
+            continue;
+        }
+        if (os_memcmp_const(expected_tag, received_tag, NAN_NIRA_TAG_LEN) == 0) {
+            match = true;
+            break;
+        }
     }
     NAN_DATA_UNLOCK();
 
-    match = (os_memcmp_const(expected_tag, received_tag, NAN_NIRA_TAG_LEN) == 0);
     if (match) {
         ESP_LOGD(TAG, "NIRA verify: OK for "MACSTR, MAC2STR(peer_mac));
     } else {
-        ESP_LOGW(TAG, "NIRA verify: tag mismatch for "MACSTR, MAC2STR(peer_mac));
+        ESP_LOGW(TAG, "NIRA verify: no matching NIK for "MACSTR, MAC2STR(peer_mac));
     }
     return match;
 }

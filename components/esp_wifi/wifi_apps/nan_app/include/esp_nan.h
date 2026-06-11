@@ -22,7 +22,8 @@ extern "C" {
     .scan_time = 3, \
     .warm_up_sec = 5, \
     .disable_random_mac = false, \
-    .nik_valid = false, \
+    .reset_current_nvs_creds = false, \
+    .use_nvs_for_caching = false, \
 };
 
 #define NDP_STATUS_ACCEPTED     1
