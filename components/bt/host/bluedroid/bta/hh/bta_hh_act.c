@@ -40,7 +40,6 @@
 **  Constants
 *****************************************************************************/
 
-
 /*****************************************************************************
 **  Local Function prototypes
 *****************************************************************************/
@@ -96,6 +95,7 @@ void bta_hh_api_enable(tBTA_HH_DATA *p_data)
         for (xx = 0; xx < BTA_HH_MAX_KNOWN; xx ++) {
             bta_hh_cb.cb_index[xx]          = BTA_HH_IDX_INVALID;
         }
+
     }
 
 #if (BTA_HH_LE_INCLUDED == TRUE)
@@ -538,8 +538,23 @@ void bta_hh_open_cmpl_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
     bta_hh_cb.cnt_num ++;
 
     /* initialize device driver */
-    bta_hh_co_open(dev_handle, p_cb->sub_class,
-                   p_cb->attr_mask,  p_cb->app_id);
+    if (!bta_hh_co_open(dev_handle, p_cb->sub_class,
+                        p_cb->attr_mask,  p_cb->app_id)) {
+        conn.status = BTA_HH_ERR_NO_RES;
+        p_cb->opened = FALSE;
+#if (BTA_HH_LE_INCLUDED == TRUE)
+        if (!p_cb->is_le_device)
+#endif
+        {
+            /* Balance the async close path which unconditionally calls bta_sys_conn_close(). */
+            bta_sys_conn_open(BTA_ID_HH, p_cb->app_id, p_cb->addr);
+        }
+        HID_HostCloseDev(dev_handle);
+        (* bta_hh_cb.p_cback)(BTA_HH_OPEN_EVT, (tBTA_HH *)&conn);
+        p_cb->incoming_conn = FALSE;
+        p_cb->incoming_hid_handle = BTA_HH_INVALID_HANDLE;
+        return;
+    }
 
 #if (BTA_HH_LE_INCLUDED == TRUE)
     conn.status = p_cb->status;
@@ -552,6 +567,7 @@ void bta_hh_open_cmpl_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
         /* inform role manager */
         bta_sys_conn_open( BTA_ID_HH , p_cb->app_id, p_cb->addr);
     }
+    p_cb->opened = TRUE;
     /* set protocol mode when not default report mode */
     if ( p_cb->mode != BTA_HH_PROTO_RPT_MODE
 #if (BTA_HH_LE_INCLUDED == TRUE)
@@ -631,12 +647,15 @@ void bta_hh_open_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
 void bta_hh_data_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
 {
     BT_HDR  *pdata = p_data->hid_cback.p_data;
-    UINT8   *p_rpt = (UINT8 *)(pdata + 1) + pdata->offset;
 
-    bta_hh_co_data((UINT8)p_data->hid_cback.hdr.layer_specific, p_rpt, pdata->len,
-                   p_cb->mode, p_cb->sub_class, p_cb->dscp_info.ctry_code, p_cb->addr, p_cb->app_id);
+    if (pdata == NULL) {
+        return;
+    }
 
-    utl_freebuf((void **)&pdata);
+    bta_hh_co_data_hdr((UINT8)p_data->hid_cback.hdr.layer_specific, pdata,
+                       p_cb->mode, p_cb->sub_class, p_cb->dscp_info.ctry_code,
+                       p_cb->addr, p_cb->app_id);
+    p_data->hid_cback.p_data = NULL;
 }
 
 
@@ -834,6 +853,7 @@ void bta_hh_open_failure(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
 
     /* Report OPEN fail event */
     (*bta_hh_cb.p_cback)(BTA_HH_OPEN_EVT, (tBTA_HH *)&conn_dat);
+    p_cb->opened = FALSE;
 
 #if BTA_HH_DEBUG
     bta_hh_trace_dev_db();
@@ -885,6 +905,7 @@ void bta_hh_close_act (tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
 
         /* Report OPEN fail event */
         (*bta_hh_cb.p_cback)(BTA_HH_OPEN_EVT, (tBTA_HH *)&conn_dat);
+        p_cb->opened = FALSE;
 
 #if BTA_HH_DEBUG
         bta_hh_trace_dev_db();
@@ -893,24 +914,27 @@ void bta_hh_close_act (tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
     }
     /* otherwise report CLOSE/VC_UNPLUG event */
     else {
-        /* finaliza device driver */
-        bta_hh_co_close(p_cb->hid_handle, p_cb->app_id);
         /* inform role manager */
         bta_sys_conn_close( BTA_ID_HH , p_cb->app_id, p_cb->addr);
         /* update total conn number */
         bta_hh_cb.cnt_num --;
 
-        if (disc_dat.status) {
-            disc_dat.status = BTA_HH_ERR;
-        }
+        if (p_cb->opened) {
+            /* finalize device driver only for successfully opened devices */
+            bta_hh_co_close(p_cb->hid_handle, p_cb->app_id);
+            if (disc_dat.status) {
+                disc_dat.status = BTA_HH_ERR;
+            }
 
-        (*bta_hh_cb.p_cback)(event, (tBTA_HH *)&disc_dat);
+            (*bta_hh_cb.p_cback)(event, (tBTA_HH *)&disc_dat);
 
-        /* if virtually unplug, remove device */
-        if (p_cb->vp ) {
-            HID_HostRemoveDev( p_cb->hid_handle);
-            bta_hh_clean_up_kdev(p_cb);
+            /* if virtually unplug, remove device */
+            if (p_cb->vp ) {
+                HID_HostRemoveDev( p_cb->hid_handle);
+                bta_hh_clean_up_kdev(p_cb);
+            }
         }
+        p_cb->opened = FALSE;
 
 #if BTA_HH_DEBUG
         bta_hh_trace_dev_db();
@@ -1190,9 +1214,17 @@ static void bta_hh_cback (UINT8 dev_handle, BD_ADDR addr, UINT8 event,
     case HID_HDEV_EVT_CLOSE:
         sm_event = BTA_HH_INT_CLOSE_EVT;
         break;
-    case HID_HDEV_EVT_INTR_DATA:
-        sm_event = BTA_HH_INT_DATA_EVT;
-        break;
+    case HID_HDEV_EVT_INTR_DATA: {
+        UINT8 index = bta_hh_dev_handle_to_cb_idx(dev_handle);
+        tBTA_HH_DEV_CB *p_cb = (index != BTA_HH_IDX_INVALID) ? &bta_hh_cb.kdev[index] : NULL;
+        if (p_cb != NULL && p_cb->state == BTA_HH_CONN_ST) {
+            bta_hh_co_data_hdr(dev_handle, pdata, p_cb->mode, p_cb->sub_class, p_cb->dscp_info.ctry_code, p_cb->addr,
+                               p_cb->app_id);
+        } else {
+            utl_freebuf((void **)&pdata);
+        }
+        return;
+    }
     case HID_HDEV_EVT_HANDSHAKE:
         sm_event = BTA_HH_INT_HANDSK_EVT;
         break;

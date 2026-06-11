@@ -2266,17 +2266,12 @@ void bta_hh_le_input_rpt_notify(tBTA_GATTC_NOTIFY *p_data)
         p_buf = p_data->value;
     }
 
-    bta_hh_co_data((UINT8)p_dev_cb->hid_handle,
-                   p_buf,
-                   p_data->len,
-                   p_dev_cb->mode,
-                   0 , /* no sub class*/
-                   p_dev_cb->dscp_info.ctry_code,
-                   p_dev_cb->addr,
-                   app_id);
-
-    if (p_buf != p_data->value) {
-        osi_free(p_buf);
+    if (p_buf == p_data->value) {
+        bta_hh_le_co_data((UINT8)p_dev_cb->hid_handle, p_buf, p_data->len, p_dev_cb->mode, 0, /* no sub class*/
+                          p_dev_cb->dscp_info.ctry_code, p_dev_cb->addr, app_id);
+    } else {
+        bta_hh_le_co_data_owned((UINT8)p_dev_cb->hid_handle, p_buf, p_data->len, p_dev_cb->mode, 0, /* no sub class*/
+                                p_dev_cb->dscp_info.ctry_code, p_dev_cb->addr, app_id);
     }
 }
 
