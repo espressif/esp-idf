@@ -12,6 +12,7 @@
 #include "soc/lpperi_struct.h"
 #include "soc/lp_i2c_ana_mst_struct.h"
 #include "soc/pmu_reg.h"
+#include "esp_rom_sys.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -71,6 +72,7 @@ static inline void regi2c_ctrl_ll_i2c_sar_periph_enable(void)
 {
     //Enter regi2c reset mode
     CLEAR_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_PERIF_I2C_RSTB);
+    esp_rom_delay_us(1); // 1us delay is recommended by digital design
     //Enable REGI2C for SAR_ADC and TSENS
     SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_PERIF_I2C);
     //Release regi2c reset mode, enter work mode
