@@ -250,6 +250,7 @@ typedef struct {
     sleep_retention_module_bitmap_t inited_modules;
     sleep_retention_module_bitmap_t created_modules;
     sleep_retention_module_bitmap_t attached_modules;
+    sleep_retention_module_bitmap_t retention_modules;
 
     void *final_default;
 
@@ -263,6 +264,7 @@ static DRAM_ATTR __attribute__((unused)) sleep_retention_t s_retention = {
     .inited_modules = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } },
     .created_modules = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } },
     .attached_modules = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } },
+    .retention_modules = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } },
     .final_default = NULL
 };
 
@@ -462,7 +464,10 @@ void * sleep_retention_find_link_by_id(int id)
     if (s_retention.highpri >= SLEEP_RETENTION_REGDMA_LINK_HIGHEST_PRIORITY &&
         s_retention.highpri <= SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY) {
         for (int entry = 0; (link == NULL && entry < ARRAY_SIZE(s_retention.retention.lists[s_retention.highpri].entries)); entry++) {
-            link = regdma_find_link_by_id(s_retention.retention.lists[s_retention.highpri].entries[entry], entry, id);
+            link = regdma_find_link_by_id(s_retention.context[0].lists[s_retention.highpri].entries[entry], entry, id);
+        }
+        for (int entry = 0; (link == NULL && entry < ARRAY_SIZE(s_retention.retention.lists[s_retention.highpri].entries)); entry++) {
+            link = regdma_find_link_by_id(s_retention.context[1].lists[s_retention.highpri].entries[entry], entry, id);
         }
     }
     _lock_release_recursive(&s_retention.lock);
@@ -631,6 +636,7 @@ static void entries_do_destroy(sleep_retention_module_t module)
             priority++;
         }
     } while (priority < SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES);
+    s_retention.retention_modules.bitmap[module >> 5] &= ~BIT(module % 32);
     s_retention.created_modules.bitmap[module >> 5] &= ~BIT(module % 32);
     _lock_release_recursive(&s_retention.lock);
 }
@@ -788,6 +794,7 @@ static esp_err_t entries_create_wrapper(const sleep_retention_entries_config_t r
     if(err) goto error;
     s_retention.created_modules.bitmap[module >> 5] |= BIT(module % 32);
     if (!module_runtime_attach(instance(module))) {
+        s_retention.retention_modules.bitmap[module >> 5] |= BIT(module % 32);
         retention_entries_join();
     }
 error:
@@ -1155,6 +1162,7 @@ static esp_err_t passive_module_attach(sleep_retention_module_t module)
     if (module_is_inited(module) && module_is_created(module) && !module_is_retained(module)) {
         module_entries_move(module, &s_retention.context[1], &s_retention.retention);
         s_retention.attached_modules.bitmap[module >> 5] |= BIT(module % 32);
+        s_retention.retention_modules.bitmap[module >> 5] |= BIT(module % 32);
         err = module_action_wrapper(module, (BIT(31) | action(3)), passive_module_attach);
     }
     _lock_release_recursive(&s_retention.lock);
@@ -1174,6 +1182,7 @@ esp_err_t sleep_retention_module_attach(sleep_retention_module_t module)
             if (module_runtime_attach(instance(module))) {
                 module_entries_move(module, &s_retention.context[1], &s_retention.retention);
                 s_retention.attached_modules.bitmap[module >> 5] |= BIT(module % 32);
+                s_retention.retention_modules.bitmap[module >> 5] |= BIT(module % 32);
                 err = module_action_wrapper(module, action(3), passive_module_attach);
             } else {
                 err = ESP_ERR_NOT_SUPPORTED;
@@ -1200,6 +1209,7 @@ static esp_err_t passive_module_detach(sleep_retention_module_t module)
     if (module_is_inited(module) && module_is_created(module) && module_is_retained(module)) {
         if (refarray_zero(instance(module), 1)) {
             module_entries_move(module, &s_retention.retention, &s_retention.context[1]);
+            s_retention.retention_modules.bitmap[module >> 5] &= ~BIT(module % 32);
             s_retention.attached_modules.bitmap[module >> 5] &= ~BIT(module % 32);
             err = module_action_wrapper(module, (BIT(31) | action(4)), passive_module_detach);
         }
@@ -1220,6 +1230,7 @@ esp_err_t sleep_retention_module_detach(sleep_retention_module_t module)
         if (module_is_inited(module) && module_is_created(module) && module_is_retained(module)) {
             if (module_runtime_attach(instance(module))) {
                 module_entries_move(module, &s_retention.retention, &s_retention.context[1]);
+                s_retention.retention_modules.bitmap[module >> 5] &= ~BIT(module % 32);
                 s_retention.attached_modules.bitmap[module >> 5] &= ~BIT(module % 32);
                 err = module_action_wrapper(module, action(4), passive_module_detach);
             } else {
