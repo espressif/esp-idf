@@ -290,7 +290,7 @@ void  btu_hcif_cmd_timeout (UINT8 controller_id);
 void  btu_init_core(void);
 void  btu_free_core(void);
 
-void BTU_StartUp(void);
+bool BTU_StartUp(void);
 void BTU_ShutDown(void);
 
 void btu_task_start_up(void *param);
