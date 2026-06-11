@@ -314,7 +314,11 @@ endif()
 if(CONFIG_ESP_WIFI_ENABLE_SAE_H2E)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_SAE_H2E)
 endif()
-if(CONFIG_ESP_WIFI_SOFTAP_SAE_SUPPORT)
+# PASN reuses the SAE module (PWE/crypto + comeback-token mechanism), so
+# CONFIG_SAE must be defined whenever SoftAP-SAE or PASN is enabled. AP-side SAE
+# authentication paths are additionally gated on CONFIG_ESP_WIFI_SOFTAP_SUPPORT
+# in the sources so they stay out of PASN-only (SoftAP-disabled) builds.
+if(CONFIG_ESP_WIFI_SOFTAP_SAE_SUPPORT OR CONFIG_ESP_WIFI_PASN_SUPPORT)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_SAE)
 endif()
 if(CONFIG_ESP_WIFI_WPA3_COMPATIBLE_SUPPORT)

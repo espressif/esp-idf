@@ -1517,16 +1517,33 @@ esp_err_t esp_wifi_nan_sync_start(const wifi_nan_sync_config_t *nan_cfg)
         return ESP_OK;
     }
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
-    if (nan_cfg->nik_valid) {
-        memcpy(s_nan_ctx.own_nik, nan_cfg->nik, ESP_WIFI_NAN_NIK_LEN);
-        s_nan_ctx.own_nik_valid = true;
-    } else {
+    s_nan_ctx.own_nik_valid = false;
+    s_nan_ctx.num_peer_creds = 0;
+    memset(s_nan_ctx.peer_creds, 0, sizeof(s_nan_ctx.peer_creds));
+    s_nan_ctx.use_nvs_for_caching = nan_cfg->use_nvs_for_caching;
+
+    if (nan_cfg->reset_current_nvs_creds) {
+        /* Start from a clean slate: drop every credential persisted in NVS. */
+        esp_wifi_nan_erase_all_creds();
+    } else if (esp_wifi_nan_load_saved_creds(s_nan_ctx.own_nik, &s_nan_ctx.own_nik_valid,
+                                             s_nan_ctx.peer_creds, &s_nan_ctx.num_peer_creds) != ESP_OK) {
+        ESP_LOGW(TAG, "Failed to load saved NAN credentials");
+        s_nan_ctx.own_nik_valid = false;
+        s_nan_ctx.num_peer_creds = 0;
+    }
+
+    if (!s_nan_ctx.own_nik_valid) {
         if (os_get_random(s_nan_ctx.own_nik, ESP_WIFI_NAN_NIK_LEN) != 0) {
             NAN_DATA_UNLOCK();
             ESP_LOGE(TAG, "Failed to generate NAN NIK");
             return ESP_FAIL;
         }
         s_nan_ctx.own_nik_valid = true;
+        /* Persist the freshly generated NIK only when NVS caching is enabled;
+         * otherwise the identity stays ephemeral for this session. */
+        if (s_nan_ctx.use_nvs_for_caching) {
+            esp_wifi_nan_save_own_nik(s_nan_ctx.own_nik);
+        }
     }
     /* Drop the cached NIRA tag; it was derived from the previous NIK. */
     s_nan_ctx.nira_cached = false;

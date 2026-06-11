@@ -17,6 +17,8 @@
 #include "esp_wifi_types_generic.h"
 #include "esp_private/wifi.h"
 #include "esp_nan.h"
+#include "utils/common.h"      /* u8/u16 typedefs required by esp_wifi_driver.h */
+#include "esp_wifi_driver.h"   /* wifi_nan_peer_creds_t + NAN credential NVS APIs */
 #include "os.h"
 
 #ifdef __cplusplus
@@ -296,6 +298,12 @@ typedef struct {
     uint8_t cached_nira_nonce[8];
     uint8_t cached_nira_tag[8];
     bool nira_cached;
+    /* Peer NIK/NPK credentials loaded from NVS at start and refreshed as peers
+     * are paired. Drives NIRA identity resolution; optionally persisted to NVS
+     * when @c use_nvs_for_caching is set. */
+    wifi_nan_peer_creds_t peer_creds[ESP_WIFI_NAN_MAX_PEER_CREDS];
+    uint8_t num_peer_creds;
+    bool use_nvs_for_caching;
 #endif
 #ifdef CONFIG_ESP_WIFI_PASN_SUPPORT
     struct nan_pasn_data *nan_pasn_data;
