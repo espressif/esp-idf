@@ -242,7 +242,7 @@ esp_err_t esp_vfs_fat_unregister_path(const char* base_path)
     vfs_fat_ctx_t* fat_ctx = s_fat_ctxs[ctx];
     esp_err_t err = esp_vfs_unregister(fat_ctx->base_path);
     if (err != ESP_OK) {
-        return err;
+        ESP_LOGW(TAG, "esp_vfs_unregister failed (0x%x), cleaning up anyway", err); // should not happen, but if it does, we don't want to leak memory and keep the VFS in a broken state
     }
     _lock_close(&fat_ctx->lock);
 
@@ -256,7 +256,7 @@ esp_err_t esp_vfs_fat_unregister_path(const char* base_path)
     free(fat_ctx->flags);
     free(fat_ctx);
     s_fat_ctxs[ctx] = NULL;
-    return ESP_OK;
+    return err;
 }
 
 esp_err_t esp_vfs_fat_info(const char* base_path,
