@@ -36,6 +36,13 @@ extern "C" {
 #define PSRAM_HALFSLEEP_RESUME_CODE_ATTR
 #endif
 
+// Downgrade "PSRAM not found" errors to warning if ignoring missing SPIRAM
+#if CONFIG_SPIRAM_IGNORE_NOTFOUND
+#define PSRAM_LOG_NOTFOUND ESP_EARLY_LOGW
+#else
+#define PSRAM_LOG_NOTFOUND ESP_EARLY_LOGE
+#endif
+
 /**
  * @brief To get the physical psram size in bytes.
  *
