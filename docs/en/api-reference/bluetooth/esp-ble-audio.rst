@@ -5,6 +5,8 @@ ESP-BLE-AUDIO provides APIs for Bluetooth LE Audio, enabling time-synchronized a
 
 The LE Audio stack is built on the **Bluetooth Core** and the **LC3** codec. The **generic audio framework** includes the Common Audio Profile (CAP), Common Audio Service (CAS), and the profiles and services below. **Use case specific profiles** (HAP, GMAP, TMAP, PBP) sit on top of the generic framework. LE Audio runs over the LE Isochronous Channels (CIS/BIS) supported by :doc:`esp-ble-iso`.
 
+For conceptual background and architectural details, see the :doc:`Bluetooth LE Audio documentation <../../api-guides/esp-ble-audio/ble-audio-index>`, in particular the :doc:`ESP-BLE-AUDIO architecture <../../api-guides/esp-ble-audio/ble-audio-architecture-lea>`.
+
 .. warning::
 
     This is a **preview release**. The ESP-BLE-AUDIO APIs, data structures, and configuration parameters are subject to change in future releases. Breaking changes — such as renamed or restructured types, modified function signatures, or removed fields — may be introduced without prior notice.

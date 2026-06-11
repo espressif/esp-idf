@@ -3,13 +3,13 @@
 
 :link_to_translation:`en:[English]`
 
-本页跟踪 ESP-IDF 中蓝牙 LE Audio 功能的支持状态 —— ESP-BLE-AUDIO 提供的通用音频框架（GAF）规范和服务，以及 ESP-BLE-ISO 提供的等时传输。
+本页跟踪 ESP-IDF 中蓝牙低功耗音频功能的支持状态 —— ESP-BLE-AUDIO 提供的通用音频框架 (GAF) 规范和服务，以及 ESP-BLE-ISO 提供的等时传输。
 
 .. note::
 
-   下表中标为支持的蓝牙 LE Audio 功能目前为\ **预览版**\ ：其 API 和行为均为暂定，可能在未来版本中变化。
+   下表中标为支持的蓝牙低功耗音频功能目前为\ **预览版**\ ：其 API 和行为均为暂定，可能在未来版本中变化。
 
-下表列出了 ESP-IDF 中当前支持的蓝牙 LE Audio 规范和服务。
+下表列出了 ESP-IDF 中当前支持的蓝牙低功耗音频规范和服务。
 
 .. list-table::
     :header-rows: 1
@@ -18,7 +18,7 @@
     * - 规范 / 服务
       - 支持状态
       - 说明
-    * - LE 等时通道（CIS / BIS）
+    * - LE 等时通道 (CIS / BIS)
       - 支持
       - 通过 :doc:`ESP-BLE-ISO <../../api-reference/bluetooth/esp-ble-iso>` 直接访问 ISO。
     * - BAP
@@ -78,6 +78,6 @@
 
 .. note::
 
-   规范和服务的定义参见 :doc:`蓝牙 LE Audio 标准 <ble-audio-introduction>`。
+   规范和服务的定义参见 :doc:`蓝牙低功耗音频标准 <ble-audio-introduction>`。
 
    通用蓝牙低功耗功能支持参见 :doc:`主要功能支持状态 <../ble/ble-feature-support-status>`。
