@@ -319,3 +319,13 @@ How the Component is Built
 --------------------------
 
 A component is compiled and linked only if it is required, directly or transitively, by a component that is being built. :cmakev2:ref:`idf_project_default` builds the application from the ``main`` component, so a native component becomes part of the application when ``main`` or one of its dependencies includes it. ``main`` is a convention of :cmakev2:ref:`idf_project_default`, not a requirement of the build system; a project that drives the build with the lower-level API can build the application from any component (see :doc:`multiple-binaries` and :doc:`idf-as-library`). The difference between discovering a component and including it is described in :doc:`design`.
+
+Some components are enabled solely by project configuration and contribute behavior through linker-section registrations, rather than through a dependency from another component. Such a component can add itself to the executable created by :cmakev2:ref:`idf_project_default` from its ``project_include.cmake`` file:
+
+.. code-block:: cmake
+
+    if(CONFIG_MY_FEATURE_ENABLE)
+        idf_project_add_default_build_component(my_component)
+    endif()
+
+Use this only when the component must be linked whenever its configuration enables it, but no ordinary component dependency expresses that requirement. For example, ``espcoredump`` registers startup and panic handlers, and ``esp_gdbstub`` registers its panic handler; both are selected by their configuration options.

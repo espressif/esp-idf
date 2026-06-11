@@ -708,6 +708,13 @@ endfunction()
 .. cmakev2:build_property:: IDF_COMPONENT_OPTIONAL_REQUIRES_MODE
 
     How :cmakev2:ref:`idf_component_optional_requires` is resolved, ``IMMEDIATE`` or ``DEFERRED``.
+
+.. cmakev2:build_property:: PROJECT_DEFAULT_EXTRA_COMPONENTS
+
+    Internal list of additional components to include in the executable
+    created by ``idf_project_default``. Components should use
+    ``idf_project_add_default_build_component`` rather than modifying this
+    property directly.
 #]]
 
 add_library(idf_build_properties INTERFACE)
