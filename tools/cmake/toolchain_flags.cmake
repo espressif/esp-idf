@@ -17,7 +17,7 @@ endforeach()
 # Helper macro to process toolchain flag options based on mappings
 # Uses macro instead of function to access parent scope variables directly
 # operation: "add" or "remove"
-macro(_process_toolchain_flag_options)
+macro(_process_toolchain_flag_options operation)
     cmake_parse_arguments(PARSE_ARGV 0 "" "" "" "${_IDF_TOOLCHAIN_MULTI_VALUE_KEYWORDS}")
 
     if(NOT EXISTS "${IDF_TOOLCHAIN_BUILD_DIR}")
@@ -34,11 +34,11 @@ macro(_process_toolchain_flag_options)
         list(GET mapping_list 1 files)
         string(REPLACE ":" ";" files ${files})
 
-        # Process flags based on calling function: add or remove
-        if("${CMAKE_CURRENT_FUNCTION}" MATCHES "add_flags" AND DEFINED ${option_var})
+        # Process flags based on operation set by the calling function.
+        if("${operation}" STREQUAL "add" AND DEFINED ${option_var})
             _add_flags_to_files("${files}" "${${option_var}}")
         endif()
-        if("${CMAKE_CURRENT_FUNCTION}" MATCHES "remove_flags" AND ${option_var})
+        if("${operation}" STREQUAL "remove" AND ${option_var})
             _remove_flags_from_files("${files}" "${${option_var}}")
         endif()
     endforeach()
@@ -149,11 +149,11 @@ endfunction()
 #   idf_toolchain_add_flags(COMPILE_OPTIONS "-Wall" "-Wextra")
 #   idf_toolchain_add_flags(C_COMPILE_OPTIONS "-std=c99" LINK_OPTIONS "-Wl,--gc-sections")
 function(idf_toolchain_add_flags)
-    _process_toolchain_flag_options()
+    _process_toolchain_flag_options("add")
 endfunction()
 
 function(idf_toolchain_remove_flags)
-    _process_toolchain_flag_options()
+    _process_toolchain_flag_options("remove")
 endfunction()
 
 # Workaround: Re-run CMake compiler ABI detection after ABI flags are set.
