@@ -60,7 +60,10 @@ static inline void sleep_retention_module_object_ctor(struct sleep_retention_mod
 
 static inline void sleep_retention_module_object_dtor(struct sleep_retention_module_object * const self)
 {
-    self->cbs = (sleep_retention_module_callbacks_t) { .create = { .handle = NULL, .arg = NULL } };
+    self->cbs = (sleep_retention_module_callbacks_t) {
+        .create = { .handle = NULL, .arg = NULL },
+        .destroy = { .handle = NULL, .arg = NULL }
+    };
 }
 
 static inline void set_dependencies(struct sleep_retention_module_object * const self, sleep_retention_module_bitmap_t depends)
@@ -1075,7 +1078,12 @@ static esp_err_t passive_module_free(sleep_retention_module_t module)
         if (!references_exist(instance(module))) {
             if (!module_is_retained(module)) {
                 sleep_retention_entries_destroy(module);
-                err = module_action_wrapper(module, (BIT(31) | action(2)), passive_module_free);
+                if (instance(module)->cbs.destroy.handle) {
+                    err = instance(module)->cbs.destroy.handle(instance(module)->cbs.destroy.arg);
+                }
+                if (err == ESP_OK) {
+                    err = module_action_wrapper(module, (BIT(31) | action(2)), passive_module_free);
+                }
             } else {
                 err = ESP_ERR_INVALID_STATE;
             }
@@ -1096,7 +1104,12 @@ esp_err_t sleep_retention_module_free(sleep_retention_module_t module)
     if (!module_is_passive(instance(module))) {
         if (module_is_inited(module) && module_is_created(module) && !module_is_retained(module)) {
             sleep_retention_entries_destroy(module);
-            err = module_action_wrapper(module, action(2), passive_module_free);
+            if (instance(module)->cbs.destroy.handle) {
+                err = instance(module)->cbs.destroy.handle(instance(module)->cbs.destroy.arg);
+            }
+            if (err == ESP_OK) {
+                err = module_action_wrapper(module, action(2), passive_module_free);
+            }
         } else {
             err = ESP_ERR_INVALID_STATE;
         }
