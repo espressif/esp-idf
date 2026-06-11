@@ -249,7 +249,7 @@ typedef struct {
     regdma_link_priority_t highpri;
     sleep_retention_module_bitmap_t inited_modules;
     sleep_retention_module_bitmap_t created_modules;
-    sleep_retention_module_bitmap_t retention_modules;
+    sleep_retention_module_bitmap_t attached_modules;
 
     void *final_default;
 
@@ -262,7 +262,7 @@ static DRAM_ATTR __attribute__((unused)) sleep_retention_t s_retention = {
     .highpri = (uint8_t)-1,
     .inited_modules = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } },
     .created_modules = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } },
-    .retention_modules = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } },
+    .attached_modules = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } },
     .final_default = NULL
 };
 
@@ -836,7 +836,7 @@ sleep_retention_module_bitmap_t IRAM_ATTR sleep_retention_get_created_modules(vo
 
 sleep_retention_module_bitmap_t IRAM_ATTR sleep_retention_get_retained_modules(void)
 {
-    return s_retention.retention_modules;
+    return s_retention.attached_modules;
 }
 
 bool sleep_retention_is_module_inited(sleep_retention_module_t module)
@@ -1154,7 +1154,7 @@ static esp_err_t passive_module_attach(sleep_retention_module_t module)
     assert(module_is_inited(module) && "All passive module must be inited first!");
     if (module_is_inited(module) && module_is_created(module) && !module_is_retained(module)) {
         module_entries_move(module, &s_retention.context[1], &s_retention.retention);
-        s_retention.retention_modules.bitmap[module >> 5] |= BIT(module % 32);
+        s_retention.attached_modules.bitmap[module >> 5] |= BIT(module % 32);
         err = module_action_wrapper(module, (BIT(31) | action(3)), passive_module_attach);
     }
     _lock_release_recursive(&s_retention.lock);
@@ -1173,7 +1173,7 @@ esp_err_t sleep_retention_module_attach(sleep_retention_module_t module)
         if (module_is_inited(module) && module_is_created(module) && !module_is_retained(module)) {
             if (module_runtime_attach(instance(module))) {
                 module_entries_move(module, &s_retention.context[1], &s_retention.retention);
-                s_retention.retention_modules.bitmap[module >> 5] |= BIT(module % 32);
+                s_retention.attached_modules.bitmap[module >> 5] |= BIT(module % 32);
                 err = module_action_wrapper(module, action(3), passive_module_attach);
             } else {
                 err = ESP_ERR_NOT_SUPPORTED;
@@ -1200,7 +1200,7 @@ static esp_err_t passive_module_detach(sleep_retention_module_t module)
     if (module_is_inited(module) && module_is_created(module) && module_is_retained(module)) {
         if (refarray_zero(instance(module), 1)) {
             module_entries_move(module, &s_retention.retention, &s_retention.context[1]);
-            s_retention.retention_modules.bitmap[module >> 5] &= ~BIT(module % 32);
+            s_retention.attached_modules.bitmap[module >> 5] &= ~BIT(module % 32);
             err = module_action_wrapper(module, (BIT(31) | action(4)), passive_module_detach);
         }
     }
@@ -1220,7 +1220,7 @@ esp_err_t sleep_retention_module_detach(sleep_retention_module_t module)
         if (module_is_inited(module) && module_is_created(module) && module_is_retained(module)) {
             if (module_runtime_attach(instance(module))) {
                 module_entries_move(module, &s_retention.retention, &s_retention.context[1]);
-                s_retention.retention_modules.bitmap[module >> 5] &= ~BIT(module % 32);
+                s_retention.attached_modules.bitmap[module >> 5] &= ~BIT(module % 32);
                 err = module_action_wrapper(module, action(4), passive_module_detach);
             } else {
                 err = ESP_ERR_NOT_SUPPORTED;
