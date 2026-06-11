@@ -248,28 +248,6 @@ npl_eventq_queued_get_isr(struct ble_npl_event_freertos *event)
 }
 
 static void IRAM_ATTR
-npl_eventq_queued_set_isr(struct ble_npl_event_freertos *event, bool queued)
-{
-    portENTER_CRITICAL_ISR(&ble_port_mutex);
-    event->queued = queued;
-    portEXIT_CRITICAL_ISR(&ble_port_mutex);
-}
-
-static bool IRAM_ATTR
-npl_eventq_queued_claim_isr(struct ble_npl_event_freertos *event)
-{
-    bool already;
-
-    portENTER_CRITICAL_ISR(&ble_port_mutex);
-    already = event->queued;
-    if (!already) {
-        event->queued = true;
-    }
-    portEXIT_CRITICAL_ISR(&ble_port_mutex);
-    return already;
-}
-
-static void IRAM_ATTR
 npl_eventq_queued_set_task(struct ble_npl_event_freertos *event, bool queued)
 {
     portENTER_CRITICAL(&ble_port_mutex);
@@ -329,18 +307,22 @@ IRAM_ATTR npl_freertos_eventq_get(struct ble_npl_eventq *evq, ble_npl_time_t tmo
 
     if (in_isr()) {
         BLE_LL_ASSERT(tmo == 0);
+        woken = pdFALSE;
+
+        portENTER_CRITICAL_ISR(&ble_port_mutex);
         ret = xQueueReceiveFromISR(eventq->q, &ev, &woken);
-        if( woken == pdTRUE ) {
+        if (ret == pdPASS && ev != NULL) {
+            struct ble_npl_event_freertos *event = (struct ble_npl_event_freertos *)ev->event;
+            if (event) {
+                event->queued = false;
+            }
+        }
+        portEXIT_CRITICAL_ISR(&ble_port_mutex);
+
+        if (woken == pdTRUE) {
             portYIELD_FROM_ISR();
         }
         BLE_LL_ASSERT(ret == pdPASS || ret == errQUEUE_EMPTY);
-
-        if (ev) {
-            struct ble_npl_event_freertos *event = (struct ble_npl_event_freertos *)ev->event;
-            if (event) {
-                npl_eventq_queued_set_isr(event, false);
-            }
-        }
     } else if (tmo == 0) {
         bool locked = npl_eventq_lock();
 
@@ -407,16 +389,24 @@ IRAM_ATTR npl_freertos_eventq_put(struct ble_npl_eventq *evq, struct ble_npl_eve
     struct ble_npl_event_freertos *event = (struct ble_npl_event_freertos *)ev->event;
 
     if (in_isr()) {
-        if (npl_eventq_queued_claim_isr(event)) {
+        woken = pdFALSE;
+
+        portENTER_CRITICAL_ISR(&ble_port_mutex);
+        if (event->queued) {
+            portEXIT_CRITICAL_ISR(&ble_port_mutex);
             return;
         }
+        event->queued = true;
 
         ret = xQueueSendToBackFromISR(eventq->q, &ev, &woken);
         if (ret != pdPASS) {
-            npl_eventq_queued_set_isr(event, false);
+            event->queued = false;
+            portEXIT_CRITICAL_ISR(&ble_port_mutex);
             return;
         }
-        if( woken == pdTRUE ) {
+        portEXIT_CRITICAL_ISR(&ble_port_mutex);
+
+        if (woken == pdTRUE) {
             portYIELD_FROM_ISR();
         }
         return;
@@ -446,16 +436,24 @@ IRAM_ATTR npl_freertos_eventq_put_to_front(struct ble_npl_eventq *evq, struct bl
     struct ble_npl_event_freertos *event = (struct ble_npl_event_freertos *)ev->event;
 
     if (in_isr()) {
-        if (npl_eventq_queued_claim_isr(event)) {
+        woken = pdFALSE;
+
+        portENTER_CRITICAL_ISR(&ble_port_mutex);
+        if (event->queued) {
+            portEXIT_CRITICAL_ISR(&ble_port_mutex);
             return;
         }
+        event->queued = true;
 
         ret = xQueueSendToFrontFromISR(eventq->q, &ev, &woken);
         if (ret != pdPASS) {
-            npl_eventq_queued_set_isr(event, false);
+            event->queued = false;
+            portEXIT_CRITICAL_ISR(&ble_port_mutex);
             return;
         }
-        if( woken == pdTRUE ) {
+        portEXIT_CRITICAL_ISR(&ble_port_mutex);
+
+        if (woken == pdTRUE) {
             portYIELD_FROM_ISR();
         }
         return;
@@ -1059,9 +1057,19 @@ IRAM_ATTR npl_freertos_callout_stop(struct ble_npl_callout *co)
     }
 
 #if BLE_NPL_USE_ESP_TIMER
-    esp_timer_stop(callout->handle);
+    if (!in_isr()) {
+        esp_timer_stop(callout->handle);
+    }
 #else
-    xTimerStop(callout->handle, portMAX_DELAY);
+    if (in_isr()) {
+        BaseType_t woken = pdFALSE;
+        xTimerStopFromISR(callout->handle, &woken);
+        if (woken == pdTRUE) {
+            portYIELD_FROM_ISR();
+        }
+    } else {
+        xTimerStop(callout->handle, portMAX_DELAY);
+    }
 #endif
 
     if (callout->evq) {

@@ -17,6 +17,8 @@ void *nimble_mem_malloc(size_t size);
 
 void *nimble_mem_calloc(size_t n, size_t size);
 
+void *nimble_mem_realloc(void *ptr, size_t size);
+
 void nimble_mem_free(void *ptr);
 
 #if CONFIG_BT_LE_USED_MEM_STATISTICS_ENABLED
@@ -89,17 +91,6 @@ void nimble_mem_dbg_set_section_end(uint8_t index);
  */
 uint32_t nimble_mem_dbg_get_max_size_section(uint8_t index);
 
-/**
- * @brief Reallocate memory with debug tracking
- *
- * @param ptr   Pointer to memory to reallocate
- * @param new_size New size of allocation
- * @param func  Function name where realloc occurred
- * @param line  Line number where realloc occurred
- * @return Pointer to reallocated memory
- */
-void *nimble_mem_dbg_realloc(void *ptr, size_t new_size, const char *func, int line);
-
 #endif // CONFIG_BT_NIMBLE_MEM_DEBUG
 
 
@@ -127,11 +118,17 @@ void *nimble_mem_dbg_realloc(void *ptr, size_t new_size, const char *func, int l
 
 #define nimble_platform_mem_realloc(ptr, new_size)              \
 ({                                                              \
-    void *p;                                                    \
-    do {                                                        \
-        p = nimble_mem_dbg_realloc(ptr, new_size, __func__, __LINE__); \
-    } while (0);                                                \
-    p;                                                          \
+    void *_old = (void *)(ptr);                                 \
+    size_t _nsz = (size_t)(new_size);                           \
+    void *_new = nimble_mem_realloc(_old, _nsz);                \
+    if (_new == NULL && _nsz > 0) {                             \
+        /* realloc failed: original block still alive, keep its debug record */ \
+    } else {                                                    \
+        /* success or free (new_size==0): clean old, record new */ \
+        if (_old) nimble_mem_dbg_clean(_old, __func__, __LINE__); \
+        if (_new) nimble_mem_dbg_record(_new, _nsz, __func__, __LINE__); \
+    }                                                           \
+    _new;                                                       \
 })
 
 #define nimble_platform_mem_free(ptr)                            \
@@ -145,7 +142,7 @@ do {                                                             \
 
 #define nimble_platform_mem_malloc nimble_mem_malloc
 #define nimble_platform_mem_calloc nimble_mem_calloc
-#define nimble_platform_mem_realloc realloc
+#define nimble_platform_mem_realloc nimble_mem_realloc
 #define nimble_platform_mem_free nimble_mem_free
 
 #endif // CONFIG_BT_NIMBLE_MEM_DEBUG

@@ -353,7 +353,10 @@ bool IRAM_ATTR
 wr_btdm_osal_event_is_queued(struct btdm_osal_event *ev)
 {
     struct btdm_osal_event_freertos *event = (struct btdm_osal_event_freertos *)ev->event;
-    return event->queued;
+    if (event) {
+        return event->queued;
+    }
+    return false;
 }
 
 void *IRAM_ATTR
