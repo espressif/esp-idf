@@ -58,6 +58,11 @@ static inline void ecc_ll_power_up(void)
     ESP_FAULT_ASSERT(REG_GET_BIT(PCR_ECC_PD_CTRL_REG, PCR_ECC_MEM_FORCE_PD) == 0);
 }
 
+static inline bool ecc_ll_mem_force_pd_is_clear(void)
+{
+    return REG_GET_BIT(PCR_ECC_PD_CTRL_REG, PCR_ECC_MEM_FORCE_PD) == 0;
+}
+
 static inline void ecc_ll_power_down(void)
 {
     REG_CLR_BIT(PCR_ECC_PD_CTRL_REG, PCR_ECC_MEM_FORCE_PU);
