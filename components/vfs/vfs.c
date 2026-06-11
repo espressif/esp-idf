@@ -52,7 +52,7 @@ _Static_assert((1 << (sizeof(vfs_index_t)*8)) >= VFS_MAX_COUNT, "VFS index type 
 _Static_assert(((vfs_index_t) -1) < 0, "vfs_index_t must be a signed type");
 
 static vfs_entry_t* s_vfs[VFS_MAX_COUNT] = { 0 };
-static size_t s_vfs_count = 0;
+static size_t s_vfs_upper_bound = 0; // upper bound of indices in s_vfs which can be occupied by VFS entries; always equal to the index of the last non-NULL entry + 1
 
 static fd_table_t s_fd_table[MAX_FDS] = { [0 ... MAX_FDS-1] = FD_TABLE_ENTRY_UNUSED };
 static _lock_t s_fd_table_lock;
@@ -390,8 +390,9 @@ static esp_err_t esp_vfs_register_fs_common(
     void *ctx,
     int *vfs_index)
 {
-    if (s_vfs_count >= VFS_MAX_COUNT) {
-        return  ESP_ERR_NO_MEM;
+    ssize_t index = esp_get_free_index();
+    if (index < 0) { // Check for free slot before doing any other work
+        return ESP_ERR_NO_MEM;
     }
 
     if (vfs == NULL) {
@@ -412,17 +413,12 @@ static esp_err_t esp_vfs_register_fs_common(
         }
     }
 
-    ssize_t index = esp_get_free_index();
-    if (index < 0) {
-        return ESP_ERR_NO_MEM;
-    }
-
     if (s_vfs[index] != NULL) {
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (index == s_vfs_count) {
-        s_vfs_count++;
+    if (index == s_vfs_upper_bound) {
+        s_vfs_upper_bound++;
     }
 
     vfs_entry_t *entry = heap_caps_malloc(sizeof(vfs_entry_t) + base_path_len + 1, VFS_MALLOC_FLAGS);
@@ -600,6 +596,10 @@ esp_err_t esp_vfs_unregister_with_id(esp_vfs_id_t vfs_id)
     }
     _lock_release(&s_fd_table_lock);
 
+    while (s_vfs_upper_bound > 0 && s_vfs[s_vfs_upper_bound - 1] == NULL) { // Move the upper bound down if we just removed the last entry
+        s_vfs_upper_bound--;
+    }
+
     return ESP_OK;
 
 }
@@ -611,7 +611,7 @@ esp_err_t esp_vfs_unregister_fs_with_id(esp_vfs_id_t vfs_id) __attribute__((alia
 esp_err_t esp_vfs_unregister(const char* base_path)
 {
     const size_t base_path_len = strlen(base_path);
-    for (size_t i = 0; i < s_vfs_count; ++i) {
+    for (size_t i = 0; i < s_vfs_upper_bound; ++i) {
         vfs_entry_t* vfs = s_vfs[i];
         if (vfs == NULL) {
             continue;
@@ -635,7 +635,7 @@ esp_err_t esp_vfs_register_fd(esp_vfs_id_t vfs_id, int *fd)
 
 esp_err_t esp_vfs_register_fd_with_local_fd(esp_vfs_id_t vfs_id, int local_fd, bool permanent, int *fd)
 {
-    if (vfs_id < 0 || vfs_id >= s_vfs_count || fd == NULL) {
+    if (vfs_id < 0 || vfs_id >= s_vfs_upper_bound || fd == NULL) {
         ESP_LOGD(TAG, "Invalid arguments for esp_vfs_register_fd_with_local_fd(%d, %d, %d, 0x%p)",
                  vfs_id, local_fd, permanent, fd);
         return ESP_ERR_INVALID_ARG;
@@ -669,7 +669,7 @@ esp_err_t esp_vfs_unregister_fd(esp_vfs_id_t vfs_id, int fd)
 {
     esp_err_t ret = ESP_ERR_INVALID_ARG;
 
-    if (vfs_id < 0 || vfs_id >= s_vfs_count || fd < 0 || fd >= MAX_FDS) {
+    if (vfs_id < 0 || vfs_id >= s_vfs_upper_bound || fd < 0 || fd >= MAX_FDS) {
         ESP_LOGD(TAG, "Invalid arguments for esp_vfs_unregister_fd(%d, %d)", vfs_id, fd);
         return ret;
     }
@@ -732,7 +732,7 @@ void esp_vfs_dump_registered_paths(FILE *fp)
 esp_err_t esp_vfs_set_readonly_flag(const char* base_path)
 {
     const size_t base_path_len = strlen(base_path);
-    for (size_t i = 0; i < s_vfs_count; ++i) {
+    for (size_t i = 0; i < s_vfs_upper_bound; ++i) {
         vfs_entry_t* vfs = s_vfs[i];
         if (vfs == NULL) {
             continue;
@@ -748,11 +748,10 @@ esp_err_t esp_vfs_set_readonly_flag(const char* base_path)
 
 const vfs_entry_t *get_vfs_for_index(int index)
 {
-    if (index < 0 || index >= s_vfs_count) {
+    if (index < 0 || index >= VFS_MAX_COUNT) {
         return NULL;
-    } else {
-        return s_vfs[index];
     }
+    return s_vfs[index];
 }
 
 int register_fd(int vfs_index, int local_fd, bool permanent)
@@ -839,7 +838,7 @@ const vfs_entry_t* get_vfs_for_path(const char* path)
     const vfs_entry_t* best_match = NULL;
     ssize_t best_match_prefix_len = -1;
     size_t len = strlen(path);
-    for (size_t i = 0; i < s_vfs_count; ++i) {
+    for (size_t i = 0; i < s_vfs_upper_bound; ++i) {
         const vfs_entry_t* vfs = s_vfs[i];
         if (vfs == NULL || vfs->path_prefix_len == LEN_PATH_PREFIX_IGNORED) {
             continue;
@@ -863,7 +862,7 @@ const vfs_entry_t* get_vfs_for_path(const char* path)
         // Out of all matching path prefixes, select the longest one;
         // i.e. if "/dev" and "/dev/uart" both match, for "/dev/uart/1" path,
         // choose "/dev/uart",
-        // This causes all s_vfs_count VFS entries to be scanned when opening
+        // This causes all s_vfs_upper_bound VFS entries to be scanned when opening
         // a file by name. This can be optimized by introducing a table for
         // FS search order, sorted so that longer prefixes are checked first.
         if (best_match_prefix_len < (ssize_t) vfs->path_prefix_len) {
@@ -874,9 +873,9 @@ const vfs_entry_t* get_vfs_for_path(const char* path)
     return best_match;
 }
 
-size_t get_vfs_count(void)
+size_t get_vfs_upper_bound(void)
 {
-    return s_vfs_count;
+    return s_vfs_upper_bound;
 }
 
 void close_pending(int nfds)
