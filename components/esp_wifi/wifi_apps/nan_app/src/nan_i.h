@@ -222,6 +222,9 @@ struct own_svc_info {
      * per-service array the blob caches in svc_entry->self_security_params[].
      * Valid entries: [0, user_cfg.num_credentials). */
     wifi_nan_security_params_t derived_security[ESP_WIFI_NAN_MAX_CREDS_PER_SVC];
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+    wifi_nan_pairing_cfg_t pairing;
+#endif
 #endif
     uint8_t num_peer_records;
     SLIST_HEAD(peer_list_t, peer_svc_info) peer_list;
