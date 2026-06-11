@@ -367,7 +367,7 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
         rc = ble_gap_conn_find(event->enc_change.conn_handle, &desc);
         assert(rc == 0);
         bleprph_print_conn_desc(&desc);
-        struct ble_cs_reflector_setup_params params;
+        struct ble_cs_reflector_setup_params params = {0};
         params.cb=blecs_gap_event;
         ble_cs_reflector_setup(&params);
 
