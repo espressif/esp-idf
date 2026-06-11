@@ -462,7 +462,7 @@ static bool nan_services_limit_reached(void)
 #define NAN_SVC_ID_PENDING  0xFF
 
 static struct own_svc_info *nan_claim_own_svc_slot(uint8_t type, const char svc_name[],
-                                                   const wifi_nan_discovery_security_params_t *security_cfg)
+                                                   const wifi_nan_discovery_security_params_t *security_cfg, wifi_nan_pairing_cfg_t *pairing)
 {
     struct own_svc_info *p_svc = NULL;
     for (int i = 0; i < ESP_WIFI_NAN_MAX_SVC_SUPPORTED; i++) {
@@ -485,6 +485,11 @@ static struct own_svc_info *nan_claim_own_svc_slot(uint8_t type, const char svc_
     if (security_cfg) {
         memcpy(&p_svc->user_cfg, security_cfg, sizeof(*security_cfg));
     }
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+    if (pairing) {
+        memcpy(&p_svc->pairing, pairing, sizeof(*pairing));
+    }
+#endif
 #else
     (void)security_cfg;
 #endif
@@ -1755,9 +1760,14 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
      * tripping the task watchdog when num_credentials > 1. */
     if (!nan_claim_own_svc_slot(ESP_NAN_PUBLISH, publish_cfg->service_name,
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
-                                cfg->security_cfg
+                                cfg->security_cfg,
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+                                cfg->pairing
 #else
                                 NULL
+#endif
+#else
+                                NULL, NULL
 #endif
                                )) {
         ESP_LOGE(TAG, "No free service slot");
@@ -1896,7 +1906,7 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
     /* Pre-claim host slot BEFORE the blob's subscribe call; see comment on
      * the publish path for the watchdog rationale. */
     if (!nan_claim_own_svc_slot(ESP_NAN_SUBSCRIBE, subscribe_cfg->service_name,
-                                subscribe_cfg->security_cfg)) {
+                                subscribe_cfg->security_cfg, subscribe_cfg->pairing)) {
         ESP_LOGE(TAG, "No free service slot");
         goto fail;
     }

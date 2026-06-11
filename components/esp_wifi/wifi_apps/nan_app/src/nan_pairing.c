@@ -788,6 +788,24 @@ static void nan_pairing_key_installed_cb(const uint8_t *peer_nmi,
     (void)nik_lifetime_sec;
 #endif
 
+    struct peer_svc_info *peer = nan_find_peer_svc(0, 0, (uint8_t *)peer_nmi);
+    struct own_svc_info *own = NULL;
+
+    if (peer) {
+        own = nan_find_own_svc(peer->own_svc_id);
+    }
+
+    if (own) {
+        if (!own->pairing.npk_nik_caching) {
+            wifi_event_nan_pairing_complete_t evt = {0};
+            evt.status = WIFI_NAN_PAIRING_STATUS_ACCEPTED;
+            evt.reason_code = 0;
+            MACADDR_COPY(evt.peer_nmi, peer_nmi);
+            nan_app_post_event(WIFI_EVENT_NAN_PAIRING_CONFIRM, &evt, sizeof(evt));
+            return;
+        }
+    }
+
     if (role == NAN_ROLE_PAIRING_INITIATOR) {
         struct nan_pairing_fup_ctx *ctx = os_zalloc(sizeof(*ctx));
         if (!ctx) {
@@ -797,7 +815,7 @@ static void nan_pairing_key_installed_cb(const uint8_t *peer_nmi,
         }
 
         NAN_DATA_LOCK();
-        struct peer_svc_info *peer = nan_find_peer_svc(0, 0, (uint8_t *)peer_nmi);
+
         if (peer) {
             ctx->svc_id      = peer->own_svc_id;
             ctx->peer_svc_id = peer->svc_id;
@@ -816,7 +834,7 @@ static void nan_pairing_key_installed_cb(const uint8_t *peer_nmi,
         MACADDR_COPY(ctx->peer_mac, peer_nmi);
         ctx->shared_key_attr_len = 0;
 
-        struct own_svc_info *own = nan_find_own_svc(ctx->svc_id);
+        own = nan_find_own_svc(ctx->svc_id);
         if (own) {
             nan_pairing_arm_pending(own, peer_nmi);
         }
@@ -832,10 +850,8 @@ static void nan_pairing_key_installed_cb(const uint8_t *peer_nmi,
     }
 
     if (role == NAN_ROLE_PAIRING_RESPONDER) {
-        struct own_svc_info *own = NULL;
-
         NAN_DATA_LOCK();
-        struct peer_svc_info *peer = nan_find_peer_svc(0, 0, (uint8_t *)peer_nmi);
+
         if (peer) {
             own = nan_find_own_svc(peer->own_svc_id);
         }
@@ -858,7 +874,7 @@ static void nan_app_update_peer_creds(const uint8_t *peer_nik, const uint8_t *np
     /* Reuse the slot already holding this NIK, if any. */
     for (uint8_t i = 0; i < s_nan_ctx.num_peer_creds; i++) {
         if (s_nan_ctx.peer_creds[i].is_valid &&
-            os_memcmp(s_nan_ctx.peer_creds[i].peer_nik, peer_nik, ESP_WIFI_NAN_NIK_LEN) == 0) {
+                os_memcmp(s_nan_ctx.peer_creds[i].peer_nik, peer_nik, ESP_WIFI_NAN_NIK_LEN) == 0) {
             slot = &s_nan_ctx.peer_creds[i];
             break;
         }
