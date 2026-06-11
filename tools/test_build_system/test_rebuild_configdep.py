@@ -3,21 +3,11 @@
 """Rebuild tests with esp-idf-configdep enabled (default idf.py behavior).
 
 esp-idf-configdep rewrites compiler .d files to depend on per-option
-build/config/.../*.cdep stubs instead of sdkconfig.h. When a referenced
-.cdep file does not exist yet, the wrapper creates it **after** the real
-compiler has written the .obj. Those stubs then have a newer mtime than the
-object. On the **next** Ninja run, those .cdep paths are prerequisites in the
-merged dependency graph, so Ninja correctly treats the object as out of date and
-rebuilds it—even though nothing in the source tree or sdkconfig changed.
-
-That one-time “settling” wave is not a CMake bug; it is an artifact of how
-configdep materializes stubs relative to object timestamps. The tests in
-test_rebuild.py therefore disable configdep to exercise pure CMake/Ninja
-incremental behavior. Here we keep configdep **on** and run **two** full
-idf.py build invocations before any mtime baseline so stub/object mtimes are
-consistent; then we apply the same coarse-grained checks as the classic rebuild
-tests (plus relaxed expectations where configdep legitimately skips compiling
-TUs that do not reference changed CONFIG_* symbols).
+build/config/.../*.cdep stubs instead of sdkconfig.h. The tests in
+test_rebuild.py disable configdep to exercise pure CMake/Ninja incremental
+behavior. Here we keep configdep **on** and apply the same coarse-grained
+checks as the classic rebuild tests (plus relaxed expectations where configdep
+legitimately skips compiling TUs that do not reference changed CONFIG_* symbols).
 """
 
 import logging
@@ -37,18 +27,10 @@ from test_build_system_helpers import rebuild_and_check
 from test_build_system_helpers import replace_in_file
 
 
-def _settle_configdep_graph(idf_py: IdfPyFunc) -> None:
-    """Two full builds so ``.cdep`` stubs created by configdep are not newer than ``.obj`` for the next graph walk."""
-    logging.info('settle (configdep): first full build')
-    idf_py('build')
-    logging.info('settle (configdep): second full build reconciles obj vs .cdep mtimes')
-    idf_py('build')
-
-
 @pytest.mark.usefixtures('test_app_copy')
 def test_rebuild_no_changes_with_configdep(idf_py: IdfPyFunc, request: pytest.FixtureRequest) -> None:
-    """No-op rebuild: with configdep on, baseline snapshot only after two settle builds (see module docstring)."""
-    _settle_configdep_graph(idf_py)
+    """No-op rebuild: second build after a clean first build must not change any artifacts."""
+    idf_py('build')
 
     logging.info('baseline snapshot after settle')
     all_build_files = get_snapshot('build/**/*', exclude_patterns=BUILD_SNAPSHOT_EXCLUDE)
@@ -66,9 +48,9 @@ def test_rebuild_no_changes_with_configdep(idf_py: IdfPyFunc, request: pytest.Fi
 
 @pytest.mark.usefixtures('test_app_copy')
 def test_rebuild_source_files_with_configdep(idf_py: IdfPyFunc) -> None:
-    """Same selective-rebuild checks as ``test_rebuild_source_files``, after configdep settle builds."""
+    """Same selective-rebuild checks as ``test_rebuild_source_files``, with configdep on."""
     idf_path = Path(os.environ['IDF_PATH'])
-    _settle_configdep_graph(idf_py)
+    idf_py('build')
 
     logging.info('updating a component source file rebuilds only that component')
     component_files_patterns = [
