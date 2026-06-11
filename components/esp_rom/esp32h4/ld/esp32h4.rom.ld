@@ -385,7 +385,7 @@ esp_rom_recover_key = 0x400007cc;
  ***************************************/
 
 /* Functions */
-_rom_ets_ecdsa_verify = 0x400007d0;
+ets_ecdsa_verify = 0x400007d0;
 ets_secure_boot_verify_bootloader_with_keys = 0x400007d4;
 ets_secure_boot_verify_signature = 0x400007d8;
 ets_secure_boot_read_key_digests = 0x400007dc;
