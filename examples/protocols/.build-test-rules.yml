@@ -25,6 +25,15 @@ examples/protocols/esp_http_client:
   depends_components+:
     - esp_http_client
 
+examples/protocols/esp_http_client_mutual_auth:
+  <<: *default_rules
+  disable_test:
+    - if: IDF_TARGET != "esp32c3"
+  depends_components+:
+    - esp_http_client
+    - esp-tls
+    - esp_secure_cert_mgr
+
 examples/protocols/esp_local_ctrl:
   <<: *default_rules
   disable+:
