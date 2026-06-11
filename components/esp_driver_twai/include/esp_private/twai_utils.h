@@ -19,6 +19,7 @@ extern "C" {
 typedef struct {
     uint32_t brp_min;   /* Bit-rate prescaler */
     uint32_t brp_max;
+    uint8_t prop_max;   /* Propagation segment */
     uint8_t tseg1_min;  /* Time segment 1 = prop_seg + phase_seg1 */
     uint8_t tseg1_max;
     uint8_t tseg2_min;  /* Time segment 2 = phase_seg2 */
