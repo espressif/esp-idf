@@ -51,10 +51,9 @@
 
 #if SOC_AXI_GDMA_SUPPORTED
 #include "hal/axi_dma_ll.h"
-#endif
-
-#if AXI_DMA_LL_SUPPORT_TX_LINK_SWITCH_EVENT
+#if AXI_DMA_LL_SUPPORT(TX_LINK_SWITCH)
 #define RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT 1
+#endif
 #endif
 
 // hardware issue workaround
