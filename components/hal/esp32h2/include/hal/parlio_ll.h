@@ -36,7 +36,6 @@
 
 #define PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG 7 // TXD[7] can be used a valid signal
 #define PARLIO_LL_TX_DATA_LINE_AS_CLK_GATE  7 // TXD[7] can be used as clock gate signal
-
 #ifdef __cplusplus
 extern "C" {
 #endif
