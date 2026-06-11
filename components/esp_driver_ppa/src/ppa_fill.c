@@ -74,8 +74,9 @@ bool ppa_fill_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channe
     dma2d_start(dma2d_rx_chan);
 
     // Configure PPA Blending engine
-    ppa_ll_blend_configure_filling_block(platform->hal.dev, fill_trans_desc->out.fill_cm, (void *)&fill_trans_desc->fill_color_val, fill_trans_desc->fill_block_w, fill_trans_desc->fill_block_h);
+    ppa_ll_blend_configure_filling_block_color(platform->hal.dev, fill_trans_desc->out.fill_cm, (void *)&fill_trans_desc->fill_color_val);
     ppa_ll_blend_set_tx_color_mode(platform->hal.dev, fill_trans_desc->out.fill_cm);
+    ppa_ll_blend_set_block_size(platform->hal.dev, fill_trans_desc->fill_block_w, fill_trans_desc->fill_block_h);
 
     ppa_ll_blend_start(platform->hal.dev, PPA_LL_BLEND_TRANS_MODE_FILL);
 
