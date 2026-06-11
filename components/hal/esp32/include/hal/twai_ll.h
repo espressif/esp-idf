@@ -40,6 +40,7 @@ static uint32_t twai_ll_get_brp_max(void);
 #define TWAI_LL_BRP_MAX         twai_ll_get_brp_max()   // max brp of esp32 is depends on chip version
 #define TWAI_LL_TSEG1_MIN       1
 #define TWAI_LL_TSEG2_MIN       1
+#define TWAI_LL_PROP_MAX        0   //hardware don't support prop_seg
 #define TWAI_LL_TSEG1_MAX       16  //the max register value
 #define TWAI_LL_TSEG2_MAX       8
 #define TWAI_LL_SJW_MAX         4
