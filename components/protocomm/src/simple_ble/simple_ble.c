@@ -133,13 +133,19 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         adv_config_done |= scan_rsp_config_flag;
         break;
     case ESP_GATTS_READ_EVT:
-        g_ble_cfg_p->read_fn(event, gatts_if, param);
+        if (g_ble_cfg_p && g_ble_cfg_p->read_fn) {
+            g_ble_cfg_p->read_fn(event, gatts_if, param);
+        }
         break;
     case ESP_GATTS_WRITE_EVT:
-        g_ble_cfg_p->write_fn(event, gatts_if, param);
+        if (g_ble_cfg_p && g_ble_cfg_p->write_fn) {
+            g_ble_cfg_p->write_fn(event, gatts_if, param);
+        }
         break;
     case ESP_GATTS_EXEC_WRITE_EVT:
-        g_ble_cfg_p->exec_write_fn(event, gatts_if, param);
+        if (g_ble_cfg_p && g_ble_cfg_p->exec_write_fn) {
+            g_ble_cfg_p->exec_write_fn(event, gatts_if, param);
+        }
         break;
     case ESP_GATTS_MTU_EVT:
         ESP_LOGD(TAG, "ESP_GATTS_MTU_EVT, MTU %d", param->mtu.mtu);
@@ -155,7 +161,9 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         break;
     case ESP_GATTS_CONNECT_EVT:
         ESP_LOGD(TAG, "ESP_GATTS_CONNECT_EVT, conn_id = %d", param->connect.conn_id);
-        g_ble_cfg_p->connect_fn(event, gatts_if, param);
+        if (g_ble_cfg_p && g_ble_cfg_p->connect_fn) {
+            g_ble_cfg_p->connect_fn(event, gatts_if, param);
+        }
         esp_ble_conn_update_params_t conn_params = {0};
         memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
 	memcpy(s_cached_remote_bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
@@ -168,7 +176,9 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         break;
     case ESP_GATTS_DISCONNECT_EVT:
         ESP_LOGD(TAG, "ESP_GATTS_DISCONNECT_EVT, reason = %d", param->disconnect.reason);
-        g_ble_cfg_p->disconnect_fn(event, gatts_if, param);
+        if (g_ble_cfg_p && g_ble_cfg_p->disconnect_fn) {
+            g_ble_cfg_p->disconnect_fn(event, gatts_if, param);
+        }
         memset(s_cached_remote_bda, 0, sizeof(esp_bd_addr_t));
         esp_ble_gap_start_advertising(&g_ble_cfg_p->adv_params);
         break;
@@ -217,10 +227,12 @@ simple_ble_cfg_t *simple_ble_init(void)
 
 esp_err_t simple_ble_deinit(void)
 {
-    free(g_ble_cfg_p->gatt_db);
-    g_ble_cfg_p->gatt_db = NULL;
-    free(g_ble_cfg_p);
+    simple_ble_cfg_t *ble_cfg = g_ble_cfg_p;
     g_ble_cfg_p = NULL;
+    if (ble_cfg) {
+        ble_cfg->gatt_db = NULL;
+        free(ble_cfg);
+    }
 
     free(g_gatt_table_map);
     g_gatt_table_map = NULL;
