@@ -377,6 +377,7 @@ static esp_err_t _node_calc_set_bit_timing(twai_node_handle_t node, const twai_t
     twai_timing_constraint_t hw_const = {
         .brp_min = TWAI_LL_BRP_MIN,
         .brp_max = TWAI_LL_BRP_MAX,
+        .prop_max = TWAI_LL_PROP_MAX,
         .tseg1_min = TWAI_LL_TSEG1_MIN,
         .tseg1_max = TWAI_LL_TSEG1_MAX,
         .tseg2_min = TWAI_LL_TSEG2_MIN,
@@ -395,6 +396,7 @@ static esp_err_t _node_calc_set_bit_timing(twai_node_handle_t node, const twai_t
     twai_timing_advanced_config_t timing_adv_fd = {};
     if (timing_fd->bitrate) {
         hw_const.brp_max = TWAI_LL_BRP_MAX_FD;
+        hw_const.prop_max = TWAI_LL_PROP_MAX_FD;
         hw_const.tseg1_max = TWAI_LL_TSEG1_MAX_FD;
         hw_const.tseg2_max = TWAI_LL_TSEG2_MAX_FD;
         hw_const.sjw_max = TWAI_LL_SJW_MAX_FD;

@@ -33,6 +33,7 @@ extern "C" {
 #define TWAI_LL_BRP_MAX         32768
 #define TWAI_LL_TSEG1_MIN       1
 #define TWAI_LL_TSEG2_MIN       1
+#define TWAI_LL_PROP_MAX        0   //hardware don't support prop_seg
 #define TWAI_LL_TSEG1_MAX       (TWAI_TIME_SEGMENT1 + 1)
 #define TWAI_LL_TSEG2_MAX       (TWAI_TIME_SEGMENT2 + 1)
 #define TWAI_LL_SJW_MAX         (TWAI_SYNC_JUMP_WIDTH + 1)

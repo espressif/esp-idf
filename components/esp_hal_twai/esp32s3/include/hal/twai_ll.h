@@ -38,6 +38,7 @@ extern "C" {
 #define TWAI_LL_BRP_MAX         16384
 #define TWAI_LL_TSEG1_MIN       1
 #define TWAI_LL_TSEG2_MIN       1
+#define TWAI_LL_PROP_MAX        0   //hardware don't support prop_seg
 #define TWAI_LL_TSEG1_MAX       16  //the max register value
 #define TWAI_LL_TSEG2_MAX       8
 #define TWAI_LL_SJW_MAX         4
