@@ -25,3 +25,4 @@
 #define ESP_ROM_RAM_APP_NEEDS_MMU_INIT      (1) // ROM doesn't init cache MMU when it's a RAM APP, needs MMU hal to init
 #define ESP_ROM_HAS_SW_FLOAT                (1) // ROM has libgcc software floating point emulation functions
 #define ESP_ROM_SUPPORT_SECURE_BOOT_FAST_WAKEUP (1) // ROM supports the secure boot fast wakeup feature
+#define ESP_ROM_ECDSA_VERIFY_PATCH (1) // ROM ets_ecdsa_verify API requires a software patch
