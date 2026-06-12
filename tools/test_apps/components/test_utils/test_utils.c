@@ -9,8 +9,10 @@
 #include "test_utils.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#ifndef CONFIG_IDF_TARGET_LINUX
 #include "esp_netif.h"
 #include "lwip/sockets.h"
+#endif // !CONFIG_IDF_TARGET_LINUX
 #include "sdkconfig.h"
 #include "memory_checks.h"
 
@@ -23,6 +25,7 @@ const esp_partition_t *get_test_data_partition(void)
     return result;
 }
 
+#ifndef CONFIG_IDF_TARGET_LINUX
 void test_case_uses_tcpip(void)
 {
     // Can be called more than once, does nothing on subsequent calls
@@ -50,6 +53,7 @@ void test_case_uses_tcpip(void)
     test_utils_set_leak_level(0, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL);
     test_utils_set_leak_level(CONFIG_UNITY_CRITICAL_LEAK_LEVEL_LWIP, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_LWIP);
 }
+#endif // !CONFIG_IDF_TARGET_LINUX
 
 // wait user to send "Enter" key or input parameter
 static void wait_user_control(char* parameter_buf, uint8_t buf_len)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -7,10 +7,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_task_wdt.h"
+#include "esp_private/esp_timer_private.h"
 
 // On C2 due to only have a single HW WDT we use the timer
 // so some tests will interfere with the WDT
-#if !CONFIG_IDF_TARGET_ESP32C2
+#if !CONFIG_IDF_TARGET_ESP32C2 && !CONFIG_IDF_TARGET_LINUX
 #define WDT_MONITOR_UNITY_TASK
 #endif
 
@@ -28,6 +29,9 @@ void tearDown(void)
     esp_task_wdt_reset();
     esp_task_wdt_delete(NULL);
 #endif
+
+    // Give some time for the esp_timer task to clean up between test runs, to avoid interference with the next test run.
+    vTaskDelay(pdMS_TO_TICKS(100));
 }
 
 void app_main(void)

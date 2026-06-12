@@ -343,7 +343,7 @@ esp_err_t esp_timer_stop_blocking(esp_timer_handle_t timer, uint32_t timeout_tic
 
         TickType_t start_time = xTaskGetTickCount();
         while (is_callback_running(timer, dispatch_method)) {
-            if (timeout_ticks != portMAX_DELAY) {
+            if (timeout_ticks != (uint32_t) portMAX_DELAY) {
                 TickType_t elapsed = xTaskGetTickCount() - start_time;
                 if (elapsed >= timeout_ticks) {
                     return ESP_ERR_TIMEOUT;
@@ -551,6 +551,12 @@ static void timer_task(void* arg)
     while (true) {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         // all deferred events are processed at a time
+#if CONFIG_ESP_TIMER_IMPL_LINUX && CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
+        esp_timer_impl_try_to_set_next_alarm();
+        if (timer_process_alarm(ESP_TIMER_ISR)) {
+            continue;
+        }
+#endif
         timer_process_alarm(ESP_TIMER_TASK);
     }
 }
@@ -558,11 +564,14 @@ static void timer_task(void* arg)
 #ifdef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
 ESP_TIMER_IRAM_ATTR void esp_timer_isr_dispatch_need_yield(void)
 {
+#ifndef CONFIG_ESP_TIMER_IMPL_LINUX
     assert(xPortInIsrContext());
+#endif
     s_isr_dispatch_need_yield = pdTRUE;
 }
 #endif
 
+#ifndef CONFIG_ESP_TIMER_IMPL_LINUX
 static void ESP_TIMER_IRAM_ATTR timer_alarm_handler(void* arg)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -583,10 +592,16 @@ static void ESP_TIMER_IRAM_ATTR timer_alarm_handler(void* arg)
         portYIELD_FROM_ISR();
     }
 }
+#endif // !CONFIG_ESP_TIMER_IMPL_LINUX
 
 static ESP_TIMER_IRAM_ATTR inline bool is_initialized(void)
 {
     return s_timer_task != NULL;
+}
+
+TaskHandle_t esp_timer_impl_get_timer_task_handle(void)
+{
+    return s_timer_task;
 }
 
 static esp_err_t init_timer_task(void)
@@ -631,7 +646,11 @@ esp_err_t esp_timer_init(void)
     }
 #endif // CONFIG_ESP_TIMER_ISR_AFFINITY_NO_AFFINITY
     if (err == ESP_OK) {
+#ifndef CONFIG_ESP_TIMER_IMPL_LINUX
         err = esp_timer_impl_init(&timer_alarm_handler);
+#else
+        err = esp_timer_impl_init(NULL);
+#endif
         if (err != ESP_OK) {
             ESP_EARLY_LOGE(TAG, "ISR init failed");
             deinit_timer_task();
@@ -706,13 +725,13 @@ static void print_timer_info(esp_timer_handle_t t, char** dst, size_t* dst_size)
         cb = snprintf(*dst, *dst_size, "timer@%-10p  ", t);
     }
 
-    cb += snprintf(*dst + cb, *dst_size - cb, "%-10lld  %-12lld  %-12d  %-12d  %-12d  %-12lld\n",
+    cb += snprintf(*dst + cb, *dst_size - cb, "%-10" PRIu64"  %-12" PRIu64"  %-12zu  %-12zu  %-12zu  %-12" PRIu64"\n",
                    (uint64_t)t->period, t->alarm, t->times_armed,
                    t->times_triggered, t->times_skipped, t->total_callback_run_time);
     /* keep this in sync with the format string, used in esp_timer_dump */
 #define TIMER_INFO_LINE_LEN 103
 #else
-    size_t cb = snprintf(*dst, *dst_size, "timer@%-14p  %-10lld  %-12lld\n", t, (uint64_t)t->period, t->alarm);
+    size_t cb = snprintf(*dst, *dst_size, "timer@%-14p  %-10" PRIu64"  %-12" PRIu64"\n", t, (uint64_t)t->period, t->alarm);
 #define TIMER_INFO_LINE_LEN 47
 #endif
     *dst += cb;

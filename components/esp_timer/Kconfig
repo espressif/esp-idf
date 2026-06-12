@@ -120,6 +120,12 @@ menu "ESP Timer (High Resolution Timer)"
     config ESP_TIMER_IMPL_SYSTIMER
         bool
         default y
-        depends on !IDF_TARGET_ESP32
+        depends on !IDF_TARGET_ESP32 && !IDF_TARGET_LINUX
+
+    config ESP_TIMER_IMPL_LINUX
+        bool
+        default y
+        depends on IDF_TARGET_LINUX
+        select ESP_TIME_FUNCS_USE_ESP_TIMER
 
 endmenu # esp_timer

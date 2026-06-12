@@ -12,7 +12,9 @@
 #include "unity.h"
 #include "unity_test_runner.h"
 #include "test_utils.h"
+#ifndef CONFIG_IDF_TARGET_LINUX
 #include "esp_newlib.h"
+#endif // !CONFIG_IDF_TARGET_LINUX
 #include "memory_checks.h"
 
 #ifdef CONFIG_HEAP_TRACING
@@ -99,8 +101,10 @@ void tearDown(void)
     /* some FreeRTOS stuff is cleaned up by idle task */
     vTaskDelay(5);
 
+#ifndef CONFIG_IDF_TARGET_LINUX
     /* clean up some of the newlib's lazy allocations */
     esp_reent_cleanup();
+#endif // !CONFIG_IDF_TARGET_LINUX
 
     /* We want the teardown to have this file in the printout if TEST_ASSERT fails */
     const char *real_testfile = Unity.TestFile;
