@@ -76,14 +76,19 @@ typedef enum {
  */
 FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
 {
-    uint32_t uart_rst_bit = ((uart_num == 0) ? SYSTEM_UART_RST :
-                             (uart_num == 1) ? SYSTEM_UART1_RST :
-                             (uart_num == 2) ? SYSTEM_UART2_RST : 0);
-    uint32_t uart_en_bit  = ((uart_num == 0) ? SYSTEM_UART_CLK_EN :
-                             (uart_num == 1) ? SYSTEM_UART1_CLK_EN :
-                             (uart_num == 2) ? SYSTEM_UART2_CLK_EN : 0);
-    return DPORT_REG_GET_BIT(SYSTEM_PERIP_RST_EN0_REG, uart_rst_bit) == 0 &&
-           DPORT_REG_GET_BIT(SYSTEM_PERIP_CLK_EN0_REG, uart_en_bit) != 0;
+    switch (uart_num) {
+    case 0:
+        return DPORT_REG_GET_BIT(SYSTEM_PERIP_RST_EN0_REG, SYSTEM_UART_RST) == 0 &&
+               DPORT_REG_GET_BIT(SYSTEM_PERIP_CLK_EN0_REG, SYSTEM_UART_CLK_EN) != 0;
+    case 1:
+        return DPORT_REG_GET_BIT(SYSTEM_PERIP_RST_EN0_REG, SYSTEM_UART1_RST) == 0 &&
+               DPORT_REG_GET_BIT(SYSTEM_PERIP_CLK_EN0_REG, SYSTEM_UART1_CLK_EN) != 0;
+    case 2:
+        return DPORT_REG_GET_BIT(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_UART2_RST) == 0 &&
+               DPORT_REG_GET_BIT(SYSTEM_PERIP_CLK_EN1_REG, SYSTEM_UART2_CLK_EN) != 0;
+    default:
+        abort();
+    }
 }
 
 /**
