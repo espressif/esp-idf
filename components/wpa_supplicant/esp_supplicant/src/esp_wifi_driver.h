@@ -243,6 +243,7 @@ typedef enum {
 typedef struct {
     uint8_t peer_nik[ESP_WIFI_NAN_NIK_LEN];     /**< Peer's NAN Identity Key (16 bytes) */
     uint8_t npk[ESP_WIFI_NAN_NPK_LEN];          /**< NAN Pairwise Key / NCS-SK PMK (32 bytes) */
+    uint8_t service_hash[6];
     bool is_valid;
 } wifi_nan_peer_creds_t;
 
@@ -345,7 +346,7 @@ esp_err_t esp_wifi_nan_load_saved_creds(uint8_t own_nik[ESP_WIFI_NAN_NIK_LEN], b
                                         wifi_nan_peer_creds_t peer_creds[ESP_WIFI_NAN_MAX_PEER_CREDS], uint8_t *num_peer_creds);
 esp_err_t esp_wifi_nan_save_own_nik(const uint8_t own_nik[ESP_WIFI_NAN_NIK_LEN]) ;
 esp_err_t esp_wifi_nan_save_creds_for_peer(const uint8_t peer_nik[ESP_WIFI_NAN_NIK_LEN],
-                                           const uint8_t npk[ESP_WIFI_NAN_NPK_LEN]);
+                                           const uint8_t npk[ESP_WIFI_NAN_NPK_LEN], const uint8_t service_hash[6]);
 esp_err_t esp_wifi_nan_erase_all_creds(void);
 
 #endif /* _ESP_WIFI_DRIVER_H_ */
