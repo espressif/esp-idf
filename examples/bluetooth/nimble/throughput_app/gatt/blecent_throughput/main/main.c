@@ -49,13 +49,13 @@
 #define WRITE_THROUGHPUT                   2
 #define NOTIFY_THROUGHPUT                  3
 
-#define READ_THROUGHPUT_PAYLOAD            510 /* MTU(512) - ATT read rsp header(1) - 1 (avoid Read Blob) */
-#define WRITE_THROUGHPUT_PAYLOAD           509 /* MTU(512) - ATT write cmd header(3) */
+#define READ_THROUGHPUT_PAYLOAD            497 /* 502 bytes ACL -> 2x 251 LL packets exactly (497 + 1 Read Rsp + 4 L2CAP) */
+#define WRITE_THROUGHPUT_PAYLOAD           495 /* 502 bytes ACL -> 2x 251 LL packets exactly (495 + 3 Write Cmd + 4 L2CAP) */
 #define LL_PACKET_TIME                     2120
 #define LL_PACKET_LENGTH                   251
 static const char *tag = "blecent_throughput";
 static int blecent_gap_event(struct ble_gap_event *event, void *arg);
-static SemaphoreHandle_t xSemaphore;
+
 static int mbuf_len_total;
 static int failure_count;
 static TaskHandle_t throughput_task_handle = NULL;
@@ -66,27 +66,101 @@ static int mtu_def = 512;
 static ble_addr_t conn_addr;
 static uint16_t handle;
 #define PHY_1M            0
-#if CONFIG_EXAMPLE_EXTENDED_ADV
-static int current_phy_updated;
 #define PHY_2M            1
 #define PHY_CODED_S2      2
 #define PHY_CODED_S8      3
+
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+static int current_phy_updated;
 #endif
 
+/* State for callback-chained read throughput test */
+static volatile bool read_test_active = false;
+static uint16_t read_val_handle_g;
+static uint16_t read_conn_handle_g;
+static int read_count_g;
+
+/* ==============================================================================
+ * Connection Parameter Tuning
+ * ==============================================================================
+ * itvl_min / itvl_max: Connection interval (time between connection events).
+ *                      Units are in 1.25ms. (e.g., 24 * 1.25ms = 30ms).
+ * latency:             Slave latency (number of events the peripheral can skip).
+ * supervision_timeout: Time before link is considered lost. Units: 10ms.
+ * min_ce_len / max_ce_len: Connection Event length. max_ce_len = 0xFFFF tells
+ *                          the controller to use the ENTIRE connection interval
+ *                          for transmitting data, instead of cutting it short.
+ * ==============================================================================
+ *
+ * Write/Notify-optimized for 1M/2M: 30-50ms interval, full CE length. */
 static struct ble_gap_upd_params conn_params = {
-    /** Minimum value for connection interval in 1.25ms units */
     .itvl_min = CONFIG_EXAMPLE_CONN_ITVL_MIN,
-    /** Maximum value for connection interval in 1.25ms units */
     .itvl_max = CONFIG_EXAMPLE_CONN_ITVL_MAX,
-    /** Connection latency */
     .latency = CONFIG_EXAMPLE_CONN_LATENCY,
-    /** Supervision timeout in 10ms units */
     .supervision_timeout = CONFIG_EXAMPLE_CONN_TIMEOUT,
-    /** Minimum length of connection event in 0.625ms units */
-    .min_ce_len = CONFIG_EXAMPLE_CONN_CE_LEN_MIN,
-    /** Maximum length of connection event in 0.625ms units */
-    .max_ce_len = CONFIG_EXAMPLE_CONN_CE_LEN_MAX,
+    .min_ce_len = 0,
+    .max_ce_len = 0xFFFF,
 };
+
+/* Write/Notify-optimized for Coded S2 */
+static struct ble_gap_upd_params conn_params_coded_s2 = {
+    .itvl_min = 24, /* 30 ms */
+    .itvl_max = 32, /* 40 ms */
+    .latency = 0,
+    .supervision_timeout = CONFIG_EXAMPLE_CONN_TIMEOUT,
+    .min_ce_len = 0,
+    .max_ce_len = 0xFFFF,
+};
+
+/* Write/Notify-optimized for Coded S8 */
+static struct ble_gap_upd_params conn_params_coded_s8 = {
+    .itvl_min = 60, /* 75 ms */
+    .itvl_max = 80, /* 100 ms */
+    .latency = 0,
+    .supervision_timeout = CONFIG_EXAMPLE_CONN_TIMEOUT,
+    .min_ce_len = 0,
+    .max_ce_len = 0xFFFF,
+};
+
+/* Read-optimized for 1M/2M: short interval for fast round-trips */
+static struct ble_gap_upd_params conn_params_read = {
+    .itvl_min = 6,          /* 7.5 ms  */
+    .itvl_max = 8,          /* 10 ms   */
+    .latency = 0,
+    .supervision_timeout = CONFIG_EXAMPLE_CONN_TIMEOUT,
+    .min_ce_len = 0,
+    .max_ce_len = 0xFFFF,
+};
+
+/* Read-optimized for Coded S2 */
+static struct ble_gap_upd_params conn_params_coded_s2_read = {
+    .itvl_min = 12, /* 15 ms */
+    .itvl_max = 16, /* 20 ms */
+    .latency = 0,
+    .supervision_timeout = CONFIG_EXAMPLE_CONN_TIMEOUT,
+    .min_ce_len = 0,
+    .max_ce_len = 0xFFFF,
+};
+
+/* Read-optimized for Coded S8 */
+static struct ble_gap_upd_params conn_params_coded_s8_read = {
+    .itvl_min = 36, /* 45 ms */
+    .itvl_max = 40, /* 50 ms */
+    .latency = 0,
+    .supervision_timeout = CONFIG_EXAMPLE_CONN_TIMEOUT,
+    .min_ce_len = 0,
+    .max_ce_len = 0xFFFF,
+};
+
+static void switch_conn_params(uint16_t conn_handle, const struct ble_gap_upd_params *params) {
+    int rc = ble_gap_update_params(conn_handle, params);
+    if (rc != 0) {
+        ESP_LOGE(tag, "Failed to update connection parameters: %d", rc);
+    } else {
+        ESP_LOGI(tag, "Requested connection parameter update");
+        vTaskDelay(500 / portTICK_PERIOD_MS);
+    }
+}
 
 void ble_store_config_init(void);
 
@@ -137,22 +211,20 @@ static int blecent_write(uint16_t conn_handle, uint16_t val_handle,
     start_time = esp_timer_get_time();
 
     while (write_time < test_time * 1000) {
-        /* Wait till the previous write is complete. For first time Semaphore
-         * is already available */
-	label:
-	    rc = ble_gattc_write_no_rsp_flat(conn_handle, val_handle, &value, sizeof value);
+        rc = ble_gattc_write_no_rsp_flat(conn_handle, val_handle, &value, sizeof value);
 
-	    if(rc == BLE_HS_ENOMEM) {
-		vTaskDelay(2); /* Wait for buffers to free up and try again */
-		goto label;
-	    }
-	    else if (rc != 0) {
-            	ESP_LOGE(tag, "Error: Failed to write characteristic; rc=%d",rc);
-            	goto err;
+        if (rc == BLE_HS_ENOMEM) {
+            vTaskDelay(2); /* Wait for buffers to free up and try again */
+            end_time = esp_timer_get_time();
+            write_time = (end_time - start_time) / 1000;
+            continue;
+        } else if (rc != 0) {
+            ESP_LOGE(tag, "Error: Failed to write characteristic; rc=%d", rc);
+            goto err;
         }
 
         end_time = esp_timer_get_time();
-        write_time = (end_time - start_time) / 1000 ;
+        write_time = (end_time - start_time) / 1000;
         write_count += 1;
     }
 
@@ -171,6 +243,11 @@ err:
     return ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
 }
 
+/**
+ * Read callback that chains the next read immediately from within the
+ * NimBLE host context. This eliminates the FreeRTOS task-switch delay
+ * that previously caused each read to waste an extra connection event.
+ */
 static int
 blecent_repeat_read(uint16_t conn_handle,
                     const struct ble_gatt_error *error,
@@ -178,55 +255,96 @@ blecent_repeat_read(uint16_t conn_handle,
                     void *arg)
 {
     if (error->status == 0) {
-        xSemaphoreGive(xSemaphore);
         ESP_LOGD(tag, " attr_handle=%d value=", attr->handle);
         mbuf_len_total += OS_MBUF_PKTLEN(attr->om);
+        read_count_g++;
     } else {
-        ESP_LOGE(tag, " Read failed, callback error code = %d", error->status );
-        xSemaphoreGive(xSemaphore);
+        ESP_LOGE(tag, " Read failed, callback error code = %d", error->status);
+        /* On error, stop chaining and wake up main task */
+        read_test_active = false;
+        if (throughput_task_handle) {
+            xTaskNotifyGive(throughput_task_handle);
+        }
+        return 0;
     }
-    return error->status;
+
+    /* Chain next read immediately (zero task-switch overhead) */
+    if (read_test_active) {
+        int rc = ble_gattc_read(read_conn_handle_g, read_val_handle_g,
+                                blecent_repeat_read, arg);
+        if (rc != 0) {
+            ESP_LOGE(tag, "Failed to chain read; rc=%d", rc);
+            read_test_active = false;
+            if (throughput_task_handle) {
+                xTaskNotifyGive(throughput_task_handle);
+            }
+        }
+    } else {
+        /* Test time expired — wake up main task to print results */
+        if (throughput_task_handle) {
+            xTaskNotifyGive(throughput_task_handle);
+        }
+    }
+
+    return 0;
 }
 
 static int blecent_read(uint16_t conn_handle, uint16_t val_handle,
-                        ble_gatt_attr_fn *cb, struct peer *peer, int test_time)
+                        struct peer *peer, int test_time)
 {
-    int rc, read_count = 0;
-    int64_t start_time, end_time, read_time = 0;
-    /* Keep track of number of bytes read from char */
+    int rc;
+    int64_t start_time;
+
+    /* Reset counters */
     mbuf_len_total = 0;
+    read_count_g = 0;
+    read_conn_handle_g = conn_handle;
+    read_val_handle_g = val_handle;
+    read_test_active = true;
+
+    /* Drain any stale notifications from a prior test that timed out */
+    ulTaskNotifyTake(pdTRUE, 0);
+
     start_time = esp_timer_get_time();
 
     ESP_LOGD(tag, "  Throughput read started :val_handle=%d test_time=%d", val_handle,
              test_time);
 
-    while (read_time < (test_time * 1000)) {
-        /* Wait till the previous read is complete. For first time use Semaphore
-         * is already available */
-        xSemaphoreTake(xSemaphore, portMAX_DELAY);
-
-        rc = ble_gattc_read(peer->conn_handle, val_handle,
-                            blecent_repeat_read, (void *) &peer);
-        if (rc != 0) {
-            ESP_LOGE(tag, "Error: Failed to read characteristic; rc=%d",
-                     rc);
-            goto err;
-        }
-
-        end_time = esp_timer_get_time();
-        read_time = (end_time - start_time) / 1000 ;
-        read_count += 1;
+    /* Kick off the first read — the callback will chain all subsequent reads */
+    rc = ble_gattc_read(conn_handle, val_handle,
+                        blecent_repeat_read, (void *) peer);
+    if (rc != 0) {
+        ESP_LOGE(tag, "Error: Failed to start read chain; rc=%d", rc);
+        read_test_active = false;
+        goto err;
     }
 
-    /* Application data throughput  */
+    /* Sleep for the test duration while the callback chain runs autonomously.
+     * If the chain encounters an error (e.g. disconnect), it will notify us early. */
+    uint32_t notified = ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(test_time * 1000));
+
+    if (notified == 0) {
+        /* Normal timeout, signal the chain to stop after the current in-flight read completes */
+        read_test_active = false;
+        /* Wait for the last callback to notify us (up to 5s safety timeout) */
+        ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(5000));
+    } else {
+        /* Woken early by an error in the callback chain */
+        read_test_active = false;
+    }
+
+    int64_t end_time = esp_timer_get_time();
+    int actual_secs = (int)((end_time - start_time) / 1000000);
+    if (actual_secs == 0) actual_secs = test_time;
+
+    /* Application data throughput */
     printf("\n****************************************************************\n");
     ESP_LOGI(tag, "Application Read throughput = %d bps, Read op counter = %d",
-             (mbuf_len_total * 8) / (test_time), read_count);
+             (mbuf_len_total * 8) / actual_secs, read_count_g);
     printf("\n****************************************************************\n");
     return 0;
 
 err:
-    xSemaphoreGive(xSemaphore);
     /* Terminate the connection. */
     vTaskDelay(100 / portTICK_PERIOD_MS);
     return ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
@@ -334,7 +452,7 @@ static void throughput_task(void *arg)
         printf(" |  Phy mode: Enter value in 0 for 1M, 1 for 2M ,2 for Coded S2,                     |\n");
         printf(" |              3 for Coded S8.                                                      |\n");
         printf(" |                                                                                   |\n");
-        printf(" |  e.g. throughput read 600 3                                                       |\n");
+        printf(" |  e.g. throughput read 60 3                                                       |\n");
         printf(" |                                                                                   |\n");
         printf(" |  ** Enter 'throughput read 60 0' for reading char for 60 seconds on 1M Phy        |\n");
         printf(" |  OR 'throughput write 60 1' for writing to char for 60 seconds on 2M Phy          |\n");
@@ -365,12 +483,46 @@ static void throughput_task(void *arg)
                     vTaskDelay(100 / portTICK_PERIOD_MS);
                 }
             }
+
+            /* Send a 1-byte control message to the peripheral's read/write char
+             * to tell it which PHY coding we are testing. This ensures the peripheral
+             * perfectly mirrors our PHY preference (1M, 2M, S2, or S8). */
+            if (test_data[2] >= 0 && test_data[2] <= 3) {
+                const struct peer_chr *cmd_chr = peer_chr_find_uuid(peer,
+                                                    THRPT_UUID_DECLARE(THRPT_SVC),
+                                                    THRPT_UUID_DECLARE(THRPT_CHR_READ_WRITE));
+                if (cmd_chr != NULL) {
+                    uint8_t phy_cmd = test_data[2];
+                    rc = ble_gattc_write_no_rsp_flat(conn_handle, cmd_chr->chr.val_handle, &phy_cmd, 1);
+                    if (rc != 0) {
+                        ESP_LOGW(tag, "Failed to send PHY cmd to peripheral; rc=%d", rc);
+                    } else {
+                        vTaskDelay(200 / portTICK_PERIOD_MS); /* Give peripheral time to apply PHY */
+                    }
+                }
+            }
+        }
+#else
+        /* Extended advertising is disabled, only 1M PHY is available */
+        if (test_data[2] != PHY_1M) {
+            ESP_LOGW(tag, "Extended advertising disabled; forcing PHY to 1M (ignoring user selection %d)", test_data[2]);
+            test_data[2] = PHY_1M;
         }
 #endif
 
         switch (test_data[0]) {
 
         case READ_THROUGHPUT:
+            /* PHY-aware read connection params: short interval for fast
+             * round-trips on 1M/2M, longer for coded PHY */
+            if (test_data[2] == PHY_CODED_S2) {
+                switch_conn_params(conn_handle, &conn_params_coded_s2_read);
+            } else if (test_data[2] == PHY_CODED_S8) {
+                switch_conn_params(conn_handle, &conn_params_coded_s8_read);
+            } else {
+                switch_conn_params(conn_handle, &conn_params_read);
+            }
+
             /* Read the characteristic supporting long read support
              * `THRPT_LONG_CHR_READ_WRITE` (0x000b) */
             chr = peer_chr_find_uuid(peer,
@@ -379,12 +531,12 @@ static void throughput_task(void *arg)
             if (chr == NULL) {
                 ESP_LOGE(tag, "Peer does not support "
                          "LONG_READ (0x000b) characteristic ");
-                break;
+                goto read_cleanup;
             }
 
             if (test_data[1] > 0) {
                 rc = blecent_read(conn_handle, chr->chr.val_handle,
-                                  blecent_repeat_read, (void *) peer, test_data[1]);
+                                  (void *) peer, test_data[1]);
                 if (rc != 0) {
                     ESP_LOGE(tag, "Error while reading from GATTS; rc = %d", rc);
                     /* Delete task on critical error (connection lost or fatal error) */
@@ -398,9 +550,28 @@ static void throughput_task(void *arg)
             } else {
                 ESP_LOGE(tag, "Please enter non-zero value for test time in seconds!!");
             }
+
+read_cleanup:
+            /* Restore write-optimized params after the read test */
+            ESP_LOGI(tag, "Restoring WRITE-optimized conn params");
+            if (test_data[2] == PHY_CODED_S2) {
+                switch_conn_params(conn_handle, &conn_params_coded_s2);
+            } else if (test_data[2] == PHY_CODED_S8) {
+                switch_conn_params(conn_handle, &conn_params_coded_s8);
+            } else {
+                switch_conn_params(conn_handle, &conn_params);
+            }
             break;
 
         case WRITE_THROUGHPUT:
+            if (test_data[2] == PHY_CODED_S2) {
+                switch_conn_params(conn_handle, &conn_params_coded_s2);
+            } else if (test_data[2] == PHY_CODED_S8) {
+                switch_conn_params(conn_handle, &conn_params_coded_s8);
+            } else {
+                switch_conn_params(conn_handle, &conn_params);
+            }
+
             chr = peer_chr_find_uuid(peer,
                                      THRPT_UUID_DECLARE(THRPT_SVC),
                                      THRPT_UUID_DECLARE(THRPT_CHR_READ_WRITE));
@@ -428,6 +599,14 @@ static void throughput_task(void *arg)
             break;
 
         case NOTIFY_THROUGHPUT:
+            if (test_data[2] == PHY_CODED_S2) {
+                switch_conn_params(conn_handle, &conn_params_coded_s2);
+            } else if (test_data[2] == PHY_CODED_S8) {
+                switch_conn_params(conn_handle, &conn_params_coded_s8);
+            } else {
+                switch_conn_params(conn_handle, &conn_params);
+            }
+
             chr = peer_chr_find_uuid(peer,
                                      THRPT_UUID_DECLARE(THRPT_SVC),
                                      THRPT_UUID_DECLARE(THRPT_CHR_NOTIFY));
@@ -463,6 +642,20 @@ static void throughput_task(void *arg)
                          test_data[1]);
             }
             vTaskDelay(test_data[1]*1000 / portTICK_PERIOD_MS);
+
+            /* Unsubscribe so the next notify test triggers a fresh
+             * BLE_GAP_EVENT_SUBSCRIBE on the peripheral (cur_notify 0→1) */
+            {
+                uint8_t unsub_value[2] = {0, 0};
+                rc = ble_gattc_write_flat(conn_handle, dsc->dsc.handle,
+                                          unsub_value, sizeof unsub_value,
+                                          NULL, NULL);
+                if (rc != 0) {
+                    ESP_LOGW(tag, "Unsubscribe failed; rc=%d (non-fatal)", rc);
+                } else {
+                    ESP_LOGI(tag, "Unsubscribed from notifications");
+                }
+            }
             break;
 
         default:
@@ -651,7 +844,7 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
         }
     }
 
-    ESP_LOGI(tag, "connect; fields.num_uuids128 =%d", fields.num_uuids128);
+    ESP_LOGD(tag, "connect; fields.num_uuids128 =%d", fields.num_uuids128);
     for (i = 0; i < fields.num_uuids128; i++) {
         if ((memcmp(&fields.uuids128[i], THRPT_UUID_DECLARE(THRPT_SVC),
                     sizeof(ble_uuid128_t))) == 0 ) {
@@ -754,7 +947,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
 
     switch (event->type) {
     case BLE_GAP_EVENT_DISC:
-        ESP_LOGI(tag, "Event DISC ");
+        ESP_LOGD(tag, "Event DISC ");
         rc = ble_hs_adv_parse_fields(&fields, event->disc.data,
                                      event->disc.length_data);
         if (rc != 0) {
@@ -875,6 +1068,11 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
         /* Attribute data is contained in event->notify_rx.attr_data. */
         return 0;
 
+    case BLE_GAP_EVENT_CONN_UPDATE:
+        ESP_LOGI(tag, "connection updated; status=%d",
+                 event->conn_update.status);
+        return 0;
+
     case BLE_GAP_EVENT_MTU:
         ESP_LOGI(tag, "mtu update event; conn_handle = %d cid = %d mtu = %d",
                  event->mtu.conn_handle,
@@ -885,7 +1083,6 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
 #if CONFIG_EXAMPLE_EXTENDED_ADV
     case BLE_GAP_EVENT_EXT_DISC:
         /* An advertisement report was received during GAP discovery. */
-
         blecent_connect_if_interesting(&event->ext_disc);
         return 0;
 
@@ -972,12 +1169,9 @@ blecent_on_sync(void)
 void blecent_host_task(void *param)
 {
     ESP_LOGI(tag, "BLE Host Task Started");
-    xSemaphore = xSemaphoreCreateBinary();
-    xSemaphoreGive(xSemaphore);
 
     /* This function will return only when nimble_port_stop() is executed */
     nimble_port_run();
-    vSemaphoreDelete(xSemaphore);
     nimble_port_freertos_deinit();
 }
 
