@@ -79,10 +79,6 @@ config ESP_ROM_RAM_APP_NEEDS_MMU_INIT
     bool
     default y
 
-config ESP_ROM_ECDSA_VERIFY_PATCH
-    bool
-    default y
-
 config ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_NO_MAP
     bool
     default y
