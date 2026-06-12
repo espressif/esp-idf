@@ -27,7 +27,6 @@
 #define I2S_LL_SUPPORT(_feat)   I2S_LL_SUPPORT_ ## _feat
 #define I2S_LL_BUS_WIDTH        24
 #define I2S_LL_INST_NUM         1
-#define I2S_LL_PDM_SUPPORTED_PORT_MASK        (1U << 0)  // PDM is supported on I2S0
 
 #ifdef __cplusplus
 extern "C" {
@@ -1033,14 +1032,6 @@ static inline bool i2s_ll_is_destination_supported(int port_id, i2s_destination_
 {
     (void)port_id;
     return destination == I2S_DESTINATION_DMA;
-}
-
-/**
- * @brief Check whether I2S PDM mode is supported on the specified port
- */
-static inline bool i2s_ll_is_pdm_supported(int port_id)
-{
-    return (I2S_LL_PDM_SUPPORTED_PORT_MASK & (1U << port_id)) != 0;
 }
 
 /**

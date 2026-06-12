@@ -95,11 +95,11 @@ typedef struct {
         } pdm_tx;                                       /*!< Specific configurations for PDM TX mode */
 #endif
 #if SOC_I2S_SUPPORTS_PDM_RX
-        /* PDM TX configurations */
+        /* PDM RX configurations */
         struct {
             i2s_pdm_slot_mask_t     slot_mask;          /*!< Choose the slots to activate */
             i2s_pdm_data_fmt_t      data_fmt;           /*!< The data format of PDM RX mode. It determines what kind of data format is read in software.
-                                                         *   Typically, set this field to I2S_PDM_DATA_FMT_PCM when PCM2PDM filter is supported in the hardware,
+                                                         *   Typically, set this field to I2S_PDM_DATA_FMT_PCM when PDM2PCM filter is supported in the hardware,
                                                          *   so that the hardware PDM2PCM filter will help to convert the raw PDM data on the line into PCM format,
                                                          *   And then you can read PCM format data in software. Otherwise if this field is set to I2S_PDM_DATA_FMT_RAW,
                                                          *   The data read in software are still in raw PDM format, you may need to convert the raw PDM data into PCM format manually by a software filter.
