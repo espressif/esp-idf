@@ -12,7 +12,7 @@
 #include "soc/ecc_mult_reg.h"
 #include "soc/pcr_struct.h"
 #include "soc/pcr_reg.h"
-#include "esp_fault.h"
+#include "esp_fault_internal.h"
 
 #ifdef __cplusplus
 extern "C" {

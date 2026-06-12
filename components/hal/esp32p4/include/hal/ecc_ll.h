@@ -15,7 +15,7 @@
 #include "soc/hp_system_reg.h"
 #include "soc/chip_revision.h"
 #include "hal/config.h"
-#include "esp_fault.h"
+#include "esp_fault_internal.h"
 
 #ifdef __cplusplus
 extern "C" {

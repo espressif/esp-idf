@@ -11,7 +11,7 @@
 #include "esp_rom_caps.h"
 #if ESP_ROM_ECDSA_VERIFY_PATCH
 #include "soc/soc_caps.h"
-#include "esp_fault.h"
+#include "esp_fault_internal.h"
 #include "rom/ecdsa.h"
 
 #define VALID_MAGIC_OK   0x6A6A6A6AU
