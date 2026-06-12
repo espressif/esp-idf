@@ -15,10 +15,6 @@ components/esp_driver_i2s/test_apps/i2s_multi_dev:
   disable:
     - if: SOC_I2S_SUPPORTED != 1
     - if: SOC_I2S_HW_VERSION_2 != 1
-  disable_test:
-    - if: IDF_TARGET in ["esp32h4", "esp32s31"]
-      temporary: true
-      reason: cannot pass # TODO: IDF-15609
   depends_components:
     - esp_driver_i2s
     - esp_driver_dma
