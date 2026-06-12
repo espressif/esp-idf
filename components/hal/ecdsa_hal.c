@@ -14,7 +14,7 @@
 #endif
 
 #if CONFIG_HAL_ECDSA_GEN_SIG_CM
-#include "esp_fault.h"
+#include "esp_fault_internal.h"
 #include "esp_random.h"
 #include "soc/chip_revision.h"
 #endif
