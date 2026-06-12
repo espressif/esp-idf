@@ -479,6 +479,7 @@ static struct own_svc_info *nan_claim_own_svc_slot(uint8_t type, const char svc_
     p_svc->type = type;
     strlcpy(p_svc->svc_name, svc_name, ESP_WIFI_MAX_SVC_NAME_LEN);
     SLIST_INIT(&p_svc->peer_list);
+
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
     forced_memzero(&p_svc->user_cfg, sizeof(p_svc->user_cfg));
     forced_memzero(&p_svc->derived_security, sizeof(p_svc->derived_security));
@@ -499,13 +500,14 @@ static struct own_svc_info *nan_claim_own_svc_slot(uint8_t type, const char svc_
 /* Stamp the real svc_id and per-publish flags after the blob accepts the
  * service. Looked up by name since the WiFi-task derive callback may have
  * already populated derived_security[] before this runs. */
-static void nan_finalize_own_svc(const char *svc_name, uint8_t id, bool ndp_resp_needed)
+static void nan_finalize_own_svc(const char *svc_name, uint8_t id, bool ndp_resp_needed, uint8_t service_hash[6])
 {
     struct own_svc_info *p_svc = nan_find_own_svc_by_name(svc_name);
     if (!p_svc) {
         return;
     }
     p_svc->svc_id = id;
+    memcpy(p_svc->svc_hash, service_hash, 6);
     if (p_svc->type == ESP_NAN_PUBLISH) {
         p_svc->ndp_resp_needed = ndp_resp_needed;
     }
@@ -1624,9 +1626,23 @@ esp_err_t esp_wifi_nan_sync_stop(void)
 }
 #endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
 
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+static bool nan_check_paired_service_hash(uint8_t service_hash[6])
+{
+    for (uint8_t i = 0; i < s_nan_ctx.num_peer_creds; i++) {
+        if (s_nan_ctx.peer_creds[i].is_valid &&
+                os_memcmp(s_nan_ctx.peer_creds[i].service_hash, service_hash, 6) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+#endif
+
 uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
 {
     int pub_id = 0;
+    uint8_t service_id[6] = {0};
 
     if (publish_cfg->usd_discovery_flag && !s_usd_in_progress) {
         ESP_LOGE(TAG, "Can not start Publish function with USD Discovery "
@@ -1758,6 +1774,17 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
      * into p_svc->derived_security[]. Doing the derive on WiFi task (not the
      * app/main task) keeps PBKDF2's hardware-SHA polling off IDLE0 and avoids
      * tripping the task watchdog when num_credentials > 1. */
+    if (!nan_compute_service_id(publish_cfg->service_name, service_id)) {
+        ESP_LOGE(TAG, "Failed to compute Service ID for %s", publish_cfg->service_name);
+        goto fail;
+    }
+
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+    if (nan_check_paired_service_hash(service_id)) {
+        cfg->pairing->pairing_setup = false;
+    }
+#endif
+
     if (!nan_claim_own_svc_slot(ESP_NAN_PUBLISH, publish_cfg->service_name,
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
                                 cfg->security_cfg,
@@ -1781,7 +1808,7 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
     }
 
     ESP_LOGI(TAG, "Started Publishing %s [Service ID - %u]", publish_cfg->service_name, pub_id);
-    nan_finalize_own_svc(publish_cfg->service_name, pub_id, publish_cfg->ndp_resp_needed);
+    nan_finalize_own_svc(publish_cfg->service_name, pub_id, publish_cfg->ndp_resp_needed, service_id);
     if (cfg->pairing) {
         os_free(cfg->pairing);
     }
@@ -1805,6 +1832,7 @@ fail:
 uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe_cfg)
 {
     int sub_id = 0;
+    uint8_t service_id[6] = {0};
 
     if (subscribe_cfg->usd_discovery_flag && !s_usd_in_progress) {
         ESP_LOGE(TAG, "Can not start Subscribe function with USD Discovery "
@@ -1905,6 +1933,18 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
 
     /* Pre-claim host slot BEFORE the blob's subscribe call; see comment on
      * the publish path for the watchdog rationale. */
+
+    if (!nan_compute_service_id(subscribe_cfg->service_name, service_id)) {
+        ESP_LOGE(TAG, "Failed to compute Service ID for %s", subscribe_cfg->service_name);
+        goto fail;
+    }
+
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+    if (nan_check_paired_service_hash(service_id)) {
+        subscribe_cfg->pairing->pairing_setup = false;
+    }
+#endif
+
     if (!nan_claim_own_svc_slot(ESP_NAN_SUBSCRIBE, subscribe_cfg->service_name,
                                 subscribe_cfg->security_cfg, subscribe_cfg->pairing)) {
         ESP_LOGE(TAG, "No free service slot");
@@ -1918,7 +1958,7 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
     }
 
     ESP_LOGI(TAG, "Started Subscribing to %s [Service ID - %u]", subscribe_cfg->service_name, sub_id);
-    nan_finalize_own_svc(subscribe_cfg->service_name, (uint8_t) sub_id, false);
+    nan_finalize_own_svc(subscribe_cfg->service_name, (uint8_t) sub_id, false, service_id);
     NAN_DATA_UNLOCK();
 
     return sub_id;

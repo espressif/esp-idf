@@ -232,6 +232,7 @@ struct own_svc_info {
     bool nik_fup_pending;
     uint8_t nik_fup_pending_peer_nmi[MACADDR_LEN];
 #endif
+    uint8_t svc_hash[6];
 };
 
 /* Per-NDP link state */
@@ -486,6 +487,8 @@ esp_err_t nan_app_register_paired_peer(const uint8_t *peer_nmi,
 const struct nan_paired_peer *nan_app_find_paired_peer(const uint8_t *peer_nmi);
 void nan_app_remove_paired_peer(const uint8_t *peer_nmi);
 void nan_app_clear_paired_peers(void);
+bool nan_compute_service_id(const char *service_name, uint8_t service_id[6]);
+
 #endif /* CONFIG_ESP_WIFI_NAN_SECURITY */
 
 #ifdef __cplusplus

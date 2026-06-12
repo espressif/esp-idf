@@ -868,7 +868,7 @@ static void nan_pairing_key_installed_cb(const uint8_t *peer_nmi,
  * for NIRA identity resolution. Caller holds NAN_DATA_LOCK. A @a npk of NULL
  * stores a zeroed key. When the cache is full the oldest entry (slot 0) is
  * reused. */
-static void nan_app_update_peer_creds(const uint8_t *peer_nik, const uint8_t *npk)
+static void nan_app_update_peer_creds(const uint8_t *peer_nik, const uint8_t *npk, uint8_t service_hash[6])
 {
     wifi_nan_peer_creds_t *slot = NULL;
 
@@ -889,6 +889,7 @@ static void nan_app_update_peer_creds(const uint8_t *peer_nik, const uint8_t *np
     }
 
     memcpy(slot->peer_nik, peer_nik, ESP_WIFI_NAN_NIK_LEN);
+    memcpy(slot->service_hash, service_hash, 6);
     if (npk) {
         memcpy(slot->npk, npk, ESP_WIFI_NAN_NPK_LEN);
     } else {
@@ -940,9 +941,9 @@ void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
 
     bool already_had_nik = false;
     bool pairing_completed = false;
-    uint8_t own_svc_id_to_disable = 0;
     bool persist_creds = false;
     uint8_t persist_npk[ESP_WIFI_NAN_NPK_LEN] = {0};
+    struct own_svc_info *own = NULL;
 
     NAN_DATA_LOCK();
     struct peer_svc_info *p_peer_svc = nan_find_peer_svc_exact(svc_id, peer_svc_id, peer_mac);
@@ -961,33 +962,33 @@ void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
         if (paired) {
             memcpy(persist_npk, paired->nd_pmk, ESP_WIFI_NAN_NPK_LEN);
         }
-        nan_app_update_peer_creds(nik, paired ? paired->nd_pmk : NULL);
-        persist_creds = s_nan_ctx.use_nvs_for_caching;
+
+        own = nan_find_own_svc(p_peer_svc->own_svc_id);
 
         if (!already_had_nik) {
             pairing_completed = true;
-            own_svc_id_to_disable = p_peer_svc->own_svc_id;
         }
+
+        nan_app_update_peer_creds(nik, paired ? paired->nd_pmk : NULL, own ? own->svc_hash : NULL);
+        persist_creds = s_nan_ctx.use_nvs_for_caching;
     }
     NAN_DATA_UNLOCK();
 
     /* Persist outside the lock; NVS writes can block. */
     if (persist_creds) {
-        esp_wifi_nan_save_creds_for_peer(nik, persist_npk);
+        esp_wifi_nan_save_creds_for_peer(nik, persist_npk, own ? own->svc_hash : NULL);
     }
-
     /* Invoke blocking calls outside NAN_DATA_LOCK to avoid deadlock. */
     if (pairing_completed) {
         wifi_event_nan_pairing_complete_t evt = {0};
 
-        struct own_svc_info *own = nan_find_own_svc(own_svc_id_to_disable);
         if (own) {
             nan_pairing_cancel_svc_pending(own);
         }
         evt.status = WIFI_NAN_PAIRING_STATUS_ACCEPTED;
         evt.reason_code = 0;
         MACADDR_COPY(evt.peer_nmi, peer_mac);
-        esp_nan_complete_pairing(own_svc_id_to_disable);
+        esp_nan_complete_pairing(p_peer_svc ? p_peer_svc->own_svc_id : 0);
         nan_app_post_event(WIFI_EVENT_NAN_PAIRING_CONFIRM, &evt, sizeof(evt));
     }
 
@@ -1047,6 +1048,7 @@ bool esp_nan_verify_nira(uint8_t *peer_mac, uint8_t *nira_attr, uint16_t nira_at
         if (!s_nan_ctx.peer_creds[i].is_valid) {
             continue;
         }
+
         if (nan_pairing_derive_nira_tag(s_nan_ctx.peer_creds[i].peer_nik, peer_mac,
                                         nonce, expected_tag) != 0) {
             continue;
@@ -1061,7 +1063,7 @@ bool esp_nan_verify_nira(uint8_t *peer_mac, uint8_t *nira_attr, uint16_t nira_at
     if (match) {
         ESP_LOGD(TAG, "NIRA verify: OK for "MACSTR, MAC2STR(peer_mac));
     } else {
-        ESP_LOGW(TAG, "NIRA verify: no matching NIK for "MACSTR, MAC2STR(peer_mac));
+        ESP_LOGD(TAG, "NIRA verify: no matching NIK for "MACSTR, MAC2STR(peer_mac));
     }
     return match;
 }

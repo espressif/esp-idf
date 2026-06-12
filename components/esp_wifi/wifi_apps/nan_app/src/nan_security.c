@@ -103,7 +103,7 @@ static bool nan_csid_bitmap_has_pasn(uint16_t csid_bitmap)
  * Service ID = first 6 bytes of SHA256(lowercase(service_name))
  * per Wi-Fi Aware v4.0 §5.1.5 (Service Name and Service ID).
  */
-static bool nan_compute_service_id(const char *service_name, uint8_t service_id[6])
+bool nan_compute_service_id(const char *service_name, uint8_t service_id[6])
 {
     if (!service_name || !g_wifi_default_wpa_crypto_funcs.sha256_vector) {
         return false;
