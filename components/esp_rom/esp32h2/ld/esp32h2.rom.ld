@@ -362,8 +362,7 @@ ets_efuse_secure_boot_fast_wake_enabled = 0x40000830;
 ets_emsa_pss_verify = 0x40000834;
 ets_rsa_pss_verify = 0x40000838;
 _rom_ets_ecdsa_verify = 0x4000083c;
-ets_secure_boot_verify_bootloader_with_keys = 0x40000840;
-ets_secure_boot_verify_signature = 0x40000844;
+_rom_ets_secure_boot_verify_signature = 0x40000844;
 ets_secure_boot_read_key_digests = 0x40000848;
 ets_secure_boot_revoke_public_key_digest = 0x4000084c;
 
