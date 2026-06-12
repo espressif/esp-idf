@@ -69,7 +69,12 @@ BLE_ISO_DOCS = [
 
 BLE_AUDIO_DOCS = [
     'api-reference/bluetooth/esp-ble-audio.rst',
-    'api-guides/ble/ble-audio.rst',
+    'api-guides/esp-ble-audio/ble-audio-index.rst',
+    'api-guides/esp-ble-audio/ble-audio-introduction.rst',
+    'api-guides/esp-ble-audio/ble-audio-architecture-overview.rst',
+    'api-guides/esp-ble-audio/ble-audio-architecture-iso.rst',
+    'api-guides/esp-ble-audio/ble-audio-architecture-lea.rst',
+    'api-guides/esp-ble-audio/ble-audio-feature-support-status.rst',
 ]
 
 CLASSIC_BT_DOCS = [

@@ -129,3 +129,6 @@ get-started/windows-setup-update                get-started/windows-setup
 
 # Kconfig documentation got pretty serious file structure changes
 api-reference/kconfig                          api-reference/kconfig-reference
+
+# The LE Audio overview page 'ble-audio' is now the 'esp-ble-audio' landing page
+api-guides/ble/ble-audio                        api-guides/esp-ble-audio/ble-audio-index

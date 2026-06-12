@@ -1,57 +1,45 @@
-LE Audio Architecture Guide
-============================
+Bluetooth LE Audio Standard
+===========================
 
 :link_to_translation:`zh_CN:[中文]`
 
-This document introduces the Bluetooth LE Audio architecture: its profiles, services, the roles they define, and the dependency relationships among them. It is intended as a conceptual reference to help you choose the right set of profiles for your application before working with the :doc:`ESP-BLE-AUDIO API reference <../../api-reference/bluetooth/esp-ble-audio>`.
+This document introduces the Bluetooth LE Audio specification: its profiles, services, the roles they define, and the dependency relationships among them. It is intended as a conceptual reference to help you choose the right set of profiles for your application before working with the :doc:`ESP-BLE-AUDIO API reference <../../api-reference/bluetooth/esp-ble-audio>`.
+
+.. note::
+
+   This document covers the Bluetooth LE Audio **specification** — its profiles, services, roles, and dependencies. For the **ESP-IDF implementation** architecture (the ESP-BLE-ISO and ESP-BLE-AUDIO components, their task and locking model, and the per-host adapters), see :doc:`ESP-IDF Bluetooth LE Audio Architecture <ble-audio-architecture-overview>`.
 
 
 Overview
 --------
 
-Bluetooth LE Audio is a suite of specifications introduced in Bluetooth Core Specification 5.2. It enables high-quality, low-power audio over Bluetooth LE using the following key additions to the standard:
+Bluetooth LE Audio, introduced in the Bluetooth Core Specification 5.2, enables high-quality, low-power audio over Bluetooth LE using the following key additions to the standard:
 
 - **LE Isochronous Channels (ISO)** — A new controller-level transport for time-synchronized, low-latency data streams, supporting both connected (CIS) and connectionless (BIS) modes.
 - **LC3 Codec** — The Low Complexity Communication Codec, which provides better audio quality at lower bitrates compared to SBC.
 - **Generic Audio Framework (GAF)** — A layered set of profiles and services that standardize audio stream setup, volume control, media control, call control, and device coordination.
 
-LE Audio supports two fundamental audio scenarios:
+Bluetooth LE Audio supports two fundamental audio scenarios:
 
 - **Unicast Audio** — Bidirectional or unidirectional audio between two connected devices over Connected Isochronous Streams (CIS). Typical use cases: TWS earbuds, hearing aids, headsets, telephony.
 - **Broadcast Audio (Auracast™)** — Unidirectional audio from one broadcaster to any number of receivers over Broadcast Isochronous Streams (BIS). Typical use cases: public venue audio, accessibility assistive listening, group TV listening.
 
 
-Architecture Overview
----------------------
+Specification Overview
+----------------------
 
-The LE Audio architecture is organized into three tiers:
+The Bluetooth LE Audio specification is organized into three tiers:
 
-1. **LE Isochronous Channels** — The transport layer, providing CIS (connected) and BIS (broadcast) streams.
+1. **Transport** — The underlying Bluetooth LE transport: LE Isochronous Channels (CIS/BIS) carry the audio data, the ACL connection carries GATT/ATT profile control, and periodic advertising carries broadcast announcements. Only the isochronous channels are new to LE Audio (detailed below).
 2. **Generic Audio Framework (GAF)** — The core specification suite, organized into four functional layers: stream control, content control, rendering/capture control, and transition/coordination control.
 3. **Use-Case Specific Profiles** — Higher-level profiles (HAP, TMAP, GMAP, PBP) that select and configure specific GAF components for a target use case.
 
-.. code-block:: none
+.. figure:: ../../../_static/ble/ble-audio-gaf-en.png
+   :align: center
+   :width: 90%
+   :alt: Bluetooth LE Audio specification stack
 
-    ┌──────────────────────────────────────────────────────────────────────┐
-    │                  Use-Case Specific Profiles                          │
-    │        HAP           TMAP           GMAP           PBP              │
-    ├──────────────────────────────────────────────────────────────────────┤
-    │                  Generic Audio Framework (GAF)                       │
-    │  ┌───────────────────────────────────────────────────────────────┐   │
-    │  │ Transition &                CAP + CAS                        │   │
-    │  │ Coordination Control        CSIP + CSIS                      │   │
-    │  ├───────────────────────────────────────────────────────────────┤   │
-    │  │ Rendering &                 VCP (VCS, VOCS, AICS)            │   │
-    │  │ Capture Control             MICP (MICS, AICS)                │   │
-    │  ├───────────────────────────────────────────────────────────────┤   │
-    │  │ Content Control             MCP + MCS/GMCS                   │   │
-    │  │                             CCP + TBS/GTBS                   │   │
-    │  ├───────────────────────────────────────────────────────────────┤   │
-    │  │ Stream Control              BAP (PACS, ASCS, BASS)           │   │
-    │  └───────────────────────────────────────────────────────────────┘   │
-    ├──────────────────────────────────────────────────────────────────────┤
-    │             LE Isochronous Channels  (CIS / BIS)                     │
-    └──────────────────────────────────────────────────────────────────────┘
+   The Bluetooth LE Audio stack: use-case profiles build on the Generic Audio Framework (GAF). Profile control rides GATT/ATT over the ACL connection, audio data rides the LE isochronous channels (CIS/BIS), and broadcast announcements ride periodic advertising.
 
 Each GAF layer depends only on the layers below it. Use-case profiles select a subset of GAF layers and add role-specific constraints on top. The sections below describe each component in detail.
 
@@ -59,7 +47,7 @@ Each GAF layer depends only on the layers below it. Use-case profiles select a s
 LE Isochronous Channels
 -----------------------
 
-LE Isochronous Channels are a feature of the Bluetooth controller, defined in the Bluetooth Core Specification. They provide the time-synchronized, low-latency data transport that LE Audio relies on.
+LE Isochronous Channels are a feature of the Bluetooth controller, defined in the Bluetooth Core Specification. They provide the time-synchronized, low-latency data transport that Bluetooth LE Audio relies on.
 
 .. list-table::
     :header-rows: 1
@@ -75,13 +63,13 @@ LE Isochronous Channels are a feature of the Bluetooth controller, defined in th
       - BIS
       - Unidirectional isochronous stream from a Broadcaster to any number of Synchronized Receivers, without a prior connection. Multiple BIS instances belong to a Broadcast Isochronous Group (BIG).
 
-ESP-IDF provides direct access to CIS and BIS via the :doc:`ESP-BLE-ISO API <../../api-reference/bluetooth/esp-ble-iso>`. When using LE Audio profiles (BAP and above), the ISO layer is managed automatically by the profile stack.
+ESP-IDF provides direct access to CIS and BIS via the :doc:`ESP-BLE-ISO API <../../api-reference/bluetooth/esp-ble-iso>`. When using Bluetooth LE Audio profiles (BAP and above), the ISO layer is managed automatically by the profile stack.
 
 
 Generic Audio Framework
 -----------------------
 
-The Generic Audio Framework (GAF) is the core of LE Audio. It defines four functional layers, described below from the bottom up.
+The Generic Audio Framework (GAF) is the core of Bluetooth LE Audio. It defines four functional layers, described below from the bottom up.
 
 
 Stream Control Layer
@@ -91,7 +79,7 @@ The stream control layer is responsible for discovering audio capabilities, sett
 
 **Basic Audio Profile (BAP)**
 
-BAP is the foundational profile for all LE Audio streaming. It defines the following roles:
+BAP is the foundational profile for all Bluetooth LE Audio streaming. It defines the following roles:
 
 - **Unicast Client** — Discovers ASEs on a remote Unicast Server, initiates codec configuration, QoS negotiation, and stream control (enable, connect, start, disable, release).
 - **Unicast Server** — Exposes audio endpoints (ASEs) via ASCS and responds to client-initiated stream control procedures.
@@ -301,10 +289,72 @@ PBP standardizes the metadata format used by a public broadcast source so that a
 PBP depends entirely on BAP for the underlying broadcast transport; it does not define a new GATT service.
 
 
-Profile and Service Dependency Reference
-----------------------------------------
+Profile and Service Dependencies
+--------------------------------
 
-The following tables summarize the dependencies between profiles and services in the ESP-IDF LE Audio implementation.
+The diagram below expands each abbreviation to its full name and shows the layered dependency hierarchy — solid arrows are a depends-on relationship, dotted arrows an optional included sub-service. The tables that follow give the exact per-profile dependencies.
+
+.. mermaid::
+
+   %%{init: {'flowchart': {'nodeSpacing': 35, 'rankSpacing': 65}}}%%
+   flowchart LR
+       HAP["HAP<br/>(Hearing Access Profile)"]
+       TMAP["TMAP<br/>(Telephony and Media Audio Profile)"]
+       GMAP["GMAP<br/>(Gaming Audio Profile)"]
+       PBP["PBP<br/>(Public Broadcast Profile)"]
+       CAP["CAP<br/>(Common Audio Profile)"]
+       VCP["VCP<br/>(Volume Control Profile)"]
+       MICP["MICP<br/>(Microphone Control Profile)"]
+       CSIP["CSIP<br/>(Coordinated Set Identification Profile)"]
+       MCP["MCP<br/>(Media Control Profile)"]
+       CCP["CCP<br/>(Call Control Profile)"]
+       BAP["BAP<br/>(Basic Audio Profile)"]
+       HAS["HAS<br/>(Hearing Access Service)"]
+       TMAS["TMAS<br/>(Telephony and Media Audio Service)"]
+       GMAS["GMAS<br/>(Gaming Audio Service)"]
+       CAS["CAS<br/>(Common Audio Service)"]
+       PACS["PACS<br/>(Published Audio Capabilities Service)"]
+       ASCS["ASCS<br/>(Audio Stream Control Service)"]
+       BASS["BASS<br/>(Broadcast Audio Scan Service)"]
+       CSIS["CSIS<br/>(Coordinated Set Identification Service)"]
+       VCS["VCS<br/>(Volume Control Service)"]
+       MICS["MICS<br/>(Microphone Control Service)"]
+       MCS["MCS / GMCS<br/>(Media Control Service)"]
+       TBS["TBS / GTBS<br/>(Telephone Bearer Service)"]
+       VOCS["VOCS<br/>(Volume Offset Control Service)"]
+       AICS["AICS<br/>(Audio Input Control Service)"]
+       OTS["OTS<br/>(Object Transfer Service)"]
+       HAP --> CAP
+       TMAP --> CAP & MCP & CCP
+       GMAP --> CAP
+       PBP --> BAP
+       CAP --> BAP & VCP & MICP & CSIP
+       CAP --> CAS
+       HAP --> HAS
+       TMAP --> TMAS
+       GMAP --> GMAS
+       BAP --> PACS & ASCS & BASS
+       VCP --> VCS
+       MICP --> MICS
+       CSIP --> CSIS
+       MCP --> MCS
+       CCP --> TBS
+       VCS -.-> VOCS & AICS
+       MICS -.-> AICS
+       MCS -.-> OTS
+       CAP ~~~ MCP
+       CAP ~~~ CCP
+       classDef uc fill:#dbe8ff,stroke:#5b8def,color:#173;
+       classDef coord fill:#ffe6c7,stroke:#e0922f;
+       classDef ctrl fill:#e3f6da,stroke:#5aa84f;
+       classDef svc fill:#efe3ff,stroke:#9a6fd6;
+       classDef opt fill:#f0f0f0,stroke:#9e9e9e,color:#555;
+       class HAP,TMAP,GMAP,PBP uc;
+       class CAP,BAP coord;
+       class VCP,MICP,CSIP,MCP,CCP ctrl;
+       class HAS,TMAS,GMAS,CAS,PACS,ASCS,BASS,CSIS,VCS,MICS,MCS,TBS svc;
+       class VOCS,AICS,OTS opt;
+
 
 Profile-to-Service Dependencies
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -414,84 +464,3 @@ The table below maps common product types to the profiles they require.
       - GMAP UGT (receiver), BAP Unicast Server, VCP Volume Renderer
     * - Media Sender (audio bar)
       - TMAP UMS (or BMS for broadcast), BAP, MCP/MCS server, VCP
-
-
-ESP-IDF Implementation
------------------------
-
-ESP-IDF provides two API components for LE Audio:
-
-- :doc:`ESP-BLE-ISO <../../api-reference/bluetooth/esp-ble-iso>` — Direct access to LE Isochronous Channels (CIS/BIS) for applications that manage their own ISO data paths.
-- :doc:`ESP-BLE-AUDIO <../../api-reference/bluetooth/esp-ble-audio>` — High-level LE Audio profile and service APIs covering the full GAF stack (BAP, CAP, VCP, MICP, CSIP, MCP, CCP, HAP, GMAP, TMAP, PBP) and codec support (LC3).
-
-For most applications, ESP-BLE-AUDIO is the correct starting point. ESP-BLE-ISO is intended for advanced use cases that require direct ISO control below the profile layer.
-
-Feature Support
-^^^^^^^^^^^^^^^
-
-The table below lists the LE Audio profiles and services currently supported in ESP-IDF.
-
-.. list-table::
-    :header-rows: 1
-    :widths: 28 12 60
-
-    * - Profile / Service
-      - Supported
-      - Notes
-    * - LE Isochronous Channels (CIS / BIS)
-      - Yes
-      - Direct ISO access via :doc:`ESP-BLE-ISO <../../api-reference/bluetooth/esp-ble-iso>`.
-    * - BAP
-      - Yes
-      - All six BAP roles: Unicast Client, Unicast Server, Broadcast Source, Broadcast Sink, Broadcast Assistant, Scan Delegator.
-    * - PACS
-      - Yes
-      - Used by BAP Unicast Server and Broadcast Sink.
-    * - ASCS
-      - Yes
-      - Used by BAP Unicast Server.
-    * - BASS
-      - Yes
-      - Used by BAP Scan Delegator and Broadcast Assistant.
-    * - CAP
-      - Yes
-      - All three CAP roles: Acceptor, Initiator, Commander.
-    * - CAS
-      - Yes
-      - Mandatory service on CAP Acceptors.
-    * - CSIP / CSIS
-      - Yes
-      - Set Member and Set Coordinator roles.
-    * - VCP / VCS
-      - Yes
-      - Volume Renderer and Volume Controller roles.
-    * - VOCS
-      - Yes
-      - Per-output volume offset control; included in VCS as an optional sub-service.
-    * - AICS
-      - Yes
-      - Audio input control; included in VCS and MICS as an optional sub-service.
-    * - MICP / MICS
-      - Yes
-      - Microphone Device and Microphone Controller roles.
-    * - MCP / MCS
-      - Partial
-      - Media Control Server and Media Control Client roles are supported. OTP/OTS-based media object transfer is not currently supported.
-    * - CCP / TBS
-      - Yes
-      - Call Control Server and Call Control Client roles, including GTBS and per-bearer TBS.
-    * - HAP / HAS
-      - Yes
-      - Hearing Aid and Hearing Aid Unicast Client roles, including preset read/write via HAS.
-    * - TMAP / TMAS
-      - Yes
-      - All six TMAP roles: CG, CT, UMS, UMR, BMS, BMR.
-    * - GMAP / GMAS
-      - Yes
-      - All four GMAP roles: UGG, UGT, BGS, BGR.
-    * - PBP
-      - Yes
-      - Public Broadcast Source and Public Broadcast Sink roles.
-    * - OTP / OTS
-      - No
-      - Object Transfer Profile/Service (used by MCP/MCS for media object transfer) is not currently supported.
