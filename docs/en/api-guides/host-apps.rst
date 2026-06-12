@@ -42,11 +42,11 @@ This approach uses the `CMock <https://www.throwtheswitch.org/cmock>`_ framework
 POSIX/Linux Simulator Approach
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The FreeRTOS Linux simulator is available on ESP-IDF as a preview target. This simulator runs each FreeRTOS task as a POSIX thread (pthread), allowing ESP-IDF components to be implemented on the host and making them accessible to ESP-IDF applications when running on host. Currently, not all components are supported on Linux. Furthermore, the functionality of each component ported to Linux may also be limited or different compared to the functionality when building that component for a chip target. For more information about whether the desired components are supported on Linux, please refer to :ref:`component-linux-mock-support`.
+The FreeRTOS Linux simulator is available on ESP-IDF as a preview target. This simulator runs each FreeRTOS task as a POSIX thread (pthread), allowing ESP-IDF components to run on the host and making them accessible to ESP-IDF applications when running on host. Currently, not all components are supported on Linux. Furthermore, the functionality of each component ported to Linux may also be limited or different compared to the functionality when building that component for a chip target. For more information about whether the desired components are supported on Linux, please refer to :ref:`component-linux-mock-support`.
 
 **Scheduling Model**
 
-The Linux simulator uses *cooperative preemption*: a dedicated scheduler thread increments the tick counter at regular intervals (configured by ``configTICK_RATE_HZ``) and performs context switches by blocking and unblocking pthreads. Because context switches can only occur when a task interacts with the FreeRTOS kernel, the scheduler is not truly preemptive at the instruction level as it would be on real hardware. This means:
+The Linux simulator uses *cooperative preemption*: a dedicated scheduler thread advances the tick count at the rate set by ``configTICK_RATE_HZ`` and switches tasks by blocking and unblocking pthreads. A context switch happens only when a task interacts with the FreeRTOS kernel, so the simulator is not preemptive at the instruction level as on real hardware. As a result:
 
 .. list::
     - A task that busy-loops without calling any FreeRTOS API will never be preempted. Preemption can only occur when a task interacts with the FreeRTOS kernel, such as entering or exiting a critical section, yielding, or calling any API that may block (e.g., ``vTaskDelay()``, ``xQueueReceive()``).
@@ -58,13 +58,13 @@ The Linux simulator uses *cooperative preemption*: a dedicated scheduler thread 
 .. list::
     - Calling FreeRTOS primitives that may block or yield (e.g., queues, semaphores, task notifications, ``vTaskDelay()``) from threads not created by FreeRTOS API functions is not supported. However, critical sections (``taskENTER_CRITICAL`` / ``taskEXIT_CRITICAL``) can be used from any thread.
 
-Note that if you use the ESP-IDF FreeRTOS mock component (``tools/mocks/freertos``), these limitations do not apply. But that mock component will not do any scheduling, either.
+If you use the ESP-IDF FreeRTOS mock component (``tools/mocks/freertos``) instead, these limitations do not apply, but that mock does not perform scheduling.
 
 .. only:: not esp32p4 and not esp32h4 and not esp32s31
 
     .. note::
 
-        The FreeRTOS POSIX/Linux simulator allows configuring the :ref:`amazon_smp_freertos` version. However, the simulation still runs in single-core mode (``configNUM_CORES = 1``). The main reason allowing Amazon SMP FreeRTOS is to provide API compatibility with ESP-IDF applications written for Amazon SMP FreeRTOS.
+        The FreeRTOS POSIX/Linux simulator can be configured to use :ref:`amazon_smp_freertos`. However, the simulation still runs in single-core mode (``configNUM_CORES = 1``). Amazon SMP FreeRTOS is supported primarily to maintain API compatibility with ESP-IDF applications written for Amazon SMP FreeRTOS.
 
 Requirements for Using Mocks
 ----------------------------
