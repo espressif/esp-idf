@@ -1629,7 +1629,7 @@ void btc_hh_cb_handler(btc_msg_t *msg)
         }
         btc_hh_cb_to_app(ESP_HIDH_INIT_EVT, &param);
         break;
-    case BTA_HH_DISABLE_EVT:
+    case BTA_HH_DISABLE_EVT: {
         btc_hh_cb.status = BTC_HH_DISABLED;
         if (btc_hh_cb.service_dereg_active) {
             BTIF_TRACE_DEBUG("BTA_HH_DISABLE_EVT: enabling HID Device service");
@@ -1656,6 +1656,7 @@ void btc_hh_cb_handler(btc_msg_t *msg)
         param.deinit.status = p_data->status;
         btc_hh_cb_to_app(ESP_HIDH_DEINIT_EVT, &param);
         break;
+    }
     case BTA_HH_OPEN_EVT:
         BTC_TRACE_DEBUG("handle=%d, status =%d", p_data->conn.handle, p_data->conn.status);
         memset(btc_hh_cb.pending_conn_address, 0, BD_ADDR_LEN);

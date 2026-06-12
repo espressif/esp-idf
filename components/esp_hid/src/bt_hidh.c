@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,19 +14,26 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "osi/fixed_queue.h"
+#include "osi/list.h"
 #include "string.h"
 #include "esp_hidh_api.h"
 
 static const char *TAG = "BT_HIDH";
 
 // element of connection queue
+typedef enum {
+    CONN_FLOW_WAIT_DSCP = 0,   // OPEN ok, waiting for GET_DSCP
+    CONN_FLOW_WAIT_ADD_DEV,    // GET_DSCP ok and !added, waiting for ADD_DEV
+} conn_flow_state_t;
+
 typedef struct {
     esp_hidh_dev_t* dev;
+    uint8_t handle;
+    uint8_t state;
 } conn_item_t;
 
 typedef struct {
-    fixed_queue_t *connection_queue; /* Queue of connection */
+    list_t *connection_queue; /* List of pending connections (accessed only in esp_hh_cb / BTC task context) */
     esp_event_loop_handle_t event_loop_handle;
 } hidh_local_param_t;
 
@@ -86,7 +93,7 @@ static char *get_trans_type_str(esp_hid_trans_type_t trans_type)
     case ESP_HID_TRANS_MAX:
         return "TRANS_MAX";
     default:
-        return "UNKOWN";
+        return "UNKNOWN";
     }
 }
 
@@ -105,14 +112,6 @@ static esp_err_t bt_hidh_get_status(esp_hidh_status_t status)
         break;
     }
     return ret;
-}
-
-static void utl_freebuf(void **p)
-{
-    if (*p != NULL) {
-        free(*p);
-        *p = NULL;
-    }
 }
 
 static void transaction_timeout_handler(void *arg)
@@ -168,7 +167,8 @@ static inline bool is_trans_done(esp_hidh_dev_t *dev)
 static void free_local_param(void)
 {
     if (hidh_local_param.connection_queue) {
-        fixed_queue_free(hidh_local_param.connection_queue, free);
+        list_free(hidh_local_param.connection_queue);
+        hidh_local_param.connection_queue = NULL;
     }
 }
 
@@ -188,6 +188,44 @@ static void open_failed_cb(esp_hidh_dev_t *dev, esp_hidh_status_t status, esp_hi
     }
     esp_event_post_to(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_OPEN_EVENT, p, event_data_size,
                       portMAX_DELAY);
+}
+
+// Find the pending connection entry matching |handle|. The connection flow is driven
+// entirely from esp_hh_cb (single BTC task context), so no extra locking is required.
+static conn_item_t *find_conn_item_by_handle(uint8_t handle)
+{
+    if (hidh_local_param.connection_queue == NULL) {
+        return NULL;
+    }
+    for (const list_node_t *node = list_begin(hidh_local_param.connection_queue);
+            node != list_end(hidh_local_param.connection_queue); node = list_next(node)) {
+        conn_item_t *conn_item = (conn_item_t *)list_node(node);
+        if (conn_item != NULL && conn_item->handle == handle) {
+            return conn_item;
+        }
+    }
+    return NULL;
+}
+
+// Remove a specific entry from the connection list. list_remove() invokes the free
+// callback registered in list_new(), releasing the conn_item itself.
+static void remove_conn_item(conn_item_t *conn_item)
+{
+    if (conn_item != NULL && hidh_local_param.connection_queue != NULL) {
+        list_remove(hidh_local_param.connection_queue, conn_item);
+    }
+}
+
+static const char *conn_flow_state_str(conn_flow_state_t state)
+{
+    switch (state) {
+    case CONN_FLOW_WAIT_DSCP:
+        return "WAIT_DSCP";
+    case CONN_FLOW_WAIT_ADD_DEV:
+        return "WAIT_ADD_DEV";
+    default:
+        return "UNKNOWN";
+    }
 }
 
 static void esp_hh_cb(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
@@ -265,8 +303,16 @@ static void esp_hh_cb(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
                 break;
             }
             conn_item->dev = dev;
-            bool ret = fixed_queue_enqueue(hidh_local_param.connection_queue, conn_item, FIXED_QUEUE_MAX_TIMEOUT);
-            assert(ret == true);
+            conn_item->handle = param->open.handle;
+            conn_item->state = CONN_FLOW_WAIT_DSCP;
+            bool ret = list_append(hidh_local_param.connection_queue, conn_item);
+            if (!ret) {
+                ESP_LOGE(TAG, "conn_item enqueue failed!");
+                free(conn_item);
+                conn_item = NULL;
+                param->open.status = ESP_HIDH_ERR_NO_RES;
+                break;
+            }
         } while (0);
 
         if (param->open.status != ESP_HIDH_OK) {
@@ -282,38 +328,57 @@ static void esp_hh_cb(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
         break;
     }
     case ESP_HIDH_GET_DSCP_EVT: {
+        bool post_open = false;
+        bool report_open_failed = false;
+        esp_hidh_status_t open_failed_status = ESP_HIDH_OK;
+
         do {
             ESP_LOGV(TAG, "DESCRIPTOR: PID: 0x%04x, VID: 0x%04x, VERSION: 0x%04x, REPORT_LEN: %u",
                      param->dscp.product_id, param->dscp.vendor_id, param->dscp.version, param->dscp.dl_len);
-            if ((conn_item = (conn_item_t *)fixed_queue_dequeue(hidh_local_param.connection_queue,
-                                                                FIXED_QUEUE_MAX_TIMEOUT)) == NULL) {
-                ESP_LOGE(TAG, "No pending connect device!");
-                param->dscp.status = ESP_HIDH_NO_CONNECTION;
+            conn_item = find_conn_item_by_handle(param->dscp.handle);
+            if (!conn_item) {
+                ESP_LOGE(TAG, "No pending connect device for handle %d!", param->dscp.handle);
                 break;
             }
+
             dev = conn_item->dev;
-            utl_freebuf((void **)&conn_item);
             // in case the dev has been freed
             if (!esp_hidh_dev_exists(dev)) {
                 ESP_LOGE(TAG, "Device Not Found");
                 dev = NULL;
                 param->dscp.status = ESP_HIDH_NO_CONNECTION;
+                report_open_failed = true;
+                open_failed_status = param->dscp.status;
                 break;
             }
+
+            if (conn_item->state != CONN_FLOW_WAIT_DSCP) {
+                ESP_LOGW(TAG, "Unexpected flow state for GET_DSCP: %s", conn_flow_state_str(conn_item->state));
+                param->dscp.status = ESP_HIDH_NO_CONNECTION;
+                report_open_failed = true;
+                open_failed_status = param->dscp.status;
+                break;
+            }
+
             // check if connected
             esp_hidh_dev_lock(dev);
             if (!dev->connected) {
                 esp_hidh_dev_unlock(dev);
                 ESP_LOGE(TAG, "Connection has been released!");
                 param->dscp.status = ESP_HIDH_NO_CONNECTION;
+                report_open_failed = true;
+                open_failed_status = param->dscp.status;
                 break;
             }
             // check if get descriptor failed
             if (param->dscp.status != ESP_HIDH_OK) {
                 esp_hidh_dev_unlock(dev);
                 ESP_LOGE(TAG, "GET_DSCP ERROR: %s", s_esp_hh_status_names[param->dscp.status]);
+                report_open_failed = true;
+                open_failed_status = param->dscp.status;
                 break;
             }
+
             dev->added = param->dscp.added;
             dev->config.product_id = param->dscp.product_id;
             dev->config.vendor_id = param->dscp.vendor_id;
@@ -377,25 +442,40 @@ static void esp_hh_cb(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
                 }
             }
             esp_hidh_dev_unlock(dev);
-        } while (0);
 
-        if (param->dscp.status != ESP_HIDH_OK) {
-            open_failed_cb(dev, param->dscp.status, &p, event_data_size);
-        }
+            if (param->dscp.status == ESP_HIDH_OK && !param->dscp.added) {
+                // New device path: lower layer has called AddDev, next stage waits ADD_DEV.
+                conn_item->state = CONN_FLOW_WAIT_ADD_DEV;
+            }
+        } while (0);
 
         if (dev != NULL) {
             esp_hidh_dev_lock(dev);
             dev->status = param->dscp.status;
-            // if has been added by lower layer, tell up layer
             if (dev->status == ESP_HIDH_OK && dev->connected && dev->added) {
-                p.open.status = bt_hidh_get_status(ESP_HIDH_OK);
-                p.open.dev = dev;
-                esp_hidh_dev_unlock(dev);
-                esp_event_post_to(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_OPEN_EVENT, &p,
-                                  event_data_size, portMAX_DELAY);
-            } else {
-                esp_hidh_dev_unlock(dev);
+                // Device is already added, no ADD_DEV_EVT will follow. Report OPEN here.
+                post_open = true;
+            } else if (dev->status != ESP_HIDH_OK) {
+                report_open_failed = true;
+                open_failed_status = dev->status;
+            } else if (dev->added && !dev->connected) {
+                report_open_failed = true;
+                open_failed_status = ESP_HIDH_NO_CONNECTION;
             }
+            esp_hidh_dev_unlock(dev);
+        }
+
+        if (param->dscp.status != ESP_HIDH_OK || param->dscp.added) {
+            remove_conn_item(conn_item);
+        }
+
+        if (report_open_failed) {
+            open_failed_cb(dev, open_failed_status, &p, event_data_size);
+        } else if (post_open) {
+            p.open.status = bt_hidh_get_status(ESP_HIDH_OK);
+            p.open.dev = dev;
+            esp_event_post_to(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_OPEN_EVENT, &p,
+                              event_data_size, portMAX_DELAY);
         }
         break;
     }
@@ -403,34 +483,51 @@ static void esp_hh_cb(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
         ESP_LOGV(TAG, "ADD_DEV: BDA: " ESP_BD_ADDR_STR ", handle: %d, status: %s",
                  ESP_BD_ADDR_HEX(param->add_dev.bd_addr), param->add_dev.handle,
                  s_esp_hh_status_names[param->add_dev.status]);
-        do {
-            dev = esp_hidh_dev_get_by_handle(param->add_dev.handle);
-            if (dev == NULL) {
-                ESP_LOGE(TAG, "Device Not Found");
-                param->add_dev.status = ESP_HIDH_NO_CONNECTION;
-                break;
-            }
-            esp_hidh_dev_lock(dev);
-            dev->added = param->add_dev.status == ESP_HIDH_OK ? true : false;
-            esp_hidh_dev_unlock(dev);
-        } while (0);
 
-        if (param->add_dev.status != ESP_HIDH_OK) {
-            ESP_LOGE(TAG, "ADD_DEV ERROR: %s", s_esp_hh_status_names[param->add_dev.status]);
-            open_failed_cb(dev, param->add_dev.status, &p, event_data_size);
+        conn_item = find_conn_item_by_handle(param->add_dev.handle);
+        if (!conn_item) {
+            // Non-connect flow (e.g. loading bonded devices from NVS after enable).
+            ESP_LOGW(TAG, "ADD_DEV without pending connection (handle %d), ignored", param->add_dev.handle);
+            break;
         }
-        if (dev != NULL) {
-            esp_hidh_dev_lock(dev);
-            dev->status = param->add_dev.status;
-            if (dev->status == ESP_HIDH_OK && dev->connected && dev->added) {
-                p.open.status = bt_hidh_get_status(ESP_HIDH_OK);
-                p.open.dev = dev;
-                esp_hidh_dev_unlock(dev);
-                esp_event_post_to(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_OPEN_EVENT, &p,
-                                  event_data_size, portMAX_DELAY);
-            } else {
-                esp_hidh_dev_unlock(dev);
+
+        dev = conn_item->dev;
+        if (conn_item->state != CONN_FLOW_WAIT_ADD_DEV) {
+            ESP_LOGW(TAG, "Unexpected flow state for ADD_DEV: %s", conn_flow_state_str(conn_item->state));
+            // Drop the stale entry so it can't block subsequent connections, and make
+            // sure the application is notified instead of silently hanging.
+            remove_conn_item(conn_item);
+            if (dev != NULL && esp_hidh_dev_exists(dev)) {
+                open_failed_cb(dev, ESP_HIDH_NO_CONNECTION, &p, event_data_size);
             }
+            break;
+        }
+
+        remove_conn_item(conn_item);
+        if (dev == NULL || !esp_hidh_dev_exists(dev)) {
+            ESP_LOGE(TAG, "Device Not Found");
+            break;
+        }
+
+        int status = param->add_dev.status;
+        bool connected = false;
+        bool added = false;
+
+        esp_hidh_dev_lock(dev);
+        dev->status = status;
+        dev->added = (status == ESP_HIDH_OK);
+        connected = dev->connected;
+        added = dev->added;
+        esp_hidh_dev_unlock(dev);
+
+        if (status == ESP_HIDH_OK && connected && added) {
+            p.open.status = bt_hidh_get_status(ESP_HIDH_OK);
+            p.open.dev = dev;
+            esp_event_post_to(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_OPEN_EVENT, &p,
+                              event_data_size, portMAX_DELAY);
+        } else {
+            ESP_LOGE(TAG, "ADD_DEV ERROR: %s connected:%d added:%d", s_esp_hh_status_names[status], connected, added);
+            open_failed_cb(dev, status != ESP_HIDH_OK ? status : ESP_HIDH_NO_CONNECTION, &p, event_data_size);
         }
         break;
     }
@@ -440,6 +537,13 @@ static void esp_hh_cb(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
             break;
         }
         ESP_LOGV(TAG, "CLOSE: handle: %d, status: %s", param->close.handle, s_esp_hh_status_names[param->close.status]);
+        // Drop any still-pending connection entry for this handle. If the link is torn
+        // down mid-flow (WAIT_DSCP / WAIT_ADD_DEV), the device itself is freed via the
+        // CLOSE_EVENT wrapper below; the conn_item must be removed here to avoid a leak
+        // and a dangling conn_item->dev that could mis-fire a later same-handle connection.
+        // No OPEN failure is posted here on purpose: CLOSE_EVENT already frees the device,
+        // and posting OPEN would free the same device twice.
+        remove_conn_item(find_conn_item_by_handle(param->close.handle));
         do {
             dev = esp_hidh_dev_get_by_handle(param->close.handle);
             if (dev == NULL) {
@@ -809,7 +913,7 @@ static esp_err_t esp_bt_hidh_dev_set_report(esp_hidh_dev_t *dev, size_t map_inde
     esp_hidh_dev_report_t *report = NULL;
     do {
         if (!is_trans_done(dev)) {
-            ESP_LOGE(TAG, "Pending previous tansaction %s done, try later!", get_trans_type_str(dev->trans_type));
+            ESP_LOGE(TAG, "Pending previous transaction %s done, try later!", get_trans_type_str(dev->trans_type));
             ret = ESP_FAIL;
             break;
         }
@@ -859,7 +963,7 @@ static esp_err_t esp_bt_hidh_dev_report_read(esp_hidh_dev_t *dev, size_t map_ind
     esp_hidh_dev_report_t *report = NULL;
     do {
         if (!is_trans_done(dev)) {
-            ESP_LOGE(TAG, "Pending previous tansaction %s done, try later!", get_trans_type_str(dev->trans_type));
+            ESP_LOGE(TAG, "Pending previous transaction %s done, try later!", get_trans_type_str(dev->trans_type));
             ret = ESP_FAIL;
             break;
         }
@@ -885,7 +989,7 @@ static esp_err_t esp_bt_hidh_dev_get_idle(esp_hidh_dev_t *dev)
     esp_err_t ret = ESP_OK;
     do {
         if (!is_trans_done(dev)) {
-            ESP_LOGE(TAG, "Pending previous tansaction %s done, try later!", get_trans_type_str(dev->trans_type));
+            ESP_LOGE(TAG, "Pending previous transaction %s done, try later!", get_trans_type_str(dev->trans_type));
             ret = ESP_FAIL;
             break;
         }
@@ -908,7 +1012,7 @@ static esp_err_t esp_bt_hidh_dev_set_idle(esp_hidh_dev_t *dev, uint8_t idle_time
     esp_err_t ret = ESP_OK;
     do {
         if (!is_trans_done(dev)) {
-            ESP_LOGE(TAG, "Pending previous tansaction %s done, try later!", get_trans_type_str(dev->trans_type));
+            ESP_LOGE(TAG, "Pending previous transaction %s done, try later!", get_trans_type_str(dev->trans_type));
             ret = ESP_FAIL;
             break;
         }
@@ -931,7 +1035,7 @@ static esp_err_t esp_bt_hidh_dev_get_protocol(esp_hidh_dev_t *dev)
     esp_err_t ret = ESP_OK;
     do {
         if (!is_trans_done(dev)) {
-            ESP_LOGE(TAG, "Pending previous tansaction %s done, try later!", get_trans_type_str(dev->trans_type));
+            ESP_LOGE(TAG, "Pending previous transaction %s done, try later!", get_trans_type_str(dev->trans_type));
             ret = ESP_FAIL;
             break;
         }
@@ -955,7 +1059,7 @@ static esp_err_t esp_bt_hidh_dev_set_protocol(esp_hidh_dev_t *dev, uint8_t proto
 
     do {
         if (!is_trans_done(dev)) {
-            ESP_LOGE(TAG, "Pending previous tansaction %s done, try later!", get_trans_type_str(dev->trans_type));
+            ESP_LOGE(TAG, "Pending previous transaction %s done, try later!", get_trans_type_str(dev->trans_type));
             ret = ESP_FAIL;
             break;
         }
@@ -993,7 +1097,7 @@ esp_err_t esp_bt_hidh_init(const esp_hidh_config_t *config)
     esp_err_t ret = ESP_OK;
     ESP_RETURN_ON_FALSE(config, ESP_ERR_INVALID_ARG, TAG, "Config is NULL");
 
-    hidh_local_param.connection_queue = fixed_queue_new(QUEUE_SIZE_MAX);
+    hidh_local_param.connection_queue = list_new(free);
     ESP_RETURN_ON_FALSE(hidh_local_param.connection_queue, ESP_ERR_NO_MEM, TAG, "Alloc failed");
     hidh_local_param.event_loop_handle = esp_hidh_get_event_loop();
 
