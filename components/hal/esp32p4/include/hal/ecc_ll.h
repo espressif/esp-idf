@@ -12,7 +12,7 @@
 #include "soc/ecc_mult_reg.h"
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/hp_system_reg.h"
-#include "esp_fault.h"
+#include "esp_fault_internal.h"
 
 #ifdef __cplusplus
 extern "C" {
