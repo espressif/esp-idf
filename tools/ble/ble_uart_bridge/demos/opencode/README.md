@@ -99,6 +99,12 @@ flowchart LR
    cp tools/ble/ble_uart_bridge/demos/opencode/src/*.ts ~/.config/opencode/plugins/opencode-ble-uart-bridge/
    ```
 
+   > **Note:** OpenCode's auto-loader may only scan the top-level of the plugin
+   > directory (not subdirectories). If the plugin does not load after copying
+   > the files, add an explicit entry in `opencode.json` (see step 5) pointing
+   > to the entry TypeScript file with an **absolute path** — this is the
+   > reliable method that works across all OpenCode versions.
+
 5. Merge the relevant parts of `opencode.json.example` into your `opencode.json`.
 
    For OpenCode plugin loading details, see the official
@@ -411,6 +417,50 @@ and truncated before crossing BLE.
 - If the device UI times out, return `reject`.
 - If JSON parsing fails, return an error response.
 - Keep displayed metadata short to avoid leaking large prompts or secrets.
+
+## Troubleshooting
+
+### Plugin has no effect after configuration
+
+If OpenCode does not forward events to the ESP-BLE-UART Daemon after you
+followed the Quick Start steps:
+
+1. **Check the plugin is actually loaded.** OpenCode loads local plugins from
+   `~/.config/opencode/plugins/` and `.opencode/plugins/`. Some versions only
+   scan the top-level directory for `.ts` files, so placing files in a
+   subdirectory may not work without an explicit `opencode.json` entry. Add a
+   `plugin` entry with an **absolute path** to the entry file:
+
+   ```json
+   {
+     "plugin": ["/Users/you/.config/opencode/plugins/opencode-ble-uart-bridge/opencode-ble-uart-bridge.ts"]
+   }
+   ```
+
+2. **Check the TypeScript compilation.** OpenCode 1.17+ uses stricter TypeScript
+   checking for local plugins. If you see compilation errors in the plugin
+   output, ensure you are using the latest version of the plugin source from
+   `tools/ble/ble_uart_bridge/demos/opencode/src/`.
+
+3. **Check the daemon is running and reachable.** The plugin calls
+   `GET http://127.0.0.1:8888/status` on startup. If the daemon is not running,
+   the plugin enters a "disabled" forwarding state. Start the daemon first:
+
+   ```bash
+   python tools/ble/ble_uart_bridge/main.py daemon "<device_id>"
+   ```
+
+   Then restart OpenCode. The daemon URL can be customized with the
+   `OPENCODE_BLE_DAEMON_URL` environment variable.
+
+4. **Enable debug logging.** Set `OPENCODE_BLE_DEBUG=1` before starting
+   OpenCode to see verbose plugin logs in the terminal where OpenCode was
+   launched:
+
+   ```bash
+   export OPENCODE_BLE_DEBUG=1
+   opencode
+   ```
 
 ## Open items
 

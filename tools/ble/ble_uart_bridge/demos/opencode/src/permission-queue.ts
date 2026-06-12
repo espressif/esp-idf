@@ -3,7 +3,7 @@
 
 import { CONCURRENT_REJECT_MESSAGE, DECISION_TIMEOUT_SECONDS, DEFAULT_REJECT_MESSAGE } from "./config"
 import { sendRequestToBLE } from "./ble-daemon-client"
-import { appLogBestEffort, debugLog, showToastBestEffort } from "./logging"
+import { appLogBestEffort, showToastBestEffort } from "./logging"
 import { isPermissionDecision, replyToOpenCodePermission } from "./opencode-permission-reply"
 import { buildPermissionPayload, permissionRequestID } from "./permission-payload"
 import type { OpenCodePermissionClient, PermissionDecision, PermissionEventProperties, PermissionQueueItem } from "./types"
@@ -113,11 +113,6 @@ async function handlePermissionQueueItem(item: PermissionQueueItem): Promise<Per
 
   if (item.skipBLE === true) {
     decisionMessage = nonEmptyString(item.skipMessage, DEFAULT_REJECT_MESSAGE)
-    debugLog("skipping BLE permission request after concurrent reject", {
-      requestID,
-      sessionID: item.permission.sessionID,
-      message: decisionMessage,
-    })
     await appLogBestEffort(item.client, "warn", "skipping BLE permission request after concurrent reject", {
       requestID,
       sessionID: item.permission.sessionID,
@@ -134,11 +129,6 @@ async function handlePermissionQueueItem(item: PermissionQueueItem): Promise<Per
 
       if (externallyResolvedPermissionIDs.has(requestID)) {
         markQueuedPermissionsSkipped(item.permission.sessionID)
-        debugLog("BLE permission response ignored after OpenCode state changed", {
-          requestID,
-          sessionID: item.permission.sessionID,
-          result,
-        })
         return undefined
       }
 
@@ -152,16 +142,9 @@ async function handlePermissionQueueItem(item: PermissionQueueItem): Promise<Per
         // it a corrective denial so later serial tool calls can continue.
         decisionMessage = nonEmptyString(result.message, DEFAULT_REJECT_MESSAGE)
       }
-      debugLog("BLE permission decision received", result)
-      await appLogBestEffort(item.client, "info", "BLE permission decision received", result as Record<string, unknown>)
     } catch (error) {
       if (externallyResolvedPermissionIDs.has(requestID)) {
         markQueuedPermissionsSkipped(item.permission.sessionID)
-        debugLog("BLE permission failure ignored after OpenCode state changed", {
-          requestID,
-          sessionID: item.permission.sessionID,
-          error: String(error),
-        })
         return undefined
       }
       // Daemon failures are fail-closed, but still include feedback for the same

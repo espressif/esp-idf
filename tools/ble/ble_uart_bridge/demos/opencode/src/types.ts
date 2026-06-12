@@ -32,6 +32,35 @@ export type PermissionEventProperties = {
 }
 
 /**
+ * Raw event properties that may come from either the internal OpenCode event
+ * system (event type "permission.asked") or the SDK event system (event type
+ * "permission.updated").
+ *
+ * The internal system uses fields like `permission` (string) and `patterns`
+ * (string[]), while the SDK Permission type uses `type` (string) and `pattern`
+ * (string | string[]). This type accepts both so the normalizer can map them
+ * into a common PermissionEventProperties shape.
+ */
+export type RawPermissionEvent = {
+  id?: string
+  requestID?: string
+  permissionID?: string
+  sessionID?: string
+  permission?: string
+  type?: string
+  title?: string
+  metadata?: unknown
+  pattern?: string | string[]
+  patterns?: unknown
+  tool_name?: string
+  tool_input?: unknown
+  messageID?: string
+  callID?: string
+  time?: unknown
+  [key: string]: unknown
+}
+
+/**
  * Normalized response expected from the ESP-BLE-UART Daemon after a permission request.
  *
  * `decision` is optional at the type level because the daemon response is parsed
