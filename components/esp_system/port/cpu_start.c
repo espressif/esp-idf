@@ -253,7 +253,7 @@ void ESP_SYSTEM_IRAM_ATTR call_start_cpu1(void)
     esp_cpu_intr_set_mtvt_addr(&_mtvt_table);
 #endif
 #if SOC_CPU_SUPPORT_WFE
-    rv_utils_disable_wfe_mode();
+    esp_cpu_disable_wfe_mode();
 #endif
     ets_set_appcpu_boot_addr(0);
 

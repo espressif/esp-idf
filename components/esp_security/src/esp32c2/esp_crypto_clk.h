@@ -6,5 +6,9 @@
 
 #pragma once
 
+#include <stdbool.h>
+
+void esp_crypto_common_clk_enable(bool enable);
+
 /* nothing to do */
 static inline void esp_crypto_clk_init(void) {}

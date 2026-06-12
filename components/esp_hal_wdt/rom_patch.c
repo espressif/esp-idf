@@ -21,6 +21,8 @@ void wdt_hal_init(wdt_hal_context_t *hal, wdt_inst_t wdt_inst, uint32_t prescale
     if (hal->inst != WDT_RWDT) {
         mwdt_ll_write_protect_disable(hal->mwdt_dev);
         mwdt_ll_set_clock_source(hal->mwdt_dev, MWDT_CLK_SRC_DEFAULT);
+        // To suppress build errors about spinlock's __DECLARE_RCC_ATOMIC_ENV
+        int __DECLARE_RCC_ATOMIC_ENV __attribute__((unused));
         mwdt_ll_enable_clock(hal->mwdt_dev, true);
         mwdt_ll_write_protect_enable(hal->mwdt_dev);
     }
@@ -31,6 +33,8 @@ void wdt_hal_deinit(wdt_hal_context_t *hal)
     // ROM version omits mwdt_ll_enable_clock(false) — delegate to ROM then fix up
     if (hal->inst != WDT_RWDT) {
         mwdt_ll_write_protect_disable(hal->mwdt_dev);
+        // To suppress build errors about spinlock's __DECLARE_RCC_ATOMIC_ENV
+        int __DECLARE_RCC_ATOMIC_ENV __attribute__((unused));
         mwdt_ll_enable_clock(hal->mwdt_dev, false);
         mwdt_ll_write_protect_enable(hal->mwdt_dev);
     }

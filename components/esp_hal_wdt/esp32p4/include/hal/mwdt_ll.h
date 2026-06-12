@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -289,15 +289,21 @@ FORCE_INLINE_ATTR void mwdt_ll_set_clock_source(timg_dev_t *hw, mwdt_clock_sourc
  * @param en true to enable, false to disable
  */
 __attribute__((always_inline))
-static inline void mwdt_ll_enable_clock(timg_dev_t *hw, bool en)
+static inline void _mwdt_ll_enable_clock(timg_dev_t *hw, bool en)
 {
-    /* The clock always defaults to enabled on P4.
-       If we update to be able to enable/disable the clock then this function
-       needs to be protected with PERIPH_RCC_ATOMIC as it touches shared registers.
-     */
-    (void)hw;
-    (void)en;
+    if (hw == &TIMERG0) {
+        HP_SYS_CLKRST.peri_clk_ctrl20.reg_timergrp0_wdt_clk_en = en;
+    } else {
+        HP_SYS_CLKRST.peri_clk_ctrl21.reg_timergrp1_wdt_clk_en = en;
+    }
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define mwdt_ll_enable_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _mwdt_ll_enable_clock(__VA_ARGS__); \
+    } while(0)
 
 #ifdef __cplusplus
 }
