@@ -101,6 +101,7 @@ static esp_err_t es8311_codec_init(void)
         .channel = 2,
         .channel_mask = 0x03,
         .sample_rate = EXAMPLE_SAMPLE_RATE,
+        .mclk_multiple = EXAMPLE_MCLK_MULTIPLE,
     };
     if (esp_codec_dev_open(codec_handle, &sample_cfg) != ESP_CODEC_DEV_OK) {
         ESP_LOGE(TAG, "Open codec device failed");
@@ -142,7 +143,6 @@ static esp_err_t i2s_driver_init(void)
             },
         },
     };
-    std_cfg.clk_cfg.mclk_multiple = EXAMPLE_MCLK_MULTIPLE;
 
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_handle, &std_cfg));
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
