@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,6 +47,15 @@ void esp_crosscore_int_send_yield(int core_id);
 void esp_crosscore_int_send_freq_switch(int core_id);
 
 void esp_crosscore_int_send_gdb_call(int core_id);
+
+/**
+ * Hook invoked from the crosscore ISR when a REASON_GDB_CALL interrupt is
+ * received on this core. esp_system provides a weak no-op default; esp_gdbstub
+ * supplies a strong override that updates this core's hardware breakpoints and
+ * watchpoints. Runs in interrupt context (possibly with cache disabled), so any
+ * override must be placed in IRAM.
+ */
+void esp_crosscore_int_gdb_call_hook(void);
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 /**

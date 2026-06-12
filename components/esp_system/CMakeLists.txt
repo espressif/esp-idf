@@ -141,18 +141,6 @@ target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_system_include_startup_
 
 # [refactor-todo] requirements due to init code, should be removable
 # once link-time registration of component init functions is used.
-if(CONFIG_ESP_TRACE_ENABLE)
-    idf_component_optional_requires(PRIVATE esp_trace)
-endif()
-
-if(CONFIG_ESP_COREDUMP_ENABLE)
-    idf_component_optional_requires(PRIVATE espcoredump)
-endif()
-
-# [refactor-todo] requirement from the panic handler,
-# need to introduce panic "event" concept to remove this dependency (IDF-2194)
-idf_component_optional_requires(PRIVATE esp_gdbstub)
-
 if(NOT CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT)
     idf_component_optional_requires(PRIVATE esp_app_format)
 endif()

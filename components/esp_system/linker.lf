@@ -12,12 +12,22 @@ entries:
 entries:
     .esysev_inits+
 
+[sections:esysev_panic]
+entries:
+    .esysev_panic+
+
+[sections:esysev_paneb]
+entries:
+    .esysev_paneb+
+
 # Default placements (overridden below with ALIGN/SURROUND flags)
 [scheme:esp_sys_event_default]
 entries:
     esysev_shdn  -> flash_rodata
     esysev_initc -> flash_rodata
     esysev_inits -> flash_rodata
+    esysev_panic -> flash_rodata
+    esysev_paneb -> flash_rodata
 
 [mapping:esp_sys_event]
 archive: *
@@ -25,7 +35,9 @@ entries:
     * (esp_sys_event_default);
         esysev_shdn  -> flash_rodata ALIGN(4, pre) KEEP() SORT(init_priority) SURROUND(esysev_shdn),
         esysev_initc -> flash_rodata ALIGN(4, pre) KEEP() SORT(init_priority) SURROUND(esysev_initc),
-        esysev_inits -> flash_rodata ALIGN(4, pre) KEEP() SORT(init_priority) SURROUND(esysev_inits)
+        esysev_inits -> flash_rodata ALIGN(4, pre) KEEP() SORT(init_priority) SURROUND(esysev_inits),
+        esysev_panic -> flash_rodata ALIGN(4, pre) KEEP() SORT(init_priority) SURROUND(esysev_panic),
+        esysev_paneb -> flash_rodata ALIGN(4, pre) KEEP() SORT(init_priority) SURROUND(esysev_paneb)
 
 # ============== esp_system component mappings ==============
 

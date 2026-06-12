@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,16 +10,13 @@
 #include "esp_cpu.h"
 #include "esp_intr_alloc.h"
 #include "esp_debug_helpers.h"
+#include "esp_private/crosscore_int.h"
 #include "soc/periph_defs.h"
 #include "soc/system_intr.h"
 #include "hal/crosscore_int_ll.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
-
-#if CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
-#include "esp_gdbstub.h"
-#endif
 
 #define REASON_YIELD            BIT(0)
 #define REASON_FREQ_SWITCH      BIT(1)
@@ -29,6 +26,15 @@
 
 static portMUX_TYPE reason_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static volatile uint32_t reason[CONFIG_FREERTOS_NUMBER_OF_CORES];
+
+/* Weak no-op hook for the REASON_GDB_CALL crosscore interrupt. esp_gdbstub
+ * provides a strong override (see gdbstub.c) when the runtime gdbstub is
+ * enabled. Keeping the default here lets esp_system trigger the gdb-call
+ * handling without taking any dependency on the esp_gdbstub component. Runs in
+ * interrupt context, hence placed in IRAM. */
+void __attribute__((weak)) ESP_SYSTEM_IRAM_ATTR esp_crosscore_int_gdb_call_hook(void)
+{
+}
 
 /*
 ToDo: There is a small chance the CPU already has yielded when this ISR is serviced. In that case, it's running the intended task but
@@ -64,11 +70,9 @@ static void ESP_SYSTEM_IRAM_ATTR esp_crosscore_isr(void *arg)
          * to allow DFS features without the extra latency of the ISR hook.
          */
     }
-#if CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
     if (my_reason_val & REASON_GDB_CALL) {
-        update_breakpoints();
+        esp_crosscore_int_gdb_call_hook();
     }
-#endif // !CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 
     if (my_reason_val & REASON_PRINT_BACKTRACE) {
         esp_backtrace_print(100);

@@ -21,6 +21,16 @@ SECTIONS
         PROVIDE(_esysev_inits_start = .);
         KEEP(*(SORT_BY_INIT_PRIORITY(.esysev_inits.*)))
         PROVIDE(_esysev_inits_end = .);
+
+        . = ALIGN(4);
+        PROVIDE(_esysev_panic_start = .);
+        KEEP(*(SORT_BY_INIT_PRIORITY(.esysev_panic.*)))
+        PROVIDE(_esysev_panic_end = .);
+
+        . = ALIGN(4);
+        PROVIDE(_esysev_paneb_start = .);
+        KEEP(*(SORT_BY_INIT_PRIORITY(.esysev_paneb.*)))
+        PROVIDE(_esysev_paneb_end = .);
     }
 }
 INSERT AFTER .data;

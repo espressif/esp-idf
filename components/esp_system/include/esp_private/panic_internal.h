@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -89,6 +89,15 @@ uint32_t panic_get_cause(const void* frame);
 void panic_prepare_frame_from_ctx(void* frame);
 
 void panic_clear_active_interrupts(const void* frame);
+
+/**
+ * @brief Disable all watchdog timers
+ *
+ * This function disables all watchdog timers (Timer Group WDTs and RTC WDT).
+ * It is intended for use by panic handlers that take over execution (e.g., gdbstub)
+ * or that halt the system.
+ */
+void panic_disable_all_wdts(void);
 
 #ifdef __cplusplus
 }

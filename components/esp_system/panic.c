@@ -23,6 +23,8 @@
 #include "esp_private/esp_int_wdt.h"
 
 #include "esp_private/panic_internal.h"
+#include "esp_private/esp_sys_event_panic.h"
+#include "esp_private/esp_sys_event_internal.h"
 #include "port/panic_funcs.h"
 #include "esp_rom_sys.h"
 
@@ -35,20 +37,8 @@
 #endif
 #endif // CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 
-#if CONFIG_ESP_COREDUMP_ENABLE
-#include "esp_core_dump.h"
-#endif
-
-#if CONFIG_ESP_TRACE_ENABLE
-#include "esp_trace.h"
-#endif
-
 #if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 #include "hal/uart_hal.h"
-#endif
-
-#if CONFIG_ESP_SYSTEM_PANIC_GDBSTUB
-#include "esp_gdbstub.h"
 #endif
 
 #if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
@@ -270,9 +260,20 @@ void esp_panic_handler_feed_wdts(void)
 }
 #endif /* SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED */
 
+/********************** esp_sys_event panic trigger **********************/
+
+static void esp_panic_trigger_event(esp_sys_event_id_t id, esp_panic_ctx_t *ctx)
+{
+    ESP_SYS_EVENT_FOREACH(h, id) {
+        esp_panic_handler_feed_wdts();
+        h->handler(NULL, ctx);
+    }
+    esp_panic_handler_feed_wdts();
+}
+
 #if SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED
 /* This function disables all the watchdogs */
-static inline void disable_all_wdts(void)
+void panic_disable_all_wdts(void)
 {
 #if SOC_WDT_SUPPORTED
     //Disable Timer Group WDTs
@@ -286,7 +287,7 @@ static inline void disable_all_wdts(void)
 #endif /* SOC_RTC_WDT_SUPPORTED */
 }
 #else /* SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED */
-static inline void disable_all_wdts(void)
+void panic_disable_all_wdts(void)
 {
 }
 #endif /* SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED */
@@ -395,11 +396,14 @@ void esp_panic_handler(panic_info_t *info)
         panic_print_hex((uint32_t)info->addr);
         panic_print_str(" and returning...\r\n");
 
-#if CONFIG_ESP_TRACE_ENABLE
-        esp_trace_panic_handler(info);
-#endif
+        // Trigger early breakpoint handlers before returning to debugger.
+        // This allows trace to dump info before breaking
+        esp_panic_ctx_t panic_ctx = {
+            .info = info,
+        };
+        esp_panic_trigger_event(ESP_SYS_EVENT_PANIC_EARLY_BREAK, &panic_ctx);
 
-        disable_all_wdts();
+        panic_disable_all_wdts();
         esp_cpu_set_breakpoint(0, info->addr); // use breakpoint 0
         return;
     }
@@ -432,28 +436,16 @@ void esp_panic_handler(panic_info_t *info)
 
     panic_print_str("\r\n");
 
-#if CONFIG_ESP_TRACE_ENABLE
-    esp_panic_handler_feed_wdts();
-    esp_trace_panic_handler(info);
-#endif
+    // Trigger esp_sys_event panic handlers (includes trace, coredump, gdbstub if enabled)
+    // If gdbstub is enabled and registered, it will take over and never return.
+    // If we return here, proceed to reboot/halt.
+    {
+        esp_panic_ctx_t panic_ctx = {
+            .info = info,
+        };
+        esp_panic_trigger_event(ESP_SYS_EVENT_PANIC, &panic_ctx);
 
-#if CONFIG_ESP_COREDUMP_ENABLE
-    esp_panic_handler_feed_wdts();
-    static bool s_dumping_core = false;
-    if (s_dumping_core) {
-        panic_print_str("Re-entered core dump! Exception happened during core dump!\r\n");
-    } else {
-        s_dumping_core = true;
-        esp_core_dump_write(info);
-        s_dumping_core = false;
     }
-#endif /* CONFIG_ESP_COREDUMP_ENABLE */
-
-#if CONFIG_ESP_SYSTEM_PANIC_GDBSTUB
-    panic_print_str("Entering gdb stub now.\r\n");
-    disable_all_wdts();
-    esp_gdbstub_panic_handler((void *)info->frame);
-#else
 #if CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS
     esp_panic_handler_feed_wdts();
 
@@ -488,20 +480,15 @@ void esp_panic_handler(panic_info_t *info)
 #else /* CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT || CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT */
     esp_panic_handler_feed_wdts();
     panic_print_str("CPU halted.\r\n");
-    disable_all_wdts();
+    panic_disable_all_wdts();
     esp_panic_handler_reset_modules_on_exit_and_halt();
 #endif /* CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT || CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT */
-#endif /* CONFIG_ESP_SYSTEM_PANIC_GDBSTUB */
 }
 
 void __attribute__((noreturn, no_sanitize_undefined)) panic_abort(const char *details)
 {
     g_panic_abort = true;
     g_panic_abort_details = (char *) details;
-
-#if CONFIG_ESP_TRACE_ENABLE
-    esp_trace_panic_handler(NULL);
-#endif
 
 #ifdef __XTENSA__
     asm("ill");     // should be an invalid operation on xtensa targets
