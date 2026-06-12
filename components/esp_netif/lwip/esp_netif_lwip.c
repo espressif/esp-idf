@@ -343,6 +343,11 @@ static esp_err_t esp_netif_update_default_netif_lwip(esp_netif_api_msg_t *msg)
 
     ESP_LOGV(TAG, "%s %p", __func__, esp_netif);
 
+    if (action == ESP_NETIF_SET_DEFAULT && esp_netif == NULL) {
+        // SET_DEFAULT with NULL: perform auto update and remove override
+        s_is_last_default_esp_netif_overridden = false;
+        action = ESP_NETIF_STOPPED;
+    }
     if (s_is_last_default_esp_netif_overridden && action != ESP_NETIF_SET_DEFAULT) {
         // check if manually configured default interface hasn't been destroyed
         s_last_default_esp_netif = esp_netif_is_active(s_last_default_esp_netif);

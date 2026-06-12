@@ -246,11 +246,11 @@ void esp_netif_action_remove_ip6_address(void *esp_netif, esp_event_base_t base,
 /**
  * @brief Manual configuration of the default netif
  *
- * This API overrides the automatic configuration of the default interface based on the route_prio
- * If the selected netif is set default using this API, no other interface could be set-default disregarding
- * its route_prio number (unless the selected netif gets destroyed)
+ * This API allows overriding the automatic configuration of the default interface based on route_prio.
+ * The passed netif will be set as default, regardless of route_prio, until the netif gets destroyed.
+ * When passing NULL, the interface with the highest route_prio becomes default, and the override is removed.
  *
- * @param[in] esp_netif Handle to esp-netif instance
+ * @param[in] esp_netif Handle to esp-netif instance, or NULL
  * @return ESP_OK on success
  */
 esp_err_t esp_netif_set_default_netif(esp_netif_t *esp_netif);
@@ -1009,6 +1009,8 @@ int esp_netif_get_route_prio(esp_netif_t *esp_netif);
 
 /**
  * @brief Configures routing priority
+ *
+ * To re-select the default interface based on the new routing priority, call esp_netif_set_default_netif(NULL).
  *
  * @param[in]  esp_netif Handle to esp-netif instance
  * @param[in]  route_prio Required route priority for esp-netif instance
