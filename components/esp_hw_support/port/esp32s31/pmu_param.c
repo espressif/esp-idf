@@ -140,16 +140,17 @@ const pmu_hp_system_power_param_t * pmu_hp_system_power_param_default(pmu_hp_mod
 }
 
 #define PMU_HP_MODEM_CLOCK_CONFIG_DEFAULT() {               \
-    .icg_func.clock[0] = 0,                                 \
-    .icg_func.clock[1] = 0,                                 \
-    .icg_apb.clock[0] = 0,                                  \
-    .icg_apb.clock[1] = 0,                                  \
+    .icg_func.clock[0] = 0xffffffff,                                 \
+    .icg_func.clock[1] = 0xffffffff,                                 \
+    .icg_apb.clock[0] = 0xffffffff,                                  \
+    .icg_apb.clock[1] = 0xffffffff,                                  \
     .icg_modem.code = PMU_HP_ICG_MODEM_CODE_MODEM,          \
     .sysclk    = {                                          \
         .dig_sysclk_nodiv   = 0,                            \
         .icg_sysclk_en      = 1,                            \
         .sysclk_slp_sel     = 1,                            \
         .icg_slp_sel        = 1,                            \
+        /* Default: dig_sysclk uses XTAL. For PLL, update divider coeffs and release PLL lock. */ \
         .dig_sysclk_sel     = SOC_CPU_CLK_SRC_XTAL          \
     } \
 }

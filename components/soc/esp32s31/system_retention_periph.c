@@ -21,6 +21,7 @@
 #include "soc/timer_group_reg.h"
 #include "soc/uart_reg.h"
 #include "esp32s31/rom/cache.h"
+#include "soc/lp_apm_reg.h"
 #include "soc/hp_apm_reg.h"
 #include "soc/cpu_apm_reg.h"
 #include "soc/hp_mem_apm_reg.h"
@@ -85,6 +86,18 @@ const regdma_entries_config_t tee_apm_regs_retention[] = {
     [13] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_TEEAPM_LINK(0x0d), HP_PERI1_PMS_BUS_ERR_CONF_REG,       HP_PERI1_PMS_BUS_ERR_CONF_REG,         N_REGS_PMS1_2(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
 };
 _Static_assert(ARRAY_SIZE(tee_apm_regs_retention) == TEE_APM_RETENTION_LINK_LEN, "Inconsistent HP_SYSTEM retention link length definitions");
+
+#if !SOC_APM_SUPPORTED
+/* Workaround (IDF-14620): until full TEE/APM retention is supported, just disable all APM control
+ * filters (equivalent to apm_hal_enable_ctrl_filter_all(false)) by writing 0 to the APM control
+ * registers at the retention backup/restore stages. */
+const regdma_entries_config_t tee_apm_filter_disable_regs_retention[] = {
+    [0] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_TEEAPM_LINK(0x0e), LP_APM_FUNC_CTRL_REG,     0, 0xFFFFFFFF, 0, 0), .owner = ENTRY(0) | ENTRY(2) },
+    [1] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_TEEAPM_LINK(0x0f), HP_APM_FUNC_CTRL_REG,     0, 0xFFFFFFFF, 0, 0), .owner = ENTRY(0) | ENTRY(2) },
+    [2] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_TEEAPM_LINK(0x10), HP_MEM_APM_FUNC_CTRL_REG, 0, 0xFFFFFFFF, 0, 0), .owner = ENTRY(0) | ENTRY(2) },
+};
+_Static_assert(ARRAY_SIZE(tee_apm_filter_disable_regs_retention) == TEE_APM_FILTER_DISABLE_RETENTION_LINK_LEN, "Inconsistent TEE_APM filter disable retention link length definitions");
+#endif // !SOC_APM_SUPPORTED
 
 /* HP System Registers Context */
 #define N_REGS_HP_SYSTEM()      (((HP_SYSTEM_GMAC1_PAD_BIST_INT_ENA_REG - DR_REG_HP_SYS_BASE) / 4) + 1)

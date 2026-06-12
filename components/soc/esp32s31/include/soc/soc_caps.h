@@ -572,7 +572,23 @@
 #define SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND (1)
 
 #define SOC_PM_MODEM_RETENTION_BY_REGDMA           (1)
-// #define SOC_PM_SUPPORT_PMU_MODEM_STATE      (1) // TODO: [ESP32S31] IDF-14582
+#define SOC_PM_SUPPORT_PMU_MODEM_STATE             (1)
+#define MAC_SUPPORT_PMU_MODEM_STATE                SOC_PM_SUPPORT_PMU_MODEM_STATE
+/* Since SOC APB and MODEM APB on ESP32-S31 are decoupled, XTAL can be used as SOC clock in modem state */
+#define SOC_PM_MODEM_STATE_USE_XTAL                (1)
+
+/*
+ * min_slp_val is derived from slow clock period (450us / slow_clk).
+ * With internal slow clock, frequency drift may cause min_slp_val to vary.
+ * If the updated value becomes larger than the previous one, modem wakeup
+ * path may still use the old value, leading to inconsistent PMU timing and
+ * potential modem state hang.
+ *
+ * Therefore, when using internal slow clock, min_slp_val is fixed after init,
+ * and clock drift is handled via separate timing compensation instead of
+ * updating this PMU threshold dynamically.
+ */
+#define SOC_PM_PMU_MIN_SLP_SLOW_CLK_CYCLE_FIXED    (1)
 
 #define SOC_PM_RETENTION_MODULE_NUM         (64)
 
