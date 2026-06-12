@@ -25,4 +25,5 @@
 #define ESP_ROM_HAS_NEWLIB_NANO_PRINTF_FLOAT_BUG  (1) // ROM has the printf float bug with newlib nano version
 #define ESP_ROM_HAS_VERSION                 (1) // ROM has version/eco information
 #define ESP_ROM_CLIC_INT_TYPE_PATCH         (1) // ROM api esprv_intc_int_set_type configuring edge type interrupt is invalid
+#define ESP_ROM_ECDSA_VERIFY_PATCH (1) // ROM ets_ecdsa_verify API requires a software patch
 #define ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_MAP (1) // ROM cache writeback related needs patch to avoid sync loss, need map parameter

@@ -31,3 +31,4 @@
 #define ESP_ROM_HAS_VERSION                 (1) // ROM has version/eco information
 #define ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB  (1) // ROM supports the HP core to jump to the RTC memory to execute stub code after waking up from deepsleep.
 #define ESP_ROM_SUPPORT_SECURE_BOOT_FAST_WAKEUP (1) // ROM supports the secure boot fast wakeup feature
+#define ESP_ROM_ECDSA_VERIFY_PATCH (1) // ROM ets_ecdsa_verify API requires a software patch

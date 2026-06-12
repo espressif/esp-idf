@@ -450,7 +450,7 @@ esp_rom_km_huk_risk = 0x4fc0071c;
 /* Functions */
 ets_emsa_pss_verify = 0x4fc00720;
 ets_rsa_pss_verify = 0x4fc00724;
-ets_ecdsa_verify = 0x4fc00728;
+_rom_ets_ecdsa_verify = 0x4fc00728;
 ets_secure_boot_verify_bootloader_with_keys = 0x4fc0072c;
 ets_secure_boot_verify_signature = 0x4fc00730;
 ets_secure_boot_read_key_digests = 0x4fc00734;
