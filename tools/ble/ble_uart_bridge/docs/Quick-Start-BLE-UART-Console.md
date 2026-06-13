@@ -1,16 +1,16 @@
 <!-- SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD -->
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-# Quick Start: BLE UART Console
+# Quick Start: ESP-BLE-UART Console
 
-This guide shows how to use the BLE UART Console for quick manual testing.
+This guide shows how to use the ESP-BLE-UART Console for quick manual testing.
 
 The Console is useful when you want to type data into a BLE UART device and inspect the bytes or text sent back by the device.
 
 ## Prerequisites
 
 1. A host machine with Bluetooth access.
-2. Python environment prepared. You can reuse the ESP-IDF Python environment, or use your own Python virtual environment. If you reuse the ESP-IDF environment, export it first and then install the BLE UART Bridge dependencies:
+2. Python environment prepared. You can reuse the ESP-IDF Python environment, or use your own Python virtual environment. If you reuse the ESP-IDF environment, export it first and then install the ESP-BLE-UART Bridge dependencies:
 
    ```bash
    cd $IDF_PATH
@@ -21,7 +21,7 @@ The Console is useful when you want to type data into a BLE UART device and insp
 
    On Windows, run `export.bat` or `export.ps1` from the ESP-IDF root directory before installing `requirements.txt`. If you use your own Python virtual environment instead, activate it before installing `requirements.txt`.
 
-3. A BLE device advertising the BLE UART service. By default the tool scans for the de-facto BLE UART-over-GATT UUIDs (`6E400001-…` / `…02` / `…03`). For a known-compatible test target, build and flash the [BLE UART Service example](../../../../examples/bluetooth/ble_uart_service), which acts as an Echo Server by echoing RX writes back through TX notifications.
+3. A BLE device advertising the BLE UART service. By default the tool scans for the de-facto BLE UART-over-GATT UUIDs (`6E400001-…` / `…02` / `…03`). For a known-compatible test target, build and flash the [ESP-BLE-UART example](../../../../examples/bluetooth/ble_uart_service), which acts as an Echo Server by echoing RX writes back through TX notifications.
 
 ## Find a device
 
@@ -33,7 +33,7 @@ python main.py list-devices
 Example output may include a device address and name:
 
 ```text
-Found: AA:BB:CC:DD:EE:FF, with name esp-ble-uart, rssi=-42
+Found: AA:BB:CC:DD:EE:FF, with name BleUart-XXXX, rssi=-42
 ```
 
 Use the printed device identifier as `DEVICE_ID`. On macOS, this identifier is a CoreBluetooth UUID and is different from the device MAC address.
@@ -131,9 +131,9 @@ This affects BLE GATT write behavior only. It does not create an application-lev
 
 ## Common examples
 
-### ESP-IDF BLE UART Echo Server
+### ESP-BLE-UART Echo Server
 
-Use the [BLE UART Service example](../../../../examples/bluetooth/ble_uart_service) when you want a ready-made ESP-IDF Echo Server for testing BLE UART Bridge Console. After building, flashing, and pairing with the example, open Console and type any text; the example should echo the same data back as `[RX]` output.
+Use the [ESP-BLE-UART example](../../../../examples/bluetooth/ble_uart_service) when you want a ready-made ESP-IDF Echo Server for testing ESP-BLE-UART Bridge Console. After building, flashing, and pairing with the example, open Console and type any text; the example should echo the same data back as `[RX]` output.
 
 ```bash
 # List nearby BLE devices and use the printed device ID as DEVICE_ID
