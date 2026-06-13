@@ -38,6 +38,7 @@ extern "C" {
   *  ulp_lp_core_mailbox_intr_handler(void);
   *  ulp_lp_core_lp_wdt_intr_handler(void);
   *  ulp_lp_core_lp_rtc_intr_handler(void);
+  *  ulp_lp_core_lp_pdma_intr_handler(void);
   *  ulp_lp_core_sw_intr_handler(void);
   *
   * Not all handlers are available on all chips. Please refer to the Technical Reference Manual for your chip for more information.
