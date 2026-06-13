@@ -120,9 +120,25 @@ idf_build_set_property(BOOTLOADER_LINKER_SCRIPT "${LD_DEFAULT_PATH}/bootloader.s
 # ---------------------------------------------------------------------------
 # Build the bootloader ELF
 # ---------------------------------------------------------------------------
+# Build system v2 discovers components from EXTRA_COMPONENT_DIRS (the application's
+# bootloader_components/ and BOOTLOADER_EXTRA_COMPONENT_DIRS entries) but does
+# not link them as idf_build_executable only links the COMPONENTS list and its
+# REQUIRES field; i.e, main and its dependencies. The application has no way
+# to link the bootloader with these extra components. So promote every project_extra_components
+# tagged component source to a root component here.
+set(_bootloader_root_components main)
+idf_build_get_property(_discovered_components COMPONENTS_DISCOVERED)
+foreach(component IN LISTS _discovered_components)
+    idf_component_get_property(_src "${component}" COMPONENT_SOURCE)
+    if(_src STREQUAL "project_extra_components")
+        list(APPEND _bootloader_root_components ${component})
+    endif()
+endforeach()
+list(REMOVE_DUPLICATES _bootloader_root_components)
+
 idf_build_executable(bootloader_elf
                      NAME bootloader
-                     COMPONENTS main
+                     COMPONENTS ${_bootloader_root_components}
                      MAPFILE_TARGET bootloader_mapfile)
 
 # ---------------------------------------------------------------------------
