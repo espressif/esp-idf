@@ -28,7 +28,8 @@ extern "C" {
 /* Use esp timer instead of FreeRTOS timer to implement the callout. */
 #define BTDM_OSAL_USE_ESP_TIMER (1)
 #else
-#define BTDM_OSAL_USE_ESP_TIMER (0)
+/* Always use esp timer */
+#define BTDM_OSAL_USE_ESP_TIMER (1)
 #endif
 
 struct btdm_osal_event_freertos {
