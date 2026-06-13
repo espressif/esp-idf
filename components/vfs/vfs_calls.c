@@ -557,10 +557,10 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
         VFS_RETURN_ERR(r, EINVAL, -1);
     }
 
-    // Capture s_vfs_count to a local variable in case a new driver is registered or removed during this actual select()
-    // call. s_vfs_count cannot be protected with a mutex during a select() call (which can be one without a timeout)
+    // Capture s_vfs_upper_bound to a local variable in case a new driver is registered or removed during this actual select()
+    // call. s_vfs_upper_bound cannot be protected with a mutex during a select() call (which can be one without a timeout)
     // because that could block the registration of new driver.
-    const size_t vfs_count = get_vfs_count();
+    const size_t vfs_count = get_vfs_upper_bound();
     fds_triple_t *vfs_fds_triple;
     if ((vfs_fds_triple = heap_caps_calloc(vfs_count, sizeof(fds_triple_t), VFS_MALLOC_FLAGS)) == NULL) {
         ESP_LOGD(TAG, "calloc is unsuccessful");
@@ -757,7 +757,7 @@ void esp_vfs_select_triggered(esp_vfs_select_sem_t sem)
         // Another way would be to go through s_fd_table and find the VFS
         // which has a permanent FD. But in order to avoid to lock
         // s_fd_table_lock we go through the VFS table.
-        size_t vfs_count = get_vfs_count();
+        size_t vfs_count = get_vfs_upper_bound();
         for (int i = 0; i < vfs_count; ++i) {
             // Note: vfs_count could have changed since the start of vfs_select() call. However, that change doesn't
             // matter here stop_socket_select() will be called for only valid VFS drivers.
@@ -781,9 +781,9 @@ void esp_vfs_select_triggered_isr(esp_vfs_select_sem_t sem, BaseType_t *woken)
         // Another way would be to go through s_fd_table and find the VFS
         // which has a permanent FD. But in order to avoid to lock
         // s_fd_table_lock we go through the VFS table.
-        size_t vfs_count = get_vfs_count();
+        size_t vfs_count = get_vfs_upper_bound();
         for (int i = 0; i < vfs_count; ++i) {
-            // Note: s_vfs_count could have changed since the start of vfs_select() call. However, that change doesn't
+            // Note: s_vfs_upper_bound could have changed since the start of vfs_select() call. However, that change doesn't
             // matter here stop_socket_select() will be called for only valid VFS drivers.
             const vfs_entry_t *vfs = get_vfs_for_index(i);
             if (vfs != NULL
