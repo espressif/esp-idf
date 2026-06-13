@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,11 @@ typedef enum {
  *
  * Defines the interface for trace transports.
  *
+ * @warning Runtime callbacks (read, write, flush_nolock, panic_handler) must
+ *          not call FreeRTOS / IDF APIs that themselves emit trace hooks
+ *          (e.g. vTaskDelay, xQueue*, xSemaphore*) — they are invoked from
+ *          inside the encoder's lock and from ISR context, so re-entering
+ *          the tracing path can deadlock or assert.
  */
 typedef struct {
     /**
