@@ -74,8 +74,10 @@ Configuration
 - The IWDT is enabled by default via the :ref:`CONFIG_ESP_INT_WDT` option.
 - The IWDT's timeout is configured by setting the :ref:`CONFIG_ESP_INT_WDT_TIMEOUT_MS` option.
 
-    - Note that the default timeout is higher if PSRAM support is enabled, as a critical section or interrupt routine that accesses a large amount of PSRAM takes longer to complete in some circumstances.
-    - The configured timeout duration for IWDT should always be at least twice longer than the period between two FreeRTOS ticks, e.g., if two FreeRTOS ticks occur 10 ms apart, then IWDT timeout duration should at least be more than 20 ms (see :ref:`CONFIG_FREERTOS_HZ`).
+    .. list::
+
+        :SOC_SPIRAM_SUPPORTED: - Note that the default timeout is higher if PSRAM support is enabled, as a critical section or interrupt routine that accesses a large amount of PSRAM takes longer to complete in some circumstances.
+        - The configured timeout duration for IWDT should always be at least twice longer than the period between two FreeRTOS ticks, e.g., if two FreeRTOS ticks occur 10 ms apart, then IWDT timeout duration should at least be more than 20 ms (see :ref:`CONFIG_FREERTOS_HZ`).
 
 Tuning
 ^^^^^^

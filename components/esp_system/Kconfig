@@ -281,8 +281,8 @@ menu "ESP System Settings"
     config ESP_INT_WDT_TIMEOUT_MS
         int "Interrupt watchdog timeout (ms)"
         depends on ESP_INT_WDT
-        default 300 if !(SPIRAM && IDF_TARGET_ESP32)
-        default 800 if (SPIRAM && IDF_TARGET_ESP32)
+        default 300 if !SPIRAM
+        default 800 if SPIRAM
         range 10 10000
         help
             The timeout of the watchdog, in milliseconds. Make this higher than the FreeRTOS tick rate.
