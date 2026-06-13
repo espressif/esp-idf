@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
 
 #include "sdkconfig.h"
@@ -68,7 +69,10 @@
 #define BREDR_P192_COORD_LEN    24U
 #define BREDR_PUB_KEY_LEN_P256  (1U + BREDR_P256_COORD_LEN * 2)
 #define BREDR_PUB_KEY_LEN_P192  (1U + BREDR_P192_COORD_LEN * 2)
-#define BREDR_LOG_TAG       "BREDR_INIT"
+#define BREDR_LOG_TAG           "BREDR_INIT"
+#define BREDR_LOG_BUFFER_SIZE   (256)
+#define BREDR_LOG_LEVEL_PREFIX_LEN  4U  /* "[X] " */
+#define BREDR_LOG_TAG_PREFIX_LEN    4U  /* "%s: " */
 #if CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS
 static const char *TAG_BREDR_CRYPTO = "bredr_crypto";
 #endif
@@ -84,6 +88,8 @@ typedef struct vhci_host_callback {
 } vhci_host_callback_t;
 
 typedef int (*bredr_ctrl_callback_t)(void);
+
+typedef int (*bredr_log_printf_fn)(const char *fmt, ...);
 
 /* External functions or values
  ************************************************************************
@@ -119,6 +125,7 @@ extern int bredr_ctrl_feat_lk_store_en(void);
 extern int bredr_ctrl_feat_coex_en(void);
 
 extern const char *co_orca_get_git_version_str(void);
+extern void r_orca_log_set_printf(bredr_log_printf_fn printf_fn);
 /* Shutdown */
 extern void bredr_controller_shutdown(void);
 
@@ -716,6 +723,49 @@ static int bredr_ctrl_ext_dep_callback(void)
     return ret;
 }
 
+static int bredr_log_printf(const char *fmt, ...)
+{
+    if (fmt == NULL) {
+        return -1;
+    }
+
+    char level_ch = 'I';
+    const char *log_fmt = fmt;
+    size_t log_fmt_len = strnlen(fmt, BREDR_LOG_BUFFER_SIZE);
+
+    if (log_fmt_len >= BREDR_LOG_LEVEL_PREFIX_LEN && fmt[0] == '[' && fmt[2] == ']' && fmt[3] == ' ') {
+        level_ch = fmt[1];
+        log_fmt += BREDR_LOG_LEVEL_PREFIX_LEN;
+        log_fmt_len = strnlen(log_fmt, BREDR_LOG_BUFFER_SIZE);
+    }
+
+    va_list ap;
+    va_start(ap, fmt);
+    const char *tag = va_arg(ap, const char *);
+
+    if (log_fmt_len >= BREDR_LOG_TAG_PREFIX_LEN && log_fmt[0] == '%' && log_fmt[1] == 's' && log_fmt[2] == ':' &&
+        log_fmt[3] == ' ') {
+        log_fmt += BREDR_LOG_TAG_PREFIX_LEN;
+    }
+
+    char buf[BREDR_LOG_BUFFER_SIZE];
+    int len = vsnprintf(buf, sizeof(buf), log_fmt, ap);
+    va_end(ap);
+    if (len <= 0) {
+        return len;
+    }
+
+    switch (level_ch) {
+    case 'E': ESP_LOGE(tag, "%s", buf); break;
+    case 'W': ESP_LOGW(tag, "%s", buf); break;
+    case 'D': ESP_LOGD(tag, "%s", buf); break;
+    case 'V': ESP_LOGV(tag, "%s", buf); break;
+    default: ESP_LOGI(tag, "%s", buf); break;
+    }
+
+    return len;
+}
+
 int esp_bredr_controller_init(esp_bt_controller_config_t *cfg)
 {
     int status;
@@ -733,6 +783,8 @@ int esp_bredr_controller_init(esp_bt_controller_config_t *cfg)
     if (status != 0) {
         ESP_LOGE(BREDR_LOG_TAG, "bredr_controller_init failed, status:%d", status);
         err = ESP_ERR_NO_MEM;
+    } else {
+        r_orca_log_set_printf(bredr_log_printf);
     }
 
     return err;
