@@ -72,8 +72,8 @@ int bt_mesh_ccm_encrypt(const struct bt_mesh_key *key, uint8_t nonce[13],
         return -EIO;
     }
 
-    if (tc_ccm_generation_encryption(enc_data, len + mic_size, aad, aad_len,
-                                     plaintext, len, &ccm) == TC_CRYPTO_FAIL) {
+    if (tc_ccm_generation_encryption(enc_data, (unsigned int)(len + mic_size), aad, (unsigned int)aad_len,
+                                     plaintext, (unsigned int)len, &ccm) == TC_CRYPTO_FAIL) {
         return -EIO;
     }
 

@@ -216,6 +216,7 @@ int bt_mesh_adv_inst_deinit(enum bt_mesh_adv_inst_type inst_type)
 static struct bt_mesh_adv *adv_alloc(int id, enum bt_mesh_adv_type type)
 {
     BT_DBG("AdvAlloc, ID %d", id);
+    assert(id >= 0 && id < CONFIG_BLE_MESH_ADV_BUF_COUNT);
     init_adv_with_defaults(&adv_pool[id], type);
     return &adv_pool[id];
 }
@@ -700,7 +701,7 @@ void bt_mesh_relay_adv_init(void)
                           &relay_adv_buf_pool, &relay_adv_alloc);
 #if CONFIG_BLE_MESH_EXT_ADV
     bt_mesh_adv_type_init(BLE_MESH_ADV_EXT_RELAY_DATA, &relay_adv_queue,
-                          &ext_adv_buf_pool, &ext_relay_adv_alloc);
+                          &ext_relay_adv_buf_pool, &ext_relay_adv_alloc);
 #if CONFIG_BLE_MESH_LONG_PACKET && CONFIG_BLE_MESH_LONG_PACKET_RELAY_ADV_BUF_COUNT
     bt_mesh_adv_type_init(BLE_MESH_ADV_EXT_LONG_RELAY_DATA, &relay_adv_queue,
                           &ext_long_relay_adv_buf_pool, ext_long_relay_adv_alloc);

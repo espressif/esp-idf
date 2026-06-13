@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -101,6 +101,11 @@ int settings_uid_load(void)
     for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
         uint16_t index = net_buf_simple_pull_le16(buf);
 
+        if (index >= ARRAY_SIZE(user_ids)) {
+            BT_WARN("Invalid index %u in NVS, skipping", index);
+            continue;
+        }
+
         sprintf(name, "mesh/id/%04x", index);
 
         err = bt_mesh_load_uid_settings(name, (uint8_t *)user_ids[index].id,
@@ -117,7 +122,13 @@ int settings_uid_load(void)
     }
 
     bt_mesh_free_buf(buf);
-    return err;
+
+    /* Return 0 since partial loads are acceptable by design.
+     * Individual load failures are logged via BT_WARN/BT_ERR
+     * in bt_mesh_load_uid_settings() and do not prevent
+     * successful restoration of other settings.
+     */
+    return 0;
 }
 
 #if CONFIG_BLE_MESH_DEINIT

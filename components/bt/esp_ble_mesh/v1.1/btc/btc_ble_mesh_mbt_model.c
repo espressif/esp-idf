@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -146,7 +146,7 @@ static void btc_ble_mesh_blob_trans_client_copy_req_data(btc_msg_t *msg, void *p
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_MBT_CLIENT_RETRIEVE_CAPABILITIES:
         if (src->value.retrieve_capabilities_status.input.unicast_addr_count &&
-            src->value.retrieve_capabilities_status.input.unicast_addr) {
+                src->value.retrieve_capabilities_status.input.unicast_addr) {
             dst->value.retrieve_capabilities_status.input.unicast_addr = bt_mesh_calloc(src->value.retrieve_capabilities_status.input.unicast_addr_count * 2);
             if (dst->value.retrieve_capabilities_status.input.unicast_addr) {
                 memcpy(dst->value.retrieve_capabilities_status.input.unicast_addr, src->value.retrieve_capabilities_status.input.unicast_addr,
@@ -159,7 +159,7 @@ static void btc_ble_mesh_blob_trans_client_copy_req_data(btc_msg_t *msg, void *p
         break;
     case BTC_BLE_MESH_ACT_MBT_CLIENT_TRANSFER_BLOB:
         if (src->value.transfer_blob_status.input.unicast_addr_count &&
-            src->value.transfer_blob_status.input.unicast_addr) {
+                src->value.transfer_blob_status.input.unicast_addr) {
             dst->value.transfer_blob_status.input.unicast_addr = bt_mesh_calloc(src->value.transfer_blob_status.input.unicast_addr_count * 2);
             if (dst->value.transfer_blob_status.input.unicast_addr) {
                 memcpy(dst->value.transfer_blob_status.input.unicast_addr, src->value.transfer_blob_status.input.unicast_addr,
@@ -172,7 +172,7 @@ static void btc_ble_mesh_blob_trans_client_copy_req_data(btc_msg_t *msg, void *p
         break;
     case BTC_BLE_MESH_ACT_MBT_CLIENT_DETERMINE_TRANSFER_STATUS:
         if (src->value.determine_transfer_status_status.input.unicast_addr_count &&
-            src->value.determine_transfer_status_status.input.unicast_addr) {
+                src->value.determine_transfer_status_status.input.unicast_addr) {
             dst->value.determine_transfer_status_status.input.unicast_addr = bt_mesh_calloc(src->value.determine_transfer_status_status.input.unicast_addr_count * 2);
             if (dst->value.determine_transfer_status_status.input.unicast_addr) {
                 memcpy(dst->value.determine_transfer_status_status.input.unicast_addr, src->value.determine_transfer_status_status.input.unicast_addr,
@@ -185,7 +185,7 @@ static void btc_ble_mesh_blob_trans_client_copy_req_data(btc_msg_t *msg, void *p
         break;
     case BTC_BLE_MESH_ACT_MBT_CLIENT_CANCEL_TRANSFER:
         if (src->value.cancel_transfer_status.input.unicast_addr_count &&
-            src->value.cancel_transfer_status.input.unicast_addr) {
+                src->value.cancel_transfer_status.input.unicast_addr) {
             dst->value.cancel_transfer_status.input.unicast_addr = bt_mesh_calloc(src->value.cancel_transfer_status.input.unicast_addr_count * 2);
             if (dst->value.cancel_transfer_status.input.unicast_addr) {
                 memcpy(dst->value.cancel_transfer_status.input.unicast_addr, src->value.cancel_transfer_status.input.unicast_addr,
@@ -482,7 +482,7 @@ void bt_mesh_mbt_server_cb_evt_to_btc(uint8_t event,
     uint8_t cb_event = 0;
 
     if (model == NULL || (ctx == NULL &&
-        event != BTC_BLE_MESH_EVT_MBT_SERVER_BLOB_RECEIVE_TIMEOUT)) {
+                          event != BTC_BLE_MESH_EVT_MBT_SERVER_BLOB_RECEIVE_TIMEOUT)) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }

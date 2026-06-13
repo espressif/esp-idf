@@ -16,7 +16,10 @@
 const char *bt_hex(const void *buf, size_t len)
 {
     static const char hex[] = "0123456789abcdef";
-    static char hexbufs[2][129];
+    /* WARNING: Buffer count limits concurrent bt_hex() calls in a single
+     * expression or across threads. Increase if more simultaneous calls needed.
+     */
+    static char hexbufs[4][129];
     static uint8_t curbuf;
     const uint8_t *b = buf;
     char *str = NULL;
@@ -24,6 +27,11 @@ const char *bt_hex(const void *buf, size_t len)
 
     str = hexbufs[curbuf++];
     curbuf %= ARRAY_SIZE(hexbufs);
+
+    if (buf == NULL) {
+        str[0] = '\0';
+        return str;
+    }
 
     len = MIN(len, (sizeof(hexbufs[0]) - 1) / 2);
 
@@ -39,6 +47,10 @@ const char *bt_hex(const void *buf, size_t len)
 
 void mem_rcopy(uint8_t *dst, uint8_t const *src, uint16_t len)
 {
+    if (dst == NULL || src == NULL || len == 0) {
+        return;
+    }
+
     src += len;
     while (len--) {
         *dst++ = *--src;

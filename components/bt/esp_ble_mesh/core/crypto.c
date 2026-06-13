@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,14 +28,19 @@
 int bt_mesh_k1(const uint8_t *ikm, size_t ikm_len, const uint8_t salt[16],
                const char *info, uint8_t okm[16])
 {
+    uint8_t t[16] = {0};
     int err = 0;
 
-    err = bt_mesh_aes_cmac_one(salt, ikm, ikm_len, okm);
+    err = bt_mesh_aes_cmac_one(salt, ikm, ikm_len, t);
     if (err < 0) {
+        memset(t, 0, sizeof(t));
         return err;
     }
 
-    return bt_mesh_aes_cmac_one(okm, info, strlen(info), okm);
+    err = bt_mesh_aes_cmac_one(t, info, strlen(info), okm);
+
+    memset(t, 0, sizeof(t));
+    return err;
 }
 
 int bt_mesh_k2(const uint8_t n[16], const uint8_t *p, size_t p_len,
