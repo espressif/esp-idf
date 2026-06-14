@@ -46,6 +46,7 @@ typedef struct {
 /* Latency test functions */
 void latency_test_init(uint16_t conn_id, uint16_t char_handle);
 void latency_test_start(void);
+void latency_test_stop(void);
 void latency_test_handle_notify(uint8_t *data, uint16_t len);
 void latency_test_print_results(void);
 

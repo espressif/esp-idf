@@ -243,7 +243,9 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                                             param->ext_adv_report.params.adv_data_len,
                                             ESP_BLE_AD_TYPE_NAME_CMPL,
                                             &adv_name_len);
-	    if ((adv_name != NULL) && (memcmp(adv_name, remote_device_name, adv_name_len) == 0) && !periodic_sync) {
+	    if ((adv_name != NULL) && (adv_name_len > 0) &&
+	        (adv_name_len == strlen(remote_device_name)) &&
+	        (memcmp(adv_name, remote_device_name, adv_name_len) == 0) && !periodic_sync) {
             // Note: If there are multiple devices with the same device name, the device may sync to an unintended one.
             // It is recommended to change the default device name to ensure it is unique.
             periodic_sync = true;
