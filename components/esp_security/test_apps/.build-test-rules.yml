@@ -6,3 +6,9 @@ components/esp_security/test_apps/crypto_drivers:
   depends_components:
     - esp_security
     - esp_hal_security
+
+components/esp_security/test_apps/fault_assert_opt_check:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3"]  # one Xtensa + one RISC-V
+  depends_components:
+    - esp_common
