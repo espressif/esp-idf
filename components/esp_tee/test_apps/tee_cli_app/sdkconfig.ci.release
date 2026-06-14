@@ -2,8 +2,8 @@
 # builds across various configurations - and is not intended for production use.
 
 # Reducing TEE IRAM size
-# 29KB
-CONFIG_SECURE_TEE_IRAM_SIZE=0x7400
+# 29.5KB
+CONFIG_SECURE_TEE_IRAM_SIZE=0x7600
 
 # TEE Secure Storage: Release mode
 CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE=y

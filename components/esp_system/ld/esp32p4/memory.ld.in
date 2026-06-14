@@ -17,11 +17,11 @@
 
 #if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 #define SRAM_START       0x4FF00000 + CONFIG_CACHE_L2_CACHE_SIZE
-#define SRAM_END         0x4FFAEFC0  /* 2nd stage bootloader iram_loader_seg start address */
+#define SRAM_END         0x4FFADFC0  /* 2nd stage bootloader iram_loader_seg start address */
 #define SRAM_SIZE        SRAM_END - SRAM_START
 #else
 #define SRAM_LOW_START     0x4FF00000
-#define SRAM_LOW_END       0x4FF2CBD0  /* 2nd stage bootloader iram_loader_seg start address */
+#define SRAM_LOW_END       0x4FF2BBD0  /* 2nd stage bootloader iram_loader_seg start address */
 #define SRAM_LOW_SIZE      SRAM_LOW_END - SRAM_LOW_START
 
 /* If the cache size is less than 512KB, then there is a region of RAM

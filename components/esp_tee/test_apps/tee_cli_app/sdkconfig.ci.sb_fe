@@ -2,8 +2,8 @@
 # builds across various configurations - and is not intended for production use.
 
 # Increasing TEE I/DRAM sizes
-# 34KB
-CONFIG_SECURE_TEE_IRAM_SIZE=0x8800
+# 38KB
+CONFIG_SECURE_TEE_IRAM_SIZE=0x9800
 # 22KB
 CONFIG_SECURE_TEE_DRAM_SIZE=0x5800
 
