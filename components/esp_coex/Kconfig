@@ -3,7 +3,6 @@ menu "Wireless Coexistence"
 
     config ESP_COEX_ENABLED
         bool
-        default n if IDF_TARGET_ESP32H21 #  TODO: Support coexistence for ESP32H21
         default y if (!SOC_WIRELESS_HOST_SUPPORTED)
 
     if(ESP_COEX_ENABLED)
