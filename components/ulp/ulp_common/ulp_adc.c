@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,27 @@
 
 static const char *TAG = "ulp_adc";
 static adc_oneshot_unit_handle_t s_adc_handle = NULL;
+
+esp_err_t ulp_adc_config_channel(adc_unit_t adc_n, adc_channel_t channel, const ulp_adc_chan_cfg_t *chan_cfg)
+{
+    esp_err_t ret = ESP_OK;
+
+    ESP_RETURN_ON_FALSE(chan_cfg, ESP_ERR_INVALID_ARG, TAG, "chan_cfg == NULL");
+    ESP_RETURN_ON_FALSE(s_adc_handle, ESP_ERR_INVALID_STATE, TAG, "ADC unit not initialized");
+
+    //-------------ADC Config---------------//
+    ret = adc_oneshot_config_channel(s_adc_handle, channel, chan_cfg);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
+    //Calibrate the ADC
+#if SOC_ADC_CALIBRATION_V1_SUPPORTED
+    adc_set_hw_calibration_code(adc_n, chan_cfg->atten);
+#endif
+
+    return ret;
+}
 
 esp_err_t ulp_adc_init(const ulp_adc_cfg_t *cfg)
 {
@@ -47,6 +68,8 @@ esp_err_t ulp_adc_init(const ulp_adc_cfg_t *cfg)
     };
     ret = adc_oneshot_config_channel(s_adc_handle, cfg->channel, &config);
     if (ret != ESP_OK) {
+        adc_oneshot_del_unit(s_adc_handle);
+        s_adc_handle = NULL;
         return ret;
     }
 
