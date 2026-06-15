@@ -1,5 +1,5 @@
 idf_component_register(SRCS "hooks.c"
-                       REQUIRES extra_component)
+                       REQUIRES extra_component1)
 
 # We need to force GCC to integrate this static library into the
 # bootloader link. Indeed, by default, as the hooks in the bootloader are weak,
