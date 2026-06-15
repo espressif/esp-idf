@@ -36,6 +36,7 @@
     *libesp_hal_security.a:huk_hal.*(.literal .text .literal.* .text.*) \
     *libesp_hal_security.a:key_mgr_hal.*(.literal .text .literal.* .text.*) \
     *libesp_security.a:esp_key_mgr.*(.literal .text .literal.* .text.*) \
+    *libesp_security.a:esp_crypto_clk.*(.literal .text .literal.* .text.*) \
     *libesp_security.a:esp_crypto_periph_clk.*(.literal .text .literal.* .text.*) \
     *libesp_security.a:esp_crypto_lock.*(.literal .text .literal.* .text.*) \
     *libesp_hw_support.a:rtc_clk.*(.literal .text .literal.* .text.*) \
@@ -74,6 +75,7 @@
     *libhal.a:efuse_hal.*(.literal .text .literal.* .text.*) \
     *libesp_hal_security.a:huk_hal.*(.literal .text .literal.* .text.*) \
     *libesp_hal_security.a:key_mgr_hal.*(.literal .text .literal.* .text.*) \
+    *libesp_security.a:esp_crypto_clk.*(.literal .text .literal.* .text.*) \
     *libesp_security.a:esp_crypto_periph_clk.*(.literal .text .literal.* .text.*) \
     *libesp_hal_wdt.a:wdt_hal_iram.*(.literal .text .literal.* .text.*) \
     *libesp_hw_support.a:rtc_clk.*(.literal .text .literal.* .text.*) \
