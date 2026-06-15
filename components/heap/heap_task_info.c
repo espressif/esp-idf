@@ -338,11 +338,8 @@ HEAP_IRAM_ATTR void heap_caps_update_per_task_info_realloc(heap_t *heap, void *o
     SLIST_FOREACH(task_info, &task_stats, next_task_info) {
         if (task_info->task_stat.handle == old_task) {
             heap_stats_t *heap_stats = NULL;
-            task_info->task_stat.overall_current_usage -= old_size;
             STAILQ_FOREACH(heap_stats, &task_info->heaps_stats, next_heap_stat) {
                 if (heap_stats->heap == heap->heap) {
-                    heap_stats->heap_stat.current_usage -= old_size;
-                    heap_stats->heap_stat.alloc_count--;
 
                     /* remove the alloc from the list. The updated alloc stats are added later
                      * in the function */
@@ -354,6 +351,13 @@ HEAP_IRAM_ATTR void heap_caps_update_per_task_info_realloc(heap_t *heap, void *o
                             break;
                         }
                     }
+
+                    if (alloc_stat != NULL) {
+                        heap_stats->heap_stat.current_usage -= old_size;
+                        heap_stats->heap_stat.alloc_count--;
+                        task_info->task_stat.overall_current_usage -= old_size;
+                    }
+
                     break;
                 }
             }
@@ -430,6 +434,8 @@ HEAP_IRAM_ATTR void heap_caps_update_per_task_info_free(heap_t *heap, void *ptr)
                         heap_stats->heap_stat.current_usage -= alloc_stat->alloc_stat.size;
                         task_info->task_stat.overall_current_usage -= alloc_stat->alloc_stat.size;
                     }
+
+                    break;
                 }
             }
 
