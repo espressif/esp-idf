@@ -186,40 +186,44 @@ JPEG 编码器引擎
       - GRAY
 
 
-可参考以下代码，为 1080*1920 大小的图片编码：
+可参考以下代码，将一张嵌入到固件中的 1280x720 原始图片编码为 JPEG：
 
 .. code:: c
 
-    int raw_size_1080p = 0;/* Your raw image size */
+    size_t raw_size_720p = EXAMPLE_WIDTH * EXAMPLE_HEIGHT * 3; /* 1280x720 bgr24 帧 */
     jpeg_encode_cfg_t enc_config = {
         .src_type = JPEG_ENCODE_IN_FORMAT_RGB888,
         .sub_sample = JPEG_DOWN_SAMPLING_YUV422,
         .image_quality = 80,
-        .width = 1920,
-        .height = 1080,
+        .width = 1280,
+        .height = 720,
         .pixel_reverse = false, // 是否反转输入图像的像素顺序，或像素顺序细节请参考技术参考手册
     };
 
-    uint8_t *raw_buf_1080p = (uint8_t*)jpeg_alloc_encoder_mem(raw_size_1080p);
-    if (raw_buf_1080p == NULL) {
-        ESP_LOGE(TAG, "alloc 1080p tx buffer error");
-        return;
-    }
-    uint8_t *jpg_buf_1080p = (uint8_t*)jpeg_alloc_encoder_mem(raw_size_1080p / 10); // Assume that compression ratio of 10 to 1
-    if (jpg_buf_1080p == NULL) {
-        ESP_LOGE(TAG, "alloc jpg_buf_1080p error");
+    jpeg_encode_memory_alloc_cfg_t rx_mem_cfg = {
+        .buffer_direction = JPEG_ENC_ALLOC_OUTPUT_BUFFER,
+    };
+    size_t jpg_buffer_size = 0;
+    uint8_t *jpg_buf_720p = (uint8_t*)jpeg_alloc_encoder_mem(raw_size_720p / 10, &rx_mem_cfg, &jpg_buffer_size);
+    if (jpg_buf_720p == NULL) {
+        ESP_LOGE(TAG, "alloc jpg_buf_720p error");
         return;
     }
 
-    ESP_ERROR_CHECK(jpeg_encoder_process(jpeg_handle, &enc_config, raw_buf_1080p, raw_size_1080p, jpg_buf_1080p, &jpg_size_1080p););
+    /* 当前 JPEG 编码输入路径下，JPEG_ENCODE_IN_FORMAT_RGB888 实际要求
+     * 原始字节按 BGR24 风格排列。只要数据在本次调用返回前保持可读，
+     * 就可以直接从 flash 中映射出来的嵌入资源读取。 */
+    ESP_ERROR_CHECK(jpeg_encoder_process(jpeg_handle, &enc_config, embedded_bgr24_start, raw_size_720p, jpg_buf_720p, jpg_buffer_size, &jpg_size_720p));
 
 参考以下提示，可以更准确地使用该驱动程序：
 
-1. 在上述代码中，应调用 :cpp:func:`jpeg_alloc_encoder_mem` 函数，确保 `raw_buf_1080p` 和 `jpg_buf_1080p` 对齐。
+1. 在上述代码中，应调用 :cpp:func:`jpeg_alloc_encoder_mem` 函数来分配 `jpg_buf_720p`，因为 JPEG 输出码流缓冲区需要满足驱动的对齐要求。
 
-2. 在 :cpp:func:`jpeg_encoder_process` 返回前， `raw_buf_1080p` 缓冲区的内容不应有更改。
+2. 在 :cpp:func:`jpeg_encoder_process` 返回前， `embedded_bgr24_start` 所指向的输入内容不应有更改。该输入缓冲区既可以来自嵌入到 flash 中的映射资源，也可以来自其他在整个调用期间保持可读的内存区域。
 
-3. 压缩比取决于所选择的 `image_quality` 和图像本身的内容。一般来说， `image_quality` 值越高，图像质量越好，相应的压缩比就越小。至于图像内容，则很难给出具体的指导方针，因此本文也就不再讨论。基准 JPEG 压缩比通常从 40:1 到 10:1 不等，请依实际情况而定。
+3. 对于 :cpp:enumerator:`JPEG_ENCODE_IN_FORMAT_RGB888`，当前驱动实际要求原始输入字节按 BGR24 风格排列。如果直接提供 RGB24 原始数据，则编码后的 JPEG 会出现红蓝通道互换。
+
+4. 压缩比取决于所选择的 `image_quality` 和图像本身的内容。一般来说， `image_quality` 值越高，图像质量越好，相应的压缩比就越小。至于图像内容，则很难给出具体的指导方针，因此本文也就不再讨论。基准 JPEG 压缩比通常从 40:1 到 10:1 不等，请依实际情况而定。
 
 .. _jpeg-performance-overview:
 
@@ -592,7 +596,7 @@ Kconfig 选项
 
 - :example:`peripherals/jpeg/jpeg_decode` 演示了如何使用 JPEG 硬件解码器将不同大小的 JPEG 图片（1080p 和 720p）解码为 RGB 格式，展示了硬件解码的速度和灵活性。
 
-- :example:`peripherals/jpeg/jpeg_encode` 演示了如何使用 JPEG 硬件编码器编码一张 1080p 的图像，即将 `*.rgb` 文件转换为 `*.jpg` 文件。
+- :example:`peripherals/jpeg/jpeg_encode` 演示了如何使用 JPEG 硬件编码器对一张嵌入式 720p 原始图像进行编码，并通过 UART 输出 base64 JPEG，再用 pytest 做结果校验。
 
 
 API 参考
