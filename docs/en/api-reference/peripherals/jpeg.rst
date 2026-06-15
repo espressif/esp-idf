@@ -186,40 +186,44 @@ The format conversions supported by this driver are listed in the table below:
       - GRAY
 
 
-Below is the example of code that encodes a 1080*1920 picture:
+Below is the example of code that encodes a 1280x720 picture from an embedded raw buffer:
 
 .. code:: c
 
-    int raw_size_1080p = 0;/* Your raw image size */
+    size_t raw_size_720p = EXAMPLE_WIDTH * EXAMPLE_HEIGHT * 3; /* 1280x720 bgr24 frame */
     jpeg_encode_cfg_t enc_config = {
         .src_type = JPEG_ENCODE_IN_FORMAT_RGB888,
         .sub_sample = JPEG_DOWN_SAMPLING_YUV422,
         .image_quality = 80,
-        .width = 1920,
-        .height = 1080,
+        .width = 1280,
+        .height = 720,
         .pixel_reverse = false, // Whether to reverse the pixel order of the input image, or pixel order detail please refer to technical reference manual
     };
 
-    uint8_t *raw_buf_1080p = (uint8_t*)jpeg_alloc_encoder_mem(raw_size_1080p);
-    if (raw_buf_1080p == NULL) {
-        ESP_LOGE(TAG, "alloc 1080p tx buffer error");
-        return;
-    }
-    uint8_t *jpg_buf_1080p = (uint8_t*)jpeg_alloc_encoder_mem(raw_size_1080p / 10); // Assume that compression ratio of 10 to 1
-    if (jpg_buf_1080p == NULL) {
-        ESP_LOGE(TAG, "alloc jpg_buf_1080p error");
+    jpeg_encode_memory_alloc_cfg_t rx_mem_cfg = {
+        .buffer_direction = JPEG_ENC_ALLOC_OUTPUT_BUFFER,
+    };
+    size_t jpg_buffer_size = 0;
+    uint8_t *jpg_buf_720p = (uint8_t*)jpeg_alloc_encoder_mem(raw_size_720p / 10, &rx_mem_cfg, &jpg_buffer_size);
+    if (jpg_buf_720p == NULL) {
+        ESP_LOGE(TAG, "alloc jpg_buf_720p error");
         return;
     }
 
-    ESP_ERROR_CHECK(jpeg_encoder_process(jpeg_handle, &enc_config, raw_buf_1080p, raw_size_1080p, jpg_buf_1080p, &jpg_size_1080p););
+    /* The current JPEG encoder input path expects BGR24-style raw bytes for
+     * JPEG_ENCODE_IN_FORMAT_RGB888. The embedded asset can be read directly
+     * from flash as long as it remains valid until this call returns. */
+    ESP_ERROR_CHECK(jpeg_encoder_process(jpeg_handle, &enc_config, embedded_bgr24_start, raw_size_720p, jpg_buf_720p, jpg_buffer_size, &jpg_size_720p));
 
 There are some tips that can help you use this driver more accurately:
 
-1. In above code, you should make sure the `raw_buf_1080p` and `jpg_buf_1080p` should aligned by calling :cpp:func:`jpeg_alloc_encoder_mem`.
+1. In the above code, the output buffer `jpg_buf_720p` should be allocated by calling :cpp:func:`jpeg_alloc_encoder_mem`, because the JPEG bitstream buffer must satisfy the driver's alignment requirements.
 
-2. The content of `raw_buf_1080p` buffer should not be changed until :cpp:func:`jpeg_encoder_process` returns.
+2. The content pointed to by `embedded_bgr24_start` should not be changed until :cpp:func:`jpeg_encoder_process` returns. This input buffer can come from flash-mapped embedded data or another memory region that stays readable for the full call.
 
-3. The compression ratio depends on the chosen `image_quality` and the content of the image itself. Generally, a higher `image_quality` value obviously results in better image quality but a smaller compression ratio. As for the image content, it is hard to give any specific guidelines, so this question is out of the scope of this document. Generally, the baseline JPEG compression ratio can vary from 40:1 to 10:1. Please take the actual situation into account.
+3. For :cpp:enumerator:`JPEG_ENCODE_IN_FORMAT_RGB888`, the current driver expects the raw input bytes in a BGR24-style layout. Supplying RGB24 raw data would swap the red and blue channels in the encoded JPEG.
+
+4. The compression ratio depends on the chosen `image_quality` and the content of the image itself. Generally, a higher `image_quality` value obviously results in better image quality but a smaller compression ratio. As for the image content, it is hard to give any specific guidelines, so this question is out of the scope of this document. Generally, the baseline JPEG compression ratio can vary from 40:1 to 10:1. Please take the actual situation into account.
 
 .. _jpeg-performance-overview:
 
@@ -592,7 +596,7 @@ Application Examples
 
 - :example:`peripherals/jpeg/jpeg_decode` demonstrates how to use the JPEG hardware decoder to decode JPEG pictures of different sizes (1080p and 720p) into RGB format, showcasing the flexibility and speed of hardware decoding.
 
-- :example:`peripherals/jpeg/jpeg_encode` demonstrates how to use the JPEG hardware encoder to encode a 1080p picture, specifically converting `*.rgb` files to `*.jpg` files.
+- :example:`peripherals/jpeg/jpeg_encode` demonstrates how to use the JPEG hardware encoder to encode an embedded 720p raw picture, stream the JPEG as base64 over UART, and validate the result with pytest.
 
 
 API Reference
