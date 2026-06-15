@@ -48,6 +48,8 @@
 #include "driver/gpio.h"
 #include "esp_private/gpio.h"
 #include "driver/i2s_common.h"
+#include "driver/i2s_std.h"
+#include "driver/i2s_tdm.h"
 #include "i2s_private.h"
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -80,6 +82,125 @@ __attribute__((always_inline))
 inline void *i2s_dma_calloc(i2s_chan_handle_t handle, size_t num, size_t size)
 {
     return heap_caps_aligned_calloc(4, num, size, I2S_DMA_ALLOC_CAPS);
+}
+
+/*---------------------------------------------------------------------------
+                         Duplex Constitution Helpers
+ ----------------------------------------------------------------------------
+    Scope: This file only
+ ----------------------------------------------------------------------------*/
+
+/* Extract the duplex candidate from a fully-initialized channel's stored configuration.
+ * @note Only valid for a channel that has reached the READY state, because the slot/clock/gpio
+ *       information is read back from `handle->mode_info`. */
+static esp_err_t s_i2s_extract_duplex_candidate(i2s_chan_handle_t handle, i2s_duplex_candidate_t *out)
+{
+    /* Only STD and TDM modes can constitute duplex, reject the others (e.g. PDM) up front */
+#if SOC_I2S_SUPPORTS_TDM
+    if (handle->mode != I2S_COMM_MODE_STD && handle->mode != I2S_COMM_MODE_TDM) {
+#else
+    if (handle->mode != I2S_COMM_MODE_STD) {
+#endif
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    memset(out, 0, sizeof(*out));
+
+    /* The clk_cfg and gpio_cfg sub-structures share the same layout between STD and TDM modes
+     * (only the slot_cfg differs), so resolve the mode-specific pointers here and fill the
+     * candidate with the shared logic below. */
+    i2s_std_clk_config_t *clk_cfg = NULL;
+    i2s_std_gpio_config_t *gpio_cfg = NULL;
+    uint32_t slot_bits = 0;
+    uint32_t data_bits = 0;
+    if (handle->mode == I2S_COMM_MODE_STD) {
+        i2s_std_config_t *cfg = (i2s_std_config_t *)handle->mode_info;
+        clk_cfg = &cfg->clk_cfg;
+        gpio_cfg = &cfg->gpio_cfg;
+        slot_bits = cfg->slot_cfg.slot_bit_width;
+        data_bits = cfg->slot_cfg.data_bit_width;
+    }
+#if SOC_I2S_SUPPORTS_TDM
+    else {
+        i2s_tdm_config_t *cfg = (i2s_tdm_config_t *)handle->mode_info;
+        clk_cfg = (i2s_std_clk_config_t *)&cfg->clk_cfg;
+        gpio_cfg = (i2s_std_gpio_config_t *)&cfg->gpio_cfg;
+        slot_bits = cfg->slot_cfg.slot_bit_width;
+        data_bits = cfg->slot_cfg.data_bit_width;
+    }
+#endif
+
+    if (slot_bits == I2S_SLOT_BIT_WIDTH_AUTO || (int)slot_bits < (int)data_bits) {
+        slot_bits = data_bits;
+    }
+
+    out->ws_pin = gpio_cfg->ws;
+    out->bclk_pin = gpio_cfg->bclk;
+    out->total_frame_bits = handle->total_slot * slot_bits;
+    out->sample_rate_hz = clk_cfg->sample_rate_hz;
+    out->clk_src = clk_cfg->clk_src;
+    out->bclk_inv = gpio_cfg->invert_flags.bclk_inv;
+    out->ws_inv = gpio_cfg->invert_flags.ws_inv;
+    return ESP_OK;
+}
+
+/* Whether the shared BCLK/WS configurations of the two candidates are identical.
+ * The slot layout and clock source are intentionally NOT compared here, only the
+ * resulting frame timing (sample rate + total frame bits) and the shared BCLK/WS
+ * settings are. */
+static bool s_i2s_duplex_candidate_match(const i2s_duplex_candidate_t *a, const i2s_duplex_candidate_t *b)
+{
+    return a->ws_pin == b->ws_pin &&
+           a->bclk_pin == b->bclk_pin &&
+           a->sample_rate_hz == b->sample_rate_hz &&
+           a->total_frame_bits == b->total_frame_bits &&
+           a->bclk_inv == b->bclk_inv &&
+           a->ws_inv == b->ws_inv;
+}
+
+void i2s_channel_try_to_constitute_duplex(i2s_chan_handle_t handle, const i2s_duplex_candidate_t *candidate)
+{
+    i2s_chan_handle_t another_handle = handle->dir == I2S_DIR_RX ? handle->controller->tx_chan : handle->controller->rx_chan;
+
+    /* The other direction channel must be registered and fully initialized to be compared with */
+    if (!another_handle || another_handle->state < I2S_CHAN_STATE_READY) {
+        return;
+    }
+
+    if (!handle->controller->full_duplex) {
+        /* Sharing BCLK/WS requires valid (used) WS and BCK pins on the current channel */
+        if (candidate->ws_pin < 0 || candidate->bclk_pin < 0) {
+            ESP_LOGD(TAG, "%s channel on I2S%d: WS/BCK pins unused, cannot constitute duplex",
+                     handle->dir == I2S_DIR_TX ? "tx" : "rx", handle->controller->id);
+            return;
+        }
+
+        i2s_duplex_candidate_t another_candidate;
+        if (s_i2s_extract_duplex_candidate(another_handle, &another_candidate) != ESP_OK) {
+            return;
+        }
+
+        /* Constitute duplex only when the shared BCLK/WS configurations are identical and the frame
+         * timing (sample rate + total frame bits) matches. The slot layout and clock config may differ. */
+        if (!s_i2s_duplex_candidate_match(candidate, &another_candidate)) {
+            ESP_LOGD(TAG, "%s channel on I2S%d: BCLK/WS/frame configurations don't match, cannot constitute duplex",
+                     handle->dir == I2S_DIR_TX ? "tx" : "rx", handle->controller->id);
+            return;
+        }
+
+        /* All conditions met, constitute duplex */
+        handle->controller->full_duplex = true;
+        ESP_LOGD(TAG, "Constitute full-duplex on port %d", handle->controller->id);
+    }
+
+    /* Handle slave role fallback when both channels are master.
+     * The later initialized channel must be slave for full duplex */
+    if (handle->controller->full_duplex &&
+            handle->role == I2S_ROLE_MASTER &&
+            another_handle->role == I2S_ROLE_MASTER) {
+        handle->role = I2S_ROLE_SLAVE;
+        handle->full_duplex_slave = true;
+    }
 }
 
 /*---------------------------------------------------------------------------
