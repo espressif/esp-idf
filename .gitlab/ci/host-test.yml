@@ -91,6 +91,14 @@ test_partition_table_on_host:
     - cd components/partition_table/test_gen_esp32part_host
     - pytest_for_ut ./gen_esp32part_tests.py
 
+test_blockdev_ioctl_overlap_checker:
+  extends:
+    - .host_test_template
+    - .rules:build:check
+  script:
+    - cd components/esp_blockdev/test
+    - pytest_for_ut ./test_check_ioctl_overlap.py
+
 test_ldgen_on_host:
   extends:
   - .host_test_template

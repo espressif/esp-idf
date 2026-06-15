@@ -245,6 +245,8 @@
 /tools/test_apps/**/*.py             @esp-idf-codeowners/ci @esp-idf-codeowners/tools
 
 /tools/test_build_system/     @esp-idf-codeowners/tools @esp-idf-codeowners/build-config
+/tools/test_build_system/buildv2/test_blockdev_ioctl.py  @esp-idf-codeowners/storage
+/tools/test_build_system/test_blockdev_ioctl.py  @esp-idf-codeowners/storage
 
 /tools/tools.json             @esp-idf-codeowners/tools @esp-idf-codeowners/toolchain @esp-idf-codeowners/debugging
 
