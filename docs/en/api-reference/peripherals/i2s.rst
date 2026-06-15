@@ -1013,7 +1013,7 @@ There are two methods to allocate a pair of full-duplex channels:
     /* Allocate for TX and RX channel at the same time, then they will work in full-duplex mode */
     i2s_new_channel(&chan_cfg, &tx_handle, &rx_handle);
 
-    /* Set the configurations for BOTH TWO channels, since TX and RX channel have to be same in full-duplex mode */
+    /* Set the configurations for both channels. BCLK/WS and frame timing must match in full-duplex mode. */
     i2s_std_config_t std_cfg = {
         .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(32000),
         .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
@@ -1038,7 +1038,7 @@ There are two methods to allocate a pair of full-duplex channels:
 
     ...
 
-2. Allocate TX and RX handles separately, and initialize them with the same configuration.
+2. Allocate TX and RX handles separately, and initialize them with compatible configurations.
 
 .. code-block:: c
 
@@ -1053,7 +1053,7 @@ There are two methods to allocate a pair of full-duplex channels:
     /* Allocate for TX and RX channel separately, they are not full-duplex yet */
     ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
 
-    /* Set the configurations for BOTH TWO channels, they will constitute in full-duplex mode automatically */
+    /* Set compatible configurations for both channels, then they will constitute in full-duplex mode automatically */
     i2s_std_config_t std_cfg = {
         .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(32000),
         .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
@@ -1079,6 +1079,15 @@ There are two methods to allocate a pair of full-duplex channels:
 
     ...
 
+.. only:: SOC_I2S_HW_VERSION_2
+
+    When the TX and RX channels are allocated separately (the second method above), they do not have to be configured exactly the same to constitute full-duplex. The driver lets them share the BCLK and WS lines as long as:
+
+    - both channels use the same valid ``bclk`` and ``ws`` pins;
+    - both channels use the same BCLK/WS inversion settings;
+    - both channels produce the same frame timing, i.e. the same ``sample_rate_hz`` and the same total bits per frame (``total_slot * slot_bit_width``).
+
+    The clock source, external clock frequency (``ext_clk_freq_hz``), and MCLK-related configuration, including the ``mclk`` pin, ``mclk_multiple``, and MCLK inversion setting, are not used as conditions for constituting full-duplex. The slot layout itself may also differ. For example, an STD channel and a TDM channel, or a 2-slot/32-bit channel paired with a 4-slot/16-bit channel, can still constitute full-duplex because the number of bits per frame is the same. Once a pair of full-duplex channels is established, the paired channel handle can be retrieved from :cpp:type:`i2s_chan_info_t`::pair_chan returned by :cpp:func:`i2s_channel_get_info`.
 
 .. only:: SOC_I2S_HW_VERSION_1
 

@@ -51,6 +51,16 @@ static esp_err_t i2s_tdm_calculate_clock(i2s_chan_handle_t handle, const i2s_tdm
         if (clk_info->mclk % clk_info->bclk != 0) {
             ESP_LOGW(TAG, "the current mclk multiple cannot perform integer division (slot_num: %"PRIu32", slot_bits: %"PRIu32")", handle->total_slot, slot_bits);
         }
+        /* As an internal full-duplex slave, the BCLK/WS are looped back from the on-chip master, but the slave logic
+         * still needs enough MCLK/BCLK ratio to sample correctly. Measured minimums: TX slave >= 6, RX slave >= 4. */
+        if (handle->full_duplex_slave) {
+            uint32_t min_bclk_div = handle->dir == I2S_DIR_TX ? 6 : 4;
+            if (clk_info->bclk_div < min_bclk_div) {
+                ESP_LOGW(TAG, "the mclk/bclk ratio %"PRIu32" is too small for the full-duplex %s slave (min %"PRIu32"), "
+                         "data might be sampled incorrectly, please increase mclk_multiple",
+                         clk_info->bclk_div, handle->dir == I2S_DIR_TX ? "tx" : "rx", min_bclk_div);
+            }
+        }
     } else {
         if (clk_cfg->bclk_div < 8) {
             ESP_LOGW(TAG, "the current bclk division is too small, adjust the bclk division to 8");
@@ -269,35 +279,21 @@ static esp_err_t i2s_tdm_set_gpio(i2s_chan_handle_t handle, const i2s_tdm_gpio_c
     return ESP_OK;
 }
 
-static void s_i2s_channel_try_to_constitude_tdm_duplex(i2s_chan_handle_t handle, const i2s_tdm_config_t *tdm_cfg)
+static void s_i2s_channel_try_to_constitute_tdm_duplex(i2s_chan_handle_t handle, const i2s_tdm_config_t *tdm_cfg)
 {
-    /* Get another direction handle */
-    i2s_chan_handle_t another_handle = handle->dir == I2S_DIR_RX ? handle->controller->tx_chan : handle->controller->rx_chan;
-    /* Condition: 1. Another direction channel is registered
-     *            2. Not a full-duplex channel yet
-     *            3. Another channel is initialized, try to compare the configurations */
-    if (another_handle && another_handle->state >= I2S_CHAN_STATE_READY) {
-        if (!handle->controller->full_duplex) {
-            i2s_tdm_config_t curr_cfg = *tdm_cfg;
-            i2s_tdm_slot_config_t norm_slot_cfg = s_i2s_tdm_normalize_slot_config(&(tdm_cfg->slot_cfg));
-            memcpy(&curr_cfg.slot_cfg, &norm_slot_cfg, sizeof(i2s_tdm_slot_config_t));
-            /* Compare the hardware configurations of the two channels, constitute the full-duplex if they are the same */
-            if (memcmp(another_handle->mode_info, &curr_cfg, sizeof(i2s_tdm_config_t)) == 0) {
-                handle->controller->full_duplex = true;
-                ESP_LOGD(TAG, "Constitude full-duplex on port %d", handle->controller->id);
-            } else {
-                ESP_LOGD(TAG, "TX & RX on I2S%d are simplex", handle->controller->id);
-            }
-        }
-        /* Switch to the slave role if needed */
-        if (handle->controller->full_duplex &&
-                handle->role == I2S_ROLE_MASTER &&
-                another_handle->role == I2S_ROLE_MASTER) {
-            /* The later initialized channel must be slave for full duplex */
-            handle->role = I2S_ROLE_SLAVE;
-            handle->full_duplex_slave = true;
-        }
-    }
+    /* Build the duplex candidate from the current channel's configuration */
+    i2s_duplex_candidate_t candidate = {0};
+    candidate.ws_pin = tdm_cfg->gpio_cfg.ws;
+    candidate.bclk_pin = tdm_cfg->gpio_cfg.bclk;
+    candidate.sample_rate_hz = tdm_cfg->clk_cfg.sample_rate_hz;
+    candidate.clk_src = tdm_cfg->clk_cfg.clk_src;
+    candidate.bclk_inv = tdm_cfg->gpio_cfg.invert_flags.bclk_inv;
+    candidate.ws_inv = tdm_cfg->gpio_cfg.invert_flags.ws_inv;
+    /* Compute total frame bits for TDM mode */
+    i2s_tdm_slot_config_t norm_slot = s_i2s_tdm_normalize_slot_config(&tdm_cfg->slot_cfg);
+    candidate.total_frame_bits = norm_slot.total_slot * norm_slot.slot_bit_width;
+
+    i2s_channel_try_to_constitute_duplex(handle, &candidate);
 }
 
 esp_err_t i2s_channel_init_tdm_mode(i2s_chan_handle_t handle, const i2s_tdm_config_t *tdm_cfg)
@@ -318,7 +314,7 @@ esp_err_t i2s_channel_init_tdm_mode(i2s_chan_handle_t handle, const i2s_tdm_conf
     handle->mode_info = calloc(1, sizeof(i2s_tdm_config_t));
     ESP_GOTO_ON_FALSE(handle->mode_info, ESP_ERR_NO_MEM, err, TAG, "no memory for storing the configurations");
     /* Try to constitute full-duplex mode if the TDM configuration is totally same as another channel */
-    s_i2s_channel_try_to_constitude_tdm_duplex(handle, tdm_cfg);
+    s_i2s_channel_try_to_constitute_tdm_duplex(handle, tdm_cfg);
     /* i2s_set_tdm_slot should be called before i2s_set_tdm_clock while initializing, because clock is relay on the slot */
     ESP_GOTO_ON_ERROR(i2s_tdm_set_slot(handle, &tdm_cfg->slot_cfg), err, TAG, "initialize channel failed while setting slot");
     ESP_GOTO_ON_ERROR(i2s_tdm_set_clock(handle, &tdm_cfg->clk_cfg), err, TAG, "initialize channel failed while setting clock");
