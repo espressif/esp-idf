@@ -2264,12 +2264,14 @@ void bta_gattc_process_indicate(UINT16 conn_id, tGATTC_OPTYPE op, tGATT_CL_COMPL
                 bta_gattc_proc_other_indication(p_clcb, op, p_data, &notify);
             }
         } else {
-            /* No app registered for this handle: drop the PDU, but log it
-             * so the common "registered a wrong handle" bug is visible
-             * instead of silently failing. */
-            APPL_TRACE_WARNING("drop %s, handle 0x%04x not registered",
-                               (op == GATTC_OPTYPE_INDICATION) ? "ind" : "notif",
-                               handle);
+            /* GATT stack broadcasts notif/ind to every client app; drop here
+             * when this gatt_if did not register. Only warn if no app at all
+             * registered for the handle (likely wrong handle). */
+            if (!bta_gattc_any_notif_registry(p_srcb, &notify)) {
+                APPL_TRACE_WARNING("drop %s, handle 0x%04x not registered",
+                                   (op == GATTC_OPTYPE_INDICATION) ? "ind" : "notif",
+                                   handle);
+            }
             if (op == GATTC_OPTYPE_INDICATION) {
                 GATTC_SendHandleValueConfirm(conn_id, handle);
             }
