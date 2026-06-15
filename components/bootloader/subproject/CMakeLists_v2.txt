@@ -27,10 +27,29 @@ if(EXISTS ${PROJECT_EXTRA_COMPONENTS})
 endif()
 
 if(IGNORE_EXTRA_COMPONENT)
-    # Prefix all entries of the list with ${PROJECT_EXTRA_COMPONENTS} absolute path
-    list(TRANSFORM IGNORE_EXTRA_COMPONENT
-         PREPEND "${PROJECT_EXTRA_COMPONENTS}/"
-         OUTPUT_VARIABLE EXTRA_COMPONENT_EXCLUDE_DIRS)
+    foreach(extra_component_dir ${EXTRA_COMPONENT_DIRS})
+        # Strip trailing slash so get_filename_component(NAME) returns the
+        # component name rather than an empty string.
+        string(REGEX REPLACE "/+$" "" extra_component_dir "${extra_component_dir}")
+        if(EXISTS "${extra_component_dir}/CMakeLists.txt")
+            # BOOTLOADER_EXTRA_COMPONENT_DIRS may point directly to a single component.
+            get_filename_component(component "${extra_component_dir}" NAME)
+            if(component AND ${component} IN_LIST IGNORE_EXTRA_COMPONENT)
+                list(APPEND EXTRA_COMPONENT_EXCLUDE_DIRS "${extra_component_dir}")
+            endif()
+        else()
+            # BOOTLOADER_EXTRA_COMPONENT_DIRS may also point to a directory containing
+            # multiple component directories.
+            file(GLOB proj_components RELATIVE ${extra_component_dir} ${extra_component_dir}/*)
+            foreach(component ${proj_components})
+                # Only directories are considered components.
+                if(IS_DIRECTORY "${extra_component_dir}/${component}"
+                   AND ${component} IN_LIST IGNORE_EXTRA_COMPONENT)
+                    list(APPEND EXTRA_COMPONENT_EXCLUDE_DIRS "${extra_component_dir}/${component}")
+                endif()
+            endforeach()
+        endif()
+    endforeach()
 endif()
 
 # ---------------------------------------------------------------------------
