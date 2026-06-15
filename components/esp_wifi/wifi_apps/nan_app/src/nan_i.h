@@ -327,6 +327,7 @@ struct own_svc_info *nan_find_own_svc(uint8_t svc_id);
 struct own_svc_info *nan_find_own_svc_by_name(const char *svc_name);
 struct ndl_info *nan_find_ndl(uint8_t ndp_id, uint8_t peer_nmi[]);
 struct ndl_info *nan_find_ndl_by_pub_id_and_peer(uint8_t pub_id, const uint8_t *peer_nmi);
+bool nan_compute_service_id(const char *service_name, uint8_t service_id[6]);
 
 /* === nan_secure_dp_funcs initializer targets === */
 
@@ -487,7 +488,6 @@ esp_err_t nan_app_register_paired_peer(const uint8_t *peer_nmi,
 const struct nan_paired_peer *nan_app_find_paired_peer(const uint8_t *peer_nmi);
 void nan_app_remove_paired_peer(const uint8_t *peer_nmi);
 void nan_app_clear_paired_peers(void);
-bool nan_compute_service_id(const char *service_name, uint8_t service_id[6]);
 
 #endif /* CONFIG_ESP_WIFI_NAN_SECURITY */
 

@@ -243,8 +243,8 @@ typedef enum {
 typedef struct {
     uint8_t peer_nik[ESP_WIFI_NAN_NIK_LEN];     /**< Peer's NAN Identity Key (16 bytes) */
     uint8_t npk[ESP_WIFI_NAN_NPK_LEN];          /**< NAN Pairwise Key / NCS-SK PMK (32 bytes) */
-    uint8_t service_hash[6];
-    bool is_valid;
+    uint8_t service_hash[6];                    /**< Service Hash of the corresponding service */
+    bool is_valid;                              /**< True if this credential entry is valid */
 } wifi_nan_peer_creds_t;
 
 typedef wifi_scan_channel_bitmap_t channel_bitmap_t;
@@ -344,7 +344,7 @@ uint8_t esp_wifi_ap_get_owe_config_internal(void);
 esp_err_t esp_nan_complete_pairing(uint8_t svc_id);
 esp_err_t esp_wifi_nan_load_saved_creds(uint8_t own_nik[ESP_WIFI_NAN_NIK_LEN], bool *own_nik_valid,
                                         wifi_nan_peer_creds_t peer_creds[ESP_WIFI_NAN_MAX_PEER_CREDS], uint8_t *num_peer_creds);
-esp_err_t esp_wifi_nan_save_own_nik(const uint8_t own_nik[ESP_WIFI_NAN_NIK_LEN]) ;
+esp_err_t esp_wifi_nan_save_own_nik(const uint8_t own_nik[ESP_WIFI_NAN_NIK_LEN]);
 esp_err_t esp_wifi_nan_save_creds_for_peer(const uint8_t peer_nik[ESP_WIFI_NAN_NIK_LEN],
                                            const uint8_t npk[ESP_WIFI_NAN_NPK_LEN], const uint8_t service_hash[6]);
 esp_err_t esp_wifi_nan_erase_all_creds(void);

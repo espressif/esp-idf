@@ -99,36 +99,6 @@ static bool nan_csid_bitmap_has_pasn(uint16_t csid_bitmap)
     return (csid_bitmap & WIFI_NAN_CSID_BIT_NCS_PK_PASN_128) != 0;
 }
 
-/*
- * Service ID = first 6 bytes of SHA256(lowercase(service_name))
- * per Wi-Fi Aware v4.0 §5.1.5 (Service Name and Service ID).
- */
-bool nan_compute_service_id(const char *service_name, uint8_t service_id[6])
-{
-    if (!service_name || !g_wifi_default_wpa_crypto_funcs.sha256_vector) {
-        return false;
-    }
-    size_t name_len = strlen(service_name);
-    char *lower = os_malloc(name_len + 1);
-    if (!lower) {
-        return false;
-    }
-    strlcpy(lower, service_name, name_len + 1);
-    for (char *p = lower; *p; p++) {
-        *p = tolower((unsigned char) * p);
-    }
-    uint8_t hash[32];
-    const uint8_t *addr[1] = {(const uint8_t *)lower};
-    size_t len[1] = {name_len};
-    int ret = g_wifi_default_wpa_crypto_funcs.sha256_vector(1, addr, len, hash);
-    os_free(lower);
-    if (ret != 0) {
-        return false;
-    }
-    memcpy(service_id, hash, 6);
-    return true;
-}
-
 #define NAN_SERVICE_ID_LEN 6
 
 /*

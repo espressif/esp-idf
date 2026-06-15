@@ -1587,7 +1587,7 @@ static void nan_pasn_auth_eloop_cb(void *eloop_ctx, void *user_data)
 
     if (ctx->pincode != UINT32_MAX) {
         n = os_snprintf(pin_digits, sizeof(pin_digits), "%06u",
-                        (unsigned)(ctx->pincode % 1000000U));
+                        (unsigned)ctx->pincode);
         if (os_snprintf_error(sizeof(pin_digits), n)) {
             nan_pasn_data_deinit(pd);
             os_free(ctx);
@@ -1746,7 +1746,7 @@ int pasn_responder_init(const uint8_t *peer_addr, uint32_t pincode)
 
     if (pincode != UINT32_MAX) {
         n = os_snprintf(pin_digits, sizeof(pin_digits), "%06u",
-                        (unsigned)(pincode % 1000000U));
+                        (unsigned)pincode);
         if (os_snprintf_error(sizeof(pin_digits), n)) {
             goto fail;
         }
