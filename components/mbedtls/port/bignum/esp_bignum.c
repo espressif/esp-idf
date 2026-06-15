@@ -208,6 +208,7 @@ static int calculate_rinv(mbedtls_mpi *Rinv, const mbedtls_mpi *M, int num_words
     mbedtls_mpi_init(&RR);
     MBEDTLS_MPI_CHK(mbedtls_mpi_set_bit(&RR, num_bits * 2, 1));
     MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(Rinv, &RR, M));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_shrink(Rinv, num_words));
 
 cleanup:
     mbedtls_mpi_free(&RR);
@@ -415,7 +416,10 @@ static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_
     } else {
         Rinv = _Rinv;
     }
-    if (Rinv->MBEDTLS_PRIVATE(p) == NULL) {
+    /* Rinv depends on num_words, which may vary with blinded exponents.
+       calculate_rinv() stores Rinv with exactly num_words limbs, so the
+       allocation size is used here as the cache tag. */
+    if (Rinv->MBEDTLS_PRIVATE(p) == NULL || Rinv->MBEDTLS_PRIVATE(n) != num_words) {
         MBEDTLS_MPI_CHK(calculate_rinv(Rinv, M, num_words));
     }
 
