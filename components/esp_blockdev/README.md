@@ -97,6 +97,31 @@ and auxiliary operations like getting device statistics or debugging information
 
 All the APIs are optional, so if any API function is not available for given device the corresponding pointer is set NULL.
 
+### Ioctl reservation overlap checking
+
+Components that define ioctl commands can also reserve command values or inclusive ranges for build-time validation. The reservation markers are real macro invocations; comments are ignored.
+
+Add reservation markers in a public header or other definition file:
+
+```c
+#include "esp_blockdev.h"
+
+ESP_BLOCKDEV_RESERVE_CMD_RANGE(nand_flash, ESP_BLOCKDEV_CMD_SYSTEM_BASE + 10, ESP_BLOCKDEV_CMD_SYSTEM_BASE + 20);
+ESP_BLOCKDEV_RESERVE_CMD(sdcard, ESP_BLOCKDEV_CMD_USER_BASE + 1);
+```
+
+Register each definition file with the build system:
+
+```cmake
+idf_build_set_property(
+    ESP_BLOCKDEV_IOCTL_DEF_FILES
+    "${CMAKE_CURRENT_LIST_DIR}/include/foo_ioctl_defs.h"
+    APPEND
+)
+```
+
+The esp_blockdev checker component preprocesses every registered file during the build and fails if any reservations overlap or are invalid.
+
 ### Error handling
 
 BDL interface doesn't define specific requirements for return values and/or error codes of the API functions declared below. The only expectation is returning ESP_OK on successful run and any sort of ESP_ERR_* on failure (to stay compatible with ESP_ERROR_CHECK and other standard IDF error validation helpers).
