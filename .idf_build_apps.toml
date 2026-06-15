@@ -19,7 +19,10 @@ ignore_warning_files = [
     '$IDF_PATH/tools/ci/ignore_build_warnings.txt',
 ]
 
-build_dir = "build_@t_@w"
+# BUILDV2_DIR_SUFFIX is expanded by idf-build-apps from the environment;
+# empty for buildv1 builds and set to "_v2" by the buildv2 CI pipelines so
+# buildv1 and buildv2 build artifacts do not share the same s3 cache path.
+build_dir = "build${BUILDV2_DIR_SUFFIX}_@t_@w"
 build_log_filename = "build_log.txt"
 size_json_filename = "size_${CI_JOB_ID}.json"
 
