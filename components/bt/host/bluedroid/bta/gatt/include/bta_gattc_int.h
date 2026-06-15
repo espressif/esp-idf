@@ -523,6 +523,7 @@ extern BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_dat
 
 extern BOOLEAN bta_gattc_uuid_compare (const tBT_UUID *p_src, const tBT_UUID *p_tar, BOOLEAN is_precise);
 extern BOOLEAN bta_gattc_check_notif_registry(tBTA_GATTC_RCB  *p_clreg, tBTA_GATTC_SERV *p_srcb, tBTA_GATTC_NOTIFY  *p_notify);
+extern BOOLEAN bta_gattc_any_notif_registry(tBTA_GATTC_SERV *p_srcb, tBTA_GATTC_NOTIFY *p_notify);
 extern BOOLEAN bta_gattc_mark_bg_conn (tBTA_GATTC_IF client_if,  BD_ADDR_PTR remote_bda, BOOLEAN add, BOOLEAN is_listen);
 extern BOOLEAN bta_gattc_check_bg_conn (tBTA_GATTC_IF client_if,  BD_ADDR remote_bda, UINT8 role);
 extern UINT8 bta_gattc_num_reg_app(void);
