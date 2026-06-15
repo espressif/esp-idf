@@ -1,0 +1,56 @@
+# Size Metrics Configuration
+#
+# This file is the single source of truth for which apps publish size metrics.
+# Only apps listed here publish anything; every other built app is ignored.
+#
+# For each listed app:
+#   - `app_size` (total flash/DRAM/IRAM) is always published.
+#   - `library_size` (per-`.a`-archive breakdown) is published only when a
+#     `libs` key is present.
+#   - `bootloader_size` is published only when `bootloader: true` is present.
+#
+# By default every built target/config of a listed app publishes metrics.
+# Use the optional `configs` and/or `targets` keys to restrict publishing to
+# specific build configs and/or targets. When omitted, all configs/targets of
+# the app are published. `libs`/`bootloader` apply to every matching build.
+#
+# Format:
+#   <app_path>:           # Path relative to IDF_PATH. Bare entry = app_size only.
+#     libs:               # (optional) enables library_size:
+#       - libfoo.a        #   - a list  -> only these archives
+#       - libbar.a
+#     configs:            # (optional) only publish these build configs
+#       - default         #   (omit to publish every built config)
+#     targets:            # (optional) only publish these targets
+#       - esp32c6         #   (omit to publish every built target)
+#   <app_path2>:
+#     libs: all           #   - the literal `all` (or empty) -> every archive
+#     bootloader: true    # (optional) enables bootloader_size
+#
+# Examples:
+#
+# app_size only, every target/config:
+#   tools/test_apps/system/startup:
+#
+# app_size + every library, only the `default` and `release` configs:
+#   examples/get-started/hello_world:
+#     libs: all
+#     configs:
+#       - default
+#       - release
+#
+# app_size + selected libraries, only on esp32c6:
+#   examples/wifi/getting_started/station:
+#     libs:
+#       - libesp_wifi.a
+#       - libnet80211.a
+#     targets:
+#       - esp32c6
+#
+# Entries below define the apps that publish size metrics:
+
+examples/get-started/hello_world:
+  libs: all
+  bootloader: true
+  configs:
+    - default

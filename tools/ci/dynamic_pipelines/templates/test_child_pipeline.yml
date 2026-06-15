@@ -40,6 +40,31 @@ generate_pytest_build_report:
     - python tools/ci/dynamic_pipelines/scripts/generate_report.py --report-type build
     - python tools/ci/previous_stage_job_status.py --stage build
 
+app-size-metrics:
+  stage: assign_test
+  image: $ESP_ENV_IMAGE
+  tags:
+    - build
+    - shiny
+  when: always
+  allow_failure: true
+  needs:
+    - job: build_test_related_apps
+      optional: true
+    - job: build_non_test_related_apps
+      optional: true
+    - pipeline: $PARENT_PIPELINE_ID
+      job: pipeline_variables
+  variables:
+    ESP_METRICS_PROJECT_URL: "$CI_PROJECT_URL"
+    ESP_METRICS_PROJECT_ID: "$CI_PROJECT_ID"
+    ESP_METRICS_COMMIT_SHA: "$PIPELINE_COMMIT_SHA"
+    ESP_METRICS_BRANCH_NAME: "$CI_COMMIT_REF_NAME"
+  script:
+    - cd tools/ci/metrics/size_metrics
+    - python3 generate_metrics.py
+    - esp-metrics-cli upload -d schema.yaml -i metrics.json
+
 generate_pytest_child_pipeline:
   # finally, we can get some use out of the default behavior that downloads all artifacts from the previous stage
   stage: assign_test

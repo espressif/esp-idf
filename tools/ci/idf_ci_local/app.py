@@ -4,6 +4,7 @@ import os
 import subprocess
 import sys
 import typing as t
+from pathlib import Path
 
 from dynamic_pipelines.constants import BINARY_SIZE_METRIC_NAME
 from idf_build_apps import App
@@ -12,9 +13,9 @@ from idf_build_apps.constants import BuildStatus
 from idf_build_apps.utils import rmdir
 from idf_ci_utils import APP_EXTRA_S3_ARTIFACT_TYPE
 from idf_ci_utils import idf_relpath
+from metrics.size_metrics import collect_build_metrics
 
-if t.TYPE_CHECKING:
-    pass
+_SIZE_METRICS_CONFIG_PATH = Path(__file__).parent.parent / 'metrics' / 'size_metrics' / 'size_metrics_config.yml'
 
 
 class IdfCMakeApp(CMakeApp):
@@ -29,8 +30,23 @@ class IdfCMakeApp(CMakeApp):
     def _post_build(self) -> None:
         super()._post_build()
 
-        # only upload in CI
+        # Size metrics are only consumed in CI (aggregated by a downstream job),
+        # so skip the extraction entirely for local builds.
         if os.getenv('CI_JOB_ID'):
+            # Never fail the build because of size metrics.
+            try:
+                metrics = collect_build_metrics.build_raw_metrics_for_build_dir(
+                    Path(self.build_path),
+                    idf_relpath(self.app_dir),
+                    self.target,
+                    self.config_name,
+                    collect_build_metrics.load_size_metrics_config(_SIZE_METRICS_CONFIG_PATH),
+                )
+                if metrics is not None:
+                    collect_build_metrics.write_raw_metrics_artifact(Path(self.build_path), metrics)
+            except Exception as e:
+                print(f'size-metrics: extraction failed for {self.build_path}: {e}')
+
             upload_commands = [
                 [
                     'idf-ci',
@@ -63,7 +79,7 @@ class IdfCMakeApp(CMakeApp):
 
             rmdir(
                 self.build_path,
-                exclude_file_patterns=['build_log.txt', 'size*.json'],
+                exclude_file_patterns=['build_log.txt', 'size*.json', 'build_size_metrics.json'],
             )
 
 
