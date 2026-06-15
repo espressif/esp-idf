@@ -61,7 +61,7 @@ def test_esp_pm_mode_stats_pd_top(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.esp32c5_eco3
+@pytest.mark.esp32c5_rev1
 @pytest.mark.parametrize('config', ['pd_top'], indirect=True)
 @idf_parametrize('target', ['esp32c5'], indirect=['target'])
 def test_esp_pm_mode_stats_pd_top_esp32c5_eco3(dut: Dut) -> None:
