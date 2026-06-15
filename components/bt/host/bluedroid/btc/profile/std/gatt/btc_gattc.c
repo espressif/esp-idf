@@ -203,7 +203,7 @@ static void btc_gattc_cback(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
 
 static void btc_gattc_app_register(btc_ble_gattc_args_t *arg)
 {
-    tBT_UUID app_uuid;
+    tBT_UUID app_uuid = {0};
     app_uuid.len = 2;
     app_uuid.uu.uuid16 = arg->app_reg.app_id;
     BTA_GATTC_AppRegister(&app_uuid, btc_gattc_cback);
@@ -991,8 +991,6 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
     case BTA_GATTC_CLOSE_EVT: {
         tBTA_GATTC_CLOSE *close = &arg->close;
 
-        // Free gattc clcb in BTC task to avoid race condition
-        bta_gattc_clcb_dealloc_by_conn_id(close->conn_id);
         gattc_if = close->client_if;
         param.close.status = close->status;
         param.close.conn_id = BTC_GATT_GET_CONN_ID(close->conn_id);

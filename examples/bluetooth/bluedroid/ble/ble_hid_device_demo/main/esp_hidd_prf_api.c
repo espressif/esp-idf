@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -37,9 +37,11 @@ esp_err_t esp_hidd_register_callbacks(esp_hidd_event_cb_t callbacks)
         return hidd_status;
     }
 
-    esp_ble_gatts_app_register(BATTRAY_APP_ID);
+    if ((hidd_status = esp_ble_gatts_app_register(BATTRAY_APP_ID)) != ESP_OK) {
+        return hidd_status;
+    }
 
-    if((hidd_status = esp_ble_gatts_app_register(HIDD_APP_ID)) != ESP_OK) {
+    if ((hidd_status = esp_ble_gatts_app_register(HIDD_APP_ID)) != ESP_OK) {
         return hidd_status;
     }
 
@@ -52,8 +54,10 @@ esp_err_t esp_hidd_profile_init(void)
         ESP_LOGE(HID_LE_PRF_TAG, "HID device profile already initialized");
         return ESP_FAIL;
     }
-    // Reset the hid device target environment
+    /* Reset the hid device target environment */
     memset(&hidd_le_env, 0, sizeof(hidd_le_env_t));
+    hidd_le_env.gatt_if = ESP_GATT_IF_NONE;
+    hidd_le_env.bat_gatt_if = ESP_GATT_IF_NONE;
     hidd_le_env.enabled = true;
     return ESP_OK;
 }
@@ -62,20 +66,32 @@ esp_err_t esp_hidd_profile_deinit(void)
 {
     uint16_t hidd_svc_hdl = hidd_le_env.hidd_inst.att_tbl[HIDD_LE_IDX_SVC];
     if (!hidd_le_env.enabled) {
-        ESP_LOGE(HID_LE_PRF_TAG, "HID device profile already initialized");
+        ESP_LOGW(HID_LE_PRF_TAG, "HID device profile not initialized, deinit skipped");
         return ESP_OK;
     }
 
-    if(hidd_svc_hdl != 0) {
-	esp_ble_gatts_stop_service(hidd_svc_hdl);
-	esp_ble_gatts_delete_service(hidd_svc_hdl);
+    if (hidd_svc_hdl != 0) {
+        esp_ble_gatts_stop_service(hidd_svc_hdl);
+        esp_ble_gatts_delete_service(hidd_svc_hdl);
     } else {
-	return ESP_FAIL;
-   }
+        ESP_LOGW(HID_LE_PRF_TAG, "HID service handle unset, skip stop/delete");
+    }
 
-    /* register the HID device profile to the BTA_GATTS module*/
-    esp_ble_gatts_app_unregister(hidd_le_env.gatt_if);
+    /* Release both GATTS apps (battery registered first, then HID) */
+    if (hidd_le_env.bat_gatt_if != ESP_GATT_IF_NONE) {
+        esp_ble_gatts_app_unregister(hidd_le_env.bat_gatt_if);
+        hidd_le_env.bat_gatt_if = ESP_GATT_IF_NONE;
+    } else {
+        ESP_LOGW(HID_LE_PRF_TAG, "Battery gatt_if invalid, app_unregister skipped (possible stack slot leak)");
+    }
+    if (hidd_le_env.gatt_if != ESP_GATT_IF_NONE) {
+        esp_ble_gatts_app_unregister(hidd_le_env.gatt_if);
+        hidd_le_env.gatt_if = ESP_GATT_IF_NONE;
+    } else {
+        ESP_LOGW(HID_LE_PRF_TAG, "HID gatt_if invalid, app_unregister skipped (possible stack slot leak)");
+    }
 
+    hidd_le_env.enabled = false;
     return ESP_OK;
 }
 
@@ -112,7 +128,7 @@ void esp_hidd_send_keyboard_value(uint16_t conn_id, key_mask_t special_key_mask,
         buffer[i+2] = keyboard_cmd[i];
     }
 
-    ESP_LOGD(HID_LE_PRF_TAG, "the key vaule = %d,%d,%d, %d, %d, %d,%d, %d", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4], buffer[5], buffer[6], buffer[7]);
+    ESP_LOGD(HID_LE_PRF_TAG, "the key value = %d,%d,%d, %d, %d, %d,%d, %d", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4], buffer[5], buffer[6], buffer[7]);
     hid_dev_send_report(hidd_le_env.gatt_if, conn_id,
                         HID_RPT_ID_KEY_IN, HID_REPORT_TYPE_INPUT, HID_KEYBOARD_IN_RPT_LEN, buffer);
     return;

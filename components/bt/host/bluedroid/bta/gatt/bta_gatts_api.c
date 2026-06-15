@@ -93,6 +93,7 @@ void BTA_GATTS_AppRegister(const tBT_UUID * p_app_uuid, tBTA_GATTS_CBACK *p_cbac
     }
 
     if ((p_buf = (tBTA_GATTS_API_REG *) osi_malloc(sizeof(tBTA_GATTS_API_REG))) != NULL) {
+        memset(p_buf, 0, sizeof(*p_buf));
         p_buf->hdr.event    = BTA_GATTS_API_REG_EVT;
 
         if (p_app_uuid != NULL) {
@@ -237,16 +238,23 @@ void BTA_GATTS_AddCharacteristic (UINT16 service_id,  const tBT_UUID  * p_char_u
         }
 
         if(attr_val != NULL){
-            p_buf->attr_val.attr_len = attr_val->attr_len;
             p_buf->attr_val.attr_max_len = attr_val->attr_max_len;
-            if(len != 0){
-                p_buf->attr_val.attr_val = (uint8_t *)osi_malloc(len);
-                if(p_buf->attr_val.attr_val != NULL){
-                    memcpy(p_buf->attr_val.attr_val, attr_val->attr_val, len);
-                } else {
-                    p_buf->attr_val.attr_len = 0;
-                    p_buf->attr_val.attr_max_len = 0;
-                    APPL_TRACE_ERROR("Allocate fail for %s\n", __func__);
+            if (attr_val->attr_max_len == 0) {
+                p_buf->attr_val.attr_len = 0;
+                if (len != 0) {
+                    APPL_TRACE_WARNING("%s: max_len 0, drop len %u", __func__, len);
+                }
+            } else {
+                p_buf->attr_val.attr_len = attr_val->attr_len;
+                if(len != 0){
+                    p_buf->attr_val.attr_val = (uint8_t *)osi_malloc(len);
+                    if(p_buf->attr_val.attr_val != NULL){
+                        memcpy(p_buf->attr_val.attr_val, attr_val->attr_val, len);
+                    } else {
+                        p_buf->attr_val.attr_len = 0;
+                        p_buf->attr_val.attr_max_len = 0;
+                        APPL_TRACE_ERROR("alloc fail %s", __func__);
+                    }
                 }
             }
         }
@@ -299,19 +307,27 @@ void BTA_GATTS_AddCharDescriptor (UINT16 service_id,
         }
 
         if(attr_val != NULL){
-            p_buf->attr_val.attr_len = attr_val->attr_len;
             p_buf->attr_val.attr_max_len = attr_val->attr_max_len;
-            value_len =  attr_val->attr_len;
-            if (value_len != 0){
-                p_buf->attr_val.attr_val = (uint8_t*)osi_malloc(value_len);
-                if(p_buf->attr_val.attr_val != NULL){
-                    memcpy(p_buf->attr_val.attr_val, attr_val->attr_val, value_len);
+            if (attr_val->attr_max_len == 0) {
+                p_buf->attr_val.attr_len = 0;
+                value_len = attr_val->attr_len;
+                if (value_len != 0) {
+                    APPL_TRACE_WARNING("%s: max_len 0, drop len %u", __func__, value_len);
                 }
-                else{
-                    p_buf->attr_val.attr_len = 0;
-                    p_buf->attr_val.attr_max_len = 0;
-                    APPL_TRACE_ERROR("Allocate fail for %s\n", __func__);
+            } else {
+                p_buf->attr_val.attr_len = attr_val->attr_len;
+                value_len =  attr_val->attr_len;
+                if (value_len != 0){
+                    p_buf->attr_val.attr_val = (uint8_t*)osi_malloc(value_len);
+                    if(p_buf->attr_val.attr_val != NULL){
+                        memcpy(p_buf->attr_val.attr_val, attr_val->attr_val, value_len);
+                    }
+                    else{
+                        p_buf->attr_val.attr_len = 0;
+                        p_buf->attr_val.attr_max_len = 0;
+                        APPL_TRACE_ERROR("alloc fail %s", __func__);
 
+                    }
                 }
             }
         }
@@ -501,8 +517,10 @@ void BTA_SetAttributeValue(UINT16 attr_handle, UINT16 length, UINT8 *value)
         memset(p_buf, 0, len);
         p_buf->hdr.event = BTA_GATTS_API_SET_ATTR_VAL_EVT;
         p_buf->hdr.layer_specific = attr_handle;
-        p_buf->length = length;
-        if(value != NULL){
+        if (value == NULL) {
+            p_buf->length = 0;
+        } else {
+            p_buf->length = length;
             if((p_buf->value = (UINT8 *)osi_malloc(length)) != NULL){
                 memcpy(p_buf->value, value, length);
             } else {

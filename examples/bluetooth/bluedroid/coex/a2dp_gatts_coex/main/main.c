@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -80,6 +80,15 @@ typedef struct {
 
 static prepare_type_env_t a_prepare_write_env;
 static prepare_type_env_t b_prepare_write_env;
+
+static void prepare_write_env_free(prepare_type_env_t *env)
+{
+    if (env->prepare_buf != NULL) {
+        free(env->prepare_buf);
+        env->prepare_buf = NULL;
+    }
+    env->prepare_len = 0;
+}
 
 //Declare the static function
 static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
@@ -176,10 +185,21 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
 {
     switch (event) {
     case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT:
-        //esp_ble_gap_start_advertising(&adv_params);
+        break;
+    case ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT:
+        /* Configure adv data only after local privacy is set up (REG_EVT requests it). */
+        if (param->local_privacy_cmpl.status != ESP_BT_STATUS_SUCCESS) {
+            ESP_LOGE(BT_BLE_COEX_TAG, "set local privacy failed, status %d", param->local_privacy_cmpl.status);
+        } else {
+            ble_init_adv_data(BLE_ADV_NAME);
+        }
         break;
     case ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT:
-        esp_ble_gap_start_advertising(&adv_params);
+        if (param->scan_rsp_data_raw_cmpl.status != ESP_BT_STATUS_SUCCESS) {
+            ESP_LOGE(BT_BLE_COEX_TAG, "set raw scan rsp data failed, status %d", param->scan_rsp_data_raw_cmpl.status);
+        } else {
+            esp_ble_gap_start_advertising(&adv_params);
+        }
         break;
     case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
         //advertising start complete event to indicate advertising start successfully or failed
@@ -265,11 +285,69 @@ void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble
     } else {
         ESP_LOGI(BT_BLE_COEX_TAG, "ESP_GATT_PREP_WRITE_CANCEL");
     }
-    if (prepare_write_env->prepare_buf) {
-        free(prepare_write_env->prepare_buf);
-        prepare_write_env->prepare_buf = NULL;
+    prepare_write_env_free(prepare_write_env);
+}
+
+/* Profile A and B handle READ/WRITE identically (apart from per-profile state); these helpers
+ * avoid the copy-pasted bodies that existed in the previous version. */
+static void gatts_coex_read_evt(esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
+{
+    ESP_LOGI(BT_BLE_COEX_TAG, "GATT_READ_EVT, conn_id %d, trans_id %"PRIu32", handle %d",
+             param->read.conn_id, param->read.trans_id, param->read.handle);
+    esp_gatt_rsp_t rsp;
+    memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
+    rsp.attr_value.handle = param->read.handle;
+    rsp.attr_value.len = 4;
+    rsp.attr_value.value[0] = 0xde;
+    rsp.attr_value.value[1] = 0xed;
+    rsp.attr_value.value[2] = 0xbe;
+    rsp.attr_value.value[3] = 0xef;
+    esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id,
+                                ESP_GATT_OK, &rsp);
+}
+
+static void gatts_coex_write_evt(esp_gatt_if_t gatts_if, int profile_idx, prepare_type_env_t *prep_env,
+                                 esp_gatt_char_prop_t char_prop, esp_ble_gatts_cb_param_t *param)
+{
+    ESP_LOGI(BT_BLE_COEX_TAG, "GATT_WRITE_EVT, conn_id %d, trans_id %"PRIu32", handle %d",
+             param->write.conn_id, param->write.trans_id, param->write.handle);
+
+    if (!param->write.is_prep) {
+        ESP_LOGI(BT_BLE_COEX_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
+        ESP_LOG_BUFFER_HEX(BT_BLE_COEX_TAG, param->write.value, param->write.len);
+        if (gl_profile_tab[profile_idx].descr_handle == param->write.handle && param->write.len == 2) {
+            uint16_t descr_value = param->write.value[1] << 8 | param->write.value[0];
+            if (descr_value == 0x0001) {
+                if (char_prop & ESP_GATT_CHAR_PROP_BIT_NOTIFY) {
+                    ESP_LOGI(BT_BLE_COEX_TAG, "notify enable");
+                    uint8_t notify_data[15];
+                    for (int i = 0; i < sizeof(notify_data); ++i) {
+                        notify_data[i] = i % 0xff;
+                    }
+                    //the size of notify_data[] need less than MTU size
+                    esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, gl_profile_tab[profile_idx].char_handle,
+                                                sizeof(notify_data), notify_data, false);
+                }
+            } else if (descr_value == 0x0002) {
+                if (char_prop & ESP_GATT_CHAR_PROP_BIT_INDICATE) {
+                    ESP_LOGI(BT_BLE_COEX_TAG, "indicate enable");
+                    uint8_t indicate_data[15];
+                    for (int i = 0; i < sizeof(indicate_data); ++i) {
+                        indicate_data[i] = i % 0xff;
+                    }
+                    //the size of indicate_data[] need less than MTU size
+                    esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, gl_profile_tab[profile_idx].char_handle,
+                                                sizeof(indicate_data), indicate_data, true);
+                }
+            } else if (descr_value == 0x0000) {
+                ESP_LOGI(BT_BLE_COEX_TAG, "notify/indicate disable ");
+            } else {
+                ESP_LOGE(BT_BLE_COEX_TAG, "unknown descr value");
+                ESP_LOG_BUFFER_HEX(BT_BLE_COEX_TAG, param->write.value, param->write.len);
+            }
+        }
     }
-    prepare_write_env->prepare_len = 0;
+    example_write_event_env(gatts_if, prep_env, param);
 }
 
 static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
@@ -282,68 +360,20 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         gl_profile_tab[PROFILE_A_APP_ID].service_id.id.inst_id = 0x00;
         gl_profile_tab[PROFILE_A_APP_ID].service_id.id.uuid.len = ESP_UUID_LEN_16;
         gl_profile_tab[PROFILE_A_APP_ID].service_id.id.uuid.uuid.uuid16 = GATTS_SERVICE_UUID_A;
-        //init BLE adv data and scan response data
-        ble_init_adv_data(BLE_ADV_NAME);
+        /* Adv raw data is set from gap_event_handler after ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT. */
         esp_ble_gatts_create_service(gatts_if, &gl_profile_tab[PROFILE_A_APP_ID].service_id, GATTS_NUM_HANDLE_A);
         break;
-    case ESP_GATTS_READ_EVT: {
-        ESP_LOGI(BT_BLE_COEX_TAG, "GATT_READ_EVT, conn_id %d, trans_id %"PRIu32", handle %d", param->read.conn_id, param->read.trans_id, param->read.handle);
-        esp_gatt_rsp_t rsp;
-        memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
-        rsp.attr_value.handle = param->read.handle;
-        rsp.attr_value.len = 4;
-        rsp.attr_value.value[0] = 0xde;
-        rsp.attr_value.value[1] = 0xed;
-        rsp.attr_value.value[2] = 0xbe;
-        rsp.attr_value.value[3] = 0xef;
-        esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id,
-                                    ESP_GATT_OK, &rsp);
+    case ESP_GATTS_READ_EVT:
+        gatts_coex_read_evt(gatts_if, param);
         break;
-    }
-    case ESP_GATTS_WRITE_EVT: {
-        ESP_LOGI(BT_BLE_COEX_TAG, "GATT_WRITE_EVT, conn_id %d, trans_id %"PRIu32", handle %d", param->write.conn_id, param->write.trans_id, param->write.handle);
-        if (!param->write.is_prep) {
-            ESP_LOGI(BT_BLE_COEX_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
-            ESP_LOG_BUFFER_HEX(BT_BLE_COEX_TAG, param->write.value, param->write.len);
-            if (gl_profile_tab[PROFILE_A_APP_ID].descr_handle == param->write.handle && param->write.len == 2) {
-                uint16_t descr_value = param->write.value[1] << 8 | param->write.value[0];
-                if (descr_value == 0x0001) {
-                    if (a_property & ESP_GATT_CHAR_PROP_BIT_NOTIFY) {
-                        ESP_LOGI(BT_BLE_COEX_TAG, "notify enable");
-                        uint8_t notify_data[15];
-                        for (int i = 0; i < sizeof(notify_data); ++i) {
-                            notify_data[i] = i % 0xff;
-                        }
-                        //the size of notify_data[] need less than MTU size
-                        esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, gl_profile_tab[PROFILE_A_APP_ID].char_handle,
-                                                    sizeof(notify_data), notify_data, false);
-                    }
-                } else if (descr_value == 0x0002) {
-                    if (a_property & ESP_GATT_CHAR_PROP_BIT_INDICATE) {
-                        ESP_LOGI(BT_BLE_COEX_TAG, "indicate enable");
-                        uint8_t indicate_data[15];
-                        for (int i = 0; i < sizeof(indicate_data); ++i) {
-                            indicate_data[i] = i % 0xff;
-                        }
-                        //the size of indicate_data[] need less than MTU size
-                        esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, gl_profile_tab[PROFILE_A_APP_ID].char_handle,
-                                                    sizeof(indicate_data), indicate_data, true);
-                    }
-                } else if (descr_value == 0x0000) {
-                    ESP_LOGI(BT_BLE_COEX_TAG, "notify/indicate disable ");
-                } else {
-                    ESP_LOGE(BT_BLE_COEX_TAG, "unknown descr value");
-                    ESP_LOG_BUFFER_HEX(BT_BLE_COEX_TAG, param->write.value, param->write.len);
-                }
-
-            }
-        }
-        example_write_event_env(gatts_if, &a_prepare_write_env, param);
+    case ESP_GATTS_WRITE_EVT:
+        gatts_coex_write_evt(gatts_if, PROFILE_A_APP_ID, &a_prepare_write_env, a_property, param);
         break;
-    }
     case ESP_GATTS_EXEC_WRITE_EVT:
         ESP_LOGI(BT_BLE_COEX_TAG, "ESP_GATTS_EXEC_WRITE_EVT");
-        esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
+        /* Use exec_write union member, not write — these share offsets in the union but it
+         * was a latent bug in master to refer to param->write here. */
+        esp_ble_gatts_send_response(gatts_if, param->exec_write.conn_id, param->exec_write.trans_id, ESP_GATT_OK, NULL);
         example_exec_write_event_env(&a_prepare_write_env, param);
         break;
     case ESP_GATTS_MTU_EVT:
@@ -395,13 +425,11 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         break;
     case ESP_GATTS_STOP_EVT:
         break;
-    case ESP_GATTS_CONNECT_EVT: {
-        esp_ble_conn_update_params_t conn_params = {0};
-        memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
+    case ESP_GATTS_CONNECT_EVT:
         break;
-    }
     case ESP_GATTS_DISCONNECT_EVT:
         ESP_LOGI(BT_BLE_COEX_TAG, "ESP_GATTS_DISCONNECT_EVT");
+        prepare_write_env_free(&a_prepare_write_env);
         esp_ble_gap_start_advertising(&adv_params);
         break;
     case ESP_GATTS_CONF_EVT:
@@ -432,63 +460,15 @@ static void gatts_profile_b_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
 
         esp_ble_gatts_create_service(gatts_if, &gl_profile_tab[PROFILE_B_APP_ID].service_id, GATTS_NUM_HANDLE_B);
         break;
-    case ESP_GATTS_READ_EVT: {
-        ESP_LOGI(BT_BLE_COEX_TAG, "GATT_READ_EVT, conn_id %d, trans_id %"PRIu32", handle %d", param->read.conn_id, param->read.trans_id, param->read.handle);
-        esp_gatt_rsp_t rsp;
-        memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
-        rsp.attr_value.handle = param->read.handle;
-        rsp.attr_value.len = 4;
-        rsp.attr_value.value[0] = 0xde;
-        rsp.attr_value.value[1] = 0xed;
-        rsp.attr_value.value[2] = 0xbe;
-        rsp.attr_value.value[3] = 0xef;
-        esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id,
-                                    ESP_GATT_OK, &rsp);
+    case ESP_GATTS_READ_EVT:
+        gatts_coex_read_evt(gatts_if, param);
         break;
-    }
-    case ESP_GATTS_WRITE_EVT: {
-        ESP_LOGI(BT_BLE_COEX_TAG, "GATT_WRITE_EVT, conn_id %d, trans_id %"PRIu32", handle %d", param->write.conn_id, param->write.trans_id, param->write.handle);
-        if (!param->write.is_prep) {
-            ESP_LOGI(BT_BLE_COEX_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
-            ESP_LOG_BUFFER_HEX(BT_BLE_COEX_TAG, param->write.value, param->write.len);
-            if (gl_profile_tab[PROFILE_B_APP_ID].descr_handle == param->write.handle && param->write.len == 2) {
-                uint16_t descr_value = param->write.value[1] << 8 | param->write.value[0];
-                if (descr_value == 0x0001) {
-                    if (b_property & ESP_GATT_CHAR_PROP_BIT_NOTIFY) {
-                        ESP_LOGI(BT_BLE_COEX_TAG, "notify enable");
-                        uint8_t notify_data[15];
-                        for (int i = 0; i < sizeof(notify_data); ++i) {
-                            notify_data[i] = i % 0xff;
-                        }
-                        //the size of notify_data[] need less than MTU size
-                        esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, gl_profile_tab[PROFILE_B_APP_ID].char_handle,
-                                                    sizeof(notify_data), notify_data, false);
-                    }
-                } else if (descr_value == 0x0002) {
-                    if (b_property & ESP_GATT_CHAR_PROP_BIT_INDICATE) {
-                        ESP_LOGI(BT_BLE_COEX_TAG, "indicate enable");
-                        uint8_t indicate_data[15];
-                        for (int i = 0; i < sizeof(indicate_data); ++i) {
-                            indicate_data[i] = i % 0xff;
-                        }
-                        //the size of indicate_data[] need less than MTU size
-                        esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, gl_profile_tab[PROFILE_B_APP_ID].char_handle,
-                                                    sizeof(indicate_data), indicate_data, true);
-                    }
-                } else if (descr_value == 0x0000) {
-                    ESP_LOGI(BT_BLE_COEX_TAG, "notify/indicate disable ");
-                } else {
-                    ESP_LOGE(BT_BLE_COEX_TAG, "unknown value");
-                }
-
-            }
-        }
-        example_write_event_env(gatts_if, &b_prepare_write_env, param);
+    case ESP_GATTS_WRITE_EVT:
+        gatts_coex_write_evt(gatts_if, PROFILE_B_APP_ID, &b_prepare_write_env, b_property, param);
         break;
-    }
     case ESP_GATTS_EXEC_WRITE_EVT:
         ESP_LOGI(BT_BLE_COEX_TAG, "ESP_GATTS_EXEC_WRITE_EVT");
-        esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
+        esp_ble_gatts_send_response(gatts_if, param->exec_write.conn_id, param->exec_write.trans_id, ESP_GATT_OK, NULL);
         example_exec_write_event_env(&b_prepare_write_env, param);
         break;
     case ESP_GATTS_MTU_EVT:
@@ -552,6 +532,9 @@ static void gatts_profile_b_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         }
         break;
     case ESP_GATTS_DISCONNECT_EVT:
+        ESP_LOGI(BT_BLE_COEX_TAG, "ESP_GATTS_DISCONNECT_EVT (profile B)");
+        prepare_write_env_free(&b_prepare_write_env);
+        break;
     case ESP_GATTS_OPEN_EVT:
     case ESP_GATTS_CANCEL_OPEN_EVT:
     case ESP_GATTS_CLOSE_EVT:
