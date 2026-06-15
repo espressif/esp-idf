@@ -154,9 +154,12 @@ tBTA_GATTC_CLCB *bta_gattc_find_clcb_by_conn_id (UINT16 conn_id)
     tBTA_GATTC_CLCB *p_clcb = &bta_gattc_cb.clcb[0];
     UINT8 i;
 
+    if (conn_id == 0 || conn_id == GATT_INVALID_CONN_ID) {
+        return NULL;
+    }
+
     for (i = 0; i < BTA_GATTC_CLCB_MAX; i ++, p_clcb ++) {
-        if (p_clcb->in_use &&
-                p_clcb->bta_conn_id == conn_id) {
+        if (p_clcb->in_use && p_clcb->bta_conn_id == conn_id) {
             return p_clcb;
         }
     }
@@ -342,7 +345,7 @@ tBTA_GATTC_SERV *bta_gattc_find_srvr_cache(BD_ADDR bda)
     UINT8   i;
 
     for (i = 0; i < BTA_GATTC_KNOWN_SR_MAX; i ++, p_srcb ++) {
-        if (bdcmp(p_srcb->server_bda, bda) == 0) {
+        if (p_srcb->in_use && bdcmp(p_srcb->server_bda, bda) == 0) {
             return p_srcb;
         }
     }
@@ -387,7 +390,7 @@ tBTA_GATTC_SERV *bta_gattc_srcb_alloc(BD_ADDR bda)
         if (!p_tcb->in_use) {
             found = TRUE;
             break;
-        } else if (!p_tcb->connected) {
+        } else if (!p_tcb->connected && p_tcb->num_clcb == 0) {
             p_recycle = p_tcb;
         }
     }
@@ -415,6 +418,38 @@ tBTA_GATTC_SERV *bta_gattc_srcb_alloc(BD_ADDR bda)
         bdcpy(p_tcb->server_bda, bda);
     }
     return p_tcb;
+}
+
+/******************************************************************************
+ *
+ * Fixed-length prefix size of a GATTC API message in the heap buffer passed
+ * to bta_gattc_enqueue. Must match osi_malloc sizes in bta_gattc_api.c.
+ * Variable payloads (write value, search UUID) are copied separately.
+ *
+ ******************************************************************************/
+static size_t bta_gattc_enqueue_api_fixed_size(UINT16 event)
+{
+    switch (event) {
+    case BTA_GATTC_API_READ_EVT:
+    case BTA_GATTC_API_READ_BY_TYPE_EVT:
+        return sizeof(tBTA_GATTC_API_READ);
+    case BTA_GATTC_API_WRITE_EVT:
+        return sizeof(tBTA_GATTC_API_WRITE);
+    case BTA_GATTC_API_EXEC_EVT:
+        return sizeof(tBTA_GATTC_API_EXEC);
+    case BTA_GATTC_API_CFG_MTU_EVT:
+        return sizeof(tBTA_GATTC_API_CFG_MTU);
+    case BTA_GATTC_API_SEARCH_EVT:
+        return sizeof(tBTA_GATTC_API_SEARCH);
+    case BTA_GATTC_API_CONFIRM_EVT:
+        return sizeof(tBTA_GATTC_API_CONFIRM);
+    case BTA_GATTC_API_READ_MULTI_EVT:
+    case BTA_GATTC_API_READ_MULTI_VAR_EVT:
+        return sizeof(tBTA_GATTC_API_READ_MULTI);
+    default:
+        APPL_TRACE_ERROR("%s: unexpected event 0x%x", __func__, event);
+        return 0;
+    }
 }
 
 static BOOLEAN bta_gattc_has_prepare_command_in_queue(tBTA_GATTC_CLCB *p_clcb)
@@ -485,14 +520,29 @@ BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 
         if (p_data->hdr.event == BTA_GATTC_API_WRITE_EVT) {
             len = p_data->api_write.len;
-            if ((cmd_data = (tBTA_GATTC_DATA *)osi_malloc(sizeof(tBTA_GATTC_DATA) + len)) != NULL) {
-                memset(cmd_data, 0, sizeof(tBTA_GATTC_DATA) + len);
-			    memcpy(cmd_data, p_data, sizeof(tBTA_GATTC_DATA));
-                cmd_data->api_write.p_value = (UINT8 *)(cmd_data + 1);
-			    memcpy(cmd_data->api_write.p_value, p_data->api_write.p_value, len);
+            if (len > 0) {
+                if (p_data->api_write.p_value == NULL) {
+                    APPL_TRACE_ERROR("%s(), write len=%u but p_value is NULL", __func__, len);
+                    return FALSE;
+                }
+                if ((cmd_data = (tBTA_GATTC_DATA *)osi_malloc(sizeof(tBTA_GATTC_DATA) + len)) != NULL) {
+                    memset(cmd_data, 0, sizeof(tBTA_GATTC_DATA) + len);
+                    memcpy(cmd_data, p_data, sizeof(tBTA_GATTC_API_WRITE));
+                    cmd_data->api_write.p_value = (UINT8 *)(cmd_data + 1);
+                    memcpy(cmd_data->api_write.p_value, p_data->api_write.p_value, len);
+                } else {
+                    APPL_TRACE_ERROR("%s(), line = %d, alloc fail, no memory.", __func__, __LINE__);
+                    return FALSE;
+                }
             } else {
-                APPL_TRACE_ERROR("%s(), line = %d, alloc fail, no memory.", __func__, __LINE__);
-                return FALSE;
+                /* len == 0: no payload to copy; keep p_value NULL like BTA_GATTC_API_SEARCH_EVT without UUID */
+                if ((cmd_data = (tBTA_GATTC_DATA *)osi_malloc(sizeof(tBTA_GATTC_DATA))) != NULL) {
+                    memset(cmd_data, 0, sizeof(tBTA_GATTC_DATA));
+                    memcpy(cmd_data, p_data, sizeof(tBTA_GATTC_API_WRITE));
+                } else {
+                    APPL_TRACE_ERROR("%s(), line = %d, alloc fail, no memory.", __func__, __LINE__);
+                    return FALSE;
+                }
             }
         } else if (p_data->hdr.event == BTA_GATTC_API_SEARCH_EVT) {
             /*
@@ -547,7 +597,7 @@ BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
                 if ((cmd_data = (tBTA_GATTC_DATA *)osi_malloc(len)) != NULL) {
                     memset(cmd_data, 0, len);
                     /* Copy the structure */
-                    memcpy(cmd_data, p_data, sizeof(tBTA_GATTC_DATA));
+                    memcpy(cmd_data, p_data, sizeof(tBTA_GATTC_API_SEARCH));
                     /* Update pointer to point to the space after the structure */
                     cmd_data->api_search.p_srvc_uuid = (tBT_UUID *)(cmd_data + 1);
                     /* Copy the UUID data */
@@ -561,16 +611,22 @@ BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
                 /* p_srvc_uuid is NULL, no extra space needed (search all services) */
                 if ((cmd_data = (tBTA_GATTC_DATA *)osi_malloc(sizeof(tBTA_GATTC_DATA))) != NULL) {
                     memset(cmd_data, 0, sizeof(tBTA_GATTC_DATA));
-                    memcpy(cmd_data, p_data, sizeof(tBTA_GATTC_DATA));
+                    memcpy(cmd_data, p_data, sizeof(tBTA_GATTC_API_SEARCH));
                 } else {
                     APPL_TRACE_ERROR("%s(), line = %d, alloc fail, no memory.", __func__, __LINE__);
                     return FALSE;
                 }
             }
         } else {
+            size_t copy_sz = bta_gattc_enqueue_api_fixed_size(p_data->hdr.event);
+            if (copy_sz == 0) {
+                APPL_TRACE_ERROR("%s(), line = %d, unknown event for queue copy 0x%x.", __func__, __LINE__,
+                                 p_data->hdr.event);
+                return FALSE;
+            }
             if ((cmd_data = (tBTA_GATTC_DATA *)osi_malloc(sizeof(tBTA_GATTC_DATA))) != NULL) {
                 memset(cmd_data, 0, sizeof(tBTA_GATTC_DATA));
-                memcpy(cmd_data, p_data, sizeof(tBTA_GATTC_DATA));
+                memcpy(cmd_data, p_data, copy_sz);
             } else {
                 APPL_TRACE_ERROR("%s(), line = %d, alloc fail, no memory.", __func__, __LINE__);
                 return FALSE;
@@ -888,7 +944,10 @@ tBTA_GATTC_CONN *bta_gattc_conn_alloc(BD_ADDR remote_bda)
 #if BTA_GATT_DEBUG == TRUE
             APPL_TRACE_DEBUG("bta_gattc_conn_alloc: found conn_track[%d] available", i_conn);
 #endif
-            p_conn->in_use          = TRUE;
+            p_conn->in_use = TRUE;
+            p_conn->svc_change_descr_handle = 0;
+            p_conn->write_remote_svc_change_ccc_in_progress = FALSE;
+            p_conn->write_remote_svc_change_ccc_done = FALSE;
             bdcpy(p_conn->remote_bda, remote_bda);
             return p_conn;
         }
@@ -956,6 +1015,9 @@ BOOLEAN bta_gattc_conn_dealloc(BD_ADDR remote_bda)
 
     if (p_conn != NULL) {
         p_conn->in_use = FALSE;
+        p_conn->svc_change_descr_handle = 0;
+        p_conn->write_remote_svc_change_ccc_in_progress = FALSE;
+        p_conn->write_remote_svc_change_ccc_done = FALSE;
         memset(p_conn->remote_bda, 0, BD_ADDR_LEN);
         return TRUE;
     }

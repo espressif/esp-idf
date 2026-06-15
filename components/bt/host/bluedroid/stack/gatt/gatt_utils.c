@@ -690,6 +690,9 @@ BOOLEAN gatt_add_an_item_to_list(tGATT_HDL_LIST_INFO *p_list, tGATT_HDL_LIST_ELE
                     p_new->p_prev    = p_old->p_prev;
                     p_new->p_next    = p_old;
 
+                    if (p_old->p_prev != NULL) {
+                        p_old->p_prev->p_next = p_new;
+                    }
 
                     p_old->p_prev    = p_new;
                     break;
@@ -1231,6 +1234,10 @@ BOOLEAN gatt_parse_uuid_from_cmd(tBT_UUID *p_uuid_rec, UINT16 uuid_size, UINT8 *
 void gatt_start_rsp_timer(UINT16 clcb_idx)
 {
     tGATT_CLCB *p_clcb = gatt_clcb_find_by_idx(clcb_idx);
+    if (p_clcb == NULL) {
+        GATT_TRACE_ERROR("%s: no CLCB for clcb_idx=0x%x", __func__, clcb_idx);
+        return;
+    }
     p_clcb->rsp_timer_ent.param  = (TIMER_PARAM_TYPE)p_clcb;
     btu_start_timer (&p_clcb->rsp_timer_ent, BTU_TTYPE_ATT_WAIT_FOR_RSP,
                      GATT_WAIT_FOR_RSP_TOUT);
@@ -2305,9 +2312,16 @@ void gatt_cleanup_upon_disc(BD_ADDR bda, UINT16 reason, tBT_TRANSPORT transport)
     UINT8           i;
     UINT16          conn_id;
     tGATT_REG        *p_reg = NULL;
-
+#if (GATTS_INCLUDED == TRUE)
+    BD_ADDR         bda_local;
+#endif
 
     GATT_TRACE_DEBUG ("gatt_cleanup_upon_disc ");
+
+#if (GATTS_INCLUDED == TRUE)
+    /* Copy in case bda points into p_tcb->peer_bda, which is invalid after gatt_tcb_free. */
+    memcpy(bda_local, bda, BD_ADDR_LEN);
+#endif
 
     if ((p_tcb = gatt_find_tcb_by_addr(bda, transport)) != NULL) {
         GATT_TRACE_DEBUG ("found p_tcb ");
@@ -2357,7 +2371,7 @@ void gatt_cleanup_upon_disc(BD_ADDR bda, UINT16 reason, tBT_TRANSPORT transport)
         BTM_Recovery_Pre_State();
     }
 #if (GATTS_INCLUDED == TRUE)
-    gatt_delete_dev_from_srv_chg_clt_list(bda);
+    gatt_delete_dev_from_srv_chg_clt_list(bda_local);
 #endif // (GATTS_INCLUDED == TRUE)
 }
 /*******************************************************************************

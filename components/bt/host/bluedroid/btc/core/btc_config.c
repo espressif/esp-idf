@@ -277,6 +277,7 @@ bool btc_config_set_bin(const char *section, const char *key, const uint8_t *val
 
     config_set_string(config, section, key, str, false);
 
+    memset(str, 0, length * 2 + 1);
     osi_free(str);
     return true;
 }

@@ -2,3 +2,7 @@
 # Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
 #
 CONFIG_BT_ENABLED=y
+
+# Disable unused Bluedroid host features (GATT security server, extended adv only)
+# CONFIG_BT_GATTC_ENABLE is not set
+# CONFIG_BT_BLE_50_DTM_TEST_EN is not set

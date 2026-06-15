@@ -390,6 +390,18 @@ tGATT_STATUS attp_send_msg_to_l2cap(tGATT_TCB *p_tcb, BT_HDR *p_toL2CAP)
 
 
     if (p_tcb->att_lcid == L2CAP_ATT_CID) {
+        /* L2CA_SendFixedChnlData() silently drops (osi_free) the buffer when the
+         * ATT fixed channel is already in cong_sent state, yet still returns
+         * L2CAP_DW_CONGESTED. Without distinguishing this from the post-enqueue
+         * congestion case, the upper layer would treat a dropped PDU as "sent"
+         * and wait for a response that never arrives. Detect the drop path
+         * up-front, release the buffer here and surface it as GATT_BUSY so that
+         * callers go through their failure path instead. */
+        if (L2CA_CheckIsCongest(L2CAP_ATT_CID, p_tcb->peer_bda)) {
+            GATT_TRACE_WARNING("ATT fixed channel already congested, drop PDU");
+            osi_free(p_toL2CAP);
+            return GATT_BUSY;
+        }
         l2cap_ret = L2CA_SendFixedChnlData (L2CAP_ATT_CID, p_tcb->peer_bda, p_toL2CAP);
     } else {
 #if (CLASSIC_BT_INCLUDED == TRUE)
@@ -403,6 +415,8 @@ tGATT_STATUS attp_send_msg_to_l2cap(tGATT_TCB *p_tcb, BT_HDR *p_toL2CAP)
         GATT_TRACE_DEBUG("ATT failed to pass msg to L2CAP");
         return GATT_INTERNAL_ERROR;
     } else if (l2cap_ret == L2CAP_DW_CONGESTED) {
+        /* Buffer was enqueued by L2CAP before congestion was reported;
+         * L2CAP retains ownership of it. */
         GATT_TRACE_DEBUG("ATT congested, message accepted");
         return GATT_CONGESTED;
     }
