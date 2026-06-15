@@ -94,7 +94,7 @@ typedef struct {
 static esp_err_t process_segment_data(const process_segment_data_t *segment_data);
 
 /* Verify the main image header */
-static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t *image, bool silent);
+static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t *image, bool do_verify, bool silent);
 
 /* Verify a segment header */
 static esp_err_t verify_segment_header(int index, const esp_image_segment_header_t *segment, uint32_t segment_data_offs, esp_image_metadata_t *metadata, bool silent);
@@ -382,7 +382,7 @@ err:
     return err;
 }
 
-static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t *image, bool silent)
+static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t *image, bool do_verify, bool silent)
 {
     esp_err_t err = ESP_OK;
 
@@ -397,11 +397,13 @@ static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t
         FAIL_LOAD("image at 0x%"PRIx32" has invalid magic byte (nothing flashed here?)", src_addr);
     }
 
-    // Checking the chip revision header *will* print a bunch of other info
-    // regardless of silent setting as this may be important, but don't bother checking it
-    // if it looks like the app partition is erased or otherwise garbage
-    esp_image_type image_type = is_bootloader(src_addr) ? ESP_IMAGE_BOOTLOADER : ESP_IMAGE_APPLICATION;
-    CHECK_ERR(bootloader_common_check_chip_validity(image, image_type));
+    if (do_verify) {
+        // Checking the chip revision header *will* print a bunch of other info
+        // regardless of silent setting as this may be important, but don't bother checking it
+        // if it looks like the app partition is erased or otherwise garbage
+        esp_image_type image_type = is_bootloader(src_addr) ? ESP_IMAGE_BOOTLOADER : ESP_IMAGE_APPLICATION;
+        CHECK_ERR(bootloader_common_check_chip_validity(image, image_type));
+    }
 
     if (image->segment_count > ESP_IMAGE_MAX_SEGMENTS) {
         FAIL_LOAD("image at 0x%"PRIx32" segment count %d exceeds max %d", src_addr, image->segment_count, ESP_IMAGE_MAX_SEGMENTS);
@@ -576,8 +578,10 @@ static esp_err_t process_image_header(esp_image_metadata_t *data, uint32_t part_
                 bootloader_sha256_data(*sha_handle, &data->image, sizeof(esp_image_header_t));
             }
         }
-        CHECK_ERR(verify_image_header(data->start_addr, &data->image, silent));
     }
+
+    CHECK_ERR(verify_image_header(data->start_addr, &data->image, do_verify, silent));
+
     data->image_len = sizeof(esp_image_header_t);
     return ESP_OK;
 err:
