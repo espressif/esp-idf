@@ -668,6 +668,29 @@ BOOLEAN bta_gattc_check_notif_registry(tBTA_GATTC_RCB  *p_clreg, tBTA_GATTC_SERV
     return FALSE;
 
 }
+
+/*******************************************************************************
+**
+** Function         bta_gattc_any_notif_registry
+**
+** Description      check if any GATT client app registered for the notification.
+**
+** Returns          TRUE if any app registered, FALSE otherwise.
+**
+*******************************************************************************/
+BOOLEAN bta_gattc_any_notif_registry(tBTA_GATTC_SERV *p_srcb, tBTA_GATTC_NOTIFY *p_notify)
+{
+    UINT8 i;
+
+    for (i = 0; i < BTA_GATTC_CL_MAX; i++) {
+        if (bta_gattc_cb.cl_rcb[i].in_use &&
+            bta_gattc_check_notif_registry(&bta_gattc_cb.cl_rcb[i], p_srcb, p_notify)) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 /*******************************************************************************
 **
 ** Function         bta_gattc_clear_notif_registration
