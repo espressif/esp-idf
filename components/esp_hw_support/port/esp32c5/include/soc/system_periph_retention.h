@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0 OR MIT
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
@@ -32,7 +32,7 @@ extern const regdma_entries_config_t intr_matrix_regs_retention[INT_MTX_RETENTIO
  * This is an internal function of the sleep retention driver, and is not
  * useful for external use.
  */
-#define HP_SYSTEM_RETENTION_LINK_LEN 1
+#define HP_SYSTEM_RETENTION_LINK_LEN 3
 extern const regdma_entries_config_t hp_system_regs_retention[HP_SYSTEM_RETENTION_LINK_LEN];
 
 /**
@@ -54,7 +54,7 @@ extern const regdma_entries_config_t tee_apm_highpri_regs_retention[TEE_APM_HIGH
  * This is an internal function of the sleep retention driver, and is not
  * useful for external use.
  */
-#define IOMUX_RETENTION_LINK_LEN    5
+#define IOMUX_RETENTION_LINK_LEN    7
 extern const regdma_entries_config_t iomux_regs_retention[IOMUX_RETENTION_LINK_LEN];
 
 /**
@@ -64,7 +64,7 @@ extern const regdma_entries_config_t iomux_regs_retention[IOMUX_RETENTION_LINK_L
  * This is an internal function of the sleep retention driver, and is not
  * useful for external use.
  */
-#define SPIMEM_RETENTION_LINK_LEN   5
+#define SPIMEM_RETENTION_LINK_LEN   8
 extern const regdma_entries_config_t flash_spimem_regs_retention[SPIMEM_RETENTION_LINK_LEN];
 
 /**
@@ -76,6 +76,16 @@ extern const regdma_entries_config_t flash_spimem_regs_retention[SPIMEM_RETENTIO
  */
 #define SYSTIMER_RETENTION_LINK_LEN   19
 extern const regdma_entries_config_t systimer_regs_retention[SYSTIMER_RETENTION_LINK_LEN];
+
+/**
+ * @brief Provide access to pvt configuration registers retention
+ * context definition.
+ *
+ * This is an internal function of the sleep retention driver, and is not
+ * useful for external use.
+ */
+#define PVT_RETENTION_LINK_LEN   1
+extern const regdma_entries_config_t pvt_regs_retention[PVT_RETENTION_LINK_LEN];
 
 #ifdef __cplusplus
 }

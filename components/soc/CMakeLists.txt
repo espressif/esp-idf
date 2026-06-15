@@ -51,10 +51,6 @@ if(CONFIG_SOC_MPI_SUPPORTED)
     list(APPEND srcs "${target_folder}/mpi_periph.c")
 endif()
 
-if(CONFIG_SOC_PAU_SUPPORTED AND CONFIG_SOC_LIGHT_SLEEP_SUPPORTED AND CONFIG_SOC_PM_SUPPORT_TOP_PD)
-    list(APPEND srcs "${target_folder}/system_retention_periph.c")
-endif()
-
 if(CONFIG_SOC_BOD_SUPPORTED)
     list(APPEND srcs "${target_folder}/power_supply_periph.c")
 endif()
