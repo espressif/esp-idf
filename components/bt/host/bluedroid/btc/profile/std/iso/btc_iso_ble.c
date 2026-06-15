@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,9 +29,10 @@ static void btc_ble_iso_callback(tBTM_BLE_ISO_EVENT event,
 {
     esp_ble_iso_cb_param_t param = {0};
     bt_status_t ret;
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_ISO_BLE;
+    msg.act = ESP_BLE_ISO_EVT_MAX;
 
     switch(event) {
 #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
@@ -208,6 +209,11 @@ static void btc_ble_iso_callback(tBTM_BLE_ISO_EVENT event,
             break;
     }
 
+    if (msg.act == ESP_BLE_ISO_EVT_MAX) {
+        BTC_TRACE_ERROR("%s unk ISO evt %d", __func__, event);
+        return;
+    }
+
     ret = btc_transfer_context(&msg, &param,
                                sizeof(esp_ble_iso_cb_param_t), NULL, NULL);
 
@@ -341,13 +347,14 @@ void btc_iso_ble_call_handler(btc_msg_t *msg)
                                 (uint8_t *)&set_cig_params->cis_params[0]);
         break;
     }
-    case BTC_ISO_ACT_SET_CIG_PARAMS_TEST:
+    case BTC_ISO_ACT_SET_CIG_PARAMS_TEST: {
         struct set_cig_params_test_arg *set_cig_params_test = (struct set_cig_params_test_arg *)arg;
         BTA_DmBleIsoSetCigParamsTest(set_cig_params_test->cig_id, set_cig_params_test->sdu_int_c_to_p, set_cig_params_test->sdu_int_p_to_c,
                                 set_cig_params_test->ft_c_to_p, set_cig_params_test->ft_p_to_c, set_cig_params_test->iso_interval,
                                 set_cig_params_test->worse_case_SCA, set_cig_params_test->packing, set_cig_params_test->framing,
                                 set_cig_params_test->cis_cnt, (uint8_t *)&set_cig_params_test->cis_params_test[0]);
         break;
+    }
     case BTC_ISO_ACT_CREATE_CIS: {
         struct creat_cis_arg * create_cis = (struct creat_cis_arg *)arg;
         BTA_DmBleIsoCreateCis(create_cis->cis_count, (uint8_t *)&create_cis->cis_hdls[0]);

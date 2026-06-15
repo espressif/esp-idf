@@ -244,7 +244,7 @@ static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
 {
     uint16_t uuid = 0;
     future_t *future_p;
-    esp_ble_gatts_cb_param_t param;
+    esp_ble_gatts_cb_param_t param = {0};
     param.add_attr_tab.status = ESP_GATT_OK;
     param.add_attr_tab.num_handle = max_nb_attr;
 
@@ -509,11 +509,43 @@ static esp_gatt_status_t btc_gatts_check_valid_attr_tab(esp_gatts_attr_db_t *gat
     uint16_t uuid = 0;
 
     for(int i = 0; i < max_nb_attr; i++) {
-        if(gatts_attr_db[i].att_desc.uuid_length != ESP_UUID_LEN_16) {
+        const esp_attr_desc_t *desc = &gatts_attr_db[i].att_desc;
+
+        /* Reject absurd attribute sizes regardless of row type. Mirrors the per-call
+         * guard in esp_ble_gatts_add_char_desc_param_check() so that the attribute
+         * table API enforces the same upper bound. */
+        if (desc->max_length > ESP_GATT_MAX_ATTR_LEN ||
+            desc->length     > ESP_GATT_MAX_ATTR_LEN) {
+            BTC_TRACE_ERROR("%s attr[%d] len %u/max %u>%u",
+                            __func__, i,
+                            (unsigned)desc->length,
+                            (unsigned)desc->max_length,
+                            (unsigned)ESP_GATT_MAX_ATTR_LEN);
+            return ESP_GATT_INVALID_ATTR_LEN;
+        }
+
+        /* When max_length is non-zero the row carries a stack-stored attribute
+         * value: gatts_add_char_descr()/gatts_add_characteristic() will allocate
+         * max_length bytes and memcpy length bytes into it. Reject length > max_length
+         * here so the table API matches esp_ble_gatts_add_char_desc_param_check(),
+         * fails fast with a clear error to the app, and also avoids the BTA-layer
+         * out-of-bounds read in BTA_GATTS_AddCharDescriptor() when the caller's
+         * source buffer is sized to max_length. Rows with max_length == 0 carry
+         * declarations (service UUID, char property byte, include-service descriptor)
+         * whose length is unrelated to max_length, so they are skipped. */
+        if (desc->max_length != 0 && desc->length > desc->max_length) {
+            BTC_TRACE_ERROR("%s attr[%d] len %u>max %u",
+                            __func__, i,
+                            (unsigned)desc->length,
+                            (unsigned)desc->max_length);
+            return ESP_GATT_INVALID_ATTR_LEN;
+        }
+
+        if(desc->uuid_length != ESP_UUID_LEN_16) {
             continue;
         }
 
-        uuid = (gatts_attr_db[i].att_desc.uuid_p[1] << 8) + (gatts_attr_db[i].att_desc.uuid_p[0]);
+        uuid = (desc->uuid_p[1] << 8) + (desc->uuid_p[0]);
         switch(uuid) {
             case ESP_GATT_UUID_PRI_SERVICE:
             case ESP_GATT_UUID_SEC_SERVICE:
@@ -594,9 +626,56 @@ esp_gatt_status_t btc_gatts_show_local_database(void)
     return ESP_GATT_OK;
 }
 
+/* BTA passes a pointer to the active tBTA_GATTS union member (often a small stack
+ * object). Only copy that member's size — sizeof(tBTA_GATTS) would read past it. */
+static int btc_gatts_cb_event_param_len(tBTA_GATTS_EVT event)
+{
+    switch (event) {
+    case BTA_GATTS_REG_EVT:
+    case BTA_GATTS_DEREG_EVT:
+        return (int)sizeof(tBTA_GATTS_REG_OPER);
+    case BTA_GATTS_READ_EVT:
+    case BTA_GATTS_WRITE_EVT:
+    case BTA_GATTS_EXEC_WRITE_EVT:
+    case BTA_GATTS_MTU_EVT:
+    case BTA_GATTS_CONF_EVT:
+        return (int)sizeof(tBTA_GATTS_REQ);
+    case BTA_GATTS_CREATE_EVT:
+        return (int)sizeof(tBTA_GATTS_CREATE);
+    case BTA_GATTS_ADD_INCL_SRVC_EVT:
+    case BTA_GATTS_ADD_CHAR_EVT:
+    case BTA_GATTS_ADD_CHAR_DESCR_EVT:
+        return (int)sizeof(tBTA_GATTS_ADD_RESULT);
+    case BTA_GATTS_DELELTE_EVT:
+    case BTA_GATTS_START_EVT:
+    case BTA_GATTS_STOP_EVT:
+        return (int)sizeof(tBTA_GATTS_SRVC_OPER);
+    case BTA_GATTS_SET_ATTR_VAL_EVT:
+        return (int)sizeof(tBAT_GATTS_ATTR_VAL_RESULT);
+    case BTA_GATTS_CONNECT_EVT:
+    case BTA_GATTS_DISCONNECT_EVT:
+        return (int)sizeof(tBTA_GATTS_CONN);
+    case BTA_GATTS_OPEN_EVT:
+        return (int)sizeof(tBTA_GATTS_OPEN);
+    case BTA_GATTS_CANCEL_OPEN_EVT:
+        return (int)sizeof(tBTA_GATTS_CANCEL_OPEN);
+    case BTA_GATTS_CLOSE_EVT:
+        return (int)sizeof(tBTA_GATTS_CLOSE);
+    case BTA_GATTS_LISTEN_EVT:
+        return (int)sizeof(tBTA_GATT_STATUS);
+    case BTA_GATTS_CONGEST_EVT:
+        return (int)sizeof(tBTA_GATTS_CONGEST);
+    case BTA_GATTS_SEND_SERVICE_CHANGE_EVT:
+        return (int)sizeof(tBTA_GATTS_SERVICE_CHANGE);
+    default:
+        return (int)sizeof(tBTA_GATTS);
+    }
+}
+
 static void btc_gatts_cb_param_copy_req(btc_msg_t *msg, void *p_dest, void *p_src)
 {
     uint16_t event = msg->act;
+    int copy_len = btc_gatts_cb_event_param_len((tBTA_GATTS_EVT)event);
 
     tBTA_GATTS *p_dest_data = (tBTA_GATTS *) p_dest;
     tBTA_GATTS *p_src_data = (tBTA_GATTS *) p_src;
@@ -605,8 +684,7 @@ static void btc_gatts_cb_param_copy_req(btc_msg_t *msg, void *p_dest, void *p_sr
         return;
     }
 
-    // Copy basic structure first
-    memcpy(p_dest_data, p_src_data, sizeof(tBTA_GATTS));
+    memcpy(p_dest_data, p_src_data, (size_t)copy_len);
 
     // Allocate buffer for request data if necessary
     switch (event) {
@@ -620,6 +698,21 @@ static void btc_gatts_cb_param_copy_req(btc_msg_t *msg, void *p_dest, void *p_sr
                    sizeof(tBTA_GATTS_REQ_DATA));
         } else {
             BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
+        }
+        break;
+    case BTA_GATTS_CONF_EVT:
+        /* bta_gatts_indicate_handle frees req_data.value after returning from this
+         * callback; duplicate the buffer so the queued BTC handler does not UAF. */
+        if (p_src_data->req_data.value != NULL && p_src_data->req_data.data_len > 0) {
+            p_dest_data->req_data.value = (uint8_t *)osi_malloc(p_src_data->req_data.data_len);
+            if (p_dest_data->req_data.value != NULL) {
+                memcpy(p_dest_data->req_data.value, p_src_data->req_data.value,
+                       p_src_data->req_data.data_len);
+            } else {
+                BTC_TRACE_ERROR("%s CONF_EVT no mem", __func__);
+                p_dest_data->req_data.value = NULL;
+                p_dest_data->req_data.data_len = 0;
+            }
         }
         break;
 
@@ -643,6 +736,10 @@ static void btc_gatts_cb_param_copy_free(btc_msg_t *msg)
         }
         break;
     case BTA_GATTS_CONF_EVT:
+        if (p_data && p_data->req_data.value) {
+            osi_free(p_data->req_data.value);
+            p_data->req_data.value = NULL;
+        }
         break;
     default:
         break;
@@ -709,7 +806,7 @@ static void btc_gatts_inter_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         future_ready(btc_creat_tab_env.complete_future, result);
         return;
     }
-    status = btc_transfer_context(&msg, p_data, sizeof(tBTA_GATTS),
+    status = btc_transfer_context(&msg, p_data, btc_gatts_cb_event_param_len(event),
                                     btc_gatts_cb_param_copy_req, btc_gatts_cb_param_copy_free);
 
     if (status != BT_STATUS_SUCCESS) {
@@ -786,7 +883,7 @@ void btc_gatts_call_handler(btc_msg_t *msg)
                                         arg->send_ind.value_len, arg->send_ind.value, arg->send_ind.need_confirm);
         break;
     case BTC_GATTS_ACT_SEND_RESPONSE: {
-        esp_ble_gatts_cb_param_t param;
+        esp_ble_gatts_cb_param_t param = {0};
         esp_gatt_rsp_t *p_rsp = arg->send_rsp.rsp;
 
         if (p_rsp) {
@@ -1099,7 +1196,7 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
 
 void btc_congest_callback(tBTA_GATTS *param)
 {
-    esp_ble_gatts_cb_param_t esp_param;
+    esp_ble_gatts_cb_param_t esp_param = {0};
     esp_gatt_if_t gatts_if = BTC_GATT_GET_GATT_IF(param->congest.conn_id);
     esp_param.congest.conn_id = BTC_GATT_GET_CONN_ID(param->congest.conn_id);
     esp_param.congest.congested = param->congest.congested;

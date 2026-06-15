@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -59,7 +59,7 @@ static const uint8_t spp_adv_data[23] = {
     0x0F, ESP_BLE_AD_TYPE_NAME_CMPL, 'E', 'S', 'P', '_', 'S', 'P', 'P', '_', 'S', 'E', 'R','V', 'E', 'R'
 };
 
-static uint16_t spp_mtu_size = SPP_GATT_MTU_SIZE;
+static uint16_t spp_mtu_size = 23;
 static uint16_t spp_conn_id = 0xffff;
 static esp_gatt_if_t spp_gatts_if = 0xff;
 QueueHandle_t spp_uart_queue = NULL;
@@ -108,19 +108,25 @@ typedef struct spp_receive_data_node{
     struct spp_receive_data_node * next_node;
 }spp_receive_data_node_t;
 
-static spp_receive_data_node_t * temp_spp_recv_data_node_p1 = NULL;
-static spp_receive_data_node_t * temp_spp_recv_data_node_p2 = NULL;
-
 typedef struct spp_receive_data_buff{
     int32_t node_num;
     int32_t buff_size;
-    spp_receive_data_node_t * first_node;
+    spp_receive_data_node_t *first_node;
+    spp_receive_data_node_t *last_node;
 }spp_receive_data_buff_t;
 
-static spp_receive_data_buff_t SppRecvDataBuff = {
+/* Command queue carries (data, len); we cannot use strlen() on the payload because
+ * BLE writes are not NUL-terminated. */
+typedef struct {
+    uint16_t len;
+    uint8_t *data;
+} spp_cmd_queue_msg_t;
+
+static spp_receive_data_buff_t spp_prep_wr_buff = {
     .node_num   = 0,
     .buff_size  = 0,
-    .first_node = NULL
+    .first_node = NULL,
+    .last_node  = NULL,
 };
 
 static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
@@ -271,67 +277,74 @@ static uint8_t find_char_and_desr_index(uint16_t handle)
 
 static bool store_wr_buffer(esp_ble_gatts_cb_param_t *p_data)
 {
-    temp_spp_recv_data_node_p1 = (spp_receive_data_node_t *)malloc(sizeof(spp_receive_data_node_t));
-
-    if(temp_spp_recv_data_node_p1 == NULL){
-        ESP_LOGI(GATTS_TABLE_TAG, "malloc error %s %d", __func__, __LINE__);
+    if (p_data == NULL) {
         return false;
     }
 
-    temp_spp_recv_data_node_p1->len = p_data->write.len;
-    temp_spp_recv_data_node_p1->next_node = NULL;
-    temp_spp_recv_data_node_p1->node_buff = (uint8_t *)malloc(p_data->write.len);
-    if (temp_spp_recv_data_node_p1->node_buff == NULL) {
-        ESP_LOGI(GATTS_TABLE_TAG, "malloc error %s %d\n", __func__, __LINE__);
-        // Security fix: Free the node and return false to prevent memory leak
-        free(temp_spp_recv_data_node_p1);
-        temp_spp_recv_data_node_p1 = NULL;
+    /* Per Bluetooth Core Spec (Vol 3, Part F, 3.4.6.1) the Part Attribute Value
+     * in ATT_PREPARE_WRITE_REQ may be 0..(ATT_MTU-5) bytes, so a zero-length
+     * fragment is a valid request that carries no payload. Skip allocating an
+     * empty node here: malloc(0) is implementation-defined in C and on
+     * ESP-IDF's multi_heap returns NULL, which would otherwise be reported as
+     * a (false) allocation failure. */
+    if (p_data->write.len == 0) {
+        return true;
+    }
+
+    spp_receive_data_node_t *node = (spp_receive_data_node_t *)malloc(sizeof(spp_receive_data_node_t));
+    if (node == NULL) {
+        ESP_LOGE(GATTS_TABLE_TAG, "malloc error %s %d", __func__, __LINE__);
         return false;
     }
-    memcpy(temp_spp_recv_data_node_p1->node_buff, p_data->write.value, p_data->write.len);
 
-    // Security fix: Link to list only after successful allocation
-    if(temp_spp_recv_data_node_p2 != NULL){
-        temp_spp_recv_data_node_p2->next_node = temp_spp_recv_data_node_p1;
+    node->len = p_data->write.len;
+    node->next_node = NULL;
+    node->node_buff = (uint8_t *)malloc(p_data->write.len);
+    if (node->node_buff == NULL) {
+        ESP_LOGE(GATTS_TABLE_TAG, "malloc error %s %d", __func__, __LINE__);
+        free(node);
+        return false;
     }
-    temp_spp_recv_data_node_p2 = temp_spp_recv_data_node_p1;
-    SppRecvDataBuff.buff_size += p_data->write.len;
+    memcpy(node->node_buff, p_data->write.value, p_data->write.len);
 
-    if(SppRecvDataBuff.node_num == 0){
-        SppRecvDataBuff.first_node = temp_spp_recv_data_node_p1;
-        SppRecvDataBuff.node_num++;
-    }else{
-        SppRecvDataBuff.node_num++;
+    if (spp_prep_wr_buff.last_node != NULL) {
+        spp_prep_wr_buff.last_node->next_node = node;
+    } else {
+        spp_prep_wr_buff.first_node = node;
     }
+    spp_prep_wr_buff.last_node = node;
+    spp_prep_wr_buff.buff_size += p_data->write.len;
+    spp_prep_wr_buff.node_num++;
 
     return true;
 }
 
-static void free_write_buffer(void)
+static void free_prep_wr_buffer(void)
 {
-    temp_spp_recv_data_node_p1 = SppRecvDataBuff.first_node;
+    spp_receive_data_node_t *cur = spp_prep_wr_buff.first_node;
 
-    while(temp_spp_recv_data_node_p1 != NULL){
-        temp_spp_recv_data_node_p2 = temp_spp_recv_data_node_p1->next_node;
-        if (temp_spp_recv_data_node_p1->node_buff) {
-            free(temp_spp_recv_data_node_p1->node_buff);
+    while (cur != NULL) {
+        spp_receive_data_node_t *next = cur->next_node;
+        if (cur->node_buff) {
+            free(cur->node_buff);
         }
-        free(temp_spp_recv_data_node_p1);
-        temp_spp_recv_data_node_p1 = temp_spp_recv_data_node_p2;
+        free(cur);
+        cur = next;
     }
 
-    SppRecvDataBuff.node_num = 0;
-    SppRecvDataBuff.buff_size = 0;
-    SppRecvDataBuff.first_node = NULL;
+    spp_prep_wr_buff.node_num = 0;
+    spp_prep_wr_buff.buff_size = 0;
+    spp_prep_wr_buff.first_node = NULL;
+    spp_prep_wr_buff.last_node = NULL;
 }
 
-static void print_write_buffer(void)
+static void print_prep_wr_buffer(void)
 {
-    temp_spp_recv_data_node_p1 = SppRecvDataBuff.first_node;
+    spp_receive_data_node_t *cur = spp_prep_wr_buff.first_node;
 
-    while (temp_spp_recv_data_node_p1 != NULL) {
-        uart_write_bytes(UART_NUM_0, (char *)(temp_spp_recv_data_node_p1->node_buff), temp_spp_recv_data_node_p1->len);
-        temp_spp_recv_data_node_p1 = temp_spp_recv_data_node_p1->next_node;
+    while (cur != NULL) {
+        uart_write_bytes(UART_NUM_0, (char *)(cur->node_buff), cur->len);
+        cur = cur->next_node;
     }
 }
 
@@ -449,21 +462,25 @@ static void spp_uart_init(void)
 #ifdef SUPPORT_HEARTBEAT
 void spp_heartbeat_task(void * arg)
 {
-    uint16_t cmd_id;
+    uint32_t cmd_id;
 
     for(;;) {
         vTaskDelay(50 / portTICK_PERIOD_MS);
         if(xQueueReceive(cmd_heartbeat_queue, &cmd_id, portMAX_DELAY)) {
-            while(1){
-                heartbeat_count_num++;
-                vTaskDelay(5000/ portTICK_PERIOD_MS);
-                if((heartbeat_count_num >3)&&(is_connected)){
-                    esp_ble_gap_disconnect(spp_remote_bda);
-                }
-                if(is_connected && enable_heart_ntf){
-                    esp_ble_gatts_send_indicate(spp_gatts_if, spp_conn_id, spp_handle_table[SPP_IDX_SPP_HEARTBEAT_VAL],sizeof(heartbeat_s), heartbeat_s, false);
-                }else if(!is_connected){
+            heartbeat_count_num = 0;
+            while (1) {
+                if (!is_connected) {
                     break;
+                }
+                vTaskDelay(5000 / portTICK_PERIOD_MS);
+                heartbeat_count_num++;
+                if ((heartbeat_count_num > 3) && is_connected) {
+                    esp_ble_gap_disconnect(spp_remote_bda);
+                    break;
+                }
+                if (is_connected && enable_heart_ntf) {
+                    esp_ble_gatts_send_indicate(spp_gatts_if, spp_conn_id, spp_handle_table[SPP_IDX_SPP_HEARTBEAT_VAL],
+                                                sizeof(heartbeat_s), heartbeat_s, false);
                 }
             }
         }
@@ -474,13 +491,15 @@ void spp_heartbeat_task(void * arg)
 
 void spp_cmd_task(void * arg)
 {
-    uint8_t * cmd_id;
+    spp_cmd_queue_msg_t msg;
 
     for (;;) {
         vTaskDelay(50 / portTICK_PERIOD_MS);
-        if(xQueueReceive(cmd_cmd_queue, &cmd_id, portMAX_DELAY)) {
-            ESP_LOG_BUFFER_CHAR(GATTS_TABLE_TAG, (char *)(cmd_id), strlen((char *)cmd_id));
-            free(cmd_id);
+        if (xQueueReceive(cmd_cmd_queue, &msg, portMAX_DELAY)) {
+            if (msg.data != NULL) {
+                ESP_LOG_BUFFER_CHAR(GATTS_TABLE_TAG, (char *)msg.data, msg.len);
+                free(msg.data);
+            }
         }
     }
     vTaskDelete(NULL);
@@ -499,7 +518,7 @@ static void spp_task_init(void)
     xTaskCreate(spp_heartbeat_task, "spp_heartbeat_task", 2048, NULL, 10, NULL);
 #endif
 
-    cmd_cmd_queue = xQueueCreate(10, sizeof(uint32_t));
+    cmd_cmd_queue = xQueueCreate(10, sizeof(spp_cmd_queue_msg_t));
     xTaskCreate(spp_cmd_task, "spp_cmd_task", 4096, NULL, 10, NULL);
 }
 
@@ -518,7 +537,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         ESP_LOGI(GATTS_TABLE_TAG, "Advertising start successfully");
         break;
     case ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT:
-        if (param->adv_start_cmpl.status != ESP_BT_STATUS_SUCCESS) {
+        if (param->adv_stop_cmpl.status != ESP_BT_STATUS_SUCCESS) {
             ESP_LOGE(GATTS_TABLE_TAG, "Advertising stop failed, status %d", param->adv_stop_cmpl.status);
             break;
         }
@@ -556,15 +575,17 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
     	    res = find_char_and_desr_index(p_data->write.handle);
             if (p_data->write.is_prep == false) {
                 if (res == SPP_IDX_SPP_COMMAND_VAL) {
-                    uint8_t * spp_cmd_buff = NULL;
-                    spp_cmd_buff = (uint8_t *)malloc((spp_mtu_size - 3) * sizeof(uint8_t));
-                    if(spp_cmd_buff == NULL){
+                    uint8_t *spp_cmd_buff = (uint8_t *)malloc(p_data->write.len);
+                    if (spp_cmd_buff == NULL) {
                         ESP_LOGE(GATTS_TABLE_TAG, "%s malloc failed", __func__);
                         break;
                     }
-                    memset(spp_cmd_buff, 0x0, (spp_mtu_size - 3));
                     memcpy(spp_cmd_buff, p_data->write.value, p_data->write.len);
-                    xQueueSend(cmd_cmd_queue, &spp_cmd_buff, 10/portTICK_PERIOD_MS);
+                    spp_cmd_queue_msg_t msg = { .len = p_data->write.len, .data = spp_cmd_buff };
+                    if (xQueueSend(cmd_cmd_queue, &msg, 10 / portTICK_PERIOD_MS) != pdTRUE) {
+                        ESP_LOGE(GATTS_TABLE_TAG, "%s cmd_cmd_queue send failed", __func__);
+                        free(spp_cmd_buff);
+                    }
                 } else if (res == SPP_IDX_SPP_DATA_NTF_CFG) {
                     if ((p_data->write.len == 2) && (p_data->write.value[0] == 0x01) && (p_data->write.value[1] == 0x00)) {
                         ESP_LOGI(GATTS_TABLE_TAG, "SPP data notification enable");
@@ -588,9 +609,11 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
                     if ((p_data->write.len == 2) && (p_data->write.value[0] == 0x01) && (p_data->write.value[1] == 0x00)) {
                         ESP_LOGI(GATTS_TABLE_TAG, "SPP heartbeat notification enable");
                         enable_heart_ntf = true;
+                        heartbeat_count_num = 0;
                     } else if ((p_data->write.len == 2) && (p_data->write.value[0] == 0x00) && (p_data->write.value[1] == 0x00)) {
                         ESP_LOGI(GATTS_TABLE_TAG, "SPP heartbeat notification disable");
                         enable_heart_ntf = false;
+                        heartbeat_count_num = 0;
                     }
                 } else if (res == SPP_IDX_SPP_HEARTBEAT_VAL) {
                     if ((p_data->write.len == sizeof(heartbeat_s)) && (memcmp(heartbeat_s, p_data->write.value, sizeof(heartbeat_s)) == 0)) {
@@ -612,14 +635,15 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
             }
       	 	break;
     	}
-    	case ESP_GATTS_EXEC_WRITE_EVT: {
-    	    ESP_LOGI(GATTS_TABLE_TAG, "Execute write");
-    	    if (p_data->exec_write.exec_write_flag) {
-    	        print_write_buffer();
-    	        free_write_buffer();
-    	    }
-    	    break;
-    	}
+    	case ESP_GATTS_EXEC_WRITE_EVT:
+            /* End of prepared-write transaction: print on EXEC, then always release queued chunks
+             * (master only freed on EXEC, which leaked on CANCEL). */
+            ESP_LOGI(GATTS_TABLE_TAG, "Execute write flag 0x%02x", p_data->exec_write.exec_write_flag);
+            if (p_data->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC) {
+                print_prep_wr_buffer();
+            }
+            free_prep_wr_buffer();
+            break;
         case ESP_GATTS_RESPONSE_EVT:
             break;
     	case ESP_GATTS_MTU_EVT:
@@ -644,18 +668,20 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
     	case ESP_GATTS_CONNECT_EVT:
             ESP_LOGI(GATTS_TABLE_TAG, "Connected, conn_id %u, remote "ESP_BD_ADDR_STR"",
                  param->connect.conn_id, ESP_BD_ADDR_HEX(param->connect.remote_bda));
+            free_prep_wr_buffer();
     	    spp_conn_id = p_data->connect.conn_id;
     	    spp_gatts_if = gatts_if;
     	    is_connected = true;
     	    memcpy(&spp_remote_bda,&p_data->connect.remote_bda,sizeof(esp_bd_addr_t));
 #ifdef SUPPORT_HEARTBEAT
-    	    uint16_t cmd = 0;
-            xQueueSend(cmd_heartbeat_queue,&cmd,10/portTICK_PERIOD_MS);
+    	    uint32_t cmd = 0;
+            xQueueSend(cmd_heartbeat_queue, &cmd, 10 / portTICK_PERIOD_MS);
 #endif
         	break;
     	case ESP_GATTS_DISCONNECT_EVT:
             ESP_LOGI(GATTS_TABLE_TAG, "Disconnected, remote "ESP_BD_ADDR_STR", reason 0x%02x",
                  ESP_BD_ADDR_HEX(param->disconnect.remote_bda), param->disconnect.reason);
+            free_prep_wr_buffer();
             spp_mtu_size = 23;
     	    is_connected = false;
     	    enable_data_ntf = false;
@@ -670,6 +696,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
     	case ESP_GATTS_CANCEL_OPEN_EVT:
     	    break;
     	case ESP_GATTS_CLOSE_EVT:
+            free_prep_wr_buffer();
     	    break;
     	case ESP_GATTS_LISTEN_EVT:
     	    break;

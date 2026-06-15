@@ -79,14 +79,15 @@ int ble_ead_encrypt(const uint8_t session_key[BLE_EAD_KEY_SIZE],
  * @param encrypted_payload     Encrypted advertising data (includes randomizer and MIC)
  * @param encrypted_payload_size Size of encrypted data
  * @param payload               Output buffer for decrypted data
- *                              Size must be at least BLE_EAD_DECRYPTED_PAYLOAD_SIZE(encrypted_payload_size)
+ * @param payload_capacity      Size of @a payload in bytes; must be >=
+ *                              BLE_EAD_DECRYPTED_PAYLOAD_SIZE(encrypted_payload_size)
  *
  * @return 0 on success, negative error code on failure
  */
 int ble_ead_decrypt(const uint8_t session_key[BLE_EAD_KEY_SIZE],
                     const uint8_t iv[BLE_EAD_IV_SIZE],
                     const uint8_t *encrypted_payload, size_t encrypted_payload_size,
-                    uint8_t *payload);
+                    uint8_t *payload, size_t payload_capacity);
 
 #ifdef __cplusplus
 }

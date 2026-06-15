@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -14,6 +14,7 @@
 *
 ****************************************************************************/
 
+#include <stdlib.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -57,7 +58,20 @@ typedef struct {
     int                     prepare_len;
 } prepare_type_env_t;
 
+/* Single-connection demo: one prepare-write buffer for the lone GATT link. */
 static prepare_type_env_t prepare_write_env;
+
+static void prepare_write_env_clear(prepare_type_env_t *env)
+{
+    if (env == NULL) {
+        return;
+    }
+    if (env->prepare_buf != NULL) {
+        free(env->prepare_buf);
+        env->prepare_buf = NULL;
+    }
+    env->prepare_len = 0;
+}
 
 #define CONFIG_SET_RAW_ADV_DATA
 #ifdef CONFIG_SET_RAW_ADV_DATA
@@ -288,7 +302,7 @@ void example_prepare_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t 
         status = ESP_GATT_INVALID_ATTR_LEN;
     }
     if (status == ESP_GATT_OK && prepare_write_env->prepare_buf == NULL) {
-        prepare_write_env->prepare_buf = (uint8_t *)malloc(PREPARE_BUF_MAX_SIZE * sizeof(uint8_t));
+        prepare_write_env->prepare_buf = (uint8_t *)calloc(PREPARE_BUF_MAX_SIZE, sizeof(uint8_t));
         prepare_write_env->prepare_len = 0;
         if (prepare_write_env->prepare_buf == NULL) {
             ESP_LOGE(GATTS_TABLE_TAG, "%s, Gatt_server prep no mem", __func__);
@@ -321,21 +335,32 @@ void example_prepare_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t 
     memcpy(prepare_write_env->prepare_buf + param->write.offset,
            param->write.value,
            param->write.len);
-    prepare_write_env->prepare_len += param->write.len;
+    /* Extent is max(end of fragment), not sum(len); cap to allocated size. */
+    int frag_end = (int)param->write.offset + (int)param->write.len;
+    if (frag_end > prepare_write_env->prepare_len) {
+        prepare_write_env->prepare_len = frag_end;
+    }
+    if (prepare_write_env->prepare_len > PREPARE_BUF_MAX_SIZE) {
+        prepare_write_env->prepare_len = PREPARE_BUF_MAX_SIZE;
+    }
 
 }
 
 void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param){
     if (param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC && prepare_write_env->prepare_buf){
-        ESP_LOG_BUFFER_HEX(GATTS_TABLE_TAG, prepare_write_env->prepare_buf, prepare_write_env->prepare_len);
+        int log_len = prepare_write_env->prepare_len;
+        if (log_len < 0) {
+            log_len = 0;
+        } else if (log_len > PREPARE_BUF_MAX_SIZE) {
+            log_len = PREPARE_BUF_MAX_SIZE;
+        }
+        if (log_len > 0) {
+            ESP_LOG_BUFFER_HEX(GATTS_TABLE_TAG, prepare_write_env->prepare_buf, (size_t)log_len);
+        }
     }else{
         ESP_LOGI(GATTS_TABLE_TAG,"ESP_GATT_PREP_WRITE_CANCEL");
     }
-    if (prepare_write_env->prepare_buf) {
-        free(prepare_write_env->prepare_buf);
-        prepare_write_env->prepare_buf = NULL;
-    }
-    prepare_write_env->prepare_len = 0;
+    prepare_write_env_clear(prepare_write_env);
 }
 
 static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
@@ -459,6 +484,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
             break;
         case ESP_GATTS_DISCONNECT_EVT:
             ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_DISCONNECT_EVT, reason = 0x%x", param->disconnect.reason);
+            prepare_write_env_clear(&prepare_write_env);
             esp_ble_gap_start_advertising(&adv_params);
             break;
         case ESP_GATTS_CREAT_ATTR_TAB_EVT:{

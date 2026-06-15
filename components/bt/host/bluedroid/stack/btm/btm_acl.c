@@ -2279,7 +2279,7 @@ void btm_acl_pkt_types_changed(UINT8 status, UINT16 handle, UINT16 pkt_types)
 tBTM_STATUS BTM_ReadChannelMap(BD_ADDR remote_bda)
 {
     tACL_CONN *p;
-    tBTM_BLE_CH_MAP_RESULTS result;
+    tBTM_BLE_CH_MAP_RESULTS result = {0};
     tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params;
     UINT8 status;
 
@@ -2322,7 +2322,7 @@ void BTM_BleGetWhiteListSize(uint16_t *length)
 {
     tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
     if (p_cb->white_list_avail_size == 0) {
-        BTM_TRACE_WARNING("%s Whitelist full.", __func__);
+        BTM_TRACE_WARNING("%s Whitelist size is 0.", __func__);
     }
     *length = p_cb->white_list_avail_size;
     return;
@@ -2356,7 +2356,7 @@ void BTM_BleGetPeriodicAdvListSize(uint8_t *size)
 *******************************************************************************/
 void btm_read_channel_map_complete(UINT8 *p)
 {
-    tBTM_BLE_CH_MAP_RESULTS results;
+    tBTM_BLE_CH_MAP_RESULTS results = {0};
     UINT16 handle;
     tACL_CONN *p_acl_cb = NULL;
 

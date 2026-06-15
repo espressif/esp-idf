@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -105,6 +105,15 @@ static esp_gatt_char_prop_t b_property = 0;
 static prepare_type_env_t a_prepare_write_env;
 static prepare_type_env_t b_prepare_write_env;
 static uint8_t adv_config_done         = 0;
+
+static void prepare_write_env_free(prepare_type_env_t *env)
+{
+    if (env->prepare_buf != NULL) {
+        free(env->prepare_buf);
+        env->prepare_buf = NULL;
+    }
+    env->prepare_len = 0;
+}
 static uint8_t char1_str[]             = {0x11, 0x22, 0x33};
 static bool connect                    = false;
 static bool get_server                 = false;
@@ -293,11 +302,17 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
     case ESP_GAP_BLE_SCAN_RESULT_EVT: {
         esp_ble_gap_cb_param_t *scan_result = (esp_ble_gap_cb_param_t *)param;
         switch (scan_result->scan_rst.search_evt) {
-        case ESP_GAP_SEARCH_INQ_RES_EVT:
+        case ESP_GAP_SEARCH_INQ_RES_EVT: {
+            const uint16_t ble_adv_storage_max = ESP_BLE_ADV_DATA_LEN_MAX + ESP_BLE_SCAN_RSP_DATA_LEN_MAX;
+            uint32_t combined_len = (uint32_t)scan_result->scan_rst.adv_data_len +
+                                    (uint32_t)scan_result->scan_rst.scan_rsp_len;
+            uint16_t resolve_len = (combined_len > ble_adv_storage_max)
+                                       ? ble_adv_storage_max
+                                       : (uint16_t)combined_len;
             adv_name = esp_ble_resolve_adv_data_by_type(scan_result->scan_rst.ble_adv,
-                                                scan_result->scan_rst.adv_data_len + scan_result->scan_rst.scan_rsp_len,
-                                                ESP_BLE_AD_TYPE_NAME_CMPL,
-                                                &adv_name_len);
+                                                        resolve_len,
+                                                        ESP_BLE_AD_TYPE_NAME_CMPL,
+                                                        &adv_name_len);
             if (adv_name != NULL) {
                 if (strlen(remote_device_name) == adv_name_len && strncmp((char *)adv_name, remote_device_name, adv_name_len) == 0) {
                     if (connect == false) {
@@ -324,6 +339,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                 }
             }
             break;
+        }
         case ESP_GAP_SEARCH_INQ_CMPL_EVT:
             ESP_LOGI(COEX_TAG, "ESP_GAP_SEARCH_INQ_CMPL_EVT, scan stop");
             break;
@@ -563,6 +579,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
             // Update connect flag and get_server flag if peer device is a gatt server
             connect = false;
             get_server = false;
+            gattc_profile_tab[GATTC_PROFILE_C_APP_ID].conn_id = UINT16_MAX;
         }
         ESP_LOGI(COEX_TAG, "ESP_GATTC_DISCONNECT_EVT, reason = %d", p_data->disconnect.reason);
         break;
@@ -577,9 +594,11 @@ static void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *
     esp_gatt_status_t status = ESP_GATT_OK;
     if (param->write.need_rsp) {
         if (param->write.is_prep) {
-            if (param->write.offset > PREPARE_BUF_MAX_SIZE) {
+            size_t w_off = param->write.offset;
+            size_t w_len = param->write.len;
+            if (w_off > PREPARE_BUF_MAX_SIZE) {
                 status = ESP_GATT_INVALID_OFFSET;
-            } else if ((param->write.offset + param->write.len) > PREPARE_BUF_MAX_SIZE) {
+            } else if (w_len > ESP_GATT_MAX_ATTR_LEN || (w_off + w_len) > PREPARE_BUF_MAX_SIZE) {
                 status = ESP_GATT_INVALID_ATTR_LEN;
             }
             if (status == ESP_GATT_OK && prepare_write_env->prepare_buf == NULL) {
@@ -591,13 +610,19 @@ static void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *
                 }
             }
 
-            esp_gatt_rsp_t *gatt_rsp = (esp_gatt_rsp_t *)malloc(sizeof(esp_gatt_rsp_t));
+            esp_gatt_rsp_t *gatt_rsp = (esp_gatt_rsp_t *)calloc(1, sizeof(esp_gatt_rsp_t));
             if (gatt_rsp) {
-                gatt_rsp->attr_value.len = param->write.len;
                 gatt_rsp->attr_value.handle = param->write.handle;
                 gatt_rsp->attr_value.offset = param->write.offset;
                 gatt_rsp->attr_value.auth_req = ESP_GATT_AUTH_REQ_NONE;
-                memcpy(gatt_rsp->attr_value.value, param->write.value, param->write.len);
+                if (status == ESP_GATT_OK) {
+                    if (param->write.value == NULL) {
+                        status = ESP_GATT_INVALID_ATTR_LEN;
+                    } else {
+                        gatt_rsp->attr_value.len = param->write.len;
+                        memcpy(gatt_rsp->attr_value.value, param->write.value, param->write.len);
+                    }
+                }
                 esp_err_t response_err = esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, status, gatt_rsp);
                 if (response_err != ESP_OK) {
                     ESP_LOGE(COEX_TAG, "Send response error\n");
@@ -605,15 +630,29 @@ static void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *
                 free(gatt_rsp);
             } else {
                 ESP_LOGE(COEX_TAG, "%s, malloc failed", __func__);
-                status = ESP_GATT_NO_RESOURCES;
+                if (status == ESP_GATT_OK) {
+                    status = ESP_GATT_NO_RESOURCES;
+                }
+                esp_err_t response_err = esp_ble_gatts_send_response(gatts_if, param->write.conn_id,
+                                                                     param->write.trans_id, status, NULL);
+                if (response_err != ESP_OK) {
+                    ESP_LOGE(COEX_TAG, "Send response error\n");
+                }
             }
             if (status != ESP_GATT_OK) {
                 return;
             }
-            memcpy(prepare_write_env->prepare_buf + param->write.offset,
+            memcpy(prepare_write_env->prepare_buf + w_off,
                    param->write.value,
-                   param->write.len);
-            prepare_write_env->prepare_len += param->write.len;
+                   w_len);
+            /* High-water end of written range (not sum of chunk lengths). */
+            int chunk_end = (int)(w_off + w_len);
+            if (chunk_end > prepare_write_env->prepare_len) {
+                prepare_write_env->prepare_len = chunk_end;
+            }
+            if (prepare_write_env->prepare_len > PREPARE_BUF_MAX_SIZE) {
+                prepare_write_env->prepare_len = PREPARE_BUF_MAX_SIZE;
+            }
 
         } else {
             esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, status, NULL);
@@ -624,15 +663,17 @@ static void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *
 static void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param)
 {
     if (param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC) {
-        ESP_LOG_BUFFER_HEX(COEX_TAG, prepare_write_env->prepare_buf, prepare_write_env->prepare_len);
+        if (prepare_write_env->prepare_buf != NULL && prepare_write_env->prepare_len > 0) {
+            size_t log_len = (size_t)prepare_write_env->prepare_len;
+            if (log_len > PREPARE_BUF_MAX_SIZE) {
+                log_len = PREPARE_BUF_MAX_SIZE;
+            }
+            ESP_LOG_BUFFER_HEX(COEX_TAG, prepare_write_env->prepare_buf, log_len);
+        }
     } else {
         ESP_LOGI(COEX_TAG, "ESP_GATT_PREP_WRITE_CANCEL");
     }
-    if (prepare_write_env->prepare_buf) {
-        free(prepare_write_env->prepare_buf);
-        prepare_write_env->prepare_buf = NULL;
-    }
-    prepare_write_env->prepare_len = 0;
+    prepare_write_env_free(prepare_write_env);
 }
 
 static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
@@ -793,6 +834,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     }
     case ESP_GATTS_DISCONNECT_EVT:
         ESP_LOGI(COEX_TAG, "ESP_GATTS_DISCONNECT_EVT, disconnect reason 0x%x", param->disconnect.reason);
+        prepare_write_env_free(&a_prepare_write_env);
         if (memcmp(peer_gatts_addr, param->disconnect.remote_bda, sizeof(esp_bd_addr_t))) {
             // If the peer device is a GATT client, restart advertising
             esp_ble_gap_start_advertising(&adv_params);
@@ -800,7 +842,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         break;
     case ESP_GATTS_CONF_EVT:
         ESP_LOGI(COEX_TAG, "ESP_GATTS_CONF_EVT, status %d attr_handle %d", param->conf.status, param->conf.handle);
-        if (param->conf.status != ESP_GATT_OK) {
+        if (param->conf.status == ESP_GATT_OK && param->conf.value != NULL && param->conf.len > 0) {
             ESP_LOG_BUFFER_HEX(COEX_TAG, param->conf.value, param->conf.len);
         }
         break;
@@ -941,11 +983,14 @@ static void gatts_profile_b_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         break;
     case ESP_GATTS_CONF_EVT:
         ESP_LOGI(COEX_TAG, "ESP_GATTS_CONF_EVT status %d attr_handle %d", param->conf.status, param->conf.handle);
-        if (param->conf.status != ESP_GATT_OK) {
+        if (param->conf.status == ESP_GATT_OK && param->conf.value != NULL && param->conf.len > 0) {
             ESP_LOG_BUFFER_HEX(COEX_TAG, param->conf.value, param->conf.len);
         }
         break;
     case ESP_GATTS_DISCONNECT_EVT:
+        ESP_LOGI(COEX_TAG, "ESP_GATTS_DISCONNECT_EVT, disconnect reason 0x%x", param->disconnect.reason);
+        prepare_write_env_free(&b_prepare_write_env);
+        break;
     case ESP_GATTS_OPEN_EVT:
     default:
         break;
