@@ -34,7 +34,7 @@ no_runner_tags:
   - esp32p4,esp32p4_eco4,ram_app
   - esp32p4,esp32p4_eco4,sdcard
   - esp32p4,esp32p4_eco4,sdcard_spimode
-  - esp32p4,esp32p4_eco4,twai_std
+  - esp32p4,esp32p4_eco4,twai_adapter
   - esp32p4,esp32p4_eco4,usb_device
   - esp32p4,esp32p4_eco4,usb_host_flash_disk
   - esp32p4,jtag
