@@ -13,7 +13,7 @@ API Guides
    :SOC_BLE_MESH_SUPPORTED: esp-ble-mesh/ble-mesh-index
    bootloader
    build-system
-   build-system-v2
+   build-system-v2/index
    :SOC_SUPPORT_COEXISTENCE: coexist
    c
    cplusplus
