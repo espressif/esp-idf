@@ -13,7 +13,7 @@ API Guides
    :SOC_BLE_AUDIO_SUPPORTED: esp-ble-audio/ble-audio-index
    bootloader
    build-system
-   build-system-v2
+   build-system-v2/index
    :SOC_SUPPORT_COEXISTENCE: coexist
    c
    cplusplus
