@@ -53,8 +53,12 @@ void esp_nan_action_stop(void);
 
 #ifdef CONFIG_ESP_WIFI_NAN_PAIRING
 
-#define NAN_PAIRING_PINCODE_MIN 000000
+#ifndef NAN_PAIRING_PINCODE_MIN
+#define NAN_PAIRING_PINCODE_MIN 0
+#endif
+#ifndef NAN_PAIRING_PINCODE_MAX
 #define NAN_PAIRING_PINCODE_MAX 999999
+#endif
 
 union pairing_cred_t {
     uint32_t pincode;       /**< 6-digit PIN in range of NAN_PAIRING_PINCODE_MIN to NAN_PAIRING_PINCODE_MAX */

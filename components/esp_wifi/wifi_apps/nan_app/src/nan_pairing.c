@@ -255,6 +255,13 @@ esp_err_t esp_wifi_nan_pairing_start(wifi_nan_pairing_config_t *cfg)
     }
 
 #if defined(CONFIG_ESP_WIFI_PASN_SUPPORT)
+    if (cfg->cred.pincode != UINT32_MAX &&
+            cfg->cred.pincode > NAN_PAIRING_PINCODE_MAX) {
+        ESP_LOGE(TAG, "Invalid pincode %u (valid range %u..%u or UINT32_MAX for default)",
+                 cfg->cred.pincode, NAN_PAIRING_PINCODE_MIN, NAN_PAIRING_PINCODE_MAX);
+        return ESP_ERR_INVALID_ARG;
+    }
+
     int ret;
 
     switch (cfg->self_role) {
@@ -497,13 +504,16 @@ static void nan_pairing_nik_fup_timeout_cb(void *eloop_data, void *user_ctx)
     }
 
     own->nik_fup_pending = false;
-    evt.status = WIFI_NAN_PAIRING_STATUS_REJECTED;
+    evt.status = WIFI_NAN_PAIRING_STATUS_ACCEPTED;
     evt.reason_code = WIFI_NAN_PAIRING_REASON_NIK_FUP_TIMEOUT;
     MACADDR_COPY(evt.peer_nmi, own->nik_fup_pending_peer_nmi);
+#if defined(CONFIG_ESP_WIFI_NAN_SECURITY)
+    nan_app_remove_paired_peer(own->nik_fup_pending_peer_nmi);
+#endif
     esp_nan_complete_pairing(own->svc_id);
     nan_app_post_event(WIFI_EVENT_NAN_PAIRING_CONFIRM, &evt, sizeof(evt));
-    ESP_LOGW(TAG, "Pairing NIK follow-up timed out for peer " MACSTR,
-             MAC2STR(own->nik_fup_pending_peer_nmi));
+    ESP_LOGW(TAG, "Pairing succeeded but NIK caching timed out for peer " MACSTR
+             " (reason=%u)", MAC2STR(own->nik_fup_pending_peer_nmi), evt.reason_code);
 }
 
 /**

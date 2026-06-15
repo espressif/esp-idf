@@ -875,7 +875,7 @@ typedef struct {
 #define ESP_WIFI_NAN_NDP_PMK_LEN        32     /**< Length of NAN Datapath PMK */
 #define ESP_WIFI_NAN_NPK_LEN            ESP_WIFI_NAN_NDP_PMK_LEN  /**< Length of NAN Pairwise Key (same as NDP PMK) */
 #define ESP_WIFI_NAN_NDP_PMKID_LEN      16     /**< Length of NAN Datapath PMKID */
-#define ESP_WIFI_NAN_MAX_PEER_CREDS     2      /**< <Maximum number of NAN peer credentials that can be stored */
+#define ESP_WIFI_NAN_MAX_PEER_CREDS     2      /**< Maximum number of NAN peer credentials that can be stored */
 #define ESP_WIFI_NAN_MAX_CREDS_PER_SVC  4      /**< Maximum number of NAN security credentials per service (passphrase/PMK entries) */
 
 #define ESP_WIFI_MAX_SVC_NAME_LEN       256    /**< Maximum length of NAN service name */
@@ -1309,7 +1309,7 @@ typedef enum {
     WIFI_EVENT_NAN_BOOTSTRAP_COMPLETED,  /**< NAN Pairing Bootstrapping completed (success/failure) */
     WIFI_EVENT_NAN_PAIRING_INDICATION,   /**< Received NAN Pairing indication (reserved) */
     WIFI_EVENT_NAN_PAIRING_CONFIRM,      /**< NAN pairing completed after NIK follow-up exchange */
-    WIFI_EVENT_NAN_CLUSTER_JOIN,         /**< NAN Cluster joined/started successfully */
+    WIFI_EVENT_NAN_CLUSTER_JOIN,         /**< Posted when the device joins, starts, or merges into a NAN cluster */
     WIFI_EVENT_MAX,                      /**< Invalid Wi-Fi event ID */
 } wifi_event_t;
 
@@ -1669,7 +1669,8 @@ typedef struct {
     uint32_t cookie;                            /**< Comeback cookie from responder (0 if none) */
 } wifi_event_nan_bootstrap_complete_t;
 
-#define WIFI_NAN_PAIRING_REASON_NIK_FUP_TIMEOUT  1  /**< Peer NIK follow-up not received (Wi-Fi Aware v4.0 §7.6.4.2) */
+#define WIFI_NAN_PAIRING_REASON_NIK_FUP_TIMEOUT  1  /**< Local reason: peer NIK follow-up not received within timeout.
+                                                         See Wi-Fi Aware v4.0 §7.6.4.2 for the NIK-exchange procedure. */
 
 /**
   * @brief Argument structure for WIFI_EVENT_NAN_PAIRING_CONFIRM event
