@@ -3059,7 +3059,8 @@ UINT8 btsnd_hcic_ble_set_periodic_adv_subevt_data(UINT8 adv_handle, UINT8 num_su
 {
     BT_HDR *p;
     UINT8 *pp;
-    uint8_t param_len = 0;
+    unsigned total_len;
+    UINT8 param_len;
 
     HCI_TRACE_DEBUG("hci set PA subevent data, adv_handle %d num_subevents_with_data %d", adv_handle, num_subevents_with_data);
 
@@ -3067,10 +3068,19 @@ UINT8 btsnd_hcic_ble_set_periodic_adv_subevt_data(UINT8 adv_handle, UINT8 num_su
         HCI_TRACE_ERROR("%s error\n", __func__);
         return HCI_ERR_ILLEGAL_PARAMETER_FMT;
     }
-    param_len += HCIC_PARAM_SIZE_SET_PA_SUBEVT_DATA_PARAMS_LEN;
+    total_len = HCIC_PARAM_SIZE_SET_PA_SUBEVT_DATA_PARAMS_LEN;
 
     for (UINT8 i = 0; i < num_subevents_with_data; i++)
     {
+        if (subevent_params[i].subevent_data_len > sizeof(subevent_params[i].data)) {
+            HCI_TRACE_ERROR("%s sub_data_len %u>%u", __func__,
+                            (unsigned)subevent_params[i].subevent_data_len,
+                            (unsigned)sizeof(subevent_params[i].data));
+            return HCI_ERR_ILLEGAL_PARAMETER_FMT;
+        }
+
+        unsigned add_len = 4u + (unsigned)subevent_params[i].subevent_data_len;
+
         HCI_TRACE_DEBUG("subevent_params: subevent %d response_slot_start %d response_slot_count %d subevent_data_len %d",
                         subevent_params[i].subevent, subevent_params[i].response_slot_start, subevent_params[i].response_slot_count,
                         subevent_params[i].subevent_data_len);
@@ -3079,8 +3089,16 @@ UINT8 btsnd_hcic_ble_set_periodic_adv_subevt_data(UINT8 adv_handle, UINT8 num_su
             esp_log_buffer_hex_internal("data", subevent_params[i].data, subevent_params[i].subevent_data_len, ESP_LOG_DEBUG);
         }
 
-        param_len += (4 + subevent_params[i].subevent_data_len);
+        /* Avoid unsigned wrap when add_len > HCI_COMMAND_SIZE. */
+        if (total_len > (unsigned)HCI_COMMAND_SIZE ||
+            add_len > (unsigned)HCI_COMMAND_SIZE - total_len) {
+            HCI_TRACE_ERROR("%s total>HCI_CMD_SZ", __func__);
+            return HCI_ERR_ILLEGAL_PARAMETER_FMT;
+        }
+        total_len += add_len;
     }
+
+    param_len = (UINT8)total_len;
 
     HCIC_BLE_CMD_CREATED_U8(p, pp, param_len);
 
@@ -3113,6 +3131,11 @@ UINT8 btsnd_hcic_ble_set_periodic_adv_rsp_data(UINT16 sync_handle, UINT16 req_ev
     HCI_TRACE_DEBUG("hci set PA rsp data, sync_handle %d req_evt %d req_subevt %d rsp_subevt %d rsp_slot %d rsp_data_len %d",
                                                     sync_handle, req_evt, req_subevt, rsp_subevt, rsp_slot, rsp_data_len);
 
+    if (rsp_data_len > HCIC_PA_RSP_DATA_PAYLOAD_MAX) {
+        HCI_TRACE_ERROR("%s rsp_len %u>%u", __func__, rsp_data_len, HCIC_PA_RSP_DATA_PAYLOAD_MAX);
+        return HCI_ERR_ILLEGAL_PARAMETER_FMT;
+    }
+
     HCIC_BLE_CMD_CREATED_U8(p, pp, HCIC_PARAM_SIZE_SET_PA_RESPONSE_DATA_PARAMS_LEN + rsp_data_len);
 
     pp = (UINT8 *)(p + 1);
@@ -3141,6 +3164,12 @@ UINT8 btsnd_hcic_ble_set_periodic_sync_subevt(UINT16 sync_handle, UINT16 periodi
 
     HCI_TRACE_DEBUG("hci set PA sync subevent, sync_handle %d periodic_adv_properties %d num_subevents_to_sync %d",
                                                     sync_handle, periodic_adv_properties, num_subevents_to_sync);
+
+    if (num_subevents_to_sync > HCIC_PA_SYNC_SUBEVT_NUM_MAX) {
+        HCI_TRACE_ERROR("%s n_sync %u>%u", __func__, num_subevents_to_sync, HCIC_PA_SYNC_SUBEVT_NUM_MAX);
+        return HCI_ERR_ILLEGAL_PARAMETER_FMT;
+    }
+
     for (UINT8 i = 0; i < num_subevents_to_sync; i++)
     {
         HCI_TRACE_DEBUG("subevt[%d] = %d", i, subevt[i]);

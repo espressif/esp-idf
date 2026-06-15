@@ -2315,7 +2315,11 @@ static void bt_mesh_bta_gattc_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
         }
         break;
     case BTA_GATTC_CLOSE_EVT:
-        bta_gattc_clcb_dealloc_by_conn_id(p_data->close.conn_id);
+        /* CLCB lifetime is owned by BTA: bta_gattc_close() deallocates the
+         * CLCB right after invoking this synchronous callback. Calling
+         * bta_gattc_clcb_dealloc_by_conn_id() here would be a redundant
+         * double-dealloc (currently a no-op only because of NULL checks in
+         * bta_gattc_clcb_dealloc()). Keep this branch as a pure notification. */
         BT_DBG("BTA_GATTC_CLOSE_EVT");
         break;
     case BTA_GATTC_CONNECT_EVT: {

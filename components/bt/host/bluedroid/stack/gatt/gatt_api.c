@@ -1750,9 +1750,22 @@ tGATT_STATUS GATTS_HandleMultiValueNotification (UINT16 conn_id, tGATT_HLV *tupl
             return GATT_ILLEGAL_PARAMETER;
         }
 
+        {
+            UINT32 new_len = (UINT32)notif.len + 4U + (UINT32)p_hlv->length;
+            if (new_len > (UINT32)GATT_MAX_ATTR_LEN) {
+                GATT_TRACE_ERROR("%s: len %u>MAX_ATTR_LEN", __func__, (unsigned)new_len);
+                return GATT_ILLEGAL_PARAMETER;
+            }
+        }
+
         UINT16_TO_STREAM(p, p_hlv->handle);   //handle
         UINT16_TO_STREAM(p, p_hlv->length);   //length
-        memcpy (p, p_hlv->value, p_hlv->length); //value
+        if (p_hlv->length > 0) {
+            if (p_hlv->value == NULL) {
+                return GATT_ILLEGAL_PARAMETER;
+            }
+            memcpy (p, p_hlv->value, p_hlv->length); //value
+        }
         GATT_TRACE_DEBUG("%s handle %x, length %u", __func__, p_hlv->handle, p_hlv->length);
         p += p_hlv->length;
         notif.len += 4 + p_hlv->length;
