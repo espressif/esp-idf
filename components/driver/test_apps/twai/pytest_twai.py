@@ -1,8 +1,9 @@
 # SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import logging
+import os
 import subprocess
-from time import sleep
+import time
 
 import pytest
 from can import Bus
@@ -26,19 +27,23 @@ def test_twai_self(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='twai-loop-back')
 
 
+can_env = os.getenv('CAN_PORT', 'can0')
+print(f'CAN_PORT={can_env}')
+
+
 @pytest.fixture(name='socket_can')
 def fixture_create_socket_can() -> Bus:
     # Set up the socket CAN with the bitrate
-    start_command = 'sudo ip link set can0 up type can bitrate 250000'
-    stop_command = 'sudo ip link set can0 down'
+    start_command = f'sudo ip link set {can_env} up type can bitrate 250000'
+    stop_command = f'sudo ip link set {can_env} down'
     subprocess.run(start_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    bus = Bus(interface='socketcan', channel='can0', bitrate=250000)
+    bus = Bus(interface='socketcan', channel=f'{can_env}', bitrate=250000)
     yield bus  # test invoked here
     bus.shutdown()
     subprocess.run(stop_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
 
-@pytest.mark.twai_std
+@pytest.mark.twai_adapter
 @pytest.mark.parametrize(
     'config',
     [
@@ -56,7 +61,7 @@ def test_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
     dut.write('"twai_listen_only"')
 
     # wait the DUT to block at the receive API
-    sleep(0.03)
+    time.sleep(0.03)
 
     message = Message(
         arbitration_id=0x123,
@@ -67,7 +72,7 @@ def test_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
     dut.expect_unity_test_output()
 
 
-@pytest.mark.twai_std
+@pytest.mark.twai_adapter
 @pytest.mark.parametrize(
     'config',
     [
@@ -84,11 +89,15 @@ def test_twai_remote_request(dut: Dut, socket_can: Bus) -> None:
     # TEST_CASE("twai_remote_request", "[twai]")
     dut.write('"twai_remote_request"')
 
-    while True:
+    deadline = time.time() + 2.0
+    req = None
+    while time.time() < deadline:
         req = socket_can.recv(timeout=0.2)
         # wait for the remote request frame
         if req is not None and req.is_remote_frame:
             break
+    if req is None:
+        raise Exception('Remote frame not received')
 
     logging.info(f'Received message: {req}')
 
