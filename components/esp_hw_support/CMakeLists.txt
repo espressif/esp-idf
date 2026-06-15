@@ -78,7 +78,8 @@ if(NOT non_os_build)
             )
         if(CONFIG_SOC_PAU_SUPPORTED AND CONFIG_SOC_PM_SUPPORT_TOP_PD)
             list(APPEND srcs "sleep_system_peripheral.c")
-            list(APPEND srcs "port/${target}/peripheral_domain_pd.c")
+            list(APPEND srcs "port/${target}/peripheral_domain_pd.c"
+                         "port/${target}/system_periph_retention.c")
         endif()
     endif()
 
