@@ -802,6 +802,54 @@ function(__set_component_cmakev1_properties component_name)
 endfunction()
 
 #[[api
+.. cmakev2:variable:: COMPONENT_TARGET
+
+    The name of the library target that the component must create, for example
+    with ``add_library``. The build system sets this variable in the component's
+    scope when the component is evaluated, and links the created target into the
+    component's interface target so that other components can depend on it.
+
+.. cmakev2:variable:: COMPONENT_LIB
+
+    The cmakev1-compatible alias of :cmakev2:ref:`COMPONENT_TARGET`. It holds the
+    same value and refers to the same library target.
+
+.. cmakev2:variable:: COMPONENT_NAME
+
+    The name of the component being evaluated, which is the name of its directory.
+
+.. cmakev2:variable:: ESP_PLATFORM
+
+    Set to ``1`` on any build driven by ``idf.py``, which passes
+    ``-DESP_PLATFORM=1`` to CMake as a cache variable. It is therefore defined
+    throughout the project, in both the top-level and component
+    ``CMakeLists.txt`` files, and is also added as a compile definition so that
+    source code can test it with ``#ifdef ESP_PLATFORM``. Use it to detect that
+    the build is driven by ESP-IDF, for example to guard ESP-IDF-specific code
+    in a project that can also build as a plain host application.
+#]]
+
+#[[api
+.. cmakev2:component_property:: WHOLE_ARCHIVE
+
+    When set to a true value, every object file from the component's static
+    library is kept in the final binary (linked with ``--whole-archive`` on GNU
+    or ``-force_load`` on Apple). Useful for link-time registration, where object
+    files may have no directly referenced symbols.
+
+.. cmakev2:component_property:: LDFRAGMENTS
+
+    List of linker fragment files contributed by the component. They are
+    processed by the linker script generator. See
+    :doc:`/api-guides/linker-script-generation`.
+
+.. cmakev2:component_property:: LINKER_SCRIPTS
+
+    List of linker script files added to the link command (with ``-T``) for the
+    component.
+#]]
+
+#[[api
 .. cmakev2:function:: idf_component_include
 
     .. code-block:: cmake

@@ -288,7 +288,7 @@ function(__dump_library_properties libraries)
     endforeach()
 endfunction()
 
-#[[
+#[[api
 .. cmakev2:function:: idf_build_library
 
     .. code-block:: cmake
@@ -547,7 +547,7 @@ function(idf_build_library library)
     __component_validation_run_checks(LIBRARY "${library}")
 endfunction()
 
-#[[
+#[[api
 .. cmakev2:function:: idf_build_executable
 
     .. code-block:: cmake
@@ -747,7 +747,7 @@ function(__get_components_metadata)
     set(${ARG_OUTPUT} "${components_json}" PARENT_SCOPE)
 endfunction()
 
-#[[
+#[[api
 .. cmakev2:function:: idf_build_generate_metadata
 
     .. code-block:: cmake
@@ -906,7 +906,7 @@ function(idf_build_generate_metadata)
     endif()
 endfunction()
 
-#[[
+#[[api
 .. cmakev2:function:: idf_build_binary
 
     .. code-block:: cmake
@@ -1133,7 +1133,7 @@ function(idf_sign_binary binary)
     set_target_properties(${ARG_TARGET} PROPERTIES EXECUTABLE_TARGET ${executable})
 endfunction()
 
-#[[
+#[[api
 .. cmakev2:function:: idf_flash_binary
 
     .. code-block:: cmake
@@ -1214,7 +1214,7 @@ function(idf_flash_binary binary)
     endif()
 endfunction()
 
-#[[
+#[[api
 .. cmakev2:function:: idf_check_binary_size
 
     .. code-block:: cmake
