@@ -871,6 +871,10 @@ static esp_err_t verify_segment_header(int index, const esp_image_segment_header
 
     /* ESP APP descriptor is present in the DROM segment #0 */
     if (index == 0 && !is_bootloader(metadata->start_addr)) {
+        if (segment->data_len < sizeof(esp_app_desc_t)) {
+            ESP_LOGE(TAG, "Segment %d: length 0x%"PRIx32" is too short for app description", index, segment->data_len);
+            return ESP_ERR_IMAGE_INVALID;
+        }
         uint32_t mmu_page_size = 0, magic_word = 0;
         const uint32_t mmu_page_size_offset = segment_data_offs + offsetof(esp_app_desc_t, mmu_page_size);
         CHECK_ERR(bootloader_flash_read(segment_data_offs, &magic_word, sizeof(uint32_t), true));
