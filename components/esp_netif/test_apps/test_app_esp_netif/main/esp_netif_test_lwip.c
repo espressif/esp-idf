@@ -18,6 +18,7 @@
 #include "test_utils.h"
 #include "memory_checks.h"
 #include "lwip/netif.h"
+#include "lwip/esp_pbuf_ref.h"
 #include "esp_netif_test.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -758,6 +759,44 @@ TEST(esp_netif, initial_mtu_config_applied)
     esp_netif_destroy(n2);
 }
 
+static int s_l2_free_calls;
+static void test_l2_free(void *h, void *buffer)
+{
+    TEST_ASSERT_EQUAL_PTR((void *)0x1234, h);
+    TEST_ASSERT_EQUAL_PTR(&s_l2_free_calls, buffer);
+    ++s_l2_free_calls;
+}
+
+TEST(esp_netif, pbuf_uses_allocated_rx_free_callback)
+{
+    test_case_uses_tcpip();
+
+    esp_netif_driver_ifconfig_t driver_config = {
+        .handle = (void *)0x1234,
+        .driver_free_rx_buffer = test_l2_free,
+    };
+    esp_netif_config_t cfg = {
+        .base = ESP_NETIF_BASE_DEFAULT_WIFI_STA,
+        .driver = &driver_config,
+        .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA,
+    };
+    esp_netif_t *esp_netif = esp_netif_new(&cfg);
+    TEST_ASSERT_NOT_NULL(esp_netif);
+
+    uint8_t payload = 0;
+    s_l2_free_calls = 0;
+    struct pbuf *pbuf = esp_pbuf_allocate(esp_netif, &payload, sizeof(payload), &s_l2_free_calls);
+    TEST_ASSERT_NOT_NULL(pbuf);
+
+    esp_netif_driver_ifconfig_t empty_driver_config = { };
+    TEST_ESP_OK(esp_netif_set_driver_config(esp_netif, &empty_driver_config));
+
+    TEST_ASSERT_EQUAL(1, pbuf_free(pbuf));
+    TEST_ASSERT_EQUAL(1, s_l2_free_calls);
+
+    esp_netif_destroy(esp_netif);
+}
+
 TEST_GROUP_RUNNER(esp_netif)
 {
     /**
@@ -788,6 +827,7 @@ TEST_GROUP_RUNNER(esp_netif)
     RUN_TEST_CASE(esp_netif, dhcp_server_state_transitions_mesh)
 #endif
     RUN_TEST_CASE(esp_netif, initial_mtu_config_applied)
+    RUN_TEST_CASE(esp_netif, pbuf_uses_allocated_rx_free_callback)
     RUN_TEST_CASE(esp_netif, route_priority)
     RUN_TEST_CASE(esp_netif, set_get_dnsserver)
     RUN_TEST_CASE(esp_netif, unified_netif_status_event)
