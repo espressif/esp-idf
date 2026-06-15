@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
+import os
 import subprocess
 import time
 from collections.abc import Generator
@@ -17,6 +17,9 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 # ---------------------------------------------------------------------------
 # Constants / Helpers
 # ---------------------------------------------------------------------------
+
+can_env = os.getenv('CAN_PORT', 'can0')
+print(f'CAN_PORT={can_env}')
 
 PROMPTS = ['twai>']
 
@@ -253,7 +256,7 @@ class TwaiTestHelper:
 class CanBusManager:
     """CAN bus manager for external hardware tests"""
 
-    def __init__(self, interface: str = 'can0'):
+    def __init__(self, interface: str = can_env):
         self.interface = interface
         self.bus: can.Bus | None = None
 
@@ -280,8 +283,6 @@ class CanBusManager:
 
             self.bus = can.Bus(interface='socketcan', channel=self.interface)
             yield self.bus
-        except Exception as e:
-            pytest.skip(f'CAN interface not available: {str(e)}')
         finally:
             if self.bus:
                 self.bus.shutdown()
@@ -607,7 +608,7 @@ def test_twai_utils_range_filters(twai: TwaiTestHelper) -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.twai_std
+@pytest.mark.twai_adapter
 @pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='no runner')  # TODO: IDFCI-11110
 @pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='no runner')
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
