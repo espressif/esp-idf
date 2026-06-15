@@ -44,6 +44,16 @@ static esp_err_t i2s_std_calculate_clock(i2s_chan_handle_t handle, const i2s_std
         if (clk_info->mclk % clk_info->bclk != 0) {
             ESP_LOGW(TAG, "the current mclk multiple cannot perform integer division (slot_num: %"PRIu32", slot_bits: %"PRIu32")", handle->total_slot, slot_bits);
         }
+        /* As an internal full-duplex slave, the BCLK/WS are looped back from the on-chip master, but the slave logic
+         * still needs enough MCLK/BCLK ratio to sample correctly. Measured minimums: TX slave >= 6, RX slave >= 4. */
+        if (handle->full_duplex_slave) {
+            uint32_t min_bclk_div = handle->dir == I2S_DIR_TX ? 6 : 4;
+            if (clk_info->bclk_div < min_bclk_div) {
+                ESP_LOGW(TAG, "the mclk/bclk ratio %"PRIu32" is too small for the full-duplex %s slave (min %"PRIu32"), "
+                         "data might be sampled incorrectly, please increase mclk_multiple",
+                         clk_info->bclk_div, handle->dir == I2S_DIR_TX ? "tx" : "rx", min_bclk_div);
+            }
+        }
     } else {
         if (clk_cfg->bclk_div < 8) {
             ESP_LOGW(TAG, "the current bclk division is too small, adjust the bclk division to 8");
@@ -256,61 +266,54 @@ static esp_err_t i2s_std_set_gpio(i2s_chan_handle_t handle, const i2s_std_gpio_c
     return ESP_OK;
 }
 
-static esp_err_t s_i2s_channel_try_to_constitude_std_duplex(i2s_chan_handle_t handle, const i2s_std_config_t *std_cfg)
+static esp_err_t s_i2s_channel_try_to_constitute_std_duplex(i2s_chan_handle_t handle, const i2s_std_config_t *std_cfg)
 {
-    /* Get another direction handle */
-    i2s_chan_handle_t another_handle = handle->dir == I2S_DIR_RX ? handle->controller->tx_chan : handle->controller->rx_chan;
-    /* Condition: 1. Another direction channel is registered
-     *            2. Not a full-duplex channel yet
-     *            3. Another channel is initialized, try to compare the configurations */
-    if (another_handle && another_handle->state >= I2S_CHAN_STATE_READY) {
-        /* Judge if the two channels can constitute full-duplex */
-        if (!handle->controller->full_duplex) {
-            i2s_std_config_t curr_cfg = *std_cfg;
-            i2s_std_slot_config_t norm_slot_cfg = s_i2s_std_normalize_slot_config(&(std_cfg->slot_cfg));
-            memcpy(&curr_cfg.slot_cfg, &norm_slot_cfg, sizeof(i2s_std_slot_config_t));
-            /* Compare the hardware configurations of the two channels, constitute the full-duplex if they are the same */
-            if (memcmp(another_handle->mode_info, &curr_cfg, sizeof(i2s_std_config_t)) == 0) {
-                handle->controller->full_duplex = true;
-                ESP_LOGD(TAG, "Constitude full-duplex on port %d", handle->controller->id);
-            } else {
+    /* Build the duplex candidate from the current channel's configuration */
+    i2s_duplex_candidate_t candidate = {0};
+    candidate.ws_pin = std_cfg->gpio_cfg.ws;
+    candidate.bclk_pin = std_cfg->gpio_cfg.bclk;
+    candidate.sample_rate_hz = std_cfg->clk_cfg.sample_rate_hz;
+    candidate.clk_src = std_cfg->clk_cfg.clk_src;
+    candidate.bclk_inv = std_cfg->gpio_cfg.invert_flags.bclk_inv;
+    candidate.ws_inv = std_cfg->gpio_cfg.invert_flags.ws_inv;
+    /* Compute total frame bits for standard mode: always 2 slots */
+    i2s_std_slot_config_t norm_slot = s_i2s_std_normalize_slot_config(&std_cfg->slot_cfg);
+    candidate.total_frame_bits = 2 * norm_slot.slot_bit_width;
+
+    i2s_channel_try_to_constitute_duplex(handle, &candidate);
+    /* On HW v1, if duplex constitution fails (pins/configs don't match),
+     * try to move the channel to another port to avoid sharing a port with incompatible configs.
+     * Only do this when the other channel was actually ready for comparison; if it wasn't
+     * initialized yet, duplex will be constituted when the second channel is initialized. */
 #if SOC_I2S_HW_VERSION_1
-                bool port_changed = false;
-                if (handle->is_port_auto) {
-                    ESP_LOGD(TAG, "TX & RX on I2S%d are simplex", handle->controller->id);
-                    for (int i = 0; i < I2S_LL_GET(INST_NUM); i++) {
-                        if (i == handle->controller->id) {
-                            continue;
-                        }
-                        ESP_LOGD(TAG, "Trying to move %s channel from port %d to %d",
-                                 handle->dir == I2S_DIR_TX ? "TX" : "RX", handle->controller->id, i);
-                        if (i2s_channel_change_port(handle, i) == ESP_OK) {
-                            ESP_LOGD(TAG, "Move success!");
-                            port_changed = true;
-                            break;
-                        } else {
-                            ESP_LOGD(TAG, "Move failed...");
-                        }
+    if (!handle->controller->full_duplex) {
+        i2s_chan_handle_t another = handle->dir == I2S_DIR_RX ? handle->controller->tx_chan : handle->controller->rx_chan;
+        if (another && another->state >= I2S_CHAN_STATE_READY) {
+            bool port_changed = false;
+            if (handle->is_port_auto) {
+                ESP_LOGD(TAG, "TX & RX on I2S%d are simplex", handle->controller->id);
+                for (int i = 0; i < I2S_LL_GET(INST_NUM); i++) {
+                    if (i == handle->controller->id) {
+                        continue;
+                    }
+                    ESP_LOGD(TAG, "Trying to move %s channel from port %d to %d",
+                             handle->dir == I2S_DIR_TX ? "TX" : "RX", handle->controller->id, i);
+                    if (i2s_channel_change_port(handle, i) == ESP_OK) {
+                        ESP_LOGD(TAG, "Move success!");
+                        port_changed = true;
+                        break;
+                    } else {
+                        ESP_LOGD(TAG, "Move failed...");
                     }
                 }
-                if (!port_changed) {
-                    ESP_LOGE(TAG, "Can't set different channel configurations on a same port");
-                    return ESP_ERR_INVALID_ARG;
-                }
-#else
-                ESP_LOGD(TAG, "TX & RX on I2S%d are simplex", handle->controller->id);
-#endif
+            }
+            if (!port_changed) {
+                ESP_LOGE(TAG, "Can't set different channel configurations on a same port");
+                return ESP_ERR_INVALID_ARG;
             }
         }
-        /* Switch to the slave role if needed */
-        if (handle->controller->full_duplex &&
-                handle->role == I2S_ROLE_MASTER &&
-                another_handle->role == I2S_ROLE_MASTER) {
-            /* The later initialized channel must be slave for full duplex */
-            handle->role = I2S_ROLE_SLAVE;
-            handle->full_duplex_slave = true;
-        }
     }
+#endif
 
     return ESP_OK;
 }
@@ -333,7 +336,7 @@ esp_err_t i2s_channel_init_std_mode(i2s_chan_handle_t handle, const i2s_std_conf
     ESP_GOTO_ON_FALSE(handle->mode_info, ESP_ERR_NO_MEM, err, TAG, "no memory for storing the configurations");
     ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_REGISTER, ESP_ERR_INVALID_STATE, err, TAG, "the channel has initialized already");
     /* Try to constitute full-duplex mode if the STD configuration is totally same as another channel */
-    ret = s_i2s_channel_try_to_constitude_std_duplex(handle, std_cfg);
+    ret = s_i2s_channel_try_to_constitute_std_duplex(handle, std_cfg);
 #if SOC_I2S_HW_VERSION_1
     ESP_GOTO_ON_ERROR(ret, err, TAG, "Failed to constitute full-duplex mode");
 #endif
