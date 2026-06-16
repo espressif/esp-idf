@@ -1008,6 +1008,33 @@ size_t httpd_req_get_hdr_value_len(httpd_req_t *r, const char *field);
 esp_err_t httpd_req_get_hdr_value_str(httpd_req_t *r, const char *field, char *val, size_t val_size);
 
 /**
+ * @brief   Similar to httpd_req_get_hdr_value_str() but avoids the string copy
+ *
+ * @note
+ *  - This API is meant to be used with std::string_view or similar
+ *  - The returned pointer references the header value kept in the request's
+ *    internal scratch buffer. It is NULL-terminated; val_len is provided for
+ *    convenience (e.g. constructing a std::string_view without a strlen()).
+ *  - This API is supposed to be called only from the context of
+ *    a URI handler where httpd_req_t* request pointer is valid.
+ *  - The returned pointer must only be used within the URI handler and not
+ *    after, since it will lead to use after free errors. In particular, once
+ *    httpd_resp_send() is called all request headers are purged.
+ *
+ * @param[in]  r        The request being responded to
+ * @param[in]  field    The field to be searched in the header
+ * @param[out] val      Pointer to a pointer that will be updated to the value string
+ * @param[out] val_len  Pointer to a length that will be updated with the value length
+ *
+ * @return
+ *  - ESP_OK : Field found; *val points to the value string and *val_len holds its length
+ *  - ESP_ERR_NOT_FOUND          : Key not found
+ *  - ESP_ERR_INVALID_ARG        : Null arguments
+ *  - ESP_ERR_HTTPD_INVALID_REQ  : Invalid HTTP request pointer
+ */
+esp_err_t httpd_req_get_hdr_value_str_ptr(httpd_req_t *r, const char *field, const char **val, size_t *val_len);
+
+/**
  * @brief   Get Query string length from the request URL
  *
  * @note    This API is supposed to be called only from the context of
