@@ -10,8 +10,14 @@
 #include "driver/parlio_tx.h"
 #include "parlio_priv.h"
 
+#define PARLIO_ALIGN_DOWN(num, align) ((num) & ~((align) - 1))
+#define PARLIO_DMA_BUFFER_MAX_SIZE(alignment) \
+    ((alignment) > 1 ? PARLIO_ALIGN_DOWN(PARLIO_DMA_DESCRIPTOR_BUFFER_MAX_SIZE, (alignment)) : PARLIO_DMA_DESCRIPTOR_BUFFER_MAX_SIZE)
+#define PARLIO_DMA_BUFFER_SPLIT_SIZE(size, alignment) \
+    ((alignment) > 1 ? PARLIO_ALIGN_DOWN((size) / 2, (alignment)) : (size) / 2)
+
 #if SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
-static bool parlio_tx_gdma_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
+static bool parlio_tx_gdma_buffer_switched_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
 #endif
 static void parlio_tx_default_isr(void *args);
 
@@ -183,6 +189,8 @@ static esp_err_t parlio_tx_unit_init_dma(parlio_tx_unit_t *tx_unit, const parlio
     // create DMA link list
     size_t buffer_alignment = MAX(tx_unit->int_mem_align, tx_unit->ext_mem_align);
     size_t num_dma_nodes = esp_dma_calculate_node_count(config->max_transfer_size, buffer_alignment, PARLIO_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
+    // link switch event requires at least 2 nodes
+    num_dma_nodes = MAX(num_dma_nodes, 2);
     gdma_link_list_config_t dma_link_config = {
         .item_alignment = PARLIO_DMA_DESC_ALIGNMENT,
         .num_items = num_dma_nodes,
@@ -452,16 +460,21 @@ esp_err_t parlio_tx_unit_register_event_callbacks(parlio_tx_unit_handle_t tx_uni
 
     if (cbs->on_buffer_switched) {
 #if SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
+#if !PARLIO_USE_GDMA_LINK_SWITCH_EVENT
         // workaround for DIG-559
         ESP_RETURN_ON_FALSE(tx_unit->data_width > 1, ESP_ERR_NOT_SUPPORTED, TAG, "on_buffer_switched callback is not supported for 1-bit data width");
-
         gdma_tx_event_callbacks_t gdma_cbs = {
-            .on_trans_eof = parlio_tx_gdma_eof_callback,
+            .on_trans_eof = parlio_tx_gdma_buffer_switched_callback,
         };
+#else // !PARLIO_USE_GDMA_LINK_SWITCH_EVENT
+        gdma_tx_event_callbacks_t gdma_cbs = {
+            .on_link_switch = parlio_tx_gdma_buffer_switched_callback,
+        };
+#endif // !PARLIO_USE_GDMA_LINK_SWITCH_EVENT
         ESP_RETURN_ON_ERROR(gdma_register_tx_event_callbacks(tx_unit->dma_chan, &gdma_cbs, tx_unit), TAG, "install DMA callback failed");
-#else
+#else // SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
         ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "on_buffer_switched callback is not supported");
-#endif
+#endif // SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
     }
 
     tx_unit->on_trans_done = cbs->on_trans_done;
@@ -474,10 +487,11 @@ static void parlio_mount_buffer(parlio_tx_unit_t *tx_unit, parlio_tx_trans_desc_
 {
     size_t buffer_alignment = esp_ptr_internal(t->payload) ? tx_unit->int_mem_align : tx_unit->ext_mem_align;
     // DMA transfer data based on bytes not bits, so convert the bit length to bytes, round up
+    size_t payload_bytes = (t->payload_bits + 7) / 8;
     gdma_buffer_mount_config_t mount_config = {
         .buffer = (void *)t->payload,
         .buffer_alignment = buffer_alignment,
-        .length = (t->payload_bits + 7) / 8,
+        .length = payload_bytes,
         .flags = {
             // if transmission is loop, we don't need to generate the EOF for 1-bit data width, DIG-559
             .mark_eof = tx_unit->data_width == 1 ? !t->flags.loop_transmission : true,
@@ -486,7 +500,30 @@ static void parlio_mount_buffer(parlio_tx_unit_t *tx_unit, parlio_tx_trans_desc_
     };
 
     int next_link_idx = t->flags.loop_transmission ? 1 - t->dma_link_idx : t->dma_link_idx;
-    gdma_link_mount_buffers(tx_unit->dma_link[next_link_idx], 0, &mount_config, 1, NULL);
+    size_t max_mount_size = PARLIO_DMA_BUFFER_MAX_SIZE(buffer_alignment);
+    if (t->flags.loop_transmission && payload_bytes <= max_mount_size) {
+        // split the payload into two DMA descriptors to trigger the buffer switch event
+        size_t split_bytes = PARLIO_DMA_BUFFER_SPLIT_SIZE(payload_bytes, buffer_alignment);
+        gdma_buffer_mount_config_t mount_configs[2] = {
+            {
+                .buffer = (void *)t->payload,
+                .buffer_alignment = buffer_alignment,
+                .length = split_bytes,
+            },
+            {
+                .buffer = (void *)((uint8_t *)t->payload + split_bytes),
+                .buffer_alignment = buffer_alignment,
+                .length = payload_bytes - split_bytes,
+                .flags = {
+                    .mark_eof = tx_unit->data_width == 1 ? false : true,
+                    .mark_final = GDMA_FINAL_LINK_TO_START,
+                },
+            },
+        };
+        gdma_link_mount_buffers(tx_unit->dma_link[next_link_idx], 0, mount_configs, 2, NULL);
+    } else {
+        gdma_link_mount_buffers(tx_unit->dma_link[next_link_idx], 0, &mount_config, 1, NULL);
+    }
 
     if (t->flags.loop_transmission) {
         // concatenate the DMA linked list of the next frame transmission with the DMA linked list of the current frame to realize the reuse of the current transmission transaction
@@ -687,13 +724,20 @@ esp_err_t parlio_tx_unit_transmit(parlio_tx_unit_handle_t tx_unit, const void *p
     uint8_t cache_type = 0;
     esp_ptr_external_ram(payload) ? (alignment = tx_unit->ext_mem_align, cache_type = CACHE_LL_LEVEL_EXT_MEM) : (alignment = tx_unit->int_mem_align, cache_type = CACHE_LL_LEVEL_INT_MEM);
     // check alignment
-    ESP_RETURN_ON_FALSE(((uint32_t)payload & (alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "payload address not aligned");
-    ESP_RETURN_ON_FALSE((payload_bits & (alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "payload size not aligned");
+    ESP_RETURN_ON_FALSE(((uint32_t)payload & (alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "payload address %p not aligned to %d", payload, alignment);
+    ESP_RETURN_ON_FALSE((payload_bits & (alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "payload size %d not aligned to %d", payload_bits, alignment);
     cache_line_size = cache_hal_get_cache_line_size(cache_type, CACHE_TYPE_DATA);
+    size_t payload_bytes = (payload_bits + 7) / 8;
+
+    // check if the payload size is too small to split into two DMA descriptors
+    if (config->flags.loop_transmission && payload_bytes <= PARLIO_DMA_BUFFER_MAX_SIZE(alignment)) {
+        size_t split_bytes = PARLIO_DMA_BUFFER_SPLIT_SIZE(payload_bytes, alignment);
+        ESP_RETURN_ON_FALSE(split_bytes > 0 && split_bytes < payload_bytes, ESP_ERR_INVALID_ARG, TAG, "loop payload too small");
+    }
 
     if (cache_line_size > 0) {
         // Write back to cache to synchronize the cache before DMA start
-        ESP_RETURN_ON_ERROR(esp_cache_msync((void *)payload, (payload_bits + 7) / 8,
+        ESP_RETURN_ON_ERROR(esp_cache_msync((void *)payload, payload_bytes,
                                             ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED), TAG, "cache sync failed");
     }
 
@@ -704,6 +748,11 @@ esp_err_t parlio_tx_unit_transmit(parlio_tx_unit_handle_t tx_unit, const void *p
         tx_unit->cur_trans->payload_bits = payload_bits;
         parlio_mount_buffer(tx_unit, tx_unit->cur_trans);
         atomic_store(&tx_unit->buffer_need_switch, true);
+#if PARLIO_USE_GDMA_LINK_SWITCH_EVENT
+        if (tx_unit->on_buffer_switched) {
+            ESP_RETURN_ON_ERROR(gdma_request_link_switch_event(tx_unit->dma_chan), TAG, "request link switch event failed");
+        }
+#endif
     } else {
         TickType_t queue_wait_ticks = portMAX_DELAY;
         if (config->flags.queue_nonblocking) {
@@ -753,7 +802,7 @@ esp_err_t parlio_tx_unit_transmit(parlio_tx_unit_handle_t tx_unit, const void *p
 }
 
 #if SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
-static bool parlio_tx_gdma_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
+static bool parlio_tx_gdma_buffer_switched_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
     parlio_tx_unit_t *tx_unit = (parlio_tx_unit_t *) user_data;
     bool need_yield = false;
