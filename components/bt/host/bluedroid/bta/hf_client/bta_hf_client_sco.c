@@ -678,7 +678,10 @@ static void bta_hf_client_sco_conn_cback(UINT16 sco_idx)
     APPL_TRACE_DEBUG("%s %d", __FUNCTION__, sco_idx);
 
     rem_bd = BTM_ReadScoBdAddr(sco_idx);
-    BTM_ReadEScoLinkParms (sco_idx, &sco_data);
+    if (BTM_ReadEScoLinkParms (sco_idx, &sco_data) == BTM_MODE_UNSUPPORTED) {
+        APPL_TRACE_WARNING("ESCO link parameters not supported or disabled.");
+        return;
+    }
 
     if (rem_bd && bdcmp(bta_hf_client_cb.scb.peer_addr, rem_bd) == 0 &&
             bta_hf_client_cb.scb.svc_conn && bta_hf_client_cb.scb.sco_idx == sco_idx) {
