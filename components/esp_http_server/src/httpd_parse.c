@@ -1143,6 +1143,30 @@ esp_err_t httpd_req_get_hdr_value_str(httpd_req_t *r, const char *field, char *v
     return ESP_OK;
 }
 
+esp_err_t httpd_req_get_hdr_value_str_ptr(httpd_req_t *r, const char *field, const char **val, size_t *val_len)
+{
+    /* val and val_len are output pointers that are dereferenced below, so they
+     * must be validated along with the other arguments to avoid a NULL write */
+    if (r == NULL || field == NULL || val == NULL || val_len == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (!httpd_valid_req(r)) {
+        return ESP_ERR_HTTPD_INVALID_REQ;
+    }
+
+    const char *val_ptr = httpd_find_hdr_value(r->aux, field);
+    if (val_ptr == NULL) {
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    /* The value lives NULL-terminated in the request scratch buffer; return a
+     * pointer to it instead of copying. Valid only within the URI handler. */
+    *val     = val_ptr;
+    *val_len = strlen(val_ptr);
+    return ESP_OK;
+}
+
 /* Helper function to get a cookie value from a cookie string of the type "cookie1=val1; cookie2=val2" */
 esp_err_t static httpd_cookie_key_value(const char *cookie_str, const char *key, char *val, size_t *val_size)
 {
