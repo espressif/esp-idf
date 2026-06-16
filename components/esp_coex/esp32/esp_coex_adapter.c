@@ -46,7 +46,7 @@ void * esp_coex_common_spin_lock_create_wrapper(void)
     void *mux = heap_caps_malloc(sizeof(portMUX_TYPE), MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
 
     if (mux) {
-        memcpy(mux,&tmp,sizeof(portMUX_TYPE));
+        memcpy(mux, &tmp, sizeof(portMUX_TYPE));
         return mux;
     }
     return NULL;
