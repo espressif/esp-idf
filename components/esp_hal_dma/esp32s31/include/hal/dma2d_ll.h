@@ -78,6 +78,7 @@
 #define DMA2D_LL_CHANNEL_PERIPH_SEL_BIT_WIDTH      (3)
 
 #define DMA2D_LL_DESC_ALIGNMENT 8 // Descriptor must be aligned to 8 bytes
+#define DMA2D_LL_DESC_2D_FIELD_MAX 0x3FFFU // 2D descriptor width/height/coordinate fields are 14-bit
 
 #ifdef __cplusplus
 extern "C" {

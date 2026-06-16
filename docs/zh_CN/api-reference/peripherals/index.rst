@@ -9,6 +9,7 @@
     :SOC_ADC_SUPPORTED: adc/index
     :SOC_ANA_CMPR_SUPPORTED: ana_cmpr
     :SOC_GDMA_SUPPORT_CRC: async_crc
+    :SOC_DMA2D_SUPPORTED: async_color_convert
     :SOC_ASYNC_MEMCPY_SUPPORTED: async_memcpy
     :SOC_BITSCRAMBLER_SUPPORTED: bitscrambler
     :SOC_MIPI_CSI_SUPPORTED: camera_driver
