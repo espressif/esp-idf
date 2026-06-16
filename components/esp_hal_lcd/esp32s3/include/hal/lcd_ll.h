@@ -16,6 +16,7 @@
 #include "soc/system_struct.h"
 
 #define LCD_LL_GET(_attr)       LCD_LL_ ## _attr
+#define LCD_LL_SUPPORT(_feat)   LCD_LL_SUPPORT_ ## _feat
 #define LCD_LL_RGB_BUS_WIDTH    16
 #define LCD_LL_RGB_PANEL_NUM    1
 #define LCD_LL_I80_BUS_WIDTH    16
@@ -201,12 +202,12 @@ static inline void lcd_ll_enable_color_convert(lcd_cam_dev_t *dev, bool en)
 }
 
 /**
- * @brief Set convert data line width
+ * @brief Set convert input data line width for YUV<->RGB conversion
  *
  * @param dev LCD register base address
  * @param width data line width (8 or 16)
  */
-static inline void lcd_ll_set_convert_data_width(lcd_cam_dev_t *dev, uint32_t width)
+static inline void lcd_ll_set_yuv_convert_input_data_width(lcd_cam_dev_t *dev, uint32_t width)
 {
     HAL_ASSERT(width == 8 || width == 16);
     dev->lcd_rgb_yuv.lcd_conv_mode_8bits_on = (width == 8) ? 1 : 0;
