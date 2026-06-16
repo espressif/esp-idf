@@ -291,7 +291,7 @@ static void s_psram_mapping(uint32_t psram_available_size, uint32_t start_page)
 {
     esp_err_t ret = ESP_FAIL;
 #if CONFIG_SPIRAM_ENC_EXEMPT
-    size_t enc_exempt_size = ESP_ALIGN_UP((size_t)CONFIG_SPIRAM_ENC_EXEMPT_SIZE * 1024, MMU_PAGE_SIZE);
+    size_t enc_exempt_size = ALIGN_UP_BY((size_t)CONFIG_SPIRAM_ENC_EXEMPT_SIZE * 1024, MMU_PAGE_SIZE);
     if (enc_exempt_size >= psram_available_size) {
         ESP_EARLY_LOGE(TAG, "SPIRAM_ENC_EXEMPT_SIZE (%dKB) >= available PSRAM (%dKB); disabling carve-out",
                        (int)(enc_exempt_size / 1024), (int)(psram_available_size / 1024));

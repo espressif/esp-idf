@@ -97,7 +97,9 @@ esp_err_t jpeg_decoder_get_info(const uint8_t *bit_stream, uint32_t stream_size,
  * returned through the `out_size` pointer.
  *
  * @note 1.Please make sure that the content of `bit_stream` pointer cannot be modified until this function returns.
- *       2.Please note that the output size of image is always the multiple of 16 depends on protocol of JPEG.
+ *       2.For JPEGs encoded with YUV420 or YUV422 sampling, the decoded output dimensions can be padded
+ *         to 16-pixel boundaries by the JPEG block layout. Make sure `decode_outbuf` is large enough for
+ *         that padded output size, not only for the visible width and height.
  *
  * @param[in] decoder_engine Handle of the JPEG decoder instance to use for processing.
  * @param[in] decode_cfg Config structure of decoder.
