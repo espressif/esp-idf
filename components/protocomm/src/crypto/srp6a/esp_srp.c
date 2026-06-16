@@ -549,6 +549,10 @@ esp_err_t esp_srp_get_session_key(esp_srp_handle_t *hd, char *bytes_A, int len_A
     if (! u) {
         goto error;
     }
+    if (esp_mpi_cmp_int(u, 0) == 0) {
+        ESP_LOGE(TAG, "Rejected SRP scrambling parameter: u == 0 (RFC 5054 Section 2.5.3)");
+        goto error;
+    }
     hexdump_mpi("u", u);
 
     /* S = (A v^u)^b */

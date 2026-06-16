@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,6 +47,14 @@
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
 #include "rgb_lcd_rotation_sw.h"
+#include "esp_private/sleep_retention.h"
+
+#if SOC_AXI_GDMA_SUPPORTED
+#include "hal/axi_dma_ll.h"
+#if AXI_DMA_LL_SUPPORT(TX_LINK_SWITCH)
+#define RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT 1
+#endif
+#endif
 
 // hardware issue workaround
 #if CONFIG_IDF_TARGET_ESP32S3
@@ -94,6 +102,9 @@ static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *rgb_panel, const 
 static void lcd_rgb_panel_release_gpio(esp_rgb_panel_t *rgb_panel);
 static void lcd_rgb_panel_start_transmission(esp_rgb_panel_t *rgb_panel);
 static void rgb_lcd_default_isr_handler(void *args);
+#if RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT
+static bool lcd_rgb_panel_link_switch_handler(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
+#endif // RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT
 
 struct esp_rgb_panel_t {
     esp_lcd_panel_t base;  // Base class of generic lcd panel
@@ -134,7 +145,7 @@ struct esp_rgb_panel_t {
     size_t bb_eof_count;            // record the number we received the DMA EOF event, compare with `expect_eof_count` in the VSYNC_END ISR
     size_t expect_eof_count;        // record the number of DMA EOF event we expected to receive
     esp_lcd_rgb_panel_draw_buf_complete_cb_t on_color_trans_done; // draw buffer completes
-    esp_lcd_rgb_panel_frame_buf_complete_cb_t on_frame_buf_complete; // callback used to notify when the bounce buffer finish copying the entire frame
+    esp_lcd_rgb_panel_frame_buf_complete_cb_t on_frame_buf_complete; // callback used to notify when the buffer can be reused safely
     esp_lcd_rgb_panel_vsync_cb_t on_vsync; // VSYNC event callback
     esp_lcd_rgb_panel_bounce_buf_fill_cb_t on_bounce_empty; // callback used to fill a bounce buffer rather than copying from the frame buffer
     void *user_ctx;                 // Reserved user's data of callback functions
@@ -250,6 +261,9 @@ static esp_err_t lcd_rgb_panel_destroy(esp_rgb_panel_t *rgb_panel)
         esp_pm_lock_release(rgb_panel->pm_lock);
         esp_pm_lock_delete(rgb_panel->pm_lock);
     }
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    sleep_retention_power_lock_release();
+#endif
     free(rgb_panel);
     return ESP_OK;
 }
@@ -300,6 +314,11 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
         expect_bb_eof_count = fb_size / bb_size;
     }
 
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    // acquire the retention power lock to prevent the power domain from being turned off during light sleep
+    sleep_retention_power_lock_acquire();
+#endif
+
     // calculate the number of DMA descriptors
     size_t num_dma_nodes = 0;
     // allocate memory for rgb panel
@@ -334,6 +353,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     // set clock source
     ret = lcd_rgb_panel_select_clock_src(rgb_panel, rgb_panel_config->clk_src);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "set source clock failed");
+
     // reset peripheral and FIFO after we select a correct clock source
     lcd_ll_fifo_reset(rgb_panel->hal.dev);
     lcd_ll_reset(rgb_panel->hal.dev);
@@ -693,7 +713,9 @@ static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
                 // it's hard to know the time when the new frame buffer starts
                 gdma_link_concat(rgb_panel->dma_fb_links[i], -1, rgb_panel->dma_fb_links[rgb_panel->cur_fb_index], 0);
             }
-
+#if RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT
+            ESP_RETURN_ON_ERROR(gdma_request_link_switch_event(rgb_panel->dma_chan), TAG, "request link switch event failed");
+#endif // RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT
         }
     }
     return ESP_OK;
@@ -937,7 +959,7 @@ static IRAM_ATTR bool lcd_rgb_panel_eof_handler(gdma_channel_handle_t dma_chan, 
         portEXIT_CRITICAL_ISR(&rgb_panel->spinlock);
         need_yield = lcd_rgb_panel_fill_bounce_buffer(rgb_panel, rgb_panel->bounce_buffer[bb]);
     } else {
-        // if not bounce buffer, the DMA EOF event means the end of a frame has been sent out to the LCD controller
+        // Once the preload has already done, the buffer complete callback is not reliable.
         if (rgb_panel->on_frame_buf_complete) {
             if (rgb_panel->on_frame_buf_complete(&rgb_panel->base, NULL, rgb_panel->user_ctx)) {
                 need_yield = true;
@@ -946,6 +968,24 @@ static IRAM_ATTR bool lcd_rgb_panel_eof_handler(gdma_channel_handle_t dma_chan, 
     }
     return need_yield;
 }
+
+#if RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT
+static IRAM_ATTR bool lcd_rgb_panel_link_switch_handler(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
+{
+    (void)dma_chan;
+    (void)event_data;
+    bool need_yield = false;
+    esp_rgb_panel_t *rgb_panel = (esp_rgb_panel_t *)user_data;
+
+    if (rgb_panel->on_frame_buf_complete) {
+        if (rgb_panel->on_frame_buf_complete(&rgb_panel->base, NULL, rgb_panel->user_ctx)) {
+            need_yield = true;
+        }
+    }
+
+    return need_yield;
+}
+#endif // RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT
 
 static esp_err_t lcd_rgb_create_dma_channel(esp_rgb_panel_t *rgb_panel)
 {
@@ -974,11 +1014,19 @@ static esp_err_t lcd_rgb_create_dma_channel(esp_rgb_panel_t *rgb_panel)
     // get the memory alignment required by the DMA
     gdma_get_alignment_constraints(rgb_panel->dma_chan, &rgb_panel->int_mem_align, &rgb_panel->ext_mem_align);
 
-    // register DMA EOF callback
+    // register DMA event callbacks
     gdma_tx_event_callbacks_t cbs = {
+#if RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT
+        // if no bounce buffer, the DMA EOF event means the end of a frame has been sent out to the LCD controller.
+        // But the dma link may have preloaded the next frame with the current buffer.
+        // So we need to wait for the GDMA link switch event to invoke the on_frame_buf_complete callback.
+        .on_trans_eof = (rgb_panel->flags.stream_mode && !rgb_panel->bb_size) ? NULL : lcd_rgb_panel_eof_handler,
+        .on_link_switch = lcd_rgb_panel_link_switch_handler,
+#else
         .on_trans_eof = lcd_rgb_panel_eof_handler,
+#endif // RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT
     };
-    ESP_RETURN_ON_ERROR(gdma_register_tx_event_callbacks(rgb_panel->dma_chan, &cbs, rgb_panel), TAG, "register DMA EOF callback failed");
+    ESP_RETURN_ON_ERROR(gdma_register_tx_event_callbacks(rgb_panel->dma_chan, &cbs, rgb_panel), TAG, "register DMA event callbacks failed");
 
     return ESP_OK;
 }

@@ -194,7 +194,7 @@ typedef bool (*esp_isp_ae_env_detector_callback_t)(isp_ae_ctlr_t ae_ctlr, const 
 /**
  * @brief Group of ISP AE env_detector
  * @note These callbacks are all running in an ISR environment.
- * @note When CONFIG_ISP_ISR_IRAM_SAEE is enabled, the callback itself and functions called by it should be placed in IRAM.
+ * @note When CONFIG_ISP_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  *       Involved variables should be in internal RAM as well.
  */
 typedef struct {
@@ -207,7 +207,7 @@ typedef struct {
  *
  * @note User can deregister a previously registered callback by calling this function and setting the to-be-deregistered callback member in
  *       the `cbs` structure to NULL.
- * @note When CONFIG_ISP_ISR_IRAM_SAEE is enabled, the callback itself and functions called by it should be placed in IRAM.
+ * @note When CONFIG_ISP_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  *       Involved variables (including `user_data`) should be in internal RAM as well.
  *
  * @param[in] ae_ctlr         AE controller handle

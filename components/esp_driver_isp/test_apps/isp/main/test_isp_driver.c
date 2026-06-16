@@ -196,6 +196,10 @@ TEST_CASE("ISP AWB driver oneshot vs continuous test", "[isp]")
     TEST_ESP_OK(esp_isp_del_processor(isp_proc));
 }
 
+/*---------------------------------------------------------------
+                      CCM
+---------------------------------------------------------------*/
+
 TEST_CASE("ISP CCM basic function", "[isp]")
 {
     esp_isp_processor_cfg_t isp_config = {
@@ -210,7 +214,7 @@ TEST_CASE("ISP CCM basic function", "[isp]")
 
     esp_isp_ccm_config_t ccm_cfg = {
         .matrix = {
-            {16.0, 0.0, 0.0},
+            {17.0, 0.0, 0.0},
             {0.0, 1.0, 0.0},
             {0.0, 0.0, 1.0}
         },
@@ -223,7 +227,7 @@ TEST_CASE("ISP CCM basic function", "[isp]")
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_isp_ccm_configure(isp_proc, &ccm_cfg));
 
     // saturation case
-    ccm_cfg.matrix[0][0] = 5.0;
+    ccm_cfg.matrix[0][0] = 3.0;
     ccm_cfg.saturation = true;
     TEST_ESP_OK(esp_isp_ccm_configure(isp_proc, &ccm_cfg));
     TEST_ESP_OK(esp_isp_ccm_enable(isp_proc));
@@ -231,6 +235,40 @@ TEST_CASE("ISP CCM basic function", "[isp]")
     ccm_cfg.matrix[0][0] = -1.1;
     TEST_ESP_OK(esp_isp_ccm_configure(isp_proc, &ccm_cfg));
     TEST_ESP_OK(esp_isp_ccm_disable(isp_proc));
+
+    TEST_ESP_OK(esp_isp_disable(isp_proc));
+    TEST_ESP_OK(esp_isp_del_processor(isp_proc));
+}
+
+/*---------------------------------------------------------------
+                      Gamma
+---------------------------------------------------------------*/
+static uint32_t test_isp_gamma_basic_curve(uint32_t x)
+{
+    return x / 2;
+}
+
+TEST_CASE("ISP gamma basic function", "[isp]")
+{
+    esp_isp_processor_cfg_t isp_config = {
+        .clk_hz = 80 * 1000 * 1000,
+        .input_data_source = ISP_INPUT_DATA_SOURCE_CSI,
+        .input_data_color_type = ISP_COLOR_RAW8,
+        .output_data_color_type = ISP_COLOR_RGB565,
+    };
+    isp_proc_handle_t isp_proc = NULL;
+    TEST_ESP_OK(esp_isp_new_processor(&isp_config, &isp_proc));
+    TEST_ESP_OK(esp_isp_enable(isp_proc));
+
+    isp_gamma_curve_points_t gamma_pts = {};
+    TEST_ESP_OK(esp_isp_gamma_fill_curve_points(test_isp_gamma_basic_curve, &gamma_pts));
+    TEST_ESP_OK(esp_isp_gamma_configure(isp_proc, COLOR_COMPONENT_R, &gamma_pts));
+    TEST_ESP_OK(esp_isp_gamma_configure(isp_proc, COLOR_COMPONENT_G, NULL));
+
+    TEST_ESP_OK(esp_isp_gamma_enable(isp_proc));
+    // Allow to be called after enabled
+    TEST_ESP_OK(esp_isp_gamma_configure(isp_proc, COLOR_COMPONENT_B, &gamma_pts));
+    TEST_ESP_OK(esp_isp_gamma_disable(isp_proc));
 
     TEST_ESP_OK(esp_isp_disable(isp_proc));
     TEST_ESP_OK(esp_isp_del_processor(isp_proc));

@@ -48,6 +48,14 @@ config BT_CLASSIC_ENABLED
     help
         For now this option needs "SMP_ENABLE" to be set to yes
 
+config BT_CLASSIC_MAX_RECONNECT_ON_COLLISION
+    int "Maximum number of reconnection attempts in case of collision"
+    depends on BT_CLASSIC_ENABLED
+    default 5
+    help
+        The maximum number of reconnection attempts when encountering rejection of connection
+        request with error code 0x0B(Connection Already Exists) from peer device
+
 config BT_CLASSIC_ENABLE_POWER_CTRL_VSC
     bool "Enable Espressif Vendor-specific HCI commands for power control of Classic Bluetooth"
     depends on BT_CLASSIC_ENABLED
@@ -1379,23 +1387,6 @@ config BT_BLE_RPA_TIMEOUT
     help
         This set RPA timeout of Controller and Host.
         Default is 900 s (15 minutes). Range is 1 s to 1 hour (3600 s).
-
-config BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT
-    bool "Allow BLE connection interval below Bluetooth Core Spec minimum (disable host check)"
-    depends on BT_BLE_ENABLED
-    default n
-    help
-        When enabled, the Bluedroid host skips the minimum BLE connection
-        interval validation (Bluetooth Core Spec minimum is 0x0006 / 7.5 ms)
-        and accepts any non-zero interval value from the application. The
-        BLE controller then enforces what is actually allowed; how small the
-        connection interval may be depends on controller capability and its
-        own configuration, not on this host option text.
-
-        End users should NOT set this option directly. In typical IDF builds it
-        follows the active Controller integration when that Controller supports
-        this mode; use the Controller's own configuration (menu entries and symbol
-        names differ by chip) instead of toggling this host symbol manually.
 
 menuconfig BT_BLE_50_FEATURES_SUPPORTED
     bool "Enable BLE 5.0 and above features(please disable BLE 4.2 if enable BLE 5.0)"

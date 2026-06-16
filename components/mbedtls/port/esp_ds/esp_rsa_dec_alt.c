@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include "esp_ds.h"
 #include "rsa_dec_alt.h"
 #include "mbedtls/rsa.h"
+#include "mbedtls/platform_util.h"
 #include "esp_ds_common.h"
 #include "esp_log.h"
 
@@ -214,6 +215,7 @@ int esp_ds_rsa_decrypt(void *ctx, size_t *olen,
     esp_ds_data_t *s_ds_data = esp_ds_get_data_ctx();
     if (s_ds_data == NULL) {
         ESP_LOGE(TAG, "s_ds_data is NULL, cannot perform decryption");
+        memset(input_tmp, 0, data_len * sizeof(uint32_t));
         free(input_tmp);
         return -1;
     }
@@ -275,15 +277,19 @@ int esp_ds_rsa_decrypt(void *ctx, size_t *olen,
     }
 
     memcpy(output, output_tmp, *olen);
+    mbedtls_platform_zeroize(output_tmp, data_len * sizeof(uint32_t));
     free(output_tmp);
+    mbedtls_platform_zeroize(input_tmp, data_len * sizeof(uint32_t));
     free(input_tmp);
     return 0;
 exit:
     esp_ds_release_ds_lock();
     if (input_tmp) {
+        mbedtls_platform_zeroize(input_tmp, data_len * sizeof(uint32_t));
         free(input_tmp);
     }
     if (output_tmp) {
+        mbedtls_platform_zeroize(output_tmp, data_len * sizeof(uint32_t));
         free(output_tmp);
     }
     if (olen) {

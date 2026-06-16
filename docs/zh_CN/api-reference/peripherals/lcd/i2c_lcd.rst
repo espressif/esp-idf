@@ -23,6 +23,7 @@ I2C 接口的 LCD
     - :cpp:member:`esp_lcd_panel_io_i2c_config_t::dev_addr` 设置 LCD 控制器芯片的 I2C 设备地址。LCD 驱动程序使用此地址与 LCD 控制器芯片通信。
     - :cpp:member:`esp_lcd_panel_io_i2c_config_t::scl_speed_hz` 设置 I2C 时钟频率 (Hz)。该值不应超过 LCD 规格书中推荐的范围。
     - :cpp:member:`esp_lcd_panel_io_i2c_config_t::lcd_cmd_bits` 和 :cpp:member:`esp_lcd_panel_io_i2c_config_t::lcd_param_bits` 分别设置 LCD 控制器芯片可识别的命令及参数的位宽。不同芯片对位宽要求不同，请提前参阅 LCD 规格书。
+    - :cpp:member:`esp_lcd_panel_io_i2c_config_t::transaction_timeout_ms` 设置每次底层 I2C 传输的超时时间（毫秒）。设为 0 或 -1 时表示无限等待；如指定为正值，则面板 IO 相关调用会在超时后返回 ``ESP_ERR_TIMEOUT``，适用于共享总线或总线可能被从设备挂死的场景。
 
     .. code-block:: c
 

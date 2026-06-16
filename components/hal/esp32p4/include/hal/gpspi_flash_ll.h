@@ -38,7 +38,6 @@ extern "C" {
                                         )) )
 
 typedef typeof(GPSPI2.clock.val) gpspi_flash_ll_clock_reg_t;
-#define GPSPI_FLASH_LL_PERIPHERAL_FREQUENCY_MHZ  (80)
 #define GPSPI_FLASH_LL_SUPPORT_CLK_SRC_PRE_DIV  (1)
 #define GPSPI_FLASH_LL_PERIPH_CLK_DIV_MAX ((SPI_CLKCNT_N + 1) * (SPI_CLKDIV_PRE + 1)) //peripheral internal maxmum clock divider
 

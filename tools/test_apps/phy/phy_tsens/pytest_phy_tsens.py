@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import random
 import string
@@ -43,7 +43,7 @@ def run_phy_tsens_test(dut: Tuple[Dut, Dut]) -> None:
     ssid = ''.join([random.choice(string.ascii_lowercase) for i in range(10)])
     password = ''.join([random.choice(string.ascii_lowercase) for i in range(10)])
     ap_dut.write(f'ap_set {ssid} {password}')
-    ap_dut.expect('set ap config OK')
+    ap_dut.expect('WIFI_EVENT_AP_START')
     sta_dut.write(f'sta_connect {ssid} {password}')
     sta_dut.expect('STA_GOT_IP')
 
@@ -90,7 +90,7 @@ def run_phy_tsens_test_init_wifi_first(dut: Tuple[Dut, Dut]) -> None:
     ssid = ''.join([random.choice(string.ascii_lowercase) for i in range(10)])
     password = ''.join([random.choice(string.ascii_lowercase) for i in range(10)])
     ap_dut.write(f'ap_set {ssid} {password}')
-    ap_dut.expect('set ap config OK')
+    ap_dut.expect('WIFI_EVENT_AP_START')
     sta_dut.write(f'sta_connect {ssid} {password}')
     sta_dut.expect('STA_GOT_IP')
 
@@ -128,7 +128,7 @@ def run_phy_tsens_test_with_light_sleep(dut: Tuple[Dut, Dut]) -> None:
     ssid = ''.join([random.choice(string.ascii_lowercase) for i in range(10)])
     password = ''.join([random.choice(string.ascii_lowercase) for i in range(10)])
     ap_dut.write(f'ap_set {ssid} {password}')
-    ap_dut.expect('set ap config OK')
+    ap_dut.expect('WIFI_EVENT_AP_START')
     sta_dut.write(f'sta_connect {ssid} {password}')
     sta_dut.expect('STA_GOT_IP')
 

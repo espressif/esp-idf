@@ -38,8 +38,13 @@ FORCE_INLINE_ATTR bool esp_tee_buf_in_ree(const void *p, size_t len)
         return false;
     }
 
-    return esp_tee_ptr_in_ree(p) &&
-           esp_tee_ptr_in_ree((const char *)p + len - 1);
+    uintptr_t end = start + len;
+    return ((start >= SOC_NS_IDRAM_START && end <= SOC_NS_IDRAM_END) ||
+            (start >= (uintptr_t)esp_tee_app_config.ns_drom_start && end <= SOC_S_MMU_MMAP_RESV_START_VADDR)
+#if SOC_RTC_MEM_SUPPORTED
+            || (start >= SOC_RTC_DATA_LOW && end <= SOC_RTC_DATA_HIGH)
+#endif
+           );
 }
 
 #ifdef __cplusplus

@@ -48,9 +48,13 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
   Light-sleep 状态下，外设设有时钟门控，不会产生来自 GPIO 和内部外设的中断。:doc:`sleep_modes` 文档中所提到的唤醒源可用于从 Light-sleep 状态触发唤醒。
 
-.. only:: SOC_PM_SUPPORT_EXT0_WAKEUP or SOC_PM_SUPPORT_EXT1_WAKEUP
+.. only:: SOC_PM_SUPPORT_EXT0_WAKEUP and SOC_PM_SUPPORT_EXT1_WAKEUP
 
   例如，EXT0 和 EXT1 唤醒源可以通过 GPIO 唤醒芯片。
+
+.. only:: SOC_PM_SUPPORT_EXT1_WAKEUP and not SOC_PM_SUPPORT_EXT0_WAKEUP
+
+  例如，EXT1 唤醒源可以通过 GPIO 唤醒芯片。
 
 
 电源管理锁
@@ -170,6 +174,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
             :SOC_TWAI_SUPPORT_SLEEP_RETENTION: - All TWAIs
             :SOC_PARLIO_SUPPORT_SLEEP_RETENTION: - PARL_IO
             :SOC_SPI_SUPPORT_SLEEP_RETENTION: - All GPSPIs
+            :SOC_LCDCAM_LCD_SUPPORT_SLEEP_RETENTION: - I80 LCD
 
         一些外设尚未支持睡眠上下文恢复，或者寄存器丢失后根本无法恢复。即使外设下电功能被启用，它们也会阻止外设下电的发生：
 

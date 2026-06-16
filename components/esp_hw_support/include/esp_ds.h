@@ -27,6 +27,7 @@ extern "C" {
 #define ESP_DS_SIGNATURE_M_PRIME_BIT_LEN 32
 #define ESP_DS_SIGNATURE_L_BIT_LEN 32
 #define ESP_DS_SIGNATURE_PADDING_BIT_LEN 64
+#define ESP_DS_DATA_KEY_SIZE 32
 
 /* Length of parameter 'C' stored in flash, in bytes
    - Operands Y, M and r_bar; each equal to maximum RSA bit length

@@ -19,7 +19,7 @@ To obtain information about the state of the heap, call the following functions:
 
 - :cpp:func:`heap_caps_get_free_size` can be used to return the current free memory for different memory capabilities.
 - :cpp:func:`heap_caps_get_largest_free_block` can be used to return the largest free block in the heap, which is also the largest single allocation currently possible. Tracking this value and comparing it to the total free heap allows you to detect heap fragmentation.
-- :cpp:func:`heap_caps_get_minimum_free_size` can be used to track the heap "low watermark" since boot.
+- :cpp:func:`heap_caps_get_minimum_free_size` can be used to track the heap "low watermark" across heaps registered during startup. Heaps added at runtime using :cpp:func:`heap_caps_add_region_with_caps` (i.e., from ``app_main`` onwards) are not taken into account.
 - :cpp:func:`heap_caps_get_info` returns a :cpp:class:`multi_heap_info_t` structure, which contains the information from the above functions, plus some additional heap-specific data (number of allocations, etc.).
 - :cpp:func:`heap_caps_print_heap_info` prints a summary of the information returned by :cpp:func:`heap_caps_get_info` to stdout.
 - :cpp:func:`heap_caps_dump` and :cpp:func:`heap_caps_dump_all` output detailed information about the structure of each block in the heap. Note that this can be a large amount of output.

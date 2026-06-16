@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,31 @@ extern "C" {
 #include <stdint.h>
 #include "esp_err.h"
 #include "hal/uart_types.h"
+#include "hal/uart_ll.h"
+
+#if SOC_LP_UART_SUPPORTED
+/**
+ * @brief LP UART peripheral interrupt enable
+ * @param uart_num UART port number
+ * @param mask Interrupt mask needs to be enabled
+ */
+static inline void ulp_lp_core_lp_uart_intr_enable(uart_port_t uart_num, uint32_t mask)
+{
+    HAL_ASSERT(uart_num == LP_UART_NUM_0);
+    uart_ll_ena_intr_mask(UART_LL_GET_HW(uart_num), mask);
+}
+
+/**
+ * @brief LP UART peripheral interrupt disable
+ * @param uart_num UART port number
+ * @param mask Interrupt mask needs to be disabled
+ */
+static inline void ulp_lp_core_lp_uart_intr_disable(uart_port_t uart_num, uint32_t mask)
+{
+    HAL_ASSERT(uart_num == LP_UART_NUM_0);
+    uart_ll_disable_intr_mask(UART_LL_GET_HW(uart_num), mask);
+}
+#endif /* SOC_LP_UART_SUPPORTED */
 
 /**
  * @brief Send data to the LP UART port if there is space available in the Tx FIFO

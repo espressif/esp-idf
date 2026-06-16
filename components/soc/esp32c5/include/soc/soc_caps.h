@@ -688,6 +688,8 @@
 
 #define SOC_CLK_ANA_I2C_MST_HAS_ROOT_GATE         (1)     /*!< Any regi2c operation needs enable the analog i2c master clock first */
 
+#define SOC_CLK_ROOT_CLK_SWITCH_PROTECT           1       /*!< Need to bypass root clock auto gating during 240M/160M PLL switch */
+
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                   (1)
@@ -730,3 +732,4 @@
 #define SOC_LP_CORE_SINGLE_INTERRUPT_VECTOR         (1) /*!< LP Core interrupts all map to a single entry in vector table */
 #define SOC_LP_CORE_SUPPORT_ETM                     (1) /*!< LP Core supports ETM */
 #define SOC_LP_CORE_SUPPORT_STORE_LOAD_EXCEPTIONS   (1) /*!< LP Core will raise exceptions if accessing invalid addresses */
+#define SOC_LP_CORE_HW_AUTO_CLRWAKEUPCAUSE          (1) /*!< LP core requests sleep, PMU clears both HP and LP wakeup causes */

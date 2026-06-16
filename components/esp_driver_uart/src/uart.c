@@ -726,13 +726,12 @@ static bool uart_try_set_iomux_pin(uart_port_t uart_num, int io_num, uint32_t id
     }
 #if (SOC_UART_LP_NUM >= 1) && (SOC_RTCIO_PIN_COUNT >= 1)
     else {
-        if (upin->input) {
-            rtc_gpio_set_direction(io_num, RTC_GPIO_MODE_INPUT_ONLY);
-        } else {
-            rtc_gpio_set_direction(io_num, RTC_GPIO_MODE_OUTPUT_ONLY);
-        }
         rtc_gpio_init(io_num);
-        rtc_gpio_iomux_func_sel(io_num, upin->iomux_func);
+        if (upin->input) {
+            rtc_gpio_iomux_input(io_num, upin->iomux_func, upin->signal);
+        } else {
+            rtc_gpio_iomux_output(io_num, upin->iomux_func);
+        }
         // undo the workaround done in uart_module_enable for RX pin
 #if !SOC_LP_GPIO_MATRIX_SUPPORTED
         if (upin->input) {

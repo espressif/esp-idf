@@ -284,6 +284,12 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
 #define WIFI_ENABLE_BSS_MAX_IDLE 0
 #endif
 
+#if CONFIG_ESP_WIFI_PASSIVE_HIDDEN_AP_SUPPORT
+#define WIFI_ENABLE_PASSIVE_HIDDEN_AP (1<<9)
+#else
+#define WIFI_ENABLE_PASSIVE_HIDDEN_AP 0
+#endif
+
 #define CONFIG_FEATURE_WPA3_SAE_BIT     (1<<0)
 #define CONFIG_FEATURE_CACHE_TX_BUF_BIT (1<<1)
 #define CONFIG_FEATURE_FTM_INITIATOR_BIT (1<<2)
@@ -293,6 +299,7 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
 #define CONFIG_FEATURE_11R_BIT (1<<6)
 #define CONFIG_FEATURE_WIFI_ENT_BIT (1<<7)
 #define CONFIG_FEATURE_BSS_MAX_IDLE_BIT (1<<8)
+#define CONFIG_FEATURE_WIFI_PASSIVE_HIDDEN_AP_BIT (1<<9)
 
 /* Set additional WiFi features and capabilities */
 #define WIFI_FEATURE_CAPS (WIFI_ENABLE_WPA3_SAE | \
@@ -303,7 +310,8 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
                            WIFI_ENABLE_GMAC | \
                            WIFI_ENABLE_11R  | \
                            WIFI_ENABLE_ENTERPRISE | \
-                           WIFI_ENABLE_BSS_MAX_IDLE)
+                           WIFI_ENABLE_BSS_MAX_IDLE | \
+                           WIFI_ENABLE_PASSIVE_HIDDEN_AP)
 
 #define WIFI_INIT_CONFIG_DEFAULT() { \
     .osi_funcs = &g_wifi_osi_funcs, \
@@ -1625,6 +1633,8 @@ esp_err_t esp_wifi_config_80211_tx(wifi_interface_t ifx, wifi_tx_rate_config_t *
   * @brief      Disable PMF configuration for specified interface
   *
   * @attention  This API should be called after esp_wifi_set_config() and before esp_wifi_start().
+  * @attention  SoftAP: PMF cannot be disabled for `WIFI_AUTH_WPA3_PSK`, `WIFI_AUTH_WPA2_WPA3_PSK`, `WIFI_AUTH_OWE`.
+  * @attention  Station: PMF cannot be disabled when `wifi_sta_config_t.threshold.authmode` is `WIFI_AUTH_WPA3_PSK`, `WIFI_AUTH_WPA2_WPA3_PSK`, or `WIFI_AUTH_OWE` (see `wifi_scan_threshold_t`).
   *
   * @param      ifx  Interface to be configured.
   *

@@ -45,6 +45,12 @@
 #include "hal/lp_core_ll.h"
 #include "hal/rtc_io_ll.h"
 #include "driver/rtc_io.h"
+#if SOC_LP_CORE_HW_AUTO_CLRWAKEUPCAUSE
+#include "rom/rtc.h"
+#include "esp_private/esp_pmu.h"
+#include "lp_core_test_app_halt.h"
+#include "hal/lp_aon_hal.h"
+#endif
 
 extern const uint8_t lp_core_main_bin_start[] asm("_binary_lp_core_test_app_bin_start");
 extern const uint8_t lp_core_main_bin_end[]   asm("_binary_lp_core_test_app_bin_end");
@@ -65,6 +71,11 @@ extern const uint8_t lp_core_main_gpio_bin_end[]   asm("_binary_lp_core_test_app
 
 extern const uint8_t lp_core_main_isr_bin_start[] asm("_binary_lp_core_test_app_isr_bin_start");
 extern const uint8_t lp_core_main_isr_bin_end[]   asm("_binary_lp_core_test_app_isr_bin_end");
+
+#if SOC_LP_CORE_HW_AUTO_CLRWAKEUPCAUSE
+extern const uint8_t lp_core_main_halt_bin_start[] asm("_binary_lp_core_test_app_halt_bin_start");
+extern const uint8_t lp_core_main_halt_bin_end[]   asm("_binary_lp_core_test_app_halt_bin_end");
+#endif
 
 static void load_and_start_lp_core_firmware(ulp_lp_core_cfg_t* cfg, const uint8_t* firmware_start, const uint8_t* firmware_end)
 {
@@ -616,3 +627,45 @@ TEST_CASE("LP core ISR tests", "[ulp]")
     TEST_ASSERT_EQUAL(ISR_TEST_ITERATIONS, ulp_io_isr_counter);
 #endif //SOC_RTCIO_PIN_COUNT > 0
 }
+
+#if SOC_DEEP_SLEEP_SUPPORTED
+
+#if SOC_LP_CORE_HW_AUTO_CLRWAKEUPCAUSE
+static void do_ulp_wakeup_with_lp_timer_deepsleep_and_halt(void)
+{
+    /* Load ULP firmware and start the coprocessor */
+    ulp_lp_core_cfg_t cfg = {
+        .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER,
+        .lp_timer_sleep_duration_us = 1000000, // 1 second
+#if ESP_ROM_HAS_LP_ROM
+        /* ROM Boot takes quite a bit longer, which skews the numbers of wake-ups. skip rom boot to keep the calculation simple */
+        .skip_lp_rom_boot = true,
+#endif
+    };
+
+    load_and_start_lp_core_firmware(&cfg, lp_core_main_halt_bin_start, lp_core_main_halt_bin_end);
+
+    /* Setup wakeup triggers */
+    TEST_ASSERT(esp_sleep_enable_ulp_wakeup() == ESP_OK);
+
+    /* Enter Deep Sleep */
+    esp_deep_sleep_start();
+
+    UNITY_TEST_FAIL(__LINE__, "Should not get here!");
+}
+
+static void check_hp_core_wakeup_cause_saved(void)
+{
+    uint32_t lp_core_wakeup_cause_status0 = lp_aon_hal_load_wakeup_cause();
+    TEST_ASSERT_EQUAL(RTC_LP_CORE_TRIG_EN, lp_core_wakeup_cause_status0 & RTC_LP_CORE_TRIG_EN);
+    TEST_ASSERT_EQUAL(BIT(ESP_SLEEP_WAKEUP_ULP), esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_ULP));
+
+    clear_test_cmds();
+}
+
+TEST_CASE_MULTIPLE_STAGES("HP core wakeup causes are saved after LP core halt", "[ulp]",
+                          do_ulp_wakeup_with_lp_timer_deepsleep_and_halt,
+                          check_hp_core_wakeup_cause_saved);
+#endif //SOC_LP_CORE_HW_AUTO_CLRWAKEUPCAUSE
+
+#endif //SOC_DEEP_SLEEP_SUPPORTED

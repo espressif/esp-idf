@@ -16,6 +16,7 @@
 #define ESP_ROM_HAS_HAL_SYSTIMER            (1) // ROM has the implementation of Systimer HAL driver
 #define ESP_ROM_SYSTIMER_INIT_PATCH         (1) // ROM version initializes SYSTIMER without ETM
 #define ESP_ROM_HAS_HEAP_TLSF               (1) // ROM has the implementation of the tlsf and multi-heap library
+#define ESP_ROM_TLSF_CHECK_PATCH            (1) // ROM does not contain the patch of tlsf_check_pool()
 #define ESP_ROM_MULTI_HEAP_WALK_PATCH       (1) // ROM does not contain the patch of multi_heap_walk()
 #define ESP_ROM_HAS_LAYOUT_TABLE            (1) // ROM has the layout table
 #define ESP_ROM_HAS_SPI_FLASH               (1) // ROM has the implementation of SPI Flash driver
@@ -25,3 +26,4 @@
 #define ESP_ROM_USB_OTG_NUM                 (-1) // No USB_OTG CDC in the ROM, set -1 for Kconfig usage.
 #define ESP_ROM_WDT_INIT_PATCH              (1) // ROM version does not configure the clock
 #define ESP_ROM_RAM_APP_NEEDS_MMU_INIT      (1) // ROM doesn't init cache MMU when it's a RAM APP, needs MMU hal to init
+#define ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_NO_MAP (1) // ROM cache writeback related needs patch to avoid sync loss, no map parameter

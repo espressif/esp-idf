@@ -723,6 +723,10 @@
 #define SOC_PSRAM_ENCRYPTION_SEPARATE_KEY       1  /* PSRAM encryption can use independent key */
 #define SOC_PSRAM_ENCRYPTION_PAGE_CONFIGURABLE  1  /* PSRAM encryption can be configured on a MMU page basis */
 
+/*------------------------Bootloader CAPS---------------------------------*/
+/* Support Recovery Bootloader */
+#define SOC_RECOVERY_BOOTLOADER_SUPPORTED             (1)
+
 /*-------------------------- MEMPROT CAPS ------------------------------------*/
 
 /*-------------------------- UART CAPS ---------------------------------------*/
@@ -843,6 +847,9 @@
 #define SOC_LCDCAM_CAM_PERIPH_NUM                   (1U)
 #define SOC_LCDCAM_CAM_DATA_WIDTH_MAX               (16U)
 
+/*--------------------------- LCD ---------------------------------*/
+#define SOC_LCDCAM_LCD_SUPPORT_SLEEP_RETENTION      (1)   /*!< Support back up registers before sleep */
+
 /*--------------------------- I3C ---------------------------------*/
 #define SOC_I3C_MASTER_PERIPH_NUM                   (1)
 #define SOC_I3C_MASTER_ADDRESS_TABLE_NUM            (12)
@@ -853,3 +860,4 @@
 #define SOC_LP_CORE_SUPPORT_LP_ADC                  (1) /*!< LP ADC can be accessed from the LP-Core */
 #define SOC_LP_CORE_SUPPORT_LP_VAD                  (1) /*!< LP VAD can be accessed from the LP-Core */
 #define SOC_LP_CORE_SUPPORT_STORE_LOAD_EXCEPTIONS   (1) /*!< LP Core will raise exceptions if accessing invalid addresses */
+#define SOC_LP_CORE_HW_AUTO_CLRWAKEUPCAUSE          (1) /*!< LP core requests sleep, PMU clears both HP and LP wakeup causes */

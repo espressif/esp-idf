@@ -699,9 +699,15 @@ class LogCompressor:
             compressed_file_cnt = 0
             total_cnt = 0
             for src in srcs:
-                if pattern.match(src):
-                    src_path = self.code_base_path / src
-                    dest_path = self.bt_compressed_srcs_path / src
+                # Convert absolute paths to relative (to code_base_path) for pattern matching
+                src_for_match = src
+                try:
+                    src_for_match = str(Path(src).relative_to(self.code_base_path))
+                except ValueError:
+                    pass  # Not under code_base_path, keep as-is
+                if pattern.match(src_for_match):
+                    src_path = self.code_base_path / src_for_match
+                    dest_path = self.bt_compressed_srcs_path / src_for_match
                     temp_path = f'{dest_path}.tmp'
                     total_cnt += 1
                     # Skip if already processed

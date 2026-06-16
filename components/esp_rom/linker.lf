@@ -15,3 +15,7 @@ entries:
         esp_rom_systimer (noflash)
     if HAL_WDT_USE_ROM_IMPL = y:
         esp_rom_wdt (noflash)
+    if ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_MAP = y:
+        esp_rom_cache_writeback_esp32p4 (noflash)
+    if ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_NO_MAP = y:
+        esp_rom_cache_writeback_esp32c5_esp32c61_esp32h4 (noflash)

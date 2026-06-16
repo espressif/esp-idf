@@ -33,6 +33,7 @@ extern "C" {
 
 typedef struct {
     esp_key_mgr_key_type_t key_type;
+    esp_key_mgr_key_len_t key_len;
     bool use_pre_generated_huk_info;
     bool use_pre_generated_sw_init_key;
     WORD_ALIGNED_ATTR esp_key_mgr_huk_info_t huk_info;
@@ -43,6 +44,7 @@ typedef struct {
 
 typedef struct {
     esp_key_mgr_key_type_t key_type;
+    esp_key_mgr_key_len_t key_len;
     bool use_pre_generated_huk_info;
     WORD_ALIGNED_ATTR esp_key_mgr_huk_info_t huk_info;
     WORD_ALIGNED_ATTR uint8_t k1_G[2][KEY_MGR_ECDH0_INFO_SIZE];
@@ -50,12 +52,14 @@ typedef struct {
 
 typedef struct {
     esp_key_mgr_key_type_t key_type;
+    esp_key_mgr_key_len_t key_len;
     bool use_pre_generated_huk_info;
     WORD_ALIGNED_ATTR esp_key_mgr_huk_info_t huk_info;
 } esp_key_mgr_random_key_config_t;
 
 typedef struct {
     esp_key_mgr_key_type_t key_type;
+    esp_key_mgr_key_len_t key_len;
     WORD_ALIGNED_ATTR uint8_t k2_G[2][KEY_MGR_ECDH0_INFO_SIZE];
 } esp_key_mgr_ecdh0_info_t;
 

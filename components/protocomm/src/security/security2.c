@@ -430,7 +430,7 @@ static esp_err_t sec2_new_session(protocomm_security_handle_t handle, uint32_t s
     if (cur_session->id != -1) {
         /* Only one session is allowed at a time */
         ESP_LOGE(TAG, "Closing old session with id %" PRIu32, cur_session->id);
-        sec2_close_session(cur_session, session_id);
+        sec2_close_session(cur_session, cur_session->id);
     }
 
     cur_session->id = session_id;

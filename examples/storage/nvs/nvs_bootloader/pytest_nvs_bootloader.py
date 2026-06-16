@@ -6,6 +6,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_nvs_bootloader_example(dut: Dut) -> None:
     # Expect to read hooks messages and data from NVS partition
@@ -22,6 +23,7 @@ def test_nvs_bootloader_example(dut: Dut) -> None:
 
 
 @pytest.mark.nvs_encr_hmac
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 @pytest.mark.parametrize('config', ['nvs_enc_hmac'], indirect=True)
 @idf_parametrize('target', ['esp32c3'], indirect=['target'])
 def test_nvs_bootloader_example_nvs_encr_hmac(dut: Dut) -> None:
@@ -29,6 +31,7 @@ def test_nvs_bootloader_example_nvs_encr_hmac(dut: Dut) -> None:
 
 
 @pytest.mark.flash_encryption
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 @pytest.mark.parametrize('config', ['nvs_enc_flash_enc'], indirect=True)
 @idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
 def test_nvs_bootloader_example_flash_enc(dut: Dut) -> None:

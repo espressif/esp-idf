@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +20,7 @@ sta_input = 0x40000b3c;
 hal_mac_tx_set_ppdu = 0x40000b74;
 ic_mac_deinit = 0x40000be8;
 ic_mac_init = 0x40000bec;
-lmacTxFrame = 0x40000c40;
+//lmacTxFrame = 0x40000c40;
 lmacDisableTransmit = 0x40000c44;
 pm_check_state = 0x40000cb4;
 pm_set_beacon_filter = 0x40000cd8;
@@ -39,7 +39,7 @@ pm_mac_enable_tsf_tbtt_soc_wakeup = 0x40000d84;
 //pm_mac_enable_tsf_tbtt_modem_wakeup = 0x40000d88;
 //pm_mac_modem_params_rt_update = 0x40000d8c;
 pm_coex_pwr_update = 0x40000d9c;
-ppMapTxQueue = 0x40000ddc;
+//ppMapTxQueue = 0x40000ddc;
 ppProcTxSecFrame = 0x40000de0;
 ppProcessTxQ = 0x40000de8;
 ppRxPkt = 0x40000e04;
@@ -89,10 +89,10 @@ phy_reg_init = 0x400010e8;
 phy_xpd_rf = 0x400010ec;
 phy_get_mac_addr = 0x400010f4;
 phy_set_mac_data = 0x400010f8;
-phy_rfcal_data_sub = 0x400010fc;
-phy_rf_cal_data_recovery = 0x40001100;
-phy_rf_cal_data_backup = 0x40001104;
-phy_rfcal_data_check = 0x40001108;
+//phy_rfcal_data_sub = 0x400010fc;
+//phy_rf_cal_data_recovery = 0x40001100;
+//phy_rf_cal_data_backup = 0x40001104;
+//phy_rfcal_data_check = 0x40001108;
 phy_pwdet_reg_init = 0x4000110c;
 phy_pwdet_sar2_init = 0x40001110;
 phy_en_pwdet = 0x40001114;

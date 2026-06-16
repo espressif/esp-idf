@@ -43,6 +43,10 @@ config ESP_ROM_HAS_HEAP_TLSF
     bool
     default y
 
+config ESP_ROM_TLSF_CHECK_PATCH
+    bool
+    default y
+
 config ESP_ROM_MULTI_HEAP_WALK_PATCH
     bool
     default y
@@ -76,5 +80,9 @@ config ESP_ROM_WDT_INIT_PATCH
     default y
 
 config ESP_ROM_RAM_APP_NEEDS_MMU_INIT
+    bool
+    default y
+
+config ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_NO_MAP
     bool
     default y

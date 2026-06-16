@@ -560,6 +560,19 @@ static esp_gatt_status_t btc_gatts_check_valid_attr_tab(esp_gatts_attr_db_t *gat
                         return ESP_GATT_INVALID_PDU;
                     }
                 }
+
+                /* Same rule as GATTS_AddCharacteristic(): signed-write perm requires AUTH property */
+                {
+                    uint8_t char_property = (uint8_t)(*(uint8_t *)(gatts_attr_db[i].att_desc.value));
+                    uint16_t perm = gatts_attr_db[i + 1].att_desc.perm;
+
+                    if (((char_property & GATT_CHAR_PROP_BIT_AUTH) && !(perm & GATT_WRITE_SIGNED_PERM)) ||
+                            ((perm & GATT_WRITE_SIGNED_PERM) && !(char_property & GATT_CHAR_PROP_BIT_AUTH))) {
+                        BTC_TRACE_ERROR("%s, Invalid char property=0x%02x perm=0x%04x at table index %d",
+                                        __func__, char_property, perm, i);
+                        return ESP_GATT_ILLEGAL_PARAMETER;
+                    }
+                }
                 break;
             default:
                 break;
@@ -645,43 +658,55 @@ static void btc_gatts_inter_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_GATTS;
     msg.act = event;
-    if(btc_creat_tab_env.is_tab_creat_svc && btc_creat_tab_env.complete_future) {
-        switch(event) {
-            case BTA_GATTS_CREATE_EVT: {
-                //save the service handle to the btc module after used
-                //the attribute table method to creat a service
+    if (btc_creat_tab_env.is_tab_creat_svc && btc_creat_tab_env.complete_future) {
+        void *result = FUTURE_SUCCESS;
+        uint16_t index = btc_creat_tab_env.handle_idx;
+
+        switch (event) {
+        case BTA_GATTS_CREATE_EVT:
+            if (p_data->create.status != BTA_GATT_OK || p_data->create.service_id == 0) {
+                result = FUTURE_FAIL;
+            } else {
+                /* save the service handle after the attribute table method creates a service */
                 bta_to_btc_uuid(&btc_creat_tab_env.svc_uuid, &p_data->create.uuid);
-                uint16_t index = btc_creat_tab_env.handle_idx;
                 btc_creat_tab_env.svc_start_hdl = p_data->create.service_id;
                 btc_creat_tab_env.handles[index] = p_data->create.service_id;
-                break;
             }
-            case BTA_GATTS_ADD_INCL_SRVC_EVT: {
-                uint16_t index = btc_creat_tab_env.handle_idx;
+            break;
+        case BTA_GATTS_ADD_INCL_SRVC_EVT:
+            if (p_data->add_result.status != BTA_GATT_OK || p_data->add_result.attr_id == 0) {
+                result = FUTURE_FAIL;
+            } else {
                 btc_creat_tab_env.handles[index] = p_data->add_result.attr_id;
-                break;
             }
-            case BTA_GATTS_ADD_CHAR_EVT: {
-                uint16_t index = btc_creat_tab_env.handle_idx;
+            break;
+        case BTA_GATTS_ADD_CHAR_EVT:
+            if (p_data->add_result.status != BTA_GATT_OK || p_data->add_result.attr_id == 0) {
+                result = FUTURE_FAIL;
+            } else {
                 btc_creat_tab_env.handles[index] = p_data->add_result.attr_id - 1;
                 if (index + 1 < btc_creat_tab_env.num_handle) {
-                    btc_creat_tab_env.handles[index+1] = p_data->add_result.attr_id;
+                    btc_creat_tab_env.handles[index + 1] = p_data->add_result.attr_id;
                 } else {
-                    BTC_TRACE_ERROR("%s handles[%d+1] out of bounds (num_handle=%d)",
-                                    __func__, index, btc_creat_tab_env.num_handle);
+                    result = FUTURE_FAIL;
                 }
-                break;
             }
-            case BTA_GATTS_ADD_CHAR_DESCR_EVT: {
-                uint16_t index = btc_creat_tab_env.handle_idx;
+            break;
+        case BTA_GATTS_ADD_CHAR_DESCR_EVT:
+            if (p_data->add_result.status != BTA_GATT_OK || p_data->add_result.attr_id == 0) {
+                result = FUTURE_FAIL;
+            } else {
                 btc_creat_tab_env.handles[index] = p_data->add_result.attr_id;
-                break;
             }
-            default:
-                break;
+            break;
+        default:
+            break;
         }
 
-        future_ready(btc_creat_tab_env.complete_future, FUTURE_SUCCESS);
+        if (result == FUTURE_FAIL) {
+            BTC_TRACE_ERROR("%s create_attr_tab failed, event=%d", __func__, event);
+        }
+        future_ready(btc_creat_tab_env.complete_future, result);
         return;
     }
     status = btc_transfer_context(&msg, p_data, sizeof(tBTA_GATTS),

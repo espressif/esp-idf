@@ -14,6 +14,12 @@
 #include "services/gap/ble_svc_gap.h"
 #include "ble_multi_conn_cent.h"
 
+#if !MYNEWT_VAL(BLE_EXT_ADV) || !MYNEWT_VAL(OPTIMIZE_MULTI_CONN)
+#error "This example requires NimBLE Extended Advertising and multi-connection optimization. " \
+       "Enable BT_NIMBLE_50_FEATURE_SUPPORT, BT_NIMBLE_EXT_ADV, and BT_NIMBLE_OPTIMIZE_MULTI_CONN; " \
+       "use a supported target from README.md (e.g. esp32h2, esp32c6) and run idf.py set-target."
+#endif
+
 #define BLE_PEER_NAME           "esp-multi-conn"
 #define BLE_PEER_MAX_NUM        (MYNEWT_VAL(BLE_MAX_CONNECTIONS) - 1)
 #define BLE_PREF_EVT_LEN_MS     (5)
