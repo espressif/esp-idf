@@ -8,6 +8,7 @@ include:
       - "templates/idf/deploy-docs.yml"
       - "templates/idf/integration-test.yml"
       - "templates/idf/pre_check.yml"
+      - "templates/idf/sync-files.yml"
   - project: "ci/actions/common"
     file: "templates/idf/build-docs.yml"
     inputs:
