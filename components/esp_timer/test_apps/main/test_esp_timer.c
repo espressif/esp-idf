@@ -931,11 +931,13 @@ TEST_CASE("Test a latency between a call of callback and real event", "[esp_time
 #if CONFIG_IDF_TARGET_LINUX
             // It may be very big due to OS scheduling, the value is taken with big margin
             const int max_latency_us = 5000;
+#elif CONFIG_IDF_TARGET_ESP32H4
+            // H4 runs this test at 96 MHz, and multicore task dispatch adds extra latency.
+            const int max_latency_us = 60;
 #else
             const int max_latency_us = 50;
 #endif
             // skip the first measurement
-            // if CPU_FREQ = 240MHz. 14 - 16us
             TEST_ASSERT_LESS_OR_EQUAL(max_latency_us, diff);
         }
 #endif // not CONFIG_IDF_ENV_FPGA
