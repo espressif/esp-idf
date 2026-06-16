@@ -41,6 +41,12 @@ extern "C" {
 #define SOC_CLK_RC_FAST_D256_FREQ_APPROX    (SOC_CLK_RC_FAST_FREQ_APPROX / 256) /*!< Approximate RC_FAST_D256_CLK frequency in Hz */
 #define SOC_CLK_XTAL32K_FREQ_APPROX         32768                               /*!< Approximate XTAL32K_CLK frequency in Hz */
 
+/* Default clock accuracy values in ppm (parts per million) at different observation durations */
+/* Row order: 1 s, 10 s, 30 s, 60 s */
+#define SOC_CLK_RC_FAST_ACCURACY_PPM_DEFAULTS    { (1107), (1349), (1498), (1976) }
+#define SOC_CLK_RC_SLOW_ACCURACY_PPM_DEFAULTS    { (2147), (5341), (14961), (27755) }
+#define SOC_CLK_CRYSTAL_ACCURACY_PPM_DEFAULTS    { (500), (500), (500), (500) }
+
 // Naming convention: SOC_ROOT_CLK_{loc}_{type}_[attr]
 // {loc}: EXT, INT
 // {type}: XTAL, RC
@@ -53,6 +59,7 @@ typedef enum {
     SOC_ROOT_CLK_INT_RC_SLOW,          /*!< Internal 90kHz RC oscillator */
     SOC_ROOT_CLK_EXT_XTAL,             /*!< External 40MHz crystal */
     SOC_ROOT_CLK_EXT_XTAL32K,          /*!< External 32kHz crystal/clock signal */
+    SOC_ROOT_CLK_SRC_NUM,              /*!< Number of root clock sources */
 } soc_root_clk_t;
 
 /**
