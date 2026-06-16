@@ -190,7 +190,7 @@ function(__init_project_configuration)
     # Subprojects that handle their own compiler optimization flags can set the
     # SET_COMPILER_OPTIMIZATION build property to NO before idf_project_init().
     idf_build_get_property(set_compiler_optimization SET_COMPILER_OPTIMIZATION)
-    if(NOT set_compiler_optimization)
+    if(NOT DEFINED set_compiler_optimization OR set_compiler_optimization STREQUAL "")
         set(set_compiler_optimization YES)
     endif()
     if(set_compiler_optimization)
@@ -533,7 +533,9 @@ endfunction()
     esptool_py component.
 #]]
 function(__init_project_flash_targets)
-    if(CONFIG_APP_BUILD_GENERATE_BINARIES)
+    # Skip if esptool_py is not in the build set; the flash-target function
+    # would otherwise be undefined.
+    if(CONFIG_APP_BUILD_GENERATE_BINARIES AND COMMAND esptool_py_flash_target)
         idf_component_get_property(main_args esptool_py FLASH_ARGS)
         idf_component_get_property(sub_args esptool_py FLASH_SUB_ARGS)
         esptool_py_flash_target(flash "${main_args}" "${sub_args}")
@@ -741,9 +743,53 @@ endfunction()
 function(__project_default)
     idf_build_get_property(build_dir BUILD_DIR)
     idf_build_get_property(executable PROJECT_NAME)
+
+    # When the Build system v1 compatibility shim forwarded a COMPONENTS
+    # list, use it instead of default main.
+    idf_build_get_property(shim_components __SHIM_COMPONENTS)
+    if(shim_components)
+        set(root_components ${shim_components})
+    else()
+        set(root_components main)
+    endif()
+
     idf_build_executable("${executable}"
-                         COMPONENTS main
+                         COMPONENTS ${root_components}
                          MAPFILE_TARGET "${executable}_mapfile")
+
+    # In Build system v1, the ``project_elf`` variable (set to
+    # "${project_name}.elf") is used by several app CMakeLists.txt files to add
+    # linker flags after project(). In Build system v2 the executable target
+    # is just "${executable}" (the .elf suffix is an output property, not part
+    # of the target name). Propagate it to the caller's scope so existing
+    # code keeps working.
+    set(project_elf "${executable}" PARENT_SCOPE)
+
+    # Provide Build system v1-compatible build properties so that existing
+    # test apps and project CMakeLists.txt files that query EXECUTABLE or
+    # BUILD_COMPONENTS continue to work when built through the shim.
+    idf_build_get_property(v1_compat __V1_COMPAT_SHIM)
+    if(v1_compat)
+        idf_build_set_property(EXECUTABLE "${executable}")
+        idf_build_set_property(EXECUTABLE_NAME "${executable}")
+
+        # BUILD_COMPONENTS: in Build system v1 this is the set of components
+        # actually processed during the build (COMPONENTS + their transitive
+        # REQUIRES within the restricted scope). Use LIBRARY_COMPONENTS_LINKED
+        # from the Build system v2 library target which reflects the actual
+        # list of components linked, plus the architecture component which
+        # Build system v1 always includes but Build system v2 does not track
+        # as a linked library.
+        get_target_property(library ${executable} LIBRARY_INTERFACE)
+        if(library)
+            idf_library_get_property(linked_components "${library}" LIBRARY_COMPONENTS_LINKED)
+            idf_build_get_property(target_arch IDF_TARGET_ARCH)
+            if(target_arch AND NOT target_arch IN_LIST linked_components)
+                list(APPEND linked_components ${target_arch})
+            endif()
+            idf_build_set_property(BUILD_COMPONENTS "${linked_components}")
+        endif()
+    endif()
 
     if(CONFIG_APP_BUILD_GENERATE_BINARIES AND TARGET idf::esptool_py)
         # Is it possible to have a configuration where

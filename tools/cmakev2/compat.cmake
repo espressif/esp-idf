@@ -425,6 +425,14 @@ function(__init_common_components)
     # component.
     if(explicit_requires_common)
         set(requires_common "${explicit_requires_common}")
+        # Auto-append the target's arch component when the app overrides
+        # common-requires without it. Lets G0-style apps (which set the property
+        # before project() to a restricted list) avoid hand-rolling a
+        # target -> arch map pre-project, since IDF_TARGET_ARCH isn't known
+        # until after sdkconfig is included. Empty on linux -> no append.
+        if(idf_target_arch AND NOT idf_target_arch IN_LIST requires_common)
+            list(APPEND requires_common "${idf_target_arch}")
+        endif()
 
     elseif("${idf_target}" STREQUAL "linux")
         set(requires_common freertos esp_hw_support heap log soc hal esp_rom esp_common esp_system linux
@@ -450,6 +458,89 @@ function(__init_common_components)
     endforeach()
 
     idf_build_set_property(__COMMON_COMPONENTS_INITIALIZED YES)
+endfunction()
+
+#[[api
+.. cmakev2:function:: idf_component_mock
+
+    .. code-block:: cmake
+
+        idf_component_mock([INCLUDE_DIRS <dir>...]
+                           [MOCK_HEADER_FILES <file>...]
+                           [REQUIRES <component>...]
+                           [MOCK_SUBDIR <subdir>])
+
+    *INCLUDE_DIRS[in,opt]*
+
+        Include directories for the header files provided in MOCK_HEADER_FILES.
+
+    *MOCK_HEADER_FILES[in,opt]*
+
+        Header files from which CMock generates mock implementations.
+
+    *REQUIRES[in,opt]*
+
+        Additional components required by the mock component.
+
+    *MOCK_SUBDIR[in,opt]*
+
+        Subdirectory under the mocks output where generated files are placed.
+
+    Create a mock component using CMock and register it with the build system.
+    This is a compatibility shim matching the v1 ``idf_component_mock``
+    function in ``tools/cmake/component.cmake``.  It generates Mock*.c and
+    Mock*.h files from the given headers using Ruby + CMock, then delegates to
+    ``idf_component_register`` so the mock participates in normal dependency
+    resolution.
+#]]
+function(idf_component_mock)
+    set(options)
+    set(single_value MOCK_SUBDIR)
+    set(multi_value MOCK_HEADER_FILES INCLUDE_DIRS REQUIRES)
+    cmake_parse_arguments(_ "${options}" "${single_value}" "${multi_value}" ${ARGN})
+
+    list(APPEND __REQUIRES "cmock")
+
+    set(MOCK_GENERATED_HEADERS "")
+    set(MOCK_GENERATED_SRCS "")
+    set(IDF_PATH $ENV{IDF_PATH})
+    set(CMOCK_DIR "${IDF_PATH}/components/cmock/CMock")
+    set(MOCK_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+    list(APPEND __INCLUDE_DIRS "${MOCK_GEN_DIR}/mocks")
+
+    foreach(header_file ${__MOCK_HEADER_FILES})
+        get_filename_component(file_without_dir ${header_file} NAME_WE)
+        if("${__MOCK_SUBDIR}" STREQUAL "")
+            list(APPEND MOCK_GENERATED_HEADERS "${MOCK_GEN_DIR}/mocks/Mock${file_without_dir}.h")
+            list(APPEND MOCK_GENERATED_SRCS "${MOCK_GEN_DIR}/mocks/Mock${file_without_dir}.c")
+        else()
+            list(APPEND MOCK_GENERATED_HEADERS "${MOCK_GEN_DIR}/mocks/${__MOCK_SUBDIR}/Mock${file_without_dir}.h")
+            list(APPEND MOCK_GENERATED_SRCS "${MOCK_GEN_DIR}/mocks/${__MOCK_SUBDIR}/Mock${file_without_dir}.c")
+        endif()
+    endforeach()
+
+    file(MAKE_DIRECTORY "${MOCK_GEN_DIR}/mocks")
+
+    idf_component_register(SRCS "${MOCK_GENERATED_SRCS}"
+                        INCLUDE_DIRS ${__INCLUDE_DIRS}
+                        REQUIRES ${__REQUIRES})
+
+    set(COMPONENT_LIB ${COMPONENT_LIB} PARENT_SCOPE)
+    add_custom_command(
+        OUTPUT ruby_found SYMBOLIC
+        COMMAND "ruby" "-v"
+        COMMENT "Try to find ruby. If this fails, you need to install ruby"
+    )
+
+    add_custom_command(
+        OUTPUT ${MOCK_GENERATED_SRCS} ${MOCK_GENERATED_HEADERS}
+        DEPENDS ruby_found
+        COMMAND ${CMAKE_COMMAND} -E env "UNITY_DIR=${IDF_PATH}/components/unity/unity"
+            ruby
+            ${CMOCK_DIR}/lib/cmock.rb
+            -o${CMAKE_CURRENT_SOURCE_DIR}/mock/mock_config.yaml
+            ${__MOCK_HEADER_FILES}
+    )
 endfunction()
 
 #[[api
@@ -642,6 +733,47 @@ function(idf_component_register)
         target_link_libraries("${COMPONENT_TARGET}" PRIVATE "${req_interface}")
     endforeach()
 
+    # Special treatment for 'main' component is only applied when the project
+    # was entered through the Build system v1 compatibility shim. Native
+    # Build system v2 projects with no REQUIRES on main should remain the
+    # author-declared dependency set rooted at main; forcing every discovered
+    # component into main's link graph in that case contradicts the Build
+    # system v2 contract that the dependency graph is what the author writes.
+    idf_build_get_property(v1_compat_shim __V1_COMPAT_SHIM)
+    if(v1_compat_shim AND COMPONENT_NAME STREQUAL "main"
+       AND NOT ARG_REQUIRES AND NOT ARG_PRIV_REQUIRES)
+        idf_component_get_property(component_source "${COMPONENT_NAME}" COMPONENT_SOURCE)
+        if(component_source STREQUAL "project_components")
+            idf_build_get_property(shim_components __SHIM_COMPONENTS)
+            if(shim_components)
+                # The project explicitly restricted COMPONENTS=<list>. Honor
+                # the restriction literally — do not pull every discovered
+                # component into main's link graph, even when the user's list
+                # collapses to just "main". Apps that need additional
+                # components must enumerate them in COMPONENTS or main's
+                # REQUIRES.
+                set(all_components ${shim_components})
+            else()
+                idf_build_get_property(all_components COMPONENTS_DISCOVERED)
+            endif()
+            list(REMOVE_ITEM all_components "main")
+            # Common components are already linked via link_libraries()
+            idf_build_get_property(common_components __COMPONENT_REQUIRES_COMMON)
+            if(common_components)
+                list(REMOVE_ITEM all_components ${common_components})
+            endif()
+            foreach(req IN LISTS all_components)
+                idf_component_include("${req}")
+                idf_component_get_property(req_interface "${req}" COMPONENT_INTERFACE)
+                if(${component_type} STREQUAL LIBRARY)
+                    target_link_libraries("${COMPONENT_TARGET}" PUBLIC "${req_interface}")
+                else()
+                    target_link_libraries("${COMPONENT_TARGET}" INTERFACE "${req_interface}")
+                endif()
+            endforeach()
+        endif()
+    endif()
+
     # Signal to idf_component_include that this component was included via the
     # backward compatible idf_component_register function.
     idf_component_set_property("${COMPONENT_NAME}" COMPONENT_FORMAT CMAKEV1)
@@ -661,8 +793,30 @@ function(idf_component_register)
     # Embedded files are managed in the idf_component_include function.
     idf_component_set_property("${COMPONENT_NAME}" EMBED_FILES "${ARG_EMBED_FILES}")
     idf_component_set_property("${COMPONENT_NAME}" EMBED_TXTFILES "${ARG_EMBED_TXTFILES}")
-    idf_component_set_property("${COMPONENT_NAME}" REQUIRES "${ARG_REQUIRES}")
-    idf_component_set_property("${COMPONENT_NAME}" PRIV_REQUIRES "${ARG_PRIV_REQUIRES}")
+    # The component manager's dependency injection runs before this component's
+    # CMakeLists.txt is evaluated (see idf_component_include() in
+    # component.cmake), and writes the manifest-derived names into both the
+    # MANAGED_* properties and the regular REQUIRES / PRIV_REQUIRES properties.
+    # The latter must not be overwritten by the component's own register call,
+    # else the manifest-derived transitive deps disappear from the build. Union
+    # the two so the persisted property is what the component author wrote
+    # PLUS what the manifest contributed.
+    idf_component_get_property(__existing_requires "${COMPONENT_NAME}" REQUIRES)
+    idf_component_get_property(__existing_priv_requires "${COMPONENT_NAME}" PRIV_REQUIRES)
+    set(__merged_requires "${ARG_REQUIRES}")
+    set(__merged_priv_requires "${ARG_PRIV_REQUIRES}")
+    foreach(__r IN LISTS __existing_requires)
+        if(__r AND NOT __r IN_LIST __merged_requires)
+            list(APPEND __merged_requires "${__r}")
+        endif()
+    endforeach()
+    foreach(__r IN LISTS __existing_priv_requires)
+        if(__r AND NOT __r IN_LIST __merged_priv_requires)
+            list(APPEND __merged_priv_requires "${__r}")
+        endif()
+    endforeach()
+    idf_component_set_property("${COMPONENT_NAME}" REQUIRES "${__merged_requires}")
+    idf_component_set_property("${COMPONENT_NAME}" PRIV_REQUIRES "${__merged_priv_requires}")
     idf_component_set_property("${COMPONENT_NAME}" REQUIRED_IDF_TARGETS "${ARG_REQUIRED_IDF_TARGETS}")
     idf_component_set_property("${COMPONENT_NAME}" COMPONENT_TYPE "${component_type}")
 endfunction()
@@ -775,4 +929,28 @@ function(idf_build_component component_dir)
     __init_component(DIRECTORY "${component_dir}"
                      PREFIX "${component_prefix}"
                      SOURCE "${component_source}")
+endfunction()
+
+#[[
+    __import_sdkconfig_as_build_properties()
+
+    Mirror every CONFIG_* symbol from the generated sdkconfig.cmake onto the
+    build-properties target so that the
+    `idf_build_get_property(var CONFIG_FOO)` idiom keeps working under the
+    compatibility shim. Called from kconfig.cmake::__generate_sdkconfig after
+    each kconfgen run.
+#]]
+function(__import_sdkconfig_as_build_properties)
+    idf_build_get_property(sdkconfig_cmake __SDKCONFIG_CMAKE)
+    if(NOT sdkconfig_cmake OR NOT EXISTS "${sdkconfig_cmake}")
+        return()
+    endif()
+    include("${sdkconfig_cmake}")
+    if(NOT DEFINED CONFIGS_LIST)
+        return()
+    endif()
+    idf_build_set_property(__CONFIG_VARIABLES "${CONFIGS_LIST}")
+    foreach(config IN LISTS CONFIGS_LIST)
+        idf_build_set_property("${config}" "${${config}}")
+    endforeach()
 endfunction()

@@ -40,6 +40,9 @@ include("${IDF_PATH}/tools/cmakev2/idf.cmake")
 
 project(bootloader C CXX ASM)
 
+# Suppress warning: "Manually-specified variables were not used by the project: SECURE_BOOT_SIGNING_KEY"
+set(_ignore_signing_key "${SECURE_BOOT_SIGNING_KEY}")
+
 # ---------------------------------------------------------------------------
 # Bootloader-specific build properties set before project initialization
 # ---------------------------------------------------------------------------

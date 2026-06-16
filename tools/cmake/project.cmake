@@ -1,6 +1,101 @@
 # Designed to be included from an IDF app's CMakeLists.txt file
 cmake_minimum_required(VERSION 3.22)
 
+# When the IDF_BUILD_V2 environment variable is set, transparently delegate
+# to Build system v2 (cmakev2). This allows existing Build system v1 projects
+# to be built with Build system v2 without modifying their CMakeLists.txt.
+# The project() macro is wrapped to automatically call idf_project_default()
+# after the real CMake project() call, bridging the API difference between
+# Build system v1 and Build system v2.
+#
+# Build system v1 pattern (no changes needed):
+#   include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+#   idf_build_set_property(...)   # optional, works with Build system v2 infra
+#   project(my_app)
+#
+# With IDF_BUILD_V2=y set in the environment, this becomes equivalent to:
+#   include($ENV{IDF_PATH}/tools/cmakev2/idf.cmake)
+#   idf_build_set_property(...)
+#   project(my_app C CXX ASM)
+#   idf_project_default()
+if($ENV{IDF_BUILD_V2})
+    message(STATUS "IDF Build System V2 (cmakev2) activated via IDF_BUILD_V2 shim")
+
+    # Include the Build system v2 (cmakev2) entry point. This sets up all
+    # Build system v2 infrastructure (build properties, target, toolchain,
+    # kconfig, etc.). idf.cmake's file-level __init_idf_path() call publishes
+    # ${idf_path} to this scope, so no further set() is needed here.
+    include(${CMAKE_CURRENT_LIST_DIR}/../cmakev2/idf.cmake)
+
+    # Mark that we are running through the Build system v1 compatibility shim
+    # so that Build system v2 internals can enable backward-compatible build
+    # properties.
+    idf_build_set_property(__V1_COMPAT_SHIM 1)
+
+    # Use the standard CMake trick to save the real project() command.
+    # After these two overrides, __project() calls the original CMake
+    # project(). See https://cmake.org/pipermail/cmake/2015-October/061751.html
+    function(project)
+    endfunction()
+
+    function(_project)
+    endfunction()
+
+    macro(project project_name)
+        # Call the real CMake project() with the languages required by cmakev2.
+        __project(${project_name} C CXX ASM)
+
+        # Restore project() for sub-projects and third-party libraries that
+        # may call project() themselves (e.g. components/mbedtls calls
+        # add_subdirectory(mbedtls) which runs `project("Mbed TLS")`).
+        #
+        # The override is a function() (own variable scope), so PROJECT_*
+        # variables set by __project() must be explicitly propagated to
+        # PARENT_SCOPE — otherwise the caller (and any subsequent
+        # add_subdirectory() within that caller) sees the IDF top-level
+        # project's source/binary dirs instead of the third-party project's.
+        # See tools/cmake/project.cmake's mature override at the Build
+        # system v1 path for the full set of mirrored variables.
+        function(project)
+            set(project_ARGV ARGV)
+            __project(${${project_ARGV}})
+
+            set(PROJECT_NAME "${PROJECT_NAME}" PARENT_SCOPE)
+            set(PROJECT_BINARY_DIR "${PROJECT_BINARY_DIR}" PARENT_SCOPE)
+            set(PROJECT_SOURCE_DIR "${PROJECT_SOURCE_DIR}" PARENT_SCOPE)
+            set(PROJECT_VERSION "${PROJECT_VERSION}" PARENT_SCOPE)
+            set(PROJECT_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}" PARENT_SCOPE)
+            set(PROJECT_VERSION_MINOR "${PROJECT_VERSION_MINOR}" PARENT_SCOPE)
+            set(PROJECT_VERSION_PATCH "${PROJECT_VERSION_PATCH}" PARENT_SCOPE)
+            set(PROJECT_VERSION_TWEAK "${PROJECT_VERSION_TWEAK}" PARENT_SCOPE)
+            set(PROJECT_DESCRIPTION "${PROJECT_DESCRIPTION}" PARENT_SCOPE)
+            set(PROJECT_HOMEPAGE_URL "${PROJECT_HOMEPAGE_URL}" PARENT_SCOPE)
+
+            set(${PROJECT_NAME}_BINARY_DIR "${${PROJECT_NAME}_BINARY_DIR}" PARENT_SCOPE)
+            set(${PROJECT_NAME}_SOURCE_DIR "${${PROJECT_NAME}_SOURCE_DIR}" PARENT_SCOPE)
+            set(${PROJECT_NAME}_VERSION "${${PROJECT_NAME}_VERSION}" PARENT_SCOPE)
+            set(${PROJECT_NAME}_VERSION_MAJOR "${${PROJECT_NAME}_VERSION_MAJOR}" PARENT_SCOPE)
+            set(${PROJECT_NAME}_VERSION_MINOR "${${PROJECT_NAME}_VERSION_MINOR}" PARENT_SCOPE)
+            set(${PROJECT_NAME}_VERSION_PATCH "${${PROJECT_NAME}_VERSION_PATCH}" PARENT_SCOPE)
+            set(${PROJECT_NAME}_VERSION_TWEAK "${${PROJECT_NAME}_VERSION_TWEAK}" PARENT_SCOPE)
+            set(${PROJECT_NAME}_DESCRIPTION "${${PROJECT_NAME}_DESCRIPTION}" PARENT_SCOPE)
+            set(${PROJECT_NAME}_HOMEPAGE_URL "${${PROJECT_NAME}_HOMEPAGE_URL}" PARENT_SCOPE)
+        endfunction()
+
+        # If the app set COMPONENTS before project(), forward it to Build
+        # system v2 via a build property so __project_default() can use the
+        # correct component list instead of the hardcoded "main".
+        if(DEFINED COMPONENTS)
+            idf_build_set_property(__SHIM_COMPONENTS "${COMPONENTS}")
+        endif()
+
+        # Initialize and build the project using Build system v2.
+        idf_project_default()
+    endmacro()
+
+    return()
+endif()
+
 # Get the currently selected sdkconfig file early, so this doesn't
 # have to be done multiple times on different places.
 if(SDKCONFIG)
