@@ -86,8 +86,6 @@ generate_build_child_pipeline:
   dependencies: # set dependencies to null to avoid missing artifacts issue
   needs:
     - pipeline_variables
-    - job: pre_check_complete
-      artifacts: false
     - job: baseline_manifest_sha
       optional: true
   artifacts:
@@ -114,6 +112,8 @@ build_child_pipeline:
       artifacts: false
     - pipeline_variables
     - generate_build_child_pipeline
+    - job: pre_check_complete
+      artifacts: false
   variables:
     MR_MODIFIED_COMPONENTS: $MR_MODIFIED_COMPONENTS
     MR_MODIFIED_FILES: $MR_MODIFIED_FILES
