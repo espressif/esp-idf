@@ -447,9 +447,9 @@ static inline esp_key_mgr_key_len_t key_mgr_ll_get_xts_aes_key_len(const esp_key
     uint32_t key_len_bit = 0;
 
     if (key_type == ESP_KEY_MGR_FLASH_XTS_AES_KEY) {
-        key_len_bit = REG_GET_BIT(KEYMNG_STATIC_REG, KEYMNG_FLASH_KEY_LEN);
+        key_len_bit = REG_GET_FIELD(KEYMNG_STATIC_REG, KEYMNG_FLASH_KEY_LEN);
     } else if (key_type == ESP_KEY_MGR_PSRAM_XTS_AES_KEY) {
-        key_len_bit = REG_GET_BIT(KEYMNG_STATIC_REG, KEYMNG_PSRAM_KEY_LEN);
+        key_len_bit = REG_GET_FIELD(KEYMNG_STATIC_REG, KEYMNG_PSRAM_KEY_LEN);
     } else {
         HAL_ASSERT(false && "Unsupported key type");
         return (esp_key_mgr_key_len_t) key_len_bit;
