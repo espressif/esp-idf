@@ -50,6 +50,13 @@
 #include "esp_private/gdma_link.h"
 #include "esp_private/esp_dma_utils.h"
 
+#if defined(SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS) && defined(SOC_GDMA_BUS_AXI) && (SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS == SOC_GDMA_BUS_AXI)
+#include "hal/axi_dma_ll.h"
+#if AXI_DMA_LL_SUPPORT(TX_LINK_SWITCH)
+#define PARLIO_USE_GDMA_LINK_SWITCH_EVENT 1
+#endif
+#endif
+
 #if CONFIG_PARLIO_OBJ_CACHE_SAFE
 #define PARLIO_MEM_ALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
