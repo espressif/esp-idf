@@ -57,6 +57,45 @@ static esp_clk_tree_calibrated_freq_t s_calibrated_freq = {};
                                            // the divider factor internally in rtc_clk_cal, so the time to spend on calibrating RC_FAST
                                            // is always (10000 / f_rc_fast)
 
+static uint32_t s_clk_src_accuracy_ppm[SOC_ROOT_CLK_SRC_NUM][ESP_CLK_TREE_ACCURACY_DURATION_NUM] = {
+    [SOC_ROOT_CLK_INT_RC_FAST] = SOC_CLK_RC_FAST_ACCURACY_PPM_DEFAULTS,
+    [SOC_ROOT_CLK_INT_RC_SLOW] = SOC_CLK_RC_SLOW_ACCURACY_PPM_DEFAULTS,
+    [SOC_ROOT_CLK_EXT_XTAL] = SOC_CLK_CRYSTAL_ACCURACY_PPM_DEFAULTS,
+#if SOC_CLK_XTAL32K_SUPPORTED
+    [SOC_ROOT_CLK_EXT_XTAL32K] = SOC_CLK_CRYSTAL_ACCURACY_PPM_DEFAULTS,
+#endif
+};
+
+esp_err_t esp_clk_tree_root_clock_set_accuracy_ppm(soc_root_clk_t clk_src,
+                                                   esp_clk_tree_accuracy_duration_t duration,
+                                                   uint32_t ppm)
+{
+    ESP_RETURN_ON_FALSE(clk_src < SOC_ROOT_CLK_SRC_NUM, ESP_ERR_INVALID_ARG, TAG,
+                        "invalid clk src %d", (int)clk_src);
+    ESP_RETURN_ON_FALSE(duration < ESP_CLK_TREE_ACCURACY_DURATION_NUM, ESP_ERR_INVALID_ARG, TAG,
+                        "invalid duration %d", (int)duration);
+
+    s_clk_src_accuracy_ppm[clk_src][duration] = ppm;
+    return ESP_OK;
+}
+
+esp_err_t esp_clk_tree_root_clock_get_accuracy_ppm(soc_root_clk_t clk_src,
+                                                   uint32_t duration_sec,
+                                                   uint32_t *clk_drift)
+{
+    ESP_RETURN_ON_FALSE(clk_src < SOC_ROOT_CLK_SRC_NUM, ESP_ERR_INVALID_ARG, TAG,
+                        "invalid clk src %d", (int)clk_src);
+    ESP_RETURN_ON_FALSE(duration_sec > 0, ESP_ERR_INVALID_ARG, TAG,
+                        "invalid duration %u", duration_sec);
+    ESP_RETURN_ON_FALSE(clk_drift, ESP_ERR_INVALID_ARG, TAG, "clk_drift must not be NULL");
+
+    if (duration_sec <= 60) {
+        *clk_drift = s_clk_src_accuracy_ppm[clk_src][ESP_CLK_TREE_ACCURACY_DURATION_TO_IDX(duration_sec)];
+    } else {
+        *clk_drift = s_clk_src_accuracy_ppm[clk_src][ESP_CLK_TREE_ACCURACY_DURATION_60S] * (((duration_sec + 59) / 60));
+    }
+    return ESP_OK;
+}
 
 /**
  * Performs a frequency calibration to RTC slow clock
