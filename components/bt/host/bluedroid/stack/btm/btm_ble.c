@@ -1846,6 +1846,81 @@ UINT8 btm_ble_br_keys_req(tBTM_SEC_DEV_REC *p_dev_rec, tBTM_LE_IO_REQ *p_data)
 #endif  ///SMP_INCLUDED
 
 
+#if (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == TRUE)
+/*******************************************************************************
+**
+** Function         btm_ble_adjust_conn_addr_for_ext_adv
+**
+** Description      Rewrite p_acl->conn_addr / conn_addr_type from the
+**                  per-set state in extend_adv_cb.inst[] for the ext-adv
+**                  instance that produced this connection.
+**
+**                  The defaults written by btm_acl_created() and
+**                  btm_ble_refresh_local_resolvable_private_addr() come
+**                  from the global addr_mgnt_cb single slot, which in
+**                  multi-ADV may not reflect the policy actually used on
+**                  air for THIS connection and causes SMP c1 / f5 / f6
+**                  to compute the wrong local address (pair fail 0x04).
+**
+**                  RPA paths (own_addr_type 0x02, or 0x03 with a valid
+**                  local RPA in the LE Enhanced Connection Complete event)
+**                  are left untouched. For 0x03 when the controller falls
+**                  back to per-set identity (zero local_rpa), replace the
+**                  global private_addr written by
+**                  btm_ble_refresh_local_resolvable_private_addr().
+**
+**                  No-op when no ext-adv instance matches the handle
+**                  (initiator role or legacy adv).
+**
+** Returns          void
+**
+*******************************************************************************/
+void btm_ble_adjust_conn_addr_for_ext_adv(UINT16 handle)
+{
+    UINT8 inst;
+    tACL_CONN *p_acl;
+    tBLE_ADDR_TYPE on_air_type;
+
+    inst = BTM_BleGetExtAdvInstByConHandle(handle);
+    if (inst >= MAX_BLE_ADV_INSTANCE) {
+        return;
+    }
+
+    p_acl = btm_handle_to_acl(handle);
+    if (p_acl == NULL) {
+        BTM_TRACE_WARNING("%s: no ACL for handle 0x%04x, skip", __func__, handle);
+        return;
+    }
+
+    on_air_type = extend_adv_cb.inst[inst].own_addr_type;
+    if (on_air_type == BLE_ADDR_PUBLIC) {
+        p_acl->conn_addr_type = BLE_ADDR_PUBLIC;
+        memcpy(p_acl->conn_addr,
+               controller_get_interface()->get_address()->address,
+               BD_ADDR_LEN);
+    } else if (on_air_type == BLE_ADDR_RANDOM &&
+               extend_adv_cb.inst[inst].rand_addr_set) {
+        p_acl->conn_addr_type = BLE_ADDR_RANDOM;
+        memcpy(p_acl->conn_addr,
+               extend_adv_cb.inst[inst].rand_addr,
+               BD_ADDR_LEN);
+    } else if (on_air_type == BLE_ADDR_RANDOM_ID &&
+               extend_adv_cb.inst[inst].rand_addr_set &&
+               !BTM_BLE_IS_RESOLVE_BDA(p_acl->conn_addr)) {
+        /* Identity fallback: controller used per-set static random, not RPA. */
+        p_acl->conn_addr_type = BLE_ADDR_RANDOM;
+        memcpy(p_acl->conn_addr,
+               extend_adv_cb.inst[inst].rand_addr,
+               BD_ADDR_LEN);
+    }
+
+    BTM_TRACE_DEBUG("%s: handle=0x%04x inst=%u type=%u addr=%02x:%02x:%02x:%02x:%02x:%02x",
+                    __func__, handle, inst, p_acl->conn_addr_type,
+                    p_acl->conn_addr[0], p_acl->conn_addr[1], p_acl->conn_addr[2],
+                    p_acl->conn_addr[3], p_acl->conn_addr[4], p_acl->conn_addr[5]);
+}
+#endif /* (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == TRUE) */
+
 #if (BLE_PRIVACY_SPT == TRUE )
 /*******************************************************************************
 **
@@ -1903,6 +1978,11 @@ static void btm_ble_resolve_random_addr_on_conn_cmpl(void *p_rec, void *p_data)
 
     l2cble_conn_comp (handle, role, bda, bda_type, conn_interval,
                       conn_latency, conn_timeout);
+
+#if (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == TRUE)
+    /* Multi-ADV: fix up p_acl->conn_addr / conn_addr_type from per-set state. */
+    btm_ble_adjust_conn_addr_for_ext_adv(handle);
+#endif /* (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == TRUE) */
 
     return;
 }
@@ -2067,6 +2147,12 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
                 }
             }
 #endif
+
+#if (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == TRUE)
+            /* Multi-ADV: must run AFTER the global-addr_mgnt_cb defaults above
+             * so per-set state wins for connections produced by an ext-adv set. */
+            btm_ble_adjust_conn_addr_for_ext_adv(handle);
+#endif /* (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == TRUE) */
         }
     } else {
         role = HCI_ROLE_UNKNOWN;
