@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <sys/lock.h>
 #include "esp_pm.h"
 #include "esp_system.h"
+#include "esp_heap_caps.h"
 #include "sys/queue.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_private/pm_impl.h"
@@ -56,7 +57,7 @@ esp_err_t esp_pm_lock_create(esp_pm_lock_type_t lock_type, int arg,
     if (out_handle == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    esp_pm_lock_t* new_lock = (esp_pm_lock_t*) calloc(1, sizeof(*new_lock));
+    esp_pm_lock_t* new_lock = (esp_pm_lock_t*) heap_caps_calloc(1, sizeof(*new_lock), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     if (!new_lock) {
         return ESP_ERR_NO_MEM;
     }
@@ -160,7 +161,7 @@ esp_err_t esp_pm_dump_locks(FILE* stream)
 
     _lock_acquire(&s_list_lock);
 #ifdef WITH_PROFILING
-    fprintf(stream, "Time since bootup: %lld us\n", cur_time);
+    fprintf(stream, "Time since boot up: %lld us\n", cur_time);
 #endif
 
     fprintf(stream, "Lock stats:\n");
