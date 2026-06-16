@@ -1016,7 +1016,9 @@ esp_err_t httpd_req_get_url_query_str(httpd_req_t *r, char *buf, size_t buf_len)
 
 esp_err_t httpd_req_get_url_query_str_ptr(httpd_req_t *r, const char **buf, size_t *buf_len)
 {
-    if (r == NULL || buf == NULL) {
+    /* buf_len is an output pointer that is dereferenced below, so it must be
+     * validated along with the other arguments to avoid a NULL write */
+    if (r == NULL || buf == NULL || buf_len == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
