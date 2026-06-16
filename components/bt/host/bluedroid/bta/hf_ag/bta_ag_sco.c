@@ -201,7 +201,10 @@ static void bta_ag_sco_conn_cback(UINT16 sco_idx)
 
     if (handle != 0 && p_scb)
     {
-        BTM_ReadEScoLinkParms(sco_idx, &sco_data);
+        if (BTM_ReadEScoLinkParms(sco_idx, &sco_data) == BTM_MODE_UNSUPPORTED) {
+            APPL_TRACE_WARNING("ESCO link parameters not supported or disabled.");
+            return;
+        }
 
         p_scb->link_type = sco_data.link_type;
         p_scb->tx_interval = sco_data.tx_interval;
@@ -640,7 +643,7 @@ static void bta_ag_create_sco(tBTA_AG_SCB *p_scb, BOOLEAN is_orig)
         }
         else
         {
-            if(p_scb->retry_with_sco_only){
+            if(p_scb->retry_with_sco_only) {
                 APPL_TRACE_API("retrying with SCO only");
             }
             p_scb->retry_with_sco_only = FALSE;
