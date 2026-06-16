@@ -1065,17 +1065,17 @@ esp_err_t httpd_req_get_url_query_str(httpd_req_t *r, char *buf, size_t buf_len)
  *    algorithm needs to be applied.
  *  - This API is supposed to be called only from the context of
  *    a URI handler where httpd_req_t* request pointer is valid
- *  - The byte range between buf and buf_len should only be used withing
+ *  - The byte range between buf and buf_len should only be used within
  *    the URI handler and not after since it will lead to use after free
  *    errors
  *
  * @param[in]  r         The request being responded to
- * @param[out] buf       Pointer to a pointer that should be updated to the begin of
- *                       the buffer
- * @param[out] buf_len   Pointer of length of output buffer
+ * @param[out] buf       Pointer to a pointer that should be updated to the beginning of
+ *                       the query string within the request URL
+ * @param[out] buf_len   Pointer to a length that will be updated with the query length
  *
  * @return
- *  - ESP_OK : Query is found in the request URL and copied to buffer
+ *  - ESP_OK : Query found; *buf points to the query string and *buf_len holds its length
  *  - ESP_FAIL                   : uri is empty
  *  - ESP_ERR_NOT_FOUND          : Query not found
  *  - ESP_ERR_INVALID_ARG        : Null arguments
