@@ -37,6 +37,9 @@ endif()
 
 if(CONFIG_SOC_DMA2D_SUPPORTED)
     list(APPEND srcs "src/dma2d.c")
+    if(CONFIG_SOC_PAU_SUPPORTED)
+        list(APPEND srcs "${target}/dma2d_retention.c")
+    endif()
 endif()
 
 idf_component_register(SRCS ${srcs}

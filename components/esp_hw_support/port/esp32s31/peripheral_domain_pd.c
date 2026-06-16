@@ -96,6 +96,12 @@ bool peripheral_domain_pd_allowed(void)
     // ESP32S31 supports JPEG sleep retention
     RETENTION_MODULE_BITMAP_SET(&mask, SLEEP_RETENTION_MODULE_JPEG);
 
+    // ESP32S31 supports PPA sleep retention
+    RETENTION_MODULE_BITMAP_SET(&mask, SLEEP_RETENTION_MODULE_PPA);
+
+    //ESP32S31 supports 2D-DMA sleep retention
+    RETENTION_MODULE_BITMAP_SET(&mask, SLEEP_RETENTION_MODULE_DMA2D);
+
     const sleep_retention_module_bitmap_t peripheral_domain_inited_modules = sleep_retention_module_bitmap_and(inited_modules, mask);
     const sleep_retention_module_bitmap_t peripheral_domain_created_modules = sleep_retention_module_bitmap_and(created_modules, mask);
     const sleep_retention_module_bitmap_t peripheral_domain_retained_modules = sleep_retention_module_bitmap_and(retained_modules, mask);

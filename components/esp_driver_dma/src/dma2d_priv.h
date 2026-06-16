@@ -16,6 +16,7 @@
 #include "hal/dma2d_hal.h"
 #include "hal/dma2d_ll.h"
 #include "esp_private/dma2d.h"
+#include "soc/regdma.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -88,6 +89,18 @@ struct dma2d_rx_channel_t {
     dma2d_event_callback_t on_desc_empty;      // RX desc empty callback, trigger when buffer on dma is not sufficient.
     uint32_t bundled_tx_channel_mask;          // Bit mask indicating the TX channels together with the RX channel to do the transaction
 };
+
+#if SOC_PAU_SUPPORTED
+#include "soc/retention_periph_defs.h"
+
+typedef struct {
+    const periph_retention_module_t module;
+    const regdma_entries_config_t *regdma_entry_array;
+    uint32_t array_size;
+} dma2d_retention_desc_t;
+
+extern const dma2d_retention_desc_t dma2d_reg_retention_info;
+#endif // SOC_PAU_SUPPORTED
 
 #ifdef __cplusplus
 }
