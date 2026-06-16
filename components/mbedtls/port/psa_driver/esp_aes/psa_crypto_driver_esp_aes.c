@@ -555,6 +555,11 @@ psa_status_t esp_aes_cipher_finish(
 
 exit:
     mbedtls_platform_zeroize(temp_output_buffer, sizeof(temp_output_buffer));
+    /* finish() has consumed the buffered partial block; on the encrypt path
+     * unprocessed_data held plaintext. Scrub it (and the length) now instead of
+     * relying on a later abort, in case a fault skips the abort. */
+    mbedtls_platform_zeroize(esp_aes_driver_ctx->unprocessed_data, sizeof(esp_aes_driver_ctx->unprocessed_data));
+    esp_aes_driver_ctx->unprocessed_len = 0;
     return status;
 }
 
