@@ -1223,6 +1223,10 @@ config SOC_HUK_SUPPORTED
     bool
     default y
 
+config SOC_HUK_MEM_NEEDS_RECHARGE
+    bool
+    default y
+
 config SOC_KEY_MANAGER_SUPPORTED
     bool
     default n

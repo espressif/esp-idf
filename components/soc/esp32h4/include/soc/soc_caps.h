@@ -428,6 +428,9 @@
 #define SOC_EFUSE_XTS_AES_KEY_128 1
 #define SOC_EFUSE_XTS_AES_KEY_256 1
 
+/*-------------------------- HUK CAPS----------------------------*/
+#define SOC_HUK_MEM_NEEDS_RECHARGE 1 /*!< HUK memory needs to be recharged on invalid HUK generation */
+
 /*-------------------------- Key Manager CAPS----------------------------*/
 #define SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT  1 /*!< Key manager supports key deployment */
 #define SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY        1 /*!< Key manager responsible to deploy ECDSA key */

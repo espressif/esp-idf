@@ -453,6 +453,7 @@
 
 /*-------------------------- HUK CAPS----------------------------*/
 #define SOC_HUK_SUPPORTED                       1
+#define SOC_HUK_MEM_NEEDS_RECHARGE              1 /*!< HUK memory needs to be recharged on invalid HUK generation */
 
 /*-------------------------- Key Manager CAPS----------------------------*/
 #define SOC_KEY_MANAGER_SUPPORTED                   0
