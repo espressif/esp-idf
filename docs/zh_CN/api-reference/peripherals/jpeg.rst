@@ -136,18 +136,13 @@ JPEG 解码器引擎
         .rgb_order = JPEG_DEC_RGB_ELEMENT_ORDER_BGR,
     };
 
-    size_t tx_buffer_size;
     size_t rx_buffer_size;
 
     jpeg_decode_memory_alloc_cfg_t rx_mem_cfg = {
         .buffer_direction = JPEG_DEC_ALLOC_OUTPUT_BUFFER,
     };
 
-    jpeg_decode_memory_alloc_cfg_t tx_mem_cfg = {
-        .buffer_direction = JPEG_DEC_ALLOC_INPUT_BUFFER,
-    };
-
-    uint8_t *bit_stream = (uint8_t*)jpeg_alloc_decoder_mem(jpeg_size, &tx_mem_cfg, &tx_buffer_size);
+    const uint8_t *bit_stream = embedded_jpeg_start;
     uint8_t *out_buf = (uint8_t*)jpeg_alloc_decoder_mem(1920 * 1088 * 3, &rx_mem_cfg, &rx_buffer_size);
 
     jpeg_decode_picture_info_t header_info;
@@ -158,11 +153,11 @@ JPEG 解码器引擎
 
 参考以下提示，可以更准确地使用该驱动程序：
 
-1. 在上述代码中，应确保 `bit_stream` 和 `out_buf` 按照一定的规则对齐。可以通过 :cpp:func:`jpeg_alloc_decoder_mem` 函数来分配一个在大小和地址上都对齐的缓冲区。
+1. 在上述代码中，应确保输出缓冲区 `out_buf` 满足驱动的对齐要求。可以通过 :cpp:func:`jpeg_alloc_decoder_mem` 函数来分配一个在大小和地址上都对齐的缓冲区。
 
-2. 在 :cpp:func:`jpeg_decoder_process` 返回前， `bit_stream` 缓冲区的内容不应有更改。
+2. 在 :cpp:func:`jpeg_decoder_process` 返回前， `bit_stream` 指向的输入内容不应有更改。该输入缓冲区既可以直接来自映射到 flash 的嵌入式数据，也可以来自其他在整个调用期间保持可读的内存区域。
 
-3. 如果原始图片以 YUV420 或 YUV422 格式压缩，则输出图片的宽度和高度将会以 16 字节对齐。例如，如果输入图片大小为 1080*1920，则输出图片大小为 1088*1920。这是 jpeg 协议的限制，所以请准备足够的输出缓冲区内存。
+3. 如果源 JPEG 使用 YUV420 或 YUV422 采样方式，解码后的输出图像尺寸可能会被补齐到 16 像素边界。例如，当可见图像大小为 1080*1920 时，解码器可能需要按 1088*1920 像素来分配输出缓冲区。这来自 JPEG 的块布局限制，因此请按补齐后的图像尺寸而不是仅按可见宽高准备足够的输出缓冲区内存。
 
 .. _jpeg-encoder-engine:
 
@@ -594,7 +589,7 @@ Kconfig 选项
 应用程序示例
 ------------
 
-- :example:`peripherals/jpeg/jpeg_decode` 演示了如何使用 JPEG 硬件解码器将不同大小的 JPEG 图片（1080p 和 720p）解码为 RGB 格式，展示了硬件解码的速度和灵活性。
+- :example:`peripherals/jpeg/jpeg_decode` 演示了如何使用 JPEG 硬件解码器解析一张嵌入式 JPEG，将其解码为 RGB888，通过 UART 输出 base64 原始结果，并使用 pytest 做回归校验。
 
 - :example:`peripherals/jpeg/jpeg_encode` 演示了如何使用 JPEG 硬件编码器对一张嵌入式 720p 原始图像进行编码，并通过 UART 输出 base64 JPEG，再用 pytest 做结果校验。
 
