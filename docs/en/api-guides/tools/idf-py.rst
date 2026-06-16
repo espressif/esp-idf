@@ -300,9 +300,9 @@ The MCP server provides the following tools:
 
 - ``set target``: Set the ESP-IDF target (esp32, esp32s3, esp32c6, etc.)
 - ``build project``: Build the ESP-IDF project with the current target
-- ``flash project``: Flash the built project to a connected device. Specify it by port name.
+- ``flash project``: Flash the built project to a connected device. Specify it by port name
 - ``clean project``: Clean build artifacts
-- ``create project``: Create a new ESP-IDF project from the sample template. Can be used before any project exists.
+- ``create project``: Create a new ESP-IDF project from the sample template. Can be used before any project exists
 
 All tools accept an optional ``project_dir`` argument. When omitted, the tool operates on the directory configured at startup (``-C`` flag or ``IDF_MCP_WORKSPACE_FOLDER``). You can instruct the AI model to use a specific project directory explicitly, for example when working with multiple projects or when no default project was configured at startup.
 
