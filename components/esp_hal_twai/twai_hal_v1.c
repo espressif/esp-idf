@@ -50,6 +50,7 @@ bool twai_hal_init(twai_hal_context_t *hal_ctx, const twai_hal_config_t *config)
     if (!twai_ll_is_in_reset_mode(hal_ctx->dev)) {    //Must enter reset mode to write to config registers
         return false;
     }
+    hal_ctx->tx_buffer_num = twai_ll_get_tx_buffer_total(hal_ctx->dev);
 #if TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
     hal_ctx->errata_ctx = (twai_hal_errata_ctx_t *)(hal_ctx + 1);   //errata context is place at end of hal_ctx
 #endif
@@ -238,10 +239,10 @@ static inline uint32_t twai_hal_decode_interrupt(twai_hal_context_t *hal_ctx)
 #else
     if (interrupts & TWAI_LL_INTR_TI) {
 #endif
-        TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_TX_BUFF_FREE);
+        TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_TX0_DONE);
         TWAI_HAL_CLEAR_BITS(state_flags, TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED);
         if (status & TWAI_LL_STATUS_TCS) {
-            TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_TX_SUCCESS);
+            TWAI_HAL_SET_BITS(events, TWAI_HAL_EVENT_TX0_SUCCESS);
         }
     }
     //Error Passive Interrupt on transition from error active to passive or vice versa
