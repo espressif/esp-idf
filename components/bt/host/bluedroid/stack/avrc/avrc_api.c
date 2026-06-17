@@ -64,6 +64,31 @@ static const UINT8 avrc_ctrl_event_map[] = {
 #define AVRC_OP_SUB_UNIT_INFO_RSP_LEN   8
 #define AVRC_OP_REJ_MSG_LEN            11
 
+#if (AVRC_METADATA_INCLUDED == TRUE)
+/******************************************************************************
+**
+** Function         avrc_free_far_cb
+**
+** Description      Free fragmentation/reassembly buffers for a connection.
+**
+******************************************************************************/
+static void avrc_free_far_cb(UINT8 handle)
+{
+    if (handle >= AVCT_NUM_CONN) {
+        return;
+    }
+    if (avrc_cb.fcb[handle].p_fmsg) {
+        osi_free(avrc_cb.fcb[handle].p_fmsg);
+        avrc_cb.fcb[handle].p_fmsg = NULL;
+    }
+    avrc_cb.fcb[handle].frag_enabled = FALSE;
+    if (avrc_cb.rcb[handle].p_rmsg) {
+        osi_free(avrc_cb.rcb[handle].p_rmsg);
+        avrc_cb.rcb[handle].p_rmsg = NULL;
+    }
+}
+#endif /* (AVRC_METADATA_INCLUDED == TRUE) */
+
 /******************************************************************************
 **
 ** Function         avrc_ctrl_cback
@@ -81,6 +106,13 @@ static void avrc_ctrl_cback(UINT8 handle, UINT8 event, UINT16 result,
 
     if (handle >= AVCT_NUM_CONN) {
         return;
+    }
+
+    /* Release pending fragment/reassembly buffers on disconnect */
+    if (event == AVCT_DISCONNECT_CFM_EVT || event == AVCT_DISCONNECT_IND_EVT) {
+#if (AVRC_METADATA_INCLUDED == TRUE)
+        avrc_free_far_cb(handle);
+#endif
     }
 
     if (event <= AVRC_MAX_RCV_CTRL_EVT && avrc_cb.ccb[handle].p_ctrl_cback) {
@@ -298,6 +330,11 @@ static BT_HDR *avrc_proc_vendor_command(UINT8 handle, UINT8 label,
         if (p_msg->company_id == AVRC_CO_METADATA) {
             switch (*p_data) {
             case AVRC_PDU_ABORT_CONTINUATION_RSP:
+                if (p_pkt->len < (AVRC_VENDOR_HDR_SIZE + AVRC_ABORT_CONTINUATION_RSP_CMD_SIZE)) {
+                    status = AVRC_STS_INTERNAL_ERR;
+                    abort_frag = TRUE;
+                    break;
+                }
                 /* aborted by CT - send accept response */
                 abort_frag = TRUE;
                 p_begin = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
@@ -315,6 +352,11 @@ static BT_HDR *avrc_proc_vendor_command(UINT8 handle, UINT8 label,
                 break;
 
             case AVRC_PDU_REQUEST_CONTINUATION_RSP:
+                if (p_pkt->len < (AVRC_VENDOR_HDR_SIZE + AVRC_REQUEST_CONTINUATION_RSP_CMD_SIZE)) {
+                    status = AVRC_STS_INTERNAL_ERR;
+                    abort_frag = TRUE;
+                    break;
+                }
                 if (*(p_data + 4) == p_fcb->frag_pdu) {
                     avrc_send_continue_frag(handle, label);
                     p_msg->hdr.opcode = AVRC_OP_DROP_N_FREE;
@@ -520,6 +562,14 @@ static UINT8 avrc_proc_far_msg(UINT8 handle, UINT8 label, UINT8 cr, BT_HDR **pp_
             if (AVRC_BldCommand ((tAVRC_COMMAND *)&avrc_cmd, &p_cmd) == AVRC_STS_NO_ERROR) {
                 drop_code = 2;
                 AVRC_MsgReq (handle, (UINT8)(label), AVRC_CMD_CTRL, p_cmd);
+            } else {
+                AVRC_TRACE_ERROR("Failed to build continuation command");
+                if (p_rcb->p_rmsg) {
+                    osi_free(p_rcb->p_rmsg);
+                    p_rcb->p_rmsg = NULL;
+                    *pp_pkt = NULL;
+                }
+                drop_code = 5;
             }
         }
     }
@@ -952,6 +1002,8 @@ UINT16 AVRC_Open(UINT8 *p_handle, tAVRC_CONN_CB *p_ccb, BD_ADDR_PTR peer_addr)
     if (status == AVCT_SUCCESS) {
         memcpy(&avrc_cb.ccb[*p_handle], p_ccb, sizeof(tAVRC_CONN_CB));
 #if (AVRC_METADATA_INCLUDED == TRUE)
+        /* free fragmentation/reassembly buffers before memset clears pointers */
+        avrc_free_far_cb(*p_handle);
         memset(&avrc_cb.fcb[*p_handle], 0, sizeof(tAVRC_FRAG_CB));
         memset(&avrc_cb.rcb[*p_handle], 0, sizeof(tAVRC_RASM_CB));
 #endif
@@ -983,6 +1035,10 @@ UINT16 AVRC_Open(UINT8 *p_handle, tAVRC_CONN_CB *p_ccb, BD_ADDR_PTR peer_addr)
 UINT16 AVRC_Close(UINT8 handle)
 {
     AVRC_TRACE_DEBUG("AVRC_Close handle:%d", handle);
+#if (AVRC_METADATA_INCLUDED == TRUE)
+    /* release pending fragment/reassembly buffers before removing connection */
+    avrc_free_far_cb(handle);
+#endif
     return AVCT_RemoveConn(handle);
 }
 
@@ -1066,7 +1122,7 @@ UINT16 AVRC_MsgReq (UINT8 handle, UINT8 label, UINT8 ctype, BT_HDR *p_pkt)
 
     /* AVRCP spec has not defined any control channel commands that needs fragmentation at this level
      * check for fragmentation only on the response */
-    if ((cr == AVCT_RSP) && (chk_frag == TRUE)) {
+    if ((cr == AVCT_RSP) && (chk_frag == TRUE) && (p_pkt->event == AVRC_OP_VENDOR)) {
         if (p_pkt->len > AVRC_MAX_CTRL_DATA_LEN) {
             int offset_len = MAX(AVCT_MSG_OFFSET, p_pkt->offset);
             p_pkt_new = (BT_HDR *)osi_malloc((UINT16)(AVRC_PACKET_LEN + offset_len
@@ -1098,6 +1154,9 @@ UINT16 AVRC_MsgReq (UINT8 handle, UINT8 label, UINT8 ctype, BT_HDR *p_pkt)
                                   p_pkt->len, len, p_fcb->p_fmsg->len );
             } else {
                 AVRC_TRACE_ERROR ("AVRC_MsgReq no buffers for fragmentation" );
+                if (p_pkt_new) {
+                    osi_free(p_pkt_new);
+                }
                 osi_free(p_pkt);
                 return AVRC_NO_RESOURCES;
             }

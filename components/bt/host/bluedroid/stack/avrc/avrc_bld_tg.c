@@ -87,15 +87,17 @@ static tAVRC_STS avrc_bld_get_capability_rsp (tAVRC_GET_CAPS_RSP *p_rsp, BT_HDR 
         }
         len += count * 3;
     } else {
+        UINT8 valid_count = 0;
         p_event_id = p_rsp->param.event_id;
-        *p_count = 0;
+        *p_count -= count;
         for (xx = 0; xx < count; xx++) {
             if (AVRC_IS_VALID_EVENT_ID(p_event_id[xx])) {
-                (*p_count)++;
+                valid_count++;
                 UINT8_TO_BE_STREAM(p_data, p_event_id[xx]);
             }
         }
-        len += (*p_count);
+        *p_count += valid_count;
+        len += valid_count;
     }
     UINT16_TO_BE_STREAM(p_len, len);
     p_pkt->len = (p_data - p_start);
@@ -920,6 +922,10 @@ tAVRC_STS AVRC_BldResponse( UINT8 handle, tAVRC_RESPONSE *p_rsp, BT_HDR **pp_pkt
         break;
     case AVRC_PDU_SET_ABSOLUTE_VOLUME:          /*        0x50 */
         status = avrc_bld_set_absolute_volume_rsp(&p_rsp->volume, p_pkt);
+        break;
+
+    default:
+        status = AVRC_STS_BAD_PARAM;
         break;
     }
 
