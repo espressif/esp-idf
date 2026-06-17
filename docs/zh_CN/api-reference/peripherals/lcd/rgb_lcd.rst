@@ -300,6 +300,76 @@ bounce buffer 与 PSRAM frame buffer
         虽说在设计良好的嵌入式应用程序中, DMA 传递数据的速度不应该赶不上 LCD 读取数据的速度。但理论上，此种情况还是有可能出现的。在 {IDF_TARGET_NAME} 的硬件中，这种情况会导致 LCD 在 DMA 等待数据时单纯输出 dummy 字节。若以流式传输运行 DMA，则 DMA 会将读取到的数据传输到某个 LCD 地址，同时 LCD 也会将数据输出到某个 LCD 地址，但上述两个地址可能会不同步，导致图像 **永久** 偏移。
         为防止类似情况发生，可以启用 :ref:`CONFIG_LCD_RGB_RESTART_IN_VSYNC` 选项，以便驱动程序在 VBlank 中断时自动重启 DMA；或者也可以调用 :cpp:func:`esp_lcd_rgb_panel_restart`，手动重启 DMA。请注意，调用 :cpp:func:`esp_lcd_rgb_panel_restart` 不会立即重启 DMA，DMA 只会在下一个 VSYNC 事件中重启。
 
+绘制位图钩子函数
+----------------
+
+若想使用 DMA2D 加速位图的复制，驱动程序内部已实现基于 DMA2D 的位图复制钩子函数，用户只需调用 :cpp:func:`esp_lcd_rgb_panel_enable_dma2d` 即可。
+
+.. code-block:: c
+
+    ESP_ERROR_CHECK(esp_lcd_rgb_panel_enable_dma2d(panel_handle));
+
+若需更高级的应用，用户可为绘制位图添加自定义钩子，例如通过 PPA 实现旋转、缩放等操作。
+
+.. code-block:: c
+
+    esp_lcd_panel_hooks_t hooks = {
+        .draw_bitmap_hook = custom_draw_bitmap_hook,
+    };
+    ESP_ERROR_CHECK(esp_lcd_rgb_panel_register_hooks(panel_handle, &hooks, &user_ctx));
+
+如果自定义钩子是异步的——例如钩子函数启动 PPA 后立即返回，真正的像素处理仍由硬件在后台执行——则必须在硬件操作真正完成后再调用 :cpp:member:`esp_lcd_draw_bitmap_hook_data_t::on_hook_end`。该回调由 RGB 面板驱动实现并填入 ``hook_data``，用户无需自行编写，只需在异步操作完成时调用它，以通知驱动结束本次绘制事务；若已注册颜色传输完成回调，也会在此时被调用。
+
+面板驱动本身不会等待上一笔绘制结束，同步由自定义钩子自行负责。最简单的做法是串行执行（上一笔完成前不启动下一笔），如下面示例所示。若希望利用 PPA 等加速器的事务队列并发提交多笔绘制，则需要为每笔事务单独保存 ``hook_data``、保证源 buffer 在硬件完成前有效，并处理好目标区域重叠等问题。
+
+下面是一个异步自定义钩子的示意代码：钩子启动 PPA 后立即返回，并在 PPA 完成回调中调用 ``on_hook_end``。示例采用串行方式，用信号量保证同一时间只有一笔绘制在进行：
+
+.. code-block:: c
+
+    typedef struct {
+        esp_lcd_panel_handle_t panel;
+        esp_lcd_draw_bitmap_hook_data_t hook_data;
+        SemaphoreHandle_t draw_sem;
+        // ... 其他字段，例如 ppa_client_handle_t
+    } draw_bitmap_hook_ctx_t;
+
+    static bool ppa_trans_done_callback(ppa_client_handle_t ppa_client, ppa_event_data_t *edata, void *user_ctx)
+    {
+        draw_bitmap_hook_ctx_t *ctx = (draw_bitmap_hook_ctx_t *)user_ctx;
+        bool need_yield = false;
+
+        // on_hook_end 由 RGB 面板驱动提供，操作完成后直接调用即可
+        if (ctx->hook_data.on_hook_end) {
+            if (ctx->hook_data.on_hook_end(ctx->panel)) {
+                need_yield = true;
+            }
+        }
+
+        BaseType_t task_woken = pdFALSE;
+        xSemaphoreGiveFromISR(ctx->draw_sem, &task_woken);
+        if (task_woken == pdTRUE) {
+            need_yield = true;
+        }
+        return need_yield;
+    }
+
+    static esp_err_t custom_draw_bitmap_hook(esp_lcd_panel_handle_t panel,
+                                             const esp_lcd_draw_bitmap_hook_data_t *hook_data,
+                                             void *user_ctx)
+    {
+        draw_bitmap_hook_ctx_t *ctx = (draw_bitmap_hook_ctx_t *)user_ctx;
+
+        // 最简单的同步方式：等待上一笔完成后再启动本笔
+        xSemaphoreTake(ctx->draw_sem, portMAX_DELAY);
+
+        // 保存 hook_data，供完成回调稍后调用 on_hook_end
+        ctx->hook_data = *hook_data;
+
+        // 启动异步 PPA 传输后立即返回
+        // ppa_do_scale_rotate_mirror(...);
+        return ESP_OK;
+    }
+
 API 参考
 --------
 
