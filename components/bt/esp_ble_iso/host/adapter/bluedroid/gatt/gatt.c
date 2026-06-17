@@ -78,7 +78,10 @@ struct gattc_list_node {
     sys_snode_t node;
     uint8_t type;
     union {
-        struct bt_gatt_read_params  *read_params;
+        struct {
+            struct bt_gatt_read_params *params;
+            struct bt_gatt_read_params params_copy;
+        } read;
         struct bt_gatt_write_params *write_params;
     };
 };
@@ -93,9 +96,13 @@ static struct gattc_list_node *gattc_list_node_alloc(uint8_t type, void *params)
     }
 
     op->type = type;
-    /* Both arms of the union are pointer-typed and same size — assigning via
-     * either field is equivalent. */
-    op->read_params = params;
+
+    if (type == GATTC_OP_READ) {
+        op->read.params_copy = *(struct bt_gatt_read_params *)params;
+        op->read.params = params;
+    } else {
+        op->write_params = params;
+    }
 
     return op;
 }
@@ -1503,6 +1510,7 @@ static void handle_gattc_disc_cmpl_event(struct bt_le_gattc_disc_cmpl_event *eve
 
 static void handle_gattc_read_chrc_event(struct bt_le_gattc_read_chrc_event *event)
 {
+    struct bt_gatt_read_params read_copy;
     struct bt_gatt_read_params *params;
     struct gatt_conn *gatt_conn;
     struct gattc_list_node *op;
@@ -1542,47 +1550,42 @@ static void handle_gattc_read_chrc_event(struct bt_le_gattc_read_chrc_event *eve
         goto end;
     }
 
-    params = op->read_params;
+    params = op->read.params;
+    read_copy = op->read.params_copy;
     free(op);
 
-    if (params == NULL || params->func == NULL) {
+    if (read_copy.func == NULL) {
         LOG_ERR("[B]GattcRdCharNoFunc");
         goto end;
     }
 
-    if ((params->handle_count == 0 && (event->attr_handle < params->by_uuid.start_handle ||
-                                       event->attr_handle > params->by_uuid.end_handle)) ||
-            (params->handle_count == 1 && event->attr_handle != params->single.handle)) {
+    if ((read_copy.handle_count == 0 &&
+            (event->attr_handle < read_copy.by_uuid.start_handle ||
+             event->attr_handle > read_copy.by_uuid.end_handle)) ||
+            (read_copy.handle_count == 1 &&
+             event->attr_handle != read_copy.single.handle)) {
         LOG_ERR("[B]GattcRdCharInvRsp[%u][%u][%u][%u][%u]",
-                params->handle_count, event->attr_handle, params->by_uuid.start_handle,
-                params->by_uuid.end_handle, params->single.handle);
-        /* BTA fires READ_CHAR_EVT exactly once per read; the op was just
-         * popped above so no further EVT will arrive. Fire func with err
-         * so caller's state machine doesn't stall waiting forever. */
-        params->func(conn, BT_ATT_ERR_UNLIKELY, params, NULL, 0);
+                read_copy.handle_count, event->attr_handle,
+                read_copy.by_uuid.start_handle,
+                read_copy.by_uuid.end_handle, read_copy.single.handle);
+        read_copy.func(conn, BT_ATT_ERR_UNLIKELY, params, NULL, 0);
         goto end;
     }
 
     val = event->value;
     vlen = event->len;
 
-    /* Long read: BTA's auto Read-Blob already fetched the full value on the
-     * BTU task; hand the caller only the requested [offset:] tail. */
-    if (params->handle_count == 1 && params->single.offset != 0 && event->status == 0) {
-        off = params->single.offset;
+    if (read_copy.handle_count == 1 && read_copy.single.offset != 0 &&
+            event->status == 0) {
+        off = read_copy.single.offset;
         val = (off < event->len) ? event->value + off : NULL;
         vlen = (off < event->len) ? (event->len - off) : 0;
     }
 
-    ret = params->func(conn, event->status, params, val, vlen);
+    ret = read_copy.func(conn, event->status, params, val, vlen);
 
-    /* (0, NULL, 0) is the success-completion signal per bt_gatt_read_func_t.
-     * Skip it on error paths — the error call above is already terminal;
-     * sending a follow-up "success" would let lib treat the read as OK and
-     * keep stale data. Mirrors NimBLE nrp.c, which fires func(err, NULL, 0)
-     * once on the default branch and never the success-completion. */
     if (ret == BT_GATT_ITER_CONTINUE && event->status == 0) {
-        params->func(conn, 0, params, NULL, 0);
+        read_copy.func(conn, 0, params, NULL, 0);
     }
 
 end:
@@ -2898,25 +2901,23 @@ int bt_le_bluedroid_gattc_read(struct bt_conn *conn, struct bt_gatt_read_params 
 
     conn_id = BTC_GATT_CREATE_CONN_ID(gattc_if, conn->handle);
 
-    if (params->handle_count == 0) {
-        LOG_INF("[B]RdByTypeReq[0x%04x]", BT_UUID_16(params->by_uuid.uuid)->val);
+    if (op->read.params_copy.handle_count == 0) {
+        LOG_INF("[B]RdByTypeReq[0x%04x]",
+                BT_UUID_16(op->read.params_copy.by_uuid.uuid)->val);
 
-        bt_le_bluedroid_gatt_uuid_convert(params->by_uuid.uuid, &uuid);
+        bt_le_bluedroid_gatt_uuid_convert(op->read.params_copy.by_uuid.uuid, &uuid);
 
-        BTA_GATTC_Read_by_type(conn_id, params->by_uuid.start_handle,
-                               params->by_uuid.end_handle, &uuid,
+        BTA_GATTC_Read_by_type(conn_id,
+                               op->read.params_copy.by_uuid.start_handle,
+                               op->read.params_copy.by_uuid.end_handle, &uuid,
                                BTA_GATT_AUTH_REQ_NONE);
     } else {
-        LOG_INF("[B]RdReq[%u][%u]", params->single.handle, params->single.offset);
+        LOG_INF("[B]RdReq[%u][%u]",
+                op->read.params_copy.single.handle,
+                op->read.params_copy.single.offset);
 
-        /* A non-zero offset is a long read: the lib re-reads the remainder of
-         * an ASE/BASS value whose notification was MTU-truncated. BTA's
-         * ReadLongChar would run GATTC_Read inline on the ISO task, racing the
-         * BTU task that owns gatt_cb. Always issue ReadCharacteristic instead
-         * (GATT_READ_BY_HANDLE) — BTA auto-continues it with Read Blob on the
-         * BTU task to fetch the full value, and handle_gattc_read_chrc_event
-         * slices the requested [offset:] tail back to the caller. */
-        BTA_GATTC_ReadCharacteristic(conn_id, params->single.handle,
+        BTA_GATTC_ReadCharacteristic(conn_id,
+                                     op->read.params_copy.single.handle,
                                      BTA_GATT_AUTH_REQ_NONE);
     }
 
