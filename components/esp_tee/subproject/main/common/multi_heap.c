@@ -10,9 +10,15 @@
 #include "esp_rom_sys.h"
 #include "tlsf_block_functions.h"
 #include "multi_heap.h"
+#include "esp_tee.h"
 
 /* Handle to a registered TEE heap */
 static multi_heap_handle_t tee_heap;
+
+static inline void tee_heap_set_poison(bool enable)
+{
+    tlsf_poison_fill_pfunc_set(enable ? (poison_fill_pfunc_t)esp_tee_app_config.ns_heap_poison_fill : NULL);
+}
 
 inline static void multi_heap_assert(bool condition, const char *format, int line, intptr_t address)
 {
@@ -142,7 +148,10 @@ void esp_tee_heap_free(void *p)
 
     tee_heap->free_bytes += tlsf_block_size(p);
     tee_heap->free_bytes += tlsf_alloc_overhead();
+
+    tee_heap_set_poison(false);
     tlsf_free(tee_heap->heap_data, p);
+    tee_heap_set_poison(true);
 }
 
 void *malloc(size_t size)
@@ -166,7 +175,10 @@ void *realloc(void* ptr, size_t size)
     }
 
     size_t previous_block_size = tlsf_block_size(ptr);
+    tee_heap_set_poison(false);
     void *result = tlsf_realloc(tee_heap->heap_data, ptr, size);
+    tee_heap_set_poison(true);
+
     if (result) {
         /* No need to subtract the tlsf_alloc_overhead() as it has already
          * been subtracted when allocating the block at first with malloc */

@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdarg.h>
 #include "esp_tee.h"
+#include "sdkconfig.h"
 
 /* U-mode interrupt handler */
 extern int _tee_interrupt_handler(void);
@@ -19,6 +20,13 @@ extern uint32_t _instruction_reserved_end;
 extern uint32_t _rodata_reserved_start;
 /* REE DROM end */
 extern uint32_t _rodata_reserved_end;
+
+#if CONFIG_HEAP_TLSF_USE_ROM_IMPL && (CONFIG_HEAP_POISONING_LIGHT || CONFIG_HEAP_POISONING_COMPREHENSIVE)
+extern void multi_heap_internal_poison_fill_region(void *start, size_t size, bool is_free);
+#define HEAP_POISON_FILL    ((void *)&multi_heap_internal_poison_fill_region)
+#else
+#define HEAP_POISON_FILL    NULL
+#endif
 
 esp_tee_config_t esp_tee_app_config __attribute__((section(".esp_tee_app_cfg"))) = {
     .magic_word = ESP_TEE_APP_CFG_MAGIC,
@@ -35,4 +43,5 @@ esp_tee_config_t esp_tee_app_config __attribute__((section(".esp_tee_app_cfg")))
     .ns_irom_end = &_instruction_reserved_end,
     .ns_drom_start = &_rodata_reserved_start,
     .ns_drom_end = &_rodata_reserved_end,
+    .ns_heap_poison_fill = HEAP_POISON_FILL,
 };
