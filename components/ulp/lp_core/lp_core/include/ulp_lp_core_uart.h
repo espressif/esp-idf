@@ -94,6 +94,17 @@ int lp_core_uart_read_bytes(uart_port_t lp_uart_num, void *buf, size_t size, int
  */
 void lp_core_uart_tx_flush(uart_port_t lp_uart_num);
 
+/**
+ * @brief Reset LP UART wakeup enable
+ *
+ * This function is used to reset the LP UART wakeup enable. It will flush the UART buffer and reset the wakeup enable.
+ *
+ * @note Kept in lp_core_uart.c (not lp_core_utils.c) to avoid changing codegen of
+ *       ulp_lp_core_delay_us() in the same compilation unit, which breaks delay_us calibration.
+ *
+ */
+void lp_core_uart_reset_wakeup_en(void);
+
 #ifdef __cplusplus
 }
 #endif
