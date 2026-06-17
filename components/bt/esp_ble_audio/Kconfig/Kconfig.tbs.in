@@ -249,4 +249,11 @@ if BT_TBS || BT_TBS_CLIENT
         help
             Sets the maximum length of the bearer provider name.
 
+    config BT_TBS_MAX_FRIENDLY_NAME_LENGTH
+        int "The maximum length of the friendly name supported"
+        default 30
+        range 1 512
+        help
+            Sets the maximum length of the friendly name in octets (without NULL terminator).
+
 endif # BT_TBS || BT_TBS_CLIENT

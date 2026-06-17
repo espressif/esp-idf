@@ -231,19 +231,16 @@ esp_err_t esp_ble_audio_tbs_set_status_flags(uint8_t bearer_index, uint16_t stat
     return ESP_OK;
 }
 
-esp_err_t esp_ble_audio_tbs_set_uri_scheme_list(uint8_t bearer_index,
-                                                const char **uri_list,
-                                                uint8_t uri_count)
+esp_err_t esp_ble_audio_tbs_set_uri_scheme_list(uint8_t bearer_index, const char *uri_scheme_list)
 {
     uint8_t count = CONFIG_BT_TBS_BEARER_COUNT;
     int err;
 
-    if (count == 0 || bearer_index >= count ||
-            (uri_count && uri_list == NULL)) {
+    if (count == 0 || bearer_index >= count || uri_scheme_list == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_tbs_set_uri_scheme_list_safe(bearer_index, uri_list, uri_count);
+    err = bt_tbs_set_uri_scheme_list_safe(bearer_index, uri_scheme_list);
     if (err) {
         return ESP_FAIL;
     }
@@ -994,4 +991,23 @@ unlock:
     return ret;
 }
 #endif /* CONFIG_BT_TBS_CLIENT_CCID */
+
+esp_ble_audio_tbs_instance_t *esp_ble_audio_tbs_client_get_by_index(uint16_t conn_handle, uint8_t index)
+{
+    esp_ble_audio_tbs_instance_t *ret = NULL;
+    void *conn;
+
+    bt_le_host_lock();
+
+    conn = bt_le_acl_conn_find(conn_handle);
+    if (conn == NULL) {
+        goto unlock;
+    }
+
+    ret = lib_tbs_client_get_by_index(conn, index);
+
+unlock:
+    bt_le_host_unlock();
+    return ret;
+}
 #endif /* CONFIG_BT_TBS_CLIENT */

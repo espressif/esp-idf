@@ -182,7 +182,7 @@ static const uint16_t ext_structs[] = {
     sizeof(struct bt_bond_info),
 };
 
-#define LEA_VERSION     (0x20260616)
+#define LEA_VERSION     (0x20260624)
 
 struct lib_ext_cfgs {
     /* BLE */
@@ -401,6 +401,7 @@ struct lib_ext_cfgs {
     bool     config_tbs_client_call_friendly_name;
     uint8_t  config_tbs_max_uri_length;
     uint16_t config_tbs_max_provider_name_length;
+    uint16_t config_tbs_max_friendly_name_length;
 
     /* TMAP (Telephony and Media Audio Profile) */
     bool     config_tmap_cg_supported;
@@ -893,6 +894,7 @@ static const struct lib_ext_cfgs ext_cfgs = {
 #if CONFIG_BT_TBS || CONFIG_BT_TBS_CLIENT
     .config_tbs_max_uri_length = CONFIG_BT_TBS_MAX_URI_LENGTH,
     .config_tbs_max_provider_name_length = CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH,
+    .config_tbs_max_friendly_name_length = CONFIG_BT_TBS_MAX_FRIENDLY_NAME_LENGTH,
 #endif /* CONFIG_BT_TBS || CONFIG_BT_TBS_CLIENT */
 
     /* TMAP (Telephony and Media Audio Profile) */
@@ -1083,6 +1085,7 @@ struct lib_ext_funcs {
                           void *data);
     int (*_conn_get_info)(const struct bt_conn *conn, struct bt_conn_info *info);
     uint8_t (*_conn_index)(const struct bt_conn *conn);
+    struct bt_conn *(*_conn_lookup_index)(uint8_t index);
     const bt_addr_le_t *(*_conn_get_dst)(const struct bt_conn *conn);
     struct bt_conn *(*_conn_ref)(struct bt_conn *conn);
     void (*_conn_unref)(struct bt_conn *conn);
@@ -1299,6 +1302,7 @@ static const struct lib_ext_funcs ext_funcs = {
     ._conn_foreach = (void *)bt_conn_foreach,
     ._conn_get_info = (void *)bt_conn_get_info,
     ._conn_index = (void *)bt_conn_index,
+    ._conn_lookup_index = (void *)bt_conn_lookup_index,
     ._conn_get_dst = (void *)bt_conn_get_dst,
     ._conn_ref = (void *)bt_conn_ref,
     ._conn_unref = (void *)bt_conn_unref,
@@ -1363,6 +1367,7 @@ struct lib_funcs {
 
     /* BAP Unicast Client */
     bool (*_bap_unicast_client_has_ep)(const struct bt_bap_ep *ep);
+    struct bt_conn *(*_bap_unicast_client_ep_get_conn)(const struct bt_bap_ep *ep);
     int (*_bap_unicast_client_register_cb)(struct bt_bap_unicast_client_cb *cb);
     int (*_bap_unicast_client_config)(struct bt_bap_stream *stream,
                                       const struct bt_audio_codec_cfg *codec_cfg);
@@ -1375,6 +1380,7 @@ struct lib_funcs {
 
     /* BAP Unicast Server */
     bool (*_bap_unicast_server_has_ep)(const struct bt_bap_ep *ep);
+    struct bt_conn *(*_bap_unicast_server_ep_get_conn)(const struct bt_bap_ep *ep);
     int (*_bap_unicast_server_reconfig)(struct bt_bap_stream *stream,
                                         const struct bt_audio_codec_cfg *codec_cfg);
     int (*_bap_unicast_server_start)(struct bt_bap_stream *stream);
@@ -1407,11 +1413,11 @@ struct lib_funcs {
     /* CAP Handover */
     bool (*_cap_common_handover_is_active)(void);
     bool (*_cap_handover_is_handover_broadcast_source)(const struct bt_cap_broadcast_source *cap_broadcast_source);
-    void (*_cap_handover_complete)(void);
-    void (*_cap_handover_unicast_proc_complete)(void);
+    void (*_cap_handover_complete)(struct bt_cap_common_proc *active_proc);
+    void (*_cap_handover_unicast_proc_complete)(struct bt_cap_common_proc *active_proc);
     void (*_cap_handover_broadcast_source_stopped)(uint8_t reason);
     void (*_cap_handover_unicast_to_broadcast_reception_start)(void);
-    int (*_cap_handover_broadcast_reception_stopped)(void);
+    int (*_cap_handover_broadcast_reception_stopped)(struct bt_cap_common_proc *active_proc);
     void (*_cap_handover_receive_state_updated)(const struct bt_conn *conn,
                                                 const struct bt_bap_scan_delegator_recv_state *state);
 
@@ -1503,6 +1509,8 @@ struct lib_funcs {
     int (*_tbs_client_primary_discover_gtbs)(struct bt_conn *conn);
     struct bt_tbs_instance *(*_tbs_client_get_by_ccid)(const struct bt_conn *conn,
                                                        uint8_t ccid);
+    struct bt_tbs_instance *(*_tbs_client_get_by_index)(const struct bt_conn *conn,
+                                                        uint8_t index);
 
     /* VCP Volume Controller */
     void (*_vcp_vol_ctlr_aics_init)(void);
@@ -1551,6 +1559,7 @@ static const struct lib_funcs lib_funcs = {
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT
     ._bap_unicast_client_has_ep = lib_bap_unicast_client_has_ep,
+    ._bap_unicast_client_ep_get_conn = lib_bap_unicast_client_ep_get_conn,
     ._bap_unicast_client_register_cb = lib_bap_unicast_client_register_cb,
     ._bap_unicast_client_config = lib_bap_unicast_client_config,
     ._bap_unicast_client_metadata = lib_bap_unicast_client_metadata,
@@ -1562,6 +1571,7 @@ static const struct lib_funcs lib_funcs = {
 
 #if CONFIG_BT_BAP_UNICAST_SERVER
     ._bap_unicast_server_has_ep = lib_bap_unicast_server_has_ep,
+    ._bap_unicast_server_ep_get_conn = lib_bap_unicast_server_ep_get_conn,
     ._bap_unicast_server_reconfig = lib_bap_unicast_server_reconfig,
     ._bap_unicast_server_start = lib_bap_unicast_server_start,
     ._bap_unicast_server_metadata = lib_bap_unicast_server_metadata,
@@ -1696,6 +1706,10 @@ static const struct lib_funcs lib_funcs = {
 #if CONFIG_BT_TBS_CLIENT_CCID
     ._tbs_client_get_by_ccid = lib_tbs_client_get_by_ccid,
 #endif /* CONFIG_BT_TBS_CLIENT_CCID */
+
+#if CONFIG_BT_TBS_CLIENT
+    ._tbs_client_get_by_index = lib_tbs_client_get_by_index,
+#endif /* CONFIG_BT_TBS_CLIENT */
 
 #if CONFIG_BT_VCP_VOL_CTLR_AICS
     ._vcp_vol_ctlr_aics_init = lib_vcp_vol_ctlr_aics_init,

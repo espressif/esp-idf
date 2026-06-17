@@ -175,7 +175,7 @@ if BT_BAP_BROADCAST_SINK
     config BT_BAP_BROADCAST_SNK_COUNT
         int "Basic Audio Broadcaster Sink count"
         default 1
-        range 0 BT_ISO_MAX_BIG
+        range 1 BT_ISO_MAX_BIG
         help
             This option sets the number of broadcast sinks to support.
             One broadcast sink can receive multiple streams
