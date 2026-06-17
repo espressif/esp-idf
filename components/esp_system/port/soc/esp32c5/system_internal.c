@@ -85,21 +85,24 @@ void esp_system_reset_modules_on_exit(void)
     // all the peripherals are reset at the same time, which triggers a hardware SEC reset. The SEC reset
     // causes the crypto -> APB path to be reset, but the APB -> crypto path is not reset. This asymmetry
     // results in the crypto module hanging and refusing all access.
+#if !CONFIG_SECURE_ENABLE_TEE
+    // Avoid resetting the TEE-protected crypto peripherals as it would lead to an APM fault
     SET_PERI_REG_MASK(PCR_AES_CONF_REG, PCR_AES_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_AES_CONF_REG, PCR_AES_RST_EN);
     SET_PERI_REG_MASK(PCR_DS_CONF_REG, PCR_DS_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_DS_CONF_REG, PCR_DS_RST_EN);
     SET_PERI_REG_MASK(PCR_ECC_CONF_REG, PCR_ECC_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_ECC_CONF_REG, PCR_ECC_RST_EN);
-    SET_PERI_REG_MASK(PCR_ECDSA_CONF_REG, PCR_ECDSA_RST_EN);
-    CLEAR_PERI_REG_MASK(PCR_ECDSA_CONF_REG, PCR_ECDSA_RST_EN);
     SET_PERI_REG_MASK(PCR_HMAC_CONF_REG, PCR_HMAC_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_HMAC_CONF_REG, PCR_HMAC_RST_EN);
-    SET_PERI_REG_MASK(PCR_RSA_CONF_REG, PCR_RSA_RST_EN);
-    CLEAR_PERI_REG_MASK(PCR_RSA_CONF_REG, PCR_RSA_RST_EN);
     SET_PERI_REG_MASK(PCR_SHA_CONF_REG, PCR_SHA_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_SHA_CONF_REG, PCR_SHA_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_ECC_PD_CTRL_REG, PCR_ECC_MEM_FORCE_PD);
+#endif // !CONFIG_SECURE_ENABLE_TEE
+    SET_PERI_REG_MASK(PCR_ECDSA_CONF_REG, PCR_ECDSA_RST_EN);
+    CLEAR_PERI_REG_MASK(PCR_ECDSA_CONF_REG, PCR_ECDSA_RST_EN);
+    SET_PERI_REG_MASK(PCR_RSA_CONF_REG, PCR_RSA_RST_EN);
+    CLEAR_PERI_REG_MASK(PCR_RSA_CONF_REG, PCR_RSA_RST_EN);
 
     // UART's sclk is controlled in the PCR register and does not reset with the UART module. The ROM missed enabling
     // it when initializing the ROM UART. If it is not turned on, it will trigger LP_WDT in the ROM.
