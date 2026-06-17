@@ -805,7 +805,8 @@ void bta_ag_setcodec(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
     /* Check if the requested codec type is valid */
     if((codec_type != BTA_AG_CODEC_NONE) &&
        (codec_type != BTA_AG_CODEC_CVSD) &&
-       (codec_type != BTA_AG_CODEC_MSBC)) {
+       (codec_type != BTA_AG_CODEC_MSBC) &&
+       (codec_type != BTA_AG_CODEC_LC3)) {
         val.hdr.status = BTA_AG_FAIL_RESOURCES;
         APPL_TRACE_ERROR("%s error: unsupported codec type %d", __func__, codec_type);
         if (bta_ag_cb.p_cback) {

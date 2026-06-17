@@ -238,12 +238,20 @@ config BT_HFP_USE_EXTERNAL_CODEC
         for new design.
 
 config BT_HFP_WBS_ENABLE
-    bool "Wide Band Speech"
+    bool "Wideband Speech"
     depends on BT_HFP_ENABLE && BT_HFP_AUDIO_DATA_PATH_HCI
     default y
     help
-        This enables Wide Band Speech. Should disable it when SCO data path is PCM.
+        This enables Wideband Speech. Should disable it when SCO data path is PCM.
         Otherwise there will be no data transmitted via GPIOs.
+
+config BT_HFP_LC3_ENABLE
+    bool "Super Wideband Speech (LC3-SWB)"
+    depends on BT_HFP_ENABLE && BT_HFP_WBS_ENABLE && BT_HFP_USE_EXTERNAL_CODEC
+    default n
+    help
+        Enable HFP 1.9 LC3-SWB codec negotiation support.
+        Requires Wideband Speech (codec negotiation) to be enabled.
 
 menuconfig BT_HID_ENABLED
     bool "Classic BT HID"

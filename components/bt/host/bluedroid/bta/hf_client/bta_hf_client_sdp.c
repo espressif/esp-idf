@@ -26,6 +26,7 @@
 
 #include <string.h>
 #include "bta/bta_api.h"
+#include "common/bt_target.h"
 #include "bta/bta_sys.h"
 #include "common/bt_defs.h"
 #include "bta/bta_hf_client_api.h"
@@ -114,7 +115,11 @@ BOOLEAN bta_hf_client_add_record(char *p_service_name, UINT8 scn,
 
     /* add profile descriptor list */
     profile_uuid = UUID_SERVCLASS_HF_HANDSFREE;
+#if UC_BT_HFP_LC3_ENABLE
+    version = HFP_VERSION_1_9;
+#else
     version = HFP_VERSION_1_8;
+#endif
 
     result &= SDP_AddProfileDescriptorList(sdp_handle, profile_uuid, version);
 
@@ -149,6 +154,12 @@ BOOLEAN bta_hf_client_add_record(char *p_service_name, UINT8 scn,
     if (features & BTA_HF_CLIENT_FEAT_CODEC) {
         sdp_features |= 0x0020;
     }
+
+#if UC_BT_HFP_LC3_ENABLE
+    if (features & BTA_HF_CLIENT_FEAT_SWB) {
+        sdp_features |= 0x0100; /* SWB supported in SDP */
+    }
+#endif
 
     UINT16_TO_BE_FIELD(buf, sdp_features);
     result &= SDP_AddAttribute(sdp_handle, ATTR_ID_SUPPORTED_FEATURES, UINT_DESC_TYPE, 2, buf);

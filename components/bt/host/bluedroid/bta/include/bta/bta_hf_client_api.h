@@ -36,6 +36,7 @@
 /* Hands-Free unit(HF) version */
 #define HFP_HF_VERSION_1_6             0x0106       /* v1.6 */
 #define HFP_HF_VERSION_1_7             0x0107       /* v1.7 */
+#define HFP_HF_VERSION_1_9             0x0109       /* v1.9 */
 
 /* HFP peer (AG) features*/
 #define BTA_HF_CLIENT_PEER_FEAT_3WAY   0x00000001  /* Three-way calling */
@@ -65,6 +66,9 @@ typedef UINT16 tBTA_HF_CLIENT_PEER_FEAT;
 #define BTA_HF_CLIENT_FEAT_CODEC       0x00000080  /* Codec Negotiation */
 #define BTA_HF_CLIENT_FEAT_HF_IND      0x00000100  /* HF indicators */
 #define BTA_HF_CLIENT_FEAT_ESCO_S4     0x00000200  /* eSCO S4 Setting Supported */
+
+/* Proprietary features: using 31 ~ 16 bits, AT+BRSF bit 12 ~ 31 are reserved by spec */
+#define BTA_HF_CLIENT_FEAT_SWB         0x00010000  /* Super Wideband Speech */
 
 /* HFP HF extended call handling - masks not related to any spec */
 #define BTA_HF_CLIENT_CHLD_REL          0x00000001  /* 0  Release waiting call or held calls */
@@ -114,6 +118,7 @@ typedef UINT8 tBTA_HF_CLIENT_AT_RESULT_TYPE;
 #define BTA_HF_CLIENT_RING_INDICATION       21 /* HF Client ring indication */
 #define BTA_HF_CLIENT_DISABLE_EVT           22 /* HF Client disabled */
 #define BTA_HF_CLIENT_PKT_STAT_NUMS_GET_EVT 23 /* HF Client packet status nums */
+#define BTA_HF_CLIENT_AUDIO_LC3_OPEN_EVT   24  /* Audio connection with LC3-SWB codec open */
 
 typedef UINT8 tBTA_HF_CLIENT_EVT;
 
@@ -188,7 +193,7 @@ typedef struct {
     tBTA_HF_CLIENT_CHLD_FEAT   chld_feat;
 } tBTA_HF_CLIENT_CONN;
 
-/* data associated with BTA_HF_CLIENT_AUDIO_XXX_EVT */
+/* data associated with BTA_HF_CLIENT_AUDIO_XXX_EVT (OPEN/MSBC/LC3/CLOSE) */
 typedef struct {
     tBTA_HF_CLIENT_HDR      hdr;
     UINT16                  preferred_frame_size;

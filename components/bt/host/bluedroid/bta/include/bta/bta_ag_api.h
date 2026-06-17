@@ -92,6 +92,7 @@ typedef UINT16 tBTA_AG_CHLD_FEAT;
 #define BTA_AG_CODEC_NONE           BTM_SCO_CODEC_NONE
 #define BTA_AG_CODEC_CVSD           BTM_SCO_CODEC_CVSD      /* CVSD */
 #define BTA_AG_CODEC_MSBC           BTM_SCO_CODEC_MSBC      /* mSBC */
+#define BTA_AG_CODEC_LC3            BTM_SCO_CODEC_LC3       /* LC3-SWB */
 typedef UINT16 tBTA_AG_PEER_CODEC;
 
 /* AG parse mode */
@@ -159,6 +160,7 @@ typedef UINT8 tBTA_AG_RES;
 #define BTA_AG_AUDIO_MSBC_OPEN_EVT 32 /* Audio connection with mSBC codec open */
 
 #define BTA_AG_PKT_NUMS_GET_EVT 33 /* AG packet status nums */
+#define BTA_AG_AUDIO_LC3_OPEN_EVT  34 /* Audio connection with LC3-SWB codec open */
 
 /* Values below are for HFP only */
 #define BTA_AG_AT_A_EVT         10 /* Answer a incoming call */
@@ -363,7 +365,8 @@ typedef struct
     tBTA_AG_CHLD_FEAT   chld_feat;
 } tBTA_AG_CONN;
 
-/* data associated with BTA_AG_AUDIO_OPEN_EVT, BTA_AG_AUDIO_CLOSE_EVT or BTA_AG_AUDIO_MSBC_OPEN_EVT */
+/* data associated with BTA_AG_AUDIO_OPEN_EVT, BTA_AG_AUDIO_CLOSE_EVT, */
+/* BTA_AG_AUDIO_MSBC_OPEN_EVT or BTA_AG_AUDIO_LC3_OPEN_EVT */
 typedef struct
 {
     tBTA_AG_HDR         hdr;

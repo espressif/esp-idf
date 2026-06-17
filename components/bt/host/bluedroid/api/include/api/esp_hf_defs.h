@@ -47,8 +47,9 @@ typedef enum {
 typedef enum {
     ESP_HF_AUDIO_STATE_DISCONNECTED = 0,          /*!< audio connection released */
     ESP_HF_AUDIO_STATE_CONNECTING,                /*!< audio connection has been initiated */
-    ESP_HF_AUDIO_STATE_CONNECTED,                 /*!< audio connection is established */
+    ESP_HF_AUDIO_STATE_CONNECTED,                 /*!< CVSD audio connection is established */
     ESP_HF_AUDIO_STATE_CONNECTED_MSBC,            /*!< mSBC audio connection is established */
+    ESP_HF_AUDIO_STATE_CONNECTED_LC3,             /*!< LC3-SWB audio connection is established */
 } esp_hf_audio_state_t;
 
 /// Bluetooth HFP audio volume type
@@ -179,13 +180,32 @@ typedef enum {
     ESP_HF_CALL_WAITING_ACTIVE,         /*!< active call waiting */
 } esp_hf_call_waiting_status_t;
 
-/* WBS codec setting */
+/* codec setting - values match HFP Codec ID in AT+BAC/+BCS (Appendix B) */
 typedef enum
 {
-   ESP_HF_WBS_NONE,         /*!< No Wideband Speech (WBS) codec support */
-   ESP_HF_WBS_NO,           /*!< Wideband Speech (WBS) codec is not enabled */
-   ESP_HF_WBS_YES           /*!< Wideband Speech (WBS) codec is enabled */
-}esp_hf_wbs_config_t;
+   ESP_HF_CODEC_NONE = 0,   /*!< No codec negotiated */
+   ESP_HF_CODEC_CVSD = 1,   /*!< Narrowband Speech (CVSD) */
+   ESP_HF_CODEC_MSBC = 2,   /*!< Wideband Speech (mSBC) */
+   ESP_HF_CODEC_LC3  = 3    /*!< Super Wideband Speech (LC3-SWB) */
+} esp_hf_codec_mode_t;
+
+/*!< @deprecated Renamed to ESP_HF_CODEC_NONE */
+#define ESP_HF_WBS_NONE   (ESP_HF_CODEC_NONE)    /*!< No Wideband Speech (WBS) codec support */
+
+/*!< @deprecated Renamed to ESP_HF_CODEC_CVSD */
+#define ESP_HF_WBS_NO     (ESP_HF_CODEC_CVSD)    /*!< Wideband Speech (WBS) codec is not enabled */
+
+/*!< @deprecated Renamed to ESP_HF_CODEC_MSBC */
+#define ESP_HF_WBS_YES    (ESP_HF_CODEC_MSBC)    /*!< Wideband Speech (WBS) codec is enabled */
+
+/*!< @deprecated esp_hf_wbs_config_t is changed to esp_hf_codec_mode_t */
+typedef esp_hf_codec_mode_t esp_hf_wbs_config_t;
+
+
+/** @brief Codec capability bitmap for AT+BAC, matches BTA_AG_CODEC_* flags */
+#define ESP_HF_CODEC_CAP_CVSD   (1u << (ESP_HF_CODEC_CVSD - 1))   /*!< 0x01 */
+#define ESP_HF_CODEC_CAP_MSBC   (1u << (ESP_HF_CODEC_MSBC - 1))   /*!< 0x02 */
+#define ESP_HF_CODEC_CAP_LC3    (1u << (ESP_HF_CODEC_LC3 - 1))    /*!< 0x04 */
 
 /// Bluetooth HFP RFCOMM connection and service level connection status
 typedef enum {
@@ -261,6 +281,17 @@ typedef enum {
 #define ESP_HF_MSBC_BITPOOL                     26                  /*!< mSBC bitpool */
 /* frame size after mSBC encoded */
 #define ESP_HF_MSBC_ENCODED_FRAME_SIZE          57                  /*!< mSBC frame size */
+#define ESP_HF_MSBC_SAMPLING_RATE_HZ            16000               /*!< mSBC PCM sampling rate */
+#define ESP_HF_MSBC_H2_HEADER_LEN               2                   /*!< H2 sync header length */
+#define ESP_HF_MSBC_ENCODED_FRAME_SIZE_WITH_H2  (ESP_HF_MSBC_ENCODED_FRAME_SIZE + ESP_HF_MSBC_H2_HEADER_LEN)
+
+/* Since HFP uses a fixed set of LC3-SWB codec parameters (HFP 1.9 Table 6.15) */
+#define ESP_HF_LC3_SAMPLING_RATE_HZ             32000               /*!< LC3-SWB PCM sampling rate */
+#define ESP_HF_LC3_FRAME_DURATION_US            7500                /*!< LC3-SWB frame duration */
+#define ESP_HF_LC3_ENCODED_FRAME_SIZE           58                  /*!< LC3 payload size (excl. H2 header) */
+#define ESP_HF_LC3_H2_HEADER_LEN                2                   /*!< H2 sync header length */
+#define ESP_HF_LC3_ENCODED_FRAME_SIZE_WITH_H2   (ESP_HF_LC3_ENCODED_FRAME_SIZE + ESP_HF_LC3_H2_HEADER_LEN)
+#define ESP_HF_LC3_BITRATE_BPS                  61867               /*!< Resulting bit rate (excl. H2 header) */
 
 /**
  * @brief HFP audio buffer

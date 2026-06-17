@@ -22,6 +22,8 @@
 
 #include "bta/bta_hf_client_api.h"
 #include "bta_hf_client_int.h"
+#include "common/bt_target.h"
+#include "stack/sdpdefs.h"
 #include "stack/port_api.h"
 #include "osi/allocator.h"
 
@@ -488,14 +490,49 @@ static void bta_hf_client_handle_ciev(UINT32 index, UINT32 value)
     }
 }
 
+static tBTM_SCO_CODEC_TYPE bta_hf_client_hfp_codec_id_to_btm(UINT32 hfp_codec_id)
+{
+    switch (hfp_codec_id) {
+    case UUID_CODEC_MSBC:
+        return BTM_SCO_CODEC_MSBC;
+    case UUID_CODEC_LC3:
+        return BTM_SCO_CODEC_LC3;
+    case UUID_CODEC_CVSD:
+        return BTM_SCO_CODEC_CVSD;
+    default:
+        /* Accept BTM bitmask values for backward compatibility */
+        if (hfp_codec_id == BTM_SCO_CODEC_MSBC || hfp_codec_id == BTM_SCO_CODEC_LC3 ||
+            hfp_codec_id == BTM_SCO_CODEC_CVSD) {
+            return (tBTM_SCO_CODEC_TYPE)hfp_codec_id;
+        }
+        return BTM_SCO_CODEC_CVSD;
+    }
+}
+
+static UINT32 bta_hf_client_btm_codec_to_hfp_id(tBTM_SCO_CODEC_TYPE btm_codec)
+{
+    switch (btm_codec) {
+    case BTM_SCO_CODEC_MSBC:
+        return UUID_CODEC_MSBC;
+    case BTM_SCO_CODEC_LC3:
+        return UUID_CODEC_LC3;
+    case BTM_SCO_CODEC_CVSD:
+    default:
+        return UUID_CODEC_CVSD;
+    }
+}
+
 static void bta_hf_client_handle_bcs(UINT32 codec)
 {
-    APPL_TRACE_DEBUG("%s %u", __FUNCTION__, codec);
+    tBTM_SCO_CODEC_TYPE btm_codec = bta_hf_client_hfp_codec_id_to_btm(codec);
 
-    if (codec == BTM_SCO_CODEC_CVSD ||
-            (codec == BTM_SCO_CODEC_MSBC && bta_hf_client_cb.msbc_enabled == TRUE)) {
-        bta_hf_client_cb.scb.negotiated_codec = codec;
-        bta_hf_client_send_at_bcs(codec);
+    APPL_TRACE_DEBUG("%s hfp_id %u btm_codec %u", __FUNCTION__, codec, btm_codec);
+
+    if (btm_codec == BTM_SCO_CODEC_CVSD ||
+            (btm_codec == BTM_SCO_CODEC_MSBC && bta_hf_client_cb.msbc_enabled == TRUE) ||
+            (btm_codec == BTM_SCO_CODEC_LC3 && bta_hf_client_cb.lc3_enabled == TRUE)) {
+        bta_hf_client_cb.scb.negotiated_codec = btm_codec;
+        bta_hf_client_send_at_bcs(btm_codec);
     } else {
         bta_hf_client_cb.scb.negotiated_codec = BTM_SCO_CODEC_CVSD;
         bta_hf_client_send_at_bac();
@@ -1427,7 +1464,8 @@ void bta_hf_client_send_at_brsf(void)
 
     APPL_TRACE_DEBUG("%s", __FUNCTION__);
 
-    at_len = snprintf(buf, BTA_HF_CLIENT_AT_MAX_LEN, "AT+BRSF=%u\r", bta_hf_client_cb.scb.features);
+    at_len = snprintf(buf, BTA_HF_CLIENT_AT_MAX_LEN, "AT+BRSF=%u\r",
+                      bta_hf_client_cb.scb.features & BTA_HF_CLIENT_BRSF_FEAT_SPEC);
 
     at_len = MIN(at_len, BTA_HF_CLIENT_AT_MAX_LEN - 1);
     if (at_len < 0) {
@@ -1446,6 +1484,11 @@ void bta_hf_client_send_at_bac(void)
 
     APPL_TRACE_DEBUG("%s", __FUNCTION__);
 
+#if UC_BT_HFP_LC3_ENABLE
+    if (bta_hf_client_cb.lc3_enabled && bta_hf_client_cb.msbc_enabled) {
+        buf = "AT+BAC=1,2,3\r";
+    } else
+#endif
     if (bta_hf_client_cb.msbc_enabled) {
         buf = "AT+BAC=1,2\r";
     } else {
@@ -1465,7 +1508,8 @@ void bta_hf_client_send_at_bcs(UINT32 codec)
         return;
     }
 
-    at_len = snprintf(buf, BTA_HF_CLIENT_AT_MAX_LEN, "AT+BCS=%u\r", codec);
+    at_len = snprintf(buf, BTA_HF_CLIENT_AT_MAX_LEN, "AT+BCS=%u\r",
+                      bta_hf_client_btm_codec_to_hfp_id((tBTM_SCO_CODEC_TYPE)codec));
 
     at_len = MIN(at_len, BTA_HF_CLIENT_AT_MAX_LEN - 1);
     if (at_len < 0) {

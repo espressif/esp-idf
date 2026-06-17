@@ -65,10 +65,11 @@ const char *c_connection_state_str[] = {
 
 // esp_hf_client_audio_state_t
 const char *c_audio_state_str[] = {
-    "disconnected",
-    "connecting",
-    "connected",
-    "connected_msbc",
+    [ESP_HF_CLIENT_AUDIO_STATE_DISCONNECTED]      = "disconnected",
+    [ESP_HF_CLIENT_AUDIO_STATE_CONNECTING]        = "connecting",
+    [ESP_HF_CLIENT_AUDIO_STATE_CONNECTED]         = "connected",
+    [ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC]    = "connected_msbc",
+    [ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_LC3]     = "connected_lc3",
 };
 
 /// esp_hf_vr_state_t
@@ -178,10 +179,16 @@ extern bool hf_client_connected;
 
 #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI
 
+typedef enum {
+    HF_AIR_CODEC_CVSD = 0,
+    HF_AIR_CODEC_MSBC,
+    HF_AIR_CODEC_LC3,
+} hf_air_codec_t;
+
 #if CONFIG_BT_HFP_USE_EXTERNAL_CODEC
 
 static esp_hf_sync_conn_hdl_t s_sync_conn_hdl;
-static bool s_msbc_air_mode = false;
+static hf_air_codec_t s_air_codec = HF_AIR_CODEC_CVSD;
 QueueHandle_t s_audio_buff_queue = NULL;
 static int s_audio_buff_cnt = 0;
 
@@ -210,13 +217,17 @@ static void bt_app_hf_client_audio_data_cb(esp_hf_sync_conn_hdl_t sync_conn_hdl,
     }
 
     s_audio_buff_cnt--;
-    if (s_msbc_air_mode && audio_data_to_send->data_len > ESP_HF_MSBC_ENCODED_FRAME_SIZE) {
+    if (s_air_codec == HF_AIR_CODEC_MSBC &&
+        audio_data_to_send->data_len > ESP_HF_MSBC_ENCODED_FRAME_SIZE) {
         /*
          * in mSBC air mode, we may receive a mSBC frame with some padding bytes at the end,
          * but esp_hf_client_audio_data_send API do not allow adding padding bytes at the end,
          * so we need to remove those padding bytes before send back to peer device.
          */
         audio_data_to_send->data_len = ESP_HF_MSBC_ENCODED_FRAME_SIZE;
+    } else if (s_air_codec == HF_AIR_CODEC_LC3 &&
+               audio_data_to_send->data_len > ESP_HF_LC3_ENCODED_FRAME_SIZE) {
+        audio_data_to_send->data_len = ESP_HF_LC3_ENCODED_FRAME_SIZE;
     }
 
     /* send audio data back to AG */
@@ -226,7 +237,7 @@ static void bt_app_hf_client_audio_data_cb(esp_hf_sync_conn_hdl_t sync_conn_hdl,
     }
 }
 
-#else
+#else /* !CONFIG_BT_HFP_USE_EXTERNAL_CODEC */
 
 #define ESP_HFP_RINGBUF_SIZE 3600
 static RingbufHandle_t m_rb = NULL;
@@ -280,7 +291,7 @@ static void bt_app_hf_client_incoming_cb(const uint8_t *buf, uint32_t sz)
     esp_hf_client_outgoing_data_ready();
 }
 
-#endif /* #if CONFIG_BT_HFP_USE_EXTERNAL_CODEC */
+#endif /* CONFIG_BT_HFP_USE_EXTERNAL_CODEC */
 
 #endif /* #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI */
 
@@ -313,30 +324,38 @@ void bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_
 
         case ESP_HF_CLIENT_AUDIO_STATE_EVT:
         {
-            ESP_LOGI(BT_HF_TAG, "--audio state %s",
-                    c_audio_state_str[param->audio_stat.state]);
+            const char *audio_state = (param->audio_stat.state <= ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_LC3 &&
+                                       c_audio_state_str[param->audio_stat.state]) ?
+                                      c_audio_state_str[param->audio_stat.state] : "unknown";
+            ESP_LOGI(BT_HF_TAG, "--audio state %s", audio_state);
     #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI
 
     #if CONFIG_BT_HFP_USE_EXTERNAL_CODEC
             if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC) {
-                s_msbc_air_mode = true;
-                ESP_LOGI(BT_HF_TAG, "--audio air mode: mSBC , preferred_frame_size: %d", param->audio_stat.preferred_frame_size);
-            }
-            else if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED) {
-                s_msbc_air_mode = false;
-                ESP_LOGI(BT_HF_TAG, "--audio air mode: CVSD , preferred_frame_size: %d", param->audio_stat.preferred_frame_size);
+                s_air_codec = HF_AIR_CODEC_MSBC;
+                ESP_LOGI(BT_HF_TAG, "--audio air mode: mSBC, preferred_frame_size: %d",
+                         param->audio_stat.preferred_frame_size);
+            } else if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_LC3) {
+                s_air_codec = HF_AIR_CODEC_LC3;
+                ESP_LOGI(BT_HF_TAG, "--audio air mode: LC3-SWB, preferred_frame_size: %d",
+                         param->audio_stat.preferred_frame_size);
+            } else if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED) {
+                s_air_codec = HF_AIR_CODEC_CVSD;
+                ESP_LOGI(BT_HF_TAG, "--audio air mode: CVSD, preferred_frame_size: %d",
+                         param->audio_stat.preferred_frame_size);
             }
 
             if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED ||
-                param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC) {
+                param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC ||
+                param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_LC3) {
                 s_sync_conn_hdl = param->audio_stat.sync_conn_handle;
                 s_audio_buff_queue = xQueueCreate(50, sizeof(esp_hf_audio_buff_t*));
                 esp_hf_client_register_audio_data_callback(bt_app_hf_client_audio_data_cb);
                 /* Disable connectable and discoverable mode to save the over-the-air bandwidth and ensure audio quality  */
                 esp_bt_gap_set_scan_mode(ESP_BT_NON_CONNECTABLE, ESP_BT_NON_DISCOVERABLE);
             } else if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_DISCONNECTED) {
-                s_sync_conn_hdl = 0;
-                s_msbc_air_mode = false;
+                s_sync_conn_hdl = ESP_INVALID_CONN_HANDLE;
+                s_air_codec = HF_AIR_CODEC_CVSD;
                 if (s_audio_buff_queue) {
                     esp_hf_audio_buff_t *buff_to_free = NULL;
                     while (xQueueReceive(s_audio_buff_queue, &buff_to_free, 0)) {
@@ -350,7 +369,10 @@ void bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_
                 esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
             }
     #else
-            if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED ||
+            if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_LC3) {
+                ESP_LOGE(BT_HF_TAG, "LC3-SWB requires CONFIG_BT_HFP_USE_EXTERNAL_CODEC "
+                         "(Bluedroid has no internal LC3 codec; use encoded-frame loopback path)");
+            } else if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED ||
                 param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC) {
                 esp_hf_client_register_data_callback(bt_app_hf_client_incoming_cb,
                                                     bt_app_hf_client_outgoing_cb);

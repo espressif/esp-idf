@@ -63,6 +63,7 @@ static const uint8_t bta_hf_client_cb_data_size[] = {
     sizeof(tBTA_HF_CLIENT_VAL),         // #define BTA_HF_CLIENT_RING_INDICATION       21
     0,                                  // #define BTA_HF_CLIENT_DISABLE_EVT           22
     sizeof(tBTA_SCO_PKT_STAT_NUMS),     // #define BTA_HF_CLIENT_PKT_STAT_NUMS_GET_EVT      23
+    sizeof(tBTA_HF_CLIENT_AUDIO_STAT),  // #define BTA_HF_CLIENT_AUDIO_LC3_OPEN_EVT           24
 };
 /*****************************************************************************
 **  External Function Declarations
@@ -368,7 +369,7 @@ void BTA_HfClientAudioBuffAlloc(UINT16 size, UINT8 **pp_buff, UINT8 **pp_data)
         return;
     }
 
-    /* reserve 1 byte at last, when the size is mSBC frame size (57), then we got a buffer that can hold 60 bytes data */
+    /* reserve trailing space for H2 header and optional eSCO padding (mSBC: 57+2+1=60, LC3: 58+2=60) */
     p_buf = (BT_HDR *)osi_calloc(sizeof(BT_HDR) + BTA_HF_CLIENT_BUFF_OFFSET_MIN + BTA_HF_CLIENT_H2_HEADER_LEN + size + 1);
     if (p_buf != NULL) {
         /* mSBC offset is large than CVSD, so this is work in CVSD air mode */

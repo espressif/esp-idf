@@ -6,4 +6,5 @@
 .. toctree::
     :maxdepth: 1
 
+    :SOC_BT_CLASSIC_SUPPORTED: bluetooth-classic
     security

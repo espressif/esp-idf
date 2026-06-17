@@ -433,7 +433,7 @@ static void bta_hf_client_decode_msbc_frame(UINT8 **data, UINT8 *length, BOOLEAN
         *length = (UINT8)frame_len;
     }
 
-// PLC_INCLUDED will be set to TRUE when enabling Wide Band Speech
+// PLC_INCLUDED will be set to TRUE when enabling Wideband Speech
 #if (PLC_INCLUDED == TRUE)
     switch(status){
         case OI_OK:
@@ -534,18 +534,21 @@ void bta_hf_client_sco_co_in_data(BT_HDR  *p_buf, tBTM_SCO_DATA_FLAG status)
                 }
                 p_new_buf->offset = 0;
                 UINT8 *p_data = (UINT8 *)(p_new_buf + 1) + p_new_buf->offset;
+                UINT16 data_len = BTM_MSBC_FRAME_SIZE;
                 memcpy(p_data, bta_hf_client_co_cb.rx_half_msbc_data, BTM_MSBC_FRAME_SIZE / 2);
                 memcpy(p_data + BTM_MSBC_FRAME_SIZE / 2, p, pkt_size);
                 osi_free(p_buf);
                 if (BTA_HF_H2_HEADER_SYNC_WORD_CHECK(p_data)) {
                     /* H2 header sync word found, skip */
                     p_data += 2;
+                    data_len -= 2;
                 }
                 else if (!bta_hf_client_co_cb.is_bad_frame){
                     /* not a bad frame, assume as H1 header */
                     p_data += 1;
+                    data_len -= 1;
                 }
-                btc_hf_client_audio_data_cb_to_app((uint8_t *)p_new_buf, (uint8_t *)p_data, BTM_MSBC_FRAME_SIZE, bta_hf_client_co_cb.is_bad_frame);
+                btc_hf_client_audio_data_cb_to_app((uint8_t *)p_new_buf, (uint8_t *)p_data, data_len, bta_hf_client_co_cb.is_bad_frame);
                 bta_hf_client_co_cb.is_bad_frame = false;
                 memset(bta_hf_client_co_cb.rx_half_msbc_data, 0, BTM_MSBC_FRAME_SIZE / 2);
             }
@@ -555,15 +558,18 @@ void bta_hf_client_sco_co_in_data(BT_HDR  *p_buf, tBTM_SCO_DATA_FLAG status)
             if (pkt_size > BTM_MSBC_FRAME_SIZE) {
                 pkt_size = BTM_MSBC_FRAME_SIZE;
             }
+            UINT16 data_len = pkt_size;
             if (BTA_HF_H2_HEADER_SYNC_WORD_CHECK(p)) {
                 /* H2 header sync word found, skip */
                 p += 2;
+                data_len -= 2;
             }
             else if (!bta_hf_client_co_cb.is_bad_frame){
                 /* not a bad frame, assume as H1 header */
                 p += 1;
+                data_len -= 1;
             }
-            btc_hf_client_audio_data_cb_to_app((uint8_t *)p_buf, (uint8_t *)p, pkt_size, bta_hf_client_co_cb.is_bad_frame);
+            btc_hf_client_audio_data_cb_to_app((uint8_t *)p_buf, (uint8_t *)p, data_len, bta_hf_client_co_cb.is_bad_frame);
             bta_hf_client_co_cb.is_bad_frame = false;
         }
         else {

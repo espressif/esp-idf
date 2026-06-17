@@ -160,6 +160,32 @@ esp_err_t esp_hf_ag_audio_disconnect(esp_bd_addr_t remote_addr)
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
+esp_err_t esp_hf_ag_set_codec(esp_bd_addr_t remote_bda, esp_hf_codec_mode_t mode)
+{
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (remote_bda == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (mode > ESP_HF_CODEC_LC3) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_HF;
+    msg.act = BTC_HF_SET_CODEC_EVT;
+
+    btc_hf_args_t arg;
+    memset(&arg, 0, sizeof(btc_hf_args_t));
+    memcpy(&arg.set_codec.remote_addr, remote_bda, sizeof(esp_bd_addr_t));
+    arg.set_codec.mode = mode;
+
+    bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), NULL, NULL);
+    return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+}
+
 esp_err_t esp_hf_ag_vra_control(esp_bd_addr_t remote_addr, esp_hf_vr_state_t value)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {

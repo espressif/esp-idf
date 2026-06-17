@@ -1116,6 +1116,7 @@ typedef UINT8 tBTM_SCO_ROUTE_TYPE;
 #define BTM_SCO_CODEC_NONE          0x0000
 #define BTM_SCO_CODEC_CVSD          0x0001
 #define BTM_SCO_CODEC_MSBC          0x0002
+#define BTM_SCO_CODEC_LC3           0x0004
 typedef UINT16 tBTM_SCO_CODEC_TYPE;
 
 

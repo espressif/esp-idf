@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -61,10 +61,11 @@ typedef enum
     ESP_HF_ATA_RESPONSE_EVT,                  /*!< Answer an Incoming Call */
     ESP_HF_CHUP_RESPONSE_EVT,                 /*!< Reject an Incoming Call */
     ESP_HF_DIAL_EVT,                          /*!< Originate an outgoing call with specific number or dial the last number */
-    ESP_HF_WBS_RESPONSE_EVT,                  /*!< Codec Status */
+    ESP_HF_WBS_RESPONSE_EVT,                  /*!< Result of esp_hf_ag_set_codec() */
     ESP_HF_BCS_RESPONSE_EVT,                  /*!< Final Codec Choice */
     ESP_HF_PKT_STAT_NUMS_GET_EVT,             /*!< Request number of packet different status */
     ESP_HF_PROF_STATE_EVT,                    /*!< Indicate HF init or deinit complete */
+    ESP_HF_BAC_RESPONSE_EVT,                  /*!< Peer codec capabilities from AT+BAC */
 } esp_hf_cb_event_t;
 
 /// Dial type of ESP_HF_DIAL_EVT
@@ -210,15 +211,24 @@ typedef union
      */
     struct hf_wbs_rep_param {
         esp_bd_addr_t remote_addr;                /*!< Remote bluetooth device address */
-        esp_hf_wbs_config_t codec;                /*!< codec mode CVSD or mSBC */
+        esp_hf_codec_mode_t codec;                /*!< Requested codec CVSD, mSBC or LC3 */
+        esp_bt_status_t status;                   /*!< ESP_BT_STATUS_SUCCESS or FAIL */
     } wbs_rep;                                    /*!< AG callback param of ESP_HF_WBS_RESPONSE_EVT */
+
+    /**
+     * @brief ESP_HF_BAC_RESPONSE_EVT
+     */
+    struct hf_bac_rep_param {
+        esp_bd_addr_t remote_addr;                /*!< Remote bluetooth device address */
+        uint16_t peer_codecs;                     /*!< Bitmap: ESP_HF_CODEC_CAP_CVSD | MSBC | LC3 */
+    } bac_rep;                                    /*!< AG callback param of ESP_HF_BAC_RESPONSE_EVT */
 
     /**
      * @brief ESP_HF_BCS_RESPONSE_EVT
      */
     struct hf_bcs_rep_param {
         esp_bd_addr_t remote_addr;                /*!< Remote bluetooth device address */
-        esp_hf_wbs_config_t mode;                 /*!< codec mode CVSD or mSBC */
+        esp_hf_codec_mode_t mode;                 /*!< Final negotiated codec mode CVSD, mSBC or LC3 */
     } bcs_rep;                                    /*!< AG callback param of ESP_HF_BCS_RESPONSE_EVT */
 
     /**
@@ -370,6 +380,26 @@ esp_err_t esp_hf_ag_audio_connect(esp_bd_addr_t remote_bda);
  *
  */
 esp_err_t esp_hf_ag_audio_disconnect(esp_bd_addr_t remote_bda);
+
+/**
+ *
+ * @brief           Set preferred codec for subsequent SCO connections with a remote HF.
+ *                  Should be called after receiving ESP_HF_BAC_RESPONSE_EVT to know peer capabilities.
+ *                  Result is reported via ESP_HF_WBS_RESPONSE_EVT.
+ *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
+ *
+ * @param[in]       remote_bda: remote bluetooth HFP client device address
+ * @param[in]       mode: ESP_HF_CODEC_CVSD, ESP_HF_CODEC_MSBC, ESP_HF_CODEC_LC3,
+ *                  or ESP_HF_CODEC_NONE to reset to stack default
+ *
+ * @return
+ *                  - ESP_OK: request sent to lower layer
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled or SLC not connected
+ *                  - ESP_ERR_INVALID_ARG: invalid codec mode or address
+ *                  - ESP_FAIL: others
+ *
+ */
+esp_err_t esp_hf_ag_set_codec(esp_bd_addr_t remote_bda, esp_hf_codec_mode_t mode);
 
 /**
  *

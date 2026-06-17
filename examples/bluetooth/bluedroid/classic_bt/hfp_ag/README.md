@@ -64,19 +64,85 @@ PCM Signal supports three configurations in menuconfig: PCM Role, PCM Polar and 
 
 ### Codec Choice
 
-Supported targets provide two types of codec for HFP audio data: `CVSD` and `mSBC`.
+Supported targets provide the following codecs for HFP audio data: `CVSD`, `mSBC` (WBS), and optionally `LC3-SWB` (HFP 1.9).
 
-`CVSD` is the default setting and is also the widely used codec for voice audio. But, `mSBC` is designed to have a better voice quality through `HFP`. To select which one is in use, we provide `Wide Band Speech` item in the `menuconfig`:
+`CVSD` is the default setting and is also the widely used codec for voice audio. `mSBC` is designed for better voice quality through HFP Wideband Speech. `LC3-SWB` further extends sample rate to 32 kHz and must be encoded/decoded in the application layer.
 
-`Component config --> Bluetooth --> Bluedroid Options --> Wide Band Speech.`
+To select Wideband / Super Wideband negotiation options, use:
 
-Switching on the `Wide Band Speech` means that the preferred codec is `mSBC`, but which one is actually being used also depends on the `Data Path` configuration.
+`Component config --> Bluetooth --> Bluedroid Options --> Hands Free/Handset Profile --> Wideband Speech`
 
-- If you choose `PCM` for datapath, you can only use `CVSD` and hardware is responsible for the codec job. In the meanwhile, you cannot use `mSBC` by switching `Wide Band Speech` on, because the `mSBC` is implemented in the Bluedroid (Bluetooth Host Stack) by software.
+and (for LC3-SWB):
 
-- If you choose `vHCI` for datapath with `Wide Band Speech` on, codec job is done in the Bluedroid and mSBC is being used.
+`Component config --> Bluetooth --> Bluedroid Options --> Hands Free/Handset Profile --> Super Wideband Speech (LC3-SWB)`
 
-- If you choose `vHCI` for datapath with `Wide Band Speech` off, hardware is responsible for the codec job and `CVSD` is in use.
+Which codec is actually used also depends on the `Data Path` configuration and peer capability:
+
+- If you choose `PCM` for datapath, you can only use `CVSD` and hardware is responsible for the codec job. You cannot use `mSBC`/`LC3` on the PCM path, because those codecs are handled in software (stack or application) over HCI.
+- If you choose `vHCI` for datapath with `Wideband Speech` on and LC3 off, codec job for mSBC is done in Bluedroid (unless External Codec is enabled, see below).
+- If you choose `vHCI` for datapath with `Wideband Speech` off, hardware is responsible for the codec job and `CVSD` is in use.
+- If you enable `Super Wideband Speech (LC3-SWB)`, LC3 negotiation is enabled. Bluedroid has **no internal LC3 codec**; this example implements LC3 encode/decode in the application using [espressif/esp_audio_codec](https://components.espressif.com/components/espressif/esp_audio_codec/).
+
+#### External Codec (mSBC and LC3-SWB)
+
+`Use External Codec for HFP` (`BT_HFP_USE_EXTERNAL_CODEC`) means the application owns encode/decode and uses encoded-frame APIs (`esp_hf_ag_register_audio_data_callback` / `esp_hf_ag_audio_data_send`). When enabled, Bluedroid's built-in mSBC software codec is removed.
+
+This example reuses **one** push TX / decode worker path for both codecs; only the `esp_audio_codec` open/process/close calls differ:
+
+| Negotiated codec | Application encoder/decoder | Frame period / PCM size |
+| ---------------- | --------------------------- | ----------------------- |
+| mSBC | `esp_sbc_enc_*` / `esp_sbc_dec_*` (`ESP_SBC_MODE_MSBC`) | 7.5 ms / 240 bytes PCM |
+| LC3-SWB | `esp_lc3_enc_*` / `esp_lc3_dec_*` | 7.5 ms / 480 bytes PCM |
+
+H2 sync headers are **not** filled by the application: send the codec payload only (mSBC 57 bytes / LC3 58 bytes). The stack adds H2 on TX and strips it on RX.
+
+| Mode | Typical menuconfig | Who encodes/decodes |
+| ---- | ------------------ | ------------------- |
+| Internal mSBC (legacy) | HCI + WBS, External Codec **off** | Bluedroid + PCM callbacks / ringbuffer in this example |
+| External mSBC | HCI + WBS, External Codec **on**, LC3 optional | Application via `esp_audio_codec` SBC (mSBC mode) |
+| External LC3-SWB | HCI + WBS + LC3 **on** + External Codec **on** | Application via `esp_audio_codec` LC3 |
+
+Recommended settings with peer [hfp_hf](../hfp_hf):
+
+1. Controller and Bluedroid SCO data path: **HCI**
+2. Enable `Wideband Speech`
+3. Enable `Use External Codec for HFP` (required for both external mSBC and LC3-SWB)
+4. Optionally enable `Super Wideband Speech (LC3-SWB)` if you want LC3 negotiation
+5. Keep AG/HF options consistent on both boards
+6. Build so Component Manager can fetch `esp_audio_codec` (see below)
+7. `con` then `cona`. Expect `connected_msbc` or `connected_lc3`, and a log such as `ext codec ready: type=mSBC` / `type=LC3-SWB`
+
+`CVSD` + External Codec is not the main path of this AG sine demo (prefer mSBC/LC3).
+
+#### Dependency: `esp_audio_codec`
+
+External mSBC/LC3 encode/decode link against [`espressif/esp_audio_codec`](https://components.espressif.com/components/espressif/esp_audio_codec/). The dependency is already declared in `main/idf_component.yml`:
+
+```yaml
+dependencies:
+  espressif/esp_audio_codec: "^2.6.1"
+```
+
+On the first configure/build, ESP-IDF Component Manager downloads it into `managed_components/`. You normally do **not** need a manual step.
+
+If the dependency is missing, add it with:
+
+```bash
+idf.py add-dependency "espressif/esp_audio_codec^2.6.1"
+```
+
+Enable the codecs you need under:
+
+`Component config --> ESP Audio Codec --> Audio Encoder / Audio Decoder`
+
+- mSBC external path: enable **SBC** encoder/decoder  
+- LC3-SWB: also enable **LC3** encoder/decoder  
+
+Then rebuild:
+
+```bash
+idf.py reconfigure build
+```
 
 ### Build and Flash
 
@@ -156,13 +222,15 @@ You can type `cona` to establish the audio connection between HF Unit and AG dev
 
 #### Choice of Codec
 
-Supported targets support both CVSD and mSBC codec. HF Unit and AG device determine which codec to use by exchanging features during service level connection. The choice of codec also depends on the your configuration in `menuconfig`.
+Supported targets can negotiate CVSD, mSBC, and (when enabled) LC3-SWB. HF Unit and AG determine the codec by exchanging features during service level connection. The result also depends on your `menuconfig`.
 
-Since CVSD is the default codec in HFP, we just show the scenarios using mSBC:
+CVSD is the default. For higher quality:
 
-- If you enable `BT_HFP_WBS_ENABLE` in `menuconfig`, mSBC will be available.
-- If both HF Unit and AG support mSBC and `BT_HFP_WBS_ENABLE` is enabled, the local device chooses mSBC.
-- If you use PCM data path, mSBC is not available.
+- If you enable `BT_HFP_WBS_ENABLE`, mSBC can be negotiated.
+- With `BT_HFP_USE_EXTERNAL_CODEC`, this example encodes/decodes mSBC in the application (`esp_sbc_*`). Without it, Bluedroid's internal mSBC path is used (PCM callbacks).
+- If you also enable `BT_HFP_LC3_ENABLE` **and** External Codec, negotiation may select LC3-SWB and this example runs the shared external path with `esp_lc3_*`.
+- LC3-SWB always requires External Codec (`esp_hf_ag_audio_data_send` is only active in that mode).
+- If you use the PCM data path, mSBC and LC3 are not available over the Bluedroid HCI audio APIs used in this demo.
 
 ### Answer or Reject an Incoming Call
 
@@ -293,6 +361,8 @@ If you encounter any problems, please check if the following rules are followed:
 - Not all commands in the table are supported by the HF Unit.
 - If you want to `hf con;` to establish a service level connection with a specific HF Unit, you should add the MAC address of the HF Unit in `app_hf_msg_set.c` for example: `esp_bd_addr_t peer_addr = {0xb4, 0xe6, 0x2d, 0xeb, 0x09, 0x93};`
 - Use `esp_hf_client_register_callback()` and  `esp_hf_client_init();` before  establishing a service level connection.
+- For external mSBC/LC3: enable HCI + WBS + `BT_HFP_USE_EXTERNAL_CODEC` on **both** AG and HF; for LC3 also enable `BT_HFP_LC3_ENABLE`. Confirm `managed_components/espressif__esp_audio_codec` exists after build. Missing `esp_sbc_enc.h` / `esp_lc3_enc.h` usually means the Component Manager dependency was not fetched—run `idf.py reconfigure` or `idf.py add-dependency "espressif/esp_audio_codec^2.6.1"`.
+- Enabling `BT_HFP_USE_EXTERNAL_CODEC` without using the example's external encoded-frame path (or with an outdated AG tree) can cause `rb send fail` / `BTA_AG_SCO_OPEN_ST: Ignoring event 9`, because the stack no longer pulls PCM for internal mSBC encode.
 
 ## Example Breakdown
 

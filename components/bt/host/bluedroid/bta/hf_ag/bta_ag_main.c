@@ -27,6 +27,7 @@
 #include "bta_ag_int.h"
 #include "bta/bta_api.h"
 #include "bta/bta_sys.h"
+#include "common/bt_target.h"
 #include "bta/bta_ag_api.h"
 #include "bta/bta_ag_co.h"
 #include "bta/utl.h"
@@ -286,7 +287,11 @@ const tBTA_AG_ST_TBL bta_ag_st_tbl[] =
 /*****************************************************************************
 ** Global data
 *****************************************************************************/
+#if UC_BT_HFP_LC3_ENABLE
+const uint16_t bta_ag_version = HFP_VERSION_1_9;
+#else
 const uint16_t bta_ag_version = HFP_VERSION_1_8;
+#endif
 /* AG control block */
 #if BTA_DYNAMIC_MEMORY == FALSE
 tBTA_AG_CB  bta_ag_cb;

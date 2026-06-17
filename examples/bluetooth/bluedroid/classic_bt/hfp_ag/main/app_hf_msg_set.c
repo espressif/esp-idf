@@ -43,6 +43,9 @@ HF_CMD_HANDLER(conn_audio)
 HF_CMD_HANDLER(disc_audio)
 {
     printf("Disconnect Audio\n");
+#if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI
+    bt_app_hf_prepare_audio_disconnect();
+#endif
     esp_hf_ag_audio_disconnect(hf_peer_addr);
     return 0;
 }
