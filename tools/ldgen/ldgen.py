@@ -17,6 +17,31 @@ from io import StringIO
 import rich_click as click
 from esp_pylib.cli_options import MutuallyExclusiveOption
 from esp_pylib.cli_options import OptionEatAll
+import ctypes
+
+def get_short_path_name(long_name):
+    if os.name != 'nt':
+        return long_name
+    try:
+        dirname, filename = os.path.split(long_name)
+        normalized_dir = os.path.normpath(dirname)
+        buf_size = ctypes.windll.kernel32.GetShortPathNameW(normalized_dir, None, 0)
+        if buf_size == 0:
+            normalized_name = os.path.normpath(long_name)
+            buf_size = ctypes.windll.kernel32.GetShortPathNameW(normalized_name, None, 0)
+            if buf_size == 0:
+                return long_name
+            output_buf = ctypes.create_unicode_buffer(buf_size)
+            ctypes.windll.kernel32.GetShortPathNameW(normalized_name, output_buf, buf_size)
+            return output_buf.value.replace('\\', '/')
+        
+        output_buf = ctypes.create_unicode_buffer(buf_size)
+        ctypes.windll.kernel32.GetShortPathNameW(normalized_dir, output_buf, buf_size)
+        short_dir = output_buf.value.replace('\\', '/')
+        return short_dir + '/' + filename
+    except Exception:
+        return long_name
+
 from esp_pylib.excepthook import install_exception_reporting
 from esp_pylib.logger import Verbosity
 from esp_pylib.logger import log
@@ -183,7 +208,7 @@ def _run(
             if library:
                 new_env = os.environ.copy()
                 new_env['LC_ALL'] = 'C'
-                dump = StringIO(subprocess.check_output([objdump, '-h', library], env=new_env).decode())
+                dump = StringIO(subprocess.check_output([objdump, '-h', get_short_path_name(library)], env=new_env).decode('utf-8', errors='replace'))
                 dump.name = library
                 sections_infos.add_sections_info(dump)
 
@@ -269,12 +294,12 @@ def _run(
     context_settings={'help_option_names': ['-h', '--help']},
     help='ESP-IDF linker script generator',
 )
-@click.option('--input', '-i', 'input_file', type=click.File('r'), help='Linker template file')
+@click.option('--input', '-i', 'input_file', type=click.File('r', encoding='utf-8'), help='Linker template file')
 @click.option(
     '--fragments',
     '-f',
     multiple=True,
-    type=click.File('r'),
+    type=click.File('r', encoding='utf-8'),
     cls=MutuallyExclusiveEatAllOption,
     exclusive_with=['fragments_list', 'fragments_list_file'],
     help='Input fragment files',
@@ -287,19 +312,19 @@ def _run(
 )
 @click.option(
     '--fragments-list-file',
-    type=click.File('r'),
+    type=click.File('r', encoding='utf-8'),
     cls=MutuallyExclusiveOption,
     exclusive_with=['fragments', 'fragments_list'],
     help='File containing fragment file paths, one per line',
 )
 @click.option(
     '--libraries-file',
-    type=click.File('r'),
+    type=click.File('r', encoding='utf-8'),
     help='File that contains the list of libraries in the build',
 )
 @click.option(
     '--mutable-libraries-file',
-    type=click.File('r'),
+    type=click.File('r', encoding='utf-8'),
     help='File that contains the list of mutable libraries in the build',
 )
 @click.option('--output', '-o', help='Output linker script')
@@ -312,7 +337,7 @@ def _run(
 )
 @click.option(
     '--check-mapping-exceptions',
-    type=click.File('r'),
+    type=click.File('r', encoding='utf-8'),
     help='Mappings exempted from check',
 )
 @click.option(
@@ -325,7 +350,7 @@ def _run(
 )
 @click.option(
     '--env-file',
-    type=click.File('r'),
+    type=click.File('r', encoding='utf-8'),
     help='Optional file to load environment variables from. Contents '
     'should be a JSON object where each key/value pair is a variable.',
 )

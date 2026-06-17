@@ -87,7 +87,7 @@ def main() -> None:
 
     parser.add_argument(
         '--env-file',
-        type=argparse.FileType('r'),
+        type=argparse.FileType('r', encoding='utf-8'),
         help='Optional file to load environment variables from. Contents '
         'should be a JSON object where each key/value pair is a variable.',
     )
