@@ -109,6 +109,14 @@ void esp_tee_configure_region_protection(void);
 void esp_tee_configure_apm_protection(void);
 
 /**
+ * @brief Reset the crypto peripherals to a clean state.
+ *
+ * Mirrors esp_system_reset_modules_on_exit() in the non-TEE path.
+ * Intended to be called from the TEE panic handler before a software reset.
+ */
+void esp_tee_soc_reset_crypto_peripherals(void);
+
+/**
  * @brief Switch to the REE app after TEE initialization is complete
  *
  * @param ree_entry_addr REE app entry address
