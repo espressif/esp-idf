@@ -104,6 +104,28 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU")
     list(APPEND c_compile_options "-Wno-old-style-declaration")
 endif()
 
+# TODO IDF-15784: remove in IDF v7.0 ?
+check_c_compiler_flag("-Wunused-but-set-variable=1" compiler_supports_wunused_but_set_variable_eq_1)
+if(compiler_supports_wunused_but_set_variable_eq_1)
+    list(APPEND compile_options "-Wunused-but-set-variable=1")
+endif()
+
+if(CONFIG_COMPILER_CXX_TRIVIAL_AUTO_VAR_INIT_UNINITIALIZED)
+    set(compiler_cxx_trivial_auto_var_init "uninitialized")
+elseif(CONFIG_COMPILER_CXX_TRIVIAL_AUTO_VAR_INIT_PATTERN)
+    set(compiler_cxx_trivial_auto_var_init "pattern")
+elseif(CONFIG_COMPILER_CXX_TRIVIAL_AUTO_VAR_INIT_ZERO)
+    set(compiler_cxx_trivial_auto_var_init "zero")
+endif()
+if(compiler_cxx_trivial_auto_var_init)
+    idf_toolchain_remove_flags(CXX_COMPILE_OPTIONS "-ftrivial-auto-var-init")
+    check_cxx_compiler_flag("-ftrivial-auto-var-init=${compiler_cxx_trivial_auto_var_init}"
+        compiler_supports_ftrivial_auto_var_init)
+    if(compiler_supports_ftrivial_auto_var_init)
+        idf_toolchain_add_flags(CXX_COMPILE_OPTIONS "-ftrivial-auto-var-init=${compiler_cxx_trivial_auto_var_init}")
+    endif()
+endif()
+
 # Clang finds some warnings in IDF code which GCC doesn't.
 # All these warnings should be fixed before Clang is presented
 # as a toolchain choice for users.

@@ -12,11 +12,9 @@ extern "C" {
 #endif
 
 #if CONFIG_LIBC_PICOLIBC
-// TODO IDF-15569
-// #if defined(__cplusplus) && __cplusplus >= 201103L
-// #define __noreturn [[noreturn]]
-// #elif __has_attribute(__noreturn__)
-#if __has_attribute(__noreturn__)
+#if defined(__cplusplus) && __cplusplus >= 201103L
+#define __noreturn [[noreturn]]
+#elif __has_attribute(__noreturn__)
 #define __noreturn __attribute__((__noreturn__))
 #else
 #define __noreturn

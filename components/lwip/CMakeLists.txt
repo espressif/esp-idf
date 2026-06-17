@@ -208,6 +208,14 @@ if(CONFIG_LWIP_ENABLE)
         -Wno-array-parameter
     )
 
+    if(CONFIG_COMPILER_STATIC_ANALYZER AND CONFIG_IDF_TOOLCHAIN_GCC)
+        set_source_files_properties(
+            lwip/src/core/ipv4/ip4_addr.c
+            PROPERTIES COMPILE_FLAGS
+            -Wno-analyzer-use-of-uninitialized-value
+        )
+    endif()
+
     if(CONFIG_OPENTHREAD_ENABLED)
         idf_component_optional_requires(PRIVATE openthread)
     endif()

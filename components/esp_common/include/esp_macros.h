@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 This header contains various general purpose helper macros used across ESP-IDF
 */
 #include <assert.h>
+#include "esp_attr.h"
 #include "esp_assert.h"
 #include "esp_compiler.h"
 
@@ -80,12 +81,15 @@ extern "C" {
 #define ESP_UNUSED(x) ((void)(x))
 #endif
 
-#define ESP_INFINITE_LOOP() \
-    do { \
-        ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-infinite-loop") \
-        while(1); \
-        ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-infinite-loop") \
-    } while(1)
+IRAM_ATTR
+static inline __attribute__((always_inline, __noreturn__)) void esp_infinite_loop(void)
+{
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-infinite-loop")
+    while (1) {
+    }
+    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-infinite-loop")
+}
+#define ESP_INFINITE_LOOP() esp_infinite_loop()
 
 #ifdef __cplusplus
 }

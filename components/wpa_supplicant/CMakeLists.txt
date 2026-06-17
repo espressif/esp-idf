@@ -390,3 +390,24 @@ if(CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_SOFTAP)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_OWE_SOFTAP)
 endif()
 set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 3)
+
+if(CONFIG_COMPILER_STATIC_ANALYZER AND CONFIG_IDF_TOOLCHAIN_GCC)
+    set(eloop_analyzer_flags
+        -Wno-analyzer-out-of-bounds
+        -Wno-analyzer-null-dereference
+        -Wno-analyzer-use-of-uninitialized-value
+        -Wno-analyzer-free-of-non-heap
+    )
+    list(JOIN eloop_analyzer_flags " " eloop_analyzer_flags)
+
+    set_source_files_properties(
+        src/rsn_supp/wpa.c
+        PROPERTIES COMPILE_FLAGS
+        -Wno-analyzer-use-of-uninitialized-value
+    )
+    set_source_files_properties(
+        port/eloop.c
+        PROPERTIES COMPILE_FLAGS
+        "${eloop_analyzer_flags}"
+    )
+endif()

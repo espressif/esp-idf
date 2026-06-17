@@ -232,3 +232,11 @@ endif()
 
 # Required in `adc_share_hw_ctrl.h`
 idf_component_optional_requires(PUBLIC esp_hal_ana_conv)
+
+if(CONFIG_COMPILER_STATIC_ANALYZER AND CONFIG_IDF_TOOLCHAIN_GCC)
+    set_source_files_properties(
+        sleep_retention.c
+        PROPERTIES COMPILE_FLAGS
+        -Wno-analyzer-null-dereference
+    )
+endif()

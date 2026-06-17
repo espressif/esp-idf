@@ -585,6 +585,41 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 This increases binary size (typically by tens of kB) but allows using
                 dynamic_cast conversion and typeid operator.
 
+        choice COMPILER_CXX_TRIVIAL_AUTO_VAR_INIT
+            prompt "C++ trivial automatic variable initialization"
+            default COMPILER_CXX_TRIVIAL_AUTO_VAR_INIT_UNINITIALIZED
+            depends on !IDF_TARGET_LINUX
+            help
+                Controls initialization of trivial automatic variables in C++ code
+                (-ftrivial-auto-var-init). The 'uninitialized' setting reduces overall
+                binary size compared to 'zero' or 'pattern'.
+
+            config COMPILER_CXX_TRIVIAL_AUTO_VAR_INIT_UNINITIALIZED
+                bool "Uninitialized"
+                help
+                    Does not initialize automatic variables. This matches the traditional C and
+                    C++ behavior and yields the smallest code of the three modes.
+
+                    When compiling as C++26, compilers may zero-initialize automatic variables
+                    and temporaries unless -ftrivial-auto-var-init is set explicitly. This
+                    option passes -ftrivial-auto-var-init=uninitialized to preserve the
+                    traditional behavior. Padding bits in objects are not initialized.
+
+            config COMPILER_CXX_TRIVIAL_AUTO_VAR_INIT_PATTERN
+                bool "Pattern"
+                help
+                    Initialize automatic variables with values which will likely transform logic
+                    bugs into crashes down the line, are easily recognized in a crash dump and
+                    without being values that programmers can rely on for useful program semantics.
+                    The current value is byte-repeatable pattern with byte "0xFE". The values used
+                    for pattern initialization might be changed in the future.
+
+            config COMPILER_CXX_TRIVIAL_AUTO_VAR_INIT_ZERO
+                bool "Zero"
+                help
+                    Initialize automatic variables with zeroes.
+        endchoice
+
         choice COMPILER_STACK_CHECK_MODE
             prompt "Stack smashing protection mode"
             default COMPILER_STACK_CHECK_MODE_NONE

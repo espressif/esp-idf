@@ -22,7 +22,14 @@
 #define IDF_PERFORMANCE_MAX_TIME_SHA1_32KB                                      5000
 #define IDF_PERFORMANCE_MAX_TIME_SHA512_32KB                                    4500
 
-#define IDF_PERFORMANCE_MAX_RSA_2048KEY_PUBLIC_OP                               45000
+/*
+ * GCC 16 has a more robust implementation of the -mfix-esp32-psram-cache-issue
+ * option, which may place memw instructions more often in the generated code.
+ * As a result, RSA private operations are slightly slower on ESP32.
+ * Example:
+ *    Encryption took 46627 us, Decryption took 709813 us.
+ */
+#define IDF_PERFORMANCE_MAX_RSA_2048KEY_PUBLIC_OP                               47500
 #define IDF_PERFORMANCE_MAX_RSA_2048KEY_PRIVATE_OP                              750000
 #define IDF_PERFORMANCE_MAX_RSA_3072KEY_PUBLIC_OP                               33000
 #define IDF_PERFORMANCE_MAX_RSA_3072KEY_PRIVATE_OP                              950000

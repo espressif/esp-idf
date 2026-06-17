@@ -28,3 +28,5 @@ idf_component_register(SRCS ${srcs}
                     PRIV_REQUIRES "${priv_requires}"
                     LDFRAGMENTS "linker.lf"
                     )
+set_source_files_properties("i2c_master.c"
+                            PROPERTIES COMPILE_FLAGS "-Wno-unused-but-set-variable")

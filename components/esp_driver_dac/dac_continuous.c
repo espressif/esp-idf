@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -418,7 +418,9 @@ esp_err_t dac_continuous_start_async_writing(dac_continuous_handle_t handle)
         }
     }
     /* Wait for the previous DMA stop */
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-infinite-loop")
     while (atomic_load(&handle->is_running)) {}
+    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-infinite-loop")
 
     /* Link all descriptors as a ring */
     for (int i = 0; i < handle->cfg.desc_num; i++) {
@@ -441,7 +443,10 @@ esp_err_t dac_continuous_stop_async_writing(dac_continuous_handle_t handle)
         STAILQ_NEXT(handle->desc[i], qe) = NULL;
     }
     /* Wait for the previous DMA stop */
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-infinite-loop")
     while (atomic_load(&handle->is_running)) {}
+    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-infinite-loop")
+
     atomic_store(&handle->is_async, false);
 
     return ESP_OK;
@@ -515,7 +520,10 @@ esp_err_t dac_continuous_write_cyclically(dac_continuous_handle_t handle, uint8_
         }
     }
     /* Wait for the previous DMA stop */
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-infinite-loop")
     while (atomic_load(&handle->is_running)) {}
+    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-infinite-loop")
+
     atomic_store(&handle->is_cyclic, true);
 
     size_t src_buf_size = buf_size;
@@ -604,7 +612,10 @@ esp_err_t dac_continuous_write(dac_continuous_handle_t handle, uint8_t *buf, siz
     /* When there is no descriptor in the chain, DMA has stopped, load data and start the DMA link */
     if (STAILQ_FIRST(&handle->head) == NULL) {
         /* Wait for the previous DMA stop */
+        ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-infinite-loop")
         while (atomic_load(&handle->is_running)) {}
+        ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-infinite-loop")
+
         for (int i = 0;
                 i < handle->cfg.desc_num && buf_size > 0;
                 i++, buf += w_size, buf_size -= w_size) {
