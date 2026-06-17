@@ -24,7 +24,7 @@ extern "C" {
 
 /* bt_mesh_aes_cmac_one is defined as inline in mesh/crypto.h */
 
-static inline bool bt_mesh_s1(const char *m, uint8_t salt[16])
+static inline int bt_mesh_s1(const char *m, uint8_t salt[16])
 {
     const uint8_t zero[16] = { 0 };
 

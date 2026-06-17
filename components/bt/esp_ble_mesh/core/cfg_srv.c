@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -911,6 +911,7 @@ static void default_ttl_set(struct bt_mesh_model *model,
         }
     } else {
         BT_WARN("Prohibited Default TTL value 0x%02x", buf->data[0]);
+        return;
     }
 
     bt_mesh_model_msg_init(&msg, OP_DEFAULT_TTL_STATUS);
@@ -1348,7 +1349,7 @@ static struct label *va_find(const uint8_t *label_uuid,
 
     for (i = 0; i < ARRAY_SIZE(labels); i++) {
         if (labels[i].ref == 0) {
-            if (free_slot != NULL) {
+            if (free_slot != NULL && *free_slot == NULL) {
                 *free_slot = &labels[i];
             }
             continue;
@@ -1370,6 +1371,9 @@ uint8_t va_add(uint8_t *label_uuid, uint16_t *addr)
 
     update = va_find(label_uuid, &free_slot);
     if (update) {
+        if (update->ref == UINT16_MAX) {
+            return STATUS_INSUFF_RESOURCES;
+        }
         update->ref++;
 
         va_store(update);
@@ -2590,6 +2594,7 @@ static void net_key_update(struct bt_mesh_model *model,
     switch (sub->kr_phase) {
     case BLE_MESH_KR_NORMAL:
         if (!memcmp(buf->data, sub->keys[0].net, 16)) {
+            send_net_key_status(model, ctx, idx, STATUS_SUCCESS);
             return;
         }
         break;
