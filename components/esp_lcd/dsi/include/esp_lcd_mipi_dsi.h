@@ -222,52 +222,6 @@ typedef struct {
 esp_err_t esp_lcd_dpi_panel_register_event_callbacks(esp_lcd_panel_handle_t dpi_panel, const esp_lcd_dpi_panel_event_callbacks_t *cbs, void *user_ctx);
 
 /**
- * @brief Type of draw bitmap hook data
- */
-typedef struct {
-    void *dst_data;       /*!< Destination buffer (usually frame buffer) */
-    int dst_x_size;       /*!< Destination bitmap width */
-    int dst_y_size;       /*!< Destination bitmap height */
-    int dst_x_start;      /*!< Destination start x coordinate */
-    int dst_y_start;      /*!< Destination start y coordinate */
-    int dst_x_end;        /*!< Destination end x coordinate (exclusive) */
-    int dst_y_end;        /*!< Destination end y coordinate (exclusive) */
-    const void *src_data; /*!< Source bitmap data */
-    int src_x_size;       /*!< Source bitmap width */
-    int src_y_size;       /*!< Source bitmap height */
-    int src_x_start;      /*!< Source start x coordinate */
-    int src_y_start;      /*!< Source start y coordinate */
-    int src_x_end;        /*!< Source end x coordinate (exclusive) */
-    int src_y_end;        /*!< Source end y coordinate (exclusive) */
-    int bits_per_pixel;   /*!< Bits per pixel */
-    bool (*on_hook_end)(esp_lcd_panel_handle_t panel); /*!< Callback to be invoked when the hook completes its operation */
-} esp_lcd_draw_bitmap_hook_data_t;
-
-/**
- * @brief draw bitmap hook function type for custom pixel processing operations
- *
- * This hook allows users to implement custom operations like scaling, rotation,
- * color space conversion, etc. using hardware accelerators like PPA or DMA2D.
- *
- * @note The hook should ensure the synchronization of draw operations on its own.
- *
- * @param[in] panel LCD panel handle
- * @param[in] hook_data Hook data
- * @param[in] hook_ctx Hook context
- * @return
- *          - ESP_OK on success
- *          - Other error codes on failure
- */
-typedef esp_err_t (*esp_lcd_panel_draw_bitmap_hook_t)(esp_lcd_panel_handle_t panel, const esp_lcd_draw_bitmap_hook_data_t *hook_data, void* hook_ctx);
-
-/**
- * @brief Type of LCD panel hooks
- */
-typedef struct {
-    esp_lcd_panel_draw_bitmap_hook_t draw_bitmap_hook; /*!< Draw bitmap hook function */
-} esp_lcd_panel_hooks_t;
-
-/**
  * @brief Register panel hooks to the DPI panel
  *
  * @note You can register panel hooks to implement custom operations like scaling, rotation, color space conversion, etc.
@@ -286,7 +240,7 @@ esp_err_t esp_lcd_dpi_panel_register_hooks(esp_lcd_panel_handle_t dpi_panel, con
 /**
  * @brief Enable DMA2D for DPI panel
  *
- * @note The function will register a built-in DMA2D draw bitmap hook to perform draw bitmap operations using DMA2D.
+ * @note The function will register a built-in DMA2D draw bitmap hook to perform bitmap copy using DMA2D.
  *
  * @param[in] dpi_panel LCD DPI panel handle, which is returned from esp_lcd_new_panel_dpi()
  * @return

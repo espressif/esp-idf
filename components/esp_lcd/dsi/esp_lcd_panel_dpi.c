@@ -542,7 +542,7 @@ esp_err_t esp_lcd_dpi_panel_enable_dma2d(esp_lcd_panel_handle_t panel)
     esp_lcd_panel_hooks_t hooks = {
         .draw_bitmap_hook = dpi_panel_draw_bitmap_dma2d_hook,
     };
-    ESP_GOTO_ON_ERROR(esp_lcd_dpi_panel_register_hooks(panel, &hooks, dpi_panel->user_ctx), err, TAG, "register DMA2D draw bitmap hook failed");
+    ESP_GOTO_ON_ERROR(esp_lcd_dpi_panel_register_hooks(panel, &hooks, NULL), err, TAG, "register DMA2D draw bitmap hook failed");
 
     return ESP_OK;
 
@@ -563,14 +563,19 @@ esp_err_t esp_lcd_dpi_panel_disable_dma2d(esp_lcd_panel_handle_t panel)
     // Check if built-in DMA2D draw bitmap hook is registered
     ESP_RETURN_ON_FALSE(dpi_panel->fbcpy_handle, ESP_ERR_INVALID_STATE, TAG, "draw bitmap DMA2D hook not registered");
 
+    // Clear the hook first so new draws stop entering the DMA2D path before uninstall.
     esp_lcd_panel_hooks_t hooks = {
         .draw_bitmap_hook = NULL,
     };
     ESP_RETURN_ON_ERROR(esp_lcd_dpi_panel_register_hooks(panel, &hooks, NULL), TAG, "unregister DMA2D draw bitmap hook failed");
-    if (dpi_panel->fbcpy_handle) {
-        ESP_RETURN_ON_ERROR(esp_async_color_convert_uninstall(dpi_panel->fbcpy_handle), TAG, "uninstall DMA2D failed");
-        dpi_panel->fbcpy_handle = NULL;
+    esp_err_t ret = esp_async_color_convert_uninstall(dpi_panel->fbcpy_handle);
+    if (ret != ESP_OK) {
+        // Restore the hook so draw_bitmap_hook and fbcpy_handle stay consistent on failure
+        hooks.draw_bitmap_hook = dpi_panel_draw_bitmap_dma2d_hook;
+        esp_lcd_dpi_panel_register_hooks(panel, &hooks, NULL);
+        ESP_RETURN_ON_ERROR(ret, TAG, "uninstall DMA2D failed");
     }
+    dpi_panel->fbcpy_handle = NULL;
     dpi_panel->on_hook_end = NULL;
 
     return ESP_OK;
@@ -600,13 +605,34 @@ static esp_err_t dpi_panel_draw_bitmap_2d(esp_lcd_panel_t *panel, int x_start, i
     size_t fb_size = dpi_panel->fb_size;
     size_t bits_per_pixel = dpi_panel->bits_per_pixel;
 
-    // clip to boundaries
     int h_res = dpi_panel->h_pixels;
     int v_res = dpi_panel->v_pixels;
+
+    // save the original coordinates before clipping
+    int unclipped_x_start = x_start;
+    int unclipped_y_start = y_start;
+    int unclipped_x_end = x_end;
+    int unclipped_y_end = y_end;
+
+    // clip to boundaries
     x_start = MAX(x_start, 0);
     x_end = MIN(x_end, h_res);
     y_start = MAX(y_start, 0);
     y_end = MIN(y_end, v_res);
+
+    // adjust the source coordinates to the clipped region
+    src_x_start += x_start - unclipped_x_start;
+    src_y_start += y_start - unclipped_y_start;
+    src_x_end -= unclipped_x_end - x_end;
+    src_y_end -= unclipped_y_end - y_end;
+
+    if (x_start >= x_end || y_start >= y_end || src_x_start >= src_x_end || src_y_start >= src_y_end) {
+        // no valid region to draw, skip
+        if (dpi_panel->on_color_trans_done) {
+            dpi_panel->on_color_trans_done(&dpi_panel->base, NULL, dpi_panel->user_ctx);
+        }
+        return ESP_OK;
+    }
 
     bool do_copy = false;
     uint8_t draw_buf_fb_index = 0;

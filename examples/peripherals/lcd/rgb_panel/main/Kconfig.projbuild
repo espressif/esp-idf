@@ -25,6 +25,14 @@ menu "RGB Panel Configuration"
                 Allocate one draw buffer in LVGL.
     endchoice
 
+    config EXAMPLE_USE_DMA2D_COPY_FRAME
+        bool "Use DMA2D to copy draw buffer to frame buffer"
+        default y
+        depends on EXAMPLE_USE_SINGLE_FB && SOC_DMA2D_SUPPORTED
+        help
+            Enable this option, DMA2D will be used to copy the LVGL draw buffer to the target frame buffer.
+            This can save some CPU time and improve the performance.
+
     choice EXAMPLE_LCD_DATA_LINES
         prompt "RGB LCD Data Lines"
         default EXAMPLE_LCD_DATA_LINES_16

@@ -9,6 +9,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
+#include "soc/soc_caps.h"
 #include "esp_lcd_panel_rgb.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_timer.h"
@@ -16,6 +17,10 @@
 #include "test_rgb_board.h"
 #include "esp_private/spi_flash_os.h"
 #include "esp_clk_tree.h"
+#include "driver/ppa.h"
+#include "esp_efuse.h"
+
+#define ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
 
 #if CONFIG_LCD_RGB_ISR_IRAM_SAFE
 #define TEST_LCD_CALLBACK_ATTR IRAM_ATTR
@@ -381,3 +386,254 @@ TEST_CASE("lcd_rgb_panel_iram_safe", "[lcd]")
     free(img);
 }
 #endif // CONFIG_LCD_RGB_ISR_IRAM_SAFE
+
+TEST_CASE("lcd_rgb_panel_draw_bitmap_2d", "[lcd]")
+{
+    // Allocate a larger source image (200x200) for testing partial copy
+    size_t src_img_size = 200 * 200 * sizeof(uint16_t);
+    uint8_t *src_img = malloc(src_img_size);
+    TEST_ASSERT_NOT_NULL(src_img);
+
+    printf("initialize RGB panel with stream mode\r\n");
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 0, LCD_CLK_SRC_DEFAULT, false, false, NULL, NULL);
+
+    printf("Draw bitmap 2D by CPU - copy partial region from source to destination\r\n");
+    for (int i = 0; i < 100; i++) {
+        int x_start = rand() % (TEST_LCD_H_RES - 100);
+        int y_start = rand() % (TEST_LCD_V_RES - 100);
+        // Fill source image with random pattern
+        uint8_t color_byte = rand() & 0xFF;
+        memset(src_img, color_byte, src_img_size / 2);
+        color_byte = rand() & 0xFF;
+        memset(src_img + src_img_size / 2, color_byte, src_img_size / 2);
+
+        // Copy a 100x100 region from source (starting at 50,50) to destination at (x_start, y_start)
+        // Source image is 200x200, we copy region from (50,50) to (150,150)
+        esp_lcd_panel_draw_bitmap_2d(panel_handle, x_start, y_start, x_start + 100, y_start + 100,
+                                     src_img, 200, 200, 50, 50, 150, 150);
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    printf("delete RGB panel\r\n");
+    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
+    free(src_img);
+}
+
+#if SOC_HAS(DMA2D)
+TEST_CASE("lcd_rgb_panel_dma2d_hook", "[lcd]")
+{
+    // Allocate a larger source image (200x200) for testing partial copy
+    size_t src_img_size = 200 * 200 * sizeof(uint16_t);
+    size_t buffer_alignment = 1;
+    if (esp_efuse_is_flash_encryption_enabled()) {
+        buffer_alignment = SOC_MEMSPI_ENCRYPTION_ALIGNMENT;
+    }
+    uint8_t *src_img = heap_caps_aligned_calloc(buffer_alignment, 1, src_img_size, MALLOC_CAP_DMA | MALLOC_CAP_SPIRAM);
+    TEST_ASSERT_NOT_NULL(src_img);
+
+    printf("initialize RGB panel with stream mode\r\n");
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 0, LCD_CLK_SRC_DEFAULT, false, false, NULL, NULL);
+
+    printf("Draw bitmap 2D by CPU first\r\n");
+    for (int i = 0; i < 50; i++) {
+        int x_start = rand() % (TEST_LCD_H_RES - 100);
+        int y_start = rand() % (TEST_LCD_V_RES - 100);
+        uint8_t color_byte = rand() & 0xFF;
+        memset(src_img, color_byte, src_img_size / 2);
+        color_byte = rand() & 0xFF;
+        memset(src_img + src_img_size / 2, color_byte, src_img_size / 2);
+        esp_lcd_panel_draw_bitmap_2d(panel_handle, x_start, y_start, x_start + 100, y_start + 100,
+                                     src_img, 200, 200, 50, 50, 150, 150);
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    size_t test_block_size = 100;
+    size_t start_alignment = 1;
+    size_t src_x_start = 50;
+    size_t src_y_start = 50;
+    if (esp_efuse_is_flash_encryption_enabled()) {
+        test_block_size = ALIGN_DOWN(test_block_size, SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
+        start_alignment = SOC_MEMSPI_ENCRYPTION_ALIGNMENT;
+        src_x_start = ALIGN_DOWN(src_x_start, SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
+        src_y_start = ALIGN_DOWN(src_y_start, SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
+    }
+
+    printf("Enable DMA2D draw bitmap hook\r\n");
+    TEST_ESP_OK(esp_lcd_rgb_panel_enable_dma2d(panel_handle));
+    printf("Draw bitmap 2D by DMA2D\r\n");
+    for (int i = 0; i < 100; i++) {
+        int x_start = ALIGN_DOWN(rand() % (TEST_LCD_H_RES - test_block_size), start_alignment);
+        int y_start = ALIGN_DOWN(rand() % (TEST_LCD_V_RES - test_block_size), start_alignment);
+        uint8_t color_byte = rand() & 0xFF;
+        memset(src_img, color_byte, src_img_size / 2);
+        color_byte = rand() & 0xFF;
+        memset(src_img + src_img_size / 2, color_byte, src_img_size / 2);
+        esp_lcd_panel_draw_bitmap_2d(panel_handle, x_start, y_start, x_start + test_block_size, y_start + test_block_size,
+                                     src_img, 200, 200, src_x_start, src_y_start, src_x_start + test_block_size, src_y_start + test_block_size);
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    printf("Disable DMA2D draw bitmap hook\r\n");
+    TEST_ESP_OK(esp_lcd_rgb_panel_disable_dma2d(panel_handle));
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    printf("delete RGB panel\r\n");
+    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
+    free(src_img);
+}
+#endif // SOC_HAS(DMA2D)
+
+#if SOC_HAS(PPA)
+typedef struct {
+    ppa_client_handle_t ppa_srm_handle;
+    esp_lcd_draw_bitmap_hook_data_t hook_data;
+    SemaphoreHandle_t draw_sem;
+    esp_lcd_panel_handle_t panel;
+} test_rgb_panel_draw_bitmap_hook_ctx_t;
+
+typedef struct {
+    uint32_t count;
+} test_rgb_panel_color_trans_done_callback_ctx_t;
+
+TEST_LCD_CALLBACK_ATTR static bool test_ppa_srm_trans_done_callback(ppa_client_handle_t ppa_client, ppa_event_data_t *edata, void *user_ctx)
+{
+    bool need_yield = false;
+    test_rgb_panel_draw_bitmap_hook_ctx_t *hook_ctx = (test_rgb_panel_draw_bitmap_hook_ctx_t *)user_ctx;
+    esp_lcd_draw_bitmap_hook_data_t *hook_data = &hook_ctx->hook_data;
+
+    if (hook_data->on_hook_end) {
+        if (hook_data->on_hook_end(hook_ctx->panel)) {
+            need_yield = true;
+        }
+    }
+
+    BaseType_t task_woken = pdFALSE;
+    xSemaphoreGiveFromISR(hook_ctx->draw_sem, &task_woken);
+    if (task_woken == pdTRUE) {
+        need_yield = true;
+    }
+
+    return need_yield;
+}
+
+static esp_err_t test_draw_bitmap_hook_ppa(esp_lcd_panel_handle_t panel, const esp_lcd_draw_bitmap_hook_data_t *hook_data, void *user_ctx)
+{
+    test_rgb_panel_draw_bitmap_hook_ctx_t *hook_ctx = (test_rgb_panel_draw_bitmap_hook_ctx_t *)user_ctx;
+    ppa_client_handle_t ppa_srm_handle = hook_ctx->ppa_srm_handle;
+    xSemaphoreTake(hook_ctx->draw_sem, portMAX_DELAY);
+    memcpy(&hook_ctx->hook_data, hook_data, sizeof(esp_lcd_draw_bitmap_hook_data_t));
+    ppa_srm_oper_config_t srm_config = {
+        .in.buffer = hook_data->src_data,
+        .in.pic_w = hook_data->src_x_size,
+        .in.pic_h = hook_data->src_y_size,
+        .in.block_w = hook_data->src_x_end - hook_data->src_x_start,
+        .in.block_h = hook_data->src_y_end - hook_data->src_y_start,
+        .in.block_offset_x = hook_data->src_x_start,
+        .in.block_offset_y = hook_data->src_y_start,
+        .in.srm_cm = PPA_SRM_COLOR_MODE_RGB565,
+        .out.buffer = hook_data->dst_data,
+        .out.buffer_size = hook_data->dst_x_size * hook_data->dst_y_size * hook_data->bits_per_pixel / 8,
+        .out.pic_w = hook_data->dst_x_size,
+        .out.pic_h = hook_data->dst_y_size,
+        .out.block_offset_x = hook_data->dst_x_start,
+        .out.block_offset_y = hook_data->dst_y_start,
+        .out.srm_cm = PPA_SRM_COLOR_MODE_RGB565,
+        .rotation_angle = PPA_SRM_ROTATION_ANGLE_90,
+        .scale_x = 0.5,
+        .scale_y = 0.5,
+        .rgb_swap = 0,
+        .byte_swap = 0,
+        .mode = PPA_TRANS_MODE_NON_BLOCKING,
+        .user_data = hook_ctx,
+    };
+
+    ppa_event_callbacks_t ppa_srm_event_callbacks = {
+        .on_trans_done = test_ppa_srm_trans_done_callback,
+    };
+    TEST_ESP_OK(ppa_client_register_event_callbacks(ppa_srm_handle, &ppa_srm_event_callbacks));
+
+    TEST_ESP_OK(ppa_do_scale_rotate_mirror(ppa_srm_handle, &srm_config));
+
+    return ESP_OK;
+}
+
+TEST_LCD_CALLBACK_ATTR static bool test_rgb_panel_color_trans_done_count_callback(esp_lcd_panel_handle_t panel, const esp_lcd_rgb_panel_event_data_t *edata, void *user_ctx)
+{
+    test_rgb_panel_color_trans_done_callback_ctx_t *color_trans_done_ctx = (test_rgb_panel_color_trans_done_callback_ctx_t *)user_ctx;
+    color_trans_done_ctx->count++;
+    return false;
+}
+
+TEST_CASE("lcd_rgb_panel_ppa_hook", "[lcd]")
+{
+    if (esp_efuse_is_flash_encryption_enabled()) {
+        TEST_PASS_MESSAGE("PPA SRM is not compatible with encrypted memory, skip this test");
+    }
+
+    // Allocate a larger source image (200x200) for testing
+    size_t src_img_size = 200 * 200 * sizeof(uint16_t);
+    uint8_t *src_img = malloc(src_img_size);
+    TEST_ASSERT_NOT_NULL(src_img);
+
+    printf("initialize RGB panel with stream mode\r\n");
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 0, LCD_CLK_SRC_DEFAULT, false, false, NULL, NULL);
+
+    SemaphoreHandle_t draw_sem = xSemaphoreCreateBinaryWithCaps(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(draw_sem);
+    xSemaphoreGive(draw_sem);
+
+    // use PPA to scale and rotate the image in draw bitmap hook
+    ppa_client_handle_t ppa_srm_handle = NULL;
+    ppa_client_config_t ppa_srm_config = {
+        .oper_type = PPA_OPERATION_SRM,
+        .max_pending_trans_num = 1,
+    };
+    TEST_ESP_OK(ppa_register_client(&ppa_srm_config, &ppa_srm_handle));
+
+    esp_lcd_rgb_panel_event_callbacks_t cbs = {
+        .on_color_trans_done = test_rgb_panel_color_trans_done_count_callback,
+    };
+
+    test_rgb_panel_color_trans_done_callback_ctx_t color_trans_done_ctx = {
+        .count = 0,
+    };
+    TEST_ESP_OK(esp_lcd_rgb_panel_register_event_callbacks(panel_handle, &cbs, &color_trans_done_ctx));
+
+    printf("Add PPA draw bitmap hook\r\n");
+    esp_lcd_panel_hooks_t hooks = {
+        .draw_bitmap_hook = test_draw_bitmap_hook_ppa,
+    };
+    test_rgb_panel_draw_bitmap_hook_ctx_t hook_ctx = {
+        .draw_sem = draw_sem,
+        .ppa_srm_handle = ppa_srm_handle,
+        .panel = panel_handle,
+    };
+    TEST_ESP_OK(esp_lcd_rgb_panel_register_hooks(panel_handle, &hooks, &hook_ctx));
+
+    for (int i = 0; i < 100; i++) {
+        int x_start = rand() % (TEST_LCD_H_RES - 100);
+        int y_start = rand() % (TEST_LCD_V_RES - 100);
+        uint8_t color_byte = rand() & 0xFF;
+        memset(src_img, color_byte, src_img_size / 2);
+        color_byte = rand() & 0xFF;
+        memset(src_img + src_img_size / 2, color_byte, src_img_size / 2);
+        esp_lcd_panel_draw_bitmap_2d(panel_handle, x_start, y_start, x_start + 50, y_start + 50,
+                                     src_img, 200, 200, 0, 0, 200, 200);
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+    xSemaphoreTake(draw_sem, portMAX_DELAY);
+    TEST_ASSERT_EQUAL_INT(100, color_trans_done_ctx.count);
+
+    hooks.draw_bitmap_hook = NULL;
+    TEST_ESP_OK(esp_lcd_rgb_panel_register_hooks(panel_handle, &hooks, NULL));
+    TEST_ESP_OK(ppa_unregister_client(ppa_srm_handle));
+
+    printf("delete RGB panel\r\n");
+    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
+    vSemaphoreDeleteWithCaps(draw_sem);
+    free(src_img);
+}
+#endif // SOC_HAS(PPA)
