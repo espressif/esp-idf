@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 #include "esp_err.h"
 #include "soc/soc_caps.h"
@@ -163,6 +164,22 @@ esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_r
  *     - ESP_FAIL OTG set mode fail.
  */
 esp_err_t usb_phy_otg_set_mode(usb_phy_handle_t handle, usb_otg_mode_t mode);
+
+/**
+ * @brief Set the USB OTG suspend state for USB wakeup logic
+ *
+ * @note Only applies to the UTMI (HS) PHY.
+ *
+ * @param in_suspend True if the USB OTG bus is suspended
+ */
+void usb_phy_set_otg_suspend_state(bool in_suspend);
+
+/**
+ * @brief Clear USB OTG wakeup status from the USB wakeup logic
+ *
+ * @note Only applies to the UTMI (HS) PHY.
+ */
+void usb_phy_clear_otg_wakeup_status(void);
 
 /**
  * @brief Delete a USB PHY

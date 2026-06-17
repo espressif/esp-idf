@@ -28,6 +28,16 @@ void usb_utmi_hal_enable_data_pulldowns(bool enable)
     usb_utmi_ll_enable_data_pulldowns(enable);
 }
 
+void usb_utmi_hal_set_suspend_state(bool in_suspend)
+{
+    usb_utmi_ll_set_suspend_state(in_suspend);
+}
+
+void usb_utmi_hal_clear_wakeup_status(void)
+{
+    usb_utmi_ll_clear_wakeup_status();
+}
+
 void _usb_utmi_hal_disable(void)
 {
     _usb_utmi_ll_enable_bus_clock(false);

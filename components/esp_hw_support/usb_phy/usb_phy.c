@@ -180,6 +180,22 @@ esp_err_t usb_phy_otg_set_mode(usb_phy_handle_t handle, usb_otg_mode_t mode)
     return ESP_OK;
 }
 
+void usb_phy_set_otg_suspend_state(bool in_suspend)
+{
+#if SOC_USB_UTMI_PHY_NUM
+    usb_utmi_hal_set_suspend_state(in_suspend);
+#else
+    (void)in_suspend;
+#endif
+}
+
+void usb_phy_clear_otg_wakeup_status(void)
+{
+#if SOC_USB_UTMI_PHY_NUM
+    usb_utmi_hal_clear_wakeup_status();
+#endif
+}
+
 static esp_err_t usb_phy_install(void)
 {
     PHY_ENTER_CRITICAL();
