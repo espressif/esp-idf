@@ -503,6 +503,82 @@ TEST_CASE("ppa_blend_basic_data_correctness_check", "[PPA]")
     printf("\n");
     TEST_ASSERT_EQUAL_UINT8_ARRAY((void *)out_buf_expected, (void *)out_buf, out_buf_len);
 
+#if !(CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
+    // Test YUV422/YUV420 blend
+
+    // A mid-grey image is achromatic (U = V = 128), so a correct RGB<->YUV path must round-trip
+    // it back to grey with R == G == B. For each format we run RGB->YUV (exercises YUV as the
+    // blend output) then YUV->RGB (exercises YUV as the blend background input); both must
+    // complete without hanging and yield achromatic grey
+
+    // 2 x 2 is the smallest valid YUV block: even w/h satisfies YUV422 (2x1) & YUV420 (2x2)
+    const uint8_t grey = 0x80; // mid-grey: Y arbitrary, U = V = 128 -> R == G == B after decode
+
+    // RGB888 mid-grey background (12B) and ARGB8888 foreground (16B). The foreground alpha is
+    // inverted to 0, so it contributes nothing and the blend output equals the background color.
+    const uint8_t rgb_grey[12] = {[0 ... 11] = grey};
+    const uint8_t fg_buf[16] = {[0 ... 15] = 0xFF};
+    // DMA outputs require cache-line alignment; yuv_mid is also reused as input for the YUV->RGB pass.
+    uint8_t yuv_mid[64] __attribute__((aligned(64))) = {[0 ... 63] = 0};
+    uint8_t rgb_back[64] __attribute__((aligned(64))) = {[0 ... 63] = 0xCC};
+    const uint32_t yuv_buf_size = sizeof(yuv_mid);
+
+    const ppa_blend_color_mode_t yuv_cms[] = {
+        PPA_BLEND_COLOR_MODE_YUV422_UYVY,
+        PPA_BLEND_COLOR_MODE_YUV420,
+    };
+    for (int c = 0; c < 2; c++) {
+        const ppa_blend_color_mode_t yuv_cm = yuv_cms[c];
+
+        // Foreground contributes nothing: alpha 0xFF inverted to 0, so output == background.
+        ppa_blend_oper_config_t yuv_oper_config = {
+            .in_fg.buffer = fg_buf,
+            .in_fg.pic_w = w,
+            .in_fg.pic_h = h,
+            .in_fg.block_w = w,
+            .in_fg.block_h = h,
+            .in_fg.blend_cm = PPA_BLEND_COLOR_MODE_ARGB8888,
+            .bg_alpha_update_mode = PPA_ALPHA_NO_CHANGE,
+            .fg_alpha_update_mode = PPA_ALPHA_INVERT,
+            .mode = PPA_TRANS_MODE_BLOCKING,
+        };
+
+        // 1) RGB888 grey -> YUV (exercises YUV as blend output; must not hang)
+        yuv_oper_config.in_bg.buffer = rgb_grey;
+        yuv_oper_config.in_bg.pic_w = w;
+        yuv_oper_config.in_bg.pic_h = h;
+        yuv_oper_config.in_bg.block_w = w;
+        yuv_oper_config.in_bg.block_h = h;
+        yuv_oper_config.in_bg.blend_cm = PPA_BLEND_COLOR_MODE_RGB888;
+        yuv_oper_config.out.buffer = yuv_mid;
+        yuv_oper_config.out.buffer_size = yuv_buf_size;
+        yuv_oper_config.out.pic_w = w;
+        yuv_oper_config.out.pic_h = h;
+        yuv_oper_config.out.blend_cm = yuv_cm;
+        TEST_ESP_OK(ppa_do_blend(ppa_client_handle, &yuv_oper_config));
+
+        // 2) YUV grey -> RGB888 (exercises YUV as blend background input; must not hang)
+        yuv_oper_config.in_bg.buffer = yuv_mid;
+        yuv_oper_config.in_bg.blend_cm = yuv_cm;
+        yuv_oper_config.out.buffer = rgb_back;
+        yuv_oper_config.out.blend_cm = PPA_BLEND_COLOR_MODE_RGB888;
+        TEST_ESP_OK(ppa_do_blend(ppa_client_handle, &yuv_oper_config));
+
+        // Check result
+        // Mid-grey is achromatic: every RGB888 pixel must stay near-grey, i.e. R ~= G ~= B
+        // (chroma preserved) and the level must remain mid-grey (luma not driven to
+        // black/white). A small tolerance covers the +-1 LSB rounding of two YUV conversions.
+        for (int p = 0; p < w * h; p++) {
+            const int b = rgb_back[p * 3 + 0];
+            const int g = rgb_back[p * 3 + 1];
+            const int r = rgb_back[p * 3 + 2];
+            TEST_ASSERT_INT_WITHIN(2, b, g);    // achromatic: channels stay together
+            TEST_ASSERT_INT_WITHIN(2, g, r);
+            TEST_ASSERT_INT_WITHIN(16, grey, b); // round-trips back to ~mid-grey
+        }
+    }
+#endif // !(CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
+
     TEST_ESP_OK(ppa_unregister_client(ppa_client_handle));
 }
 
