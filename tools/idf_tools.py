@@ -2748,13 +2748,6 @@ def action_install_python_env(args):  # type: ignore
             # Reinstallation of the virtual environment could help if pip was installed for the main Python
             reinstall = True
 
-        if sys.platform != 'win32':
-            try:
-                subprocess.check_call([virtualenv_python, '-c', 'import curses'], stdout=sys.stdout, stderr=sys.stderr)
-            except subprocess.CalledProcessError:
-                warn('curses can not be imported, new virtual environment will be created.')
-                reinstall = True
-
     if reinstall and os.path.exists(idf_python_env_path):
         warn(f'Removing the existing Python environment in {idf_python_env_path}')
         shutil.rmtree(idf_python_env_path)
