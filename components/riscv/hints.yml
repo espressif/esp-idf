@@ -1,0 +1,3 @@
+-
+    re: "ZCMP workaround violation"
+    hint: "Global interrupt disable (csrrc/csrrci mstatus,8) was found without the required mintthresh write (csrrw to CSR 0x347) within the previous instructions. This is unsafe with RISC-V ZCMP enabled on affected chips.\nEither apply the workaround before clearing mstatus.MIE (see SOC_CPU_ZCMP_WORKAROUND examples in ESP-IDF), or disable the ZCMP extension: set CONFIG_COMPILER_ENABLE_RISCV_ZCMP=n in sdkconfig / sdkconfig.defaults, or use 'idf.py menuconfig' -> 'Compiler options' -> disable 'Enable RISCV ZCMP extension'."
