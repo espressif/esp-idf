@@ -12,6 +12,9 @@ int32_t ulp_riscv_adc_read_channel(adc_unit_t adc_n, int channel)
     adc_oneshot_ll_clear_event(event);
     adc_oneshot_ll_disable_all_unit();
     adc_oneshot_ll_enable(adc_n);
+    /* Force SW control of the channel bitmap; deep-sleep entry can clear it, which would
+     * otherwise make the channel selection below take no effect. */
+    adc_ll_set_controller(adc_n, ADC_LL_CTRL_RTC);
     adc_oneshot_ll_set_channel(adc_n, channel);
 
     adc_oneshot_ll_start(adc_n);
