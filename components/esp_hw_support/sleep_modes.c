@@ -1263,7 +1263,7 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     /* Disable interrupts and stall another core in case another task writes
      * to RTC memory while we calculate RTC memory CRC.
      */
-    esp_os_enter_critical(&spinlock_rtc_deep_sleep);
+    esp_os_enter_critical(&s_config.lock);
     esp_ipc_isr_stall_other_cpu();
     esp_ipc_isr_stall_pause();
     /* Another core is stalled and interrupts are disabled, so we can safely claim the thread-safe
@@ -1368,7 +1368,7 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     xPortThreadSafeDisclaim();
     esp_ipc_isr_stall_resume();
     esp_ipc_isr_release_other_cpu();
-    esp_os_exit_critical(&spinlock_rtc_deep_sleep);
+    esp_os_exit_critical(&s_config.lock);
 
 #if CONFIG_IDF_TARGET_ESP32S2 && CONFIG_ESP_BROWNOUT_DET
     /* Brownout was disabled before attempting deep sleep; restore it after rejection. */
@@ -1446,6 +1446,51 @@ static SLEEP_FN_ATTR esp_err_t esp_light_sleep_inner(uint32_t sleep_flags,
     return reject;
 }
 
+#if !CONFIG_FREERTOS_UNICORE
+static SLEEP_FN_ATTR esp_err_t sleep_smp_cpu_sleep_prepare(void)
+{
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && SOC_PM_CPU_RETENTION_BY_SW
+    sleep_cpu_retention_start();
+#endif
+#if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+    // The other core will be stalled by high-priority interrupt and spins on variables in internal RAM,
+    // which naturally avoids cache livelock, so the 20ms livelock workaround timeout is not needed.
+    esp_int_wdt_livelock_workaround(false);
+#endif
+    esp_err_t ipc_isr_err = esp_ipc_isr_stall_other_cpu_safe();
+    if (ipc_isr_err == ESP_OK) {
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && SOC_PM_CPU_RETENTION_BY_SW
+        // Run CPU retention in the context of the other safely stalled CPU.
+        esp_ipc_isr_call(sleep_cpu_retention_execute, NULL);
+#endif
+        esp_ipc_isr_stall_pause();
+    } else {
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && SOC_PM_CPU_RETENTION_BY_SW
+        sleep_cpu_retention_finish();
+#endif
+#if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+        // Configure WDT to use livelock workaround timeout after releasing other CPU
+        esp_int_wdt_livelock_workaround(true);
+#endif
+        return ESP_ERR_SLEEP_REJECT;
+    }
+    return ESP_OK;
+}
+
+static SLEEP_FN_ATTR void sleep_smp_cpu_wakeup_prepare(void)
+{
+    esp_ipc_isr_stall_resume();
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && SOC_PM_CPU_RETENTION_BY_SW
+    sleep_cpu_retention_finish();
+#endif
+    esp_ipc_isr_release_other_cpu();
+#if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+    // Configure WDT to use livelock workaround timeout after releasing other CPU
+    esp_int_wdt_livelock_workaround(true);
+#endif
+}
+#endif  // !CONFIG_FREERTOS_UNICORE
+
 /**
  * vddsdio is used for power supply of spi flash
  *
@@ -1466,14 +1511,7 @@ esp_err_t esp_light_sleep_start(void)
 {
     s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
     esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_GOTO_SLEEP, (void *)0);
-#if CONFIG_ESP_TASK_WDT_USE_ESP_TIMER
-    esp_err_t timerret = ESP_OK;
 
-    /* If a task watchdog timer is running, we have to stop it. */
-    timerret = esp_task_wdt_stop();
-#endif // CONFIG_ESP_TASK_WDT_USE_ESP_TIMER
-
-    esp_timer_private_lock();
     esp_os_enter_critical(&s_config.lock);
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
     uint32_t ccount_at_sleep_start = esp_cpu_get_cycle_count();
@@ -1488,22 +1526,21 @@ esp_err_t esp_light_sleep_start(void)
 #endif
 
 #if !CONFIG_FREERTOS_UNICORE
-#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && SOC_PM_CPU_RETENTION_BY_SW
-    sleep_smp_cpu_sleep_prepare();
-#else
-#if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
-    // The other core will be stalled by high-priority interrupt and spins on variables in internal RAM,
-    // which naturally avoids cache livelock, so the 20ms livelock workaround timeout is not needed.
-    esp_int_wdt_livelock_workaround(false);
+    if (sleep_smp_cpu_sleep_prepare() != ESP_OK) {
+        esp_os_exit_critical(&s_config.lock);
+        return ESP_ERR_SLEEP_REJECT;
+    }
 #endif
-    esp_ipc_isr_stall_other_cpu();
-#endif
-    esp_ipc_isr_stall_pause();
-#endif
+
     /* Another core is stalled and interrupts are disabled, so we can safely claim the thread-safe
        critical section to avoid deadlocks and fastup the sleep process.
     */
     xPortThreadSafeClaim();
+
+#if CONFIG_ESP_TASK_WDT_USE_ESP_TIMER
+    /* If a task watchdog timer is running, we have to stop it. */
+    esp_err_t timerret = esp_task_wdt_stop();
+#endif // CONFIG_ESP_TASK_WDT_USE_ESP_TIMER
 
 #if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION && CONFIG_PM_SLP_IRAM_OPT
     /* Cache Suspend 0: if CONFIG_PM_SLP_IRAM_OPT is enabled, suspend cache here so that the access to flash
@@ -1724,18 +1761,8 @@ esp_err_t esp_light_sleep_start(void)
 
     /* Restore port critical before unstalling other CPU */
     xPortThreadSafeDisclaim();
-    esp_timer_private_unlock();
 #if !CONFIG_FREERTOS_UNICORE
-    esp_ipc_isr_stall_resume();
-#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && SOC_PM_CPU_RETENTION_BY_SW
     sleep_smp_cpu_wakeup_prepare();
-#else
-    esp_ipc_isr_release_other_cpu();
-#if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
-    // Configure WDT to use livelock workaround timeout after releasing other CPU
-    esp_int_wdt_livelock_workaround(true);
-#endif
-#endif
 #endif
 
 #if SOC_RTC_WDT_SUPPORTED

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,14 +69,27 @@ esp_err_t esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t, uint32_t, uin
 
 #if !CONFIG_FREERTOS_UNICORE && CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
 /**
- * Do sleep prepare for other smp cores
+ * Start the software CPU retention synchronization.
+ *
+ * This waits until the other CPU retention state to IDLE before
+ * the caller starts the software CPU retention.
  */
-void sleep_smp_cpu_sleep_prepare(void);
+void sleep_cpu_retention_start(void);
 
 /**
- * Do wakeup prepare for other smp cores
+ * Run the software CPU retention flow on the stalled other CPU.
+ *
+ * @param arg Unused
  */
-void sleep_smp_cpu_wakeup_prepare(void);
+void sleep_cpu_retention_execute(void* arg);
+
+/**
+ * Finish the software CPU retention synchronization.
+ *
+ * This is called by the initiating CPU after wakeup or sleep rejection to
+ * synchronize with the other CPU retention state and return its own state to idle.
+ */
+void sleep_cpu_retention_finish(void);
 
 /**
  * Notify the other core that this sleep does not require retention.
