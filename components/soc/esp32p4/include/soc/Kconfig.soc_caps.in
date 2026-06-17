@@ -1395,6 +1395,10 @@ config SOC_USB_UTMI_PHY_NO_POWER_OFF_ISO
     bool
     default y
 
+config SOC_PM_SUPPORT_USB_WAKEUP
+    int
+    default 1
+
 config SOC_PARLIO_GROUPS
     int
     default 1
