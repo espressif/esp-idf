@@ -54,7 +54,10 @@ extern "C" {
 #define BT_MICP_MUTE_DISABLED                      0x02
 /** @} */
 
-/** @brief Opaque Microphone Controller instance. */
+/**
+ * @struct bt_micp_mic_ctlr
+ * @brief Opaque Microphone Controller instance.
+ */
 struct bt_micp_mic_ctlr;
 
 /** @brief Register parameters structure for Microphone Control Service */

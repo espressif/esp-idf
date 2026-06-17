@@ -19,8 +19,6 @@
 
 #include "peripheral.h"
 
-#define SECURITY_LEVEL          ESP_BLE_ISO_SECURITY_NO_MITM
-
 #define CIS_SDU_SIZE            120
 
 static uint8_t ext_adv_data[3 + 2 + LOCAL_DEVICE_NAME_LEN];
@@ -95,7 +93,6 @@ static int iso_accept(const esp_ble_iso_accept_info_t *info,
 }
 
 static esp_ble_iso_server_t iso_server = {
-    .sec_level = SECURITY_LEVEL,
     .accept = iso_accept,
 };
 

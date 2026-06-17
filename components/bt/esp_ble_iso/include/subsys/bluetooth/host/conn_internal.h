@@ -29,7 +29,7 @@ typedef enum __packed {
 struct bt_conn_le {
     bt_addr_le_t dst;
 
-    uint16_t interval;
+    uint32_t interval_us;
 
     /** @brief Remote LE features
      *
@@ -113,6 +113,8 @@ bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, uint8_t id,
  * e.g. as the handle since that's assigned to us by the controller.
  */
 #define BT_CONN_INDEX_INVALID 0xff
+
+struct bt_conn *bt_conn_lookup_index(uint8_t index);
 
 /* Set connection object in certain state and perform action related to state */
 void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state);

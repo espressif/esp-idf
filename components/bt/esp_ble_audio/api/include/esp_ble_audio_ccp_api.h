@@ -99,13 +99,25 @@ esp_err_t esp_ble_audio_ccp_call_control_server_set_bearer_provider_name(
 /**
  * @brief   Get the bearer provider name.
  *
- * @param   bearer  The bearer to get the name for.
- * @param   name    Pointer that will be updated to be the bearer provider name.
+ * @param   bearer     The bearer to get the name for.
+ * @param   name       Buffer that will be populated with the bearer provider name.
+ * @param   name_size  The size of the @p name buffer.
  *
  * @return  ESP_OK on success, or an error code on failure.
  */
 esp_err_t esp_ble_audio_ccp_call_control_server_get_bearer_provider_name(
-    esp_ble_audio_ccp_call_control_server_bearer_t *bearer, const char **name);
+    esp_ble_audio_ccp_call_control_server_bearer_t *bearer, char *name, size_t name_size);
+
+/**
+ * @brief   Get the bearer UCI.
+ *
+ * @param   bearer  The bearer to get the UCI for.
+ * @param   uci     Buffer of size BT_TBS_MAX_UCI_SIZE that the bearer UCI will be written to.
+ *
+ * @return  ESP_OK on success, or an error code on failure.
+ */
+esp_err_t esp_ble_audio_ccp_call_control_server_get_bearer_uci(
+    esp_ble_audio_ccp_call_control_server_bearer_t *bearer, char *uci);
 
 /**
  * @brief   Discovers the Telephone Bearer Service (TBS) support on a remote device.

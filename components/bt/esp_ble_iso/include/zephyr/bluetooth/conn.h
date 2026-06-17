@@ -112,7 +112,7 @@ struct bt_conn_le_info {
      *  Address (RPA) before identity has been resolved.
      */
     const bt_addr_le_t *dst;
-    uint16_t interval; /**< Connection interval */
+    uint32_t interval_us; /**< Connection interval in microseconds */
 };
 
 /** @brief Convert connection interval to milliseconds
