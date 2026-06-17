@@ -30,6 +30,7 @@
 //#include "bt_utils.h"
 #include "btm_int.h"
 #include "stack/btm_ble_api.h"
+#include "btm_ble_pseudo.h"
 #include "stack/btu.h"
 #include "device/controller.h"
 #include "stack/hcimsgs.h"
@@ -3944,6 +3945,10 @@ void btm_ble_init (void)
 #if (BLE_VENDOR_HCI_EN == TRUE)
     BTM_RegisterForVSEvents(btm_ble_vs_evt_callback, TRUE);
 #endif // #if (BLE_VENDOR_HCI_EN == TRUE)
+
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+    btm_ble_pseudo_init();
+#endif
 }
 
 /*******************************************************************************
@@ -3969,6 +3974,10 @@ void btm_ble_free (void)
     osi_event_delete(p_cb->adv_rpt_ready);
     p_cb->adv_rpt_ready = NULL;
 #endif // #if (BLE_42_SCAN_EN == TRUE)
+
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+    btm_ble_pseudo_deinit();
+#endif
 }
 
 static bool enable_topology_check_flag = true;

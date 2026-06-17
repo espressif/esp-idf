@@ -20,6 +20,9 @@
 #include "device/interop.h"
 #include "common/bt_target.h"
 #include "btm_int.h"
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+#include "btm_ble_pseudo.h"
+#endif
 #include "stack/l2c_api.h"
 #include "smp_int.h"
 #if (SMP_CRYPTO_MBEDTLS == TRUE)
@@ -1185,6 +1188,28 @@ void smp_proc_id_addr(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
                             (tBTM_LE_KEY_VALUE *)&pid_key, TRUE);
     }
 #endif  ///BLE_INCLUDED == TRUE
+
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+    /* Dual-identity bond isolation: the link may have been keyed earlier from a
+     * transient RPA. Now that the peer's stable Identity Address is known,
+     * re-derive the pseudo from (local, Identity) and re-key the link so the
+     * stored bond is reproducible across the peer's future RPA rotations. Keep
+     * smp_cb.pairing_bda consistent so the in-flight pairing continues. */
+    {
+        tACL_CONN *p_acl = btm_bda_to_acl(p_cb->pairing_bda, BT_TRANSPORT_LE);
+        BLE_PSEUDO_DBG("smp PID: pairing_bda=" BLE_PSEUDO_BDA_FMT " acl=%p id_addr=" BLE_PSEUDO_BDA_FMT,
+                       BLE_PSEUDO_BDA(p_cb->pairing_bda), p_acl, BLE_PSEUDO_BDA(pid_key.static_addr));
+        if (p_acl != NULL) {
+            BD_ADDR new_pseudo;
+            if (btm_ble_pseudo_apply_identity(p_acl->hci_handle, pid_key.static_addr,
+                                              pid_key.addr_type, new_pseudo)) {
+                memcpy(p_cb->pairing_bda, new_pseudo, BD_ADDR_LEN);
+                BLE_PSEUDO_DBG("smp PID: pairing_bda updated -> " BLE_PSEUDO_BDA_FMT,
+                               BLE_PSEUDO_BDA(p_cb->pairing_bda));
+            }
+        }
+    }
+#endif
 
     smp_key_distribution_by_transport(p_cb, NULL);
 }
