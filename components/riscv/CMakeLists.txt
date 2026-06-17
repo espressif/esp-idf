@@ -41,3 +41,37 @@ idf_component_register(SRCS "${srcs}"
                        PRIV_REQUIRES ${priv_requires})
 
 target_linker_script(${COMPONENT_LIB} INTERFACE "ld/rom.api.ld")
+
+# TODO: IDF-14145
+if(CONFIG_COMPILER_ENABLE_RISCV_ZCMP AND
+   NOT CONFIG_ESP32P4_SELECTS_REV_LESS_V3 AND
+   NOT CONFIG_SECURE_ENABLE_TEE AND
+   NOT ESP_TEE_BUILD)
+    if(IDF_BUILD_V2)
+        function(riscv_check_zcmp_workaround target)
+            add_custom_command(TARGET ${target} POST_BUILD
+                COMMAND ${CMAKE_COMMAND}
+                    -DELF_FILE=$<TARGET_FILE:${target}>
+                    -DCMAKE_OBJDUMP=${CMAKE_OBJDUMP}
+                    -P "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/check_zcmp_workaround.cmake"
+                COMMENT "Checking ZCMP workaround in linked executable"
+                VERBATIM)
+        endfunction()
+        idf_component_register_build_event_callback(EVENT POST_ELF CALLBACK riscv_check_zcmp_workaround)
+    else()
+        idf_build_get_property(build_dir BUILD_DIR)
+        idf_build_get_property(elf_target EXECUTABLE GENERATOR_EXPRESSION)
+        set(_riscv_zcmp_check_marker "${build_dir}/.zcmp_workaround_checked")
+        add_custom_command(OUTPUT "${_riscv_zcmp_check_marker}"
+            COMMAND ${CMAKE_COMMAND}
+                -DELF_FILE=$<TARGET_FILE:$<GENEX_EVAL:${elf_target}>>
+                -DCMAKE_OBJDUMP=${CMAKE_OBJDUMP}
+                -P "${CMAKE_CURRENT_LIST_DIR}/check_zcmp_workaround.cmake"
+            COMMAND ${CMAKE_COMMAND} -E touch "${_riscv_zcmp_check_marker}"
+            DEPENDS "$<TARGET_FILE:$<GENEX_EVAL:${elf_target}>>"
+            COMMENT "Checking ZCMP workaround in linked executable"
+            VERBATIM)
+        add_custom_target(riscv_check_zcmp_workaround DEPENDS "${_riscv_zcmp_check_marker}")
+        idf_build_add_post_elf_dependency("${CMAKE_PROJECT_NAME}.elf" riscv_check_zcmp_workaround)
+    endif()
+endif()
