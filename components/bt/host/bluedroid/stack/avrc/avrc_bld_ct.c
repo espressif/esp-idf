@@ -336,9 +336,11 @@ tAVRC_STS AVRC_BldCommand( tAVRC_COMMAND *p_cmd, BT_HDR **pp_pkt)
         status = avrc_bld_get_play_status_cmd(&p_cmd->get_play_status, p_pkt);
         break;
 
+#if (AVRC_ADV_CTRL_INCLUDED == TRUE)
     case AVRC_PDU_REGISTER_NOTIFICATION:      /* 0x31 */
         status = avrc_bld_register_change_notfn(p_cmd->reg_notif.event_id, p_cmd->reg_notif.param, p_pkt);
         break;
+#endif
     case AVRC_PDU_GET_CAPABILITIES:
         status = avrc_bld_get_caps_cmd(&p_cmd->get_caps, p_pkt);
         break;
