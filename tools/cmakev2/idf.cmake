@@ -5,6 +5,10 @@ include_guard(GLOBAL)
 
 cmake_minimum_required(VERSION 3.22)
 
+if(NOT DEFINED IDF_DEFAULT_PROJECT_NAME)
+    get_filename_component(IDF_DEFAULT_PROJECT_NAME "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
+endif()
+
 # Update the CMAKE_MODULE_PATH to ensure that additional cmakev2 build system
 # modules can be included. The third_party directory from cmakev1 is also
 # included for third-party modules shared with cmakev1.

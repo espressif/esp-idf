@@ -195,6 +195,40 @@ function(target_linker_script target deptype scriptfiles)
     endforeach()
 endfunction()
 
+function(__idf_component_link_optional_requirement component target link_type req_interface output)
+    # Config-only cmakev1 components are represented by INTERFACE libraries.
+    # CMake cannot apply PRIVATE links to an INTERFACE library, so optional
+    # private requirements are ignored for those components.
+    idf_component_get_property(component_target_type "${component}" COMPONENT_REAL_TARGET_TYPE)
+    if("${component_target_type}" STREQUAL "INTERFACE_LIBRARY")
+        if("${link_type}" STREQUAL "PRIVATE")
+            set(${output} FALSE PARENT_SCOPE)
+            return()
+        endif()
+        target_link_libraries("${target}" INTERFACE "${req_interface}")
+    else()
+        target_link_libraries("${target}" "${link_type}" "${req_interface}")
+    endif()
+
+    if("${link_type}" STREQUAL "PRIVATE")
+        set(req_type PRIV_REQUIRES)
+    elseif("${link_type}" STREQUAL "PUBLIC" OR "${link_type}" STREQUAL "INTERFACE")
+        set(req_type REQUIRES)
+    else()
+        set(req_type "")
+    endif()
+
+    if(req_type)
+        idf_component_get_property(req_name "${req_interface}" COMPONENT_NAME)
+        idf_component_get_property(existing "${component}" ${req_type})
+        if(NOT "${req_name}" IN_LIST existing)
+            idf_component_set_property("${component}" ${req_type} "${req_name}" APPEND)
+        endif()
+    endif()
+
+    set(${output} TRUE PARENT_SCOPE)
+endfunction()
+
 #[[
     __idf_component_process_optional_requires()
 
@@ -269,22 +303,10 @@ function(__idf_component_process_optional_requires)
             endif()
 
             # Link the caller's real target to the requirement's interface target.
-            target_link_libraries("${caller_target}" "${link_type}" "${req_interface}")
-
-            # Update the caller's REQUIRES or PRIV_REQUIRES property.
-            idf_component_get_property(req_name "${req_interface}" COMPONENT_NAME)
-            if("${link_type}" STREQUAL "PRIVATE")
-                idf_component_get_property(existing "${caller_interface}" PRIV_REQUIRES)
-                if(NOT "${req_name}" IN_LIST existing)
-                    idf_component_set_property("${caller_interface}" PRIV_REQUIRES
-                                               "${req_name}" APPEND)
-                endif()
-            elseif("${link_type}" STREQUAL "PUBLIC" OR "${link_type}" STREQUAL "INTERFACE")
-                idf_component_get_property(existing "${caller_interface}" REQUIRES)
-                if(NOT "${req_name}" IN_LIST existing)
-                    idf_component_set_property("${caller_interface}" REQUIRES
-                                               "${req_name}" APPEND)
-                endif()
+            __idf_component_link_optional_requirement("${caller_interface}" "${caller_target}"
+                                                      "${link_type}" "${req_interface}" linked)
+            if(NOT linked)
+                continue()
             endif()
 
             # Mark this pair as done so it is not processed again for subsequent
@@ -372,24 +394,8 @@ function(idf_component_optional_requires type)
             endif()
             idf_component_include("${req}")
 
-            if("${type}" STREQUAL "PRIVATE")
-                set(req_type PRIV_REQUIRES)
-            elseif("${type}" STREQUAL "PUBLIC")
-                set(req_type REQUIRES)
-            else()
-                set(req_type "")
-            endif()
-
-            if(req_type)
-                idf_component_get_property(req_name "${req_interface}" COMPONENT_NAME)
-                idf_component_get_property(target_reqs "${COMPONENT_NAME}" ${req_type})
-                if(NOT "${req_name}" IN_LIST target_reqs)
-                    idf_component_set_property("${COMPONENT_NAME}" ${req_type} "${req_name}" APPEND)
-                    target_link_libraries(${COMPONENT_TARGET} ${type} ${req_interface})
-                endif()
-            else()
-                target_link_libraries(${COMPONENT_TARGET} ${type} ${req_interface})
-            endif()
+            __idf_component_link_optional_requirement("${COMPONENT_NAME}" "${COMPONENT_TARGET}"
+                                                      "${type}" "${req_interface}" linked)
         endforeach()
     endif()
 endfunction()
@@ -822,6 +828,14 @@ function(idf_component_register)
     idf_component_set_property("${COMPONENT_NAME}" PRIV_REQUIRES "${__merged_priv_requires}")
     idf_component_set_property("${COMPONENT_NAME}" REQUIRED_IDF_TARGETS "${ARG_REQUIRED_IDF_TARGETS}")
     idf_component_set_property("${COMPONENT_NAME}" COMPONENT_TYPE "${component_type}")
+    idf_component_set_property("${COMPONENT_NAME}" COMPONENT_REAL_TARGET "${COMPONENT_TARGET}")
+    # Optional requirements need to know whether the backward-compatible
+    # component target is STATIC or INTERFACE before deciding how to link it.
+    if("${component_type}" STREQUAL "CONFIG_ONLY")
+        idf_component_set_property("${COMPONENT_NAME}" COMPONENT_REAL_TARGET_TYPE INTERFACE_LIBRARY)
+    else()
+        idf_component_set_property("${COMPONENT_NAME}" COMPONENT_REAL_TARGET_TYPE STATIC_LIBRARY)
+    endif()
 endfunction()
 
 #[[
