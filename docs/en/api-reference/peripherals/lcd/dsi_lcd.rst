@@ -86,7 +86,7 @@ MIPI DSI Interfaced LCD
 
 #. Configure draw bitmap hook function (optional)
 
-    If you want to use DMA2D to implement draw bitmap, the driver has already implemented the DMA2D draw bitmap hook function, you only need to call :func:`esp_lcd_dpi_panel_enable_dma2d` to enable it.
+    If you want to accelerate 2D bitmap copy with DMA2D, the driver already provides a built-in DMA2D bitmap copy hook. You only need to call :func:`esp_lcd_dpi_panel_enable_dma2d` to enable it.
 
     .. code-block:: c
 
@@ -104,6 +104,58 @@ MIPI DSI Interfaced LCD
             .draw_bitmap_hook = custom_draw_bitmap_hook,
         };
         ESP_ERROR_CHECK(esp_lcd_dpi_panel_register_hooks(mipi_dpi_panel, &hooks, &user_ctx));
+
+    If the custom hook is asynchronous — for example, the hook starts a PPA transfer and returns immediately while the hardware continues processing pixels in the background — call :cpp:member:`esp_lcd_draw_bitmap_hook_data_t::on_hook_end` only after the hardware operation has actually finished. ``on_hook_end`` is implemented and filled into ``hook_data`` by the DPI panel driver; you do not need to write it yourself, only call it when the asynchronous operation completes to notify the driver that the draw transaction is finished. If a color transfer done callback has been registered, it is invoked at that time as well.
+
+    The panel driver does not wait for a previous draw to finish; synchronization is the custom hook's responsibility. The simplest approach is to serialize draws (do not start a new one before the previous one completes), as shown in the example below. If you want to submit multiple draws concurrently using an accelerator transaction queue such as PPA's, keep a separate ``hook_data`` copy per transaction, keep the source buffer valid until hardware completion, and handle overlapping destination regions carefully.
+
+    The following snippet shows an asynchronous custom hook: it starts PPA and returns immediately, then calls ``on_hook_end`` from the PPA completion callback. The example serializes draws with a semaphore so only one draw is in flight at a time:
+
+    .. code-block:: c
+
+        typedef struct {
+            esp_lcd_panel_handle_t panel;
+            esp_lcd_draw_bitmap_hook_data_t hook_data;
+            SemaphoreHandle_t draw_sem;
+            // ... other fields, e.g. ppa_client_handle_t
+        } draw_bitmap_hook_ctx_t;
+
+        static bool ppa_trans_done_callback(ppa_client_handle_t ppa_client, ppa_event_data_t *edata, void *user_ctx)
+        {
+            draw_bitmap_hook_ctx_t *ctx = (draw_bitmap_hook_ctx_t *)user_ctx;
+            bool need_yield = false;
+
+            // on_hook_end is provided by the DPI panel driver; just call it when done
+            if (ctx->hook_data.on_hook_end) {
+                if (ctx->hook_data.on_hook_end(ctx->panel)) {
+                    need_yield = true;
+                }
+            }
+
+            BaseType_t task_woken = pdFALSE;
+            xSemaphoreGiveFromISR(ctx->draw_sem, &task_woken);
+            if (task_woken == pdTRUE) {
+                need_yield = true;
+            }
+            return need_yield;
+        }
+
+        static esp_err_t custom_draw_bitmap_hook(esp_lcd_panel_handle_t panel,
+                                                 const esp_lcd_draw_bitmap_hook_data_t *hook_data,
+                                                 void *user_ctx)
+        {
+            draw_bitmap_hook_ctx_t *ctx = (draw_bitmap_hook_ctx_t *)user_ctx;
+
+            // Simplest sync: wait until the previous draw finishes
+            xSemaphoreTake(ctx->draw_sem, portMAX_DELAY);
+
+            // Save hook_data so the completion callback can call on_hook_end later
+            ctx->hook_data = *hook_data;
+
+            // Start an asynchronous PPA transfer, then return immediately
+            // ppa_do_scale_rotate_mirror(...);
+            return ESP_OK;
+        }
 
 Power Supply for MIPI DPHY
 --------------------------
