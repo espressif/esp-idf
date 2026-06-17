@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "esp_log.h"
+#include "hal/spi_flash_encrypted_ll.h"
 #include "sdkconfig.h"
 
 ESP_LOG_ATTR_TAG(TAG, "flash_encrypt");
@@ -32,6 +33,14 @@ esp_err_t esp_flash_encryption_enable_secure_features(void)
 #endif
 
     esp_efuse_write_field_bit(ESP_EFUSE_DIS_DIRECT_BOOT);
+
+#if CONFIG_SECURE_FLASH_PSEUDO_ROUND_FUNC
+    if (spi_flash_encrypt_ll_is_pseudo_rounds_function_supported()) {
+        ESP_LOGI(TAG, "Enable XTS-AES pseudo rounds function...");
+        uint8_t xts_pseudo_level = CONFIG_SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH;
+        esp_efuse_write_field_blob(ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL, &xts_pseudo_level, ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL[0]->bit_count);
+    }
+#endif
 
 #if defined(CONFIG_SECURE_BOOT_V2_ENABLED) && !defined(CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS)
     // This bit is set when enabling Secure Boot V2, but we can't enable it until this later point in the first boot
