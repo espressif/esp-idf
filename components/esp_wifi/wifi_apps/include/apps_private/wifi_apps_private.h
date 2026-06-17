@@ -53,6 +53,9 @@ void esp_nan_action_stop(void);
 
 #ifdef CONFIG_ESP_WIFI_NAN_PAIRING
 
+#define WIFI_NAN_PAIRING_REASON_NIK_FUP_TIMEOUT  1  /**< Local reason: peer NIK follow-up not received within timeout.
+                                                         See Wi-Fi Aware v4.0 §7.6.4.2 for the NIK-exchange procedure. */
+
 #ifndef NAN_PAIRING_PINCODE_MIN
 #define NAN_PAIRING_PINCODE_MIN 0
 #endif

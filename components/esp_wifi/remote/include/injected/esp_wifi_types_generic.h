@@ -1669,9 +1669,6 @@ typedef struct {
     uint32_t cookie;                            /**< Comeback cookie from responder (0 if none) */
 } wifi_event_nan_bootstrap_complete_t;
 
-#define WIFI_NAN_PAIRING_REASON_NIK_FUP_TIMEOUT  1  /**< Local reason: peer NIK follow-up not received within timeout.
-                                                         See Wi-Fi Aware v4.0 §7.6.4.2 for the NIK-exchange procedure. */
-
 /**
   * @brief Argument structure for WIFI_EVENT_NAN_PAIRING_CONFIRM event
   */

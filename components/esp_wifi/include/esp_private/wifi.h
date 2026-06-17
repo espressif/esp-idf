@@ -232,6 +232,9 @@ struct nan_secure_dp_funcs {
      * encrypted KDE payload (GTK/IGTK/BIGTK). */
     int (*ndp_security_install_get_shared_desc_len)(void);
 
+    uint8_t (*get_ndp_resp_num_pmkids)(uint8_t ndp_id, const uint8_t *peer_nmi);
+    uint32_t (*get_ndp_resp_shared_key_desc_len)(uint8_t ndp_id, const uint8_t *peer_nmi);
+
     /* --- CSIA / SCIA construction. Each writes a complete NAN
      *     attribute (header + body) at @c frm and returns bytes
      *     written, or -1 on error. --- */
