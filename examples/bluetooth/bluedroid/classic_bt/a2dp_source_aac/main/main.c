@@ -375,10 +375,6 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
         esp_avrc_ct_init();
         esp_avrc_ct_register_callback(bt_app_rc_ct_cb);
 
-        esp_avrc_rn_evt_cap_mask_t evt_set = {0};
-        esp_avrc_rn_evt_bit_mask_operation(ESP_AVRC_BIT_MASK_OP_SET, &evt_set, ESP_AVRC_RN_VOLUME_CHANGE);
-        ESP_ERROR_CHECK(esp_avrc_tg_set_rn_evt_cap(&evt_set));
-
         esp_a2d_source_init();
         esp_a2d_register_callback(&bt_app_a2d_cb);
 
