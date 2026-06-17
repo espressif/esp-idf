@@ -856,7 +856,7 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
         if ((sleep_flags & RTC_SLEEP_FLASH_DPD) && (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 300))) {
             /* Switch Flash from standby mode to deep powerdown mode */
             /* During bootloader phase following wakeup from deepsleep, flash will exit dpd mode */
-            spi_flash_enable_deep_power_down_mode(true);
+            spi_flash_enable_deep_power_down_mode(true, false);
         }
 #endif
 
@@ -900,7 +900,7 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
 #if CONFIG_ESP_SLEEP_SET_FLASH_DPD
             if (sleep_flags & RTC_SLEEP_FLASH_DPD) {
                 /* Switch Flash from standby mode to deep powerdown mode */
-                spi_flash_enable_deep_power_down_mode(true);
+                spi_flash_enable_deep_power_down_mode(true, false);
             }
 #endif
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
@@ -988,7 +988,7 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
 #if CONFIG_ESP_SLEEP_SET_FLASH_DPD
         if (sleep_flags & RTC_SLEEP_FLASH_DPD) {
             //Release Flash out from deep powerdown mode
-            spi_flash_enable_deep_power_down_mode(false);
+            spi_flash_enable_deep_power_down_mode(false, true);
         }
 #endif
 #if CONFIG_PM_SLP_SPIRAM_HALFSLEEP_ENABLED && (CONFIG_SPIRAM_XIP_FROM_PSRAM || !CONFIG_PM_SLP_IRAM_OPT)
