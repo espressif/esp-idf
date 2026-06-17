@@ -510,7 +510,9 @@ static void nan_pairing_nik_fup_timeout_cb(void *eloop_data, void *user_ctx)
 #if defined(CONFIG_ESP_WIFI_NAN_SECURITY)
     nan_app_remove_paired_peer(own->nik_fup_pending_peer_nmi);
 #endif
-    esp_nan_complete_pairing(own->svc_id);
+    struct peer_svc_info *peer = nan_find_peer_svc(own->svc_id, 0,
+                                                   own->nik_fup_pending_peer_nmi);
+    esp_nan_complete_pairing(own->svc_id, peer ? peer->svc_id : 0);
     nan_app_post_event(WIFI_EVENT_NAN_PAIRING_CONFIRM, &evt, sizeof(evt));
     ESP_LOGW(TAG, "Pairing succeeded but NIK caching timed out for peer " MACSTR
              " (reason=%u)", MAC2STR(own->nik_fup_pending_peer_nmi), evt.reason_code);
@@ -811,7 +813,7 @@ static void nan_pairing_key_installed_cb(const uint8_t *peer_nmi,
             evt.status = WIFI_NAN_PAIRING_STATUS_ACCEPTED;
             evt.reason_code = 0;
             MACADDR_COPY(evt.peer_nmi, peer_nmi);
-            esp_nan_complete_pairing(own->svc_id);
+            esp_nan_complete_pairing(own->svc_id, peer->svc_id);
             nan_app_post_event(WIFI_EVENT_NAN_PAIRING_CONFIRM, &evt, sizeof(evt));
             return;
         }
@@ -998,7 +1000,8 @@ void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
         evt.status = WIFI_NAN_PAIRING_STATUS_ACCEPTED;
         evt.reason_code = 0;
         MACADDR_COPY(evt.peer_nmi, peer_mac);
-        esp_nan_complete_pairing(p_peer_svc ? p_peer_svc->own_svc_id : 0);
+        esp_nan_complete_pairing(p_peer_svc ? p_peer_svc->own_svc_id : 0,
+                                 p_peer_svc ? p_peer_svc->svc_id : peer_svc_id);
         nan_app_post_event(WIFI_EVENT_NAN_PAIRING_CONFIRM, &evt, sizeof(evt));
     }
 

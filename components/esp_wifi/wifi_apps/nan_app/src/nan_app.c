@@ -1375,6 +1375,8 @@ static struct nan_secure_dp_funcs s_nan_secure_dp_funcs = {
     .get_scia_len                              = esp_nan_get_scia_len,
     .get_shared_key_desc_attr_len              = esp_nan_get_shared_key_desc_attr_len,
     .ndp_security_install_get_shared_desc_len  = esp_nan_ndp_security_install_get_shared_desc_len,
+    .get_ndp_resp_num_pmkids                   = esp_nan_get_ndp_resp_num_pmkids,
+    .get_ndp_resp_shared_key_desc_len          = esp_nan_get_ndp_resp_shared_key_desc_len,
 
     /* CSIA / SCIA construction */
     .construct_csia                            = esp_nan_construct_csia,

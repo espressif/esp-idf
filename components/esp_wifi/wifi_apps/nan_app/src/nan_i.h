@@ -366,6 +366,8 @@ uint32_t esp_nan_get_csia_len(uint16_t own_csid_bitmap, uint16_t peer_csid_bitma
 uint32_t esp_nan_get_scia_len(uint8_t num_pmkids);
 uint32_t esp_nan_get_shared_key_desc_attr_len(uint16_t key_data_len);
 int      esp_nan_ndp_security_install_get_shared_desc_len(void);
+uint8_t esp_nan_get_ndp_resp_num_pmkids(uint8_t ndp_id, const uint8_t *peer_nmi);
+uint32_t esp_nan_get_ndp_resp_shared_key_desc_len(uint8_t ndp_id, const uint8_t *peer_nmi);
 
 int  esp_nan_construct_csia(uint8_t *frm, uint8_t pub_id,
                             uint16_t own_csid_bitmap, uint16_t peer_csid_bitmap);
