@@ -11,11 +11,6 @@ examples/system/ulp/lp_core/build_system:
     - if: SOC_LP_CORE_SUPPORTED == 1
   <<: *ulp_default_depends
 
-examples/system/ulp/lp_core/build_system_v2:
-  enable:
-    - if: SOC_LP_CORE_SUPPORTED == 1
-  <<: *ulp_default_depends
-
 examples/system/ulp/lp_core/debugging:
   enable:
     - if: SOC_LP_CORE_SUPPORTED == 1

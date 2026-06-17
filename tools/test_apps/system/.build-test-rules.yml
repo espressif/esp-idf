@@ -1,5 +1,17 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+.ulp_full_subproject_child_project_disable: &ulp_full_subproject_child_project_disable
+  disable:
+    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3", "esp32c3", "esp32c2", "esp32c6", "esp32c5", "esp32h2", "esp32p4", "esp32c61", "esp32h21", "esp32h4", "esp32s31"]
+      reason: ULP child project is built by its parent test app
+
+.ulp_full_subproject_default_depends: &ulp_full_subproject_default_depends
+  depends_components:
+    - ulp
+    - esp_hw_support
+    - esp_hal_pmu
+
+
 tools/test_apps/system/bootloader_sections:
   disable:
     - if: CONFIG_NAME == "rtc_retain" and SOC_RTC_FAST_MEM_SUPPORTED != 1
@@ -199,6 +211,48 @@ tools/test_apps/system/test_watchpoint:
   enable:
     - if: IDF_TARGET in ["esp32", "esp32c3"] # Just one test per architecture
 
+tools/test_apps/system/ulp/full_subproject/combined:
+  enable:
+    - if: (SOC_ULP_FSM_SUPPORTED == 1) and (SOC_RISCV_COPROC_SUPPORTED == 1)
+  <<: *ulp_full_subproject_default_depends
+
+tools/test_apps/system/ulp/full_subproject/combined/main/ulp_fsm:
+  <<: *ulp_full_subproject_child_project_disable
+
+tools/test_apps/system/ulp/full_subproject/combined/main/ulp_riscv:
+  <<: *ulp_full_subproject_child_project_disable
+
+tools/test_apps/system/ulp/full_subproject/fsm:
+  enable:
+    - if: SOC_ULP_FSM_SUPPORTED == 1
+  <<: *ulp_full_subproject_default_depends
+
+tools/test_apps/system/ulp/full_subproject/fsm/main/ulp:
+  <<: *ulp_full_subproject_child_project_disable
+
+tools/test_apps/system/ulp/full_subproject/lp_core:
+  enable:
+    - if: SOC_LP_CORE_SUPPORTED == 1
+  <<: *ulp_full_subproject_default_depends
+
+tools/test_apps/system/ulp/full_subproject/lp_core/main/ulp:
+  <<: *ulp_full_subproject_child_project_disable
+
+tools/test_apps/system/ulp/full_subproject/multi_binary:
+  enable:
+    - if: SOC_LP_CORE_SUPPORTED == 1
+  <<: *ulp_full_subproject_default_depends
+
+tools/test_apps/system/ulp/full_subproject/multi_binary/main/ulp:
+  <<: *ulp_full_subproject_child_project_disable
+
+tools/test_apps/system/ulp/full_subproject/riscv:
+  enable:
+    - if: SOC_RISCV_COPROC_SUPPORTED == 1
+  <<: *ulp_full_subproject_default_depends
+
+tools/test_apps/system/ulp/full_subproject/riscv/main/ulp:
+  <<: *ulp_full_subproject_child_project_disable
 tools/test_apps/system/unicore_bootloader:
   disable:
     - if: SOC_CPU_CORES_NUM == 1
