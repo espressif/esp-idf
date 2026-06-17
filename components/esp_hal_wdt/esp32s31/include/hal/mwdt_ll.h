@@ -16,8 +16,6 @@
 #include "hal/timg_ll.h"
 #include "soc/hp_sys_clkrst_struct.h"
 
-// TODO: ["ESP32S31"] IDF-14656
-
 /* Pre-calculated prescaler to achieve 500 ticks/us (MWDT1_TICKS_PER_US) when using default clock (MWDT_CLK_SRC_DEFAULT ) */
 #define MWDT_LL_DEFAULT_CLK_PRESCALER 20000
 

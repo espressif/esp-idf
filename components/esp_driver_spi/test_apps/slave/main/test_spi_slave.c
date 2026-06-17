@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 */
 
 #include <string.h>
+#include <sys/param.h>
 #include "sdkconfig.h"
 #include "unity.h"
 #include "test_utils.h"
@@ -32,13 +33,9 @@ static WORD_ALIGNED_ATTR uint8_t slave_rxbuf[320];
 static const uint8_t master_send[] = { 0x93, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0xaa, 0xcc, 0xff, 0xee, 0x55, 0x77, 0x88, 0x43 };
 static const uint8_t slave_send[] = { 0xaa, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10, 0x13, 0x57, 0x9b, 0xdf, 0x24, 0x68, 0xac, 0xe0 };
 
-#if (TEST_SPI_PERIPH_NUM >= 2)
-//These will only be enabled on chips with 2 or more SPI peripherals
-#ifndef CONFIG_SPIRAM
-//This test should be removed once the timing test is merged.
-
+static spi_host_device_t master_slave_ids[2];
 static spi_device_handle_t spi;
-static void custom_setup(void)
+void custom_setup(spi_host_device_t master_id, spi_host_device_t slave_id)
 {
     //Initialize buffers
     memset(master_txbuf, 0, sizeof(master_txbuf));
@@ -46,46 +43,60 @@ static void custom_setup(void)
     memset(slave_txbuf, 0, sizeof(slave_txbuf));
     memset(slave_rxbuf, 0, sizeof(slave_rxbuf));
 
-    //Initialize SPI Master
     spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
     buscfg.flags |= SPICOMMON_BUSFLAG_GPIO_PINS;
+    buscfg.max_transfer_sz = 40960;
     spi_device_interface_config_t devcfg = {
         .clock_speed_hz = 4 * 1000 * 1000,      //currently only up to 4MHz for internal connect
-        .mode = 0,                              //SPI mode 0
         .spics_io_num = PIN_NUM_CS,             //CS pin
         .queue_size = 7,                        //We want to be able to queue 7 transactions at a time
-        .pre_cb = NULL,
         .cs_ena_posttrans = 5,
         .cs_ena_pretrans = 1,
     };
-    //Initialize the SPI bus
-    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
-    //Attach the device to the SPI bus
-    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &spi));
 
-    //Configuration for the SPI slave interface
-    spi_slave_interface_config_t slvcfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
-    //Enable pull-ups on SPI lines so we don't detect rogue pulses when no master is connected.
-    gpio_set_pull_mode(PIN_NUM_MOSI, GPIO_PULLUP_ONLY);
-    gpio_set_pull_mode(PIN_NUM_CLK, GPIO_PULLUP_ONLY);
-    gpio_set_pull_mode(PIN_NUM_CS, GPIO_PULLUP_ONLY);
-    //Initialize SPI slave interface
-    TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &buscfg, &slvcfg, SPI_DMA_CH_AUTO));
+    //Initialize SPI Master
+    if (master_id) {
+        //Initialize the SPI bus
+        TEST_ESP_OK(spi_bus_initialize(master_id, &buscfg, SPI_DMA_CH_AUTO));
+        //Attach the device to the SPI bus
+        TEST_ESP_OK(spi_bus_add_device(master_id, &devcfg, &spi));
+    }
+
+    if (slave_id) {
+        //Configuration for the SPI slave interface
+        spi_slave_interface_config_t slvcfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
+        //Enable pull-ups on SPI lines so we don't detect rogue pulses when no master is connected.
+        slave_pull_up(&buscfg, devcfg.spics_io_num);
+        //Initialize SPI slave interface
+        TEST_ESP_OK(spi_slave_initialize(slave_id, &buscfg, &slvcfg, SPI_DMA_CH_AUTO));
+    }
 
     //Do internal connections
-    same_pin_func_sel(buscfg, devcfg.spics_io_num, 0, false);
+    same_pin_func_sel(master_id, slave_id, buscfg, devcfg.spics_io_num);
+    master_slave_ids[0] = master_id;
+    master_slave_ids[1] = slave_id;
 }
 
-static void custom_teardown(void)
+void custom_teardown(void)
 {
-    TEST_ESP_OK(spi_slave_free(TEST_SLAVE_HOST));
-    TEST_ESP_OK(spi_bus_remove_device(spi));
-    TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
+    if (master_slave_ids[1]) {
+        TEST_ESP_OK(spi_slave_free(master_slave_ids[1]));
+        master_slave_ids[1] = 0;
+    }
+    if (spi != NULL) {
+        TEST_ESP_OK(spi_bus_remove_device(spi));
+        spi = NULL;
+    }
+    if (master_slave_ids[0]) {
+        TEST_ESP_OK(spi_bus_free(master_slave_ids[0]));
+        master_slave_ids[0] = 0;
+    }
 }
 
+#if (TEST_SPI_PERIPH_NUM >= 2)
 TEST_CASE("test fullduplex slave with only RX direction", "[spi]")
 {
-    custom_setup();
+    custom_setup(TEST_SPI_HOST, TEST_SLAVE_HOST);
 
     memcpy(master_txbuf, master_send, sizeof(master_send));
 
@@ -132,7 +143,7 @@ TEST_CASE("test fullduplex slave with only RX direction", "[spi]")
 
 TEST_CASE("test fullduplex slave with only TX direction", "[spi]")
 {
-    custom_setup();
+    custom_setup(TEST_SPI_HOST, TEST_SLAVE_HOST);
 
     memcpy(slave_txbuf, slave_send, sizeof(slave_send));
 
@@ -141,7 +152,7 @@ TEST_CASE("test fullduplex slave with only TX direction", "[spi]")
         spi_slave_transaction_t slave_t;
         spi_slave_transaction_t *out;
         memset(&slave_t, 0, sizeof(spi_slave_transaction_t));
-        slave_t.length = 8 * 32;
+        slave_t.tx_length = 8 * 32;
         slave_t.tx_buffer = slave_txbuf;
         slave_t.rx_buffer = NULL;
         slave_t.flags |= SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO;
@@ -178,7 +189,7 @@ TEST_CASE("test fullduplex slave with only TX direction", "[spi]")
 }
 
 #define TEST_SLV_RX_BUF_LEN     15
-TEST_CASE("Test slave rx no_dma overwrite when length below/over config", "[spi]")
+TEST_CASE("Test slave rx_buffer overwrite if trans_len below/over config_len", "[spi]")
 {
     spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
     buscfg.flags |= SPICOMMON_BUSFLAG_GPIO_PINS;
@@ -187,70 +198,148 @@ TEST_CASE("Test slave rx no_dma overwrite when length below/over config", "[spi]
     spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &spidev0));
 
-    spi_slave_interface_config_t slvcfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
-    TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &buscfg, &slvcfg, SPI_DMA_DISABLED));
+    for (int use_dma = 0; use_dma < 2; use_dma++) {
+        printf("\n------------- DMA: %s -------------\n", use_dma ? "Enable" : "Disable");
+        spi_slave_interface_config_t slvcfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
+        TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &buscfg, &slvcfg, use_dma ? SPI_DMA_CH_AUTO : SPI_DMA_DISABLED));
+        same_pin_func_sel(TEST_SPI_HOST, TEST_SLAVE_HOST, buscfg, devcfg.spics_io_num);
 
-    //initialize master and slave on the same pins break some of the output configs, fix them
-    same_pin_func_sel(buscfg, devcfg.spics_io_num, 0, false);
+        uint8_t master_tx[TEST_SLV_RX_BUF_LEN], master_rx[TEST_SLV_RX_BUF_LEN];
+        uint8_t slave_tx[TEST_SLV_RX_BUF_LEN], slave_rx[TEST_SLV_RX_BUF_LEN];
+        for (uint8_t i = 0; i < TEST_SLV_RX_BUF_LEN; i++) {
+            master_tx[i] = TEST_SLV_RX_BUF_LEN - i;
+            slave_tx[i] = i + 1;
+            slave_rx[i] = 100;
+        }
 
-    uint8_t master_tx[TEST_SLV_RX_BUF_LEN], slave_rx[TEST_SLV_RX_BUF_LEN];
-    for (uint8_t i = 0; i < TEST_SLV_RX_BUF_LEN; i++) {
-        master_tx[i] = TEST_SLV_RX_BUF_LEN - i;
-        slave_rx[i] = 100;
-    }
+        //------------------------------ trans_len < config_len ------------------------------
+        printf("Testing trans_len < config_len:\n");
+        spi_slave_transaction_t *slave_out, slave_tans = {
+            .tx_buffer = slave_tx,
+            .rx_buffer = slave_rx,
+            .tx_length = 8 * 10, // let tx shorter than rx but larger than trans_len
+            .rx_length = 8 * (TEST_SLV_RX_BUF_LEN),
+            .flags = SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO,
+        };
+        TEST_ESP_OK(spi_slave_queue_trans(TEST_SLAVE_HOST, &slave_tans, portMAX_DELAY));
 
-    //------------------------------ trans_len < config_len ------------------------------
-    printf("Testing trans_len < config_len:\n");
-    spi_slave_transaction_t *slave_out, slave_tans = {
-        .length = 8 * TEST_SLV_RX_BUF_LEN,
-        .rx_buffer = slave_rx,
-    };
-    TEST_ESP_OK(spi_slave_queue_trans(TEST_SLAVE_HOST, &slave_tans, portMAX_DELAY));
+        spi_transaction_t master_tans = {
+            .length = 8 * 7,
+            .rx_buffer = master_rx,
+            .tx_buffer = master_tx,
+        };
+        memset(master_rx, 0x55, TEST_SLV_RX_BUF_LEN);
+        spi_device_polling_transmit(spidev0, &master_tans);
 
-    spi_transaction_t master_tans = {
-        .length = 8 * 7,
-        .tx_buffer = master_tx,
-    };
-    spi_device_polling_transmit(spidev0, &master_tans);
+        TEST_ESP_OK(spi_slave_get_trans_result(TEST_SLAVE_HOST, &slave_out, portMAX_DELAY));
 
-    TEST_ESP_OK(spi_slave_get_trans_result(TEST_SLAVE_HOST, &slave_out, portMAX_DELAY));
+        ESP_LOGI(SLAVE_TAG, "trans_len: %d, config_len rx %d tx %d", master_tans.length / 8, slave_tans.rx_length / 8, slave_tans.tx_length / 8);
+        ESP_LOG_BUFFER_HEX("master tx", master_tans.tx_buffer, master_tans.length / 8);
+        ESP_LOG_BUFFER_HEX("slave  rx", slave_tans.rx_buffer, TEST_SLV_RX_BUF_LEN);
+        ESP_LOG_BUFFER_HEX("master rx", master_rx, TEST_SLV_RX_BUF_LEN);
 
-    ESP_LOGI(SLAVE_TAG, "trans_len: %d, config_len %d", slave_tans.trans_len / 8, slave_tans.length / 8);
-    ESP_LOG_BUFFER_HEX("master tx", master_tans.tx_buffer, master_tans.length / 8);
-    ESP_LOG_BUFFER_HEX("slave  rx", slave_tans.rx_buffer, TEST_SLV_RX_BUF_LEN);
+        TEST_ASSERT_EQUAL(master_tans.length, slave_tans.trans_len);
+        for (uint8_t i = slave_tans.trans_len; i < slave_tans.rx_length; i += 8) {
+            TEST_ASSERT_EQUAL(slave_rx[i / 8], 100);
+        }
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(slave_tx, master_rx, master_tans.length / 8);
 
-    TEST_ASSERT_EQUAL(master_tans.length, slave_tans.trans_len);
-    for (uint8_t i = slave_tans.trans_len; i < slave_tans.length; i += 8) {
-        TEST_ASSERT_EQUAL(slave_rx[i / 8], 100);
-    }
+        //------------------------------ trans_len > config_len ------------------------------
+        printf("Testing trans_len > config_len:\n");
+        slave_tans.rx_length = 8 * 8;
+        slave_tans.tx_length = 8 * 10;
+        TEST_ESP_OK(spi_slave_queue_trans(TEST_SLAVE_HOST, &slave_tans, portMAX_DELAY));
 
-    //------------------------------ trans_len > config_len ------------------------------
-    printf("Testing trans_len > config_len:\n");
-    slave_tans.length = 8 * 9;
-    TEST_ESP_OK(spi_slave_queue_trans(TEST_SLAVE_HOST, &slave_tans, portMAX_DELAY));
+        master_tans.length = 8 * 13,
+        master_tans.rxlength = 8 * 13;
+        spi_device_polling_transmit(spidev0, &master_tans);
 
-    master_tans.length = 8 * 11,
-    spi_device_polling_transmit(spidev0, &master_tans);
+        TEST_ESP_OK(spi_slave_get_trans_result(TEST_SLAVE_HOST, &slave_out, portMAX_DELAY));
 
-    TEST_ESP_OK(spi_slave_get_trans_result(TEST_SLAVE_HOST, &slave_out, portMAX_DELAY));
-
-    ESP_LOGI(SLAVE_TAG, "trans_len: %d, config_len %d", master_tans.length / 8, slave_tans.trans_len / 8);
-    ESP_LOG_BUFFER_HEX("master tx", master_tans.tx_buffer, master_tans.length / 8);
-    ESP_LOG_BUFFER_HEX("slave  rx", slave_tans.rx_buffer, TEST_SLV_RX_BUF_LEN);
+        ESP_LOGI(SLAVE_TAG, "trans_len: %d, config_len rx %d tx %d", master_tans.length / 8, slave_tans.rx_length / 8, slave_tans.tx_length / 8);
+        ESP_LOG_BUFFER_HEX("master tx", master_tans.tx_buffer, master_tans.length / 8);
+        ESP_LOG_BUFFER_HEX("slave  rx", slave_tans.rx_buffer, TEST_SLV_RX_BUF_LEN);
+        ESP_LOG_BUFFER_HEX("master rx", master_rx, TEST_SLV_RX_BUF_LEN);
 
 #if !CONFIG_IDF_TARGET_ESP32    // esp32 already hardware limited trans_len <= config_len
-    TEST_ASSERT_EQUAL(master_tans.length, slave_tans.trans_len);
+        TEST_ASSERT_EQUAL(master_tans.length, slave_tans.trans_len);
 #endif
-    for (uint8_t i = slave_tans.length; i < TEST_SLV_RX_BUF_LEN * 8; i += 8) {
-        TEST_ASSERT_EQUAL(slave_rx[i / 8], 100);
-    }
+        for (uint8_t i = slave_tans.rx_length; i < TEST_SLV_RX_BUF_LEN * 8; i += 8) {
+            TEST_ASSERT_EQUAL(slave_rx[i / 8], 100);
+        }
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(slave_tx, master_rx, slave_tans.tx_length / 8);
 
-    TEST_ESP_OK(spi_slave_free(TEST_SLAVE_HOST));
+        TEST_ESP_OK(spi_slave_free(TEST_SLAVE_HOST));
+    }
     TEST_ESP_OK(spi_bus_remove_device(spidev0));
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
 }
-#endif // !CONFIG_SPIRAM
 #endif // #if (TEST_SPI_PERIPH_NUM >= 2)
+
+#if CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE
+#define PSRAM_TRANS_LEN     16000
+TEST_CASE("test slave using external ram", "[spi]")
+{
+    custom_setup((TEST_SPI_PERIPH_NUM >= 2) ? TEST_SLAVE_HOST : 0, TEST_SPI_HOST);
+
+    uint8_t *slave_ext_tx = heap_caps_aligned_calloc(32, 1, PSRAM_TRANS_LEN, MALLOC_CAP_SPIRAM);
+    uint8_t *slave_ext_rx = heap_caps_aligned_calloc(32, 1, PSRAM_TRANS_LEN, MALLOC_CAP_SPIRAM);
+    uint8_t *master_tx = heap_caps_malloc(PSRAM_TRANS_LEN, MALLOC_CAP_DMA);
+    uint8_t *master_rx = heap_caps_malloc(PSRAM_TRANS_LEN, MALLOC_CAP_DMA);
+
+    spi_slave_transaction_t slave_tans = {}, *out_trans;
+    slave_tans.length = 8 * PSRAM_TRANS_LEN;
+    slave_tans.tx_buffer = slave_ext_tx;
+    slave_tans.rx_buffer = slave_ext_rx;
+    slave_tans.flags = SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO;
+
+    spi_transaction_t master_tans = {};
+    master_tans.override_freq_hz = MIN(60000000, (CONFIG_SPIRAM_SPEED / 2) * 1000 * 1000);
+    master_tans.tx_buffer = master_tx;
+    master_tans.rx_buffer = master_rx;
+
+    for (int i = 0; i < 6; i ++) {
+        test_fill_random_to_buffers_dualboard(7 + i, master_tx, slave_ext_tx, PSRAM_TRANS_LEN);
+        slave_tans.length -= i * 8;
+        master_tans.length = slave_tans.length;
+        master_tans.rxlength = slave_tans.length;
+        ESP_LOGI(SLAVE_TAG, "Test freq: %ld, tx: %p, rx: %p, len: %d", master_tans.override_freq_hz, slave_tans.tx_buffer, slave_tans.rx_buffer, slave_tans.length / 8);
+
+        uint32_t before = esp_get_free_heap_size();
+        TEST_ESP_OK(spi_slave_queue_trans(TEST_SPI_HOST, &slave_tans, portMAX_DELAY));
+        uint32_t after = esp_get_free_heap_size();
+#if (TEST_SPI_PERIPH_NUM >= 2)
+        spi_device_transmit(spi, &master_tans);
+#else
+        spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+        spi_master_trans_impl_gpio(buscfg, PIN_NUM_CS, 0, (uint8_t *)master_tans.tx_buffer, master_tans.rx_buffer, master_tans.length / 8, false);
+#endif
+        ESP_LOGI(SLAVE_TAG, "slave malloc: %ld", after - before);
+        TEST_ASSERT(i ? (before - after) > PSRAM_TRANS_LEN : (before - after) < PSRAM_TRANS_LEN);
+        TEST_ESP_OK(spi_slave_get_trans_result(TEST_SPI_HOST, &out_trans, portMAX_DELAY));
+
+        TEST_ASSERT_EQUAL(master_tans.length, slave_tans.trans_len);
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(slave_tans.tx_buffer, master_tans.rx_buffer, master_tans.length / 8);
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(master_tans.tx_buffer, slave_tans.rx_buffer, master_tans.length / 8);
+        ESP_LOGI(SLAVE_TAG, "ok\n");
+    }
+
+#if (TEST_SPI_PERIPH_NUM >= 2) && !SOC_IS(ESP32P4)  // P4 can't reach error condition since it has powerful 16bits ddr psram
+    master_tans.override_freq_hz = 61000000;    // real freq will be 40 if just config 60M
+    ESP_LOGI(SLAVE_TAG, "Testing over freq: %ld", master_tans.override_freq_hz);
+    TEST_ESP_OK(spi_slave_queue_trans(TEST_SPI_HOST, &slave_tans, portMAX_DELAY));
+    spi_device_transmit(spi, (spi_transaction_t *)&master_tans);
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, spi_slave_get_trans_result(TEST_SPI_HOST, &out_trans, portMAX_DELAY));
+#endif
+
+    free(slave_ext_tx);
+    free(slave_ext_rx);
+    free(master_tx);
+    free(master_rx);
+    custom_teardown();
+    ESP_LOGI(SLAVE_TAG, "test passed.");
+}
+#endif // CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE
 
 TEST_CASE("test slave send unaligned", "[spi]")
 {
@@ -258,7 +347,7 @@ TEST_CASE("test slave send unaligned", "[spi]")
     buscfg.flags |= SPICOMMON_BUSFLAG_GPIO_PINS;
     spi_slave_interface_config_t slvcfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
     TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &buscfg, &slvcfg, SPI_DMA_CH_AUTO));
-    same_pin_func_sel(buscfg, slvcfg.spics_io_num, 0, true);
+    same_pin_func_sel(0, TEST_SLAVE_HOST, buscfg, slvcfg.spics_io_num);
 
     memcpy(master_txbuf, master_send, sizeof(master_send));
     memcpy(slave_txbuf, slave_send, sizeof(slave_send));
@@ -678,7 +767,7 @@ TEST_CASE("test_spi_slave_sleep_retention", "[spi]")
         buscfg.flags |= SPICOMMON_BUSFLAG_GPIO_PINS;
         spi_slave_interface_config_t slvcfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
         TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &buscfg, &slvcfg, SPI_DMA_DISABLED));
-        same_pin_func_sel(buscfg, slvcfg.spics_io_num, 0, true);
+        same_pin_func_sel(0, TEST_SLAVE_HOST, buscfg, slvcfg.spics_io_num);
 
         for (uint8_t cnt = 0; cnt < 3; cnt ++) {
             printf("Going into sleep with power %s ...\n", (buscfg.flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) ? "down" : "hold");

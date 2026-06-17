@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-P4 |
-| ----------------- | -------- |
+| Supported Targets | ESP32-P4 | ESP32-S31 |
+| ----------------- | -------- | --------- |
 
 # Time Synchronization over PTP
 (See the README.md file in the upper level 'examples' directory for more information about examples.)

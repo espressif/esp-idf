@@ -15,8 +15,8 @@ extern "C" {
 /**
  * @brief Enable an entropy source for RNG if RF subsystem is disabled
  *
- * @warning This function is not safe to use if any other subsystem is accessing the RF subsystem or
- *          the ADC at the same time!
+ * @warning If use ADC as entropy source, this function is not safe
+ * if any other subsystem is accessing the RF subsystem or the ADC at the same time!
  *
  * The exact internal entropy source mechanism depends on the chip in use but
  * all SoCs use the SAR ADC to continuously mix random bits (an internal

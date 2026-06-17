@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -31,7 +31,7 @@ static const char *TAG = "i2s_multi_dev_test";
 #define TEST_I2S_MCK_IO         (GPIO_NUM_1)
 #define TEST_I2S_BCK_IO         (GPIO_NUM_4)
 #define TEST_I2S_WS_IO          (GPIO_NUM_5)
-#if CONFIG_IDF_TARGET_ESP32H2
+#if CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32H4
 #define TEST_I2S_DO_IO          (GPIO_NUM_2)
 #define TEST_I2S_DI_IO          (GPIO_NUM_3) // DI and DO gpio will be reversed on slave runner
 #else
@@ -80,6 +80,9 @@ static void test_i2s_tdm_master(uint32_t sample_rate, i2s_data_bit_width_t bit_w
         .gpio_cfg = TEST_I2S_DEFAULT_GPIO(I2S_GPIO_UNUSED, true),
     };
     i2s_tdm_config.clk_cfg.mclk_multiple = I2S_MCLK_MULTIPLE_512;
+#if CONFIG_IDF_TARGET_ESP32S31
+    i2s_tdm_config.clk_cfg.clk_src = I2S_CLK_SRC_APLL;
+#endif
     TEST_ESP_OK(i2s_channel_init_tdm_mode(i2s_tdm_tx_handle, &i2s_tdm_config));
     TEST_ESP_OK(i2s_channel_init_tdm_mode(i2s_tdm_rx_handle, &i2s_tdm_config));
 
@@ -293,7 +296,7 @@ TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_8bits_4slots", "[I2S
 /* The I2S source clock can only reach 96Mhz on ESP32H2,
    and the max clock source APLL on P4 is 125M,
    which can't satisfy the following configurations in slave mode */
-#if !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32P4
+#if !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32H4 && !CONFIG_IDF_TARGET_ESP32P4
 static void test_i2s_tdm_master_48k_16bits_8slots(void)
 {
     test_i2s_tdm_master(48000, I2S_DATA_BIT_WIDTH_16BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3 |
@@ -339,7 +342,7 @@ static void test_i2s_external_clk_src(bool is_master, bool is_external)
         std_cfg.clk_cfg.clk_src = I2S_CLK_SRC_EXTERNAL;
         std_cfg.clk_cfg.ext_clk_freq_hz = 22579200;
     }
-#if CONFIG_IDF_TARGET_ESP32P4
+#if CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32S31
     else {
         // Use APLL instead.
         // Because the default clock source is not sufficient for 22.58M MCLK

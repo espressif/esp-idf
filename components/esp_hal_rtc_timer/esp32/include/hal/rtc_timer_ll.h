@@ -44,8 +44,12 @@ FORCE_INLINE_ATTR uint64_t rtc_timer_ll_get_cycle_count(uint8_t timer_id)
     while (GET_PERI_REG_MASK(RTC_CNTL_TIME_UPDATE_REG, RTC_CNTL_TIME_VALID) == 0) {
         esp_rom_delay_us(1);
         if (attempts) {
-            if (--attempts == 0 && clk_ll_xtal32k_digi_is_enabled()) {
-                HAL_LOGW("rtc_timer_ll", "32KHz xtal has been stopped.");
+            if (--attempts == 0) {
+                if (clk_ll_xtal32k_digi_is_enabled()) {
+                    HAL_EARLY_LOGW("rtc_timer_ll", "32KHz xtal has been stopped.");
+                }
+                HAL_EARLY_LOGW("rtc_timer_ll", "RTC Timer stopped.");
+                break;
             }
         }
     }

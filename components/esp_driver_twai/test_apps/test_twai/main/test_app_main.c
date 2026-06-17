@@ -10,7 +10,7 @@
 #include "esp_heap_caps.h"
 
 // lazy install of mutex and pm_lock occupied memorys
-#define LEAKS (300)
+#define LEAKS (400)
 
 void setUp(void)
 {

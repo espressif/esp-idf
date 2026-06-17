@@ -28,6 +28,9 @@ typedef struct {
     int i2c_port_num;               /* SCCB: i2c port */
     int i2c_sda_io_num;             /* SCCB: i2c SDA IO number */
     int i2c_scl_io_num;             /* SCCB: i2c SCL IO number */
+    int reset_pin;                  /* Sensor: reset GPIO number, -1 if unused */
+    int pwdn_pin;                   /* Sensor: power-down GPIO number, -1 if unused */
+    int xclk_pin;                   /* Sensor: XCLK GPIO number, -1 if unused */
     esp_cam_sensor_port_t port;     /* Sensor: interface of the camera sensor */
     const char *format_name;        /* Sensor: format to be set for the camera sensor */
 } example_sensor_config_t;

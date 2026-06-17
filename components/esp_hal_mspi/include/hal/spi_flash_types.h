@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <esp_types.h>
-#include <esp_bit_defs.h>
-#include "esp_flash_err.h"
+#include "esp_types.h"
+#include "esp_err.h"
+#include "esp_bit_defs.h"
 
 #ifdef __cplusplus
 extern "C" {

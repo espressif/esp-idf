@@ -86,6 +86,13 @@ typedef enum {
     UART_INTR_WAKEUP           = (0x1 << 19),
 } uart_intr_t;
 
+typedef enum {
+    UART_LL_MEM_LP_MODE_DEEP_SLEEP,  // memory enters deep sleep in low power stage
+    UART_LL_MEM_LP_MODE_LIGHT_SLEEP, // memory enters light sleep in low power stage
+    UART_LL_MEM_LP_MODE_SHUT_DOWN,   // memory is powered down in low power stage
+    UART_LL_MEM_LP_MODE_DISABLE,     // disable low power stage behavior
+} uart_ll_mem_lp_mode_t;
+
 /**
  * @brief Sync the update to UART core clock domain
  *
@@ -252,6 +259,101 @@ FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *source
 }
 
 /**
+ * @brief  Force UART memory block powered on by software.
+ *
+ * @param  uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_mem_force_power_on(uart_port_t uart_num)
+{
+    switch (uart_num) {
+    case 0:
+        PCR.uart0_mem_lp_ctrl.uart0_mem_force_ctrl = 1;
+        PCR.uart0_mem_lp_ctrl.uart0_mem_lp_en = 0;
+        break;
+    case 1:
+        PCR.uart1_mem_lp_ctrl.uart1_mem_force_ctrl = 1;
+        PCR.uart1_mem_lp_ctrl.uart1_mem_lp_en = 0;
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+
+/**
+ * @brief  Force UART memory block in low power by software.
+ *
+ * @param  uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_mem_force_low_power(uart_port_t uart_num)
+{
+    switch (uart_num) {
+    case 0:
+        PCR.uart0_mem_lp_ctrl.uart0_mem_force_ctrl = 1;
+        PCR.uart0_mem_lp_ctrl.uart0_mem_lp_en = 1;
+        break;
+    case 1:
+        PCR.uart1_mem_lp_ctrl.uart1_mem_force_ctrl = 1;
+        PCR.uart1_mem_lp_ctrl.uart1_mem_lp_en = 1;
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+
+/**
+ * @brief  Control UART memory block by PMU logic.
+ *
+ * @param  uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_mem_power_by_pmu(uart_port_t uart_num)
+{
+    switch (uart_num) {
+    case 0:
+        PCR.uart0_mem_lp_ctrl.uart0_mem_force_ctrl = 0;
+        PCR.uart0_mem_lp_ctrl.uart0_mem_lp_en = 0;
+        break;
+    case 1:
+        PCR.uart1_mem_lp_ctrl.uart1_mem_force_ctrl = 0;
+        PCR.uart1_mem_lp_ctrl.uart1_mem_lp_en = 0;
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+
+/**
+ * @brief  Set UART memory low power mode in low power stage.
+ *
+ * @param  uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ * @param  mode UART memory low power mode.
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_mem_set_low_power_mode(uart_port_t uart_num, uart_ll_mem_lp_mode_t mode)
+{
+    switch (uart_num) {
+    case 0:
+        PCR.uart0_mem_lp_ctrl.uart0_mem_lp_mode = mode;
+        break;
+    case 1:
+        PCR.uart1_mem_lp_ctrl.uart1_mem_lp_mode = mode;
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+
+/**
  * @brief  Configure the baud-rate.
  *
  * @param  hw Beginning address of the peripheral registers.
@@ -297,9 +399,37 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_fr
 {
     typeof(hw->clkdiv_sync) div_reg;
     div_reg.val = hw->clkdiv_sync.val;
-    int sclk_div;
-    sclk_div = UART_LL_PCR_REG_U32_GET(hw, sclk_conf, sclk_div_num) + 1;
+    int sclk_div = UART_LL_PCR_REG_U32_GET(hw, sclk_conf, sclk_div_num) + 1;
     return ((sclk_freq << 4)) / (((div_reg.clkdiv << 4) | div_reg.clkdiv_frag) * sclk_div);
+}
+
+/**
+ * @brief  Set the UART glitch filter threshold. Any high pulse lasting shorter than this value will be ignored when the filter is enabled.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  glitch_filt_thrd The glitch filter threshold to be set (unit: ns)
+ * @param  sclk_freq Frequency of the clock source of UART, in Hz.
+ */
+FORCE_INLINE_ATTR void uart_ll_set_glitch_filt_thrd(uart_dev_t *hw, uint32_t glitch_filt_thrd, uint32_t sclk_freq)
+{
+    uint32_t clk_cycles = 0;
+    if (glitch_filt_thrd > 0) {
+        uint32_t ref_clk_freq = sclk_freq / (UART_LL_PCR_REG_U32_GET(hw, sclk_conf, sclk_div_num) + 1);
+        clk_cycles = ((uint64_t)glitch_filt_thrd * ref_clk_freq + 1000000000 - 1) / 1000000000; // round up to always filter something
+        HAL_ASSERT(clk_cycles <= UART_GLITCH_FILT_V);
+    }
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->rx_filt, glitch_filt, clk_cycles);
+}
+
+/**
+ * @brief  Enable or disable the UART glitch filter
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  enable True to enable the filter, False to disable the filter
+ */
+FORCE_INLINE_ATTR void uart_ll_enable_glitch_filt(uart_dev_t *hw, bool enable)
+{
+    hw->rx_filt.glitch_filt_en = enable;
 }
 
 /**

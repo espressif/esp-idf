@@ -18,11 +18,16 @@
 extern "C" {
 #endif
 
-#define AHB_DMA_LL_GET_HW(id) (((id) == 0) ? (&AHB_DMA) : NULL)
+#define AHB_DMA_LL_GET_HW(id) (((id) == 0) ? (&AHB_DMA) : (((id) == 2) ? ((ahb_dma_dev_t *)&LP_AHB_DMA) : NULL))
 
 // any "dummy" peripheral ID can be used for M2M mode
 #define AHB_DMA_LL_M2M_FREE_PERIPH_ID_MASK (0x8200)
+#define AHB_DMA_LL_RX_EVENT_MASK    (0x7F)
+#define AHB_DMA_LL_TX_EVENT_MASK    (0x3F)
 
+#define LP_AHB_DMA_LL_M2M_FREE_PERIPH_ID_MASK (0xFFFC)
+#define AHB_DMA_LL_RX_EVENT_MASK    (0x7F)
+#define AHB_DMA_LL_TX_EVENT_MASK    (0x3F)
 ///////////////////////////////////// Common /////////////////////////////////////////
 
 /**
@@ -64,6 +69,17 @@ static inline void ahb_dma_ll_set_default_memory_range(ahb_dma_dev_t *dev)
 {
     // AHB-DMA can access SRAM, ROM, MSPI Flash, MSPI PSRAM
     dev->intr_mem_start_addr.val = 0x2F000000;
+    dev->intr_mem_end_addr.val = 0x53FFFFFF;
+}
+
+/**
+ * @brief Preset valid memory range for LP_AHB-DMA
+ * @param dev DMA register base address
+ */
+static inline void lp_ahb_dma_ll_set_default_memory_range(ahb_dma_dev_t *dev)
+{
+    // LP_AHB-DMA can access LPMEM, SRAM, ROM, MSPI Flash, MSPI PSRAM
+    dev->intr_mem_start_addr.val = 0x2E000000;
     dev->intr_mem_end_addr.val = 0x53FFFFFF;
 }
 

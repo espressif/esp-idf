@@ -23,7 +23,7 @@
 #define SOC_APM_CTRL_TEE_MODE_ACCESS_BUG   0
 
 /********* GDMA APM master ID *********/
-#define TEST_GDMA_APM_MASTER_ID         26    /* GDMA_DUMMY10 */
+#define TEST_GDMA_APM_MASTER_ID         27    /* GDMA_DUMMY11 */
 
 /********* APM controller and path definitions *********/
 #define HP_CPU_CPUPERI_APM_CTRL         APM_CTRL_HP_APM

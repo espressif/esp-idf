@@ -26,6 +26,7 @@ entries:
         esp_ieee802154_frame: is_src_panid_present (noflash)
         esp_ieee802154_pib: ieee802154_pib_get_pending_mode (noflash)
         esp_ieee802154_pib: ieee802154_pib_get_rx_when_idle (noflash)
+        esp_ieee802154_sec: ieee802154_sec_clear (noflash)
         esp_ieee802154_sec: ieee802154_transmit_security_config (noflash)
         esp_ieee802154_timer: ieee802154_timer0_set_threshold (noflash)
         esp_ieee802154_timer: ieee802154_timer0_start (noflash)

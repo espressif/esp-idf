@@ -1,7 +1,7 @@
-| Supported Targets | ESP32-P4 |
-| ----------------- | -------- |
+| Supported Targets | ESP32-P4 | ESP32-S31 |
+| ----------------- | -------- | --------- |
 
-# LP I2C Example
+# LP SPI Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
@@ -22,6 +22,7 @@ To run this example, you should have an ESP based development board that support
 |                         | SDI(MISO) | SDO(MOSI) | SCK   | CSB (CS) |
 | ----------------------- | ----------| ----------| ----- | -------- |
 | ESP32-P4 LP SPI Master  | GPIO6     | GPIO7     | GPIO8 | GPIO4    |
+| ESP32-S31 LP SPI Master | GPIO6     | GPIO7     | GPIO3 | GPIO4    |
 
 ### Build and Flash
 

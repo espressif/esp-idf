@@ -13,6 +13,8 @@
 #include "esp_timer.h"
 #include "sdkconfig.h"
 
+#if CONFIG_LOG_API_CONSTRAINED_ENV_SAFE
+
 #if CONFIG_LOG_TAG_LEVEL_IMPL_NONE
 #define EXPECTED_US 3
 #define DELTA_US    3
@@ -51,7 +53,11 @@ TEST_CASE("test master logging level performance", "[log]")
 #if ESP_LOG_VERSION == 1
     const int typical_value = 150;
 #else // ESP_LOG_VERSION == 2
+#if CONFIG_LOG_API_CONSTRAINED_ENV_SAFE
+    const int typical_value = 400;
+#else
     const int typical_value = 250;
+#endif // CONFIG_LOG_API_CONSTRAINED_ENV_SAFE
 #endif // ESP_LOG_VERSION == 2
     TEST_ASSERT_INT_WITHIN(100, typical_value, calc_time_of_logging(ITERATIONS));
 #else
@@ -68,3 +74,4 @@ TEST_CASE("test master logging level performance", "[log]")
     esp_log_level_set("*", ESP_LOG_INFO);
     ESP_LOGI(TAG, "End");
 }
+#endif // CONFIG_LOG_API_CONSTRAINED_ENV_SAFE

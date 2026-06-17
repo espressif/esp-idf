@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -12,6 +12,8 @@
 #include "unity.h"
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
+#include "esp_heap_caps_init.h"
+#include "heap_memory_layout.h"
 #include "spi_flash_mmap.h"
 #include "esp_memory_utils.h"
 #include "esp_private/spi_flash_os.h"
@@ -57,7 +59,7 @@ TEST_CASE("Capabilities allocator test", "[heap]")
         m1 = heap_caps_malloc(alloc32, MALLOC_CAP_32BIT);
         printf("--> %p\n", m1);
         //Check that we got IRAM back
-        TEST_ASSERT((((int)m1)&0xFF000000)==0x40000000);
+        TEST_ASSERT(esp_ptr_in_iram(m1));
         free8 = heap_caps_get_free_size(MALLOC_CAP_8BIT);
         free32 = heap_caps_get_free_size(MALLOC_CAP_32BIT);
         printf("Free 8bit-capable memory (after 32-bit): %dK, 32-bit capable memory %dK\n", free8, free32);
@@ -81,8 +83,8 @@ TEST_CASE("Capabilities allocator test", "[heap]")
             m2[x]= heap_caps_malloc(alloc32, MALLOC_CAP_32BIT);
             printf("--> %p\n", m2[x]);
         }
-        TEST_ASSERT((((int)m2[0])&0xFF000000)==0x40000000);
-        TEST_ASSERT((((int)m2[9])&0xFF000000)==0x3F000000);
+        TEST_ASSERT(esp_ptr_in_iram(m2[0]));
+        TEST_ASSERT(esp_ptr_in_dram(m2[9]));
 
     } else {
         printf("This platform has no IRAM-only so changeover will never occur, jumping to next test\n");
@@ -94,7 +96,7 @@ TEST_CASE("Capabilities allocator test", "[heap]")
         free_iram = heap_caps_get_free_size(MALLOC_CAP_EXEC);
         m1= heap_caps_malloc(MIN(free_iram / 2, 10*1024), MALLOC_CAP_EXEC);
         printf("--> %p\n", m1);
-        TEST_ASSERT((((int)m1)&0xFF000000)==0x40000000);
+        TEST_ASSERT(esp_ptr_in_iram(m1) || esp_ptr_in_diram_iram(m1));
         for (x=0; x<10; x++) free(m2[x]);
 
     } else {
@@ -102,7 +104,7 @@ TEST_CASE("Capabilities allocator test", "[heap]")
         free_iram = heap_caps_get_free_size(MALLOC_CAP_EXEC);
         m1= heap_caps_malloc(MIN(free_iram / 2, 10*1024), MALLOC_CAP_EXEC);
         printf("--> %p\n", m1);
-        TEST_ASSERT((((int)m1)&0xFF000000)==0x40000000);
+        TEST_ASSERT(esp_ptr_in_iram(m1) || esp_ptr_in_diram_iram(m1));
     }
 
     free(m1);
@@ -204,6 +206,41 @@ TEST_CASE("heap caps minimum free bytes monitoring", "[heap]")
     // the local minimum (since the local minimum didn't create a new all time minimum)
     size_t free_size = heap_caps_get_minimum_free_size(caps);
     TEST_ASSERT(local_minimum_free_size >= free_size);
+}
+
+extern void set_leak_threshold(int threshold);
+
+/* NOTE: This is not a well-formed unit test, it leaks memory */
+TEST_CASE("heap registered after startup should not affect minimum free size", "[heap]")
+{
+    printf("heap registered after startup should not affect minimum free size\n");
+
+    const uint32_t MALLOC_CAP_INVENTED = (1 << 29); /* unused capability, must differ from (1 << 30) used in test_runtime_heap_reg.c */
+    const size_t BUF_SZ = 3500;
+    uint32_t caps[SOC_MEMORY_TYPE_NO_PRIOS] = { MALLOC_CAP_INVENTED };
+
+    // Record the minimum free size for default caps before adding a new heap
+    size_t minimum_before = heap_caps_get_minimum_free_size(MALLOC_CAP_DEFAULT);
+
+    // Allocate a buffer and register it as a new heap region.
+    // Since we are past startup (app_main has been reached), the newly
+    // registered heap should NOT affect the minimum free size.
+    void *buffer = malloc(BUF_SZ);
+    TEST_ASSERT_NOT_NULL(buffer);
+    TEST_ESP_OK(heap_caps_add_region_with_caps(caps, (intptr_t)buffer, (intptr_t)buffer + BUF_SZ));
+
+    // The minimum free size for the invented capability should be 0
+    // because the heap was registered after startup.
+    size_t minimum_invented = heap_caps_get_minimum_free_size(MALLOC_CAP_INVENTED);
+    TEST_ASSERT_EQUAL(0, minimum_invented);
+
+    // The minimum free size for default caps should not have increased
+    // (it may have decreased slightly due to the malloc above).
+    size_t minimum_after = heap_caps_get_minimum_free_size(MALLOC_CAP_DEFAULT);
+    TEST_ASSERT(minimum_after <= minimum_before);
+
+    // set the leak threshold to a bigger value as this test leaks memory
+    set_leak_threshold(-4000);
 }
 
 TEST_CASE("heap caps minimum free bytes fault cases", "[heap]")
@@ -327,11 +364,16 @@ TEST_CASE("RTC memory should be lowest priority and its free size should be big 
     TEST_ASSERT_NOT_NULL(ptr);
     TEST_ASSERT(!esp_ptr_in_rtc_dram_fast(ptr));
 
-    const size_t max_rtc_size = SOC_RTC_DATA_HIGH - SOC_RTC_DATA_LOW;
     const size_t min_rtc_size_since_init = heap_caps_get_minimum_free_size(MALLOC_CAP_RTCRAM);
     const size_t rtc_free_size = heap_caps_get_free_size(MALLOC_CAP_RTCRAM);
     TEST_ASSERT_EQUAL(min_rtc_size_since_init, rtc_free_size);
+    /* The ROM TLSF implementation uses a statically-sized control_t (sized for the
+    * maximum DRAM pool) which has much higher overhead on small pools like RTCRAM.
+    * The 80% threshold only applies when the IDF TLSF is used. */
+   #if !CONFIG_HEAP_TLSF_USE_ROM_IMPL
+    const size_t max_rtc_size = SOC_RTC_DATA_HIGH - SOC_RTC_DATA_LOW;
     TEST_ASSERT_GREATER_OR_EQUAL((max_rtc_size * 8) / 10, rtc_free_size);
+#endif
 
     free(ptr);
 }

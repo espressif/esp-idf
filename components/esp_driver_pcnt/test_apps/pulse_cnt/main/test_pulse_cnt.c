@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,31 +23,48 @@ TEST_CASE("pcnt_unit_install_uninstall", "[pcnt]")
         .low_limit = -100,
         .high_limit = 100,
         .intr_priority = 0,
+        .flags.accum_count = true,
     };
-    pcnt_unit_handle_t units[PCNT_LL_GET(UNITS_PER_INST)];
+    // total available units across all PCNT instances on this SoC
+    const int units_per_inst = PCNT_LL_GET(UNITS_PER_INST);
+    const int total_units = PCNT_LL_GET(INST_NUM) * units_per_inst;
+    pcnt_unit_handle_t units[total_units];
     int count_value = 0;
 
+    // The driver no longer auto-spreads units across instances, so the test must
+    // walk every instance explicitly to exhaust all hardware units.
     printf("install pcnt units and check initial count\r\n");
-    for (int i = 0; i < PCNT_LL_GET(UNITS_PER_INST) - 1; i++) {
-        TEST_ESP_OK(pcnt_new_unit(&unit_config, &units[i]));
-        TEST_ESP_OK(pcnt_unit_get_count(units[i], &count_value));
-        TEST_ASSERT_EQUAL(0, count_value);
+    for (int g = 0; g < PCNT_LL_GET(INST_NUM); g++) {
+        unit_config.group_id = g;
+        const int units_to_install = (g == PCNT_LL_GET(INST_NUM) - 1) ? (units_per_inst - 1) : units_per_inst;
+        for (int u = 0; u < units_to_install; u++) {
+            int idx = g * units_per_inst + u;
+            TEST_ESP_OK(pcnt_new_unit(&unit_config, &units[idx]));
+            TEST_ESP_OK(pcnt_unit_get_count(units[idx], &count_value));
+            TEST_ASSERT_EQUAL(0, count_value);
+        }
     }
 
-    // unit with a different interrupt priority
+    // unit with a different interrupt priority, must conflict with the existing
+    // shared interrupt that is already allocated at the default priority
+    unit_config.group_id = PCNT_LL_GET(INST_NUM) - 1;
     unit_config.intr_priority = 3;
-    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, pcnt_new_unit(&unit_config, &units[PCNT_LL_GET(UNITS_PER_INST) - 1]));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, pcnt_new_unit(&unit_config, &units[total_units - 1]));
     unit_config.intr_priority = 0;
-    TEST_ESP_OK(pcnt_new_unit(&unit_config, &units[PCNT_LL_GET(UNITS_PER_INST) - 1]));
+    TEST_ESP_OK(pcnt_new_unit(&unit_config, &units[total_units - 1]));
 
-    // no more free pcnt units
-    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, pcnt_new_unit(&unit_config, &units[0]));
+    // no more free pcnt units in any instance
+    for (int g = 0; g < PCNT_LL_GET(INST_NUM); g++) {
+        unit_config.group_id = g;
+        pcnt_unit_handle_t overflow_unit = NULL;
+        TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, pcnt_new_unit(&unit_config, &overflow_unit));
+    }
 
     printf("set glitch filter\r\n");
     pcnt_glitch_filter_config_t filter_config = {
         .max_glitch_ns = 1000,
     };
-    for (int i = 0; i < PCNT_LL_GET(UNITS_PER_INST); i++) {
+    for (int i = 0; i < total_units; i++) {
         TEST_ESP_OK(pcnt_unit_set_glitch_filter(units[i], &filter_config));
     }
     // invalid glitch configuration
@@ -57,30 +74,30 @@ TEST_CASE("pcnt_unit_install_uninstall", "[pcnt]")
         .on_reach = NULL,
     };
     printf("enable pcnt units\r\n");
-    for (int i = 0; i < PCNT_LL_GET(UNITS_PER_INST); i++) {
+    for (int i = 0; i < total_units; i++) {
         TEST_ESP_OK(pcnt_unit_register_event_callbacks(units[i], &cbs, NULL));
         TEST_ESP_OK(pcnt_unit_enable(units[i]));
     }
 
     printf("start pcnt units\r\n");
-    for (int i = 0; i < PCNT_LL_GET(UNITS_PER_INST); i++) {
+    for (int i = 0; i < total_units; i++) {
         TEST_ESP_OK(pcnt_unit_start(units[i]));
     }
 
     printf("stop pcnt units\r\n");
-    for (int i = 0; i < PCNT_LL_GET(UNITS_PER_INST); i++) {
+    for (int i = 0; i < total_units; i++) {
         TEST_ESP_OK(pcnt_unit_stop(units[i]));
     }
 
     // can't uninstall unit before disable it
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, pcnt_del_unit(units[0]));
     printf("disable pcnt units\r\n");
-    for (int i = 0; i < PCNT_LL_GET(UNITS_PER_INST); i++) {
+    for (int i = 0; i < total_units; i++) {
         TEST_ESP_OK(pcnt_unit_disable(units[i]));
     }
 
     printf("uninstall pcnt units\r\n");
-    for (int i = 0; i < PCNT_LL_GET(UNITS_PER_INST); i++) {
+    for (int i = 0; i < total_units; i++) {
         TEST_ESP_OK(pcnt_del_unit(units[i]));
     }
 }
@@ -241,12 +258,10 @@ static bool test_pcnt_quadrature_reach_watch_point(pcnt_unit_handle_t handle, co
     return false;
 }
 
-TEST_CASE("pcnt_quadrature_decode_event", "[pcnt]")
+static void test_pcnt_quadrature_decode_event_on_one_unit(int group_id)
 {
-    test_gpio_init_for_simulation(TEST_PCNT_GPIO_A);
-    test_gpio_init_for_simulation(TEST_PCNT_GPIO_B);
-
     pcnt_unit_config_t unit_config = {
+        .group_id = group_id,
         .low_limit = -100,
         .high_limit = 100,
     };
@@ -358,6 +373,18 @@ TEST_CASE("pcnt_quadrature_decode_event", "[pcnt]")
     TEST_ESP_OK(pcnt_unit_stop(unit));
     TEST_ESP_OK(pcnt_unit_disable(unit));
     TEST_ESP_OK(pcnt_del_unit(unit));
+}
+
+TEST_CASE("pcnt_quadrature_decode_event", "[pcnt]")
+{
+    test_gpio_init_for_simulation(TEST_PCNT_GPIO_A);
+    test_gpio_init_for_simulation(TEST_PCNT_GPIO_B);
+
+    // test on each PCNT instance, allocating the unit explicitly via group_id
+    for (int inst = 0; inst < PCNT_LL_GET(INST_NUM); inst++) {
+        printf("test quadrature decode event on PCNT instance %d\r\n", inst);
+        test_pcnt_quadrature_decode_event_on_one_unit(inst);
+    }
 }
 
 typedef struct {

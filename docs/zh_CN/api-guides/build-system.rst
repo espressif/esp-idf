@@ -77,6 +77,14 @@ idf.py
 
 没有必要多次运行 ``cmake``。第一次构建后，往后每次只需运行 ``ninja`` 即可。如果项目需要重新配置，``ninja`` 会自动重新调用 ``cmake``。
 
+使用 Ninja 生成器配合 ``idf.py`` 时，可以通过设置环境变量 ``IDF_PY_BUILD_JOBS`` 来限制并行构建任务数。例如：
+
+.. code-block:: bash
+
+    IDF_PY_BUILD_JOBS=6 idf.py build
+
+如果不是通过 ``idf.py``，而是直接调用 CMake、``ninja`` 或 ``make``，则请使用它们各自原生的并行控制选项或环境变量。
+
 若在 CMake 中使用 ``ninja`` 或 ``make``，则多数 ``idf.py`` 子命令也会有其对应的目标，例如在构建目录下运行 ``make menuconfig`` 或 ``ninja menuconfig`` 与运行 ``idf.py menuconfig`` 是相同的。
 
 .. note::
@@ -140,6 +148,43 @@ ESP-IDF 适用于 Python 3.10 以上版本。
 
 如果想在命令行中更优雅地管理 Python 的各个版本，请查看 pyenv_ 或 virtualenv_ 工具，它们会帮助你更改默认的 python 版本。
 
+
+.. _build-acceleration:
+
+构建加速
+--------
+
+ESP-IDF 支持多种用于加速构建过程的工具。这些工具充当编译器启动器，封装并调用实际的编译器。
+
+CCache
+^^^^^^
+
+CCache_ 是一种编译器缓存工具，通过缓存先前的编译结果来加速重新编译。启用后，当使用相同的源代码和编译器标志重复编译时，CCache 会直接返回缓存结果，而无需重新编译。
+
+关于如何启用或禁用 CCache，请参见 :ref:`idf_py_global_options` 章节。
+
+Configdep 封装器
+^^^^^^^^^^^^^^^^^
+
+``esp-idf-configdep`` 工具对编译器生成的依赖文件进行后处理，以减少由 ``sdkconfig.h`` 变更引起的不必要重建。
+
+通常在任一配置选项发生变化时，凡是包含 ``sdkconfig.h`` 的源文件都会被重建，因为编译器会将 ``sdkconfig.h`` 记录为直接依赖。Configdep 工具会在初次构建后编辑这些依赖文件，使源文件不再直接依赖 ``sdkconfig.h``。取而代之的是，源文件会依赖由 ``esp-idf-kconfig`` 创建的一种特殊文件结构：每个配置选项都有各自的文件，当某个选项被修改时，只会更新对应的文件。这样一来，只有实际使用到该变更选项的源文件会被重建，而并非整个项目。
+
+重要：源文件不会被修改，仍然包含 ``#include <sdkconfig.h>``，并且无需更改源代码中的任何内容，Configdep 工具即可正常工作。该工具仅作用于生成的依赖文件 (``.d``) 进行工作。
+
+若重建时仅有少量配置选项频繁变更，该工具尤为有用。Configdep 默认启用。
+
+有关如何启用或禁用 Configdep，请参见 :ref:`idf_py_global_options` 章节。
+
+串联使用加速工具
+^^^^^^^^^^^^^^^^
+
+启用多个加速工具时，它们会以编译器启动器链的形式串联使用。该链按照以下顺序应用：
+
+1. **esp-idf-configdep** （若启用） - 处理依赖文件并优化由 ``sdkconfig.h`` 变更引起的重建
+2. **ccache** （若启用） - 缓存编译结果
+
+链中的每个工具都会封装下一个工具，最终调用实际的编译器。这样可以叠加多个工具的优势。然而，组合使用多个工具并不总能带来最佳性能，因此可能需要针对具体项目尝试不同的工具组合，以获得最佳构建性能。
 
 .. _example-project-structure:
 
@@ -264,6 +309,9 @@ ESP-IDF 适用于 Python 3.10 以上版本。
 2. 在项目 CMakeLists.txt 文件中设置 ``EXTRA_COMPONENT_DIRS``，并添加重命名后的 ``main`` 目录。
 3. 在组件的 CMakeLists.txt 文件中设置 ``COMPONENT_REQUIRES`` 或 ``COMPONENT_PRIV_REQUIRES`` 以指定依赖项。
 
+.. note::
+
+   没有 ``main`` 组件的项目无法使用 ``MINIMAL_BUILD`` :ref:`构建属性 <cmake-build-properties>`，因为该属性的生效明确依赖 ``main`` 组件的存在。因此，请确保在未包含 ``main`` 组件的项目中不要设置 ``MINIMAL_BUILD`` 属性。
 
 覆盖默认的构建规范
 ---------------------------------------
@@ -930,7 +978,7 @@ CMake 文件可以使用 ``IDF_TARGET`` 变量来获取当前的硬件目标。
 有些组件的源文件可能并不是由组件本身提供，而必须从另外的文件生成。假设组件需要一个头文件，该文件由 BMP 文件转换后（使用 bmp2h 工具）的二进制数据组成，然后将头文件包含在名为 graphics_lib.c 的文件中::
 
     add_custom_command(OUTPUT logo.h
-         COMMAND bmp2h -i ${COMPONENT_DIR}/logo.bmp -o log.h
+         COMMAND bmp2h -i ${COMPONENT_DIR}/logo.bmp -o logo.h
          DEPENDS ${COMPONENT_DIR}/logo.bmp
          VERBATIM)
 
@@ -1097,7 +1145,33 @@ ExternalProject 的依赖与构建清理
 
 如果使用 ``SDKCONFIG_DEFAULTS`` 覆盖默认文件的名称，则硬件目标的默认文件名也会从 ``SDKCONFIG_DEFAULTS`` 值中派生。如果 ``SDKCONFIG_DEFAULTS`` 中有多个文件，硬件目标文件会在引入该硬件目标文件的文件之后应用， 而 ``SDKCONFIG_DEFAULTS`` 中所有其它后续文件则会在硬件目标文件之后应用 。
 
-例如，如果 ``SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig_devkit1"``，并且在同一文件夹中有一个 ``sdkconfig.defaults.esp32`` 文件，那么这些文件将按以下顺序应用：（1) sdkconfig.defaults (2) sdkconfig.defaults.esp32 (3) sdkconfig_devkit1。
+以下示例中，假定构建目标为 ``esp32``，且项目目录中有下列文件：
+
+.. code-block:: none
+
+    sdkconfig.defaults
+    sdkconfig.defaults.esp32
+    sdkconfig_devkit1
+
+**示例 1**： ``SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig_devkit1"``
+
+构建系统将按以下顺序应用这些文件：
+
+1. ``sdkconfig.defaults``。
+2. ``sdkconfig.defaults.esp32`` — 对于 ``SDKCONFIG_DEFAULTS`` 中列出的每个文件，构建系统都会尝试加载其对应目标芯片的变体文件。
+3. ``sdkconfig_devkit1``。
+4. 构建系统还会尝试加载 ``sdkconfig_devkit1.esp32``，但由于项目中不存在以此命名的文件，所以不会加载任何额外的文件。
+
+**示例 2**： ``SDKCONFIG_DEFAULTS="sdkconfig_devkit1"``
+
+构建系统将按以下顺序应用这些文件：
+
+1. ``sdkconfig_devkit1``。
+2. 构建系统还会尝试加载 ``sdkconfig_devkit1.esp32``，但由于项目中不存在以此命名的文件，所以不会加载任何额外的文件。
+
+.. warning::
+
+    在第二个示例中，标准的 ``sdkconfig.defaults`` （或其特定于目标的变体）未被应用，因为它未被显式包含在 ``SDKCONFIG_DEFAULTS`` 中。
 
 关于项目配置的详细信息，请参阅 :ref:`项目配置指南 <project-configuration-guide>`。关于配置文件的详细信息，请参阅 :ref:`配置文件的结构和关系 <configuration-structure>`。
 

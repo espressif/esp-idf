@@ -2,5 +2,5 @@ CONFIG_SPIRAM=y
 CONFIG_SPIRAM_MODE_OCT=y
 CONFIG_SPIRAM_SPEED_80M=y
 
-# Enable the XIP-PSRAM feature, so the ext-mem cache won't be disabled when SPI1 is operating the main flash
+# Enable the XIP-PSRAM feature, to increase PSRAM bandwidth
 CONFIG_SPIRAM_XIP_FROM_PSRAM=y

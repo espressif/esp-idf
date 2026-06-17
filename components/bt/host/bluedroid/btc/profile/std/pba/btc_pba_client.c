@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,8 @@
 #include "btc/btc_task.h"
 #include "btc_pba_client.h"
 #include "esp_pbac_api.h"
+#include <stddef.h>
+#include <stdint.h>
 
 #if BTC_PBA_CLIENT_INCLUDED
 
@@ -227,7 +229,12 @@ static bool btc_pba_client_pull_phone_book(uint16_t handle, char *name, bool inc
                 UINT8_TO_BE_STREAM(p, app_param->vcard_selector_operator);
             }
             app_param_len = p - app_param_buff;
-            assert(app_param_len <= BTA_PBAP_PULL_PHONE_BOOK_APP_PARAM_BUFF_SIZE_MIN);
+            if (app_param_len > BTA_PBAP_PULL_PHONE_BOOK_APP_PARAM_BUFF_SIZE_MIN) {
+                osi_free(app_param_buff);
+                app_param_buff = NULL;
+                err = BT_STATUS_FAIL;
+                break;
+            }
             if (app_param_len == 0) {
                 /* user give us an empty app param, allow but not recommend */
                 osi_free(app_param_buff);
@@ -391,9 +398,18 @@ static bool btc_pba_client_pull_vcard_listing(uint16_t handle, char *name, bool 
         }
 
         if (include_app_param) {
-            uint8_t search_value_len = 0;
-            if (app_param->include_search_value && app_param->search_value) {
-                search_value_len = strlen(app_param->search_value) + 1;
+            size_t search_value_len = 0;
+            if (app_param->include_search_value) {
+                if (app_param->search_value == NULL) {
+                    err = BT_STATUS_PARM_INVALID;
+                    break;
+                }
+                size_t sl = strlen(app_param->search_value);
+                if (sl >= UINT8_MAX) {
+                    err = BT_STATUS_PARM_INVALID;
+                    break;
+                }
+                search_value_len = sl + 1;
             }
             app_param_buff = osi_malloc(BTA_PBAP_PULL_VCARD_LISTING_APP_PARAM_BUFF_SIZE_MIN + search_value_len);
             if (app_param_buff == NULL) {
@@ -409,7 +425,7 @@ static bool btc_pba_client_pull_vcard_listing(uint16_t handle, char *name, bool 
             }
             if (app_param->include_search_value) {
                 UINT8_TO_BE_STREAM(p, BTA_PBAP_APP_PARAM_SEARCH_VALUE);
-                UINT8_TO_BE_STREAM(p, search_value_len);
+                UINT8_TO_BE_STREAM(p, (uint8_t)search_value_len);
                 memcpy(p, app_param->search_value, search_value_len);
                 p += search_value_len;
             }
@@ -444,7 +460,12 @@ static bool btc_pba_client_pull_vcard_listing(uint16_t handle, char *name, bool 
                 UINT8_TO_BE_STREAM(p, app_param->vcard_selector_operator);
             }
             app_param_len = p - app_param_buff;
-            assert(app_param_len <= BTA_PBAP_PULL_VCARD_LISTING_APP_PARAM_BUFF_SIZE_MIN + search_value_len);
+            if (app_param_len > BTA_PBAP_PULL_VCARD_LISTING_APP_PARAM_BUFF_SIZE_MIN + search_value_len) {
+                osi_free(app_param_buff);
+                app_param_buff = NULL;
+                err = BT_STATUS_FAIL;
+                break;
+            }
             if (app_param_len == 0) {
                 /* user give us an empty app param, allow but not recommend */
                 osi_free(app_param_buff);
@@ -520,7 +541,12 @@ static bool btc_pba_client_pull_vcard_entry(uint16_t handle, char *name, bool in
                 UINT8_TO_BE_STREAM(p, app_param->format);
             }
             app_param_len = p - app_param_buff;
-            assert(app_param_len <= BTA_PBAP_PULL_VCARD_ENTRY_APP_PARAM_BUFF_SIZE_MIN);
+            if (app_param_len > BTA_PBAP_PULL_VCARD_ENTRY_APP_PARAM_BUFF_SIZE_MIN) {
+                osi_free(app_param_buff);
+                app_param_buff = NULL;
+                err = BT_STATUS_FAIL;
+                break;
+            }
             if (app_param_len == 0) {
                 /* user give us an empty app param, allow but not recommend */
                 osi_free(app_param_buff);
@@ -564,6 +590,7 @@ void btc_pba_client_args_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             memcpy(dst->pull_vcard_listing.name, src->pull_vcard_listing.name, len);
         } else {
             BTC_TRACE_ERROR("%s %d no mem\n", __FUNCTION__, msg->act);
+            break;
         }
         if (src->pull_vcard_listing.include_app_param && src->pull_vcard_listing.app_param.include_search_value) {
             len = strlen(src->pull_vcard_listing.app_param.search_value) + 1;
@@ -572,6 +599,8 @@ void btc_pba_client_args_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
                 memcpy(dst->pull_vcard_listing.app_param.search_value, src->pull_vcard_listing.app_param.search_value, len);
             } else {
                 BTC_TRACE_ERROR("%s %d no mem\n", __FUNCTION__, msg->act);
+                osi_free(dst->pull_vcard_listing.name);
+                dst->pull_vcard_listing.name = NULL;
             }
         }
         break;
@@ -834,15 +863,20 @@ void btc_pba_client_cb_handler(btc_msg_t *msg)
     switch (event) {
     case BTA_PBA_CLIENT_CONN_OPEN_EVT:
         if (p_data->conn.error == BTA_PBA_CLIENT_NO_ERROR) {
-            /* allocate ccb */
-            p_ccb = &btc_pba_client_cb.ccb[p_data->conn.handle - 1];
-            p_ccb->handle = p_data->conn.handle;
-            bdcpy(p_ccb->bd_addr.address, p_data->conn.bd_addr);
-            p_ccb->busy = false;
-            param.conn_stat.connected = true;
-            param.conn_stat.peer_supported_repo = p_data->conn.peer_supported_repo;
-            param.conn_stat.peer_supported_feat = p_data->conn.peer_supported_feat;
-            param.conn_stat.reason = BTA_PBA_CLIENT_NO_ERROR;
+            if (p_data->conn.handle >= 1 && p_data->conn.handle <= BTC_PBA_CLIENT_MAX_CONN_NUM) {
+                p_ccb = &btc_pba_client_cb.ccb[p_data->conn.handle - 1];
+                p_ccb->handle = p_data->conn.handle;
+                bdcpy(p_ccb->bd_addr.address, p_data->conn.bd_addr);
+                p_ccb->busy = false;
+                param.conn_stat.connected = true;
+                param.conn_stat.peer_supported_repo = p_data->conn.peer_supported_repo;
+                param.conn_stat.peer_supported_feat = p_data->conn.peer_supported_feat;
+                param.conn_stat.reason = BTA_PBA_CLIENT_NO_ERROR;
+            } else {
+                BTC_TRACE_ERROR("CONN_OPEN EINVAL handle:%u", p_data->conn.handle);
+                param.conn_stat.connected = false;
+                param.conn_stat.reason = BTA_PBA_CLIENT_FAIL;
+            }
         }
         else {
             param.conn_stat.connected = false;
@@ -855,8 +889,7 @@ void btc_pba_client_cb_handler(btc_msg_t *msg)
         btc_queue_advance();
         break;
     case BTA_PBA_CLIENT_CONN_CLOSE_EVT:
-        if (p_data->conn.handle != 0) {
-            /* clear ccb */
+        if (p_data->conn.handle >= 1 && p_data->conn.handle <= BTC_PBA_CLIENT_MAX_CONN_NUM) {
             p_ccb = &btc_pba_client_cb.ccb[p_data->conn.handle - 1];
             if (p_ccb->path) {
                 osi_free(p_ccb->path);
@@ -873,8 +906,16 @@ void btc_pba_client_cb_handler(btc_msg_t *msg)
         break;
     case BTA_PBA_CLIENT_PULL_PHONE_BOOK_RSP_EVT:
         if (p_data->response.final) {
-            p_ccb = &btc_pba_client_cb.ccb[p_data->response.handle - 1];
-            p_ccb->busy = false;
+            if (p_data->response.handle >= 1 && p_data->response.handle <= BTC_PBA_CLIENT_MAX_CONN_NUM) {
+                p_ccb = &btc_pba_client_cb.ccb[p_data->response.handle - 1];
+                p_ccb->busy = false;
+            } else {
+                BTC_TRACE_ERROR("PULL_PHONE_BOOK_RSP EINVAL handle:%u", p_data->response.handle);
+                if (p_data->response.pkt != NULL) {
+                    osi_free(p_data->response.pkt);
+                }
+                break;
+            }
         }
         param.pull_phone_book_rsp.handle = p_data->response.handle;
         param.pull_phone_book_rsp.final = p_data->response.final;
@@ -888,6 +929,13 @@ void btc_pba_client_cb_handler(btc_msg_t *msg)
         }
         break;
     case BTA_PBA_CLIENT_SET_PHONE_BOOK_RSP_EVT:
+        if (!(p_data->response.handle >= 1 && p_data->response.handle <= BTC_PBA_CLIENT_MAX_CONN_NUM)) {
+            BTC_TRACE_ERROR("SET_PHONE_BOOK_RSP EINVAL handle:%u", p_data->response.handle);
+            if (p_data->response.pkt != NULL) {
+                osi_free(p_data->response.pkt);
+            }
+            break;
+        }
         p_ccb = &btc_pba_client_cb.ccb[p_data->response.handle - 1];
         if (p_data->response.status == BTA_PBA_CLIENT_NO_ERROR && p_ccb->path_pos < p_ccb->path_len) {
             /* since path_len is not zero, path should not be NULL, use asset to check */
@@ -920,7 +968,7 @@ void btc_pba_client_cb_handler(btc_msg_t *msg)
         }
         break;
     case BTA_PBA_CLIENT_PULL_VCARD_LISTING_RSP_EVT:
-        if (p_data->response.final) {
+        if (p_data->response.final && p_data->response.handle >= 1 && p_data->response.handle <= BTC_PBA_CLIENT_MAX_CONN_NUM) {
             p_ccb = &btc_pba_client_cb.ccb[p_data->response.handle - 1];
             p_ccb->busy = false;
         }
@@ -936,7 +984,7 @@ void btc_pba_client_cb_handler(btc_msg_t *msg)
         }
         break;
     case BTA_PBA_CLIENT_PULL_VCARD_ENTRY_RSP_EVT:
-        if (p_data->response.final) {
+        if (p_data->response.final && p_data->response.handle >= 1 && p_data->response.handle <= BTC_PBA_CLIENT_MAX_CONN_NUM) {
             p_ccb = &btc_pba_client_cb.ccb[p_data->response.handle - 1];
             p_ccb->busy = false;
         }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,10 @@
 #include "lp_core_test_app_lp_rom.h"
 #endif
 
+#if SOC_LP_CORE_HAS_PMP
+#include "lp_core_test_pmp_positive.h"
+#endif
+
 extern const uint8_t lp_core_main_bin_start[] asm("_binary_lp_core_test_app_bin_start");
 extern const uint8_t lp_core_main_bin_end[]   asm("_binary_lp_core_test_app_bin_end");
 
@@ -35,6 +39,17 @@ extern const uint8_t lp_core_shared_mem_bin_end[]   asm("_binary_lp_core_test_ap
 #if ESP_ROM_HAS_LP_ROM
 extern const uint8_t lp_core_lp_rom_bin_start[] asm("_binary_lp_core_test_app_lp_rom_bin_start");
 extern const uint8_t lp_core_lp_rom_bin_end[]   asm("_binary_lp_core_test_app_lp_rom_bin_end");
+#endif
+
+#if SOC_LP_CORE_HAS_PMP
+extern const uint8_t lp_core_pmp_positive_bin_start[]   asm("_binary_lp_core_test_pmp_positive_bin_start");
+extern const uint8_t lp_core_pmp_positive_bin_end[]     asm("_binary_lp_core_test_pmp_positive_bin_end");
+extern const uint8_t lp_core_pmp_write_text_bin_start[] asm("_binary_lp_core_test_pmp_write_text_bin_start");
+extern const uint8_t lp_core_pmp_write_text_bin_end[]   asm("_binary_lp_core_test_pmp_write_text_bin_end");
+extern const uint8_t lp_core_pmp_exec_data_bin_start[]  asm("_binary_lp_core_test_pmp_exec_data_bin_start");
+extern const uint8_t lp_core_pmp_exec_data_bin_end[]    asm("_binary_lp_core_test_pmp_exec_data_bin_end");
+extern const uint8_t lp_core_pmp_unmapped_bin_start[]   asm("_binary_lp_core_test_pmp_unmapped_bin_start");
+extern const uint8_t lp_core_pmp_unmapped_bin_end[]     asm("_binary_lp_core_test_pmp_unmapped_bin_end");
 #endif
 
 static void load_and_start_lp_core_firmware(ulp_lp_core_cfg_t* cfg, const uint8_t* firmware_start, const uint8_t* firmware_end)
@@ -123,3 +138,48 @@ TEST_CASE("LP-Core LP-ROM", "[lp_core]")
     printf("LP ROM test passed\n");
 }
 #endif
+
+#if SOC_LP_CORE_HAS_PMP
+TEST_CASE("LP core PMP: normal operation succeeds", "[lp_core][pmp]")
+{
+    ulp_lp_core_cfg_t cfg = {
+        .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU,
+    };
+
+    ulp_pmp_positive_result = 0;
+    load_and_start_lp_core_firmware(&cfg, lp_core_pmp_positive_bin_start, lp_core_pmp_positive_bin_end);
+
+    int timeout_ms = 2000;
+    while (ulp_pmp_positive_result == 0 && timeout_ms-- > 0) {
+        vTaskDelay(pdMS_TO_TICKS(1));
+    }
+    TEST_ASSERT_EQUAL_HEX32(0xA5A5A5A5, ulp_pmp_positive_result);
+}
+
+TEST_CASE("LP core PMP: write to .text triggers Store access fault", "[lp_core][pmp]")
+{
+    ulp_lp_core_cfg_t cfg = {
+        .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU,
+    };
+    load_and_start_lp_core_firmware(&cfg, lp_core_pmp_write_text_bin_start, lp_core_pmp_write_text_bin_end);
+    vTaskDelay(pdMS_TO_TICKS(1000));
+}
+
+TEST_CASE("LP core PMP: execute from .data triggers Instruction access fault", "[lp_core][pmp]")
+{
+    ulp_lp_core_cfg_t cfg = {
+        .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU,
+    };
+    load_and_start_lp_core_firmware(&cfg, lp_core_pmp_exec_data_bin_start, lp_core_pmp_exec_data_bin_end);
+    vTaskDelay(pdMS_TO_TICKS(1000));
+}
+
+TEST_CASE("LP core PMP: access unmapped region triggers Load access fault", "[lp_core][pmp]")
+{
+    ulp_lp_core_cfg_t cfg = {
+        .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU,
+    };
+    load_and_start_lp_core_firmware(&cfg, lp_core_pmp_unmapped_bin_start, lp_core_pmp_unmapped_bin_end);
+    vTaskDelay(pdMS_TO_TICKS(1000));
+}
+#endif /* SOC_LP_CORE_HAS_PMP */

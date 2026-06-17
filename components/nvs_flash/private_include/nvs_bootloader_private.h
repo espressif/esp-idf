@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-// evaluates to true for NVS types fitting single NVS entry. At the moment all NVS_TYPE_U* or NVS_TYPE_I* */
+// evaluates to true for NVS types fitting single NVS entry. At the moment all NVS_TYPE_U*, NVS_TYPE_I*, NVS_TYPE_FLOAT and NVS_TYPE_DOUBLE */
 #define NVS_BOOTLOADER_TYPE_FITS_SINGLE_ENTRY(data_type) \
 (   (data_type == NVS_TYPE_U8) \
   ||(data_type == NVS_TYPE_I8) \
@@ -26,6 +26,8 @@ extern "C" {
   ||(data_type == NVS_TYPE_I32) \
   ||(data_type == NVS_TYPE_U64) \
   ||(data_type == NVS_TYPE_I64) \
+  ||(data_type == NVS_TYPE_FLOAT) \
+  ||(data_type == NVS_TYPE_DOUBLE) \
 )
 
 // evaluates to true for NVS types supported by the nvs bootloader code*/
@@ -43,6 +45,8 @@ extern "C" {
   :(data_type == NVS_TYPE_I32) ? 4 \
   :(data_type == NVS_TYPE_U64) ? 8 \
   :(data_type == NVS_TYPE_I64) ? 8 \
+  :(data_type == NVS_TYPE_FLOAT) ? 4 \
+  :(data_type == NVS_TYPE_DOUBLE) ? 8 \
   :0 \
 )
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,7 +42,7 @@
 #define PARLIO_LL_EVENT_RX_MASK          (PARLIO_LL_EVENT_RX_FIFO_FULL)
 
 #define PARLIO_LL_TX_DATA_LINE_AS_CLK_GATE  7 // TXD[7] can be used as clock gate signal
-#define PARLIO_LL_TX_VALID_MAX_DELAY        32767
+#define PARLIO_LL_TX_VALID_MAX_DELAY        65535
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -562,16 +562,15 @@ static inline bool parlio_ll_tx_set_valid_delay(parl_io_dev_t *dev, uint32_t sta
 }
 
 /**
- * @brief Set the sample clock edge
+ * @brief Set the shift clock edge
  *
  * @param dev Parallel IO register base address
- * @param edge Sample clock edge
+ * @param edge Shift clock edge
  */
-static inline void parlio_ll_tx_set_sample_clock_edge(parl_io_dev_t *dev, parlio_sample_edge_t edge)
+static inline void parlio_ll_tx_set_shift_clock_edge(parl_io_dev_t *dev, parlio_shift_edge_t edge)
 {
-    bool invert = edge == PARLIO_SAMPLE_EDGE_NEG;
-    dev->tx_clk_cfg.tx_clk_i_inv = invert;
-    dev->tx_clk_cfg.tx_clk_o_inv = invert;
+    dev->tx_clk_cfg.tx_clk_i_inv = edge;
+    dev->tx_clk_cfg.tx_clk_o_inv = edge;
 }
 
 /**

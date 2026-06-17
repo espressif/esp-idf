@@ -68,11 +68,11 @@ Wi-Fi 80211 数据包发送
 
        如果 Wi-Fi 模式是 station 模式，MAC 的地址 1 是 station 所连 AP 的 MAC，地址 2 是 station 接口的 MAC，那么就称数据包是从 station 发送到 AP。另一方面，如果 Wi-Fi 模式是 AP 模式，且 MAC 地址 1 是该 AP 所连 station 的 MAC，地址 2 是 AP 接口的 MAC，那么就称数据包是从 AP 发送到 station。为避免与 Wi-Fi 连接冲突，可采用以下检查方法：
 
-       - 如果数据包类型是数据，且是从 station 发送到 AP，IEEE 802.11 Frame control 字段中的 ToDS 位应该为 1，FromDS 位为 0，否则，Wi-Fi 驱动程序不接受该数据包。
+       - 如果数据包类型是数据，且是从 station 发送到 AP，IEEE 802.11 Frame control 字段中的 ToDS 位应该为 1，FromDS 位为 0。否则，Wi-Fi 驱动程序将丢弃该数据包。
 
-       - 如果数据包类型是数据，且是从 AP 发送到 station，IEEE 802.11 Frame control 字段中的 ToDS 位应该为 0，FromDS 位为 1，否则，Wi-Fi 驱动程序不接受该数据包。
+       - 如果数据包类型是数据，且是从 AP 发送到 station，IEEE 802.11 Frame control 字段中的 ToDS 位应该为 0，FromDS 位为 1。否则，Wi-Fi 驱动程序将丢弃该数据包。
 
-       - 如果数据包是从 station 发送到 AP，或从 AP 到 station，Power Management、More Data 和 Re-Transmission 位应该为 0，否则，Wi-Fi 驱动程序不接受该数据包。
+       - 如果数据包是从 station 发送到 AP，或从 AP 到 station，Power Management、More Data 和 Re-Transmission 位应该为 0。否则，Wi-Fi 驱动程序将丢弃该数据包。
 
        如果任何检查失败，将返回 ``ESP_ERR_INVALID_ARG``。
 
@@ -119,7 +119,7 @@ Wi-Fi 供应商 IE 配置
             - 总字节数指 len 字段。
             - 每个长训练字段 (LTF) 类型对应的 CSI 数据存储在从 buf 字段开始的缓冲区中。每个元素以两个字节的形式存储：虚部和实部。每个元素的顺序与表中的子载波相同。LTF 的顺序是 LLTF、HT-LTF 和 STBC-HT-LTF。但是，根据信道和数据包的信息，3 个 LTF 可能都不存在（见上文）。
             - 如果 :cpp:type:`wifi_csi_info_t` 的 first_word_invalid 字段为 true，表示由于 {IDF_TARGET_NAME} 的硬件限制，CSI 数据的前四个字节无效。
-            - 更多信息，如 RSSI，射频的噪声底，接收时间和天线 rx_ctrl 领域。
+            - 更多信息，如 RSSI、射频底噪声、接收时间及天线，请参见 rx_ctrl 字段。
 
         子载波的虚部和实部的使用请参考下表。
 

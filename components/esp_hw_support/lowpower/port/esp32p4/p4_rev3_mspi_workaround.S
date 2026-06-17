@@ -38,7 +38,8 @@
 .macro REG_CLR_BIT addr, value
     li a0, \addr
     /* Since all our parameters will be constants, we can pre-calculate it at assemble time */
-    li a1, ~\value
+    li a1, \value
+    not a1, a1
     lw a2, (a0)
     and a2, a2, a1
     sw a2, (a0)

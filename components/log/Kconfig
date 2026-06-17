@@ -52,6 +52,30 @@ menu "Log"
 
     rsource "./Kconfig.settings"
 
+    config LOG_API_CONSTRAINED_ENV_SAFE
+        bool "Enable safe ESP_LOGx fallback in constrained environments (ISR, cache disabled)"
+        depends on LOG_VERSION_2 && !ESP_ROM_HAS_VPRINTF_FUNC && !LOG_MODE_BINARY_EN
+        default y
+        help
+            This option is only relevant on chips where ets_vprintf is NOT in ROM
+
+            When enabled, Log V2 routes ESP_DRAM_LOGx, ESP_EARLY_LOGx, and runtime
+            constrained-environment log calls (ISR, cache disabled) through esp_log(),
+            which uses esp_rom_vprintf for formatting.
+
+            When disabled, ESP_DRAM_LOGx and ESP_EARLY_LOGx expand directly
+            to esp_rom_printf (a true ROM function with zero IRAM cost), bypassing
+            esp_log(). Normal ESP_LOGx calls that happen to run in a constrained
+            environment (ISR, cache disabled) will use the standard vprintf function
+            instead of esp_rom_vprintf; if the standard vprintf resides in flash,
+            such calls may crash. Use ESP_DRAM_LOGx for any logging that must work
+            with cache disabled or from an ISR.
+
+            Disable this option to save ~1.2 KB of IRAM on memory-constrained devices.
+            Enable it if you need ESP_LOGx to safely fall back to ROM-based printing
+            in ISRs or with cache disabled, or if you need constrained-environment
+            logs in binary log format.
+
     config LOG_IN_IRAM
         bool "Place logging functions in IRAM" if SPI_FLASH_AUTO_SUSPEND
         default y

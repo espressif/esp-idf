@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,13 +50,15 @@ int bt_mesh_device_auto_enter_network(struct bt_mesh_device_network_info *info)
 
     bt_mesh_atomic_set_bit(bt_mesh.flags, BLE_MESH_NODE);
 
-    /* The device becomes a node and enters the network */
-    err = bt_mesh_provision(info->net_key, info->net_idx, info->flags, info->iv_index,
-                            info->unicast_addr, info->dev_key);
+    err = bt_mesh_pre_provision(info->net_key, info->net_idx, info->flags, info->iv_index,
+                                info->unicast_addr, info->dev_key);
     if (err) {
-        BT_ERR("bt_mesh_provision() failed (err %d)", err);
+        BT_ERR("bt_mesh_pre_provision() failed (err %d)", err);
         return err;
     }
+
+    /* The device becomes a node and enters the network */
+    bt_mesh_provision();
 
     /* Adds application key to device */
     sub = bt_mesh_subnet_get(info->net_idx);

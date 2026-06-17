@@ -14,14 +14,23 @@
 
 #include "sdkconfig.h"
 #include "ld.common"
+#include "ld.hp_mem_defs"
 
 #if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 #define SRAM_START       0x4FF00000 + CONFIG_CACHE_L2_CACHE_SIZE
+#if CONFIG_ULP_COPROC_RUN_FROM_HP_MEM
+#define SRAM_END         ULP_HP_MEM_START
+#else
 #define SRAM_END         0x4FFAEFC0  /* 2nd stage bootloader iram_loader_seg start address */
+#endif
 #define SRAM_SIZE        SRAM_END - SRAM_START
 #else
 #define SRAM_LOW_START     0x4FF00000
+#if CONFIG_ULP_COPROC_RUN_FROM_HP_MEM
+#define SRAM_LOW_END       ULP_HP_MEM_START
+#else
 #define SRAM_LOW_END       0x4FF2CBD0  /* 2nd stage bootloader iram_loader_seg start address */
+#endif
 #define SRAM_LOW_SIZE      SRAM_LOW_END - SRAM_LOW_START
 
 /* If the cache size is less than 512KB, then there is a region of RAM
@@ -46,8 +55,8 @@ MEMORY
    *  of the various regions. The 'data access port' dram/drom regions map to the same iram/irom regions but
    *  are connected to the data port of the CPU and eg allow byte-wise access.
    */
-  /* TCM */
-  tcm_idram_seg (RX) :               org = 0x30100000, len = 0x2000
+  /* SPM */
+  spm_idram_seg (RX) :               org = 0x30100000, len = 0x2000
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
@@ -159,37 +168,46 @@ MEMORY
 /* Heap ends at top of dram0_0_seg */
 _heap_end = 0x50000000;
 
-_data_seg_org = ORIGIN(rtc_data_seg);
-
 /**
  *  The lines below define location alias for .rtc.data section
  *  P4 has no distinguished LP(RTC) fast and slow memory sections, instead, there is a unified LP_RAM section
  *  Thus, the following region segments are not configurable like on other targets
  */
-REGION_ALIAS("rtc_iram_seg", lp_ram_seg );
-REGION_ALIAS("rtc_data_seg", rtc_iram_seg );
-REGION_ALIAS("rtc_slow_seg", rtc_iram_seg );
-REGION_ALIAS("rtc_data_location", rtc_iram_seg );
+REGION_ALIAS("rtc_text_seg", lp_ram_seg);
+REGION_ALIAS("rtc_data_seg", lp_ram_seg);
+REGION_ALIAS("rtc_slow_seg", lp_ram_seg);
+REGION_ALIAS("rtc_force_fast_seg", lp_ram_seg);
+REGION_ALIAS("rtc_force_slow_seg", lp_ram_seg);
 REGION_ALIAS("rtc_reserved_seg", lp_reserved_seg );
 
-#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
-  REGION_ALIAS("text_seg_low", irom_seg);
-#else
 #if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
-  REGION_ALIAS("text_seg_low", sram_low);
+  REGION_ALIAS("iram_text_seg", sram_low);
+  REGION_ALIAS("dram_seg", sram_low);
+  REGION_ALIAS("dram_high_seg", sram_high);
+  ASSERT(((_heap_start_high - ORIGIN(dram_high_seg)) <= LENGTH(dram_high_seg)),
+          "DRAM_HIGH segment data does not fit.")
+
+  /* define X_low symbols */
+  _data_start_low = _data_start;
+  _data_end_low   = _data_end;
+  _bss_start_low  = _bss_start;
+  _bss_end_low    = _bss_end;
+  _heap_start_low = _heap_start;
 #else
-  REGION_ALIAS("text_seg_low", sram_seg);
-#endif //CONFIG_ESP32P4_SELECTS_REV_LESS_V3
-#endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+ REGION_ALIAS("iram_text_seg", sram_seg);
+ REGION_ALIAS("dram_seg", sram_seg);
+#endif
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
-  REGION_ALIAS("rodata_seg_low", drom_seg);
+  REGION_ALIAS("flash_text_seg", irom_seg);
+  REGION_ALIAS("flash_rodata_seg", drom_seg);
 #else
 #if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
-  REGION_ALIAS("rodata_seg_low", sram_low);
-  REGION_ALIAS("rodata_seg_high", sram_high);
+  REGION_ALIAS("flash_text_seg", sram_low);
+  REGION_ALIAS("flash_rodata_seg", sram_low);
 #else
-  REGION_ALIAS("rodata_seg_low", sram_seg);
+  REGION_ALIAS("flash_text_seg", sram_seg);
+  REGION_ALIAS("flash_rodata_seg", sram_seg);
 #endif //CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
@@ -199,16 +217,9 @@ REGION_ALIAS("rtc_reserved_seg", lp_reserved_seg );
   REGION_ALIAS("ext_ram_seg", extern_ram_seg);
 #endif //#if CONFIG_SPIRAM_XIP_FROM_PSRAM
 
-/**
- *  If rodata default segment is placed in `drom_seg`, then flash's first rodata section must
- *  also be first in the segment.
- */
-#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
-  ASSERT(_flash_rodata_dummy_start == ORIGIN(rodata_seg_low),
-         ".flash_rodata_dummy section must be placed at the beginning of the rodata segment.")
-#endif
+ALIGN_VECTOR_TABLE = 0x40;
 
-#if CONFIG_ESP_SYSTEM_USE_EH_FRAME
-    ASSERT ((__eh_frame_end > __eh_frame), "Error: eh_frame size is null!");
-    ASSERT ((__eh_frame_hdr_end > __eh_frame_hdr), "Error: eh_frame_hdr size is null!");
+#if CONFIG_ULP_COPROC_RUN_FROM_HP_MEM
+_ulp_hp_mem_resv_start = ULP_HP_MEM_START;
+_ulp_hp_mem_resv_end   = ULP_HP_MEM_END;
 #endif

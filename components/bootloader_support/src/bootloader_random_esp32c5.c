@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -67,13 +67,12 @@ void bootloader_random_enable(void)
     adc_ll_digi_set_trigger_interval(200);
     adc_ll_digi_trigger_enable();
 
-    rng_ll_enable_sample(true);
-    rng_ll_enable_rtc_timer(true);
-    rng_ll_enable_rng_timer(true);
+    rng_ll_enable();
 }
 
 void bootloader_random_disable(void)
 {
+    rng_ll_disable();
     adc_ll_digi_trigger_disable();
     adc_ll_digi_reset_pattern_table();
     adc_ll_set_calibration_param(ADC_UNIT_1, 0x0);

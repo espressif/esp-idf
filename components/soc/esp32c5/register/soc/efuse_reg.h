@@ -1,11 +1,10 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
-#include <stdint.h>
 #include "soc/soc.h"
 #ifdef __cplusplus
 extern "C" {
@@ -1239,13 +1238,20 @@ extern "C" {
 #define EFUSE_ADC1_CH5_ATTEN0_INITCODE_DIFF_M  (EFUSE_ADC1_CH5_ATTEN0_INITCODE_DIFF_V << EFUSE_ADC1_CH5_ATTEN0_INITCODE_DIFF_S)
 #define EFUSE_ADC1_CH5_ATTEN0_INITCODE_DIFF_V  0x0000000FU
 #define EFUSE_ADC1_CH5_ATTEN0_INITCODE_DIFF_S  21
-/** EFUSE_RESERVED_2_249 : R; bitpos: [31:25]; default: 0;
+/** EFUSE_PVT_DBIAS : R; bitpos: [29:25]; default: 0;
+ *  Average initcode of ADC1 atten0
+ */
+#define EFUSE_PVT_DBIAS    0x0000001FU
+#define EFUSE_PVT_DBIAS_M  (EFUSE_PVT_DBIAS_V << EFUSE_PVT_DBIAS_S)
+#define EFUSE_PVT_DBIAS_V  0x0000001FU
+#define EFUSE_PVT_DBIAS_S  25
+/** EFUSE_RESERVED_2_254 : R; bitpos: [31:30]; default: 0;
  *  reserved
  */
-#define EFUSE_RESERVED_2_249    0x0000007FU
-#define EFUSE_RESERVED_2_249_M  (EFUSE_RESERVED_2_249_V << EFUSE_RESERVED_2_249_S)
-#define EFUSE_RESERVED_2_249_V  0x0000007FU
-#define EFUSE_RESERVED_2_249_S  25
+#define EFUSE_RESERVED_2_254    0x00000003U
+#define EFUSE_RESERVED_2_254_M  (EFUSE_RESERVED_2_254_V << EFUSE_RESERVED_2_254_S)
+#define EFUSE_RESERVED_2_254_V  0x00000003U
+#define EFUSE_RESERVED_2_254_S  30
 
 /** EFUSE_RD_USR_DATA0_REG register
  *  Represents rd_usr_data0

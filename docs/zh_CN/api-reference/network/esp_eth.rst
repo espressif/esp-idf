@@ -167,6 +167,13 @@
 
             如果 RMII 时钟模式配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`，则可以通过 IO_MUX 将 {IDF_TARGET_SOC_REF_CLK_IN_GPIO} 选择为 ``REF_CLK`` 信号的输入管脚。
 
+    .. only:: esp32p4
+
+        .. warning::
+            如果 RMII 时钟模式配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`，EMAC 将通过整数分频器从 MPLL 获取 50 MHz RMII 参考时钟。当同时启用 PSRAM 时，两个外设共享 MPLL，PSRAM 会将 MPLL 锁定在由其速度配置决定的频率上。如果 PSRAM 速度配置为 80 MHz (:ref:`CONFIG_SPIRAM_SPEED`)，MPLL 将运行在 320 MHz，而 320 MHz 无法通过任何整数分频得到满足 ±50 ppm 容差要求的 50 MHz（最接近的候选值为 320 / 6 ≈ 53.33 MHz）。在此配置下，EMAC 初始化将失败。
+
+            如果必须使用 80 MHz 的 PSRAM 速度，请通过外部时钟源（PHY 或振荡器）提供 ``REF_CLK``，并配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`。
+
     .. only:: not SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
 
         .. warning::

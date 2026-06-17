@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -760,7 +760,9 @@ void test_fatfs_can_opendir(const char* path)
 void test_fatfs_readdir_stat(const char* dir_prefix)
 {
     char name_dir_file[64];
-    char name_dir_stat[64];
+    /* Full path = dir_prefix + "/" + d_name; LFN entries can be ~255 bytes, so 64
+     * was unsafe. Use sizeof() as snprintf bound. */
+    char name_dir_stat[320];
     int file_num = 25;
 
     rmdir(dir_prefix);
@@ -785,7 +787,7 @@ void test_fatfs_readdir_stat(const char* dir_prefix)
         if (!de) {
             break;
         }
-        snprintf(name_dir_stat, sizeof(dir_prefix)+sizeof(de->d_name), "%s/%s", dir_prefix, de->d_name);
+        snprintf(name_dir_stat, sizeof(name_dir_stat), "%s/%s", dir_prefix, de->d_name);
         TEST_ASSERT_EQUAL(0, stat(name_dir_stat, &st));
         dir_size += st.st_size;
     }

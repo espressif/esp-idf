@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,12 @@ extern "C" {
  * @brief AE controller config
  */
 typedef struct {
-    isp_ae_sample_point_t   sample_point;           ///< The input data source, ISP_AE_SAMPLE_POINT_AFTER_DEMOSAIC: AE input data after demosaic, ISP_AE_SAMPLE_POINT_AFTER_GAMMA: AE input data after gamma
+    isp_ae_sample_point_t   sample_point;           /*!< AE sample point in the ISP pipeline. See TRM for more details.
+                                                     *   ISP_AE_SAMPLE_POINT_x: see TRM for more details
+                                                     *
+                                                     *   Different sample points collect different color statistics, which can be used
+                                                     *   to match different hardware pipelines and AE tuning strategies.
+                                                     */
     isp_window_t            window;                 ///< The sampling windows of AE
     int                     intr_priority;          ///< The interrupt priority, range 0~3, if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3)
 } esp_isp_ae_config_t;
@@ -189,7 +194,7 @@ typedef bool (*esp_isp_ae_env_detector_callback_t)(isp_ae_ctlr_t ae_ctlr, const 
 /**
  * @brief Group of ISP AE env_detector
  * @note These callbacks are all running in an ISR environment.
- * @note When CONFIG_ISP_ISR_IRAM_SAEE is enabled, the callback itself and functions called by it should be placed in IRAM.
+ * @note When CONFIG_ISP_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  *       Involved variables should be in internal RAM as well.
  */
 typedef struct {
@@ -202,7 +207,7 @@ typedef struct {
  *
  * @note User can deregister a previously registered callback by calling this function and setting the to-be-deregistered callback member in
  *       the `cbs` structure to NULL.
- * @note When CONFIG_ISP_ISR_IRAM_SAEE is enabled, the callback itself and functions called by it should be placed in IRAM.
+ * @note When CONFIG_ISP_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  *       Involved variables (including `user_data`) should be in internal RAM as well.
  *
  * @param[in] ae_ctlr         AE controller handle

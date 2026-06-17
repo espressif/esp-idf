@@ -1,0 +1,13 @@
+# CI config: Minimal binary size for gatt_security_client.
+# Disable GATTS, BLE 5.0; keep SMP (required for security/pairing).
+CONFIG_EXAMPLE_CI_ID=12
+CONFIG_EXAMPLE_CI_PIPELINE_ID=${CI_PIPELINE_ID}
+# GATT server not needed for client-only app
+# CONFIG_BT_GATTS_ENABLE is not set
+# BLE 4.2 only, no 5.0 features
+# CONFIG_BT_BLE_50_FEATURES_SUPPORTED is not set
+# BLE 4.2: disable DTM; client does not need advertising
+# CONFIG_BT_BLE_42_DTM_TEST_EN is not set
+# CONFIG_BT_BLE_42_ADV_EN is not set
+CONFIG_BT_ACL_CONNECTIONS=1
+CONFIG_BT_MULTI_CONNECTION_ENBALE=n

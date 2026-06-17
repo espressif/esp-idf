@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import json
 import os
@@ -57,12 +57,15 @@ RISCV_ESP_GDB = 'riscv32-esp-elf-gdb'
 ESP_ROM_ELFS = 'esp-rom-elfs'
 QEMU_RISCV = 'qemu-riscv32'
 QEMU_XTENSA = 'qemu-xtensa'
+CLANGD = 'esp-clangd'
+CLANGD_ARCHIVE = 'clangd'
 # Win tools
 CMAKE = 'cmake'
 NINJA = 'ninja'
 IDF_EXE = 'idf-exe'
 CCACHE = 'ccache'
 DFU_UTIL = 'dfu-util'
+ESP_IDF_CONFIGDEP = 'esp-idf-configdep'
 
 
 def get_version_dict():
@@ -89,12 +92,14 @@ RISCV_ESP_GDB_VERSION = version_dict[RISCV_ESP_GDB]
 ESP_ROM_ELFS_VERSION = version_dict[ESP_ROM_ELFS]
 QEMU_RISCV_VERSION = version_dict[QEMU_RISCV]
 QEMU_XTENSA_VERSION = version_dict[QEMU_XTENSA]
+CLANGD_VERSION = version_dict[CLANGD]
 # Win tools
 CMAKE_VERSION = version_dict[CMAKE]
 NINJA_VERSION = version_dict[NINJA]
 IDF_EXE_VERSION = version_dict[IDF_EXE]
 CCACHE_VERSION = version_dict[CCACHE]
 DFU_UTIL_VERSION = version_dict[DFU_UTIL]
+ESP_IDF_CONFIGDEP_VERSION = version_dict[ESP_IDF_CONFIGDEP]
 
 # There are some complex search patterns to detect download snippets
 
@@ -377,8 +382,10 @@ class TestUsageUnix(TestUsage):
         self.assertIn(f'- {RISCV_ELF_VERSION} (recommended)', output)
         self.assertIn(f'* {XTENSA_ELF}:', output)
         self.assertIn(f'- {XTENSA_ELF_VERSION} (recommended)', output)
+        self.assertIn(f'* {CLANGD}:', output)
+        self.assertIn(f'- {CLANGD_VERSION} (recommended)', output)
 
-        required_tools_installed = 7
+        required_tools_installed = 9
         output = self.run_idf_tools_with_action(['install'])
         self.assert_tool_installed(output, OPENOCD, OPENOCD_VERSION)
         self.assert_tool_installed(output, RISCV_ELF, RISCV_ELF_VERSION, RISCV_ELF_ARCHIVE_PATTERN)
@@ -387,6 +394,8 @@ class TestUsageUnix(TestUsage):
         self.assert_tool_installed(output, XTENSA_ESP_GDB, XTENSA_ESP_GDB_VERSION)
         self.assert_tool_installed(output, RISCV_ESP_GDB, RISCV_ESP_GDB_VERSION)
         self.assert_tool_installed(output, ESP_ROM_ELFS, ESP_ROM_ELFS_VERSION)
+        self.assert_tool_installed(output, CLANGD, CLANGD_VERSION, CLANGD_ARCHIVE)
+        self.assert_tool_installed(output, ESP_IDF_CONFIGDEP, ESP_IDF_CONFIGDEP_VERSION)
         self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
@@ -399,6 +408,8 @@ class TestUsageUnix(TestUsage):
             XTENSA_ESP_GDB_VERSION,
             RISCV_ESP_GDB_VERSION,
             ESP_ROM_ELFS_VERSION,
+            CLANGD_VERSION,
+            ESP_IDF_CONFIGDEP_VERSION,
         ]:
             self.assertIn('version installed in tools directory: ' + tool_version, output)
 
@@ -416,6 +427,12 @@ class TestUsageUnix(TestUsage):
             output,
         )
         self.assertIn(f'{self.temp_tools_dir}/tools/esp-rom-elfs/{ESP_ROM_ELFS_VERSION}/', output)
+        self.assertIn(f'{self.temp_tools_dir}/tools/esp-clangd/{CLANGD_VERSION}/esp-clangd/bin', output)
+        self.assertIn(
+            f'{self.temp_tools_dir}/tools/{ESP_IDF_CONFIGDEP}/{ESP_IDF_CONFIGDEP_VERSION}/'
+            f'{ESP_IDF_CONFIGDEP}-{ESP_IDF_CONFIGDEP_VERSION}/bin',
+            output,
+        )
 
         output = self.run_idf_tools_with_action(['list', '--outdated'])
         self.assertEqual('', output)
@@ -443,7 +460,7 @@ class TestUsageUnix(TestUsage):
         self.assertIn((f'{XTENSA_ELF}: version {XTENSA_ELF_VERSION} is outdated by {new_version}'), output)
 
     def test_tools_for_esp32(self):
-        required_tools_installed = 5
+        required_tools_installed = 7
         output = self.run_idf_tools_with_action(['install', '--targets=esp32'])
         self.assert_tool_installed(output, XTENSA_ELF, XTENSA_ELF_VERSION, XTENSA_ELF_ARCHIVE_PATTERN)
         self.assert_tool_installed(output, OPENOCD, OPENOCD_VERSION)
@@ -452,6 +469,8 @@ class TestUsageUnix(TestUsage):
         self.assert_tool_not_installed(output, RISCV_ELF, RISCV_ELF_VERSION, RISCV_ELF_ARCHIVE_PATTERN)
         self.assert_tool_not_installed(output, RISCV_ESP_GDB, RISCV_ESP_GDB_VERSION)
         self.assert_tool_installed(output, ESP_ROM_ELFS, ESP_ROM_ELFS_VERSION)
+        self.assert_tool_installed(output, CLANGD, CLANGD_VERSION, CLANGD_ARCHIVE)
+        self.assert_tool_installed(output, ESP_IDF_CONFIGDEP, ESP_IDF_CONFIGDEP_VERSION)
         self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
@@ -462,6 +481,8 @@ class TestUsageUnix(TestUsage):
             XTENSA_ELF_VERSION,
             XTENSA_ESP_GDB_VERSION,
             ESP_ROM_ELFS_VERSION,
+            CLANGD_VERSION,
+            ESP_IDF_CONFIGDEP_VERSION,
         ]:
             self.assertIn('version installed in tools directory: ' + tool_version, output)
 
@@ -479,9 +500,15 @@ class TestUsageUnix(TestUsage):
             output,
         )
         self.assertIn(f'{self.temp_tools_dir}/tools/esp-rom-elfs/{ESP_ROM_ELFS_VERSION}/', output)
+        self.assertIn(f'{self.temp_tools_dir}/tools/esp-clangd/{CLANGD_VERSION}/esp-clangd/bin', output)
+        self.assertIn(
+            f'{self.temp_tools_dir}/tools/{ESP_IDF_CONFIGDEP}/{ESP_IDF_CONFIGDEP_VERSION}/'
+            f'{ESP_IDF_CONFIGDEP}-{ESP_IDF_CONFIGDEP_VERSION}/bin',
+            output,
+        )
 
     def test_tools_for_esp32c3(self):
-        required_tools_installed = 4
+        required_tools_installed = 6
         output = self.run_idf_tools_with_action(['install', '--targets=esp32c3'])
         self.assert_tool_installed(output, OPENOCD, OPENOCD_VERSION)
         self.assert_tool_installed(output, RISCV_ELF, RISCV_ELF_VERSION, RISCV_ELF_ARCHIVE_PATTERN)
@@ -490,11 +517,19 @@ class TestUsageUnix(TestUsage):
         self.assert_tool_not_installed(output, ESP32ULP, ESP32ULP_VERSION)
         self.assert_tool_not_installed(output, XTENSA_ESP_GDB, XTENSA_ESP_GDB_VERSION)
         self.assert_tool_installed(output, ESP_ROM_ELFS, ESP_ROM_ELFS_VERSION)
+        self.assert_tool_installed(output, CLANGD, CLANGD_VERSION, CLANGD_ARCHIVE)
+        self.assert_tool_installed(output, ESP_IDF_CONFIGDEP, ESP_IDF_CONFIGDEP_VERSION)
         self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
         output = self.run_idf_tools_with_action(['check'])
-        for tool_version in [OPENOCD_VERSION, RISCV_ELF_VERSION, RISCV_ESP_GDB_VERSION, ESP_ROM_ELFS_VERSION]:
+        for tool_version in [
+            OPENOCD_VERSION,
+            RISCV_ELF_VERSION,
+            RISCV_ESP_GDB_VERSION,
+            ESP_ROM_ELFS_VERSION,
+            ESP_IDF_CONFIGDEP_VERSION,
+        ]:
             self.assertIn('version installed in tools directory: ' + tool_version, output)
 
         output = self.run_idf_tools_with_action(['export'])
@@ -507,9 +542,15 @@ class TestUsageUnix(TestUsage):
             output,
         )
         self.assertIn(f'{self.temp_tools_dir}/tools/esp-rom-elfs/{ESP_ROM_ELFS_VERSION}/', output)
+        self.assertIn(f'{self.temp_tools_dir}/tools/esp-clangd/{CLANGD_VERSION}/esp-clangd/bin', output)
+        self.assertIn(
+            f'{self.temp_tools_dir}/tools/{ESP_IDF_CONFIGDEP}/{ESP_IDF_CONFIGDEP_VERSION}/'
+            f'{ESP_IDF_CONFIGDEP}-{ESP_IDF_CONFIGDEP_VERSION}/bin',
+            output,
+        )
 
     def test_tools_for_esp32s2(self):
-        required_tools_installed = 6
+        required_tools_installed = 8
         output = self.run_idf_tools_with_action(['install', '--targets=esp32s2'])
         self.assert_tool_installed(output, XTENSA_ELF, XTENSA_ELF_VERSION, XTENSA_ELF_ARCHIVE_PATTERN)
         self.assert_tool_installed(output, OPENOCD, OPENOCD_VERSION)
@@ -518,11 +559,19 @@ class TestUsageUnix(TestUsage):
         self.assert_tool_installed(output, XTENSA_ESP_GDB, XTENSA_ESP_GDB_VERSION)
         self.assert_tool_installed(output, ESP_ROM_ELFS, ESP_ROM_ELFS_VERSION)
         self.assert_tool_not_installed(output, RISCV_ESP_GDB, RISCV_ESP_GDB_VERSION)
+        self.assert_tool_installed(output, CLANGD, CLANGD_VERSION, CLANGD_ARCHIVE)
+        self.assert_tool_installed(output, ESP_IDF_CONFIGDEP, ESP_IDF_CONFIGDEP_VERSION)
         self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
         output = self.run_idf_tools_with_action(['check'])
-        for tool_version in [OPENOCD_VERSION, XTENSA_ELF_VERSION, XTENSA_ESP_GDB_VERSION, ESP_ROM_ELFS_VERSION]:
+        for tool_version in [
+            OPENOCD_VERSION,
+            XTENSA_ELF_VERSION,
+            XTENSA_ESP_GDB_VERSION,
+            ESP_ROM_ELFS_VERSION,
+            ESP_IDF_CONFIGDEP_VERSION,
+        ]:
             self.assertIn('version installed in tools directory: ' + tool_version, output)
 
         output = self.run_idf_tools_with_action(['export'])
@@ -539,9 +588,15 @@ class TestUsageUnix(TestUsage):
             output,
         )
         self.assertIn(f'{self.temp_tools_dir}/tools/esp-rom-elfs/{ESP_ROM_ELFS_VERSION}/', output)
+        self.assertIn(f'{self.temp_tools_dir}/tools/esp-clangd/{CLANGD_VERSION}/esp-clangd/bin', output)
+        self.assertIn(
+            f'{self.temp_tools_dir}/tools/{ESP_IDF_CONFIGDEP}/{ESP_IDF_CONFIGDEP_VERSION}/'
+            f'{ESP_IDF_CONFIGDEP}-{ESP_IDF_CONFIGDEP_VERSION}/bin',
+            output,
+        )
 
     def test_tools_for_esp32s3(self):
-        required_tools_installed = 6
+        required_tools_installed = 8
         output = self.run_idf_tools_with_action(['install', '--targets=esp32s3'])
         self.assert_tool_installed(output, XTENSA_ELF, XTENSA_ELF_VERSION, XTENSA_ELF_ARCHIVE_PATTERN)
         self.assert_tool_installed(output, OPENOCD, OPENOCD_VERSION)
@@ -550,6 +605,8 @@ class TestUsageUnix(TestUsage):
         self.assert_tool_installed(output, XTENSA_ESP_GDB, XTENSA_ESP_GDB_VERSION)
         self.assert_tool_installed(output, ESP_ROM_ELFS, ESP_ROM_ELFS_VERSION)
         self.assert_tool_not_installed(output, RISCV_ESP_GDB, RISCV_ESP_GDB_VERSION)
+        self.assert_tool_installed(output, CLANGD, CLANGD_VERSION, CLANGD_ARCHIVE)
+        self.assert_tool_installed(output, ESP_IDF_CONFIGDEP, ESP_IDF_CONFIGDEP_VERSION)
         self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
@@ -560,6 +617,8 @@ class TestUsageUnix(TestUsage):
             XTENSA_ESP_GDB_VERSION,
             RISCV_ESP_GDB_VERSION,
             ESP_ROM_ELFS_VERSION,
+            CLANGD_VERSION,
+            ESP_IDF_CONFIGDEP_VERSION,
         ]:
             self.assertIn('version installed in tools directory: ' + tool_version, output)
 
@@ -577,9 +636,15 @@ class TestUsageUnix(TestUsage):
             output,
         )
         self.assertIn(f'{self.temp_tools_dir}/tools/esp-rom-elfs/{ESP_ROM_ELFS_VERSION}/', output)
+        self.assertIn(f'{self.temp_tools_dir}/tools/esp-clangd/{CLANGD_VERSION}/esp-clangd/bin', output)
+        self.assertIn(
+            f'{self.temp_tools_dir}/tools/{ESP_IDF_CONFIGDEP}/{ESP_IDF_CONFIGDEP_VERSION}/'
+            f'{ESP_IDF_CONFIGDEP}-{ESP_IDF_CONFIGDEP_VERSION}/bin',
+            output,
+        )
 
     def test_tools_for_esp32p4(self):
-        required_tools_installed = 4
+        required_tools_installed = 6
         output = self.run_idf_tools_with_action(['install', '--targets=esp32p4'])
         self.assert_tool_installed(output, OPENOCD, OPENOCD_VERSION)
         self.assert_tool_installed(output, RISCV_ELF, RISCV_ELF_VERSION, RISCV_ELF_ARCHIVE_PATTERN)
@@ -588,10 +653,18 @@ class TestUsageUnix(TestUsage):
         self.assert_tool_not_installed(output, XTENSA_ELF, XTENSA_ELF_VERSION, XTENSA_ELF_ARCHIVE_PATTERN)
         self.assert_tool_not_installed(output, ESP32ULP, ESP32ULP_VERSION)
         self.assert_tool_not_installed(output, XTENSA_ESP_GDB, XTENSA_ESP_GDB_VERSION)
+        self.assert_tool_installed(output, CLANGD, CLANGD_VERSION, CLANGD_ARCHIVE)
+        self.assert_tool_installed(output, ESP_IDF_CONFIGDEP, ESP_IDF_CONFIGDEP_VERSION)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
         output = self.run_idf_tools_with_action(['check'])
-        for tool_version in [OPENOCD_VERSION, RISCV_ELF_VERSION, ESP_ROM_ELFS_VERSION, RISCV_ESP_GDB_VERSION]:
+        for tool_version in [
+            OPENOCD_VERSION,
+            RISCV_ELF_VERSION,
+            ESP_ROM_ELFS_VERSION,
+            RISCV_ESP_GDB_VERSION,
+            ESP_IDF_CONFIGDEP_VERSION,
+        ]:
             self.assertIn(f'version installed in tools directory: {tool_version}', output)
 
         output = self.run_idf_tools_with_action(['export'])
@@ -604,6 +677,17 @@ class TestUsageUnix(TestUsage):
             os.path.join(self.temp_tools_dir, 'tools', RISCV_ESP_GDB, RISCV_ESP_GDB_VERSION, RISCV_ESP_GDB, 'bin'),
             output,
         )
+        self.assertIn(
+            os.path.join(
+                self.temp_tools_dir,
+                'tools',
+                ESP_IDF_CONFIGDEP,
+                ESP_IDF_CONFIGDEP_VERSION,
+                f'{ESP_IDF_CONFIGDEP}-{ESP_IDF_CONFIGDEP_VERSION}',
+                'bin',
+            ),
+            output,
+        )
         self.assertNotIn(
             os.path.join(self.temp_tools_dir, 'tools', ESP32ULP, ESP32ULP_VERSION, ESP32ULP, 'bin'), output
         )
@@ -614,10 +698,11 @@ class TestUsageUnix(TestUsage):
             os.path.join(self.temp_tools_dir, 'tools', XTENSA_ESP_GDB, XTENSA_ESP_GDB_VERSION, XTENSA_ESP_GDB, 'bin'),
             output,
         )
+        self.assertIn(os.path.join(self.temp_tools_dir, 'tools', CLANGD, CLANGD_VERSION, CLANGD, 'bin'), output)
 
     # a different test for qemu because of "on_request"
     def test_tools_for_qemu_with_required(self):
-        required_tools_installed = 9
+        required_tools_installed = 11
         output = self.run_idf_tools_with_action(['install', 'required', 'qemu-xtensa', 'qemu-riscv32'])
         self.assert_tool_installed(output, OPENOCD, OPENOCD_VERSION)
         self.assert_tool_installed(output, RISCV_ELF, RISCV_ELF_VERSION, RISCV_ELF_ARCHIVE_PATTERN)
@@ -626,8 +711,10 @@ class TestUsageUnix(TestUsage):
         self.assert_tool_installed(output, XTENSA_ESP_GDB, XTENSA_ESP_GDB_VERSION)
         self.assert_tool_installed(output, RISCV_ESP_GDB, RISCV_ESP_GDB_VERSION)
         self.assert_tool_installed(output, ESP_ROM_ELFS, ESP_ROM_ELFS_VERSION)
+        self.assert_tool_installed(output, ESP_IDF_CONFIGDEP, ESP_IDF_CONFIGDEP_VERSION)
         self.assert_tool_installed(output, QEMU_RISCV, QEMU_RISCV_VERSION)
         self.assert_tool_installed(output, QEMU_XTENSA, QEMU_XTENSA_VERSION)
+        self.assert_tool_installed(output, CLANGD, CLANGD_VERSION, CLANGD_ARCHIVE)
         self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
@@ -652,8 +739,10 @@ class TestUsageWin(TestUsage):
         self.assertIn(f'- {RISCV_ELF_VERSION} (recommended)', output)
         self.assertIn(f'* {XTENSA_ELF}:', output)
         self.assertIn(f'- {XTENSA_ELF_VERSION} (recommended)', output)
+        self.assertIn(f'* {CLANGD}:', output)
+        self.assertIn(f'- {CLANGD_VERSION} (recommended)', output)
 
-        required_tools_installed = 12
+        required_tools_installed = 13
         output = self.run_idf_tools_with_action(['install'])
         self.assert_tool_installed(output, OPENOCD, OPENOCD_VERSION)
         self.assert_tool_installed(output, RISCV_ELF, RISCV_ELF_VERSION, RISCV_ELF_ARCHIVE_PATTERN)
@@ -667,6 +756,8 @@ class TestUsageWin(TestUsage):
         self.assert_tool_installed(output, IDF_EXE, IDF_EXE_VERSION)
         self.assert_tool_installed(output, CCACHE, CCACHE_VERSION)
         self.assert_tool_installed(output, DFU_UTIL, DFU_UTIL_VERSION)
+        self.assert_tool_installed(output, CLANGD, CLANGD_VERSION, CLANGD_ARCHIVE)
+        self.assert_tool_installed(output, ESP_IDF_CONFIGDEP, ESP_IDF_CONFIGDEP_VERSION)
         self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
@@ -684,6 +775,8 @@ class TestUsageWin(TestUsage):
             IDF_EXE_VERSION,
             CCACHE_VERSION,
             DFU_UTIL_VERSION,
+            CLANGD_VERSION,
+            ESP_IDF_CONFIGDEP_VERSION,
         ]:
             self.assertIn('version installed in tools directory: ' + tool_version, output)
 
@@ -724,6 +817,18 @@ class TestUsageWin(TestUsage):
         self.assertIn(
             os.path.join(self.temp_tools_dir, 'tools', DFU_UTIL, DFU_UTIL_VERSION, 'dfu-util-0.11-win64'), output
         )
+        self.assertIn(os.path.join(self.temp_tools_dir, 'tools', CLANGD, CLANGD_VERSION, CLANGD, 'bin'), output)
+        self.assertIn(
+            os.path.join(
+                self.temp_tools_dir,
+                'tools',
+                ESP_IDF_CONFIGDEP,
+                ESP_IDF_CONFIGDEP_VERSION,
+                f'{ESP_IDF_CONFIGDEP}-{ESP_IDF_CONFIGDEP_VERSION}',
+                'bin',
+            ),
+            output,
+        )
 
         output = self.run_idf_tools_with_action(['list', '--outdated'])
         self.assertEqual('', output)
@@ -751,7 +856,7 @@ class TestUsageWin(TestUsage):
         self.assertIn((f'{XTENSA_ELF}: version {XTENSA_ELF_VERSION} is outdated by {new_version}'), output)
 
     def test_tools_for_esp32_win(self):
-        required_tools_installed = 9
+        required_tools_installed = 10
         output = self.run_idf_tools_with_action(['install', '--targets=esp32'])
         self.assert_tool_installed(output, XTENSA_ELF, XTENSA_ELF_VERSION, XTENSA_ELF_ARCHIVE_PATTERN)
         self.assert_tool_installed(output, OPENOCD, OPENOCD_VERSION)
@@ -765,6 +870,8 @@ class TestUsageWin(TestUsage):
         self.assert_tool_installed(output, IDF_EXE, IDF_EXE_VERSION)
         self.assert_tool_installed(output, CCACHE, CCACHE_VERSION)
         self.assert_tool_not_installed(output, DFU_UTIL, DFU_UTIL_VERSION)
+        self.assert_tool_installed(output, CLANGD, CLANGD_VERSION, CLANGD_ARCHIVE)
+        self.assert_tool_installed(output, ESP_IDF_CONFIGDEP, ESP_IDF_CONFIGDEP_VERSION)
         self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
@@ -779,6 +886,8 @@ class TestUsageWin(TestUsage):
             NINJA_VERSION,
             IDF_EXE_VERSION,
             CCACHE_VERSION,
+            CLANGD_VERSION,
+            ESP_IDF_CONFIGDEP_VERSION,
         ]:
             self.assertIn('version installed in tools directory: ' + tool_version, output)
         self.assertNotIn('version installed in tools directory: ' + DFU_UTIL_VERSION, output)
@@ -828,9 +937,21 @@ class TestUsageWin(TestUsage):
         self.assertNotIn(
             os.path.join(self.temp_tools_dir, 'tools', DFU_UTIL, DFU_UTIL_VERSION, 'dfu-util-0.11-win64'), output
         )
+        self.assertNotIn(os.path.join(self.temp_tools_dir, 'tools', CLANGD, CLANGD_VERSION, CLANGD, 'bin'), output)
+        self.assertIn(
+            os.path.join(
+                self.temp_tools_dir,
+                'tools',
+                ESP_IDF_CONFIGDEP,
+                ESP_IDF_CONFIGDEP_VERSION,
+                f'{ESP_IDF_CONFIGDEP}-{ESP_IDF_CONFIGDEP_VERSION}',
+                'bin',
+            ),
+            output,
+        )
 
     def test_tools_for_esp32c3_win(self):
-        required_tools_installed = 8
+        required_tools_installed = 9
         output = self.run_idf_tools_with_action(['install', '--targets=esp32c3'])
         self.assert_tool_installed(output, OPENOCD, OPENOCD_VERSION)
         self.assert_tool_installed(output, RISCV_ELF, RISCV_ELF_VERSION, RISCV_ELF_ARCHIVE_PATTERN)
@@ -844,6 +965,8 @@ class TestUsageWin(TestUsage):
         self.assert_tool_installed(output, IDF_EXE, IDF_EXE_VERSION)
         self.assert_tool_installed(output, CCACHE, CCACHE_VERSION)
         self.assert_tool_not_installed(output, DFU_UTIL, DFU_UTIL_VERSION)
+        self.assert_tool_installed(output, CLANGD, CLANGD_VERSION, CLANGD_ARCHIVE)
+        self.assert_tool_installed(output, ESP_IDF_CONFIGDEP, ESP_IDF_CONFIGDEP_VERSION)
         self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
@@ -857,6 +980,8 @@ class TestUsageWin(TestUsage):
             NINJA_VERSION,
             IDF_EXE_VERSION,
             CCACHE_VERSION,
+            CLANGD_VERSION,
+            ESP_IDF_CONFIGDEP_VERSION,
         ]:
             self.assertIn('version installed in tools directory: ' + tool_version, output)
         self.assertNotIn('version installed in tools directory: ' + DFU_UTIL_VERSION, output)
@@ -900,9 +1025,21 @@ class TestUsageWin(TestUsage):
         self.assertNotIn(
             os.path.join(self.temp_tools_dir, 'tools', DFU_UTIL, DFU_UTIL_VERSION, 'dfu-util-0.11-win64'), output
         )
+        self.assertNotIn(os.path.join(self.temp_tools_dir, 'tools', CLANGD, CLANGD_VERSION, CLANGD, 'bin'), output)
+        self.assertIn(
+            os.path.join(
+                self.temp_tools_dir,
+                'tools',
+                ESP_IDF_CONFIGDEP,
+                ESP_IDF_CONFIGDEP_VERSION,
+                f'{ESP_IDF_CONFIGDEP}-{ESP_IDF_CONFIGDEP_VERSION}',
+                'bin',
+            ),
+            output,
+        )
 
     def test_tools_for_esp32s2_win(self):
-        required_tools_installed = 11
+        required_tools_installed = 12
         output = self.run_idf_tools_with_action(['install', '--targets=esp32s2'])
         self.assert_tool_installed(output, XTENSA_ELF, XTENSA_ELF_VERSION, XTENSA_ELF_ARCHIVE_PATTERN)
         self.assert_tool_installed(output, OPENOCD, OPENOCD_VERSION)
@@ -916,6 +1053,8 @@ class TestUsageWin(TestUsage):
         self.assert_tool_installed(output, IDF_EXE, IDF_EXE_VERSION)
         self.assert_tool_installed(output, CCACHE, CCACHE_VERSION)
         self.assert_tool_installed(output, DFU_UTIL, DFU_UTIL_VERSION)
+        self.assert_tool_installed(output, CLANGD, CLANGD_VERSION, CLANGD_ARCHIVE)
+        self.assert_tool_installed(output, ESP_IDF_CONFIGDEP, ESP_IDF_CONFIGDEP_VERSION)
         self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
@@ -930,6 +1069,8 @@ class TestUsageWin(TestUsage):
             NINJA_VERSION,
             IDF_EXE_VERSION,
             CCACHE_VERSION,
+            CLANGD_VERSION,
+            ESP_IDF_CONFIGDEP_VERSION,
         ]:
             self.assertIn('version installed in tools directory: ' + tool_version, output)
 
@@ -978,9 +1119,21 @@ class TestUsageWin(TestUsage):
         self.assertIn(
             os.path.join(self.temp_tools_dir, 'tools', DFU_UTIL, DFU_UTIL_VERSION, 'dfu-util-0.11-win64'), output
         )
+        self.assertIn(os.path.join(self.temp_tools_dir, 'tools', CLANGD, CLANGD_VERSION, CLANGD, 'bin'), output)
+        self.assertIn(
+            os.path.join(
+                self.temp_tools_dir,
+                'tools',
+                ESP_IDF_CONFIGDEP,
+                ESP_IDF_CONFIGDEP_VERSION,
+                f'{ESP_IDF_CONFIGDEP}-{ESP_IDF_CONFIGDEP_VERSION}',
+                'bin',
+            ),
+            output,
+        )
 
     def test_tools_for_esp32s3_win(self):
-        required_tools_installed = 11
+        required_tools_installed = 12
         output = self.run_idf_tools_with_action(['install', '--targets=esp32s3'])
         print(output)
         self.assert_tool_installed(output, XTENSA_ELF, XTENSA_ELF_VERSION, XTENSA_ELF_ARCHIVE_PATTERN)
@@ -995,6 +1148,8 @@ class TestUsageWin(TestUsage):
         self.assert_tool_installed(output, IDF_EXE, IDF_EXE_VERSION)
         self.assert_tool_installed(output, CCACHE, CCACHE_VERSION)
         self.assert_tool_installed(output, DFU_UTIL, DFU_UTIL_VERSION)
+        self.assert_tool_installed(output, CLANGD, CLANGD_VERSION, CLANGD_ARCHIVE)
+        self.assert_tool_installed(output, ESP_IDF_CONFIGDEP, ESP_IDF_CONFIGDEP_VERSION)
         self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
@@ -1010,6 +1165,8 @@ class TestUsageWin(TestUsage):
             NINJA_VERSION,
             IDF_EXE_VERSION,
             CCACHE_VERSION,
+            CLANGD_VERSION,
+            ESP_IDF_CONFIGDEP_VERSION,
         ]:
             self.assertIn('version installed in tools directory: ' + tool_version, output)
 
@@ -1058,9 +1215,21 @@ class TestUsageWin(TestUsage):
         self.assertIn(
             os.path.join(self.temp_tools_dir, 'tools', DFU_UTIL, DFU_UTIL_VERSION, 'dfu-util-0.11-win64'), output
         )
+        self.assertIn(os.path.join(self.temp_tools_dir, 'tools', CLANGD, CLANGD_VERSION, CLANGD, 'bin'), output)
+        self.assertIn(
+            os.path.join(
+                self.temp_tools_dir,
+                'tools',
+                ESP_IDF_CONFIGDEP,
+                ESP_IDF_CONFIGDEP_VERSION,
+                f'{ESP_IDF_CONFIGDEP}-{ESP_IDF_CONFIGDEP_VERSION}',
+                'bin',
+            ),
+            output,
+        )
 
     def test_tools_for_esp32p4_win(self):
-        required_tools_installed = 8
+        required_tools_installed = 9
         output = self.run_idf_tools_with_action(['install', '--targets=esp32p4'])
         self.assert_tool_installed(output, RISCV_ELF, RISCV_ELF_VERSION, RISCV_ELF_ARCHIVE_PATTERN)
         self.assert_tool_installed(output, RISCV_ESP_GDB, RISCV_ESP_GDB_VERSION)
@@ -1074,6 +1243,8 @@ class TestUsageWin(TestUsage):
         self.assert_tool_not_installed(output, ESP32ULP, ESP32ULP_VERSION)
         self.assert_tool_not_installed(output, XTENSA_ESP_GDB, XTENSA_ESP_GDB_VERSION)
         self.assert_tool_not_installed(output, DFU_UTIL, DFU_UTIL_VERSION)
+        self.assert_tool_installed(output, CLANGD, CLANGD_VERSION, CLANGD_ARCHIVE)
+        self.assert_tool_installed(output, ESP_IDF_CONFIGDEP, ESP_IDF_CONFIGDEP_VERSION)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
         output = self.run_idf_tools_with_action(['check'])
@@ -1086,6 +1257,8 @@ class TestUsageWin(TestUsage):
             NINJA_VERSION,
             IDF_EXE_VERSION,
             CCACHE_VERSION,
+            CLANGD_VERSION,
+            ESP_IDF_CONFIGDEP_VERSION,
         ]:
             self.assertIn(f'version installed in tools directory: {tool_version}', output)
 
@@ -1105,6 +1278,17 @@ class TestUsageWin(TestUsage):
         self.assertIn(
             os.path.join(self.temp_tools_dir, 'tools', CCACHE, CCACHE_VERSION, 'ccache-4.12.1-windows-x86_64'), output
         )
+        self.assertIn(
+            os.path.join(
+                self.temp_tools_dir,
+                'tools',
+                ESP_IDF_CONFIGDEP,
+                ESP_IDF_CONFIGDEP_VERSION,
+                f'{ESP_IDF_CONFIGDEP}-{ESP_IDF_CONFIGDEP_VERSION}',
+                'bin',
+            ),
+            output,
+        )
         self.assertNotIn(
             os.path.join(self.temp_tools_dir, 'tools', XTENSA_ELF, XTENSA_ELF_VERSION, XTENSA_ELF, 'bin'), output
         )
@@ -1118,10 +1302,11 @@ class TestUsageWin(TestUsage):
         self.assertNotIn(
             os.path.join(self.temp_tools_dir, 'tools', DFU_UTIL, DFU_UTIL_VERSION, 'dfu-util-0.11-win64'), output
         )
+        self.assertNotIn(os.path.join(self.temp_tools_dir, 'tools', CLANGD, CLANGD_VERSION, CLANGD, 'bin'), output)
 
     # a different test for qemu because of "on_request"
     def test_tools_for_qemu_with_required_win(self):
-        required_tools_installed = 14
+        required_tools_installed = 15
         output = self.run_idf_tools_with_action(['install', 'required', 'qemu-xtensa', 'qemu-riscv32'])
         self.assert_tool_installed(output, OPENOCD, OPENOCD_VERSION)
         self.assert_tool_installed(output, RISCV_ELF, RISCV_ELF_VERSION, RISCV_ELF_ARCHIVE_PATTERN)
@@ -1137,6 +1322,8 @@ class TestUsageWin(TestUsage):
         self.assert_tool_installed(output, IDF_EXE, IDF_EXE_VERSION)
         self.assert_tool_installed(output, CCACHE, CCACHE_VERSION)
         self.assert_tool_installed(output, DFU_UTIL, DFU_UTIL_VERSION)
+        self.assert_tool_installed(output, CLANGD, CLANGD_VERSION, CLANGD_ARCHIVE)
+        self.assert_tool_installed(output, ESP_IDF_CONFIGDEP, ESP_IDF_CONFIGDEP_VERSION)
         self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 

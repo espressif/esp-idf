@@ -3,6 +3,7 @@
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
@@ -13,7 +14,7 @@ from pytest_embedded_idf.utils import idf_parametrize
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32c5', 'esp32c6', 'esp32h2', 'esp32p4'], indirect=['target'])
+@idf_parametrize('target', soc_filtered_targets('SOC_PARLIO_SUPPORTED == 1'), indirect=['target'])
 def test_logic_analyzer_flash_stream(dut: Dut) -> None:
     dut.expect(r'flash_fat: Probe data partition base addr: \w+ size: \w+')
     dut.expect(r'flash_fat: flash FATFS mounted')

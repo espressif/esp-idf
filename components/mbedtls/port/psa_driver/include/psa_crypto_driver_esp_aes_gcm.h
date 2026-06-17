@@ -1,20 +1,18 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
-// #include_next "mbedtls/gcm.h"
-#include "sdkconfig.h"
+#include "psa/crypto.h"
+#include "psa_crypto_driver_esp_aes_contexts.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #if defined(ESP_AES_DRIVER_ENABLED)
-#include "psa/crypto.h"
-#include "psa_crypto_driver_esp_aes_contexts.h"
 
 psa_status_t esp_crypto_aes_gcm_encrypt_setup(
     esp_aes_gcm_operation_t *esp_aes_gcm_driver_ctx,

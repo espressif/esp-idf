@@ -9,7 +9,6 @@
 #include "hal/uart_hal.h"
 #include "esp_rom_serial_output.h"
 
-#define LP_UART_PORT_NUM LP_UART_NUM_0
 #define BINARY_SUPPORT 1
 
 #define is_digit(c) ((c >= '0') && (c <= '9'))
@@ -26,8 +25,9 @@ static void hp_uart_send_char(char t)
     }
     uart_ll_write_txfifo(uart, &t, 1);
 }
-#elif !CONFIG_ULP_ROM_PRINT_ENABLE
+#elif !CONFIG_ULP_ROM_PRINT_ENABLE && CONFIG_SOC_ULP_LP_UART_SUPPORTED
 void __attribute__((alias("lp_uart_send_char"))) lp_core_print_char(char c);
+#define LP_UART_PORT_NUM LP_UART_NUM_0
 static void lp_uart_send_char(char c)
 {
     int tx_len = 0;

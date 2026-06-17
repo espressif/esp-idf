@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +22,6 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout)
     fd_set readfds;
     fd_set writefds;
     fd_set errorfds;
-    int ret = 0;
 
     if (fds == NULL) {
         errno = ENOENT;
@@ -43,7 +42,6 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout)
 
         if (fds[i].fd >= FD_SETSIZE) {
             fds[i].revents |= POLLNVAL;
-            ++ret;
             continue;
         }
 
@@ -62,10 +60,17 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout)
 
     const int select_ret = select(max_fd + 1, &readfds, &writefds, &errorfds, timeout < 0 ? NULL : &tv);
 
-    if (select_ret > 0) {
-        ret += select_ret;
+    if (select_ret < 0) {
+        // keeping the errno from select()
+        return select_ret;
+    }
 
+    if (select_ret > 0) {
         for (unsigned int i = 0; i < nfds; ++i) {
+            if (fds[i].fd < 0 || fds[i].fd >= FD_SETSIZE) {
+                continue;
+            }
+
             if (FD_ISSET(fds[i].fd, &readfds)) {
                 fds[i].revents |= POLLIN;
             }
@@ -78,9 +83,13 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout)
                 fds[i].revents |= POLLERR;
             }
         }
-    } else {
-        ret = select_ret;
-        // keeping the errno from select()
+    }
+
+    int ret = 0;
+    for (unsigned int i = 0; i < nfds; ++i) {
+        if (fds[i].revents != 0) {
+            ++ret;
+        }
     }
 
     return ret;

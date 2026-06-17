@@ -36,9 +36,7 @@
 #if SOC_I2C_SUPPORT_APB || SOC_I2C_SUPPORT_XTAL
 #include "esp_private/esp_clk.h"
 #endif
-#if SOC_I2C_SUPPORT_RTC
-#include "clk_ctrl_os.h"
-#endif
+#include "esp_private/esp_clk_tree_common.h"
 
 static const char *I2C_TAG = "i2c";
 
@@ -114,18 +112,6 @@ static const char *I2C_TAG = "i2c";
 #define I2C_MEM_ALLOC_CAPS_INTERNAL     (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #endif
 #define I2C_MEM_ALLOC_CAPS_DEFAULT      MALLOC_CAP_DEFAULT
-
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define I2C_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define I2C_CLOCK_SRC_ATOMIC()
-#endif
-
-#if !SOC_RCC_IS_INDEPENDENT
-#define I2C_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define I2C_RCC_ATOMIC()
-#endif
 
 #define I2C_CLR_BUS_TIMEOUT_MS        (50)  // 50ms is sufficient for clearing the bus
 
@@ -269,7 +255,7 @@ static void i2c_hw_disable(i2c_port_t i2c_num)
 {
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     if (i2c_context[i2c_num].hw_enabled != false) {
-        I2C_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             i2c_ll_enable_bus_clock(i2c_num, false);
         }
         i2c_context[i2c_num].hw_enabled = false;
@@ -281,7 +267,7 @@ static void i2c_hw_enable(i2c_port_t i2c_num)
 {
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     if (i2c_context[i2c_num].hw_enabled != true) {
-        I2C_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             i2c_ll_enable_bus_clock(i2c_num, true);
             i2c_ll_reset_register(i2c_num);
         }
@@ -420,7 +406,7 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
         return ESP_FAIL;
     }
     i2c_hw_enable(i2c_num);
-    I2C_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i2c_hal_init(&i2c_context[i2c_num].hal, i2c_num);
     }
     //Disable I2C interrupt.
@@ -542,7 +528,7 @@ esp_err_t i2c_driver_delete(i2c_port_t i2c_num)
     }
 #endif
 
-    I2C_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i2c_hal_deinit(&i2c_context[i2c_num].hal);
     }
     free(p_i2c_obj[i2c_num]);
@@ -752,34 +738,8 @@ static esp_err_t i2c_hw_fsm_reset(i2c_port_t i2c_num)
 
 static uint32_t s_get_src_clk_freq(i2c_clock_source_t clk_src)
 {
-    // TODO: replace the following switch table by clk_tree API
     uint32_t periph_src_clk_hz = 0;
-    switch (clk_src) {
-#if SOC_I2C_SUPPORT_APB
-    case I2C_CLK_SRC_APB:
-        periph_src_clk_hz = esp_clk_apb_freq();
-        break;
-#endif
-#if SOC_I2C_SUPPORT_XTAL
-    case I2C_CLK_SRC_XTAL:
-        periph_src_clk_hz = esp_clk_xtal_freq();
-        break;
-#endif
-#if SOC_I2C_SUPPORT_RTC
-    case I2C_CLK_SRC_RC_FAST:
-        periph_rtc_dig_clk8m_enable();
-        periph_src_clk_hz = periph_rtc_dig_clk8m_get_freq();
-        break;
-#endif
-#if SOC_I2C_SUPPORT_REF_TICK
-    case I2C_CLK_SRC_REF_TICK:
-        periph_src_clk_hz = REF_CLK_FREQ;
-        break;
-#endif
-    default:
-        ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, I2C_TAG, "clock source %d is not supported", clk_src);
-        break;
-    }
+    esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz);
 
     return periph_src_clk_hz;
 }
@@ -827,7 +787,7 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t *i2c_conf)
         return ret;
     }
     i2c_hw_enable(i2c_num);
-    I2C_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i2c_hal_init(&i2c_context[i2c_num].hal, i2c_num);
     }
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
@@ -837,7 +797,7 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t *i2c_conf)
     if (i2c_conf->mode == I2C_MODE_SLAVE) {  //slave mode
         i2c_hal_slave_init(&(i2c_context[i2c_num].hal));
         i2c_ll_slave_enable_auto_start(i2c_context[i2c_num].hal.dev, true);
-        I2C_CLOCK_SRC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             i2c_ll_set_source_clk(i2c_context[i2c_num].hal.dev, src_clk);
         }
         i2c_ll_set_slave_addr(i2c_context[i2c_num].hal.dev, i2c_conf->slave.slave_addr, i2c_conf->slave.addr_10bit_en);
@@ -851,12 +811,12 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t *i2c_conf)
 #endif // SOC_I2C_SUPPORT_SLAVE
     {
         i2c_hal_master_init(&(i2c_context[i2c_num].hal));
-        I2C_CLOCK_SRC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             i2c_ll_set_source_clk(i2c_context[i2c_num].hal.dev, src_clk);
         }
         //Default, we enable hardware filter
         i2c_ll_master_set_filter(i2c_context[i2c_num].hal.dev, I2C_FILTER_CYC_NUM_DEF);
-        I2C_CLOCK_SRC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             i2c_hal_set_bus_timing(&(i2c_context[i2c_num].hal), i2c_conf->master.clk_speed, src_clk, s_get_src_clk_freq(src_clk));
         }
     }

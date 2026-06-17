@@ -249,8 +249,8 @@ static int issue_scan(struct wpa_supplicant *wpa_s,
             params->scan_time.active.min = scan_params->duration;
             params->scan_time.active.max = scan_params->duration;
         } else {
-            params->scan_time.active.min = SUPPLICANT_SCAN_ACTIVE_SCAN_MIN_DURATION;
-            params->scan_time.active.max = SUPPLICANT_SCAN_ACTIVE_SCAN_MAX_DURATION;
+            params->scan_time.active.min = SUPPLICANT_SCAN_ACTIVE_SCAN_DURATION;
+            params->scan_time.active.max = SUPPLICANT_SCAN_ACTIVE_SCAN_DURATION;
         }
     }
 
@@ -262,7 +262,7 @@ static int issue_scan(struct wpa_supplicant *wpa_s,
     typedef void (* scan_done_cb_t)(void *arg, ETS_STATUS status);
     extern int esp_wifi_promiscuous_scan_start(wifi_scan_config_t *config, scan_done_cb_t cb);
     /* issue scan */
-    if (esp_wifi_promiscuous_scan_start(params, scan_done_event_handler) < 0) {
+    if (esp_wifi_promiscuous_scan_start(params, scan_done_event_handler) != ESP_OK) {
         ret = -1;
         goto cleanup;
     }

@@ -22,7 +22,6 @@
 #include "bootloader_random.h"
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
-#include "esp_flash_encrypt.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 
@@ -77,7 +76,7 @@ static bool secure_boot_generate(uint32_t image_len){
 
     ESP_LOGD(TAG, "write iv+digest to flash");
     err = bootloader_flash_write(FLASH_OFFS_SECURE_BOOT_IV_DIGEST, &digest,
-                           sizeof(digest), esp_flash_encryption_enabled());
+                           sizeof(digest), esp_efuse_is_flash_encryption_enabled());
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "SPI write failed: 0x%x", err);
         return false;

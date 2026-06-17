@@ -254,7 +254,7 @@ typedef union {
     uint32_t val;
 } touch_aprch_ch_data_reg_t;
 
-/** Type of config register
+/** Type of sample_status register
  *  need_des
  */
 typedef union {

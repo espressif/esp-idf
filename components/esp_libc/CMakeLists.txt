@@ -26,6 +26,7 @@ set(srcs
     "src/termios.c"
     "src/stdatomic.c"
     "src/time.c"
+    "src/timekeeping.c"
     "src/sysconf.c"
     "src/realpath.c"
     "src/scandir.c"
@@ -77,14 +78,17 @@ else()
          "src/picolibc/picolibc_init.c"
          "src/picolibc/rand.c"
          "src/picolibc/open_memstream.c"
-         "src/picolibc/errno.c")
+         "src/picolibc/errno.c"
+         "src/picolibc/bufio_setvbuf.c") # TODO IDF-15494: remove this and the following lines
+         list(APPEND EXTRA_LINK_FLAGS "-Wl,--wrap=__bufio_setvbuf")
     if(CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY)
         list(APPEND srcs "src/picolibc/getreent.c")
+        list(APPEND srcs "src/picolibc/fopencookie.c")
     endif()
 endif()
 
 set(ldfragments "")
-list(APPEND ldfragments "src/esp_libc.lf" "src/system_libs.lf")
+list(APPEND ldfragments "src/esp_libc.lf" "src/esp_libc_clock.lf" "src/system_libs.lf")
 
 if(CONFIG_LIBC_NEWLIB)
     list(APPEND ldfragments src/libc.lf)
@@ -154,6 +158,9 @@ if(CONFIG_LIBC_NEWLIB_NANO_FORMAT)
     if(CMAKE_C_COMPILER_ID MATCHES "Clang")
         set(libc_dir_cmd ${CMAKE_C_COMPILER})
         string(REPLACE " " ";" cflags_list ${CMAKE_C_FLAGS})
+        # execute_process() quotes every argument, so we need to unquote response file path
+        # otherwise it will be treated in wrong way and clang will ignore it
+        string(REGEX REPLACE "@\"([^\"]*)\"" "@\\1" cflags_list ${cflags_list})
         list(APPEND libc_dir_cmd ${cflags_list} "-print-file-name=libc.a")
         execute_process(
             COMMAND ${libc_dir_cmd}

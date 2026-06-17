@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -20,7 +20,7 @@ esp_err_t esp_bt_hid_device_register_callback(esp_hd_cb_t callback)
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (callback == NULL) {
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_ARG;
     }
 
     btc_profile_cb_set(BTC_PID_HD, callback);
@@ -58,6 +58,16 @@ esp_err_t esp_bt_hid_device_register_app(esp_hidd_app_param_t* app_param, esp_hi
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if ((app_param == NULL) || (in_qos == NULL) || (out_qos == NULL)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if ((app_param->desc_list_len <= 0) || (app_param->desc_list_len > ESP_HIDD_APP_DESC_LIST_LEN_MAX) || (app_param->desc_list == NULL)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if ((app_param->name == NULL) || (app_param->description == NULL) || (app_param->provider == NULL)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     btc_msg_t msg;
     btc_hidd_args_t args;
     memset(&args, 0, sizeof(btc_hidd_args_t));
@@ -69,7 +79,8 @@ esp_err_t esp_bt_hid_device_register_app(esp_hidd_app_param_t* app_param, esp_hi
     msg.pid = BTC_PID_HD;
     msg.act = BTC_HD_REGISTER_APP_EVT;
 
-    bt_status_t stat = btc_transfer_context(&msg, &args, sizeof(btc_hidd_args_t), NULL, NULL);
+    bt_status_t stat = btc_transfer_context(&msg, &args, sizeof(btc_hidd_args_t),
+                                                btc_hd_arg_deep_copy, btc_hd_call_arg_deep_free);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -89,6 +100,10 @@ esp_err_t esp_bt_hid_device_unregister_app(void)
 esp_err_t esp_bt_hid_device_connect(esp_bd_addr_t bd_addr)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (bd_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     btc_msg_t msg;
     btc_hidd_args_t args;
@@ -120,6 +135,10 @@ esp_err_t esp_bt_hid_device_send_report(esp_hidd_report_type_t type, uint8_t id,
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if ((type < ESP_HIDD_REPORT_TYPE_OTHER) || (type > ESP_HIDD_REPORT_TYPE_INTRDATA) || (data == NULL) || (len == 0)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     btc_msg_t msg;
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HD;
@@ -140,6 +159,11 @@ esp_err_t esp_bt_hid_device_send_report(esp_hidd_report_type_t type, uint8_t id,
 esp_err_t esp_bt_hid_device_report_error(esp_hidd_handshake_error_t error)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if ((error < ESP_HID_PAR_HANDSHAKE_RSP_SUCCESS) || (error > ESP_HID_PAR_HANDSHAKE_RSP_ERR_FATAL) ||
+        ((error > ESP_HID_PAR_HANDSHAKE_RSP_ERR_INVALID_PARAM) && (error < ESP_HID_PAR_HANDSHAKE_RSP_ERR_UNKNOWN))) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     btc_msg_t msg;
     msg.sig = BTC_SIG_API_CALL;

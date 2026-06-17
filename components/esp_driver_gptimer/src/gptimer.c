@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,9 +17,9 @@ static esp_err_t gptimer_create_sleep_retention_link_cb(void *timer)
 {
     int group_id = ((gptimer_t *)timer)->group->group_id;
     int timer_id = ((gptimer_t *)timer)->timer_id;
-    esp_err_t err = sleep_retention_entries_create(soc_timg_gptimer_retention_infos[group_id][timer_id].regdma_entry_array,
-                                                   soc_timg_gptimer_retention_infos[group_id][timer_id].array_size,
-                                                   REGDMA_LINK_PRI_GPTIMER, soc_timg_gptimer_retention_infos[group_id][timer_id].module);
+    esp_err_t err = sleep_retention_entries_create(gptimer_retention_infos[group_id][timer_id].regdma_entry_array,
+                                                   gptimer_retention_infos[group_id][timer_id].array_size,
+                                                   REGDMA_LINK_PRI_GPTIMER, gptimer_retention_infos[group_id][timer_id].module);
     return err;
 }
 
@@ -27,11 +27,15 @@ static void gptimer_create_retention_module(gptimer_t *timer)
 {
     int group_id = timer->group->group_id;
     int timer_id = timer->timer_id;
-    sleep_retention_module_t module = soc_timg_gptimer_retention_infos[group_id][timer_id].module;
+    sleep_retention_module_t module = gptimer_retention_infos[group_id][timer_id].module;
     if (sleep_retention_is_module_inited(module) && !sleep_retention_is_module_created(module)) {
         if (sleep_retention_module_allocate(module) != ESP_OK) {
             // even though the sleep retention module create failed, GPTimer driver should still work, so just warning here
             ESP_LOGW(TAG, "create retention link failed on TimerGroup%d Timer%d, power domain won't be turned off during sleep", group_id, timer_id);
+            return;
+        }
+        if (sleep_retention_module_attach(module) != ESP_OK) {
+            ESP_LOGW(TAG, "attach retention link failed on TimerGroup%d Timer%d, power domain won't be turned off during sleep", group_id, timer_id);
         }
     }
 }
@@ -65,7 +69,7 @@ static esp_err_t gptimer_register_to_group(gptimer_t *timer)
     ESP_RETURN_ON_FALSE(timer_id != -1, ESP_ERR_NOT_FOUND, TAG, "no free timer");
 
 #if GPTIMER_USE_RETENTION_LINK
-    sleep_retention_module_t module = soc_timg_gptimer_retention_infos[group->group_id][timer_id].module;
+    sleep_retention_module_t module = gptimer_retention_infos[group->group_id][timer_id].module;
     sleep_retention_module_init_param_t init_param = {
         .cbs = {
             .create = {
@@ -73,6 +77,7 @@ static esp_err_t gptimer_register_to_group(gptimer_t *timer)
                 .arg = (void *)timer
             },
         },
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
         .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
     };
     if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
@@ -93,7 +98,10 @@ static void gptimer_unregister_from_group(gptimer_t *timer)
     portEXIT_CRITICAL(&group->spinlock);
 
 #if GPTIMER_USE_RETENTION_LINK
-    sleep_retention_module_t module = soc_timg_gptimer_retention_infos[group->group_id][timer_id].module;
+    sleep_retention_module_t module = gptimer_retention_infos[group->group_id][timer_id].module;
+    if (sleep_retention_is_module_attached(module)) {
+        sleep_retention_module_detach(module);
+    }
     if (sleep_retention_is_module_created(module)) {
         sleep_retention_module_free(module);
     }
@@ -160,7 +168,6 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
     // initialize HAL layer
     timer_hal_init(&timer->hal, group_id, timer_id);
     // select clock source, set clock resolution
-    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)config->clk_src, true), err, TAG, "clock source enable failed");
     ESP_GOTO_ON_ERROR(gptimer_select_periph_clock(timer, config->clk_src, config->resolution_hz), err, TAG, "set periph clock failed");
     // initialize counter value to zero
     timer_hal_set_counter_value(&timer->hal, 0);
@@ -195,28 +202,18 @@ esp_err_t gptimer_del_timer(gptimer_handle_t timer)
     ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(atomic_load(&timer->fsm) == GPTIMER_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "timer not in init state");
     gptimer_group_t *group = timer->group;
-    gptimer_clock_source_t clk_src = timer->clk_src;
     int group_id = group->group_id;
     int timer_id = timer->timer_id;
     timer_hal_context_t *hal = &timer->hal;
     ESP_LOGD(TAG, "del timer (%d,%d)", group_id, timer_id);
     // disable the source clock
-    GPTIMER_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         timer_ll_enable_clock(group_id, hal->timer_id, false);
     }
     timer_hal_deinit(hal);
     // recycle memory resource
     ESP_RETURN_ON_ERROR(gptimer_destroy(timer), TAG, "destroy gptimer failed");
 
-    switch (clk_src) {
-#if TIMER_LL_FUNC_CLOCK_SUPPORT_RC_FAST
-    case GPTIMER_CLK_SRC_RC_FAST:
-        periph_rtc_dig_clk8m_disable();
-        break;
-#endif // TIMER_LL_FUNC_CLOCK_SUPPORT_RC_FAST
-    default:
-        break;
-    }
     return ESP_OK;
 }
 

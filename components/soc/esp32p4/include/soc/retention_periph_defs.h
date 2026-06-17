@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -62,50 +62,16 @@ typedef enum periph_retention_module {
     SLEEP_RETENTION_MODULE_SDM0         = 36,
     SLEEP_RETENTION_MODULE_EMAC         = 37,
     SLEEP_RETENTION_MODULE_JPEG         = 38,
+    SLEEP_RETENTION_MODULE_LCDCAM       = 39,
+    SLEEP_RETENTION_MODULE_H264         = 40,
+
+    /* PMU REGDMA clock icg */
+    SLEEP_RETENTION_MODULE_CLOCK_ICG    = SOC_PM_RETENTION_MODULE_NUM - 2,
 
     SLEEP_RETENTION_MODULE_MAX          = SOC_PM_RETENTION_MODULE_NUM - 1
 } periph_retention_module_t;
 
-#define is_top_domain_module(m)                           \
-    ( ((m) == SLEEP_RETENTION_MODULE_NULL)         ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_CLOCK_SYSTEM) ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_SYS_PERIPH)   ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_TG0_WDT)      ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_TG1_WDT)      ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_TG0_TIMER0)   ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_TG0_TIMER1)   ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_TG1_TIMER0)   ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_TG1_TIMER1)   ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_AHB_DMA_CH0)  ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_AHB_DMA_CH1)  ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_AHB_DMA_CH2)  ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_AXI_DMA_CH0)  ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_AXI_DMA_CH1)  ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_AXI_DMA_CH2)  ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_UART0)        ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_UART1)        ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_UART2)        ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_UART3)        ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_UART4)        ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_RMT0)         ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_I2S0)         ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_I2S1)         ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_I2S2)         ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_I2C0)         ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_I2C1)         ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_ETM0)         ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_TWAI0)        ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_TWAI1)        ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_TWAI2)        ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_PARLIO0)      ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_GPSPI2)       ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_GPSPI3)       ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_LEDC)         ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_MCPWM0)       ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_MCPWM1)       ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_SDM0)         ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_JPEG)         ? true \
-    : false)
+#define is_top_domain_module(m)     (((m) <= SLEEP_RETENTION_MODULE_H264) || ((m) == SLEEP_RETENTION_MODULE_CLOCK_ICG))
 
 #ifdef __cplusplus
 }

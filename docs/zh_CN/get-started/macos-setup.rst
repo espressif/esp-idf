@@ -2,7 +2,7 @@
 在 macOS 上安装 ESP-IDF 及工具链
 ************************************************
 
-:link_to_translation:`zh_CN:[中文]`
+:link_to_translation:`en:[English]`
 
 本章节将介绍如何使用 ESP-IDF 安装管理器 (EIM) 在 macOS 上安装 ESP-IDF 及其所需工具。
 
@@ -24,13 +24,36 @@
 
     ESP-IDF  要求 Python 版本至少为 3.10。
 
-    但如需使用 EIM 进行 `离线安装 <https://docs.espressif.com/projects/idf-im-ui/en/latest/offline_installation.html>`_，则必须使用 **Python 3.11 或更高版本**。
+    EIM 所需的 Python 版本，请参考 `EIM 文档 <https://docs.espressif.com/projects/idf-im-ui/en/latest/prerequisites.html#python-version>`_。
 
 
 第二步：安装 EIM
 =======================
 
-将 EIM 仓库添加到 Homebrew 中，以便后续使用 Homebrew 安装 EIM：
+您可以使用以下任一方法安装 EIM：
+
+- `下载 EIM`_
+- `通过 Homebrew 安装 EIM`_
+
+如果通过 Homebrew 安装 EIM，后续运行单个命令，即可轻松升级更新 EIM。
+
+
+下载 EIM
+~~~~~~~~~
+
+.. figure:: ../../_static/get-started-eim-download.drawio.png
+   :alt: EIM 下载页面
+   :align: left
+   :width: 35%
+   :target: https://dl.espressif.com/dl/eim/
+
+可选择下载在线或离线安装程序的图形用户界面 (GUI) 或命令行界面 (CLI) 版本。
+
+
+通过 Homebrew 安装 EIM
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+将 EIM 仓库添加到 `Homebrew <https://brew.sh/>`__ 中，以便后续使用 Homebrew 安装 EIM：
 
 .. code-block:: bash
 
@@ -47,12 +70,6 @@
     .. code-block:: bash
 
         brew install eim
-
-.. note::
-
-   通过 Homebrew 安装 EIM 便于后续升级更新。
-
-   您也可以从 `Espressif 下载页面 <https://dl.espressif.com/dl/eim/>`__ 下载适用于 macOS 的 EIM 安装包，该页面提供了 CLI 和 GUI 版本的在线和离线安装程序。
 
 
 第三步：使用 EIM 安装 ESP-IDF

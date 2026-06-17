@@ -26,12 +26,13 @@
 #define HOST_ID             SPI2_HOST
 #define QUEUE_SIZE          6
 #define TRANSACTION_LEN     64
-#define SYNC_REG_FROM_HOST  (14 * 4)
-#define SYNC_REG_TO_HOST    (15 * 4)
 
 //---------This should be negotiated with the Master!!!!-------------//
 #define SLAVE_READY_FLAG    0x88
-#define READY_FLAG_REG      0
+#define SLAVE_SHARE_REG_NUM 3
+#define READY_FLAG_REG      (0 * 4) // first register is used for ready flag
+#define SYNC_REG_FROM_HOST  (1 * 4) // second register is used for sync from host
+#define SYNC_REG_TO_HOST    (2 * 4) // third register is used for sync to host
 
 struct trans_link_s {
     spi_slave_hd_data_t trans;
@@ -242,8 +243,8 @@ void app_main(void)
     init_slave_hd();
 
     //Init the shared register
-    uint8_t init_value[SOC_SPI_MAXIMUM_BUFFER_SIZE] = {0x0};
-    spi_slave_hd_write_buffer(HOST_ID, 0, init_value, SOC_SPI_MAXIMUM_BUFFER_SIZE);
+    uint8_t init_value[SLAVE_SHARE_REG_NUM * 4] = {0x0};
+    spi_slave_hd_write_buffer(HOST_ID, 0, init_value, sizeof(init_value));
 
     uint8_t ready_flag = SLAVE_READY_FLAG;
     spi_slave_hd_write_buffer(HOST_ID, READY_FLAG_REG, &ready_flag, 4);

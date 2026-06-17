@@ -656,6 +656,23 @@ buffer 日志需特殊处理
 
 启用 **Log V2** 会增加 IRAM 的使用量，同时减少整个应用程序的二进制文件大小、flash 代码和数据量。
 
+.. only:: not CONFIG_ESP_ROM_HAS_VPRINTF_FUNC
+
+    在 Log V2 中减少 IRAM 使用
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    **Log V2** 中 IRAM 开销增加的主要原因是 ``esp_rom_vprintf`` 在 {IDF_TARGET_NAME} 上被编译进了 IRAM（约 1.2 KB）。在内联函数 ``esp_log_vprintf()`` 中，``esp_rom_vprintf`` 作为受限环境（例如在 ISR 中或缓存被禁用时）的回退格式化函数被引用。
+
+    在 IRAM 与 DRAM 共用同一内存池的芯片上，这也会减少相应的可用堆空间（约 1.2 KB）。
+
+    为消除该开销，请禁用 :ref:`CONFIG_LOG_API_CONSTRAINED_ENV_SAFE` （默认启用）。禁用后：
+
+    - ``ESP_DRAM_LOGx`` 和 ``ESP_EARLY_LOGx`` 直接展开为 ``esp_rom_printf()`` （真正的 ROM 函数，无需 IRAM 开销），完全绕过 ``esp_log()`` 处理流程。
+    - 在受限环境中，普通的 ``ESP_LOGx`` 调用将使用标准 ``vprintf`` 函数。如果 ``vprintf`` 位于 flash 中，此类调用可能导致崩溃。对于必须在缓存被禁用时或在 ISR 中使用的日志，请使用 ``ESP_DRAM_LOGx``。
+    - ``esp_rom_vprintf`` 不会被引用，因此链接器会将其从二进制文件中排除。
+
+    若启用 :ref:`CONFIG_LOG_API_CONSTRAINED_ENV_SAFE`，则保留原始 **Log V2** 行为：所有受限环境的日志都通过 ``esp_log()`` 路由，并使用 ``esp_rom_vprintf`` 作为早期/DRAM 日志的格式化函数。
+
 通过 JTAG 将日志记录到主机
 ------------------------------
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,6 +50,14 @@ void esp_nan_action_start(esp_netif_t *nan_netif);
 void esp_nan_action_stop(void);
 
 #endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
+
+#if defined(CONFIG_ESP_WIFI_PASN_SUPPORT)
+struct nan_pasn_data;
+struct nan_pasn_data *esp_nan_app_get_pasn_data(void);
+void esp_nan_app_set_pasn_data(struct nan_pasn_data *pd);
+//void esp_nan_app_post_pasn_pairing_indication(const wifi_event_nan_pasn_pairing_indication_t *evt);
+//void esp_nan_app_post_pasn_pairing_confirm(const wifi_event_nan_pasn_pairing_confirm_t *evt);
+#endif /* CONFIG_ESP_WIFI_PASN_SUPPORT */
 
 #ifdef __cplusplus
 }

@@ -11,7 +11,6 @@
 #include "sdkconfig.h"
 #include "esp_check.h"
 #include "esp_log.h"
-#include "soc/soc_caps.h"
 #include "soc/rtc.h"
 #include "hal/mspi_ll.h"
 #include "hal/clk_tree_ll.h"
@@ -38,7 +37,7 @@ void esp_clk_utils_mspi_speed_mode_sync_before_cpu_freq_switching(uint32_t targe
     if (target_cpu_src_freq <= clk_ll_xtal_load_freq_mhz()) {
         mspi_timing_change_speed_mode_cache_safe(true);
     }
-#elif SOC_SPI_MEM_PSRAM_FREQ_AXI_CONSTRAINED && CONFIG_SPIRAM
+#elif MSPI_TIMING_LL_PSRAM_FREQ_AXI_CONSTRAINED && CONFIG_SPIRAM
     /* On chips with AXI bus, currently there is a restriction that AXI frequency (usually equals to a portion of CPU
      * frequency) needs to be greater than or equal to MSPI PSRAM frequency to avoid writing MSPI FIFO overflow.
      */
@@ -60,7 +59,7 @@ void esp_clk_utils_mspi_speed_mode_sync_after_cpu_freq_switching(uint32_t target
     if (target_cpu_src_freq > clk_ll_xtal_load_freq_mhz()) {
         mspi_timing_change_speed_mode_cache_safe(false);
     }
-#elif SOC_SPI_MEM_PSRAM_FREQ_AXI_CONSTRAINED && CONFIG_SPIRAM
+#elif MSPI_TIMING_LL_PSRAM_FREQ_AXI_CONSTRAINED && CONFIG_SPIRAM
     /* On chips with AXI bus, currently there is a restriction that AXI frequency (usually equals to a portion of CPU
      * frequency) needs to be greater than or equal to MSPI PSRAM frequency to avoid writing MSPI FIFO overflow.
      */

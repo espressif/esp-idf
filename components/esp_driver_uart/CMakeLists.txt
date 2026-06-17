@@ -3,7 +3,12 @@ idf_build_get_property(target IDF_TARGET)
 set(srcs)
 set(public_include "include")
 if(CONFIG_SOC_UART_SUPPORTED)
-    list(APPEND srcs "src/uart.c" "src/uart_wakeup.c")
+    list(APPEND srcs "src/uart.c")
+
+    if(CONFIG_SOC_DEEP_SLEEP_SUPPORTED OR CONFIG_SOC_LIGHT_SLEEP_SUPPORTED)
+        list(APPEND srcs "src/uart_wakeup.c")
+    endif()
+
     if(CONFIG_SOC_UHCI_SUPPORTED)
         list(APPEND srcs "src/uhci.c")
     endif()

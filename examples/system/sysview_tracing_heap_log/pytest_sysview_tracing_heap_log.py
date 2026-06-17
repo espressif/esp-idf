@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import os.path
+import time
 import typing
 
 import pexpect.fdpexpect
@@ -32,6 +33,7 @@ def _test_examples_sysview_tracing_heap_log(openocd_dut: 'OpenOCD', idf_path: st
             else:
                 f_w.write(line)
 
+    time.sleep(1)  # Wait for the USJ port to be ready
     dut.expect_exact('example: Ready for OpenOCD connection', timeout=5)
     with openocd_dut.run() as oocd:
         if dut.target == 'esp32p4':
@@ -73,7 +75,9 @@ def test_examples_sysview_tracing_heap_log(openocd_dut: 'OpenOCD', idf_path: str
 @pytest.mark.parametrize('config', ['app_trace_jtag'], indirect=True)
 @pytest.mark.usb_serial_jtag
 @idf_parametrize(
-    'target', ['esp32s3', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4'], indirect=['target']
+    'target',
+    ['esp32s3', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4'],
+    indirect=['target'],
 )
 def test_examples_sysview_tracing_heap_log_usj(openocd_dut: 'OpenOCD', idf_path: str, dut: IdfDut) -> None:
     _test_examples_sysview_tracing_heap_log(openocd_dut, idf_path, dut)

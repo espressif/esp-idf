@@ -139,8 +139,6 @@
 #define USB_INT_PHY0_DM_GPIO_NUM              12
 #define USB_INT_PHY0_DP_GPIO_NUM              13
 
-#define MAX_RTC_GPIO_NUM              7
-
 
 #define REG_IO_MUX_BASE DR_REG_IO_MUX_BASE
 #define PIN_CTRL                          (REG_IO_MUX_BASE +0x00)

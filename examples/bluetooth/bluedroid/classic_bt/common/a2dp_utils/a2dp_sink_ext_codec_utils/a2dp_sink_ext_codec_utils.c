@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -63,7 +63,7 @@ void bt_a2d_evt_ext_codec_hdl(uint16_t event, void *param)
     case ESP_A2D_AUDIO_CFG_EVT: {
         esp_a2d_mcc_t *p_mcc = &a2d->audio_cfg.mcc;
         ESP_LOGI(BT_AV_TAG, "A2DP audio stream configuration, codec type: %d", p_mcc->type);
-        /* for now only SBC stream is supported */
+
         if (p_mcc->type == ESP_A2D_MCT_SBC) {
             int sample_rate = 16000;
             if (p_mcc->cie.sbc_info.samp_freq & ESP_A2D_SBC_CIE_SF_32K) {
@@ -81,6 +81,44 @@ void bt_a2d_evt_ext_codec_hdl(uint16_t event, void *param)
                      p_mcc->cie.sbc_info.alloc_mthd,
                      p_mcc->cie.sbc_info.min_bitpool,
                      p_mcc->cie.sbc_info.max_bitpool);
+            ESP_LOGI(BT_AV_TAG, "Audio player configured, sample rate: %d", sample_rate);
+        } else if (p_mcc->type == ESP_A2D_MCT_M24) {
+            int sample_rate = 16000;
+            if (p_mcc->cie.m24_info.samp_freq2 & ESP_A2D_M24_CIE_SF2_96K) {
+                sample_rate = 96000;
+            } else if (p_mcc->cie.m24_info.samp_freq2 & ESP_A2D_M24_CIE_SF2_88K) {
+                sample_rate = 88200;
+            } else if (p_mcc->cie.m24_info.samp_freq2 & ESP_A2D_M24_CIE_SF2_64K) {
+                sample_rate = 64000;
+            } else if (p_mcc->cie.m24_info.samp_freq2 & ESP_A2D_M24_CIE_SF2_48K) {
+                sample_rate = 48000;
+            } else if (p_mcc->cie.m24_info.samp_freq1 & ESP_A2D_M24_CIE_SF1_44K) {
+                sample_rate = 44100;
+            } else if (p_mcc->cie.m24_info.samp_freq1 & ESP_A2D_M24_CIE_SF1_32K) {
+                sample_rate = 32000;
+            } else if (p_mcc->cie.m24_info.samp_freq1 & ESP_A2D_M24_CIE_SF1_24K) {
+                sample_rate = 24000;
+            } else if (p_mcc->cie.m24_info.samp_freq1 & ESP_A2D_M24_CIE_SF1_22K) {
+                sample_rate = 22050;
+            } else if (p_mcc->cie.m24_info.samp_freq1 & ESP_A2D_M24_CIE_SF1_16K) {
+                sample_rate = 16000;
+            } else if (p_mcc->cie.m24_info.samp_freq1 & ESP_A2D_M24_CIE_SF1_12K) {
+                sample_rate = 12000;
+            } else if (p_mcc->cie.m24_info.samp_freq1 & ESP_A2D_M24_CIE_SF1_11K) {
+                sample_rate = 11025;
+            } else if (p_mcc->cie.m24_info.samp_freq1 & ESP_A2D_M24_CIE_SF1_8K) {
+                sample_rate = 8000;
+            }
+            ESP_LOGI(BT_AV_TAG, "Configure audio player: 0x%x-0x%x-0x%x-0x%x-0x%x-0x%x-0x%x-0x%x-0x%x",
+                     p_mcc->cie.m24_info.drc,
+                     p_mcc->cie.m24_info.obj_type,
+                     p_mcc->cie.m24_info.samp_freq1,
+                     p_mcc->cie.m24_info.samp_freq2,
+                     p_mcc->cie.m24_info.ch,
+                     p_mcc->cie.m24_info.vbr,
+                     p_mcc->cie.m24_info.br1,
+                     p_mcc->cie.m24_info.br2,
+                     p_mcc->cie.m24_info.br3);
             ESP_LOGI(BT_AV_TAG, "Audio player configured, sample rate: %d", sample_rate);
         }
         break;

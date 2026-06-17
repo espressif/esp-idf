@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -269,13 +269,13 @@ typedef union {
          *  1: Allowed
          */
         uint32_t coren_mm_hp_rmt_allow:1;
-        /** coren_mm_hp_bitsrambler_allow : R/W; bitpos: [23]; default: 1;
+        /** coren_mm_hp_bitscrambler_allow : R/W; bitpos: [23]; default: 1;
          *  Configures whether HP CPUn in machine mode has permission to access HP bit
          *  scrambler.
          *  0: Not allowed
          *  1: Allowed
          */
-        uint32_t coren_mm_hp_bitsrambler_allow:1;
+        uint32_t coren_mm_hp_bitscrambler_allow:1;
         /** coren_mm_hp_axi_icm_allow : R/W; bitpos: [24]; default: 1;
          *  Configures whether HP CPUn in machine mode has permission to access HP AXI ICM.
          *  0: Not allowed
@@ -773,12 +773,12 @@ typedef union {
          *  1: Allowed
          */
         uint32_t coren_um_hp_rmt_allow:1;
-        /** coren_um_hp_bitsrambler_allow : R/W; bitpos: [23]; default: 1;
+        /** coren_um_hp_bitscrambler_allow : R/W; bitpos: [23]; default: 1;
          *  Configures whether HP CPUn in user mode has permission to access HP bit scrambler.
          *  0: Not allowed
          *  1: Allowed
          */
-        uint32_t coren_um_hp_bitsrambler_allow:1;
+        uint32_t coren_um_hp_bitscrambler_allow:1;
         /** coren_um_hp_axi_icm_allow : R/W; bitpos: [24]; default: 1;
          *  Configures whether HP CPUn in user mode has permission to access HP AXI ICM.
          *  0: Not allowed

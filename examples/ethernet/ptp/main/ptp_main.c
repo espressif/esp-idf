@@ -12,9 +12,12 @@
 #include "ethernet_init.h"
 #include "esp_vfs_l2tap.h"
 #include "driver/gpio.h"
+#include <sys/socket.h>
 #include "ptpd.h"
 
-#include "esp_eth_time.h"
+#if CONFIG_EXAMPLE_PTP_PULSE_CALLBACK
+#include "esp_eth_clock.h" // for esp_eth_clock_set_target_time and esp_eth_clock_register_target_cb
+#endif //CONFIG_EXAMPLE_PTP_PULSE_CALLBACK
 #include "esp_eth_mac_esp.h"
 
 #define ETH_IF_KEY "ETH_0"
@@ -78,7 +81,7 @@ IRAM_ATTR bool ts_callback(esp_eth_mediator_t *eth, void *user_args)
     timespecadd(&s_next_time, &interval, &s_next_time);
 
     struct timespec curr_time;
-    esp_eth_clock_gettime(CLOCK_PTP_SYSTEM, &curr_time);
+    clock_gettime(CLOCK_PTP_SYSTEM, &curr_time);
     // check the next time is in the future
     if (timespeccmp(&s_next_time, &curr_time, >)) {
         esp_eth_clock_set_target_time(CLOCK_PTP_SYSTEM, &s_next_time);
@@ -88,15 +91,42 @@ IRAM_ATTR bool ts_callback(esp_eth_mediator_t *eth, void *user_args)
 }
 #endif //CONFIG_EXAMPLE_PTP_PULSE_CALLBACK
 
+void ptp_daemon_task(void *task_param)
+{
+    struct ptpd_config_s ptp_config = {
+        .interface = ETH_IF_KEY,
+        .clock = "ptpclock",
+#ifdef CONFIG_EXAMPLE_PTPD_CLIENT_ONLY
+        .client_only = true,
+#endif
+        .hardware_ts = true,
+#ifdef CONFIG_EXAMPLE_PTPD_SEND_DELAYREQ
+        .delay_e2e = true,
+#endif
+#ifdef CONFIG_EXAMPLE_PTPD_BMCA
+        .bmca = true,
+#endif
+        .af = AF_INET,
+    };
+    if (ptpd_start(&ptp_config) < 0) {
+        ESP_LOGE(TAG, "PTP daemon exited with error");
+    }
+    vTaskDelete(NULL);
+}
+
+void ptp_deamon_start(void)
+{
+    xTaskCreate(ptp_daemon_task, "PTPD", CONFIG_EXAMPLE_PTPD_STACKSIZE,
+                NULL, CONFIG_EXAMPLE_PTPD_TASKPRIO, NULL);
+}
+
 void app_main(void)
 {
     ESP_LOGI(TAG, "Starting PTP example");
     init_ethernet_and_netif();
 
-    int pid = ptpd_start(ETH_IF_KEY);
-
+    ptp_deamon_start();
 #if CONFIG_EXAMPLE_PTP_PULSE_EMAC_PPS
-    (void)pid; // suppress compiler warning about unused variable
     esp_eth_handle_t eth_handle = esp_netif_get_io_driver(esp_netif_get_handle_from_ifkey(ETH_IF_KEY));
     esp_eth_mac_t *mac;
     ESP_ERROR_CHECK(esp_eth_get_mac_instance(eth_handle, &mac));
@@ -105,7 +135,7 @@ void app_main(void)
 #elif CONFIG_EXAMPLE_PTP_PULSE_CALLBACK
     struct timespec cur_time;
     // wait for the clock to be available
-    while (esp_eth_clock_gettime(CLOCK_PTP_SYSTEM, &cur_time) == -1) {
+    while (clock_gettime(CLOCK_PTP_SYSTEM, &cur_time) == -1) {
         vTaskDelay(pdMS_TO_TICKS(500));
     }
     // register callback function which will toggle output pin
@@ -129,7 +159,7 @@ void app_main(void)
     while (1) {
         struct ptpd_status_s ptp_status;
         // if valid PTP status
-        if (ptpd_status(pid, &ptp_status) == 0) {
+        if (ptpd_status(0, &ptp_status) == 0) {
             if (ptp_status.clock_source_valid) {
                 clock_source_valid_cnt++;
             } else {
@@ -149,7 +179,7 @@ void app_main(void)
         if ((clock_source_valid == true && clock_source_valid_last == false) || first_pass) {
             first_pass = false;
             // get the most recent (now synced) time
-            esp_eth_clock_gettime(CLOCK_PTP_SYSTEM, &cur_time);
+            clock_gettime(CLOCK_PTP_SYSTEM, &cur_time);
             // compute the next target time
             s_next_time.tv_sec = 1;
             timespecadd(&s_next_time, &cur_time, &s_next_time);

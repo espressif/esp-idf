@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2026 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * Copyright (c) 2015-2019 Cadence Design Systems, Inc.
@@ -135,7 +135,9 @@ _xt_context_save:
     s32i    a3,  sp, XT_STK_LBEG
     rsr     a3,  XT_REG_LEND
     s32i    a3,  sp, XT_STK_LEND
-    rsr     a3,  XT_REG_LCOUNT
+    /* Save and disable active zero-overhead loop state while ISR/exception code runs. */
+    movi    a3,  0
+    xsr     a3,  XT_REG_LCOUNT   /* a3 = LCOUNT, LCOUNT = 0 */
     s32i    a3,  sp, XT_STK_LCOUNT
     #endif
 

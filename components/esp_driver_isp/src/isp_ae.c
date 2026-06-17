@@ -233,7 +233,7 @@ esp_err_t esp_isp_ae_env_detector_register_event_callbacks(isp_ae_ctlr_t ae_ctlr
     ESP_RETURN_ON_FALSE(ae_ctlr && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(atomic_load(&ae_ctlr->fsm) == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller not in init state");
 
-#if CONFIG_ISP_ISR_IRAM_SAEE
+#if CONFIG_ISP_ISR_IRAM_SAFE
     if (cbs->on_env_statistics_done) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_env_statistics_done), ESP_ERR_INVALID_ARG, TAG, "on_env_statistics_done callback not in IRAM");
     }

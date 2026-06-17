@@ -34,6 +34,7 @@
 #if (defined BLE_INCLUDED && BLE_INCLUDED == TRUE)
 #include "btm_ble_int.h"
 #include "stack/smp_api.h"
+#include "bta_dm_gap.h"
 
 
 /*******************************************************************************
@@ -50,6 +51,7 @@ static void btm_gen_resolve_paddr_cmpl(tSMP_ENC *p)
 {
     tBTM_LE_RANDOM_CB *p_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
     BTM_TRACE_EVENT ("btm_gen_resolve_paddr_cmpl");
+    tBTM_STATUS status = BTM_SUCCESS;
 
     if (p) {
         /* set hash to be LSB of rpAddress */
@@ -62,10 +64,7 @@ static void btm_gen_resolve_paddr_cmpl(tSMP_ENC *p)
 
         p_cb->exist_addr_bit |= BTM_BLE_GAP_ADDR_BIT_RESOLVABLE;
         memcpy(p_cb->resolvale_addr, p_cb->private_addr, BD_ADDR_LEN);
-        if (p_cb->set_local_privacy_cback){
-            (*p_cb->set_local_privacy_cback)(BTM_SET_PRIVACY_SUCCESS);
-            p_cb->set_local_privacy_cback = NULL;
-        }
+        status = BTM_SET_PRIVACY_SUCCESS;
 
         /* start a periodical timer to refresh random addr */
         btu_stop_timer_oneshot(&p_cb->raddr_timer_ent);
@@ -79,11 +78,11 @@ static void btm_gen_resolve_paddr_cmpl(tSMP_ENC *p)
     } else {
         /* random address set failure */
         BTM_TRACE_DEBUG("set random address failed");
-        if (p_cb->set_local_privacy_cback){
-            (*p_cb->set_local_privacy_cback)(BTM_SET_PRIVACY_FAIL);
-            p_cb->set_local_privacy_cback = NULL;
-        }
+        status = BTM_SET_PRIVACY_FAIL;
     }
+    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+    cb_params.status = status;
+    BTM_BleLegacyGapOneshotFireIfArmed(BTM_BLE_LEGACY_GAP_SET_PRIVACY_EVT, &cb_params);
 }
 /*******************************************************************************
 **
@@ -221,7 +220,7 @@ static void btm_ble_resolve_address_cmpl(void)
 {
     tBTM_LE_RANDOM_CB   *p_mgnt_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
 
-    BTM_TRACE_EVENT ("btm_ble_resolve_address_cmpl p_mgnt_cb->p_dev_rec = 0x%08x", (uint32_t)p_mgnt_cb->p_dev_rec);
+    BTM_TRACE_EVENT ("btm_ble_resolve_address_cmpl p_mgnt_cb->p_dev_rec = 0x%08x", p_mgnt_cb->p_dev_rec ? (uint32_t)p_mgnt_cb->p_dev_rec : 0);
 
     p_mgnt_cb->busy = FALSE;
 
@@ -405,7 +404,9 @@ void btm_ble_resolve_random_addr(BD_ADDR random_bda, tBTM_BLE_RESOLVE_CBACK *p_c
             p_dev_rec = list_node(p_node);
             p_mgnt_cb->p_dev_rec = p_dev_rec;
             if (btm_ble_match_random_bda(p_dev_rec)) {
-                break;
+                // if matched, btm_ble_match_random_bda->btm_ble_proc_resolve_x->btm_ble_resolve_address_cmpl
+                p_mgnt_cb->p_dev_rec = NULL;
+                return;
             }
             p_mgnt_cb->p_dev_rec = NULL;
         }
@@ -439,12 +440,12 @@ tBTM_SEC_DEV_REC *btm_find_dev_by_identity_addr(BD_ADDR bd_addr, UINT8 addr_type
     context.free_check          = FALSE;
     p_node = list_foreach(btm_cb.p_sec_dev_rec_list, btm_find_sec_dev_in_list, &context);
     if (p_node) {
-	p_dev_rec = list_node(p_node);
+	    p_dev_rec = list_node(p_node);
         if ((p_dev_rec->ble.static_addr_type & (~BLE_ADDR_TYPE_ID_BIT)) !=
                 (addr_type & (~BLE_ADDR_TYPE_ID_BIT))) {
             BTM_TRACE_WARNING("%s find pseudo->random match with diff addr type: %d vs %d",
                               __func__, p_dev_rec->ble.static_addr_type, addr_type);
-	}
+	    }
     }
     return p_dev_rec;
 #endif
@@ -617,4 +618,71 @@ void btm_ble_refresh_local_resolvable_private_addr(BD_ADDR pseudo_addr,
     }
 #endif
 }
+
+#if (SMP_INCLUDED == TRUE) && (BLE_PRIVACY_SPT == TRUE)
+BOOLEAN btm_ble_resolve_rpa(BD_ADDR rpa, uint8_t *irk)
+{
+    UINT8 rand[3];
+    UINT8 hash[3];
+    tSMP_ENC output;
+
+    /* use the 3 MSB of bd address as prand */
+    rand[0] = rpa[2];
+    rand[1] = rpa[1];
+    rand[2] = rpa[0];
+    /* use the 3 LSB of bd address as hash */
+    hash[0] = rpa[5];
+    hash[1] = rpa[4];
+    hash[2] = rpa[3];
+
+    /* generate X = E irk(R0, R1, R2) and R is random address 3 LSO */
+    SMP_Encrypt(irk, BT_OCTET16_LEN, &rand[0], 3, &output);
+    if (!memcmp(output.param_buf, &hash[0], 3)) {
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+/**
+ * For internal testing only.
+ * Should be invoked only after the Bluedroid host has been enabled.
+ */
+bool btm_ble_rpa_resolve(uint8_t *rpa, uint8_t *ida, uint8_t *ida_type)
+{
+    list_node_t *p_node = NULL;
+    tBTM_SEC_DEV_REC *p_dev_rec = NULL;
+
+    if (!rpa || !ida || !ida_type) {
+        return false;
+    }
+
+    if (!BTM_BLE_IS_RESOLVE_BDA(rpa)) {
+        return false;
+    }
+
+    // Iterate through all peer IRKs to resolve the RPA
+    for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
+        p_dev_rec = list_node(p_node);
+        // If device record has peer IRK
+        if ((p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) &&
+            (p_dev_rec->ble.key_type & BTM_LE_KEY_PID)) {
+            if (btm_ble_resolve_rpa(rpa, p_dev_rec->ble.keys.irk)) {
+                memcpy(ida, p_dev_rec->ble.static_addr, BD_ADDR_LEN);
+                *ida_type = p_dev_rec->ble.static_addr_type;
+                return true;
+            }
+        }
+    }
+
+    // Iterate through all local IRKs to resolve the RPA
+    if (btm_ble_resolve_rpa(rpa, btm_cb.devcb.id_keys.irk)) {
+        memset(ida, 0, BD_ADDR_LEN);
+        *ida_type = 0;
+        return true;
+    }
+
+    return false;
+}
+#endif
 #endif

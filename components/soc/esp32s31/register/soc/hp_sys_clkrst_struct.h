@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -1410,52 +1410,52 @@ typedef union {
 } hp_sys_clkrst_parlio_tx_ctrl0_reg_t;
 
 
-/** Group: bitsrambler_ctrl */
-/** Type of bitsrambler_ctrl0 register
+/** Group: bitscrambler_ctrl */
+/** Type of bitscrambler_ctrl0 register
  *  need_des
  */
 typedef union {
     struct {
-        /** reg_bitsrambler_sys_clk_en : R/W; bitpos: [0]; default: 0;
+        /** reg_bitscrambler_sys_clk_en : R/W; bitpos: [0]; default: 0;
          *  need_des
          */
-        uint32_t reg_bitsrambler_sys_clk_en:1;
-        /** reg_bitsrambler_rst_en : R/W; bitpos: [1]; default: 0;
+        uint32_t reg_bitscrambler_sys_clk_en:1;
+        /** reg_bitscrambler_rst_en : R/W; bitpos: [1]; default: 0;
          *  need_des
          */
-        uint32_t reg_bitsrambler_rst_en:1;
-        /** reg_bitsrambler_force_norst : R/W; bitpos: [2]; default: 0;
+        uint32_t reg_bitscrambler_rst_en:1;
+        /** reg_bitscrambler_force_norst : R/W; bitpos: [2]; default: 0;
          *  need_des
          */
-        uint32_t reg_bitsrambler_force_norst:1;
-        /** reg_bitsrambler_rx_sys_clk_en : R/W; bitpos: [3]; default: 0;
+        uint32_t reg_bitscrambler_force_norst:1;
+        /** reg_bitscrambler_rx_sys_clk_en : R/W; bitpos: [3]; default: 0;
          *  need_des
          */
-        uint32_t reg_bitsrambler_rx_sys_clk_en:1;
-        /** reg_bitsrambler_rx_rst_en : R/W; bitpos: [4]; default: 0;
+        uint32_t reg_bitscrambler_rx_sys_clk_en:1;
+        /** reg_bitscrambler_rx_rst_en : R/W; bitpos: [4]; default: 0;
          *  need_des
          */
-        uint32_t reg_bitsrambler_rx_rst_en:1;
-        /** reg_bitsrambler_rx_force_norst : R/W; bitpos: [5]; default: 0;
+        uint32_t reg_bitscrambler_rx_rst_en:1;
+        /** reg_bitscrambler_rx_force_norst : R/W; bitpos: [5]; default: 0;
          *  need_des
          */
-        uint32_t reg_bitsrambler_rx_force_norst:1;
-        /** reg_bitsrambler_tx_sys_clk_en : R/W; bitpos: [6]; default: 0;
+        uint32_t reg_bitscrambler_rx_force_norst:1;
+        /** reg_bitscrambler_tx_sys_clk_en : R/W; bitpos: [6]; default: 0;
          *  need_des
          */
-        uint32_t reg_bitsrambler_tx_sys_clk_en:1;
-        /** reg_bitsrambler_tx_rst_en : R/W; bitpos: [7]; default: 0;
+        uint32_t reg_bitscrambler_tx_sys_clk_en:1;
+        /** reg_bitscrambler_tx_rst_en : R/W; bitpos: [7]; default: 0;
          *  need_des
          */
-        uint32_t reg_bitsrambler_tx_rst_en:1;
-        /** reg_bitsrambler_tx_force_norst : R/W; bitpos: [8]; default: 0;
+        uint32_t reg_bitscrambler_tx_rst_en:1;
+        /** reg_bitscrambler_tx_force_norst : R/W; bitpos: [8]; default: 0;
          *  need_des
          */
-        uint32_t reg_bitsrambler_tx_force_norst:1;
+        uint32_t reg_bitscrambler_tx_force_norst:1;
         uint32_t reserved_9:23;
     };
     uint32_t val;
-} hp_sys_clkrst_bitsrambler_ctrl0_reg_t;
+} hp_sys_clkrst_bitscrambler_ctrl0_reg_t;
 
 
 /** Group: etm_ctrl */
@@ -3679,7 +3679,7 @@ typedef struct {
     volatile hp_sys_clkrst_parlio_ctrl0_reg_t parlio_ctrl0;
     volatile hp_sys_clkrst_parlio_rx_ctrl0_reg_t parlio_rx_ctrl0;
     volatile hp_sys_clkrst_parlio_tx_ctrl0_reg_t parlio_tx_ctrl0;
-    volatile hp_sys_clkrst_bitsrambler_ctrl0_reg_t bitsrambler_ctrl0;
+    volatile hp_sys_clkrst_bitscrambler_ctrl0_reg_t bitscrambler_ctrl0;
     volatile hp_sys_clkrst_etm_ctrl0_reg_t etm_ctrl0;
     volatile hp_sys_clkrst_usb_otghs_ctrl0_reg_t usb_otghs_ctrl0;
     volatile hp_sys_clkrst_dma2d_ctrl0_reg_t dma2d_ctrl0;

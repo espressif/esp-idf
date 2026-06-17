@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
+#include "hal/pmu_types.h"
 
 #if SOC_PMU_SUPPORTED
 #include "hal/pmu_hal.h"
@@ -23,16 +24,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @brief PMU ICG modem code of HP system
- * @note  This type is required in rtc_clk_init.c when PMU not fully supported
- */
-typedef enum {
-    PMU_HP_ICG_MODEM_CODE_SLEEP = 0,
-    PMU_HP_ICG_MODEM_CODE_MODEM = 1,
-    PMU_HP_ICG_MODEM_CODE_ACTIVE = 2,
-} pmu_hp_icg_modem_mode_t;
 
 #if SOC_PMU_SUPPORTED
 
@@ -75,8 +66,8 @@ typedef enum {
 #define RTC_GPIO_TRIG_EN            (PMU_GPIO_WAKEUP_EN)
 #endif
 
-#if SOC_RTC_TIMER_V2_SUPPORTED
-#define RTC_TIMER_TRIG_EN           PMU_LP_TIMER_WAKEUP_EN  //!< Timer wakeup
+#if !SOC_RTC_TIMER_V1
+#define RTC_TIMER_TRIG_EN           PMU_RTC_TIMER_WAKEUP_EN  //!< Timer wakeup
 #else
 #define RTC_TIMER_TRIG_EN           0
 #endif
@@ -87,18 +78,25 @@ typedef enum {
 #define RTC_WIFI_TRIG_EN            0
 #endif
 
-#if SOC_UART_SUPPORT_WAKEUP_INT
 #define RTC_UART0_TRIG_EN           PMU_UART0_WAKEUP_EN     //!< UART0 wakeup (light sleep only)
 #define RTC_UART1_TRIG_EN           PMU_UART1_WAKEUP_EN     //!< UART1 wakeup (light sleep only)
+#define RTC_UART2_TRIG_EN           0
+#define RTC_UART3_TRIG_EN           0
+#define RTC_UART4_TRIG_EN           0
+
 #if SOC_UART_HP_NUM > 2
+#undef RTC_UART2_TRIG_EN
 #define RTC_UART2_TRIG_EN           PMU_UART2_WAKEUP_EN     //!< UART2 wakeup (light sleep only)
-#else
-#define RTC_UART2_TRIG_EN           0
 #endif
-#else
-#define RTC_UART0_TRIG_EN           0
-#define RTC_UART1_TRIG_EN           0
-#define RTC_UART2_TRIG_EN           0
+
+#if SOC_UART_HP_NUM > 3
+#undef RTC_UART3_TRIG_EN
+#define RTC_UART3_TRIG_EN           PMU_UART3_WAKEUP_EN     //!< UART3 wakeup (light sleep only)
+#endif
+
+#if SOC_UART_HP_NUM > 4
+#undef RTC_UART4_TRIG_EN
+#define RTC_UART4_TRIG_EN           PMU_UART4_WAKEUP_EN     //!< UART4 wakeup (light sleep only)
 #endif
 
 #if SOC_BT_SUPPORTED
@@ -116,8 +114,8 @@ typedef enum {
 #define RTC_USB_TRIG_EN             PMU_USB_WAKEUP_EN
 
 #if SOC_LP_CORE_SUPPORTED
-#define RTC_LP_CORE_TRIG_EN         PMU_LP_CORE_WAKEUP_EN   //!< LP core wakeup
-#define RTC_LP_CORE_TRAP_TRIG_EN    PMU_LP_CORE_TRAP_WAKEUP_EN   //!< LP core trap (exception) wakeup
+#define RTC_LP_CORE_TRIG_EN         PMU_LP_CORE_WAKEUP_HP_EN    //!< LP core wakeup
+#define RTC_LP_CORE_TRAP_TRIG_EN    PMU_LP_CORE_TRAP_WAKEUP_EN  //!< LP core trap (exception) wakeup
 #else
 #define RTC_LP_CORE_TRIG_EN         0
 #define RTC_LP_CORE_TRAP_TRIG_EN    0
@@ -149,6 +147,8 @@ typedef enum {
                                RTC_UART0_TRIG_EN        | \
                                RTC_UART1_TRIG_EN        | \
                                RTC_UART2_TRIG_EN        | \
+                               RTC_UART3_TRIG_EN        | \
+                               RTC_UART4_TRIG_EN        | \
                                RTC_BT_TRIG_EN           | \
                                RTC_LP_CORE_TRIG_EN      | \
                                RTC_TOUCH_TRIG_EN        | \
@@ -187,6 +187,12 @@ typedef enum {
 typedef struct {
     pmu_hal_context_t *hal;
     void *mc;
+#if SOC_PM_SLEEP_CLK_ICG_USE_REGDMA
+    void *priv;
+#endif
+#if SOC_SPI_FLASH_HAS_DEDICATED_LDO
+    bool flash_ldo_volt_1v8;
+#endif
 } pmu_context_t;
 
 pmu_context_t * PMU_instance(void);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,11 +19,11 @@
 #include "soc/hp_sys_clkrst_reg.h"
 #include "soc/lp_uart_reg.h"
 #include "soc/lp_clkrst_struct.h"
+#include "soc/lp_peri_clkrst_struct.h"
+#include "soc/lp_peri_clkrst_reg.h"
 #include "soc/hp_system_struct.h"
 #include "soc/lp_system_struct.h"
 #include "soc/hp_alive_sys_struct.h"
-
-// TODO: [ESP32S31] IDF-14789
 
 // The default fifo depth
 #define UART_LL_FIFO_DEF_LEN  (SOC_UART_FIFO_LEN)
@@ -77,6 +77,13 @@ typedef enum {
     UART_INTR_WAKEUP           = (0x1 << 19),
 } uart_intr_t;
 
+typedef enum {
+    UART_LL_MEM_LP_MODE_DEEP_SLEEP,  // memory enters deep sleep in low power stage
+    UART_LL_MEM_LP_MODE_LIGHT_SLEEP, // memory enters light sleep in low power stage
+    UART_LL_MEM_LP_MODE_SHUT_DOWN,   // memory is powered down in low power stage
+    UART_LL_MEM_LP_MODE_DISABLE,     // disable low power stage behavior
+} uart_ll_mem_lp_mode_t;
+
 /**
  * @brief Sync the update to UART core clock domain
  *
@@ -99,33 +106,67 @@ FORCE_INLINE_ATTR void uart_ll_update(uart_dev_t *hw)
  */
 FORCE_INLINE_ATTR void lp_uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *source_clk)
 {
-    // TODO: [ESP32S31] IDF-14789
+    (void)hw;
+    switch (LP_PERI_CLKRST.uart_ctrl.lp_uart_clk_sel) {
+    default:
+    case 0:
+        *source_clk = (soc_module_clk_t)LP_UART_SCLK_RC_FAST;
+        break;
+    case 1:
+        *source_clk = (soc_module_clk_t)LP_UART_SCLK_XTAL;
+        break;
+    }
 }
 
 /**
- * @brief  Configure the lp uart baud-rate.
+ * @brief Set LP UART source clock
  *
+ * @param  hw Address offset of the LP UART peripheral registers
+ * @param  src_clk Source clock for the LP UART peripheral
+ */
+static inline void lp_uart_ll_set_source_clk(uart_dev_t *hw, soc_periph_lp_uart_clk_src_t src_clk)
+{
+    (void)hw;
+    switch (src_clk) {
+    case LP_UART_SCLK_RC_FAST:
+        LP_PERI_CLKRST.uart_ctrl.lp_uart_clk_sel = 0;
+        break;
+    case LP_UART_SCLK_XTAL:
+        LP_PERI_CLKRST.uart_ctrl.lp_uart_clk_sel = 1;
+        break;
+    default:
+        // Invalid LP_UART clock source
+        HAL_ASSERT(false);
+    }
+}
+
+/**
+ * @brief  Configure the LP UART baud rate (same two-stage division as HP UART).
  * @param  hw Beginning address of the peripheral registers.
  * @param  baud The baud rate to be set.
- * @param  sclk_freq Frequency of the clock source of UART, in Hz.
+ * @param  sclk_freq Frequency of the LP UART clock source (RC_FAST / XTAL), in Hz.
  *
  * @return True if baud-rate set successfully; False if baud-rate requested cannot be achieved
  */
 FORCE_INLINE_ATTR bool lp_uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint32_t sclk_freq)
 {
+#define DIV_UP(a, b)    (((a) + (b) - 1) / (b))
     if (baud == 0) {
         return false;
     }
-    // No pre-divider for LP UART clock source on the target
-    uint32_t clk_div = (sclk_freq << 4) / baud;
-    // The baud rate configuration register is divided into an integer part and a fractional part.
-    uint32_t clkdiv_int = clk_div >> 4;
-    if (clkdiv_int > UART_CLKDIV_V) {
-        return false; // unachievable baud-rate
+    const uint32_t max_div = UART_CLKDIV_V;
+    uint32_t sclk_div = DIV_UP(sclk_freq, (uint64_t)max_div * baud);
+#undef DIV_UP
+
+    if (sclk_div == 0 || sclk_div > (LP_PERICLKRST_LP_UART_CLK_DIV_NUM_V + 1)) {
+        return false;
     }
-    uint32_t clkdiv_frag = clk_div & 0xf;
-    hw->clkdiv_sync.clkdiv = clkdiv_int;
-    hw->clkdiv_sync.clkdiv_frag = clkdiv_frag;
+
+    uint32_t clk_div = ((sclk_freq) << 4) / (baud * sclk_div);
+    hw->clkdiv_sync.clkdiv = clk_div >> 4;
+    hw->clkdiv_sync.clkdiv_frag = clk_div & 0xf;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_PERI_CLKRST.uart_ctrl, lp_uart_clk_div_num, sclk_div - 1);
+
     uart_ll_update(hw);
     return true;
 }
@@ -138,7 +179,8 @@ FORCE_INLINE_ATTR bool lp_uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, ui
  */
 static inline void lp_uart_ll_enable_bus_clock(int hw_id, bool enable)
 {
-    // TODO: [ESP32S31] IDF-14789
+    (void)hw_id;
+    LP_PERI_CLKRST.uart_ctrl.lp_uart_clk_en = enable;
 }
 
 /**
@@ -172,8 +214,46 @@ FORCE_INLINE_ATTR void lp_uart_ll_sclk_disable(int hw_id)
  */
 static inline void lp_uart_ll_reset_register(int hw_id)
 {
-    // (void)hw_id;
-    // lp_uart = 0;
+    (void)hw_id;
+    LP_PERI_CLKRST.uart_ctrl.lp_uart_rst_en = 1;
+    LP_PERI_CLKRST.uart_ctrl.lp_uart_rst_en = 0;
+}
+
+/**
+ * @brief  Force LP UART memory block powered on by software (LP AON `uart_mem_lp_ctrl`).
+ */
+FORCE_INLINE_ATTR void lp_uart_ll_mem_force_power_on(void)
+{
+    LP_SYS.uart_mem_lp_ctrl.uart_mem_lp_force_ctrl = 1;
+    LP_SYS.uart_mem_lp_ctrl.uart_mem_lp_en = 0;
+}
+
+/**
+ * @brief  Force LP UART memory block in low power by software.
+ */
+FORCE_INLINE_ATTR void lp_uart_ll_mem_force_low_power(void)
+{
+    LP_SYS.uart_mem_lp_ctrl.uart_mem_lp_force_ctrl = 1;
+    LP_SYS.uart_mem_lp_ctrl.uart_mem_lp_en = 1;
+}
+
+/**
+ * @brief  Release software force so LP UART memory is controlled by PMU.
+ */
+FORCE_INLINE_ATTR void lp_uart_ll_mem_power_by_pmu(void)
+{
+    LP_SYS.uart_mem_lp_ctrl.uart_mem_lp_force_ctrl = 0;
+    LP_SYS.uart_mem_lp_ctrl.uart_mem_lp_en = 0;
+}
+
+/**
+ * @brief  Set LP UART memory low power mode in low power stage.
+ *
+ * @param mode UART memory low power mode (see `uart_ll_mem_lp_mode_t`).
+ */
+FORCE_INLINE_ATTR void lp_uart_ll_mem_set_low_power_mode(uart_ll_mem_lp_mode_t mode)
+{
+    LP_SYS.uart_mem_lp_ctrl.uart_mem_lp_mode = mode;
 }
 
 /*************************************** General LL functions ******************************************/
@@ -210,6 +290,11 @@ FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
         uart_rst_en = HP_SYS_CLKRST.uart3_ctrl0.reg_uart3_core_rst_en;
         uart_apb_en = HP_SYS_CLKRST.uart3_ctrl0.reg_uart3_apb_clk_en;
         uart_sys_en = HP_SYS_CLKRST.uart3_ctrl0.reg_uart3_sys_clk_en;
+        break;
+    case 4:
+        uart_rst_en = LP_PERI_CLKRST.uart_ctrl.lp_uart_rst_en;
+        uart_apb_en = LP_PERI_CLKRST.uart_ctrl.lp_uart_clk_en;
+        uart_sys_en = true;
         break;
     default:
         // Unknown uart port number
@@ -408,6 +493,143 @@ FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *source
 }
 
 /**
+ * @brief  Force UART memory block powered on by software.
+ *
+ * @param  uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_mem_force_power_on(uart_port_t uart_num)
+{
+    switch (uart_num) {
+    case 0:
+        HP_SYSTEM.sys_uart0_mem_lp_ctrl.sys_uart0_mem_force_ctrl = 1;
+        HP_SYSTEM.sys_uart0_mem_lp_ctrl.sys_uart0_mem_lp_en = 0;
+        break;
+    case 1:
+        HP_SYSTEM.sys_uart1_mem_lp_ctrl.sys_uart1_mem_force_ctrl = 1;
+        HP_SYSTEM.sys_uart1_mem_lp_ctrl.sys_uart1_mem_lp_en = 0;
+        break;
+    case 2:
+        HP_SYSTEM.sys_uart2_mem_lp_ctrl.sys_uart2_mem_force_ctrl = 1;
+        HP_SYSTEM.sys_uart2_mem_lp_ctrl.sys_uart2_mem_lp_en = 0;
+        break;
+    case 3:
+        HP_SYSTEM.sys_uart3_mem_lp_ctrl.sys_uart3_mem_force_ctrl = 1;
+        HP_SYSTEM.sys_uart3_mem_lp_ctrl.sys_uart3_mem_lp_en = 0;
+        break;
+    case 4:
+        lp_uart_ll_mem_force_power_on();
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+
+/**
+ * @brief  Force UART memory block in low power by software.
+ *
+ * @param  uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_mem_force_low_power(uart_port_t uart_num)
+{
+    switch (uart_num) {
+    case 0:
+        HP_SYSTEM.sys_uart0_mem_lp_ctrl.sys_uart0_mem_force_ctrl = 1;
+        HP_SYSTEM.sys_uart0_mem_lp_ctrl.sys_uart0_mem_lp_en = 1;
+        break;
+    case 1:
+        HP_SYSTEM.sys_uart1_mem_lp_ctrl.sys_uart1_mem_force_ctrl = 1;
+        HP_SYSTEM.sys_uart1_mem_lp_ctrl.sys_uart1_mem_lp_en = 1;
+        break;
+    case 2:
+        HP_SYSTEM.sys_uart2_mem_lp_ctrl.sys_uart2_mem_force_ctrl = 1;
+        HP_SYSTEM.sys_uart2_mem_lp_ctrl.sys_uart2_mem_lp_en = 1;
+        break;
+    case 3:
+        HP_SYSTEM.sys_uart3_mem_lp_ctrl.sys_uart3_mem_force_ctrl = 1;
+        HP_SYSTEM.sys_uart3_mem_lp_ctrl.sys_uart3_mem_lp_en = 1;
+        break;
+    case 4:
+        lp_uart_ll_mem_force_low_power();
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+
+/**
+ * @brief  Control UART memory block by PMU logic.
+ *
+ * @param  uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_mem_power_by_pmu(uart_port_t uart_num)
+{
+    switch (uart_num) {
+    case 0:
+        HP_SYSTEM.sys_uart0_mem_lp_ctrl.sys_uart0_mem_force_ctrl = 0;
+        HP_SYSTEM.sys_uart0_mem_lp_ctrl.sys_uart0_mem_lp_en = 0;
+        break;
+    case 1:
+        HP_SYSTEM.sys_uart1_mem_lp_ctrl.sys_uart1_mem_force_ctrl = 0;
+        HP_SYSTEM.sys_uart1_mem_lp_ctrl.sys_uart1_mem_lp_en = 0;
+        break;
+    case 2:
+        HP_SYSTEM.sys_uart2_mem_lp_ctrl.sys_uart2_mem_force_ctrl = 0;
+        HP_SYSTEM.sys_uart2_mem_lp_ctrl.sys_uart2_mem_lp_en = 0;
+        break;
+    case 3:
+        HP_SYSTEM.sys_uart3_mem_lp_ctrl.sys_uart3_mem_force_ctrl = 0;
+        HP_SYSTEM.sys_uart3_mem_lp_ctrl.sys_uart3_mem_lp_en = 0;
+        break;
+    case 4:
+        lp_uart_ll_mem_power_by_pmu();
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+
+/**
+ * @brief  Set UART memory low power mode in low power stage.
+ *
+ * @param  uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ * @param  mode UART memory low power mode.
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_mem_set_low_power_mode(uart_port_t uart_num, uart_ll_mem_lp_mode_t mode)
+{
+    switch (uart_num) {
+    case 0:
+        HP_SYSTEM.sys_uart0_mem_lp_ctrl.sys_uart0_mem_lp_mode = mode;
+        break;
+    case 1:
+        HP_SYSTEM.sys_uart1_mem_lp_ctrl.sys_uart1_mem_lp_mode = mode;
+        break;
+    case 2:
+        HP_SYSTEM.sys_uart2_mem_lp_ctrl.sys_uart2_mem_lp_mode = mode;
+        break;
+    case 3:
+        HP_SYSTEM.sys_uart3_mem_lp_ctrl.sys_uart3_mem_lp_mode = mode;
+        break;
+    case 4:
+        lp_uart_ll_mem_set_low_power_mode(mode);
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+
+/**
  * @brief  Configure the baud-rate.
  *
  * @param  hw Beginning address of the peripheral registers.
@@ -468,7 +690,7 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_fr
 {
     typeof(hw->clkdiv_sync) div_reg;
     div_reg.val = hw->clkdiv_sync.val;
-    int sclk_div = 0;
+    int sclk_div = 1;
     if ((hw) == &UART0) {
         sclk_div = HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.uart0_ctrl0, reg_uart0_sclk_div_num) + 1;
     } else if ((hw) == &UART1) {
@@ -478,9 +700,50 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_fr
     } else if ((hw) == &UART3) {
         sclk_div = HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.uart3_ctrl0, reg_uart3_sclk_div_num) + 1;
     } else if ((hw) == &LP_UART) {
-        // sclk_div = HAL_FORCE_READ_U32_REG_FIELD(hw->clk_conf, sclk_div_num) + 1;
+        sclk_div = HAL_FORCE_READ_U32_REG_FIELD(LP_PERI_CLKRST.uart_ctrl, lp_uart_clk_div_num) + 1;
     }
     return ((sclk_freq << 4)) / (((div_reg.clkdiv << 4) | div_reg.clkdiv_frag) * sclk_div);
+}
+
+/**
+ * @brief  Set the UART glitch filter threshold. Any high pulse lasting shorter than this value will be ignored when the filter is enabled.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  glitch_filt_thrd The glitch filter threshold to be set (unit: ns)
+ * @param  sclk_freq Frequency of the clock source of UART, in Hz.
+ */
+FORCE_INLINE_ATTR void uart_ll_set_glitch_filt_thrd(uart_dev_t *hw, uint32_t glitch_filt_thrd, uint32_t sclk_freq)
+{
+    uint32_t clk_cycles = 0;
+    if (glitch_filt_thrd > 0) {
+        int sclk_div = 1;
+        if ((hw) == &UART0) {
+            sclk_div = HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.uart0_ctrl0, reg_uart0_sclk_div_num) + 1;
+        } else if ((hw) == &UART1) {
+            sclk_div = HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.uart1_ctrl0, reg_uart1_sclk_div_num) + 1;
+        } else if ((hw) == &UART2) {
+            sclk_div = HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.uart2_ctrl0, reg_uart2_sclk_div_num) + 1;
+        } else if ((hw) == &UART3) {
+            sclk_div = HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.uart3_ctrl0, reg_uart3_sclk_div_num) + 1;
+        } else if ((hw) == &LP_UART) {
+            sclk_div = HAL_FORCE_READ_U32_REG_FIELD(LP_PERI_CLKRST.uart_ctrl, lp_uart_clk_div_num) + 1;
+        }
+        uint32_t ref_clk_freq = sclk_freq / sclk_div;
+        clk_cycles = ((uint64_t)glitch_filt_thrd * ref_clk_freq + 1000000000 - 1) / 1000000000; // round up to always filter something
+        HAL_ASSERT(clk_cycles <= UART_GLITCH_FILT_V);
+    }
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->rx_filt, glitch_filt, clk_cycles);
+}
+
+/**
+ * @brief  Enable or disable the UART glitch filter
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  enable True to enable the filter, False to disable the filter
+ */
+FORCE_INLINE_ATTR void uart_ll_enable_glitch_filt(uart_dev_t *hw, bool enable)
+{
+    hw->rx_filt.glitch_filt_en = enable;
 }
 
 /**
@@ -971,7 +1234,23 @@ FORCE_INLINE_ATTR void uart_ll_set_wakeup_fifo_thrd(uart_dev_t *hw, uint32_t wak
  */
 FORCE_INLINE_ATTR void uart_ll_set_wakeup_mode(uart_dev_t *hw, uart_wakeup_mode_t mode)
 {
-
+    switch (mode) {
+    case UART_WK_MODE_ACTIVE_THRESH:
+        hw->sleep_conf2.wk_mode_sel = 0;
+        break;
+    case UART_WK_MODE_FIFO_THRESH:
+        hw->sleep_conf2.wk_mode_sel = 1;
+        break;
+    case UART_WK_MODE_START_BIT:
+        hw->sleep_conf2.wk_mode_sel = 2;
+        break;
+    case UART_WK_MODE_CHAR_SEQ:
+        hw->sleep_conf2.wk_mode_sel = 3;
+        break;
+    default:
+        abort();
+        break;
+    }
 }
 
 /**
@@ -1023,6 +1302,9 @@ FORCE_INLINE_ATTR void uart_ll_set_char_seq_wk_char(uart_dev_t *hw, uint32_t cha
         break;
     case 3:
         HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sleep_conf0, wk_char3, value);
+        break;
+    case 4:
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sleep_conf0, wk_char4, value);
         break;
     default:
         abort();
@@ -1496,68 +1778,12 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_tx_fsm_status(uart_port_t uart_num)
  *
  * @param  hw Beginning address of the peripheral registers.
  * @param  discard true: Receiver stops storing data into FIFO when data is wrong
- *                false: Receiver continue storing data into FIFO when data is wrong
+*                false: Receiver continue storing data into FIFO when data is wrong
  */
 FORCE_INLINE_ATTR void uart_ll_discard_error_data(uart_dev_t *hw, bool discard)
 {
     hw->conf0_sync.err_wr_mask = discard ? 1 : 0;
     uart_ll_update(hw);
-}
-
-/**
- * @brief  Set UART memory into low power mode.
- *
- * @param  uart_num UART port number, the max port number is (UART_NUM_MAX -1).
- *
- * @return UART module FSM status.
- */
-FORCE_INLINE_ATTR void uart_ll_memory_lp_enable(uart_port_t uart_num)
-{
-    switch (uart_num) {
-    case 0:
-        HP_SYSTEM.sys_uart0_mem_lp_ctrl.sys_uart0_mem_lp_en = 1;
-        break;
-    case 1:
-        HP_SYSTEM.sys_uart1_mem_lp_ctrl.sys_uart1_mem_lp_en = 1;
-        break;
-    case 2:
-        HP_SYSTEM.sys_uart2_mem_lp_ctrl.sys_uart2_mem_lp_en = 1;
-        break;
-    case 3:
-        HP_SYSTEM.sys_uart3_mem_lp_ctrl.sys_uart3_mem_lp_en = 1;
-        break;
-    default:
-        abort();
-        break;
-    }
-}
-
-/**
- * @brief  Set UART memory exit low power mode
- *
- * @param  uart_num UART port number, the max port number is (UART_NUM_MAX -1).
- *
- * @return UART module FSM status.
- */
-FORCE_INLINE_ATTR void uart_ll_memory_lp_disable(uart_port_t uart_num)
-{
-    switch (uart_num) {
-    case 0:
-        HP_SYSTEM.sys_uart0_mem_lp_ctrl.sys_uart0_mem_lp_en = 0;
-        break;
-    case 1:
-        HP_SYSTEM.sys_uart1_mem_lp_ctrl.sys_uart1_mem_lp_en = 0;
-        break;
-    case 2:
-        HP_SYSTEM.sys_uart2_mem_lp_ctrl.sys_uart2_mem_lp_en = 0;
-        break;
-    case 3:
-        HP_SYSTEM.sys_uart3_mem_lp_ctrl.sys_uart3_mem_lp_en = 0;
-        break;
-    default:
-        abort();
-        break;
-    }
 }
 
 #ifdef __cplusplus

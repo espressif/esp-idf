@@ -46,9 +46,16 @@ static int dtm_set_ble_tx_power_command(int argc, char **argv)
 
 static int dtm_get_ble_tx_power_command(int argc, char **argv)
 {
-    esp_power_level_t power_level = 0xFF;
+    esp_power_level_t power_level;
+
     power_level = esp_ble_tx_power_get_enhanced(ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT, 0);
-    printf("\nCurrent BLE TX power is %d level\n", power_level);
+
+    if (power_level == ESP_PWR_LVL_INVALID) {
+        ESP_LOGI(__func__,"TX power is not available!\n");
+        return 1;
+    }
+
+    ESP_LOGI(__func__,"\nCurrent BLE TX power is %d level\n", power_level);
     return 0;
 }
 

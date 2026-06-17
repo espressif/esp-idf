@@ -475,7 +475,7 @@ esp_err_t ledc_set_fade_with_time(ledc_mode_t speed_mode, ledc_channel_t channel
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Intr flag error
  *     - ESP_ERR_NOT_FOUND Failed to find available interrupt source
- *     - ESP_ERR_INVALID_STATE Fade function already installed
+ *     - ESP_ERR_INVALID_STATE Fade function already installed / LEDC not initialized
  */
 esp_err_t ledc_fade_func_install(int intr_alloc_flags);
 

@@ -1204,9 +1204,13 @@ menu "LWIP"
 
         config LWIP_DNS_MAX_HOST_IP
             int "Maximum number of IP addresses per host"
+            range 1 8
             default 1
             help
                 Maximum number of IP addresses that can be returned by DNS queries for a single host.
+                Allowed values are 1--8. In lwIP this is ``DNS_MAX_HOST_IP``. Multi-IP DNS APIs
+                require the caller's ``addr_cnt`` argument to satisfy 0 < addr_cnt <= DNS_MAX_HOST_IP;
+                otherwise they return ``ERR_ARG``.
 
         config LWIP_DNS_MAX_SERVERS
             int "Maximum number of DNS servers"

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,19 +11,18 @@
 #include "esp_log.h"
 #include "esp_cpu.h"
 #include "esp_attr.h"
-#include "esp_private/uart_share_hw_ctrl.h"
 #include "hal/uart_hal.h"
 #include "hal/gpio_hal.h"
 #include "driver/uart.h"
 #include "hal/uart_periph.h"
 #include "esp_clk_tree.h"
-#include "esp_private/esp_clk_tree_common.h"
 #include "soc/gpio_periph.h"
 #include "esp_rom_gpio.h"
 #include "hal/uart_ll.h"
-#include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/esp_gpio_reserve.h"
+#include "esp_private/periph_ctrl.h"
 
 #include "esp_app_trace_port.h"
 #include "esp_app_trace_util.h"
@@ -45,10 +44,8 @@ typedef struct {
 
 typedef struct {
     int inited;
-    volatile bool tx_busy;              ///< TX busy flag
     uart_hal_context_t hal_ctx;         ///< UART HAL context
     esp_apptrace_uart_rb_t tx_ring;     ///< TX ring buffer
-    intr_handle_t intr_handle;          ///< Interrupt handle
 
     /* TX message buffer */
     uint8_t *tx_msg_buff;               ///< TX message buffer to provide with get_up_buffer
@@ -178,31 +175,6 @@ static esp_err_t ring_buffer_init(esp_apptrace_uart_rb_t *rb, uint32_t size)
     return ESP_OK;
 }
 
-static void IRAM_ATTR esp_apptrace_uart_isr_handler(void *arg)
-{
-    esp_apptrace_uart_data_t *uart_data = arg;
-    esp_apptrace_uart_rb_t *rb = &uart_data->tx_ring;
-
-    uint32_t intr_status = uart_hal_get_intsts_mask(&uart_data->hal_ctx);
-
-    if (intr_status & UART_INTR_TXFIFO_EMPTY) {
-        uart_hal_clr_intsts_mask(&uart_data->hal_ctx, UART_INTR_TXFIFO_EMPTY);
-
-        uint32_t to_send = ring_buffer_calc_to_send(rb, uart_data->tx_msg_buff_size);
-        if (to_send > 0) {
-            uint32_t written = 0;
-            uart_hal_write_txfifo(&uart_data->hal_ctx, &rb->buffer[rb->tail], to_send, &written);
-            ring_buffer_advance_tail(rb, written);
-        }
-
-        /* If ring buffer is empty, disable TX interrupt */
-        if (ring_buffer_data_len(rb) == 0) {
-            uart_ll_disable_intr_mask(uart_data->hal_ctx.dev, UART_INTR_TXFIFO_EMPTY);
-            uart_data->tx_busy = false;
-        }
-    }
-}
-
 static esp_err_t esp_apptrace_uart_init(void *hw_data, const esp_apptrace_config_t *config)
 {
     esp_err_t ret = ESP_ERR_INVALID_ARG;
@@ -244,11 +216,11 @@ static esp_err_t esp_apptrace_uart_init(void *hw_data, const esp_apptrace_config
 
         uart_data->hal_ctx.dev = UART_LL_GET_HW(uart_config->uart_num);
 
-        HP_UART_BUS_CLK_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             uart_ll_enable_bus_clock(uart_config->uart_num, true);
             uart_ll_reset_register(uart_config->uart_num);
         }
-        HP_UART_SRC_CLK_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             uart_ll_sclk_enable(uart_data->hal_ctx.dev);
         }
 
@@ -260,7 +232,7 @@ static esp_err_t esp_apptrace_uart_init(void *hw_data, const esp_apptrace_config
         /* Initialize UART HAL (sets default 8N1 mode) */
         uart_hal_init(&uart_data->hal_ctx, uart_config->uart_num);
 
-        HP_UART_SRC_CLK_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             uart_hal_set_sclk(&uart_data->hal_ctx, UART_SCLK_DEFAULT);
             uart_hal_set_baudrate(&uart_data->hal_ctx, uart_config->baud_rate, sclk_hz);
         }
@@ -294,15 +266,6 @@ static esp_err_t esp_apptrace_uart_init(void *hw_data, const esp_apptrace_config
         uart_ll_disable_intr_mask(uart_data->hal_ctx.dev, UART_LL_INTR_MASK);
         uart_ll_clr_intsts_mask(uart_data->hal_ctx.dev, UART_LL_INTR_MASK);
 
-        /* Install interrupt handler */
-        int intr_alloc_flags = 0;
-        ret = esp_intr_alloc(uart_periph_signal[uart_config->uart_num].irq, intr_alloc_flags,
-                             esp_apptrace_uart_isr_handler, uart_data, &uart_data->intr_handle);
-        if (ret != ESP_OK) {
-            ESP_APPTRACE_LOGE("Failed to allocate interrupt: %s", esp_err_to_name(ret));
-            goto err_alloc_intr;
-        }
-
         /* Reset FIFOs */
         uart_hal_rxfifo_rst(&uart_data->hal_ctx);
         uart_hal_txfifo_rst(&uart_data->hal_ctx);
@@ -328,20 +291,17 @@ static esp_err_t esp_apptrace_uart_init(void *hw_data, const esp_apptrace_config
     }
 
     uart_data->inited |= 1 << core_id;
-    uart_data->tx_busy = false;
 
     return ESP_OK;
 
-err_alloc_intr:
-    heap_caps_free(uart_data->tx_msg_buff);
 err_alloc_msg_buff:
     heap_caps_free(uart_data->tx_ring.buffer);
 err_init_ring_buff:
     esp_clk_tree_enable_src(UART_SCLK_DEFAULT, false);
-    HP_UART_SRC_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         uart_ll_sclk_disable(uart_data->hal_ctx.dev);
     }
-    HP_UART_BUS_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         uart_ll_enable_bus_clock(uart_config->uart_num, false);
     }
     esp_gpio_revoke(gpio_mask);
@@ -373,6 +333,22 @@ static uint8_t *esp_apptrace_uart_up_buffer_get(void *hw_data, uint32_t size, es
     return uart_data->tx_msg_buff;
 }
 
+static uint32_t esp_apptrace_uart_write_fifo(esp_apptrace_uart_data_t *uart_data, esp_apptrace_uart_rb_t *rb)
+{
+    if (uart_ll_get_txfifo_len(uart_data->hal_ctx.dev) == 0) {
+        /* FIFO is full. No blocking. */
+        return 0;
+    }
+    uint32_t to_send = ring_buffer_calc_to_send(rb, 0);
+    if (to_send == 0) {
+        return 0;
+    }
+    uint32_t written = 0;
+    uart_hal_write_txfifo(&uart_data->hal_ctx, &rb->buffer[rb->tail], to_send, &written);
+    ring_buffer_advance_tail(rb, written);
+    return written;
+}
+
 static esp_err_t esp_apptrace_uart_up_buffer_put(void *hw_data, uint8_t *ptr, esp_apptrace_tmo_t *tmo)
 {
     esp_apptrace_uart_data_t *uart_data = hw_data;
@@ -387,15 +363,12 @@ static esp_err_t esp_apptrace_uart_up_buffer_put(void *hw_data, uint8_t *ptr, es
     ring_buffer_put(rb, ptr, uart_data->tx_pending_msg_size);
     uart_data->tx_pending_msg_size = 0;
 
-    esp_apptrace_uart_unlock(uart_data);
-
-    // Trigger transmission if not already in progress
-    if (!uart_data->tx_busy) {
-        uart_data->tx_busy = true;
-        /* Enable TX interrupt */
-        uart_ll_clr_intsts_mask(uart_data->hal_ctx.dev, UART_INTR_TXFIFO_EMPTY);
-        uart_ll_ena_intr_mask(uart_data->hal_ctx.dev, UART_INTR_TXFIFO_EMPTY);
+    /* Flush ring buffer to UART FIFO */
+    while (ring_buffer_data_len(rb) > 0 && esp_apptrace_uart_write_fifo(uart_data, rb) > 0) {
+        esp_rom_delay_us(100);
     }
+
+    esp_apptrace_uart_unlock(uart_data);
 
     return ESP_OK;
 }
@@ -479,20 +452,22 @@ static esp_err_t esp_apptrace_uart_flush_nolock(void *hw_data, uint32_t min_sz, 
         return ESP_OK;
     }
 
-    /* Trigger transmission if there's data but not busy */
-    if (pending > 0 && !uart_data->tx_busy) {
-        uart_data->tx_busy = true;
-        uart_ll_clr_intsts_mask(uart_data->hal_ctx.dev, UART_INTR_TXFIFO_EMPTY);
-        uart_ll_ena_intr_mask(uart_data->hal_ctx.dev, UART_INTR_TXFIFO_EMPTY);
-    }
-
-    while (uart_data->tx_busy || ring_buffer_data_len(rb) > 0) {
+    /* Flush ring buffer to HW FIFO */
+    while (ring_buffer_data_len(rb) > 0) {
+        esp_apptrace_uart_write_fifo(uart_data, rb);
         if (esp_apptrace_tmo_check(tmo) != ESP_OK) {
             return ESP_ERR_TIMEOUT;
         }
         esp_rom_delay_us(100);
     }
 
+    /* Wait until all data is flushed */
+    while (uart_ll_get_txfifo_len(uart_data->hal_ctx.dev) < SOC_UART_FIFO_LEN) {
+        if (esp_apptrace_tmo_check(tmo) != ESP_OK) {
+            return ESP_ERR_TIMEOUT;
+        }
+        esp_rom_delay_us(100);
+    }
     return ESP_OK;
 }
 

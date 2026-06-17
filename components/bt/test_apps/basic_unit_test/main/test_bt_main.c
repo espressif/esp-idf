@@ -8,7 +8,7 @@
 #include "unity_test_runner.h"
 #include "esp_heap_caps.h"
 
-#define TEST_MEMORY_LEAK_THRESHOLD_DEFAULT 0
+#define TEST_MEMORY_LEAK_THRESHOLD_DEFAULT -150
 static int leak_threshold = TEST_MEMORY_LEAK_THRESHOLD_DEFAULT;
 void set_leak_threshold(int threshold)
 {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,12 +29,13 @@
 #if (BTC_AV_INCLUDED == TRUE)
 
 #if (BTA_AV_CO_CP_SCMS_T == TRUE)
-#define BTC_MEDIA_AA_SBC_OFFSET (AVDT_MEDIA_OFFSET + BTA_AV_SBC_HDR_SIZE + 1)
+#define BTC_MEDIA_AA_OFFSET (AVDT_MEDIA_OFFSET + 1)
 #else
-#define BTC_MEDIA_AA_SBC_OFFSET (AVDT_MEDIA_OFFSET + BTA_AV_SBC_HDR_SIZE)
+#define BTC_MEDIA_AA_OFFSET (AVDT_MEDIA_OFFSET)
 #endif
 
-#define BTC_AUDIO_BUFF_OFFSET   BTC_MEDIA_AA_SBC_OFFSET
+#define BTC_MEDIA_AA_SBC_OFFSET (BTC_MEDIA_AA_OFFSET + BTA_AV_SBC_HDR_SIZE)
+#define BTC_AUDIO_BUFF_OFFSET   (BTC_MEDIA_AA_OFFSET)
 
 // global variable to indicate avrc is initialized with a2dp
 extern bool g_av_with_rc;
@@ -78,6 +79,7 @@ typedef enum {
 #endif  /* BTC_AV_SINK_INCLUDED */
 #if BTC_AV_SRC_INCLUDED
     BTC_AV_SRC_API_INIT_EVT,
+    BTC_AV_SRC_API_SET_PREF_MCC_EVT,
     BTC_AV_SRC_API_REG_SEP_EVT,
     BTC_AV_SRC_API_DEINIT_EVT,
     BTC_AV_SRC_API_CONNECT_EVT,
@@ -108,6 +110,11 @@ typedef union {
     bt_bdaddr_t src_connect;
     // BTC_AV_SRC_API_DISCONNECT_EVT
     bt_bdaddr_t src_disconn;
+    // BTC_AV_SRC_API_SET_PREF_MCC_EVT
+    struct {
+        esp_a2d_conn_hdl_t conn_hdl;
+        esp_a2d_mcc_t pref_mcc;
+    } set_pref_mcc;
 #endif /* BTC_AV_SRC_INCLUDED */
     // BTC_AV_CONFIG_EVT
     esp_a2d_mcc_t mcc;
@@ -280,6 +287,17 @@ void btc_av_clear_remote_suspend_flag(void);
  *
  ******************************************************************************/
 uint8_t btc_av_get_service_id(void);
+
+#if (BTC_AV_SRC_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         btc_av_report_all_snk_codec_caps
+**
+** Description      Report all sink codec capabilities to the application.
+**
+*******************************************************************************/
+void btc_av_report_all_snk_codec_caps(tBTA_AV_HNDL hndl, esp_a2d_sep_mcc_t *sep_mcc, UINT8 sep_num);
+#endif /* BTC_AV_SRC_INCLUDED */
 
 #endif  ///BTC_AV_INCLUDED == TRUE
 

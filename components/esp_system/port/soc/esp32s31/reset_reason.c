@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,8 +11,6 @@
 #include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
 #include "esp32s31/rom/rtc.h"
-
-// TODO: ["ESP32S31"] IDF-14672
 
 static void esp_reset_reason_clear_hint(void);
 
@@ -35,15 +33,20 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
         return ESP_RST_SW;
 
     case RESET_REASON_CORE_PMU_PWR_DOWN:
+    case RESET_REASON_CPU_PMU_PWR_DOWN: // TODO: ESP32-S31 IDF-15181
         return ESP_RST_DEEPSLEEP;
+
+    case RESET_REASON_CORE_MWDT0:
+        return ESP_RST_TASK_WDT;
+
+    case RESET_REASON_CORE_MWDT1:
+        return ESP_RST_INT_WDT;
 
     case RESET_REASON_CPU_MWDT:
     case RESET_REASON_CPU_RWDT:
     case RESET_REASON_SYS_SUPER_WDT:
     case RESET_REASON_SYS_RWDT:
-    case RESET_REASON_CORE_MWDT:
     case RESET_REASON_CORE_RWDT:
-        /* Code is the same for INT vs Task WDT */
         return ESP_RST_WDT;
 
     case RESET_REASON_SYS_BROWN_OUT:
@@ -90,23 +93,35 @@ esp_reset_reason_t esp_reset_reason(void)
  * is only used for deep sleep reset, and in this case the reason provided by
  * esp_rom_get_reset_reason is unambiguous.
  *
- * Same layout is used as for RTC_APB_FREQ_REG (a.k.a. RTC_CNTL_STORE5_REG):
+ * Same layout is used as for RTC_XTAL_FREQ_REG (a.k.a. RTC_CNTL_STORE4_REG):
  * the value is replicated in low and high half-words. In addition to that,
  * MSB is set to 1, which doesn't happen when RTC_CNTL_STORE6_REG contains
  * deep sleep wake stub address.
  */
 
-/* in IRAM, can be called from panic handler */
+#define RST_REASON_BIT  0x80000000
+#define RST_REASON_MASK 0x7FFF
+#define RST_REASON_SHIFT 16
+
 void esp_reset_reason_set_hint(esp_reset_reason_t hint)
 {
-    // TODO: ["ESP32S31"] IDF-14672
+    assert((hint & (~RST_REASON_MASK)) == 0);
+    uint32_t val = hint | (hint << RST_REASON_SHIFT) | RST_REASON_BIT;
+    REG_WRITE(RTC_RESET_CAUSE_REG, val);
 }
 
 esp_reset_reason_t esp_reset_reason_get_hint(void)
 {
-    return 0; // TODO: ["ESP32S31"] IDF-14672
+    uint32_t reset_reason_hint = REG_READ(RTC_RESET_CAUSE_REG);
+    uint32_t high = (reset_reason_hint >> RST_REASON_SHIFT) & RST_REASON_MASK;
+    uint32_t low = reset_reason_hint & RST_REASON_MASK;
+    if ((reset_reason_hint & RST_REASON_BIT) == 0 || high != low) {
+        return ESP_RST_UNKNOWN;
+    }
+    return (esp_reset_reason_t) low;
 }
+
 static inline void esp_reset_reason_clear_hint(void)
 {
-    // TODO: ["ESP32S31"] IDF-14672
+    REG_WRITE(RTC_RESET_CAUSE_REG, 0);
 }

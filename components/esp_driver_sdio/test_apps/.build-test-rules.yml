@@ -6,6 +6,9 @@ components/esp_driver_sdio/test_apps/sdio/sdio_common_tests/host_sdmmc:
     - sdmmc
     - esp_driver_sdmmc
     - esp_driver_sdio
+    - esp_hal_sd
+    - esp_hw_support
+    - soc
 
 components/esp_driver_sdio/test_apps/sdio/sdio_common_tests/sdio:
   enable:
@@ -18,3 +21,6 @@ components/esp_driver_sdio/test_apps/sdio/sdio_common_tests/sdio:
     - sdmmc
     - esp_driver_sdmmc
     - esp_driver_sdio
+    - esp_hal_sd
+    - esp_hw_support
+    - soc

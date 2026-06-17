@@ -75,7 +75,8 @@ typedef struct {
      * Transaction specific (data), all these parameters will be updated to the
      * peripheral every transaction.
      */
-    uint32_t bitlen;                ///< Expected maximum length of the transaction, in bits.
+    uint32_t tx_bitlen;             ///< Expected maximum length of the tx transaction, in bits.
+    uint32_t rx_bitlen;             ///< Expected maximum length of the rx transaction, in bits.
     const void *tx_buffer;          ///< Data to be sent
     void *rx_buffer;                ///< Buffer to hold the received data.
 
@@ -171,6 +172,23 @@ void spi_slave_hal_user_start(const spi_slave_hal_context_t *hal);
  * @param hal Context of the HAL layer.
  */
 bool spi_slave_hal_usr_is_done(spi_slave_hal_context_t* hal);
+
+/**
+ * Get SPI interrupt bits status by mask
+ *
+ * @param hal Context of the HAL layer.
+ * @param mask Mask of the interrupt bits to check.
+ * @return True if the masked interrupts are set, false otherwise.
+ */
+bool spi_slave_hal_get_intr_status(spi_slave_hal_context_t *hal, uint32_t mask);
+
+/**
+ * Clear SPI interrupt bits by mask
+ *
+ * @param hal Context of the HAL layer.
+ * @param mask Mask of the interrupt bits to clear.
+ */
+void spi_slave_hal_clear_intr_status(spi_slave_hal_context_t *hal, uint32_t mask);
 
 /**
  * Post transaction operations, fetch data from the buffer and recorded the length.

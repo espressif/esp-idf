@@ -48,9 +48,17 @@ Dynamic frequency scaling (DFS) and automatic Light-sleep can be enabled in an a
 
   In Light-sleep, peripherals are clock gated, and interrupts (from GPIOs and internal peripherals) will not be generated. A wakeup source described in the :doc:`sleep_modes` documentation can be used to trigger wakeup from the Light-sleep state.
 
-.. only:: SOC_PM_SUPPORT_EXT0_WAKEUP or SOC_PM_SUPPORT_EXT1_WAKEUP
+.. warning::
+
+  Automatic Light-sleep is implemented using timer wakeup. Do not manually configure the timer wakeup source.
+
+.. only:: SOC_PM_SUPPORT_EXT0_WAKEUP and SOC_PM_SUPPORT_EXT1_WAKEUP
 
   For example, the EXT0 and EXT1 wakeup sources can be used to wake up the chip via a GPIO.
+
+.. only:: SOC_PM_SUPPORT_EXT1_WAKEUP and not SOC_PM_SUPPORT_EXT0_WAKEUP
+
+  For example, the EXT1 wakeup source can be used to wake up the chip via a GPIO.
 
 
 Power Management Locks
@@ -92,6 +100,26 @@ Light-sleep duration is chosen to wake up the chip before the nearest event (tas
 
 To skip unnecessary wake-up, you can consider initializing an ``esp_timer`` with the ``skip_unhandled_events`` option as ``true``. Timers with this flag will not wake up the system and it helps to reduce consumption.
 
+Automatic Light-sleep Time Compensation Mechanism
+-------------------------------------------------
+
+ESP-IDF uses a predictive time compensation mechanism for automatic Light-sleep. The system measures the actual wakeup overhead after each Light-sleep cycle and uses this measurement to predict the wakeup overhead for the next sleep cycle.
+
+The system calculates sleep duration based on the next scheduled event and subtracts the predicted wakeup overhead (from the previous cycle) to set the wakeup timer. After wakeup, since FreeRTOS systick interrupts are suspended during sleep, the system needs to call :cpp:func:`vTaskStepTick()` to compensate for the ticks elapsed during sleep, maintaining the accuracy of FreeRTOS tick count. Meanwhile, it measures the actual overhead and stores it for the next prediction, creating a feedback loop that adapts to system behavior.
+
+However, actual overhead can vary due to cache misses, CPU frequency changes, flash latency variations, or hardware state restoration time. When actual overhead exceeds prediction, the actual sleep time may exceed the expected value, causing :cpp:func:`vTaskStepTick()` to receive an excessive tick compensation value, triggering assertion failure.
+
+The :ref:`CONFIG_PM_LIGHTSLEEP_TICK_OVERFLOW_PROTECTION` option provides a safety mechanism to prevent assertion failures when wakeup overhead exceeds prediction. When enabled, the system limits the tick compensation value to prevent overflow. This option can be enabled in menuconfig via ``Component config`` > ``Power Management`` > ``Enable light sleep tick overflow protection``.
+
+When enabled, this option handles oversleep as follows:
+- If oversleep is within tolerance (configurable via :ref:`CONFIG_PM_LIGHTSLEEP_TICK_OVERFLOW_TOLERANCE`, default: 2 ticks), the system silently limits ``slept_ticks`` to ``xExpectedIdleTime``, preventing assertion failure
+- If oversleep exceeds tolerance (may indicate a bug), the system does not limit ticks, logs an error message, and assertion failure will occur
+- In rare edge cases, it may lose ticks, causing FreeRTOS tick count (``xTickCount``) to lag behind real time (``esp_timer``). Tasks using :cpp:func:`vTaskDelay()` may experience slightly longer delays than expected, and FreeRTOS software timers may have reduced accuracy.
+
+When disabled (default), the system provides accurate tick compensation with better precision for time-critical applications. In edge cases, if wakeup overhead estimation is insufficient causing Light-sleep oversleep, assertion failure and system crash may occur.
+
+It is recommended to keep this option disabled by default to maintain tick accuracy. Enable it only when you experience assertion failures related to :cpp:func:`vTaskStepTick()` and can accept slight inaccuracy of RTOS tick time compared to real time.
+
 Debugging and Profiling
 -----------------------
 
@@ -109,6 +137,11 @@ These functions are particularly useful for:
 4. Debugging issues related to lock management in applications
 
 To enable profiling features (timing information for individual locks), enable the :ref:`CONFIG_PM_PROFILING` option in menuconfig.
+
+Application Example
+-------------------
+
+The :example:`lowpower/power_management` example demonstrates dynamic frequency scaling, automatic Light-sleep, and power management locks.
 
 Dynamic Frequency Scaling and Peripheral Drivers
 ------------------------------------------------
@@ -173,6 +206,7 @@ The following drivers hold the ``ESP_PM_APB_FREQ_MAX`` lock while the driver is 
             :SOC_PARLIO_SUPPORT_SLEEP_RETENTION: - PARL_IO
             :SOC_SPI_SUPPORT_SLEEP_RETENTION: - All GPSPIs
             :SOC_EMAC_SUPPORT_SLEEP_RETENTION: - EMAC
+            :SOC_LCDCAM_LCD_SUPPORT_SLEEP_RETENTION: - I80 LCD
 
         Some peripherals haven't support Light-sleep context retention, or it cannot survive from the register lose. They will prevent the power-down of peripherals even when the feature is enabled.
 

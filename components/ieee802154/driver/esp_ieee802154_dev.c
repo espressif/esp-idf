@@ -48,7 +48,12 @@ extern uint32_t bt_bb_get_cur_rx_info(void);
 
 IEEE802154_STATIC volatile ieee802154_state_t s_ieee802154_state;
 static uint8_t *s_tx_frame = NULL;
+
+#if CONFIG_IEEE802154_TEST
 #define IEEE802154_RX_FRAME_SIZE (127 + 1 + 1) // +1: len, +1: for dma test
+#else
+#define IEEE802154_RX_FRAME_SIZE (127 + 1) // +1: len
+#endif // CONFIG_IEEE802154_TEST
 
 // +1: for the stub buffer when the valid buffers are full.
 //
@@ -66,6 +71,7 @@ static uint8_t s_rx_frame[CONFIG_IEEE802154_RX_BUFFER_SIZE + 1][IEEE802154_RX_FR
 static esp_ieee802154_frame_info_t s_rx_frame_info[CONFIG_IEEE802154_RX_BUFFER_SIZE + 1];
 
 static bool s_needs_next_operation = false;
+static volatile bool s_pending_rx_stop = false;
 
 static uint8_t s_rx_index = 0;
 static uint8_t s_enh_ack_frame[128];
@@ -223,9 +229,18 @@ IEEE802154_STATIC IEEE802154_NOINLINE void update_mpf_index(void)
 
 static IEEE802154_NOINLINE void ieee802154_rx_frame_info_update(void)
 {
-    uint8_t len = s_rx_frame[s_rx_index][0];
-    int8_t rssi = s_rx_frame[s_rx_index][len - 1]; // crc is not written to rx buffer
-    uint8_t lqi = s_rx_frame[s_rx_index][len];
+    uint8_t len = s_rx_frame[s_rx_index][0] & 0x7f;
+    int8_t rssi = 0;
+    uint8_t lqi = 0;
+
+    if (len < IEEE802154_FRAME_MIN_LEN) {
+        s_rx_frame_info[s_rx_index].channel = 0;
+        s_rx_frame_info[s_rx_index].rssi = 0;
+        s_rx_frame_info[s_rx_index].lqi = 0;
+        return;
+    }
+    rssi = s_rx_frame[s_rx_index][len - 1]; // crc is not written to rx buffer
+    lqi = s_rx_frame[s_rx_index][len];
 
 #if CONFIG_IEEE802154_MULTI_PAN_ENABLE
     update_mpf_index();
@@ -457,6 +472,13 @@ static void enable_rx(void)
 
 static IRAM_ATTR void next_operation(void)
 {
+    if (s_pending_rx_stop) {
+        ieee802154_ll_disable_rx_abort_events(IEEE802154_RX_ABORT_ALL);
+        ieee802154_ll_enable_rx_abort_events(BIT(IEEE802154_RX_ABORT_BY_TX_ACK_TIMEOUT - 1) | BIT(IEEE802154_RX_ABORT_BY_TX_ACK_COEX_BREAK - 1));
+        esp_ieee802154_receive_at_done();
+        s_pending_rx_stop = false;
+    }
+
     if (ieee802154_pib_get_rx_when_idle()) {
         enable_rx();
     } else {
@@ -969,7 +991,6 @@ static inline esp_err_t ieee802154_transmit_internal(const uint8_t *frame, bool 
 
 esp_err_t ieee802154_transmit(const uint8_t *frame, bool cca)
 {
-    ESP_RETURN_ON_FALSE(frame[0] <= 127, ESP_ERR_INVALID_ARG, IEEE802154_TAG, "Invalid frame length.");
 #if !CONFIG_IEEE802154_TEST
     ieee802154_enter_critical();
     if ((s_ieee802154_state == IEEE802154_STATE_RX && ieee802154_ll_is_current_rx_frame())
@@ -991,32 +1012,17 @@ esp_err_t ieee802154_transmit(const uint8_t *frame, bool cca)
 
 esp_err_t ieee802154_transmit_at(const uint8_t *frame, bool cca, uint32_t time)
 {
-    ESP_RETURN_ON_FALSE(frame[0] <= 127, ESP_ERR_INVALID_ARG, IEEE802154_TAG, "Invalid frame length.");
-    uint32_t tx_target_time;
     IEEE802154_RF_ENABLE();
     tx_init(frame);
     IEEE802154_SET_TXRX_PTI(IEEE802154_SCENE_TX_AT);
     if (cca) {
         ieee802154_ll_set_ed_duration(CCA_DETECTION_TIME);
-        tx_target_time = time - IEEE802154_ED_TRIG_TX_RAMPUP_TIME_US;
-        ieee802154_set_state(IEEE802154_STATE_TX_CCA);
-        ieee802154_enter_critical();
-        ieee802154_etm_set_event_task(IEEE802154_ETM_CHANNEL0, ETM_EVENT_TIMER0_OVERFLOW, ETM_TASK_ED_TRIG_TX);
-        ieee802154_timer0_fire_at(tx_target_time);
-        ieee802154_exit_critical();
-    } else {
-        tx_target_time = time - IEEE802154_TX_RAMPUP_TIME_US;
-        if (ieee802154_frame_get_type(frame) == IEEE802154_FRAME_TYPE_ACK && ieee802154_frame_get_version(frame) == IEEE802154_FRAME_VERSION_2) {
-            ieee802154_set_state(IEEE802154_STATE_TX_ENH_ACK);
-        } else {
-            ieee802154_set_state(IEEE802154_STATE_TX);
-        }
-        ieee802154_enter_critical();
-        ieee802154_etm_set_event_task(IEEE802154_ETM_CHANNEL0, ETM_EVENT_TIMER0_OVERFLOW, ETM_TASK_TX_START);
-        ieee802154_timer0_fire_at(tx_target_time);
-        ieee802154_exit_critical();
     }
-
+    ieee802154_set_state(cca ? IEEE802154_STATE_TX_CCA : IEEE802154_STATE_TX);
+    ieee802154_enter_critical();
+    ieee802154_etm_set_event_task(IEEE802154_ETM_CHANNEL0, ETM_EVENT_TIMER0_OVERFLOW, cca ? ETM_TASK_ED_TRIG_TX : ETM_TASK_TX_START);
+    ieee802154_timer0_fire_at(time - (cca ? IEEE802154_ED_TRIG_TX_RAMPUP_TIME_US : IEEE802154_TX_RAMPUP_TIME_US));
+    ieee802154_exit_critical();
     return ESP_OK;
 }
 
@@ -1044,8 +1050,15 @@ esp_err_t ieee802154_receive(void)
 IEEE802154_NOINLINE static void ieee802154_finish_receive_at(void* ctx)
 {
     (void)ctx;
-    stop_current_operation();
-    esp_ieee802154_receive_at_done();
+    if (s_ieee802154_state == IEEE802154_STATE_RX && ieee802154_ll_is_current_rx_frame()) {
+        // if we successfully receive SFD, then continue receiving
+        ieee802154_ll_enable_rx_abort_events(IEEE802154_RX_ABORT_ALL);
+        s_pending_rx_stop = true;
+    } else {
+        // or else we go back to sleep
+        stop_current_operation();
+        esp_ieee802154_receive_at_done();
+    }
 }
 
 IEEE802154_NOINLINE static void ieee802154_start_receive_at(void* ctx)
@@ -1094,14 +1107,18 @@ static esp_err_t ieee802154_sleep_init(void)
 {
     esp_err_t err = ESP_OK;
 #if CONFIG_PM_ENABLE
-    sleep_retention_module_init_param_t init_param = { .cbs = { .create = { .handle = ieee802154_sleep_retention_init, .arg = NULL } } };
+    sleep_retention_module_init_param_t init_param = {
+        .cbs = { .create = { .handle = ieee802154_sleep_retention_init, .arg = NULL } },
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH
+    };
     init_param.depends.bitmap[SLEEP_RETENTION_MODULE_BT_BB >> 5] |= BIT(SLEEP_RETENTION_MODULE_BT_BB % 32);
     init_param.depends.bitmap[SLEEP_RETENTION_MODULE_CLOCK_MODEM >> 5] |= BIT(SLEEP_RETENTION_MODULE_CLOCK_MODEM % 32);
     err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_802154_MAC, &init_param);
-    if (err == ESP_OK) {
-        err = sleep_retention_module_allocate(SLEEP_RETENTION_MODULE_802154_MAC);
-    }
-    ESP_RETURN_ON_ERROR(err, IEEE802154_TAG, "failed to create sleep retention linked list for ieee802154 mac retention");
+    ESP_RETURN_ON_ERROR(err, IEEE802154_TAG, "ieee802154 sleep retention init error");
+    err = sleep_retention_module_allocate(SLEEP_RETENTION_MODULE_802154_MAC);
+    ESP_RETURN_ON_ERROR(err, IEEE802154_TAG, "ieee802154 sleep retention allocate error");
+    err = sleep_retention_module_attach(SLEEP_RETENTION_MODULE_802154_MAC);
+    ESP_RETURN_ON_ERROR(err, IEEE802154_TAG, "ieee802154 sleep retention attach error");
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
     sleep_modem_register_mac_bb_module_prepare_callback(sleep_modem_mac_bb_power_down_prepare,
                                                    sleep_modem_mac_bb_power_up_prepare);
@@ -1114,10 +1131,12 @@ static esp_err_t ieee802154_sleep_deinit(void)
 {
     esp_err_t err = ESP_OK;
 #if CONFIG_PM_ENABLE
+    err = sleep_retention_module_detach(SLEEP_RETENTION_MODULE_802154_MAC);
+    ESP_RETURN_ON_ERROR(err, IEEE802154_TAG, "ieee802154 sleep retention detach error");
     err = sleep_retention_module_free(SLEEP_RETENTION_MODULE_802154_MAC);
-    if (err == ESP_OK) {
-        err = sleep_retention_module_deinit(SLEEP_RETENTION_MODULE_802154_MAC);
-    }
+    ESP_RETURN_ON_ERROR(err, IEEE802154_TAG, "ieee802154 sleep retention free error");
+    err = sleep_retention_module_deinit(SLEEP_RETENTION_MODULE_802154_MAC);
+    ESP_RETURN_ON_ERROR(err, IEEE802154_TAG, "ieee802154 sleep retention deinit error");
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
     sleep_modem_unregister_mac_bb_module_prepare_callback(sleep_modem_mac_bb_power_down_prepare,
                                                      sleep_modem_mac_bb_power_up_prepare);

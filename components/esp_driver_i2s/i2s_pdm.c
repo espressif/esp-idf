@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,7 @@
 #include "driver/gpio.h"
 #include "driver/i2s_pdm.h"
 #include "i2s_private.h"
-#include "clk_ctrl_os.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_intr_alloc.h"
 #include "esp_check.h"
 
@@ -78,14 +78,22 @@ static esp_err_t i2s_pdm_tx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_tx
 #endif
     ESP_RETURN_ON_FALSE(clk_cfg->up_sample_fs <= 480, ESP_ERR_INVALID_ARG, TAG, "up_sample_fs should be within 480");
 
+    i2s_clock_src_t clk_src = clk_cfg->clk_src;
+#ifdef I2S_LL_DEFAULT_CLK_SRC
+    if (clk_src == I2S_CLK_SRC_DEFAULT) {
+        clk_src = I2S_LL_DEFAULT_CLK_SRC;
+    }
+#endif
+
     i2s_hal_clock_info_t clk_info;
-    /* Calculate clock parameters */
+    // Calculate clock parameters before enabling clock source
     ESP_RETURN_ON_ERROR(i2s_pdm_tx_calculate_clock(handle, clk_cfg, &clk_info), TAG, "clock calculate failed");
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), TAG, "clock source enable failed");
 
     hal_utils_clk_div_t ret_mclk_div = {};
     portENTER_CRITICAL(&g_i2s.spinlock);
     /* Set clock configurations in HAL*/
-    I2S_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i2s_hal_set_tx_clock(&handle->controller->hal, &clk_info, clk_cfg->clk_src, &ret_mclk_div);
     }
 #if SOC_I2S_HW_VERSION_2
@@ -96,7 +104,7 @@ static esp_err_t i2s_pdm_tx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_tx
     portEXIT_CRITICAL(&g_i2s.spinlock);
 
     uint64_t tmp_div = (uint64_t)ret_mclk_div.integer * ret_mclk_div.denominator + ret_mclk_div.numerator;
-    ESP_RETURN_ON_FALSE(tmp_div != 0 && ret_mclk_div.denominator != 0, ESP_ERR_INVALID_ARG, TAG, "invalid mclk division result");
+    ESP_GOTO_ON_FALSE(tmp_div != 0 && ret_mclk_div.denominator != 0, ESP_ERR_INVALID_ARG, err, TAG, "invalid mclk division result");
 
     /* Update the mode info: clock configuration */
     memcpy(&(pdm_tx_cfg->clk_cfg), clk_cfg, sizeof(i2s_pdm_tx_clk_config_t));
@@ -110,13 +118,17 @@ static esp_err_t i2s_pdm_tx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_tx
              clk_info.sclk, ret_mclk_div.integer, ret_mclk_div.numerator, ret_mclk_div.denominator, handle->origin_mclk_hz, clk_info.bclk_div, clk_info.bclk);
 
     return ret;
+
+err:
+    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, false);
+    return ret;
 }
 
 static esp_err_t i2s_pdm_tx_set_slot(i2s_chan_handle_t handle, const i2s_pdm_tx_slot_config_t *slot_cfg)
 {
-#if !SOC_I2S_SUPPORTS_PCM2PDM
-    ESP_RETURN_ON_FALSE(slot_cfg->data_fmt == I2S_PDM_DATA_FMT_RAW, ESP_ERR_NOT_SUPPORTED, TAG, "not support PCM2PDM converter on this target");
-#endif
+    ESP_RETURN_ON_FALSE(slot_cfg->data_fmt != I2S_PDM_DATA_FMT_PCM ||
+                        i2s_ll_is_pcm2pdm_supported(handle->controller->id),
+                        ESP_ERR_NOT_SUPPORTED, TAG, "PCM2PDM converter is not supported on selected port");
     /* Update the total slot num and active slot num */
     handle->is_raw_pdm = slot_cfg->data_fmt == I2S_PDM_DATA_FMT_RAW;
     handle->total_slot = 2;
@@ -124,8 +136,9 @@ static esp_err_t i2s_pdm_tx_set_slot(i2s_chan_handle_t handle, const i2s_pdm_tx_
 
     uint32_t buf_size = i2s_get_buf_size(handle, slot_cfg->data_bit_width, handle->dma.frame_num);
     ESP_RETURN_ON_FALSE(buf_size != 0, ESP_ERR_INVALID_ARG, TAG, "invalid data_bit_width");
-    /* The DMA buffer need to re-allocate if the buffer size changed */
-    if (handle->dma.buf_size != buf_size) {
+    /* The DMA buffer need to re-allocate if the buffer size changed.
+     * Skip when GDMA is not the data path (e.g. Bluetooth destination), since the channel never owns a DMA buffer. */
+    if (I2S_CHANNEL_USES_DMA(handle) && handle->dma.buf_size != buf_size) {
         ESP_RETURN_ON_ERROR(i2s_free_dma_desc(handle), TAG, "failed to free the old dma descriptor");
         ESP_RETURN_ON_ERROR(i2s_alloc_dma_desc(handle, buf_size),
                             TAG, "allocate memory for dma descriptor failed");
@@ -184,7 +197,7 @@ static esp_err_t i2s_pdm_tx_set_gpio(i2s_chan_handle_t handle, const i2s_pdm_tx_
         i2s_gpio_check_and_set(handle, gpio_cfg->clk, i2s_periph_signal[id].m_tx_ws_sig, false, gpio_cfg->invert_flags.clk_inv);
     }
 #if SOC_I2S_HW_VERSION_2
-    I2S_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i2s_ll_mclk_bind_to_tx_clk(handle->controller->hal.dev);
     }
 #endif
@@ -201,7 +214,8 @@ esp_err_t i2s_channel_init_pdm_tx_mode(i2s_chan_handle_t handle, const i2s_pdm_t
 #endif
     I2S_NULL_POINTER_CHECK(TAG, handle);
     ESP_RETURN_ON_FALSE(handle->dir == I2S_DIR_TX, ESP_ERR_INVALID_ARG, TAG, "This channel handle is not a TX handle");
-    ESP_RETURN_ON_FALSE(handle->controller->id == I2S_NUM_0, ESP_ERR_INVALID_ARG, TAG, "This channel handle is registered on I2S1, but PDM is only supported on I2S0");
+    ESP_RETURN_ON_FALSE(i2s_ll_is_pdm_supported(handle->controller->id),
+                        ESP_ERR_NOT_SUPPORTED, TAG, "PDM TX mode is not supported on selected port");
 
     esp_err_t ret = ESP_OK;
 
@@ -218,17 +232,13 @@ esp_err_t i2s_channel_init_pdm_tx_mode(i2s_chan_handle_t handle, const i2s_pdm_t
      * while initializing, because clock and gpio is relay on the slot */
     ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_slot(handle, &pdm_tx_cfg->slot_cfg), err, TAG, "initialize channel failed while setting slot");
     ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_gpio(handle, &pdm_tx_cfg->gpio_cfg), err, TAG, "initialize channel failed while setting gpio pins");
-#if SOC_I2S_SUPPORTS_APLL
-    /* Enable APLL and acquire its lock when the clock source is APLL */
-    if (pdm_tx_cfg->clk_cfg.clk_src == I2S_CLK_SRC_APLL) {
-        periph_rtc_apll_acquire();
-        handle->apll_en = true;
-    }
-#endif
     ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_clock(handle, &pdm_tx_cfg->clk_cfg), err, TAG, "initialize channel failed while setting clock");
-    ESP_GOTO_ON_ERROR(i2s_init_dma_intr(handle, I2S_INTR_ALLOC_FLAGS), err, TAG, "initialize dma interrupt failed");
+    if (I2S_CHANNEL_USES_DMA(handle)) {
+        ESP_GOTO_ON_ERROR(i2s_init_dma_intr(handle, I2S_INTR_ALLOC_FLAGS), err, TAG, "initialize dma interrupt failed");
+    }
 
     i2s_ll_tx_enable_pdm(handle->controller->hal.dev, pdm_tx_cfg->slot_cfg.data_fmt == I2S_PDM_DATA_FMT_PCM);
+    i2s_ll_set_destination(handle->controller->hal.dev, handle->dir, handle->destination);
 
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_type_t pm_type = ESP_PM_APB_FREQ_MAX;
@@ -239,7 +249,7 @@ esp_err_t i2s_channel_init_pdm_tx_mode(i2s_chan_handle_t handle, const i2s_pdm_t
         pm_type = ESP_PM_NO_LIGHT_SLEEP;
     }
 #endif // SOC_I2S_SUPPORTS_APLL
-    ESP_RETURN_ON_ERROR(esp_pm_lock_create(pm_type, 0, "i2s_driver", &handle->pm_lock), TAG, "I2S pm lock create failed");
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(pm_type, 0, "i2s_driver", &handle->pm_lock), err, TAG, "I2S pm lock create failed");
 #endif
 
     /* Initialization finished, mark state as ready */
@@ -267,23 +277,20 @@ esp_err_t i2s_channel_reconfig_pdm_tx_clock(i2s_chan_handle_t handle, const i2s_
     i2s_pdm_tx_config_t *pdm_tx_cfg = (i2s_pdm_tx_config_t *)handle->mode_info;
     ESP_GOTO_ON_FALSE(pdm_tx_cfg, ESP_ERR_INVALID_STATE, err, TAG, "initialization not complete");
 
-#if SOC_I2S_SUPPORTS_APLL
-    /* Enable APLL and acquire its lock when the clock source is changed to APLL */
-    if (clk_cfg->clk_src == I2S_CLK_SRC_APLL && pdm_tx_cfg->clk_cfg.clk_src != I2S_CLK_SRC_APLL) {
-        periph_rtc_apll_acquire();
-        handle->apll_en = true;
-    }
-    /* Disable APLL and release its lock when clock source is changed to 160M_PLL */
-    if (clk_cfg->clk_src != I2S_CLK_SRC_APLL && pdm_tx_cfg->clk_cfg.clk_src == I2S_CLK_SRC_APLL) {
-        periph_rtc_apll_release();
-        handle->apll_en = false;
+    i2s_clock_src_t old_clk_src = pdm_tx_cfg->clk_cfg.clk_src;
+#ifdef I2S_LL_DEFAULT_CLK_SRC
+    if (old_clk_src == I2S_CLK_SRC_DEFAULT) {
+        old_clk_src = I2S_LL_DEFAULT_CLK_SRC;
     }
 #endif
 
     ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_clock(handle, clk_cfg), err, TAG, "update clock failed");
+
+    // disable old clock source after new clock is successfully configured
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)old_clk_src, false), err, TAG, "clock source disable failed");
 #ifdef CONFIG_PM_ENABLE
     // Create/Re-create power management lock
-    if (pdm_tx_cfg->clk_cfg.clk_src != clk_cfg->clk_src) {
+    if (old_clk_src != clk_cfg->clk_src) {
         ESP_GOTO_ON_ERROR(esp_pm_lock_delete(handle->pm_lock), err, TAG, "I2S delete old pm lock failed");
         esp_pm_lock_type_t pm_type = ESP_PM_APB_FREQ_MAX;
 #if SOC_I2S_SUPPORTS_APLL && SOC_I2S_HW_VERSION_2
@@ -325,7 +332,15 @@ esp_err_t i2s_channel_reconfig_pdm_tx_slot(i2s_chan_handle_t handle, const i2s_p
     /* If the slot bit width changed, then need to update the clock */
     uint32_t slot_bits = slot_cfg->slot_bit_width == I2S_SLOT_BIT_WIDTH_AUTO ? slot_cfg->data_bit_width : slot_cfg->slot_bit_width;
     if (pdm_tx_cfg->slot_cfg.slot_bit_width != slot_bits) {
+        i2s_clock_src_t old_clk_src = pdm_tx_cfg->clk_cfg.clk_src;
+#ifdef I2S_LL_DEFAULT_CLK_SRC
+        if (old_clk_src == I2S_CLK_SRC_DEFAULT) {
+            old_clk_src = I2S_LL_DEFAULT_CLK_SRC;
+        }
+#endif
         ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_clock(handle, &pdm_tx_cfg->clk_cfg), err, TAG, "update clock failed");
+        // disable old clock source after new clock is successfully configured
+        ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)old_clk_src, false), err, TAG, "clock source disable failed");
     }
 
     xSemaphoreGive(handle->mutex);
@@ -415,20 +430,30 @@ static esp_err_t i2s_pdm_rx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_rx
     ESP_RETURN_ON_FALSE(clk_cfg->clk_src != I2S_CLK_SRC_EXTERNAL, ESP_ERR_INVALID_ARG, TAG, "not support external clock source in pdm mode");
 #endif
 
+    i2s_clock_src_t clk_src = clk_cfg->clk_src;
+#ifdef I2S_LL_DEFAULT_CLK_SRC
+    if (clk_src == I2S_CLK_SRC_DEFAULT) {
+        clk_src = I2S_LL_DEFAULT_CLK_SRC;
+    }
+#endif
+
     i2s_hal_clock_info_t clk_info;
-    /* Calculate clock parameters */
+    /* Calculate clock parameters before enabling clock source, so that APLL frequency
+     * can be set while ref_cnt is still < 2 (which is the threshold for freq change) */
     ESP_RETURN_ON_ERROR(i2s_pdm_rx_calculate_clock(handle, clk_cfg, &clk_info), TAG, "clock calculate failed");
+
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), TAG, "clock source enable failed");
 
     hal_utils_clk_div_t ret_mclk_div = {};
     portENTER_CRITICAL(&g_i2s.spinlock);
     /* Set clock configurations in HAL*/
-    I2S_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i2s_hal_set_rx_clock(&handle->controller->hal, &clk_info, clk_cfg->clk_src, &ret_mclk_div);
     }
     portEXIT_CRITICAL(&g_i2s.spinlock);
 
     uint64_t tmp_div = (uint64_t)ret_mclk_div.integer * ret_mclk_div.denominator + ret_mclk_div.numerator;
-    ESP_RETURN_ON_FALSE(tmp_div != 0 && ret_mclk_div.denominator != 0, ESP_ERR_INVALID_ARG, TAG, "invalid mclk division result");
+    ESP_GOTO_ON_FALSE(tmp_div != 0 && ret_mclk_div.denominator != 0, ESP_ERR_INVALID_ARG, err, TAG, "invalid mclk division result");
 
     /* Update the mode info: clock configuration */
     memcpy(&(pdm_rx_cfg->clk_cfg), clk_cfg, sizeof(i2s_pdm_rx_clk_config_t));
@@ -437,17 +462,22 @@ static esp_err_t i2s_pdm_rx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_rx
     handle->origin_mclk_hz = ((uint64_t)clk_info.sclk * ret_mclk_div.denominator) / tmp_div;
     handle->curr_mclk_hz = handle->origin_mclk_hz;
     handle->bclk_hz = clk_info.bclk;
+
     ESP_LOGD(TAG, "Clock division info: [sclk] %"PRIu32" Hz [mdiv] %"PRIu32" %"PRIu32"/%"PRIu32" [mclk] %"PRIu32" Hz [bdiv] %d [bclk] %"PRIu32" Hz",
              clk_info.sclk, ret_mclk_div.integer, ret_mclk_div.numerator, ret_mclk_div.denominator, handle->origin_mclk_hz, clk_info.bclk_div, clk_info.bclk);
 
+    return ret;
+
+err:
+    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, false);
     return ret;
 }
 
 static esp_err_t i2s_pdm_rx_set_slot(i2s_chan_handle_t handle, const i2s_pdm_rx_slot_config_t *slot_cfg)
 {
-#if !SOC_I2S_SUPPORTS_PDM2PCM
-    ESP_RETURN_ON_FALSE(slot_cfg->data_fmt == I2S_PDM_DATA_FMT_RAW, ESP_ERR_NOT_SUPPORTED, TAG, "not support PDM2PCM converter on this target");
-#endif
+    ESP_RETURN_ON_FALSE(slot_cfg->data_fmt != I2S_PDM_DATA_FMT_PCM ||
+                        i2s_ll_is_pdm2pcm_supported(handle->controller->id),
+                        ESP_ERR_NOT_SUPPORTED, TAG, "PDM2PCM converter is not supported on selected port");
     /* Update the total slot num and active slot num */
     handle->is_raw_pdm = slot_cfg->data_fmt == I2S_PDM_DATA_FMT_RAW;
     handle->total_slot = 2;
@@ -455,8 +485,9 @@ static esp_err_t i2s_pdm_rx_set_slot(i2s_chan_handle_t handle, const i2s_pdm_rx_
 
     uint32_t buf_size = i2s_get_buf_size(handle, slot_cfg->data_bit_width, handle->dma.frame_num);
     ESP_RETURN_ON_FALSE(buf_size != 0, ESP_ERR_INVALID_ARG, TAG, "invalid data_bit_width");
-    /* The DMA buffer need to re-allocate if the buffer size changed */
-    if (handle->dma.buf_size != buf_size) {
+    /* The DMA buffer need to re-allocate if the buffer size changed.
+     * Skip when GDMA is not the data path (e.g. Bluetooth destination), since the channel never owns a DMA buffer. */
+    if (I2S_CHANNEL_USES_DMA(handle) && handle->dma.buf_size != buf_size) {
         ESP_RETURN_ON_ERROR(i2s_free_dma_desc(handle), TAG, "failed to free the old dma descriptor");
         ESP_RETURN_ON_ERROR(i2s_alloc_dma_desc(handle, buf_size),
                             TAG, "allocate memory for dma descriptor failed");
@@ -517,7 +548,7 @@ static esp_err_t i2s_pdm_rx_set_gpio(i2s_chan_handle_t handle, const i2s_pdm_rx_
         }
     }
 #if SOC_I2S_HW_VERSION_2
-    I2S_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i2s_ll_mclk_bind_to_rx_clk(handle->controller->hal.dev);
     }
 #endif
@@ -534,7 +565,8 @@ esp_err_t i2s_channel_init_pdm_rx_mode(i2s_chan_handle_t handle, const i2s_pdm_r
 #endif
     I2S_NULL_POINTER_CHECK(TAG, handle);
     ESP_RETURN_ON_FALSE(handle->dir == I2S_DIR_RX, ESP_ERR_INVALID_ARG, TAG, "This channel handle is not a RX handle");
-    ESP_RETURN_ON_FALSE(handle->controller->id == I2S_NUM_0, ESP_ERR_INVALID_ARG, TAG, "This channel handle is registered on I2S1, but PDM is only supported on I2S0");
+    ESP_RETURN_ON_FALSE(i2s_ll_is_pdm_supported(handle->controller->id),
+                        ESP_ERR_NOT_SUPPORTED, TAG, "PDM RX mode is not supported on selected port");
 
     esp_err_t ret = ESP_OK;
 
@@ -550,17 +582,13 @@ esp_err_t i2s_channel_init_pdm_rx_mode(i2s_chan_handle_t handle, const i2s_pdm_r
     /* i2s_set_pdm_rx_slot should be called before i2s_set_pdm_rx_clock and i2s_pdm_rx_set_gpio while initializing, because clock is relay on the slot */
     ESP_GOTO_ON_ERROR(i2s_pdm_rx_set_slot(handle, &pdm_rx_cfg->slot_cfg), err, TAG, "initialize channel failed while setting slot");
     ESP_GOTO_ON_ERROR(i2s_pdm_rx_set_gpio(handle, &pdm_rx_cfg->gpio_cfg), err, TAG, "initialize channel failed while setting gpio pins");
-#if SOC_I2S_SUPPORTS_APLL
-    /* Enable APLL and acquire its lock when the clock source is APLL */
-    if (pdm_rx_cfg->clk_cfg.clk_src == I2S_CLK_SRC_APLL) {
-        periph_rtc_apll_acquire();
-        handle->apll_en = true;
-    }
-#endif
     ESP_GOTO_ON_ERROR(i2s_pdm_rx_set_clock(handle, &pdm_rx_cfg->clk_cfg), err, TAG, "initialize channel failed while setting clock");
-    ESP_GOTO_ON_ERROR(i2s_init_dma_intr(handle, I2S_INTR_ALLOC_FLAGS), err, TAG, "initialize dma interrupt failed");
+    if (I2S_CHANNEL_USES_DMA(handle)) {
+        ESP_GOTO_ON_ERROR(i2s_init_dma_intr(handle, I2S_INTR_ALLOC_FLAGS), err, TAG, "initialize dma interrupt failed");
+    }
 
     i2s_ll_rx_enable_pdm(handle->controller->hal.dev, pdm_rx_cfg->slot_cfg.data_fmt == I2S_PDM_DATA_FMT_PCM);
+    i2s_ll_set_destination(handle->controller->hal.dev, handle->dir, handle->destination);
 
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_type_t pm_type = ESP_PM_APB_FREQ_MAX;
@@ -571,7 +599,7 @@ esp_err_t i2s_channel_init_pdm_rx_mode(i2s_chan_handle_t handle, const i2s_pdm_r
         pm_type = ESP_PM_NO_LIGHT_SLEEP;
     }
 #endif // SOC_I2S_SUPPORTS_APLL
-    ESP_RETURN_ON_ERROR(esp_pm_lock_create(pm_type, 0, "i2s_driver", &handle->pm_lock), TAG, "I2S pm lock create failed");
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(pm_type, 0, "i2s_driver", &handle->pm_lock), err, TAG, "I2S pm lock create failed");
 #endif
 
     /* Initialization finished, mark state as ready */
@@ -599,23 +627,20 @@ esp_err_t i2s_channel_reconfig_pdm_rx_clock(i2s_chan_handle_t handle, const i2s_
     i2s_pdm_rx_config_t *pdm_rx_cfg = (i2s_pdm_rx_config_t *)handle->mode_info;
     ESP_GOTO_ON_FALSE(pdm_rx_cfg, ESP_ERR_INVALID_STATE, err, TAG, "initialization not complete");
 
-#if SOC_I2S_SUPPORTS_APLL
-    /* Enable APLL and acquire its lock when the clock source is changed to APLL */
-    if (clk_cfg->clk_src == I2S_CLK_SRC_APLL && pdm_rx_cfg->clk_cfg.clk_src != I2S_CLK_SRC_APLL) {
-        periph_rtc_apll_acquire();
-        handle->apll_en = true;
-    }
-    /* Disable APLL and release its lock when clock source is changed to 160M_PLL */
-    if (clk_cfg->clk_src != I2S_CLK_SRC_APLL && pdm_rx_cfg->clk_cfg.clk_src == I2S_CLK_SRC_APLL) {
-        periph_rtc_apll_release();
-        handle->apll_en = false;
+    i2s_clock_src_t old_clk_src = pdm_rx_cfg->clk_cfg.clk_src;
+#ifdef I2S_LL_DEFAULT_CLK_SRC
+    if (old_clk_src == I2S_CLK_SRC_DEFAULT) {
+        old_clk_src = I2S_LL_DEFAULT_CLK_SRC;
     }
 #endif
 
     ESP_GOTO_ON_ERROR(i2s_pdm_rx_set_clock(handle, clk_cfg), err, TAG, "update clock failed");
+
+    // disable old clock source after new clock is successfully configured
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)old_clk_src, false), err, TAG, "clock source disable failed");
 #ifdef CONFIG_PM_ENABLE
     // Create/Re-create power management lock
-    if (pdm_rx_cfg->clk_cfg.clk_src != clk_cfg->clk_src) {
+    if (old_clk_src != clk_cfg->clk_src) {
         ESP_GOTO_ON_ERROR(esp_pm_lock_delete(handle->pm_lock), err, TAG, "I2S delete old pm lock failed");
         esp_pm_lock_type_t pm_type = ESP_PM_APB_FREQ_MAX;
 #if SOC_I2S_SUPPORTS_APLL && SOC_I2S_HW_VERSION_2
@@ -657,7 +682,15 @@ esp_err_t i2s_channel_reconfig_pdm_rx_slot(i2s_chan_handle_t handle, const i2s_p
     /* If the slot bit width changed, then need to update the clock */
     uint32_t slot_bits = slot_cfg->slot_bit_width == I2S_SLOT_BIT_WIDTH_AUTO ? slot_cfg->data_bit_width : slot_cfg->slot_bit_width;
     if (pdm_rx_cfg->slot_cfg.slot_bit_width != slot_bits) {
+        i2s_clock_src_t old_clk_src = pdm_rx_cfg->clk_cfg.clk_src;
+#ifdef I2S_LL_DEFAULT_CLK_SRC
+        if (old_clk_src == I2S_CLK_SRC_DEFAULT) {
+            old_clk_src = I2S_LL_DEFAULT_CLK_SRC;
+        }
+#endif
         ESP_GOTO_ON_ERROR(i2s_pdm_rx_set_clock(handle, &pdm_rx_cfg->clk_cfg), err, TAG, "update clock failed");
+        // disable old clock source after new clock is successfully configured
+        ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)old_clk_src, false), err, TAG, "clock source disable failed");
     }
 
     xSemaphoreGive(handle->mutex);

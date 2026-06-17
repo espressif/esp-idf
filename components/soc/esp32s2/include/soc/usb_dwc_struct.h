@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -14,7 +14,6 @@ extern "C" {
 
 /*
 Registers and fields were generated based on a set of configuration options.
-See the ESP32-S2 "usb_dwc_cfg.h" for more details.
 */
 
 /* ---------------------------- Register Types ------------------------------ */

@@ -1,6 +1,6 @@
 choice ESPTOOLPY_FLASHFREQ
     prompt "Flash SPI speed"
-    default ESPTOOLPY_FLASHFREQ_40M
+    default ESPTOOLPY_FLASHFREQ_80M
     config ESPTOOLPY_FLASHFREQ_80M
         bool "80 MHz"
     config ESPTOOLPY_FLASHFREQ_40M

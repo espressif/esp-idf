@@ -39,14 +39,14 @@ static void test_parlio_tx_cache_safe(void)
         .trans_queue_depth = 4,
         .max_transfer_size = 65535,
         .bit_pack_order = PARLIO_BIT_PACK_ORDER_LSB,
-        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .shift_edge = PARLIO_SHIFT_EDGE_POS,
     };
 
     TEST_ESP_OK(parlio_new_tx_unit(&config, &tx_unit));
     TEST_ESP_OK(parlio_tx_unit_enable(tx_unit));
 
-    const size_t buffer_size = 160 * 1000;
-    const size_t chunk_size = buffer_size / 4; // 40KB per trunk
+    const size_t buffer_size = 80 * 1000;
+    const size_t chunk_size = buffer_size / 4; // 20KB per trunk
     uint8_t *buffer = heap_caps_malloc(buffer_size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
     TEST_ASSERT_NOT_NULL(buffer);
     for (int i = 0; i < buffer_size; i++) {

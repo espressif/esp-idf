@@ -34,7 +34,7 @@ typedef struct {
     uint32_t resolution_hz;              /*!< Counter resolution in Hz
                                               The step size of each count tick equals to (1 / resolution_hz) seconds */
     mcpwm_timer_count_mode_t count_mode; /*!< Count mode */
-    uint32_t period_ticks;               /*!< Number of count ticks within a period */
+    uint32_t period_ticks;               /*!< Number of count ticks within a period. For up-down mode, the timer peak value is half of the period_ticks */
     int intr_priority;                   /*!< MCPWM timer interrupt priority,
                                               if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
     /// Extra configuration flags for MCPWM timer

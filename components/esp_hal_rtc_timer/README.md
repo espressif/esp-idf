@@ -8,8 +8,9 @@
 The `esp_hal_rtc_timer` component provides a **unified Hardware Abstraction Layer** for RTC Timer peripherals across all ESP-IDF supported targets. This HAL abstracts hardware differences between legacy RTC timer implementations (in RTC_CNTL peripheral) and modern low-power timer implementations, providing a consistent API for wakeup timer configuration and RTC time reading across different ESP chip families.
 
 The component consolidates timer functionality from two different hardware implementations:
-- **SOC_RTC_TIMER_V1_SUPPORTED**: Legacy RTC timer functionality in RTC_CNTL peripheral (ESP32, ESP32C2, ESP32C3, ESP32S2, ESP32S3)
-- **SOC_RTC_TIMER_V2_SUPPORTED**: Newer LP timer peripheral (ESP32C5, ESP32C6, ESP32C61, ESP32H2, ESP32H21, ESP32H4, ESP32P4)
+- **SOC_RTC_TIMER_V1**: Legacy RTC timer functionality in RTC_CNTL peripheral for ESP32, ESP32C2, ESP32C3, ESP32S2, ESP32S3
+- **SOC_RTC_TIMER_V2**: LP timer peripheral for ESP32C5, ESP32C6, ESP32C61, ESP32H2, ESP32H21, ESP32H4, ESP32P4
+- **SOC_RTC_TIMER_V3**: RTC timer peripheral for ESP32S31
 
 ### Unified HAL API (All Chips)
 - Wakeup timer configuration via `rtc_timer_hal_set_wakeup_time()`

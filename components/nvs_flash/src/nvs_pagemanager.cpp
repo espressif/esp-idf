@@ -75,7 +75,7 @@ esp_err_t PageManager::load(Partition *partition, uint32_t baseSector, uint32_t 
             for (it = begin(); it != last; ++it) {
 
                 if ((it->state() != Page::PageState::FREEING) &&
-                        (it->eraseItem(item.nsIndex, item.datatype, item.key, item.chunkIndex) == ESP_OK)) {
+                        (it->eraseItem(item.nsIndex, item.datatype, item.key, Page::DEFAULT_PURGE_AFTER_ERASE, item.chunkIndex) == ESP_OK)) {
                     break;
                 }
             }
@@ -85,7 +85,7 @@ esp_err_t PageManager::load(Partition *partition, uint32_t baseSector, uint32_t 
                 for (it = begin(); it != last; ++it) {
 
                     if ((it->state() != Page::PageState::FREEING) &&
-                            (it->eraseItem(item.nsIndex, ItemType::BLOB, item.key, item.chunkIndex) == ESP_OK)) {
+                            (it->eraseItem(item.nsIndex, ItemType::BLOB, item.key, Page::DEFAULT_PURGE_AFTER_ERASE, item.chunkIndex) == ESP_OK)) {
                         break;
                     }
                 }

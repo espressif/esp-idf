@@ -93,9 +93,12 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
 
     const bool is_mem = card->is_mem;
     const bool is_sdio = !is_mem;
+    const bool ignore_data_crc = (config->flags & SDMMC_HOST_FLAG_SPI_IGNORE_DATA_CRC);
 
-    /* Enable CRC16 checks for data transfers in SPI mode */
-    SDMMC_INIT_STEP(is_spi, sdmmc_init_spi_crc);
+    if (!ignore_data_crc) {
+        /* Enable CRC16 checks for data transfers in SPI mode */
+        SDMMC_INIT_STEP(is_spi, sdmmc_init_spi_crc);
+    }
 
     /* Use SEND_OP_COND to set up card OCR */
     SDMMC_INIT_STEP(is_mem, sdmmc_init_ocr);

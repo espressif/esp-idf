@@ -1,0 +1,154 @@
+# Bluetooth Audio configuration options
+
+# SPDX-FileCopyrightText: 2020 Intel Corporation
+# SPDX-FileCopyrightText: 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_AUDIO
+    bool # hidden
+    help
+        This option enables Bluetooth Audio support. The specific
+        features that are available may depend on other features
+        that have been enabled in the stack, such as Periodic
+        Advertisement for Broadcast and L2CAP Dynamic Channel
+        for Unicast.
+
+config BT_AUDIO_RX
+    bool # hidden
+    default y if BT_ASCS_ASE_SNK || BT_BAP_UNICAST_CLIENT_ASE_SRC || BT_BAP_BROADCAST_SINK
+    select BT_AUDIO
+
+config BT_AUDIO_TX
+    bool # hidden
+    default y if BT_ASCS_ASE_SRC || BT_BAP_UNICAST_CLIENT_ASE_SNK || BT_BAP_BROADCAST_SOURCE
+    select BT_AUDIO
+
+menu "AICS Options"
+    rsource "Kconfig/Kconfig.aics.in"
+endmenu
+
+menu "ASCS Options"
+    rsource "Kconfig/Kconfig.ascs.in"
+endmenu
+
+menu "BAP Options"
+    rsource "Kconfig/Kconfig.bap.in"
+endmenu
+
+menu "CAP Options"
+    rsource "Kconfig/Kconfig.cap.in"
+endmenu
+
+menu "TBS Options"
+    rsource "Kconfig/Kconfig.tbs.in"
+endmenu
+
+menu "CCP Options"
+    rsource "Kconfig/Kconfig.ccp.in"
+endmenu
+
+menu "CSIP Options"
+    rsource "Kconfig/Kconfig.csip.in"
+endmenu
+
+menu "GMAP Options"
+    rsource "Kconfig/Kconfig.gmap.in"
+endmenu
+
+menu "MCS Options"
+    rsource "Kconfig/Kconfig.mcs.in"
+endmenu
+
+menu "MCTL Options"
+    rsource "Kconfig/Kconfig.mctl.in"
+endmenu
+
+menu "MICP Options"
+    rsource "Kconfig/Kconfig.micp.in"
+endmenu
+
+menu "MPL Options"
+    rsource "Kconfig/Kconfig.mpl.in"
+endmenu
+
+menu "PACS Options"
+    rsource "Kconfig/Kconfig.pacs.in"
+endmenu
+
+menu "VOCS Options"
+    rsource "Kconfig/Kconfig.vocs.in"
+endmenu
+
+menu "VCP Options"
+    rsource "Kconfig/Kconfig.vcp.in"
+endmenu
+
+menu "TMAP Options"
+    rsource "Kconfig/Kconfig.tmap.in"
+endmenu
+
+menu "HAS Options"
+    rsource "Kconfig/Kconfig.has.in"
+endmenu
+
+menu "PBP Options"
+    rsource "Kconfig/Kconfig.pbp.in"
+endmenu
+
+menu "OTS Options"
+    rsource "host/services/ots/Kconfig.ots.in"
+endmenu
+
+config BT_AUDIO_NO_LOG
+    bool "Disable BLE Audio Lib Debug Log"
+    default n
+    help
+        Select this to save rodata code size by disabling the debug log
+        emitted by the BLE Audio prebuilt library (printed with the
+        "LEA_LIB" tag).
+
+        Note: this option does NOT affect logs from the BLE Audio IDF
+        source files (esp_ble_audio component, "LEA_*" tags) - those
+        are controlled by BT_ISO_NO_LOG / BT_ISO_LOG_LEVEL under the
+        "BLE ISO Options" menu.
+
+menu "BLE Audio Lib Debug Log Level"
+    depends on !BT_AUDIO_NO_LOG
+
+    choice BT_AUDIO_LOG_LEVEL
+        prompt "BLE_AUDIO_LIB_LOG_LEVEL"
+        default BT_AUDIO_LOG_LEVEL_WARNING
+        depends on !BT_AUDIO_NO_LOG
+        help
+            Define the trace level of the BLE Audio prebuilt library
+            (logs printed with the "LEA_LIB" tag).
+
+            Note: logs from the BLE Audio IDF source files
+            (esp_ble_audio component, "LEA_*" tags) are controlled
+            separately by BT_ISO_LOG_LEVEL under the "BLE ISO Options"
+            menu.
+
+        config BT_AUDIO_LOG_LEVEL_NONE
+            bool "NONE"
+        config BT_AUDIO_LOG_LEVEL_ERROR
+            bool "ERROR"
+        config BT_AUDIO_LOG_LEVEL_WARNING
+            bool "WARNING"
+        config BT_AUDIO_LOG_LEVEL_INFO
+            bool "INFO"
+        config BT_AUDIO_LOG_LEVEL_DEBUG
+            bool "DEBUG"
+        config BT_AUDIO_LOG_LEVEL_VERBOSE
+            bool "VERBOSE"
+    endchoice
+
+    config BT_AUDIO_LOG_LEVEL
+        int
+        default 0 if BT_AUDIO_LOG_LEVEL_NONE
+        default 1 if BT_AUDIO_LOG_LEVEL_ERROR
+        default 2 if BT_AUDIO_LOG_LEVEL_WARNING
+        default 3 if BT_AUDIO_LOG_LEVEL_INFO
+        default 4 if BT_AUDIO_LOG_LEVEL_DEBUG
+        default 5 if BT_AUDIO_LOG_LEVEL_VERBOSE
+        default 2
+endmenu

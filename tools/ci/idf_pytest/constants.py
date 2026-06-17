@@ -15,6 +15,8 @@ SUPPORTED_TARGETS = [
     'esp32p4',
     'esp32c5',
     'esp32c61',
+    'esp32s31',
+    'esp32h4',
 ]
 PREVIEW_TARGETS: list[str] = []  # this PREVIEW_TARGETS excludes 'linux' target
 
@@ -25,10 +27,11 @@ TIMEOUT_4H_MARKERS = [
     'ethernet_stress',
 ]
 
-ECO_MARKERS = [
-    'esp32eco3',
-    'esp32c2eco4',
-    'esp32c3eco7',
-    'esp32p4_eco4',
-    'esp32c5_eco3',
+REV_MARKERS = [
+    'esp32_rev3',
+    'esp32c2_rev2',
+    'esp32c3_rev1',
+    'esp32h2_rev1_2',
+    'esp32p4_rev1',
+    'esp32c5_rev1',
 ]

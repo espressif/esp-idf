@@ -6,10 +6,11 @@
 #include "hal/spi_slave_hal.h"
 #include "hal/spi_ll.h"
 #include "soc/soc_caps.h"
+#include "soc/spi_periph.h"
 
 void spi_slave_hal_init(spi_slave_hal_context_t *hal, const spi_slave_hal_config_t *hal_config)
 {
-    hal->hw = SPI_LL_GET_HW(hal_config->host_id);
+    hal->hw = spi_periph_signal[hal_config->host_id].hw;
 
     spi_ll_slave_init(hal->hw);
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,10 +10,9 @@
 
 /* Functions */
 
-/* Patch init function to set clock source
-wdt_hal_init = 0x4000038c;
-wdt_hal_deinit = 0x40000390;
-*/
+/* Patch init/deinit to add clock configuration missing from ROM version */
+rom_wdt_hal_init = 0x4000038c;
+rom_wdt_hal_deinit = 0x40000390;
 
 /* Functions */
 wdt_hal_config_stage = 0x40000394;

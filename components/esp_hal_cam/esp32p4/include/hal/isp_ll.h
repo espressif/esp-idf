@@ -71,6 +71,18 @@ extern "C" {
 #define ISP_LL_EVENT_WBG_FRAME                (1<<30)
 #define ISP_LL_EVENT_CROP_ERR                 (1<<31)
 
+/*---------------------------------------------------------------
+                    Error Events
+---------------------------------------------------------------*/
+#define ISP_LL_EVENT_DATA_TYPE_ERR            (1<<0)
+#define ISP_LL_EVENT_ASYNC_FIFO_OVF           (1<<1)
+#define ISP_LL_EVENT_BUF_FULL                 (1<<2)
+#define ISP_LL_EVENT_HVNUM_SETTING_ERR        (1<<3)
+#define ISP_LL_EVENT_DATA_TYPE_SETTING_ERR    (1<<4)
+#define ISP_LL_EVENT_MIPI_HNUM_UNMATCH        (1<<5)
+#define ISP_LL_EVENT_GAMMA_XCOORD_ERR         (1<<7)
+#define ISP_LL_EVENT_CROP_ERR                 (1<<31)
+
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
 #define ISP_LL_EVENT_ALL_MASK                 (0xFFFFFFFF)
 #else
@@ -82,6 +94,7 @@ extern "C" {
 #define ISP_LL_EVENT_SHARP_MASK               (ISP_LL_EVENT_SHARP_FRAME)
 #define ISP_LL_EVENT_HIST_MASK                (ISP_LL_EVENT_HIST_FDONE)
 #define ISP_LL_EVENT_COLOR_MASK               (ISP_LL_EVENT_COLOR_FRAME)
+#define ISP_LL_EVENT_ERROR_MASK               (ISP_LL_EVENT_DATA_TYPE_ERR | ISP_LL_EVENT_ASYNC_FIFO_OVF | ISP_LL_EVENT_BUF_FULL | ISP_LL_EVENT_HVNUM_SETTING_ERR | ISP_LL_EVENT_DATA_TYPE_SETTING_ERR | ISP_LL_EVENT_MIPI_HNUM_UNMATCH | ISP_LL_EVENT_CROP_ERR) // Due to a hardware issue (DIG-820), ISP_LL_EVENT_GAMMA_XCOORD_ERR will always get triggered when a gamma update is set on P4, so we will not use it
 
 /*---------------------------------------------------------------
                       AF
@@ -109,15 +122,6 @@ extern "C" {
 #define ISP_LL_BF_DEFAULT_TEMPLATE_VAL        15
 
 /*---------------------------------------------------------------
-                      DVP
----------------------------------------------------------------*/
-#define ISP_LL_DVP_CTLR_NUMS          1U
-#define ISP_LL_DVP_DATA_WIDTH_MAX     16
-#define ISP_LL_DVP_DATA_TYPE_RAW8     0x2A
-#define ISP_LL_DVP_DATA_TYPE_RAW10    0x2B
-#define ISP_LL_DVP_DATA_TYPE_RAW12    0x2C
-
-/*---------------------------------------------------------------
                       Color
 ---------------------------------------------------------------*/
 #define ISP_LL_COLOR_CONTRAST_MAX       0xff
@@ -125,12 +129,6 @@ extern "C" {
 #define ISP_LL_COLOR_HUE_MAX            359
 #define ISP_LL_COLOR_BRIGNTNESS_MIN     -128
 #define ISP_LL_COLOR_BRIGNTNESS_MAX     127
-
-/*---------------------------------------------------------------
-                      LSC
----------------------------------------------------------------*/
-#define ISP_LL_LSC_GRID_HEIGHT        32
-#define ISP_LL_LSC_GRID_WIDTH         32
 
 /*---------------------------------------------------------------
                       CCM
@@ -148,6 +146,28 @@ extern "C" {
                       CCM
 ---------------------------------------------------------------*/
 #define ISP_LL_HIST_CTLR_NUMS           1U
+
+/*---------------------------------------------------------------
+                      DVP
+---------------------------------------------------------------*/
+#define ISP_LL_DVP_CTLR_NUMS          1U
+#define ISP_LL_DVP_DATA_WIDTH_MAX     16
+#define ISP_LL_DVP_DATA_TYPE_RAW8     0x2A
+#define ISP_LL_DVP_DATA_TYPE_RAW10    0x2B
+#define ISP_LL_DVP_DATA_TYPE_RAW12    0x2C
+
+/*---------------------------------------------------------------
+                      LSC
+---------------------------------------------------------------*/
+#define ISP_LL_LSC_GRID_HEIGHT        32
+#define ISP_LL_LSC_GRID_WIDTH         32
+
+/*---------------------------------------------------------------
+                      LUT
+---------------------------------------------------------------*/
+#define ISP_LL_LUT_LSC_SIZE_MAX       560
+#define ISP_LL_LUT_DPC_SIZE_MAX       512
+#define ISP_LL_LUT_AWB_SIZE_MAX       104
 
 typedef union {
     struct {
@@ -240,10 +260,9 @@ typedef enum {
 /**
  * @brief Enable the bus clock for ISP module
  *
- * @param hw    Hardware instance address
  * @param en    enable / disable
  */
-static inline void isp_ll_enable_module_clock(isp_dev_t *hw, bool en)
+static inline void isp_ll_enable_module_clock(bool en)
 {
     HP_SYS_CLKRST.peri_clk_ctrl25.reg_isp_clk_en = en;
 }
@@ -257,10 +276,8 @@ static inline void isp_ll_enable_module_clock(isp_dev_t *hw, bool en)
 
 /**
  * @brief Reset the ISP module
- *
- * @param hw    Hardware instance address
  */
-static inline void isp_ll_reset_module_clock(isp_dev_t *hw)
+static inline void isp_ll_reset_module_clock(void)
 {
     HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_isp = 1;
     HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_isp = 0;
@@ -276,20 +293,19 @@ static inline void isp_ll_reset_module_clock(isp_dev_t *hw)
 /**
  * @brief Select ISP clock source
  *
- * @param hw       Hardware instance address
  * @param clk_src  clock source, see valid sources in type `soc_periph_isp_clk_src_t`
  */
-static inline void isp_ll_select_clk_source(isp_dev_t *hw, soc_periph_isp_clk_src_t clk_src)
+static inline void isp_ll_select_clk_source(soc_periph_isp_clk_src_t clk_src)
 {
     uint32_t clk_val = 0;
     switch (clk_src) {
     case ISP_CLK_SRC_XTAL:
         clk_val = 0;
         break;
-    case ISP_CLK_SRC_PLL160:
+    case ISP_CLK_SRC_PLL240:
         clk_val = 1;
         break;
-    case ISP_CLK_SRC_PLL240:
+    case ISP_CLK_SRC_PLL160:
         clk_val = 2;
         break;
     default:
@@ -310,10 +326,9 @@ static inline void isp_ll_select_clk_source(isp_dev_t *hw, soc_periph_isp_clk_sr
 /**
  * @brief Set ISP clock div
  *
- * @param hw     Hardware instance address
  * @param div    Clock division with integral and decimal part
  */
-static inline void isp_ll_set_clock_div(isp_dev_t *hw, const hal_utils_clk_div_t *clk_div)
+static inline void isp_ll_set_clock_div(const hal_utils_clk_div_t *clk_div)
 {
     HAL_ASSERT(clk_div->integer > 0 && clk_div->integer <= ISP_LL_TX_MAX_CLK_INT_DIV);
     HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl26, reg_isp_clk_div_num, clk_div->integer - 1);

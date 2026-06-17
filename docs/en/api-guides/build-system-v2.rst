@@ -7,6 +7,8 @@ Build System v2
 
 ESP-IDF CMake-based build system v2, referred to in this documentation simply as v2 or build system, is a successor to the original CMake-based :doc:`/api-guides/build-system`, referred to as v1. The v2 addresses limitations introduced in the previous version while trying to maintain backward compatibility for components written for v1. The most significant changes include the ability to use Kconfig variables to specify component dependencies, the removal of early component evaluation using CMake script mode, and support for writing components using the native CMake approach. While v2 aims to be as backward compatible with v1 as possible, meaning most components written for v1 should work without modification with v2, there are design differences between v1 and v2 that may require changes in v1 components to work with v2. The incompatibilities are described in :ref:`cmakev2-breaking-changes`.
 
+Example applications for Build System v2 are described in the :example:`Build System v2 examples README <build_system/cmakev2>`.
+
 Creating a New Project
 ======================
 
@@ -274,6 +276,34 @@ LINKER_SCRIPTS:
 
 Also ensure that the ``esp_chip_info`` function is retained in the final binary even when section garbage collection, ``--gc-sections``, is enabled. This is required because ``esp_target_info.ld`` defines ``esp_target_chip_info`` as an alias for ``esp_chip_info``, and without forcing the linker to include it, the underlying ``esp_chip_info`` function could be discarded as unused.
 
+.. _cmakev2-build-event-callbacks:
+
+Build Event Callback Framework
+==============================
+
+The build system allows components to register callbacks that are invoked at specific points in the build lifecycle. This provides a generic way for components to run custom steps (for example, running a tool on the executable or adding dependencies) without relying on internal build targets or properties.
+
+Components register a callback in their ``project_include.cmake`` using :cmakev2:ref:`idf_component_register_build_event_callback`. The callback must be a CMake function defined in the same file. At the specified event, the build system invokes the callback and passes the relevant CMake target as the first argument (for example, the executable target for ``POST_ELF``).
+
+Currently supported events:
+
+- **POST_ELF** — Fired after the executable target is created and linked, but before the binary (``.bin``) image is generated. The callback receives the executable target name. Use this to perform actions on the ELF by attaching a ``POST_BUILD`` command to the executable with ``add_custom_command(TARGET ... POST_BUILD ...)``.
+
+Example: perform actions on the ELF after linking:
+
+.. code-block:: cmake
+
+    # In project_include.cmake
+    function(my_post_elf_hook target)
+        add_custom_command(TARGET ${target} POST_BUILD
+            COMMAND my_tool "$<TARGET_FILE:${target}>"
+            COMMENT "Running my_tool on the executable")
+    endfunction()
+
+    idf_component_register_build_event_callback(EVENT POST_ELF CALLBACK my_post_elf_hook)
+
+Additional build events may be added in future when required.
+
 .. _cmakev2-breaking-changes:
 
 Breaking Changes for v1 Components
@@ -325,6 +355,13 @@ The hello_world example ``CMakeLists_v2.txt`` for v2.
     target_link_libraries(${COMPONENT_TARGET} PRIVATE
         idf::spi_flash
     )
+
+``idf_build_add_post_elf_dependency`` and ``idf_build_get_post_elf_dependencies`` are Unavailable
+-------------------------------------------------------------------------------------------------
+
+In v1, components that need to run a step after the executable is linked but before the binary image is generated use ``idf_build_add_post_elf_dependency`` to register a dependency and ``idf_build_get_post_elf_dependencies`` to retrieve the list of such dependencies (see the :doc:`build system </api-guides/build-system>` API). These functions are **not available** in v2.
+
+In v2, use the :ref:`Build Event Callback Framework <cmakev2-build-event-callbacks>` instead. Register a **POST_ELF** callback with :cmakev2:ref:`idf_component_register_build_event_callback` in your component's ``project_include.cmake``. The callback receives the executable target name; use it to attach a ``POST_BUILD`` command (e.g. with ``add_custom_command(TARGET ... POST_BUILD ...)``) or to add custom targets that depend on the executable. This achieves the same ordering (run after ELF, before binary) without relying on internal build properties.
 
 The ``BUILD_COMPONENTS`` Build Property is Unavailable
 ------------------------------------------------------
@@ -431,6 +468,34 @@ Strict Component Precedence
 ---------------------------
 
 The v2 strictly adheres to the component precedence for components with the same name, as described in :ref:`cmake-components-same-name`. While v1 allows components discovered in directories specified with the ``EXTRA_COMPONENT_DIRS`` variable to be overridden by `Local Directory Dependencies`_ specified in the ``idf_component.yml`` manifest file, this is no longer possible in v2.
+
+The Behavior of ``idf_component_optional_requires`` has Changed
+---------------------------------------------------------------
+
+In v1, the ``idf_component_optional_requires`` function adds a dependency on a specified component only if that component is already included in the build (for instance, if it is already required by another component). To achieve this, v1 examines the ``BUILD_COMPONENTS`` build property, which is generated during the early evaluation phase and lists all components involved in the build.
+
+In v2, there is no early collection phase and ``BUILD_COMPONENTS`` does not exist. The build system discovers components as it evaluates dependencies. So v2 cannot use the same "only if already in the build" check; it has to choose a different rule.
+
+The build system supports two behaviors, controlled by the ``IDF_COMPONENT_OPTIONAL_REQUIRES_MODE`` build property:
+
+* **IMMEDIATE (default)** — When a component calls ``idf_component_optional_requires(type req_component)``, the build system includes ``req_component`` and links it to the caller if it is recognized (discovered). No check is made whether the rest of the project actually needs that component. This is safe for multi-binary projects (multiple executables or binaries), but it can pull in more components than necessary and increase build time.
+
+* **DEFERRED** — The build system does not include or link immediately. It records the request and resolves it later in :cmakev2:ref:`idf_build_library`: the optional component is linked only if it ends up in that library's dependency graph. This matches v1 semantics and keeps the number of linked components minimal. It **must not** be used when building more than one library (see below).
+
+A multi-binary project is one that creates more than one executable or binary (for example, several application executables built from the same tree). Such a project calls :cmakev2:ref:`idf_build_library` or :cmakev2:ref:`idf_build_executable` more than once. In v2, component targets are shared globally across all libraries. If ``IDF_COMPONENT_OPTIONAL_REQUIRES_MODE`` is set to **DEFERRED**, the build system resolves optional requirements when it processes each library. When it processes the second or a later library, it may add new links to component targets that are already used by the first library. The first library's metadata (such as the list of linker fragments or linked components) was already computed when that library was processed and is not updated. As a result, linker script generation and section placement for the first library can be incorrect or stale. For this reason, DEFERRED mode is not allowed when more than one library is built; the build fails with an error in that case. **IMMEDIATE** mode does not have this problem, because optional requirements are applied during component evaluation, before any per-library metadata is computed. The side effect of the IMMEDIATE mode is that it can pull in more components than necessary and increase build time.
+
+:cmakev2:ref:`idf_project_default` (the usual entry point for a single-executable project) sets ``IDF_COMPONENT_OPTIONAL_REQUIRES_MODE`` to **DEFERRED** before building the default executable when no libraries have been created yet. So if your project uses ``idf_project_default()`` and builds only one executable, you get DEFERRED behavior automatically and do not need to do anything.
+
+If you do not use :cmakev2:ref:`idf_project_default` and instead call :cmakev2:ref:`idf_project_init` and then the lower-level API (:cmakev2:ref:`idf_build_executable`, :cmakev2:ref:`idf_build_library`) yourself, the default mode is **IMMEDIATE**. If you build only one library/executable and want the same efficient, v1-like behavior as ``idf_project_default``, you must set the mode to DEFERRED yourself after project init:
+
+.. code-block:: cmake
+
+    idf_project_init()
+    idf_build_set_property(IDF_COMPONENT_OPTIONAL_REQUIRES_MODE DEFERRED)
+    idf_build_executable(my_app COMPONENTS main ...)
+    # ... rest of your project ...
+
+Do **not** set ``IDF_COMPONENT_OPTIONAL_REQUIRES_MODE`` to ``DEFERRED`` if you build multiple libraries; the build will error. Keep the default IMMEDIATE in that case.
 
 API Reference
 =============

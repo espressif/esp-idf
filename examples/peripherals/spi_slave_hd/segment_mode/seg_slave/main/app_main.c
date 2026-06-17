@@ -33,6 +33,7 @@
  * The address and value should be negotiated with Master beforehand
  */
 //----------------------General Settings---------------------//
+#define SLAVE_SHARE_REG_NUM             5   // number of shared registers list below
 //Indicate Slave General Settings are ready
 #define SLAVE_READY_FLAG_REG            0
 #define SLAVE_READY_FLAG                0xEE
@@ -287,8 +288,8 @@ void app_main(void)
     init_slave_hd();
 
     //Reset the shared register to 0
-    uint8_t init_value[SOC_SPI_MAXIMUM_BUFFER_SIZE] = {0x0};
-    spi_slave_hd_write_buffer(SLAVE_HOST, 0, init_value, SOC_SPI_MAXIMUM_BUFFER_SIZE);
+    uint8_t init_value[SLAVE_SHARE_REG_NUM * 4] = {0x0};
+    spi_slave_hd_write_buffer(SLAVE_HOST, 0, init_value, sizeof(init_value));
 
     static uint32_t send_buf_size = 4800;
     spi_slave_hd_write_buffer(SLAVE_HOST, SLAVE_MAX_TX_BUF_LEN_REG, (uint8_t *)&send_buf_size, sizeof(send_buf_size));

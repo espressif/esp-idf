@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,10 +24,12 @@ typedef enum {
  * MMU Page size
  */
 typedef enum {
-    MMU_PAGE_8KB  = 0x2000,
-    MMU_PAGE_16KB = 0x4000,
-    MMU_PAGE_32KB = 0x8000,
-    MMU_PAGE_64KB = 0x10000,
+    MMU_PAGE_8KB   = 0x2000,
+    MMU_PAGE_16KB  = 0x4000,
+    MMU_PAGE_32KB  = 0x8000,
+    MMU_PAGE_64KB  = 0x10000,
+    MMU_PAGE_128KB = 0x20000,
+    MMU_PAGE_256KB = 0x40000,
 } mmu_page_size_t;
 
 /**

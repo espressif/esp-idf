@@ -77,34 +77,22 @@ MEMORY
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
     /* PSRAM seg */
-  extern_ram_seg(RWX) :        org = 0x42000020, len = IDRAM0_2_SEG_SIZE - 0x20
+  ext_ram_seg(RWX) :           org = 0x42000020, len = IDRAM0_2_SEG_SIZE - 0x20
 }
 
 /* Heap ends at top of sram_seg */
 _heap_end = 0x40000000;
 
+REGION_ALIAS("iram_text_seg", sram_seg);
+REGION_ALIAS("dram_seg", sram_seg);
+
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
-  REGION_ALIAS("default_code_seg", irom_seg);
+  REGION_ALIAS("flash_text_seg", irom_seg);
+  REGION_ALIAS("flash_rodata_seg", drom_seg);
 #else
-  REGION_ALIAS("default_code_seg", sram_seg);
+  REGION_ALIAS("flash_text_seg", sram_seg);
+  REGION_ALIAS("flash_rodata_seg", sram_seg);
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
-#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
-  REGION_ALIAS("default_rodata_seg", drom_seg);
-#else
-  REGION_ALIAS("default_rodata_seg", sram_seg);
-#endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
-
-/**
- *  If rodata default segment is placed in `drom_seg`, then flash's first rodata section must
- *  also be first in the segment.
- */
-#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
-  ASSERT(_flash_rodata_dummy_start == ORIGIN(default_rodata_seg),
-         ".flash_rodata_dummy section must be placed at the beginning of the rodata segment.")
-#endif
-
-#if CONFIG_ESP_SYSTEM_USE_EH_FRAME
-    ASSERT ((__eh_frame_end > __eh_frame), "Error: eh_frame size is null!");
-    ASSERT ((__eh_frame_hdr_end > __eh_frame_hdr), "Error: eh_frame_hdr size is null!");
-#endif
+ALIGN_VECTOR_TABLE = 0x100;
+OFFSET_TEE = 0x2b0;

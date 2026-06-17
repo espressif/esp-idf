@@ -22,6 +22,8 @@
 #define GPIO_LL_ETM_TASK_ID_CLR(ch) (GPIO_TASK_CH0_CLEAR + (ch))
 #define GPIO_LL_ETM_TASK_ID_TOG(ch) (GPIO_TASK_CH0_TOGGLE + (ch))
 
+#define GPIO_LL_ETM_GET_HW() ((gpio_etm_dev_t *)(void *)&GPIO_EXT.etm)
+
 #ifdef __cplusplus
 extern "C" {
 #endif

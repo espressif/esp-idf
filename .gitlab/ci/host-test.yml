@@ -13,7 +13,7 @@
     - job: upload-submodules-cache
       optional: true
       artifacts: false
-    - job: fast_template_app
+    - job: fast_build_check
       optional: true
       artifacts: false
   artifacts:
@@ -52,6 +52,25 @@ check_public_headers:
           IDF_TARGET=${target} python tools/ci/check_public_headers.py --jobs 4 --prefix ${PREFIX} --libc-type ${libc}
         done
       done
+
+check_api_compatibility:
+  extends:
+    - .host_test_template
+    - .rules:test:host_test
+  needs:
+    - pipeline_variables
+  variables:
+    IDF_TOOLCHAIN: clang
+    INSTALL_EXTRA_TOOLS: esp-clang-libs
+  allow_failure: true
+  script:
+    - pip install "esp-api-check[gitlab] @ git+https://gitlab-ci-token:${ESPCI_TOKEN}@${GITLAB_HTTPS_HOST}/espressif/esp-api-check.git"
+    - python -m esp_api_check install-clang-bindings
+    - python -m esp_api_check gitlab
+      --gitlab-url "https://${GITLAB_HTTPS_HOST}"
+      --gitlab-token ${ESPCI_TOKEN}
+      --head-sha ${CI_MERGE_REQUEST_SOURCE_BRANCH_SHA}
+      --project-dir ${CI_PROJECT_DIR}/tools/test_apps/system/test_api_check
 
 test_nvs_coverage:
   extends:
@@ -122,7 +141,7 @@ test_cli_installer:
     #                                                                      cmake@version that is supported
     - python3 ${IDF_PATH}/tools/idf_tools.py download required qemu-riscv32 qemu-xtensa cmake cmake@3.22.1
     - cd ${IDF_PATH}/tools/test_idf_tools
-    - python3 -m pip install jsonschema
+    - python3 -m pip install jsonschema --break-system-packages
     # Testing with system python3, so don't use any third-party packages
     - python3 ./test_idf_tools.py -v
     - python3 ./test_idf_tools_python_env.py
@@ -306,18 +325,22 @@ build_docker:
     - .before_script:minimal
     - .rules:build:docker
   stage: host_test
-  needs: []
+  needs:
+    - job: manual_gate
+      optional: true
   image: espressif/docker-builder:1
   tags: [shiny, dind]
   variables:
     DOCKER_TMP_IMAGE_NAME: "idf_tmp_image"
   script:
-    - export DOCKER_BUILD_ARGS="--build-arg IDF_CLONE_URL=${CI_REPOSITORY_URL} --build-arg IDF_CLONE_BRANCH_OR_TAG=${CI_COMMIT_REF_NAME} --build-arg IDF_CHECKOUT_REF=${CI_COMMIT_TAG:-$CI_COMMIT_SHA} --build-arg IDF_CLONE_SHALLOW=1 --build-arg IDF_GITHUB_ASSETS=${INTERNAL_GITHUB_ASSETS}"
-    - docker build --tag ${DOCKER_TMP_IMAGE_NAME} ${DOCKER_BUILD_ARGS} tools/docker/
+    # use different image tag for different concurrent job
+    - export DOCKER_TMP_IMAGE="${DOCKER_TMP_IMAGE_NAME}:${CI_CONCURRENT_ID:-latest}"
+    - export DOCKER_BUILD_ARGS="--build-arg IDF_CLONE_URL=${CI_REPOSITORY_URL} --build-arg IDF_CLONE_BRANCH_OR_TAG=${CI_COMMIT_REF_NAME} --build-arg IDF_CHECKOUT_REF=${CI_COMMIT_TAG:-$CI_COMMIT_SHA} --build-arg IDF_CLONE_SHALLOW=1 ${EXTRA_DOCKER_BUILD_ARGS:-} "
+    - time docker build --tag ${DOCKER_TMP_IMAGE} ${DOCKER_BUILD_ARGS} tools/docker/
     # We can't mount $PWD/examples/get-started/blink into the container, see https://gitlab.com/gitlab-org/gitlab-ce/issues/41227.
     # The workaround mentioned there works, but leaves around directories which need to be cleaned up manually.
     # Therefore, build a copy of the example located inside the container.
-    - docker run --rm --workdir /opt/esp/idf/examples/get-started/blink ${DOCKER_TMP_IMAGE_NAME} idf.py build
+    - docker run --rm --workdir /opt/esp/idf/examples/get-started/blink ${DOCKER_TMP_IMAGE} idf.py build
 
 ############################
 # Host test with test apps #
@@ -325,7 +348,6 @@ build_docker:
 test_pytest_qemu:
   extends:
     - .host_test_template
-    - .before_script:build
   artifacts:
     paths:
       - XUNIT_RESULT.xml
@@ -352,7 +374,6 @@ test_pytest_qemu:
     - run_cmd pytest
       --target $IDF_TARGET
       -m qemu
-      --embedded-services idf,qemu
       --junitxml=XUNIT_RESULT.xml
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
       --qemu-extra-args \"-global driver=timer.$IDF_TARGET.timg,property=wdt_disable,value=true\"
@@ -360,7 +381,6 @@ test_pytest_qemu:
 test_pytest_linux:
   extends:
     - .host_test_template
-    - .before_script:build
   artifacts:
     paths:
       - XUNIT_RESULT.xml
@@ -378,7 +398,7 @@ test_pytest_linux:
     - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
     - run_cmd pytest
       --target linux
-      --embedded-services idf
+      -m \"not macos\"
       --junitxml=XUNIT_RESULT.xml
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
 
@@ -418,7 +438,7 @@ test_pytest_macos:
     - .rules:build:check
   dependencies: # set dependencies to null to avoid missing artifacts issue
   needs:
-    - job: fast_template_app
+    - job: fast_build_check
       artifacts: false
       optional: true
   artifacts:
@@ -487,22 +507,6 @@ pytest_buildv2_system:
       --work-dir ${CI_PROJECT_DIR}/test_build_system
       --junitxml ${CI_PROJECT_DIR}/XUNIT_RESULT.xml
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
-      --
-      test_non_default_target.py
-      test_component_manager.py
-      test_build.py
-      test_bootloader.py
-      test_git.py
-      test_kconfig.py
-      test_partition.py
-      test_reproducible_build.py
-      test_sdkconfig.py
-      test_versions.py
-      test_common.py
-      test_components.py
-      test_cmake.py
-      test_idf_extension.py
-      test_rebuild.py
 
 pytest_build_system_macos:
   extends:

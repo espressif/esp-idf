@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
 *
 * SPDX-License-Identifier: Apache-2.0
 */
@@ -15,6 +15,7 @@
 #include "soc/soc_caps.h"
 #include "driver/sd_host.h"
 #include "esp_private/sd_host_private.h"
+#include "esp_memory_utils.h"
 
 typedef enum {
     SDMMC_IDLE,
@@ -87,11 +88,12 @@ size_t sd_host_get_free_descriptors_count(sd_host_sdmmc_slot_t *slot)
     int dma_desc_num = slot->ctlr->dma_desc_num;
     for (size_t i = 0; i < dma_desc_num; ++i) {
         sdmmc_desc_t *desc = slot->ctlr->dma_desc + ((next + i) % dma_desc_num);
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-        esp_err_t ret = esp_cache_msync((void *)desc, sizeof(sdmmc_desc_t), ESP_CACHE_MSYNC_FLAG_DIR_M2C);
-        assert(ret == ESP_OK);
-        (void)ret;
-#endif
+        bool needs_sync = esp_cache_get_line_size_by_addr(desc) > 0;
+        if (needs_sync) {
+            esp_err_t ret = esp_cache_msync((void *)desc, sizeof(sdmmc_desc_t), ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+            assert(ret == ESP_OK);
+            (void)ret;
+        }
         if (desc->owned_by_idmac) {
             break;
         }
@@ -132,11 +134,13 @@ void sd_host_fill_dma_descriptors(sd_host_sdmmc_slot_t *slot, size_t num_desc)
         ESP_LOGV(TAG, "fill %d desc=%d rem=%d next=%d last=%d sz=%d",
                  num_desc, next, cur_trans->size_remaining,
                  cur_trans->next_desc, desc->last_descriptor, desc->buffer1_size);
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-        esp_err_t ret = esp_cache_msync((void *)desc, sizeof(sdmmc_desc_t), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
-        assert(ret == ESP_OK);
-        (void)ret;
-#endif
+        bool needs_sync = false;
+        needs_sync = esp_cache_get_line_size_by_addr(desc) > 0;
+        if (needs_sync) {
+            esp_err_t ret = esp_cache_msync((void *)desc, sizeof(sdmmc_desc_t), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+            assert(ret == ESP_OK);
+            (void)ret;
+        }
     }
 }
 
@@ -507,10 +511,7 @@ esp_err_t sd_host_slot_sdmmc_do_transaction(sd_host_slot_handle_t slot, sdmmc_co
     ESP_GOTO_ON_ERROR(sd_host_set_delay_phase(slot_ctx), out, TAG, "failed to set delay phase");
     ESP_GOTO_ON_ERROR(sd_host_set_delay_line(slot_ctx), out, TAG, "failed to set delay line");
 
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-    // cache sync related
-    size_t cache_sync_len = 0;
-#endif
+    __attribute__((unused)) size_t cache_sync_len = 0;
 
     // dispose of any events which happened asynchronously
     sd_host_handle_idle_state_events(slot_ctx);
@@ -538,13 +539,14 @@ esp_err_t sd_host_slot_sdmmc_do_transaction(sd_host_slot_handle_t slot, sdmmc_co
             goto out;
         }
 
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-        cache_sync_len = cmdinfo->buflen;
-        ret = esp_cache_msync((void *)cmdinfo->data, cache_sync_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
-        if (ret != ESP_OK) {
-            goto out;
+        bool needs_sync = esp_cache_get_line_size_by_addr(cmdinfo->data) > 0;
+        if (needs_sync) {
+            cache_sync_len = cmdinfo->buflen;
+            ret = esp_cache_msync((void *)cmdinfo->data, cache_sync_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+            if (ret != ESP_OK) {
+                goto out;
+            }
         }
-#endif
         // write transfer info into hardware
         sd_host_dma_prepare(slot_ctx, cmdinfo->data, cmdinfo->datalen, cmdinfo->blklen);
     }
@@ -573,14 +575,15 @@ esp_err_t sd_host_slot_sdmmc_do_transaction(sd_host_slot_handle_t slot, sdmmc_co
     }
     slot_ctx->ctlr->is_app_cmd = (ret == ESP_OK && cmdinfo->opcode == MMC_APP_CMD);
 
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     if (cmdinfo->data) {
-        ret = esp_cache_msync((void *)cmdinfo->data, cache_sync_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
-        if (ret != ESP_OK) {
-            goto out;
+        bool needs_sync = esp_cache_get_line_size_by_addr(cmdinfo->data) > 0;
+        if (needs_sync) {
+            ret = esp_cache_msync((void *)cmdinfo->data, cache_sync_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+            if (ret != ESP_OK) {
+                goto out;
+            }
         }
     }
-#endif
 
 out:
 #if CONFIG_PM_ENABLE

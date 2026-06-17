@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,7 +84,7 @@ TEST_CASE("ADC oneshot fast work with ISR and Flash", "[adc_oneshot]")
     //-------------ADC1 TEST Channel 0 Config---------------//
     adc_oneshot_chan_cfg_t config = {
         .bitwidth = ADC_BITWIDTH_DEFAULT,
-        .atten = ADC_ATTEN_DB_12,
+        .atten = TEST_ADC_DRIVER_DEFAULT_ATTEN,
     };
     TEST_ESP_OK(adc_oneshot_config_channel(oneshot_handle, ADC1_TEST_CHAN0, &config));
 
@@ -117,7 +117,7 @@ TEST_CASE("ADC oneshot fast work with ISR and Flash", "[adc_oneshot]")
     s_test_cache_disable_period_us(&isr_test_ctx, 100 * 1000);
     TEST_ESP_OK(gptimer_stop(timer));
     //Checks
-    TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, isr_test_ctx.adc_raw_low);
+    test_assert_adc_raw(ADC_UNIT_1, ADC1_TEST_CHAN0, false, isr_test_ctx.adc_raw_low, false, false);
     esp_rom_printf("callback runs %d times when $ disabled\n", isr_test_ctx.cb_exe_times_low);
     TEST_ASSERT_GREATER_OR_EQUAL(1, isr_test_ctx.cb_exe_times_low);
 
@@ -131,7 +131,7 @@ TEST_CASE("ADC oneshot fast work with ISR and Flash", "[adc_oneshot]")
     s_test_cache_disable_period_us(&isr_test_ctx, 100 * 1000);
     TEST_ESP_OK(gptimer_stop(timer));
     //Checks
-    TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, isr_test_ctx.adc_raw_high);
+    test_assert_adc_raw(ADC_UNIT_1, ADC1_TEST_CHAN0, true, isr_test_ctx.adc_raw_high, false, false);
     esp_rom_printf("callback runs %d times when $ disabled\n", isr_test_ctx.cb_exe_times_high);
     TEST_ASSERT_GREATER_OR_EQUAL(1, isr_test_ctx.cb_exe_times_high);
 
@@ -225,7 +225,7 @@ TEST_CASE("ADC continuous work with ISR and Flash", "[adc_continuous]")
     s_test_cache_disable_period_us(&isr_test_ctx, wait_time_us);
     TEST_ESP_OK(adc_continuous_stop(handle));
     //Checks
-    TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, isr_test_ctx.adc_raw_low);
+    test_assert_adc_raw(ADC_UNIT_1, ADC1_TEST_CHAN0, false, isr_test_ctx.adc_raw_low, false, false);
     esp_rom_printf("callback runs %d times when $ disabled\n", isr_test_ctx.cb_exe_times_low);
     //At least 1 time conv_done callback happens during this period is ok
     TEST_ASSERT_GREATER_OR_EQUAL(1, isr_test_ctx.cb_exe_times_low);
@@ -240,7 +240,7 @@ TEST_CASE("ADC continuous work with ISR and Flash", "[adc_continuous]")
     s_test_cache_disable_period_us(&isr_test_ctx, wait_time_us);
     TEST_ESP_OK(adc_continuous_stop(handle));
     //Checks
-    TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL_DMA, isr_test_ctx.adc_raw_high);
+    test_assert_adc_raw(ADC_UNIT_1, ADC1_TEST_CHAN0, true, isr_test_ctx.adc_raw_high, true, false);
     esp_rom_printf("callback runs %d times when $ disabled\n", isr_test_ctx.cb_exe_times_high);
     //At least 1 time conv_done callback happens during this period is ok
     TEST_ASSERT_GREATER_OR_EQUAL(1, isr_test_ctx.cb_exe_times_high);

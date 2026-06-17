@@ -22,7 +22,9 @@
 #include "esp_hf_ag_api.h"
 #include "bt_app_hf.h"
 #include "gpio_pcm_config.h"
+#if CONFIG_EXAMPLE_ENABLE_CONSOLE_REPL
 #include "esp_console.h"
+#endif
 #include "app_hf_msg_set.h"
 
 #define BT_HF_AG_TAG    "HF_AG_DEMO_MAIN"
@@ -119,11 +121,13 @@ void app_main(void)
     bt_app_task_start_up();
 
     /* Bluetooth device name, connection mode and profile set up */
-    bt_app_work_dispatch(bt_hf_hdl_stack_evt, BT_APP_EVT_STACK_UP, NULL, 0, NULL);
+    bt_app_work_dispatch(bt_hf_hdl_stack_evt, BT_APP_EVT_STACK_UP, NULL, 0, NULL, NULL);
 
-#if CONFIG_BT_HFP_AUDIO_DATA_PATH_PCM
+#if CONFIG_EXAMPLE_HFP_PCM_GPIO_SUPPORTED && CONFIG_BT_HFP_AUDIO_DATA_PATH_PCM
     /* configure the PCM interface and PINs used */
     app_gpio_pcm_io_cfg();
+#elif CONFIG_BT_HFP_AUDIO_DATA_PATH_PCM
+    ESP_LOGW(BT_HF_TAG, "PCM GPIO is not supported on this chip; use HCI SCO data path");
 #endif
 
     /* configure external chip for acoustic echo cancellation */
@@ -131,6 +135,7 @@ void app_main(void)
     app_gpio_aec_io_cfg();
 #endif /* ACOUSTIC_ECHO_CANCELLATION_ENABLE */
 
+#if CONFIG_EXAMPLE_ENABLE_CONSOLE_REPL
     esp_console_repl_t *repl = NULL;
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
@@ -152,4 +157,5 @@ void app_main(void)
 
     // start console REPL
     ESP_ERROR_CHECK(esp_console_start_repl(repl));
+#endif
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,14 +8,27 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "soc/soc.h"
+#include "soc/lpperi_reg.h"
 #include "soc/lpperi_struct.h"
 #include "hal/lp_clkrst_ll.h"
 
-#define RNG_LL_DEPENDS_ON_LP_PERIPH 1
+//For ESP32C5, RNG needs to be reset and enabled again when wakeup from sleep
+#define RNG_LL_NEEDS_RESET_WHEN_WAKEUP 1
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Read random data from RNG
+ *
+ * @return 32-bit random data
+ */
+static inline uint32_t rng_ll_read_data(void)
+{
+    return REG_READ(LPPERI_RNG_DATA_SYNC_REG);
+}
 
 /**
  * @brief Enable or disable RNG sampling.
@@ -81,7 +94,6 @@ static inline void rng_ll_disable(void)
     rng_ll_enable_rng_timer(false);
     _lp_clkrst_ll_enable_rng_clock(false);
 }
-
 
 #ifdef __cplusplus
 }

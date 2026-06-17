@@ -106,3 +106,11 @@ config ESP_ROM_CONSOLE_OUTPUT_SECONDARY
 config ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY
     bool
     default y
+
+config ESP_ROM_HAS_REGI2C_IMPL
+    bool
+    default y
+
+config ESP_ROM_BOOTLOADER_OFFSET_FLASH
+    hex
+    default 0x0

@@ -22,7 +22,6 @@
 #include "hal/gpio_ll.h"
 #include "soc/io_mux_reg.h"
 #include "esp_private/sleep_event.h"
-#include "esp_private/regi2c_ctrl.h"
 #include "esp_attr.h"
 
 ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk");
@@ -31,7 +30,7 @@ ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk");
 static int s_cur_cpll_freq = 0;
 
 // MPLL frequency option, 400MHz. Zero if MPLL is not enabled.
-static TCM_DRAM_ATTR uint32_t s_cur_mpll_freq = 0;
+static SPM_DRAM_ATTR uint32_t s_cur_mpll_freq = 0;
 
 void rtc_clk_32k_enable(bool enable)
 {
@@ -160,13 +159,13 @@ static void rtc_clk_cpll_configure(soc_xtal_freq_t xtal_freq, int cpll_freq)
     /* Analog part */
     ANALOG_CLOCK_ENABLE();
     /* CPLL CALIBRATION START */
-    regi2c_ctrl_ll_cpll_calibration_start();
+    clk_ll_cpll_calibration_start();
     clk_ll_cpll_set_config(cpll_freq, xtal_freq);
     /* WAIT CALIBRATION DONE */
-    while(!regi2c_ctrl_ll_cpll_calibration_is_done());
+    while(!clk_ll_cpll_calibration_is_done());
     esp_rom_delay_us(10); // wait for true stop
     /* CPLL CALIBRATION STOP */
-    regi2c_ctrl_ll_cpll_calibration_stop();
+    clk_ll_cpll_calibration_stop();
     ANALOG_CLOCK_DISABLE();
 
     s_cur_cpll_freq = cpll_freq;
@@ -643,13 +642,13 @@ bool rtc_dig_8m_enabled(void)
 }
 
 //------------------------------------MPLL-------------------------------------//
-TCM_IRAM_ATTR void rtc_clk_mpll_disable(void)
+SPM_IRAM_ATTR void rtc_clk_mpll_disable(void)
 {
     clk_ll_mpll_disable();
     s_cur_mpll_freq = 0;
 }
 
-TCM_IRAM_ATTR void rtc_clk_mpll_enable(void)
+SPM_IRAM_ATTR void rtc_clk_mpll_enable(void)
 {
     clk_ll_mpll_enable();
 }
@@ -663,12 +662,12 @@ void rtc_clk_mpll_configure(uint32_t xtal_freq, uint32_t mpll_freq, bool thread_
         ANALOG_CLOCK_ENABLE();
     }
     /* MPLL calibration start */
-    regi2c_ctrl_ll_mpll_calibration_start();
+    clk_ll_mpll_calibration_start();
     clk_ll_mpll_set_config(mpll_freq, xtal_freq);
     /* wait calibration done */
-    while(!regi2c_ctrl_ll_mpll_calibration_is_done());
+    while(!clk_ll_mpll_calibration_is_done());
     /* MPLL calibration stop */
-    regi2c_ctrl_ll_mpll_calibration_stop();
+    clk_ll_mpll_calibration_stop();
 
     if (thread_safe) {
         _regi2c_ctrl_ll_master_enable_clock(false);
@@ -678,7 +677,7 @@ void rtc_clk_mpll_configure(uint32_t xtal_freq, uint32_t mpll_freq, bool thread_
     s_cur_mpll_freq = mpll_freq;
 }
 
-TCM_IRAM_ATTR uint32_t rtc_clk_mpll_get_freq(void)
+SPM_IRAM_ATTR uint32_t rtc_clk_mpll_get_freq(void)
 {
     return s_cur_mpll_freq;
 }

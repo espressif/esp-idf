@@ -3,3 +3,6 @@ components/esp_driver_touch_sens/test_apps/touch_sens:
     - if: SOC_TOUCH_SENSOR_SUPPORTED != 1
   depends_components:
     - esp_driver_touch_sens
+    - esp_hal_touch_sens
+    - esp_hw_support
+    - soc

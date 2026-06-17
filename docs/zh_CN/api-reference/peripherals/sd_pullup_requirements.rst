@@ -90,6 +90,11 @@ SD 上拉需求
         - :ref:`sd_pull-up_no_pull-ups`
         - :ref:`strapping_conflicts_dat2`
 
+    - ESP32-WROVER-E 系列模组，包括 ESP32-WROVER-E 和 ESP32-WROVER-IE
+
+        - :ref:`sd_pull-up_no_pull-ups`
+        - :ref:`strapping_conflicts_dat2`
+
 
 .. only:: esp32
 
@@ -306,7 +311,7 @@ SD 上拉需求
 
     MTDI (GPIO12) 为 strapping 管脚，用于选择内部调节器 (VDD_SDIO) 的输出电压，为 flash 芯片供电。该管脚带有内部下拉电阻，因此若处于未连接状态，MTDI 管脚将在启动时读取低电平，选择默认的 3.3 V 操作。
 
-    除 ESP32-WROVER-B 外的所有 ESP32-WROVER 模组都使用 1.8 V flash，并在 GPIO12 上有内部上拉电阻。使用 3.3 V flash 的其他模组在 GPIO12 管脚上没有上拉电阻，并在芯片内部 GPIO12 管脚默认使能弱下拉。
+    使用 1.8 V flash 的 ESP32 模组（如 ESP32-WROVER 和 ESP32-WROVER-I），在 GPIO12 上有上拉电阻。使用 3.3 V flash 的其他 ESP32 模组，在 GPIO12 上无上拉电阻，该管脚在芯片内部为弱下拉。
 
     为 GPIO12 添加上拉电阻以进行 SD 卡操作时，请考虑以下事项：
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -110,6 +110,17 @@ extern "C" {
 #define USB_DWC_LL_INTR_CHAN_XFERCOMPL      (1 << 0)
 
 /*
+ * OTG mode configuration values for the GHWCFG2 register
+ */
+#define USB_DWC_LL_GHWCFG_OTG_MODE_HNP_SRP_OTG 0
+#define USB_DWC_LL_GHWCFG_OTG_MODE_SRP_OTG     1
+#define USB_DWC_LL_GHWCFG_OTG_MODE_OTG         2
+#define USB_DWC_LL_GHWCFG_OTG_MODE_SRP_DEVICE  3
+#define USB_DWC_LL_GHWCFG_OTG_MODE_DEVICE      4
+#define USB_DWC_LL_GHWCFG_OTG_MODE_SRP_HOST    5
+#define USB_DWC_LL_GHWCFG_OTG_MODE_HOST        6
+
+/*
  * QTD (Queue Transfer Descriptor) structure used in Scatter/Gather DMA mode.
  * Each QTD describes one transfer. Scatter gather mode will automatically split
  * a transfer into multiple MPS packets. Each QTD is 64bits in size
@@ -204,19 +215,14 @@ static inline void usb_dwc_ll_gusbcfg_force_host_mode(usb_dwc_dev_t *hw)
     hw->gusbcfg_reg.forcehstmode = 1;
 }
 
-static inline void usb_dwc_ll_gusbcfg_en_hnp_cap(usb_dwc_dev_t *hw)
+static inline void usb_dwc_ll_gusbcfg_set_hnp_cap(usb_dwc_dev_t *hw, bool hnp_cap)
 {
-    hw->gusbcfg_reg.hnpcap = 1;
+    hw->gusbcfg_reg.hnpcap = hnp_cap;
 }
 
-static inline void usb_dwc_ll_gusbcfg_dis_hnp_cap(usb_dwc_dev_t *hw)
+static inline void usb_dwc_ll_gusbcfg_set_srp_cap(usb_dwc_dev_t *hw, bool srp_cap)
 {
-    hw->gusbcfg_reg.hnpcap = 0;
-}
-
-static inline void usb_dwc_ll_gusbcfg_dis_srp_cap(usb_dwc_dev_t *hw)
-{
-    hw->gusbcfg_reg.srpcap = 0;
+    hw->gusbcfg_reg.srpcap = srp_cap;
 }
 
 static inline void usb_dwc_ll_gusbcfg_set_timeout_cal(usb_dwc_dev_t *hw, uint8_t tout_cal)
@@ -371,9 +377,62 @@ static inline uint32_t usb_dwc_ll_gsnpsid_get_id(usb_dwc_dev_t *hw)
 
 // --------------------------- GHWCFGx Register --------------------------------
 
+static inline void usb_dwc_ll_ghwcfg_get_hnp_srp_cap(usb_dwc_dev_t *hw, bool *hnp_cap, bool *srp_cap)
+{
+    const uint32_t otg_mode = hw->ghwcfg2_reg.otgmode;
+
+    if (otg_mode == USB_DWC_LL_GHWCFG_OTG_MODE_HNP_SRP_OTG) {
+        *hnp_cap = true;
+        *srp_cap = true;
+    } else if (otg_mode == USB_DWC_LL_GHWCFG_OTG_MODE_SRP_OTG ||
+               otg_mode == USB_DWC_LL_GHWCFG_OTG_MODE_SRP_DEVICE ||
+               otg_mode == USB_DWC_LL_GHWCFG_OTG_MODE_SRP_HOST) {
+        *hnp_cap = false;
+        *srp_cap = true;
+    } else {
+        *hnp_cap = false;
+        *srp_cap = false;
+    }
+}
+
 static inline unsigned usb_dwc_ll_ghwcfg_get_fifo_depth(usb_dwc_dev_t *hw)
 {
     return hw->ghwcfg3_reg.dfifodepth;
+}
+
+/**
+ * @brief Get transfer size counter width
+ *
+ * For each transfer, the USB-DWC core keeps track of number of bytes for the particular transfer.
+ * Hence, maximum transfer size is limited by (2^xfer_size_width - 1) bytes
+ *
+ * Minimum transfer size counter width is 11. So value of 0 of xfersizewidth field in the register must be interpreted as 11.
+ *
+ * @see USB-DWC databook Table 5-26
+ * @param[in] hw Start address of the DWC_OTG registers
+ * @return Effective bitwidth of the transfer size counter
+ */
+static inline unsigned usb_dwc_ll_ghwcfg_get_xfer_size_width(usb_dwc_dev_t *hw)
+{
+    return hw->ghwcfg3_reg.xfersizewidth + 11;
+}
+
+/**
+ * @brief Get packet counter width
+ *
+ * For each transfer, the USB-DWC core keeps track of the number of packets needed for the particular transfer
+ * and its endpoint's Maximum Packet Size.
+ * Hence, maximum transfer size is limited by MPS * (2^packet_counter_width - 1)
+ *
+ * Minimum packet counter width is 4. So value of 0 of pktsizewidth field in the register must be interpreted as 4.
+ *
+ * @see USB-DWC databook Table 5-26
+ * @param[in] hw Start address of the DWC_OTG registers
+ * @return Effective bitwidth of the packet counter
+ */
+static inline unsigned usb_dwc_ll_ghwcfg_get_packet_size_width(usb_dwc_dev_t *hw)
+{
+    return hw->ghwcfg3_reg.pktsizewidth + 4;
 }
 
 static inline unsigned usb_dwc_ll_ghwcfg_get_hsphy_type(usb_dwc_dev_t *hw)
@@ -1047,6 +1106,24 @@ FORCE_INLINE_ATTR bool usb_dwc_ll_get_bvalid_override(usb_dwc_dev_t *hw)
 FORCE_INLINE_ATTR void usb_dwc_ll_enable_bvalid_override(usb_dwc_dev_t *hw, bool override)
 {
     hw->gotgctl_reg.bvalidoven = override;
+}
+
+/**
+ * @brief Software-anchor OTG session comparators for internal UTMI HS host (ESP32-P4).
+ *
+ * The HS USB-DWC instance does not expose ID / VBUSVALID / AVALID through the GPIO matrix
+ * (see `usb_dwc_periph.c`: `otg_signals` is NULL for controller 0). The FS controller uses
+ * constant matrix inputs in `usb_phy_otg_set_mode()` instead;
+ * When GUSBCFG.HNPCap is set, the OTG session logic still runs; floating or
+ * weak internal sense can make the host port unstable. This mirrors the FS host strap values:
+ * VBUS valid and A-session valid asserted
+ */
+FORCE_INLINE_ATTR void usb_dwc_ll_gotgctl_anchor_internal_utmi_a_host(usb_dwc_dev_t *hw, bool set_hst_set_hnp_en)
+{
+    hw->gotgctl_reg.vbvalidoven = 1;
+    hw->gotgctl_reg.vbvalidovval = 1;
+    hw->gotgctl_reg.avalidoven = 1;
+    hw->gotgctl_reg.avalidovval = 1;
 }
 
 // ---------------------------- Power and Clock Gating Register --------------------------------

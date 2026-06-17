@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,5 +84,37 @@ void rtcio_hal_isolate(int rtcio_num)
     rtcio_ll_output_disable(rtcio_num);
     rtcio_ll_input_disable(rtcio_num);
 }
+
+void rtcio_hal_iomux_input(int rtcio_num, int func, uint32_t signal_idx)
+{
+    rtcio_ll_input_enable(rtcio_num);
+    rtcio_ll_iomux_func_sel(rtcio_num, func);
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
+    rtcio_ll_set_input_signal_from(signal_idx, false);
+#endif
+}
+
+void rtcio_hal_iomux_output(int rtcio_num, int func)
+{
+    rtcio_ll_iomux_func_sel(rtcio_num, func);
+    // as long as the func sel is not RTC IO, the oe can only be controlled by the peripheral
+}
+
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
+void rtcio_hal_matrix_in(int rtcio_num, uint32_t signal_idx, bool inv)
+{
+    if (rtcio_num < SOC_RTCIO_PIN_COUNT) {
+        rtcio_ll_input_enable(rtcio_num);
+    }
+    rtcio_ll_set_input_signal_matrix_source(rtcio_num, signal_idx, inv);
+}
+
+void rtcio_hal_matrix_out(int rtcio_num, uint32_t signal_idx, bool out_inv, bool oen_inv)
+{
+    rtcio_ll_iomux_func_sel(rtcio_num, RTCIO_LL_PIN_FUNC);
+    rtcio_ll_set_output_signal_matrix_source(rtcio_num, signal_idx, out_inv);
+    rtcio_ll_set_output_enable_ctrl(rtcio_num, true, oen_inv); // output is enabled at the end to avoid undesired level change
+}
+#endif // SOC_LP_GPIO_MATRIX_SUPPORTED
 
 #endif //SOC_RTCIO_INPUT_OUTPUT_SUPPORTED

@@ -53,6 +53,7 @@ extern "C" {
   *     LP_AON_STORE7_REG       FAST_RTC_MEMORY_CRC
   *     LP_AON_STORE8_REG       Store light sleep wake stub addr
   *     LP_AON_STORE9_REG       Store the sleep mode at bit[0]  (0:light sleep 1:deep sleep)
+  *     LP_AON_STORE9_REG       LP core store wakeup cause at bit[31:2]
   *************************************************************************************
   */
 
@@ -66,6 +67,7 @@ extern "C" {
 #define RTC_MEMORY_CRC_REG                  LP_AON_STORE7_REG
 #define RTC_SLEEP_WAKE_STUB_ADDR_REG        LP_AON_STORE8_REG
 #define RTC_SLEEP_MODE_REG                  LP_AON_STORE9_REG
+#define RTC_LP_CORE_STORE_WAKEUP_REG        LP_AON_STORE9_REG
 
 #define RTC_DISABLE_ROM_LOG ((1 << 0) | (1 << 16)) //!< Disable logging from the ROM code.
 

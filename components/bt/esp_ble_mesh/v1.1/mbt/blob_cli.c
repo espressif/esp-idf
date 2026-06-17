@@ -1127,7 +1127,7 @@ static void progress_checked(struct bt_mesh_blob_cli *cli)
 
     cli->state = BT_MESH_BLOB_CLI_STATE_NONE;
 
-    if (cli->cb && cli->cb->end) {
+    if (cli->cb && cli->cb->xfer_progress_complete) {
         cli->cb->xfer_progress_complete(cli);
     }
 }
@@ -1269,8 +1269,11 @@ static int handle_xfer_status(const struct bt_mesh_model *mod, struct bt_mesh_ms
     info.mode = status_and_mode >> 6;
     info.phase = net_buf_simple_pull_u8(buf);
 
-    if (buf->len) {
+    if (buf->len >= 8) {
         info.id = net_buf_simple_pull_le64(buf);
+    } else if (buf->len > 0) {
+        BT_WARN("Invalid ID field length: %u", buf->len);
+        return -EINVAL;
     }
 
     if (buf->len >= 7) {
@@ -1278,6 +1281,9 @@ static int handle_xfer_status(const struct bt_mesh_model *mod, struct bt_mesh_ms
         info.block_size_log = net_buf_simple_pull_u8(buf);
         info.mtu_size = net_buf_simple_pull_le16(buf);
         info.missing_blocks = net_buf_simple_pull(buf, buf->len);
+    } else if (buf->len > 0) {
+        BT_WARN("Invalid extended field length: %u", buf->len);
+        return -EINVAL;
     }
 
     BT_DBG("status: %u %s phase: %u %s", info.status,
@@ -1358,8 +1364,9 @@ static int handle_block_report(const struct bt_mesh_model *mod, struct bt_mesh_m
         int idx;
 
         idx = chunk_idx_decode(buf);
-        if (idx < 0) {
-            return idx;
+        if (idx < 0 || idx >= cli->block.chunk_count) {
+            BT_ERR("Invalid encoding");
+            return -EINVAL;
         }
 
         blob_chunk_missing_set(status.block.missing, idx, true);
@@ -1401,6 +1408,10 @@ static int handle_block_status(const struct bt_mesh_model *mod, struct bt_mesh_m
     status.missing = status_and_format >> 6;
     status.block.number = net_buf_simple_pull_le16(buf);
     chunk_size = net_buf_simple_pull_le16(buf);
+    if (chunk_size == 0) {
+        BT_ERR("Invalid chunk_size: 0");
+        return -EINVAL;
+    }
     status.block.chunk_count =
         DIV_ROUND_UP(cli->block.size, chunk_size);
 
@@ -1638,6 +1649,7 @@ int bt_mesh_blob_cli_suspend(struct bt_mesh_blob_cli *cli)
         return -EINVAL;
     }
 
+    io_close(cli);
     cli->state = BT_MESH_BLOB_CLI_STATE_SUSPENDED;
     (void)k_work_cancel_delayable(&cli->tx.retry);
     cli->tx.ctx.is_inited = 0;
@@ -1668,8 +1680,8 @@ int bt_mesh_blob_cli_resume(struct bt_mesh_blob_cli *cli)
         return -ENODEV;
     }
 
-    block_set(cli, 0);
-    return xfer_start(cli);
+    block_start(cli);
+    return 0;
 }
 
 void bt_mesh_blob_cli_cancel(struct bt_mesh_blob_cli *cli)
@@ -1683,6 +1695,9 @@ void bt_mesh_blob_cli_cancel(struct bt_mesh_blob_cli *cli)
 
     if (cli->state == BT_MESH_BLOB_CLI_STATE_CAPS_GET ||
             cli->state == BT_MESH_BLOB_CLI_STATE_SUSPENDED) {
+        if (cli->state == BT_MESH_BLOB_CLI_STATE_SUSPENDED) {
+            io_close(cli);
+        }
         cli_state_reset(cli);
         return;
     }
@@ -1715,7 +1730,7 @@ int bt_mesh_blob_cli_xfer_progress_get(struct bt_mesh_blob_cli *cli,
 
 uint8_t bt_mesh_blob_cli_xfer_progress_active_get(struct bt_mesh_blob_cli *cli)
 {
-    if (cli->state < BT_MESH_BLOB_CLI_STATE_START) {
+    if (cli->state < BT_MESH_BLOB_CLI_STATE_START || cli->block_count == 0) {
         return 0;
     }
 

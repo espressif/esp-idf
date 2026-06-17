@@ -60,4 +60,5 @@ TEST_CASE("rtos_systick_etm_event", "[etm]")
     TEST_ESP_OK(esp_etm_del_event(systick_event));
     TEST_ESP_OK(esp_etm_channel_disable(etm_channel_a));
     TEST_ESP_OK(esp_etm_del_channel(etm_channel_a));
+    TEST_ESP_OK(gpio_reset_pin(output_gpio));
 }

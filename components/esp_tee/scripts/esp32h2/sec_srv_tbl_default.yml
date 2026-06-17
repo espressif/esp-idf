@@ -245,6 +245,10 @@ secure_services:
         type: IDF
         function: esp_sha_set_mode
         args: 1
+      - id: 112
+        type: IDF
+        function: esp_ds_encrypt_params_using_key_type
+        args: 5
   # ID: 134-169 (36) - Reserved for future use
   - family: attestation
     entries:
@@ -278,11 +282,11 @@ secure_services:
       - id: 179
         type: custom
         function: esp_tee_sec_storage_aead_encrypt
-        args: 4
+        args: 6
       - id: 180
         type: custom
         function: esp_tee_sec_storage_aead_decrypt
-        args: 4
+        args: 6
       - id: 181
         type: custom
         function: esp_tee_sec_storage_ecdsa_sign_pbkdf2

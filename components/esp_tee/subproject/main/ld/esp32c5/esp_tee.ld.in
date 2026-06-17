@@ -36,6 +36,8 @@ PROVIDE ( esp_tee_app_config        = SRAM_REE_SEG_START + 0x2b0 );
 PROVIDE ( GDMA                      = 0x60080000 );
 
 /* SPI Flash functions required from the ROM (refer esp32c5.rom.spiflash.ld) */
+PROVIDE ( rom_spi_flash_disable_cache                = 0x40000204 );
+PROVIDE ( rom_spi_flash_restore_cache                = 0x40000208 );
 PROVIDE ( spi_flash_check_and_flush_cache            = 0x40000230 );
 PROVIDE ( spi_flash_chip_generic_config_host_io_mode = 0x400002d4 );
 PROVIDE ( memspi_host_flush_cache                    = 0x40000318 );
@@ -96,7 +98,7 @@ SECTIONS
     /* HAL */
     *libhal.a:mmu_hal.c*(.literal .text .literal.* .text.*)
     *libhal.a:cache_hal.c*(.literal .text .literal.* .text.*)
-    *libhal.a:apm_hal.c*(.literal .text .literal.* .text.*)
+    *libesp_hal_security.a:apm_hal.c*(.literal .text .literal.* .text.*)
     *libesp_hal_mspi.a:*(.literal .text .literal.* .text.*)
     *libesp_hal_wdt.a:*(.literal .text .literal.* .text.*)
     /* IDF components */
@@ -236,8 +238,3 @@ ASSERT ((_tee_iram_end <= _tee_dram_start),
         "Error: TEE IRAM segment overflowed into the DRAM segment! Increase CONFIG_SECURE_TEE_IRAM_SIZE as required.");
 ASSERT((_tee_heap_end >= _tee_heap_start + 0x2000),
         "Error: TEE heap size is too small - minimum is 8KB (0x2000)! Increase CONFIG_SECURE_TEE_DRAM_SIZE as required.");
-/* MMU Page Alignment Checks */
-ASSERT ((CONFIG_SECURE_TEE_IROM_SIZE % 0x10000) == 0,
-        "Error: SECURE_TEE_IROM_SIZE must be a multiple of MMU_PAGE_SIZE (0x10000/64KB)!");
-ASSERT ((CONFIG_SECURE_TEE_DROM_SIZE % 0x10000) == 0,
-        "Error: SECURE_TEE_DROM_SIZE must be a multiple of MMU_PAGE_SIZE (0x10000/64KB)!");

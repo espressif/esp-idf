@@ -31,5 +31,5 @@ if(NOT CONFIG_I2C_MASTER_ISR_HANDLER_IN_IRAM)
 endif()
 
 idf_component_register(SRCS ${srcs}
-                       PRIV_REQUIRES esp_driver_i2c unity esp_driver_uart test_utils esp_pm esp_driver_gptimer
+                       PRIV_REQUIRES esp_driver_i2c unity esp_driver_uart test_utils esp_pm esp_driver_gptimer esp_psram
                        WHOLE_ARCHIVE)

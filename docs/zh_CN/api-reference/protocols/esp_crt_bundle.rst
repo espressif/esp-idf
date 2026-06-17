@@ -8,15 +8,11 @@ ESP x509 证书包
 
 ESP x509 证书包 API 提供了一种简便的方法，帮助你安装自定义 x509 根证书用于 TLS 服务器验证。
 
-.. note::
-
-    目前在使用 WolfSSL 时该证书包不可用。
-
 该证书包中包括 Mozilla NSS 根证书存储区的完整根证书列表。使用 gen_crt_bundle.py python 程序，可将证书的主题名称和公钥存储在文件中，并嵌入 {IDF_TARGET_NAME} 二进制文件。
 
 生成证书包时，你需选择：
 
-* 来自 Mozilla 的完整根证书包，包含超过 130 份证书。目前提供的证书包更新于 2025 年 12 月 2 日，星期二, 04:12:02 (GMT)。
+* 来自 Mozilla 的完整根证书包，包含超过 130 份证书。目前提供的证书包更新于 2026 年 5 月 14 日，星期四, 03:12:02 (GMT)。
 * 一组预先筛选的常用根证书。其中仅包含约 38 份证书，但根据 SSL 证书颁发机构统计数据，其绝对使用率约达到 93%，市场覆盖率约达 99%。
 
 此外，还可指定证书文件的路径或包含证书的目录，将其他证书添加到生成的证书包中。
@@ -67,7 +63,7 @@ ESP x509 证书包 API 提供了一种简便的方法，帮助你安装自定义
 
 常用证书包是通过筛选出市场份额超过 1% 的授权机构来决定的，筛选数据来自 w3tech 的 `SSL Survey <https://w3techs.com/technologies/overview/ssl_certificate>`_。
 
-根据这些授权机构，从 Mozilla 提供的 `列表 <https://ccadb-public.secure.force.com/mozilla/IncludedCACertificateReportPEMCSV>`_ 的 ``cmn_crt_authorities.csv`` 中筛选证书名称。
+根据这些授权机构，从 Mozilla 提供的 `Included CA Certificate List <https://ccadb.my.salesforce-sites.com/mozilla/IncludedRootCertificateReportCSVFormat>`_ 中筛选 ``cmn_crt_authorities.csv`` 所需的证书名称。
 
 
 更新证书包

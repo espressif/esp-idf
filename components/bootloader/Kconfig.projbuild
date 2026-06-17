@@ -6,10 +6,7 @@ menu "Bootloader config"
 
     config BOOTLOADER_OFFSET_IN_FLASH
         hex
-        default 0x1000 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2
-        # the first 2 sectors are reserved for the key manager with AES-XTS (flash encryption) purpose
-        default 0x2000 if IDF_TARGET_ESP32P4 || IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32H4 || IDF_TARGET_ESP32S31
-        default 0x0
+        default ESP_ROM_BOOTLOADER_OFFSET_FLASH
         help
             Offset address that 2nd bootloader will be flashed to.
             The value is determined by the ROM bootloader.
@@ -41,8 +38,7 @@ menu "Bootloader config"
 
     config BOOTLOADER_CPU_CLK_FREQ_MHZ
         int
-        default 48 if IDF_TARGET_ESP32H21
-        default 64 if IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32H4
+        default 64 if IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32H4 || IDF_TARGET_ESP32H21
         default 90 if IDF_TARGET_ESP32P4 && ESP32P4_SELECTS_REV_LESS_V3
         default 100 if IDF_TARGET_ESP32P4 && !ESP32P4_SELECTS_REV_LESS_V3
         default 80
@@ -284,6 +280,7 @@ menu "Bootloader config"
 
     config BOOTLOADER_WDT_ENABLE
         bool "Use RTC watchdog in start code"
+        depends on SOC_RTC_WDT_SUPPORTED
         default y
         help
             Tracks the execution time of startup code.
@@ -479,6 +476,18 @@ menu "Security features"
         default y
         depends on SOC_SECURE_BOOT_V2_ECC
 
+    # ECDSA based Secure Boot V2 is not functional for certain input vectors on these
+    # SoCs. The scheme stays available but, for hardware Secure Boot, must be explicitly
+    # turned on via SECURE_BOOT_V2_FORCE_ENABLE_ECDSA under "Allow potentially insecure
+    # options" (CONFIG_SECURE_BOOT_INSECURE).
+    #
+    # TODO: IDF-15721 - drop a SoC from this list once a fixing hardware ECO revision
+    # ships, gating on the selected minimum chip revision, e.g.:
+    #     default y if IDF_TARGET_ESP32C5 && ESP32C5_REV_MIN_FULL < <fixed_rev>
+    config SECURE_BOOT_V2_ECDSA_INSECURE
+        bool
+        default y if IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32C61 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32P4
+
     config SECURE_BOOT_V1_SUPPORTED
         bool
         default y
@@ -550,6 +559,10 @@ menu "Security features"
         config SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
             bool "ECDSA (V2)"
             depends on SECURE_BOOT_V2_ECC_SUPPORTED && (SECURE_SIGNED_APPS_NO_SECURE_BOOT || SECURE_BOOT_V2_ENABLED)
+            # On the affected SoCs (SECURE_BOOT_V2_ECDSA_INSECURE), hardware Secure Boot with ECDSA
+            # is offered only when SECURE_BOOT_V2_FORCE_ENABLE_ECDSA is explicitly set. App signing
+            # without hardware Secure Boot is not affected by this gate.
+            depends on !SECURE_BOOT_V2_ENABLED || (!SECURE_BOOT_V2_ECDSA_INSECURE || SECURE_BOOT_V2_FORCE_ENABLE_ECDSA)
             help
                 For Secure boot V2 (e.g., ESP32-C2 SoC), appends ECDSA based signature block to the application.
                 Refer to documentation before enabling.
@@ -561,19 +574,12 @@ menu "Security features"
         depends on SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
         default SECURE_BOOT_ECDSA_KEY_LEN_256_BITS
         help
-            Select the ECDSA key size. Three key sizes are supported depending upon on the target:
+            Select the ECDSA key size. Two key sizes are supported depending on the target:
 
-            - 192 bit key using NISTP192 curve
             - 256 bit key using NISTP256 curve (Recommended)
             - 384 bit key using NISTP384 curve (Recommended)
 
-            The advantage of using 384 and 256 bit keys is the extra randomness which makes it difficult to be
-            bruteforced compared to 192 bit key.
             At present, both key sizes are practically implausible to bruteforce.
-
-        config SECURE_BOOT_ECDSA_KEY_LEN_192_BITS
-            bool "Using ECC curve NISTP192"
-            depends on SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
 
         config SECURE_BOOT_ECDSA_KEY_LEN_256_BITS
             bool "Using ECC curve NISTP256 (Recommended)"
@@ -708,7 +714,8 @@ menu "Security features"
             Path to the key file used to sign app images.
 
             Key file is an ECDSA private key (NIST256p curve) in PEM format for Secure Boot V1.
-            Key file is an RSA private key in PEM format for Secure Boot V2.
+            Key file is an RSA private key in PEM format for Secure Boot V2 (RSA scheme).
+            Key file is an ECDSA private key (256p or 384p) in PEM format for Secure Boot V2 (ECDSA scheme).
 
             Path is evaluated relative to the project directory.
 
@@ -938,6 +945,19 @@ menu "Security features"
         # it's possible for the insecure menu to be disabled but the insecure option
         # to remain on which is very bad.)
 
+        config SECURE_BOOT_V2_FORCE_ENABLE_ECDSA
+            bool "Force enable ECDSA based Secure Boot V2"
+            depends on SECURE_BOOT_INSECURE && SECURE_BOOT_V2_ECDSA_INSECURE
+            default n
+            help
+                ECDSA based Secure Boot V2 is not functional for certain input vectors on this SoC
+                and is therefore not offered by default. Refer to the hardware errata document for
+                details.
+
+                Setting this option re-enables the ECDSA based Secure Boot V2 signing scheme despite
+                the known vulnerability. Only set this option if you fully understand the risk. RSA
+                based Secure Boot V2 is the recommended scheme on SoCs that support it.
+
         config SECURE_BOOT_ALLOW_ROM_BASIC
             bool "Leave ROM BASIC Interpreter available on reset"
             depends on (SECURE_BOOT_INSECURE || SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT) && IDF_TARGET_ESP32
@@ -990,13 +1010,8 @@ menu "Security features"
                 Revoking unused digest slots makes ensures that no trusted keys can be added later by an attacker.
                 If set, it means that you have a plan to use unused digests slots later.
 
-                Note that if you plan to enable secure boot during the first boot up, the bootloader will intentionally
-                revoke the unused digest slots while enabling secure boot, even if the above config is enabled because
-                keeping the unused key slots un-revoked would a security hazard.
-                In case for any development workflow if you need to avoid this revocation, you should enable
-                secure boot externally (host based mechanism) rather than enabling it during the boot up,
-                so that the bootloader would not need to enable secure boot and thus you could avoid its revocation
-                strategy.
+                This config is honored both at runtime in the app and while enabling secure boot during the first
+                boot up in the bootloader. When set, the unused digest slots are left un-revoked in both cases.
 
         config SECURE_BOOT_SKIP_WRITE_PROTECTION_SCA
             bool "Skip write-protection of SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH"

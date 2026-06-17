@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include "esp_vfs_fat.h"
 #include "diskio_impl.h"
 #include "esp_partition.h"
+#include "esp_blockdev.h"
 #ifndef CONFIG_IDF_TARGET_LINUX
 #include "sdmmc_cmd.h"
 #endif
@@ -35,6 +36,13 @@ static inline size_t esp_vfs_fat_get_allocation_unit_size(
     alloc_unit_size = MIN(alloc_unit_size, max_size);
     return alloc_unit_size;
 }
+
+typedef struct vfs_fat_bdl_ctx_t {
+    esp_blockdev_handle_t bdl_handle;           //BDL device handle
+    BYTE pdrv;                                  //Drive number that is mounted
+    FATFS *fs;                                  //FAT structure pointer that is registered
+    esp_vfs_fat_mount_config_t mount_config;    //Mount configuration
+} vfs_fat_bdl_ctx_t;
 
 #ifndef CONFIG_IDF_TARGET_LINUX
 typedef struct vfs_fat_sd_ctx_t {

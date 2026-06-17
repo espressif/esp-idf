@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import os.path
 import re
@@ -10,23 +10,76 @@ import pytest
 import serial
 from pytest_embedded_idf import IdfDut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 if typing.TYPE_CHECKING:
     from conftest import OpenOCD
 
 
-def _validate_trace_data(trace_log: list[str], target: str) -> None:
+def _validate_trace_data(trace_log: list[str], target: str, is_uart: bool = False) -> None:
     """Validate SysView trace data in log file(s).
 
     Args:
         trace_log: List of trace log paths
         target: Target chip name (e.g., 'esp32', 'esp32s3')
+        is_uart: If True, also validate STOP record at end of file
     """
+    STOP_EVENT_ID = 0x0B  # SYSVIEW_EVTID_TRACE_STOP
+
     for idx, log in enumerate(trace_log):
         with open(log, 'rb') as f:
             content = f.read()
             search_str = f'N=FreeRTOS Application,D={target},C=core{idx},O=FreeRTOS'.encode()
             assert search_str in content, f'SysView trace data not found in {log}'
+
+            # For UART transport, validate STOP record at end of file
+            # TODO: Adapt this to JTAG as well.
+            if is_uart:
+                size = len(content)
+                assert size >= 2, 'Trace file too small to contain STOP record'
+                assert content[-2] == STOP_EVENT_ID, 'STOP record does not start with STOP eventID'
+
+
+def _capture_sysview_trace(ser: serial.Serial, trace_log_path: str) -> None:
+    """Capture SysView trace data from serial port.
+
+    Args:
+        ser: Serial port instance
+        trace_log_path: Path to save the trace log
+    """
+    START_CMD = b'\x01'
+    STOP_CMD = b'\x02'
+
+    ser.reset_input_buffer()
+    # Send Start command to start SysView tracing
+    ser.write(START_CMD)
+
+    with open(trace_log_path, 'w+b') as f:
+        # Capture for 3 seconds
+        end_time = time.time() + 3.0
+        while time.time() < end_time:
+            try:
+                if ser.in_waiting:
+                    f.write(ser.read(ser.in_waiting))
+            except serial.SerialTimeoutException:
+                assert False, 'Timeout reached while reading from serial port, exiting...'
+
+        # Wait some time to let data accumulate in target's ring buffer
+        time.sleep(0.2)
+
+        # Send Stop command
+        ser.write(STOP_CMD)
+
+        # Capture until target flushed data or timeout (3 seconds)
+        end_time = time.time() + 3.0
+        last_data_time = time.time()
+        while time.time() < end_time and (time.time() - last_data_time) <= 1.0:
+            try:
+                if ser.in_waiting:
+                    f.write(ser.read(ser.in_waiting))
+                    last_data_time = time.time()
+            except serial.SerialTimeoutException:
+                assert False, 'Timeout reached while reading from serial port, exiting...'
 
 
 def _test_sysview_tracing_jtag(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
@@ -52,6 +105,7 @@ def _test_sysview_tracing_jtag(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
     def dut_expect_task_event() -> None:
         dut.expect(re.compile(rb'example: Task\[0x[0-9A-Fa-f]+\]: received event \d+'), timeout=30)
 
+    time.sleep(1)  # Wait for the USJ port to be ready
     dut.expect_exact('example: Hello from sysview_tracing example!', timeout=5)
     with (
         openocd_dut.run() as openocd,
@@ -85,8 +139,11 @@ def test_sysview_tracing_jtag(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
 @pytest.mark.usb_serial_jtag
 @idf_parametrize('config', ['sysview_jtag'], indirect=['config'])
 @idf_parametrize(
-    'target', ['esp32s3', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4'], indirect=['target']
+    'target',
+    ['esp32s3', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32h4'],
+    indirect=['target'],
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-10703')
 def test_sysview_tracing_usj(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
     _test_sysview_tracing_jtag(openocd_dut, dut)
 
@@ -94,31 +151,16 @@ def test_sysview_tracing_usj(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
 def _test_sysview_tracing_uart(dut: IdfDut) -> None:
     dut.serial.close()
     time.sleep(2)  # Wait for the DUT to reboot
-    with serial.Serial(dut.serial.port, baudrate=dut.app.sdkconfig.get('APPTRACE_UART_BAUDRATE'), timeout=10) as ser:
+    with serial.Serial(dut.serial.port, baudrate=dut.app.sdkconfig.get('APPTRACE_UART_BAUDRATE'), timeout=3) as ser:
         trace_log = [os.path.join(dut.logdir, 'sys_log_uart.svdat')]  # pylint: disable=protected-access
-        # Send Start command to start SysView tracing
-        ser.write(b'\x01')
-        with open(trace_log[0], 'w+b') as f:
-            start_time = time.time()
-            while True:
-                try:
-                    if ser.in_waiting:
-                        data = ser.read(1024)
-                        f.write(data)
-                    if time.time() - start_time > 3:
-                        break
-                except serial.SerialTimeoutException:
-                    assert False, 'Timeout reached while reading from serial port, exiting...'
-
-            # Send Stop command
-            ser.write(b'\x02')
-
-        _validate_trace_data(trace_log, dut.target)
+        _capture_sysview_trace(ser, trace_log[0])
+        _validate_trace_data(trace_log, dut.target, is_uart=True)
 
 
 @pytest.mark.generic
 @idf_parametrize('config', ['sysview_uart'], indirect=['config'])
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='bringup on this module is not done')
 def test_sysview_tracing_uart(dut: IdfDut) -> None:
     _test_sysview_tracing_uart(dut)
 
@@ -129,3 +171,16 @@ def test_sysview_tracing_uart(dut: IdfDut) -> None:
 @idf_parametrize('target', ['esp32c2'], indirect=['target'])
 def test_sysview_tracing_uart_c2(dut: IdfDut) -> None:
     _test_sysview_tracing_uart(dut)
+
+
+@pytest.mark.usb_serial_jtag
+@idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
+@pytest.mark.parametrize('config', [pytest.param('sysview_usj')], indirect=True)
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32s31'], reason='lack of runner # TODO: IDFCI-10703')
+def test_sysview_tracing_usj_serial(dut: IdfDut) -> None:
+    time.sleep(1)  # wait for USJ port to be ready
+    usj_port = '/dev/serial_ports/ttyACM-esp32'
+    ser = serial.Serial(usj_port, baudrate=1000000, timeout=10)
+    trace_log = [os.path.join(dut.logdir, 'sys_log_usj.svdat')]  # pylint: disable=protected-access
+    _capture_sysview_trace(ser, trace_log[0])
+    _validate_trace_data(trace_log, dut.target, is_uart=True)

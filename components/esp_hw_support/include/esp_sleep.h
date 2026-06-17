@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,11 +41,18 @@ typedef enum {
 #endif
 #endif
 
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+#if SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 typedef enum {
     ESP_GPIO_WAKEUP_GPIO_LOW = 0,
-    ESP_GPIO_WAKEUP_GPIO_HIGH = 1
-} esp_deepsleep_gpio_wake_up_mode_t;
+    ESP_GPIO_WAKEUP_GPIO_HIGH = 1,
+#if SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED
+    ESP_GPIO_WAKEUP_GPIO_POSEDGE = 2,
+    ESP_GPIO_WAKEUP_GPIO_NEGEDGE = 3,
+    ESP_GPIO_WAKEUP_GPIO_ANYEDGE = 4,
+#endif
+} esp_sleep_gpio_wake_up_mode_t;
+
+#define WAKEUP_MODE_2_INT_TYPE(mode) ((gpio_int_type_t)((0x32154 >> ((mode) * 4)) & 0xF))
 #endif
 
 /**
@@ -112,9 +119,18 @@ typedef enum {
     ESP_SLEEP_WAKEUP_TOUCHPAD,          //!< Wakeup caused by touchpad
     ESP_SLEEP_WAKEUP_ULP,               //!< Wakeup caused by ULP program
     ESP_SLEEP_WAKEUP_GPIO,              //!< Wakeup caused by GPIO (light sleep only on ESP32, S2 and S3)
-    ESP_SLEEP_WAKEUP_UART,              //!< Wakeup caused by UART0 (light sleep only)
+    ESP_SLEEP_WAKEUP_UART0,             //!< Wakeup caused by UART0 (light sleep only)
+    ESP_SLEEP_WAKEUP_UART = ESP_SLEEP_WAKEUP_UART0,
     ESP_SLEEP_WAKEUP_UART1,             //!< Wakeup caused by UART1 (light sleep only)
+#if (SOC_UART_HP_NUM > 2) && !SOC_PM_RTC_NOT_SUPPORT_UART2_WAKEUP
     ESP_SLEEP_WAKEUP_UART2,             //!< Wakeup caused by UART2 (light sleep only)
+#endif
+#if (SOC_UART_HP_NUM > 3)
+    ESP_SLEEP_WAKEUP_UART3,             //!< Wakeup caused by UART3 (light sleep only)
+#endif
+#if (SOC_UART_HP_NUM > 4)
+    ESP_SLEEP_WAKEUP_UART4,             //!< Wakeup caused by UART4 (light sleep only)
+#endif
     ESP_SLEEP_WAKEUP_WIFI,              //!< Wakeup caused by WIFI (light sleep only)
     ESP_SLEEP_WAKEUP_COCPU,             //!< Wakeup caused by COCPU int
     ESP_SLEEP_WAKEUP_COCPU_TRAP_TRIG,   //!< Wakeup caused by COCPU crash
@@ -452,14 +468,15 @@ __attribute__((deprecated("please use 'esp_sleep_enable_ext1_wakeup_io' and 'esp
 #endif // SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
 #endif // SOC_PM_SUPPORT_EXT1_WAKEUP
 
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+#if SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 /**
  * @brief Enable wakeup using specific gpio pins
  *
- * This function enables an IO pin to wake up the chip from deep sleep.
+ * This function enables an IO pin to wake up the chip from peripheral powerdowned sleep.
+ * (including deepsleep and peripheral powerdowned lightsleep).
  *
  * @note 1.This function does not modify pin configuration. The pins are configured
- *          inside `esp_deep_sleep_start`, immediately before entering sleep mode.
+ *          inside `esp_sleep_start`, immediately before entering sleep mode.
  *       2.This function is also applicable to waking up the lightsleep when the peripheral
  *         power domain is powered off, see PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP in menuconfig.
  *
@@ -472,24 +489,27 @@ __attribute__((deprecated("please use 'esp_sleep_enable_ext1_wakeup_io' and 'esp
  *       and external resistors may cause interference. BTW, when you use low level to wake up the
  *       chip, we strongly recommend you to add external resistors (pull-up).
  *
+ * @note The wakeup signal must be held (level mode) or have a pulse width (edge mode)
+ *       of at least 3 RTC slow-clock cycles to be reliably sampled by the wakeup logic.
+ *       The duration of one slow-clock cycle depends on `CONFIG_RTC_CLK_SRC` (e.g.
+ *       RC_SLOW @ ~136 kHz ~= 7.4 us/cycle, XTAL32K @ 32.768 kHz ~= 30.5 us/cycle).
+ *
  * @param gpio_pin_mask  Bit mask of GPIO numbers which will cause wakeup. Only GPIOs
  *              which have RTC functionality (pads that powered by VDD3P3_RTC) can be used in this bit map.
- * @param mode Select logic function used to determine wakeup condition:
- *            - ESP_GPIO_WAKEUP_GPIO_LOW: wake up when the gpio turn to low.
- *            - ESP_GPIO_WAKEUP_GPIO_HIGH: wake up when the gpio turn to high.
+ * @param mode Wakeup condition, see esp_sleep_gpio_wake_up_mode_t.
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_INVALID_ARG if the mask contains any invalid deep sleep wakeup pin or wakeup mode is invalid
+ *      - ESP_ERR_INVALID_ARG if the mask contains any invalid wakeup pin or wakeup mode is invalid
  */
-esp_err_t esp_deep_sleep_enable_gpio_wakeup(uint64_t gpio_pin_mask, esp_deepsleep_gpio_wake_up_mode_t mode);
+esp_err_t esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown(uint64_t gpio_pin_mask, esp_sleep_gpio_wake_up_mode_t mode);
 #endif
 
 /**
  * @brief Enable wakeup from light sleep using GPIOs
  *
  * Each GPIO supports wakeup function, which can be triggered on either low level
- * or high level. Unlike EXT0 and EXT1 wakeup sources, this method can be used
- * both for all IOs: RTC IOs and digital IOs. It can only be used to wakeup from
+ * or high level. This method can be used with any IO (RTC or digital), whereas
+ * external RTC wakeup is limited to RTC GPIOs. It can only be used to wakeup from
  * light sleep though.
  *
  * To enable wakeup, first call gpio_wakeup_enable, specifying gpio number and
@@ -499,7 +519,7 @@ esp_err_t esp_deep_sleep_enable_gpio_wakeup(uint64_t gpio_pin_mask, esp_deepslee
  * @note 1. On ESP32, GPIO wakeup source can not be used together with touch or ULP wakeup sources.
  *       2. If PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP is enabled (if target supported),
  *          this API is unavailable since the GPIO module is powered down during sleep.
- *          You can use `esp_deep_sleep_enable_gpio_wakeup` instead, or use EXT1 wakeup source
+ *          You can use `esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown` instead, or use EXT1 wakeup source
  *          by `esp_sleep_enable_ext1_wakeup_io` to achieve the same function.
  *          (Only GPIOs which have RTC functionality can be used)
  *
@@ -512,13 +532,14 @@ esp_err_t esp_sleep_enable_gpio_wakeup(void);
 /**
  * @brief Enable wakeup from light sleep using UART
  *
- * Use uart_set_wakeup_threshold function to configure UART wakeup threshold.
+ * Use uart_wakeup_setup function to configure UART wakeup mode and parameters.
  *
  * Wakeup from light sleep takes some time, so not every character sent
  * to the UART can be received by the application.
  *
  * @note 1. ESP32 does not support wakeup from UART2.
- *       2. If PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP is enabled (if target supported),
+ *       2. Wakeup mode 0(Active threshold) don't need source clock, but other modes need.
+ *       3. If PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP is enabled (if target supported),
  *          this API is unavailable since the UART module is powered down during sleep.
  *
  * @param uart_num  UART port to wake up from
@@ -581,16 +602,28 @@ esp_err_t esp_sleep_disable_wifi_beacon_wakeup(void);
  */
 uint64_t esp_sleep_get_ext1_wakeup_status(void);
 
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+#if SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 /**
- * @brief Get the bit mask of GPIOs which caused wakeup (gpio)
+ * @brief Get the bit mask of RTC IO which caused wakeup (GPIO wakeup source).
  *
  * If wakeup was caused by another source, this function will return 0.
+ * Each bit corresponds to an RTC IO.
+ * Use esp_sleep_wakeup_io_bit2num() to convert a bit index to GPIO number.
  *
- * @return bit mask, if GPIOn caused wakeup, BIT(n) will be set
+ * @return bit mask of RTC IO that caused wakeup
  */
 uint64_t esp_sleep_get_gpio_wakeup_status(void);
-#endif //SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+#endif //SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
+
+/**
+ * @brief Convert RTC IO status bit index to GPIO number.
+ *
+ * Used to interpret the bit mask returned by esp_sleep_get_gpio_wakeup_status().
+ *
+ * @param bit RTC IO bit index (0 to SOC_RTCIO_PIN_COUNT-1).
+ * @return GPIO number, or GPIO_NUM_NC if bit is invalid or has no corresponding GPIO.
+ */
+gpio_num_t esp_sleep_wakeup_io_bit2num(uint32_t bit);
 
 /**
  * @brief Configure power domain options for sleep mode

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -179,11 +179,21 @@ esp_err_t esp_openthread_platform_deinit(void)
     esp_openthread_task_queue_deinit();
     esp_openthread_radio_deinit();
 
-    if (get_host_connection_mode() == HOST_CONNECTION_MODE_RCP_SPI){
+    esp_openthread_host_connection_mode_t host_mode = get_host_connection_mode();
+    switch (host_mode) {
+#if CONFIG_OPENTHREAD_RCP_SPI
+    case HOST_CONNECTION_MODE_RCP_SPI:
         esp_openthread_spi_slave_deinit();
-    } else if (get_host_connection_mode() == HOST_CONNECTION_MODE_CLI_UART ||
-        get_host_connection_mode() == HOST_CONNECTION_MODE_RCP_UART) {
+        break;
+#endif
+#if CONFIG_OPENTHREAD_RCP_UART || CONFIG_OPENTHREAD_CONSOLE_TYPE_UART
+    case HOST_CONNECTION_MODE_RCP_UART:
+    case HOST_CONNECTION_MODE_CLI_UART:
         esp_openthread_uart_deinit();
+        break;
+#endif
+    default:
+        break;
     }
 
     esp_openthread_lock_deinit();
@@ -217,6 +227,6 @@ uint32_t esp_openthread_get_alloc_caps(void)
 #if CONFIG_OPENTHREAD_PLATFORM_MALLOC_CAP_SPIRAM
     (MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
 #else
-    (MALLOC_CAP_DEFAULT | MALLOC_CAP_8BIT);
+    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
 #endif
 }

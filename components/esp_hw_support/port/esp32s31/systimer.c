@@ -6,8 +6,6 @@
 
 #include "esp_private/systimer.h"
 
-// TODO: [ESP32S31] IDF-14693
-
 /**
  * @brief systimer's clock source is fixed to XTAL (40MHz), and has a fixed fractional divider (2.5).
  *        So the resolution of the systimer is 40MHz/2.5 = 16MHz.

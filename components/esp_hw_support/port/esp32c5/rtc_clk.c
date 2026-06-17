@@ -17,13 +17,11 @@
 #include "esp_rom_sys.h"
 #include "esp_sleep.h"
 #include "hal/clk_tree_ll.h"
-#include "hal/regi2c_ctrl_ll.h"
 #include "hal/gpio_ll.h"
 #include "soc/lp_aon_reg.h"
 #include "esp_private/sleep_event.h"
 #include "hal/efuse_hal.h"
 #include "soc/chip_revision.h"
-#include "esp_private/regi2c_ctrl.h"
 #include "esp_attr.h"
 #include "esp_private/esp_pmu.h"
 
@@ -154,13 +152,13 @@ static void rtc_clk_bbpll_configure(soc_xtal_freq_t xtal_freq, int pll_freq)
     /* Analog part */
     ANALOG_CLOCK_ENABLE();
     /* BBPLL CALIBRATION START */
-    regi2c_ctrl_ll_bbpll_calibration_start();
+    clk_ll_bbpll_calibration_start();
     clk_ll_bbpll_set_config(pll_freq, xtal_freq);
     /* WAIT CALIBRATION DONE */
-    while(!regi2c_ctrl_ll_bbpll_calibration_is_done());
+    while(!clk_ll_bbpll_calibration_is_done());
     esp_rom_delay_us(10); // wait for true stop
     /* BBPLL CALIBRATION STOP */
-    regi2c_ctrl_ll_bbpll_calibration_stop();
+    clk_ll_bbpll_calibration_stop();
     ANALOG_CLOCK_DISABLE();
 
     s_cur_pll_freq = pll_freq;
@@ -179,10 +177,6 @@ static FORCE_IRAM_ATTR void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_XTAL);
     clk_ll_bus_update();
     esp_rom_set_cpu_ticks_per_us(cpu_freq);
-#if CONFIG_ESP_ENABLE_PVT && !defined(BOOTLOADER_BUILD)
-    charge_pump_enable(false);
-    pvt_func_enable(false);
-#endif
 }
 
 static void rtc_clk_cpu_freq_to_rc_fast(void)
@@ -192,10 +186,6 @@ static void rtc_clk_cpu_freq_to_rc_fast(void)
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_RC_FAST);
     clk_ll_bus_update();
     esp_rom_set_cpu_ticks_per_us(20);
-#if CONFIG_ESP_ENABLE_PVT && !defined(BOOTLOADER_BUILD)
-    charge_pump_enable(false);
-    pvt_func_enable(false);
-#endif
 }
 
 /**
@@ -359,6 +349,16 @@ static void rtc_clk_update_pll_state_on_cpu_src_switching_end(soc_cpu_clk_src_t 
     }
 }
 
+#if SOC_CLK_ROOT_CLK_SWITCH_PROTECT
+void rtc_clk_root_clk_switch_protect(const rtc_cpu_freq_config_t *new_config, const rtc_cpu_freq_config_t *old_config, bool enable)
+{
+    if ((new_config->source == SOC_CPU_CLK_SRC_PLL_F160M && old_config->source == SOC_CPU_CLK_SRC_PLL_F240M) ||
+        (new_config->source == SOC_CPU_CLK_SRC_PLL_F240M && old_config->source == SOC_CPU_CLK_SRC_PLL_F160M)) {
+        clk_ll_soc_root_clk_auto_gating_bypass(enable);
+    }
+}
+#endif
+
 void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
 {
     soc_cpu_clk_src_t old_cpu_clk_src = clk_ll_cpu_get_src();
@@ -458,7 +458,9 @@ FORCE_IRAM_ATTR void rtc_clk_cpu_set_to_default_config(void)
 #endif
     rtc_clk_cpu_freq_to_xtal(freq_mhz, 1);
 #ifndef BOOTLOADER_BUILD
-    esp_clk_tree_enable_src(old_cpu_clk_src, false);
+    if (old_cpu_clk_src != SOC_MOD_CLK_XTAL) {
+        esp_clk_tree_enable_src(old_cpu_clk_src, false);
+    }
 #endif
     s_cur_pll_freq = 0; // no disable PLL, but set freq to 0 to trigger a PLL calibration after wake-up from sleep
 }
@@ -466,6 +468,10 @@ FORCE_IRAM_ATTR void rtc_clk_cpu_set_to_default_config(void)
 void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
 {
     rtc_clk_cpu_set_to_default_config();
+#if CONFIG_ESP_ENABLE_PVT && !defined(BOOTLOADER_BUILD)
+    charge_pump_enable(false);
+    pvt_func_enable(false);
+#endif
 }
 
 #ifndef BOOTLOADER_BUILD

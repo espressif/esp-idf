@@ -20,7 +20,7 @@ typedef struct {
     uint8_t seper_chr;        /*!< escape sequence character */
     uint8_t sub_chr1;         /*!< escape sequence sub-character 1 */
     uint8_t sub_chr2;         /*!< escape sequence sub-character 2 */
-    bool sub_chr_en;          /*!< enable use of sub-chaacter of escape sequence */
+    bool sub_chr_en;          /*!< enable use of sub-character of escape sequence */
 } uhci_seper_chr_t;
 
 /**

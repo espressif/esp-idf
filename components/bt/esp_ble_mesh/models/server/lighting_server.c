@@ -371,7 +371,7 @@ static void light_lightness_linear_set(struct bt_mesh_model *model,
         light_lightness_linear_tt_values(srv, trans_time, delay);
     } else {
         bt_mesh_light_server_state_change_t change = {
-            .lightness_linear_set.lightness = srv->state->lightness_actual,
+            .lightness_linear_set.lightness = srv->state->lightness_linear,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
                                               model, ctx, (const uint8_t *)&change, sizeof(change));
@@ -1513,15 +1513,14 @@ static void light_hsl_range_set(struct bt_mesh_model *model,
     saturation_min = net_buf_simple_pull_le16(buf);
     saturation_max = net_buf_simple_pull_le16(buf);
 
-    if (hue_min > hue_max) {
-        BT_ERR("Invalid parameter, hue min 0x%04x, hue max 0x%04x",
-                hue_min, hue_max);
-        return;
-    }
-
-    if (saturation_min > saturation_max) {
-        BT_ERR("Invalid parameter, saturation min 0x%04x, saturation max 0x%04x",
-                saturation_min, saturation_max);
+    if (hue_min > hue_max || saturation_min > saturation_max) {
+        BT_ERR("Invalid parameter, hue 0x%04x/0x%04x saturation 0x%04x/0x%04x",
+               hue_min, hue_max, saturation_min, saturation_max);
+        srv->state->status_code = BLE_MESH_CANNOT_SET_RANGE_MIN;
+        if (ctx->recv_op == BLE_MESH_MODEL_OP_LIGHT_HSL_RANGE_SET) {
+            send_light_hsl_status(model, ctx, false, BLE_MESH_MODEL_OP_LIGHT_HSL_RANGE_STATUS);
+        }
+        send_light_hsl_status(model, NULL, true, BLE_MESH_MODEL_OP_LIGHT_HSL_RANGE_STATUS);
         return;
     }
 
@@ -2497,102 +2496,113 @@ static void light_lc_sensor_status(struct bt_mesh_model *model,
         return;
     }
 
-    mpid = net_buf_simple_pull_le16(buf);
-    if (mpid & BIT(0)) {
-        length = (uint8_t)((mpid & 0xff) >> 1);
-        uint8_t msb = net_buf_simple_pull_u8(buf);
-        prop_id = (uint16_t)(msb << 8) | (uint16_t)(mpid >> 8);
-    } else {
-        length = (uint8_t)((mpid & 0x1f) >> 1);
-        prop_id = (uint16_t)(mpid >> 5);
-    }
-
-    change.sensor_status.property_id = prop_id;
-
-    switch (prop_id) {
-    case BLE_MESH_MOTION_SENSED: {
-        if (length != BLE_MESH_MOTION_SENSED_LEN || length != buf->len) {
-            BT_WARN("Invalid Motion Sensed Property length %d", length);
-            return;
+    while (buf->len >= 2) {
+        mpid = net_buf_simple_pull_le16(buf);
+        if (mpid & BIT(0)) {
+            if (buf->len < 1) {
+                BT_WARN("Invalid LC Sensor status length %d", buf->len);
+                return;
+            }
+            length = (uint8_t)((mpid & 0xff) >> 1);
+            uint8_t msb = net_buf_simple_pull_u8(buf);
+            prop_id = (uint16_t)(msb << 8) | (uint16_t)(mpid >> 8);
+        } else {
+            length = (uint8_t)((mpid & 0x1f) >> 1);
+            prop_id = (uint16_t)(mpid >> 5);
         }
-        uint8_t val = net_buf_simple_pull_u8(buf);
-        if (val > 0) {
-            srv->lc->state.occupancy = BLE_MESH_STATE_ON;
 
-            change.sensor_status.state.occupancy = srv->lc->state.occupancy;
+        change.sensor_status.property_id = prop_id;
+
+        switch (prop_id) {
+        case BLE_MESH_MOTION_SENSED: {
+            if (length != BLE_MESH_MOTION_SENSED_LEN ||
+                buf->len < BLE_MESH_MOTION_SENSED_LEN) {
+                BT_WARN("Invalid Motion Sensed Property length %d/%d", length, buf->len);
+                return;
+            }
+            uint8_t val = net_buf_simple_pull_u8(buf);
+            if (val > 0) {
+                srv->lc->state.occupancy = BLE_MESH_STATE_ON;
+
+                change.sensor_status.state.occupancy = srv->lc->state.occupancy;
+                bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
+                                                      model, ctx, (const uint8_t *)&change, sizeof(change));
+            }
+            break;
+        }
+        case BLE_MESH_PEOPLE_COUNT: {
+            if (length != BLE_MESH_PEOPLE_COUNT_LEN ||
+                buf->len < BLE_MESH_PEOPLE_COUNT_LEN) {
+                BT_WARN("Invalid People Count Property length %d/%d", length, buf->len);
+                return;
+            }
+            uint16_t val = net_buf_simple_pull_le16(buf);
+            if (val > 0) {
+                srv->lc->state.occupancy = BLE_MESH_STATE_ON;
+
+                change.sensor_status.state.occupancy = srv->lc->state.occupancy;
+                bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
+                                                      model, ctx, (const uint8_t *)&change, sizeof(change));
+            }
+            break;
+        }
+        case BLE_MESH_PRESENCE_DETECTED: {
+            if (length != BLE_MESH_PRESENCE_DETECTED_LEN ||
+                buf->len < BLE_MESH_PRESENCE_DETECTED_LEN) {
+                BT_WARN("Invalid Presence Detected Property length %d/%d", length, buf->len);
+                return;
+            }
+            uint8_t val = net_buf_simple_pull_u8(buf);
+            if (val > 0) {
+                srv->lc->state.occupancy = BLE_MESH_STATE_ON;
+
+                change.sensor_status.state.occupancy = srv->lc->state.occupancy;
+                bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
+                                                      model, ctx, (const uint8_t *)&change, sizeof(change));
+            }
+            break;
+        }
+        case BLE_MESH_TIME_SINCE_MOTION_SENSED: {
+            if (length != BLE_MESH_TIME_SINCE_MOTION_SENSED_LEN ||
+                buf->len < BLE_MESH_TIME_SINCE_MOTION_SENSED_LEN) {
+                BT_WARN("Invalid Time Scene Motion Sensed Property length %d/%d", length, buf->len);
+                return;
+            }
+            uint16_t val = net_buf_simple_pull_le16(buf);
+            if (val <= srv->lc->prop_state.time_occupancy_delay) {
+                srv->lc->prop_state.set_occupancy_to_1_delay =
+                    srv->lc->prop_state.time_occupancy_delay - val;
+
+                change.sensor_status.state.set_occupancy_to_1_delay = srv->lc->prop_state.set_occupancy_to_1_delay;
+                bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
+                                                      model, ctx, (const uint8_t *)&change, sizeof(change));
+            }
+            break;
+        }
+        case BLE_MESH_PRESENT_AMBIENT_LIGHT_LEVEL: {
+            /**
+             * Present Ambient Light Level device property is 4 octets, but ambient
+             * luxlevel length is 3 octets, and other devices may send Sensor Status
+             * which only contains 3 octets just for Light LC Server.
+             * Here we just check if the length is larger than 3.
+             */
+            if (length < BLE_MESH_PRESENT_AMBIENT_LIGHT_LEVEL_LEN ||
+                buf->len < BLE_MESH_PRESENT_AMBIENT_LIGHT_LEVEL_LEN) {
+                BT_WARN("Invalid Present Ambient Light Level Property length %d/%d", length, buf->len);
+                return;
+            }
+            uint16_t lsb = net_buf_simple_pull_le16(buf);
+            uint8_t msb = net_buf_simple_pull_u8(buf);
+            srv->lc->state.ambient_luxlevel = (msb << 16) | lsb;
+
+            change.sensor_status.state.ambient_luxlevel = srv->lc->state.ambient_luxlevel;
             bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
                                                   model, ctx, (const uint8_t *)&change, sizeof(change));
+            break;
         }
-        break;
-    }
-    case BLE_MESH_PEOPLE_COUNT: {
-        if (length != BLE_MESH_PEOPLE_COUNT_LEN || length != buf->len) {
-            BT_WARN("Invalid Motion Sensed Property length %d", length);
-            return;
+        default:
+            break;
         }
-        uint16_t val = net_buf_simple_pull_le16(buf);
-        if (val > 0) {
-            srv->lc->state.occupancy = BLE_MESH_STATE_ON;
-
-            change.sensor_status.state.occupancy = srv->lc->state.occupancy;
-            bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
-                                                  model, ctx, (const uint8_t *)&change, sizeof(change));
-        }
-        break;
-    }
-    case BLE_MESH_PRESENCE_DETECTED: {
-        if (length != BLE_MESH_PRESENCE_DETECTED_LEN || length != buf->len) {
-            BT_WARN("Invalid Motion Sensed Property length %d", length);
-            return;
-        }
-        uint8_t val = net_buf_simple_pull_u8(buf);
-        if (val > 0) {
-            srv->lc->state.occupancy = BLE_MESH_STATE_ON;
-
-            change.sensor_status.state.occupancy = srv->lc->state.occupancy;
-            bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
-                                                  model, ctx, (const uint8_t *)&change, sizeof(change));
-        }
-        break;
-    }
-    case BLE_MESH_TIME_SINCE_MOTION_SENSED: {
-        if (length != BLE_MESH_TIME_SINCE_MOTION_SENSED_LEN || length != buf->len) {
-            BT_WARN("Invalid Motion Sensed Property length %d", length);
-            return;
-        }
-        uint16_t val = net_buf_simple_pull_le16(buf);
-        if (val <= srv->lc->prop_state.time_occupancy_delay) {
-            srv->lc->prop_state.set_occupancy_to_1_delay =
-                srv->lc->prop_state.time_occupancy_delay - val;
-
-            change.sensor_status.state.set_occupancy_to_1_delay = srv->lc->prop_state.set_occupancy_to_1_delay;
-            bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
-                                                  model, ctx, (const uint8_t *)&change, sizeof(change));
-        }
-        break;
-    }
-    case BLE_MESH_PRESENT_AMBIENT_LIGHT_LEVEL: {
-        /**
-         * Present Ambient Light Level device property is 4 octets, but ambient
-         * luxlevel length is 3 octets, and other devices may send Sensor Status
-         * which only contains 3 octets just for Light LC Server.
-         * Here we just check if the length is larger than 3.
-         */
-        if (buf->len < 3) {
-            BT_WARN("Invalid Motion Sensed Property length %d", buf->len);
-            return;
-        }
-        uint16_t lsb = net_buf_simple_pull_le16(buf);
-        uint8_t msb = net_buf_simple_pull_u8(buf);
-        srv->lc->state.ambient_luxlevel = (msb << 16) | lsb;
-
-        change.sensor_status.state.ambient_luxlevel = srv->lc->state.ambient_luxlevel;
-        bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
-                                              model, ctx, (const uint8_t *)&change, sizeof(change));
-        break;
-    }
-    default:
-        break;
     }
 }
 
@@ -2731,7 +2741,7 @@ static void light_lc_prop_get(struct bt_mesh_model *model,
     /* Callback the received message to the application layer */
     if (srv->rsp_ctrl.get_auto_rsp == BLE_MESH_SERVER_RSP_BY_APP) {
         bt_mesh_light_server_recv_get_msg_t get = {
-            .lc_property_get.id = net_buf_simple_pull_le16(buf),
+            .lc_property_get.id = prop_id,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_GET_MSG,
                                               model, ctx, (const uint8_t *)&get, sizeof(get));
@@ -2762,8 +2772,8 @@ static void light_lc_prop_set(struct bt_mesh_model *model,
 
     if (srv->rsp_ctrl.set_auto_rsp == BLE_MESH_SERVER_RSP_BY_APP) {
         bt_mesh_light_server_recv_set_msg_t set = {
-            .lc_property_set.id = net_buf_simple_pull_le16(buf),
-            .lc_property_set.value = buf,
+            .lc_property_set.id = prop_id,
+            .lc_property_set.value = buf->len ? buf : NULL,
         };
         bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG,
                                               model, ctx, (const uint8_t *)&set, sizeof(set));

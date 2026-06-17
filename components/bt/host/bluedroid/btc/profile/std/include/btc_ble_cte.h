@@ -76,12 +76,12 @@ typedef union {
         uint8_t req_cte_len;
         uint8_t req_cte_Type;
     } cte_req_en;
-#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
 
     struct cte_rsp_en_arg {
         uint16_t conn_handle;
         uint8_t enable;
     } cte_rsp_en;
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
 
 } btc_ble_cte_args_t;
 

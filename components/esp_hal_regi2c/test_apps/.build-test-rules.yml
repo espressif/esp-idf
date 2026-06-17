@@ -1,0 +1,7 @@
+components/esp_hal_regi2c/test_apps:
+  enable:
+    - if: SOC_REGI2C_SUPPORTED == 1
+  depends_components:
+    - esp_hal_regi2c
+  depends_filepatterns:
+    - components/soc/esp32*/include/soc/regi2c_saradc_*.h

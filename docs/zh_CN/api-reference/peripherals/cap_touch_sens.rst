@@ -3,7 +3,7 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_TOUCH_SENSOR_VERSION:default="NOT_UPDATED", esp32="v1", esp32s2="v2", esp32s3="v2", esp32p4="v3", esp32h4="v3"}
+{IDF_TARGET_TOUCH_SENSOR_VERSION:default="NOT_UPDATED", esp32="v1", esp32s2="v2", esp32s3="v2", esp32p4="v3", esp32h4="v3", esp32s31="v3"}
 
 概述
 ------
@@ -31,6 +31,7 @@
 +-----------+--------------+------------------------------------------------------------------------+
 |     V3    |  ESP32-P4    | 第三代触摸传感器，新增跳频扫描                                         |
 |           |  ESP32-H4    |                                                                        |
+|           |  ESP32-S31   |                                                                        |
 +-----------+--------------+------------------------------------------------------------------------+
 
 测量原理
@@ -114,19 +115,19 @@
 
 .. list::
 
-  - `触摸传感器控制器管理 <#touch-ctrl>`__
-  - `触摸传感器通道管理 <#touch-chan>`__
-  - `滤波器配置 <#touch-filter>`__
-  - `回调函数 <#touch-callback>`__
-  - `启用和禁用 <#touch-enable>`__
-  - `连续扫描 <#touch-conti-scan>`__
-  - `单次扫描 <#touch-oneshot-scan>`__
-  - `测量值读数 <#touch-read>`__
-  :SOC_TOUCH_SUPPORT_BENCHMARK: - `基线值配置 <#touch-benchmark>`__
-  :SOC_TOUCH_SUPPORT_WATERPROOF: - `防水防潮配置 <#touch-waterproof>`__
-  :SOC_TOUCH_SUPPORT_PROX_SENSING: - `接近感应配置 <#touch-prox-sensing>`__
-  :SOC_TOUCH_SUPPORT_SLEEP_WAKEUP: - `睡眠唤醒配置 <#touch-sleep-wakeup>`__
-  :SOC_TOUCH_SUPPORT_DENOISE_CHAN: - `去噪通道配置 <#touch-denoise-chan>`__
+  - :ref:`touch-ctrl`
+  - :ref:`touch-chan`
+  - :ref:`touch-filter`
+  - :ref:`touch-callback`
+  - :ref:`touch-enable`
+  - :ref:`touch-conti-scan`
+  - :ref:`touch-oneshot-scan`
+  - :ref:`touch-read`
+  :SOC_TOUCH_SUPPORT_BENCHMARK: - :ref:`touch-benchmark`
+  :SOC_TOUCH_SUPPORT_WATERPROOF: - :ref:`touch-waterproof`
+  :SOC_TOUCH_SUPPORT_PROX_SENSING: - :ref:`touch-prox-sensing`
+  :SOC_TOUCH_SUPPORT_SLEEP_WAKEUP: - :ref:`touch-sleep-wakeup`
+  :SOC_TOUCH_SUPPORT_DENOISE_CHAN: - :ref:`touch-denoise-chan`
 
 .. _touch-ctrl:
 
@@ -322,9 +323,9 @@
     // 读取滤波后的平滑数据
     ESP_ERROR_CHECK(touch_channel_read_data(chan_handle, TOUCH_CHAN_DATA_TYPE_SMOOTH, smooth_data));
 
-.. _touch-benchmark:
-
 .. only:: SOC_TOUCH_SUPPORT_BENCHMARK
+
+    .. _touch-benchmark:
 
     基线值配置
     ^^^^^^^^^^^^^
@@ -339,9 +340,9 @@
         };
         ESP_ERROR_CHECK(touch_channel_config_benchmark(chan_handle, &benchmark_cfg));
 
-.. _touch-waterproof:
-
 .. only:: SOC_TOUCH_SUPPORT_WATERPROOF
+
+    .. _touch-waterproof:
 
     防水防潮配置
     ^^^^^^^^^^^^^^
@@ -365,9 +366,9 @@
         // 注销防水防潮功能
         ESP_ERROR_CHECK(touch_sensor_config_waterproof(sens_handle, NULL));
 
-.. _touch-prox-sensing:
-
 .. only:: SOC_TOUCH_SUPPORT_PROX_SENSING
+
+    .. _touch-prox-sensing:
 
     接近感应配置
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -398,9 +399,10 @@
         // 注销接近感应功能
         ESP_ERROR_CHECK(touch_sensor_config_proximity_sensing(sens_handle, NULL));
 
-.. _touch-sleep-wakeup:
 
 .. only:: SOC_TOUCH_SUPPORT_SLEEP_WAKEUP
+
+    .. _touch-sleep-wakeup:
 
     睡眠唤醒配置
     ^^^^^^^^^^^^^^
@@ -444,9 +446,15 @@
         // 注册 Deep-sleep 唤醒功能
         ESP_ERROR_CHECK(touch_sensor_config_sleep_wakeup(sens_handle, &deep_slp_cfg));
 
-.. _touch-denoise-chan:
+    .. only:: esp32s31
+
+        .. note::
+
+            ESP32-S31 触摸传感器从 Deep-sleep 唤醒在部分场景下可能失败。增大 :cpp:type:`touch_sensor_config_t` 中的 ``meas_interval_us`` 可缓解该问题。
 
 .. only:: SOC_TOUCH_SUPPORT_DENOISE_CHAN
+
+    .. _touch-denoise-chan:
 
     去噪通道配置
     ^^^^^^^^^^^^

@@ -1,0 +1,28 @@
+# Bluetooth Audio - Gaming Audio Profile (GMAP) options
+#
+# SPDX-FileCopyrightText: 2023 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BT_GMAP_UGG_SUPPORTED
+    bool # hidden
+    default y if BT_CAP_INITIATOR && BT_BAP_UNICAST_CLIENT && BT_VCP_VOL_CTLR
+
+config BT_GMAP_UGT_SUPPORTED
+    bool # hidden
+    default y if BT_CAP_ACCEPTOR && BT_BAP_UNICAST_SERVER
+
+config BT_GMAP_BGS_SUPPORTED
+    bool # hidden
+    default y if BT_CAP_INITIATOR && BT_BAP_BROADCAST_SOURCE && BT_BAP_BROADCAST_ASSISTANT
+
+config BT_GMAP_BGR_SUPPORTED
+    bool # hidden
+    default y if BT_CAP_ACCEPTOR && BT_BAP_BROADCAST_SINK && BT_VCP_VOL_REND
+
+config BT_GMAP
+    bool "Gaming Audio Profile"
+    depends on BT_CAP_ACCEPTOR || BT_CAP_INITIATOR
+    help
+        Enabling this will enable GMAP.

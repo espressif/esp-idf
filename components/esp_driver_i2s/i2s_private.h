@@ -19,6 +19,7 @@
 #if SOC_LP_I2S_SUPPORTED
 #include "hal/lp_i2s_ll.h"
 #endif
+#include "hal/i2s_types.h"
 #include "driver/i2s_types.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp_clock_output.h"
@@ -50,22 +51,15 @@ extern "C" {
 #endif //CONFIG_I2S_ISR_IRAM_SAFE
 #define I2S_DMA_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT)
 
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define I2S_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define I2S_CLOCK_SRC_ATOMIC()
-#endif
-
-#if !SOC_RCC_IS_INDEPENDENT
-#define I2S_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define I2S_RCC_ATOMIC()
-#endif
-
 #define I2S_USE_RETENTION_LINK  (SOC_HAS(PAU) && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
 #define I2S_NULL_POINTER_CHECK(tag, p)          ESP_RETURN_ON_FALSE((p), ESP_ERR_INVALID_ARG, tag, "input parameter '"#p"' is NULL")
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+
+/**
+ * @brief Whether this channel uses the DMA memory data path
+ */
+#define I2S_CHANNEL_USES_DMA(handle)   ((handle)->destination == I2S_DESTINATION_DMA)
 
 /**
  * @brief i2s channel state for checking if the operation in under right driver state
@@ -167,12 +161,10 @@ struct i2s_channel_obj_t {
         bool                is_raw_pdm: 1;     /*!< Flag of whether send/receive PDM in raw data, i.e., no PCM2PDM/PDM2PCM filter enabled */
         bool                is_external: 1;    /*!< Whether use external clock */
         bool                full_duplex_slave: 1; /*!< whether the channel is forced to switch to slave role for full duplex */
-#if SOC_I2S_SUPPORTS_APLL
-        bool                apll_en: 1;        /*!< Flag of whether APLL enabled */
-#endif
     };
     uint32_t                active_slot;    /*!< Active slot number */
     uint32_t                total_slot;     /*!< Total slot number */
+    i2s_destination_t       destination;    /*!< Data path destination (DMA memory path vs Bluetooth controller where supported) */
     i2s_clock_src_t         clk_src;        /*!< Clock source */
     uint32_t                sclk_hz;        /*!< Source clock frequency */
     uint32_t                origin_mclk_hz; /*!< Original mclk frequency */

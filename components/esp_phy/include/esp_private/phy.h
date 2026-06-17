@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@ extern "C" {
 #endif
 
 #define ESP_CAL_DATA_CHECK_FAIL 1
+#define ESP_MODEM_RF_FLAG_UPDATE_CB_REQUIRED (SOC_PM_MODEM_RF_FLAG_UPDATE_WORKAROUND || CONFIG_ESP_WIFI_MODEM_RF_FLAG_UPDATE_DEBUG)
 
 typedef struct {
     uint8_t cmd_type;   /* the command type of the current phy i2c master command memory config */
@@ -244,6 +245,16 @@ uint32_t phy_ana_i2c_master_burst_rf_onoff(bool on);
 void phy_wakeup_from_modem_state_extra_init(void);
 #endif
 
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP && ESP_MODEM_RF_FLAG_UPDATE_CB_REQUIRED
+/**
+ * @brief Update modem RF flag
+ *
+ * This function is called as a callback during MAC/BB power down operations.
+ * It checks if modem RF is already enabled and clears the RF power state accordingly.
+ */
+void esp_phy_modem_rf_flag_update(void);
+#endif
+
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_MAC_BB_PD
 /**
  * @brief PHY module sleep data (includes AGC, TX, NRX, BB, FE, etc..) initialize.
@@ -251,9 +262,43 @@ void phy_wakeup_from_modem_state_extra_init(void);
 void esp_phy_sleep_data_init(void);
 
 /**
+ * @brief Attach WiFi BB sleep retention linked list (REGDMA) after entries are allocated in `esp_phy_sleep_data_init()`.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - error code from sleep retention otherwise
+ */
+esp_err_t esp_phy_wifi_bb_sleep_retention_attach(void);
+
+/**
+ * @brief Detach WiFi BB sleep retention linked list (REGDMA) before `sleep_retention_module_free()` in `esp_phy_sleep_data_deinit()`.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - error code from sleep retention otherwise
+ */
+esp_err_t esp_phy_wifi_bb_sleep_retention_detach(void);
+
+/**
  * @brief PHY module sleep data de-initialize.
  */
 void esp_phy_sleep_data_deinit(void);
+#endif
+
+/**
+ * @brief Wait for frequency hardware hop to complete
+ *
+ */
+void phy_wait_freq_hw_hop_done(void);
+
+#if CONFIG_ESP_PHY_PLL_TRACK_TEMP_DEBUG
+/**
+ * @brief Set the temperature delta for PHY track pll
+ *
+ * @param     debug_flag  Debug flag for PHY temperature tracking
+ * @param     track_temp   Temperature delta for PHY temperature tracking
+ */
+void phy_track_temp_debug(uint8_t debug_flag, uint8_t track_temp);
 #endif
 
 #ifdef __cplusplus

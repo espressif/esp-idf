@@ -11,7 +11,7 @@
 #include "ulp_riscv_uart_ulp_core.h"
 
 /* We calculate the bit duration at compile time to speed up and avoid pulling in soft-float libs */
-#define BIT_DURATION_CYCLES ( ULP_RISCV_CYCLES_PER_US * ((1000*1000) / CONFIG_ULP_RISCV_UART_BAUDRATE) )
+#define BIT_DURATION_CYCLES ( (ULP_RISCV_CYCLES_PER_US_NUM * 1000000) / (ULP_RISCV_CYCLES_PER_US_DENOM * CONFIG_ULP_RISCV_UART_BAUDRATE) )
 
 void ulp_riscv_uart_init(ulp_riscv_uart_t *uart, const ulp_riscv_uart_cfg_t *cfg)
 {

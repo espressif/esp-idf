@@ -1019,6 +1019,8 @@ typedef struct {
 } lp_pwr_dev_t;
 
 
+extern lp_pwr_dev_t LP_PWR;
+
 #ifndef __cplusplus
 _Static_assert(sizeof(lp_pwr_dev_t) == 0xa8, "Invalid size of lp_pwr_dev_t structure");
 #endif

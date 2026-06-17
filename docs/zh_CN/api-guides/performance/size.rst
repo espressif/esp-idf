@@ -158,11 +158,9 @@ lwIP IPv4
 使用 Picolibc 替代 Newlib
 @@@@@@@@@@@@@@@@@@@@@@@@@
 
-默认情况下，ESP-IDF 使用 Newlib C 库，同时也对 Picolibc C 库提供实验性支持。
+默认情况下，ESP-IDF 使用 Picolibc C 库。也支持 Newlib，可通过 :ref:`CONFIG_LIBC_NEWLIB<CONFIG_LIBC_NEWLIB>` 选项选择使用。
 
 Picolibc C 库提供了更精简的 ``printf`` 系列函数，并且根据应用程序，可以将二进制文件大小减少最多 30 KB。
-
-如需切换链接到 Picolibc C 库，请启用配置选项 :ref:`CONFIG_IDF_EXPERIMENTAL_FEATURES` 和 :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>`。
 
 .. _newlib-nano-formatting:
 
@@ -183,7 +181,7 @@ ESP-IDF 的 I/O 函数（ ``printf()`` 和 ``scanf()`` 等）默认使用 Newlib
 
 启用 Nano 格式化会减少调用 ``printf()`` 或其他字符串格式化函数的堆栈使用量，参阅 :ref:`optimize-stack-sizes`。
 
-“Nano”  格式化不支持 64 位整数或 C99 格式化功能。请在 `Newlib README 文件`_ 中搜索 ``--enable-newlib-nano-formatted-io`` 来获取完整的限制列表。
+“Nano”  格式化不支持 64 位整数或 C99 格式化功能。请在 `Newlib 文档`_ 中搜索 ``--enable-newlib-nano-formatted-io`` 来获取完整的限制列表。
 
 
 .. only:: esp32c2
@@ -193,7 +191,7 @@ ESP-IDF 的 I/O 函数（ ``printf()`` 和 ``scanf()`` 等）默认使用 Newlib
         {IDF_TARGET_NAME} 会默认启用 :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT`。
 
 
-.. _Newlib README 文件: https://sourceware.org/newlib/README
+.. _Newlib 文档: https://sourceware.org/newlib/docs.html
 
 libstdc++
 @@@@@@@@@
@@ -214,7 +212,6 @@ MbedTLS 功能
     - :ref:`CONFIG_MBEDTLS_HAVE_TIME`
     - :ref:`CONFIG_MBEDTLS_ECDSA_DETERMINISTIC`
     - :ref:`CONFIG_MBEDTLS_SHA512_C`
-    - :ref:`CONFIG_MBEDTLS_SHA3_C`
     - :ref:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`
     - :ref:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`
     - :ref:`CONFIG_MBEDTLS_SSL_CONTEXT_SERIALIZATION`
@@ -245,8 +242,9 @@ MbedTLS 功能
 .. only:: CONFIG_ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
 
     启用配置选项 :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` 时 mbedtls 使用由 ROM 提供的加密算法。
+    该选项仅在所选目标芯片和最低芯片版本支持 ROM mbedTLS 加密算法库时可用。
 
-    禁用配置选项 :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` 时mbedtls 完全使用由 ESP-IDF 中提供的加密算法。这会导致二进制文件大小增加。
+    禁用配置选项 :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` 时，mbedtls 完全使用由 ESP-IDF 中提供的加密算法。这会导致二进制文件大小增加。
 
 .. note::
 

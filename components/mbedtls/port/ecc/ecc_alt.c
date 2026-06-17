@@ -55,7 +55,7 @@ int ecp_mul_restartable_internal( mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
              mbedtls_ecp_restart_ctx *rs_ctx )
 {
     int ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
-    if (grp->id != MBEDTLS_ECP_DP_SECP192R1 && grp->id != MBEDTLS_ECP_DP_SECP256R1
+    if (grp->id != MBEDTLS_ECP_DP_SECP256R1
 #if SOC_ECC_SUPPORT_CURVE_P384
         && (grp->id != MBEDTLS_ECP_DP_SECP384R1 || !ecc_ll_is_p384_curve_operations_supported())
 #endif
@@ -90,7 +90,7 @@ int mbedtls_ecp_check_pubkey( const mbedtls_ecp_group *grp,
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
 
-    if (grp->id != MBEDTLS_ECP_DP_SECP192R1 && grp->id != MBEDTLS_ECP_DP_SECP256R1
+    if (grp->id != MBEDTLS_ECP_DP_SECP256R1
 #if SOC_ECC_SUPPORT_CURVE_P384
         && (grp->id != MBEDTLS_ECP_DP_SECP384R1 || !ecc_ll_is_p384_curve_operations_supported())
 #endif

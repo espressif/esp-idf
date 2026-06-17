@@ -205,16 +205,13 @@ config BT_LE_SUBRATE_ENABLED
 
 config BT_LE_CTE_FEATURE_ENABLED
     bool "Enable Bluetooth LE Direction Finding (AoA/AoD)"
-    depends on BT_LE_50_FEATURE_SUPPORT && SOC_BLE_CTE_SUPPORTED && !(BT_LE_SECURITY_ENABLE)
+    depends on BT_LE_50_FEATURE_SUPPORT && SOC_BLE_CTE_SUPPORTED
     default n
     help
         Enable this option to activate Bluetooth LE Direction Finding (AoA/AoD) feature.
         Note:
         This feature allows devices to determine the direction of a Bluetooth CTE signal,
         enabling Angle of Arrival (AoA) and Angle of Departure (AoD) functionality.
-        In chip esp32h2, Direction Finding is not supported in encrypted
-        communication scenarios. If you are using chip esp32h2, ensure that encryption is
-        disabled when using this feature.
 
 config BT_LE_PERIODIC_ADV_WITH_RESPONSE_ENABLED
     bool "Enable BLE periodic advertising with response"
@@ -311,130 +308,6 @@ config BT_LE_CONTROLLER_TASK_STACK_SIZE
         This configures stack size of NimBLE controller task
 
 menu "Controller debug features"
-    menuconfig BT_LE_CONTROLLER_LOG_ENABLED
-        bool "Controller log enable"
-        default n
-        help
-            Enable controller log
-
-    config BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2
-        bool "Utilize BLE Log v2 for controller log"
-        depends on BLE_LOG_ENABLED
-        default y
-        help
-            Utilize BLE Log v2 for controller log
-
-    if !BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2
-        config BT_LE_CONTROLLER_LOG_CTRL_ENABLED
-            bool "enable controller log module"
-            depends on BT_LE_CONTROLLER_LOG_ENABLED
-            default y
-            help
-                Enable controller log module
-
-        config BT_LE_CONTROLLER_LOG_HCI_ENABLED
-            bool "enable HCI log module"
-            depends on BT_LE_CONTROLLER_LOG_ENABLED
-            default y
-            help
-                Enable hci log module
-
-        config BT_LE_CONTROLLER_LOG_DUMP_ONLY
-            bool "Controller log dump mode only"
-            depends on BT_LE_CONTROLLER_LOG_ENABLED
-            default y
-            help
-                Only operate in dump mode
-
-        config BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
-            bool "Output ble controller logs to SPI bus (Experimental)"
-            depends on BT_LE_CONTROLLER_LOG_ENABLED
-            depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
-            select BT_BLE_LOG_SPI_OUT_ENABLED
-            default n
-            help
-                Output ble controller logs to SPI bus
-
-        config BT_LE_CONTROLLER_LOG_UHCI_OUT_ENABLED
-            bool "Output ble controller logs via UART DMA (Experimental)"
-            depends on BT_LE_CONTROLLER_LOG_ENABLED
-            depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
-            depends on !BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
-            select BT_BLE_LOG_UHCI_OUT_ENABLED
-            default y
-            help
-                Output ble controller logs via UART DMA
-
-        config BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
-            bool "Store ble controller logs to flash(Experimental)"
-            depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
-            depends on BT_LE_CONTROLLER_LOG_ENABLED
-            default n
-            help
-                Store ble controller logs to flash memory.
-
-        config BT_LE_CONTROLLER_LOG_PARTITION_SIZE
-            int "size of ble controller log partition(Multiples of 4K)"
-            depends on BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
-            default 65536
-            help
-                The size of ble controller log partition shall be a multiples of 4K.
-                The name of log partition shall be "bt_ctrl_log".
-                The partition type shall be ESP_PARTITION_TYPE_DATA.
-                The partition sub_type shall be ESP_PARTITION_SUBTYPE_ANY.
-
-        config BT_LE_LOG_CTRL_BUF1_SIZE
-            int "size of the first BLE controller LOG buffer"
-            depends on BT_LE_CONTROLLER_LOG_ENABLED
-            default 4096
-            help
-                Configure the size of the first BLE controller LOG buffer.
-
-        config BT_LE_LOG_CTRL_BUF2_SIZE
-            int "size of the second BLE controller LOG buffer"
-            depends on BT_LE_CONTROLLER_LOG_ENABLED
-            default 1024
-            help
-                Configure the size of the second BLE controller LOG buffer.
-
-        config BT_LE_LOG_HCI_BUF_SIZE
-            int "size of the BLE HCI LOG buffer"
-            depends on BT_LE_CONTROLLER_LOG_ENABLED
-            default 4096
-            help
-                Configure the size of the BLE HCI LOG buffer.
-    endif
-
-    config BT_LE_CONTROLLER_LOG_WRAP_PANIC_HANDLER_ENABLE
-        bool "Enable wrap panic handler"
-        depends on BT_LE_CONTROLLER_LOG_ENABLED
-        default n
-        help
-            Wrap esp_panic_handler to get controller logs when PC pointer exception crashes.
-
-    config BT_LE_CONTROLLER_LOG_TASK_WDT_USER_HANDLER_ENABLE
-        bool "Enable esp_task_wdt_isr_user_handler implementation"
-        depends on BT_LE_CONTROLLER_LOG_ENABLED
-        default n
-        help
-            Implement esp_task_wdt_isr_user_handler to get controller logs when task wdt issue is triggered.
-
-    config BT_LE_CONTROLLER_LOG_OUTPUT_LEVEL
-        int "The output level of controller log"
-        depends on BT_LE_CONTROLLER_LOG_ENABLED
-        range 0 5
-        default 1
-        help
-            The output level of controller log.
-
-    config BT_LE_CONTROLLER_LOG_MOD_OUTPUT_SWITCH
-        hex "The switch of module log output"
-        depends on BT_LE_CONTROLLER_LOG_ENABLED
-        range 0 0xFFFFFFFF
-        default 0xFFFFFFFF
-        help
-            The switch of module log output, this is an unsigned 32-bit hexadecimal value.
-
     config BT_LE_ERROR_SIM_ENABLED
         bool "Enable controller features for internal testing"
         default n
@@ -503,15 +376,6 @@ config BT_LE_LL_CFG_FEAT_LE_ENCRYPTION
     default y
     help
         Enable encryption connection
-
-config BT_LE_CRYPTO_STACK_MBEDTLS
-    bool "Override TinyCrypt with mbedTLS for crypto computations"
-    default y
-    depends on !BT_NIMBLE_ENABLED
-    select MBEDTLS_CMAC_C
-    help
-        Enable this option to choose mbedTLS instead of TinyCrypt for crypto
-        computations.
 
 config BT_LE_WHITELIST_SIZE
     int "BLE white list size"
@@ -979,3 +843,108 @@ config BT_LE_CTRL_DL_ITVL_PHY_SYNC_EN
         When this option is enabled, the Controller automatically initiates a data length update
         Using the appropriate data length parameters
         When a PHY update or a connection interval update occurs.
+
+config BT_LE_CTRL_ADV_FAST_TX_EN
+    bool "Reduce adv enable-to-air latency (READ DOCS FIRST) (EXPERIMENTAL)"
+    default n
+    help
+        Reduce the latency between issuing the advertising enable command
+        and the actual on-air transmission by executing the advertising TX
+        path from IRAM.
+        Note: Enabling this option increases IRAM usage.
+
+menu "Adv Tx Options"
+    config BT_LE_CTRL_ADV_EVENT_INC_ON_FULL_TX_EN
+        bool "Increment advertising event count only on full PDU TX success"
+        default n
+        help
+            When enabled, the advertising event count is incremented only
+            if all PDUs in an advertising event are transmitted successfully.
+            If disabled, the event count is incremented regardless of transmission success.
+
+    config BT_LE_CTRL_ADV_CH38_39_TX_AVOID_CONFLICT_EN
+        bool "Delay advertising TX on channels 38/39 to avoid scheduling conflicts"
+        default n
+        help
+            When enabled, advertising transmissions on channels 38 and 39
+            are delayed if a scheduling conflict occurs.
+
+    config BT_LE_ADV_CH39_TXPWR_CONFIG_SEPARATELY_EN
+        bool "Enable separate TX power for advertising on channel 39"
+        default n
+        help
+            When enabled, the TX power for advertising transmissions
+            on channel 39 can be configured independently of other channels.
+
+    config BT_LE_CTRL_ADV_TX_CONTINUE_WHEN_EXCEED_ITVL_EN
+        bool "Allow advertising TX to continue if data TX exceeds interval"
+        default n
+        help
+            When enabled, advertising transmission continues even if the
+            TX duration for advertising data exceeds the configured advertising interval.
+
+    config BT_LE_CTRL_ADV_RAND_CH_IDX_EN
+        bool "Enable Randomized Advertising Channel Indexing"
+        default n
+        help
+            When enabled, the advertising channel sequence is randomized
+            according to the Randomized Advertising Channel Indexing feature.
+            If disabled, the standard channel sequence is used.
+
+    choice BT_LE_DFT_CH39_TX_POWER_LEVEL_DBM
+        prompt "BLE default Tx power level(dBm)"
+        depends on BT_LE_ADV_CH39_TXPWR_CONFIG_SEPARATELY_EN
+        default BT_LE_DFT_CH39_TX_POWER_LEVEL_P9
+        help
+            Specify default Tx power level(dBm).
+        config BT_LE_DFT_CH39_TX_POWER_LEVEL_N24
+            bool "-24dBm"
+        config BT_LE_DFT_CH39_TX_POWER_LEVEL_N21
+            bool "-21dBm"
+        config BT_LE_DFT_CH39_TX_POWER_LEVEL_N18
+            bool "-18dBm"
+        config BT_LE_DFT_CH39_TX_POWER_LEVEL_N15
+            bool "-15dBm"
+        config BT_LE_DFT_CH39_TX_POWER_LEVEL_N12
+            bool "-12dBm"
+        config BT_LE_DFT_CH39_TX_POWER_LEVEL_N9
+            bool "-9dBm"
+        config BT_LE_DFT_CH39_TX_POWER_LEVEL_N6
+            bool "-6dBm"
+        config BT_LE_DFT_CH39_TX_POWER_LEVEL_N3
+            bool "-3dBm"
+        config BT_LE_DFT_CH39_TX_POWER_LEVEL_N0
+            bool "0dBm"
+        config BT_LE_DFT_CH39_TX_POWER_LEVEL_P3
+            bool "+3dBm"
+        config BT_LE_DFT_CH39_TX_POWER_LEVEL_P6
+            bool "+6dBm"
+        config BT_LE_DFT_CH39_TX_POWER_LEVEL_P9
+            bool "+9dBm"
+        config BT_LE_DFT_CH39_TX_POWER_LEVEL_P12
+            bool "+12dBm"
+        config BT_LE_DFT_CH39_TX_POWER_LEVEL_P15
+            bool "+15dBm"
+        config BT_LE_DFT_CH39_TX_POWER_LEVEL_P18
+            bool "+18dBm"
+        config BT_LE_DFT_CH39_TX_POWER_LEVEL_P20
+            bool "+20dBm"
+    endchoice
+
+    config BT_LE_DFT_CH39_TX_POWER_LEVEL_DBM_EFF
+        int
+        default -15 if BT_LE_DFT_CH39_TX_POWER_LEVEL_N15
+        default -12 if BT_LE_DFT_CH39_TX_POWER_LEVEL_N12
+        default -9 if BT_LE_DFT_CH39_TX_POWER_LEVEL_N9
+        default -6 if BT_LE_DFT_CH39_TX_POWER_LEVEL_N6
+        default -3 if BT_LE_DFT_CH39_TX_POWER_LEVEL_N3
+        default 0 if BT_LE_DFT_CH39_TX_POWER_LEVEL_N0
+        default 3 if BT_LE_DFT_CH39_TX_POWER_LEVEL_P3
+        default 6 if BT_LE_DFT_CH39_TX_POWER_LEVEL_P6
+        default 9 if BT_LE_DFT_CH39_TX_POWER_LEVEL_P9
+        default 12 if BT_LE_DFT_CH39_TX_POWER_LEVEL_P12
+        default 15 if BT_LE_DFT_CH39_TX_POWER_LEVEL_P15
+        default 18 if BT_LE_DFT_CH39_TX_POWER_LEVEL_P18
+        default 20 if BT_LE_DFT_CH39_TX_POWER_LEVEL_P20
+        default 0
+endmenu

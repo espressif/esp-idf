@@ -47,9 +47,9 @@ To compile the ULP FSM code as part of the component, the following steps must b
     set(ulp_s_sources ulp/ulp_assembly_source_file.S)
     set(ulp_exp_dep_srcs "ulp_c_source_file.c")
 
-    ulp_embed_binary(${ulp_app_name} "${ulp_s_sources}" "${ulp_exp_dep_srcs}")
+    ulp_embed_binary(${ulp_app_name} "${ulp_s_sources}" "${ulp_exp_dep_srcs}" TYPE fsm)
 
-The first argument to ``ulp_embed_binary`` specifies the ULP FSM binary name. The name specified here will also be used by other generated artifacts such as the ELF file, map file, header file and linker export file. The second argument specifies the ULP FSM assembly source files. Finally, the third argument specifies the list of component source files which include the header file to be generated. This list is needed to build the dependencies correctly and ensure that the generated header file will be created before any of these files are compiled. See the section below for the concept of generated header files for ULP applications.
+The first argument to ``ulp_embed_binary`` specifies the ULP FSM binary name. The name specified here will also be used by other generated artifacts such as the ELF file, map file, header file and linker export file. The second argument specifies the ULP FSM assembly source files. The third argument specifies the list of component source files which include the header file to be generated. This list is needed to build the dependencies correctly and ensure that the generated header file will be created before any of these files are compiled. Finally, the fourth argument ``TYPE`` is optional, but it must be provided as ``TYPE fsm`` to compile using FSM toolchain, if both ``CONFIG_ULP_COPROC_TYPE_FSM`` and ``CONFIG_ULP_COPROC_TYPE_RISCV`` are selected in menu option ``ULP Coprocessor types``. See the section below for the concept of generated header files for ULP applications.
 
 Variables in the ULP code will be prefixed with ``ulp_`` (default value) in this generated header file.
 
@@ -135,7 +135,7 @@ Starting the ULP FSM Program
 
 To run a ULP FSM program, the main application needs to load the ULP program into RTC memory using the :cpp:func:`ulp_load_binary` function, and then start it using the :cpp:func:`ulp_run` function.
 
-Note that the ``Enable Ultra Low Power (ULP) Coprocessor`` option must be enabled in menuconfig to work with ULP. To select the type of ULP to be used, the ``ULP Co-processor type`` option must be set. To reserve memory for the ULP, the ``RTC slow memory reserved for coprocessor`` option must be set to a value big enough to store ULP code and data. If the application components contain multiple ULP programs, then the size of the RTC memory must be sufficient to hold the largest one.
+Note that the ``Enable Ultra Low Power (ULP) Coprocessor`` option must be enabled in menuconfig to work with ULP. To select the FSM type for ULP, please go to menu option ``ULP Coprocessor types`` and select ``CONFIG_ULP_COPROC_TYPE_FSM``. To reserve memory for the ULP, the ``RTC slow memory reserved for coprocessor`` option must be set to a value big enough to store ULP code and data. If the application components contain multiple ULP programs, then the size of the RTC memory must be sufficient to hold the largest one.
 
 Each ULP program is embedded into the ESP-IDF application as a binary blob. The application can reference this blob and load it in the following way (suppose ULP_APP_NAME was defined to ``ulp_app_name``)::
 
@@ -199,6 +199,10 @@ Application Examples
 .. only:: esp32 or esp32s3
 
     * :example:`system/ulp/ulp_fsm/ulp_adc` demonstrates how to use the ULP FSM coprocessor to periodically measure input voltage on a specific ADC channel during deep sleep, compare it to the set threshold, and wake up the system if the voltage is outside the threshold.
+
+.. only:: esp32s2 or esp32s3
+
+    * :example:`system/ulp/ulp_fsm_riscv_combined/counter` demonstrates how to use both the ULP FSM and ULP RISC-V coprocessors sequentially within the same application, counting from 0 to 100 with the FSM and from 100 to 500 with the RISC-V coprocessor while the HP core remains in sleep mode until the counting completes.
 
 API Reference
 -------------

@@ -7,5 +7,3 @@ entries:
             cache_hal_esp32 (noflash)
         else:
             cache_hal (noflash)
-    if SOC_SYSTIMER_SUPPORTED = y && HAL_SYSTIMER_USE_ROM_IMPL = n:
-        systimer_hal (noflash)

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import pytest
 from pytest_embedded import Dut
@@ -17,7 +17,11 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 )
 @idf_parametrize(
     'target',
-    soc_filtered_targets('SOC_TOUCH_SENSOR_SUPPORTED == 1 and SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP == 1'),
+    soc_filtered_targets(
+        'SOC_TOUCH_SENSOR_SUPPORTED == 1 and '
+        'SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP == 1 and '
+        'SOC_TOUCH_SUPPORT_SLEEP_WAKEUP == 1'
+    ),
     indirect=['target'],
 )
 def test_touch_sens_sleep(dut: Dut) -> None:

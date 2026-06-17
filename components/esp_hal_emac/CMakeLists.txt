@@ -12,9 +12,10 @@ set(srcs)
 if(CONFIG_SOC_EMAC_SUPPORTED)
     list(APPEND srcs "emac_hal.c")
     list(APPEND srcs "${target}/emac_periph.c")
+    list(APPEND srcs "${target}/emac_clk.c")
     list(APPEND includes "${target}/include")
 endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
-                       REQUIRES soc hal)
+                       REQUIRES soc hal esp_hal_gpio)

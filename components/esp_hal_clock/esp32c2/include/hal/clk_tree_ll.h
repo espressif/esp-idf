@@ -13,6 +13,7 @@
 #include "soc/rtc_cntl_reg.h"
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_bbpll.h"
+#include "soc/regi2c_defs.h"
 #include "soc/timer_group_struct.h"
 #include "soc/io_mux_reg.h"
 #include "hal/clkout_channel.h"
@@ -282,6 +283,34 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32
     REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DR3, dr3);
     REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_OC_DCUR, i2c_bbpll_dcur);
     REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_VCO_DBIAS, dbias);
+}
+
+/**
+ * @brief Start BBPLL self-calibration
+ */
+static inline __attribute__((always_inline)) void clk_ll_bbpll_calibration_start(void)
+{
+    REG_CLR_BIT(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_HIGH);
+    REG_SET_BIT(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_LOW);
+}
+
+/**
+ * @brief Stop BBPLL self-calibration
+ */
+static inline __attribute__((always_inline)) void clk_ll_bbpll_calibration_stop(void)
+{
+    REG_CLR_BIT(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_LOW);
+    REG_SET_BIT(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_HIGH);
+}
+
+/**
+ * @brief Check whether BBPLL calibration is done
+ *
+ * @return True if calibration is done; otherwise false
+ */
+static inline __attribute__((always_inline)) bool clk_ll_bbpll_calibration_is_done(void)
+{
+    return REG_GET_BIT(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_CAL_DONE);
 }
 
 /**

@@ -57,6 +57,12 @@ void ot_external_coexist_init(void);
 void ot_console_start(void);
 
 /**
+ * @brief   De-initializes the console.
+ *
+ */
+void ot_console_stop(void);
+
+/**
  * @brief   Form or join the Thread network automatically.
  *
  */

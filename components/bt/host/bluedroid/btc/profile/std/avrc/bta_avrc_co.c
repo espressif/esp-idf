@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,8 @@
 #include "btc_avrc.h"
 
 #if BTC_AV_INCLUDED
+
+#define AVRC_TG_SUPPORTED_CMD_ARRAY_SIZE   (8)
 /*******************************************************************************
  **
  ** Function         bta_avrc_co_cmd_allowed
@@ -37,10 +39,13 @@
  *******************************************************************************/
 BOOLEAN bta_avrc_co_cmd_allowed(tBTA_AV_RC rc_id)
 {
-    if (rc_id >= BTA_AV_VENDOR) {
+    if (rc_id >= BTA_AV_VENDOR || (rc_id >> 4) >= AVRC_TG_SUPPORTED_CMD_ARRAY_SIZE) {
         return FALSE;
     }
     const uint16_t *rc_cmd = btc_avrc_tg_get_supported_command();
+    if (rc_cmd == NULL) {
+        return FALSE;
+    }
     if (rc_cmd[rc_id >> 4] & ((uint16_t)1 << (rc_id & 0x0F))) {
         return TRUE;
     } else {
@@ -52,7 +57,7 @@ BOOLEAN bta_avrc_co_cmd_allowed(tBTA_AV_RC rc_id)
  **
  ** Function         bta_avrc_co_rn_evt_cap
  **
- ** Description      get the event notifcation capabilities on AVRCP target
+ ** Description      get the event notification capabilities on AVRCP target
  **
  ** Returns          number of event_ids supported
  **
@@ -65,7 +70,7 @@ UINT8 bta_avrc_co_rn_evt_cap(UINT8 *event_ids)
 
     UINT16 event_bits = btc_avrc_tg_get_rn_supported_evt();
     UINT8 count = 0;
-    for (UINT8 i = 0; i < 16; ++i, event_bits >>= 1) {
+    for (UINT8 i = 0; i < AVRC_CAP_MAX_NUM_EVT_ID; ++i, event_bits >>= 1) {
         if (event_bits & 0x01) {
             event_ids[count++] = i;
         }

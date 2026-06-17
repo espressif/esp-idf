@@ -6,3 +6,6 @@ components/esp_driver_i2c/test_apps/i2c_test_apps:
   depends_components:
     - esp_driver_i2c
     - esp_hal_i2c
+    - esp_driver_uart
+    - esp_hw_support
+    - soc

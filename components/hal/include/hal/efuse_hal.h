@@ -14,7 +14,6 @@
 extern "C" {
 #endif
 
-
 /**
  * @brief get factory mac address
  */
@@ -73,7 +72,6 @@ uint32_t efuse_hal_get_minor_chip_version(void);
  * @brief Returns the chip package version
  */
 uint32_t efuse_hal_get_chip_ver_pkg(void);
-
 
 #if SOC_RECOVERY_BOOTLOADER_SUPPORTED
 

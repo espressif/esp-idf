@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -51,6 +51,7 @@
 #define LP_PROBE_TOP_OUT15_IDX                            29
 #define PROBE_CHAIN_CLK_PAD_OUT_IDX                       30
 
-#define SIG_LP_GPIO_OUT_IDX                               32
+#define LP_SIG_GPIO_OUT_IDX                               32
+#define SIG_LP_GPIO_OUT_IDX _Pragma ("GCC warning \"'SIG_LP_GPIO_OUT_IDX' macro is deprecated, use 'LP_SIG_GPIO_OUT_IDX' instead\"") LP_SIG_GPIO_OUT_IDX
 
 #define LP_GPIO_MAP_DATE_IDX                              0x230323

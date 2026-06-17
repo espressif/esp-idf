@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -21,6 +21,12 @@ const static char jpg_file_1080[] = "/sdcard/esp1080.jpg";
 const static char raw_file_1080[] = "/sdcard/out.rgb";
 const static char jpg_file_720[] = "/sdcard/esp720.jpg";
 const static char raw_file_720[] = "/sdcard/out2.rgb";
+
+#if CONFIG_IDF_TARGET_ESP32S31
+#define TIMEOUT_MS 80
+#else
+#define TIMEOUT_MS 40
+#endif
 
 static esp_err_t sdcard_init(void)
 {
@@ -97,7 +103,7 @@ void app_main(void)
     jpeg_decoder_handle_t jpgd_handle;
 
     jpeg_decode_engine_cfg_t decode_eng_cfg = {
-        .timeout_ms = 40,
+        .timeout_ms = TIMEOUT_MS,
     };
 
     ESP_ERROR_CHECK(jpeg_new_decoder_engine(&decode_eng_cfg, &jpgd_handle));

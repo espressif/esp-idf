@@ -1,19 +1,24 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdint.h>
+#include <stdatomic.h>
 #include "esp_clk_tree.h"
 #include "esp_err.h"
 #include "esp_check.h"
+#include "esp_log.h"
 #include "soc/rtc.h"
 #include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "esp_private/esp_clk_tree_common.h"
+#include "esp_private/periph_ctrl.h"
 
 ESP_LOG_ATTR_TAG(TAG, "esp_clk_tree");
+
+static _Atomic int16_t s_pll_src_cg_ref_cnt[SOC_MOD_CLK_INVALID] = { 0 };
 
 esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_src_freq_precision_t precision,
 uint32_t *freq_value)
@@ -33,9 +38,9 @@ uint32_t *freq_value)
     case SOC_MOD_CLK_PLL_F48M:
         clk_src_freq = CLK_LL_PLL_48M_FREQ_MHZ * MHZ;
         break;
-    // case SOC_MOD_CLK_XTAL_X2_F64M:
-    //     clk_src_freq = CLK_LL_PLL_64M_FREQ_MHZ * MHZ;
-    //     break;
+    case SOC_MOD_CLK_XTAL_X2_F64M:
+        clk_src_freq = CLK_LL_PLL_64M_FREQ_MHZ * MHZ;
+        break;
     case SOC_MOD_CLK_PLL_F96M:
         clk_src_freq = CLK_LL_PLL_96M_FREQ_MHZ * MHZ;
         break;
@@ -60,22 +65,38 @@ uint32_t *freq_value)
     return ESP_OK;
 }
 
-// static int16_t s_xtal_x2_ref_cnt = 0;
+esp_err_t esp_clk_tree_src_set_freq_hz(soc_module_clk_t clk_src, uint32_t expt_freq_value, uint32_t *ret_freq_value)
+{
+    (void)clk_src; (void)expt_freq_value; (void)ret_freq_value;
+    return ESP_ERR_NOT_SUPPORTED;
+}
+
+static int16_t s_xtal_x2_ref_cnt = 0;
+static int16_t s_bbpll_ref_cnt = 0;
 
 void esp_clk_tree_initialize(void)
 {
-    // // In bootloader, flash clock source will always be switched to use XTAL_X2 clock
-    // s_xtal_x2_ref_cnt++;
-    // if (clk_ll_cpu_get_src() == SOC_CPU_CLK_SRC_XTAL_X2) {
-    //     s_xtal_x2_ref_cnt++;
-    // }
+    // Power
+    // In bootloader, flash clock source will always be switched to use XTAL_X2 clock
+    s_xtal_x2_ref_cnt++;
+    soc_cpu_clk_src_t cpu_clk_src_btld = clk_ll_cpu_get_src();
+    if (cpu_clk_src_btld == SOC_CPU_CLK_SRC_XTAL_X2) {
+        s_xtal_x2_ref_cnt++;
+    } else if (cpu_clk_src_btld == SOC_CPU_CLK_SRC_PLL) {
+        s_bbpll_ref_cnt++;
+    }
+
+    // Gating
+    // PLL_F64M ++ for MSPI
 }
 
 bool esp_clk_tree_is_power_on(soc_root_clk_circuit_t clk_circuit)
 {
     switch (clk_circuit) {
-    // case SOC_ROOT_CIRCUIT_CLK_XTAL_X2:
-    //     return s_xtal_x2_ref_cnt > 0;
+    case SOC_ROOT_CIRCUIT_CLK_XTAL_X2:
+        return s_xtal_x2_ref_cnt > 0;
+    case SOC_ROOT_CIRCUIT_CLK_BBPLL:
+        return s_bbpll_ref_cnt > 0;
     default:
         break;
     }
@@ -84,37 +105,83 @@ bool esp_clk_tree_is_power_on(soc_root_clk_circuit_t clk_circuit)
 
 bool esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable)
 {
+    bool toggled = false;
     switch (clk_circuit) {
-    // case SOC_ROOT_CIRCUIT_CLK_XTAL_X2:
-    //     if (enable) {
-    //         s_xtal_x2_ref_cnt++;
-    //     } else {
-    //         s_xtal_x2_ref_cnt--;
-    //     }
+    case SOC_ROOT_CIRCUIT_CLK_XTAL_X2:
+        if (enable) {
+            s_xtal_x2_ref_cnt++;
+        } else {
+            s_xtal_x2_ref_cnt--;
+        }
 
-    //     if (s_xtal_x2_ref_cnt == 1) {
-    //         clk_ll_xtal_x2_enable();
-    //     } else if (s_xtal_x2_ref_cnt == 0) {
-    //         clk_ll_xtal_x2_disable();
-    //     }
+        if (s_xtal_x2_ref_cnt == 1) {
+            clk_ll_xtal_x2_enable();
+            toggled = true;
+        } else if (s_xtal_x2_ref_cnt == 0) {
+            clk_ll_xtal_x2_disable();
+            toggled = true;
+        }
 
-    //     assert(s_xtal_x2_ref_cnt >= 0);
-    //     break;
+        assert(s_xtal_x2_ref_cnt >= 0);
+        break;
+    case SOC_ROOT_CIRCUIT_CLK_BBPLL:
+        if (enable) {
+            s_bbpll_ref_cnt++;
+        } else {
+            s_bbpll_ref_cnt--;
+        }
+
+        // Note that a calibration is usually needed after enabling BBPLL
+        if (s_bbpll_ref_cnt == 1) {
+            clk_ll_bbpll_enable();
+            toggled = true;
+        } else if (s_bbpll_ref_cnt == 0) {
+            clk_ll_bbpll_disable();
+            toggled = true;
+        }
+
+        assert(s_bbpll_ref_cnt >= 0);
+        break;
     default:
         break;
     }
-    return false; // TODO: PM-653
+    return toggled; // TODO: PM-653
 }
 
 esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
 {
-    switch (clk_src) {
-    // case SOC_MOD_CLK_XTAL_X2_F64M:
-    //     // later, here should handle ref count for XTAL_X2_F64M clock gating, then also handle XTAL_X2 circuit enable/disable
-    //     esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_XTAL_X2, enable);
-    //     break;
-    default:
-        break;
+    if (clk_src < 1 || clk_src >= SOC_MOD_CLK_INVALID) {
+        // some conditions is legal, e.g. -1 means external clock source
+        return ESP_OK;
     }
-    return ESP_OK; // TODO: PM-653
+    int16_t prev_ref_cnt = 0;
+    if (enable) {
+        prev_ref_cnt = atomic_fetch_add(&s_pll_src_cg_ref_cnt[clk_src], 1);
+    } else {
+        prev_ref_cnt = atomic_fetch_sub(&s_pll_src_cg_ref_cnt[clk_src], 1);
+        if (prev_ref_cnt <= 0) {
+            ESP_EARLY_LOGW(TAG, "soc_module_clk_t %d disabled multiple times!!", clk_src);
+            atomic_store(&s_pll_src_cg_ref_cnt[clk_src], 0);
+            return ESP_OK;
+        }
+    }
+    if ((prev_ref_cnt == 0 && enable) || (prev_ref_cnt == 1 && !enable)) {
+        switch (clk_src) {
+        case SOC_MOD_CLK_RC_FAST:
+            enable ? rtc_dig_clk8m_enable() : rtc_dig_clk8m_disable();
+            break;
+        case SOC_MOD_CLK_XTAL_X2_F64M:
+            // later, here should handle ref count for XTAL_X2_F64M clock gating, then also handle XTAL_X2 circuit enable/disable
+            esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_XTAL_X2, enable);
+            break;
+        // case SOC_MOD_CLK_PLL_FxxM:
+        //     bool truly_toggled = esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_BBPLL, enable);
+        //     if (enable && truly_toggled) {
+        //         ESP_LOGW(TAG, "BBPLL enabled, a calibration may be needed");
+        //     }
+        default:
+            break;
+        }
+    }
+    return ESP_OK;
 }

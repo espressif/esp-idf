@@ -186,6 +186,10 @@ int bt_mesh_settings_direct_open(bt_mesh_nvs_handle_t *handle)
         err = bt_mesh_settings_nvs_open(ctx->nvs_name, &ctx->handle);
         if (err) {
             BT_ERR("Open nvs failed, name %s, err %d", ctx->nvs_name, err);
+            /* Close the previously opened nvs nvs partition(s) */
+            for (int j = 0; j < i; j++) {
+                bt_mesh_settings_nvs_close(settings_ctx[j].handle);
+            }
             return -EIO;
         }
 
@@ -596,9 +600,9 @@ static int settings_remove_item(bt_mesh_nvs_handle_t handle, const char *key, co
 
     length = buf->len - sizeof(val);
     if (!length) {
-        settings_save(handle, key, NULL, 0);
+        err = settings_save(handle, key, NULL, 0);
         bt_mesh_free_buf(buf);
-        return 0;
+        return err;
     }
 
     store = bt_mesh_alloc_buf(length);

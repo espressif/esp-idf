@@ -176,13 +176,7 @@ Refer to the examples :example:`protocols/https_server/simple` (simple HTTPS ser
 
 If you plan to use the Mbed TLS API directly, refer to the example :example:`protocols/https_mbedtls`. This example demonstrates how to establish an HTTPS connection using Mbed TLS by setting up a secure socket with a certificate bundle for verification.
 
-
-Alternatives
-------------
-
-:doc:`/api-reference/protocols/esp_tls` acts as an abstraction layer over the underlying SSL/TLS library and thus has an option to use Mbed TLS or wolfSSL as the underlying library. By default, only Mbed TLS is available and used in ESP-IDF whereas wolfSSL is available publicly at `<https://github.com/espressif/esp-wolfSSL>`_ with the upstream submodule pointer.
-
-Please refer to :ref:`ESP-TLS: Underlying SSL/TLS Library Options <esp_tls_wolfssl>` documentation for more information on this and comparison of Mbed TLS and wolfSSL.
+The example :example:`protocols/smtp_client` sends email (including attachments) over SMTP with STARTTLS using the Mbed TLS APIs.
 
 
 Important Config Options

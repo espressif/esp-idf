@@ -146,15 +146,33 @@ static inline void modem_lpcon_ll_enable_wifipwr_clock(modem_lpcon_dev_t *hw, bo
 }
 
 __attribute__((always_inline))
+static inline bool modem_lpcon_ll_wifipwr_clock_is_enabled(modem_lpcon_dev_t *hw)
+{
+    return hw->clk_conf.clk_wifipwr_en;
+}
+
+__attribute__((always_inline))
 static inline void modem_lpcon_ll_enable_coex_clock(modem_lpcon_dev_t *hw, bool en)
 {
     hw->clk_conf.clk_coex_en = en;
 }
 
 __attribute__((always_inline))
+static inline bool modem_lpcon_ll_coex_clock_is_enabled(modem_lpcon_dev_t *hw)
+{
+    return hw->clk_conf.clk_coex_en;
+}
+
+__attribute__((always_inline))
 static inline void modem_lpcon_ll_enable_ble_rtc_timer_clock(modem_lpcon_dev_t *hw, bool en)
 {
     hw->clk_conf.clk_lp_timer_en = en;
+}
+
+__attribute__((always_inline))
+static inline bool modem_lpcon_ll_ble_rtc_timer_clock_is_enabled(modem_lpcon_dev_t *hw)
+{
+    return hw->clk_conf.clk_lp_timer_en;
 }
 
 __attribute__((always_inline))

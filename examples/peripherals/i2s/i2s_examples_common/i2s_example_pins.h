@@ -38,7 +38,7 @@ extern "C" {
 #define EXAMPLE_I2S_DOUT_IO2        GPIO_NUM_22     // I2S data out io number
 #define EXAMPLE_I2S_DIN_IO2         GPIO_NUM_23     // I2S data in io number
 
-#elif CONFIG_IDF_TARGET_ESP32S3
+#elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S31
 #define EXAMPLE_I2S_BCLK_IO1        GPIO_NUM_2      // I2S bit clock io number
 #define EXAMPLE_I2S_WS_IO1          GPIO_NUM_3      // I2S word select io number
 #define EXAMPLE_I2S_DOUT_IO1        GPIO_NUM_4      // I2S data out io number

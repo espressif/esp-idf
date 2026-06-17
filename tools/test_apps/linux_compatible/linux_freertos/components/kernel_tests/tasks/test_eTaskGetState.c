@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,7 +43,7 @@ static void loop_task(void *arg)
     // Short delay to allow other created tasks to run
     vTaskDelay(2);
     while (1) {
-        ;
+        vTaskDelay(1);
     }
 }
 

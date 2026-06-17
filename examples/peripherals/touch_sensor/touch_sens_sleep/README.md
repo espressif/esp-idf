@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-P4 | ESP32-S2 | ESP32-S3 | ESP32-S31 |
+| ----------------- | ----- | -------- | -------- | -------- | --------- |
 
 # Touch Sensor Sleep Wake up Example
 
@@ -93,3 +93,7 @@ Entering deep sleep in:
 ## Troubleshooting
 
 For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
+
+## Known issues
+
+The ESP32-S31 touch sensor may fail to wake the chip from deep sleep. Increasing `meas_interval_us` in `touch_sensor_config_t` can mitigate this issue.

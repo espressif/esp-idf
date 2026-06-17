@@ -9,8 +9,10 @@
 
 #include "crypto.h"
 #include "access.h"
+#include "transport.h"
 #include "mesh/byteorder.h"
 #include "mesh/buf.h"
+#include "mesh_v1.1/utils.h"
 #include "mesh_v1.1/dfu/dfu_metadata.h"
 
 #if CONFIG_BLE_MESH_DFU_METADATA
@@ -62,8 +64,10 @@ int bt_mesh_dfu_metadata_encode(const struct bt_mesh_dfu_metadata *metadata,
     net_buf_simple_add_le32(buf, metadata->fw_ver.build_num);
     net_buf_simple_add_le24(buf, metadata->fw_size);
     net_buf_simple_add_u8(buf, metadata->fw_core_type);
-    net_buf_simple_add_le32(buf, metadata->comp_hash);
-    net_buf_simple_add_le16(buf, metadata->elems);
+    if (metadata->fw_core_type & BLE_MESH_DFU_FW_CORE_TYPE_APP) {
+        net_buf_simple_add_le32(buf, metadata->comp_hash);
+        net_buf_simple_add_le16(buf, metadata->elems);
+    }
 
     if (metadata->user_data_len > 0) {
         net_buf_simple_add_mem(buf, metadata->user_data, metadata->user_data_len);

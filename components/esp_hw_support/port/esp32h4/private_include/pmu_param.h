@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,18 +27,19 @@ extern "C" {
 // FOR BOTH LIGHTSLEEP & DEEPSLEEP
 #define PMU_PD_CUR_SLEEP_DEFAULT        1
 #define PMU_BIASSLP_SLEEP_DEFAULT       1
-#define PMU_LP_XPD_SLEEP_DEFAULT        1
 #define PMU_LP_SLP_XPD_SLEEP_DEFAULT    0
 #define PMU_LP_SLP_DBIAS_SLEEP_DEFAULT  0
 
 // FOR LIGHTSLEEP
-#define PMU_HP_DRVB_LIGHTSLEEP      0
+#define PMU_HP_DRVB_LIGHTSLEEP_TOP_PU      25
+#define PMU_HP_DRVB_LIGHTSLEEP_TOP_PD      23
 #define PMU_LP_DRVB_LIGHTSLEEP      0
 #define PMU_HP_XPD_LIGHTSLEEP       1
+#define PMU_LP_XPD_LIGHTSLEEP_DEFAULT    1
 
 #define PMU_DBG_ATTEN_LIGHTSLEEP_DEFAULT    0
-#define PMU_HP_DBIAS_LIGHTSLEEP_0V6_DEFAULT 1
-#define PMU_LP_DBIAS_LIGHTSLEEP_0V7_DEFAULT 12
+#define PMU_HP_DBIAS_LIGHTSLEEP_0V6_DEFAULT 0
+#define PMU_LP_DBIAS_LIGHTSLEEP_0V7_DEFAULT 3
 
 #define PMU_REGDMA_S2A_WORK_TIME_PD_TOP_US     0
 // The current value of this depends on the restoration time overhead of the longest chain in regdma
@@ -48,9 +49,9 @@ extern "C" {
 #define PMU_DBG_HP_DEEPSLEEP    0
 #define PMU_HP_XPD_DEEPSLEEP    0
 #define PMU_LP_DRVB_DEEPSLEEP   0
-
+#define PMU_LP_XPD_DEEPSLEEP_DEFAULT    0
 #define PMU_DBG_ATTEN_DEEPSLEEP_DEFAULT     12
-#define PMU_LP_DBIAS_SLEEP_0V7_DEFAULT      23
+#define PMU_LP_DBIAS_SLEEP_0V7_DEFAULT      3
 
 uint32_t get_act_hp_drvb(void);
 uint32_t get_act_lp_dbias(void);
@@ -330,8 +331,7 @@ typedef struct {
     },                                                                       \
     .lp_sys[PMU_MODE_LP_SLEEP] = {                                           \
         .dig_power = {                                                       \
-            /* TODO: PM-638 */\
-            .vdd_io_mode    = 0,                                             \
+            .vdd_io_mode    = 3,                                             \
             .bod_source_sel = 0,                                             \
             .vddbat_mode    = 0,                                             \
             .peri_pd_en     = ((sleep_flags) & PMU_SLEEP_PD_LP_PERIPH) ? 1 : 0,\
@@ -387,12 +387,12 @@ typedef struct {
             .dcdc_clear_rdy     = 0,                                \
             .dig_reg_dpcur_bias = 1,                                \
             .dig_reg_dsfmos     = 4,                                \
-            .dcm_vset           = 20,                               \
             .dcm_mode           = 3,                                \
             .discnnt_dig_rtc    = 0,                                \
             .xpd_trx            = 0,                                \
+            .xpd_bias           = 0,                                \
             .power_det_bypass   = 0,                                \
-            .drv_b              = PMU_HP_DRVB_LIGHTSLEEP,           \
+            .drv_b              = PMU_HP_DRVB_LIGHTSLEEP_TOP_PU,    \
             .pd_cur             = PMU_PD_CUR_SLEEP_DEFAULT,         \
             .bias_sleep         = PMU_BIASSLP_SLEEP_DEFAULT,        \
             .xpd                = PMU_HP_XPD_LIGHTSLEEP,            \
@@ -405,7 +405,7 @@ typedef struct {
             .dcdc_clear_rdy     = 0,                                \
             .dig_reg_dpcur_bias = 1,                                \
             .dig_reg_dsfmos     = 4,                                \
-            .dcm_vset           = 20,                                \
+            .dcm_vset           = 20,                               \
             .dcm_mode           = 3,                                \
             .discnnt_dig_rtc    = 0,                                \
             .drv_b              = PMU_LP_DRVB_DEEPSLEEP,            \
@@ -413,7 +413,7 @@ typedef struct {
             .bias_sleep         = PMU_BIASSLP_SLEEP_DEFAULT,        \
             .slp_xpd            = PMU_LP_SLP_XPD_SLEEP_DEFAULT,     \
             .slp_dbias          = PMU_LP_SLP_DBIAS_SLEEP_DEFAULT,   \
-            .xpd                = PMU_LP_XPD_SLEEP_DEFAULT,         \
+            .xpd                = PMU_LP_XPD_LIGHTSLEEP_DEFAULT,    \
             .dbias              = PMU_LP_DBIAS_LIGHTSLEEP_0V7_DEFAULT \
         }                                                           \
     }                                                               \
@@ -426,7 +426,7 @@ typedef struct {
             .dcdc_clear_rdy     = 0,                                \
             .dig_reg_dpcur_bias = 1,                                \
             .dig_reg_dsfmos     = 4,                                \
-            .dcm_vset           = 23,                               \
+            .dcm_vset           = 20,                               \
             .dcm_mode           = 3,                                \
             .discnnt_dig_rtc    = 0,                                \
             .xpd_trx            = 0,                                \
@@ -450,7 +450,7 @@ typedef struct {
             .bias_sleep         = PMU_BIASSLP_SLEEP_DEFAULT,        \
             .slp_xpd            = PMU_LP_SLP_XPD_SLEEP_DEFAULT,     \
             .slp_dbias          = PMU_LP_SLP_DBIAS_SLEEP_DEFAULT,   \
-            .xpd                = PMU_LP_XPD_SLEEP_DEFAULT,         \
+            .xpd                = PMU_LP_XPD_DEEPSLEEP_DEFAULT,     \
             .dbias              = PMU_LP_DBIAS_SLEEP_0V7_DEFAULT    \
         }                                                           \
     }                                                               \

@@ -6,7 +6,7 @@ This demo demonstrates the Wi-Fi and Bluetooth (BLE/BR/EDR) coexistence feature 
 * The Bluetooth function is demonstrated by the fast provisioning function. Details can be seen in `fast_prov_server`.
 
 
-> Note: In this demo, you call wifi API and bluetooth API to achieve the functions you want. such as `wifi_get_local_ip` API and `esp_ble_mesh_provisioner_add_unprov_dev` API.
+> Note: In this demo, you call wifi API and bluetooth API to achieve the functions you want. such as `esp_wifi_sta_get_ap_info` API and `esp_ble_mesh_provisioner_add_unprov_dev` API.
 
 # What You Need
 

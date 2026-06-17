@@ -52,7 +52,7 @@ struct gpio_etm_task_t {
 };
 
 static gpio_etm_group_t s_gpio_etm_group = {
-    .dev = &GPIO_ETM,
+    .dev = GPIO_LL_ETM_GET_HW(),
     .spinlock = portMUX_INITIALIZER_UNLOCKED,
 };
 

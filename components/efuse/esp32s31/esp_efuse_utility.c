@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,9 +19,8 @@ extern uint32_t virt_blocks[EFUSE_BLK_MAX][COUNT_EFUSE_REG_PER_BLOCK];
 #endif // CONFIG_EFUSE_VIRTUAL
 
 /*Range addresses to read blocks*/
-// TODO: [ESP32S31] IDF-14688 the table is written for passing static check, not accurate, please check.
 const esp_efuse_range_addr_t range_read_addr_blocks[] = {
-    {EFUSE_RD_WR_DIS_REG,       EFUSE_RD_REPEAT_DATA4_REG},      // range address of EFUSE_BLK0  REPEAT
+    {EFUSE_RD_WR_DIS_REG,       EFUSE_RD_REPEAT_DATA7_REG},      // range address of EFUSE_BLK0  REPEAT
     {EFUSE_RD_MAC_SYS0_REG,    EFUSE_RD_MAC_SYS5_REG},      // range address of EFUSE_BLK1  MAC_SPI_8M
     {EFUSE_RD_SYS_PART1_DATA0_REG,    EFUSE_RD_SYS_PART1_DATA7_REG},         // range address of EFUSE_BLK2  SYS_DATA
     {EFUSE_RD_USR_DATA0_REG,    EFUSE_RD_USR_DATA7_REG},         // range address of EFUSE_BLK3  USR_DATA
@@ -30,14 +29,14 @@ const esp_efuse_range_addr_t range_read_addr_blocks[] = {
     {EFUSE_RD_KEY2_DATA0_REG,   EFUSE_RD_KEY2_DATA7_REG},        // range address of EFUSE_BLK6  KEY2
     {EFUSE_RD_KEY3_DATA0_REG,   EFUSE_RD_KEY3_DATA7_REG},        // range address of EFUSE_BLK7  KEY3
     {EFUSE_RD_KEY4_DATA0_REG,   EFUSE_RD_KEY4_DATA7_REG},        // range address of EFUSE_BLK8  KEY4
-    {EFUSE_RD_KEY4_DATA0_REG,   EFUSE_RD_KEY4_DATA7_REG},        // range address of EFUSE_BLK8  KEY4
+    {EFUSE_RD_SYS_PART2_DATA0_REG, EFUSE_RD_SYS_PART2_DATA7_REG}, // range address of EFUSE_BLK9  SYS_DATA_PART2
 };
 
 static uint32_t write_mass_blocks[EFUSE_BLK_MAX][COUNT_EFUSE_REG_PER_BLOCK] = { 0 };
 
 /*Range addresses to write blocks (it is not real regs, it is buffer) */
 const esp_efuse_range_addr_t range_write_addr_blocks[] = {
-    {(uint32_t) &write_mass_blocks[EFUSE_BLK0][0],  (uint32_t) &write_mass_blocks[EFUSE_BLK0][5]},
+    {(uint32_t) &write_mass_blocks[EFUSE_BLK0][0],  (uint32_t) &write_mass_blocks[EFUSE_BLK0][8]},
     {(uint32_t) &write_mass_blocks[EFUSE_BLK1][0],  (uint32_t) &write_mass_blocks[EFUSE_BLK1][5]},
     {(uint32_t) &write_mass_blocks[EFUSE_BLK2][0],  (uint32_t) &write_mass_blocks[EFUSE_BLK2][7]},
     {(uint32_t) &write_mass_blocks[EFUSE_BLK3][0],  (uint32_t) &write_mass_blocks[EFUSE_BLK3][7]},
@@ -70,12 +69,6 @@ void esp_efuse_utility_clear_program_registers(void)
 esp_err_t esp_efuse_utility_check_errors(void)
 {
     return ESP_OK;
-}
-
-// Burn values written to the efuse write registers
-esp_err_t esp_efuse_utility_burn_chip(void)
-{
-    return esp_efuse_utility_burn_chip_opt(false, true);
 }
 
 esp_err_t esp_efuse_utility_burn_chip_opt(bool ignore_coding_errors, bool verify_written_data)

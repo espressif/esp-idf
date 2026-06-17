@@ -28,9 +28,9 @@ extern "C" {
 #endif
 
 #if CONFIG_DMA2D_ISR_IRAM_SAFE
-#define DMA2D_INTR_ALLOC_FLAGS  (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM)
+#define DMA2D_INTR_ALLOC_FLAGS  (ESP_INTR_FLAG_SHARED_PRIVATE | ESP_INTR_FLAG_IRAM)
 #else
-#define DMA2D_INTR_ALLOC_FLAGS  ESP_INTR_FLAG_SHARED
+#define DMA2D_INTR_ALLOC_FLAGS  ESP_INTR_FLAG_SHARED_PRIVATE
 #endif
 
 #define DMA2D_RX_DEFAULT_INTR_FLAG  (DMA2D_LL_EVENT_RX_SUC_EOF | DMA2D_LL_EVENT_RX_ERR_EOF | DMA2D_LL_EVENT_RX_DESC_ERROR)
@@ -59,7 +59,6 @@ struct dma2d_group_t {
     uint32_t rx_periph_m2m_free_id_mask;                            // Bit mask indicating the available RX M2M peripheral selelction IDs at the moment
     dma2d_tx_channel_t *tx_chans[DMA2D_LL_GET(TX_CHANS_PER_INST)];  // Handles of 2D-DMA TX channels
     dma2d_rx_channel_t *rx_chans[DMA2D_LL_GET(RX_CHANS_PER_INST)];  // Handles of 2D-DMA RX channels
-    int intr_priority;                                              // All channels in the same group should share the same interrupt priority
 };
 
 struct dma2d_channel_t {

@@ -17,6 +17,7 @@
 #include "soc/gpio_ext_struct.h"
 #include "soc/gpio_ext_reg.h"
 
+#define GPIO_LL_GLITCH_FILTER_GET_HW() ((gpio_glitch_filter_dev_t *)(void *)&GPIO_EXT.glitch_filter)
 // the max window size is expected to be 64, but due to a hardware issue, we need to limit it to 63
 #define GPIO_LL_GLITCH_FILTER_MAX_WINDOW  GPIO_EXT_FILTER_CH0_WINDOW_WIDTH_V
 

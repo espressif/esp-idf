@@ -43,8 +43,8 @@ static void s_test_i2s_enter_light_sleep(int sec, bool allow_power_down)
     printf("Woke up from light sleep\n");
 
     TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
-#if SOC_HAS(PAU)
-    // check if the power domain also is powered down
+#if SOC_HAS(PAU) && SOC_GDMA_SUPPORT_SLEEP_RETENTION
+    // check if the power domain also is powered down (if GDMA retention is not supported, TOP pd will be rejected)
     TEST_ASSERT_EQUAL(allow_power_down ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
 #endif
     esp_sleep_set_sleep_context(NULL);

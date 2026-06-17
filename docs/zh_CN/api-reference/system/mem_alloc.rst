@@ -39,8 +39,17 @@ ESP-IDF 应用程序使用常见的计算机架构模式：由程序控制流动
 
     如果占用了所有的 ``MALLOC_CAP_8BIT`` 堆空间，则可以用 ``MALLOC_CAP_IRAM_8BIT`` 代替。此时，若只以 32 位对齐的方式访问 IRAM 内存，或者启用了 ``CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY``，则仍然可以将 IRAM 用作内部内存的“储备池”。
 
+    .. note::
+
+        此选项仅在单核 ESP32 配置（``CONFIG_FREERTOS_UNICORE=y``）下可用。与普通内存相比，``CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY`` 选项有一个显著的缺点：对 ``MALLOC_CAP_IRAM_8BIT`` 内存的每次字节、半字或任意非对齐访问都会触发 ``LoadStore`` 或 ``Alignment`` 异常。虽然这些异常会通过软件处理以确保读写值的正确性，但每次访问都会产生约 167 个 CPU 周期的开销，如果频繁访问，可能导致严重的性能下降。因此，应避免在注重性能的代码段（如 ISR 例程或紧凑循环）中使用此类内存。建议重构代码，改用 32 位对齐（``uint32_t``）的访问方式。
 
 调用 ``malloc()`` 时，ESP-IDF ``malloc()`` 内部调用 ``heap_caps_malloc_default(size)``，使用属性 ``MALLOC_CAP_DEFAULT`` 分配内存。该属性可实现字节寻址功能，即存储空间的最小编址单位为字节。
+
+``MALLOC_CAP_DEFAULT`` 描述的是内存能力，而不是精确的分配策略。特别是，``heap_caps_malloc(size, MALLOC_CAP_DEFAULT)`` 不一定遵循与 ``malloc()`` 相同的放置策略。
+
+.. only:: SOC_SPIRAM_SUPPORTED
+
+    例如，当 :doc:`片外 RAM </api-guides/external-ram>` 被添加到基于能力的堆分配器后，``heap_caps_malloc(size, MALLOC_CAP_DEFAULT)`` 可能返回片外 RAM，而 ``malloc()`` 是否优先或仅使用内部 RAM 则取决于具体配置。
 
 ``malloc()`` 使用基于属性的分配系统，所以使用 :cpp:func:`heap_caps_malloc` 分配的内存可以通过调用标准的 ``free()`` 函数释放。
 

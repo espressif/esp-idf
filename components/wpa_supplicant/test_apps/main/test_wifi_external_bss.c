@@ -105,6 +105,7 @@ static void stop_wifi(void)
     }
     vTaskDelay(500 / portTICK_PERIOD_MS);
     TEST_ESP_OK(esp_wifi_deinit());
+    vTaskDelay(1);
 }
 
 static void start_wifi_as_sta(void)

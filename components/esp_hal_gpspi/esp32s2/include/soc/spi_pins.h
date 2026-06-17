@@ -23,8 +23,8 @@
 
 // There are 2 sets of GPIO pins which could be routed to FSPICS0, FSPICLK, FSPID, FSPIQ, FSPIHD, FSPIWP.
 // However, there is only one set of GPIO pins which could be routed to FSPIIO4, FSPIIO5, FSPIIO6, FSPIIO7.
-// As default (when we are not going to use Octal SPI), we make use of SPI2_FUNC_NUM to route one of the 2 sets of GPIO pins to FSPICS0 ~ FSPIWP as follows.
-#define SPI2_FUNC_NUM               4
+// As default (when we are not going to use Octal SPI), we make use of SPI2_FUNC_NUM_QUAD to route one of the 2 sets of GPIO pins to FSPICS0 ~ FSPIWP as follows.
+#define SPI2_FUNC_NUM_QUAD          4
 #define SPI2_IOMUX_PIN_NUM_HD       9
 #define SPI2_IOMUX_PIN_NUM_CS       10
 #define SPI2_IOMUX_PIN_NUM_MOSI     11

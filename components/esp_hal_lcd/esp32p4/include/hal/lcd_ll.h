@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@
 #include "soc/hp_sys_clkrst_struct.h"
 
 #define LCD_LL_GET(_attr)       LCD_LL_ ## _attr
+#define LCD_LL_SUPPORT(_feat)   LCD_LL_SUPPORT_ ## _feat
 #define LCD_LL_RGB_BUS_WIDTH    24
 #define LCD_LL_RGB_PANEL_NUM    1
 #define LCD_LL_I80_BUS_WIDTH    24
@@ -45,7 +46,10 @@ extern "C" {
 #define LCD_LL_CLK_FRAC_DIV_N_MAX  256 // LCD_CLK = LCD_CLK_S / (N + b/a), the N register is 8 bit-width
 #define LCD_LL_CLK_FRAC_DIV_AB_MAX 64  // LCD_CLK = LCD_CLK_S / (N + b/a), the a/b register is 6 bit-width
 #define LCD_LL_PCLK_DIV_MAX        64  // LCD_PCLK = LCD_CLK / MO, the MO register is 6 bit-width
-#define LCD_LL_FIFO_DEPTH          8   // Async FIFO depth
+
+typedef enum {
+    LCD_LL_MEM_LP_MODE_SHUT_DOWN,
+} lcd_ll_mem_lp_mode_t;
 
 /**
  * @brief LCD data byte swizzle mode
@@ -171,6 +175,65 @@ static inline void lcd_ll_set_group_clock_coeff(lcd_cam_dev_t *dev, int div_num,
         (void)__DECLARE_RCC_ATOMIC_ENV; \
         lcd_ll_set_group_clock_coeff(__VA_ARGS__); \
     } while(0)
+
+/**
+ * @brief Force power on the LCD memory block, regardless of the outside PMU logic
+ *
+ * @param dev Peripheral instance address
+ */
+static inline void lcd_ll_mem_force_power_on(lcd_cam_dev_t *dev)
+{
+    (void)dev;
+    // P4 does not have transfer buffer
+}
+
+/**
+ * @brief Force the LCD memory block into low power mode, regardless of the outside PMU logic
+ *
+ * @param dev Peripheral instance address
+ */
+static inline void lcd_ll_mem_force_low_power(lcd_cam_dev_t *dev)
+{
+    (void)dev;
+    // P4 does not have transfer buffer
+}
+
+/**
+ * @brief Power control the LCD memory block by the outside PMU logic
+ *
+ * @param dev Peripheral instance address
+ * @param mode LCD memory low power mode in low power stage
+ */
+static inline void lcd_ll_mem_power_by_pmu(lcd_cam_dev_t *dev)
+{
+    (void)dev;
+    // P4 does not have transfer buffer
+}
+
+/**
+ * @brief Set low power mode for LCD memory block
+ *
+ * @param dev Peripheral instance address
+ * @param mode LCD memory low power mode in low power stage
+ */
+static inline void lcd_ll_mem_set_low_power_mode(lcd_cam_dev_t *dev, lcd_ll_mem_lp_mode_t mode)
+{
+    (void)dev;
+    HAL_ASSERT(mode == LCD_LL_MEM_LP_MODE_SHUT_DOWN);
+}
+
+/**
+ * @brief Enable the transfer buffer(memory block) for LCD module
+ *
+ * @param dev Peripheral instance address
+ * @param en True to enable, False to disable
+ */
+static inline void lcd_ll_enable_trans_buffer(lcd_cam_dev_t *dev, bool en)
+{
+    (void)dev;
+    (void)en;
+    // P4 does not have transfer buffer
+}
 
 /**
  * @brief Set the PCLK clock level state when there's no transaction undergoing

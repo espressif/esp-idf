@@ -1,10 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "esp_log.h"
 #include "nvs_flash.h"
 
 /* BLE */
@@ -12,7 +11,6 @@
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
 #include "host/util/util.h"
-#include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
 #include "multi_adv.h"
 
@@ -27,37 +25,65 @@ static int ble_scannable_legacy_ext_cb(uint16_t instance);
 static int ble_legacy_duration_cb(uint16_t instance);
 static int ble_non_conn_ext_cb(uint16_t instance);
 static void ble_multi_advertise(ble_addr_t addr);
+#define ADV_UUID16_OFFSET (5)
+#define CONNECTABLE_ADV_UUID128_OFFSET (11)
 
 /* Advertising patterns */
 static uint8_t legacy_dur_adv_pattern[] = {
     0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
-    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
-    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x18, 0x11,
+    0x05, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x00, 0x00, 0x00, 0x00,
     0x12, BLE_HS_ADV_TYPE_COMP_NAME, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'l', 'e', 'g', 'a', 'c', 'y', '-', 'd', 'u',
     'r'
 };
 
 static uint8_t scannable_legacy_adv_pattern[] = {
     0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
-    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
-    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x18, 0x11,
+    0x05, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x00, 0x00, 0x00, 0x00,
     0x13, BLE_HS_ADV_TYPE_COMP_NAME, 'n', 'i', 'm', 'b', 'l', 'e', '-', 's', 'c', 'a', 'n', '-', 'l', 'e', 'g', 'a',
     'c', 'y'
 };
 
 static uint8_t connectable_adv_pattern[] = {
     0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
-    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
-    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x18, 0x11,
+    0x05, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x00, 0x00, 0x00, 0x00,
+    0x11, BLE_HS_ADV_TYPE_COMP_UUIDS128,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x12, BLE_HS_ADV_TYPE_COMP_NAME, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'c', 'o', 'n', 'n', 'e', 't', 'a', 'b', 'l', 'e'
 };
 
 static uint8_t non_conn_adv_pattern[] = {
     0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
-    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
-    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x18, 0x11,
+    0x05, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x00, 0x00, 0x00, 0x00,
     0x10, BLE_HS_ADV_TYPE_COMP_NAME, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'n', 'o', 'n', '-', 'c', 'o', 'n', 'n'
 };
+
+static void
+ble_multi_adv_set_uuid16_field(uint8_t *adv_pattern, uint8_t uuid_offset)
+{
+    size_t uuids16_count;
+    const uint16_t *uuids16 = gatt_svr_service_uuids16(&uuids16_count);
+
+    /* Pattern reserves room for 2 x 16-bit UUIDs. */
+    assert(uuids16_count >= 2);
+
+    adv_pattern[uuid_offset] = uuids16[0] & 0xFF;
+    adv_pattern[uuid_offset + 1] = (uuids16[0] >> 8) & 0xFF;
+    adv_pattern[uuid_offset + 2] = uuids16[1] & 0xFF;
+    adv_pattern[uuid_offset + 3] = (uuids16[1] >> 8) & 0xFF;
+}
+
+static void
+ble_multi_adv_set_service_uuids(void)
+{
+    ble_multi_adv_set_uuid16_field(legacy_dur_adv_pattern, ADV_UUID16_OFFSET);
+    ble_multi_adv_set_uuid16_field(scannable_legacy_adv_pattern, ADV_UUID16_OFFSET);
+    ble_multi_adv_set_uuid16_field(connectable_adv_pattern, ADV_UUID16_OFFSET);
+    ble_multi_adv_set_uuid16_field(non_conn_adv_pattern, ADV_UUID16_OFFSET);
+
+    memcpy(&connectable_adv_pattern[CONNECTABLE_ADV_UUID128_OFFSET],
+           gatt_svr_service_uuid128(), 16);
+}
 
 /**
  * Logs information about a connection to the console.
@@ -207,6 +233,7 @@ start_connectable_ext(void)
 {
     uint8_t instance = 1;
     struct ble_gap_ext_adv_params params;
+
     int size_pattern = sizeof(connectable_adv_pattern) / sizeof(connectable_adv_pattern[0]);
 
     memset (&params, 0, sizeof(params));
@@ -438,6 +465,8 @@ ble_multi_adv_on_sync(void)
         return;
     }
 
+    ble_multi_adv_set_service_uuids();
+
     start_non_connectable_ext();
 
     start_connectable_ext();
@@ -481,7 +510,6 @@ app_main(void)
     ble_hs_cfg.sm_bonding = 1;
     ble_hs_cfg.sm_mitm = 1;
     ble_hs_cfg.sm_sc = 1;
-    ble_hs_cfg.sm_sc = 0;
     /* Enable the appropriate bit masks to make sure the keys
      * that are needed are exchanged
      */

@@ -4,6 +4,7 @@ tools/test_apps/linux_compatible/generic_build_test:
   enable:
     - if: IDF_TARGET in ["esp32", "esp32c3", "linux"]
   depends_components:
+    - *common_components
     - pthread
 
 tools/test_apps/linux_compatible/linux_freertos:

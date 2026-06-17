@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,12 +16,20 @@ extern "C" {
 #endif
 
 /**
- * @brief Parallel IO sample edge
+ * @brief Parallel IO Rx sample edge
  */
 typedef enum {
     PARLIO_SAMPLE_EDGE_NEG, /*!< Sample data on falling edge of clock */
     PARLIO_SAMPLE_EDGE_POS, /*!< Sample data on rising edge of clock */
 } parlio_sample_edge_t;
+
+/**
+ * @brief Parallel IO Tx shift edge
+ */
+typedef enum {
+    PARLIO_SHIFT_EDGE_POS, /*!< Shift data on rising edge of clock */
+    PARLIO_SHIFT_EDGE_NEG, /*!< Shift data on falling edge of clock */
+} parlio_shift_edge_t;
 
 /**
  * @brief Parallel IO bit packing order

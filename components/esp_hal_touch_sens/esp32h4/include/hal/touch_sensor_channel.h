@@ -6,7 +6,7 @@
 
 #pragma once
 
-//Touch channels
+// Touch channels
 
 #define TOUCH_PAD_GPIO0_CHANNEL     0
 #define TOUCH_PAD_NUM0_GPIO_NUM     0

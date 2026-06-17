@@ -15,6 +15,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "hal/spi_flash_hal.h"
+#include "hal/spi_ll.h"
 #include "hal/assert.h"
 #include "soc/soc_caps.h"
 #include "soc/chip_revision.h"
@@ -96,7 +97,7 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
      */
     bool conf_required = ((extra_bits & SPI_FLASH_CONFIG_CONF_BITS) != 0);
 
-    if ((SOC_SPI_MAX_BITWIDTH(spi_flash_ll_hw_get_id(dev)) < 2) && io_mode > SPI_FLASH_FASTRD) {
+    if ((SPI_LL_PERIPH_BITWIDTH(spi_flash_ll_hw_get_id(dev)) < 2) && io_mode > SPI_FLASH_FASTRD) {
         return ESP_ERR_NOT_SUPPORTED;
     }
 
@@ -125,11 +126,11 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
     if (conf_required) {
         int line_width = (io_mode == SPI_FLASH_DIO ? 2 : 4);
         dummy_cyclelen_base -= SPI_FLASH_LL_CONTINUOUS_MODE_BIT_NUMS / line_width;
-#if !SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
+#if !SPI_FLASH_LL_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
         addr_bitlen += SPI_FLASH_LL_CONTINUOUS_MODE_BIT_NUMS;
 #endif
         spi_flash_ll_set_extra_address(dev, 0);
-#if SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
+#if SPI_FLASH_LL_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
         spi_flash_ll_wb_mode_enable(dev, true);
 #endif
     }
@@ -188,6 +189,23 @@ esp_err_t spi_flash_hal_common_command(spi_flash_host_inst_t *host, spi_flash_tr
         io_mode = trans->io_mode;
     }
 
+#if SOC_IS(ESP32S3)
+    // On ESP32S3, PMS is enabled only if user_command = 1, user_addr = 1, and user_mosi = 1
+    // While for other targets, user_command = 1, user_addr = 1, and user_miso = 0 are the conditions to enable PMS.
+    // While erase command doesn't have mosi data, so PMS cannot be enabled
+    // The workaround is to send the low 8 bits of the address in data phase, in such way, user_mosi will be set to 1
+    if (command != 0x00 && trans->address_bitlen > 0 && trans->mosi_len == 0 && trans->miso_len == 0) {
+        uint32_t addr = trans->address;
+        // Split addr into two phases
+        trans->address_bitlen -= 8;
+        trans->address = addr >> 8; // the high bits of the addr
+        trans->mosi_len = 1;
+        trans->mosi_data = (uint8_t[]) {
+            (uint8_t)(addr & 0xFF)
+        }; // the low 8 bits of the addr
+    }
+#endif
+
     host->driver->configure_host_io_mode(host, command, trans->address_bitlen, dummy_bitlen, io_mode);
 
     spi_flash_ll_set_usr_address(dev, trans->address, trans->address_bitlen);
@@ -208,7 +226,7 @@ esp_err_t spi_flash_hal_common_command(spi_flash_host_inst_t *host, spi_flash_tr
     if (trans->miso_len > 0) {
         spi_flash_ll_get_buffer_data(dev, trans->miso_data, trans->miso_len);
     }
-#if SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
+#if SPI_FLASH_LL_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
     spi_flash_ll_wb_mode_enable(dev, false);
 #endif
     return ESP_OK;

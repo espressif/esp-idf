@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
@@ -16,8 +16,6 @@ from cryptography.hazmat.primitives.asymmetric import ec
 # === Constants ===
 SEC_STG_KEY_DATA_SZ = 256
 AES_KEY_LEN = 32
-AES_DEFAULT_IV_LEN = 16
-AES_GCM_IV_LEN = 12
 ECDSA_P256_LEN = 32
 ECDSA_P384_LEN = 48
 
@@ -47,22 +45,10 @@ def generate_aes256_key(flags: Flags, key_file: str | None = None) -> bytes:
             raise ValueError('AES key file must be at least 32 bytes long')
 
         key = key_data[:AES_KEY_LEN]
-        iv_data = key_data[AES_KEY_LEN:]
-
-        iv_len = len(iv_data)
-        if iv_len == 0:
-            iv = os.urandom(AES_DEFAULT_IV_LEN)
-        elif iv_len == AES_GCM_IV_LEN:
-            iv = iv_data + b'\x00' * (AES_DEFAULT_IV_LEN - AES_GCM_IV_LEN)
-        elif iv_len == AES_DEFAULT_IV_LEN:
-            iv = iv_data
-        else:
-            raise ValueError('IV length must be exactly 12 or 16 bytes, or omitted to generate one')
     else:
         key = os.urandom(AES_KEY_LEN)
-        iv = os.urandom(AES_DEFAULT_IV_LEN)
 
-    packed = struct.pack('<II32s16s', KeyType.AES256.value, flags.value, key, iv)
+    packed = struct.pack('<II32s', KeyType.AES256.value, flags.value, key)
     return packed + b'\x00' * (SEC_STG_KEY_DATA_SZ - len(packed))
 
 

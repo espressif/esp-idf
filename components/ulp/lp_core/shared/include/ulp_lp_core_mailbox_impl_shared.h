@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,11 @@ typedef intptr_t lp_message_t;
  * @brief Abstract context for the mailbox implementation
  */
 typedef void*   lp_core_mailbox_ctx_t;
+
+/**
+ * @brief Initialize the mailbox implementation for the current target/core.
+ */
+void lp_core_mailbox_impl_init(void);
 
 /**
  * @brief Get the mailbox context for the current implementation

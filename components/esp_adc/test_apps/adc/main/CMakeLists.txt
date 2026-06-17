@@ -12,5 +12,5 @@ set(srcs "test_app_main.c"
 idf_component_register(SRCS ${srcs}
                        PRIV_INCLUDE_DIRS "../include"
                        PRIV_REQUIRES esp_driver_gptimer esp_driver_gpio esp_wifi nvs_flash esp_adc test_utils efuse
-                                     esp_driver_tsens
+                                     esp_driver_tsens esp_timer
                        WHOLE_ARCHIVE)

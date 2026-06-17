@@ -14,7 +14,6 @@
 #include "hal/cache_types.h"
 #include "hal/assert.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -51,12 +50,12 @@ __attribute__((always_inline))
 static inline void cache_ll_l1_disable_cache(uint32_t cache_id)
 {
     if (cache_id == 0) {
-        while (DPORT_GET_PERI_REG_BITS2(DPORT_PRO_DCACHE_DBUG0_REG, DPORT_PRO_CACHE_STATE, DPORT_PRO_CACHE_STATE_S) != 1){
+        while (DPORT_GET_PERI_REG_BITS2(DPORT_PRO_DCACHE_DBUG0_REG, DPORT_PRO_CACHE_STATE, DPORT_PRO_CACHE_STATE_S) != 1) {
             ;
         }
         DPORT_REG_CLR_BIT(DPORT_PRO_CACHE_CTRL_REG, DPORT_PRO_CACHE_ENABLE);
     } else {
-        while (DPORT_GET_PERI_REG_BITS2(DPORT_APP_DCACHE_DBUG0_REG, DPORT_APP_CACHE_STATE, DPORT_APP_CACHE_STATE_S) != 1){
+        while (DPORT_GET_PERI_REG_BITS2(DPORT_APP_DCACHE_DBUG0_REG, DPORT_APP_CACHE_STATE, DPORT_APP_CACHE_STATE_S) != 1) {
             ;
         }
         DPORT_REG_CLR_BIT(DPORT_APP_CACHE_CTRL_REG, DPORT_APP_CACHE_ENABLE);
@@ -175,7 +174,7 @@ static inline cache_bus_mask_t cache_ll_l1_get_enabled_bus(uint32_t cache_id)
     cache_bus_mask_t mask = (cache_bus_mask_t)0;
     HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
     if (cache_id == 0) {
-        uint32_t bus_mask= DPORT_REG_READ(DPORT_PRO_CACHE_CTRL1_REG);
+        uint32_t bus_mask = DPORT_REG_READ(DPORT_PRO_CACHE_CTRL1_REG);
         mask = (cache_bus_mask_t)(mask | ((!(bus_mask & DPORT_PRO_CACHE_MASK_IRAM0)) ? CACHE_BUS_IBUS0 : 0));
         mask = (cache_bus_mask_t)(mask | ((!(bus_mask & DPORT_PRO_CACHE_MASK_IRAM1)) ? CACHE_BUS_IBUS1 : 0));
         mask = (cache_bus_mask_t)(mask | ((!(bus_mask & DPORT_PRO_CACHE_MASK_IROM0)) ? CACHE_BUS_IBUS2 : 0));
@@ -183,7 +182,7 @@ static inline cache_bus_mask_t cache_ll_l1_get_enabled_bus(uint32_t cache_id)
         mask = (cache_bus_mask_t)(mask | ((!(bus_mask & DPORT_PRO_CACHE_MASK_DROM0)) ? CACHE_BUS_DBUS0 : 0));
         mask = (cache_bus_mask_t)(mask | ((!(bus_mask & DPORT_PRO_CACHE_MASK_DRAM1)) ? CACHE_BUS_DBUS1 : 0));
     } else {
-        uint32_t bus_mask= DPORT_REG_READ(DPORT_APP_CACHE_CTRL1_REG);
+        uint32_t bus_mask = DPORT_REG_READ(DPORT_APP_CACHE_CTRL1_REG);
         mask = (cache_bus_mask_t)(mask | ((!(bus_mask & DPORT_APP_CACHE_MASK_IRAM0)) ? CACHE_BUS_IBUS0 : 0));
         mask = (cache_bus_mask_t)(mask | ((!(bus_mask & DPORT_APP_CACHE_MASK_IRAM1)) ? CACHE_BUS_IBUS1 : 0));
         mask = (cache_bus_mask_t)(mask | ((!(bus_mask & DPORT_APP_CACHE_MASK_IROM0)) ? CACHE_BUS_IBUS2 : 0));

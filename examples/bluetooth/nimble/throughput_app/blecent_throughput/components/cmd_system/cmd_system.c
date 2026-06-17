@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -15,6 +16,7 @@
 #include "driver/rtc_io.h"
 #include "driver/gpio.h"
 #include "driver/uart.h"
+#include "driver/uart_wakeup.h"
 #include "argtable3/argtable3.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -63,6 +65,7 @@ static int get_version(int argc, char **argv)
 {
     esp_chip_info_t info;
     uint32_t flash_size;
+    const char *model_str;
     esp_chip_info(&info);
     if(esp_flash_get_size(NULL, &flash_size) != ESP_OK) {
         printf("Get flash size failed");
@@ -70,7 +73,18 @@ static int get_version(int argc, char **argv)
     }
     printf("IDF Version:%s\r\n", esp_get_idf_version());
     printf("Chip info:\r\n");
-    printf("\tmodel:%s\r\n", info.model == CHIP_ESP32 ? "ESP32" : "Unknown");
+    switch (info.model) {
+        case CHIP_ESP32:   model_str = "ESP32"; break;
+        case CHIP_ESP32S3: model_str = "ESP32-S3"; break;
+        case CHIP_ESP32C3: model_str = "ESP32-C3"; break;
+        case CHIP_ESP32C2: model_str = "ESP32-C2"; break;
+        case CHIP_ESP32C6: model_str = "ESP32-C6"; break;
+        case CHIP_ESP32H2: model_str = "ESP32-H2"; break;
+        case CHIP_ESP32C61: model_str = "ESP32-C61"; break;
+        case CHIP_ESP32C5: model_str = "ESP32-C5"; break;
+        default:           model_str = "Unknown"; break;
+    }
+    printf("\tmodel:%s\r\n", model_str);
     printf("\tcores:%d\r\n", info.cores);
     printf("\tfeature:%s%s%s%s%" PRIu32 "%s\r\n",
            info.features & CHIP_FEATURE_WIFI_BGN ? "/802.11bgn" : "",
@@ -307,7 +321,8 @@ static int light_sleep(int argc, char **argv)
     }
     if (CONFIG_ESP_CONSOLE_UART_NUM <= UART_NUM_1) {
         ESP_LOGI(TAG, "Enabling UART wakeup (press ENTER to exit light sleep)");
-        ESP_ERROR_CHECK( uart_set_wakeup_threshold(CONFIG_ESP_CONSOLE_UART_NUM, 3) );
+        uart_wakeup_cfg_t uart_wakeup_cfg = {.wakeup_mode = UART_WK_MODE_ACTIVE_THRESH, .rx_edge_threshold = 3};
+        ESP_ERROR_CHECK( uart_wakeup_setup(CONFIG_ESP_CONSOLE_UART_NUM, &uart_wakeup_cfg) );
         ESP_ERROR_CHECK( esp_sleep_enable_uart_wakeup(CONFIG_ESP_CONSOLE_UART_NUM) );
     }
     fflush(stdout);
@@ -317,7 +332,7 @@ static int light_sleep(int argc, char **argv)
     uint32_t causes = esp_sleep_get_wakeup_causes();
     if (causes & BIT(ESP_SLEEP_WAKEUP_UNDEFINED)) {
         ESP_LOGI(TAG, "Woke up from: unknown");
-        printf("%lx\n", causes);
+        printf("%" PRIx32 "\n", causes);
         return 0;
     }
     if (causes & BIT(ESP_SLEEP_WAKEUP_GPIO)) {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@
 #include "bta/bta_av_api.h"
 #include "bta/bta_av_ci.h"
 #include "btc_av_co.h"
+#include "btc_a2dp_latm_raw.h"
 #include "btc_a2dp.h"
 #include "btc_a2dp_control.h"
 #include "btc_a2dp_sink.h"
@@ -118,6 +119,17 @@ bool btc_a2dp_sink_startup(void)
     osi_event_bind(data_event, a2dp_sink_local_param.btc_aa_snk_task_hdl, BTC_A2DP_SNK_DATA_QUEUE_IDX);
     a2dp_sink_local_param.btc_aa_snk_cb.data_ready_event = data_event;
     a2dp_sink_local_param.btc_aa_snk_cb.audio_rx_q = fixed_queue_new(QUEUE_SIZE_MAX);
+    if (a2dp_sink_local_param.btc_aa_snk_cb.audio_rx_q == NULL) {
+        osi_event_delete(data_event);
+        a2dp_sink_local_param.btc_aa_snk_cb.data_ready_event = NULL;
+        a2dp_sink_local_param.btc_aa_snk_task_hdl = NULL;
+#if A2D_DYNAMIC_MEMORY == TRUE
+        osi_free(a2dp_sink_local_param_ptr);
+        a2dp_sink_local_param_ptr = NULL;
+#endif
+        return false;
+    }
+
     btc_a2dp_sink_state = BTC_A2DP_SINK_STATE_ON;
 
     btc_a2dp_control_init();
@@ -220,9 +232,14 @@ static void btc_a2dp_sink_data_ready(UNUSED_ATTR void *context)
 
 static void btc_a2dp_sink_handle_inc_media(BT_HDR *p_msg)
 {
-    UINT8 *sbc_start_frame = ((UINT8 *)(p_msg + 1) + p_msg->offset + 1);
-    int num_sbc_frames = (*((UINT8 *)(p_msg + 1) + p_msg->offset)) & 0x0f;
-    UINT32 sbc_frame_len = p_msg->len - 1;
+    UINT8  *payload    = (UINT8 *)(p_msg + 1) + p_msg->offset;
+    UINT8  *frame_ptr  = payload;
+    UINT32  frame_len  = p_msg->len;
+    UINT16  num_frames = 0;
+    UINT32  timestamp;
+    tBTC_AV_CODEC_INFO cur_codec_info;
+
+    bta_av_co_get_cur_codec_info(&cur_codec_info);
 
     if (a2dp_sink_local_param.btc_aa_snk_cb.rx_flush) {
         osi_free(p_msg);
@@ -247,17 +264,82 @@ static void btc_a2dp_sink_handle_inc_media(BT_HDR *p_msg)
     a2dp_sink_local_param.media_pkt_seq_num.expected_seq_num  = p_msg->layer_specific + 1;
     a2dp_sink_local_param.media_pkt_seq_num.seq_num_recount = false;
 
-    APPL_TRACE_DEBUG("Number of sbc frames %d, frame_len %d\n", num_sbc_frames, sbc_frame_len);
+    memcpy(&timestamp, (UINT8 *)(p_msg + 1), sizeof(UINT32));
 
-    UINT32 timestamp = *((UINT32 *) (p_msg + 1));
+    switch (cur_codec_info.id) {
+    case BTC_AV_CODEC_SBC:
+        if (p_msg->len < 1) {
+            APPL_TRACE_WARNING("%s: SBC packet too short (%d)", __func__, p_msg->len);
+            osi_free(p_msg);
+            return;
+        }
+        num_frames = payload[0] & 0x0F;
+        frame_ptr  = payload + 1;
+        frame_len  = p_msg->len - 1;
+        break;
+
+#if (BTC_AV_CODEC_AAC_INCLUDED == TRUE)
+    case BTC_AV_CODEC_M24: {
+        unsigned latm_hdr_bit_len = 0;
+
+        num_frames = 1;
+
+        if (p_msg->len > 0 &&
+            btc_a2dp_latm_check_hdr_len(payload, (size_t)p_msg->len, &latm_hdr_bit_len) == 0) {
+            if (latm_hdr_bit_len != 0 && latm_hdr_bit_len % 8 == 0) {
+                frame_ptr  = payload + latm_hdr_bit_len / 8;
+                frame_len  = p_msg->len - latm_hdr_bit_len / 8;
+            } else {
+                size_t raw_len = 0;
+                BT_HDR *p_raw_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR) + p_msg->offset + p_msg->len);
+                assert(p_raw_buf != NULL);
+                uint8_t *p_raw_data = (uint8_t *)(p_raw_buf + 1) + p_msg->offset;
+                if (p_msg->len > 0 &&
+                    btc_a2dp_latm_extract_raw_data_block(payload, (size_t)p_msg->len, p_raw_data,
+                                                        (size_t)p_msg->len, &raw_len) == 0 &&
+                    raw_len > 0 && raw_len <= (size_t)p_msg->len && raw_len <= 0xffffU) {
+                    frame_ptr = p_raw_data;
+                    frame_len = (UINT32)raw_len;
+                    osi_free(p_msg);
+                    p_msg = p_raw_buf;
+                } else {
+                    APPL_TRACE_WARNING("M24 LATM extract failed, drop len=%u", (unsigned)p_msg->len);
+                    osi_free(p_msg);
+                    osi_free(p_raw_buf);
+                    return;
+                }
+            }
+        } else {
+            APPL_TRACE_WARNING("M24 LATM invalid data");
+            osi_free(p_msg);
+            return;
+        }
+
+        break;
+    }
+#endif
+
+    default:
+        APPL_TRACE_WARNING("%s: unsupported codec type 0x%02x, drop", __func__, cur_codec_info.id);
+        osi_free(p_msg);
+        return;
+    }
+
+    APPL_TRACE_DEBUG("codec 0x%02x, frames %d, frame_len %d", cur_codec_info.id, num_frames, (int)frame_len);
+
     UINT16 conn_hdl = btc_a2d_conn_handle_get();
-    btc_a2d_audio_data_cb_to_app(conn_hdl, (uint8_t *)p_msg, sbc_start_frame, sbc_frame_len, num_sbc_frames, timestamp);
+    btc_a2d_audio_data_cb_to_app(conn_hdl, (uint8_t *)p_msg, frame_ptr, frame_len, num_frames, timestamp);
     /* dont free p_msg here */
 }
 
 UINT8 btc_a2dp_sink_enque_buf(BT_HDR *p_pkt)
 {
     if (btc_a2dp_sink_state != BTC_A2DP_SINK_STATE_ON){
+        osi_free(p_pkt);
+        return 0;
+    }
+
+    if (a2dp_sink_local_param.btc_aa_snk_cb.audio_rx_q == NULL) {
         osi_free(p_pkt);
         return 0;
     }

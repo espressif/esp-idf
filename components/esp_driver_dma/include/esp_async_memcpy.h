@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -97,6 +97,21 @@ esp_err_t esp_async_memcpy_install_gdma_ahb(const async_memcpy_config_t *config,
 esp_err_t esp_async_memcpy_install_gdma_axi(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp);
 #endif // SOC_HAS(AXI_GDMA)
 
+#if SOC_HAS(LP_AHB_GDMA)
+/**
+ * @brief Install async memcpy driver, with LP AHB-GDMA as the backend
+ *
+ * @param[in] config Configuration of async memcpy
+ * @param[out] mcp Returned driver handle
+ * @return
+ *      - ESP_OK: Install async memcpy driver successfully
+ *      - ESP_ERR_INVALID_ARG: Install async memcpy driver failed because of invalid argument
+ *      - ESP_ERR_NO_MEM: Install async memcpy driver failed because out of memory
+ *      - ESP_FAIL: Install async memcpy driver failed because of other error
+ */
+esp_err_t esp_async_memcpy_install_gdma_lp_ahb(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp);
+#endif // SOC_HAS(LP_AHB_GDMA)
+
 #if SOC_CP_DMA_SUPPORTED
 /**
  * @brief Install async memcpy driver, with CPDMA as the backend
@@ -158,6 +173,25 @@ esp_err_t esp_async_memcpy_uninstall(async_memcpy_handle_t mcp);
  *      - ESP_FAIL: Send memory copy request failed because of other error
  */
 esp_err_t esp_async_memcpy(async_memcpy_handle_t mcp, void *dst, void *src, size_t n, async_memcpy_isr_cb_t cb_isr, void *cb_args);
+
+/**
+ * @brief Blocking memory copy function with timeout
+ *
+ * @note This function is blocking and should not be called from interrupt context.
+ * @note Only `timeout_ms=-1` is supported, which means waiting indefinitely.
+ *
+ * @param[in] mcp Handle of async memcpy driver that returned from `esp_async_memcpy_install`
+ * @param[in] dst Destination address (copy to)
+ * @param[in] src Source address (copy from)
+ * @param[in] n Number of bytes to copy
+ * @param[in] timeout_ms Timeout in milliseconds. Only -1 is supported.
+ * @return
+ *      - ESP_OK: Copy memory successfully
+ *      - ESP_ERR_INVALID_ARG: Copy memory failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Function called from ISR context or driver in invalid state
+ *      - ESP_FAIL: Copy memory failed because of other error
+ */
+esp_err_t esp_memcpy_blocking(async_memcpy_handle_t mcp, void *dst, void *src, size_t n, int32_t timeout_ms);
 
 #if SOC_ETM_SUPPORTED
 /**

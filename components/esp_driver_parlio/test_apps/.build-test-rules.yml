@@ -5,3 +5,7 @@ components/esp_driver_parlio/test_apps/parlio:
     - if: SOC_PARLIO_SUPPORTED != 1
   depends_components:
     - esp_driver_parlio
+    - esp_driver_dma
+    - esp_hal_parlio
+    - esp_hw_support
+    - soc

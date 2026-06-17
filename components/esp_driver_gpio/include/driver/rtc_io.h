@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -208,6 +208,31 @@ esp_err_t rtc_gpio_get_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t* s
  */
 esp_err_t rtc_gpio_iomux_func_sel(gpio_num_t gpio_num, int func);
 
+/**
+  * @brief Set pad input to an LP peripheral signal through the LP(RTC) IOMUX.
+  *
+  * @param gpio_num GPIO number
+  * @param func The index number of the LP(RTC) IOMUX function to be selected for the pin
+  * @param signal_idx Peripheral signal index to input. One of the ``*_IN_IDX`` signals in ``soc/lp_gpio_sig_map.h``.
+  *
+  * @return
+  *     - ESP_OK Success
+  *     - ESP_ERR_INVALID_ARG GPIO number error
+  */
+esp_err_t rtc_gpio_iomux_input(gpio_num_t gpio_num, int func, uint32_t signal_idx);
+
+/**
+  * @brief Set LP peripheral output to an RTC IO pad through the LP(RTC) IOMUX.
+  *
+  * @param gpio_num GPIO number
+  * @param func The index number of the LP(RTC) IOMUX function to be selected for the pin
+  *
+  * @return
+  *     - ESP_OK Success
+  *     - ESP_ERR_INVALID_ARG GPIO number error
+  */
+esp_err_t rtc_gpio_iomux_output(gpio_num_t gpio_num, int func);
+
 #endif // SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
 #if SOC_RTCIO_HOLD_SUPPORTED
@@ -284,12 +309,13 @@ esp_err_t rtc_gpio_isolate(gpio_num_t gpio_num);
 /**
  * @brief Enable wakeup from sleep mode using specific GPIO
  * @param gpio_num  GPIO number
- * @param intr_type  Wakeup on high level (GPIO_INTR_HIGH_LEVEL) or low level
- *                   (GPIO_INTR_LOW_LEVEL)
+ * @param intr_type  Wakeup trigger type:
+ *                   - Always supported: GPIO_INTR_HIGH_LEVEL, GPIO_INTR_LOW_LEVEL
+ *                   - If SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED:
+ *                        GPIO_INTR_POSEDGE, GPIO_INTR_NEGEDGE, GPIO_INTR_ANYEDGE
  * @return
  *      - ESP_OK Success
- *      - ESP_ERR_INVALID_ARG The IO is not an RTC IO, or intr_type is not
- *        one of GPIO_INTR_HIGH_LEVEL, GPIO_INTR_LOW_LEVEL.
+ *      - ESP_ERR_INVALID_ARG The IO is not an RTC IO, or intr_type is not supported by the target.
  */
 esp_err_t rtc_gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type);
 

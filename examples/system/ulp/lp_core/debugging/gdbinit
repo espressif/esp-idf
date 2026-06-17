@@ -10,7 +10,13 @@ thb main
 commands
 b do_crash
 b do_things
+commands
+c
+end
 b ulp_lp_core_delay_us
+commands
+c
+end
 c
 end
 c

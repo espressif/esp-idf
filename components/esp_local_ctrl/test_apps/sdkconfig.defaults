@@ -1,0 +1,4 @@
+# Enable Security Version 0 (no encryption) so esp_local_ctrl_start() succeeds
+# with a minimal null transport (no BLE/Wi-Fi hardware required).
+CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0=y
+CONFIG_ESP_TASK_WDT_INIT=n

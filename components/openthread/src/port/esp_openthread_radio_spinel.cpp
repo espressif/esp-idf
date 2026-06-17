@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,7 @@
 #include "esp_spinel_interface.hpp"
 #include "esp_spinel_ncp_vendor_macro.h"
 #include "esp_spi_spinel_interface.hpp"
-#include "esp_uart_spinel_interface.hpp"
+#include "esp_radio_spinel_uart_interface.hpp"
 #include "openthread-core-config.h"
 #include "lib/spinel/radio_spinel.hpp"
 #include "lib/spinel/spinel.h"
@@ -36,7 +36,7 @@ using esp::openthread::SpinelInterfaceAdapter;
 using ot::Spinel::SpinelDriver;
 
 #if CONFIG_OPENTHREAD_RADIO_SPINEL_UART // CONFIG_OPENTHREAD_RADIO_SPINEL_UART
-using esp::openthread::UartSpinelInterface;
+using esp::radio_spinel::UartSpinelInterface;
 static SpinelInterfaceAdapter<UartSpinelInterface> s_spinel_interface;
 #else // CONFIG_OPENTHREAD_RADIO_SPINEL_SPI
 using esp::openthread::SpiSpinelInterface;
@@ -53,7 +53,9 @@ static otRadioCaps s_radio_caps = (OT_RADIO_CAPS_ENERGY_SCAN       |
                                    OT_RADIO_CAPS_RECEIVE_TIMING    |
                                    OT_RADIO_CAPS_TRANSMIT_TIMING   |
                                    OT_RADIO_CAPS_ACK_TIMEOUT       |
-                                   OT_RADIO_CAPS_SLEEP_TO_TX);
+                                   OT_RADIO_CAPS_SLEEP_TO_TX       |
+                                   OT_RADIO_CAPS_CSMA_BACKOFF      |
+                                   OT_RADIO_CAPS_TRANSMIT_RETRIES);
 
 static const char *radiospinel_workflow = "radio_spinel";
 static const esp_openthread_radio_config_t *s_esp_openthread_radio_config = NULL;
@@ -150,7 +152,8 @@ esp_err_t esp_openthread_rcp_deinit(void)
         ESP_RETURN_ON_FALSE(s_radio.Sleep() == OT_ERROR_NONE, ESP_ERR_INVALID_STATE, OT_PLAT_LOG_TAG, "Radio fails to sleep");
         ESP_RETURN_ON_FALSE(s_radio.Disable() == OT_ERROR_NONE, ESP_ERR_INVALID_STATE, OT_PLAT_LOG_TAG, "Fail to disable radio");
     }
-    ESP_RETURN_ON_FALSE(s_spinel_interface.GetSpinelInterface().Disable() == OT_ERROR_NONE, ESP_ERR_INVALID_STATE, OT_PLAT_LOG_TAG, "Fail to deinitialize UART");
+    ESP_RETURN_ON_ERROR(s_spinel_interface.GetSpinelInterface().Disable(), OT_PLAT_LOG_TAG,
+                        "Fail to deinitialize UART");
     esp_openthread_platform_workflow_unregister(radiospinel_workflow);
     return ESP_OK;
 }
@@ -413,7 +416,11 @@ otError otPlatDiagProcess(otInstance *aInstance, uint8_t aArgsLength, char *aArg
     char *end = cmd + sizeof(cmd);
 
     for (int index = 0; index < aArgsLength; index++) {
-        cur += snprintf(cur, static_cast<size_t>(end - cur), "%s ", aArgs[index]);
+        if (end > cur + strlen(aArgs[index])) {
+            cur += snprintf(cur, static_cast<size_t>(end - cur), "%s ", aArgs[index]);
+        } else {
+            return OT_ERROR_INVALID_ARGS;
+        }
     }
 
     return s_radio.PlatDiagProcess(cmd);

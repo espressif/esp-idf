@@ -55,9 +55,9 @@ static const char *TAG = "esp_tee_apm_prot_cfg";
 
 /* NOTE: Super-Watchdog and Brownout Detector protection */
 #define LP_APM_SWD_REG_START      (LP_WDT_SWD_CONFIG_REG)
-#define LP_APM_SWD_REG_END        (LP_WDT_INT_CLR_REG)
+#define LP_APM_SWD_REG_END        (LP_WDT_INT_CLR_REG + 4U)
 #define LP_APM_BOD_REG_START      (LP_ANA_BOD_MODE0_CNTL_REG)
-#define LP_APM_BOD_REG_END        (LP_ANA_LP_INT_CLR_REG)
+#define LP_APM_BOD_REG_END        (LP_ANA_LP_INT_CLR_REG + 4U)
 
 /* NOTE: Following are the master IDs for setting the security mode and access through APM:
  * +---------+-------------+

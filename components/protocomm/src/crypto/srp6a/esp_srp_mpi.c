@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -127,6 +127,16 @@ int esp_mpi_a_mul_b_mod_c(esp_mpi_t *result, esp_mpi_t *a, esp_mpi_t *b, esp_mpi
     mbedtls_mpi_free(&t);
 
     return res;
+}
+
+int esp_mpi_a_mod_b(esp_mpi_t *result, const esp_mpi_t *a, const esp_mpi_t *b)
+{
+    return mbedtls_mpi_mod_mpi(result, a, b);
+}
+
+int esp_mpi_cmp_int(const esp_mpi_t *a, int value)
+{
+    return mbedtls_mpi_cmp_int(a, value);
 }
 
 int esp_mpi_a_add_b_mod_c(esp_mpi_t *result, esp_mpi_t *a, esp_mpi_t *b, esp_mpi_t *c, esp_mpi_ctx_t *ctx)

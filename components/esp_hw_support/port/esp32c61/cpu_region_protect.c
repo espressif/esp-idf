@@ -10,9 +10,9 @@
 #include "esp_cpu.h"
 #include "esp_fault.h"
 #include "esp32c61/rom/rom_layout.h"
-#if CONFIG_SPIRAM
+#if !BOOTLOADER_BUILD && CONFIG_SPIRAM
 #include "esp_private/esp_psram_extram.h"
-#endif /* CONFIG_SPIRAM */
+#endif /* !BOOTLOADER_BUILD && CONFIG_SPIRAM */
 
 #ifdef BOOTLOADER_BUILD
 // Without L bit set
@@ -30,7 +30,7 @@
 
 #define ALIGN_UP_TO_MMU_PAGE_SIZE(addr) (((addr) + (SOC_MMU_PAGE_SIZE) - 1) & ~((SOC_MMU_PAGE_SIZE) - 1))
 #define ALIGN_DOWN_TO_MMU_PAGE_SIZE(addr)  ((addr) & ~((SOC_MMU_PAGE_SIZE) - 1))
-#define ALIGN_UP(addr, align)  ((addr) & ~((align) - 1))
+#define ALIGN_UP(addr, align)  (((addr) + (align) - 1) & ~((align) - 1))
 
 static void esp_cpu_configure_invalid_regions(void)
 {
@@ -147,7 +147,7 @@ void esp_cpu_configure_region_protection(void)
     if ((drom_start & (SOC_CPU_PMP_REGION_GRANULARITY - 1)) == 0) {
         PMP_ENTRY_SET(1, SOC_IROM_MASK_LOW, NONE);
         PMP_ENTRY_SET(2, drom_start, PMP_TOR | RX);
-        PMP_ENTRY_SET(3, SOC_DROM_MASK_HIGH, PMP_TOR | RW);
+        PMP_ENTRY_SET(3, SOC_DROM_MASK_HIGH, PMP_TOR | R);
     } else
 #endif
     {

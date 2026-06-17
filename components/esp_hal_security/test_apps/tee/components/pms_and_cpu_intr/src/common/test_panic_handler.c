@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -61,11 +61,18 @@ void test_panicHandler(RvExcFrame *frame, int exccause)
         }
         return;
     }
+
     /* PERI_APM access fault */
-#if SOC_APM_SUPPORT_TEE_PERI_ACCESS_CTRL
+#if SOC_APM_SUPPORT_TEE_PERI_ACCESS_CTRL || !SOC_APM_CTRL_FILTER_SUPPORTED
+#if CONFIG_IDF_TARGET_ESP32P4
+    if ((regs->mtval >= CPU_PERIPH_LOW && regs->mtval < CPU_PERIPH_HIGH) ||
+            (regs->mtval >= SOC_PERIPHERAL_LOW && regs->mtval < SOC_PERIPHERAL_HIGH) ||
+            (regs->mtval >= SOC_LP_PERIPH_LOW && regs->mtval < SOC_LP_PERIPH_HIGH)) {
+#else
     if (regs->mtval >= SOC_PERIPHERAL_LOW && regs->mtval < SOC_PERIPHERAL_HIGH) {
+#endif
         if (mcause == MCAUSE_LOAD_ACCESS_FAULT || mcause == MCAUSE_STORE_ACCESS_FAULT) {
-            panic_print("[PERI_APM] %s at 0x%08x\n\r", rsn, regs->mtval);
+            panic_print("[PERI_ACC] %s at 0x%08x (%s)\n\r", rsn, regs->mtval, (regs->mstatus & MSTATUS_MPP) ? "M-mode" : "U-mode");
             frame->mepc += 0x04U;
             RV_WRITE_CSR(uscratch, regs->mtval);
             return;

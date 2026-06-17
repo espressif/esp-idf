@@ -1863,6 +1863,11 @@ UINT16 L2CA_SendFixedChnlData (UINT16 fixed_cid, BD_ADDR rem_bda, BT_HDR *p_buf)
 
 BOOLEAN L2CA_CheckIsCongest(UINT16 fixed_cid, BD_ADDR addr)
 {
+    if ((fixed_cid < L2CAP_FIRST_FIXED_CHNL) || (fixed_cid > L2CAP_LAST_FIXED_CHNL)) {
+        L2CAP_TRACE_ERROR ("L2CA_CheckIsCongest()  Invalid CID: 0x%04x", fixed_cid);
+        return TRUE;
+    }
+
     tL2C_LCB *p_lcb;
     p_lcb = l2cu_find_lcb_by_bd_addr(addr, BT_TRANSPORT_LE);
 

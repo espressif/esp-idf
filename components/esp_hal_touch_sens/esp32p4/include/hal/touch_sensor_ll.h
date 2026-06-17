@@ -335,8 +335,6 @@ static inline void touch_ll_enable_scan_mask(uint16_t chan_mask, bool enable)
  * @note  The touch sensor that in scan map, should be deinit GPIO function firstly.
  * @param enable_mask bitmask of touch sensor scan group.
  *        e.g. TOUCH_PAD_NUM1 -> BIT(1)
- * @return
- *      - ESP_OK on success
  */
 static inline void touch_ll_enable_channel_mask(uint16_t enable_mask)
 {

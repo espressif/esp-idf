@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -126,14 +126,27 @@ TEST_CASE("RTC WDT triggers interrupt at expected time for all stages", "[rtc_wd
     esp_intr_free(ret_handle);
 #endif
 
-    /* Check that wdt interrupts for various stages occurred within a reasonable window (WDT_TIMEOUT_MARGIN_MS) */
+    /* Check that wdt interrupts for various stages occurred within a reasonable window (WDT_TIMEOUT_MARGIN_MS)
+     * Do not abort on first failure: print all stage results and report aggregate failure at the end so later
+     * stage timings can be inspected even if earlier stages are out of tolerance.
+     */
     int64_t elapsed_us[4], expected_us[4];
+    int failures = 0;
     for (stage = WDT_STAGE0; stage <= WDT_STAGE3; stage++) {
         elapsed_us[stage] = wdt_stage_int_time[stage] - wdt_start_time[stage];
         expected_us[stage] = wdt_stage_timeout_ms[stage] * 1000;
         printf("Stage-%d: interrupt time %lld us, start time %lld us\n", stage, wdt_stage_int_time[stage], wdt_start_time[stage]);
         printf("Stage-%d: expected %lld us, elapsed %lld us\n", stage, expected_us[stage], elapsed_us[stage]);
-        TEST_ASSERT_INT_WITHIN(WDT_TIMEOUT_MARGIN_MS(wdt_stage_timeout_ms[stage]) * 1000, expected_us[stage], elapsed_us[stage]);
+        int64_t margin_us = (int64_t)WDT_TIMEOUT_MARGIN_MS(wdt_stage_timeout_ms[stage]) * 1000;
+        if (llabs(expected_us[stage] - elapsed_us[stage]) > margin_us) {
+            failures++;
+            printf("Stage-%d: OUT OF TOLERANCE (expected %lld +/- %lld, got %lld)\n", stage, expected_us[stage], margin_us, elapsed_us[stage]);
+        } else {
+            printf("Stage-%d: within tolerance\n", stage);
+        }
+    }
+    if (failures) {
+        TEST_FAIL_MESSAGE("One or more WDT stages timed out outside allowed margin. See logs for details.");
     }
 }
 
@@ -226,7 +239,7 @@ static void rtc_wdt_deep_sleep_prepare_timeout(void)
 static void rtc_wdt_verify_SYSTEM_reset(void)
 {
     printf("Confirming if reset reason matches 0x9 (main system reset)\n");
-#if CONFIG_IDF_TARGET_ESP32P4
+#if CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32S31
     TEST_ASSERT_EQUAL(RESET_REASON_CORE_RWDT, esp_rom_get_reset_reason(CONFIG_ESP_MAIN_TASK_AFFINITY));
 #else
     TEST_ASSERT_EQUAL(RESET_REASON_CORE_RTC_WDT, esp_rom_get_reset_reason(CONFIG_ESP_MAIN_TASK_AFFINITY));
@@ -236,7 +249,7 @@ static void rtc_wdt_verify_SYSTEM_reset(void)
 static void rtc_wdt_verify_RTC_reset(void)
 {
     printf("Confirming if reset reason matches 0x10 (main system + RTC reset)\n");
-#if CONFIG_IDF_TARGET_ESP32P4
+#if CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32S31
     TEST_ASSERT_EQUAL(RESET_REASON_SYS_RWDT, esp_rom_get_reset_reason(CONFIG_ESP_MAIN_TASK_AFFINITY));
 #else
     TEST_ASSERT_EQUAL(RESET_REASON_SYS_RTC_WDT, esp_rom_get_reset_reason(CONFIG_ESP_MAIN_TASK_AFFINITY));

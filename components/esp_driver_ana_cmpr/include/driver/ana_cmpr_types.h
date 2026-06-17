@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
 #include "hal/ana_cmpr_types.h"
+#include "hal/gpio_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,14 +22,6 @@ extern "C" {
 typedef int ana_cmpr_unit_t;
 
 #define ANA_CMPR_UNIT_0     0       /*!< @deprecated Analog comparator unit 0 */
-
-/**
- * @brief Analog comparator reference source
- */
-typedef enum {
-    ANA_CMPR_REF_SRC_INTERNAL,      /*!< Analog Comparator reference voltage comes from internal, divided from VDD */
-    ANA_CMPR_REF_SRC_EXTERNAL,      /*!< Analog Comparator reference voltage comes from external pin, e.g. `ANA_CMPR0_EXT_REF_GPIO` */
-} ana_cmpr_ref_source_t;
 
 /**
  * @brief Analog comparator channel type
@@ -43,18 +36,6 @@ typedef enum {
  */
 typedef struct ana_cmpr_t *ana_cmpr_handle_t;
 
-#if SOC_ANA_CMPR_SUPPORTED
-/**
- * @brief Analog comparator clock source
- */
-typedef soc_periph_ana_cmpr_clk_src_t ana_cmpr_clk_src_t;
-#else
-/**
- * @brief Analog comparator clock source
- */
-typedef int ana_cmpr_clk_src_t;
-#endif
-
 /**
  * @brief Analog comparator cross event data
  */
@@ -62,6 +43,7 @@ typedef struct {
     ana_cmpr_cross_type_t cross_type;   /*!< The cross type of the target signal to the reference signal.
                                          *   Will either be ANA_CMPR_CROSS_POS or ANA_CMPR_CROSS_NEG
                                          *   Always be ANA_CMPR_CROSS_ANY if target does not support independent interrupt (like ESP32H2) */
+    int src_chan_id;                    /*!< The source channel index that triggers the interrupt, valid when the target supports multiple source channels */
 } ana_cmpr_cross_event_data_t;
 
 /**
@@ -74,6 +56,16 @@ typedef struct {
  * @return Whether a high priority task has been waken up by this callback function
  */
 typedef bool (*ana_cmpr_cross_cb_t)(ana_cmpr_handle_t cmpr, const ana_cmpr_cross_event_data_t *edata, void *user_ctx);
+
+/**
+ * @brief Group of Analog Comparator callbacks
+ * @note The callbacks are all running under ISR environment
+ * @note When CONFIG_ANA_CMPR_ISR_CACHE_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
+ *       The variables used in the function should be in the SRAM as well.
+ */
+typedef struct {
+    ana_cmpr_cross_cb_t on_cross;               /*!< The callback function on cross interrupt */
+} ana_cmpr_event_callbacks_t;
 
 #ifdef __cplusplus
 }

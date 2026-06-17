@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,6 +62,13 @@ void RTC_IRAM_ATTR esp_wake_stub_sleep(esp_deep_sleep_wake_stub_fn_t new_stub)
     pmu_ll_hp_clear_wakeup_intr_status(&PMU);
     pmu_ll_hp_clear_reject_intr_status(&PMU);
     pmu_ll_hp_clear_reject_cause(&PMU);
+#if CONFIG_ULP_COPROC_TYPE_LP_CORE
+    /* Clear the pending LP core SW interrupt before sleeping. Without this,
+     * the LP core wakeup cause bit (PMU_SW_INT_RAW) remains asserted after
+     * ulp_lp_core_wakeup_main_processor(), causing the PMU to immediately
+     * re-trigger a wakeup as soon as sleep is requested. */
+    pmu_ll_hp_clear_sw_intr_status(&PMU);
+#endif
     pmu_ll_hp_set_sleep_enable(&PMU);
 #else
     rtc_cntl_ll_sleep_enable();

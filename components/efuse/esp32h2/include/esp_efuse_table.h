@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@ extern "C" {
 #include "esp_efuse_table_v0.0_v1.1.h"
 #endif
 
-// md5_digest_table 1dc5045e8a74c32825696ca314128499
+// md5_digest_table 4b1296d3b432e2675dd1c7bbceef856c
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -82,6 +82,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ACTIVE_HP_DBIAS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ACTIVE_LP_DBIAS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DSLP_DBIAS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DBIAS_VOL_GAP[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LSLP_HP_DBIAS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MINOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DISABLE_WAFER_VERSION_MAJOR[];
@@ -206,6 +207,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_ACTIVE_HP_DBIAS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_ACTIVE_LP_DBIAS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DSLP_DBIAS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DBIAS_VOL_GAP[];
+extern const esp_efuse_desc_t* ESP_EFUSE_LSLP_HP_DBIAS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DISABLE_WAFER_VERSION_MAJOR[];

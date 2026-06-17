@@ -6,10 +6,15 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(partitions_ota)
 
 # Copy storage.bin from test folder to build directory
+if(CONFIG_SECURE_SIGNED_DATA_PARTITION)
+    set(storage_file signed_storage.bin)
+else()
+    set(storage_file storage.bin)
+endif()
 add_custom_target(copy_storage_bin ALL
     COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_SOURCE_DIR}/test/storage.bin
-        ${CMAKE_BINARY_DIR}/storage.bin
-    COMMENT "Copying test/storage.bin to build directory"
-    DEPENDS ${CMAKE_SOURCE_DIR}/test/storage.bin
+        ${CMAKE_SOURCE_DIR}/test/${storage_file}
+        ${CMAKE_BINARY_DIR}/${storage_file}
+    COMMENT "Copying test/${storage_file} to build directory"
+    DEPENDS ${CMAKE_SOURCE_DIR}/test/${storage_file}
 )

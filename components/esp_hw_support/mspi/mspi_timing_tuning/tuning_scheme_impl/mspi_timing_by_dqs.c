@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,12 +49,14 @@ ESP_LOG_ATTR_TAG(TAG, "MSPI DQS");
 const static uint32_t s_test_data[MSPI_TIMING_TEST_DATA_LEN] = {0x7f786655, 0xa5ff005a, 0x3f3c33aa, 0xa5ff5a00, 0x1f1e9955, 0xa5005aff, 0x0f0fccaa, 0xa55a00ff,
                                                                 0x07876655, 0xffa55a00, 0x03c333aa, 0xff00a55a, 0x01e19955, 0xff005aa5, 0x00f0ccaa, 0xff5a00a5,
                                                                 0x80786655, 0x00a5ff5a, 0xc03c33aa, 0x00a55aff, 0xe01e9355, 0x00ff5aa5, 0xf00fccaa, 0x005affa5,
-                                                                0xf8876655, 0x5aa5ff00, 0xfcc333aa, 0x5affa500, 0xfee19955, 0x5a00a5ff, 0x11f0ccaa, 0x5a00ffa5};
+                                                                0xf8876655, 0x5aa5ff00, 0xfcc333aa, 0x5affa500, 0xfee19955, 0x5a00a5ff, 0x11f0ccaa, 0x5a00ffa5
+                                                               };
 const static mspi_timing_config_t s_test_delayline_config = {
-        .delayline_table = {{0, 15}, {0, 14}, {0, 13}, {0, 12}, {0, 11}, {0, 10}, {0, 9}, {0, 8}, {0, 7}, {0, 6}, {0, 5}, {0, 4}, {0, 3}, {0, 2}, {0, 1},
-                            {0, 0}, {1, 0}, {2, 0}, {3, 0}, {4, 0}, {5, 0}, {6, 0}, {7, 0}, {8, 0}, {9, 0}, {10, 0}, {11, 0}, {12, 0}, {13, 0}, {14, 0}, {15, 0}},
-        .available_config_num = 31,
-    };
+    .delayline_table = {{0, 15}, {0, 14}, {0, 13}, {0, 12}, {0, 11}, {0, 10}, {0, 9}, {0, 8}, {0, 7}, {0, 6}, {0, 5}, {0, 4}, {0, 3}, {0, 2}, {0, 1},
+        {0, 0}, {1, 0}, {2, 0}, {3, 0}, {4, 0}, {5, 0}, {6, 0}, {7, 0}, {8, 0}, {9, 0}, {10, 0}, {11, 0}, {12, 0}, {13, 0}, {14, 0}, {15, 0}
+    },
+    .available_config_num = 31,
+};
 static mspi_ll_dqs_phase_t s_psram_best_phase = MSPI_LL_DQS_PHASE_MAX;
 static delayline_config_t s_psram_best_delayline = {WRONG_DELAYLINE, WRONG_DELAYLINE};
 
@@ -121,7 +123,9 @@ void mspi_timing_config_psram_set_tuning_phase(const void *configs, uint8_t id)
 {
     mspi_ll_dqs_phase_t phase = ((mspi_timing_config_t *)configs)->phase[id];
     mspi_timing_ll_set_dqs_phase(MSPI_LL_DQS_ID_0, phase);
+#if MSPI_LL_PSRAM_DQS1_SUPPORTED
     mspi_timing_ll_set_dqs_phase(MSPI_LL_DQS_ID_1, phase);
+#endif
     ESP_DRAM_LOGD(TAG, "set to phase: %d", phase);
 }
 
@@ -162,14 +166,22 @@ void mspi_timing_config_psram_set_tuning_delayline(const void *configs, uint8_t 
 {
     assert(s_psram_best_phase != MSPI_LL_DQS_PHASE_MAX);
     mspi_timing_ll_set_dqs_phase(MSPI_LL_DQS_ID_0, s_psram_best_phase);
+#if MSPI_LL_PSRAM_DQS1_SUPPORTED
     mspi_timing_ll_set_dqs_phase(MSPI_LL_DQS_ID_1, s_psram_best_phase);
+#endif
     ESP_DRAM_LOGD(TAG, "set to best phase: %d", s_psram_best_phase);
 
     const delayline_config_t *delayline_config = &((mspi_timing_config_t *)configs)->delayline_table[id];
     for (int i = 0; i < MSPI_LL_PIN_MAX; i++) {
-        if (i == MSPI_LL_PIN_DQS0 || i == MSPI_LL_PIN_DQS1) {
+        if (i == MSPI_LL_PIN_DQS0) {
             mspi_timing_ll_set_delayline(i, delayline_config->dqs_delayline);
-        } else {
+        }
+#if MSPI_LL_PSRAM_DQS1_SUPPORTED
+        else if (i == MSPI_LL_PIN_DQS1) {
+            mspi_timing_ll_set_delayline(i, delayline_config->dqs_delayline);
+        }
+#endif
+        else {
             mspi_timing_ll_set_delayline(i, delayline_config->data_delayline);
         }
     }
@@ -199,8 +211,9 @@ void mspi_timing_psram_set_best_tuning_delayline(const void *configs, uint8_t be
 void mspi_timing_psram_config_clear_tuning_regs(bool control_both_mspi)
 {
     mspi_timing_ll_set_dqs_phase(MSPI_LL_DQS_ID_0, 0);
+#if MSPI_LL_PSRAM_DQS1_SUPPORTED
     mspi_timing_ll_set_dqs_phase(MSPI_LL_DQS_ID_1, 0);
-
+#endif
     for (int i = 0; i < MSPI_LL_PIN_MAX; i++) {
         mspi_timing_ll_set_delayline(i, 0);
     }
@@ -209,12 +222,20 @@ void mspi_timing_psram_config_clear_tuning_regs(bool control_both_mspi)
 void mspi_timing_psram_config_set_tuning_regs(bool control_both_mspi)
 {
     mspi_timing_ll_set_dqs_phase(MSPI_LL_DQS_ID_0, s_psram_best_phase);
+#if MSPI_LL_PSRAM_DQS1_SUPPORTED
     mspi_timing_ll_set_dqs_phase(MSPI_LL_DQS_ID_1, s_psram_best_phase);
+#endif
 
     for (int i = 0; i < MSPI_LL_PIN_MAX; i++) {
-        if (i == MSPI_LL_PIN_DQS0 || i == MSPI_LL_PIN_DQS1) {
+        if (i == MSPI_LL_PIN_DQS0) {
             mspi_timing_ll_set_delayline(i, s_psram_best_delayline.dqs_delayline);
-        } else {
+        }
+#if MSPI_LL_PSRAM_DQS1_SUPPORTED
+        else if (i == MSPI_LL_PIN_DQS1) {
+            mspi_timing_ll_set_delayline(i, s_psram_best_delayline.dqs_delayline);
+        }
+#endif
+        else {
             mspi_timing_ll_set_delayline(i, s_psram_best_delayline.data_delayline);
         }
     }

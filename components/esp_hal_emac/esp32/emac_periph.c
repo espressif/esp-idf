@@ -1,8 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stddef.h>
 #include "hal/emac_periph.h"
 #include "soc/io_mux_reg.h"
 
@@ -37,6 +38,7 @@ const emac_io_info_t emac_io_idx = {
     .mii_rx_er_i_idx = SIG_GPIO_OUT_IDX,
     .rmii_refclk_i_idx = SIG_GPIO_OUT_IDX,
     .rmii_refclk_o_idx = SIG_GPIO_OUT_IDX,
+    .phy_ref_clk_o_idx = SIG_GPIO_OUT_IDX,
     .ptp_pps_idx = SIG_GPIO_OUT_IDX,
 };
 
@@ -60,6 +62,10 @@ static const emac_iomux_info_t emac_rmii_iomux_clko[] = {
         .func = FUNC_GPIO17_EMAC_CLK_OUT_180,
     },
     [2] = {
+        .gpio_num = 0,
+        .func = FUNC_GPIO0_CLK_OUT1,
+    },
+    [3] = {
         .gpio_num = GPIO_NUM_MAX,
     }
 };
@@ -216,6 +222,10 @@ const emac_rmii_iomux_info_t emac_rmii_iomux_pins = {
     .rxd1 = emac_rmii_mii_iomux_rxd1,
     .tx_er = emac_rmii_mii_iomux_tx_er,
     .rx_er = emac_rmii_mii_iomux_rx_er,
+};
+
+const emac_ref_clk_iomux_info_t emac_ref_clk_iomux_pins = {
+    .phy_ref_clk = NULL,
 };
 
 const emac_mii_iomux_info_t emac_mii_iomux_pins = {

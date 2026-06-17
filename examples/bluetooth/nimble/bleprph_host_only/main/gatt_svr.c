@@ -1,16 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <assert.h>
-#include <stdio.h>
-#include <string.h>
 #include "host/ble_hs.h"
-#include "host/ble_uuid.h"
 #include "services/gap/ble_svc_gap.h"
 #include "services/gatt/ble_svc_gatt.h"
-#include "bleprph.h"
 #include "services/ans/ble_svc_ans.h"
 
 /*** Maximum number of characteristics with the notify flag ***/
@@ -226,9 +221,15 @@ gatt_svr_init(void)
 {
     int rc;
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     ble_svc_gap_init();
+#endif /* CONFIG_BT_NIMBLE_GAP_SERVICE */
+#if MYNEWT_VAL(BLE_GATTS)
     ble_svc_gatt_init();
+#endif
+#if CONFIG_BT_NIMBLE_ANS_SERVICE
     ble_svc_ans_init();
+#endif
 
     rc = ble_gatts_count_cfg(gatt_svr_svcs);
     if (rc != 0) {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,7 @@ extern "C" {
 #define ESP_INTR_FLAG_EDGE          (1<<9)  ///< Edge-triggered interrupt
 #define ESP_INTR_FLAG_IRAM          (1<<10) ///< ISR can be called if cache is disabled
 #define ESP_INTR_FLAG_INTRDISABLED  (1<<11) ///< Return with this interrupt disabled
+#define ESP_INTR_FLAG_SHARED_PRIVATE (1<<12) ///< Interrupt can be shared with `*_bind` functions only
 
 #define ESP_INTR_FLAG_LOWMED    (ESP_INTR_FLAG_LEVEL1|ESP_INTR_FLAG_LEVEL2|ESP_INTR_FLAG_LEVEL3) ///< Low and medium prio interrupts. These can be handled in C.
 #define ESP_INTR_FLAG_HIGH      (ESP_INTR_FLAG_LEVEL4|ESP_INTR_FLAG_LEVEL5|ESP_INTR_FLAG_LEVEL6|ESP_INTR_FLAG_NMI) ///< High level interrupts. Need to be handled in assembly.
@@ -80,6 +81,25 @@ extern "C" {
 
 /** Disable interrupt by interrupt number */
 #define ESP_INTR_DISABLE(inum) esp_intr_disable_source(inum)
+
+/**
+ * @brief Structure used to specify all the information needed to allocate an interrupt.
+ * This structure can be passed to the function esp_intr_alloc_info
+ */
+typedef struct {
+    int source;              /*!< Interrupt source to map */
+    int flags;               /*!< ORred mask of the ESP_INTR_FLAG_* defines */
+    uint32_t intrstatusreg;  /*!< Address of the interrupt status register */
+    uint32_t intrstatusmask; /*!< Mask of the interrupt status register */
+    intr_handler_t handler;  /*!< Interrupt handler to invoke upon triggered interrupt */
+    void *arg;               /*!< Argument to pass to the interrupt handler */
+    struct {
+        intr_handle_t handle; /*!< Handle of the interrupt to share with */
+        const char* name;     /*!< Name of the interrupt to share with */
+    } bind_by;                /*!< Interrupt to share with, to be populated when flags are set to
+                                * ESP_INTR_FLAG_SHARED or ESP_INTR_FLAG_SHARED_PRIVATE, and only provide one of
+                                * `handle` or `name`. */
+} esp_intr_alloc_info_t;
 
 /**
  * @brief Mark an interrupt as a shared interrupt
@@ -213,13 +233,15 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
  * @param arg    Optional argument for passed to the interrupt handler
  * @param shared_handle Previously allocated interrupt to share the CPU interrupt line with. If NULL,
  *               calling this function equivalent to esp_intr_alloc, else, ESP_INTR_FLAG_SHARED must
- *               be provided in the flags parameter.
+ *               be provided in the flags parameter. If not NULL, the given `flags` must present the bit
+ *               ESP_INTR_FLAG_SHARED or ESP_INTR_FLAG_SHARED_PRIVATE.
  * @param ret_handle Pointer to an intr_handle_t to store a handle that can later be
  *               used to request details or free the interrupt. Can be NULL if no handle
  *               is required.
  *
  * @return ESP_ERR_INVALID_ARG if the combination of arguments is invalid.
- *         ESP_ERR_NOT_FOUND No free interrupt found with the specified flasg or the given level is different
+ *         ESP_ERR_INVALID_STATE if the provided handler refers to an interrupt that on the other core.
+ *         ESP_ERR_NOT_FOUND No free interrupt found with the specified flags or the given level is different
  *                           from the one assigned to the share_handle parameter.
  *         ESP_OK on success
  */
@@ -256,18 +278,46 @@ esp_err_t esp_intr_alloc_bind(int source, int flags, intr_handler_t handler, voi
  * @param arg    Optional argument for passed to the interrupt handler
  * @param shared_handle Previously allocated interrupt to share the CPU interrupt line with. If NULL,
  *               calling this function equivalent to esp_intr_alloc, else, ESP_INTR_FLAG_SHARED must
- *               be provided in the flags parameter.
+ *               be provided in the flags parameter. If not NULL, the given `flags` must present the bit
+ *               ESP_INTR_FLAG_SHARED or ESP_INTR_FLAG_SHARED_PRIVATE.
  * @param ret_handle Pointer to an intr_handle_t to store a handle that can later be
  *               used to request details or free the interrupt. Can be NULL if no handle
  *               is required.
  *
  * @return ESP_ERR_INVALID_ARG if the combination of arguments is invalid.
- *         ESP_ERR_NOT_FOUND No free interrupt found with the specified flasg or the given level is different
+ *         ESP_ERR_INVALID_STATE if the provided handler refers to an interrupt that on the other core.
+ *         ESP_ERR_NOT_FOUND No free interrupt found with the specified flags or the given level is different
  *                           from the one assigned to the share_handle parameter.
  *         ESP_OK on success
  */
 esp_err_t esp_intr_alloc_intrstatus_bind(int source, int flags, uint32_t intrstatusreg, uint32_t intrstatusmask, intr_handler_t handler,
                                          void *arg, intr_handle_t shared_handle, intr_handle_t *ret_handle);
+
+
+/**
+ * @brief Allocate an interrupt with all the parameters in a single structure
+ *
+ * This function does the same as `esp_intr_alloc_intrstatus_bind`, but allows specifying all the parameters in a single structure.
+ * Check the parameters description in `esp_intr_alloc_intrstatus_bind` for more details.
+ *
+ * @note This function allows to create or join a group of interrupts to share a same interrupt line.
+ * When `ESP_INTR_FLAG_SHARED_PRIVATE` or `ESP_INTR_FLAG_SHARED` flags are set, `handle` or `name` can be used to specify
+ * the interrupt to share with (previously allocated). Only one of `handle` or `name` can be used, not both.
+ * If a `name` is passed but the interrupt to share with is not found, the function will create a new group of interrupts
+ * with the given name.
+ *
+ * @param info The information to allocate the interrupt.
+ * @param ret_handle Pointer to an intr_handle_t to store a handle that can later be
+ *               used to request details or free the interrupt. Can be NULL if no handle
+ *               is required.
+ *
+ * @return ESP_ERR_INVALID_ARG if the combination of arguments is invalid.
+ *         ESP_ERR_INVALID_STATE if the provided handler refers to an interrupt that on the other core.
+ *         ESP_ERR_NOT_FOUND No free interrupt found with the specified flags or the given level is different
+ *                           from the one assigned to the share_handle parameter.
+ *         ESP_OK on success
+ */
+esp_err_t esp_intr_alloc_info(const esp_intr_alloc_info_t *info, intr_handle_t *ret_handle);
 
 /**
  * @brief Disable and free an interrupt.

@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -863,10 +863,14 @@ typedef union {
          *  Gap between ADC1 CH5 and average initcode
          */
         uint32_t adc1_ch5_atten0_initcode_diff:4;
-        /** reserved_2_249 : R; bitpos: [31:25]; default: 0;
+        /** pvt_dbias : R; bitpos: [29:25]; default: 0;
+         *  Average initcode of ADC1 atten0
+         */
+        uint32_t pvt_dbias:5;
+        /** reserved_2_254 : R; bitpos: [31:30]; default: 0;
          *  reserved
          */
-        uint32_t reserved_2_249:7;
+        uint32_t reserved_2_254:2;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data7_reg_t;

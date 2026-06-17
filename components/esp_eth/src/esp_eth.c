@@ -414,13 +414,13 @@ esp_err_t esp_eth_transmit_ctrl_vargs(esp_eth_handle_t hdl, void *ctrl, uint32_t
         goto err;
     }
 
-    va_list args;
     esp_eth_mac_t *mac = eth_driver->mac;
 #if CONFIG_ETH_TRANSMIT_MUTEX
     if (xSemaphoreTake(eth_driver->transmit_mutex, pdMS_TO_TICKS(ESP_ETH_TX_TIMEOUT_MS)) == pdFALSE) {
         return ESP_ERR_TIMEOUT;
     }
 #endif // CONFIG_ETH_TRANSMIT_MUTEX
+    va_list args = {0};
     va_start(args, argc);
     ret = mac->transmit_ctrl_vargs(mac, ctrl, argc, args);
 #if CONFIG_ETH_TRANSMIT_MUTEX

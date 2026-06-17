@@ -1431,7 +1431,7 @@ typedef union {
 } jpeg_version_reg_t;
 
 
-typedef struct {
+typedef struct jpeg_dev_t {
     volatile jpeg_config_reg_t config;
     volatile jpeg_dqt_info_reg_t dqt_info;
     volatile jpeg_pic_size_reg_t pic_size;
@@ -1481,6 +1481,7 @@ typedef struct {
     volatile jpeg_version_reg_t version;
 } jpeg_dev_t;
 
+extern jpeg_dev_t JPEG;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(jpeg_dev_t) == 0x100, "Invalid size of jpeg_dev_t structure");

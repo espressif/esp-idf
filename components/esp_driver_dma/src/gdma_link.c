@@ -19,6 +19,7 @@
 #include "hal/efuse_hal.h"
 #include "hal/cache_ll.h"
 #include "esp_cache.h"
+#include "esp_efuse.h"
 
 ESP_LOG_ATTR_TAG(TAG, "gdma-link");
 
@@ -77,7 +78,7 @@ esp_err_t gdma_new_link_list(const gdma_link_list_config_t *config, gdma_link_li
     bool items_in_ext_mem = config->flags.items_in_ext_mem;
     uint32_t list_items_mem_caps = MALLOC_CAP_8BIT | MALLOC_CAP_DMA;
     if (items_in_ext_mem) {
-        if (efuse_hal_flash_encryption_enabled()) {
+        if (esp_efuse_is_flash_encryption_enabled()) {
             items_in_ext_mem = false;
             list_items_mem_caps |= MALLOC_CAP_INTERNAL;
             ESP_LOGW(TAG, "DMA linked list items cannot be placed in PSRAM when external memory encryption is enabled, using internal memory instead");
@@ -194,7 +195,7 @@ esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, int start_item_i
         size_t max_buffer_mount_length = ALIGN_DOWN(GDMA_MAX_BUFFER_SIZE_PER_LINK_ITEM, buffer_alignment);
         if (!config->flags.bypass_buffer_align_check) {
             ESP_RETURN_ON_FALSE_ISR(((uintptr_t)buf & (buffer_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "buf misalign idx=%"PRIu32" align=%"PRIu32, bi, buffer_alignment);
-            if (efuse_hal_flash_encryption_enabled()) {
+            if (esp_efuse_is_flash_encryption_enabled()) {
                 // buffer size must be aligned to the encryption alignment which should be provided by the upper buffer_alignment
                 ESP_RETURN_ON_FALSE_ISR((len & (buffer_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "buf len misalign idx=%"PRIu32" len=%"PRIu32" align=%"PRIu32"", bi, len, buffer_alignment);
             }

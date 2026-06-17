@@ -384,6 +384,10 @@ esp_err_t sdmmc_fix_host_flags(sdmmc_card_t* card)
         }
     }
 
+    if (card->host.flags & SDMMC_HOST_FLAG_SPI_IGNORE_DATA_CRC) {
+        ESP_LOGW(TAG, "SDMMC_HOST_FLAG_SPI_IGNORE_DATA_CRC flag is set on non-SPI host");
+    }
+
 #if !SOC_SDMMC_UHS_I_SUPPORTED
     if ((card->host.max_freq_khz == SDMMC_FREQ_SDR50) ||
         (card->host.max_freq_khz == SDMMC_FREQ_DDR50) ||

@@ -50,7 +50,7 @@ static void test_parlio_sleep_retention(bool allow_pd)
         .trans_queue_depth = 8,
         .max_transfer_size = 128,
         .bit_pack_order = PARLIO_BIT_PACK_ORDER_MSB,
-        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .shift_edge = PARLIO_SHIFT_EDGE_POS,
         .flags.allow_pd = allow_pd,
     };
     TEST_ESP_OK(parlio_new_tx_unit(&tx_config, &tx_unit));
@@ -133,7 +133,7 @@ static void test_parlio_sleep_retention(bool allow_pd)
 
     printf("check if the sleep happened as expected\r\n");
     TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
-#if SOC_PARLIO_SUPPORT_SLEEP_RETENTION
+#if SOC_PARLIO_SUPPORT_SLEEP_RETENTION && SOC_GDMA_SUPPORT_SLEEP_RETENTION
     // check if the power domain also is powered down
     TEST_ASSERT_EQUAL(allow_pd ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
 #endif
@@ -162,7 +162,7 @@ static void test_parlio_sleep_retention(bool allow_pd)
 TEST_CASE("parlio light sleep", "[parlio]")
 {
     test_parlio_sleep_retention(false);
-#if SOC_PARLIO_SUPPORT_SLEEP_RETENTION
+#if SOC_PARLIO_SUPPORT_SLEEP_RETENTION && SOC_GDMA_SUPPORT_SLEEP_RETENTION
     test_parlio_sleep_retention(true);
 #endif
 }

@@ -79,6 +79,14 @@ As not every transaction requires both writing and reading data, you can choose 
 
     A Host should not start a transaction before its Device is ready for receiving data. It is recommended to use another GPIO pin for a handshake signal to sync the Devices. For more details, see :ref:`transaction_interval`.
 
+.. only:: SOC_PSRAM_DMA_CAPABLE
+
+    Using PSRAM for DMA transfer
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    SPI Slave driver supports using PSRAM for DMA transfer. Directly passing a PSRAM address as :cpp:member:`spi_slave_transaction_t::tx_buffer` or :cpp:member:`spi_slave_transaction_t::rx_buffer` is supported. For the rx_buffer, it has alignment requirements, using :cpp:func:`heap_caps_malloc` to allocate memory can automatically handle the alignment requirements. For the buffers that you can not control, you can also use the :c:macro:`SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO` flag to enable driver to automatically align the buffer from PSRAM.
+
+    Note that this feature shares the MSPI bus bandwidth (bus frequency * bus width), so the transmission bandwidth of the host to this device should be less than the PSRAM bandwidth, otherwise **data may be lost**, and the ``spi_slave_transmit`` function will return the :c:macro:`ESP_ERR_INVALID_STATE` error.
 
 Driver Usage
 ------------
@@ -93,7 +101,7 @@ Driver Usage
 
     If transactions will be longer than 32 bytes, allow a DMA channel by setting the parameter ``dma_chan`` to the host device. Otherwise, set ``dma_chan`` to ``0``.
 
-- Before initiating transactions, fill one or more :cpp:type:`spi_slave_transaction_t` structs with the transaction parameters required. Either queue all transactions by calling the function :cpp:func:`spi_slave_queue_trans` and, at a later time, query the result by using the function :cpp:func:`spi_slave_get_trans_result`, or handle all requests individually by feeding them into :cpp:func:`spi_slave_transmit`. The latter two functions will be blocked until the Host has initiated and finished a transaction, causing the queued data to be sent and received.
+- Before initiating transactions, fill one or more :cpp:type:`spi_slave_transaction_t` structs with the transaction parameters required. Either queue all transactions by calling the function :cpp:func:`spi_slave_queue_trans` and, at a later time, query the result by using the function :cpp:func:`spi_slave_get_trans_result`, or handle all requests individually by feeding them into :cpp:func:`spi_slave_transmit`. The latter two functions will be blocked until the Host has initiated and finished a transaction, causing the queued data to be sent and received, or until ``ticks_to_wait`` expires.
 
 - (Optional) Enable/Disable driver functions: Slave driver supports disabling / enabling driver after it is initialized by calling to :cpp:func:`spi_slave_disable` / :cpp:func:`spi_slave_enable`, to be able to change clock or power config or sleep to save power. By default, the driver state is `enabled` after initialized.
 
@@ -108,6 +116,8 @@ Normally, the data that needs to be transferred to or from a Device is read or w
 The amount of data that the driver can read or write to the buffers is limited by :cpp:member:`spi_slave_transaction_t::length`. However, this member does not define the actual length of an SPI transaction. A transaction's length is determined by the clock and CS lines driven by the Host. The actual length of the transmission can be read only after a transaction is finished from the member :cpp:member:`spi_slave_transaction_t::trans_len`.
 
 If the length of the transmission is greater than the buffer length, only the initial number of bits specified in the :cpp:member:`spi_slave_transaction_t::length` member will be sent and received. In this case, :cpp:member:`spi_slave_transaction_t::trans_len` is set to :cpp:member:`spi_slave_transaction_t::length` instead of the actual transaction length. To meet the actual transaction length requirements, set :cpp:member:`spi_slave_transaction_t::length` to a value greater than the maximum :cpp:member:`spi_slave_transaction_t::trans_len` expected. If the transmission length is shorter than the buffer length, only the data equal to the length of the buffer will be transmitted.
+
+When you need to specify different TX/RX lengths in a single transaction, you can use the :cpp:member:`spi_slave_transaction_t::tx_length` and :cpp:member:`spi_slave_transaction_t::rx_length` members to specify the lengths of TX and RX respectively. This configuration is mutually exclusive with :cpp:member:`spi_slave_transaction_t::length`, and cannot be used simultaneously.
 
 GPIO Matrix and IO_MUX
 ^^^^^^^^^^^^^^^^^^^^^^

@@ -36,7 +36,8 @@ typedef struct {
     uint16_t min_efuse_blk_rev_full; /*!< Minimal eFuse block revision supported by image, in format: major * 100 + minor */
     uint16_t max_efuse_blk_rev_full; /*!< Maximal eFuse block revision supported by image, in format: major * 100 + minor */
     uint8_t mmu_page_size;      /*!< MMU page size in log base 2 format */
-    uint8_t reserv3[3];         /*!< reserv3 */
+    uint8_t spi_flash_mode;     /*!< SPI flash mode as per CONFIG_ESPTOOLPY_FLASHMODE_VAL for compatibility check during OTA */
+    uint8_t reserv3[2];         /*!< reserv3 */
     uint32_t reserv2[18];       /*!< reserv2 */
 } esp_app_desc_t;
 

@@ -1,20 +1,24 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
+
 #pragma once
 
-#include <stdint.h>
-#include "soc/soc.h"
+#include "soc/reg_base.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/* Multi-instance reg base macro */
+#define REG_PCNT_BASE(i) (DR_REG_PCNT0_BASE + (i * 0x14000))
+
 /** PCNT_U0_CONF0_REG register
  *  Configuration register 0 for unit 0
  */
-#define PCNT_U0_CONF0_REG (DR_REG_PCNT_BASE + 0x0)
+#define PCNT_U0_CONF0_REG(i) (REG_PCNT_BASE(i) + 0x0)
 /** PCNT_FILTER_THRES_U0 : R/W; bitpos: [9:0]; default: 16;
  *  Configures the maximum threshold for the filter. Any pulses with width less than
  *  this will be ignored when the filter is enabled.
@@ -156,7 +160,7 @@ extern "C" {
 /** PCNT_U0_CONF1_REG register
  *  Configuration register 1 for unit 0
  */
-#define PCNT_U0_CONF1_REG (DR_REG_PCNT_BASE + 0x4)
+#define PCNT_U0_CONF1_REG(i) (REG_PCNT_BASE(i) + 0x4)
 /** PCNT_CNT_THRES0_U0 : R/W; bitpos: [15:0]; default: 0;
  *  Configures the thres0 value for unit 0.
  */
@@ -175,7 +179,7 @@ extern "C" {
 /** PCNT_U0_CONF2_REG register
  *  Configuration register 2 for unit 0
  */
-#define PCNT_U0_CONF2_REG (DR_REG_PCNT_BASE + 0x8)
+#define PCNT_U0_CONF2_REG(i) (REG_PCNT_BASE(i) + 0x8)
 /** PCNT_CNT_H_LIM_U0 : R/W; bitpos: [15:0]; default: 0;
  *  Configures the thr_h_lim value for unit 0. When pulse_cnt reaches this value, the
  *  counter will be cleared to 0.
@@ -196,7 +200,7 @@ extern "C" {
 /** PCNT_U0_CONF3_REG register
  *  Configuration register for unit $n's step value.
  */
-#define PCNT_U0_CONF3_REG (DR_REG_PCNT_BASE + 0xc)
+#define PCNT_U0_CONF3_REG(i) (REG_PCNT_BASE(i) + 0xc)
 /** PCNT_CNT_H_STEP_U0 : R/W; bitpos: [15:0]; default: 0;
  *  Configures the forward rotation step value for unit 0.
  */
@@ -215,7 +219,7 @@ extern "C" {
 /** PCNT_U1_CONF0_REG register
  *  Configuration register 0 for unit 1
  */
-#define PCNT_U1_CONF0_REG (DR_REG_PCNT_BASE + 0x10)
+#define PCNT_U1_CONF0_REG(i) (REG_PCNT_BASE(i) + 0x10)
 /** PCNT_FILTER_THRES_U1 : R/W; bitpos: [9:0]; default: 16;
  *  Configures the maximum threshold for the filter. Any pulses with width less than
  *  this will be ignored when the filter is enabled.
@@ -357,7 +361,7 @@ extern "C" {
 /** PCNT_U1_CONF1_REG register
  *  Configuration register 1 for unit 1
  */
-#define PCNT_U1_CONF1_REG (DR_REG_PCNT_BASE + 0x14)
+#define PCNT_U1_CONF1_REG(i) (REG_PCNT_BASE(i) + 0x14)
 /** PCNT_CNT_THRES0_U1 : R/W; bitpos: [15:0]; default: 0;
  *  Configures the thres0 value for unit 1.
  */
@@ -376,7 +380,7 @@ extern "C" {
 /** PCNT_U1_CONF2_REG register
  *  Configuration register 2 for unit 1
  */
-#define PCNT_U1_CONF2_REG (DR_REG_PCNT_BASE + 0x18)
+#define PCNT_U1_CONF2_REG(i) (REG_PCNT_BASE(i) + 0x18)
 /** PCNT_CNT_H_LIM_U1 : R/W; bitpos: [15:0]; default: 0;
  *  Configures the thr_h_lim value for unit 1. When pulse_cnt reaches this value, the
  *  counter will be cleared to 0.
@@ -397,7 +401,7 @@ extern "C" {
 /** PCNT_U1_CONF3_REG register
  *  Configuration register for unit $n's step value.
  */
-#define PCNT_U1_CONF3_REG (DR_REG_PCNT_BASE + 0x1c)
+#define PCNT_U1_CONF3_REG(i) (REG_PCNT_BASE(i) + 0x1c)
 /** PCNT_CNT_H_STEP_U1 : R/W; bitpos: [15:0]; default: 0;
  *  Configures the forward rotation step value for unit 1.
  */
@@ -416,7 +420,7 @@ extern "C" {
 /** PCNT_U2_CONF0_REG register
  *  Configuration register 0 for unit 2
  */
-#define PCNT_U2_CONF0_REG (DR_REG_PCNT_BASE + 0x20)
+#define PCNT_U2_CONF0_REG(i) (REG_PCNT_BASE(i) + 0x20)
 /** PCNT_FILTER_THRES_U2 : R/W; bitpos: [9:0]; default: 16;
  *  Configures the maximum threshold for the filter. Any pulses with width less than
  *  this will be ignored when the filter is enabled.
@@ -558,7 +562,7 @@ extern "C" {
 /** PCNT_U2_CONF1_REG register
  *  Configuration register 1 for unit 2
  */
-#define PCNT_U2_CONF1_REG (DR_REG_PCNT_BASE + 0x24)
+#define PCNT_U2_CONF1_REG(i) (REG_PCNT_BASE(i) + 0x24)
 /** PCNT_CNT_THRES0_U2 : R/W; bitpos: [15:0]; default: 0;
  *  Configures the thres0 value for unit 2.
  */
@@ -577,7 +581,7 @@ extern "C" {
 /** PCNT_U2_CONF2_REG register
  *  Configuration register 2 for unit 2
  */
-#define PCNT_U2_CONF2_REG (DR_REG_PCNT_BASE + 0x28)
+#define PCNT_U2_CONF2_REG(i) (REG_PCNT_BASE(i) + 0x28)
 /** PCNT_CNT_H_LIM_U2 : R/W; bitpos: [15:0]; default: 0;
  *  Configures the thr_h_lim value for unit 2. When pulse_cnt reaches this value, the
  *  counter will be cleared to 0.
@@ -598,7 +602,7 @@ extern "C" {
 /** PCNT_U2_CONF3_REG register
  *  Configuration register for unit $n's step value.
  */
-#define PCNT_U2_CONF3_REG (DR_REG_PCNT_BASE + 0x2c)
+#define PCNT_U2_CONF3_REG(i) (REG_PCNT_BASE(i) + 0x2c)
 /** PCNT_CNT_H_STEP_U2 : R/W; bitpos: [15:0]; default: 0;
  *  Configures the forward rotation step value for unit 2.
  */
@@ -617,7 +621,7 @@ extern "C" {
 /** PCNT_U3_CONF0_REG register
  *  Configuration register 0 for unit 3
  */
-#define PCNT_U3_CONF0_REG (DR_REG_PCNT_BASE + 0x30)
+#define PCNT_U3_CONF0_REG(i) (REG_PCNT_BASE(i) + 0x30)
 /** PCNT_FILTER_THRES_U3 : R/W; bitpos: [9:0]; default: 16;
  *  Configures the maximum threshold for the filter. Any pulses with width less than
  *  this will be ignored when the filter is enabled.
@@ -759,7 +763,7 @@ extern "C" {
 /** PCNT_U3_CONF1_REG register
  *  Configuration register 1 for unit 3
  */
-#define PCNT_U3_CONF1_REG (DR_REG_PCNT_BASE + 0x34)
+#define PCNT_U3_CONF1_REG(i) (REG_PCNT_BASE(i) + 0x34)
 /** PCNT_CNT_THRES0_U3 : R/W; bitpos: [15:0]; default: 0;
  *  Configures the thres0 value for unit 3.
  */
@@ -778,7 +782,7 @@ extern "C" {
 /** PCNT_U3_CONF2_REG register
  *  Configuration register 2 for unit 3
  */
-#define PCNT_U3_CONF2_REG (DR_REG_PCNT_BASE + 0x38)
+#define PCNT_U3_CONF2_REG(i) (REG_PCNT_BASE(i) + 0x38)
 /** PCNT_CNT_H_LIM_U3 : R/W; bitpos: [15:0]; default: 0;
  *  Configures the thr_h_lim value for unit 3. When pulse_cnt reaches this value, the
  *  counter will be cleared to 0.
@@ -799,7 +803,7 @@ extern "C" {
 /** PCNT_U3_CONF3_REG register
  *  Configuration register for unit $n's step value.
  */
-#define PCNT_U3_CONF3_REG (DR_REG_PCNT_BASE + 0x3c)
+#define PCNT_U3_CONF3_REG(i) (REG_PCNT_BASE(i) + 0x3c)
 /** PCNT_CNT_H_STEP_U3 : R/W; bitpos: [15:0]; default: 0;
  *  Configures the forward rotation step value for unit 3.
  */
@@ -818,7 +822,7 @@ extern "C" {
 /** PCNT_U0_CNT_REG register
  *  Counter value for unit 0
  */
-#define PCNT_U0_CNT_REG (DR_REG_PCNT_BASE + 0x40)
+#define PCNT_U0_CNT_REG(i) (REG_PCNT_BASE(i) + 0x40)
 /** PCNT_PULSE_CNT_U0 : RO; bitpos: [15:0]; default: 0;
  *  Represents the current pulse count value for unit 0.
  */
@@ -830,7 +834,7 @@ extern "C" {
 /** PCNT_U1_CNT_REG register
  *  Counter value for unit 1
  */
-#define PCNT_U1_CNT_REG (DR_REG_PCNT_BASE + 0x44)
+#define PCNT_U1_CNT_REG(i) (REG_PCNT_BASE(i) + 0x44)
 /** PCNT_PULSE_CNT_U1 : RO; bitpos: [15:0]; default: 0;
  *  Represents the current pulse count value for unit 1.
  */
@@ -842,7 +846,7 @@ extern "C" {
 /** PCNT_U2_CNT_REG register
  *  Counter value for unit 2
  */
-#define PCNT_U2_CNT_REG (DR_REG_PCNT_BASE + 0x48)
+#define PCNT_U2_CNT_REG(i) (REG_PCNT_BASE(i) + 0x48)
 /** PCNT_PULSE_CNT_U2 : RO; bitpos: [15:0]; default: 0;
  *  Represents the current pulse count value for unit 2.
  */
@@ -854,7 +858,7 @@ extern "C" {
 /** PCNT_U3_CNT_REG register
  *  Counter value for unit 3
  */
-#define PCNT_U3_CNT_REG (DR_REG_PCNT_BASE + 0x4c)
+#define PCNT_U3_CNT_REG(i) (REG_PCNT_BASE(i) + 0x4c)
 /** PCNT_PULSE_CNT_U3 : RO; bitpos: [15:0]; default: 0;
  *  Represents the current pulse count value for unit 3.
  */
@@ -866,7 +870,7 @@ extern "C" {
 /** PCNT_INT_RAW_REG register
  *  Interrupt raw status register
  */
-#define PCNT_INT_RAW_REG (DR_REG_PCNT_BASE + 0x50)
+#define PCNT_INT_RAW_REG(i) (REG_PCNT_BASE(i) + 0x50)
 /** PCNT_CNT_THR_EVENT_U0_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  The raw interrupt status bit for the PCNT_CNT_THR_EVENT_U0_INT interrupt.
  */
@@ -899,7 +903,7 @@ extern "C" {
 /** PCNT_INT_ST_REG register
  *  Interrupt status register
  */
-#define PCNT_INT_ST_REG (DR_REG_PCNT_BASE + 0x54)
+#define PCNT_INT_ST_REG(i) (REG_PCNT_BASE(i) + 0x54)
 /** PCNT_CNT_THR_EVENT_U0_INT_ST : RO; bitpos: [0]; default: 0;
  *  The masked interrupt status bit for the PCNT_CNT_THR_EVENT_U0_INT interrupt.
  */
@@ -932,7 +936,7 @@ extern "C" {
 /** PCNT_INT_ENA_REG register
  *  Interrupt enable register
  */
-#define PCNT_INT_ENA_REG (DR_REG_PCNT_BASE + 0x58)
+#define PCNT_INT_ENA_REG(i) (REG_PCNT_BASE(i) + 0x58)
 /** PCNT_CNT_THR_EVENT_U0_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  The interrupt enable bit for the PCNT_CNT_THR_EVENT_U0_INT interrupt.
  */
@@ -965,7 +969,7 @@ extern "C" {
 /** PCNT_INT_CLR_REG register
  *  Interrupt clear register
  */
-#define PCNT_INT_CLR_REG (DR_REG_PCNT_BASE + 0x5c)
+#define PCNT_INT_CLR_REG(i) (REG_PCNT_BASE(i) + 0x5c)
 /** PCNT_CNT_THR_EVENT_U0_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Set this bit to clear the PCNT_CNT_THR_EVENT_U0_INT interrupt.
  */
@@ -998,7 +1002,7 @@ extern "C" {
 /** PCNT_U0_STATUS_REG register
  *  PNCT UNIT0 status register
  */
-#define PCNT_U0_STATUS_REG (DR_REG_PCNT_BASE + 0x60)
+#define PCNT_U0_STATUS_REG(i) (REG_PCNT_BASE(i) + 0x60)
 /** PCNT_CNT_THR_ZERO_MODE_U0 : RO; bitpos: [1:0]; default: 0;
  *  Represents the pulse counter status of PCNT_U0 corresponding to 0.
  *  0: pulse counter decreases from positive to 0
@@ -1082,7 +1086,7 @@ extern "C" {
 /** PCNT_U1_STATUS_REG register
  *  PNCT UNIT1 status register
  */
-#define PCNT_U1_STATUS_REG (DR_REG_PCNT_BASE + 0x64)
+#define PCNT_U1_STATUS_REG(i) (REG_PCNT_BASE(i) + 0x64)
 /** PCNT_CNT_THR_ZERO_MODE_U1 : RO; bitpos: [1:0]; default: 0;
  *  Represents the pulse counter status of PCNT_U1 corresponding to 0.
  *  0: pulse counter decreases from positive to 0
@@ -1166,7 +1170,7 @@ extern "C" {
 /** PCNT_U2_STATUS_REG register
  *  PNCT UNIT2 status register
  */
-#define PCNT_U2_STATUS_REG (DR_REG_PCNT_BASE + 0x68)
+#define PCNT_U2_STATUS_REG(i) (REG_PCNT_BASE(i) + 0x68)
 /** PCNT_CNT_THR_ZERO_MODE_U2 : RO; bitpos: [1:0]; default: 0;
  *  Represents the pulse counter status of PCNT_U2 corresponding to 0.
  *  0: pulse counter decreases from positive to 0
@@ -1250,7 +1254,7 @@ extern "C" {
 /** PCNT_U3_STATUS_REG register
  *  PNCT UNIT3 status register
  */
-#define PCNT_U3_STATUS_REG (DR_REG_PCNT_BASE + 0x6c)
+#define PCNT_U3_STATUS_REG(i) (REG_PCNT_BASE(i) + 0x6c)
 /** PCNT_CNT_THR_ZERO_MODE_U3 : RO; bitpos: [1:0]; default: 0;
  *  Represents the pulse counter status of PCNT_U3 corresponding to 0.
  *  0: pulse counter decreases from positive to 0
@@ -1334,7 +1338,7 @@ extern "C" {
 /** PCNT_CTRL_REG register
  *  Control register for all counters
  */
-#define PCNT_CTRL_REG (DR_REG_PCNT_BASE + 0x70)
+#define PCNT_CTRL_REG(i) (REG_PCNT_BASE(i) + 0x70)
 /** PCNT_PULSE_CNT_RST_U0 : R/W; bitpos: [0]; default: 1;
  *  Set this bit to clear unit 0's counter.
  */
@@ -1432,7 +1436,7 @@ extern "C" {
 /** PCNT_DATE_REG register
  *  PCNT version control register
  */
-#define PCNT_DATE_REG (DR_REG_PCNT_BASE + 0xfc)
+#define PCNT_DATE_REG(i) (REG_PCNT_BASE(i) + 0xfc)
 /** PCNT_DATE : R/W; bitpos: [31:0]; default: 37822848;
  *  Version control register.
  */

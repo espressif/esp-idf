@@ -18,7 +18,6 @@
 #include "esp_check.h"
 #include "esp_heap_caps.h"
 #include "esp_clk_tree.h"
-#include "clk_ctrl_os.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/gpio.h"
@@ -57,18 +56,6 @@
 
 #define ALERT_LOG_LEVEL_WARNING     TWAI_ALERT_ARB_LOST  //Alerts above and including this level use ESP_LOGW
 #define ALERT_LOG_LEVEL_ERROR       TWAI_ALERT_TX_FAILED //Alerts above and including this level use ESP_LOGE
-
-#if !SOC_RCC_IS_INDEPENDENT
-#define TWAI_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define TWAI_RCC_ATOMIC()
-#endif
-
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define TWAI_PERI_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define TWAI_PERI_ATOMIC()
-#endif
 
 #define TWAI_USE_RETENTION_LINK  (SOC_TWAI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
@@ -232,7 +219,7 @@ static void twai_intr_handler_main(void *arg)
     if (events & TWAI_HAL_EVENT_NEED_PERIPH_RESET) {
         ESP_EARLY_LOGD(TWAI_TAG, "Triggered peripheral reset");
         twai_hal_prepare_for_reset(p_twai_obj->hal);
-        TWAI_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             twai_ll_reset_register(p_twai_obj->controller_id);
         }
         twai_hal_recover_from_reset(p_twai_obj->hal);
@@ -383,6 +370,7 @@ static void twai_free_driver_obj(twai_obj_t *p_obj)
 
 #if TWAI_USE_RETENTION_LINK
     const periph_retention_module_t retention_id = twai_reg_retention_info[p_obj->controller_id].module_id;
+    sleep_retention_module_detach(retention_id);
     if (sleep_retention_is_module_created(retention_id)) {
         assert(sleep_retention_is_module_inited(retention_id));
         sleep_retention_module_free(retention_id);
@@ -456,6 +444,7 @@ static esp_err_t twai_alloc_driver_obj(const twai_general_config_t *g_config, tw
                 .arg = p_obj,
             },
         },
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
         .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
     };
     if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
@@ -465,6 +454,10 @@ static esp_err_t twai_alloc_driver_obj(const twai_general_config_t *g_config, tw
     if (g_config->general_flags.sleep_allow_pd) {
         if (sleep_retention_module_allocate(module) != ESP_OK) {
             ESP_LOGW(TWAI_TAG, "create retention module failed, power domain can't turn off");
+        } else {
+            if (sleep_retention_module_attach(module) != ESP_OK) {
+                ESP_LOGW(TWAI_TAG, "attach retention module failed, power domain can't turn off");
+            }
         }
     }
 #endif
@@ -547,11 +540,11 @@ esp_err_t twai_driver_install_v2(const twai_general_config_t *g_config, const tw
     portEXIT_CRITICAL(&g_spinlock);
 
     //Enable TWAI peripheral register clock
-    TWAI_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         twai_ll_enable_bus_clock(controller_id, true);
         twai_ll_reset_register(controller_id);
     }
-    TWAI_PERI_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         //Enable functional clock
         twai_ll_set_clock_source(p_twai_obj->controller_id, clk_src);
         twai_ll_enable_clock(p_twai_obj->controller_id, true);
@@ -622,10 +615,10 @@ esp_err_t twai_driver_uninstall_v2(twai_handle_t handle)
 
     //Clear registers by reading
     twai_hal_deinit(p_twai_obj->hal);
-    TWAI_PERI_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         twai_ll_enable_clock(controller_id, false);
     }
-    TWAI_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         twai_ll_enable_bus_clock(controller_id, false);
     }
 
@@ -817,7 +810,7 @@ esp_err_t twai_receive_v2(twai_handle_t handle, twai_message_t *message, TickTyp
 
     //Decode frame
     twai_frame_header_t header = {0};
-    twai_hal_parse_frame(&rx_frame, &header, message->data, TWAI_FRAME_MAX_LEN);
+    twai_hal_parse_frame(p_twai_obj->hal, &rx_frame, &header, message->data, TWAI_FRAME_MAX_LEN);
     message->identifier = header.id;
     message->data_length_code = header.dlc;
     message->extd = header.ide;

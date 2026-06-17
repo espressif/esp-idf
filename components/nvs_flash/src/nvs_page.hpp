@@ -18,6 +18,8 @@ namespace nvs
 class Page : public intrusive_list_node<Page>, public ExceptionlessAllocatable
 {
 public:
+    static const bool DEFAULT_PURGE_AFTER_ERASE = true;
+
     static const uint32_t PSB_INIT = NVS_CONST_PSB_INIT;
     static const uint32_t PSB_FULL = NVS_CONST_PSB_FULL;
     static const uint32_t PSB_FREEING = NVS_CONST_PSB_FREEING;
@@ -86,13 +88,15 @@ public:
 
     esp_err_t cmpItem(uint8_t nsIndex, ItemType datatype, const char* key, const void* data, size_t dataSize, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
 
-    esp_err_t eraseItem(uint8_t nsIndex, ItemType datatype, const char* key, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
+    esp_err_t eraseItem(uint8_t nsIndex, ItemType datatype, const char* key, const bool purgeAfterErase, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
+
+    esp_err_t purgeErasedItems(uint8_t nsIndex);
 
     esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
 
     esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, size_t &itemIndex, Item& item, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
 
-    esp_err_t eraseEntryAndSpan(size_t index);
+    esp_err_t eraseEntryAndSpan(size_t index, const bool purgeAfterErase);
 
     template<typename T>
     esp_err_t writeItem(uint8_t nsIndex, const char* key, const T& value)
@@ -113,9 +117,9 @@ public:
     }
 
     template<typename T>
-    esp_err_t eraseItem(uint8_t nsIndex, const char* key)
+    esp_err_t eraseItem(uint8_t nsIndex, const char* key, const bool purgeAfterErase)
     {
-        return eraseItem(nsIndex, itemTypeOf<T>(), key);
+        return eraseItem(nsIndex, itemTypeOf<T>(), key, purgeAfterErase);
     }
 
     size_t getUsedEntryCount() const
@@ -177,6 +181,10 @@ protected:
     esp_err_t alterEntryRangeState(size_t begin, size_t end, EntryState state);
 
     esp_err_t alterPageState(PageState state);
+
+    esp_err_t purgeEntryRange(size_t begin, size_t end);
+
+    esp_err_t purgeEntry(size_t index);
 
     esp_err_t readEntry(size_t index, Item& dst) const;
 

@@ -41,7 +41,11 @@ const static char *TAG = "EXAMPLE";
 #define EXAMPLE_ADC2_CHAN0          ADC_CHANNEL_0
 #endif  //#if EXAMPLE_USE_ADC2
 
+#if SOC_ADC_ATTEN_NUM <= 1
+#define EXAMPLE_ADC_ATTEN           ADC_ATTEN_DB_0
+#else
 #define EXAMPLE_ADC_ATTEN           ADC_ATTEN_DB_12
+#endif
 
 static int adc_raw[2][10];
 static int voltage[2][10];

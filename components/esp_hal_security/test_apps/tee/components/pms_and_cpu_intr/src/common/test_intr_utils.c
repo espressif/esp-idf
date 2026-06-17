@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,6 @@
 #include "soc/soc_caps.h"
 #include "soc/reg_base.h"
 #include "soc/interrupts.h"
-#include "soc/interrupt_matrix_reg.h"
 
 #include "riscv/encoding.h"
 #include "riscv/csr.h"
@@ -75,14 +74,6 @@ void test_u2m_switch(void)
 
 /********************************** Interrupt Handler *************************************/
 
-extern void _global_interrupt_handler(intptr_t sp, int mcause);
-
-/* called from test_tee_vectors.S */
-void _test_global_interrupt_handler(intptr_t sp, int mcause)
-{
-    _global_interrupt_handler(sp, mcause);
-}
-
 #if CONFIG_SOC_SUPPORT_TEE_INTR_TEST
 
 extern int _vector_table;
@@ -105,6 +96,43 @@ static void test_redirect_vector_table(bool redirect)
     } else {
         test_rv_utils_set_xtvt((uintptr_t)&_mtvt_table, PRV_M);
         test_rv_utils_set_xtvec((uintptr_t)&_vector_table, PRV_M);
+    }
+}
+typedef struct {
+    intr_handler_t handler;
+    void *arg;
+} intr_handler_item_t;
+
+static intr_handler_item_t s_intr_handlers[SOC_CPU_CORES_NUM][RV_EXTERNAL_INT_OFFSET];
+
+static intr_handler_item_t* intr_get_item(int int_no)
+{
+    assert_valid_rv_int_num(int_no);
+    /* TODO: [DIG-795]
+     * Find a way to query the current core ID in
+     * U-mode for multicore SoCs. Thus, TEE interrupt tests
+     * will run only in unicore mode till then.
+     */
+    const uint32_t id = 0;
+    return &s_intr_handlers[id][int_no];
+}
+
+void test_intr_handler_set(int int_no, intr_handler_t fn, void *arg)
+{
+    intr_handler_item_t* item = intr_get_item(int_no);
+    *item = (intr_handler_item_t) {
+        .handler = fn,
+        .arg = arg
+    };
+}
+
+/* called from test_vectors_m/u.S */
+void _test_global_interrupt_handler(intptr_t sp, int mcause)
+{
+    assert(mcause >= RV_EXTERNAL_INT_OFFSET && "Interrupt sources must not be mapped to local interrupts");
+    const intr_handler_item_t* item = intr_get_item(mcause - RV_EXTERNAL_INT_OFFSET);
+    if (item->handler) {
+        (*item->handler)(item->arg);
     }
 }
 
@@ -202,7 +230,7 @@ void test_intr_alloc(int mode, int priority, int intr_src, intr_handler_t func, 
             return;  // No free interrupts
         }
 
-        intr_handler_set(intr_num, func, arg);
+        test_intr_handler_set(intr_num, func, arg);
         esp_rom_route_intr_matrix(0, intr_src, intr_num);
     }
 
@@ -218,10 +246,11 @@ void test_intr_alloc(int mode, int priority, int intr_src, intr_handler_t func, 
     test_rv_utils_intr_set_mode(intr_num, mode);
 
     if (mode == PRV_U) {
-        REG_SET_BIT(DR_REG_INTMTX_BASE + 4 * intr_src, BIT(8));
+        REG_SET_BIT(DR_REG_INTMTX_BASE + 4 * intr_src, INTMTX_INT_SRC_PASS_IN_SEC_BIT);
     }
+
     if (mode == PRV_M && intr_src == ETS_MAX_INTR_SOURCE) {
-        REG_WRITE(INTERRUPT_CORE0_SIG_IDX_ASSERT_IN_SEC_REG, intr_num + CLIC_EXT_INTR_NUM_OFFSET);
+        REG_WRITE(INTMTX_SIG_IDX_ASSERT_IN_SEC_REG, intr_num + CLIC_EXT_INTR_NUM_OFFSET);
     }
 
     test_rv_utils_intr_enable(BIT(intr_num));
@@ -235,13 +264,13 @@ void test_intr_free_all(void)
         }
 
         test_intr_entry_t *entry = &s_intr_table[TEST_INTR_IDX(intr_num)];
-        intr_handler_set(intr_num, NULL, NULL);
+        test_intr_handler_set(intr_num, NULL, NULL);
         interrupt_clic_ll_route(0, entry->intr_src, ETS_INVALID_INUM);
         if (entry->mode == PRV_U) {
-            REG_CLR_BIT(DR_REG_INTMTX_BASE + 4 * entry->intr_src, BIT(8));
+            REG_CLR_BIT(DR_REG_INTMTX_BASE + 4 * entry->intr_src, INTMTX_INT_SRC_PASS_IN_SEC_BIT);
         }
         if (entry->mode == PRV_M && entry->intr_src == ETS_MAX_INTR_SOURCE) {
-            REG_WRITE(INTERRUPT_CORE0_SIG_IDX_ASSERT_IN_SEC_REG, ETS_INVALID_INUM);
+            REG_WRITE(INTMTX_SIG_IDX_ASSERT_IN_SEC_REG, ETS_INVALID_INUM);
         }
 
         test_rv_utils_intr_disable(BIT(intr_num));
@@ -249,3 +278,24 @@ void test_intr_free_all(void)
     }
 }
 #endif
+
+/***************************** Miscellaneous *****************************/
+
+IRAM_ATTR void test_delay_ms(uint32_t ms)
+{
+    uint32_t us = ms * 1000U;
+#if SOC_CPU_HAS_CSR_PC
+    esp_rom_delay_us(us);
+#else
+    if (RV_READ_CSR(CSR_PRV_MODE) == PRV_M) {
+        esp_rom_delay_us(us);
+    } else {
+        uint32_t start = RV_READ_CSR(cycle);
+        uint32_t end = us * esp_rom_get_cpu_ticks_per_us();
+
+        while ((RV_READ_CSR(cycle) - start) < end) {
+            /* nothing to do */
+        }
+    }
+#endif
+}

@@ -80,7 +80,8 @@ typedef struct rtc_cntl_sleep_retent {
 #endif
 #endif // SOC_PM_SUPPORT_EXT1_WAKEUP
 
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT == 0) && SOC_DEEP_SLEEP_SUPPORTED
+#if SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT == 0)
+
 #define rtc_hal_gpio_get_wakeup_status()                  rtc_cntl_ll_gpio_get_wakeup_status()
 #define rtc_hal_gpio_clear_wakeup_status()                rtc_cntl_ll_gpio_clear_wakeup_status()
 #endif

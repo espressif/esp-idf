@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -856,9 +856,13 @@ nimble_hid_gap_event(struct ble_gap_event *event, void *arg)
         /* Encryption has been enabled or disabled for this connection. */
         MODLOG_DFLT(INFO, "encryption change event; status=%d ",
                 event->enc_change.status);
-        rc = ble_gap_conn_find(event->enc_change.conn_handle, &desc);
-        assert(rc == 0);
-        ble_hid_task_start_up();
+        if (event->enc_change.status == 0) {
+            rc = ble_gap_conn_find(event->enc_change.conn_handle, &desc);
+            assert(rc == 0);
+            ble_hid_task_start_up();
+        } else {
+            ESP_LOGW(TAG, "encryption failed; waiting for disconnect/retry");
+        }
         return 0;
 
     case BLE_GAP_EVENT_NOTIFY_TX:
@@ -889,7 +893,7 @@ nimble_hid_gap_event(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_PASSKEY_ACTION:
         ESP_LOGI(TAG, "PASSKEY_ACTION_EVENT started");
         struct ble_sm_io pkey = {0};
-        int key = 0;
+        int key = 1;
 
         if (event->passkey.params.action == BLE_SM_IOACT_DISP) {
             pkey.action = event->passkey.params.action;
@@ -964,10 +968,7 @@ static esp_err_t init_low_level(uint8_t mode)
     bt_cfg.mode = mode;
 #endif
 #if CONFIG_BT_HID_DEVICE_ENABLED
-    if (mode & ESP_BT_MODE_CLASSIC_BT) {
-        bt_cfg.bt_max_acl_conn = 3;
-        bt_cfg.bt_max_sync_conn = 3;
-    } else
+    if (!(mode & ESP_BT_MODE_CLASSIC_BT))
 #endif
     {
         ret = esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
@@ -1021,6 +1022,44 @@ static esp_err_t init_low_level(uint8_t mode)
 #endif /* CONFIG_BT_BLE_ENABLED */
     return ret;
 }
+
+static esp_err_t deinit_low_level(void)
+{
+    esp_err_t ret;
+
+    if (bt_scan_results) {
+        esp_hid_scan_results_free(bt_scan_results);
+        bt_scan_results = NULL;
+        num_bt_scan_results = 0;
+    }
+    if (ble_scan_results) {
+        esp_hid_scan_results_free(ble_scan_results);
+        ble_scan_results = NULL;
+        num_ble_scan_results = 0;
+    }
+
+    ret = esp_bluedroid_disable();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_bluedroid_disable failed: %d", ret);
+    }
+
+    ret = esp_bluedroid_deinit();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_bluedroid_deinit failed: %d", ret);
+    }
+
+    ret = esp_bt_controller_disable();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_bt_controller_disable failed: %d", ret);
+    }
+
+    ret = esp_bt_controller_deinit();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_bt_controller_deinit failed: %d", ret);
+    }
+
+    return ret;
+}
 #endif
 
 #if CONFIG_BT_NIMBLE_ENABLED
@@ -1057,7 +1096,51 @@ static esp_err_t init_low_level(uint8_t mode)
 
     return ret;
 }
+
+static esp_err_t deinit_low_level(void)
+{
+    esp_err_t ret;
+
+    ret = esp_nimble_deinit();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_nimble_deinit failed: %d", ret);
+    }
+
+    ret = esp_bt_controller_disable();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_bt_controller_disable failed: %d", ret);
+    }
+
+    ret = esp_bt_controller_deinit();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_bt_controller_deinit failed: %d", ret);
+    }
+
+    return ret;
+}
 #endif
+
+esp_err_t esp_hid_gap_deinit(void)
+{
+    esp_err_t ret;
+
+    ret = deinit_low_level();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "deinit_low_level failed: %d", ret);
+    }
+
+    if (bt_hidh_cb_semaphore != NULL) {
+        vSemaphoreDelete(bt_hidh_cb_semaphore);
+        bt_hidh_cb_semaphore = NULL;
+    }
+
+    if (ble_hidh_cb_semaphore != NULL) {
+        vSemaphoreDelete(ble_hidh_cb_semaphore);
+        ble_hidh_cb_semaphore = NULL;
+    }
+
+    return ESP_OK;
+}
 
 esp_err_t esp_hid_gap_init(uint8_t mode)
 {

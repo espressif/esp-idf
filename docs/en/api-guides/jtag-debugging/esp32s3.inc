@@ -99,7 +99,7 @@
       - Board configuration file for ESP32-S3 for via externally connected FTDI-based probe like ESP-Prog, includes target and adapter configuration.
     * - ``target/esp32s3.cfg``
       - ESP32-S3 target configuration file. Can be used together with one of the ``interface/`` configuration files.
-    * - ``interface/ftdi/esp_usb_jtag.cfg``
+    * - ``interface/esp_usb_jtag.cfg``
       - JTAG adapter configuration file for ESP32-S3 builtin USB JTAG.
     * - ``interface/ftdi/esp_ftdi.cfg``
       - JTAG adapter configuration file for ESP-Prog debug adapter board.

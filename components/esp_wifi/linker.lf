@@ -161,8 +161,8 @@ entries:
         esp_adapter:wifi_clock_enable_wrapper (noflash)
         esp_adapter:wifi_clock_disable_wrapper (noflash)
         if PM_ENABLE = y:
-            wifi_init:wifi_apb80m_request (noflash)
-            wifi_init:wifi_apb80m_release (noflash)
+            wifi_init:wifi_pm_sleep_lock_acquire (noflash)
+            wifi_init:wifi_pm_sleep_lock_release (noflash)
 
 [mapping:esp_timer_wifi_pm]
 archive: libesp_timer.a

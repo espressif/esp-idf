@@ -1,12 +1,19 @@
 menu "Example Configuration"
 
-    orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
-
-    config APP_QUIT_PIN
-        int "APP Quit button GPIO pin"
-        range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
-        default 0
+    config CONSOLE_STORE_HISTORY
+        bool "Store command history in flash"
+        default y
         help
-            GPIO pin number to be used as APP_QUIT button.
+            Linenoise line editing library provides functions to save and load
+            command history. If this option is enabled, initializes a FAT filesystem
+            and uses it to store command history.
+
+    config CONSOLE_MAX_COMMAND_LINE_LENGTH
+        int "Maximum command line length"
+        default 1024
+        range 128 2048
+        help
+            This value marks the maximum length of a single command line. Once it is
+            reached, no more characters will be accepted by the console.
 
 endmenu

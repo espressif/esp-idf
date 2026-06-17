@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -33,8 +33,12 @@ typedef union {
         uint32_t outdscr_burst_en_chn:1;
         /** out_ecc_aes_en_chn : R/W; bitpos: [3]; default: 0;
          *  When access address space is ecc/aes area, this bit should be set to 1. In this
-         *  case, the start address of square should be 16-bit aligned. The width of square
-         *  multiply byte number of one pixel should be 16-bit aligned.
+         *  case, the start address of square should be 16-byte aligned. The width of square
+         *  multiply byte number of one pixel should be 16-byte aligned.
+         *
+         *  2D-DMA w/ flash encryption enabled can still work properly even if this bit is not set to 1
+         *  Meanwhile, enabling this bit will restrict addr and size in internal RAM also has to be 16-byte aligned
+         *  Therefore, this bit is not used.
          */
         uint32_t out_ecc_aes_en_chn:1;
         /** out_check_owner_chn : R/W; bitpos: [4]; default: 0;
@@ -372,8 +376,12 @@ typedef union {
         uint32_t indscr_burst_en_chn:1;
         /** in_ecc_aes_en_chn : R/W; bitpos: [3]; default: 0;
          *  When access address space is ecc/aes area, this bit should be set to 1. In this
-         *  case, the start address of square should be 16-bit aligned. The width of square
-         *  multiply byte number of one pixel should be 16-bit aligned.
+         *  case, the start address of square should be 16-byte aligned. The width of square
+         *  multiply byte number of one pixel should be 16-byte aligned.
+         *
+         *  2D-DMA w/ flash encryption enabled can still work properly even if this bit is not set to 1
+         *  Meanwhile, enabling this bit will restrict addr and size in internal RAM also has to be 16-byte aligned
+         *  Therefore, this bit is not used.
          */
         uint32_t in_ecc_aes_en_chn:1;
         /** in_check_owner_chn : R/W; bitpos: [4]; default: 0;
@@ -1848,194 +1856,90 @@ typedef union {
 } dma2d_in_peri_sel_chn_reg_t;
 
 
+/** Type of in/out_color_param_h/m/l_chn register
+ *  Configures the rx/tx color convert parameter of channel n
+ */
+typedef union {
+    struct {
+        struct {
+            uint32_t a                             :    10;
+            uint32_t b                             :    11;
+            uint32_t reserved21                    :    11;
+        };
+        struct {
+            uint32_t c                             :    10;
+            uint32_t d                             :    18;
+            uint32_t reserved60                    :    4;
+        };
+    };
+    uint32_t val[2];
+} dma2d_color_param_reg_t;
+
 typedef struct {
-    volatile dma2d_out_conf0_chn_reg_t out_conf0_ch0;
-    volatile dma2d_out_int_raw_chn_reg_t out_int_raw_ch0;
-    volatile dma2d_out_int_ena_chn_reg_t out_int_ena_ch0;
-    volatile dma2d_out_int_st_chn_reg_t out_int_st_ch0;
-    volatile dma2d_out_int_clr_chn_reg_t out_int_clr_ch0;
-    volatile dma2d_outfifo_status_chn_reg_t outfifo_status_ch0;
-    volatile dma2d_out_push_chn_reg_t out_push_ch0;
-    volatile dma2d_out_link_conf_chn_reg_t out_link_conf_ch0;
-    volatile dma2d_out_link_addr_chn_reg_t out_link_addr_ch0;
-    volatile dma2d_out_state_chn_reg_t out_state_ch0;
-    volatile dma2d_out_eof_des_addr_chn_reg_t out_eof_des_addr_ch0;
-    volatile dma2d_out_dscr_chn_reg_t out_dscr_ch0;
-    volatile dma2d_out_dscr_bf0_chn_reg_t out_dscr_bf0_ch0;
-    volatile dma2d_out_dscr_bf1_chn_reg_t out_dscr_bf1_ch0;
-    volatile dma2d_out_peri_sel_chn_reg_t out_peri_sel_ch0;
-    volatile dma2d_out_arb_chn_reg_t out_arb_ch0;
-    volatile dma2d_out_ro_status_chn_reg_t out_ro_status_ch0;
-    volatile dma2d_out_ro_pd_conf_chn_reg_t out_ro_pd_conf_ch0;
-    volatile dma2d_out_color_convert_chn_reg_t out_color_convert_ch0;
-    volatile dma2d_out_scramble_chn_reg_t out_scramble_ch0;
-    volatile dma2d_out_color_param0_chn_reg_t out_color_param0_ch0;
-    volatile dma2d_out_color_param1_chn_reg_t out_color_param1_ch0;
-    volatile dma2d_out_color_param2_chn_reg_t out_color_param2_ch0;
-    volatile dma2d_out_color_param3_chn_reg_t out_color_param3_ch0;
-    volatile dma2d_out_color_param4_chn_reg_t out_color_param4_ch0;
-    volatile dma2d_out_color_param5_chn_reg_t out_color_param5_ch0;
-    volatile dma2d_out_etm_conf_chn_reg_t out_etm_conf_ch0;
-    volatile dma2d_out_dscr_port_blk_chn_reg_t out_dscr_port_blk_ch0;
-    uint32_t reserved_070[36];
-    volatile dma2d_out_conf0_chn_reg_t out_conf0_ch1;
-    volatile dma2d_out_int_raw_chn_reg_t out_int_raw_ch1;
-    volatile dma2d_out_int_ena_chn_reg_t out_int_ena_ch1;
-    volatile dma2d_out_int_st_chn_reg_t out_int_st_ch1;
-    volatile dma2d_out_int_clr_chn_reg_t out_int_clr_ch1;
-    volatile dma2d_outfifo_status_chn_reg_t outfifo_status_ch1;
-    volatile dma2d_out_push_chn_reg_t out_push_ch1;
-    volatile dma2d_out_link_conf_chn_reg_t out_link_conf_ch1;
-    volatile dma2d_out_link_addr_chn_reg_t out_link_addr_ch1;
-    volatile dma2d_out_state_chn_reg_t out_state_ch1;
-    volatile dma2d_out_eof_des_addr_chn_reg_t out_eof_des_addr_ch1;
-    volatile dma2d_out_dscr_chn_reg_t out_dscr_ch1;
-    volatile dma2d_out_dscr_bf0_chn_reg_t out_dscr_bf0_ch1;
-    volatile dma2d_out_dscr_bf1_chn_reg_t out_dscr_bf1_ch1;
-    volatile dma2d_out_peri_sel_chn_reg_t out_peri_sel_ch1;
-    volatile dma2d_out_arb_chn_reg_t out_arb_ch1;
-    volatile dma2d_out_ro_status_chn_reg_t out_ro_status_ch1;
-    uint32_t reserved_144;
-    volatile dma2d_out_color_convert_chn_reg_t out_color_convert_ch1;
-    volatile dma2d_out_scramble_chn_reg_t out_scramble_ch1;
-    volatile dma2d_out_color_param0_chn_reg_t out_color_param0_ch1;
-    volatile dma2d_out_color_param1_chn_reg_t out_color_param1_ch1;
-    volatile dma2d_out_color_param2_chn_reg_t out_color_param2_ch1;
-    volatile dma2d_out_color_param3_chn_reg_t out_color_param3_ch1;
-    volatile dma2d_out_color_param4_chn_reg_t out_color_param4_ch1;
-    volatile dma2d_out_color_param5_chn_reg_t out_color_param5_ch1;
-    volatile dma2d_out_etm_conf_chn_reg_t out_etm_conf_ch1;
-    volatile dma2d_out_dscr_port_blk_chn_reg_t out_dscr_port_blk_ch1;
-    uint32_t reserved_170[36];
-    volatile dma2d_out_conf0_chn_reg_t out_conf0_ch2;
-    volatile dma2d_out_int_raw_chn_reg_t out_int_raw_ch2;
-    volatile dma2d_out_int_ena_chn_reg_t out_int_ena_ch2;
-    volatile dma2d_out_int_st_chn_reg_t out_int_st_ch2;
-    volatile dma2d_out_int_clr_chn_reg_t out_int_clr_ch2;
-    volatile dma2d_outfifo_status_chn_reg_t outfifo_status_ch2;
-    volatile dma2d_out_push_chn_reg_t out_push_ch2;
-    volatile dma2d_out_link_conf_chn_reg_t out_link_conf_ch2;
-    volatile dma2d_out_link_addr_chn_reg_t out_link_addr_ch2;
-    volatile dma2d_out_state_chn_reg_t out_state_ch2;
-    volatile dma2d_out_eof_des_addr_chn_reg_t out_eof_des_addr_ch2;
-    volatile dma2d_out_dscr_chn_reg_t out_dscr_ch2;
-    volatile dma2d_out_dscr_bf0_chn_reg_t out_dscr_bf0_ch2;
-    volatile dma2d_out_dscr_bf1_chn_reg_t out_dscr_bf1_ch2;
-    volatile dma2d_out_peri_sel_chn_reg_t out_peri_sel_ch2;
-    volatile dma2d_out_arb_chn_reg_t out_arb_ch2;
-    volatile dma2d_out_ro_status_chn_reg_t out_ro_status_ch2;
-    uint32_t reserved_244;
-    volatile dma2d_out_color_convert_chn_reg_t out_color_convert_ch2;
-    volatile dma2d_out_scramble_chn_reg_t out_scramble_ch2;
-    volatile dma2d_out_color_param0_chn_reg_t out_color_param0_ch2;
-    volatile dma2d_out_color_param1_chn_reg_t out_color_param1_ch2;
-    volatile dma2d_out_color_param2_chn_reg_t out_color_param2_ch2;
-    volatile dma2d_out_color_param3_chn_reg_t out_color_param3_ch2;
-    volatile dma2d_out_color_param4_chn_reg_t out_color_param4_ch2;
-    volatile dma2d_out_color_param5_chn_reg_t out_color_param5_ch2;
-    volatile dma2d_out_etm_conf_chn_reg_t out_etm_conf_ch2;
-    volatile dma2d_out_dscr_port_blk_chn_reg_t out_dscr_port_blk_ch2;
-    uint32_t reserved_270[36];
-    volatile dma2d_out_conf0_chn_reg_t out_conf0_ch3;
-    volatile dma2d_out_int_raw_chn_reg_t out_int_raw_ch3;
-    volatile dma2d_out_int_ena_chn_reg_t out_int_ena_ch3;
-    volatile dma2d_out_int_st_chn_reg_t out_int_st_ch3;
-    volatile dma2d_out_int_clr_chn_reg_t out_int_clr_ch3;
-    volatile dma2d_outfifo_status_chn_reg_t outfifo_status_ch3;
-    volatile dma2d_out_push_chn_reg_t out_push_ch3;
-    volatile dma2d_out_link_conf_chn_reg_t out_link_conf_ch3;
-    volatile dma2d_out_link_addr_chn_reg_t out_link_addr_ch3;
-    volatile dma2d_out_state_chn_reg_t out_state_ch3;
-    volatile dma2d_out_eof_des_addr_chn_reg_t out_eof_des_addr_ch3;
-    volatile dma2d_out_dscr_chn_reg_t out_dscr_ch3;
-    volatile dma2d_out_dscr_bf0_chn_reg_t out_dscr_bf0_ch3;
-    volatile dma2d_out_dscr_bf1_chn_reg_t out_dscr_bf1_ch3;
-    volatile dma2d_out_peri_sel_chn_reg_t out_peri_sel_ch3;
-    volatile dma2d_out_arb_chn_reg_t out_arb_ch3;
-    volatile dma2d_out_ro_status_chn_reg_t out_ro_status_ch3;
-    uint32_t reserved_344;
-    volatile dma2d_out_color_convert_chn_reg_t out_color_convert_ch3;
-    volatile dma2d_out_scramble_chn_reg_t out_scramble_ch3;
-    volatile dma2d_out_color_param0_chn_reg_t out_color_param0_ch3;
-    volatile dma2d_out_color_param1_chn_reg_t out_color_param1_ch3;
-    volatile dma2d_out_color_param2_chn_reg_t out_color_param2_ch3;
-    volatile dma2d_out_color_param3_chn_reg_t out_color_param3_ch3;
-    volatile dma2d_out_color_param4_chn_reg_t out_color_param4_ch3;
-    volatile dma2d_out_color_param5_chn_reg_t out_color_param5_ch3;
-    volatile dma2d_out_etm_conf_chn_reg_t out_etm_conf_ch3;
-    volatile dma2d_out_dscr_port_blk_chn_reg_t out_dscr_port_blk_ch3;
-    uint32_t reserved_370[100];
-    volatile dma2d_in_conf0_chn_reg_t in_conf0_ch0;
-    volatile dma2d_in_int_raw_chn_reg_t in_int_raw_ch0;
-    volatile dma2d_in_int_ena_chn_reg_t in_int_ena_ch0;
-    volatile dma2d_in_int_st_chn_reg_t in_int_st_ch0;
-    volatile dma2d_in_int_clr_chn_reg_t in_int_clr_ch0;
-    volatile dma2d_infifo_status_chn_reg_t infifo_status_ch0;
-    volatile dma2d_in_pop_chn_reg_t in_pop_ch0;
-    volatile dma2d_in_link_conf_chn_reg_t in_link_conf_ch0;
-    volatile dma2d_in_link_addr_chn_reg_t in_link_addr_ch0;
-    volatile dma2d_in_state_chn_reg_t in_state_ch0;
-    volatile dma2d_in_suc_eof_des_addr_chn_reg_t in_suc_eof_des_addr_ch0;
-    volatile dma2d_in_err_eof_des_addr_chn_reg_t in_err_eof_des_addr_ch0;
-    volatile dma2d_in_dscr_chn_reg_t in_dscr_ch0;
-    volatile dma2d_in_dscr_bf0_chn_reg_t in_dscr_bf0_ch0;
-    volatile dma2d_in_dscr_bf1_chn_reg_t in_dscr_bf1_ch0;
-    volatile dma2d_in_peri_sel_chn_reg_t in_peri_sel_ch0;
-    volatile dma2d_in_arb_chn_reg_t in_arb_ch0;
-    volatile dma2d_in_ro_status_chn_reg_t in_ro_status_ch0;
-    volatile dma2d_in_ro_pd_conf_chn_reg_t in_ro_pd_conf_ch0;
-    volatile dma2d_in_color_convert_chn_reg_t in_color_convert_ch0;
-    volatile dma2d_in_scramble_chn_reg_t in_scramble_ch0;
-    volatile dma2d_in_color_param0_chn_reg_t in_color_param0_ch0;
-    volatile dma2d_in_color_param1_chn_reg_t in_color_param1_ch0;
-    volatile dma2d_in_color_param2_chn_reg_t in_color_param2_ch0;
-    volatile dma2d_in_color_param3_chn_reg_t in_color_param3_ch0;
-    volatile dma2d_in_color_param4_chn_reg_t in_color_param4_ch0;
-    volatile dma2d_in_color_param5_chn_reg_t in_color_param5_ch0;
-    volatile dma2d_in_etm_conf_chn_reg_t in_etm_conf_ch0;
-    uint32_t reserved_570[36];
-    volatile dma2d_in_conf0_chn_reg_t in_conf0_ch1;
-    volatile dma2d_in_int_raw_chn_reg_t in_int_raw_ch1;
-    volatile dma2d_in_int_ena_chn_reg_t in_int_ena_ch1;
-    volatile dma2d_in_int_st_chn_reg_t in_int_st_ch1;
-    volatile dma2d_in_int_clr_chn_reg_t in_int_clr_ch1;
-    volatile dma2d_infifo_status_chn_reg_t infifo_status_ch1;
-    volatile dma2d_in_pop_chn_reg_t in_pop_ch1;
-    volatile dma2d_in_link_conf_chn_reg_t in_link_conf_ch1;
-    volatile dma2d_in_link_addr_chn_reg_t in_link_addr_ch1;
-    volatile dma2d_in_state_chn_reg_t in_state_ch1;
-    volatile dma2d_in_suc_eof_des_addr_chn_reg_t in_suc_eof_des_addr_ch1;
-    volatile dma2d_in_err_eof_des_addr_chn_reg_t in_err_eof_des_addr_ch1;
-    volatile dma2d_in_dscr_chn_reg_t in_dscr_ch1;
-    volatile dma2d_in_dscr_bf0_chn_reg_t in_dscr_bf0_ch1;
-    volatile dma2d_in_dscr_bf1_chn_reg_t in_dscr_bf1_ch1;
-    volatile dma2d_in_peri_sel_chn_reg_t in_peri_sel_ch1;
-    volatile dma2d_in_arb_chn_reg_t in_arb_ch1;
-    volatile dma2d_in_ro_status_chn_reg_t in_ro_status_ch1;
-    uint32_t reserved_648[9];
-    volatile dma2d_in_etm_conf_chn_reg_t in_etm_conf_ch1;
-    uint32_t reserved_670[36];
-    volatile dma2d_in_conf0_chn_reg_t in_conf0_ch2;
-    volatile dma2d_in_int_raw_chn_reg_t in_int_raw_ch2;
-    volatile dma2d_in_int_ena_chn_reg_t in_int_ena_ch2;
-    volatile dma2d_in_int_st_chn_reg_t in_int_st_ch2;
-    volatile dma2d_in_int_clr_chn_reg_t in_int_clr_ch2;
-    volatile dma2d_infifo_status_chn_reg_t infifo_status_ch2;
-    volatile dma2d_in_pop_chn_reg_t in_pop_ch2;
-    volatile dma2d_in_link_conf_chn_reg_t in_link_conf_ch2;
-    volatile dma2d_in_link_addr_chn_reg_t in_link_addr_ch2;
-    volatile dma2d_in_state_chn_reg_t in_state_ch2;
-    volatile dma2d_in_suc_eof_des_addr_chn_reg_t in_suc_eof_des_addr_ch2;
-    volatile dma2d_in_err_eof_des_addr_chn_reg_t in_err_eof_des_addr_ch2;
-    volatile dma2d_in_dscr_chn_reg_t in_dscr_ch2;
-    volatile dma2d_in_dscr_bf0_chn_reg_t in_dscr_bf0_ch2;
-    volatile dma2d_in_dscr_bf1_chn_reg_t in_dscr_bf1_ch2;
-    volatile dma2d_in_peri_sel_chn_reg_t in_peri_sel_ch2;
-    volatile dma2d_in_arb_chn_reg_t in_arb_ch2;
-    volatile dma2d_in_ro_status_chn_reg_t in_ro_status_ch2;
-    uint32_t reserved_748[9];
-    volatile dma2d_in_etm_conf_chn_reg_t in_etm_conf_ch2;
-    uint32_t reserved_770[164];
+    volatile dma2d_color_param_reg_t param_h;
+    volatile dma2d_color_param_reg_t param_m;
+    volatile dma2d_color_param_reg_t param_l;
+} dma2d_color_param_group_chn_reg_t;
+
+typedef struct {
+    volatile dma2d_out_conf0_chn_reg_t out_conf0;
+    volatile dma2d_out_int_raw_chn_reg_t out_int_raw;
+    volatile dma2d_out_int_ena_chn_reg_t out_int_ena;
+    volatile dma2d_out_int_st_chn_reg_t out_int_st;
+    volatile dma2d_out_int_clr_chn_reg_t out_int_clr;
+    volatile dma2d_outfifo_status_chn_reg_t outfifo_status;
+    volatile dma2d_out_push_chn_reg_t out_push;
+    volatile dma2d_out_link_conf_chn_reg_t out_link_conf;
+    volatile dma2d_out_link_addr_chn_reg_t out_link_addr;
+    volatile dma2d_out_state_chn_reg_t out_state;
+    volatile dma2d_out_eof_des_addr_chn_reg_t out_eof_des_addr;
+    volatile dma2d_out_dscr_chn_reg_t out_dscr;
+    volatile dma2d_out_dscr_bf0_chn_reg_t out_dscr_bf0;
+    volatile dma2d_out_dscr_bf1_chn_reg_t out_dscr_bf1;
+    volatile dma2d_out_peri_sel_chn_reg_t out_peri_sel;
+    volatile dma2d_out_arb_chn_reg_t out_arb;
+    volatile dma2d_out_ro_status_chn_reg_t out_ro_status;
+    volatile dma2d_out_ro_pd_conf_chn_reg_t out_ro_pd_conf;             /* only exist on channel0 */
+    volatile dma2d_out_color_convert_chn_reg_t out_color_convert;
+    volatile dma2d_out_scramble_chn_reg_t out_scramble;
+    volatile dma2d_color_param_group_chn_reg_t out_color_param_group;
+    volatile dma2d_out_etm_conf_chn_reg_t out_etm_conf;
+    volatile dma2d_out_dscr_port_blk_chn_reg_t out_dscr_port_blk;
+    uint32_t reserved_out[36];
+} dma2d_out_chn_reg_t;
+
+typedef struct {
+    volatile dma2d_in_conf0_chn_reg_t in_conf0;
+    volatile dma2d_in_int_raw_chn_reg_t in_int_raw;
+    volatile dma2d_in_int_ena_chn_reg_t in_int_ena;
+    volatile dma2d_in_int_st_chn_reg_t in_int_st;
+    volatile dma2d_in_int_clr_chn_reg_t in_int_clr;
+    volatile dma2d_infifo_status_chn_reg_t infifo_status;
+    volatile dma2d_in_pop_chn_reg_t in_pop;
+    volatile dma2d_in_link_conf_chn_reg_t in_link_conf;
+    volatile dma2d_in_link_addr_chn_reg_t in_link_addr;
+    volatile dma2d_in_state_chn_reg_t in_state;
+    volatile dma2d_in_suc_eof_des_addr_chn_reg_t in_suc_eof_des_addr;
+    volatile dma2d_in_err_eof_des_addr_chn_reg_t in_err_eof_des_addr;
+    volatile dma2d_in_dscr_chn_reg_t in_dscr;
+    volatile dma2d_in_dscr_bf0_chn_reg_t in_dscr_bf0;
+    volatile dma2d_in_dscr_bf1_chn_reg_t in_dscr_bf1;
+    volatile dma2d_in_peri_sel_chn_reg_t in_peri_sel;
+    volatile dma2d_in_arb_chn_reg_t in_arb;
+    volatile dma2d_in_ro_status_chn_reg_t in_ro_status;
+    volatile dma2d_in_ro_pd_conf_chn_reg_t in_ro_pd_conf;               /* only exist on channel0 */
+    volatile dma2d_in_color_convert_chn_reg_t in_color_convert;         /* only exist on channel0 */
+    volatile dma2d_in_scramble_chn_reg_t in_scramble;                   /* only exist on channel0 */
+    volatile dma2d_color_param_group_chn_reg_t in_color_param_group;    /* only exist on channel0 */
+    volatile dma2d_in_etm_conf_chn_reg_t in_etm_conf;
+    uint32_t reserved_in[36];
+} dma2d_in_chn_reg_t;
+
+typedef struct dma2d_dev_t {
+    volatile dma2d_out_chn_reg_t out_channel[4];
+    uint32_t reserved_400[64];
+    volatile dma2d_in_chn_reg_t in_channel[3];
+    uint32_t reserved_800[128];
     volatile dma2d_axi_err_reg_t axi_err;
     volatile dma2d_rst_conf_reg_t rst_conf;
     volatile dma2d_intr_mem_start_addr_reg_t intr_mem_start_addr;
@@ -2050,6 +1954,7 @@ typedef struct {
     volatile dma2d_date_reg_t date;
 } dma2d_dev_t;
 
+extern dma2d_dev_t DMA2D;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(dma2d_dev_t) == 0xa30, "Invalid size of dma2d_dev_t structure");

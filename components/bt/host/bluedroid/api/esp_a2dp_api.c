@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -77,7 +77,7 @@ esp_err_t esp_a2d_sink_register_stream_endpoint(uint8_t seid, const esp_a2d_mcc_
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (seid >= ESP_A2D_MAX_SEPS) {
+    if (mcc == NULL || seid >= ESP_A2D_MAX_SEPS) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -209,6 +209,7 @@ esp_err_t esp_a2d_sink_disconnect(esp_bd_addr_t remote_bda)
     msg.pid = BTC_PID_A2DP;
     msg.act = BTC_AV_SINK_API_DISCONNECT_EVT;
 
+    memset(&arg, 0, sizeof(btc_av_args_t));
     /* Switch to BTC context */
     memcpy(&(arg.disconn), remote_bda, sizeof(bt_bdaddr_t));
     stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL, NULL);
@@ -292,7 +293,7 @@ esp_err_t esp_a2d_media_ctrl(esp_a2d_media_ctrl_t ctrl)
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (ctrl > ESP_A2D_MEDIA_CTRL_SUSPEND) {
+    if (ctrl <= ESP_A2D_MEDIA_CTRL_NONE || ctrl > ESP_A2D_MEDIA_CTRL_SUSPEND) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -349,6 +350,35 @@ esp_err_t esp_a2d_source_init(void)
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
+esp_err_t esp_a2d_source_set_pref_mcc(esp_a2d_conn_hdl_t conn_hdl, const esp_a2d_mcc_t *pref_mcc)
+{
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (g_a2dp_on_deinit || g_a2dp_source_ongoing_deinit) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (conn_hdl == 0 || pref_mcc == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_A2DP;
+    msg.act = BTC_AV_SRC_API_SET_PREF_MCC_EVT;
+
+    btc_av_args_t arg;
+    memset(&arg, 0, sizeof(btc_av_args_t));
+    arg.set_pref_mcc.conn_hdl = conn_hdl;
+    memcpy(&arg.set_pref_mcc.pref_mcc, pref_mcc, sizeof(esp_a2d_mcc_t));
+
+    /* Switch to BTC context */
+    bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL, NULL);
+    return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+}
+
 esp_err_t esp_a2d_source_register_stream_endpoint(uint8_t seid, const esp_a2d_mcc_t *mcc)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
@@ -359,7 +389,7 @@ esp_err_t esp_a2d_source_register_stream_endpoint(uint8_t seid, const esp_a2d_mc
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (seid >= ESP_A2D_MAX_SEPS) {
+    if (mcc == NULL || seid >= ESP_A2D_MAX_SEPS) {
         return ESP_ERR_INVALID_ARG;
     }
 

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import os
 import os.path as path
@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 from pytest_embedded_idf.utils import idf_parametrize
 
-sys.path.append(path.expandvars(path.join('$IDF_PATH', 'tools', 'test_apps', 'system', 'panic')))
+sys.path.append(path.normpath(path.join(path.dirname(__file__), '..', 'panic', 'panic_base')))
 from test_panic_util import PanicTestDut  # noqa: E402
 
 
@@ -63,7 +63,7 @@ def dut_get_threads(dut: PanicTestDut) -> Any:
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['esp32p4'], indirect=['target'])
+@idf_parametrize('target', ['esp32p4', 'esp32s31'], indirect=['target'])
 def test_hwloop_jump(dut: PanicTestDut) -> None:
     start_gdb(dut)
 
@@ -147,7 +147,7 @@ def check_registers_numbers(dut: PanicTestDut) -> None:
             r_id += 1
 
 
-def set_float_registers(dut: PanicTestDut, t_id: int, addition: int) -> None:
+def set_riscv_float_registers(dut: PanicTestDut, t_id: int, addition: int) -> None:
     cmd = f'-thread-select {t_id}'
     responses = dut.gdb_write(cmd)
     assert dut.find_gdb_response('done', 'result', responses) is not None
@@ -157,13 +157,39 @@ def set_float_registers(dut: PanicTestDut, t_id: int, addition: int) -> None:
         responses = dut.gdb_write(cmd)
         assert dut.find_gdb_response('done', 'result', responses) is not None
 
-        # Note that it's a gap between the last floating register number and fcsr register number.
-        cmd = f'-data-write-register-values d 68 {32 + addition}'
+    # Note that it's a gap between the last floating register number and fcsr register number.
+    cmd = f'-data-write-register-values d 68 {32 + addition}'
+    responses = dut.gdb_write(cmd)
+    assert dut.find_gdb_response('done', 'result', responses) is not None
+
+
+def set_xtensa_float_registers(dut: PanicTestDut, t_id: int, addition: int) -> None:
+    """Set Xtensa FPU registers via GDB.
+
+    Xtensa FPU register numbers:
+    - f0-f15: registers 87-102
+    - fcr: register 103
+    - fsr: register 104
+    """
+    cmd = f'-thread-select {t_id}'
+    responses = dut.gdb_write(cmd)
+    assert dut.find_gdb_response('done', 'result', responses) is not None
+
+    if dut.target == 'esp32':
+        fpu_current_register = 87
+    elif dut.target == 'esp32s3':
+        fpu_current_register = 84
+    else:
+        raise ValueError(f'Unsupported target: {dut.target}')
+
+    for i in range(18):  # 16 f* registers + fcr + fsr
+        cmd = f'-data-write-register-values d {fpu_current_register} {i + addition}'
         responses = dut.gdb_write(cmd)
         assert dut.find_gdb_response('done', 'result', responses) is not None
+        fpu_current_register += 1
 
 
-def set_pie_registers(dut: PanicTestDut, t_id: int, addition: int) -> None:
+def set_riscv_pie_registers(dut: PanicTestDut, t_id: int, addition: int) -> None:
     cmd = f'-thread-select {t_id}'
     responses = dut.gdb_write(cmd)
     assert dut.find_gdb_response('done', 'result', responses) is not None
@@ -212,15 +238,14 @@ def coproc_registers_test(dut: PanicTestDut, regs_type: str, set_registers: Call
       - Task coproc owner (direct registers write)
       - Other tasks (write registers to task's stack)
     """
-    coproc_tasks = [f'test_{regs_type}_1', f'test_{regs_type}_2']
-    found_tasks = [False] * len(coproc_tasks)
+    found_count = 0
     for t in threads:
-        for index, test in enumerate(coproc_tasks):
-            if test in t['details']:
-                set_registers(dut, t['id'], index + 1)
-                found_tasks[index] = True
+        for task_num in [1, 2]:
+            if f'test_{regs_type}_{task_num}' in t['details']:
+                set_registers(dut, t['id'], task_num)
+                found_count += 1
 
-    assert all(found_tasks)
+    assert found_count == 2, f'Expected 2 coproc tasks, found {found_count}'
 
     dut_set_variable(dut, f'test_{regs_type}_ready', 1)
 
@@ -240,32 +265,35 @@ def coproc_registers_test(dut: PanicTestDut, regs_type: str, set_registers: Call
 
     threads = dut_get_threads(dut)
 
-    found_tasks = [False] * len(coproc_tasks)
+    found_count = 0
     for t in threads:
-        for index, test in enumerate(coproc_tasks):
-            if test in t['details']:
-                found_tasks[index] = True
+        for task_num in [1, 2]:
+            if f'test_{regs_type}_{task_num}' in t['details']:
+                found_count += 1
 
-    assert not any(found_tasks)
+    assert found_count == 0, f'Expected 0 coproc tasks, found {found_count}'
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['esp32p4'], indirect=['target'])
+@idf_parametrize('target', ['esp32', 'esp32s3', 'esp32p4', 'esp32s31'], indirect=['target'])
 def test_coproc_registers(dut: PanicTestDut) -> None:
     start_gdb(dut)
 
     # enable coprocessors registers testing
     dut_enable_test(dut, 'coproc_regs')
 
-    check_registers_numbers(dut)
-
-    coproc_registers_test(dut, 'fpu', set_float_registers)
-    if dut.target == 'esp32p4':
-        coproc_registers_test(dut, 'pie', set_pie_registers)
+    if dut.is_xtensa:
+        coproc_registers_test(dut, 'fpu', set_xtensa_float_registers)
+    else:
+        check_registers_numbers(dut)
+        coproc_registers_test(dut, 'fpu', set_riscv_float_registers)
+        if dut.target == 'esp32p4':
+            coproc_registers_test(dut, 'pie', set_riscv_pie_registers)
 
 
 @pytest.mark.generic
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15607
 def test_gdbstub_runtime(dut: PanicTestDut) -> None:
     start_gdb(dut)
 
@@ -289,6 +317,14 @@ def test_gdbstub_runtime(dut: PanicTestDut) -> None:
     assert payload['reason'] == 'end-stepping-range'
     assert payload['frame']['func'] == 'foo'
     assert payload['frame']['line'] == str(get_line_number('var_2+=2;'))
+    assert payload['stopped-threads'] == 'all'
+
+    # Test next command
+    cmd = '-exec-next'
+    payload = run_and_break(dut, cmd)
+    assert payload['reason'] == 'end-stepping-range'
+    assert payload['frame']['line'] == str(get_line_number('var_2--;', 0))
+    assert payload['frame']['func'] == 'foo'
     assert payload['stopped-threads'] == 'all'
 
     # Test finish command
@@ -341,14 +377,11 @@ def test_gdbstub_runtime(dut: PanicTestDut) -> None:
     assert dut.find_gdb_response('done', 'result', responses) is not None
     cmd = '-exec-continue'
     payload = run_and_break(dut, cmd)
-    assert payload['reason'] == 'signal-received'
+    assert payload['reason'] == 'watchpoint-trigger'
+    assert int(payload['value']['new']) == int(payload['value']['old']) + 2
     assert payload['frame']['func'] == 'foo'
+    assert payload['frame']['line'] == str(get_line_number('var_2--;'))
     assert payload['stopped-threads'] == 'all'
-    # Uncomment this when implement send reason to gdb: GCC-313
-    #
-    # assert payload['reason'] == 'watchpoint-trigger'
-    # assert int(payload['value']['new']) == int(payload['value']['old']) + 1
-    # assert payload['frame']['line'] == '14'
 
     cmd = '-break-delete 2'
     responses = dut.gdb_write(cmd)
@@ -364,41 +397,4 @@ def test_gdbstub_runtime(dut: PanicTestDut) -> None:
     assert payload['signal-name'] == 'SIGSEGV'
     assert payload['frame']['func'] == 'app_main'
     assert payload['frame']['line'] == str(get_line_number('label_5', 1))
-    assert payload['stopped-threads'] == 'all'
-
-
-@pytest.mark.generic
-@pytest.mark.temp_skip_ci(targets=['esp32', 'esp32s2', 'esp32s3'], reason='fix IDF-7927')
-@idf_parametrize('target', ['esp32', 'esp32s2', 'esp32s3'], indirect=['target'])
-def test_gdbstub_runtime_xtensa_stepping_bug(dut: PanicTestDut) -> None:
-    start_gdb(dut)
-
-    dut_enable_test(dut)
-
-    # Test breakpoint
-    cmd = '-break-insert --source test_app_main.c --function app_main --label label_1'
-    response = dut.find_gdb_response('done', 'result', dut.gdb_write(cmd))
-    assert response is not None
-    cmd = '-exec-continue'
-    payload = run_and_break(dut, cmd)
-    assert payload['reason'] == 'breakpoint-hit'
-    assert payload['bkptno'] == '1'
-    assert payload['frame']['func'] == 'app_main'
-    assert payload['frame']['line'] == str(get_line_number('label_1:', 1))
-    assert payload['stopped-threads'] == 'all'
-
-    # Test step command
-    cmd = '-exec-step'
-    payload = run_and_break(dut, cmd)
-    assert payload['reason'] == 'end-stepping-range'
-    assert payload['frame']['func'] == 'foo'
-    assert payload['frame']['line'] == str(get_line_number('var_2+=2;'))
-    assert payload['stopped-threads'] == 'all'
-
-    # Test next command
-    cmd = '-exec-next'
-    payload = run_and_break(dut, cmd)
-    assert payload['reason'] == 'end-stepping-range'
-    assert payload['frame']['line'] == str(get_line_number('var_2--;', 0))
-    assert payload['frame']['func'] == 'foo'
     assert payload['stopped-threads'] == 'all'

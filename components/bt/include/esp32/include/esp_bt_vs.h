@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -223,6 +223,51 @@ struct bt_hci_vs_legacy_rem_auth_evt {
  * @note The init function is `bt_stack_enableRateCtrlVsCmd(true)`
  */
 #define ESP_BT_VS_WR_AUTO_RATE_INIT_OCF                             (0x018b)
+
+/**
+ * @note The init function is `bt_stack_enablePwrCtrlVsCmd(true)`
+ */
+#define ESP_BT_VS_RD_ACL_REAL_RSSI_OCF                              (0x0191)
+
+/**
+ * @note The init function is `bt_stack_enablePwrCtrlVsCmd(true)`
+ */
+#define ESP_BT_VS_RD_NEW_CONN_TX_PWR_LVL_OCF                        (0x0192)
+
+/**
+ * @note The init function is `bt_stack_enablePwrCtrlVsCmd(true)`
+ */
+#define ESP_BT_VS_WR_NEW_CONN_TX_PWR_LVL_OCF                        (0x0193)
+
+/**
+ * @note The init function is `bt_stack_enablePwrCtrlVsCmd(true)`
+ */
+#define ESP_BT_VS_RD_PAGE_TX_PWR_LVL_OCF                            (0x0194)
+
+/**
+ * @note The init function is `bt_stack_enablePwrCtrlVsCmd(true)`
+ */
+#define ESP_BT_VS_WR_PAGE_TX_PWR_LVL_OCF                            (0x0195)
+
+/**
+ * @note The init function is `bt_stack_enablePwrCtrlVsCmd(true)`
+ */
+#define ESP_BT_VS_RD_PSCAN_TX_PWR_LVL_OCF                           (0x0196)
+
+/**
+ * @note The init function is `bt_stack_enablePwrCtrlVsCmd(true)`
+ */
+#define ESP_BT_VS_WR_PSCAN_TX_PWR_LVL_OCF                           (0x0197)
+
+/**
+ * @note The init function is `bt_stack_enablePwrCtrlVsCmd(true)`
+ */
+#define ESP_BT_VS_RD_INQ_TX_PWR_LVL_OCF                             (0x0198)
+
+/**
+ * @note The init function is `bt_stack_enablePwrCtrlVsCmd(true)`
+ */
+#define ESP_BT_VS_WR_ISCAN_TX_PWR_LVL_OCF                           (0x0199)
 
 //
 // @brief HCI VS Events for Espressif's Internal-Use Debugging

@@ -54,5 +54,15 @@ void app_main(void)
 
     ESP_LOGI(TAG, "Erased data");
 
+    // Find the custom partition in the partition table
+    partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "custom_partition");
+    assert(partition != NULL);
+
+    memset(read_data, 0, sizeof(read_data));
+    // Read the data and check if it matches the expected content (first 12 bytes should be "abcdef123456", rest should be 0x00's)
+    ESP_ERROR_CHECK(esp_partition_read(partition, 0, read_data, sizeof(read_data)));
+    assert(memcmp("abcdef123456", read_data, 12) == 0);
+    ESP_LOGI(TAG, "Read data from custom partition: %s", read_data);
+
     ESP_LOGI(TAG, "Example end");
 }

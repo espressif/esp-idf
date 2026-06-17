@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -34,9 +34,13 @@ void bt_avrc_ca_ct_evt_hdl(uint16_t event, void *param)
     }
     /* when metadata response, this event comes */
     case ESP_AVRC_CT_METADATA_RSP_EVT: {
-        ESP_LOGI(BT_RC_CT_TAG, "AVRC metadata rsp: attribute id 0x%x, %s", rc->meta_rsp.attr_id, rc->meta_rsp.attr_text);
-        if (rc->meta_rsp.attr_id == ESP_AVRC_MD_ATTR_COVER_ART) {
-            avrc_cover_art_srv_ct_metadata_update(rc->meta_rsp.attr_text, rc->meta_rsp.attr_length);
+        if (rc->meta_rsp.attr_text) {
+            ESP_LOGI(BT_RC_CT_TAG, "AVRC metadata rsp: attribute id 0x%x, %s", rc->meta_rsp.attr_id, rc->meta_rsp.attr_text);
+            if (rc->meta_rsp.attr_id == ESP_AVRC_MD_ATTR_COVER_ART) {
+                avrc_cover_art_srv_ct_metadata_update(rc->meta_rsp.attr_text, rc->meta_rsp.attr_length);
+            }
+        } else {
+            ESP_LOGE(BT_RC_CT_TAG, "AVRC metadata rsp: attr_text NULL");
         }
         break;
     }

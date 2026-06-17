@@ -1,11 +1,13 @@
 examples/system/heap_task_tracking/advanced:
   depends_components:
+    - *common_components
     - heap
     - soc
     - esp_psram
 
 examples/system/heap_task_tracking/basic:
   depends_components:
+    - *common_components
     - heap
     - soc
     - esp_psram

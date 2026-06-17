@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,14 +43,10 @@ static esp_err_t validate_signature_block(const ets_secure_boot_sig_block_t *blo
         return ESP_FAIL;
     }
 
-#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED && CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
-    if (block->ecdsa.key.curve_id == ECDSA_CURVE_P192) {
-        // Enabling ECDSA-192 Curve mode
-        esp_err_t err = esp_efuse_enable_ecdsa_p192_curve_mode();
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to enable ECDSA-192 curve mode: %d", err);
-            return err;
-        }
+#if CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+    if (block->ecdsa.key.curve_id != ESP_SECURE_BOOT_ECDSA_CURVE_ID) {
+        ESP_LOGE(TAG, "ECDSA curve mismatch: actual (curve_id %u), expected (curve_id %u)", (unsigned) block->ecdsa.key.curve_id, (unsigned) ESP_SECURE_BOOT_ECDSA_CURVE_ID);
+        return ESP_FAIL;
     }
 #endif
 

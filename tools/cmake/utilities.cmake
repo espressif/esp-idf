@@ -45,6 +45,32 @@ function(lines2list variable_name)
 endfunction()
 
 
+# __check_python_package_min_version
+#
+# Check whether a Python package is installed with at least the given version.
+#
+# @param python_exe   Python interpreter to use (e.g. ${python} or ${PYTHON})
+# @param package_name Pip package name (e.g. esp-idf-kconfig)
+# @param min_version  Minimum version required (e.g. 3.4.2)
+# @param result_var   Output variable name; set to TRUE if package version >= min_version,
+#                     FALSE otherwise (package missing, older version, or pip unavailable)
+#
+function(__check_python_package_min_version python_exe package_name min_version result_var)
+    execute_process(
+        COMMAND ${python_exe} -c
+            "from importlib.metadata import version; print(version('${package_name}'))"
+        OUTPUT_VARIABLE _ver
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE _rc
+        ERROR_QUIET
+    )
+    set(${result_var} FALSE PARENT_SCOPE)
+    if(_rc EQUAL 0 AND _ver VERSION_GREATER_EQUAL "${min_version}")
+        set(${result_var} TRUE PARENT_SCOPE)
+    endif()
+endfunction()
+
+
 # move_if_different
 #
 # If 'source' has different md5sum to 'destination' (or destination

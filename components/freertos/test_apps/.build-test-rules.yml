@@ -3,9 +3,7 @@
 components/freertos/test_apps/build_tests/freertos_build_test:
   disable:
     - if: CONFIG_NAME == "timers_disabled" and IDF_TARGET != "esp32"
-    - if: IDF_TARGET in ["esp32s31"]
-      temporary: true
-      reason: not support yet, smp build failed # TODO: [ESP32S31] IDF-14685
+    - if: CONFIG_NAME == "smp" and IDF_TARGET not in ["esp32"]
   depends_components:
     - freertos
     - esp_system # trigger on changes to idle / tick hooks, wdt, entry point to freertos code
@@ -20,12 +18,9 @@ components/freertos/test_apps/build_tests/orig_inc_path:
 
 components/freertos/test_apps/freertos:
   disable:
-    - if: CONFIG_NAME == "smp" and IDF_TARGET in ["esp32p4"]
+    - if: CONFIG_NAME == "smp" and IDF_TARGET not in ["esp32"]
       temporary: true
       reason: target(s) not supported yet
-    - if: IDF_TARGET in ["esp32s31"]
-      temporary: true
-      reason: not support yet # TODO: [ESP32S31] IDF-14685
     - if: CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1
   depends_components:
     - freertos

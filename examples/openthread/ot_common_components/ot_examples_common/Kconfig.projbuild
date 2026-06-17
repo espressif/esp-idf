@@ -12,7 +12,12 @@ menu "Config for OpenThread Examples"
     menu "External Console Commands"
         config OPENTHREAD_IPERF_CMD_ENABLE
             bool "Enable iperf command"
-            depends on OPENTHREAD_FTD || OPENTHREAD_MTD
+            # TODO: Make this option depend on LWIP_ENABLE in the future.
+            # Currently, LWIP_ENABLE cannot be set to `n` because the OpenThread component makes MbedTLS a hard
+            # dependency.
+            # This is a known limitation of the ESP-IDF (<6) build system (component requirements are expanded
+            # before configuration is loaded).
+            depends on OPENTHREAD_PLATFORM_NETIF
             default y
             help
                 If enabled, iperf will be registered and available as a console command.

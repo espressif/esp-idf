@@ -75,8 +75,8 @@
 #define DR_REG_LP_WDT_BASE                        0x600B5400
 #define DR_REG_TOUCH_SENS_BASE                    0x600B5800
 #define DR_REG_TOUCH_AON_BASE                     0x600B5C00
-#define DR_REG_I2C_ANA_MST_BASE                   0x600CF800 // (DR_REG_MODEM_PWR_BASE + 0x2800)
 
-#define DR_REG_CLINT_M_BASE                       0x20000000    // TODO: [ESP32H4] IDF-12303 inherit from verify code, need check
+#define DR_REG_CLINT_M_BASE                       0x20000000
 
 #define IEEE802154_REG_BASE                       0x600C3000
+#define PWDET_CONF_REG                            0x600C0808

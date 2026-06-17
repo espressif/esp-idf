@@ -11,9 +11,9 @@ import time
 from threading import Thread
 from typing import Any
 
-from click import INT
-from click.core import Context
 from esp_coredump import CoreDump
+from rich_click import INT
+from rich_click import Context
 
 from idf_py_actions.errors import FatalError
 from idf_py_actions.serial_ext import BAUD_RATE
@@ -208,6 +208,8 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     time.sleep(0.5)
             except KeyboardInterrupt:
                 print('Terminated -> exiting debug utility targets')
+        if processes['allow_hints']:
+            ensure_build_directory(args, ctx.info_name)  # initialize build context for hints
         _terminate_async_target('openocd')
         _terminate_async_target('gdbgui')
 

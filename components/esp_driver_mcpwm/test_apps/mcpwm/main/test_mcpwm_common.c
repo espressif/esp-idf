@@ -9,6 +9,36 @@
 #include "driver/mcpwm_prelude.h"
 #include "test_mcpwm_utils.h"
 
+TEST_MCPWM_CALLBACK_ATTR
+static bool test_mcpwm_timer_on_full_cb(mcpwm_timer_handle_t timer, const mcpwm_timer_event_data_t *edata, void *user_data)
+{
+    return false;
+}
+
+TEST_MCPWM_CALLBACK_ATTR
+static bool test_mcpwm_oper_on_brake_cbc_cb(mcpwm_oper_handle_t oper, const mcpwm_brake_event_data_t *edata, void *user_data)
+{
+    return false;
+}
+
+TEST_MCPWM_CALLBACK_ATTR
+static bool test_mcpwm_cmpr_on_reach_cb(mcpwm_cmpr_handle_t comparator, const mcpwm_compare_event_data_t *edata, void *user_data)
+{
+    return false;
+}
+
+TEST_MCPWM_CALLBACK_ATTR
+static bool test_mcpwm_fault_on_enter_cb(mcpwm_fault_handle_t fault, const mcpwm_fault_event_data_t *edata, void *user_data)
+{
+    return false;
+}
+
+TEST_MCPWM_CALLBACK_ATTR
+static bool test_mcpwm_cap_on_cap_cb(mcpwm_cap_channel_handle_t cap_channel, const mcpwm_capture_event_data_t *edata, void *user_data)
+{
+    return false;
+}
+
 TEST_CASE("mcpwm_set_interrupt_priority", "[mcpwm]")
 {
     printf("install timer\r\n");
@@ -25,13 +55,13 @@ TEST_CASE("mcpwm_set_interrupt_priority", "[mcpwm]")
     printf("register event callbacks\r\n");
     mcpwm_timer_event_callbacks_t timer_cbs = {
         .on_stop = NULL,
-        .on_full = NULL,
+        .on_full = test_mcpwm_timer_on_full_cb,
         .on_empty = NULL,
     };
     TEST_ESP_OK(mcpwm_timer_register_event_callbacks(timer, &timer_cbs, NULL));
     timer_config.intr_priority = 1;
     mcpwm_timer_handle_t timer2 = NULL;
-    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, mcpwm_new_timer(&timer_config, &timer2));
+    TEST_ESP_OK(mcpwm_new_timer(&timer_config, &timer2));
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, mcpwm_timer_register_event_callbacks(timer2, &timer_cbs, NULL));
 
     printf("install operator\r\n");
@@ -43,13 +73,13 @@ TEST_CASE("mcpwm_set_interrupt_priority", "[mcpwm]")
     TEST_ESP_OK(mcpwm_new_operator(&operator_config, &oper));
     printf("register event callbacks\r\n");
     mcpwm_operator_event_callbacks_t oper_cbs = {
-        .on_brake_cbc = NULL,
+        .on_brake_cbc = test_mcpwm_oper_on_brake_cbc_cb,
         .on_brake_ost = NULL,
     };
     TEST_ESP_OK(mcpwm_operator_register_event_callbacks(oper, &oper_cbs, NULL));
     operator_config.intr_priority = 1;
     mcpwm_oper_handle_t oper2 = NULL;
-    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, mcpwm_new_operator(&operator_config, &oper2));
+    TEST_ESP_OK(mcpwm_new_operator(&operator_config, &oper2));
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, mcpwm_operator_register_event_callbacks(oper2, &oper_cbs, NULL));
 
     printf("install comparator\r\n");
@@ -61,12 +91,12 @@ TEST_CASE("mcpwm_set_interrupt_priority", "[mcpwm]")
     TEST_ESP_OK(mcpwm_operator_connect_timer(oper, timer));
     printf("register event callback\r\n");
     mcpwm_comparator_event_callbacks_t comparator_cbs = {
-        .on_reach = NULL,
+        .on_reach = test_mcpwm_cmpr_on_reach_cb,
     };
     TEST_ESP_OK(mcpwm_comparator_register_event_callbacks(comparator, &comparator_cbs, NULL));
     comparator_config.intr_priority = 1;
     mcpwm_cmpr_handle_t comparator2 = NULL;
-    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, mcpwm_new_comparator(oper, &comparator_config, &comparator2));
+    TEST_ESP_OK(mcpwm_new_comparator(oper, &comparator_config, &comparator2));
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, mcpwm_comparator_register_event_callbacks(comparator2, &comparator_cbs, NULL));
 
     printf("install gpio fault\r\n");
@@ -81,13 +111,13 @@ TEST_CASE("mcpwm_set_interrupt_priority", "[mcpwm]")
 
     printf("register event callback\r\n");
     mcpwm_fault_event_callbacks_t fault_cbs = {
-        .on_fault_enter = NULL,
+        .on_fault_enter = test_mcpwm_fault_on_enter_cb,
         .on_fault_exit = NULL,
     };
     TEST_ESP_OK(mcpwm_fault_register_event_callbacks(fault, &fault_cbs, NULL));
     gpio_fault_config.intr_priority = 1;
     mcpwm_fault_handle_t fault2 = NULL;
-    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, mcpwm_new_gpio_fault(&gpio_fault_config, &fault2));
+    TEST_ESP_OK(mcpwm_new_gpio_fault(&gpio_fault_config, &fault2));
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, mcpwm_fault_register_event_callbacks(fault2, &fault_cbs, NULL));
 
     printf("install capture timer\r\n");
@@ -108,21 +138,26 @@ TEST_CASE("mcpwm_set_interrupt_priority", "[mcpwm]")
 
     printf("register event callback\r\n");
     mcpwm_capture_event_callbacks_t cap_cbs = {
-        .on_cap = NULL,
+        .on_cap = test_mcpwm_cap_on_cap_cb,
     };
     TEST_ESP_OK(mcpwm_capture_channel_register_event_callbacks(cap_channel, &cap_cbs, NULL));
     cap_chan_config.intr_priority = 1;
     mcpwm_cap_channel_handle_t cap_channel2 = NULL;
-    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, mcpwm_new_capture_channel(cap_timer, &cap_chan_config, &cap_channel2));
+    TEST_ESP_OK(mcpwm_new_capture_channel(cap_timer, &cap_chan_config, &cap_channel2));
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, mcpwm_capture_channel_register_event_callbacks(cap_channel2, &cap_cbs, NULL));
 
     printf("delete all mcpwm objects\r\n");
     TEST_ESP_OK(mcpwm_del_comparator(comparator));
+    TEST_ESP_OK(mcpwm_del_comparator(comparator2));
     TEST_ESP_OK(mcpwm_del_operator(oper));
+    TEST_ESP_OK(mcpwm_del_operator(oper2));
     TEST_ESP_OK(mcpwm_del_capture_channel(cap_channel));
+    TEST_ESP_OK(mcpwm_del_capture_channel(cap_channel2));
     TEST_ESP_OK(mcpwm_del_capture_timer(cap_timer));
     TEST_ESP_OK(mcpwm_del_timer(timer));
+    TEST_ESP_OK(mcpwm_del_timer(timer2));
     TEST_ESP_OK(mcpwm_del_fault(fault));
+    TEST_ESP_OK(mcpwm_del_fault(fault2));
 }
 
 TEST_CASE("mcpwm_group_set_prescale_dynamically", "[mcpwm]")

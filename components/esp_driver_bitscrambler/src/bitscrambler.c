@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,13 +19,6 @@ static const char *TAG = "bitscrambler";
 #define BITSCRAMBLER_MEM_ALLOC_CAPS  (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
 #define BITSCRAMBLER_MEM_ALLOC_CAPS  MALLOC_CAP_DEFAULT
-#endif
-
-#if !SOC_RCC_IS_INDEPENDENT
-// Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
-#define BS_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define BS_RCC_ATOMIC()
 #endif
 
 #define BITSCRAMBLER_BINARY_VER 1 //max version we're compatible with
@@ -71,12 +64,13 @@ static bool claim_channel(bitscrambler_direction_t dir)
 {
     int old_use_count = atomic_fetch_add(&group_ref_count, 1);
     if (old_use_count == 0) {
-        BS_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             // This is the first client using the module, so we need to enable the sys clock
             bitscrambler_ll_set_bus_clock_sys_enable(true);
             bitscrambler_ll_reset_sys();
             // also power on the memory
             bitscrambler_ll_mem_power_by_pmu();
+            bitscrambler_ll_mem_set_low_power_mode(BITSCRAMBLER_LL_MEM_LP_MODE_SHUT_DOWN);
         }
     }
     if (dir == BITSCRAMBLER_DIR_TX) {
@@ -84,7 +78,7 @@ static bool claim_channel(bitscrambler_direction_t dir)
         if (old_val) {
             goto err;
         } else {
-            BS_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 bitscrambler_ll_set_bus_clock_tx_enable(true);
                 bitscrambler_ll_reset_tx();
             }
@@ -94,7 +88,7 @@ static bool claim_channel(bitscrambler_direction_t dir)
         if (old_val) {
             goto err;
         } else {
-            BS_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 bitscrambler_ll_set_bus_clock_rx_enable(true);
                 bitscrambler_ll_reset_rx();
             }
@@ -117,7 +111,7 @@ static void release_channel(bitscrambler_direction_t dir)
     int old_use_count = atomic_fetch_sub(&group_ref_count, 1);
     if (old_use_count == 1) {
         // This is the last client using the module, so we need to disable the sys clock
-        BS_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             bitscrambler_ll_set_bus_clock_sys_enable(false);
             bitscrambler_ll_mem_force_power_off();
         }
@@ -307,15 +301,18 @@ void bitscrambler_free(bitscrambler_handle_t handle)
     if (!handle) {
         return;
     }
+
+    if (handle->extra_clean_up) {
+        handle->extra_clean_up(handle, handle->clean_up_user_ctx);
+    }
+
     if (handle->loopback) {
         release_channel(BITSCRAMBLER_DIR_TX);
         release_channel(BITSCRAMBLER_DIR_RX);
     } else {
         release_channel(handle->cfg.dir);
     }
-    if (handle->extra_clean_up) {
-        handle->extra_clean_up(handle, handle->clean_up_user_ctx);
-    }
+
     free(handle);
 }
 

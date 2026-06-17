@@ -55,11 +55,11 @@ TEST_CASE("uart restored correctly after auto light sleep", "[uart][hp-uart-only
     // Ensure UART is fully idle before starting loopback RX/TX test
     TEST_ESP_OK(uart_wait_tx_done(uart_num, portMAX_DELAY));
     vTaskDelay(pdMS_TO_TICKS(20)); // make sure last byte has flushed from TX FIFO
-    TEST_ESP_OK(uart_flush_input(uart_num));
 
     for (int i = 0; i < 5; i++) {
         char tx_data[20] = {0};
         char rx_data[20] = {0};
+        TEST_ESP_OK(uart_flush_input(uart_num));
         int len = sprintf(tx_data, "Hello World %d!\n", i);
         uart_write_bytes(uart_num, tx_data, len);
         int size = 0;
@@ -97,6 +97,7 @@ TEST_CASE("uart restored correctly after manually enter light sleep", "[uart][hp
     for (int i = 0; i < 5; i++) {
         char tx_data[20] = {0};
         char rx_data[20] = {0};
+        TEST_ESP_OK(uart_flush_input(uart_num));
         int len = sprintf(tx_data, "Hello World %d!\n", i);
         uart_write_bytes(uart_num, tx_data, len);
         int size = uart_read_bytes(uart_num, rx_data, len, pdMS_TO_TICKS(20));

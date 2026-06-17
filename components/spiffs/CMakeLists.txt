@@ -6,6 +6,8 @@ set(original_srcs "spiffs/src/spiffs_cache.c"
                   "spiffs/src/spiffs_hydrogen.c"
                   "spiffs/src/spiffs_nucleus.c")
 
+set(srcs)
+set(pr)
 list(APPEND srcs "spiffs_api.c" ${original_srcs})
 
 if(NOT ${target} STREQUAL "linux")

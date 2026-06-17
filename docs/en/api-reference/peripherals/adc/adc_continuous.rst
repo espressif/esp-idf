@@ -352,7 +352,7 @@ The parsed data structure :cpp:type:`adc_continuous_data_t` contains the followi
 
 - :cpp:member:`adc_continuous_data_t::unit`：ADC unit (ADC_UNIT_1 or ADC_UNIT_2)
 - :cpp:member:`adc_continuous_data_t::channel`：ADC channel number (0-9)
-- :cpp:member:`adc_continuous_data_t::raw_data`：ADC raw data value (0-4095, 12-bit resolution)
+- :cpp:member:`adc_continuous_data_t::raw_data`：ADC raw data value
 - :cpp:member:`adc_continuous_data_t::valid`：Whether the data is valid
 
 Read and Parse ADC Data
@@ -388,7 +388,8 @@ Hardware Limitations
 .. list::
 
     - A specific ADC unit can only work under one operating mode at any one time, either continuous mode or one-shot mode. :cpp:func:`adc_continuous_start` has provided the protection.
-    - Random Number Generator (RNG) uses ADC as an input source. When ADC continuous mode driver works, the random number generated from RNG will be less random.
+    :not esp32s31: - Random Number Generator (RNG) uses ADC as an input source. When ADC continuous mode driver works, the random number generated from RNG will be less random.
+    :SOC_ADC_DIFF_SUPPORTED: - In single-ended mode, if the N-side channel is used as the input interface, its raw-data polarity is inverted. For an input range of -2 V to 2 V, the N-side raw code is 4393 to 0. Please use the ADC calibration APIs.
     :esp32 or esp32s2: - ADC2 is also used by Wi-Fi. :cpp:func:`adc_continuous_start` has provided the protection between Wi-Fi driver and ADC continuous mode driver.
     :esp32: - ADC continuous mode driver uses I2S0 peripheral as hardware DMA FIFO. Therefore, if I2S0 is in use already, the :cpp:func:`adc_continuous_new_handle` will return :c:macro:`ESP_ERR_NOT_FOUND`.
     :esp32: - ESP32 DevKitC: GPIO 0 cannot be used due to external auto program circuits.

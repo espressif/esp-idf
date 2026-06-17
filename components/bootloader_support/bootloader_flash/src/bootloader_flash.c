@@ -7,7 +7,7 @@
 
 #include <bootloader_flash_priv.h>
 #include <esp_log.h>
-#include <esp_flash_encrypt.h>
+#include "esp_efuse.h"
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "hal/efuse_ll.h"
@@ -84,7 +84,7 @@ void bootloader_munmap(const void *mapping)
 
 esp_err_t bootloader_flash_read(size_t src, void *dest, size_t size, bool allow_decrypt)
 {
-    if (allow_decrypt && esp_flash_encryption_enabled()) {
+    if (allow_decrypt && esp_efuse_is_flash_encryption_enabled()) {
         return esp_flash_read_encrypted(NULL, src, dest, size);
     } else {
         return esp_flash_read(NULL, dest, src, size);
@@ -123,15 +123,7 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 #include "hal/mmu_ll.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
-
-#if CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/opi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32P4
-#include "esp32p4/rom/opi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32C5
-#include "esp32c5/rom/opi_flash.h"
-#endif
-#include "spi_flash/spi_flash_defs.h"
+#include "esp_flash_chips/spi_flash_defs.h"
 
 #if ESP_TEE_BUILD
 #include "esp_fault.h"
@@ -290,7 +282,7 @@ static void rom_read_api_workaround(void)
  */
 static inline bool spi1_wb_mode_save_and_disable(void)
 {
-#if SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
+#if SPI_FLASH_LL_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
     if (REG_GET_BIT(SPI_MEM_RD_STATUS_REG(1), SPI_MEM_WB_MODE_EN)) {
         REG_CLR_BIT(SPI_MEM_RD_STATUS_REG(1), SPI_MEM_WB_MODE_EN);
         return true;
@@ -301,7 +293,7 @@ static inline bool spi1_wb_mode_save_and_disable(void)
 
 static inline void spi1_wb_mode_restore(bool saved_state)
 {
-#if SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
+#if SPI_FLASH_LL_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
     if (saved_state) {
         REG_SET_BIT(SPI_MEM_RD_STATUS_REG(1), SPI_MEM_WB_MODE_EN);
     }
@@ -697,7 +689,7 @@ void bootloader_flash_32bits_address_map_enable(esp_rom_spiflash_read_mode_t fla
         break;
     }
     cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
-    esp_rom_opiflash_cache_mode_config(flash_mode, &cache_rd);
+    esp_rom_spiflash_cache_mode_config(flash_mode, &cache_rd);
     cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 }
 #endif

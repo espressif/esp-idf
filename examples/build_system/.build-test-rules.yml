@@ -9,3 +9,13 @@ examples/build_system/cmake/plugins:
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
       reason: Testing on two diff architectures is sufficient
+
+examples/build_system/cmakev2/features/import_lib:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: QEMU tests limited to esp32 and esp32c3
+
+examples/build_system/cmakev2/features/plugins:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: Testing on two diff architectures is sufficient

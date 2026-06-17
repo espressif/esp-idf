@@ -449,7 +449,7 @@ void gatt_process_find_type_value_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UIN
 void gatt_process_read_info_rsp(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 op_code,
                                 UINT16 len, UINT8 *p_data)
 {
-    tGATT_DISC_RES  result;
+    tGATT_DISC_RES  result = {0};
     UINT8   *p = p_data, uuid_len = 0, type;
 
     UNUSED(p_tcb);
@@ -472,6 +472,10 @@ void gatt_process_read_info_rsp(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 op_c
         uuid_len = LEN_UUID_16;
     } else if (type == GATT_INFO_TYPE_PAIR_128) {
         uuid_len = LEN_UUID_128;
+    } else {
+        GATT_TRACE_ERROR("invalid Info Response PDU format: %d", type);
+        gatt_end_operation(p_clcb, GATT_INVALID_PDU, NULL);
+        return;
     }
 
     while (len >= uuid_len + 2) {
@@ -796,7 +800,7 @@ void gatt_process_read_by_type_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 
     if ((value_len > (p_tcb->payload_size - 2)) || (value_len > (len - 1))  ) {
         /* this is an error case that server's response containing a value length which is larger than MTU-2
            or value_len > message total length -1 */
-        GATT_TRACE_ERROR("gatt_process_read_by_type_rsp: Discard response op_code=%d vale_len=%d > (MTU-2=%d or msg_len-1=%d)",
+        GATT_TRACE_ERROR("gatt_process_read_by_type_rsp: Discard response op_code=%d value_len=%d > (MTU-2=%d or msg_len-1=%d)",
                          op_code, value_len, (p_tcb->payload_size - 2), (len - 1));
         gatt_end_operation(p_clcb, GATT_ERROR, NULL);
         return;
@@ -884,7 +888,8 @@ void gatt_process_read_by_type_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 
         }
         /* read by type */
         else if (p_clcb->operation == GATTC_OPTYPE_READ && p_clcb->op_subtype == GATT_READ_BY_TYPE) {
-            p_clcb->counter = len - 2;
+            /* value_len is the length of current record's value; use it to avoid overread when multiple records present */
+            p_clcb->counter = value_len;
             p_clcb->s_handle = handle;
             if ( p_clcb->counter == (p_clcb->p_tcb->payload_size - 4)) {
                 p_clcb->op_subtype = GATT_READ_BY_HANDLE;
@@ -916,7 +921,7 @@ void gatt_process_read_by_type_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 
 
             /* UUID not matching */
             if (!gatt_uuid_compare(record_value.dclr_value.char_uuid, p_clcb->uuid)) {
-                len -= (value_len + 2);
+                len -= (value_len + handle_len);
                 continue; /* skip the result, and look for next one */
             } else if (p_clcb->operation == GATTC_OPTYPE_READ)
                 /* UUID match for read characteristic value */
@@ -1000,7 +1005,7 @@ void gatt_process_read_rsp(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb,  UINT8 op_code,
                     gatt_end_operation(p_clcb, GATT_SUCCESS, (void *)p_clcb->p_attr_buf);
                 }
             } else { /* exception, should not happen */
-                GATT_TRACE_ERROR("attr offset = %d p_attr_buf = %p ", offset, p_clcb->p_attr_buf);
+                GATT_TRACE_ERROR("attr offset = %d p_attr_buf = %p ", offset, p_clcb->p_attr_buf ? p_clcb->p_attr_buf:0);
                 gatt_end_operation(p_clcb, GATT_NO_RESOURCES, (void *)p_clcb->p_attr_buf);
             }
         }
@@ -1119,10 +1124,14 @@ BOOLEAN gatt_cl_send_next_cmd_inq(tGATT_TCB *p_tcb)
         if (att_ret == GATT_SUCCESS || att_ret == GATT_CONGESTED) {
             sent = TRUE;
             p_cmd->to_send = FALSE;
-            if(p_cmd->p_cmd) {
-                osi_free(p_cmd->p_cmd);
-                p_cmd->p_cmd = NULL;
-            }
+            /* On GATT_SUCCESS / GATT_CONGESTED, L2CAP has taken ownership of
+             * p_cmd->p_cmd (it was either accepted normally, or enqueued just
+             * before the channel turned congested). The "already congested"
+             * drop path inside L2CA_SendFixedChnlData() is filtered out earlier
+             * by attp_send_msg_to_l2cap() and returned as GATT_BUSY, which
+             * falls into the error branch below. So we must not free the
+             * buffer here. */
+            p_cmd->p_cmd = NULL;
 
             /* dequeue the request if is write command or sign write */
             if (p_cmd->op_code != GATT_CMD_WRITE && p_cmd->op_code != GATT_SIGN_CMD_WRITE) {
@@ -1140,11 +1149,22 @@ BOOLEAN gatt_cl_send_next_cmd_inq(tGATT_TCB *p_tcb)
                 gatt_end_operation(p_clcb, att_ret, NULL);
             }
         } else {
-            GATT_TRACE_ERROR("gatt_cl_send_next_cmd_inq: L2CAP sent error");
-
-            memset(p_cmd, 0, sizeof(tGATT_CMD_Q));
-            p_tcb->pending_cl_req ++;
+            GATT_TRACE_ERROR("gatt_cl_send_next_cmd_inq: L2CAP sent error, status=%d", att_ret);
+            /* attp_send_msg_to_l2cap() already freed p_cmd->p_cmd on failure */
+            p_cmd->p_cmd = NULL;
+            p_cmd->to_send = FALSE;
+            /* Dequeue the failing command so pending_cl_req is advanced and the
+             * associated p_clcb can be retrieved. */
+            p_clcb = gatt_cmd_dequeue(p_tcb, &rsp_code);
             p_cmd = &p_tcb->cl_cmd_q[p_tcb->pending_cl_req];
+            /* Notify the upper layer about the failure. Without this the
+             * response timer is never armed (non-write ops) and the write
+             * completion callback is never fired, leaving the application
+             * stuck waiting for a callback that will never come. The p_clcb
+             * would also leak. */
+            if (p_clcb != NULL) {
+                gatt_end_operation(p_clcb, att_ret, NULL);
+            }
         }
 
     }

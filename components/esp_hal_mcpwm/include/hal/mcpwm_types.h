@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -104,6 +104,15 @@ typedef enum {
     MCPWM_CAP_EDGE_POS, /*!< Capture on the positive edge */
     MCPWM_CAP_EDGE_NEG, /*!< Capture on the negative edge */
 } mcpwm_capture_edge_t;
+
+/**
+ * @brief MCPWM timer specific events that supported by the ETM module
+ */
+typedef enum {
+    MCPWM_TIMER_ETM_EVENT_TEZ,  /*!< The timer reaches zero */
+    MCPWM_TIMER_ETM_EVENT_TEP,  /*!< The timer reaches peak */
+    MCPWM_TIMER_ETM_EVENT_MAX,  /*!< Maximum number of timer events */
+} mcpwm_timer_etm_event_type_t;
 
 /**
  * @brief MCPWM comparator specific events that supported by the ETM module

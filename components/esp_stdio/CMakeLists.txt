@@ -3,19 +3,33 @@ idf_build_get_property(target IDF_TARGET)
 # Bootloader builds only needs it for config, not for anything else
 idf_build_get_property(non_os_build NON_OS_BUILD)
 
-if(non_os_build OR ${target} STREQUAL "linux")
+if(non_os_build)
     idf_component_register()
     return()
 endif()
+set(srcs)
+set(includes)
 
-set(srcs "stdio_vfs.c"
-         "stdio_simple.c"
-         "stdio_syscalls_simple.c")
+if(${target} STREQUAL "linux")
+    list(APPEND srcs "stdio_port.c"
+                     "linux/esp_stdio_linux.c")
+    list(APPEND includes "include"
+                         "linux/include")
+else()
+    list(APPEND srcs "stdio_port.c"
+                     "stdio_simple.c"
+                     "stdio_syscalls_simple.c")
+    list(APPEND includes "include")
+
+    if(CONFIG_VFS_SUPPORT_IO)
+        list(APPEND srcs "stdio_vfs.c")
+    endif()
+endif()
 
 idf_component_register(SRCS ${srcs}
-                       INCLUDE_DIRS include)
+                       INCLUDE_DIRS ${includes})
 
-if(CONFIG_VFS_SUPPORT_IO)
+if(CONFIG_VFS_SUPPORT_IO AND NOT ${target} STREQUAL "linux")
     if(IDF_BUILD_V2)
         idf_component_include(vfs)
 
@@ -51,6 +65,9 @@ if(CONFIG_VFS_SUPPORT_IO)
     endif()
 
     target_link_libraries(${COMPONENT_LIB} PRIVATE idf::vfs)
-    # Make sure esp_stdio_register gets called at startup stage
+    # Make sure esp_stdio_register gets called at startup stage.
+    # The referenced symbol is defined in stdio_vfs.c, which is only added to
+    # the source list above on non-Linux targets; the force-undef is gated on
+    # the same condition for the link line to remain resolvable.
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_vfs_include_console_register")
 endif()

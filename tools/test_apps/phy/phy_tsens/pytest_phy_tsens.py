@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import random
 import string
@@ -42,7 +42,7 @@ def run_phy_tsens_test(dut: tuple[Dut, Dut]) -> None:
     ssid = ''.join([random.choice(string.ascii_lowercase) for i in range(10)])
     password = ''.join([random.choice(string.ascii_lowercase) for i in range(10)])
     ap_dut.write(f'ap_set {ssid} {password}')
-    ap_dut.expect('set ap config OK')
+    ap_dut.expect('WIFI_EVENT_AP_START')
     sta_dut.write(f'sta_connect {ssid} {password}')
     sta_dut.expect('STA_GOT_IP')
 
@@ -89,7 +89,7 @@ def run_phy_tsens_test_init_wifi_first(dut: tuple[Dut, Dut]) -> None:
     ssid = ''.join([random.choice(string.ascii_lowercase) for i in range(10)])
     password = ''.join([random.choice(string.ascii_lowercase) for i in range(10)])
     ap_dut.write(f'ap_set {ssid} {password}')
-    ap_dut.expect('set ap config OK')
+    ap_dut.expect('WIFI_EVENT_AP_START')
     sta_dut.write(f'sta_connect {ssid} {password}')
     sta_dut.expect('STA_GOT_IP')
 
@@ -127,7 +127,7 @@ def run_phy_tsens_test_with_light_sleep(dut: tuple[Dut, Dut]) -> None:
     ssid = ''.join([random.choice(string.ascii_lowercase) for i in range(10)])
     password = ''.join([random.choice(string.ascii_lowercase) for i in range(10)])
     ap_dut.write(f'ap_set {ssid} {password}')
-    ap_dut.expect('set ap config OK')
+    ap_dut.expect('WIFI_EVENT_AP_START')
     sta_dut.write(f'sta_connect {ssid} {password}')
     sta_dut.expect('STA_GOT_IP')
 
@@ -190,16 +190,16 @@ def test_phy_tsens_coexist_c2_xtal26m(dut: tuple[Dut, Dut]) -> None:
 
 @pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
-@pytest.mark.esp32c2eco4
+@pytest.mark.esp32c2_rev2
 @pytest.mark.parametrize(
     'count, config, baud',
     [
-        (2, 'c2_eco4', '74880'),
+        (2, 'esp32c2_rev2', '74880'),
     ],
     indirect=True,
 )
 @idf_parametrize('target', ['esp32c2'], indirect=['target'])
-def test_phy_tsens_coexist_c2eco4_xtal26m(dut: tuple[Dut, Dut]) -> None:
+def test_phy_tsens_coexist_esp32c2_rev2_xtal26m(dut: tuple[Dut, Dut]) -> None:
     for _dut in dut:
         _dut.expect('esp>')
     run_phy_tsens_test(dut)
@@ -216,16 +216,16 @@ def test_phy_tsens_coexist_c2eco4_xtal26m(dut: tuple[Dut, Dut]) -> None:
 
 
 @pytest.mark.two_duts
-@pytest.mark.esp32c3eco7
+@pytest.mark.esp32c3_rev1
 @pytest.mark.parametrize(
     'count, config',
     [
-        (2, 'c3_eco7'),
+        (2, 'esp32c3_rev1'),
     ],
     indirect=True,
 )
 @idf_parametrize('target', ['esp32c3'], indirect=['target'])
-def test_phy_tsens_coexist_c3eco7(dut: tuple[Dut, Dut]) -> None:
+def test_phy_tsens_coexist_esp32c3_rev1(dut: tuple[Dut, Dut]) -> None:
     for _dut in dut:
         _dut.expect('esp>')
     run_phy_tsens_test(dut)

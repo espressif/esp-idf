@@ -57,6 +57,8 @@ idf_component_register(SRCS ${srcs}
                     REQUIRES ${requires}
                     PRIV_REQUIRES ${priv_requires})
 
+idf_define_esp_err_codes(HEADERS include/esp_ds_err.h)
+
 if(NOT non_os_build)
     target_link_libraries(${COMPONENT_LIB} PRIVATE "-u esp_security_init_include_impl")
 elseif(esp_tee_build)

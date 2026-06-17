@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -182,6 +182,99 @@ static size_t esp_partition_calc_required_flash_size_from_file(const char *parti
     return required;
 }
 
+// Load pre-built partition data binaries into the emulated flash.
+// Reads a manifest file (BUILD_DIR "/linux_flash_data.txt") where each line
+// has format: "<hex_offset> <absolute_path_to_binary>".
+// Each binary is copied into s_spiflash_mem_file_buf at the given offset.
+static void esp_partition_load_flash_data(void)
+{
+    const char *manifest_path = BUILD_DIR "/linux_flash_data.txt";
+    FILE *manifest = fopen(manifest_path, "r");
+    if (manifest == NULL) {
+        // No manifest file — nothing to pre-load (this is normal for projects
+        // that don't use esp_partition_register_target())
+        return;
+    }
+
+    char line[PATH_MAX + 32];
+    while (fgets(line, sizeof(line), manifest) != NULL) {
+        // Skip empty lines
+        size_t len = strlen(line);
+        if (len == 0) {
+            continue;
+        }
+        // Trim trailing newline
+        if (line[len - 1] == '\n') {
+            line[len - 1] = '\0';
+            len--;
+        }
+        if (len == 0) {
+            continue;
+        }
+
+        // Parse "<hex_offset> <path>"
+        char *space = strchr(line, ' ');
+        if (space == NULL) {
+            ESP_LOGW(TAG, "Malformed line in flash data manifest: %s", line);
+            continue;
+        }
+        *space = '\0';
+        const char *offset_str = line;
+        const char *file_path = space + 1;
+
+        unsigned long offset = strtoul(offset_str, NULL, 0);
+        if (offset == 0 && offset_str[0] != '0') {
+            ESP_LOGW(TAG, "Invalid offset in flash data manifest: %s", offset_str);
+            continue;
+        }
+
+        FILE *data_file = fopen(file_path, "rb");
+        if (data_file == NULL) {
+            ESP_LOGW(TAG, "Failed to open flash data file %s: %s", file_path, strerror(errno));
+            continue;
+        }
+
+        // Get file size
+        if (fseek(data_file, 0L, SEEK_END) != 0) {
+            ESP_LOGW(TAG, "Failed to seek in flash data file %s: %s", file_path, strerror(errno));
+            fclose(data_file);
+            continue;
+        }
+        long data_size = ftell(data_file);
+        if (data_size < 0) {
+            ESP_LOGW(TAG, "Failed to get size of flash data file %s: %s", file_path, strerror(errno));
+            fclose(data_file);
+            continue;
+        }
+        if (fseek(data_file, 0L, SEEK_SET) != 0) {
+            ESP_LOGW(TAG, "Failed to seek in flash data file %s: %s", file_path, strerror(errno));
+            fclose(data_file);
+            continue;
+        }
+
+        // Verify the data fits within the emulated flash
+        if (offset + (size_t)data_size > s_esp_partition_file_mmap_ctrl_act.flash_file_size) {
+            ESP_LOGW(TAG, "Flash data file %s (offset: 0x%lx, size: %ld) exceeds emulated flash size (%" PRIu32 " B). Skipping.",
+                     file_path, offset, data_size, (uint32_t) s_esp_partition_file_mmap_ctrl_act.flash_file_size);
+            fclose(data_file);
+            continue;
+        }
+
+        // Copy the data into the emulated flash at the specified offset
+        uint8_t *dst = (uint8_t *)s_spiflash_mem_file_buf + offset;
+        size_t bytes_read = fread(dst, 1, (size_t)data_size, data_file);
+        fclose(data_file);
+
+        if (bytes_read != (size_t)data_size) {
+            ESP_LOGW(TAG, "Partial read of flash data file %s: expected %ld bytes, got %zu", file_path, data_size, bytes_read);
+        } else {
+            ESP_LOGV(TAG, "Loaded flash data: %s at offset 0x%lx (%ld bytes)", file_path, offset, data_size);
+        }
+    }
+
+    fclose(manifest);
+}
+
 esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
 {
     // temporary file is used only if control structure doesn't specify file name.
@@ -345,6 +438,10 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
                 ret = ESP_ERR_INVALID_STATE;
                 break;
             }
+
+            // Load any pre-built partition data binaries into the emulated flash.
+            // The manifest file is generated at build time by esp_partition_register_target().
+            esp_partition_load_flash_data();
         } while (false);
     }
 

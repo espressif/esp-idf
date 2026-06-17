@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -86,35 +86,38 @@ static esp_err_t s_check_key(esp_efuse_block_t num_key, void* wr_key)
 #endif // not CONFIG_EFUSE_FPGA_TEST
 
     TEST_ASSERT_TRUE(esp_efuse_get_key_dis_write(num_key));
-    if (purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY ||
+    if (purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY
 #ifdef SOC_EFUSE_XTS_AES_KEY_256
-            purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 ||
-            purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 ||
+            || purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1
+            || purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2
 #endif
 #if SOC_EFUSE_ECDSA_KEY
-            purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY ||
+            || purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY
 #endif
 #if (!defined(CONFIG_IDF_TARGET_ESP32P4) && SOC_EFUSE_ECDSA_KEY_P192) || EFUSE_LL_HAS_ECDSA_KEY_P192
-            purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P192 ||
+            || purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P192
 #endif
 #if (!defined(CONFIG_IDF_TARGET_ESP32P4) && SOC_EFUSE_ECDSA_KEY_P384) || EFUSE_LL_HAS_ECDSA_KEY_P384
-            purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_L ||
-            purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_H ||
+            || purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_L
+            || purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_H
 #endif
 #if SOC_PSRAM_ENCRYPTION_XTS_AES_128 || EFUSE_LL_HAS_PSRAM_ENCRYPTION_XTS_AES_128
-            purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_PSRAM_KEY ||
+            || purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_PSRAM_KEY
 #endif
 #if SOC_PSRAM_ENCRYPTION_XTS_AES_256 || EFUSE_LL_HAS_PSRAM_ENCRYPTION_XTS_AES_256
-            purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_PSRAM_KEY_1 ||
-            purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_PSRAM_KEY_2 ||
+            || purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_PSRAM_KEY_1
+            || purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_PSRAM_KEY_2
 #endif
-            purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL ||
-            purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG ||
-            purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_DIGITAL_SIGNATURE ||
+#if SOC_HMAC_SUPPORTED
+            || purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL
+            || purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG
+            || purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_DIGITAL_SIGNATURE
+            || purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_UP
+#endif
 #if SOC_KEY_MANAGER_SUPPORTED
-            purpose == ESP_EFUSE_KEY_PURPOSE_KM_INIT_KEY ||
+            || purpose == ESP_EFUSE_KEY_PURPOSE_KM_INIT_KEY
 #endif
-            purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_UP) {
+        ) {
         TEST_ASSERT_TRUE(esp_efuse_get_key_dis_read(num_key));
 #if CONFIG_EFUSE_FPGA_TEST && !CONFIG_EFUSE_VIRTUAL
         TEST_ASSERT_EACH_EQUAL_HEX8(0, rd_key, sizeof(rd_key));
@@ -161,7 +164,7 @@ TEST_CASE("Test esp_efuse_write_key for virt mode", "[efuse]")
     int tmp_purpose = 0;
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_write_key(EFUSE_BLK3, tmp_purpose,  &rd_key, sizeof(rd_key)));
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_write_key(EFUSE_BLK_KEY0, tmp_purpose, &rd_key, 33));
-    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_write_key(EFUSE_BLK10, tmp_purpose, &rd_key, sizeof(rd_key)));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_write_key(EFUSE_BLK_SYS_DATA_PART2, tmp_purpose, &rd_key, sizeof(rd_key)));
 
     for (esp_efuse_purpose_t g_purpose = ESP_EFUSE_KEY_PURPOSE_USER; g_purpose < ESP_EFUSE_KEY_PURPOSE_MAX; ++g_purpose) {
         if (g_purpose == ESP_EFUSE_KEY_PURPOSE_USER) {
@@ -189,8 +192,8 @@ TEST_CASE("Test esp_efuse_write_key for virt mode", "[efuse]")
                 purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY ||
 #endif
                 purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY)) {
-                printf("BLOCK9 can not have the %d purpose, use RESERVED instead\n", purpose);
-                purpose = ESP_EFUSE_KEY_PURPOSE_RESERVED;
+                printf("BLOCK9 can not have the %d purpose, use ESP_EFUSE_KEY_PURPOSE_USER instead\n", purpose);
+                purpose = ESP_EFUSE_KEY_PURPOSE_USER;
             }
 #endif // SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
             int id = num_key - EFUSE_BLK_KEY0;
@@ -198,6 +201,9 @@ TEST_CASE("Test esp_efuse_write_key for virt mode", "[efuse]")
             test_write_key(num_key, purpose);
             TEST_ASSERT_EQUAL(id, esp_efuse_count_unused_key_blocks());
 
+            if (num_key == EFUSE_BLK9 && purpose == ESP_EFUSE_KEY_PURPOSE_USER) {
+                continue;  // Skip checking purpose for BLOCK9 if it is set to PURPOSE_USER due to the quirk, since there may be other purpose set in this block before.
+            }
             esp_efuse_block_t key_block = EFUSE_BLK_KEY_MAX;
             TEST_ASSERT_TRUE(esp_efuse_find_purpose(purpose, &key_block));
             TEST_ASSERT_EQUAL(num_key, key_block);
@@ -223,7 +229,7 @@ TEST_CASE("Test 1 esp_efuse_write_key for FPGA", "[efuse]")
 #if SOC_EFUSE_ECDSA_KEY
         ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY,
 #else
-        ESP_EFUSE_KEY_PURPOSE_RESERVED,
+        ESP_EFUSE_KEY_PURPOSE_USER,
 #endif
 #ifdef SOC_EFUSE_XTS_AES_KEY_256
         ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1,
@@ -233,7 +239,11 @@ TEST_CASE("Test 1 esp_efuse_write_key for FPGA", "[efuse]")
         ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY,
 #endif
         ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY,
+#if SOC_HMAC_SUPPORTED
         ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL,
+#else
+        ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY,
+#endif
     };
 
     int max_keys = EFUSE_BLK_KEY_MAX - EFUSE_BLK_KEY0;
@@ -261,9 +271,15 @@ TEST_CASE("Test 2 esp_efuse_write_key for FPGA", "[efuse]")
     TEST_ASSERT_EQUAL_MESSAGE(EFUSE_BLK_KEY_MAX - EFUSE_BLK_KEY0, esp_efuse_count_unused_key_blocks(), "Efuses should be in initial state");
 
     esp_efuse_purpose_t purpose [] = {
+#if SOC_HMAC_SUPPORTED
         ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG,
         ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_DIGITAL_SIGNATURE,
         ESP_EFUSE_KEY_PURPOSE_HMAC_UP,
+#else
+        ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY,
+        ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY,
+        ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY,
+#endif
         ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST0,
         ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST1,
         ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2,
@@ -309,7 +325,11 @@ TEST_CASE("Test esp_efuse_write_keys", "[efuse]")
 #else
     esp_efuse_purpose_t purpose1[BLOCKS_NEEDED1] = {
         ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY,
+#if SOC_HMAC_SUPPORTED
         ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL
+#else
+        ESP_EFUSE_KEY_PURPOSE_USER
+#endif
     };
 #endif
     uint8_t keys1[BLOCKS_NEEDED1][32] = {{0xEE}};

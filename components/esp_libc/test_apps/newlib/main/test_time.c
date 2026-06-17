@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,8 @@
 #include "unity.h"
 #include <time.h>
 #include <sys/time.h>
+#include <sys/timex.h>
+#include <errno.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -29,10 +31,22 @@
 #include "esp_private/esp_clk.h"
 
 #include "esp_rtc_time.h"
+#include "esp_libc_clock.h"
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #include "hal/cache_ll.h"
 #endif
+
+typedef enum {
+    TEST_ADJTIME_MODE_LEGACY = 0,
+    TEST_ADJTIME_MODE_CLOCK_ADJTIME,
+} test_adjtime_mode_t;
+
+typedef enum {
+    TEST_CLOCK_ADJTIME_UNITS_NOT_APPLICABLE = 0,
+    TEST_CLOCK_ADJTIME_UNITS_NS = 1,
+    TEST_CLOCK_ADJTIME_UNITS_US = 2,
+} test_clock_adjtime_units_t;
 
 #if (CONFIG_FREERTOS_NUMBER_OF_CORES == 2) && CONFIG_IDF_TARGET_ARCH_XTENSA
 // https://github.com/espressif/arduino-esp32/issues/120
@@ -99,13 +113,63 @@ TEST_CASE("test usleep basic functionality", "[newlib]")
     TEST_ASSERT_GREATER_OR_EQUAL(long_sleep_us, end - start);
 }
 
-TEST_CASE("test adjtime function", "[newlib]")
+int realtime_adjtime_wrapper(const struct timeval *delta, struct timeval *outdelta, test_adjtime_mode_t mode, test_clock_adjtime_units_t units)
 {
-    struct timeval tv_time;
-    struct timeval tv_delta;
-    struct timeval tv_outdelta;
+    int ret = -1;
+    if (mode == TEST_ADJTIME_MODE_LEGACY) {
+        return adjtime(delta, outdelta);
+    } else if (mode == TEST_ADJTIME_MODE_CLOCK_ADJTIME) {
+        struct timex tx = {0};
+        if (delta) {
+            if (units == TEST_CLOCK_ADJTIME_UNITS_NS) {
+                tx.modes = ADJ_OFFSET | ADJ_NANO;
+                int64_t offset_ns = delta->tv_sec * 1000000000L + delta->tv_usec * 1000L;
+                // timex buffer `offset` member is a long type, so it's limited to INT_MAX and INT_MIN
+                if (offset_ns > INT_MAX || offset_ns < INT_MIN) {
+                    TEST_FAIL_MESSAGE("Invalid clock_adjtime offset it's out of range, this is test problem!");
+                }
+                tx.offset = (long)offset_ns;
+            } else if (units == TEST_CLOCK_ADJTIME_UNITS_US) {
+                tx.modes = ADJ_OFFSET_SINGLESHOT;
+                tx.offset = delta->tv_sec * 1000000L + delta->tv_usec;
+            } else {
+                TEST_FAIL_MESSAGE("Invalid clock_adjtime units");
+            }
+        } else { // Read-only mode
+            if (units == TEST_CLOCK_ADJTIME_UNITS_NS) {
+                tx.modes = ADJ_NANO;
+            } else if (units == TEST_CLOCK_ADJTIME_UNITS_US) {
+                tx.modes = 0;
+            } else {
+                TEST_FAIL_MESSAGE("Invalid clock_adjtime units");
+            }
+        }
+        ret = clock_adjtime(CLOCK_REALTIME, &tx);
+        if (ret == 0 && outdelta != NULL) {
+            if (units == TEST_CLOCK_ADJTIME_UNITS_NS) {
+                outdelta->tv_sec = tx.offset / 1000000000L;
+                outdelta->tv_usec = (tx.offset % 1000000000L) / 1000L;
+            } else {
+                outdelta->tv_sec = tx.offset / 1000000L;
+                outdelta->tv_usec = tx.offset % 1000000L;
+            }
+        }
+    }
+    return ret;
+}
 
-    TEST_ASSERT_EQUAL(adjtime(NULL, NULL), 0);
+void test_adjtime_function(test_adjtime_mode_t mode, test_clock_adjtime_units_t units)
+{
+    struct timeval tv_time = {0};
+    struct timeval tv_delta = {0};
+    struct timeval tv_outdelta = {0};
+    const char *units_str = units == TEST_CLOCK_ADJTIME_UNITS_NS ? "NS"
+                            : units == TEST_CLOCK_ADJTIME_UNITS_US ? "US"
+                            : "N/A";
+    printf("test_adjtime_function: mode = %s, units = %s\n",
+           mode == TEST_ADJTIME_MODE_LEGACY ? "LEGACY" : "CLOCK_ADJTIME",
+           units_str);
+    TEST_ASSERT_EQUAL_INT(realtime_adjtime_wrapper(NULL, NULL, mode, units), 0);
 
     tv_time.tv_sec = 5000;
     tv_time.tv_usec = 5000;
@@ -113,74 +177,90 @@ TEST_CASE("test adjtime function", "[newlib]")
 
     tv_outdelta.tv_sec = 5;
     tv_outdelta.tv_usec = 5;
-    TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
+    TEST_ASSERT_EQUAL(realtime_adjtime_wrapper(NULL, &tv_outdelta, mode, units), 0);
     TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  0);
     TEST_ASSERT_EQUAL(tv_outdelta.tv_usec, 0);
 
-    tv_delta.tv_sec = INT_MAX / 1000000L;
-    TEST_ASSERT_EQUAL(adjtime(&tv_delta, &tv_outdelta), -1);
+    // when use nanoseconds, the offset is out of range
+    if (units == TEST_CLOCK_ADJTIME_UNITS_US) {
+        tv_delta.tv_sec = INT_MAX / 1000000L;
+        tv_delta.tv_usec = 0;
+        TEST_ASSERT_EQUAL(realtime_adjtime_wrapper(&tv_delta, &tv_outdelta, mode, units), -1);
 
-    tv_delta.tv_sec = INT_MIN / 1000000L;
-    TEST_ASSERT_EQUAL(adjtime(&tv_delta, &tv_outdelta), -1);
+        tv_delta.tv_sec = INT_MIN / 1000000L;
+        tv_delta.tv_usec = 0;
+        TEST_ASSERT_EQUAL(realtime_adjtime_wrapper(&tv_delta, &tv_outdelta, mode, units), -1);
+    }
 
     tv_delta.tv_sec = 0;
     tv_delta.tv_usec = -900000;
-    TEST_ASSERT_EQUAL(adjtime(&tv_delta, &tv_outdelta), 0);
+    TEST_ASSERT_EQUAL(realtime_adjtime_wrapper(&tv_delta, &tv_outdelta, mode, units), 0);
     TEST_ASSERT_EQUAL(tv_outdelta.tv_sec, 0);
     TEST_ASSERT_EQUAL(tv_outdelta.tv_usec, 0);
-    TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
+    TEST_ASSERT_EQUAL(realtime_adjtime_wrapper(NULL, &tv_outdelta, mode, units), 0);
     TEST_ASSERT_LESS_THAN(-800000, tv_outdelta.tv_usec);
 
-    tv_delta.tv_sec = -4;
-    tv_delta.tv_usec = -900000;
-    TEST_ASSERT_EQUAL(adjtime(&tv_delta, NULL), 0);
-    TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
-    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  -4);
-    TEST_ASSERT_LESS_THAN(-800000, tv_outdelta.tv_usec);
+    tv_delta.tv_sec = -2;
+    tv_delta.tv_usec = -90000;
+    TEST_ASSERT_EQUAL(realtime_adjtime_wrapper(&tv_delta, NULL, mode, units), 0);
+    TEST_ASSERT_EQUAL(realtime_adjtime_wrapper(NULL, &tv_outdelta, mode, units), 0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  -2);
+    TEST_ASSERT_LESS_THAN(-80000, tv_outdelta.tv_usec);
 
     // after settimeofday() adjtime() is stopped
-    tv_delta.tv_sec = 15;
-    tv_delta.tv_usec = 900000;
-    TEST_ASSERT_EQUAL(adjtime(&tv_delta, &tv_outdelta), 0);
-    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec, -4);
-    TEST_ASSERT_LESS_THAN(-800000, tv_outdelta.tv_usec);
-    TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
-    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  15);
-    TEST_ASSERT_GREATER_OR_EQUAL(800000, tv_outdelta.tv_usec);
+    tv_delta.tv_sec = 1;
+    tv_delta.tv_usec = 90000;
+    TEST_ASSERT_EQUAL(realtime_adjtime_wrapper(&tv_delta, &tv_outdelta, mode, units), 0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec, -2);
+    TEST_ASSERT_LESS_THAN(-80000, tv_outdelta.tv_usec);
+    TEST_ASSERT_EQUAL(realtime_adjtime_wrapper(NULL, &tv_outdelta, mode, units), 0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  1);
+    TEST_ASSERT_GREATER_OR_EQUAL(80000, tv_outdelta.tv_usec);
 
     TEST_ASSERT_EQUAL(gettimeofday(&tv_time, NULL), 0);
     TEST_ASSERT_EQUAL(settimeofday(&tv_time, NULL), 0);
 
-    TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
+    TEST_ASSERT_EQUAL(realtime_adjtime_wrapper(NULL, &tv_outdelta, mode, units), 0);
     TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  0);
     TEST_ASSERT_EQUAL(tv_outdelta.tv_usec, 0);
 
     // after gettimeofday() adjtime() is not stopped
-    tv_delta.tv_sec = 15;
-    tv_delta.tv_usec = 900000;
-    TEST_ASSERT_EQUAL(adjtime(&tv_delta, &tv_outdelta), 0);
+    tv_delta.tv_sec = 1;
+    tv_delta.tv_usec = 90000;
+    TEST_ASSERT_EQUAL(realtime_adjtime_wrapper(&tv_delta, &tv_outdelta, mode, units), 0);
     TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  0);
     TEST_ASSERT_EQUAL(tv_outdelta.tv_usec, 0);
-    TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
-    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  15);
-    TEST_ASSERT_GREATER_OR_EQUAL(800000, tv_outdelta.tv_usec);
+    TEST_ASSERT_EQUAL(realtime_adjtime_wrapper(NULL, &tv_outdelta, mode, units), 0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  1);
+    TEST_ASSERT_GREATER_OR_EQUAL(80000, tv_outdelta.tv_usec);
 
     TEST_ASSERT_EQUAL(gettimeofday(&tv_time, NULL), 0);
 
-    TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
-    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  15);
-    TEST_ASSERT_GREATER_OR_EQUAL(800000, tv_outdelta.tv_usec);
+    TEST_ASSERT_EQUAL(realtime_adjtime_wrapper(NULL, &tv_outdelta, mode, units), 0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  1);
+    TEST_ASSERT_GREATER_OR_EQUAL(80000, tv_outdelta.tv_usec);
 
     tv_delta.tv_sec = 1;
     tv_delta.tv_usec = 0;
-    TEST_ASSERT_EQUAL(adjtime(&tv_delta, NULL), 0);
+    TEST_ASSERT_EQUAL(realtime_adjtime_wrapper(&tv_delta, NULL, mode, units), 0);
     vTaskDelay(1000 / portTICK_PERIOD_MS);
-    TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
+    TEST_ASSERT_EQUAL(realtime_adjtime_wrapper(NULL, &tv_outdelta, mode, units), 0);
     TEST_ASSERT_EQUAL(tv_outdelta.tv_sec, 0);
     // the correction will be equal to (1_000_000us >> 6) = 15_625 us.
 
     TEST_ASSERT_TRUE(1000000L - tv_outdelta.tv_usec >= 15600);
     TEST_ASSERT_TRUE(1000000L - tv_outdelta.tv_usec <= 15650);
+}
+
+TEST_CASE("test adjtime function", "[newlib]")
+{
+    test_adjtime_function(TEST_ADJTIME_MODE_LEGACY, TEST_CLOCK_ADJTIME_UNITS_NOT_APPLICABLE);
+}
+
+TEST_CASE("test clock_adjtime function", "[newlib]")
+{
+    test_adjtime_function(TEST_ADJTIME_MODE_CLOCK_ADJTIME, TEST_CLOCK_ADJTIME_UNITS_US);
+    test_adjtime_function(TEST_ADJTIME_MODE_CLOCK_ADJTIME, TEST_CLOCK_ADJTIME_UNITS_NS);
 }
 
 static volatile bool exit_flag;
@@ -390,6 +470,7 @@ void test_posix_timers_clock(void)
     TEST_ASSERT(clock_settime(CLOCK_REALTIME, NULL) == -1);
     TEST_ASSERT(clock_gettime(CLOCK_REALTIME, NULL) == -1);
     TEST_ASSERT(clock_getres(CLOCK_REALTIME,  NULL) == -1);
+    TEST_ASSERT(clock_adjtime(CLOCK_REALTIME, NULL) == -1);
 
     TEST_ASSERT(clock_settime(CLOCK_MONOTONIC, NULL) == -1);
     TEST_ASSERT(clock_gettime(CLOCK_MONOTONIC, NULL) == -1);
@@ -403,10 +484,12 @@ void test_posix_timers_clock(void)
     TEST_ASSERT(gettimeofday(&now, NULL) == 0);
 
     struct timespec ts = {0};
+    struct timex tx = {0};
 
     TEST_ASSERT(clock_settime(0xFFFFFFFF, &ts) == -1);
     TEST_ASSERT(clock_gettime(0xFFFFFFFF, &ts) == -1);
-    TEST_ASSERT(clock_getres(0xFFFFFFFF,  &ts) == 0);
+    TEST_ASSERT(clock_getres(0xFFFFFFFF,  &ts) == -1);
+    TEST_ASSERT(clock_adjtime(0xFFFFFFFF, &tx) == -1);
 
     TEST_ASSERT(clock_gettime(CLOCK_REALTIME, &ts) == 0);
     TEST_ASSERT(now.tv_sec == ts.tv_sec);
@@ -463,6 +546,245 @@ void test_posix_timers_clock(void)
 TEST_CASE("test posix_timers clock_... functions", "[newlib]")
 {
     test_posix_timers_clock();
+}
+
+#define TEST_USE_CPU_CYCLES 1
+#if TEST_USE_CPU_CYCLES && CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+#include "esp_cpu.h"
+typedef esp_cpu_cycle_count_t benchmark_tick_t;  /* unit: CPU cycles */
+#define get_start() esp_cpu_get_cycle_count()
+#define get_end() esp_cpu_get_cycle_count()
+#define benchmark_print_units(type, x) printf("%s cpu cycles: %lu\n", type, (unsigned long)(x))
+#else
+typedef uint64_t benchmark_tick_t;  /* unit: microseconds */
+#define get_start() esp_timer_get_time()
+#define get_end() esp_timer_get_time()
+#define benchmark_print_units(type, x) printf("%s us: %lu\n", type, (unsigned long)(x))
+#endif
+
+#define N 4096
+const uint32_t ro_tbl[N] = { 2 };
+uint32_t scan_tbl(const volatile uint32_t *p, size_t n)
+{
+    uint32_t sum = 0;
+    for (size_t i = 0; i < n; i++) {
+        sum += p[i];
+    }
+    return sum;
+}
+
+void test_posix_timers_clock_performance(clockid_t clock_id)
+{
+    const int MEASUREMENTS = 5000;
+    const int PHASE_COUNT = 2;  /* must be at least 2 (half without table scan, half with) */
+    struct timespec ts = {0};
+
+    benchmark_tick_t start;
+    benchmark_tick_t end;
+    benchmark_tick_t delta;
+    benchmark_tick_t delta_sum = 0;
+    for (int i = 0; i < PHASE_COUNT; i++) {
+        volatile uint32_t table_sum = 0;
+        if (i == PHASE_COUNT / 2) {
+            printf("With table scan...\n");
+        }
+        for (int j = 0; j < MEASUREMENTS; j++) {
+            if (i >= PHASE_COUNT / 2) {
+                table_sum += scan_tbl(ro_tbl, N);
+            }
+            start = get_start();
+            clock_settime(clock_id, &ts);
+            end = get_end();
+            delta = end - start;
+            delta_sum += delta;
+        }
+        benchmark_print_units("average", delta_sum / MEASUREMENTS);
+        delta_sum = 0;
+    }
+}
+
+TEST_CASE("test posix_timers clock_... performance", "[newlib]")
+{
+    printf("Testing CLOCK_REALTIME performance...\n");
+    test_posix_timers_clock_performance(CLOCK_REALTIME);
+    printf("Testing CLOCK_MONOTONIC performance...\n");
+    test_posix_timers_clock_performance(CLOCK_MONOTONIC);
+}
+
+/*
+ * Stub clocks for testing link-time ESP_LIBC_CLOCK_REGISTER and
+ * clock_gettime / clock_settime / clock_adjtime.
+ */
+#define TEST_CLOCK_STUB_ID     ((clockid_t)18)
+#define TEST_CLOCK_STUB_CTX_ID ((clockid_t)17)
+
+static struct timespec s_stub_clock_time;
+static int64_t s_stub_clock_adj_remaining_ns;
+
+static int stub_clock_gettime(struct timespec *tp, void *ctx)
+{
+    (void)ctx;
+    if (tp == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    *tp = s_stub_clock_time;
+    return 0;
+}
+
+static int stub_clock_settime(const struct timespec *tp, void *ctx)
+{
+    (void)ctx;
+    if (tp == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    s_stub_clock_time = *tp;
+    return 0;
+}
+
+static int stub_clock_adjtime(struct timex *buf, void *ctx)
+{
+    (void)ctx;
+    if (buf == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    if (buf->modes == ADJ_OFFSET_SS_READ) {
+        buf->offset = (long)(s_stub_clock_adj_remaining_ns / 1000);
+        return 0;
+    }
+    if (buf->modes & ADJ_OFFSET) {
+        if (buf->modes == ADJ_OFFSET_SINGLESHOT) {
+            s_stub_clock_adj_remaining_ns = (int64_t)buf->offset * 1000;
+        } else {
+            s_stub_clock_adj_remaining_ns = (int64_t)buf->offset;
+        }
+    }
+    if (buf->modes & ADJ_FREQUENCY) {
+        (void)buf->freq; /* stub: ignore frequency */
+    }
+    return 0;
+}
+
+static int stub_clock_getres(struct timespec *res, void *ctx)
+{
+    (void)ctx;
+    if (res == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    res->tv_sec = 0;
+    res->tv_nsec = 1000;
+    return 0;
+}
+
+static int stub_clock_gettime_context(struct timespec *tp, void *ctx)
+{
+    uint32_t *ctx_ptr = (uint32_t *)ctx;
+    if (ctx_ptr == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    *ctx_ptr = 0xFEEDBABE;
+    return stub_clock_gettime(tp, NULL);
+}
+
+static void stub_clock_reset(void)
+{
+    s_stub_clock_time.tv_sec = 0;
+    s_stub_clock_time.tv_nsec = 0;
+    s_stub_clock_adj_remaining_ns = 0;
+}
+
+static const esp_libc_clock_ops_t s_test_stub_ops = {
+    .gettime = stub_clock_gettime,
+    .settime = stub_clock_settime,
+    .adjtime = stub_clock_adjtime,
+    .getres = stub_clock_getres
+};
+
+ESP_LIBC_CLOCK_REGISTER(test_stub, TEST_CLOCK_STUB_ID, s_test_stub_ops, NULL);
+
+static uint32_t s_stub_ctx_test_word;
+
+static const esp_libc_clock_ops_t s_test_stub_ctx_ops = {
+    .gettime = stub_clock_gettime_context,
+    .settime = NULL,
+    .adjtime = NULL,
+    .getres = stub_clock_getres
+};
+
+ESP_LIBC_CLOCK_REGISTER(test_stub_ctx, TEST_CLOCK_STUB_CTX_ID, s_test_stub_ctx_ops, &s_stub_ctx_test_word);
+
+TEST_CASE("link-time custom clock functionality", "[newlib]")
+{
+    stub_clock_reset();
+
+    struct timespec ts;
+    /* gettime after init: 0,0 */
+    TEST_ASSERT_EQUAL(0, clock_gettime(TEST_CLOCK_STUB_ID, &ts));
+    TEST_ASSERT_EQUAL(0, ts.tv_sec);
+    TEST_ASSERT_EQUAL(0, ts.tv_nsec);
+
+    /* settime */
+    ts.tv_sec = 1700000000;
+    ts.tv_nsec = 123456789;
+    TEST_ASSERT_EQUAL(0, clock_settime(TEST_CLOCK_STUB_ID, &ts));
+
+    /* gettime matches */
+    TEST_ASSERT_EQUAL(0, clock_gettime(TEST_CLOCK_STUB_ID, &ts));
+    TEST_ASSERT_EQUAL(1700000000, ts.tv_sec);
+    TEST_ASSERT_EQUAL(123456789, ts.tv_nsec);
+
+    /* getres */
+    TEST_ASSERT_EQUAL(0, clock_getres(TEST_CLOCK_STUB_ID, &ts));
+    TEST_ASSERT_EQUAL(0, ts.tv_sec);
+    TEST_ASSERT_EQUAL(1000, ts.tv_nsec);
+
+    /* clock_adjtime: ADJ_OFFSET_SS_READ */
+    struct timex tx = { .modes = ADJ_OFFSET_SS_READ };
+    TEST_ASSERT_EQUAL(0, clock_adjtime(TEST_CLOCK_STUB_ID, &tx));
+    TEST_ASSERT_EQUAL(0, tx.offset);
+
+    /* clock_adjtime: ADJ_OFFSET_SINGLESHOT (offset in microseconds in buf->offset) */
+    tx.modes = ADJ_OFFSET_SINGLESHOT;
+    tx.offset = 50000; /* 50 ms */
+    TEST_ASSERT_EQUAL(0, clock_adjtime(TEST_CLOCK_STUB_ID, &tx));
+    tx.modes = ADJ_OFFSET_SS_READ;
+    tx.offset = 0;
+    TEST_ASSERT_EQUAL(0, clock_adjtime(TEST_CLOCK_STUB_ID, &tx));
+    TEST_ASSERT_EQUAL(50000, tx.offset);
+
+    /* Test link-time stub clock passes ctx to gettime callback */
+    stub_clock_reset();
+    s_stub_ctx_test_word = 0xDEADBEEF;
+    errno = 0;
+    TEST_ASSERT_EQUAL(0, clock_gettime(TEST_CLOCK_STUB_CTX_ID, &ts));
+    TEST_ASSERT_EQUAL(0, errno);
+    TEST_ASSERT_EQUAL(0xFEEDBABE, s_stub_ctx_test_word);
+
+    /* TEST_CLOCK_STUB_CTX_ID uses s_test_stub_ctx_ops: .settime = NULL, .adjtime = NULL */
+    stub_clock_reset();
+    ts.tv_sec = 1;
+    ts.tv_nsec = 2;
+
+    errno = 0;
+    TEST_ASSERT_EQUAL(-1, clock_settime(TEST_CLOCK_STUB_CTX_ID, &ts));
+    TEST_ASSERT_EQUAL(EOPNOTSUPP, errno);
+
+    tx.modes = ADJ_OFFSET_SS_READ;
+    errno = 0;
+    TEST_ASSERT_EQUAL(-1, clock_adjtime(TEST_CLOCK_STUB_CTX_ID, &tx));
+    TEST_ASSERT_EQUAL(EOPNOTSUPP, errno);
+
+    /* gettime / getres still work */
+    errno = 0;
+    TEST_ASSERT_EQUAL(0, clock_gettime(TEST_CLOCK_STUB_CTX_ID, &ts));
+    TEST_ASSERT_EQUAL(0, errno);
+    errno = 0;
+    TEST_ASSERT_EQUAL(0, clock_getres(TEST_CLOCK_STUB_CTX_ID, &ts));
+    TEST_ASSERT_EQUAL(0, errno);
 }
 
 #ifndef _USE_LONG_TIME_T

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -78,9 +78,16 @@ static void client_event_cb(const usb_host_client_event_msg_t *event_msg, void *
             }
         }
         xSemaphoreGive(driver_obj->constant.mux_lock);
+        ESP_LOGI(TAG, "Device gone");
+        break;
+    case USB_HOST_CLIENT_EVENT_DEV_SUSPENDED:
+        ESP_LOGI(TAG, "Device suspended");
+        break;
+    case USB_HOST_CLIENT_EVENT_DEV_RESUMED:
+        ESP_LOGI(TAG, "Device resumed");
         break;
     default:
-        ESP_LOGW(TAG, "Unsupported client event: %d (possibly suspend/resume)", event_msg->event);
+        ESP_LOGW(TAG, "Unsupported client event: %d", (int)event_msg->event);
         break;
     }
 }
@@ -103,16 +110,6 @@ static void action_get_info(usb_device_t *device_obj)
     ESP_LOGI(TAG, "\t%s speed", (char *[]) {
         "Low", "Full", "High"
     }[dev_info.speed]);
-    ESP_LOGI(TAG, "\tParent info:");
-    if (dev_info.parent.dev_hdl) {
-        usb_device_info_t parent_dev_info;
-        ESP_ERROR_CHECK(usb_host_device_info(dev_info.parent.dev_hdl, &parent_dev_info));
-        ESP_LOGI(TAG, "\t\tBus addr: %d", parent_dev_info.dev_addr);
-        ESP_LOGI(TAG, "\t\tPort: %d", dev_info.parent.port_num);
-
-    } else {
-        ESP_LOGI(TAG, "\t\tPort: ROOT");
-    }
     ESP_LOGI(TAG, "\tbConfigurationValue %d", dev_info.bConfigurationValue);
     // Get the device descriptor next
     device_obj->actions |= ACTION_GET_DEV_DESC;
@@ -198,6 +195,7 @@ static void class_driver_device_handle(usb_device_t *device_obj)
 
 void class_driver_task(void *arg)
 {
+    TaskHandle_t task_to_notify = (TaskHandle_t)arg;
     class_driver_t driver_obj = {0};
     usb_host_client_handle_t class_driver_client_hdl = NULL;
 
@@ -206,7 +204,7 @@ void class_driver_task(void *arg)
     SemaphoreHandle_t mux_lock = xSemaphoreCreateMutex();
     if (mux_lock == NULL) {
         ESP_LOGE(TAG, "Unable to create class driver mutex");
-        vTaskSuspend(NULL);
+        vTaskDelete(NULL);
         return;
     }
 
@@ -218,7 +216,11 @@ void class_driver_task(void *arg)
             .callback_arg = (void *) &driver_obj,
         },
     };
-    ESP_ERROR_CHECK(usb_host_client_register(&client_config, &class_driver_client_hdl));
+    if (ESP_OK != usb_host_client_register(&client_config, &class_driver_client_hdl)) {
+        ESP_LOGE(TAG, "Failed to register class driver client");
+        vTaskDelete(NULL);
+        return;
+    }
 
     driver_obj.constant.mux_lock = mux_lock;
     driver_obj.constant.client_hdl = class_driver_client_hdl;
@@ -228,6 +230,8 @@ void class_driver_task(void *arg)
     }
 
     s_driver_obj = &driver_obj;
+
+    xTaskNotifyGive(task_to_notify);
 
     while (1) {
         // Driver has unhandled devices, handle all devices first
@@ -256,11 +260,13 @@ void class_driver_task(void *arg)
     if (mux_lock != NULL) {
         vSemaphoreDelete(mux_lock);
     }
-    vTaskSuspend(NULL);
+    s_driver_obj = NULL;
+    vTaskDelete(NULL);
 }
 
 void class_driver_client_deregister(void)
 {
+    assert(s_driver_obj != NULL);
     // Mark all opened devices
     xSemaphoreTake(s_driver_obj->constant.mux_lock, portMAX_DELAY);
     for (uint8_t i = 0; i < DEV_MAX_COUNT; i++) {

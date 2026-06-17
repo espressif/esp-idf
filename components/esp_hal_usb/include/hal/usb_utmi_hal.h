@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,6 +56,16 @@ void _usb_utmi_hal_disable(void);
 // the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
 #define usb_utmi_hal_disable(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; _usb_utmi_hal_disable(__VA_ARGS__);} while(0)
 #endif
+
+/**
+ * @brief Enable/disable 15k pulldown resistors on D+/D- lines
+ *
+ * In USB Host mode, 15k pulldown resistors must be connected on both D+ and D-.
+ * In USB Device mode, pulldown resistors must be disconnected.
+ *
+ * @param[in] enable true to connect pulldowns (Host mode), false to disconnect (Device mode)
+ */
+void usb_utmi_hal_enable_data_pulldowns(bool enable);
 
 #endif // (SOC_USB_UTMI_PHY_NUM > 0)
 

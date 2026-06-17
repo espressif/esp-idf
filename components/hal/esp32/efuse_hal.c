@@ -29,11 +29,11 @@ IRAM_ATTR uint32_t efuse_hal_get_major_chip_version(void)
     case 3:
         chip_ver = 2;
         break;
-#if HAL_CONFIG(EFUSE_ENV_FPGA)
+#if HAL_CONFIG(ENV_FPGA)
     case 4: /* Empty efuses, but SYSCON_DATE_REG bit is set */
         chip_ver = 3;
         break;
-#endif // HAL_CONFIG_EFUSE_ENV_FPGA
+#endif // HAL_CONFIG_ENV_FPGA
     case 7:
         chip_ver = 3;
         break;

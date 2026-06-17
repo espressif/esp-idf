@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <catch2/catch_test_macros.hpp>
+#include <cmath>
 #include "nvs_flash.h"
 #include "nvs_handle_simple.hpp"
 #include "nvs_partition_manager.hpp"
@@ -257,5 +258,114 @@ TEST_CASE("NVSHandleSimple correctly sets/gets char enum", "[partition_mgr]")
 
     delete handle;
 
+    REQUIRE(nvs_flash_deinit_partition(TEST_3SEC_PARTITION_NAME) == ESP_OK);
+}
+
+TEST_CASE("NVSHandleSimple correctly sets/gets float", "[partition_mgr]")
+{
+    REQUIRE(nvs_flash_erase_partition(TEST_3SEC_PARTITION_NAME) == ESP_OK);
+    REQUIRE(nvs_flash_init_partition(TEST_3SEC_PARTITION_NAME) == ESP_OK);
+
+    nvs::NVSHandleSimple *handle = nullptr;
+    REQUIRE(nvs::NVSPartitionManager::get_instance()->open_handle(TEST_3SEC_PARTITION_NAME, "ns_1", NVS_READWRITE, &handle) == ESP_OK);
+
+    float test_val = 3.14159265f;
+    float test_val_read = 0.0f;
+
+    CHECK(handle->set_item("key", test_val) == ESP_OK);
+    CHECK(handle->get_item("key", test_val_read) == ESP_OK);
+    CHECK(test_val == test_val_read);
+
+    delete handle;
+    REQUIRE(nvs_flash_deinit_partition(TEST_3SEC_PARTITION_NAME) == ESP_OK);
+}
+
+TEST_CASE("NVSHandleSimple correctly sets/gets double", "[partition_mgr]")
+{
+    REQUIRE(nvs_flash_erase_partition(TEST_3SEC_PARTITION_NAME) == ESP_OK);
+    REQUIRE(nvs_flash_init_partition(TEST_3SEC_PARTITION_NAME) == ESP_OK);
+
+    nvs::NVSHandleSimple *handle = nullptr;
+    REQUIRE(nvs::NVSPartitionManager::get_instance()->open_handle(TEST_3SEC_PARTITION_NAME, "ns_1", NVS_READWRITE, &handle) == ESP_OK);
+
+    double test_val = 2.718281828459045;
+    double test_val_read = 0.0;
+
+    CHECK(handle->set_item("key", test_val) == ESP_OK);
+    CHECK(handle->get_item("key", test_val_read) == ESP_OK);
+    CHECK(test_val == test_val_read);
+
+    delete handle;
+    REQUIRE(nvs_flash_deinit_partition(TEST_3SEC_PARTITION_NAME) == ESP_OK);
+}
+
+TEST_CASE("NVSHandleSimple float type mismatch with int", "[partition_mgr]")
+{
+    REQUIRE(nvs_flash_erase_partition(TEST_3SEC_PARTITION_NAME) == ESP_OK);
+    REQUIRE(nvs_flash_init_partition(TEST_3SEC_PARTITION_NAME) == ESP_OK);
+
+    nvs::NVSHandleSimple *handle = nullptr;
+    REQUIRE(nvs::NVSPartitionManager::get_instance()->open_handle(TEST_3SEC_PARTITION_NAME, "ns_1", NVS_READWRITE, &handle) == ESP_OK);
+
+    float test_float = 1.5f;
+    CHECK(handle->set_item("key", test_float) == ESP_OK);
+
+    int32_t read_int = 0;
+    CHECK(handle->get_item("key", read_int) == ESP_ERR_NVS_NOT_FOUND);
+
+    uint32_t read_uint = 0;
+    CHECK(handle->get_item("key", read_uint) == ESP_ERR_NVS_NOT_FOUND);
+
+    delete handle;
+    REQUIRE(nvs_flash_deinit_partition(TEST_3SEC_PARTITION_NAME) == ESP_OK);
+}
+
+TEST_CASE("NVSHandleSimple double type mismatch with float", "[partition_mgr]")
+{
+    REQUIRE(nvs_flash_erase_partition(TEST_3SEC_PARTITION_NAME) == ESP_OK);
+    REQUIRE(nvs_flash_init_partition(TEST_3SEC_PARTITION_NAME) == ESP_OK);
+
+    nvs::NVSHandleSimple *handle = nullptr;
+    REQUIRE(nvs::NVSPartitionManager::get_instance()->open_handle(TEST_3SEC_PARTITION_NAME, "ns_1", NVS_READWRITE, &handle) == ESP_OK);
+
+    double test_double = 1.5;
+    CHECK(handle->set_item("key", test_double) == ESP_OK);
+
+    float read_float = 0.0f;
+    CHECK(handle->get_item("key", read_float) == ESP_ERR_NVS_NOT_FOUND);
+
+    int64_t read_int64 = 0;
+    CHECK(handle->get_item("key", read_int64) == ESP_ERR_NVS_NOT_FOUND);
+
+    delete handle;
+    REQUIRE(nvs_flash_deinit_partition(TEST_3SEC_PARTITION_NAME) == ESP_OK);
+}
+
+TEST_CASE("NVSHandleSimple readonly rejects float and double writes", "[partition_mgr]")
+{
+    REQUIRE(nvs_flash_erase_partition(TEST_3SEC_PARTITION_NAME) == ESP_OK);
+    REQUIRE(nvs_flash_init_partition(TEST_3SEC_PARTITION_NAME) == ESP_OK);
+
+    nvs::NVSHandleSimple *rw_handle = nullptr;
+    REQUIRE(nvs::NVSPartitionManager::get_instance()->open_handle(TEST_3SEC_PARTITION_NAME, "ns_1", NVS_READWRITE, &rw_handle) == ESP_OK);
+    CHECK(rw_handle->set_item("fkey", 1.0f) == ESP_OK);
+    CHECK(rw_handle->set_item("dkey", 2.0) == ESP_OK);
+    delete rw_handle;
+
+    nvs::NVSHandleSimple *ro_handle = nullptr;
+    REQUIRE(nvs::NVSPartitionManager::get_instance()->open_handle(TEST_3SEC_PARTITION_NAME, "ns_1", NVS_READONLY, &ro_handle) == ESP_OK);
+
+    CHECK(ro_handle->set_item("fkey", 9.0f) == ESP_ERR_NVS_READ_ONLY);
+    CHECK(ro_handle->set_item("dkey", 9.0) == ESP_ERR_NVS_READ_ONLY);
+
+    float fval = 0.0f;
+    CHECK(ro_handle->get_item("fkey", fval) == ESP_OK);
+    CHECK(fval == 1.0f);
+
+    double dval = 0.0;
+    CHECK(ro_handle->get_item("dkey", dval) == ESP_OK);
+    CHECK(dval == 2.0);
+
+    delete ro_handle;
     REQUIRE(nvs_flash_deinit_partition(TEST_3SEC_PARTITION_NAME) == ESP_OK);
 }

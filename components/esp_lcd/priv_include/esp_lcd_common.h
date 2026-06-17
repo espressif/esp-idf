@@ -27,12 +27,6 @@ extern "C" {
 
 #define LCD_PERIPH_CLOCK_PRE_SCALE (2) // This is the minimum divider that can be applied to LCD peripheral
 
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define LCD_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define LCD_CLOCK_SRC_ATOMIC()
-#endif
-
 #define LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE 4095
 
 #if SOC_HAS(LCDCAM_I80_LCD) || SOC_HAS(LCDCAM_RGB_LCD)

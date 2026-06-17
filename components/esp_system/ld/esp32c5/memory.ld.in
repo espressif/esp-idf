@@ -14,6 +14,7 @@
 
 #include "sdkconfig.h"
 #include "ld.common"
+#include "ld.hp_mem_defs"
 
 #if !CONFIG_SECURE_ENABLE_TEE
 #define SRAM_SEG_START        (0x40800000)
@@ -22,8 +23,11 @@
 #define FLASH_SEG_OFFSET      (CONFIG_SECURE_TEE_IROM_SIZE + CONFIG_SECURE_TEE_DROM_SIZE)
 #endif // CONFIG_SECURE_ENABLE_TEE
 
-#define SRAM_SEG_END       0x4084E5A0  /* 2nd stage bootloader iram_loader_seg start address */
-#define SRAM_SEG_SIZE      SRAM_SEG_END - SRAM_SEG_START
+#if CONFIG_ULP_COPROC_RUN_FROM_HP_MEM
+#define SRAM_SEG_SIZE      ((ULP_HP_MEM_START) - (SRAM_SEG_START))
+#else
+#define SRAM_SEG_SIZE      ((SRAM_SEG_END) - (SRAM_SEG_START))
+#endif
 
 /*
  * IDRAM0_2_SEG_SIZE_DEFAULT is used when page size is 64KB
@@ -132,47 +136,39 @@ MEMORY
   lp_reserved_seg(RW) :        org = 0x50000000 + 0x4000 - RESERVE_RTC_MEM, len = RESERVE_RTC_MEM
 
   /* PSRAM seg */
-  extern_ram_seg(RWX) :        org = 0x42000020, len = IDRAM0_2_SEG_SIZE - 0x20
+  ext_ram_seg(RWX) :           org = 0x42000020, len = IDRAM0_2_SEG_SIZE - 0x20
 }
 
 /* Heap ends at top of sram_seg */
 _heap_end = 0x40000000;
-
-_data_seg_org = ORIGIN(rtc_data_seg);
 
 /**
  *  The lines below define location alias for .rtc.data section
  *  C5 has no distinguished LP(RTC) fast and slow memory sections, instead, there is a unified LP_RAM section
  *  Thus, the following region segments are not configurable like on other targets
  */
-REGION_ALIAS("rtc_iram_seg", lp_ram_seg );
-REGION_ALIAS("rtc_data_seg", rtc_iram_seg );
-REGION_ALIAS("rtc_slow_seg", rtc_iram_seg );
-REGION_ALIAS("rtc_data_location", rtc_iram_seg );
+REGION_ALIAS("rtc_text_seg", lp_ram_seg);
+REGION_ALIAS("rtc_data_seg", lp_ram_seg );
+REGION_ALIAS("rtc_slow_seg", lp_ram_seg );
+REGION_ALIAS("rtc_force_fast_seg", lp_ram_seg);
+REGION_ALIAS("rtc_force_slow_seg", lp_ram_seg);
 REGION_ALIAS("rtc_reserved_seg", lp_reserved_seg );
 
+REGION_ALIAS("iram_text_seg", sram_seg);
+REGION_ALIAS("dram_seg", sram_seg);
+
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
-  REGION_ALIAS("default_code_seg", irom_seg);
+  REGION_ALIAS("flash_text_seg", irom_seg);
+  REGION_ALIAS("flash_rodata_seg", drom_seg);
 #else
-  REGION_ALIAS("default_code_seg", sram_seg);
+  REGION_ALIAS("flash_text_seg", sram_seg);
+  REGION_ALIAS("flash_rodata_seg", sram_seg);
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
-#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
-  REGION_ALIAS("default_rodata_seg", drom_seg);
-#else
-  REGION_ALIAS("default_rodata_seg", sram_seg);
-#endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+ALIGN_VECTOR_TABLE = 0x100;
+OFFSET_TEE = 0x2b0;
 
-/**
- *  If rodata default segment is placed in `drom_seg`, then flash's first rodata section must
- *  also be first in the segment.
- */
-#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
-  ASSERT(_flash_rodata_dummy_start == ORIGIN(default_rodata_seg),
-         ".flash_rodata_dummy section must be placed at the beginning of the rodata segment.")
-#endif
-
-#if CONFIG_ESP_SYSTEM_USE_EH_FRAME
-    ASSERT ((__eh_frame_end > __eh_frame), "Error: eh_frame size is null!");
-    ASSERT ((__eh_frame_hdr_end > __eh_frame_hdr), "Error: eh_frame_hdr size is null!");
+#if CONFIG_ULP_COPROC_RUN_FROM_HP_MEM
+_ulp_hp_mem_resv_start = ULP_HP_MEM_START;
+_ulp_hp_mem_resv_end   = ULP_HP_MEM_END;
 #endif

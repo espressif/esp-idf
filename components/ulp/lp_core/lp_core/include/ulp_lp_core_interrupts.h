@@ -16,7 +16,7 @@ extern "C" {
 #if SOC_LP_CORE_SINGLE_INTERRUPT_VECTOR
 #define LP_CORE_ISR_ATTR // On chips with just a single interrupt entry point registers are saved by us before calling the ISR
 #else
-#define LP_CORE_ISR_ATTR __attribute__((interrupt))
+#define LP_CORE_ISR_ATTR __attribute__((interrupt, section(".text.handlers")))
 #endif
 
 /**
@@ -38,6 +38,7 @@ extern "C" {
   *  ulp_lp_core_mailbox_intr_handler(void);
   *  ulp_lp_core_lp_wdt_intr_handler(void);
   *  ulp_lp_core_lp_rtc_intr_handler(void);
+  *  ulp_lp_core_lp_pdma_intr_handler(void);
   *  ulp_lp_core_sw_intr_handler(void);
   *
   * Not all handlers are available on all chips. Please refer to the Technical Reference Manual for your chip for more information.

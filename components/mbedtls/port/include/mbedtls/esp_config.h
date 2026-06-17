@@ -31,10 +31,9 @@
 #if (defined(MBEDTLS_MAJOR_VERSION) && (MBEDTLS_MAJOR_VERSION < 4))
 #include "mbedtls/mbedtls_config.h"
 #endif // MBEDTLS_MAJOR_VERSION < 4
+#ifndef CONFIG_IDF_TARGET_LINUX
 #include "soc/soc_caps.h"
 
-
-#ifndef CONFIG_IDF_TARGET_LINUX
 #undef MBEDTLS_PSA_BUILTIN_GET_ENTROPY
 #define MBEDTLS_PSA_DRIVER_GET_ENTROPY
 #define MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
@@ -59,8 +58,6 @@
  *       not to be supported by PSA functions.
  */
 #define MBEDTLS_PSA_ASSUME_EXCLUSIVE_BUFFERS
-
-#define PSA_WANT_ECC_SECP_R1_192                1
 
 /**
  * \name SECTION: System support
@@ -191,31 +188,54 @@
    with software fallback.
 */
 #ifdef CONFIG_MBEDTLS_HARDWARE_SHA
-#define MBEDTLS_PSA_ACCEL_ALG_SHA_1
-#define MBEDTLS_PSA_ACCEL_ALG_SHA_224
-#define MBEDTLS_PSA_ACCEL_ALG_SHA_256
-#if SOC_SHA_SUPPORT_SHA512
-#define MBEDTLS_PSA_ACCEL_ALG_SHA_384
-#define MBEDTLS_PSA_ACCEL_ALG_SHA_512
-#endif
-#if SOC_SHA_SUPPORT_SHA512
+    #define ESP_SHA_DRIVER_ENABLED
+    #define MBEDTLS_PSA_ACCEL_ALG_HMAC
+    #define MBEDTLS_PSA_BUILTIN_ALG_HMAC
+    #if SOC_SHA_SUPPORT_SHA1
+        #define MBEDTLS_PSA_ACCEL_ALG_SHA_1
+        #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_1
+        #undef MBEDTLS_SHA1_C
+    #endif // SOC_SHA_SUPPORT_SHA1
+    #if SOC_SHA_SUPPORT_SHA224
+        #define MBEDTLS_PSA_ACCEL_ALG_SHA_224
+        #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_224
+        #undef MBEDTLS_SHA224_C
+    #endif // SOC_SHA_SUPPORT_SHA224
+    #if SOC_SHA_SUPPORT_SHA256
+        #define MBEDTLS_PSA_ACCEL_ALG_SHA_256
+        #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_256
+    #endif // SOC_SHA_SUPPORT_SHA256
+    #if SOC_SHA_SUPPORT_SHA512
+        #define MBEDTLS_PSA_ACCEL_ALG_SHA_512
+        #define MBEDTLS_PSA_ACCEL_ALG_SHA_384
+        #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_512
+        #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_384
+        #undef MBEDTLS_SHA512_C
+        #undef MBEDTLS_SHA384_C
+        #undef MBEDTLS_PSA_BUILTIN_ALG_HMAC
+    #else
+        #undef MBEDTLS_SHA512_ALT
+    #endif // SOC_SHA_SUPPORT_SHA512
+#define ESP_HMAC_TRANSPARENT_DRIVER_ENABLED
 #else
-#undef MBEDTLS_SHA512_ALT
-#endif
-
-#else
-#undef MBEDTLS_SHA1_ALT
-#undef MBEDTLS_SHA256_ALT
-#undef MBEDTLS_SHA512_ALT
+    #undef MBEDTLS_SHA1_ALT
+    #undef MBEDTLS_SHA256_ALT
+    #undef MBEDTLS_SHA512_ALT
 #endif
 
 /* MBEDTLS_MDx_ALT to enable ROM MD support
    with software fallback.
 */
 #ifdef CONFIG_MBEDTLS_ROM_MD5
+#define ESP_MD5_DRIVER_ENABLED
 #define MBEDTLS_PSA_ACCEL_ALG_MD5
 #undef MBEDTLS_PSA_BUILTIN_ALG_MD5
+#else
+#if !defined(MBEDTLS_PSA_BUILTIN_ALG_HMAC)
+    /* If ROM MD5 is not enabled, use the builtin HMAC algorithm for HMAC(MD5) operations */
+    #define MBEDTLS_PSA_BUILTIN_ALG_HMAC
 #endif
+#endif /* MBEDTLS_PSA_BUILTIN_ALG_HMAC */
 
 /* The following MPI (bignum) functions have hardware support.
  * Uncommenting these macros will use the hardware-accelerated
@@ -237,18 +257,14 @@
 #undef MBEDTLS_MPI_MUL_MPI_ALT
 #endif
 
-#ifdef MBEDTLS_HARDWARE_ECDSA_SIGN
-#define MBEDTLS_PSA_ACCEL_ECC_SECP_R1_192
-#define MBEDTLS_PSA_ACCEL_ECC_SECP_R1_256
-#if SOC_ECDSA_SUPPORT_CURVE_P384
-#define MBEDTLS_PSA_ACCEL_ECC_SECP_R1_384
+#if defined(CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY) || defined(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN) || defined(CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN)
+#define ESP_ECDSA_DRIVER_ENABLED
+#ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY
+#define ESP_ECDSA_VERIFY_DRIVER_ENABLED
 #endif
-#define MBEDTLS_PSA_ACCEL_ALG_ECDSA
-#define MBEDTLS_PSA_ACCEL_ALG_DETERMINISTIC_ECDSA
-#define MBEDTLS_PSA_ACCEL_KEY_TYPE_ECC_PUBLIC_KEY
-#define MBEDTLS_PSA_ACCEL_KEY_TYPE_ECC_KEY_PAIR_BASIC
-#define MBEDTLS_PSA_ACCEL_KEY_TYPE_ECC_KEY_PAIR_IMPORT
-#define MBEDTLS_PSA_ACCEL_KEY_TYPE_ECC_KEY_PAIR_EXPORT
+#if defined(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN) || defined(CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN)
+#define ESP_ECDSA_SIGN_DRIVER_ENABLED
+#endif
 #endif
 
 #ifdef CONFIG_MBEDTLS_ATCA_HW_ECDSA_SIGN
@@ -261,7 +277,7 @@
 
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECC
 #ifdef CONFIG_MBEDTLS_ECC_OTHER_CURVES_SOFT_FALLBACK
-    /* Use hardware accelerator for SECP192R1 and SECP256R1 curves,
+    /* Use hardware accelerator for SECP256R1 curves,
      * software implementation for rest of the curves
      */
     #define MBEDTLS_ECP_MUL_ALT_SOFT_FALLBACK
@@ -277,6 +293,10 @@
 #undef MBEDTLS_ECP_MUL_ALT_SOFT_FALLBACK
 #undef MBEDTLS_ECP_VERIFY_ALT
 #undef MBEDTLS_ECP_VERIFY_ALT_SOFT_FALLBACK
+#endif
+
+#ifdef SOC_HMAC_SUPPORTED
+#define ESP_HMAC_OPAQUE_DRIVER_ENABLED
 #endif
 
 /**
@@ -491,6 +511,9 @@
  */
 #ifdef CONFIG_MBEDTLS_CMAC_C
 #define PSA_WANT_ALG_CMAC 1
+#ifdef CONFIG_MBEDTLS_HARDWARE_AES
+#define ESP_CMAC_DRIVER_ENABLED
+#endif
 #else
 #ifdef CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL
 /* The mbedtls present in ROM is built with the MBEDTLS_CMAC_C symbol being enabled,
@@ -502,58 +525,53 @@
 #endif
 
 /**
- * \def MBEDTLS_ECP_DP_SECP192R1_ENABLED
  *
  * MBEDTLS_ECP_XXXX_ENABLED: Enables specific curves within the Elliptic Curve
  * module.  By default all supported curves are enabled.
  *
  * Comment macros to disable the curve and functions for it
  */
-/* Short Weierstrass curves (supporting ECP, ECDH, ECDSA) */
+/* Short Weierstrass curves (supporting ECDH, ECDSA) */
 #ifdef CONFIG_MBEDTLS_ECP_DP_SECP256R1_ENABLED
-#define MBEDTLS_ECP_DP_SECP256R1_ENABLED
+#define PSA_WANT_ECC_SECP_R1_256 1
 #else
-#undef MBEDTLS_ECP_DP_SECP256R1_ENABLED
+#undef PSA_WANT_ECC_SECP_R1_256
 #endif
 #ifdef CONFIG_MBEDTLS_ECP_DP_SECP384R1_ENABLED
-#define MBEDTLS_ECP_DP_SECP384R1_ENABLED
+#define PSA_WANT_ECC_SECP_R1_384 1
 #else
-#undef MBEDTLS_ECP_DP_SECP384R1_ENABLED
 #undef PSA_WANT_ECC_SECP_R1_384
 #endif
 #ifdef CONFIG_MBEDTLS_ECP_DP_SECP521R1_ENABLED
-#define MBEDTLS_ECP_DP_SECP521R1_ENABLED
+#define PSA_WANT_ECC_SECP_R1_521 1
 #else
-#undef MBEDTLS_ECP_DP_SECP521R1_ENABLED
+#undef PSA_WANT_ECC_SECP_R1_521
 #endif
 #ifdef CONFIG_MBEDTLS_ECP_DP_SECP256K1_ENABLED
-#define MBEDTLS_ECP_DP_SECP256K1_ENABLED
+#define PSA_WANT_ECC_SECP_K1_256 1
 #else
-#undef MBEDTLS_ECP_DP_SECP256K1_ENABLED
+#undef PSA_WANT_ECC_SECP_K1_256
 #endif
 #ifdef CONFIG_MBEDTLS_ECP_DP_BP256R1_ENABLED
-#define MBEDTLS_ECP_DP_BP256R1_ENABLED
+#define PSA_WANT_ECC_BRAINPOOL_P_R1_256 1
 #else
-#undef MBEDTLS_ECP_DP_BP256R1_ENABLED
+#undef PSA_WANT_ECC_BRAINPOOL_P_R1_256
 #endif
 #ifdef CONFIG_MBEDTLS_ECP_DP_BP384R1_ENABLED
-#define MBEDTLS_ECP_DP_BP384R1_ENABLED
+#define PSA_WANT_ECC_BRAINPOOL_P_R1_384 1
 #else
-#undef MBEDTLS_ECP_DP_BP384R1_ENABLED
+#undef PSA_WANT_ECC_BRAINPOOL_P_R1_384
 #endif
 #ifdef CONFIG_MBEDTLS_ECP_DP_BP512R1_ENABLED
-#define MBEDTLS_ECP_DP_BP512R1_ENABLED
+#define PSA_WANT_ECC_BRAINPOOL_P_R1_512 1
 #else
-#undef MBEDTLS_ECP_DP_BP512R1_ENABLED
+#undef PSA_WANT_ECC_BRAINPOOL_P_R1_512
 #endif
-/* Montgomery curves (supporting ECP) */
+/* Montgomery curves */
 #ifdef CONFIG_MBEDTLS_ECP_DP_CURVE25519_ENABLED
-#define MBEDTLS_ECP_DP_CURVE25519_ENABLED
+#define PSA_WANT_ECC_MONTGOMERY_255 1
 #else
-#undef MBEDTLS_ECP_DP_CURVE25519_ENABLED
-#endif
-#ifdef MBEDTLS_ECP_DP_CURVE448_ENABLED
-#undef MBEDTLS_ECP_DP_CURVE448_ENABLED
+#undef PSA_WANT_ECC_MONTGOMERY_255
 #endif
 
 /**
@@ -792,7 +810,9 @@
 #else
 #undef MBEDTLS_FS_IO
 #undef MBEDTLS_PSA_ITS_FILE_C
+#if !defined(ESP_PSA_ITS_AVAILABLE)
 #undef MBEDTLS_PSA_CRYPTO_STORAGE_C
+#endif
 #endif
 
 #ifndef CONFIG_IDF_TARGET_LINUX
@@ -1725,10 +1745,18 @@
 #undef PSA_WANT_KEY_TYPE_AES
 #endif
 
+/* PSA Crypto RSA DS Driver */
+#ifdef CONFIG_MBEDTLS_HARDWARE_RSA_DS_PERIPHERAL
+#define ESP_RSA_DS_DRIVER_ENABLED
+#else
+#undef ESP_RSA_DS_DRIVER_ENABLED
+#endif
+
 /* The following units have ESP32 hardware support,
    uncommenting each _ALT macro will use the
    hardware-accelerated implementation. */
 #ifdef CONFIG_MBEDTLS_HARDWARE_AES
+#define ESP_AES_DRIVER_ENABLED
 #define MBEDTLS_PSA_ACCEL_ALG_CBC_NO_PADDING
 #undef MBEDTLS_PSA_BUILTIN_ALG_CBC_NO_PADDING
 #define MBEDTLS_PSA_ACCEL_ALG_CBC_PKCS7
@@ -1800,29 +1828,7 @@
 #undef MBEDTLS_BASE64_C
 #endif
 
-/**
- * \def MBEDTLS_BIGNUM_C
- *
- * Enable the multi-precision integer library.
- *
- * Module:  library/bignum.c
- *          library/bignum_core.c
- *          library/bignum_mod.c
- *          library/bignum_mod_raw.c
- * Caller:  library/dhm.c
- *          library/ecp.c
- *          library/ecdsa.c
- *          library/rsa.c
- *          library/rsa_alt_helpers.c
- *          library/ssl_tls.c
- *
- * This module is required for RSA, DHM and ECC (ECDH, ECDSA) support.
- */
-#ifdef CONFIG_MBEDTLS_BIGNUM_C
-#define MBEDTLS_BIGNUM_C
-#else
-#undef MBEDTLS_BIGNUM_C
-#endif
+/* MBEDTLS_BIGNUM_C is deprecated in mbedtls 4.x - PSA handles bignum internally */
 
 /**
  * \def MBEDTLS_CAMELLIA_C
@@ -1982,7 +1988,6 @@
 #ifdef CONFIG_MBEDTLS_CHACHA20_C
 #define PSA_WANT_KEY_TYPE_CHACHA20 1
 #else
-#undef MBEDTLS_CHACHA20_C
 #undef PSA_WANT_KEY_TYPE_CHACHA20
 #endif
 
@@ -1993,12 +1998,11 @@
  *
  * Module:  library/chachapoly.c
  *
- * This module requires: MBEDTLS_CHACHA20_C, MBEDTLS_POLY1305_C
+ * This module requires: MBEDTLS_CHACHA20_C
  */
 #ifdef CONFIG_MBEDTLS_CHACHAPOLY_C
 #define PSA_WANT_ALG_CHACHA20_POLY1305 1
 #else
-#undef MBEDTLS_CHACHAPOLY_C
 #undef PSA_WANT_ALG_CHACHA20_POLY1305
 #endif
 
@@ -2086,9 +2090,21 @@
  * Requires: MBEDTLS_ECP_C
  */
 #ifdef CONFIG_MBEDTLS_ECDH_C
-#define MBEDTLS_ECDH_C
+#define PSA_WANT_ALG_ECDH 1
 #else
-#undef MBEDTLS_ECDH_C
+#undef PSA_WANT_ALG_ECDH
+#endif
+
+/**
+ * \def MBEDTLS_ECJPAKE_C
+ *
+ * Enable the ECJPAKE based ciphersuites.
+ */
+#ifdef CONFIG_MBEDTLS_ECJPAKE_C
+#define PSA_WANT_ALG_JPAKE 1
+#else
+#undef PSA_WANT_ALG_JPAKE
+#undef PSA_WANT_ALG_TLS12_ECJPAKE_TO_PMS
 #endif
 
 /**
@@ -2107,51 +2123,26 @@
  *           short Weierstrass curve.
  */
 #ifdef CONFIG_MBEDTLS_ECDSA_C
-#define MBEDTLS_ECDSA_C
+#define PSA_WANT_ALG_ECDSA 1
 #else
-#undef MBEDTLS_ECDSA_C
+#undef PSA_WANT_ALG_ECDSA
 #endif
 
-/**
- * \def MBEDTLS_ECJPAKE_C
- *
- * Enable the elliptic curve J-PAKE library.
- *
- * \warning This is currently experimental. EC J-PAKE support is based on the
- * Thread v1.0.0 specification; incompatible changes to the specification
- * might still happen. For this reason, this is disabled by default.
- *
- * Module:  library/ecjpake.c
- * Caller:
- *
- * This module is used by the following key exchanges:
- *      ECJPAKE
- *
- * Requires: MBEDTLS_ECP_C and MBEDTLS_MD_C
- *
- */
-#ifdef CONFIG_MBEDTLS_ECJPAKE_C
-#define MBEDTLS_ECJPAKE_C
-#else
-#undef MBEDTLS_ECJPAKE_C
-#endif
-
-/**
- * \def MBEDTLS_ECP_C
- *
- * Enable the elliptic curve over GF(p) library.
- *
- * Module:  library/ecp.c
- * Caller:  library/ecdh.c
- *          library/ecdsa.c
- *          library/ecjpake.c
- *
- * Requires: MBEDTLS_BIGNUM_C and at least one MBEDTLS_ECP_DP_XXX_ENABLED
- */
+/* MBEDTLS_ECP_C is deprecated in mbedtls 4.x - use PSA ECC key types instead */
 #ifdef CONFIG_MBEDTLS_ECP_C
-#define MBEDTLS_ECP_C
+#define PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC 1
+#define PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT 1
+#define PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT 1
+#define PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE 1
+#define PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE 1
+#define PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY 1
 #else
-#undef MBEDTLS_ECP_C
+#undef PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
+#undef PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
+#undef PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
+#undef PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+#undef PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE
+#undef PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
 #endif
 
 /**
@@ -2495,20 +2486,6 @@
 #define MBEDTLS_PLATFORM_C
 
 /**
- * \def MBEDTLS_POLY1305_C
- *
- * Enable the Poly1305 MAC algorithm.
- *
- * Module:  library/poly1305.c
- * Caller:  library/chachapoly.c
- */
-#ifdef CONFIG_MBEDTLS_POLY1305_C
-#define MBEDTLS_POLY1305_C
-#else
-#undef MBEDTLS_POLY1305_C
-#endif
-
-/**
  * \def MBEDTLS_RIPEMD160_C
  *
  * Enable the RIPEMD-160 hash algorithm.
@@ -2543,10 +2520,16 @@
  * Requires: MBEDTLS_BIGNUM_C, MBEDTLS_OID_C
  */
 #ifdef CONFIG_MBEDTLS_RSA_C
-#define PSA_WANT_KEY_TYPE_RSA_KEY_PAIR 1
+#define PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC 1
+#define PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT 1
+#define PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT 1
+#define PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE 1
 #define PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY 1
 #else
-#undef PSA_WANT_KEY_TYPE_RSA_KEY_PAIR
+#undef PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC
+#undef PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT
+#undef PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT
+#undef PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE
 #undef PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY
 #endif
 
@@ -2571,6 +2554,7 @@
 #define PSA_WANT_ALG_SHA_1 1
 #else
 #undef PSA_WANT_ALG_SHA_1
+#undef MBEDTLS_PSA_ACCEL_ALG_SHA_1
 #endif
 /**
  * \def MBEDTLS_SHA224_C
@@ -2609,6 +2593,7 @@
 #define PSA_WANT_ALG_SHA_512 1
 #else
 #undef PSA_WANT_ALG_SHA_512
+#undef MBEDTLS_PSA_ACCEL_ALG_SHA_512
 #endif
 
 /**
@@ -2629,6 +2614,7 @@
 #define PSA_WANT_ALG_SHA_384 1
 #else
 #undef PSA_WANT_ALG_SHA_384
+#undef MBEDTLS_PSA_ACCEL_ALG_SHA_384
 #endif
 
 /**
@@ -2652,35 +2638,9 @@
 #define PSA_WANT_ALG_SHA_224 1
 #else
 #undef PSA_WANT_ALG_SHA_256
+#undef MBEDTLS_PSA_ACCEL_ALG_SHA_256
 #undef PSA_WANT_ALG_SHA_224
-#endif
-
-/* MBEDTLS_SHAxx_ALT to enable hardware SHA support
-   with software fallback.
-*/
-#ifdef CONFIG_MBEDTLS_HARDWARE_SHA
-    #define MBEDTLS_PSA_ACCEL_ALG_SHA_1
-    #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_1
-    #define MBEDTLS_PSA_ACCEL_ALG_SHA_224
-    #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_224
-    #define MBEDTLS_PSA_ACCEL_ALG_SHA_256
-    #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_256
-    #undef MBEDTLS_SHA1_C
-    #undef MBEDTLS_SHA224_C
-    #if SOC_SHA_SUPPORT_SHA512
-        #define MBEDTLS_PSA_ACCEL_ALG_SHA_512
-        #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_512
-        #define MBEDTLS_PSA_ACCEL_ALG_SHA_384
-        #undef MBEDTLS_PSA_BUILTIN_ALG_SHA_384
-        #undef MBEDTLS_SHA512_C
-        #undef MBEDTLS_SHA384_C
-    #else
-        #undef MBEDTLS_SHA512_ALT
-    #endif
-#else
-    #undef MBEDTLS_SHA1_ALT
-    #undef MBEDTLS_SHA256_ALT
-    #undef MBEDTLS_SHA512_ALT
+#undef MBEDTLS_PSA_ACCEL_ALG_SHA_224
 #endif
 
 /* MBEDTLS_MD_CAN_SHA* macros indicate whether a hash algorithm is available
@@ -2721,6 +2681,10 @@
 #define PSA_WANT_ALG_SHA3_256 1
 #define PSA_WANT_ALG_SHA3_384 1
 #define PSA_WANT_ALG_SHA3_512 1
+#if !defined(MBEDTLS_PSA_BUILTIN_ALG_HMAC)
+    /* If SHA3 is enabled, use the builtin HMAC algorithm for HMAC(SHA3) operations */
+    #define MBEDTLS_PSA_BUILTIN_ALG_HMAC
+#endif /* MBEDTLS_PSA_BUILTIN_ALG_HMAC */
 #else
 #undef PSA_WANT_ALG_SHA3_224
 #undef PSA_WANT_ALG_SHA3_256

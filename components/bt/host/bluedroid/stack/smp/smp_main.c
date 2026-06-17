@@ -746,7 +746,7 @@ void smp_sm_event(tSMP_CB *p_cb, tSMP_EVENT event, void *p_data)
     /* lookup entry /w event & curr_state */
     /* If entry is ignore, return.
      * Otherwise, get state table (according to curr_state or all_state) */
-    if ((event <= SMP_MAX_EVT) && ( (entry = entry_table[event - 1][curr_state]) != SMP_SM_IGNORE )) {
+    if ((event >= 1 && event <= SMP_MAX_EVT) && ( (entry = entry_table[event - 1][curr_state]) != SMP_SM_IGNORE )) {
         if (entry & SMP_ALL_TBL_MASK) {
             entry &= ~SMP_ALL_TBL_MASK;
             state_table = smp_all_table;
@@ -803,7 +803,7 @@ const char *smp_get_event_name(tSMP_EVENT event)
 {
     const char *p_str = smp_event_name[SMP_MAX_EVT];
 
-    if (event <= SMP_MAX_EVT) {
+    if (event >= 1 && event <= SMP_MAX_EVT) {
         p_str = smp_event_name[event - 1];
     }
     return p_str;

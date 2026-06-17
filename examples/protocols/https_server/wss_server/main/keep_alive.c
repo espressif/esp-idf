@@ -8,12 +8,16 @@
 */
 
 #include <esp_log.h>
-#include <esp_system.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
 #include "keep_alive.h"
+#if !CONFIG_IDF_TARGET_LINUX
+#include <esp_system.h>
 #include "esp_timer.h"
+#else
+#include <time.h>
+#endif  // !CONFIG_IDF_TARGET_LINUX
 
 typedef enum {
     NO_CLIENT = 0,
@@ -47,7 +51,13 @@ static const char *TAG = "wss_keep_alive";
 
 static uint64_t _tick_get_ms(void)
 {
-    return esp_timer_get_time()/1000;
+#if CONFIG_IDF_TARGET_LINUX
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (uint64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+#else
+    return esp_timer_get_time() / 1000;
+#endif
 }
 
 // Goes over active clients to find out how long we could sleep before checking who's alive

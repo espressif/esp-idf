@@ -1,6 +1,6 @@
 # For the syntax of this file, see:
 #
-#    https://docs.gitlab.com/ee/user/project/code_owners.html#the-syntax-of-code-owners-files
+#    https://docs.gitlab.com/user/project/codeowners/reference/
 #
 # If more than one rule matches a given file, the latest rule is used.
 # The file should be generally kept sorted, except when it is necessary
@@ -85,7 +85,9 @@
 /components/efuse/                    @esp-idf-codeowners/system
 /components/esp_adc/                  @esp-idf-codeowners/peripherals
 /components/esp_app_format/           @esp-idf-codeowners/system @esp-idf-codeowners/app-utilities
+/components/esp_asrc_adapter/         @esp-idf-codeowners/peripherals
 /components/esp_blockdev/             @esp-idf-codeowners/storage
+/components/esp_blockdev_util/        @esp-idf-codeowners/storage
 /components/esp_bootloader_format/    @esp-idf-codeowners/system @esp-idf-codeowners/app-utilities
 /components/esp_coex/                 @esp-idf-codeowners/wifi @esp-idf-codeowners/bluetooth @esp-idf-codeowners/ieee802154
 /components/esp_common/               @esp-idf-codeowners/system
@@ -106,6 +108,7 @@
 /components/esp_https_server/         @esp-idf-codeowners/app-utilities
 /components/esp_hw_support/           @esp-idf-codeowners/system @esp-idf-codeowners/peripherals
 /components/esp_hw_support/lowpower/  @esp-idf-codeowners/power-management
+/components/esp_hw_support/modem/     @esp-idf-codeowners/power-management
 /components/esp_hw_support/usb_phy/   @esp-idf-codeowners/peripherals/usb
 /components/esp_lcd/                  @esp-idf-codeowners/peripherals
 /components/esp_libc/                 @esp-idf-codeowners/system @esp-idf-codeowners/toolchain
@@ -129,6 +132,7 @@
 /components/esp_trace/                @esp-idf-codeowners/debugging
 /components/esp_usb_cdc_rom_console/  @esp-idf-codeowners/system @esp-idf-codeowners/peripherals/usb
 /components/esp_wifi/                 @esp-idf-codeowners/wifi
+/components/esp_wifi/remote/          @esp-idf-codeowners/network
 /components/espcoredump/              @esp-idf-codeowners/debugging
 /components/esptool_py/               @esp-idf-codeowners/tools
 /components/fatfs/                    @esp-idf-codeowners/storage
@@ -141,7 +145,6 @@
 /components/log/                      @esp-idf-codeowners/system
 /components/lwip/                     @esp-idf-codeowners/lwip
 /components/mbedtls/                  @esp-idf-codeowners/app-utilities/mbedtls @esp-idf-codeowners/security
-/components/mqtt/                     @esp-idf-codeowners/network
 /components/nvs_flash/                @esp-idf-codeowners/storage
 /components/nvs_sec_provider/         @esp-idf-codeowners/storage @esp-idf-codeowners/security
 /components/openthread/               @esp-idf-codeowners/ieee802154
@@ -164,26 +167,26 @@
 /components/wpa_supplicant/           @esp-idf-codeowners/wifi @esp-idf-codeowners/app-utilities/mbedtls
 /components/xtensa/                   @esp-idf-codeowners/system
 
-/docs/                                      @esp-idf-codeowners/docs
-/docs/docs_not_updated/                     @esp-idf-codeowners/all-maintainers
-/docs/**/api-guides/tools/                  @esp-idf-codeowners/tools
-/docs/**/api-guides/kconfig/                @esp-idf-codeowners/tools
-/docs/en/api-guides/core_dump.rst           @esp-idf-codeowners/debugging
-/docs/**/api-guides/wifi*                   @esp-idf-codeowners/wifi
-/docs/**/api-guides/esp-wifi-mesh.rst       @esp-idf-codeowners/wifi
-/docs/en/api-guides/jtag-debugging/         @esp-idf-codeowners/debugging
-/docs/**/api-reference/bluetooth/           @esp-idf-codeowners/bluetooth
-/docs/**/api-reference/network/             @esp-idf-codeowners/network @esp-idf-codeowners/wifi
-/docs/**/api-reference/peripherals/         @esp-idf-codeowners/peripherals
-/docs/**/api-reference/peripherals/usb*     @esp-idf-codeowners/peripherals @esp-idf-codeowners/peripherals/usb
-/docs/**/api-reference/peripherals/usb*/    @esp-idf-codeowners/peripherals @esp-idf-codeowners/peripherals/usb
-/docs/**/api-reference/protocols/           @esp-idf-codeowners/network @esp-idf-codeowners/app-utilities
-/docs/**/api-reference/provisioning/        @esp-idf-codeowners/app-utilities/provisioning
-/docs/**/api-reference/storage/             @esp-idf-codeowners/storage
-/docs/**/api-reference/system/              @esp-idf-codeowners/system
-/docs/**/security/                          @esp-idf-codeowners/security
-/docs/**/migration-guides/                  @esp-idf-codeowners/docs @esp-idf-codeowners/all-maintainers
-/docs/**/contribute/install-pre-commit-hook.rst @esp-idf-codeowners/ci @esp-idf-codeowners/tools
+/docs/                                             @esp-idf-codeowners/docs
+/docs/docs_not_updated/                            @esp-idf-codeowners/all-maintainers
+/docs/**/api-guides/build-system*                  @esp-idf-codeowners/build-config
+/docs/**/api-guides/tools/                         @esp-idf-codeowners/tools
+/docs/**/api-guides/kconfig/                       @esp-idf-codeowners/tools
+/docs/en/api-guides/core_dump.rst                  @esp-idf-codeowners/debugging
+/docs/**/api-guides/wifi*                          @esp-idf-codeowners/wifi
+/docs/**/api-guides/esp-wifi-mesh.rst              @esp-idf-codeowners/wifi
+/docs/**/api-guides/file-system-considerations.rst @esp-idf-codeowners/storage
+/docs/en/api-guides/jtag-debugging/                @esp-idf-codeowners/debugging
+/docs/**/api-reference/bluetooth/                  @esp-idf-codeowners/bluetooth
+/docs/**/api-reference/network/                    @esp-idf-codeowners/network @esp-idf-codeowners/wifi
+/docs/**/api-reference/peripherals/                @esp-idf-codeowners/peripherals
+/docs/**/api-reference/protocols/                  @esp-idf-codeowners/network @esp-idf-codeowners/app-utilities
+/docs/**/api-reference/provisioning/               @esp-idf-codeowners/app-utilities/provisioning
+/docs/**/api-reference/storage/                    @esp-idf-codeowners/storage
+/docs/**/api-reference/system/                     @esp-idf-codeowners/system
+/docs/**/security/                                 @esp-idf-codeowners/security
+/docs/**/migration-guides/                         @esp-idf-codeowners/docs @esp-idf-codeowners/all-maintainers
+/docs/**/contribute/install-pre-commit-hook.rst    @esp-idf-codeowners/ci @esp-idf-codeowners/tools
 
 /examples/README.md           @esp-idf-codeowners/docs @esp-idf-codeowners/ci
 /examples/**/*.py             @esp-idf-codeowners/ci @esp-idf-codeowners/tools
@@ -211,7 +214,7 @@
 /examples/zigbee/             @esp-idf-codeowners/ieee802154
 
 /tools/                       @esp-idf-codeowners/tools
-/tools/ble/                   @esp-idf-codeowners/app-utilities
+/tools/ble/                   @esp-idf-codeowners/bluetooth
 /tools/bt/                    @esp-idf-codeowners/bluetooth
 /tools/ci/                    @esp-idf-codeowners/ci
 /tools/cmake/                 @esp-idf-codeowners/build-config
@@ -246,8 +249,6 @@
 /tools/tools.json             @esp-idf-codeowners/tools @esp-idf-codeowners/toolchain @esp-idf-codeowners/debugging
 
 # sort-order-reset
-
-/components/**/test_apps/**/*.py     @esp-idf-codeowners/ci @esp-idf-codeowners/tools
 
 # ignore lists
 /tools/ci/check_copyright_config.yaml                   @esp-idf-codeowners/all-maintainers

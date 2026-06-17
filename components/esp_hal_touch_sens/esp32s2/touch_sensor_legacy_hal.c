@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,11 +14,10 @@ static int s_meas_times = -1;
 
 void touch_hal_init(void)
 {
+    // Deinit to reset the registers in case of the registers are not reset when wakeup from deep sleep.
+    touch_hal_deinit();
     touch_ll_stop_fsm();
-    touch_ll_intr_disable(TOUCH_PAD_INTR_MASK_ALL);
     touch_ll_intr_clear(TOUCH_PAD_INTR_MASK_ALL);
-    touch_ll_clear_channel_mask(TOUCH_PAD_BIT_MASK_ALL);
-    touch_ll_clear_trigger_status_mask();
     touch_ll_set_meas_times(TOUCH_PAD_MEASURE_CYCLE_DEFAULT);
     touch_ll_set_sleep_time(TOUCH_PAD_SLEEP_CYCLE_DEFAULT);
     /* Configure the touch-sensor power domain into self-bias since bandgap-bias
@@ -45,6 +44,7 @@ void touch_hal_deinit(void)
     touch_ll_clear_channel_mask(TOUCH_PAD_BIT_MASK_ALL);
     touch_ll_clear_trigger_status_mask();
     touch_ll_intr_disable(TOUCH_PAD_INTR_MASK_ALL);
+    touch_ll_intr_clear(TOUCH_PAD_INTR_MASK_ALL);
     touch_ll_timeout_disable();
     touch_ll_waterproof_enable(false);
     touch_ll_denoise_enable(false);

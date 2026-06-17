@@ -89,7 +89,7 @@ If none of our chip series meet your needs, please contact `customer support tea
     * - .. centered:: |5.2|
       - LE Isochronous Channels (BIS/CIS)
       - |experimental|
-      - |developing202512|
+      - |experimental|
     * -
       - Enhanced Attribute Protocol
       - |unsupported|
@@ -116,7 +116,7 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |supported|
     * -
       - Encrypted Advertising Data
-      - |developing202512|
+      - |experimental|
       - |experimental|
     * -
       - LE GATT Security Levels Characteristic

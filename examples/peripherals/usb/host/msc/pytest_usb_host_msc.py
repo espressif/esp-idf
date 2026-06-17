@@ -1,15 +1,24 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.temp_skip_ci(targets=['esp32s2'], reason='lack of runners with usb_host_flash_disk tag')
+@pytest.mark.temp_skip_ci(
+    targets=['esp32s2', 'esp32s31', 'esp32h4'], reason='lack of runners with usb_host_flash_disk tag'
+)
 @pytest.mark.usb_host_flash_disk
 @idf_parametrize(
     'config,target',
-    [('default', 'esp32s2'), ('default', 'esp32s3'), ('default', 'esp32p4'), ('esp32p4_psram', 'esp32p4')],
+    [
+        ('default', 'esp32s2'),
+        ('default', 'esp32s3'),
+        ('default', 'esp32p4'),
+        ('esp32p4_psram', 'esp32p4'),
+        ('default', 'esp32s31'),
+        ('default', 'esp32h4'),
+    ],
     indirect=['config', 'target'],
 )
 def test_usb_host_msc_example(dut: Dut) -> None:

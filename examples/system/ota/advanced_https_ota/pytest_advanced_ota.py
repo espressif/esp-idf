@@ -1,9 +1,10 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import http.server
 import multiprocessing
 import os
 import random
+import socket
 import ssl
 import struct
 import subprocess
@@ -40,12 +41,26 @@ def restart_device_with_random_delay(dut: Dut, min_delay: int = 10, max_delay: i
     print('Device restarted after random delay.')
 
 
-def https_request_handler() -> Callable[..., http.server.BaseHTTPRequestHandler]:
+def https_request_handler(
+    ssl_context: ssl.SSLContext | None = None,
+) -> Callable[..., http.server.BaseHTTPRequestHandler]:
     """
-    Returns a request handler class that handles broken pipe exception
+    Returns a request handler class that handles broken pipe exception.
+    If ssl_context is provided, SSL wrapping is done per-connection in the handler
+    thread (inside setup()) so that the server's main accept loop never blocks on
+    an SSL handshake — critical for OTA resumption tests where the device hard-resets
+    mid-connection.
     """
 
     class RequestHandler(RangeRequestHandler):
+        def setup(self) -> None:
+            if ssl_context is not None:
+                sock: socket.socket = self.request  # type: ignore[has-type]
+                sock.settimeout(10)  # Timeout for SSL handshake
+                self.request = ssl_context.wrap_socket(sock, server_side=True)
+                self.request.settimeout(None)  # Back to blocking mode for data transfer
+            super().setup()
+
         def finish(self) -> None:
             try:
                 if not self.wfile.closed:
@@ -66,13 +81,15 @@ def https_request_handler() -> Callable[..., http.server.BaseHTTPRequestHandler]
 
 def start_https_server(ota_image_dir: str, server_ip: str, server_port: int) -> None:
     os.chdir(ota_image_dir)
-    requestHandler = https_request_handler()
-    httpd = http.server.HTTPServer((server_ip, server_port), requestHandler)
 
     ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     ssl_context.load_cert_chain(certfile=server_file, keyfile=key_file)
 
-    httpd.socket = ssl_context.wrap_socket(httpd.socket, server_side=True)
+    # Pass ssl_context to handler — SSL is done per-connection in handler threads,
+    # keeping the main accept loop on plain TCP (never blocks on SSL handshake)
+    requestHandler = https_request_handler(ssl_context)
+    httpd = http.server.ThreadingHTTPServer((server_ip, server_port), requestHandler)
+    httpd.daemon_threads = True  # Handler threads won't block server shutdown
     httpd.serve_forever()
 
 
@@ -94,12 +111,26 @@ def start_chunked_server(ota_image_dir: str, server_port: int) -> subprocess.Pop
     return chunked_server
 
 
-def redirect_handler_factory(url: str) -> Callable[..., http.server.BaseHTTPRequestHandler]:
+def redirect_handler_factory(
+    url: str,
+    ssl_context: ssl.SSLContext | None = None,
+) -> Callable[..., http.server.BaseHTTPRequestHandler]:
     """
-    Returns a request handler class that redirects to supplied `url`
+    Returns a request handler class that redirects to supplied `url`.
+    If ssl_context is provided, SSL wrapping is done per-connection in the handler
+    thread (inside setup()) so that the server's main accept loop never blocks on
+    an SSL handshake.
     """
 
     class RedirectHandler(http.server.SimpleHTTPRequestHandler):
+        def setup(self) -> None:
+            if ssl_context is not None:
+                sock: socket.socket = self.request  # type: ignore[has-type]
+                sock.settimeout(10)  # Timeout for SSL handshake
+                self.request = ssl_context.wrap_socket(sock, server_side=True)
+                self.request.settimeout(None)  # Back to blocking mode for data transfer
+            super().setup()
+
         def do_GET(self) -> None:
             print('Sending resp, URL: ' + url)
             self.send_response(301)
@@ -117,16 +148,18 @@ def redirect_handler_factory(url: str) -> Callable[..., http.server.BaseHTTPRequ
 
 def start_redirect_server(ota_image_dir: str, server_ip: str, server_port: int, redirection_port: int) -> None:
     os.chdir(ota_image_dir)
-    redirectHandler = redirect_handler_factory(
-        'https://' + server_ip + ':' + str(redirection_port) + '/advanced_https_ota.bin'
-    )
-
-    httpd = http.server.HTTPServer((server_ip, server_port), redirectHandler)
 
     ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     ssl_context.load_cert_chain(certfile=server_file, keyfile=key_file)
 
-    httpd.socket = ssl_context.wrap_socket(httpd.socket, server_side=True)
+    # Pass ssl_context to handler — SSL is done per-connection in handler threads,
+    # keeping the main accept loop on plain TCP (never blocks on SSL handshake)
+    redirectHandler = redirect_handler_factory(
+        'https://' + server_ip + ':' + str(redirection_port) + '/advanced_https_ota.bin',
+        ssl_context,
+    )
+    httpd = http.server.ThreadingHTTPServer((server_ip, server_port), redirectHandler)
+    httpd.daemon_threads = True  # Handler threads won't block server shutdown
     httpd.serve_forever()
 
 
@@ -271,6 +304,88 @@ def test_examples_protocol_advanced_https_ota_example_ota_resumption(dut: Dut) -
 
     finally:
         thread1.terminate()
+
+
+@pytest.mark.ethernet_ota
+@pytest.mark.parametrize('config', ['ota_resumption'], indirect=True)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
+def test_examples_protocol_advanced_https_ota_example_ota_resumption_range_request_support_detection(dut: Dut) -> None:
+    """
+    This test verifies OTA resumption fallback when the server does not support Range requests.
+    OpenSSL s_server may return 416 Range Not Satisfiable or 200 OK instead of 206 Partial Content.
+    The OTA should detect this, close the connection, clear the response buffer, and restart
+    the download from the beginning (ensuring a fresh connection for the retry).
+    steps: |
+      1. join AP/Ethernet
+      2. Start OpenSSL s_server (which does not support Range requests)
+      3. Fetch OTA image over HTTPS
+      4. Restart device mid-download
+      5. Resume OTA; fallback to full download from beginning
+      6. Verify OTA completes successfully
+    """
+    server_port = 8070
+    bin_name = 'advanced_https_ota.bin'
+
+    # Erase NVS partition
+    dut.serial.erase_partition(NVS_PARTITION)
+
+    # Start openssl s_server which doesn't support Range requests
+    chunked_server = start_chunked_server(dut.app.binary_path, server_port)
+    try:
+        # start test
+        dut.expect('Loaded app from partition at offset', timeout=30)
+
+        try:
+            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
+            print(f'Connected to AP/Ethernet with IP: {ip_address}')
+        except pexpect.exceptions.TIMEOUT:
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
+
+        dut.expect('Starting Advanced OTA example', timeout=30)
+        host_ip = get_host_ip4_by_dest_ip(ip_address)
+
+        print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + bin_name))
+        dut.write('https://' + host_ip + ':' + str(server_port) + '/' + bin_name)
+        dut.expect('Starting OTA...', timeout=60)
+
+        # Restart device mid-download to trigger resumption
+        restart_device_with_random_delay(dut, 5, 15)
+
+        # Validate that the device restarts correctly
+        dut.expect('Loaded app from partition at offset', timeout=180)
+
+        try:
+            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
+            print(f'Connected to AP/Ethernet with IP: {ip_address}')
+        except pexpect.exceptions.TIMEOUT:
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
+
+        dut.expect('Starting Advanced OTA example', timeout=30)
+        host_ip = get_host_ip4_by_dest_ip(ip_address)
+
+        print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + bin_name))
+        dut.write('https://' + host_ip + ':' + str(server_port) + '/' + bin_name)
+        dut.expect('Starting OTA...', timeout=60)
+
+        # The server doesn't support Range requests, so it may return 416 or 200 OK.
+        # The OTA should detect this, close the connection, clear response buffer,
+        # and restart download from the beginning (works with OpenSSL s_server).
+        try:
+            dut.expect('restarting download from beginning', timeout=30)
+            print('Detected fallback to OTA without resumption (restart from beginning)')
+        except pexpect.exceptions.TIMEOUT:
+            # This is okay - the message might not be visible at current log level
+            pass
+
+        # Verify that OTA completes successfully
+        dut.expect('upgrade successful. Rebooting ...', timeout=150)
+
+        # After reboot, verify the device is running the new image
+        dut.expect('Loaded app from partition at offset', timeout=30)
+        dut.expect('OTA example app_main start', timeout=20)
+
+    finally:
+        chunked_server.kill()
 
 
 @pytest.mark.flash_encryption_ota
@@ -540,7 +655,7 @@ def test_examples_protocol_advanced_https_ota_example_invalid_chip_id(dut: Dut) 
         dut.expect('Starting Advanced OTA example', timeout=30)
         print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + random_bin_name))
         dut.write('https://' + host_ip + ':' + str(server_port) + '/' + random_bin_name)
-        dut.expect(r'esp_https_ota: Mismatch chip id, expected 0, found \d', timeout=10)
+        dut.expect(r'boot_comm: mismatch chip ID, expected 0, found \d', timeout=10)
         try:
             os.remove(random_binary_file)
         except OSError:
@@ -1014,7 +1129,6 @@ def test_examples_protocol_advanced_https_ota_example_openssl_aligned_bin(dut: D
 
 @pytest.mark.qemu
 @pytest.mark.nightly_run
-@pytest.mark.host_test
 @pytest.mark.parametrize(
     'qemu_extra_args',
     [
@@ -1070,7 +1184,6 @@ def test_examples_protocol_advanced_https_ota_example_verify_min_chip_revision(d
 
 @pytest.mark.qemu
 @pytest.mark.nightly_run
-@pytest.mark.host_test
 @pytest.mark.parametrize(
     'qemu_extra_args',
     [

@@ -199,7 +199,7 @@ config SOC_PMU_SUPPORTED
     bool
     default y
 
-config SOC_RTC_TIMER_V2_SUPPORTED
+config SOC_RTC_TIMER_SUPPORTED
     bool
     default y
 
@@ -223,6 +223,10 @@ config SOC_WDT_SUPPORTED
     bool
     default y
 
+config SOC_RTC_WDT_SUPPORTED
+    bool
+    default y
+
 config SOC_SPI_FLASH_SUPPORTED
     bool
     default y
@@ -240,6 +244,10 @@ config SOC_DEEP_SLEEP_SUPPORTED
     default y
 
 config SOC_MODEM_CLOCK_SUPPORTED
+    bool
+    default y
+
+config SOC_REGI2C_SUPPORTED
     bool
     default y
 
@@ -299,33 +307,21 @@ config SOC_ADC_PERIPH_NUM
     int
     default 1
 
-config SOC_ADC_MAX_CHANNEL_NUM
-    int
-    default 5
-
 config SOC_ADC_ATTEN_NUM
     int
     default 4
-
-config SOC_ADC_DIGI_CONTROLLER_NUM
-    int
-    default 1
 
 config SOC_ADC_PATT_LEN_MAX
     int
     default 8
 
-config SOC_ADC_DIGI_MAX_BITWIDTH
-    int
-    default 12
-
 config SOC_ADC_DIGI_MIN_BITWIDTH
     int
     default 12
 
-config SOC_ADC_DIGI_IIR_FILTER_NUM
+config SOC_ADC_DIGI_MAX_BITWIDTH
     int
-    default 2
+    default 12
 
 config SOC_ADC_DIGI_MONITOR_NUM
     int
@@ -338,22 +334,6 @@ config SOC_ADC_DIGI_RESULT_BYTES
 config SOC_ADC_DIGI_DATA_BYTES_PER_CONV
     int
     default 4
-
-config SOC_ADC_SAMPLE_FREQ_THRES_HIGH
-    int
-    default 83333
-
-config SOC_ADC_SAMPLE_FREQ_THRES_LOW
-    int
-    default 611
-
-config SOC_ADC_RTC_MIN_BITWIDTH
-    int
-    default 12
-
-config SOC_ADC_RTC_MAX_BITWIDTH
-    int
-    default 12
 
 config SOC_ADC_CALIBRATION_V1_SUPPORTED
     bool
@@ -378,6 +358,10 @@ config SOC_ADC_SHARED_POWER
 config SOC_APB_BACKUP_DMA
     bool
     default n
+
+config SOC_ANA_CMPR_SUPPORT_AUTO_SCAN
+    bool
+    default y
 
 config SOC_BROWNOUT_RESET_SUPPORTED
     bool
@@ -440,10 +424,6 @@ config SOC_CPU_MISALIGNED_ACCESS_ON_PMP_MISMATCH_ISSUE
     default y
 
 config SOC_MMU_PAGE_SIZE_CONFIGURABLE
-    bool
-    default y
-
-config SOC_MMU_PAGE_SIZE_8KB_SUPPORTED
     bool
     default y
 
@@ -560,14 +540,6 @@ config SOC_SDM_SUPPORT_SLEEP_RETENTION
     default y
 
 config SOC_ETM_SUPPORT_SLEEP_RETENTION
-    bool
-    default y
-
-config SOC_ANA_CMPR_NUM
-    int
-    default 1
-
-config SOC_ANA_CMPR_INTR_SHARE_WITH_GPIO
     bool
     default y
 
@@ -867,37 +839,9 @@ config SOC_MEMSPI_IS_INDEPENDENT
     bool
     default y
 
-config SOC_SYSTIMER_COUNTER_NUM
+config SOC_MEMSPI_ENCRYPTION_ALIGNMENT
     int
-    default 2
-
-config SOC_SYSTIMER_ALARM_NUM
-    int
-    default 3
-
-config SOC_SYSTIMER_BIT_WIDTH_LO
-    int
-    default 32
-
-config SOC_SYSTIMER_BIT_WIDTH_HI
-    int
-    default 20
-
-config SOC_SYSTIMER_FIXED_DIVIDER
-    bool
-    default y
-
-config SOC_SYSTIMER_SUPPORT_RC_FAST
-    bool
-    default y
-
-config SOC_SYSTIMER_INT_LEVEL
-    bool
-    default y
-
-config SOC_SYSTIMER_ALARM_MISS_COMPENSATE
-    bool
-    default y
+    default 16
 
 config SOC_SYSTIMER_SUPPORT_ETM
     bool
@@ -910,6 +854,10 @@ config SOC_LP_TIMER_BIT_WIDTH_LO
 config SOC_LP_TIMER_BIT_WIDTH_HI
     int
     default 16
+
+config SOC_RTC_TIMER_V2
+    bool
+    default y
 
 config SOC_TIMER_SUPPORT_ETM
     bool
@@ -1011,6 +959,10 @@ config SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
     bool
     default y
 
+config SOC_FLASH_ENCRYPTION_PAGE_CONFIGURABLE
+    bool
+    default y
+
 config SOC_APM_CTRL_FILTER_SUPPORTED
     bool
     default y
@@ -1090,10 +1042,6 @@ config SOC_UART_WAKEUP_SUPPORT_START_BIT_MODE
 config SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE
     bool
     default y
-
-config SOC_UHCI_NUM
-    int
-    default 1
 
 config SOC_COEX_HW_PTI
     bool
@@ -1220,6 +1168,10 @@ config SOC_CLK_LP_FAST_SUPPORT_XTAL_D2
     default y
 
 config SOC_MODEM_CLOCK_IS_INDEPENDENT
+    bool
+    default y
+
+config SOC_MODEM_CLOCK_BLE_RTC_TIMER_WORKAROUND
     bool
     default y
 

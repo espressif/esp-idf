@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -165,13 +165,10 @@ npl_freertos_eventq_deinit(struct ble_npl_eventq *evq)
 {
     struct ble_npl_eventq_freertos *eventq = (struct ble_npl_eventq_freertos *)evq->eventq;
 
-#if CONFIG_BT_NIMBLE_STATIC_TO_DYNAMIC
     /* Deinit can be invoked twice without init . Handle this case */
     if (eventq == NULL) {
         return;
     }
-#endif
-
     BLE_LL_ASSERT(eventq);
     vQueueDelete(eventq->q);
 #if OS_MEM_ALLOC
@@ -326,8 +323,7 @@ IRAM_ATTR npl_freertos_eventq_remove(struct ble_npl_eventq *evq,
             portYIELD_FROM_ISR();
         }
     } else {
-        portMUX_TYPE ble_npl_mut = portMUX_INITIALIZER_UNLOCKED;
-        portENTER_CRITICAL(&ble_npl_mut);
+        portENTER_CRITICAL(&ble_port_mutex);
 
         count = uxQueueMessagesWaiting(eventq->q);
         for (i = 0; i < count; i++) {
@@ -342,7 +338,7 @@ IRAM_ATTR npl_freertos_eventq_remove(struct ble_npl_eventq *evq,
             BLE_LL_ASSERT(ret == pdPASS);
         }
 
-        portEXIT_CRITICAL(&ble_npl_mut);
+        portEXIT_CRITICAL(&ble_port_mutex);
     }
 
     event->queued = 0;
@@ -791,6 +787,9 @@ IRAM_ATTR npl_freertos_callout_reset(struct ble_npl_callout *co, ble_npl_time_t 
     struct ble_npl_callout_freertos *callout = (struct ble_npl_callout_freertos *)co->co;
 #if BLE_NPL_USE_ESP_TIMER
     esp_timer_stop(callout->handle);
+    if (callout->evq) {
+        npl_freertos_eventq_remove(callout->evq, &callout->ev);
+    }
 
     return esp_err_to_npl_error(esp_timer_start_once(callout->handle, ticks*1000));
 #else
@@ -802,6 +801,9 @@ IRAM_ATTR npl_freertos_callout_reset(struct ble_npl_callout *co, ble_npl_time_t 
     }
     if (in_isr()) {
         xTimerStopFromISR(callout->handle, &woken1);
+        if (callout->evq) {
+            npl_freertos_eventq_remove(callout->evq, &callout->ev);
+        }
         xTimerChangePeriodFromISR(callout->handle, ticks, &woken2);
         xTimerResetFromISR(callout->handle, &woken3);
 
@@ -810,6 +812,9 @@ IRAM_ATTR npl_freertos_callout_reset(struct ble_npl_callout *co, ble_npl_time_t 
         }
     } else {
         xTimerStop(callout->handle, portMAX_DELAY);
+        if (callout->evq) {
+            npl_freertos_eventq_remove(callout->evq, &callout->ev);
+        }
         xTimerChangePeriod(callout->handle, ticks, portMAX_DELAY);
         xTimerReset(callout->handle, portMAX_DELAY);
     }
@@ -832,6 +837,10 @@ IRAM_ATTR npl_freertos_callout_stop(struct ble_npl_callout *co)
 #else
     xTimerStop(callout->handle, portMAX_DELAY);
 #endif
+
+    if (callout->evq) {
+        npl_freertos_eventq_remove(callout->evq, &callout->ev);
+    }
 }
 
 bool

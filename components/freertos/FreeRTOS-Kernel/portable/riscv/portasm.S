@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,7 @@
     .global pxCurrentTCBs
     .global vTaskSwitchContext
     .global xPortSwitchFlag
+    .global port_uxCoreStartupDone
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
     .global xIsrStackBottom
     .global esp_hw_stack_guard_monitor_stop
@@ -544,6 +545,29 @@ generate_coprocessor_routine fpu, FPU_COPROC_IDX, fpu_enable, fpu_save_regs, fpu
 
 #endif /* SOC_CPU_COPROC_NUM > 0 */
 
+#if CONFIG_IDF_TARGET_ESP32S31
+
+    /* On the ESP32-S31, the PIE is only available on core 1, so whenever the core 0 uses a PIE instruction, we need to migrate the task to core 1.
+     * If the task ever used the FPU (and is currently the owner), we need to flush the context to the Task's coproc save area. */
+    .extern vPortTaskUsedPIEOnCPU0
+    .global rtos_pie_used_cpu0
+    .type rtos_pie_used_cpu0, @function
+rtos_pie_used_cpu0:
+    /* Task context on core 0 */
+    mv    s0, ra
+    lw    a0, pxCurrentTCBs   // a0 = task
+    mv    a1, sp              // a1 = frame
+    call  vPortTaskUsedPIEOnCPU0
+    /* Returns the context to save the current FPU context, or NULL if the task is not the owner of the FPU on the current core */
+    beqz  a0, rtos_pie_used_cpu0_end
+    /* As a precaution, enable the FPU. It will be restored to the initialize state when exiting
+     * the exception handler (mstatus will be restored) */
+    fpu_enable a1
+    fpu_save_regs a0
+rtos_pie_used_cpu0_end:
+    jr    s0
+    .size rtos_pie_used_cpu0, .-rtos_pie_used_cpu0
+#endif /* CONFIG_IDF_TARGET_ESP32S31 */
 
 /**
  * @brief Get current TCB on current core
@@ -834,6 +858,13 @@ restore_stack_pointer:
     lw      sp, 0(a0)
 #endif /* ( configNUM_CORES > 1 ) */
 
+#if ( configNUM_CORES > 1 )
+    /* Indicate that this CPU has completed startup */
+    la      t1, port_uxCoreStartupDone      /* t1 = &port_uxCoreStartupDone */
+    add     t1, t1, s0                      /* t1 = &port_uxCoreStartupDone[coreID] // s0 contains coreID * 4 */
+    li      a1, 1                           /* a1 = 1 */
+    sw      a1, 0(t1)                       /* port_uxCoreStartupDone[coreID] = 1 */
+#endif /* ( configNUM_CORES > 1 ) */
 
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
     /* esp_hw_stack_guard_set_bounds(pxCurrentTCBs[0]->pxStack,

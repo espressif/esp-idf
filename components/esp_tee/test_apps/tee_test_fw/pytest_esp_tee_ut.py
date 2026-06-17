@@ -1,12 +1,17 @@
 # SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+import logging
+import random
 import re
 from enum import Enum
+from pathlib import Path
 
+import pexpect
 import pytest
+import yaml
 from pytest_embedded_idf import IdfDut
 from pytest_embedded_idf.utils import idf_parametrize
-from tee_exception_cfg import TEE_EXCEPTION_TEST_MAP
+from tee_exception_test_map import TEE_EXCEPTION_TEST_MAP
 
 # ---------------- Pytest build parameters ----------------
 
@@ -19,6 +24,12 @@ CONFIG_DEFAULT = [
 ]
 
 CONFIG_OTA = [
+    # 'config, target, markers',
+    ('tee_ota', target, (pytest.mark.generic,))
+    for target in TESTING_TARGETS
+]
+
+CONFIG_OTA_NO_AUTOFLASH = [
     # 'config, target, skip_autoflash, markers',
     ('tee_ota', target, 'y', (pytest.mark.generic,))
     for target in TESTING_TARGETS
@@ -49,8 +60,10 @@ def test_esp_tee(dut: IdfDut) -> None:
     CONFIG_ALL,
     indirect=['config', 'target'],
 )
-@pytest.mark.skipif(targets=['esp32c61'], reason='Not supported')
 def test_esp_tee_crypto_aes(dut: IdfDut) -> None:
+    if dut.target == 'esp32c61':
+        pytest.skip(f'AES not supported on {dut.target}')
+
     dut.run_all_single_board_cases(group='aes')
     dut.run_all_single_board_cases(group='aes-gcm')
 
@@ -71,8 +84,10 @@ def test_esp_tee_crypto_sha(dut: IdfDut) -> None:
     CONFIG_ALL,
     indirect=['config', 'target'],
 )
-@pytest.mark.skipif(targets=['esp32c61'], reason='Not supported')
 def test_esp_tee_aes_perf(dut: IdfDut) -> None:
+    if dut.target == 'esp32c61':
+        pytest.skip(f'AES not supported on {dut.target}')
+
     for i in range(10):
         dut.run_all_single_board_cases(name=['mbedtls AES performance'])
 
@@ -83,6 +98,9 @@ def test_esp_tee_aes_perf(dut: IdfDut) -> None:
 def run_exception_case(
     dut: IdfDut, menu_prefix: str, test_name: str, expected: str, check_origin: bool = False
 ) -> None:
+    # Panics are expected during these tests
+    dut.skip_decode_panic = True
+
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write(f'"{menu_prefix}: {test_name}"')
 
@@ -136,6 +154,9 @@ def test_esp_tee_apm_violation(dut: IdfDut) -> None:
     indirect=['config', 'target'],
 )
 def test_esp_tee_stack_smashing(dut: IdfDut) -> None:
+    # Panics are expected during this test
+    dut.skip_decode_panic = True
+
     for env in ('REE', 'TEE'):
         for case in ('overflow', 'underflow'):
             dut.expect_exact('Press ENTER to see the list of tests')
@@ -228,7 +249,8 @@ def run_multiple_stages(dut: IdfDut, test_case_num: int, stages: int, api: TeeFl
 
 
 def run_flash_access_test(dut: IdfDut, api: TeeFlashAccessApi, test_name: str) -> None:
-    dut.serial.custom_flash()
+    # Panics are expected during these tests
+    dut.skip_decode_panic = True
 
     extra_data = dut._parse_test_menu()
     test_case = next((tc for tc in extra_data if tc.name == test_name), None)
@@ -240,9 +262,9 @@ def run_flash_access_test(dut: IdfDut, api: TeeFlashAccessApi, test_name: str) -
 
 
 @idf_parametrize(
-    'config, target, skip_autoflash, markers',
+    'config, target, markers',
     CONFIG_OTA,
-    indirect=['config', 'target', 'skip_autoflash'],
+    indirect=['config', 'target'],
 )
 def test_esp_tee_flash_prot_esp_partition_mmap(dut: IdfDut) -> None:
     run_flash_access_test(
@@ -251,9 +273,9 @@ def test_esp_tee_flash_prot_esp_partition_mmap(dut: IdfDut) -> None:
 
 
 @idf_parametrize(
-    'config, target, skip_autoflash, markers',
+    'config, target, markers',
     CONFIG_OTA,
-    indirect=['config', 'target', 'skip_autoflash'],
+    indirect=['config', 'target'],
 )
 def test_esp_tee_flash_prot_spi_flash_mmap(dut: IdfDut) -> None:
     run_flash_access_test(
@@ -262,9 +284,9 @@ def test_esp_tee_flash_prot_spi_flash_mmap(dut: IdfDut) -> None:
 
 
 @idf_parametrize(
-    'config, target, skip_autoflash, markers',
+    'config, target, markers',
     CONFIG_OTA,
-    indirect=['config', 'target', 'skip_autoflash'],
+    indirect=['config', 'target'],
 )
 def test_esp_tee_flash_prot_esp_rom_spiflash(dut: IdfDut) -> None:
     run_flash_access_test(
@@ -273,18 +295,18 @@ def test_esp_tee_flash_prot_esp_rom_spiflash(dut: IdfDut) -> None:
 
 
 @idf_parametrize(
-    'config, target, skip_autoflash, markers',
+    'config, target, markers',
     CONFIG_OTA,
-    indirect=['config', 'target', 'skip_autoflash'],
+    indirect=['config', 'target'],
 )
 def test_esp_tee_flash_prot_esp_partition(dut: IdfDut) -> None:
     run_flash_access_test(dut, TeeFlashAccessApi.ESP_PARTITION, 'Test REE-TEE isolation: Flash - SPI1 (esp_partition)')
 
 
 @idf_parametrize(
-    'config, target, skip_autoflash, markers',
+    'config, target, markers',
     CONFIG_OTA,
-    indirect=['config', 'target', 'skip_autoflash'],
+    indirect=['config', 'target'],
 )
 def test_esp_tee_flash_prot_esp_flash(dut: IdfDut) -> None:
     run_flash_access_test(dut, TeeFlashAccessApi.ESP_FLASH, 'Test REE-TEE isolation: Flash - SPI1 (esp_flash)')
@@ -293,9 +315,11 @@ def test_esp_tee_flash_prot_esp_flash(dut: IdfDut) -> None:
 # ---------------- TEE Local OTA tests ----------------
 
 
-@pytest.mark.generic
-@idf_parametrize('config', ['tee_ota'], indirect=['config'])
-@idf_parametrize('target', TESTING_TARGETS, indirect=['target'])
+@idf_parametrize(
+    'config, target, markers',
+    CONFIG_OTA,
+    indirect=['config', 'target'],
+)
 def test_esp_tee_ota_negative(dut: IdfDut) -> None:
     # start test
     dut.run_all_single_board_cases(group='ota_neg_1', timeout=10)
@@ -303,7 +327,7 @@ def test_esp_tee_ota_negative(dut: IdfDut) -> None:
 
 @idf_parametrize(
     'config, target, skip_autoflash, markers',
-    CONFIG_OTA,
+    CONFIG_OTA_NO_AUTOFLASH,
     indirect=['config', 'target', 'skip_autoflash'],
 )
 def test_esp_tee_ota_corrupted_img(dut: IdfDut) -> None:
@@ -337,7 +361,7 @@ def tee_ota_stage_checks(dut: IdfDut, stage: TeeOtaStage, offset: str) -> None:
 
 @idf_parametrize(
     'config, target, skip_autoflash, markers',
-    CONFIG_OTA,
+    CONFIG_OTA_NO_AUTOFLASH,
     indirect=['config', 'target', 'skip_autoflash'],
 )
 def test_esp_tee_ota_reboot_without_ota_end(dut: IdfDut) -> None:
@@ -352,7 +376,7 @@ def test_esp_tee_ota_reboot_without_ota_end(dut: IdfDut) -> None:
     dut.write('"Test TEE OTA - Reboot without ending OTA"')
 
     # OTA begin checks
-    tee_ota_stage_checks(dut, TeeOtaStage.BEGIN, '0x40000')
+    tee_ota_stage_checks(dut, TeeOtaStage.BEGIN, '0x50000')
 
     # after reboot
     tee_ota_stage_checks(dut, TeeOtaStage.REBOOT, '0x10000')
@@ -360,7 +384,7 @@ def test_esp_tee_ota_reboot_without_ota_end(dut: IdfDut) -> None:
 
 @idf_parametrize(
     'config, target, skip_autoflash, markers',
-    CONFIG_OTA,
+    CONFIG_OTA_NO_AUTOFLASH,
     indirect=['config', 'target', 'skip_autoflash'],
 )
 def test_esp_tee_ota_valid_img(dut: IdfDut) -> None:
@@ -375,26 +399,29 @@ def test_esp_tee_ota_valid_img(dut: IdfDut) -> None:
     dut.write('"Test TEE OTA - Valid image"')
 
     # OTA begin checks
-    tee_ota_stage_checks(dut, TeeOtaStage.BEGIN, '0x40000')
+    tee_ota_stage_checks(dut, TeeOtaStage.BEGIN, '0x50000')
     dut.expect('TEE OTA update successful!', timeout=10)
 
     # after reboot 1
-    tee_ota_stage_checks(dut, TeeOtaStage.REBOOT, '0x40000')
+    tee_ota_stage_checks(dut, TeeOtaStage.REBOOT, '0x50000')
 
     # resetting device to check for image validity
     dut.serial.hard_reset()
 
     # after reboot 2
     dut.expect('TEE otadata - Current image state: VALID', timeout=10)
-    tee_ota_stage_checks(dut, TeeOtaStage.REBOOT, '0x40000')
+    tee_ota_stage_checks(dut, TeeOtaStage.REBOOT, '0x50000')
 
 
 @idf_parametrize(
     'config, target, skip_autoflash, markers',
-    CONFIG_OTA,
+    CONFIG_OTA_NO_AUTOFLASH,
     indirect=['config', 'target', 'skip_autoflash'],
 )
 def test_esp_tee_ota_rollback(dut: IdfDut) -> None:
+    # Panics are expected during these tests
+    dut.skip_decode_panic = True
+
     # Flashing the TEE app to the non-secure app's passive partition
     dut.serial.custom_flash_w_test_tee_img_rb()
 
@@ -406,12 +433,12 @@ def test_esp_tee_ota_rollback(dut: IdfDut) -> None:
     dut.write('"Test TEE OTA - Rollback"')
 
     # OTA begin checks
-    tee_ota_stage_checks(dut, TeeOtaStage.BEGIN, '0x40000')
+    tee_ota_stage_checks(dut, TeeOtaStage.BEGIN, '0x50000')
     dut.expect('TEE OTA update successful!', timeout=10)
 
     # after reboot 1
     dut.expect('TEE otadata - Current image state: NEW', timeout=10)
-    dut.expect('Loaded TEE app from partition at offset 0x40000', timeout=10)
+    dut.expect('Loaded TEE app from partition at offset 0x50000', timeout=10)
     rst_rsn = dut.expect(r'rst:(0x[0-9A-Fa-f]+) \(([^)]+)\)', timeout=10).group(2).decode()
     # NOTE: LP_WDT_SYS (C6/H2) and RTC_WDT_SYS (C5) are expected as bootloader fails to load the dummy TEE app
     if rst_rsn not in {'LP_WDT_SYS', 'RTC_WDT_SYS'}:
@@ -427,7 +454,7 @@ def test_esp_tee_ota_rollback(dut: IdfDut) -> None:
 
 @idf_parametrize(
     'config, target, skip_autoflash, markers',
-    CONFIG_OTA,
+    CONFIG_OTA_NO_AUTOFLASH,
     indirect=['config', 'target', 'skip_autoflash'],
 )
 def test_esp_tee_secure_storage(dut: IdfDut) -> None:
@@ -439,14 +466,35 @@ def test_esp_tee_secure_storage(dut: IdfDut) -> None:
 
 @idf_parametrize(
     'config, target, skip_autoflash, markers',
-    CONFIG_OTA,
+    CONFIG_OTA_NO_AUTOFLASH,
     indirect=['config', 'target', 'skip_autoflash'],
 )
 def test_esp_tee_secure_storage_with_host_img(dut: IdfDut) -> None:
     # Flash image and write the secure_storage partition with host-generated keys
+
+    # NOTE: In release mode (CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE), the test
+    # expects the eFuse-burned HMAC key used for TEE secure storage to be available
+    # at the path "test_keys/tee_sec_stg_hmac_key.bin"
     dut.serial.custom_flash_with_host_gen_sec_stg_img()
 
     dut.run_all_single_board_cases(group='sec_storage_host_keygen')
+
+
+@idf_parametrize(
+    'config, target, skip_autoflash, markers',
+    CONFIG_OTA_NO_AUTOFLASH,
+    indirect=['config', 'target', 'skip_autoflash'],
+)
+def test_esp_tee_secure_storage_encryption(dut: IdfDut) -> None:
+    dut.serial.custom_flash_with_empty_sec_stg()
+
+    # NOTE: In release mode (CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE), the test
+    # expects the eFuse-burned HMAC key used for TEE secure storage to be available
+    # at the path "test_keys/tee_sec_stg_hmac_key.bin"
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('"Test TEE Secure Storage - Verify data encryption"')
+
+    dut.serial.verify_tee_sec_stg_encryption(dut)
 
 
 # ---------------- TEE Attestation tests ----------------
@@ -454,7 +502,7 @@ def test_esp_tee_secure_storage_with_host_img(dut: IdfDut) -> None:
 
 @idf_parametrize(
     'config, target, skip_autoflash, markers',
-    CONFIG_OTA,
+    CONFIG_OTA_NO_AUTOFLASH,
     indirect=['config', 'target', 'skip_autoflash'],
 )
 def test_esp_tee_attestation(dut: IdfDut) -> None:
@@ -463,3 +511,62 @@ def test_esp_tee_attestation(dut: IdfDut) -> None:
 
     # start test
     dut.run_all_single_board_cases(group='attestation')
+
+
+# ---------------- TEE Fuzzing tests ----------------
+
+
+@pytest.mark.generic
+@idf_parametrize('config', ['tee_fuzzing'], indirect=['config'])
+@idf_parametrize('target', TESTING_TARGETS, indirect=['target'])
+def test_esp_tee_fuzzer(dut: IdfDut) -> None:
+    # Panics are expected during fuzzing; skip GDB decode on teardown
+    dut.skip_decode_panic = True
+
+    seed = random.randrange(2**32)
+    logging.info('Fuzzer seed: 0x%08x', seed)
+    rng = random.Random(seed)
+
+    # Number of random inputs to send per service
+    FUZZ_ITERATIONS_PER_SERVICE = 4
+
+    # Build {service_id: arg_count} map from the target's YAML service table
+    yml_path = Path(__file__).parent.joinpath('..', '..', 'scripts', dut.target, 'sec_srv_tbl_default.yml').resolve()
+    with open(yml_path) as f:
+        services = {
+            entry['id']: entry['args'] for family in yaml.safe_load(f)['secure_services'] for entry in family['entries']
+        }
+
+    pat_ret = re.compile(r'Service call returned (0x[0-9A-Fa-f]+)')
+    pat_rst = re.compile(r'rst:(0x[0-9A-Fa-f]+) \(([^)]+)\)')
+    device_rebooted = True  # True on first entry since device boots fresh
+
+    for srv_id, num_args in sorted(services.items()):
+        for iter_idx in range(FUZZ_ITERATIONS_PER_SERVICE):
+            # Re-enter the console menu only after a reboot
+            if device_rebooted:
+                dut.expect_exact('Press ENTER to see the list of tests')
+                dut.write('[fuzzing]')
+                dut.expect('esp>')
+                device_rebooted = False
+
+            # Always pass at least 1 arg; extra trailing args are ignored by the dispatcher
+            n = max(num_args, 1)
+            arg_str = ';'.join(f'0x{rng.getrandbits(32):08x}' for _ in range(n))
+            dut.write(f'fuzz -c {num_args} -i {srv_id} {arg_str}')
+
+            try:
+                # Service call either returns gracefully or crashes the device
+                match = dut.expect([pat_ret, pat_rst], timeout=3)
+            except pexpect.TIMEOUT:
+                logging.warning('Device hung, hard-resetting (srv_id: %d, iter: %d)', srv_id, iter_idx)
+                dut.serial.hard_reset()
+                device_rebooted = True
+                continue
+
+            if pat_rst.match(match.group(0).decode()):
+                # Device crashed and rebooted — verify it was a software reset
+                device_rebooted = True
+                rst_rsn = match.group(2).decode()
+                if rst_rsn not in ('LP_SW_HPSYS', 'RTC_SW_HPSYS'):
+                    logging.warning('Unexpected reset reason: "%s" (srv_id: %d, iter: %d)', rst_rsn, srv_id, iter_idx)

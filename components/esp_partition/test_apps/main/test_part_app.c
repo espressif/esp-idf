@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -188,15 +188,19 @@
  TEST(esp_partition, test_bdl_interface_readonly)
  {
     //storage3 is readonly partition
-     esp_blockdev_handle_t part_blockdev = NULL;
-     TEST_ESP_OK(esp_partition_get_blockdev(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage3", &part_blockdev));
+    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage3");
+    TEST_ASSERT_NOT_NULL(partition);
+
+    esp_blockdev_handle_t part_blockdev = NULL;
+    TEST_ESP_OK(esp_partition_get_blockdev(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage3", &part_blockdev));
 
      //test flags
      TEST_ASSERT_EQUAL(1, part_blockdev->device_flags.read_only);
-     TEST_ASSERT_EQUAL(0, part_blockdev->geometry.write_size);
-     TEST_ASSERT_EQUAL(0, part_blockdev->geometry.erase_size);
-     TEST_ASSERT_EQUAL(0, part_blockdev->geometry.recommended_write_size);
-     TEST_ASSERT_EQUAL(0, part_blockdev->geometry.recommended_erase_size);
+    const size_t expected_write_size = partition->encrypted ? 16 : 1;
+    TEST_ASSERT_EQUAL(expected_write_size, part_blockdev->geometry.write_size);
+    TEST_ASSERT_EQUAL(partition->erase_size, part_blockdev->geometry.erase_size);
+    TEST_ASSERT_EQUAL(expected_write_size, part_blockdev->geometry.recommended_write_size);
+    TEST_ASSERT_EQUAL(partition->erase_size, part_blockdev->geometry.recommended_erase_size);
 
      uint8_t dummy_test_buff[1024];
 

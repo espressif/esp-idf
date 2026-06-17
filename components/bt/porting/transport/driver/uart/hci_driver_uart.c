@@ -102,6 +102,7 @@ hci_driver_uart_rx_task(void *p)
         xQueueReceive(s_hci_driver_uart_env.rx_event_queue, &uart_event, portMAX_DELAY);
         data = s_hci_driver_uart_env.rx_data;
         while (true) {
+            // TODO: read_len maybe -1, need to handle it
             read_len = uart_read_bytes(port, data, CONFIG_BT_LE_HCI_RX_PROC_DATA_LEN, 0);
             if (read_len == 0) {
                 break;

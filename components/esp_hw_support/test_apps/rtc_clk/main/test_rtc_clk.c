@@ -50,9 +50,13 @@ TEST_CASE("RTC_SLOW_CLK sources calibration", "[rtc_clk]")
     rtc_clk_32k_enable(true);
 #endif
 
+#if SOC_CLK_RC_FAST_D256_SUPPORTED
+    rtc_clk_8m_enable(true, true);
+#endif
+
     // By default Kconfig, RTC_SLOW_CLK source is RC_SLOW
     soc_rtc_slow_clk_src_t default_rtc_slow_clk_src = rtc_clk_slow_src_get();
-    CALIBRATE_ONE(CLK_CAL_RTC_SLOW);
+    TEST_ASSERT_NOT_EQUAL(0, CALIBRATE_ONE(CLK_CAL_RTC_SLOW));
 #if SOC_CLK_RC_FAST_D256_SUPPORTED
     CALIBRATE_ONE(CLK_CAL_RC_FAST_D256);
 #endif
@@ -66,7 +70,7 @@ TEST_CASE("RTC_SLOW_CLK sources calibration", "[rtc_clk]")
         rtc_clk_slow_src_set(SOC_RTC_SLOW_CLK_SRC_XTAL32K);
         printf("done\n");
 
-        CALIBRATE_ONE(CLK_CAL_RTC_SLOW);
+        TEST_ASSERT_NOT_EQUAL(0, CALIBRATE_ONE(CLK_CAL_RTC_SLOW));
 #if SOC_CLK_RC_FAST_D256_SUPPORTED
         CALIBRATE_ONE(CLK_CAL_RC_FAST_D256);
 #endif
@@ -79,7 +83,7 @@ TEST_CASE("RTC_SLOW_CLK sources calibration", "[rtc_clk]")
     rtc_clk_slow_src_set(SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256);
     printf("done\n");
 
-    CALIBRATE_ONE(CLK_CAL_RTC_SLOW);
+    TEST_ASSERT_NOT_EQUAL(0, CALIBRATE_ONE(CLK_CAL_RTC_SLOW));
     CALIBRATE_ONE(CLK_CAL_RC_FAST_D256);
 #if SOC_CLK_XTAL32K_SUPPORTED
     CALIBRATE_ONE(CLK_CAL_32K_XTAL);
@@ -96,7 +100,7 @@ TEST_CASE("RTC_SLOW_CLK sources calibration", "[rtc_clk]")
         rtc_clk_slow_src_set(SOC_RTC_SLOW_CLK_SRC_OSC_SLOW);
         printf("done\n");
 
-        CALIBRATE_ONE(CLK_CAL_RTC_SLOW);
+        TEST_ASSERT_NOT_EQUAL(0, CALIBRATE_ONE(CLK_CAL_RTC_SLOW));
 #if SOC_CLK_RC_FAST_D256_SUPPORTED
         CALIBRATE_ONE(CLK_CAL_RC_FAST_D256);
 #endif
@@ -243,7 +247,7 @@ static void start_freq(soc_rtc_slow_clk_src_t required_src, uint32_t start_delay
             printf("PASS. Time measurement...");
         }
         uint32_t fail_measure = 0;
-#if SOC_RTC_TIMER_V2_SUPPORTED
+#if !SOC_RTC_TIMER_V1
         uint64_t clk_rtc_time;
         for (int j = 0; j < 3; ++j) {
             clk_rtc_time = esp_clk_rtc_time();
@@ -334,7 +338,7 @@ TEST_CASE("Test starting 'External 32kHz XTAL' on the board without it.", "[rtc_
 #endif // !defined(CONFIG_IDF_CI_BUILD) || !CONFIG_SPIRAM_BANKSWITCH_ENABLE
 #endif // SOC_CLK_XTAL32K_SUPPORTED
 
-#if SOC_RTC_TIMER_V2_SUPPORTED
+#if !SOC_RTC_TIMER_V1
 TEST_CASE("Test rtc clk calibration compensation", "[rtc_clk]")
 {
     int64_t t1 = esp_rtc_get_time_us();
@@ -373,7 +377,7 @@ RTC_NOINIT_ATTR
 #elif CONFIG_IDF_TARGET_ESP32C61
 #define TEMP_RTC_STORE_REG          LP_AON_DATE_REG
 #define TEMP_RTC_STORE_REG_M        LP_AON_DATE_M
-#elif CONFIG_IDF_TARGET_ESP32H4
+#elif CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32H21
 #include "soc/pmu_reg.h"
 #define TEMP_RTC_STORE_REG          PMU_DATE_REG
 #define TEMP_RTC_STORE_REG_M        PMU_PMU_DATE_M
@@ -479,4 +483,34 @@ TEST_CASE("Output 8M clock to GPIO25", "[ignore]")
     SET_PERI_REG_MASK(RTC_IO_RTC_DEBUG_SEL_REG, RTC_IO_DEBUG_12M_NO_GATING);
     pull_out_clk(RTC_IO_DEBUG_SEL0_8M);
 }
+#endif
+
+#if !CONFIG_RTC_CLK_FUNC_IN_IRAM
+static void do_restart(void)
+{
+    esp_restart();
+}
+
+#if CONFIG_FREERTOS_NUMBER_OF_CORES > 1
+static void do_restart_from_app_cpu(void)
+{
+    xTaskCreatePinnedToCore((TaskFunction_t) &do_restart, "restart", 2048, NULL, 5, NULL, 1);
+    vTaskDelay(2);
+}
+#endif
+
+static void check_reset_reason_sw(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_SW, esp_reset_reason());
+}
+
+TEST_CASE_MULTIPLE_STAGES("test rtc_clk in flash after restart", "[rtc_clk]",
+                          do_restart,
+                          check_reset_reason_sw);
+
+#if CONFIG_FREERTOS_NUMBER_OF_CORES > 1
+TEST_CASE_MULTIPLE_STAGES("test rtc_clk in flash after restart from APP CPU", "[rtc_clk]",
+                          do_restart_from_app_cpu,
+                          check_reset_reason_sw);
+#endif
 #endif

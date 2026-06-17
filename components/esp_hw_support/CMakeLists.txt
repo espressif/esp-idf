@@ -3,16 +3,26 @@ idf_build_get_property(non_os_build NON_OS_BUILD)
 
 # On Linux, we only support a few features, hence this simple component registration
 if(${target} STREQUAL "linux")
+    # "include/linux" MUST come before "include" so that Linux-specific header
+    # overrides (e.g. esp_cpu.h) take precedence over the generic versions.
     idf_component_register(SRCS "port/linux/esp_random.c"
                                  "port/linux/chip_info.c"
-                           INCLUDE_DIRS "include" "etm/include")
+                                 "port/linux/cpu.c"
+                           INCLUDE_DIRS "include/linux" "include" "etm/include")
     return()
 endif()
 
-set(requires esp_hal_gpio esp_hal_usb esp_hal_pmu)
-# only esp_hw_support/adc_share_hw_ctrl.c requires efuse component
-set(priv_requires efuse spi_flash bootloader_support esp_hal_wdt esp_hal_rtc_timer
-    esp_hal_clock esp_hal_security)
+set(requires esp_hal_gpio esp_hal_usb esp_hal_pmu esp_hal_regi2c)
+set(priv_requires efuse                 # only esp_hw_support/adc_share_hw_ctrl.c requires efuse component
+                  spi_flash
+                  bootloader_support
+                  esp_hal_wdt
+                  esp_hal_rtc_timer
+                  esp_hal_clock
+                  esp_hal_security
+                  esp_hal_systimer
+                  esp_hal_ana_conv      # sleep process requires backup/restore some ADC, TSENS registers
+                  )
 
 set(srcs "cpu.c" "port/${IDF_TARGET}/esp_cpu_intr.c" "esp_memory_utils.c" "port/${IDF_TARGET}/cpu_region_protect.c")
 if(NOT non_os_build)
@@ -27,9 +37,12 @@ if(NOT non_os_build)
                      "regi2c_ctrl.c"
                      "esp_gpio_reserve.c"
                      "sar_tsens_ctrl.c"
+                     "sar_periph_ctrl_common.c"
+                     "io_mux.c"
                      "port/${target}/io_mux.c"
                      "port/${target}/esp_clk_tree.c"
                      "spi_bus_lock.c"
+                     "heap_align_hw.c"
                      "clk_utils.c")
     if(CONFIG_SOC_USB_OTG_SUPPORTED)
         list(APPEND srcs "usb_phy/usb_phy.c")
@@ -49,14 +62,12 @@ if(NOT non_os_build)
     if(CONFIG_SOC_PAU_SUPPORTED)
         list(APPEND srcs "sleep_retention.c")
     endif()
-    if(CONFIG_SOC_MODEM_SUPPORT_ETM)
-        list(APPEND srcs "modem/modem_etm.c")
-    endif()
     if(CONFIG_SOC_PMU_SUPPORTED)
         list(APPEND srcs "pmu_share_hw.c")
     endif()
     if(CONFIG_SOC_LIGHT_SLEEP_SUPPORTED)
         list(APPEND srcs "sleep_modem.c"
+                         "sleep_cache.c"
                          "sleep_modes.c"
                          "sleep_uart.c"
                          "sleep_console.c"
@@ -105,10 +116,6 @@ if(NOT non_os_build)
     if(CONFIG_SOC_PAU_SUPPORTED)
         list(APPEND srcs "port/pau_regdma.c"
                          "port/regdma_link.c")
-    endif()
-
-    if(CONFIG_SOC_MODEM_CLOCK_IS_INDEPENDENT AND CONFIG_SOC_MODEM_CLOCK_SUPPORTED)
-        list(APPEND srcs "modem_clock.c")
     endif()
 
     if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
@@ -181,12 +188,6 @@ if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/include/soc/${target}")
     )
 endif()
 
-if(NOT CONFIG_ESP32P4_SELECTS_REV_LESS_V3 AND CONFIG_IDF_TARGET_ESP32P4)
-    if(CMAKE_C_COMPILER_ID MATCHES "Clang") # TODO: LLVM-478 IDF-14338
-        message(FATAL_ERROR "ESP32-P4 rev. 3.0 or higher is not supported in Clang-based toolchain")
-    endif()
-endif()
-
 if(${target} STREQUAL "esp32p4")
     # for mipi_csi_share_hw_ctrl.c
     list(APPEND priv_requires esp_hal_cam)
@@ -199,12 +200,15 @@ idf_component_register(SRCS ${srcs}
                        PRIV_REQUIRES "${priv_requires}"
                        LDFRAGMENTS linker.lf ldo/linker.lf mspi/linker.lf)
 
+idf_define_esp_err_codes(HEADERS include/esp_memprot_err.h)
+
 idf_build_get_property(target IDF_TARGET)
 add_subdirectory(port/${target})
 if(CONFIG_SOC_SPI_MEM_SUPPORT_TIMING_TUNING)
     add_subdirectory(mspi/mspi_timing_tuning/port/${target})
 endif()
 add_subdirectory(lowpower)
+add_subdirectory(modem)
 
 if(CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND OR CONFIG_PM_SLP_DISABLE_GPIO)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_sleep_gpio_include")

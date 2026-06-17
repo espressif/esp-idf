@@ -49,7 +49,7 @@ Using the ``idf.py menuconfig`` command in terminal or command line is the most 
 Configuration with ESP-IDF Plugin for Visual Studio Code
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-After successful `installation <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_ of the ESP-IDF plugin for Visual Studio Code, follow their `Basic Use document <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/basic_use.md>`_ and search for the **Configuration Editor** option.
+After installing the ESP-IDF plugin for Visual Studio Code, refer to the `Project Configuration Editor <https://docs.espressif.com/projects/vscode-esp-idf-extension/en/latest/additionalfeatures/project-configuration.html>`_ section in the extension documentation.
 
 Configuration with ESP-IDE
 ^^^^^^^^^^^^^^^^^^^^^^^^^^

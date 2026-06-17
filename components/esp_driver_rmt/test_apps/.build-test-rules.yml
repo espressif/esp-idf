@@ -5,3 +5,7 @@ components/esp_driver_rmt/test_apps/rmt:
     - if: SOC_RMT_SUPPORTED != 1
   depends_components:
     - esp_driver_rmt
+    - esp_driver_dma
+    - esp_hal_rmt
+    - esp_hw_support
+    - soc

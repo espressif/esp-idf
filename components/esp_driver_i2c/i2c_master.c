@@ -119,17 +119,14 @@ static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master, bool cle
     i2c_hal_get_timing_config(hal, &timing_config);
     i2c_ll_master_get_filter(hal->dev, &filter_cfg);
 
-    //to reset the I2C hw module, we need re-enable the hw
-    if (clear_bus) {
-        ret = s_i2c_master_clear_bus(i2c_master->base);
-    }
-    I2C_RCC_ATOMIC() {
+    // Run bus clear after reset and interrupt masking; reconnecting pins must not wake a stuck FSM.
+    PERIPH_RCC_ATOMIC() {
         i2c_ll_reset_register(i2c_master->base->port_num);
     }
 
     i2c_hal_master_init(hal);
     // Restore the clock source here.
-    I2C_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i2c_ll_set_source_clk(hal->dev, i2c_master->base->clk_src);
     }
     i2c_ll_enable_fifo_mode(hal->dev, true);
@@ -137,6 +134,10 @@ static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master, bool cle
     i2c_ll_clear_intr_mask(hal->dev, I2C_LL_INTR_MASK);
     i2c_hal_set_timing_config(hal, &timing_config);
     i2c_ll_master_set_filter(hal->dev, filter_cfg);
+
+    if (clear_bus) {
+        ret = s_i2c_master_clear_bus(i2c_master->base);
+    }
 #else
     i2c_ll_master_fsm_rst(hal->dev);
     if (clear_bus) {
@@ -696,7 +697,7 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
     i2c_master->read_len_static = 0;
     i2c_master->read_buf_pos = 0;
 
-    I2C_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i2c_hal_set_bus_timing(hal, i2c_dev->scl_speed_hz, i2c_master->base->clk_src, i2c_master->base->clk_src_freq_hz);
     }
 
@@ -826,7 +827,10 @@ static void i2c_master_isr_handler_default(void *arg)
         }
         xSemaphoreGiveFromISR(i2c_master->bus_lock_mux, &HPTaskAwoken);
         if (i2c_dev == NULL) {
-            return;
+            // HPTaskAwoken may have been set by xQueueSendFromISR / xSemaphoreTakeFromISR /
+            // xSemaphoreGiveFromISR above; fall through to the yield check at the end of
+            // the ISR rather than returning directly.
+            goto out;
         }
         i2c_master_event_data_t evt = {
             .event = i2c_master->event,
@@ -864,6 +868,7 @@ static void i2c_master_isr_handler_default(void *arg)
         xSemaphoreGiveFromISR(i2c_master->cmd_semphr, &HPTaskAwoken);
     }
 
+out:
     if (HPTaskAwoken == pdTRUE) {
         portYIELD_FROM_ISR();
     }
@@ -887,44 +892,52 @@ static esp_err_t i2c_param_master_config(i2c_bus_handle_t handle, const i2c_mast
 
 static esp_err_t i2c_master_bus_destroy(i2c_master_bus_handle_t bus_handle)
 {
-    ESP_RETURN_ON_FALSE(bus_handle, ESP_ERR_INVALID_ARG, TAG, "no memory for i2c master bus");
+    ESP_RETURN_ON_FALSE(bus_handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     i2c_master_bus_handle_t i2c_master = bus_handle;
     esp_err_t err = ESP_OK;
+
     if (i2c_master->base) {
-        ESP_RETURN_ON_ERROR(i2c_common_deinit_pins(i2c_master->base), TAG, "failed to deinit i2c pins");
-        err = i2c_release_bus_handle(i2c_master->base);
-    }
-    if (err == ESP_OK) {
-        if (i2c_master) {
-            if (i2c_master->bus_lock_mux) {
-                vSemaphoreDeleteWithCaps(i2c_master->bus_lock_mux);
-                i2c_master->bus_lock_mux = NULL;
-            }
-            if (i2c_master->cmd_semphr) {
-                vSemaphoreDeleteWithCaps(i2c_master->cmd_semphr);
-                i2c_master->cmd_semphr = NULL;
-            }
-            if (i2c_master->event_queue) {
-                vQueueDeleteWithCaps(i2c_master->event_queue);
-            }
-            if (i2c_master->queues_storage) {
-                free(i2c_master->queues_storage);
-            }
-            free(i2c_master->i2c_async_ops);
-            for (int i = 0; i < I2C_TRANS_QUEUE_MAX; i++) {
-                if (i2c_master->trans_queues[i]) {
-                    vQueueDelete(i2c_master->trans_queues[i]);
-                }
-            }
-            bus_handle = NULL;
+        err = i2c_common_deinit_pins(i2c_master->base);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "failed to deinit i2c pins: %s", esp_err_to_name(err));
         }
-
-        free(i2c_master);
-    } else {
-        free(i2c_master);
+        esp_err_t release_ret = i2c_release_bus_handle(i2c_master->base);
+        if (release_ret != ESP_OK) {
+            ESP_LOGE(TAG, "failed to release bus handle: %s", esp_err_to_name(release_ret));
+            if (err == ESP_OK) {
+                err = release_ret;
+            }
+        }
     }
 
-    return ESP_OK;
+    if (i2c_master->bus_lock_mux) {
+        vSemaphoreDeleteWithCaps(i2c_master->bus_lock_mux);
+        i2c_master->bus_lock_mux = NULL;
+    }
+    if (i2c_master->cmd_semphr) {
+        vSemaphoreDeleteWithCaps(i2c_master->cmd_semphr);
+        i2c_master->cmd_semphr = NULL;
+    }
+    if (i2c_master->event_queue) {
+        vQueueDeleteWithCaps(i2c_master->event_queue);
+        i2c_master->event_queue = NULL;
+    }
+    if (i2c_master->queues_storage) {
+        free(i2c_master->queues_storage);
+        i2c_master->queues_storage = NULL;
+    }
+    free(i2c_master->i2c_async_ops);
+    i2c_master->i2c_async_ops = NULL;
+    for (int i = 0; i < I2C_TRANS_QUEUE_MAX; i++) {
+        if (i2c_master->trans_queues[i]) {
+            vQueueDeleteWithCaps(i2c_master->trans_queues[i]);
+            i2c_master->trans_queues[i] = NULL;
+        }
+    }
+
+    free(i2c_master);
+
+    return err;
 }
 
 static esp_err_t s_i2c_asynchronous_transaction(i2c_master_dev_handle_t i2c_dev, i2c_operation_t *i2c_ops, size_t ops_dim, int timeout_ms)
@@ -1048,7 +1061,7 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
 
     i2c_master = heap_caps_calloc(1, sizeof(i2c_master_bus_t) + 20 * sizeof(i2c_transaction_t), I2C_MEM_ALLOC_CAPS);
 
-    ESP_RETURN_ON_FALSE(i2c_master, ESP_ERR_NO_MEM, TAG, "no memory for i2c master bus");
+    ESP_GOTO_ON_FALSE(i2c_master, ESP_ERR_NO_MEM, err, TAG, "no memory for i2c master bus");
 
     ESP_GOTO_ON_ERROR(i2c_acquire_bus_handle(i2c_port_num, &i2c_master->base, I2C_BUS_MODE_MASTER), err, TAG, "I2C bus acquire failed");
     i2c_port_num = i2c_master->base->port_num;
@@ -1061,7 +1074,7 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
     ESP_GOTO_ON_ERROR(i2c_param_master_config(i2c_master->base, bus_config), err, TAG, "i2c configure parameter failed");
 
     if (!i2c_master->base->is_lp_i2c) {
-        I2C_CLOCK_SRC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             i2c_ll_set_source_clk(hal->dev, i2c_master->base->clk_src);
         }
     }
@@ -1080,7 +1093,7 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
 
         ESP_GOTO_ON_FALSE(lp_clock_match, ESP_ERR_NOT_SUPPORTED, err, TAG, "the clock source does not support lp i2c, please check");
 
-        LP_I2C_SRC_CLK_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             lp_i2c_ll_set_source_clk(hal->dev, i2c_master->base->clk_src);
         }
     }
@@ -1101,7 +1114,7 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
     portEXIT_CRITICAL(&i2c_master->base->spinlock);
 
     if (bus_config->intr_priority) {
-        ESP_RETURN_ON_FALSE(1 << (bus_config->intr_priority) & I2C_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG, TAG, "invalid interrupt priority:%d", bus_config->intr_priority);
+        ESP_GOTO_ON_FALSE(1 << (bus_config->intr_priority) & I2C_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG, err, TAG, "invalid interrupt priority:%d", bus_config->intr_priority);
     }
 
 #if I2C_USE_RETENTION_LINK
@@ -1122,10 +1135,10 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
         i2c_master->new_queue = true;
         i2c_master->queue_size = bus_config->trans_queue_depth;
         i2c_master->queues_storage = (uint8_t*)heap_caps_calloc(bus_config->trans_queue_depth * I2C_TRANS_QUEUE_MAX, sizeof(i2c_transaction_t), I2C_MEM_ALLOC_CAPS);
-        ESP_RETURN_ON_FALSE(i2c_master->queues_storage, ESP_ERR_NO_MEM, TAG, "no mem for queue storage");
+        ESP_GOTO_ON_FALSE(i2c_master->queues_storage, ESP_ERR_NO_MEM, err, TAG, "no mem for queue storage");
         i2c_transaction_t **pp_trans_desc = (i2c_transaction_t **)i2c_master->queues_storage;
         for (int i = 0; i < I2C_TRANS_QUEUE_MAX; i++) {
-            i2c_master->trans_queues[i] = xQueueCreate(bus_config->trans_queue_depth, sizeof(i2c_transaction_t));
+            i2c_master->trans_queues[i] = xQueueCreateWithCaps(bus_config->trans_queue_depth, sizeof(i2c_transaction_t), I2C_MEM_ALLOC_CAPS);
 
             pp_trans_desc += bus_config->trans_queue_depth;
             // sanity check
@@ -1134,12 +1147,12 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
         i2c_transaction_t trans_pre = {};
         for (int i = 0; i < bus_config->trans_queue_depth ; i++) {
             trans_pre = i2c_master->i2c_trans_pool[i];
-            ESP_RETURN_ON_FALSE(xQueueSend(i2c_master->trans_queues[I2C_TRANS_QUEUE_READY], &trans_pre, 0) == pdTRUE,
-                                ESP_ERR_INVALID_STATE, TAG, "ready queue full");
+            ESP_GOTO_ON_FALSE(xQueueSend(i2c_master->trans_queues[I2C_TRANS_QUEUE_READY], &trans_pre, 0) == pdTRUE,
+                              ESP_ERR_INVALID_STATE, err, TAG, "ready queue full");
         }
 
         i2c_master->i2c_async_ops = (i2c_operation_t(*)[I2C_STATIC_OPERATION_ARRAY_MAX])heap_caps_calloc(bus_config->trans_queue_depth, sizeof(*i2c_master->i2c_async_ops), I2C_MEM_ALLOC_CAPS);
-        ESP_RETURN_ON_FALSE(i2c_master->i2c_async_ops, ESP_ERR_NO_MEM, TAG, "no mem for operations");
+        ESP_GOTO_ON_FALSE(i2c_master->i2c_async_ops, ESP_ERR_NO_MEM, err, TAG, "no mem for operations");
         i2c_master->ops_prepare_idx = 0;
 
     }
@@ -1186,7 +1199,7 @@ esp_err_t i2c_master_bus_add_device(i2c_master_bus_handle_t bus_handle, const i2
     i2c_dev->ack_check_disable = dev_config->flags.disable_ack_check;
     i2c_dev->scl_wait_us = (dev_config->scl_wait_us == 0) ? I2C_LL_SCL_WAIT_US_VAL_DEFAULT : dev_config->scl_wait_us;
 
-    i2c_master_device_list_t *device_item = (i2c_master_device_list_t *)calloc(1, sizeof(i2c_master_device_list_t));
+    i2c_master_device_list_t *device_item = (i2c_master_device_list_t *)heap_caps_calloc(1, sizeof(i2c_master_device_list_t), I2C_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE((device_item != NULL), ESP_ERR_NO_MEM, err, TAG, "no memory for i2c device item`");
     device_item->device = i2c_dev;
     xSemaphoreTake(bus_handle->bus_lock_mux, portMAX_DELAY);
@@ -1228,6 +1241,7 @@ esp_err_t i2c_master_bus_rm_device(i2c_master_dev_handle_t handle)
 
 esp_err_t i2c_del_master_bus(i2c_master_bus_handle_t bus_handle)
 {
+    ESP_RETURN_ON_FALSE(bus_handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_LOGD(TAG, "del i2c bus(%d)", bus_handle->base->port_num);
 
     // Check if the device list is empty
@@ -1385,7 +1399,7 @@ esp_err_t i2c_master_probe(i2c_master_bus_handle_t bus_handle, uint16_t address,
 
     // I2C probe does not have i2c device module. So set the clock parameter independently
     // This will not influence device transaction.
-    I2C_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i2c_ll_set_source_clk(hal->dev, bus_handle->base->clk_src);
         i2c_hal_set_bus_timing(hal, 100000, bus_handle->base->clk_src, bus_handle->base->clk_src_freq_hz);
     }

@@ -71,7 +71,16 @@ choice SPIRAM_USE
     config SPIRAM_USE_MEMMAP
         bool "Integrate RAM into memory map"
     config SPIRAM_USE_CAPS_ALLOC
-        bool "Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPIRAM)"
+        bool "Add RAM to heap_caps allocator (malloc() stays internal by default)"
+        help
+            Add SPI RAM to the capability allocator.
+
+            Use heap_caps_malloc(..., MALLOC_CAP_SPIRAM) to explicitly allocate
+            from SPI RAM. SPI RAM may also be returned by
+            heap_caps_malloc(..., MALLOC_CAP_DEFAULT), since this heap is also
+            registered with MALLOC_CAP_DEFAULT.
+
+            Standard malloc() does not allocate from SPI RAM by default in this mode.
     config SPIRAM_USE_MALLOC
         bool "Make RAM allocatable using malloc() as well"
         select FREERTOS_SUPPORT_STATIC_ALLOCATION
@@ -147,3 +156,42 @@ config SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
 
         Note the values placed into this section will not be initialized at startup and should keep its value
         after software restart.
+
+config SPIRAM_ENC_EXEMPT
+    bool "Reserve a PSRAM region exempt from encryption"
+    default n
+    depends on SPIRAM && SOC_PSRAM_ENCRYPTION_PAGE_CONFIGURABLE
+    help
+        !!! SECURITY WARNING !!!
+
+        Enabling this option carves out a region at the upper end of PSRAM (highest
+        physical addresses) that is mapped WITHOUT encryption, even when flash
+        encryption is enabled. Memory allocated
+        from this region (via MALLOC_CAP_SPIRAM_NO_ENC) is stored in plaintext in
+        PSRAM and can be observed by an attacker with physical access to the PSRAM
+        interface.
+
+        DO NOT enable this unless you have weighed the trade-off:
+          - You accept that any data placed in this region is unprotected at rest.
+          - You will only allocate workloads that are not security-sensitive (e.g.
+            video frame buffers, intermediate codec scratch buffers) into this region.
+          - You understand that PSRAM-resident TLS state, keys, or other secrets
+            MUST NOT be allocated with MALLOC_CAP_SPIRAM_NO_ENC.
+
+        Use case: PSRAM encryption imposes alignment constraints on buffers that
+        cross PSRAM. Some DMA engines (e.g. 2D-DMA) cannot satisfy these alignment
+        requirements, so DMA into encrypted PSRAM fails. This option lets such
+        workloads place their buffers in an unencrypted PSRAM region while keeping
+        the rest of PSRAM (and flash) encrypted.
+
+config SPIRAM_ENC_EXEMPT_SIZE
+    int "Size of the unencrypted PSRAM region (KB)"
+    default 256
+    range 64 65536
+    depends on SPIRAM_ENC_EXEMPT
+    help
+        Size of the PSRAM region carved out at the upper end of PSRAM (highest
+        physical addresses) and mapped without encryption. Rounded up to a multiple
+        of the MMU page size (typically 64 KB).
+        The region is registered as a separate heap pool, accessible only via
+        MALLOC_CAP_SPIRAM_NO_ENC.

@@ -53,7 +53,8 @@ typedef u16 __bitwise be16;
 #define TEST_DEFAULT_SSID "SSID_" CONFIG_IDF_TARGET TEST_SUFFIX_STR
 #define TEST_DEFAULT_PWD "PASS_" CONFIG_IDF_TARGET TEST_SUFFIX_STR
 #define TEST_DEFAULT_CHANNEL (6)
-#define CONNECT_TIMEOUT_MS   (8000)
+/* STA association can take many seconds (e.g. WPA3 peer + scan). */
+#define STA_ASSOC_WAIT_MS    (30000)
 #define MAXIMUM_RETRY (5)
 
 #define WIFI_DISCONNECT_EVENT    (1)
@@ -62,7 +63,8 @@ typedef u16 __bitwise be16;
 #define WIFI_FAIL                (1<<3)
 #define EMPH_STR(s) "****** "s" ******"
 
-#define MAX_IDLE_PERIOD      (5)
+//For station, max idle period is default 10 (1000TUs)
+#define MAX_IDLE_PERIOD      (10)
 #define ETHTYPE_IP            0x0800
 
 static const char* TAG = "test_bss_max_idle";
@@ -103,6 +105,9 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t e
         break;
     case WIFI_EVENT_AP_STACONNECTED:
         ESP_LOGI(TAG, "Wi-Fi AP got a station connected");
+        if (wifi_events) {
+            xEventGroupSetBits(wifi_events, WIFI_AP_STA_CONNECTED);
+        }
         break;
     case WIFI_EVENT_STA_CONNECTED:
         ESP_LOGI(TAG, "WIFI_EVENT_STA_CONNECTED");
@@ -229,9 +234,17 @@ static void test_bss_max_idle_sta(void)
 
 static void test_bss_max_idle_softap(void)
 {
+    s_keep_alive_received = false;
     start_wifi_as_softap();
 
-    vTaskDelay((CONNECT_TIMEOUT_MS + MAX_IDLE_PERIOD * 1000) / portTICK_PERIOD_MS);
+    EventBits_t bits = xEventGroupWaitBits(wifi_events,
+                                           WIFI_AP_STA_CONNECTED,
+                                           pdFALSE,
+                                           pdFALSE,
+                                           pdMS_TO_TICKS(STA_ASSOC_WAIT_MS));
+    TEST_ASSERT_MESSAGE(bits & WIFI_AP_STA_CONNECTED, "station did not connect to softap in time");
+
+    vTaskDelay(pdMS_TO_TICKS(MAX_IDLE_PERIOD * 1024));
 
     TEST_ASSERT(s_keep_alive_received);
     stop_wifi();

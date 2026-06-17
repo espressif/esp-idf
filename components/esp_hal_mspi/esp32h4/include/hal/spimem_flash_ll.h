@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -60,6 +60,7 @@ static inline void spimem_flash_ll_reset(spi_mem_dev_t *dev)
  *
  * @return true if last command is done, otherwise false.
  */
+__attribute__((always_inline))
 static inline bool spimem_flash_ll_cmd_is_done(const spi_mem_dev_t *dev)
 {
     return (dev->cmd.val == 0);
@@ -226,6 +227,34 @@ static inline void spimem_flash_ll_set_sus_delay(spi_mem_dev_t *dev, uint32_t dl
 }
 
 /**
+ * @brief Get trs unit values in SPI_CLK cycles
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @return uint32_t trs unit values
+ */
+static inline uint32_t spimem_flash_ll_get_trs_unit_in_cycles(spi_mem_dev_t *dev)
+{
+    uint32_t trs_unit = 0;
+    if (dev->sus_status.flash_per_dly_128 == 1) {
+        trs_unit = 128;
+    } else {
+        trs_unit = 4;
+    }
+    return trs_unit;
+}
+
+/**
+ * Configure the delay after Resume
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param dly_val delay time
+ */
+static inline void spimem_flash_ll_set_rs_delay(spi_mem_dev_t *dev, uint32_t dly_val)
+{
+    dev->ctrl1.cs_hold_dly_per = dly_val;
+}
+
+/**
  * Configure the cs hold delay time(used to set the minimum CS high time tSHSL)
  *
  * @param dev Beginning address of the peripheral registers.
@@ -346,6 +375,7 @@ static inline void spimem_flash_ll_exit_dpd(spi_mem_dev_t *dev)
  * @param buffer Buffer to hold the output data
  * @param read_len Length to get out of the buffer
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_get_buffer_data(spi_mem_dev_t *dev, void *buffer, uint32_t read_len)
 {
     if (((intptr_t)buffer % 4 == 0) && (read_len % 4 == 0)) {
@@ -371,6 +401,7 @@ static inline void spimem_flash_ll_get_buffer_data(spi_mem_dev_t *dev, void *buf
  * @param buffer Buffer holding the data
  * @param length Length of data in bytes.
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_set_buffer_data(spi_mem_dev_t *dev, const void *buffer, uint32_t length)
 {
     // Load data registers, word at a time
@@ -407,6 +438,7 @@ static inline void spimem_flash_ll_program_page(spi_mem_dev_t *dev, const void *
  * @param dev Beginning address of the peripheral registers.
  * @param pe_ops Is page program/erase operation or not.
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_user_start(spi_mem_dev_t *dev, bool pe_ops)
 {
     uint32_t usr_pe = (pe_ops ? 0x60000 : 0x40000);
@@ -510,6 +542,7 @@ static inline void spimem_flash_ll_set_clock(spi_mem_dev_t *dev, spimem_flash_ll
  * @param dev Beginning address of the peripheral registers.
  * @param bitlen Length of input, in bits.
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_set_miso_bitlen(spi_mem_dev_t *dev, uint32_t bitlen)
 {
     dev->user.usr_miso = bitlen > 0;
@@ -523,6 +556,7 @@ static inline void spimem_flash_ll_set_miso_bitlen(spi_mem_dev_t *dev, uint32_t 
  * @param dev Beginning address of the peripheral registers.
  * @param bitlen Length of output, in bits.
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_set_mosi_bitlen(spi_mem_dev_t *dev, uint32_t bitlen)
 {
     dev->user.usr_mosi = bitlen > 0;
@@ -536,6 +570,7 @@ static inline void spimem_flash_ll_set_mosi_bitlen(spi_mem_dev_t *dev, uint32_t 
  * @param command Command to send
  * @param bitlen Length of the command
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_set_command(spi_mem_dev_t *dev, uint32_t command, uint32_t bitlen)
 {
     dev->user.usr_command = 1;
@@ -560,8 +595,10 @@ static inline int spimem_flash_ll_get_addr_bitlen(spi_mem_dev_t *dev)
  * @param dev Beginning address of the peripheral registers.
  * @param bitlen Length of the address, in bits
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_set_addr_bitlen(spi_mem_dev_t *dev, uint32_t bitlen)
 {
+    dev->cache_fctrl.usr_addr_4byte = (bitlen == 32) ? 1 : 0;
     dev->user1.usr_addr_bitlen = (bitlen - 1);
     dev->user.usr_addr = bitlen ? 1 : 0;
 }
@@ -574,8 +611,19 @@ static inline void spimem_flash_ll_set_addr_bitlen(spi_mem_dev_t *dev, uint32_t 
  */
 static inline void spimem_flash_ll_set_extra_address(spi_mem_dev_t *dev, uint32_t extra_addr)
 {
-    dev->cache_fctrl.usr_addr_4byte = 0;
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->rd_status, wb_mode, extra_addr);
+    dev->rd_status.wb_mode_bitlen = 7;  // 8 - 1
+}
+
+/**
+ * Enable extra address for bits M0-M7 in DIO/QIO mode.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param wb_mode_enable true for enabling wb_mode
+ */
+static inline void spimem_flash_ll_wb_mode_enable(spi_mem_dev_t *dev, bool wb_mode_enable)
+{
+    dev->rd_status.wb_mode_en = wb_mode_enable;
 }
 
 /**
@@ -595,6 +643,7 @@ static inline void spimem_flash_ll_set_address(spi_mem_dev_t *dev, uint32_t addr
  * @param dev Beginning address of the peripheral registers.
  * @param addr Address to send
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_set_usr_address(spi_mem_dev_t *dev, uint32_t addr, uint32_t bitlen)
 {
     (void)bitlen;
@@ -607,10 +656,13 @@ static inline void spimem_flash_ll_set_usr_address(spi_mem_dev_t *dev, uint32_t 
  * @param dev Beginning address of the peripheral registers.
  * @param dummy_n Cycles of dummy phases
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_set_dummy(spi_mem_dev_t *dev, uint32_t dummy_n)
 {
     dev->user.usr_dummy = dummy_n ? 1 : 0;
-    dev->user1.usr_dummy_cyclelen = dummy_n - 1;
+    if (dummy_n > 0) {
+        dev->user1.usr_dummy_cyclelen = dummy_n - 1;
+    }
 }
 
 /**
@@ -624,6 +676,12 @@ static inline void spimem_flash_ll_set_hold(spi_mem_dev_t *dev, uint32_t hold_n)
     //not supported on esp32h4
 }
 
+/**
+ * Set CS setup time
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param cs_setup_time CS setup time
+ */
 static inline void spimem_flash_ll_set_cs_setup(spi_mem_dev_t *dev, uint32_t cs_setup_time)
 {
     //not supported on esp32h4
@@ -642,10 +700,10 @@ static inline uint8_t spimem_flash_ll_get_source_freq_mhz(void)
     uint8_t clock_val = 0;
     switch (PCR.mspi_clk_conf.mspi_func_clk_sel) {
     case 0:
-        clock_val = 48;
+        clock_val = 32;
         break;
     case 1:
-        clock_val = 8;
+        clock_val = 20;
         break;
     case 2:
         clock_val = 64;
@@ -683,6 +741,7 @@ static inline uint32_t spimem_flash_ll_calculate_clock_reg(uint8_t clkdiv)
 
  * @param level 1: 1: output high, 0: output low
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_set_wp_level(spi_mem_dev_t *dev, bool level)
 {
     dev->ctrl.wp_reg = level;
@@ -719,6 +778,7 @@ static inline void spimem_flash_ll_sync_reset(void)
  * @param user1_reg user1_reg
  * @param user2_reg user2_reg
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_get_common_command_register_info(spi_mem_dev_t *dev, uint32_t *ctrl_reg, uint32_t *user_reg, uint32_t *user1_reg, uint32_t *user2_reg)
 {
     *ctrl_reg = dev->ctrl.val;
@@ -735,6 +795,7 @@ static inline void spimem_flash_ll_get_common_command_register_info(spi_mem_dev_
  * @param user1_reg user1_reg
  * @param user2_reg user2_reg
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_set_common_command_register_info(spi_mem_dev_t *dev, uint32_t ctrl_reg, uint32_t user_reg, uint32_t user1_reg, uint32_t user2_reg)
 {
     dev->ctrl.val = ctrl_reg;

@@ -2,3 +2,7 @@
 components/esp_usb_cdc_rom_console/test_apps/usb_cdc_vfs:
   enable:
     - if: IDF_TARGET in ["esp32s3"] # reason: console components is only implemented on these targets. TODO P4: IDF-9120
+  depends_components:
+    - esp_usb_cdc_rom_console
+    - vfs
+    - esp_rom

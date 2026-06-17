@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,7 +30,7 @@
 
 static struct bt_mesh_adv_inst *adv_insts;
 
-static int adv_send(struct bt_mesh_adv_inst *inst, uint16_t *adv_duration)
+static int adv_send(struct bt_mesh_adv_inst *inst, int32_t *adv_duration)
 {
     struct net_buf *buf = inst->sending_buf;
     const struct bt_mesh_send_cb *cb = BLE_MESH_ADV(buf)->cb;
@@ -57,9 +57,10 @@ static int adv_send(struct bt_mesh_adv_inst *inst, uint16_t *adv_duration)
     case BLE_MESH_ADV_EXT_LONG_DATA:
     case BLE_MESH_ADV_EXT_LONG_RELAY_DATA:
 #endif /* CONFIG_BLE_MESH_LONG_PACKET */
-    {
-        is_ext_adv = true;
-    }
+        {
+            is_ext_adv = true;
+        }
+        __attribute__((fallthrough));
 #endif /* CONFIG_BLE_MESH_EXT_ADV */
     case BLE_MESH_ADV_PROV:
     case BLE_MESH_ADV_DATA:
@@ -150,7 +151,7 @@ static int adv_send(struct bt_mesh_adv_inst *inst, uint16_t *adv_duration)
         struct bt_mesh_ble_adv_data data = {0};
         struct bt_mesh_ble_adv_tx *tx = cb_data;
 
-        if (tx == NULL) {
+        if (tx == NULL || tx->buf == NULL || tx->buf->len < 2) {
             BT_ERR("Invalid adv user data");
             net_buf_unref(buf);
             return -EINVAL;
@@ -160,13 +161,21 @@ static int adv_send(struct bt_mesh_adv_inst *inst, uint16_t *adv_duration)
                ADV_SCAN_INT(tx->param.interval), tx->param.duration,
                tx->param.period, tx->param.count);
 
-        data.adv_data_len = tx->buf->data[0];
-        if (data.adv_data_len) {
+        data.adv_data_len = MIN(tx->buf->data[0], sizeof(data.adv_data));
+        if (data.adv_data_len && tx->buf->len >= 1 + data.adv_data_len) {
             memcpy(data.adv_data, tx->buf->data + 1, data.adv_data_len);
+        } else {
+            data.adv_data_len = 0;
         }
-        data.scan_rsp_data_len = tx->buf->data[data.adv_data_len + 1];
-        if (data.scan_rsp_data_len) {
-            memcpy(data.scan_rsp_data, tx->buf->data + data.adv_data_len + 2, data.scan_rsp_data_len);
+        if (tx->buf->len >= data.adv_data_len + 2) {
+            data.scan_rsp_data_len = MIN(tx->buf->data[data.adv_data_len + 1], sizeof(data.scan_rsp_data));
+            if (data.scan_rsp_data_len && tx->buf->len >= data.adv_data_len + 2 + data.scan_rsp_data_len) {
+                memcpy(data.scan_rsp_data, tx->buf->data + data.adv_data_len + 2, data.scan_rsp_data_len);
+            } else {
+                data.scan_rsp_data_len = 0;
+            }
+        } else {
+            data.scan_rsp_data_len = 0;
         }
         duration = tx->param.duration;
 
@@ -187,7 +196,7 @@ static int adv_send(struct bt_mesh_adv_inst *inst, uint16_t *adv_duration)
         return err;
     }
 
-    *adv_duration = duration;
+    *adv_duration = (int32_t)duration;
 
     BT_DBG("Advertising started. %u ms", duration);
     return 0;
@@ -256,12 +265,12 @@ static int find_valid_msg_from_queue(bt_mesh_queue_t *msg_queue, bt_mesh_msg_t *
     return 0;
 }
 
-static int activate_idle_adv_instance(uint32_t *update_evts, uint16_t *min_duration)
+static int activate_idle_adv_instance(uint32_t *update_evts, int32_t *min_duration)
 {
-    uint16_t cur_min_duration = K_FOREVER;
+    int32_t cur_min_duration = K_FOREVER;
     enum bt_mesh_adv_type adv_type = 0;
     bt_mesh_queue_t *msg_queue = NULL;
-    uint16_t duration = K_FOREVER;
+    int32_t duration = K_FOREVER;
     bt_mesh_msg_t msg = {0};
     uint32_t spt_mask = 0;
     uint32_t evts = 0;
@@ -381,13 +390,17 @@ static uint32_t received_adv_evts_handle(uint32_t recv_evts)
             } else
 #endif
             {
-                BLE_MESH_SEND_END_CB(0, BLE_MESH_ADV(adv_insts[i].sending_buf)->cb,
-                                     BLE_MESH_ADV(adv_insts[i].sending_buf)->cb_data);
+                if (adv_insts[i].sending_buf == NULL) {
+                    BT_WARN("sending_buf is NULL for inst %d, skipping", i);
+                } else {
+                    BLE_MESH_SEND_END_CB(0, BLE_MESH_ADV(adv_insts[i].sending_buf)->cb,
+                                         BLE_MESH_ADV(adv_insts[i].sending_buf)->cb_data);
 
-                bt_mesh_adv_buf_ref_debug(__func__, adv_insts[i].sending_buf, 4U, BLE_MESH_BUF_REF_SMALL);
+                    bt_mesh_adv_buf_ref_debug(__func__, adv_insts[i].sending_buf, 4U, BLE_MESH_BUF_REF_SMALL);
 
-                net_buf_unref(adv_insts[i].sending_buf);
-                adv_insts[i].sending_buf = NULL;
+                    net_buf_unref(adv_insts[i].sending_buf);
+                    adv_insts[i].sending_buf = NULL;
+                }
             }
 
             adv_insts[i].busy = false;
@@ -399,7 +412,7 @@ static uint32_t received_adv_evts_handle(uint32_t recv_evts)
 
 static void adv_thread(void *p)
 {
-    uint16_t adv_duration = K_FOREVER;
+    int32_t adv_duration = K_FOREVER;
     uint32_t recv_evts = 0;
     uint32_t wait_evts = 0;
 

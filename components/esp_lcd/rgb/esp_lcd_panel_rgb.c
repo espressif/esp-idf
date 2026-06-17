@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
 #include "sdkconfig.h"
 #if CONFIG_LCD_ENABLE_DEBUG_LOG
 // The local log level must be defined before including esp_log.h
-// Set the maximum log level for gptimer driver
+// Set the maximum log level for rgb lcd driver
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #endif
 #include "freertos/FreeRTOS.h"
@@ -41,13 +41,20 @@
 #include "esp_cache.h"
 #include "esp_memory_utils.h"
 #include "hal/lcd_periph.h"
-#include "soc/io_mux_reg.h"
 #include "hal/lcd_hal.h"
 #include "hal/lcd_ll.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
 #include "hal/color_hal.h"
 #include "rgb_lcd_rotation_sw.h"
+#include "esp_private/sleep_retention.h"
+
+#if SOC_HAS(AXI_GDMA)
+#include "hal/axi_dma_ll.h"
+#if AXI_DMA_LL_SUPPORT(TX_LINK_SWITCH)
+#define RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT 1
+#endif
+#endif
 
 // hardware issue workaround
 #if CONFIG_IDF_TARGET_ESP32S3
@@ -94,6 +101,14 @@ static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *rgb_panel, const 
 static void lcd_rgb_panel_release_gpio(esp_rgb_panel_t *rgb_panel);
 static void lcd_rgb_panel_start_transmission(esp_rgb_panel_t *rgb_panel);
 static void rgb_lcd_default_isr_handler(void *args);
+static esp_err_t lcd_rgb_panel_configure_gpio_matrix(const esp_lcd_rgb_panel_config_t *panel_config, int panel_id, uint64_t *gpio_reserve_mask);
+#if LCD_LL_SUPPORT(IOMUX)
+static bool lcd_rgb_panel_can_use_iomux(const esp_lcd_rgb_panel_config_t *panel_config, const soc_lcd_rgb_iomux_desc_t *iomux_desc);
+static esp_err_t lcd_rgb_panel_configure_iomux(const esp_lcd_rgb_panel_config_t *panel_config, const soc_lcd_rgb_iomux_desc_t *iomux_desc, uint64_t *gpio_reserve_mask);
+#endif // LCD_LL_SUPPORT(IOMUX)
+#if RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT
+static bool lcd_rgb_panel_link_switch_handler(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
+#endif // RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT
 
 struct esp_rgb_panel_t {
     esp_lcd_panel_t base;  // Base class of generic lcd panel
@@ -132,12 +147,13 @@ struct esp_rgb_panel_t {
     gpio_num_t data_gpio_nums[LCD_LL_GET(RGB_BUS_WIDTH)]; // GPIOs used for data lines, we keep these GPIOs for action like "invert_color"
     uint64_t gpio_reserve_mask; // GPIOs reserved by this panel, used to revoke the GPIO reservation when the panel is deleted
     uint32_t src_clk_hz;   // Peripheral source clock resolution
+    lcd_clock_source_t clk_src; // Peripheral clock source
     esp_lcd_rgb_timing_t timings;   // RGB timing parameters (e.g. pclk, sync pulse, porch width)
     int bounce_pos_px;              // Position in whatever source material is used for the bounce buffer, in pixels
     size_t bb_eof_count;            // record the number we received the DMA EOF event, compare with `expect_eof_count` in the VSYNC_END ISR
     size_t expect_eof_count;        // record the number of DMA EOF event we expected to receive
     esp_lcd_rgb_panel_draw_buf_complete_cb_t on_color_trans_done; // draw buffer completes
-    esp_lcd_rgb_panel_frame_buf_complete_cb_t on_frame_buf_complete; // callback used to notify when the bounce buffer finish copying the entire frame
+    esp_lcd_rgb_panel_frame_buf_complete_cb_t on_frame_buf_complete; // callback used to notify when the buffer can be reused safely
     esp_lcd_rgb_panel_vsync_cb_t on_vsync; // VSYNC event callback
     esp_lcd_rgb_panel_bounce_buf_fill_cb_t on_bounce_empty; // callback used to fill a bounce buffer rather than copying from the frame buffer
     void *user_ctx;                 // Reserved user's data of callback functions
@@ -205,6 +221,7 @@ static esp_err_t lcd_rgb_panel_alloc_frame_buffers(esp_rgb_panel_t *rgb_panel, c
 
         // flush data from cache to the physical memory
         if (rgb_panel->flags.fb_behind_cache) {
+            ESP_LOGD(TAG, "frame buffer %d at %p is behind the cache", i, rgb_panel->fbs[i]);
             esp_cache_msync(rgb_panel->fbs[i], rgb_panel->fb_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
         }
     }
@@ -237,9 +254,16 @@ static esp_err_t lcd_rgb_panel_destroy(esp_rgb_panel_t *rgb_panel)
 {
     // ensure the HW state machine is stopped
     lcd_ll_stop(rgb_panel->hal.dev);
-    LCD_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         lcd_ll_enable_clock(rgb_panel->hal.dev, false);
     }
+    if (rgb_panel->clk_src) {
+        esp_clk_tree_enable_src(rgb_panel->clk_src, false);
+    }
+    // force power off LCD trans buffer power
+    lcd_ll_mem_force_low_power(rgb_panel->hal.dev);
+    // disable the LCD trans buffer
+    lcd_ll_enable_trans_buffer(rgb_panel->hal.dev, false);
     if (rgb_panel->panel_id >= 0) {
         PERIPH_RCC_RELEASE_ATOMIC(soc_lcd_rgb_signals[rgb_panel->panel_id].module, ref_count) {
             if (ref_count == 0) {
@@ -284,6 +308,9 @@ static esp_err_t lcd_rgb_panel_destroy(esp_rgb_panel_t *rgb_panel)
         esp_pm_lock_release(rgb_panel->pm_lock);
         esp_pm_lock_delete(rgb_panel->pm_lock);
     }
+#endif
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    sleep_retention_power_lock_release();
 #endif
     free(rgb_panel);
     return ESP_OK;
@@ -342,6 +369,11 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
         expect_bb_eof_count = fb_size / bb_size;
     }
 
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    // acquire the retention power lock to prevent the power domain from being turned off during light sleep
+    sleep_retention_power_lock_acquire();
+#endif
+
     // calculate the number of DMA descriptors
     size_t num_dma_nodes = 0;
     // allocate memory for rgb panel
@@ -373,15 +405,22 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     lcd_hal_init(&rgb_panel->hal, panel_id);
     lcd_hal_context_t *hal = &rgb_panel->hal;
     // enable clock
-    LCD_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         lcd_ll_enable_clock(hal->dev, true);
     }
+    // power down memory during low power stage
+    lcd_ll_mem_set_low_power_mode(hal->dev, LCD_LL_MEM_LP_MODE_SHUT_DOWN);
+    // let PMU control the LCD trans buffer power
+    lcd_ll_mem_power_by_pmu(hal->dev);
+    // enable the LCD trans buffer to improve the performance and prevent underrun
+    lcd_ll_enable_trans_buffer(hal->dev, true);
     // set clock source
     ret = lcd_rgb_panel_select_clock_src(rgb_panel, rgb_panel_config->clk_src);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "set source clock failed");
+
     // reset peripheral and FIFO after we select a correct clock source
-    lcd_ll_fifo_reset(hal->dev);
     lcd_ll_reset(hal->dev);
+    lcd_ll_fifo_reset(hal->dev);
     // install interrupt service, (LCD peripheral shares the interrupt source with Camera by different mask)
     int isr_flags = LCD_RGB_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED;
     ret = esp_intr_alloc_intrstatus(soc_lcd_rgb_signals[panel_id].irq_id, isr_flags,
@@ -578,8 +617,8 @@ static esp_err_t rgb_panel_del(esp_lcd_panel_t *panel)
 static esp_err_t rgb_panel_reset(esp_lcd_panel_t *panel)
 {
     esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
-    lcd_ll_fifo_reset(rgb_panel->hal.dev);
     lcd_ll_reset(rgb_panel->hal.dev);
+    lcd_ll_fifo_reset(rgb_panel->hal.dev);
     return ESP_OK;
 }
 
@@ -590,7 +629,7 @@ static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel)
     // set pixel clock frequency
     hal_utils_clk_div_t lcd_clk_div = {};
     rgb_panel->timings.pclk_hz = lcd_hal_cal_pclk_freq(&rgb_panel->hal, rgb_panel->src_clk_hz, rgb_panel->timings.pclk_hz, &lcd_clk_div);
-    LCD_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         lcd_ll_set_group_clock_coeff(rgb_panel->hal.dev, lcd_clk_div.integer, lcd_clk_div.denominator, lcd_clk_div.numerator);
     }
     // pixel clock phase and polarity
@@ -731,7 +770,9 @@ static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
                 // it's hard to know the time when the new frame buffer starts
                 gdma_link_concat(rgb_panel->dma_fb_links[i], -1, rgb_panel->dma_fb_links[rgb_panel->cur_fb_index], 0);
             }
-
+#if RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT
+            ESP_RETURN_ON_ERROR(gdma_request_link_switch_event(rgb_panel->dma_chan), TAG, "request link switch event failed");
+#endif // RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT
         }
     }
     return ESP_OK;
@@ -795,35 +836,16 @@ static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *rgb_panel, const 
     int panel_id = rgb_panel->panel_id;
     // Set the number of output data lines
     lcd_ll_set_data_wire_width(rgb_panel->hal.dev, panel_config->data_width);
-    // connect peripheral signals via GPIO matrix
-    for (size_t i = 0; i < panel_config->data_width; i++) {
-        if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->data_gpio_nums[i])) {
-            gpio_matrix_output(panel_config->data_gpio_nums[i],
-                               soc_lcd_rgb_signals[panel_id].data_sigs[i], false, false);
-            gpio_reserve_mask |= (1ULL << panel_config->data_gpio_nums[i]);
-        }
-    }
-    if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->hsync_gpio_num)) {
-        gpio_matrix_output(panel_config->hsync_gpio_num,
-                           soc_lcd_rgb_signals[panel_id].hsync_sig, false, false);
-        gpio_reserve_mask |= (1ULL << panel_config->hsync_gpio_num);
-    }
-    if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->vsync_gpio_num)) {
-        gpio_matrix_output(panel_config->vsync_gpio_num,
-                           soc_lcd_rgb_signals[panel_id].vsync_sig, false, false);
-        gpio_reserve_mask |= (1ULL << panel_config->vsync_gpio_num);
-    }
-    // PCLK may not be necessary in some cases (i.e. VGA output)
-    if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->pclk_gpio_num)) {
-        gpio_matrix_output(panel_config->pclk_gpio_num,
-                           soc_lcd_rgb_signals[panel_id].pclk_sig, false, false);
-        gpio_reserve_mask |= (1ULL << panel_config->pclk_gpio_num);
-    }
-    // DE signal might not be necessary for some RGB LCD
-    if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->de_gpio_num)) {
-        gpio_matrix_output(panel_config->de_gpio_num,
-                           soc_lcd_rgb_signals[panel_id].de_sig, false, false);
-        gpio_reserve_mask |= (1ULL << panel_config->de_gpio_num);
+#if LCD_LL_SUPPORT(IOMUX)
+    const soc_lcd_rgb_iomux_desc_t *iomux_desc = &soc_lcd_rgb_iomux_descs[panel_id];
+    if (lcd_rgb_panel_can_use_iomux(panel_config, iomux_desc)) {
+        ESP_RETURN_ON_ERROR(lcd_rgb_panel_configure_iomux(panel_config, iomux_desc, &gpio_reserve_mask), TAG, "configure RGB iomux failed");
+        ESP_LOGD(TAG, "RGB panel uses IOMUX (data_width=%zu)", panel_config->data_width);
+    } else
+#endif // LCD_LL_SUPPORT(IOMUX)
+    {
+        ESP_RETURN_ON_ERROR(lcd_rgb_panel_configure_gpio_matrix(panel_config, panel_id, &gpio_reserve_mask), TAG, "configure RGB GPIO matrix failed");
+        ESP_LOGD(TAG, "RGB panel uses GPIO matrix (data_width=%zu)", panel_config->data_width);
     }
     // disp enable GPIO is optional, it is a general purpose output GPIO
     if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->disp_gpio_num)) {
@@ -842,6 +864,93 @@ static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *rgb_panel, const 
     }
 
     rgb_panel->gpio_reserve_mask = gpio_reserve_mask;
+    return ESP_OK;
+}
+
+#if LCD_LL_SUPPORT(IOMUX)
+static bool lcd_rgb_panel_can_use_iomux(const esp_lcd_rgb_panel_config_t *panel_config, const soc_lcd_rgb_iomux_desc_t *iomux_desc)
+{
+    for (size_t i = 0; i < panel_config->data_width; i++) {
+        if (panel_config->data_gpio_nums[i] != iomux_desc->data_pins[i].gpio_num) {
+            return false;
+        }
+    }
+    if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->hsync_gpio_num) && panel_config->hsync_gpio_num != iomux_desc->hsync_pin.gpio_num) {
+        return false;
+    }
+    if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->vsync_gpio_num) && panel_config->vsync_gpio_num != iomux_desc->vsync_pin.gpio_num) {
+        return false;
+    }
+    if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->pclk_gpio_num) && panel_config->pclk_gpio_num != iomux_desc->pclk_pin.gpio_num) {
+        return false;
+    }
+    if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->de_gpio_num) && panel_config->de_gpio_num != iomux_desc->de_pin.gpio_num) {
+        return false;
+    }
+    return true;
+}
+
+static esp_err_t lcd_rgb_panel_configure_iomux(const esp_lcd_rgb_panel_config_t *panel_config, const soc_lcd_rgb_iomux_desc_t *iomux_desc, uint64_t *gpio_reserve_mask)
+{
+    for (size_t i = 0; i < panel_config->data_width; i++) {
+        const soc_lcd_iomux_pin_desc_t *pin = &iomux_desc->data_pins[i];
+        ESP_RETURN_ON_ERROR(gpio_iomux_output(pin->gpio_num, pin->func), TAG, "set data[%zu] iomux failed", i);
+        *gpio_reserve_mask |= (1ULL << pin->gpio_num);
+    }
+    if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->hsync_gpio_num)) {
+        ESP_RETURN_ON_ERROR(gpio_iomux_output(iomux_desc->hsync_pin.gpio_num, iomux_desc->hsync_pin.func), TAG, "set hsync iomux failed");
+        *gpio_reserve_mask |= (1ULL << panel_config->hsync_gpio_num);
+    }
+    if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->vsync_gpio_num)) {
+        ESP_RETURN_ON_ERROR(gpio_iomux_output(iomux_desc->vsync_pin.gpio_num, iomux_desc->vsync_pin.func), TAG, "set vsync iomux failed");
+        *gpio_reserve_mask |= (1ULL << panel_config->vsync_gpio_num);
+    }
+    // PCLK may not be necessary in some cases (i.e. VGA output)
+    if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->pclk_gpio_num)) {
+        ESP_RETURN_ON_ERROR(gpio_iomux_output(iomux_desc->pclk_pin.gpio_num, iomux_desc->pclk_pin.func), TAG, "set pclk iomux failed");
+        *gpio_reserve_mask |= (1ULL << panel_config->pclk_gpio_num);
+    }
+    // DE signal might not be necessary for some RGB LCD
+    if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->de_gpio_num)) {
+        ESP_RETURN_ON_ERROR(gpio_iomux_output(iomux_desc->de_pin.gpio_num, iomux_desc->de_pin.func), TAG, "set de iomux failed");
+        *gpio_reserve_mask |= (1ULL << panel_config->de_gpio_num);
+    }
+    return ESP_OK;
+}
+#endif // LCD_LL_SUPPORT(IOMUX)
+
+static esp_err_t lcd_rgb_panel_configure_gpio_matrix(const esp_lcd_rgb_panel_config_t *panel_config, int panel_id, uint64_t *gpio_reserve_mask)
+{
+    // connect peripheral signals via GPIO matrix
+    for (size_t i = 0; i < panel_config->data_width; i++) {
+        if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->data_gpio_nums[i])) {
+            gpio_matrix_output(panel_config->data_gpio_nums[i],
+                               soc_lcd_rgb_signals[panel_id].data_sigs[i], false, false);
+            *gpio_reserve_mask |= (1ULL << panel_config->data_gpio_nums[i]);
+        }
+    }
+    if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->hsync_gpio_num)) {
+        gpio_matrix_output(panel_config->hsync_gpio_num,
+                           soc_lcd_rgb_signals[panel_id].hsync_sig, false, false);
+        *gpio_reserve_mask |= (1ULL << panel_config->hsync_gpio_num);
+    }
+    if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->vsync_gpio_num)) {
+        gpio_matrix_output(panel_config->vsync_gpio_num,
+                           soc_lcd_rgb_signals[panel_id].vsync_sig, false, false);
+        *gpio_reserve_mask |= (1ULL << panel_config->vsync_gpio_num);
+    }
+    // PCLK may not be necessary in some cases (i.e. VGA output)
+    if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->pclk_gpio_num)) {
+        gpio_matrix_output(panel_config->pclk_gpio_num,
+                           soc_lcd_rgb_signals[panel_id].pclk_sig, false, false);
+        *gpio_reserve_mask |= (1ULL << panel_config->pclk_gpio_num);
+    }
+    // DE signal might not be necessary for some RGB LCD
+    if (GPIO_IS_VALID_OUTPUT_GPIO(panel_config->de_gpio_num)) {
+        gpio_matrix_output(panel_config->de_gpio_num,
+                           soc_lcd_rgb_signals[panel_id].de_sig, false, false);
+        *gpio_reserve_mask |= (1ULL << panel_config->de_gpio_num);
+    }
     return ESP_OK;
 }
 
@@ -881,11 +990,12 @@ static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *rgb_panel, lcd_
 {
     // get clock source frequency
     uint32_t src_clk_hz = 0;
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), TAG, "clock source enable failed");
+    rgb_panel->clk_src = clk_src;
     ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_clk_hz),
                         TAG, "get clock source frequency failed");
     rgb_panel->src_clk_hz = src_clk_hz;
-    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), TAG, "clock source enable failed");
-    LCD_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         lcd_ll_select_clk_src(rgb_panel->hal.dev, clk_src);
     }
 
@@ -942,15 +1052,9 @@ static IRAM_ATTR bool lcd_rgb_panel_fill_bounce_buffer(esp_rgb_panel_t *panel, u
 
     // Preload the next bit of buffer to the cache memory, this can improve the performance
     if (panel->num_fbs > 0 && panel->flags.fb_behind_cache) {
-#if CONFIG_IDF_TARGET_ESP32S3
-        Cache_Start_DCache_Preload((uint32_t)&panel->fbs[panel->bb_fb_index][panel->bounce_pos_px * bytes_per_pixel],
-                                   panel->bb_size, 0);
-#elif CONFIG_IDF_TARGET_ESP32P4
-        Cache_Start_L2_Cache_Preload((uint32_t)&panel->fbs[panel->bb_fb_index][panel->bounce_pos_px * bytes_per_pixel],
-                                     panel->bb_size, 0);
-#else
-#error "Unsupported target"
-#endif
+        cache_hal_preload(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA,
+                          (uint32_t)&panel->fbs[panel->bb_fb_index][panel->bounce_pos_px * bytes_per_pixel],
+                          panel->bb_size, CACHE_PRELOAD_ORDER_ASCENDING);
     }
     return need_yield;
 }
@@ -969,7 +1073,7 @@ static IRAM_ATTR bool lcd_rgb_panel_eof_handler(gdma_channel_handle_t dma_chan, 
         portEXIT_CRITICAL_ISR(&rgb_panel->spinlock);
         need_yield = lcd_rgb_panel_fill_bounce_buffer(rgb_panel, rgb_panel->bounce_buffer[bb]);
     } else {
-        // if not bounce buffer, the DMA EOF event means the end of a frame has been sent out to the LCD controller
+        // Once the preload has already done, the buffer complete callback is not reliable.
         if (rgb_panel->on_frame_buf_complete) {
             if (rgb_panel->on_frame_buf_complete(&rgb_panel->base, NULL, rgb_panel->user_ctx)) {
                 need_yield = true;
@@ -978,6 +1082,24 @@ static IRAM_ATTR bool lcd_rgb_panel_eof_handler(gdma_channel_handle_t dma_chan, 
     }
     return need_yield;
 }
+
+#if RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT
+static IRAM_ATTR bool lcd_rgb_panel_link_switch_handler(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
+{
+    (void)dma_chan;
+    (void)event_data;
+    bool need_yield = false;
+    esp_rgb_panel_t *rgb_panel = (esp_rgb_panel_t *)user_data;
+
+    if (rgb_panel->on_frame_buf_complete) {
+        if (rgb_panel->on_frame_buf_complete(&rgb_panel->base, NULL, rgb_panel->user_ctx)) {
+            need_yield = true;
+        }
+    }
+
+    return need_yield;
+}
+#endif // RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT
 
 static esp_err_t lcd_rgb_create_dma_channel(esp_rgb_panel_t *rgb_panel)
 {
@@ -1005,11 +1127,19 @@ static esp_err_t lcd_rgb_create_dma_channel(esp_rgb_panel_t *rgb_panel)
     // get the memory alignment required by the DMA
     gdma_get_alignment_constraints(rgb_panel->dma_chan, &rgb_panel->int_mem_align, &rgb_panel->ext_mem_align);
 
-    // register DMA EOF callback
+    // register DMA event callbacks
     gdma_tx_event_callbacks_t cbs = {
+#if RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT
+        // if no bounce buffer, the DMA EOF event means the end of a frame has been sent out to the LCD controller.
+        // But the dma link may have preloaded the next frame with the current buffer.
+        // So we need to wait for the GDMA link switch event to invoke the on_frame_buf_complete callback.
+        .on_trans_eof = (rgb_panel->flags.stream_mode && !rgb_panel->bb_size) ? NULL : lcd_rgb_panel_eof_handler,
+        .on_link_switch = lcd_rgb_panel_link_switch_handler,
+#else
         .on_trans_eof = lcd_rgb_panel_eof_handler,
+#endif // RGB_LCD_USE_GDMA_LINK_SWITCH_EVENT
     };
-    ESP_RETURN_ON_ERROR(gdma_register_tx_event_callbacks(rgb_panel->dma_chan, &cbs, rgb_panel), TAG, "register DMA EOF callback failed");
+    ESP_RETURN_ON_ERROR(gdma_register_tx_event_callbacks(rgb_panel->dma_chan, &cbs, rgb_panel), TAG, "register DMA event callbacks failed");
 
     return ESP_OK;
 }
@@ -1188,10 +1318,10 @@ static IRAM_ATTR void lcd_rgb_panel_try_restart_transmission(esp_rgb_panel_t *pa
 static void lcd_rgb_panel_start_transmission(esp_rgb_panel_t *rgb_panel)
 {
     // reset FIFO of DMA and LCD, in case there remains old frame data
-    gdma_reset(rgb_panel->dma_chan);
     lcd_ll_stop(rgb_panel->hal.dev);
     lcd_ll_reset(rgb_panel->hal.dev);
     lcd_ll_fifo_reset(rgb_panel->hal.dev);
+    gdma_reset(rgb_panel->dma_chan);
 
     // pre-fill bounce buffers if needed
     if (rgb_panel->bb_size) {
@@ -1220,7 +1350,7 @@ IRAM_ATTR static void lcd_rgb_panel_try_update_pclk(esp_rgb_panel_t *rgb_panel)
     if (unlikely(rgb_panel->flags.need_update_pclk)) {
         rgb_panel->flags.need_update_pclk = false;
         rgb_panel->timings.pclk_hz = lcd_hal_cal_pclk_freq(&rgb_panel->hal, rgb_panel->src_clk_hz, rgb_panel->timings.pclk_hz, &lcd_clk_div);
-        LCD_CLOCK_SRC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             lcd_ll_set_group_clock_coeff(rgb_panel->hal.dev, lcd_clk_div.integer, lcd_clk_div.denominator, lcd_clk_div.numerator);
         }
     }

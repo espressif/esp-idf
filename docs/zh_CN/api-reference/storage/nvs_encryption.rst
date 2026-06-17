@@ -148,7 +148,11 @@ NVS API 函数 ``nvs_get_*`` 或 ``nvs_set_*`` 也可用于读取和写入加密
 
 - 要为默认 NVS 分区启用加密，无需额外的步骤。在启用 :ref:`CONFIG_NVS_ENCRYPTION` 时，API 函数 :cpp:func:`nvs_flash_init` 会根据使用的方案（由 :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` 设置）在内部执行一些额外步骤，为默认的 NVS 分区启用加密。
 
-- 在基于 flash 加密的方案中，加密密钥由找到的第一个 :ref:`nvs_encr_key_partition` 生成。在 HMAC 方案中，密钥由 :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` 中烧录的 HMAC 密钥生成（参考 API 文档以了解更多详细信息）。
+- 在基于 flash 加密的方案中，加密密钥由找到的第一个 :ref:`nvs_encr_key_partition` 生成。
+
+.. only:: SOC_HMAC_SUPPORTED
+
+    在 HMAC 方案中，密钥由 :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` 中烧录的 HMAC 密钥生成（参考 API 文档以了解更多详细信息）。
 
 另外，还可使用 API 函数 :cpp:func:`nvs_flash_secure_init` 为默认 NVS 分区启用加密。
 

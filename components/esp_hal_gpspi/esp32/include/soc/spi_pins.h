@@ -23,7 +23,7 @@
 #define SPI_D2WD_PIN_NUM_WP         7
 #define SPI_D2WD_PIN_NUM_HD         11
 
-#define SPI2_FUNC_NUM           1
+#define SPI2_FUNC_NUM_QUAD      1
 #define SPI2_IOMUX_PIN_NUM_MISO 12
 #define SPI2_IOMUX_PIN_NUM_MOSI 13
 #define SPI2_IOMUX_PIN_NUM_CLK  14

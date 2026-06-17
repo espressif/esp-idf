@@ -30,7 +30,7 @@ TEST_CASE("Basic BitScrambler I/O", "[bs]")
         data_out[i] = 0xFF;
     }
     bitscrambler_handle_t bs;
-    TEST_ESP_OK(bitscrambler_loopback_create(&bs, SOC_BITSCRAMBLER_ATTACH_I2S0, len));
+    TEST_ESP_OK(bitscrambler_loopback_create(&bs, SOC_BITSCRAMBLER_ATTACH_GPSPI2, len));
     TEST_ESP_OK(bitscrambler_load_program(bs, bitscrambler_program_trivial));
     size_t res_len;
     TEST_ESP_OK(bitscrambler_loopback_run(bs, data_in, len, data_out, len, &res_len));
@@ -50,7 +50,7 @@ TEST_CASE("Timeout on stuck program", "[bs]")
     uint8_t *data_out = heap_caps_aligned_calloc(8, 1, len, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     bitscrambler_handle_t bs;
 
-    TEST_ESP_OK(bitscrambler_loopback_create(&bs, SOC_BITSCRAMBLER_ATTACH_I2S0, len));
+    TEST_ESP_OK(bitscrambler_loopback_create(&bs, SOC_BITSCRAMBLER_ATTACH_GPSPI2, len));
     TEST_ESP_OK(bitscrambler_load_program(bs, bitscrambler_program_timeout));
     esp_err_t err = bitscrambler_loopback_run(bs, data_in, len, data_out, len, NULL);
     TEST_ASSERT(err == ESP_ERR_TIMEOUT);
@@ -68,7 +68,7 @@ TEST_CASE("BitScrambler with EOF counted on upstream", "[bs]")
     TEST_ASSERT_NOT_NULL(data_out);
 
     bitscrambler_handle_t bs;
-    TEST_ESP_OK(bitscrambler_loopback_create(&bs, SOC_BITSCRAMBLER_ATTACH_I2S0, len * 4));
+    TEST_ESP_OK(bitscrambler_loopback_create(&bs, SOC_BITSCRAMBLER_ATTACH_GPSPI2, len * 4));
     TEST_ESP_OK(bitscrambler_load_program(bs, bitscrambler_program_eof_upstream));
     size_t res_len = 0;
     TEST_ESP_OK(bitscrambler_loopback_run(bs, data_in, len, data_out, len * 4, &res_len));
@@ -97,7 +97,7 @@ TEST_CASE("BitScrambler with EOF counted on downstream", "[bs]")
     TEST_ASSERT_NOT_NULL(data_out);
 
     bitscrambler_handle_t bs;
-    TEST_ESP_OK(bitscrambler_loopback_create(&bs, SOC_BITSCRAMBLER_ATTACH_I2S0, len * 4));
+    TEST_ESP_OK(bitscrambler_loopback_create(&bs, SOC_BITSCRAMBLER_ATTACH_GPSPI2, len * 4));
     TEST_ESP_OK(bitscrambler_load_program(bs, bitscrambler_program_eof_downstream));
     size_t res_len = 0;
     TEST_ESP_OK(bitscrambler_loopback_run(bs, data_in, len, data_out, len * 4, &res_len));
@@ -126,7 +126,7 @@ TEST_CASE("BitScrambler with LUT32", "[bs]")
     TEST_ASSERT_NOT_NULL(data_out);
 
     bitscrambler_handle_t bs;
-    TEST_ESP_OK(bitscrambler_loopback_create(&bs, SOC_BITSCRAMBLER_ATTACH_I2S0, len * 4));
+    TEST_ESP_OK(bitscrambler_loopback_create(&bs, SOC_BITSCRAMBLER_ATTACH_GPSPI2, len * 4));
     TEST_ESP_OK(bitscrambler_load_program(bs, bitscrambler_program_lut32));
     size_t res_len = 0;
     TEST_ESP_OK(bitscrambler_loopback_run(bs, data_in, len, data_out, len * 4, &res_len));
@@ -165,7 +165,7 @@ TEST_CASE("BitScrambler with loop instruction", "[bs]")
     TEST_ASSERT_NOT_NULL(data_out);
 
     bitscrambler_handle_t bs;
-    TEST_ESP_OK(bitscrambler_loopback_create(&bs, SOC_BITSCRAMBLER_ATTACH_I2S0, len));
+    TEST_ESP_OK(bitscrambler_loopback_create(&bs, SOC_BITSCRAMBLER_ATTACH_GPSPI2, len));
     TEST_ESP_OK(bitscrambler_load_program(bs, bitscrambler_program_loop));
     size_t res_len = 0;
     TEST_ESP_OK(bitscrambler_loopback_run(bs, data_in, sizeof(data_in) / sizeof(data_in[0]), data_out, len, &res_len));

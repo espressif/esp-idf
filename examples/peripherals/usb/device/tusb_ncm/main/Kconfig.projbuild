@@ -12,4 +12,9 @@ menu "Example Configuration"
         help
             WiFi password (WPA or WPA2) for the example to use.
 
+    config ESP_USB_NCM_USE_WIFI_REMOTE
+        int
+        default 1 if !SOC_WIFI_SUPPORTED
+        default 0
+
 endmenu

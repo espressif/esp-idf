@@ -30,12 +30,12 @@ Tree Structure for ESP-TLS Component
     ├── esp_tls.c
     ├── esp_tls.h
     ├── esp_tls_mbedtls.c
-    ├── esp_tls_wolfssl.c
+    ├── esp_tls_custom_stack.c
     └── private_include
         ├── esp_tls_mbedtls.h
-        └── esp_tls_wolfssl.h
+        └── esp_tls_custom_stack.h
 
-The ESP-TLS component has a file :component_file:`esp-tls/esp_tls.h` which contains the public API headers for the component. Internally, the ESP-TLS component operates using either MbedTLS or WolfSSL, which are SSL/TLS libraries. APIs specific to MbedTLS are present in :component_file:`esp-tls/private_include/esp_tls_mbedtls.h` and APIs specific to WolfSSL are present in :component_file:`esp-tls/private_include/esp_tls_wolfssl.h`.
+The ESP-TLS component has a file :component_file:`esp-tls/esp_tls.h` which contains the public API headers for the component. Internally, the ESP-TLS component operates using MbedTLS as the default SSL/TLS library, or a custom TLS stack registered via the :cpp:func:`esp_tls_register_stack` API. APIs specific to MbedTLS are present in :component_file:`esp-tls/private_include/esp_tls_mbedtls.h` and APIs for custom stack registration are present in :component_file:`esp-tls/esp_tls_custom_stack.h`.
 
 .. _esp_tls_server_verification:
 
@@ -99,72 +99,110 @@ The certificate selection callback can be configured in the :cpp:type:`esp_tls_c
         cert_select_cb = cert_section_callback,
     };
 
-.. _esp_tls_wolfssl:
+.. _esp_tls_custom_stack:
 
-Underlying SSL/TLS Library Options
-----------------------------------
+Custom TLS Stack Support
+------------------------
 
-The ESP-TLS component offers the option to use MbedTLS or WolfSSL as its underlying SSL/TLS library. By default, only MbedTLS is available and used, WolfSSL SSL/TLS library is also available publicly at https://github.com/espressif/esp-wolfssl. The repository provides the WolfSSL component in binary format, and it also provides a few examples that are useful for understanding the API. Please refer to the repository ``README.md`` for information on licensing and other options. Please see the below section for instructions on how to use WolfSSL in your project.
-
-.. note::
-
-    As the library options are internal to ESP-TLS, switching the libraries will not change ESP-TLS specific code for a project.
-
-How to Use WolfSSL with ESP-IDF
--------------------------------
-
-There are two ways to use WolfSSL in your project:
-
-- Add WolfSSL as a component directly to your project. For this, go to your project directory and run:
-
-  .. code-block:: none
-
-      mkdir components
-      cd components
-      git clone --recursive https://github.com/espressif/esp-wolfssl.git
-
-- Add WolfSSL as an extra component in your project.
-
-    1. Download WolfSSL with:
-
-       .. code-block:: none
-
-           git clone --recursive https://github.com/espressif/esp-wolfssl.git
-
-    2. Include ESP-WolfSSL in ESP-IDF with setting ``EXTRA_COMPONENT_DIRS`` in ``CMakeLists.txt`` of your project as done in `wolfssl/examples <https://github.com/espressif/esp-wolfssl/tree/master/examples>`_. For reference see :ref:`optional_project_variable` in :doc:`build-system </api-guides/build-system>`.
-
-After the above steps, you will have the option to choose WolfSSL as the underlying SSL/TLS library in the configuration menu of your project as follow:
-
-.. code-block:: none
-
-    idf.py menuconfig > ESP-TLS > SSL/TLS Library > Mbedtls/Wolfssl
-
-Comparison Between MbedTLS and WolfSSL
---------------------------------------
-
-The following table shows a typical comparison between WolfSSL and MbedTLS when the :example:`protocols/https_request` example (which includes server authentication) is running with both SSL/TLS libraries and with all respective configurations set to default. For MbedTLS, the IN_CONTENT length and OUT_CONTENT length are set to 16384 bytes and 4096 bytes respectively.
-
-.. list-table::
-    :header-rows: 1
-    :widths: 40 30 30
-    :align: center
-
-    * - Property
-      - WolfSSL
-      - MbedTLS
-    * - Total Heap Consumed
-      - ~ 19 KB
-      - ~ 37 KB
-    * - Task Stack Used
-      - ~ 2.2 KB
-      - ~ 3.6 KB
-    * - Bin size
-      - ~ 858 KB
-      - ~ 736 KB
+The ESP-TLS component supports registering custom TLS stack implementations via the :cpp:func:`esp_tls_register_stack` API. This allows external components to provide their own TLS stack implementation by implementing the :cpp:type:`esp_tls_stack_ops_t` interface. Once registered, all TLS connections created after the registration will use the custom stack.
 
 .. note::
 
-    These values can vary based on configuration options and version of respective libraries.
+    As the custom stack implementation is internal to ESP-TLS, switching to a custom stack will not change ESP-TLS specific code for a project.
+
+How to Use Custom TLS Stack with ESP-IDF
+----------------------------------------
+
+To use a custom TLS stack in your project, follow these steps:
+
+1. Enable the custom stack option ``CONFIG_ESP_TLS_CUSTOM_STACK`` (Component config > ESP-TLS > SSL/TLS Library > Custom TLS stack) in menuconfig.
+
+2. Implement all required functions defined in the :cpp:type:`esp_tls_stack_ops_t` structure. The required functions are:
+
+   * ``create_ssl_handle`` - Initialize TLS/SSL context for a new connection
+   * ``handshake`` - Perform TLS handshake
+   * ``read`` - Read decrypted data from TLS connection
+   * ``write`` - Write and encrypt data to TLS connection
+   * ``conn_delete`` - Clean up TLS connection and free resources
+   * ``net_init`` - Initialize network context
+   * ``get_ssl_context`` - Get stack-specific SSL context
+   * ``get_bytes_avail`` - Get bytes available for reading
+   * ``init_global_ca_store`` - Initialize global CA store
+   * ``set_global_ca_store`` - Load CA certificates into global store
+   * ``get_global_ca_store`` - Get global CA store
+   * ``free_global_ca_store`` - Free global CA store
+   * ``get_ciphersuites_list`` - Get list of supported ciphersuites
+
+   Optional functions (can be NULL if not supported):
+
+   * ``get_client_session`` - Get client session ticket (if CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS enabled)
+   * ``free_client_session`` - Free client session (if CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS enabled)
+   * ``server_session_ticket_ctx_init`` - Initialize server session ticket context (if CONFIG_ESP_TLS_SERVER_SESSION_TICKETS enabled)
+   * ``server_session_ticket_ctx_free`` - Free server session ticket context (if CONFIG_ESP_TLS_SERVER_SESSION_TICKETS enabled)
+   * ``server_session_create`` - Create server session (server-side, can be NULL if server_session_init is provided)
+   * ``server_session_init`` - Initialize server session (server-side, can be NULL if server_session_create is provided)
+   * ``server_session_continue_async`` - Continue async server handshake (server-side, can be NULL if server_session_create is provided)
+   * ``server_session_delete`` - Delete server session (server-side, can be NULL, conn_delete will be used)
+
+3. Create a static/global structure containing your function implementations:
+
+   .. code-block:: c
+
+       #include "esp_tls_custom_stack.h"
+
+       static const esp_tls_stack_ops_t my_tls_ops = {
+           .version = ESP_TLS_STACK_OPS_VERSION,
+           .create_ssl_handle = my_create_ssl_handle,
+           .handshake = my_handshake,
+           .read = my_read,
+           .write = my_write,
+           .conn_delete = my_conn_delete,
+           .net_init = my_net_init,
+           .get_ssl_context = my_get_ssl_context,
+           .get_bytes_avail = my_get_bytes_avail,
+           .init_global_ca_store = my_init_global_ca_store,
+           .set_global_ca_store = my_set_global_ca_store,
+           .get_global_ca_store = my_get_global_ca_store,
+           .free_global_ca_store = my_free_global_ca_store,
+           .get_ciphersuites_list = my_get_ciphersuites_list,
+           // Optional functions can be NULL if not supported
+           .get_client_session = NULL,
+           .free_client_session = NULL,
+           .server_session_ticket_ctx_init = NULL,
+           .server_session_ticket_ctx_free = NULL,
+           .server_session_create = NULL,
+           .server_session_init = NULL,
+           .server_session_continue_async = NULL,
+           .server_session_delete = NULL,
+       };
+
+4. Register your custom stack before creating any TLS connections:
+
+   .. code-block:: c
+
+       void app_main(void) {
+           // The second parameter is user context passed to global callbacks
+           // (init_global_ca_store, set_global_ca_store, etc.)
+           // Use NULL if not needed, or pass a pointer for C++ implementations
+           esp_err_t ret = esp_tls_register_stack(&my_tls_ops, NULL);
+           if (ret != ESP_OK) {
+               ESP_LOGE("APP", "Failed to register TLS stack: %s", esp_err_to_name(ret));
+               return;
+           }
+
+           // Now all TLS connections will use your custom stack
+           // ... create TLS connections as usual using esp_tls_conn_new(), etc. ...
+       }
+
+.. important::
+
+    * The custom stack must be registered **before** creating any TLS connections. Calling :cpp:func:`esp_tls_register_stack` after TLS connections have been created will not affect existing connections.
+    * The :cpp:type:`esp_tls_stack_ops_t` structure must point to a static/global structure (not on the stack) as it's stored by reference.
+    * Your implementation should store stack-specific context data in the ``priv_ctx`` and ``priv_ssl`` fields of the :cpp:type:`esp_tls_t` structure.
+    * All required function pointers must be non-NULL. Optional functions can be NULL if not supported.
+    * The registration function can only be called once. Subsequent calls will return ``ESP_ERR_INVALID_STATE``.
+    * For detailed function signatures and requirements, see :component_file:`esp-tls/esp_tls_custom_stack.h`.
+
 
 ATECC608A (Secure Element) with ESP-TLS
 --------------------------------------------------
@@ -209,9 +247,9 @@ To enable the secure element support, and use it in your project for TLS connect
     Digital Signature with ESP-TLS
     ------------------------------
 
-    ESP-TLS provides support for using the Digital Signature (DS) with {IDF_TARGET_NAME}. Use of the DS for TLS is supported only when ESP-TLS is used with MbedTLS (default stack) as its underlying SSL/TLS stack. For more details on Digital Signature, please refer to the :doc:`Digital Signature (DS) </api-reference/peripherals/ds>`. The technical details of Digital Signature such as how to calculate private key parameters can be found in **{IDF_TARGET_NAME} Technical Reference Manual** > **Digital Signature (DS)** [`PDF <{IDF_TARGET_TRM_EN_URL}#digsig>`__]. The DS peripheral must be configured before it can be used to perform Digital Signature, see :ref:`configure-the-ds-peripheral`.
+    ESP-TLS provides support for using the RSA Digital Signature Peripheral (RSA_DS) with {IDF_TARGET_NAME}. Use of the RSA_DS for TLS is supported only when ESP-TLS is used with MbedTLS (default stack) as its underlying SSL/TLS stack. For more details on the RSA_DS, please refer to the :doc:`RSA Digital Signature Peripheral (RSA_DS) </api-reference/peripherals/ds>`. The technical details such as how to calculate private key parameters can be found in **{IDF_TARGET_NAME} Technical Reference Manual** > **RSA Digital Signature Peripheral (RSA_DS)** [`PDF <{IDF_TARGET_TRM_EN_URL}#digsig>`__]. The RSA_DS peripheral must be configured before it can be used to perform RSA digital signature, see :ref:`configure-the-ds-peripheral`.
 
-    The DS peripheral must be initialized with the required encrypted private key parameters, which are obtained when the DS peripheral is configured. ESP-TLS internally initializes the DS peripheral when provided with the required DS context, i.e., DS parameters. Please see the below code snippet for passing the DS context to the ESP-TLS context. The DS context passed to the ESP-TLS context should not be freed till the TLS connection is deleted.
+    The RSA_DS peripheral must be initialized with the required encrypted private key parameters, which are obtained when the RSA_DS peripheral is configured. ESP-TLS internally initializes the RSA_DS peripheral when provided with the required DS context, i.e., DS parameters. Please see the below code snippet for passing the DS context to the ESP-TLS context. The DS context passed to the ESP-TLS context should not be freed till the TLS connection is deleted.
 
     .. code-block:: c
 
@@ -227,20 +265,20 @@ To enable the secure element support, and use it in your project for TLS connect
 
     .. note::
 
-        When using Digital Signature for the TLS connection, along with the other required params, only the client certification (`clientcert_buf`) and the DS params (`ds_data`) are required and the client key (`clientkey_buf`) can be set to NULL.
+        When using the RSA_DS for the TLS connection, along with the other required params, only the client certification (`clientcert_buf`) and the DS params (`ds_data`) are required and the client key (`clientkey_buf`) can be set to NULL.
 
-    * A mutual-authentication example that utilizes the DS peripheral is shipped with the standalone `espressif/mqtt <https://components.espressif.com/components/espressif/mqtt>`__ component and internally relies on ESP-TLS for the TLS connection. Follow the component documentation to fetch and build that example.
+    * A mutual-authentication example that utilizes the RSA_DS peripheral is shipped with the standalone `espressif/mqtt <https://components.espressif.com/components/espressif/mqtt>`__ component and internally relies on ESP-TLS for the TLS connection. Follow the component documentation to fetch and build that example.
 
 .. only:: SOC_ECDSA_SUPPORTED
 
     .. _ecdsa-peri-with-esp-tls:
 
-    ECDSA Peripheral with ESP-TLS
-    -----------------------------
+    ECDSA Digital Signature Peripheral (ECDSA_DS) with ESP-TLS
+    -----------------------------------------------------------
 
-    ESP-TLS provides support for using the ECDSA peripheral with {IDF_TARGET_NAME}. The use of ECDSA peripheral is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack. The ECDSA private key should be present in the eFuse for using the ECDSA peripheral. Please refer to :doc:`ECDSA Guide <../peripherals/ecdsa>` for programming the ECDSA key in the eFuse.
+    ESP-TLS provides support for using the ECDSA Digital Signature Peripheral (ECDSA_DS) with {IDF_TARGET_NAME}. The use of the ECDSA_DS peripheral is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack. The ECDSA private key should be present in the eFuse for using the ECDSA_DS peripheral. Please refer to :doc:`ECDSA Digital Signature Peripheral (ECDSA_DS) <../peripherals/ecdsa>` for programming the ECDSA key in the eFuse.
 
-    This will enable the use of ECDSA peripheral for private key operations. As the client private key is already present in the eFuse, it need not be supplied to the :cpp:type:`esp_tls_cfg_t` structure. Please see the below code snippet for enabling the use of ECDSA peripheral for a given ESP-TLS connection.
+    This will enable the use of the ECDSA_DS peripheral for private key operations. As the client private key is already present in the eFuse, it need not be supplied to the :cpp:type:`esp_tls_cfg_t` structure. Please see the below code snippet for enabling the use of the ECDSA_DS peripheral for a given ESP-TLS connection.
 
     .. code-block:: c
 
@@ -254,7 +292,7 @@ To enable the secure element support, and use it in your project for TLS connect
 
     .. note::
 
-        When using ECDSA peripheral with TLS, only ``MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`` ciphersuite is supported. If using TLS v1.3, ``MBEDTLS_TLS1_3_AES_128_GCM_SHA256`` ciphersuite is supported.
+        When using the ECDSA_DS peripheral with TLS, only ``MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`` ciphersuite is supported. If using TLS v1.3, ``MBEDTLS_TLS1_3_AES_128_GCM_SHA256`` ciphersuite is supported.
 
 
 .. _esp_tls_client_session_tickets:
@@ -380,3 +418,4 @@ API Reference
 
 .. include-build-file:: inc/esp_tls.inc
 .. include-build-file:: inc/esp_tls_errors.inc
+.. include-build-file:: inc/esp_tls_custom_stack.inc

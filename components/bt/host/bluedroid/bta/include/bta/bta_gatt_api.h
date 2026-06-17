@@ -429,6 +429,12 @@ typedef struct {
     BD_ADDR             remote_bda;
 } tBTA_GATTC_SERVICE_CHANGE;
 
+typedef struct {
+    tBTA_GATT_STATUS    status;
+    tBTA_GATTC_IF       client_if;
+    BD_ADDR             remote_bda;
+} tBTA_GATTC_CANCEL_OPEN;
+
 typedef union {
     tBTA_GATT_STATUS        status;
     tBTA_GATTC_DIS_CMPL     dis_cmpl;    /* discovery complete */
@@ -450,6 +456,7 @@ typedef union {
     tBTA_GATTC_SERVICE_CHANGE srvc_chg;     /* service change event */
     tBTA_GATTC_SET_ASSOC    set_assoc;
     tBTA_GATTC_GET_ADDR_LIST get_addr_list;
+    tBTA_GATTC_CANCEL_OPEN  cancel_open;
 } tBTA_GATTC;
 
 /* GATTC enable callback function */
@@ -669,10 +676,17 @@ typedef union {
                                                 add char : BTA_GATTS_ADD_CHAR_EVT
                                                 add char descriptor: BTA_GATTS_ADD_CHAR_DESCR_EVT */
     tBAT_GATTS_ATTR_VAL_RESULT  attr_val;
-    tBTA_GATTS_REQ              req_data;
+    tBTA_GATTS_REQ              req_data;       /* BTA_GATTS_READ_EVT, BTA_GATTS_WRITE_EVT,
+                                                   BTA_GATTS_EXEC_WRITE_EVT, BTA_GATTS_MTU_EVT,
+                                                   BTA_GATTS_CONF_EVT (handle/value/data_len
+                                                   are carried here, not in `confirm`) */
     tBTA_GATTS_CONN             conn;           /* BTA_GATTS_CONN_EVT */
     tBTA_GATTS_CONGEST          congest;        /* BTA_GATTS_CONGEST_EVT callback data */
-    tBTA_GATTS_CONF             confirm;        /* BTA_GATTS_CONF_EVT callback data */
+    tBTA_GATTS_CONF             confirm;        /* Deprecated: retained for source/ABI compatibility
+                                                   only. BTA_GATTS_CONF_EVT actually uses `req_data`
+                                                   because handle/value/data_len are required by the
+                                                   public API. Do NOT add new producers/consumers
+                                                   that read or write this member. */
     tBTA_GATTS_CLOSE            close;          /* BTA_GATTS_CLOSE_EVT callback data */
     tBTA_GATTS_OPEN             open;           /* BTA_GATTS_OPEN_EVT callback data */
     tBTA_GATTS_CANCEL_OPEN      cancel_open;    /* tBTA_GATTS_CANCEL_OPEN callback data */

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,9 +8,15 @@
 
 #include "ble_log.h"
 #include <stdio.h>
+#include <string.h>
 
+#ifndef CONCAT
 #define CONCAT(a, b) a##b
+#endif
+
+#ifndef _CONCAT
 #define _CONCAT(a, b) CONCAT(a, b)
+#endif
 
 #define _0 0
 #define _1 1
@@ -26,8 +32,10 @@
 #define __COUNT_ARGS(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _n, X...) _n
 #define COUNT_ARGS(X...) __COUNT_ARGS(, ##X, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
 
+#ifndef FOR_EACH_IDX
 #define FOR_EACH_IDX(macro, name, len, ...) \
     _CONCAT(_FOR_EACH_, COUNT_ARGS(__VA_ARGS__))(macro, name, len, __VA_ARGS__)
+#endif
 
 #define _FOR_EACH_0(m, n, l, ...)
 #define _FOR_EACH_1(m, n, l, i1, ...) m(n, l, i1)
@@ -49,6 +57,8 @@ enum {
     BLE_COMPRESSED_LOG_OUT_SOURCE_HOST,
     BLE_COMPRESSED_LOG_OUT_SOURCE_MESH,
     BLE_COMPRESSED_LOG_OUT_SOURCE_MESH_LIB,
+    BLE_COMPRESSED_LOG_OUT_SOURCE_ISO,
+    BLE_COMPRESSED_LOG_OUT_SOURCE_AUDIO_LIB,
 };
 
 enum {
@@ -86,7 +96,7 @@ typedef struct {
 #define CONTENT_CHECK(idx, buf, except_val, len)
 #define LENGTH_CHECK(idx, pbuffer_mgmt) do ( if(unlikely((idx) > (pbuffer_mgmt->len))) assert(0 && "Maximum log buffer length exceeded");) while(0)
 
-#define BLE_LOG_CP_CONTENT_CHECK_ENBALE 0
+#define BLE_LOG_CP_CONTENT_CHECK_ENABLE 0
 #define BLE_LOG_CP_CONTENT_CHECK_VAL 0x00
 
 static inline int ble_log_cp_buffer_safe_check(ble_cp_log_buffer_mgmt_t *pbuf_mgmt, uint16_t write_len)
@@ -95,7 +105,7 @@ static inline int ble_log_cp_buffer_safe_check(ble_cp_log_buffer_mgmt_t *pbuf_mg
         printf("Maximum length of buffer(%p) idx %d write_len %d exceed\n", pbuf_mgmt, pbuf_mgmt->idx, write_len);
         return -1;
     }
-#if BLE_LOG_CP_CONTENT_CHECK_ENBALE
+#if BLE_LOG_CP_CONTENT_CHECK_ENABLE
     for (int i = pbuf_mgmt->idx; i < pbuf_mgmt->idx + write_len; i++) {
         if (pbuf_mgmt->buffer[i] != BLE_LOG_CP_CONTENT_CHECK_VAL) {
             printf("The value(%02x) in the buffer does not match the expected(%02x)\n", pbuf_mgmt->buffer[i], BLE_LOG_CP_CONTENT_CHECK_VAL);
@@ -121,8 +131,7 @@ static inline int ble_log_cp_push_u16(ble_cp_log_buffer_mgmt_t *pbuf_mgmt, uint1
     if (ble_log_cp_buffer_safe_check(pbuf_mgmt, 2)) {
         return -1;
     }
-    uint16_t *p = (uint16_t *)&(pbuf_mgmt->buffer[pbuf_mgmt->idx]);
-    *p = val;
+    memcpy(&(pbuf_mgmt->buffer[pbuf_mgmt->idx]), &val, sizeof(val));
     pbuf_mgmt->idx+=2;
     return 0;
 }
@@ -132,8 +141,7 @@ static inline int ble_log_cp_push_u32(ble_cp_log_buffer_mgmt_t *pbuf_mgmt, uint3
     if (ble_log_cp_buffer_safe_check(pbuf_mgmt, 4)) {
         return -1;
     }
-    uint32_t *p = (uint32_t *)&(pbuf_mgmt->buffer[pbuf_mgmt->idx]);
-    *p = val;
+    memcpy(&(pbuf_mgmt->buffer[pbuf_mgmt->idx]), &val, sizeof(val));
     pbuf_mgmt->idx+=4;
     return 0;
 }
@@ -143,8 +151,7 @@ static inline int ble_log_cp_push_u64(ble_cp_log_buffer_mgmt_t *pbuf_mgmt, uint6
     if (ble_log_cp_buffer_safe_check(pbuf_mgmt, 8)) {
         return -1;
     }
-    uint64_t *p = (uint64_t *)&(pbuf_mgmt->buffer[pbuf_mgmt->idx]);
-    *p = val;
+    memcpy(&(pbuf_mgmt->buffer[pbuf_mgmt->idx]), &val, sizeof(val));
     pbuf_mgmt->idx+=8;
     return 0;
 }

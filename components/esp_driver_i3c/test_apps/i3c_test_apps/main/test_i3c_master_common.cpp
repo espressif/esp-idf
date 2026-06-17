@@ -186,10 +186,9 @@ TEST_CASE("I3C master clock frequency test", "[i3c]")
     i3c_master_i2c_device_handle_t dev_1;
     TEST_ESP_OK(i3c_master_bus_add_i2c_device(bus_handle, &dev_cfg_1, &dev_1));
 
-    uart_bitrate_detect_config_t conf = {
-        .rx_io_num = I3C_MASTER_SCL_IO,
-        .source_clk = UART_SCLK_DEFAULT,
-    };
+    uart_bitrate_detect_config_t conf = {};
+    conf.rx_io_num = I3C_MASTER_SCL_IO;
+    conf.source_clk = UART_SCLK_DEFAULT;
     uart_bitrate_res_t res = {};
     uart_detect_bitrate_start(UART_NUM_1, &conf);
 

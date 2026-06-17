@@ -4,6 +4,38 @@ components/esp_wifi/test_apps/:
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
 
+  disable_test:
+    - if: IDF_TARGET in ["esp32s31"]
+      temporary: true
+      reason: lack of runner
+  depends_components:
+    - esp_hw_support
+    - esp_rom
+    - esp_system
+    - esp_timer
+    - freertos
+    - esp_event
+    - esp_wifi
+    - esp_phy
+    - esp_netif
+    - esp_coex
+    - wpa_supplicant
+    - mbedtls
+    - esp_pm
+
 components/esp_wifi/test_apps/wifi_nvs_config:
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32s31"]
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - esp_hw_support
+    - esp_rom
+    - esp_system
+    - esp_timer
+    - freertos
+    - esp_event
+    - nvs_flash
+    - esp_wifi

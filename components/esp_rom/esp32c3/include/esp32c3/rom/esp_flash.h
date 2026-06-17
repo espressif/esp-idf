@@ -16,7 +16,6 @@ extern "C" {
    just adds ROM-specific parts
 */
 
-struct spi_flash_chip_t;
 typedef struct esp_flash_t esp_flash_t;
 
 /* Structure to wrap "global" data used by esp_flash in ROM */

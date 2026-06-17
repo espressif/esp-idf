@@ -124,9 +124,11 @@
 #include <sys/param.h>
 #include <assert.h>
 #include "linenoise.h"
+#if !CONFIG_IDF_TARGET_LINUX
 #if CONFIG_LIBC_PICOLIBC
 #include <stdio-bufio.h>
 #endif
+#endif // !CONFIG_IDF_TARGET_LINUX
 
 #if CONFIG_LIBC_PICOLIBC && !CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY
 __thread FILE *linenoise_stdin;

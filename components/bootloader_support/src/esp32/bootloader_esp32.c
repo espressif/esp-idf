@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,8 @@
 #include "soc/gpio_sig_map.h"
 #include "soc/io_mux_reg.h"
 #include "soc/rtc.h"
+#include "soc/soc_caps.h"
+
 #include "hal/gpio_hal.h"
 #include "hal/mmu_hal.h"
 #include "xtensa/config/core.h"
@@ -88,14 +90,15 @@ static inline esp_err_t bootloader_check_rated_cpu_clock(void)
     return ESP_OK;
 }
 
-static void wdt_reset_cpu0_info_enable(void)
+#if SOC_RTC_WDT_SUPPORTED
+void bootloader_enable_cpu_reset_info(void)
 {
     //We do not reset core1 info here because it didn't work before cpu1 was up. So we put it into call_start_cpu1.
     DPORT_REG_SET_BIT(DPORT_PRO_CPU_RECORD_CTRL_REG, DPORT_PRO_CPU_PDEBUG_ENABLE | DPORT_PRO_CPU_RECORD_ENABLE);
     DPORT_REG_CLR_BIT(DPORT_PRO_CPU_RECORD_CTRL_REG, DPORT_PRO_CPU_RECORD_ENABLE);
 }
 
-static void wdt_reset_info_dump(int cpu)
+void bootloader_dump_wdt_reset_info(int cpu)
 {
     uint32_t inst = 0, pid = 0, stat = 0, data = 0, pc = 0,
              lsstat = 0, lsaddr = 0, lsdata = 0, dstat = 0;
@@ -142,32 +145,24 @@ static void wdt_reset_info_dump(int cpu)
     ESP_LOGD(TAG, "WDT rst info: %s CPU PDEBUGLS0DATA 0x%08"PRIx32, cpu_name, lsdata);
 }
 
-static void bootloader_check_wdt_reset(void)
+bool bootloader_check_if_wdt_reset(int cpu, soc_reset_reason_t rst_reason)
 {
-    int wdt_rst = 0;
-    soc_reset_reason_t rst_reas[2];
-
-    rst_reas[0] = esp_rom_get_reset_reason(0);
-    rst_reas[1] = esp_rom_get_reset_reason(1);
-    if (rst_reas[0] == RESET_REASON_CORE_RTC_WDT || rst_reas[0] == RESET_REASON_CORE_MWDT0 || rst_reas[0] == RESET_REASON_CORE_MWDT1 ||
-        rst_reas[0] == RESET_REASON_CPU0_MWDT0 || rst_reas[0] == RESET_REASON_CPU0_RTC_WDT) {
+    if (cpu == 0 && (rst_reason == RESET_REASON_CORE_RTC_WDT || rst_reason == RESET_REASON_CORE_MWDT0 ||
+                     rst_reason == RESET_REASON_CORE_MWDT1 || rst_reason == RESET_REASON_CPU0_MWDT0 ||
+                     rst_reason == RESET_REASON_CPU0_RTC_WDT)) {
         ESP_LOGW(TAG, "PRO CPU has been reset by WDT");
-        wdt_rst = 1;
+        return true;
     }
-    if (rst_reas[1] == RESET_REASON_CORE_RTC_WDT || rst_reas[1] == RESET_REASON_CORE_MWDT0 || rst_reas[1] == RESET_REASON_CORE_MWDT1 ||
-        rst_reas[1] == RESET_REASON_CPU1_MWDT1 || rst_reas[1] == RESET_REASON_CPU1_RTC_WDT) {
+    if (cpu == 1 && (rst_reason == RESET_REASON_CORE_RTC_WDT || rst_reason == RESET_REASON_CORE_MWDT0 ||
+                     rst_reason == RESET_REASON_CORE_MWDT1 || rst_reason == RESET_REASON_CPU1_MWDT1 ||
+                     rst_reason == RESET_REASON_CPU1_RTC_WDT)) {
         ESP_LOGW(TAG, "APP CPU has been reset by WDT");
-        wdt_rst = 1;
+        return true;
     }
-    if (wdt_rst) {
-        // if reset by WDT dump info from trace port
-        wdt_reset_info_dump(0);
-#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-        wdt_reset_info_dump(1);
-#endif
-    }
-    wdt_reset_cpu0_info_enable();
+    return false;
 }
+
+#endif // SOC_RTC_WDT_SUPPORTED
 
 esp_err_t bootloader_init(void)
 {
@@ -240,10 +235,12 @@ esp_err_t bootloader_init(void)
     }
 #endif // #if !CONFIG_APP_BUILD_TYPE_RAM
 
-    // check whether a WDT reset happened
-    bootloader_check_wdt_reset();
+    // check reset reason and dump diagnostic info
+    bootloader_check_reset();
+#if SOC_RTC_WDT_SUPPORTED || SOC_WDT_SUPPORTED
     // config WDT
     bootloader_config_wdt();
+#endif
     // enable RNG early entropy source
     bootloader_enable_random();
     return ret;

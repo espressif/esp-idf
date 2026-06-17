@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 00c61e1122b40bab1153117e162a713c
+// md5_digest_table 4d334deda739743601735f09078a9fd5
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -79,6 +79,14 @@ static const esp_efuse_desc_t WR_DIS_DIS_DOWNLOAD_MANUAL_ENCRYPT[] = {
     {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of DIS_DOWNLOAD_MANUAL_ENCRYPT,
 };
 
+static const esp_efuse_desc_t WR_DIS_PVT_GLITCH_EN[] = {
+    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of PVT_GLITCH_EN,
+};
+
+static const esp_efuse_desc_t WR_DIS_PVT_GLITCH_MODE[] = {
+    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of PVT_GLITCH_MODE,
+};
+
 static const esp_efuse_desc_t WR_DIS_SPI_BOOT_CRYPT_CNT[] = {
     {EFUSE_BLK0, 4, 1}, 	 // [] wr_dis of SPI_BOOT_CRYPT_CNT,
 };
@@ -133,6 +141,10 @@ static const esp_efuse_desc_t WR_DIS_XTS_DPA_CLK_ENABLE[] = {
 
 static const esp_efuse_desc_t WR_DIS_ECC_FORCE_CONST_TIME[] = {
     {EFUSE_BLK0, 14, 1}, 	 // [] wr_dis of ECC_FORCE_CONST_TIME,
+};
+
+static const esp_efuse_desc_t WR_DIS_SECURE_BOOT_SHA384_EN[] = {
+    {EFUSE_BLK0, 14, 1}, 	 // [] wr_dis of SECURE_BOOT_SHA384_EN,
 };
 
 static const esp_efuse_desc_t WR_DIS_SECURE_BOOT_EN[] = {
@@ -231,8 +243,168 @@ static const esp_efuse_desc_t WR_DIS_FLASH_LDO_POWER_SEL[] = {
     {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of FLASH_LDO_POWER_SEL,
 };
 
+static const esp_efuse_desc_t WR_DIS_WAFER_VERSION_MINOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of WAFER_VERSION_MINOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_WAFER_VERSION_MAJOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of WAFER_VERSION_MAJOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_DISABLE_WAFER_VERSION_MAJOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of DISABLE_WAFER_VERSION_MAJOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_DISABLE_BLK_VERSION_MAJOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of DISABLE_BLK_VERSION_MAJOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_BLK_VERSION_MINOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of BLK_VERSION_MINOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_BLK_VERSION_MAJOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of BLK_VERSION_MAJOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_FLASH_CAP[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of FLASH_CAP,
+};
+
+static const esp_efuse_desc_t WR_DIS_FLASH_VENDOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of FLASH_VENDOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_PSRAM_CAP[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PSRAM_CAP,
+};
+
+static const esp_efuse_desc_t WR_DIS_PSRAM_VENDOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PSRAM_VENDOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_TEMP[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of TEMP,
+};
+
+static const esp_efuse_desc_t WR_DIS_PKG_VERSION[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PKG_VERSION,
+};
+
+static const esp_efuse_desc_t WR_DIS_PVT_DBIAS[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PVT_DBIAS,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADJUST_1V2[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of ADJUST_1V2,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADJUST_1V8[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of ADJUST_1V8,
+};
+
+static const esp_efuse_desc_t WR_DIS_ACTIVE_DCDC_1V25[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of ACTIVE_DCDC_1V25,
+};
+
+static const esp_efuse_desc_t WR_DIS_ACTIVE_DCDC_1V35[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of ACTIVE_DCDC_1V35,
+};
+
+static const esp_efuse_desc_t WR_DIS_SLP_DCDC[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of SLP_DCDC,
+};
+
+static const esp_efuse_desc_t WR_DIS_LSLP_HP_DRVB[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of LSLP_HP_DRVB,
+};
+
+static const esp_efuse_desc_t WR_DIS_DSLP_LP_DBIAS[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of DSLP_LP_DBIAS,
+};
+
+static const esp_efuse_desc_t WR_DIS_TEMP_CALIB[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of TEMP_CALIB,
+};
+
 static const esp_efuse_desc_t WR_DIS_SYS_DATA_PART1[] = {
     {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of BLOCK2,
+};
+
+static const esp_efuse_desc_t WR_DIS_OPTIONAL_UNIQUE_ID[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of OPTIONAL_UNIQUE_ID,
+};
+
+static const esp_efuse_desc_t WR_DIS_OCODE[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of OCODE,
+};
+
+static const esp_efuse_desc_t WR_DIS_DCDC_OCODE[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of DCDC_OCODE,
+};
+
+static const esp_efuse_desc_t WR_DIS_VDD_3V4_DOUT[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of VDD_3V4_DOUT,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_AVE_INITCODE_ATTEN0[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_AVE_INITCODE_ATTEN0,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_AVE_INITCODE_ATTEN1[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_AVE_INITCODE_ATTEN1,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_AVE_INITCODE_ATTEN2[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_AVE_INITCODE_ATTEN2,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_AVE_INITCODE_ATTEN3[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_AVE_INITCODE_ATTEN3,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_HI_DOUT_ATTEN0[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_HI_DOUT_ATTEN0,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_HI_DOUT_ATTEN1[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_HI_DOUT_ATTEN1,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_HI_DOUT_ATTEN2[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_HI_DOUT_ATTEN2,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_HI_DOUT_ATTEN3[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_HI_DOUT_ATTEN3,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_CH0_ATTEN0_INITCODE_DIFF[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_CH0_ATTEN0_INITCODE_DIFF,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_CH1_ATTEN0_INITCODE_DIFF[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_CH1_ATTEN0_INITCODE_DIFF,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_CH2_ATTEN0_INITCODE_DIFF[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_CH2_ATTEN0_INITCODE_DIFF,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_CH3_ATTEN0_INITCODE_DIFF[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_CH3_ATTEN0_INITCODE_DIFF,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_CH4_ATTEN0_INITCODE_DIFF[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_CH4_ATTEN0_INITCODE_DIFF,
+};
+
+static const esp_efuse_desc_t WR_DIS_INITCODE_DIFF_1P8_3P3[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of INITCODE_DIFF_1P8_3P3,
+};
+
+static const esp_efuse_desc_t WR_DIS_HI_DOUT_DIFF_1P8_3P3[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of HI_DOUT_DIFF_1P8_3P3,
 };
 
 static const esp_efuse_desc_t WR_DIS_BLOCK_USR_DATA[] = {
@@ -273,6 +445,14 @@ static const esp_efuse_desc_t WR_DIS_BLOCK_SYS_DATA2[] = {
 
 static const esp_efuse_desc_t WR_DIS_USB_EXCHG_PINS[] = {
     {EFUSE_BLK0, 30, 1}, 	 // [] wr_dis of USB_EXCHG_PINS,
+};
+
+static const esp_efuse_desc_t WR_DIS_USB_OTG_FS_EXCHG_PINS[] = {
+    {EFUSE_BLK0, 30, 1}, 	 // [] wr_dis of USB_OTG_FS_EXCHG_PINS,
+};
+
+static const esp_efuse_desc_t WR_DIS_USB_PHY_SEL[] = {
+    {EFUSE_BLK0, 30, 1}, 	 // [] wr_dis of USB_PHY_SEL,
 };
 
 static const esp_efuse_desc_t WR_DIS_SOFT_DIS_JTAG[] = {
@@ -569,6 +749,166 @@ static const esp_efuse_desc_t FLASH_LDO_POWER_SEL[] = {
     {EFUSE_BLK1, 113, 1}, 	 // [] Represents which flash ldo be select: 1: FLASH LDO 1P2 0 : FLASH LDO 1P8,
 };
 
+static const esp_efuse_desc_t WAFER_VERSION_MINOR[] = {
+    {EFUSE_BLK1, 114, 4}, 	 // [] Minor chip version,
+};
+
+static const esp_efuse_desc_t WAFER_VERSION_MAJOR[] = {
+    {EFUSE_BLK1, 118, 2}, 	 // [] Major chip version,
+};
+
+static const esp_efuse_desc_t DISABLE_WAFER_VERSION_MAJOR[] = {
+    {EFUSE_BLK1, 120, 1}, 	 // [] Disables check of wafer version major,
+};
+
+static const esp_efuse_desc_t DISABLE_BLK_VERSION_MAJOR[] = {
+    {EFUSE_BLK1, 121, 1}, 	 // [] Disables check of blk version major,
+};
+
+static const esp_efuse_desc_t BLK_VERSION_MINOR[] = {
+    {EFUSE_BLK1, 122, 3}, 	 // [] BLK_VERSION_MINOR of BLOCK2,
+};
+
+static const esp_efuse_desc_t BLK_VERSION_MAJOR[] = {
+    {EFUSE_BLK1, 125, 2}, 	 // [] BLK_VERSION_MAJOR of BLOCK2,
+};
+
+static const esp_efuse_desc_t FLASH_CAP[] = {
+    {EFUSE_BLK1, 127, 3}, 	 // [] Flash capacity,
+};
+
+static const esp_efuse_desc_t FLASH_VENDOR[] = {
+    {EFUSE_BLK1, 130, 3}, 	 // [] Flash vendor,
+};
+
+static const esp_efuse_desc_t PSRAM_CAP[] = {
+    {EFUSE_BLK1, 133, 3}, 	 // [] Psram capacity,
+};
+
+static const esp_efuse_desc_t PSRAM_VENDOR[] = {
+    {EFUSE_BLK1, 136, 2}, 	 // [] Psram vendor,
+};
+
+static const esp_efuse_desc_t TEMP[] = {
+    {EFUSE_BLK1, 138, 2}, 	 // [] Temp (die embedded inside),
+};
+
+static const esp_efuse_desc_t PKG_VERSION[] = {
+    {EFUSE_BLK1, 140, 3}, 	 // [] Package version,
+};
+
+static const esp_efuse_desc_t PVT_DBIAS[] = {
+    {EFUSE_BLK1, 143, 5}, 	 // [] PVT DBIAS,
+};
+
+static const esp_efuse_desc_t ADJUST_1V2[] = {
+    {EFUSE_BLK1, 148, 4}, 	 // [] SPI LDO adjust of 1.2v,
+};
+
+static const esp_efuse_desc_t ADJUST_1V8[] = {
+    {EFUSE_BLK1, 152, 4}, 	 // [] SPI LDO adjust of 1.8v,
+};
+
+static const esp_efuse_desc_t ACTIVE_DCDC_1V25[] = {
+    {EFUSE_BLK1, 156, 4}, 	 // [] DCDC-DCDC DBIAS of 1.25v,
+};
+
+static const esp_efuse_desc_t ACTIVE_DCDC_1V35[] = {
+    {EFUSE_BLK1, 160, 4}, 	 // [] DCDC-DCDC DBIAS of 1.35v,
+};
+
+static const esp_efuse_desc_t SLP_DCDC[] = {
+    {EFUSE_BLK1, 164, 5}, 	 // [] DCDC DBIAS in sleep,
+};
+
+static const esp_efuse_desc_t LSLP_HP_DRVB[] = {
+    {EFUSE_BLK1, 169, 5}, 	 // [] HP DRVB in light sleep,
+};
+
+static const esp_efuse_desc_t DSLP_LP_DBIAS[] = {
+    {EFUSE_BLK1, 174, 2}, 	 // [] LP DBIAS in deep sleep,
+};
+
+static const esp_efuse_desc_t TEMP_CALIB[] = {
+    {EFUSE_BLK1, 176, 10}, 	 // [] Temperature calibration data,
+};
+
+static const esp_efuse_desc_t OPTIONAL_UNIQUE_ID[] = {
+    {EFUSE_BLK2, 0, 128}, 	 // [] Optional unique 128-bit ID,
+};
+
+static const esp_efuse_desc_t OCODE[] = {
+    {EFUSE_BLK2, 128, 8}, 	 // [] ADC OCode,
+};
+
+static const esp_efuse_desc_t DCDC_OCODE[] = {
+    {EFUSE_BLK2, 136, 8}, 	 // [] DCDC OCode,
+};
+
+static const esp_efuse_desc_t VDD_3V4_DOUT[] = {
+    {EFUSE_BLK2, 144, 10}, 	 // [] ADC dout of vdd 3.4v,
+};
+
+static const esp_efuse_desc_t ADC1_AVE_INITCODE_ATTEN0[] = {
+    {EFUSE_BLK2, 154, 9}, 	 // [] Average initcode of ADC1 atten0,
+};
+
+static const esp_efuse_desc_t ADC1_AVE_INITCODE_ATTEN1[] = {
+    {EFUSE_BLK2, 163, 9}, 	 // [] Average initcode of ADC1 atten1,
+};
+
+static const esp_efuse_desc_t ADC1_AVE_INITCODE_ATTEN2[] = {
+    {EFUSE_BLK2, 172, 9}, 	 // [] Average initcode of ADC1 atten2,
+};
+
+static const esp_efuse_desc_t ADC1_AVE_INITCODE_ATTEN3[] = {
+    {EFUSE_BLK2, 181, 9}, 	 // [] Average initcode of ADC1 atten3,
+};
+
+static const esp_efuse_desc_t ADC1_HI_DOUT_ATTEN0[] = {
+    {EFUSE_BLK2, 190, 9}, 	 // [] HI dout of ADC1 atten0,
+};
+
+static const esp_efuse_desc_t ADC1_HI_DOUT_ATTEN1[] = {
+    {EFUSE_BLK2, 199, 9}, 	 // [] HI dout of ADC1 atten1,
+};
+
+static const esp_efuse_desc_t ADC1_HI_DOUT_ATTEN2[] = {
+    {EFUSE_BLK2, 208, 9}, 	 // [] HI dout of ADC1 atten2,
+};
+
+static const esp_efuse_desc_t ADC1_HI_DOUT_ATTEN3[] = {
+    {EFUSE_BLK2, 217, 9}, 	 // [] HI dout of ADC1 atten3,
+};
+
+static const esp_efuse_desc_t ADC1_CH0_ATTEN0_INITCODE_DIFF[] = {
+    {EFUSE_BLK2, 226, 3}, 	 // [] Gap between ADC1 CH0 and average initcode,
+};
+
+static const esp_efuse_desc_t ADC1_CH1_ATTEN0_INITCODE_DIFF[] = {
+    {EFUSE_BLK2, 229, 3}, 	 // [] Gap between ADC1 CH1 and average initcode,
+};
+
+static const esp_efuse_desc_t ADC1_CH2_ATTEN0_INITCODE_DIFF[] = {
+    {EFUSE_BLK2, 232, 3}, 	 // [] Gap between ADC1 CH2 and average initcode,
+};
+
+static const esp_efuse_desc_t ADC1_CH3_ATTEN0_INITCODE_DIFF[] = {
+    {EFUSE_BLK2, 235, 3}, 	 // [] Gap between ADC1 CH3 and average initcode,
+};
+
+static const esp_efuse_desc_t ADC1_CH4_ATTEN0_INITCODE_DIFF[] = {
+    {EFUSE_BLK2, 238, 3}, 	 // [] Gap between ADC1 CH4 and average initcode,
+};
+
+static const esp_efuse_desc_t INITCODE_DIFF_1P8_3P3[] = {
+    {EFUSE_BLK2, 241, 5}, 	 // [] Initcode diff between IO LDO 1.8v and 3.3v,
+};
+
+static const esp_efuse_desc_t HI_DOUT_DIFF_1P8_3P3[] = {
+    {EFUSE_BLK2, 246, 5}, 	 // [] HI dout diff between IO LDO 1.8v and 3.3v,
+};
+
 static const esp_efuse_desc_t USER_DATA[] = {
     {EFUSE_BLK3, 0, 256}, 	 // [BLOCK_USR_DATA] User data,
 };
@@ -689,6 +1029,16 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_DOWNLOAD_MANUAL_ENCRYPT[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PVT_GLITCH_EN[] = {
+    &WR_DIS_PVT_GLITCH_EN[0],    		// [] wr_dis of PVT_GLITCH_EN
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PVT_GLITCH_MODE[] = {
+    &WR_DIS_PVT_GLITCH_MODE[0],    		// [] wr_dis of PVT_GLITCH_MODE
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SPI_BOOT_CRYPT_CNT[] = {
     &WR_DIS_SPI_BOOT_CRYPT_CNT[0],    		// [] wr_dis of SPI_BOOT_CRYPT_CNT
     NULL
@@ -756,6 +1106,11 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_XTS_DPA_CLK_ENABLE[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ECC_FORCE_CONST_TIME[] = {
     &WR_DIS_ECC_FORCE_CONST_TIME[0],    		// [] wr_dis of ECC_FORCE_CONST_TIME
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SECURE_BOOT_SHA384_EN[] = {
+    &WR_DIS_SECURE_BOOT_SHA384_EN[0],    		// [] wr_dis of SECURE_BOOT_SHA384_EN
     NULL
 };
 
@@ -879,8 +1234,208 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_LDO_POWER_SEL[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MINOR[] = {
+    &WR_DIS_WAFER_VERSION_MINOR[0],    		// [] wr_dis of WAFER_VERSION_MINOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MAJOR[] = {
+    &WR_DIS_WAFER_VERSION_MAJOR[0],    		// [] wr_dis of WAFER_VERSION_MAJOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DISABLE_WAFER_VERSION_MAJOR[] = {
+    &WR_DIS_DISABLE_WAFER_VERSION_MAJOR[0],    		// [] wr_dis of DISABLE_WAFER_VERSION_MAJOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DISABLE_BLK_VERSION_MAJOR[] = {
+    &WR_DIS_DISABLE_BLK_VERSION_MAJOR[0],    		// [] wr_dis of DISABLE_BLK_VERSION_MAJOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK_VERSION_MINOR[] = {
+    &WR_DIS_BLK_VERSION_MINOR[0],    		// [] wr_dis of BLK_VERSION_MINOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK_VERSION_MAJOR[] = {
+    &WR_DIS_BLK_VERSION_MAJOR[0],    		// [] wr_dis of BLK_VERSION_MAJOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_CAP[] = {
+    &WR_DIS_FLASH_CAP[0],    		// [] wr_dis of FLASH_CAP
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_VENDOR[] = {
+    &WR_DIS_FLASH_VENDOR[0],    		// [] wr_dis of FLASH_VENDOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PSRAM_CAP[] = {
+    &WR_DIS_PSRAM_CAP[0],    		// [] wr_dis of PSRAM_CAP
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PSRAM_VENDOR[] = {
+    &WR_DIS_PSRAM_VENDOR[0],    		// [] wr_dis of PSRAM_VENDOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_TEMP[] = {
+    &WR_DIS_TEMP[0],    		// [] wr_dis of TEMP
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PKG_VERSION[] = {
+    &WR_DIS_PKG_VERSION[0],    		// [] wr_dis of PKG_VERSION
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PVT_DBIAS[] = {
+    &WR_DIS_PVT_DBIAS[0],    		// [] wr_dis of PVT_DBIAS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADJUST_1V2[] = {
+    &WR_DIS_ADJUST_1V2[0],    		// [] wr_dis of ADJUST_1V2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADJUST_1V8[] = {
+    &WR_DIS_ADJUST_1V8[0],    		// [] wr_dis of ADJUST_1V8
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ACTIVE_DCDC_1V25[] = {
+    &WR_DIS_ACTIVE_DCDC_1V25[0],    		// [] wr_dis of ACTIVE_DCDC_1V25
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ACTIVE_DCDC_1V35[] = {
+    &WR_DIS_ACTIVE_DCDC_1V35[0],    		// [] wr_dis of ACTIVE_DCDC_1V35
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SLP_DCDC[] = {
+    &WR_DIS_SLP_DCDC[0],    		// [] wr_dis of SLP_DCDC
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LSLP_HP_DRVB[] = {
+    &WR_DIS_LSLP_HP_DRVB[0],    		// [] wr_dis of LSLP_HP_DRVB
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DSLP_LP_DBIAS[] = {
+    &WR_DIS_DSLP_LP_DBIAS[0],    		// [] wr_dis of DSLP_LP_DBIAS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_TEMP_CALIB[] = {
+    &WR_DIS_TEMP_CALIB[0],    		// [] wr_dis of TEMP_CALIB
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SYS_DATA_PART1[] = {
     &WR_DIS_SYS_DATA_PART1[0],    		// [] wr_dis of BLOCK2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_OPTIONAL_UNIQUE_ID[] = {
+    &WR_DIS_OPTIONAL_UNIQUE_ID[0],    		// [] wr_dis of OPTIONAL_UNIQUE_ID
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_OCODE[] = {
+    &WR_DIS_OCODE[0],    		// [] wr_dis of OCODE
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DCDC_OCODE[] = {
+    &WR_DIS_DCDC_OCODE[0],    		// [] wr_dis of DCDC_OCODE
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_VDD_3V4_DOUT[] = {
+    &WR_DIS_VDD_3V4_DOUT[0],    		// [] wr_dis of VDD_3V4_DOUT
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_AVE_INITCODE_ATTEN0[] = {
+    &WR_DIS_ADC1_AVE_INITCODE_ATTEN0[0],    		// [] wr_dis of ADC1_AVE_INITCODE_ATTEN0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_AVE_INITCODE_ATTEN1[] = {
+    &WR_DIS_ADC1_AVE_INITCODE_ATTEN1[0],    		// [] wr_dis of ADC1_AVE_INITCODE_ATTEN1
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_AVE_INITCODE_ATTEN2[] = {
+    &WR_DIS_ADC1_AVE_INITCODE_ATTEN2[0],    		// [] wr_dis of ADC1_AVE_INITCODE_ATTEN2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_AVE_INITCODE_ATTEN3[] = {
+    &WR_DIS_ADC1_AVE_INITCODE_ATTEN3[0],    		// [] wr_dis of ADC1_AVE_INITCODE_ATTEN3
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_HI_DOUT_ATTEN0[] = {
+    &WR_DIS_ADC1_HI_DOUT_ATTEN0[0],    		// [] wr_dis of ADC1_HI_DOUT_ATTEN0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_HI_DOUT_ATTEN1[] = {
+    &WR_DIS_ADC1_HI_DOUT_ATTEN1[0],    		// [] wr_dis of ADC1_HI_DOUT_ATTEN1
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_HI_DOUT_ATTEN2[] = {
+    &WR_DIS_ADC1_HI_DOUT_ATTEN2[0],    		// [] wr_dis of ADC1_HI_DOUT_ATTEN2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_HI_DOUT_ATTEN3[] = {
+    &WR_DIS_ADC1_HI_DOUT_ATTEN3[0],    		// [] wr_dis of ADC1_HI_DOUT_ATTEN3
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH0_ATTEN0_INITCODE_DIFF[] = {
+    &WR_DIS_ADC1_CH0_ATTEN0_INITCODE_DIFF[0],    		// [] wr_dis of ADC1_CH0_ATTEN0_INITCODE_DIFF
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH1_ATTEN0_INITCODE_DIFF[] = {
+    &WR_DIS_ADC1_CH1_ATTEN0_INITCODE_DIFF[0],    		// [] wr_dis of ADC1_CH1_ATTEN0_INITCODE_DIFF
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH2_ATTEN0_INITCODE_DIFF[] = {
+    &WR_DIS_ADC1_CH2_ATTEN0_INITCODE_DIFF[0],    		// [] wr_dis of ADC1_CH2_ATTEN0_INITCODE_DIFF
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH3_ATTEN0_INITCODE_DIFF[] = {
+    &WR_DIS_ADC1_CH3_ATTEN0_INITCODE_DIFF[0],    		// [] wr_dis of ADC1_CH3_ATTEN0_INITCODE_DIFF
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH4_ATTEN0_INITCODE_DIFF[] = {
+    &WR_DIS_ADC1_CH4_ATTEN0_INITCODE_DIFF[0],    		// [] wr_dis of ADC1_CH4_ATTEN0_INITCODE_DIFF
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_INITCODE_DIFF_1P8_3P3[] = {
+    &WR_DIS_INITCODE_DIFF_1P8_3P3[0],    		// [] wr_dis of INITCODE_DIFF_1P8_3P3
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_HI_DOUT_DIFF_1P8_3P3[] = {
+    &WR_DIS_HI_DOUT_DIFF_1P8_3P3[0],    		// [] wr_dis of HI_DOUT_DIFF_1P8_3P3
     NULL
 };
 
@@ -931,6 +1486,16 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_SYS_DATA2[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_USB_EXCHG_PINS[] = {
     &WR_DIS_USB_EXCHG_PINS[0],    		// [] wr_dis of USB_EXCHG_PINS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_USB_OTG_FS_EXCHG_PINS[] = {
+    &WR_DIS_USB_OTG_FS_EXCHG_PINS[0],    		// [] wr_dis of USB_OTG_FS_EXCHG_PINS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_USB_PHY_SEL[] = {
+    &WR_DIS_USB_PHY_SEL[0],    		// [] wr_dis of USB_PHY_SEL
     NULL
 };
 
@@ -1297,6 +1862,206 @@ const esp_efuse_desc_t* ESP_EFUSE_VDD_SPI_LDO_ADJUST[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_FLASH_LDO_POWER_SEL[] = {
     &FLASH_LDO_POWER_SEL[0],    		// [] Represents which flash ldo be select: 1: FLASH LDO 1P2 0 : FLASH LDO 1P8
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR[] = {
+    &WAFER_VERSION_MINOR[0],    		// [] Minor chip version
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR[] = {
+    &WAFER_VERSION_MAJOR[0],    		// [] Major chip version
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DISABLE_WAFER_VERSION_MAJOR[] = {
+    &DISABLE_WAFER_VERSION_MAJOR[0],    		// [] Disables check of wafer version major
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DISABLE_BLK_VERSION_MAJOR[] = {
+    &DISABLE_BLK_VERSION_MAJOR[0],    		// [] Disables check of blk version major
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MINOR[] = {
+    &BLK_VERSION_MINOR[0],    		// [] BLK_VERSION_MINOR of BLOCK2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MAJOR[] = {
+    &BLK_VERSION_MAJOR[0],    		// [] BLK_VERSION_MAJOR of BLOCK2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_FLASH_CAP[] = {
+    &FLASH_CAP[0],    		// [] Flash capacity
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_FLASH_VENDOR[] = {
+    &FLASH_VENDOR[0],    		// [] Flash vendor
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_PSRAM_CAP[] = {
+    &PSRAM_CAP[0],    		// [] Psram capacity
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_PSRAM_VENDOR[] = {
+    &PSRAM_VENDOR[0],    		// [] Psram vendor
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_TEMP[] = {
+    &TEMP[0],    		// [] Temp (die embedded inside)
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
+    &PKG_VERSION[0],    		// [] Package version
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_PVT_DBIAS[] = {
+    &PVT_DBIAS[0],    		// [] PVT DBIAS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADJUST_1V2[] = {
+    &ADJUST_1V2[0],    		// [] SPI LDO adjust of 1.2v
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADJUST_1V8[] = {
+    &ADJUST_1V8[0],    		// [] SPI LDO adjust of 1.8v
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ACTIVE_DCDC_1V25[] = {
+    &ACTIVE_DCDC_1V25[0],    		// [] DCDC-DCDC DBIAS of 1.25v
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ACTIVE_DCDC_1V35[] = {
+    &ACTIVE_DCDC_1V35[0],    		// [] DCDC-DCDC DBIAS of 1.35v
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_SLP_DCDC[] = {
+    &SLP_DCDC[0],    		// [] DCDC DBIAS in sleep
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_LSLP_HP_DRVB[] = {
+    &LSLP_HP_DRVB[0],    		// [] HP DRVB in light sleep
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DSLP_LP_DBIAS[] = {
+    &DSLP_LP_DBIAS[0],    		// [] LP DBIAS in deep sleep
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_TEMP_CALIB[] = {
+    &TEMP_CALIB[0],    		// [] Temperature calibration data
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[] = {
+    &OPTIONAL_UNIQUE_ID[0],    		// [] Optional unique 128-bit ID
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_OCODE[] = {
+    &OCODE[0],    		// [] ADC OCode
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DCDC_OCODE[] = {
+    &DCDC_OCODE[0],    		// [] DCDC OCode
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_VDD_3V4_DOUT[] = {
+    &VDD_3V4_DOUT[0],    		// [] ADC dout of vdd 3.4v
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_AVE_INITCODE_ATTEN0[] = {
+    &ADC1_AVE_INITCODE_ATTEN0[0],    		// [] Average initcode of ADC1 atten0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_AVE_INITCODE_ATTEN1[] = {
+    &ADC1_AVE_INITCODE_ATTEN1[0],    		// [] Average initcode of ADC1 atten1
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_AVE_INITCODE_ATTEN2[] = {
+    &ADC1_AVE_INITCODE_ATTEN2[0],    		// [] Average initcode of ADC1 atten2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_AVE_INITCODE_ATTEN3[] = {
+    &ADC1_AVE_INITCODE_ATTEN3[0],    		// [] Average initcode of ADC1 atten3
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_HI_DOUT_ATTEN0[] = {
+    &ADC1_HI_DOUT_ATTEN0[0],    		// [] HI dout of ADC1 atten0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_HI_DOUT_ATTEN1[] = {
+    &ADC1_HI_DOUT_ATTEN1[0],    		// [] HI dout of ADC1 atten1
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_HI_DOUT_ATTEN2[] = {
+    &ADC1_HI_DOUT_ATTEN2[0],    		// [] HI dout of ADC1 atten2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_HI_DOUT_ATTEN3[] = {
+    &ADC1_HI_DOUT_ATTEN3[0],    		// [] HI dout of ADC1 atten3
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH0_ATTEN0_INITCODE_DIFF[] = {
+    &ADC1_CH0_ATTEN0_INITCODE_DIFF[0],    		// [] Gap between ADC1 CH0 and average initcode
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH1_ATTEN0_INITCODE_DIFF[] = {
+    &ADC1_CH1_ATTEN0_INITCODE_DIFF[0],    		// [] Gap between ADC1 CH1 and average initcode
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH2_ATTEN0_INITCODE_DIFF[] = {
+    &ADC1_CH2_ATTEN0_INITCODE_DIFF[0],    		// [] Gap between ADC1 CH2 and average initcode
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH3_ATTEN0_INITCODE_DIFF[] = {
+    &ADC1_CH3_ATTEN0_INITCODE_DIFF[0],    		// [] Gap between ADC1 CH3 and average initcode
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH4_ATTEN0_INITCODE_DIFF[] = {
+    &ADC1_CH4_ATTEN0_INITCODE_DIFF[0],    		// [] Gap between ADC1 CH4 and average initcode
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_INITCODE_DIFF_1P8_3P3[] = {
+    &INITCODE_DIFF_1P8_3P3[0],    		// [] Initcode diff between IO LDO 1.8v and 3.3v
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_HI_DOUT_DIFF_1P8_3P3[] = {
+    &HI_DOUT_DIFF_1P8_3P3[0],    		// [] HI dout diff between IO LDO 1.8v and 3.3v
     NULL
 };
 

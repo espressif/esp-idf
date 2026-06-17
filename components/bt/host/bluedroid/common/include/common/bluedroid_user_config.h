@@ -32,6 +32,12 @@
 #define UC_BT_CLASSIC_ENABLED               FALSE
 #endif
 
+#ifdef CONFIG_BT_CLASSIC_MAX_RECONNECT_ON_COLLISION
+#define UC_BT_CLASSIC_MAX_RECONNECT_ON_COLLISION CONFIG_BT_CLASSIC_MAX_RECONNECT_ON_COLLISION
+#else
+#define UC_BT_CLASSIC_MAX_RECONNECT_ON_COLLISION 5
+#endif
+
 //A2DP
 #ifdef CONFIG_BT_A2DP_ENABLE
 #define UC_BT_A2DP_ENABLED                  CONFIG_BT_A2DP_ENABLE
@@ -43,6 +49,18 @@
 #define UC_BT_A2DP_USE_EXTERNAL_CODEC       CONFIG_BT_A2DP_USE_EXTERNAL_CODEC
 #else
 #define UC_BT_A2DP_USE_EXTERNAL_CODEC       FALSE
+#endif
+
+#ifdef CONFIG_BT_A2DP_CODEC_AAC_ENABLED
+#define UC_BT_A2DP_CODEC_AAC_ENABLED        CONFIG_BT_A2DP_CODEC_AAC_ENABLED
+#else
+#define UC_BT_A2DP_CODEC_AAC_ENABLED        FALSE
+#endif
+
+#ifdef CONFIG_BT_A2DP_SEP_NUM_MAX
+#define UC_BT_A2DP_SEP_NUM_MAX              CONFIG_BT_A2DP_SEP_NUM_MAX
+#else
+#define UC_BT_A2DP_SEP_NUM_MAX              1
 #endif
 
 //AVRCP
@@ -155,6 +173,13 @@
 #define UC_BT_ENC_KEY_SIZE_CTRL_MODE   2
 #else
 #define UC_BT_ENC_KEY_SIZE_CTRL_MODE   0
+#endif
+
+//Enable Classic Bluetooth power control vsc
+#ifdef CONFIG_BT_CLASSIC_ENABLE_POWER_CTRL_VSC
+#define UC_BT_CLASSIC_ENABLE_POWER_CTRL_VSC         CONFIG_BT_CLASSIC_ENABLE_POWER_CTRL_VSC
+#else
+#define UC_BT_CLASSIC_ENABLE_POWER_CTRL_VSC         FALSE
 #endif
 
 //PBAP Client
@@ -303,9 +328,9 @@
 #endif
 
 #ifdef CONFIG_BT_BLE_FEAT_ISO_BIG_BROCASTER
-#define UC_BT_BLE_FEAT_ISO_BIG_BROCASTER            CONFIG_BT_BLE_FEAT_ISO_BIG_BROCASTER
+#define UC_BT_BLE_FEAT_ISO_BIG_BROADCASTER            CONFIG_BT_BLE_FEAT_ISO_BIG_BROCASTER
 #else
-#define UC_BT_BLE_FEAT_ISO_BIG_BROCASTER           FALSE
+#define UC_BT_BLE_FEAT_ISO_BIG_BROADCASTER           FALSE
 #endif
 
 #ifdef CONFIG_BT_BLE_FEAT_ISO_CIG_CENTRAL
@@ -388,6 +413,12 @@
 #define UC_BT_BLE_FEAT_CHANNEL_SOUNDING            FALSE
 #endif
 
+#ifdef CONFIG_BT_BLE_FEAT_ADV_MONITOR
+#define UC_BT_BLE_FEAT_ADV_MONITOR            CONFIG_BT_BLE_FEAT_ADV_MONITOR
+#else
+#define UC_BT_BLE_FEAT_ADV_MONITOR            FALSE
+#endif
+
 #ifdef CONFIG_BT_BLE_VENDOR_HCI_EN
 #define UC_BT_BLE_VENDOR_HCI_EN CONFIG_BT_BLE_VENDOR_HCI_EN
 #else
@@ -398,6 +429,18 @@
 #define UC_BT_BLE_HIGH_DUTY_ADV_INTERVAL CONFIG_BT_BLE_HIGH_DUTY_ADV_INTERVAL
 #else
 #define UC_BT_BLE_HIGH_DUTY_ADV_INTERVAL FALSE
+#endif
+
+/* When set to 1, the Bluedroid host's parameter validation no longer enforces
+ * a minimum BLE connection interval; the actual lower limit is then left to
+ * the controller. See BLE_CONN_INT_MIN_HOST_CHECK in common/bt_target.h.
+ *
+ * Do not turn this on manually in menuconfig unless you know the implications.
+ * In normal IDF builds it follows the active Controller integration. */
+#ifdef CONFIG_BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT
+#define UC_BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT      1
+#else
+#define UC_BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT      0
 #endif
 
 //GATTS

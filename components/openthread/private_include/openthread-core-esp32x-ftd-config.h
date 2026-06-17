@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -97,6 +97,16 @@
 #define OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE 1
 #else
 #define OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE 0
+#endif // CONFIG_OPENTHREAD_RADIO_TREL
+
+#if CONFIG_OPENTHREAD_RADIO_TREL
+/**
+ * @def OPENTHREAD_CONFIG_TREL_USE_HEAP_ENABLE
+ *
+ * Set to 1 to allow TREL modules to use heap allocated objects (e.g. for the TREL peer table).
+ *
+ */
+#define OPENTHREAD_CONFIG_TREL_USE_HEAP_ENABLE 1
 #endif // CONFIG_OPENTHREAD_RADIO_TREL
 
 /**
@@ -444,6 +454,21 @@
 #endif
 #define OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_MARGIN CONFIG_OPENTHREAD_PARENT_SEARCH_RSS_MARGIN
 
+/**
+ * @def OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
+ *
+ * Define to 1 to enable platform NETIF support.
+ *
+ */
+#ifdef OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
+#error `OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE` is redefined.
+#endif
+#ifdef CONFIG_OPENTHREAD_PLATFORM_NETIF
+#ifndef OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
+#define OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE 1
+#endif
+#endif
+
 /*----The following options set fixed default values but can be overridden by the user header file.----*/
 
 #if CONFIG_OPENTHREAD_BORDER_ROUTER
@@ -694,16 +719,6 @@
 #endif
 
 /**
- * @def OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
- *
- * Define to 1 to enable platform NETIF support.
- *
- */
-#ifndef OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
-#define OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE 1
-#endif
-
-/**
  * @def OPENTHREAD_CONFIG_HEAP_EXTERNAL_ENABLE
  *
  * Enable the external heap.
@@ -869,6 +884,16 @@
 #endif
 
 /**
+ * @def OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AFTER
+ *
+ * Additional time for CSL receiver to remain in rx active after SFD has been received, in units of microseconds.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AFTER
+#define OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AFTER 0
+#endif
+
+/**
  * @def OPENTHREAD_CONFIG_OPERATIONAL_DATASET_AUTO_INIT
  *
  * Define as 1 to enable support for locally initializing an Active Operational Dataset.
@@ -879,7 +904,7 @@
 #endif
 
 /**
- * @OPENTHREAD_CONFIG_DELAY_AWARE_QUEUE_MANAGEMENT_MARK_ECN_INTERVAL
+ * @def OPENTHREAD_CONFIG_DELAY_AWARE_QUEUE_MANAGEMENT_MARK_ECN_INTERVAL
  *
  * Specifies the time-in-queue threshold interval in milliseconds to mark ECN on a message if it is ECN-capable or
  * drop the message if not ECN-capable.
@@ -888,10 +913,42 @@
 #define OPENTHREAD_CONFIG_DELAY_AWARE_QUEUE_MANAGEMENT_MARK_ECN_INTERVAL 1000
 #endif
 
+/**
+ * @def OPENTHREAD_CONFIG_PLATFORM_MAC_KEYS_EXPORTABLE_ENABLE
+ *
+ * Define to 1 if you want to make MAC keys exportable.
+ */
+#ifndef OPENTHREAD_CONFIG_PLATFORM_MAC_KEYS_EXPORTABLE_ENABLE
+#define OPENTHREAD_CONFIG_PLATFORM_MAC_KEYS_EXPORTABLE_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_CRYPTO_LIB
+ *
+ * Selects the crypto backend library for OpenThread.
+ *
+ * There are several options available
+ * - @sa OPENTHREAD_CONFIG_CRYPTO_LIB_MBEDTLS
+ * - @sa OPENTHREAD_CONFIG_CRYPTO_LIB_PSA
+ * - @sa OPENTHREAD_CONFIG_CRYPTO_LIB_PLATFORM
+ */
+#ifndef OPENTHREAD_CONFIG_CRYPTO_LIB
+#define OPENTHREAD_CONFIG_CRYPTO_LIB OPENTHREAD_CONFIG_CRYPTO_LIB_PSA
+#endif
+// TODO: Remove when https://github.com/openthread/openthread/pull/12638 is merged
+#ifndef OPENTHREAD_CONFIG_PLATFORM_KEY_REFERENCES_ENABLE
+#define OPENTHREAD_CONFIG_PLATFORM_KEY_REFERENCES_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_MESHCOP_STEERING_DATA_API_ENABLE
+ *
+ * Define as 1 to enable the MeshCoP Steering Data public APIs (in `openthread/steering_data.h`).
+ */
+#ifndef OPENTHREAD_CONFIG_MESHCOP_STEERING_DATA_API_ENABLE
+#define OPENTHREAD_CONFIG_MESHCOP_STEERING_DATA_API_ENABLE 1
+#endif
+
 #ifndef OPENTHREAD_CONFIG_THREAD_VERSION
 #define OPENTHREAD_CONFIG_THREAD_VERSION OT_THREAD_VERSION_1_4
 #endif
-
-#define OPENTHREAD_CONFIG_PLATFORM_MAC_KEYS_EXPORTABLE_ENABLE 1
-
-#define OPENTHREAD_CONFIG_CRYPTO_LIB OPENTHREAD_CONFIG_CRYPTO_LIB_PSA

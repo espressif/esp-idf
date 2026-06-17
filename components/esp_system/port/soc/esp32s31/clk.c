@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,41 +18,34 @@
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
-#include "soc/i2s_reg.h"
-#include "soc/hp_sys_clkrst_reg.h"
 #include "esp_cpu.h"
-#include "soc/hp_sys_clkrst_reg.h"
-#include "soc/lp_clkrst_reg.h"
-#include "soc/lp_system_reg.h"
-#include "soc/spi_mem_c_reg.h"
-#include "soc/spi_mem_s_reg.h"
-#include "soc/usb_serial_jtag_reg.h"
-#include "soc/hp_alive_sys_reg.h"
-#include "hal/uart_ll.h"
+#if SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED
 #include "hal/wdt_hal.h"
-#include "esp_private/esp_modem_clock.h"
+#endif
 #include "esp_private/esp_sleep_internal.h"
+#include "esp_private/esp_modem_clock.h"
 #include "esp_private/periph_ctrl.h"
+#include "hal/clk_gate_ll.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/esp_pmu.h"
 #include "esp_rom_serial_output.h"
 #include "esp_rom_sys.h"
-
-// TODO: ["ESP32S31"] IDF-14733
 
 /* Number of cycles to wait from the 32k XTAL oscillator to consider it running.
  * Larger values increase startup delay. Smaller values may cause false positive
  * detection (i.e. oscillator runs for a few cycles and then stops).
  */
+#define SLOW_CLK_CAL_CYCLES     CONFIG_RTC_CLK_CAL_CYCLES
 
 #define MHZ (1000000)
 
 static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src);
 
-static const char *TAG = "clk";
+ESP_LOG_ATTR_TAG(TAG, "clk");
 
-void IRAM_ATTR esp_rtc_init(void)
+__attribute__((weak)) void IRAM_ATTR esp_rtc_init(void)
 {
-#if SOC_PMU_SUPPORTED
+#if SOC_PMU_SUPPORTED && !CONFIG_IDF_ENV_FPGA
     pmu_init();
 #endif  //SOC_PMU_SUPPORTED
 }
@@ -62,8 +55,9 @@ __attribute__((weak)) void esp_clk_init(void)
     assert(rtc_clk_xtal_freq_get() == SOC_XTAL_FREQ_40M);
 
     rtc_clk_8m_enable(true);
+    rtc_clk_fast_src_set(SOC_RTC_FAST_CLK_SRC_RC_FAST);
 
-#ifdef CONFIG_BOOTLOADER_WDT_ENABLE
+#if defined(CONFIG_BOOTLOADER_WDT_ENABLE) && SOC_RTC_WDT_SUPPORTED
     // WDT uses a SLOW_CLK clock source. After a function select_rtc_slow_clk a frequency of this source can changed.
     // If the frequency changes from 150kHz to 32kHz, then the timeout set for the WDT will increase 4.6 times.
     // Therefore, for the time of frequency change, set a new lower timeout value (1.6 sec).
@@ -84,7 +78,7 @@ __attribute__((weak)) void esp_clk_init(void)
     select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_RC_SLOW);
 #endif
 
-#ifdef CONFIG_BOOTLOADER_WDT_ENABLE
+#if defined(CONFIG_BOOTLOADER_WDT_ENABLE) && SOC_RTC_WDT_SUPPORTED
     // After changing a frequency WDT timeout needs to be set for new frequency.
     stage_timeout_ticks = (uint32_t)((uint64_t)CONFIG_BOOTLOADER_WDT_TIME_MS * rtc_clk_slow_freq_get_hz() / 1000);
     wdt_hal_write_protect_disable(&rtc_wdt_ctx);
@@ -121,8 +115,11 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
     /* number of times to repeat 32k XTAL calibration
      * before giving up and switching to the internal RC
      */
+    int retry_32k_xtal = 3;
 
+    soc_rtc_slow_clk_src_t old_rtc_slow_clk_src = rtc_clk_slow_src_get();
     do {
+        bool revoke_32k_enable = false;
         if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
             /* 32k XTAL oscillator needs to be enabled and running before it can
              * be used. Hardware doesn't have a direct way of checking if the
@@ -132,24 +129,47 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
              * will time out, returning 0.
              */
             ESP_EARLY_LOGD(TAG, "waiting for 32k oscillator to start up");
-            if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
-                rtc_clk_32k_enable(true);
+            rtc_clk_32k_enable(true);
+            soc_clk_freq_calculation_src_t cal_sel = CLK_CAL_32K_XTAL;
+            // When SLOW_CLK_CAL_CYCLES is set to 0, clock calibration will not be performed at startup.
+            if (SLOW_CLK_CAL_CYCLES > 0) {
+                cal_val = rtc_clk_cal(cal_sel, SLOW_CLK_CAL_CYCLES);
+                if (cal_val == 0) {
+                    if (retry_32k_xtal-- > 0) {
+                        continue;
+                    }
+                    ESP_EARLY_LOGW(TAG, "32 kHz clock not found, switching to internal 136 kHz oscillator");
+                    rtc_slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
+                    revoke_32k_enable = true;
+                }
             }
-
-        } else if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K) {
-            rtc_clk_rc32k_enable(true);
         }
         rtc_clk_slow_src_set(rtc_slow_clk_src);
 
         // Disable unused clock sources after clock source switching is complete.
         // Regardless of the clock source selection, the internal 136K clock source will always keep on.
-        if (rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
+        if (revoke_32k_enable || \
+                ((old_rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) && rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_XTAL32K)) {
             rtc_clk_32k_enable(false);
         }
-        if (rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_RC32K) {
-            rtc_clk_rc32k_enable(false);
-        }
+        // We have enabled all LP clock power in pmu_init, re-initialize the LP clock power based on the slow clock source after selection.
+        pmu_lp_power_t lp_clk_power = {
+            .xpd_xtal32k = (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K),
+            .xpd_rc32k = 0,
+            .xpd_fosc = 1,
+            .pd_osc = 0
+        };
+        pmu_ll_lp_set_clk_power(&PMU, PMU_MODE_LP_ACTIVE, lp_clk_power.val);
 
+        if (SLOW_CLK_CAL_CYCLES > 0) {
+            /* TODO: 32k XTAL oscillator has some frequency drift at startup.
+             * Improve calibration routine to wait until the frequency is stable.
+             */
+            cal_val = rtc_clk_cal(CLK_CAL_RTC_SLOW, SLOW_CLK_CAL_CYCLES);
+        } else {
+            const uint64_t cal_dividend = (1ULL << RTC_CLK_CAL_FRACT) * 1000000ULL;
+            cal_val = (uint32_t)(cal_dividend / rtc_clk_slow_freq_get_hz());
+        }
     } while (cal_val == 0);
     ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK calibration value: %" PRIu32, cal_val);
     esp_clk_slowclk_cal_set(cal_val);
@@ -168,5 +188,13 @@ void rtc_clk_select_rtc_slow_clk(void)
  */
 __attribute__((weak)) void esp_perip_clk_init(void)
 {
+#if CONFIG_ESP_WIFI_ENABLED
+    soc_rtc_slow_clk_src_t rtc_slow_clk_src = rtc_clk_slow_src_get();
+    modem_clock_lpclk_src_t modem_lpclk_src = (modem_clock_lpclk_src_t)(
+                                                  (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) ? MODEM_CLOCK_LPCLK_SRC_XTAL32K
+                                                  : MODEM_CLOCK_LPCLK_SRC_RC_SLOW);
+    modem_clock_select_lp_clock_source(PERIPH_WIFI_MODULE, modem_lpclk_src, 0);
+#endif
 
+    periph_ll_clk_gate_set_default(esp_rom_get_reset_reason(0));
 }

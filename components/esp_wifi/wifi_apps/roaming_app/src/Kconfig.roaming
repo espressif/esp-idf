@@ -90,13 +90,13 @@ menu "Roaming Methods"
             Retry threshold after which the station should stop using Network Assisted
             roaming methods and start using legacy roaming instead.
 
-    config ESP_WIFI_NETWORK_ASSISTED_ROAMING_IP_RENEW_SKIP
-        bool "Skip IP renew during BTM based roaming"
-        depends on ESP_WIFI_ROAMING_NETWORK_ASSISTED_ROAM
+    config ESP_WIFI_ROAMING_IP_RENEW_SKIP
+        bool "Skip IP renew after roaming"
         default n
         help
-            Station will not ask for IP renew after a BTM based roaming. Before enabling please
-            make sure your network supports this.
+            Skip the default IP renew path when the Wi-Fi stack reports a roaming event.
+            Enable this only if your network preserves IP state across a roam, for example
+            during 802.11r or BTM-based roaming.
 
 endmenu #"Roaming Methods"
 
@@ -129,7 +129,9 @@ menu "Scan Configuration"
         default "None"
         help
             Channels your wireless network operates on to allow for faster scanning.
-            Specify the channels(between 1-14) in a comma separated manner.
+            Specify channels in a comma-separated manner. The list is used as a
+            channel filter, not as an ordered scan sequence. When 5 GHz support
+            is enabled, valid 5 GHz channels are also accepted.
 
     config ESP_WIFI_ROAMING_SCAN_EXPIRY_WINDOW
         int "Scan results expiry window (in seconds)"
@@ -214,12 +216,4 @@ menu "Blacklist Configuration"
         help
             Maximum number of roaming candidates to consider. This also defines the size of the blacklist.
 
-    config ESP_WIFI_ROAMING_PREVENT_DOWNGRADE
-        bool "Prevent security downgrade when roaming"
-        default n
-        help
-            If the currently connected AP sends a "transition disable" bit,
-            this option will make the roaming logic ignore less secure APs.
-            This helps prevent security downgrades when roaming in a mixed
-            security environment (e.g., WPA2/WPA3).
 endmenu # "Blacklist Configuration"

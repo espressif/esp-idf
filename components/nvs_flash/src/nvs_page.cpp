@@ -276,7 +276,7 @@ esp_err_t Page::readVariableLengthItemData(const Item& item, const size_t index,
         dst += willCopy;
     }
     if (Item::calculateCrc32(reinterpret_cast<uint8_t * >(data), item.varLength.dataSize) != item.varLength.dataCrc32) {
-        rc = eraseEntryAndSpan(index);
+        rc = eraseEntryAndSpan(index, DEFAULT_PURGE_AFTER_ERASE);
         if (rc != ESP_OK) {
             return rc;
         }
@@ -388,7 +388,7 @@ esp_err_t Page::cmpItem(uint8_t nsIndex, ItemType datatype, const char* key, con
     return ESP_OK;
 }
 
-esp_err_t Page::eraseItem(uint8_t nsIndex, ItemType datatype, const char* key, uint8_t chunkIdx, VerOffset chunkStart)
+esp_err_t Page::eraseItem(uint8_t nsIndex, ItemType datatype, const char* key, const bool purgeAfterErase, uint8_t chunkIdx, VerOffset chunkStart)
 {
     size_t index = 0;
     Item item;
@@ -396,7 +396,60 @@ esp_err_t Page::eraseItem(uint8_t nsIndex, ItemType datatype, const char* key, u
     if (rc != ESP_OK) {
         return rc;
     }
-    return eraseEntryAndSpan(index);
+    return eraseEntryAndSpan(index, purgeAfterErase);
+}
+
+esp_err_t Page::purgeErasedItems(uint8_t nsIndex)
+{
+    if (mState == PageState::INVALID) {
+        return ESP_ERR_NVS_INVALID_STATE;
+    }
+
+    size_t index = 0;
+    esp_err_t err;
+    EntryState state;
+
+    while (index < ENTRY_COUNT) {
+        err = mEntryTable.get(index, &state);
+        if (err != ESP_OK) {
+            return err;
+        }
+        if (state == EntryState::ERASED) {
+            Item item;
+            err = readEntry(index, item);
+            if (err != ESP_OK) {
+                return err;
+            }
+
+            // check item sanity to avoid purging random data
+            bool headerConsistent = item.checkHeaderConsistency(index);
+
+            // if header is not consistent, we cannot rely on nsIndex, so skip
+            if (!headerConsistent) {
+                ++index;
+                continue;
+            }
+
+            // if nsIndex does not match, skip as well
+            if (item.nsIndex != nsIndex) {
+                ++index;
+                continue;
+            }
+
+            // we have matching nsIndex and a consistent header, span is valid
+            // purge entries belonging to the item's span range
+            // we assume that if first entry is erased, the whole span is erased as well
+            err = purgeEntryRange(index, index + item.span);
+            if (err != ESP_OK) {
+                return err;
+            }
+            index += item.span;
+            continue;
+        }
+        // next entry
+        ++index;
+    }
+    return ESP_OK;
 }
 
 esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, uint8_t chunkIdx, VerOffset chunkStart)
@@ -406,7 +459,7 @@ esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, ui
     return findItem(nsIndex, datatype, key, index, item, chunkIdx, chunkStart);
 }
 
-esp_err_t Page::eraseEntryAndSpan(size_t index)
+esp_err_t Page::eraseEntryAndSpan(size_t index, const bool purgeAfterErase)
 {
     uint32_t seq_num;
     getSeqNumber(seq_num);
@@ -432,6 +485,12 @@ esp_err_t Page::eraseEntryAndSpan(size_t index)
             if (rc != ESP_OK) {
                 return rc;
             }
+            if(purgeAfterErase) {
+                rc = purgeEntry(index);
+                if (rc != ESP_OK) {
+                    return rc;
+                }
+            }
         } else {
             mHashList.erase(index);
             span = item.span;
@@ -453,11 +512,27 @@ esp_err_t Page::eraseEntryAndSpan(size_t index)
             if (rc != ESP_OK) {
                 return rc;
             }
+            if(purgeAfterErase) {
+                if(span == 1) {
+                    rc = purgeEntry(index);
+                } else {
+                    rc = purgeEntryRange(index, index + span);
+                }
+            }
+            if (rc != ESP_OK) {
+                return rc;
+            }
         }
     } else {
         auto rc = alterEntryState(index, EntryState::ERASED);
         if (rc != ESP_OK) {
             return rc;
+        }
+        if(purgeAfterErase) {
+            rc = purgeEntry(index);
+            if (rc != ESP_OK) {
+                return rc;
+            }
         }
     }
 
@@ -635,6 +710,13 @@ esp_err_t Page::mLoadEntryTable()
                     mState = PageState::INVALID;
                     return err;
                 }
+                if(DEFAULT_PURGE_AFTER_ERASE) {
+                    err = purgeEntry(mNextFreeEntry);
+                    if (err != ESP_OK) {
+                        mState = PageState::INVALID;
+                        return err;
+                    }
+                }
                 ++mNextFreeEntry;
                 if (oldState == EntryState::WRITTEN) {
                     --mUsedEntryCount;
@@ -666,7 +748,7 @@ esp_err_t Page::mLoadEntryTable()
 
             if (state == EntryState::ILLEGAL) {
                 lastItemIndex = INVALID_ENTRY;
-                auto err = eraseEntryAndSpan(i);
+                auto err = eraseEntryAndSpan(i, DEFAULT_PURGE_AFTER_ERASE);
                 if (err != ESP_OK) {
                     mState = PageState::INVALID;
                     return err;
@@ -683,7 +765,7 @@ esp_err_t Page::mLoadEntryTable()
             }
 
             if (!item.checkHeaderConsistency(i)) {
-                err = eraseEntryAndSpan(i);
+                err = eraseEntryAndSpan(i, DEFAULT_PURGE_AFTER_ERASE);
                 if (err != ESP_OK) {
                     mState = PageState::INVALID;
                     return err;
@@ -715,7 +797,7 @@ esp_err_t Page::mLoadEntryTable()
                     }
                 }
                 if (needErase) {
-                    eraseEntryAndSpan(i);
+                    eraseEntryAndSpan(i, DEFAULT_PURGE_AFTER_ERASE);
                     continue;
                 }
             }
@@ -725,7 +807,7 @@ esp_err_t Page::mLoadEntryTable()
              * for same key on active page. Since datatype is not used in hash calculation,
              * old-format blob will be removed.*/
             if (duplicateIndex < i) {
-                eraseEntryAndSpan(duplicateIndex);
+                eraseEntryAndSpan(duplicateIndex, DEFAULT_PURGE_AFTER_ERASE);
             }
         }
 
@@ -735,7 +817,7 @@ esp_err_t Page::mLoadEntryTable()
             Item dupItem;
             if (findItem(item.nsIndex, item.datatype, item.key, findItemIndex, dupItem) == ESP_OK) {
                 if (findItemIndex < lastItemIndex) {
-                    auto err = eraseEntryAndSpan(findItemIndex);
+                    auto err = eraseEntryAndSpan(findItemIndex, DEFAULT_PURGE_AFTER_ERASE);
                     if (err != ESP_OK) {
                         mState = PageState::INVALID;
                         return err;
@@ -763,7 +845,7 @@ esp_err_t Page::mLoadEntryTable()
             }
 
             if (!item.checkHeaderConsistency(i)) {
-                err = eraseEntryAndSpan(i);
+                err = eraseEntryAndSpan(i, DEFAULT_PURGE_AFTER_ERASE);
                 if (err != ESP_OK) {
                     mState = PageState::INVALID;
                     return err;
@@ -788,7 +870,7 @@ esp_err_t Page::mLoadEntryTable()
                         return err;
                     }
                     if (state != EntryState::WRITTEN) {
-                        eraseEntryAndSpan(i);
+                        eraseEntryAndSpan(i, DEFAULT_PURGE_AFTER_ERASE);
                         break;
                     }
                 }
@@ -897,6 +979,36 @@ esp_err_t Page::readEntry(size_t index, Item &dst) const
     return ESP_OK;
 }
 
+esp_err_t Page::purgeEntry(size_t index){
+    return purgeEntryRange(index, index + 1);
+}
+
+esp_err_t Page::purgeEntryRange(size_t begin, size_t end)
+{
+    NVS_ASSERT_OR_RETURN(end <= ENTRY_COUNT, ESP_FAIL);
+    NVS_ASSERT_OR_RETURN(end > begin, ESP_FAIL);
+    esp_err_t err;
+    uint32_t phyAddr;
+
+    uint8_t entryPurgeBuffer[ENTRY_SIZE];
+    std::fill_n(entryPurgeBuffer, ENTRY_SIZE, 0x00);
+
+    for (size_t i = begin; i < end; i++) {
+        err = getEntryAddress(i, &phyAddr);
+        if (err != ESP_OK) {
+            return err;
+        }
+        err = mPartition->write_raw(phyAddr, entryPurgeBuffer, ENTRY_SIZE);
+        if (err != ESP_OK) {
+            mState = PageState::INVALID;
+            return err;
+        }
+    }
+    return ESP_OK;
+}
+
+
+
 esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, size_t &itemIndex, Item &item, uint8_t chunkIdx, VerOffset chunkStart)
 {
     if (mState == PageState::CORRUPT || mState == PageState::INVALID || mState == PageState::UNINITIALIZED) {
@@ -950,7 +1062,7 @@ esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, si
         }
 
         if (!item.checkHeaderConsistency(i)) {
-            rc = eraseEntryAndSpan(i);
+            rc = eraseEntryAndSpan(i, DEFAULT_PURGE_AFTER_ERASE);
             if (rc != ESP_OK) {
                 mState = PageState::INVALID;
                 return rc;

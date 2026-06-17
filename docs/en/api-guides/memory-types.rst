@@ -187,7 +187,7 @@ The ``DRAM_ATTR`` attribute can be used to force constants from DROM into the :r
         Remaining RTC FAST memory is added to the heap unless the option :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` is disabled. This memory can be used interchangeably with :ref:`DRAM`, but is slightly slower to access.
 
 
-.. only:: SOC_MEM_TCM_SUPPORTED
+.. only:: SOC_MEM_SPM_SUPPORTED
 
     SPM (Scratchpad Memory)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

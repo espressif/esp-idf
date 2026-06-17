@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -234,6 +234,13 @@ fail:
             last_error.last_error = esp_tls_get_and_clear_last_error(error_handle, &last_error.esp_tls_error_code, &last_error.esp_tls_flags);
             http_dispatch_event_to_event_loop(HTTPS_SERVER_EVENT_ERROR, &last_error, sizeof(last_error));
         }
+        // Call user callback if configured, allowing user to log failures
+        if (global_ctx->user_cb) {
+            esp_https_server_user_cb_arg_t user_cb_data = {0};
+            user_cb_data.user_cb_state = HTTPD_SSL_USER_CB_SESS_ERROR;
+            user_cb_data.tls = tls;
+            (global_ctx->user_cb)((void *)&user_cb_data);
+        }
         esp_tls_server_session_delete(tls);
     }
     return ESP_FAIL;
@@ -441,8 +448,9 @@ esp_err_t httpd_ssl_start(httpd_handle_t *pHandle, struct httpd_ssl_config *conf
 
     ret = httpd_start(&handle, &config->httpd);
     if (ret != ESP_OK) {
-        free(ssl_ctx);
-        ssl_ctx = NULL;
+        if (ssl_ctx) {
+            free_secure_context(ssl_ctx);
+        }
         return ret;
     }
 

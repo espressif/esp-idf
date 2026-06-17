@@ -223,4 +223,5 @@ otError otPlatSettingsDelete(otInstance *aInstance, uint16_t aKey, int aIndex)
 void otPlatSettingsWipe(otInstance *aInstance)
 {
     nvs_erase_all(s_ot_nvs_handle);
+    nvs_commit(s_ot_nvs_handle);
 }

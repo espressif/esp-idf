@@ -43,7 +43,7 @@ To install an ADC instance, set up the required initial configuration structure 
 
 .. todo::
 
-   Add ULP ADC-related docs here.
+    Add ULP ADC-related docs here.
 
 After setting up the initial configurations for the ADC, call :cpp:func:`adc_oneshot_new_unit` with the prepared :cpp:type:`adc_oneshot_unit_init_cfg_t`. This function will return an ADC unit handle if the allocation is successful.
 
@@ -137,7 +137,7 @@ where:
     * - Dmax
       -  Maximum of the output ADC raw digital reading result, which is 2^bitwidth, where bitwidth is the :cpp:member:`adc_oneshot_chan_cfg_t::bitwidth` configured before.
 
-To do further calibration to convert the ADC raw result to voltage in mV, please refer to calibration doc :doc:`adc_calibration`.
+For further calibration to convert the ADC raw result to voltage in mV, please refer to :doc:`adc_calibration`.
 
 
 Read Raw Result
@@ -159,8 +159,9 @@ Hardware Limitations
 
 .. list::
 
-    - Random Number Generator (RNG) uses ADC as an input source. When ADC :cpp:func:`adc_oneshot_read` works, the random number generated from RNG will be less random.
+    :not esp32s31: - Random Number Generator (RNG) uses ADC as an input source. When ADC :cpp:func:`adc_oneshot_read` works, the random number generated from RNG will be less random.
     :SOC_ADC_DMA_SUPPORTED: - A specific ADC unit can only work under one operating mode at any one time, either continuous mode or oneshot mode. :cpp:func:`adc_oneshot_read` has provided the protection.
+    :SOC_ADC_DIFF_SUPPORTED: - In single-ended mode, if the N-side channel is used as the input interface, its raw-data polarity is inverted. For an input range of -2 to 2, the N-side raw code is 4393 to 0. Please use the ADC calibration APIs.
     :esp32 or esp32s2 or esp32s3: - ADC2 is also used by Wi-Fi. :cpp:func:`adc_oneshot_read` has provided protection between the Wi-Fi driver and ADC oneshot mode driver.
     :esp32c3: - ADC2 oneshot mode is no longer supported, due to hardware limitations. The results are not stable. This issue can be found in `ESP32-C3 Series SoC Errata <https://www.espressif.com/sites/default/files/documentation/esp32-c3_errata_en.pdf>`_. For compatibility, you can enable :ref:`CONFIG_ADC_ONESHOT_FORCE_USE_ADC2_ON_C3` to force use ADC2.
     :esp32: - ESP32-DevKitC: GPIO0 cannot be used in oneshot mode, because the DevKit has used it for auto-flash.
@@ -200,7 +201,7 @@ Above functions are guaranteed to be thread-safe. Therefore, you can call them f
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_ADC_ONESHOT_CTRL_FUNC_IN_IRAM` controls where to place the ADC fast read function (IRAM or Flash), see `IRAM Safe <#iram-safe>`__ for more details.
+- :ref:`CONFIG_ADC_ONESHOT_CTRL_FUNC_IN_IRAM` controls where to place the ADC fast read function (IRAM or Flash), see :ref:`adc-oneshot-iram-safe` for more details.
 
 
 Application Examples

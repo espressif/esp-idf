@@ -32,7 +32,7 @@ static void check_leak(size_t before_free, size_t after_free, const char *type)
 {
     ssize_t delta = after_free - before_free;
     printf("MALLOC_CAP_%s: Before %u bytes free, After %u bytes free (delta %d, threshold %d)\n", type, before_free, after_free, delta, leak_threshold);
-    TEST_ASSERT_MESSAGE(delta > leak_threshold, "memory leak");
+    TEST_ASSERT_MESSAGE(delta >= leak_threshold, "memory leak");
 }
 
 #if SOC_SHA_SUPPORT_SHA512

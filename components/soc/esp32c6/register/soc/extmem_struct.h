@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -33,7 +33,11 @@ typedef union {
          */
         uint32_t l1_icache_shut_ibus3:1;
         /** l1_icache_undef_op : HRO; bitpos: [7:4]; default: 0;
-         *  Reserved
+         *  Internal debug control field.
+         *  bits[1:0]: Arbitration mode.
+         *    0: Round-robin, hold bus until data fetch completes.
+         *    1: Round-robin, release bus after request is issued.
+         *    2/3: Random arbitration.
          */
         uint32_t l1_icache_undef_op:4;
         uint32_t reserved_8:24;
@@ -68,7 +72,11 @@ typedef union {
         uint32_t l1_cache_shut_dma:1;
         uint32_t reserved_5:3;
         /** l1_cache_undef_op : R/W; bitpos: [11:8]; default: 0;
-         *  Reserved
+         *  Internal debug control field.
+         *  bits[1:0]: Arbitration mode.
+         *    0: Round-robin, hold bus until data fetch completes.
+         *    1: Round-robin, release bus after request is issued.
+         *    2/3: Random arbitration.
          */
         uint32_t l1_cache_undef_op:4;
         uint32_t reserved_12:20;
@@ -87,7 +95,11 @@ typedef union {
          */
         uint32_t l2_cache_shut_dma:1;
         /** l2_cache_undef_op : HRO; bitpos: [8:5]; default: 0;
-         *  Reserved
+         *  Internal debug control field.
+         *  bits[1:0]: Arbitration mode.
+         *    0: Round-robin, hold bus until data fetch completes.
+         *    1: Round-robin, release bus after request is issued.
+         *    2/3: Random arbitration.
          */
         uint32_t l2_cache_undef_op:4;
         uint32_t reserved_9:23;

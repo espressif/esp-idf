@@ -1,4 +1,5 @@
 include(${CMAKE_CURRENT_LIST_DIR}/toolchain_flags.cmake)
+include($ENV{IDF_PATH}/tools/cmake/deduplicate_flags.cmake)
 
 if(NOT CMAKE_PARENT_LIST_FILE)
     message(FATAL_ERROR "toolchain.cmake cannot be used standalone (use chip-specific toolchain file instead)")
@@ -14,6 +15,16 @@ file(TO_CMAKE_PATH "${_current_toolchain_dir}" _current_toolchain_dir)
 
 set(CMAKE_SYSTEM_NAME Generic)
 
+# Windows CreateProcess enforces a short command line (~32k). IDF compile lines can be
+# huge (includes, reproducible-build prefix maps, etc.). Tell the Ninja generator to
+# pass compiler arguments via response files (CMake 3.15+). This is orthogonal to the
+# early-stage @cflags/@cxxflags response files below, which only cover CMAKE_*_FLAGS.
+if(CMAKE_HOST_WIN32 AND CMAKE_GENERATOR MATCHES "Ninja"
+    AND NOT DEFINED CACHE{CMAKE_NINJA_FORCE_RESPONSE_FILE})
+    set(CMAKE_NINJA_FORCE_RESPONSE_FILE ON CACHE BOOL
+        "Use Ninja response files on Windows hosts (avoid CreateProcess command-line limit).")
+endif()
+
 # Set compiler tools according to the toolchain type
 string(FIND "${_toolchain_filename}" "clang" found_clang)
 if(NOT found_clang EQUAL -1)
@@ -22,10 +33,10 @@ if(NOT found_clang EQUAL -1)
     set(CMAKE_C_COMPILER clang)
     set(CMAKE_CXX_COMPILER clang++)
     set(CMAKE_ASM_COMPILER clang)
-    set(CMAKE_LINKER ${_CMAKE_TOOLCHAIN_PREFIX}ld)
+    set(CMAKE_LINKER ${_CMAKE_TOOLCHAIN_PREFIX}clang-ld)
     set(CMAKE_AR llvm-ar)
     set(CMAKE_RANLIB llvm-ranlib)
-    set(CMAKE_OBJDUMP ${_CMAKE_TOOLCHAIN_PREFIX}objdump)
+    set(CMAKE_OBJDUMP ${_CMAKE_TOOLCHAIN_PREFIX}clang-objdump)
 else()
     set(IDF_TOOLCHAIN "gcc" CACHE STRING "IDF Build Toolchain Type" FORCE)
 
@@ -69,17 +80,30 @@ if(_idf_toolchain_dir STREQUAL _current_toolchain_dir)
                             CXX_COMPILE_OPTIONS "${CMAKE_CXX_FLAGS}"
                             ASM_COMPILE_OPTIONS "${CMAKE_ASM_FLAGS}"
                             LINK_OPTIONS "${CMAKE_EXE_LINKER_FLAGS}")
+    # Clear CMAKE_*_FLAGS because all flags are written to response files.
+    set(CMAKE_C_FLAGS "")
+    set(CMAKE_CXX_FLAGS "")
+    set(CMAKE_ASM_FLAGS "")
+    set(CMAKE_EXE_LINKER_FLAGS "")
 else()
     set(IDF_TOOLCHAIN_BUILD_DIR "${_current_toolchain_dir}"
         CACHE PATH "Path to toolchain build directory containing response files and toolchain file copy" FORCE)
 endif()
+
+# Merge the response file path with any existing CMAKE_*_FLAGS (e.g. from
+# ExternalProject_Add), then remove duplicates. Deduplication is needed because
+# CMake may execute this toolchain file multiple times during initialization.
+remove_duplicated_flags("@\"${IDF_TOOLCHAIN_BUILD_DIR}/cflags\" ${CMAKE_C_FLAGS}" CMAKE_C_FLAGS)
+remove_duplicated_flags("@\"${IDF_TOOLCHAIN_BUILD_DIR}/cxxflags\" ${CMAKE_CXX_FLAGS}" CMAKE_CXX_FLAGS)
+remove_duplicated_flags("@\"${IDF_TOOLCHAIN_BUILD_DIR}/asmflags\" ${CMAKE_ASM_FLAGS}" CMAKE_ASM_FLAGS)
+remove_duplicated_flags("@\"${IDF_TOOLCHAIN_BUILD_DIR}/ldflags\" ${CMAKE_EXE_LINKER_FLAGS}" CMAKE_EXE_LINKER_FLAGS)
 
 # Configure CMake to use response files for compiler and linker flags.
 # Some compilation options enabled by IDF configuration options are not yet
 # defined at this very early CMake stage (toolchain.cmake execution). Response
 # files allow these flags to be dynamically updated during the CMake configuration
 # phase, after the options become available.
-set(CMAKE_C_FLAGS "@\"${IDF_TOOLCHAIN_BUILD_DIR}/cflags\"" CACHE STRING "C Compiler Base Flags" FORCE)
-set(CMAKE_CXX_FLAGS "@\"${IDF_TOOLCHAIN_BUILD_DIR}/cxxflags\"" CACHE STRING "C++ Compiler Base Flags" FORCE)
-set(CMAKE_ASM_FLAGS "@\"${IDF_TOOLCHAIN_BUILD_DIR}/asmflags\"" CACHE STRING "Asm Compiler Base Flags" FORCE)
-set(CMAKE_EXE_LINKER_FLAGS "@\"${IDF_TOOLCHAIN_BUILD_DIR}/ldflags\"" CACHE STRING "Linker Base Flags" FORCE)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}" CACHE STRING "C Compiler Base Flags" FORCE)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" CACHE STRING "C++ Compiler Base Flags" FORCE)
+set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS}" CACHE STRING "Asm Compiler Base Flags" FORCE)
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}" CACHE STRING "Linker Base Flags" FORCE)

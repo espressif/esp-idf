@@ -8,13 +8,12 @@ set(srcs "commands.c"
          "split_argv.c"
          "linenoise/linenoise.c")
 
-set(requires vfs)
+set(requires vfs esp_stdio)
 
 if(${target} STREQUAL "linux")
-    list(APPEND srcs "esp_console_repl_linux.c" "esp_console_repl_internal.c")
+    list(APPEND srcs "esp_console_repl_internal.c")
 else()
     list(APPEND srcs "esp_console_repl_chip.c")
-    list(APPEND requires esp_stdio)
     if(CONFIG_VFS_SUPPORT_SELECT)
         list(APPEND srcs "esp_console_repl_internal.c")
     endif()
@@ -35,16 +34,15 @@ set(argtable_srcs argtable3/arg_cmd.c
                   argtable3/arg_utils.c
                   argtable3/argtable3.c)
 
+# TODO IDF-14810: Remove io_requires dependency
+if(NOT ${target} STREQUAL "linux")
+    set(io_requires esp_driver_uart esp_driver_usb_serial_jtag esp_usb_cdc_rom_console)
+endif()
 
-idf_component_register(SRCS ${srcs}
-                            ${argtable_srcs}
+idf_component_register(SRCS ${srcs} ${argtable_srcs}
                     INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
                     PRIV_INCLUDE_DIRS private_include
-                    REQUIRES "${requires}"
-                    PRIV_REQUIRES esp_driver_uart
-                                  esp_driver_usb_serial_jtag
-                                  esp_usb_cdc_rom_console
-                    )
+                    REQUIRES ${requires} ${io_requires})
 
 if(CONFIG_LIBC_PICOLIBC)
     list(APPEND srcs_include_stdio_private ${srcs})

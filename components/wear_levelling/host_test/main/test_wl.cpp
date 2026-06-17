@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -279,7 +279,7 @@ void calculate_wl_state_address_info(const esp_partition_t *partition, size_t *o
 void calculate_wl_state_crc(WL_State_s *state_ptr)
 {
     int check_size = WL_STATE_CRC_LEN_V2;
-    // Chech CRC and recover state
+    // Check CRC and recover state
     state_ptr->crc32 = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)state_ptr, check_size);
  }
 
@@ -420,4 +420,234 @@ TEST_CASE("power down between WL status 1 and WL status 2 update", "[wear_levell
     REQUIRE(result == ESP_OK);
 
     free(tmp_state);
+}
+
+/* ======================================================================== */
+/* BDL (Block Device Layer) interface tests                                 */
+/* ======================================================================== */
+
+TEST_CASE("BDL read/write/erase operations", "[wear_levelling][bdl]")
+{
+    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    REQUIRE(partition != NULL);
+
+    esp_blockdev_handle_t part_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    REQUIRE(esp_partition_ptr_get_blockdev(partition, &part_blockdev) == ESP_OK);
+
+    esp_blockdev_handle_t wl_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    REQUIRE(wl_get_blockdev(part_blockdev, &wl_blockdev) == ESP_OK);
+
+    REQUIRE(wl_blockdev->geometry.disk_size > 0);
+    REQUIRE(wl_blockdev->geometry.erase_size > 0);
+
+    const size_t data_size = 256;
+    uint8_t test_data[data_size];
+    uint8_t data_buffer[data_size];
+    size_t target_addr = 3 * 4 * 1024;  //"random" address - 3rd sector of the partition (ie anything but 0 sector)
+
+    REQUIRE(wl_blockdev->ops->erase(wl_blockdev, target_addr, wl_blockdev->geometry.erase_size) == ESP_OK);
+    memset(test_data, 0xFF, data_size);
+    REQUIRE(wl_blockdev->ops->read(wl_blockdev, data_buffer, data_size, target_addr, data_size) == ESP_OK);
+    REQUIRE(memcmp(test_data, data_buffer, data_size) == 0);
+
+    memset(test_data, 'P', data_size);
+    REQUIRE(wl_blockdev->ops->write(wl_blockdev, test_data, target_addr, data_size) == ESP_OK);
+    REQUIRE(wl_blockdev->ops->read(wl_blockdev, data_buffer, data_size, target_addr, data_size) == ESP_OK);
+    REQUIRE(memcmp(test_data, data_buffer, data_size) == 0);
+
+    REQUIRE(wl_blockdev->ops->sync(wl_blockdev) == ESP_OK);
+
+    REQUIRE(wl_blockdev->ops->release(wl_blockdev) == ESP_OK);
+    REQUIRE(part_blockdev->ops->release(part_blockdev) == ESP_OK);
+}
+
+TEST_CASE("BDL error paths", "[wear_levelling][bdl]")
+{
+    esp_blockdev_handle_t out = ESP_BLOCKDEV_HANDLE_INVALID;
+    CHECK(wl_get_blockdev(ESP_BLOCKDEV_HANDLE_INVALID, &out) == ESP_ERR_INVALID_ARG);
+    CHECK(wl_get_blockdev(ESP_BLOCKDEV_HANDLE_INVALID, NULL) == ESP_ERR_INVALID_ARG);
+
+    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    REQUIRE(partition != NULL);
+
+    esp_blockdev_handle_t part_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    REQUIRE(esp_partition_ptr_get_blockdev(partition, &part_blockdev) == ESP_OK);
+
+    CHECK(wl_get_blockdev(part_blockdev, NULL) == ESP_ERR_INVALID_ARG);
+
+    REQUIRE(part_blockdev->ops->release(part_blockdev) == ESP_OK);
+}
+
+TEST_CASE("BDL disk_size truncation guard", "[wear_levelling][bdl]")
+{
+    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    REQUIRE(partition != NULL);
+
+    esp_blockdev_handle_t part_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    REQUIRE(esp_partition_ptr_get_blockdev(partition, &part_blockdev) == ESP_OK);
+
+    uint64_t orig_size = part_blockdev->geometry.disk_size;
+    esp_blockdev_handle_t wl_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+
+    // Just above the uint32_t boundary
+    part_blockdev->geometry.disk_size = (uint64_t)UINT32_MAX + 1;
+    CHECK(wl_get_blockdev(part_blockdev, &wl_blockdev) == ESP_ERR_INVALID_SIZE);
+    CHECK(wl_blockdev == ESP_BLOCKDEV_HANDLE_INVALID);
+
+    // Far above the uint32_t boundary
+    wl_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    part_blockdev->geometry.disk_size = UINT64_MAX;
+    CHECK(wl_get_blockdev(part_blockdev, &wl_blockdev) == ESP_ERR_INVALID_SIZE);
+    CHECK(wl_blockdev == ESP_BLOCKDEV_HANDLE_INVALID);
+
+    part_blockdev->geometry.disk_size = orig_size;
+    REQUIRE(part_blockdev->ops->release(part_blockdev) == ESP_OK);
+}
+
+TEST_CASE("BDL geometry and flags verification", "[wear_levelling][bdl]")
+{
+    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    REQUIRE(partition != NULL);
+
+    esp_blockdev_handle_t part_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    REQUIRE(esp_partition_ptr_get_blockdev(partition, &part_blockdev) == ESP_OK);
+
+    esp_blockdev_handle_t wl_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    REQUIRE(wl_get_blockdev(part_blockdev, &wl_blockdev) == ESP_OK);
+
+    CHECK(wl_blockdev->geometry.disk_size > 0);
+    CHECK((uint64_t)wl_blockdev->geometry.disk_size < part_blockdev->geometry.disk_size);
+    CHECK(wl_blockdev->geometry.erase_size > 0);
+    CHECK(wl_blockdev->geometry.read_size == part_blockdev->geometry.read_size);
+    CHECK(wl_blockdev->geometry.write_size == part_blockdev->geometry.write_size);
+    CHECK(wl_blockdev->geometry.recommended_read_size == part_blockdev->geometry.recommended_read_size);
+    CHECK(wl_blockdev->geometry.recommended_write_size == part_blockdev->geometry.recommended_write_size);
+
+    CHECK(wl_blockdev->device_flags.val == part_blockdev->device_flags.val);
+
+    REQUIRE(wl_blockdev->ops != NULL);
+    CHECK(wl_blockdev->ops->read != NULL);
+    CHECK(wl_blockdev->ops->write != NULL);
+    CHECK(wl_blockdev->ops->erase != NULL);
+    CHECK(wl_blockdev->ops->sync != NULL);
+    CHECK(wl_blockdev->ops->ioctl != NULL);
+    CHECK(wl_blockdev->ops->release != NULL);
+
+    REQUIRE(wl_blockdev->ops->release(wl_blockdev) == ESP_OK);
+    REQUIRE(part_blockdev->ops->release(part_blockdev) == ESP_OK);
+}
+
+TEST_CASE("BDL sync operation", "[wear_levelling][bdl]")
+{
+    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    REQUIRE(partition != NULL);
+
+    esp_blockdev_handle_t part_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    REQUIRE(esp_partition_ptr_get_blockdev(partition, &part_blockdev) == ESP_OK);
+
+    esp_blockdev_handle_t wl_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    REQUIRE(wl_get_blockdev(part_blockdev, &wl_blockdev) == ESP_OK);
+
+    size_t erase_size = wl_blockdev->geometry.erase_size;
+    REQUIRE(wl_blockdev->ops->erase(wl_blockdev, 0, erase_size) == ESP_OK);
+
+    uint8_t test_data[64];
+    memset(test_data, 'S', sizeof(test_data));
+    REQUIRE(wl_blockdev->ops->write(wl_blockdev, test_data, 0, sizeof(test_data)) == ESP_OK);
+    REQUIRE(wl_blockdev->ops->sync(wl_blockdev) == ESP_OK);
+
+    uint8_t read_data[64];
+    REQUIRE(wl_blockdev->ops->read(wl_blockdev, read_data, sizeof(read_data), 0, sizeof(read_data)) == ESP_OK);
+    REQUIRE(memcmp(test_data, read_data, sizeof(test_data)) == 0);
+
+    REQUIRE(wl_blockdev->ops->release(wl_blockdev) == ESP_OK);
+    REQUIRE(part_blockdev->ops->release(part_blockdev) == ESP_OK);
+}
+
+TEST_CASE("BDL ioctl relay to bottom device", "[wear_levelling][bdl]")
+{
+    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    REQUIRE(partition != NULL);
+
+    esp_blockdev_handle_t part_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    REQUIRE(esp_partition_ptr_get_blockdev(partition, &part_blockdev) == ESP_OK);
+
+    esp_blockdev_handle_t wl_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    REQUIRE(wl_get_blockdev(part_blockdev, &wl_blockdev) == ESP_OK);
+
+    CHECK(wl_blockdev->ops->ioctl(wl_blockdev, ESP_BLOCKDEV_CMD_MARK_DELETED, NULL) == ESP_ERR_NOT_SUPPORTED);
+
+    REQUIRE(wl_blockdev->ops->release(wl_blockdev) == ESP_OK);
+    REQUIRE(part_blockdev->ops->release(part_blockdev) == ESP_OK);
+}
+
+TEST_CASE("BDL erase alignment validation", "[wear_levelling][bdl]")
+{
+    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    REQUIRE(partition != NULL);
+
+    esp_blockdev_handle_t part_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    REQUIRE(esp_partition_ptr_get_blockdev(partition, &part_blockdev) == ESP_OK);
+
+    esp_blockdev_handle_t wl_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    REQUIRE(wl_get_blockdev(part_blockdev, &wl_blockdev) == ESP_OK);
+
+    size_t erase_size = wl_blockdev->geometry.erase_size;
+
+    CHECK(wl_blockdev->ops->erase(wl_blockdev, 1, erase_size) == ESP_ERR_INVALID_SIZE);
+    CHECK(wl_blockdev->ops->erase(wl_blockdev, 0, erase_size - 1) == ESP_ERR_INVALID_SIZE);
+    CHECK(wl_blockdev->ops->erase(wl_blockdev, 1, erase_size + 1) == ESP_ERR_INVALID_SIZE);
+    REQUIRE(wl_blockdev->ops->erase(wl_blockdev, 0, erase_size) == ESP_OK);
+
+    REQUIRE(wl_blockdev->ops->release(wl_blockdev) == ESP_OK);
+    REQUIRE(part_blockdev->ops->release(part_blockdev) == ESP_OK);
+}
+
+TEST_CASE("BDL read buffer size validation", "[wear_levelling][bdl]")
+{
+    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    REQUIRE(partition != NULL);
+
+    esp_blockdev_handle_t part_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    REQUIRE(esp_partition_ptr_get_blockdev(partition, &part_blockdev) == ESP_OK);
+
+    esp_blockdev_handle_t wl_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    REQUIRE(wl_get_blockdev(part_blockdev, &wl_blockdev) == ESP_OK);
+
+    uint8_t buf[64];
+    CHECK(wl_blockdev->ops->read(wl_blockdev, buf, 32, 0, 64) == ESP_ERR_INVALID_ARG);
+    REQUIRE(wl_blockdev->ops->read(wl_blockdev, buf, sizeof(buf), 0, sizeof(buf)) == ESP_OK);
+
+    REQUIRE(wl_blockdev->ops->release(wl_blockdev) == ESP_OK);
+    REQUIRE(part_blockdev->ops->release(part_blockdev) == ESP_OK);
+}
+
+TEST_CASE("BDL release and reconnect", "[wear_levelling][bdl]")
+{
+    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    REQUIRE(partition != NULL);
+
+    esp_blockdev_handle_t part_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    REQUIRE(esp_partition_ptr_get_blockdev(partition, &part_blockdev) == ESP_OK);
+
+    esp_blockdev_handle_t wl_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    REQUIRE(wl_get_blockdev(part_blockdev, &wl_blockdev) == ESP_OK);
+
+    size_t erase_size = wl_blockdev->geometry.erase_size;
+    REQUIRE(wl_blockdev->ops->erase(wl_blockdev, 0, erase_size) == ESP_OK);
+    uint8_t test_data[64];
+    memset(test_data, 'R', sizeof(test_data));
+    REQUIRE(wl_blockdev->ops->write(wl_blockdev, test_data, 0, sizeof(test_data)) == ESP_OK);
+
+    REQUIRE(wl_blockdev->ops->release(wl_blockdev) == ESP_OK);
+
+    wl_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    REQUIRE(wl_get_blockdev(part_blockdev, &wl_blockdev) == ESP_OK);
+
+    uint8_t read_data[64];
+    REQUIRE(wl_blockdev->ops->read(wl_blockdev, read_data, sizeof(read_data), 0, sizeof(read_data)) == ESP_OK);
+    REQUIRE(memcmp(test_data, read_data, sizeof(test_data)) == 0);
+
+    REQUIRE(wl_blockdev->ops->release(wl_blockdev) == ESP_OK);
+    REQUIRE(part_blockdev->ops->release(part_blockdev) == ESP_OK);
 }

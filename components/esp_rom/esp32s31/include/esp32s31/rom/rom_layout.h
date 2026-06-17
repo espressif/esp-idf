@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,11 +12,12 @@
 extern "C" {
 #endif
 
+#define CORE_NUM 2
 #define SUPPORT_BTDM 0
 #define SUPPORT_BTBB 0
-#define SUPPORT_WIFI 0
+#define SUPPORT_WIFI 1
 #define SUPPORT_USB_DWCOTG 1
-#define SUPPORT_COEXIST 0
+#define SUPPORT_COEXIST 1
 #define SUPPORT_MBEDTLS 0
 
 /* Structure and functions for returning ROM global layout
@@ -91,6 +92,11 @@ typedef struct {
 
     void *dram_start_uart_rom;
     void *dram_end_uart_rom;
+
+    void *eh_frame_vaddr_rom;
+    void *eh_frame_hdr_vaddr_rom;
+
+    void *drom_start;
 } ets_rom_layout_t;
 
 extern const ets_rom_layout_t *const ets_rom_layout_p;

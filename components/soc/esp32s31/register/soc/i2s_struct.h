@@ -1027,11 +1027,11 @@ typedef union {
 typedef union {
     struct {
         /** rx_destination : R/W; bitpos: [0]; default: 0;
-         *  Set this bit to configure the data destination of i2s rx. 1: ble. 0: gdma.
+         *  Set this bit to configure the data destination of i2s rx. 1: bt. 0: gdma.
          */
         uint32_t rx_destination:1;
         /** tx_destination : R/W; bitpos: [1]; default: 0;
-         *  Set this bit to configure the data destination of i2s tx. 1: ble. 0: gdma.
+         *  Set this bit to configure the data destination of i2s tx. 1: bt. 0: gdma.
          */
         uint32_t tx_destination:1;
         uint32_t reserved_2:30;
@@ -1282,6 +1282,8 @@ typedef struct {
     volatile i2s_date_reg_t date;
 } i2s_dev_t;
 
+extern i2s_dev_t I2S0;
+extern i2s_dev_t I2S1;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(i2s_dev_t) == 0x100, "Invalid size of i2s_dev_t structure");

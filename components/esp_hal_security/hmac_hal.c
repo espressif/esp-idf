@@ -38,7 +38,7 @@ uint32_t hmac_hal_configure(hmac_hal_output_t config, uint32_t key_id)
             // No other HMAC output type is allowed when using key manager
             return 1;
         }
-    } else {
+    } else if (key_mgr_ll_is_supported()) {
         key_mgr_hal_set_key_usage(ESP_KEY_MGR_HMAC_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
     }
 #endif

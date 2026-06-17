@@ -195,9 +195,6 @@ _heap_end = ALIGN(0x40000000 - _sram1_iram_len - 3, 4);
 _heap_end = 0x40000000 - CONFIG_ESP32_TRACEMEM_RESERVE_DRAM;
 #endif
 
-
-_data_seg_org = ORIGIN(rtc_data_seg);
-
 /* The lines below define location alias for .rtc.data section based on Kconfig option.
    When the option is not defined then use slow memory segment
    else the data will be placed in fast memory segment */

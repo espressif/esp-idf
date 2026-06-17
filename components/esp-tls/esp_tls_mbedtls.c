@@ -44,7 +44,8 @@ static esp_err_t esp_set_atecc608a_pki_context(esp_tls_t *tls, const void *pki);
 
 #if defined(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
 #include <pk_wrap.h>
-#include "rsa_sign_alt.h"
+#include "psa/crypto.h"
+#include "psa_crypto_driver_esp_rsa_ds.h"
 static esp_err_t esp_mbedtls_init_pk_ctx_for_ds(const void *pki);
 #endif /* CONFIG_ESP_TLS_USE_DS_PERIPHERAL */
 
@@ -289,9 +290,6 @@ int esp_mbedtls_handshake(esp_tls_t *tls, const esp_tls_cfg_t *cfg)
 #endif
         tls->conn_state = ESP_TLS_DONE;
 
-#ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL
-        esp_ds_release_ds_lock();
-#endif
         return 1;
     } else {
         if (ret != ESP_TLS_ERR_SSL_WANT_READ && ret != ESP_TLS_ERR_SSL_WANT_WRITE) {
@@ -495,53 +493,18 @@ void esp_mbedtls_cleanup(esp_tls_t *tls)
     mbedtls_x509_crt_free(&tls->cacert);
     mbedtls_x509_crt_free(&tls->clientcert);
 
-#ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL
-    if (mbedtls_pk_get_type(&tls->clientkey) == MBEDTLS_PK_RSASSA_PSS) {
-        mbedtls_rsa_context *rsa = tls->clientkey.MBEDTLS_PRIVATE(pk_ctx);
-        if (rsa != NULL) {
-            mbedtls_rsa_free(rsa);
-            mbedtls_free(rsa);
-            rsa = NULL;
+    /* For opaque keys (DS peripheral, hardware ECDSA), mbedtls_pk_free() does
+     * not destroy the PSA key — ownership is external. Destroy it manually
+     * before calling mbedtls_pk_free(). mbedtls_pk_wrap_psa() sets the pk_info
+     * to mbedtls_{rsa,ecdsa}_opaque_info, both of which have type
+     * MBEDTLS_PK_OPAQUE — so a single check covers both DS and ECDSA paths.
+     * clientkey and serverkey share storage via union, so one branch suffices. */
+#if defined(CONFIG_ESP_TLS_USE_DS_PERIPHERAL) || defined(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN)
+    if (mbedtls_pk_get_type(&tls->clientkey) == MBEDTLS_PK_OPAQUE) {
+        if (tls->clientkey.MBEDTLS_PRIVATE(priv_id) != PSA_KEY_ID_NULL) {
+            psa_destroy_key(tls->clientkey.MBEDTLS_PRIVATE(priv_id));
+            tls->clientkey.MBEDTLS_PRIVATE(priv_id) = PSA_KEY_ID_NULL;
         }
-        tls->clientkey.MBEDTLS_PRIVATE(pk_ctx) = NULL;
-    }
-
-    // Similar cleanup for server key
-    if (mbedtls_pk_get_type(&tls->serverkey) == MBEDTLS_PK_RSASSA_PSS) {
-        mbedtls_rsa_context *rsa = tls->serverkey.MBEDTLS_PRIVATE(pk_ctx);
-        if (rsa != NULL) {
-            mbedtls_rsa_free(rsa);
-            mbedtls_free(rsa);
-            rsa = NULL;
-        }
-        tls->serverkey.MBEDTLS_PRIVATE(pk_ctx) = NULL;
-    }
-#endif
-
-#ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
-    /* In mbedtls v4.0, ECDSA keys require manual cleanup of the keypair structure */
-    if (mbedtls_pk_get_type(&tls->clientkey) == MBEDTLS_PK_ECDSA) {
-        ESP_LOGD(TAG, "Cleaning up client key");
-        mbedtls_ecp_keypair *keypair = tls->clientkey.MBEDTLS_PRIVATE(pk_ctx);
-        if (keypair != NULL) {
-            mbedtls_ecp_keypair_free(keypair);
-            mbedtls_free(keypair);
-            keypair = NULL;
-        }
-        psa_destroy_key(tls->clientkey.MBEDTLS_PRIVATE(priv_id));
-        tls->clientkey.MBEDTLS_PRIVATE(pk_ctx) = NULL;
-    }
-
-    // Similar cleanup for server key
-    if (mbedtls_pk_get_type(&tls->serverkey) == MBEDTLS_PK_ECDSA) {
-        mbedtls_ecp_keypair *keypair = tls->serverkey.MBEDTLS_PRIVATE(pk_ctx);
-        if (keypair != NULL) {
-            mbedtls_ecp_keypair_free(keypair);
-            mbedtls_free(keypair);
-            keypair = NULL;
-        }
-        psa_destroy_key(tls->serverkey.MBEDTLS_PRIVATE(priv_id));
-        tls->serverkey.MBEDTLS_PRIVATE(pk_ctx) = NULL;
     }
 #endif
 
@@ -550,9 +513,6 @@ void esp_mbedtls_cleanup(esp_tls_t *tls)
     mbedtls_ssl_free(&tls->ssl);
 #ifdef CONFIG_ESP_TLS_USE_SECURE_ELEMENT
     atcab_release();
-#endif
-#ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL
-    esp_ds_release_ds_lock();
 #endif
 }
 
@@ -603,7 +563,7 @@ static esp_err_t set_pki_context(esp_tls_t *tls, const esp_tls_pki_t *pki)
         if (pki->esp_ds_data != NULL) {
             ret = esp_mbedtls_init_pk_ctx_for_ds(pki);
             if (ret != ESP_OK) {
-                ESP_LOGE(TAG, "Failed to initialize pk context for esp_ds");
+                ESP_LOGE(TAG, "Failed to initialize pk context for esp_rsa_ds");
                 return ret;
             }
         } else
@@ -638,11 +598,14 @@ static esp_err_t set_pki_context(esp_tls_t *tls, const esp_tls_pki_t *pki)
             esp_ecdsa_opaque_key_t opaque_key = {
                 .curve = curve,
                 .efuse_block = tls->ecdsa_efuse_blk,
-                .use_km_key = false,
+#if SOC_KEY_MANAGER_SUPPORTED
+                .key_recovery_info = NULL,
+#endif /* SOC_KEY_MANAGER_SUPPORTED */
             };
 
             // Import opaque key reference
             psa_status_t status = psa_import_key(&key_attr, (uint8_t*) &opaque_key, sizeof(opaque_key), &priv_key_id);
+            psa_reset_key_attributes(&key_attr);
             if (status != PSA_SUCCESS) {
                 ESP_LOGE(TAG, "Failed to import opaque key reference");
                 return ESP_ERR_MBEDTLS_PK_PARSE_KEY_FAILED;
@@ -651,10 +614,9 @@ static esp_err_t set_pki_context(esp_tls_t *tls, const esp_tls_pki_t *pki)
             ret = mbedtls_pk_wrap_psa(pki->pk_key, priv_key_id);
             if (ret != 0) {
                 ESP_LOGE(TAG, "Failed to wrap opaque key reference");
+                psa_destroy_key(priv_key_id);
                 return ret;
             }
-
-            psa_reset_key_attributes(&key_attr);
         } else
 #endif
         if (pki->privkey_pem_buf != NULL) {
@@ -950,6 +912,9 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
         }
         free(use_host);
     } else {
+        ESP_LOGW(TAG, "skip_common_name=true: hostname matching and SNI disabled. "
+                 "This disables ALL server-name authentication (CN/SAN/SNI), not just CN. "
+                 "Only intended for loopback / debug clients.");
         mbedtls_ssl_set_hostname(&tls->ssl, NULL);
     }
 
@@ -1023,10 +988,6 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
             return ESP_ERR_MBEDTLS_SSL_CONF_PSK_FAILED;
         }
 #endif
-#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
-    } else if (cfg->client_session != NULL) {
-        ESP_LOGD(TAG, "Reusing the saved client session");
-#endif
     } else {
 #ifdef CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY
         mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_NONE);
@@ -1062,7 +1023,7 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
             ESP_LOGE(TAG, "Client certificate is also required with the DS parameters");
             return ESP_ERR_INVALID_STATE;
         }
-        esp_ds_set_session_timeout(cfg->timeout_ms);
+        esp_rsa_ds_opaque_set_session_timeout(cfg->timeout_ms);
         /* set private key pointer to NULL since the DS peripheral with its own configuration data is used */
         esp_tls_pki_t pki = {
             .public_cert = &tls->clientcert,
@@ -1193,6 +1154,7 @@ int esp_mbedtls_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp
             return ESP_ERR_ESP_TLS_SERVER_HANDSHAKE_TIMEOUT;
         }
     }
+    tls->conn_state = ESP_TLS_DONE;
     return ret;
 }
 
@@ -1403,47 +1365,80 @@ static esp_err_t esp_set_atecc608a_pki_context(esp_tls_t *tls, const void *pki)
 #endif /* CONFIG_ESP_TLS_USE_SECURE_ELEMENT */
 
 #ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL
-
-int esp_mbedtls_ds_can_do(mbedtls_pk_type_t type)
+/*
+ * tf-psa-crypto 1.1 made mbedtls_pk_wrap_psa() call psa_export_public_key() on
+ * the imported PSA key. The DS peripheral cannot expose any key material
+ * (private or public), so the export fails with PK_INVALID_ALG. Copy the
+ * already-parsed raw public key from the device certificate so wrap_psa()'s
+ * export step short-circuits (pk.c:145-148, returns early when pub_raw_len>0).
+ */
+static esp_err_t inject_rsa_pubkey_from_cert(mbedtls_pk_context *dst, const mbedtls_x509_crt *cert)
 {
-    ESP_LOGI(TAG, "esp_mbedtls_ds_can_do called with type %d", type);
-    return type == MBEDTLS_PK_RSA || type == MBEDTLS_PK_RSASSA_PSS;
+    const mbedtls_pk_context *src = &cert->pk;
+    size_t src_len = src->MBEDTLS_PRIVATE(pub_raw_len);
+    if (src_len == 0 || src_len > sizeof(dst->MBEDTLS_PRIVATE(pub_raw))) {
+        ESP_LOGE(TAG, "Invalid cert pubkey length: %zu", src_len);
+        return ESP_ERR_INVALID_STATE;
+    }
+    memcpy(dst->MBEDTLS_PRIVATE(pub_raw), src->MBEDTLS_PRIVATE(pub_raw), src_len);
+    dst->MBEDTLS_PRIVATE(pub_raw_len) = src_len;
+    dst->MBEDTLS_PRIVATE(bits) = src->MBEDTLS_PRIVATE(bits);
+    dst->MBEDTLS_PRIVATE(psa_type) = PSA_KEY_TYPE_RSA_PUBLIC_KEY;
+    return ESP_OK;
+}
+
+static psa_status_t import_ds_key(const esp_ds_data_ctx_t *ds_data, psa_key_id_t *out_key_id)
+{
+    esp_rsa_ds_opaque_key_t rsa_ds_opaque_key = {0};
+    rsa_ds_opaque_key.ds_data_ctx = (esp_ds_data_ctx_t *)ds_data;
+
+    psa_key_attributes_t attrs = PSA_KEY_ATTRIBUTES_INIT;
+    psa_set_key_type(&attrs, PSA_KEY_TYPE_RSA_KEY_PAIR);
+    psa_set_key_bits(&attrs, ds_data->rsa_length_bits);
+    psa_set_key_usage_flags(&attrs, PSA_KEY_USAGE_SIGN_HASH);
+    psa_set_key_algorithm(&attrs, PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_ANY_HASH));
+#ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
+    psa_set_key_enrollment_algorithm(&attrs, PSA_ALG_RSA_PSS(PSA_ALG_ANY_HASH));
+#endif
+    psa_set_key_lifetime(&attrs, PSA_KEY_LIFETIME_ESP_RSA_DS_VOLATILE);
+
+    psa_status_t status = psa_import_key(&attrs,
+                                         (const uint8_t *)&rsa_ds_opaque_key,
+                                         sizeof(rsa_ds_opaque_key),
+                                         out_key_id);
+    psa_reset_key_attributes(&attrs);
+    return status;
 }
 
 static esp_err_t esp_mbedtls_init_pk_ctx_for_ds(const void *pki)
 {
-    int ret = -1;
-    /* initialize the mbedtls pk context with rsa context */
-    mbedtls_rsa_context *rsakey = calloc(1, sizeof(mbedtls_rsa_context));
-    if (rsakey == NULL) {
-        ESP_LOGE(TAG, "Failed to allocate memory for mbedtls_rsa_context");
-        return ESP_ERR_NO_MEM;
-    }
-    mbedtls_rsa_init(rsakey);
-    esp_tls_pki_t *pki_l = (esp_tls_pki_t *) pki;
-    mbedtls_pk_context *pk_context = (mbedtls_pk_context *) pki_l->pk_key;
-    mbedtls_pk_info_t *esp_ds_pk_info = calloc(1, sizeof(mbedtls_pk_info_t));
-    if (esp_ds_pk_info == NULL) {
-        ESP_LOGE(TAG, "Failed to allocate memory for mbedtls_pk_info_t");
-        ret = ESP_ERR_NO_MEM;
-        mbedtls_rsa_free(rsakey);
-        free(rsakey);
-        goto exit;
+    const esp_tls_pki_t *pki_l = (const esp_tls_pki_t *)pki;
+    if (pki_l->esp_ds_data == NULL || pki_l->pk_key == NULL || pki_l->public_cert == NULL) {
+        ESP_LOGE(TAG, "DS pki context missing required fields");
+        return ESP_ERR_INVALID_ARG;
     }
 
-    esp_ds_pk_info->sign_func = esp_ds_rsa_sign_alt;
-    esp_ds_pk_info->get_bitlen = esp_ds_get_keylen_alt;
-    esp_ds_pk_info->can_do = esp_mbedtls_ds_can_do;
-    esp_ds_pk_info->type = MBEDTLS_PK_RSASSA_PSS;
-    pk_context->pk_info = esp_ds_pk_info;
-    pk_context->pk_ctx = rsakey;
-    ret = esp_ds_init_data_ctx(((const esp_tls_pki_t*)pki)->esp_ds_data);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize DS parameters from nvs");
-        goto exit;
+    psa_key_id_t ds_key_id = 0;
+    psa_status_t status = import_ds_key(pki_l->esp_ds_data, &ds_key_id);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to import DS key to PSA, status = %d", status);
+        return ESP_ERR_INVALID_STATE;
     }
-    ESP_LOGD(TAG, "DS peripheral params initialized.");
-exit:
-    return ret;
+
+    /* Pre-populate pub_raw so wrap_psa() does not attempt to export it. */
+    esp_err_t esp_ret = inject_rsa_pubkey_from_cert(pki_l->pk_key, pki_l->public_cert);
+    if (esp_ret != ESP_OK) {
+        psa_destroy_key(ds_key_id);
+        return esp_ret;
+    }
+
+    int ret = mbedtls_pk_wrap_psa(pki_l->pk_key, ds_key_id);
+    if (ret != 0) {
+        ESP_LOGE(TAG, "mbedtls_pk_wrap_psa failed with -0x%04X", -ret);
+        psa_destroy_key(ds_key_id);
+        return ESP_FAIL;
+    }
+    ESP_LOGD(TAG, "DS peripheral pk context initialized.");
+    return ESP_OK;
 }
 #endif /* CONFIG_ESP_TLS_USE_DS_PERIPHERAL */

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,14 @@
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
 #include "hal/temperature_sensor_ll.h"
 #endif
+
+/* Per-target ANT_SELn_IDX indices are not always consecutive; do not use ANT_SEL0_IDX + n. */
+static const uint32_t s_phy_ant_sel_sig_idx[4] = {
+    ANT_SEL0_IDX,
+    ANT_SEL1_IDX,
+    ANT_SEL2_IDX,
+    ANT_SEL3_IDX,
+};
 
 static const char* TAG = "phy_comm";
 
@@ -196,7 +204,7 @@ esp_err_t esp_phy_set_ant_gpio(esp_phy_ant_gpio_config_t *config)
     for (int i = 0; i < 4; i++) {
         if (config->gpio_cfg[i].gpio_select == 1) {
             phy_ant_set_gpio_output(config->gpio_cfg[i].gpio_num);
-            esp_rom_gpio_connect_out_signal(config->gpio_cfg[i].gpio_num, ANT_SEL0_IDX + i, 0, 0);
+            esp_rom_gpio_connect_out_signal(config->gpio_cfg[i].gpio_num, s_phy_ant_sel_sig_idx[i], 0, 0);
         }
     }
 
@@ -377,3 +385,9 @@ void phy_wakeup_from_modem_state_extra_init(void)
 }
 #endif
 #endif
+
+__attribute__((weak)) void phy_wait_freq_hw_hop_done(void)
+{
+    ESP_LOGD(TAG, "phy_wait_freq_hw_hop_done is not implemented");
+    return;
+}

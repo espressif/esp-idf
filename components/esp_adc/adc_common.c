@@ -31,7 +31,7 @@ esp_err_t adc_io_to_channel(int io_num, adc_unit_t * const unit_id, adc_channel_
 
     bool found = false;
     for (int i = 0; i < SOC_ADC_PERIPH_NUM; i++) {
-        for (int j = 0; j < SOC_ADC_MAX_CHANNEL_NUM; j++) {
+        for (int j = 0; j < ADC_LL_MAX_CHANNEL_NUM; j++) {
             if (adc_channel_io_map[i][j] == io_num) {
                 *channel = j;
                 *unit_id = i;

@@ -6,7 +6,7 @@
 
 #pragma once
 
-//Touch channels
+// Touch channels
 
 /* Note: T14 is an internal channel that does not have a corresponding external GPIO. */
 

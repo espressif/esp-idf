@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <freertos/FreeRTOS.h>
 #include "sdkconfig.h"
+#include "esp_bit_defs.h"
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_rom_caps.h"
@@ -51,6 +52,8 @@ extern char _rodata_reserved_end;
 
 #if !ESP_ROM_HAS_SPI_FLASH_MMAP || !CONFIG_SPI_FLASH_ROM_IMPL
 
+/* 0x1000000, 16MB */
+#define FLASH_MMAP_ADDR_24BIT_MAX  (BIT(24))
 
 typedef struct mmap_block_t {
     uint32_t *vaddr_list;
@@ -61,6 +64,12 @@ typedef struct mmap_block_t {
 esp_err_t spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_memory_t memory,
                          const void** out_ptr, spi_flash_mmap_handle_t* out_handle)
 {
+#if !CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH && !CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_OCTAL_FLASH
+    if (src_addr >= FLASH_MMAP_ADDR_24BIT_MAX || size > FLASH_MMAP_ADDR_24BIT_MAX || src_addr > FLASH_MMAP_ADDR_24BIT_MAX - size) {
+        ESP_LOGE("flash_mmap", "Address 0x%08x is out of range for 24bit flash mapping, see CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH and CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_OCTAL_FLASH for more details", src_addr);
+        return ESP_ERR_INVALID_ARG;
+    }
+#endif
     esp_err_t ret = ESP_FAIL;
     mmu_mem_caps_t caps = 0;
     void *ptr = NULL;
@@ -166,6 +175,15 @@ static void s_pages_to_bytes(int (*blocks)[2], int block_nums)
 esp_err_t spi_flash_mmap_pages(const int *pages, size_t page_count, spi_flash_mmap_memory_t memory,
                          const void** out_ptr, spi_flash_mmap_handle_t* out_handle)
 {
+#if !CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH && !CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_OCTAL_FLASH
+    for (size_t i = 0; i < page_count; i++) {
+        uint32_t phys = (uint32_t)pages[i] * CONFIG_MMU_PAGE_SIZE;
+        if (phys >= FLASH_MMAP_ADDR_24BIT_MAX) {
+            ESP_LOGE("flash_mmap", "Page %d (addr 0x%08x) is out of range for 24bit flash mapping", pages[i], phys);
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+#endif
     esp_err_t ret = ESP_FAIL;
     mmu_mem_caps_t caps = 0;
     mmap_block_t *block = NULL;

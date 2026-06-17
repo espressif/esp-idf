@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2018 Intel Corporation
- * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -244,7 +244,7 @@ static int net_set(const char *name)
         BT_ERR("Failed to load node net info");
         memset(bt_mesh.dev_key, 0, sizeof(bt_mesh.dev_key));
         bt_mesh_comp_unprovision();
-        return 0;
+        return err;
     }
 
     if (exist == false) {
@@ -1424,7 +1424,7 @@ int settings_core_load(void)
                 break;
             default:
                 BT_ERR("Restored mesh device role: Unknown");
-                return 0;
+                return -EINVAL;
             }
         }
     }
@@ -1826,7 +1826,7 @@ static void store_pending_hb_pub(void)
         return;
     }
 
-    val.indefinite = (hb_pub->count = 0xffff);
+    val.indefinite = (hb_pub->count == 0xffff);
     val.dst = hb_pub->dst;
     val.period = hb_pub->period;
     val.ttl = hb_pub->ttl;
@@ -2353,6 +2353,7 @@ static struct key_update *key_update_find(bool app_key, uint16_t key_idx,
 
         if (update->key_idx == key_idx) {
             match = update;
+            break;
         }
     }
 
@@ -2524,7 +2525,7 @@ void bt_mesh_clear_rpl(void)
 {
     BT_DBG("ClearRPLSchedule");
 
-    schedule_store(BLE_MESH_RPL_PENDING);
+    clear_rpl();
 }
 
 void bt_mesh_store_mod_bind(struct bt_mesh_model *model)
@@ -2879,8 +2880,7 @@ int settings_core_init(void)
 {
     BT_DBG("SettingsCoreInit");
 
-    k_delayed_work_init(&pending_store, store_pending);
-    return 0;
+    return k_delayed_work_init(&pending_store, store_pending);
 }
 
 int bt_mesh_settings_init(void)
@@ -2942,7 +2942,7 @@ void bt_mesh_settings_reset(bool erase)
 
 #define SETTINGS_MAX_DIR_DEPTH 8
 
-int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
+int bt_mesh_model_data_store(const struct bt_mesh_model *mod, bool vnd,
                              const char *name, const void *data,
                              size_t data_len)
 {
@@ -2950,12 +2950,12 @@ int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
 
     char path[30] = {'\0'};
     uint16_t model_key = 0U;
+    int len = 0;
 
     model_key = BLE_MESH_GET_MODEL_KEY(mod->elem_idx, mod->model_idx);
-    sprintf(path, "mesh/%s/%04x/d", vnd ? "v" : "s", model_key);
-    if (name) {
-        strcat(path, "/");
-        strncat(path, name, SETTINGS_MAX_DIR_DEPTH);
+    len = snprintf(path, sizeof(path), "mesh/%s/%04x/d", vnd ? "v" : "s", model_key);
+    if (name && len > 0 && len < sizeof(path)) {
+        snprintf(path + len, sizeof(path) - len, "/%.*s", SETTINGS_MAX_DIR_DEPTH, name);
     }
 
     if (data_len) {

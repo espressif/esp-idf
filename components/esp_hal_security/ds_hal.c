@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "hal/systimer_hal.h"
 #include "hal/ds_hal.h"
 #include "hal/ds_ll.h"
 #include "hal/assert.h"

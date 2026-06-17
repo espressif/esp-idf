@@ -1042,10 +1042,7 @@ static esp_err_t init_low_level(uint8_t mode)
     bt_cfg.mode = mode;
 #endif
 #if CONFIG_BT_HID_HOST_ENABLED
-    if (mode & ESP_BT_MODE_CLASSIC_BT) {
-        bt_cfg.bt_max_acl_conn = 3;
-        bt_cfg.bt_max_sync_conn = 3;
-    } else
+    if (!(mode & ESP_BT_MODE_CLASSIC_BT))
 #endif
     {
         ret = esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);

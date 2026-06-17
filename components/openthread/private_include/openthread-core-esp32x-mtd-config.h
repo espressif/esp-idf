@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -245,6 +245,21 @@
 #endif
 #define OPENTHREAD_CONFIG_MAC_MAX_CSMA_BACKOFFS_DIRECT CONFIG_OPENTHREAD_MAC_MAX_CSMA_BACKOFFS_DIRECT
 
+/**
+ * @def OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
+ *
+ * Define to 1 to enable platform NETIF support.
+ *
+ */
+#ifdef OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
+#error `OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE` is redefined.
+#endif
+#ifdef CONFIG_OPENTHREAD_PLATFORM_NETIF
+#ifndef OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
+#define OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE 1
+#endif
+#endif
+
 /*----The following options set fixed default values but can be overridden by the user header file.----*/
 
 /**
@@ -255,16 +270,6 @@
  */
 #ifndef OPENTHREAD_CONFIG_COAP_API_ENABLE
 #define OPENTHREAD_CONFIG_COAP_API_ENABLE 1
-#endif
-
-/**
- * @def OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
- *
- * Define to 1 to enable platform NETIF support.
- *
- */
-#ifndef OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
-#define OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE 1
 #endif
 
 /**
@@ -451,6 +456,16 @@
 #endif
 
 /**
+ * @def OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AFTER
+ *
+ * Additional time for CSL receiver to remain in rx active after SFD has been received, in units of microseconds.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AFTER
+#define OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AFTER 0
+#endif
+
+/**
  * @def OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE
  *
  * Enable the periodic parent search feature.
@@ -494,6 +509,42 @@
 #define OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_THRESHOLD CONFIG_OPENTHREAD_PARENT_SEARCH_RSS_THRESHOLD
 #endif
 
+/**
+ * @def OPENTHREAD_CONFIG_PLATFORM_MAC_KEYS_EXPORTABLE_ENABLE
+ *
+ * Define to 1 if you want to make MAC keys exportable.
+ */
+#ifndef OPENTHREAD_CONFIG_PLATFORM_MAC_KEYS_EXPORTABLE_ENABLE
 #define OPENTHREAD_CONFIG_PLATFORM_MAC_KEYS_EXPORTABLE_ENABLE 1
+#endif
 
+/**
+ * @def OPENTHREAD_CONFIG_CRYPTO_LIB
+ *
+ * Selects the crypto backend library for OpenThread.
+ *
+ * There are several options available
+ * - @sa OPENTHREAD_CONFIG_CRYPTO_LIB_MBEDTLS
+ * - @sa OPENTHREAD_CONFIG_CRYPTO_LIB_PSA
+ * - @sa OPENTHREAD_CONFIG_CRYPTO_LIB_PLATFORM
+ */
+#ifndef OPENTHREAD_CONFIG_CRYPTO_LIB
 #define OPENTHREAD_CONFIG_CRYPTO_LIB OPENTHREAD_CONFIG_CRYPTO_LIB_PSA
+#endif
+// TODO: Remove when https://github.com/openthread/openthread/pull/12638 is merged
+#ifndef OPENTHREAD_CONFIG_PLATFORM_KEY_REFERENCES_ENABLE
+#define OPENTHREAD_CONFIG_PLATFORM_KEY_REFERENCES_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_MESHCOP_STEERING_DATA_API_ENABLE
+ *
+ * Define as 1 to enable the MeshCoP Steering Data public APIs (in `openthread/steering_data.h`).
+ */
+#ifndef OPENTHREAD_CONFIG_MESHCOP_STEERING_DATA_API_ENABLE
+#define OPENTHREAD_CONFIG_MESHCOP_STEERING_DATA_API_ENABLE 1
+#endif
+
+#ifndef OPENTHREAD_CONFIG_THREAD_VERSION
+#define OPENTHREAD_CONFIG_THREAD_VERSION OT_THREAD_VERSION_1_4
+#endif

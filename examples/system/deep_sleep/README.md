@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-P4 | ESP32-S2 | ESP32-S3 | ESP32-S31 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | -------- | -------- | --------- |
 
 # Deep Sleep Example
 
@@ -11,7 +11,7 @@ The following wake up sources are demonstrated in this example (refer to the [Wa
 
 - **Timer:** An RTC timer that can be programmed to trigger a wake up after a preset time. This example will trigger a wake up every 20 seconds.
 - **EXT0:** External wake up 0 can trigger wakeup when one predefined RTC GPIO is at a predefined logic level. This example uses GPIO25 in ESP32 or GPIO3 in ESP32-S2/S3 to trigger a wake up when the pin is HIGH. (This wake up source is only available on ESP32, ESP32-S2, and ESP32-S3.)
-- **EXT1:** External wake up 1 which is tied to multiple RTC GPIOs. This example uses GPIO2 and GPIO4 to trigger a wake up with any one of the two pins are HIGH. (This wake up source is available on ESP32, ESP32-S2, ESP32-S3, ESP32-C6 and ESP32-H2.)
+- **EXT1:** External wake up 1 which is tied to multiple RTC GPIOs. This example uses GPIO2 and GPIO4 to trigger a wake up with any one of the two pins are HIGH. (Available on targets that define `SOC_PM_SUPPORT_EXT1_WAKEUP`, pin set depends on the chip—see the programming guide and datasheet.)
 - **GPIO:** Pads powered by VDD3P3_RTC can be used to trigger a wake up from deep sleep. You may choose the pin and trigger level in menuconfig. (This wake up source is unavailable on ESP32, ESP32-S2, ESP32-S3 and ESP32-H2.)
 
 > [!NOTE]
@@ -40,7 +40,7 @@ This example should be able to run on any commonly available ESP32 series develo
 
 - **EXT1:** GPIO2 and GPIO4 should be connected to LOW to avoid floating pins. When triggering a wake up, connect one or both of the pins to HIGH. Note that floating pins may trigger a wake up.
 
-- **GPIO:** If `EXAMPLE_GPIO_WAKEUP_HIGH_LEVEL` is selected in menuconfig, then connect `EXAMPLE_GPIO_WAKEUP_PIN` to HIGH to trigger a wake up; Otherwise, connect `EXAMPLE_GPIO_WAKEUP_PIN` to LOW to trigger a wake up.
+- **GPIO:** In `Example configuration > GPIO wakeup configuration`, set **GPIO wakeup trigger type** to match how you drive `EXAMPLE_GPIO_WAKEUP_PIN`: for **High level**, hold the pin low before sleep then drive high to wake; for **Low level**, hold high then pull low; for **Rising/Falling/Any edge** (targets with `SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED`), use an edge after a stable idle level as required by the selected mode.
 
 ### Configure the project
 
@@ -51,8 +51,8 @@ idf.py menuconfig
 * **EXT0 wake up** can be enabled/disabled via `Example configuration > Enable wakeup from GPIO (ext0)`
 * **EXT1 wake up** can be enabled/disabled via `Example configuration > Enable wakeup from GPIO (ext1)`
 * **GPIO wake up** can be enabled/disabled via `Example configuration > Enable wakeup from GPIO`
-  Trigger pin can be chosen via `Example configuration > GPIO wakeup configuration > Enable wakeup from GPIO`
-  Trigger level can be selected via `Example configuration > GPIO wakeup configuration > Enable GPIO high-level wakeup`
+  The pin is set under `Example configuration > GPIO wakeup configuration > Enable wakeup from GPIO`.
+  The trigger is set under `Example configuration > GPIO wakeup configuration > GPIO wakeup trigger type` (level or edge where supported).
 
 Wake up sources that are unused or unconnected should be disabled in configuration to prevent inadvertent triggering of wake up as a result of floating pins.
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,6 +39,8 @@ typedef union {
     int32_t   i32_val;  /**< Placeholder for signed 32 bit integer variable */
     uint64_t u64_val;   /**< Placeholder for unsigned 64 bit integer variable */
     int64_t   i64_val;  /**< Placeholder for signed 64 bit integer variable */
+    float   float_val;  /**< Placeholder for IEEE 754 single precision float variable */
+    double double_val;  /**< Placeholder for IEEE 754 double precision float variable */
     nvs_bootloader_str_value_placeholder_t str_val; /**< Placeholder for string buffer information */
 } nvs_bootloader_value_placeholder_t;
 
@@ -49,14 +51,16 @@ typedef union {
  * Before calling the `nvs_bootloader_read` function, populate the namespace_name, key_name and value_type members.
  * If string value has to be read, provide also buffer and its length in the `value.str_val` member.
  *
- * The result_code member will be populated by the function with the result of the read operation.
- * There are 2 possible situations and interpretations of the result_code:
+ * The result_code member will be populated after calling the `nvs_bootloader_read` function.
+ * There are 2 possible situations and interpretations depending on he result_code returned by the `nvs_bootloader_read`:
+ *
  * If the return value of the `nvs_bootloader_read` was ESP_OK, the result_code will be one of the following:
  * - `ESP_OK`: Entry found, value member contains the data. This is the only case when the value member is populated.
  * - `ESP_ERR_NVS_TYPE_MISMATCH`: Entry was found, but requested datatype doesn't match datatype found in NVS
  * - `ESP_ERR_NVS_NOT_FOUND`: Data was not found.
  * - `ESP_ERR_INVALID_SIZE`: the value found for string is longer than the space provided in placeholder (str_val.buff_len)
- * If the return value of the function was ESP_ERR_INVALID_ARG, the result_code will be one of the following:
+ *
+ * If the return value of the `nvs_bootloader_read` was ESP_ERR_INVALID_ARG, the result_code will be one of the following:
  * - `ESP_ERR_NVS_NOT_FOUND`: Check of this parameters was successful.
  * - `ESP_ERR_NVS_INVALID_NAME`: namespace_name is NULL or too long
  * - `ESP_ERR_NVS_KEY_TOO_LONG`: key_name NULL or too long
@@ -65,12 +69,12 @@ typedef union {
  *
  */
 typedef struct {
-    const char* namespace_name;                 /**< Namespace of the entry */
-    const char* key_name;                       /**< Key of the entry */
-    nvs_type_t value_type;                      /**< Expected datatype to be read, can be any of NVS_TYPE_U*, NVS_TYPE_I* or NVS_TYPE_STR */
-    esp_err_t result_code;                      /**< Result code of this entry. Explanation is in general description of the struct nvs_bootloader_read_list_t*/
-    nvs_bootloader_value_placeholder_t value;   /**< Placeholder for value read */
-    uint8_t namespace_index;                    /**< Index of the namespace (internal variable, do not use) */
+    const char* namespace_name;                 /**< Input. Namespace of the entry */
+    const char* key_name;                       /**< Input. Key of the entry */
+    nvs_type_t value_type;                      /**< Input. Expected datatype to be read, can be any of NVS_TYPE_U*, NVS_TYPE_I*, NVS_TYPE_FLOAT, NVS_TYPE_DOUBLE or NVS_TYPE_STR */
+    esp_err_t result_code;                      /**< Output. Result code of this entry. Explanation is in general description of the struct nvs_bootloader_read_list_t*/
+    nvs_bootloader_value_placeholder_t value;   /**< Input/Output. Placeholder for value read */
+    uint8_t namespace_index;                    /**< Output. Index of the namespace (internal variable, do not use) */
 } nvs_bootloader_read_list_t;
 
 /**

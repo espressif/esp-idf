@@ -50,15 +50,19 @@ To install a PCNT unit, there is a configuration structure that needs to be give
 
 .. list::
 
+    -  :cpp:member:`pcnt_unit_config_t::group_id` specifies which PCNT peripheral group (hardware instance) to allocate the unit from. Must be a valid group index in range ``[0, PCNT_LL_INST_NUM)``. When you have multiple independent PCNT groups on a chip (e.g., ESP32-S31), this field allows you to pin a unit to a specific group.
+    -  :cpp:member:`pcnt_unit_config_t::clk_src` selects the clock source for the PCNT unit.
     -  :cpp:member:`pcnt_unit_config_t::low_limit` and :cpp:member:`pcnt_unit_config_t::high_limit` specify the range for the internal hardware counter. The counter will reset to zero automatically when it crosses either the high or low limit.
+    -  :cpp:member:`pcnt_unit_config_t::intr_priority` sets the interrupt priority. If it is set to ``0``, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority.
     -  :cpp:member:`pcnt_unit_config_t::flags::accum_count` sets whether to create an internal accumulator for the counter. This is helpful when you want to extend the counter's width, which by default is 16 bit at most, defined in the hardware. See also :ref:`pcnt-compensate-overflow-loss` for how to use this feature to compensate the overflow loss.
     :SOC_PCNT_SUPPORT_STEP_NOTIFY: -  :cpp:member:`pcnt_unit_config_t::flags::en_step_notify_up` Configure whether to enable watch step to count in the positive direction.
     :SOC_PCNT_SUPPORT_STEP_NOTIFY: -  :cpp:member:`pcnt_unit_config_t::flags::en_step_notify_down` Configure whether to enable watch step to count in the negative direction.
-    -  :cpp:member:`pcnt_unit_config_t::intr_priority` sets the priority of the interrupt. If it is set to ``0``, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority.
 
 .. note::
 
-    Since all PCNT units share the same interrupt source, when installing multiple PCNT units make sure that the interrupt priority :cpp:member:`pcnt_unit_config_t::intr_priority` is the same for each unit.
+    All units within the **same PCNT group** share the same hardware interrupt source and the same peripheral clock. Therefore, when installing multiple PCNT units in the same group, the following constraints apply:
+
+    - Both :cpp:member:`pcnt_unit_config_t::intr_priority` and :cpp:member:`pcnt_unit_config_t::clk_src` must be the same for all units within the same group. If there is a mismatch, :cpp:func:`pcnt_new_unit` will return :c:macro:`ESP_ERR_INVALID_ARG`.
 
 Unit allocation and initialization is done by calling a function :cpp:func:`pcnt_new_unit` with :cpp:type:`pcnt_unit_config_t` as an input parameter. The function will return a PCNT unit handle only when it runs correctly. Specifically, when there are no more free PCNT units in the pool (i.e., unit resources have been used up), then this function will return :c:macro:`ESP_ERR_NOT_FOUND` error.
 

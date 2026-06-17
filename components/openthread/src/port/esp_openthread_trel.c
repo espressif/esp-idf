@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -191,6 +191,8 @@ esp_err_t esp_openthread_trel_process(otInstance *aInstance, const esp_openthrea
             }
             if (should_handle) {
                 otPlatTrelHandleReceived(aInstance, data_buf, length, source_addr);
+                s_trel_counters.mRxPackets++;
+                s_trel_counters.mRxBytes += length;
             }
             pbuf_free(recv_buf);
             free(data_buf_to_free);
@@ -255,7 +257,13 @@ void otPlatTrelSend(otInstance       *aInstance,
     esp_openthread_task_switching_lock_release();
     err = esp_netif_tcpip_exec(trel_send_task, &task);
     esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
-    ESP_RETURN_ON_FALSE(err == ESP_OK, , OT_PLAT_LOG_TAG, "Failed to send TREL message");
+    if (err == ESP_OK) {
+        s_trel_counters.mTxPackets++;
+        s_trel_counters.mTxBytes += aUdpPayloadLen;
+    } else {
+        s_trel_counters.mTxFailure++;
+        ESP_LOGW(OT_PLAT_LOG_TAG, "Failed to send TREL message");
+    }
 }
 
 void otPlatTrelNotifyPeerSocketAddressDifference(otInstance       *aInstance,
@@ -284,8 +292,10 @@ void otPlatTrelRegisterService(otInstance *aInstance, uint16_t aPort, const uint
     s_is_service_registered = true;
     uint16_t index = 0;
     while (index < aTxtLength) {
-        const uint8_t *item_header = aTxtData + index + 1;
         uint8_t item_len = aTxtData[index];
+        ESP_GOTO_ON_FALSE(index + 1 + item_len <= aTxtLength, ESP_FAIL, exit, OT_PLAT_LOG_TAG,
+                          "Malformed _trel._udp TXT record: item exceeds data length");
+        const uint8_t *item_header = aTxtData + index + 1;
 
         char key[UINT8_MAX + 1];
         for (uint16_t i = 0; i < item_len; i++) {
@@ -348,6 +358,7 @@ void otPlatTrelDisable(otInstance *aInstance)
     free_all_buffer();
     close(s_trel_event_fd);
     s_trel_event_fd = -1;
+    s_trel_netif = NULL;
 }
 
 const otPlatTrelCounters *otPlatTrelGetCounters(otInstance *aInstance)

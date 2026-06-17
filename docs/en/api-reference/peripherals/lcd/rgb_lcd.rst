@@ -16,6 +16,61 @@ RGB LCD panel is created by :cpp:func:`esp_lcd_new_rgb_panel`, with various conf
     - :cpp:member:`esp_lcd_rgb_panel_config_t::num_fbs` specifies how many frame buffers the driver should allocate. For backward compatibility, setting this to ``0`` will allocate a single frame buffer. If you don't want to allocate any frame buffer, use :cpp:member:`esp_lcd_rgb_panel_config_t::no_fb` instead.
     - :cpp:member:`esp_lcd_rgb_panel_config_t::no_fb` determines whether frame buffer will be allocated. When it is set, no frame buffer will be allocated. This is also called the :ref:`bounce_buffer_only` mode.
 
+.. note::
+
+    - When :cpp:member:`esp_lcd_rgb_panel_config_t::data_width` is 8:
+
+        - The PCLK frequency is recommended to be less than 80 MHz.
+        - If YUV-RGB format conversion is also configured via :cpp:func:`esp_lcd_rgb_panel_set_yuv_conversion`, the PCLK frequency is recommended to be less than 60 MHz.
+
+    - When :cpp:member:`esp_lcd_rgb_panel_config_t::data_width` is 16:
+
+        - The PCLK frequency is recommended to be less than 40 MHz.
+        - If YUV-RGB format conversion is also configured, the PCLK frequency is recommended to be less than 30 MHz.
+
+GPIO Matrix and IOMUX Pins
+--------------------------
+
+.. only:: esp32s31
+
+    On {IDF_TARGET_NAME}, the RGB LCD driver can use IOMUX automatically when all required signals are mapped to dedicated pins:
+
+    - If ``data_gpio_nums``, ``hsync_gpio_num``, ``vsync_gpio_num``, ``pclk_gpio_num``, and ``de_gpio_num`` all match their dedicated IOMUX pins, the driver bypasses the GPIO matrix automatically.
+    - If any one of these signals does not match the dedicated IOMUX pin, the driver falls back to GPIO matrix routing automatically.
+
+    For higher pixel clock configurations, using IOMUX pins is recommended for better timing robustness.
+
+    Dedicated RGB IOMUX pins on {IDF_TARGET_NAME} are listed below:
+
+    - When ``data_width = 8``, ``DATA[0:7]`` is used
+    - When ``data_width = 16``, ``DATA[0:15]`` is used
+    - When ``data_width = 24``, ``DATA[0:23]`` is used
+
+    .. list-table::
+       :widths: 35 65
+       :header-rows: 1
+
+       * - Signal
+         - GPIO
+       * - DATA[0:7]
+         - 8, 9, 10, 11, 12, 13, 14, 15
+       * - DATA[8:15]
+         - 16, 17, 18, 19, 33, 34, 35, 36
+       * - DATA[16:23]
+         - 37, 38, 39, 2, 3, 4, 5, 7
+       * - HSYNC
+         - 44
+       * - VSYNC
+         - 45
+       * - PCLK
+         - 40
+       * - DE
+         - 43
+
+.. only:: not esp32s31
+
+    On {IDF_TARGET_NAME}, RGB signals are routed through the GPIO matrix.
+
 RGB LCD Frame Buffer Operation Modes
 ------------------------------------
 

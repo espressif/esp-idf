@@ -166,7 +166,7 @@
         ESP32-S3-DevKitM-1 <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32s3/esp32-s3-devkitm-1/index.html>
         ESP32-S3-USB-OTG <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32s3/esp32-s3-usb-otg/index.html>
         ESP32-S3-LCD-EV-Board <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32s3/esp32-s3-lcd-ev-board/index.html>
-        EchoEar <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32s3/echoear/index.html>
+        ESP-VoCat <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32s3/esp-vocat/index.html>
         ESP-DualKey <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32s3/esp-dualkey/index.html>
 
 .. only:: esp32c2
@@ -319,7 +319,7 @@ EIM 提供两种安装方式：
 
 .. code-block:: bash
 
-    eim uninstall v5.4.2
+    eim remove v5.4.2
 
 如需删除所有 ESP-IDF 版本，请在终端中运行以下命令：
 

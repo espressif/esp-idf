@@ -60,15 +60,25 @@ app_main(void)
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
     /* Initialize data structures to track connected peers. */
+#if MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES)
+    rc = peer_init(BLE_PEER_MAX_NUM, BLE_PEER_MAX_NUM, BLE_PEER_MAX_NUM, BLE_PEER_MAX_NUM, BLE_PEER_MAX_NUM);
+    assert(rc == 0);
+#else
     rc = peer_init(BLE_PEER_MAX_NUM, BLE_PEER_MAX_NUM, BLE_PEER_MAX_NUM, BLE_PEER_MAX_NUM);
     assert(rc == 0);
+#endif
 
+
+#if MYNEWT_VAL(BLE_GATTS)
+    rc = gatt_svr_init();
+    assert(rc == 0);
+#endif
+
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name. We will act as both central and peripheral. */
     rc = ble_svc_gap_device_name_set("esp-ble-role-coex");
     assert(rc == 0);
-
-    rc = gatt_svr_init();
-    assert(rc == 0);
+#endif
 
     /* XXX Need to have template for store */
     ble_store_config_init();
@@ -144,9 +154,8 @@ esp_err_t esp_nimble_init(void)
 The host is configured by setting up the callbacks on Stack-reset, Stack-sync, registration of each GATT resource, and storage status.
 
 ```c
- ble_hs_cfg.reset_cb = ble_multi_adv_on_reset;
- ble_hs_cfg.sync_cb = ble_multi_adv_on_sync;
- ble_hs_cfg.gatts_register_cb = gatt_svr_register_cb;
+ ble_hs_cfg.reset_cb = blecent_on_reset;
+ ble_hs_cfg.sync_cb = blecent_on_sync;
  ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 ```
 
@@ -166,10 +175,42 @@ ble_store_config_init();
 The main function ends by creating a task where nimble will run using `nimble_port_freertos_init()`. This enables the nimble stack by using `esp_nimble_enable()`.
 
 ```c
-nimble_port_freertos_init(ble_multi_adv_host_task);
+nimble_port_freertos_init(blecent_host_task);
 ```
 
 `esp_nimble_enable()` create a task where the nimble host will run. It is not strictly necessary to have a separate task for the nimble host, but since something needs to handle the default queue, it is easier to create a separate task.
+
+## Sync Callback
+
+When the BLE host and controller are synced, the `blecent_on_sync` callback is invoked. It sets up the connection interval common factor, ensures a valid identity address, determines the address type dynamically, and starts both advertising and scanning:
+
+```c
+static void
+blecent_on_sync(void)
+{
+    int rc;
+
+    rc = ble_gap_common_factor_set(true, (BLE_PREF_CONN_ITVL_MS * 1000) / 625);
+    assert(rc == 0);
+
+    /* Make sure we have proper identity address set (public preferred) */
+    rc = ble_hs_util_ensure_addr(0);
+    assert(rc == 0);
+
+    /* Figure out address to use for advertising and scanning */
+    rc = ble_hs_id_infer_auto(0, &own_addr_type);
+    if (rc != 0) {
+        ESP_LOGE(TAG, "error determining address type; rc=%d\n", rc);
+        return;
+    }
+
+    ble_cent_advertise();
+    ble_cent_scan();
+}
+```
+
+- `ble_hs_util_ensure_addr(0)`: Ensures the device has a valid identity address configured (prefers public address).
+- `ble_hs_id_infer_auto(0, &own_addr_type)`: Dynamically determines the best address type to use. The result is stored in the global `own_addr_type` variable, which is then used by `ble_cent_advertise()` and `ble_cent_scan()`.
 
 ## Multiple Connections
 
@@ -217,7 +258,7 @@ This example will be executed according to the following steps:
       multi_conn_params.scheduling_len_us = BLE_PREF_EVT_LEN_MS * 1000;
       multi_conn_params.own_addr_type = BLE_OWN_ADDR_RANDOM;
       multi_conn_params.peer_addr = peer_addr;
-      multi_conn_params.duration_ms = 3000;
+      multi_conn_params.duration_ms = 8000;
       multi_conn_params.phy_mask = BLE_GAP_LE_PHY_1M_MASK | BLE_GAP_LE_PHY_2M_MASK |
                                    BLE_GAP_LE_PHY_CODED_MASK;
       multi_conn_params.phy_1m_conn_params = &uncoded_conn_param;

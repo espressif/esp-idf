@@ -10,6 +10,7 @@ Resources
 
     third-party-tools/platformio
     third-party-tools/clion
+    third-party-tools/wokwi
     third-party-tools/visualgdb
 
 For inquiries related to these third-party tools, we recommend seeking assistance from the respective tool's support channels or user communities.

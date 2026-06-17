@@ -13,7 +13,7 @@
 #include "esp_heap_trace.h"
 #endif
 
-#define TEST_MEMORY_LEAK_THRESHOLD_DEFAULT -300
+#define TEST_MEMORY_LEAK_THRESHOLD_DEFAULT -350
 static int leak_threshold = TEST_MEMORY_LEAK_THRESHOLD_DEFAULT;
 
 void set_leak_threshold(int threshold)

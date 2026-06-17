@@ -44,11 +44,13 @@ extern "C" {
 #define MALLOC_CAP_IRAM_8BIT        (1<<13) ///< Memory must be in IRAM and allow unaligned access
 #define MALLOC_CAP_RETENTION        (1<<14) ///< Memory must be able to accessed by retention DMA
 #define MALLOC_CAP_RTCRAM           (1<<15) ///< Memory must be in RTC fast memory
-#define MALLOC_CAP_TCM              (1<<16) ///< Memory must be in TCM memory
+#define MALLOC_CAP_SPM              (1<<16) ///< Memory must be in SPM memory
+#define MALLOC_CAP_TCM              MALLOC_CAP_SPM _Pragma ("GCC warning \"'MALLOC_CAP_TCM' macro is deprecated, please use `MALLOC_CAP_SPM`\"")
 #define MALLOC_CAP_DMA_DESC_AHB     (1<<17) ///< Memory must be capable of containing AHB DMA descriptors
 #define MALLOC_CAP_DMA_DESC_AXI     (1<<18) ///< Memory must be capable of containing AXI DMA descriptors
 #define MALLOC_CAP_CACHE_ALIGNED    (1<<19) ///< Memory must be aligned to the cache line size of any intermediate caches
 #define MALLOC_CAP_SIMD             (1<<20) ///< Memory must be capable of being used for SIMD instructions (i.e. allow for SIMD-specific-bit data accesses)
+#define MALLOC_CAP_SPIRAM_NO_ENC    (1<<21) ///< Memory must be in the PSRAM region exempt from flash encryption (plaintext in PSRAM; see CONFIG_SPIRAM_ENC_EXEMPT)
 
 #define MALLOC_CAP_INVALID          (1<<31) ///< Memory can't be used / list end marker
 
@@ -227,6 +229,9 @@ size_t heap_caps_get_free_size( uint32_t caps );
  * @note Note the result may be less than the global all-time minimum available heap of this kind, as "low watermarks" are
  * tracked per-region. Individual regions' heaps may have reached their "low watermarks" at different points in time. However,
  * this result still gives a "worst case" indication for all-time minimum free heap.
+ *
+ * @note Heaps added at runtime using heap_caps_add_region_with_caps() (i.e., from app_main onwards) are not taken into
+ * account in the minimum free size calculation.
  *
  * @param caps        Bitwise OR of MALLOC_CAP_* flags indicating the type
  *                    of memory

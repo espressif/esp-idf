@@ -315,6 +315,9 @@ UINT8 gap_proc_write_req( tGATTS_REQ_TYPE type, tGATT_WRITE_REQ *p_data)
             switch (p_db_attr->uuid) {
                 #if (GATTS_DEVICE_NAME_WRITABLE == TRUE)
                 case GATT_UUID_GAP_DEVICE_NAME: {
+                    if (p_data->len > BD_NAME_LEN) {
+                        return GATT_INVALID_ATTR_LEN;
+                    }
                     UINT8 *p_val = p_data->value;
                     p_val[p_data->len] = '\0';
                     BTM_SetLocalDeviceName((char *)p_val, BT_DEVICE_TYPE_BLE);
@@ -775,6 +778,7 @@ BOOLEAN gap_ble_accept_cl_operation(BD_ADDR peer_bda, UINT16 uuid, tGAP_BLE_CMPL
 {
     tGAP_CLCB *p_clcb;
     BOOLEAN started = FALSE;
+    BOOLEAN is_new_clcb = FALSE;
 
     if (p_cback == NULL && uuid != GATT_UUID_GAP_PREF_CONN_PARAM) {
         return (started);
@@ -785,6 +789,7 @@ BOOLEAN gap_ble_accept_cl_operation(BD_ADDR peer_bda, UINT16 uuid, tGAP_BLE_CMPL
             GAP_TRACE_ERROR("gap_ble_accept_cl_operation max connection reached");
             return started;
         }
+        is_new_clcb = TRUE;
     }
 
     GAP_TRACE_EVENT ("%s() - BDA: %08x%04x  cl_op_uuid: 0x%04x",
@@ -798,11 +803,25 @@ BOOLEAN gap_ble_accept_cl_operation(BD_ADDR peer_bda, UINT16 uuid, tGAP_BLE_CMPL
 
     /* hold the link here */
     if (!GATT_Connect(gap_cb.gatt_if, p_clcb->bda, BLE_ADDR_UNKNOWN_TYPE, TRUE, BT_TRANSPORT_LE, FALSE, FALSE, 0xFF, 0xFF)) {
+        if (is_new_clcb) {
+            gap_ble_dealloc_clcb(p_clcb);
+        }
         return started;
     }
 
     /* enqueue the request */
-    gap_ble_enqueue_request(p_clcb, uuid, p_cback);
+    if (gap_ble_enqueue_request(p_clcb, uuid, p_cback) == FALSE) {
+        GAP_TRACE_ERROR("gap_ble_accept_cl_operation enqueue request failed");
+        if (is_new_clcb) {
+            if (p_clcb->connected) {
+                GATT_Disconnect(p_clcb->conn_id);
+            } else {
+                GATT_CancelConnect(gap_cb.gatt_if, p_clcb->bda, TRUE);
+            }
+            gap_ble_dealloc_clcb(p_clcb);
+        }
+        return started;
+    }
 
     if (p_clcb->connected && p_clcb->cl_op_uuid == 0) {
         started = gap_ble_send_cl_read_request(p_clcb);

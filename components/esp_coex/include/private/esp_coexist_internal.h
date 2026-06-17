@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -324,6 +324,17 @@ int coex_schm_register_callback(coex_schm_callback_type_t type, void *callback);
  *  @return : ESP_OK - success, other - failed
  */
 esp_err_t esp_coex_adapter_register(coex_adapter_funcs_t *funcs);
+
+#if SOC_BLE_ISO_SUPPORTED
+/**
+ * @brief Register coexistence iso end wifi callback function.
+ *
+ *  @param is_reg : register or unregister
+ *  @param funcs : coexistence iso end wifi function
+ *  @return : ESP_OK - success, other - failed
+ */
+esp_err_t esp_coex_configure_iso_end_wifi_cb(bool is_reg, void *funcs);
+#endif /* SOC_BLE_ISO_SUPPORTED */
 
 #if CONFIG_EXTERNAL_COEX_ENABLE
 /**

@@ -1,13 +1,15 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
+#include <stdbool.h>
 #include "esp_err.h"
 #include "soc/clk_tree_defs.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,7 +20,7 @@ extern "C" {
  */
 typedef enum {
     ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED,   /*< Get value from the data cached by the driver; If the data is 0, then a calibration will be performed */
-    ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX,   /*< Get its approxiamte frequency value */
+    ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX,   /*< Get its approximate frequency value */
     ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT,    /*< Always perform a calibration */
     ESP_CLK_TREE_SRC_FREQ_PRECISION_INVALID,  /*< Invalid degree of precision */
 } esp_clk_tree_src_freq_precision_t;
@@ -41,6 +43,20 @@ typedef enum {
  */
 esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_src_freq_precision_t precision,
 uint32_t *freq_value);
+
+/**
+ * @brief Set frequency of module clock source
+ *
+ * @param[in] clk_src Clock source available to modules, in soc_module_clk_t
+ * @param[in] expt_freq_value Expected frequency of the clock source, in Hz
+ * @param[out] ret_freq_value Real frequency of the clock source, in Hz
+ *
+ * @return
+ *      - ESP_OK               Success
+ *      - ESP_ERR_INVALID_ARG  Parameter error
+ *      - ESP_ERR_NOT_SUPPORTED Unsupported clock source
+ */
+esp_err_t esp_clk_tree_src_set_freq_hz(soc_module_clk_t clk_src, uint32_t expt_freq_value, uint32_t *ret_freq_value);
 
 #ifdef __cplusplus
 }

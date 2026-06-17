@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#if (SOC_USB_OTG_PERIPH_NUM > 0)
+#if (SOC_USB_FSLS_PHY_NUM > 0)
 
 /**
  * @brief USB WRAP pull up/down resistor override values
@@ -46,7 +46,7 @@ typedef struct {
     bool rx_rcv;        /**< Differential receive data from D+ and D- lines */
 } usb_wrap_test_mode_vals_t;
 
-#endif // (SOC_USB_OTG_PERIPH_NUM > 0)
+#endif // (SOC_USB_FSLS_PHY_NUM > 0)
 
 #ifdef __cplusplus
 }

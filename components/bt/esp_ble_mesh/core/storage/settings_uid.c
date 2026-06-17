@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -101,6 +101,11 @@ int settings_uid_load(void)
     for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
         uint16_t index = net_buf_simple_pull_le16(buf);
 
+        if (index >= ARRAY_SIZE(user_ids)) {
+            BT_WARN("Invalid index %u in NVS, skipping", index);
+            continue;
+        }
+
         sprintf(name, "mesh/id/%04x", index);
 
         err = bt_mesh_load_uid_settings(name, (uint8_t *)user_ids[index].id,
@@ -117,7 +122,13 @@ int settings_uid_load(void)
     }
 
     bt_mesh_free_buf(buf);
-    return err;
+
+    /* Return 0 since partial loads are acceptable by design.
+     * Individual load failures are logged via BT_WARN/BT_ERR
+     * in bt_mesh_load_uid_settings() and do not prevent
+     * successful restoration of other settings.
+     */
+    return 0;
 }
 
 #if CONFIG_BLE_MESH_DEINIT
@@ -150,6 +161,7 @@ int settings_uid_erase(void)
              * be erased when the deinit function is invoked,
              * no need to erase it here.
              */
+            assert(user_ids[i].handle != INVALID_SETTINGS_HANDLE);
             bt_mesh_settings_nvs_close(user_ids[i].handle);
         } else if (settings_uid_empty(&user_ids[i]) == false) {
             /* When a user id is not empty, which means the nvs
@@ -188,6 +200,7 @@ static int settings_direct_erase(uint8_t index)
     err = bt_mesh_settings_erase_all(handle);
     if (err) {
         BT_ERR("Erase settings failed, index %d", index);
+        bt_mesh_settings_nvs_close(handle);
         return err;
     }
 
@@ -278,13 +291,13 @@ static int settings_open(uint8_t index)
     err = bt_mesh_save_uid_settings(name, (const uint8_t *)uid->id, SETTINGS_UID_SIZE);
     if (err) {
         BT_ERR("Save uid failed, name %s", name);
-        return err;
+        goto fail;
     }
 
     err = bt_mesh_add_uid_settings_item("mesh/uid", index);
     if (err) {
         BT_ERR("Add uid failed, index %d", index);
-        return err;
+        goto fail;
     }
 
     /* Mark this as open here, because we need this flag for
@@ -295,16 +308,22 @@ static int settings_open(uint8_t index)
     err = settings_core_load();
     if (err) {
         BT_ERR("Load settings failed, name %s", uid->name);
-        return err;
+        goto fail;
     }
 
     err = settings_core_commit();
     if (err) {
         BT_ERR("Commit settings failed, name %s", uid->name);
-        return err;
+        goto fail;
     }
 
     return 0;
+
+fail:
+    bt_mesh_settings_nvs_close(uid->handle);
+    uid->handle = INVALID_SETTINGS_HANDLE;
+    uid->open = false;
+    return err;
 }
 
 int bt_mesh_provisioner_open_settings_with_index(uint8_t index)
@@ -445,6 +464,7 @@ static int settings_delete(uint8_t index)
      * and delete the corresponding user id.
      */
     struct settings_uid *uid = &user_ids[index];
+    int err = 0;
 
     BT_DBG("SettingsDelete, Index %u UID %s", index, uid->id);
 
@@ -453,7 +473,10 @@ static int settings_delete(uint8_t index)
         return -EBUSY;
     }
 
-    settings_direct_erase(index);
+    err = settings_direct_erase(index);
+    if (err) {
+        return err;
+    }
 
     memset(uid, 0, sizeof(struct settings_uid));
     uid->handle = INVALID_SETTINGS_HANDLE;
@@ -564,12 +587,24 @@ int bt_mesh_provisioner_direct_erase_settings(void)
 
 #if CONFIG_BLE_MESH_USE_MULTIPLE_NAMESPACE
     for (int i = 0; i < ARRAY_SIZE(user_ids); i++) {
-        settings_direct_erase(i);
+        err = settings_direct_erase(i);
+        if (err) {
+            BT_ERR("SettingsDirectEraseFail %d %d", i, err);
+            /* Continue the following erase operation, no need to return */
+        }
     }
 
-    bt_mesh_erase_uid_settings("mesh/uid");
+    err = bt_mesh_erase_uid_settings("mesh/uid");
+    if (err) {
+        BT_ERR("SettingsEraseUidFail %d", err);
+        /* Continue the following operation, no need to return */
+    }
 #else /* CONFIG_BLE_MESH_USE_MULTIPLE_NAMESPACE */
     err = bt_mesh_settings_erase_all(handle);
+    if (err) {
+        BT_ERR("SettingsEraseAllFail %u %d", handle, err);
+        /* Continue the following operation, no need to return */
+    }
 #endif /* CONFIG_BLE_MESH_USE_MULTIPLE_NAMESPACE */
 
     bt_mesh_settings_direct_close();

@@ -108,7 +108,11 @@ typedef union {
          *  synchronization bit for CHANNELn
          */
         uint32_t conf_update_chn:1;
-        uint32_t reserved_25:7;
+        /** dma_access_en_chn : WT; bitpos: [25]; default: 0;
+         *  DMA access control bit for CHANNELn (only CHANNEL3 has this control bit)
+         */
+        uint32_t dma_access_en_chn: 1;
+        uint32_t reserved_26: 6;
     };
     uint32_t val;
 } rmt_chnconf0_reg_t;
@@ -127,7 +131,10 @@ typedef union {
          *  than this register value, received process is finished.
          */
         uint32_t idle_thres_chm:15;
-        uint32_t reserved_23:1;
+        /** dma_access_en_m : WT; bitpos: [23]; default: 0;
+         *  DMA access control bit for CHANNELm (only channel7 has this control bit)
+         */
+        uint32_t dma_access_en_chm: 1;
         /** mem_size_chm : R/W; bitpos: [27:24]; default: 1;
          *  This register is used to configure the maximum size of memory allocated to CHANNELm.
          */
@@ -1038,18 +1045,14 @@ typedef union {
 } rmt_date_reg_t;
 
 
-typedef struct {
+typedef struct rmt_dev_t {
     volatile rmt_chndata_reg_t chndata[4];
     volatile rmt_chmdata_reg_t chmdata[4];
     volatile rmt_chnconf0_reg_t chnconf0[4];
-    volatile rmt_chmconf0_reg_t ch4conf0;
-    volatile rmt_chmconf1_reg_t ch4conf1;
-    volatile rmt_chmconf0_reg_t ch5conf0;
-    volatile rmt_chmconf1_reg_t ch5conf1;
-    volatile rmt_chmconf0_reg_t ch6conf0;
-    volatile rmt_chmconf1_reg_t ch6conf1;
-    volatile rmt_chmconf0_reg_t ch7conf0;
-    volatile rmt_chmconf1_reg_t ch7conf1;
+    volatile struct {
+        rmt_chmconf0_reg_t conf0;
+        rmt_chmconf1_reg_t conf1;
+    } chmconf[4];
     volatile rmt_chnstatus_reg_t chnstatus[4];
     volatile rmt_chmstatus_reg_t chmstatus[4];
     volatile rmt_int_raw_reg_t int_raw;
@@ -1065,6 +1068,8 @@ typedef struct {
     volatile rmt_ref_cnt_rst_reg_t ref_cnt_rst;
     volatile rmt_date_reg_t date;
 } rmt_dev_t;
+
+extern rmt_dev_t RMT;
 
 
 #ifndef __cplusplus

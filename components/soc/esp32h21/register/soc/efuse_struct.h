@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -46,9 +46,7 @@ typedef union {
     struct {
         /** wr_dis : RO; bitpos: [31:0]; default: 0;
          *  Represents whether programming of individual eFuse memory bit is disabled or
-         *  enabled.
-         *  1: Disabled
-         *  0: Enabled
+         *  enabled.\\ 1: Disabled\\ 0: Enabled\\
          */
         uint32_t wr_dis:32;
     };
@@ -62,112 +60,102 @@ typedef union {
     struct {
         /** rd_dis : RO; bitpos: [6:0]; default: 0;
          *  Represents whether reading of individual eFuse block(block4~block10) is disabled or
-         *  enabled.
-         *  1: Disabled
-         *  0: Enabled
+         *  enabled.\\ 1: Disabled\\ 0: Enabled\\
          */
         uint32_t rd_dis:7;
         /** pvt_glitch_en : RO; bitpos: [7]; default: 0;
-         *  Represents whether to enable PVT power glitch monitor function.
-         *  1: Enable.
-         *  0: Disable
+         *  Represents whether to enable PVT power glitch monitor function.\\1: Enable. \\0:
+         *  Disable\\
          */
         uint32_t pvt_glitch_en:1;
         /** dis_icache : RO; bitpos: [8]; default: 0;
-         *  Represents whether icache is disabled or enabled.
-         *  1: Disabled
-         *  0: Enabled
+         *  Represents whether icache is disabled or enabled.\\ 1: Disabled\\ 0: Enabled\\
          */
         uint32_t dis_icache:1;
         /** dis_usb_jtag : RO; bitpos: [9]; default: 0;
-         *  Represents whether the USB-to-JTAG function in USB Serial/JTAG is disabled.
-         *  1: Disabled
-         *  0: Enabled
+         *  Represents whether the USB-to-JTAG function in USB Serial/JTAG is disabled. \\ 1:
+         *  Disabled\\ 0: Enabled\\
          */
         uint32_t dis_usb_jtag:1;
         /** powerglitch_en : RO; bitpos: [10]; default: 0;
-         *  Represents whether to enable power glitch function.
+         *  Represents whether to enable power glitch function.\\
          */
         uint32_t powerglitch_en:1;
-        uint32_t reserved_11:1;
+        /** dis_usb_serial_jtag : RO; bitpos: [11]; default: 0;
+         *  Represents whether to disable USB-Serial-JTAG.\\
+         */
+        uint32_t dis_usb_serial_jtag:1;
         /** dis_force_download : RO; bitpos: [12]; default: 0;
-         *  Represents whether the function that forces chip into Download mode is disabled.
-         *  1: Disabled
-         *  0: Enabled
+         *  Represents whether the function that forces chip into Download mode is disabled. \\
+         *  1: Disabled\\ 0: Enabled\\
          */
         uint32_t dis_force_download:1;
         /** spi_download_mspi_dis : RO; bitpos: [13]; default: 0;
          *  Represents accessing MSPI flash/MSPI RAM by SYS AXI matrix is disabled during
-         *  boot_mode_download.
-         *  1: Disabled
-         *  0: Enabled
+         *  boot_mode_download.\\ 1: Disabled\\ 0: Enabled\\
          */
         uint32_t spi_download_mspi_dis:1;
         /** dis_twai : RO; bitpos: [14]; default: 0;
-         *  Represents whether TWAI function is disabled.
-         *  1: Disabled
-         *  0: Enabled
+         *  Represents whether TWAI function is disabled. \\ 1: Disabled\\ 0: Enabled\\
          */
         uint32_t dis_twai:1;
         /** jtag_sel_enable : RO; bitpos: [15]; default: 0;
          *  Represents whether the selection of a JTAG signal source through the strapping pin
          *  value is enabled when both EFUSE_DIS_PAD_JTAG and EFUSE_DIS_USB_JTAG are configured
-         *  to 0. For more information, please refer to Chapter Placeholder.
-         *  1: Enabled
-         *  0: Disabled
+         *  to 0. For more information, please refer to Chapter Placeholder.\\ 1: Enabled\\ 0:
+         *  Disabled\\
          */
         uint32_t jtag_sel_enable:1;
         /** soft_dis_jtag : RO; bitpos: [18:16]; default: 0;
          *  Represents whether PAD JTAG is disabled in the soft way. It can be restarted via
-         *  HMAC.
-         *  Odd count of bits with a value of 1: Disabled
-         *  Even count of bits with a value of 1: Enabled
+         *  HMAC. \\ Odd count of bits with a value of 1: Disabled\\ Even count of bits with a
+         *  value of 1: Enabled\\
          */
         uint32_t soft_dis_jtag:3;
         /** dis_pad_jtag : RO; bitpos: [19]; default: 0;
-         *  Represents whether PAD JTAG is disabled in the hard way (permanently).
-         *  1: Disabled
-         *  0: Enabled
+         *  Represents whether PAD JTAG is disabled in the hard way (permanently).\\ 1:
+         *  Disabled\\ 0: Enabled\\
          */
         uint32_t dis_pad_jtag:1;
         /** dis_download_manual_encrypt : RO; bitpos: [20]; default: 0;
-         *  Represents whether flash encryption is disabled (except in SPI boot mode).
-         *  1: Disabled
-         *  0: Enabled
+         *  Represents whether flash encryption is disabled (except in SPI boot mode).\\ 1:
+         *  Disabled\\ 0: Enabled\\
          */
         uint32_t dis_download_manual_encrypt:1;
-        uint32_t reserved_21:4;
+        /** usb_drefh : RO; bitpos: [22:21]; default: 0;
+         *  Represents single-end input threshold vrefh, 1.76 V to 2 V with step of 80 mV,
+         *  stored in eFuse.\\
+         */
+        uint32_t usb_drefh:2;
+        /** usb_drefl : RO; bitpos: [24:23]; default: 0;
+         *  Represents single-end input threshold vrefl, 0.8 V to 1.04 V with step of 80 mV,
+         *  stored in eFuse.\\
+         */
+        uint32_t usb_drefl:2;
         /** usb_exchg_pins : RO; bitpos: [25]; default: 0;
-         *  Represents whether the D+ and D- pins is exchanged.
-         *  1: Exchanged
-         *  0: Not exchanged
+         *  Represents whether the D+ and D- pins is exchanged.\\ 1: Exchanged\\ 0: Not
+         *  exchanged\\
          */
         uint32_t usb_exchg_pins:1;
         /** vdd_spi_as_gpio : RO; bitpos: [26]; default: 0;
-         *  Represents whether vdd spi pin is functioned as gpio.
-         *  1: Functioned
-         *  0: Not functioned
+         *  Represents whether vdd spi pin is functioned as gpio.\\ 1: Functioned\\ 0: Not
+         *  functioned\\
          */
         uint32_t vdd_spi_as_gpio:1;
         /** ecdsa_curve_mode : RO; bitpos: [28:27]; default: 0;
-         *  Represents the configuration of the curve of ECDSA calculation.
-         *  0: Only enable P256
-         *  1: Only enable P192
-         *  2: Both enable P256 and P192
-         *  3: Only enable P256
+         *  Represents the configuration of the curve of ECDSA calculation.\\ 0: Only enable
+         *  P256\\ 1: Only enable P192\\ 2: Both enable P256 and P192\\ 3: Only enable P256\\
          */
         uint32_t ecdsa_curve_mode:2;
         /** ecc_force_const_time : RO; bitpos: [29]; default: 0;
-         *  Represents whether to permanently turn on ECC const-time mode.
-         *  0: Disabled
-         *  1: Enabled
+         *  Represents whether to permanently turn on ECC const-time mode.\\ 0: Disabled\\ 1:
+         *  Enabled\\
          */
         uint32_t ecc_force_const_time:1;
         /** xts_dpa_pseudo_level : RO; bitpos: [31:30]; default: 0;
-         *  Represents control method of xts pseudo-round anti-dpa attack function.
-         *  0: Controlled by register
-         *  1-3: The higher the value is, the more pseudo-rounds are inserted to the xts-aes
-         *  calculation.
+         *  Represents control method of xts pseudo-round anti-dpa attack function.\\ 0:
+         *  Controlled by register\\ 1-3: The higher the value is, the more pseudo-rounds are
+         *  inserted to the xts-aes calculation.\\
          */
         uint32_t xts_dpa_pseudo_level:2;
     };
@@ -180,51 +168,45 @@ typedef union {
 typedef union {
     struct {
         /** io_ldo_adjust : RO; bitpos: [7:0]; default: 0;
-         *  Represents configuration of IO LDO mode and voltage.
+         *  Represents configuration of IO LDO mode and voltage.\\
          */
         uint32_t io_ldo_adjust:8;
         /** vdd_spi_ldo_adjust : RO; bitpos: [15:8]; default: 0;
-         *  Represents configuration of FLASH LDO mode and voltage.
+         *  Represents configuration of FLASH LDO mode and voltage.\\
          */
         uint32_t vdd_spi_ldo_adjust:8;
         /** wdt_delay_sel : RO; bitpos: [17:16]; default: 0;
-         *  Represents RTC watchdog timeout threshold.
-         *  0：The originally configured STG0 threshold × 2
-         *  1：The originally configured STG0 threshold × 4
-         *  2：The originally configured STG0 threshold × 8
-         *  3：The originally configured STG0 threshold × 16
+         *  Represents RTC watchdog timeout threshold. 0: The originally configured STG0
+         *  threshold x 2 1: The originally configured STG0 threshold x 4 2: The originally
+         *  configured STG0 threshold x 8 3: The originally configured STG0 threshold x 16
          */
         uint32_t wdt_delay_sel:2;
         /** spi_boot_crypt_cnt : RO; bitpos: [20:18]; default: 0;
-         *  Represents whether SPI boot encryption/decryption is enabled.
-         *  Odd count of bits with a value of 1: Enabled
-         *  Even count of bits with a value of 1: Disabled
+         *  Represents whether SPI boot encryption/decryption is enabled. \\ Odd count of bits
+         *  with a value of 1: Enabled\\ Even count of bits with a value of 1: Disabled\\
          */
         uint32_t spi_boot_crypt_cnt:3;
         /** secure_boot_key_revoke0 : RO; bitpos: [21]; default: 0;
-         *  Represents whether revoking Secure Boot key 0 is enabled.
-         *  1: Enabled
-         *  0: Disabled
+         *  Represents whether revoking Secure Boot key 0 is enabled. \\ 1: Enabled\\ 0:
+         *  Disabled\\
          */
         uint32_t secure_boot_key_revoke0:1;
         /** secure_boot_key_revoke1 : RO; bitpos: [22]; default: 0;
-         *  Represents whether revoking Secure Boot key 1 is enabled.
-         *  1: Enabled
-         *  0: Disabled
+         *  Represents whether revoking Secure Boot key 1 is enabled. \\ 1: Enabled\\ 0:
+         *  Disabled\\
          */
         uint32_t secure_boot_key_revoke1:1;
         /** secure_boot_key_revoke2 : RO; bitpos: [23]; default: 0;
-         *  Represents whether revoking Secure Boot key 2 is enabled.
-         *  1: Enabled
-         *  0: Disabled
+         *  Represents whether revoking Secure Boot key 2 is enabled. \\ 1: Enabled\\ 0:
+         *  Disabled\\
          */
         uint32_t secure_boot_key_revoke2:1;
         /** key_purpose_0 : RO; bitpos: [27:24]; default: 0;
-         *  Represents the purpose of Key0. See Table tab:efuse-key-purpose.
+         *  Represents the purpose of Key0. See Table tab:efuse-key-purpose.\\
          */
         uint32_t key_purpose_0:4;
         /** key_purpose_1 : RO; bitpos: [31:28]; default: 0;
-         *  Represents the purpose of Key1. See Table tab:efuse-key-purpose.
+         *  Represents the purpose of Key1. See Table tab:efuse-key-purpose.\\
          */
         uint32_t key_purpose_1:4;
     };
@@ -237,58 +219,49 @@ typedef union {
 typedef union {
     struct {
         /** key_purpose_2 : RO; bitpos: [3:0]; default: 0;
-         *  Represents the purpose of Key2. See Table tab:efuse-key-purpose.
+         *  Represents the purpose of Key2. See Table tab:efuse-key-purpose.\\
          */
         uint32_t key_purpose_2:4;
         /** key_purpose_3 : RO; bitpos: [7:4]; default: 0;
-         *  Represents the purpose of Key3. See Table tab:efuse-key-purpose.
+         *  Represents the purpose of Key3. See Table tab:efuse-key-purpose.\\
          */
         uint32_t key_purpose_3:4;
         /** key_purpose_4 : RO; bitpos: [11:8]; default: 0;
-         *  Represents the purpose of Key4. See Table tab:efuse-key-purpose.
+         *  Represents the purpose of Key4. See Table tab:efuse-key-purpose.\\
          */
         uint32_t key_purpose_4:4;
         /** key_purpose_5 : RO; bitpos: [15:12]; default: 0;
-         *  Represents the purpose of Key5. See Table tab:efuse-key-purpose.
+         *  Represents the purpose of Key5. See Table tab:efuse-key-purpose.\\
          */
         uint32_t key_purpose_5:4;
         /** sec_dpa_level : RO; bitpos: [17:16]; default: 0;
          *  Represents the security level of anti-DPA attack. The level is adjusted by
-         *  configuring the clock random frequency division mode.
-         *  0: Security level is SEC_DPA_OFF
-         *  1: Security level is SEC_DPA_LOW
-         *  2: Security level is SEC_DPA_MIDDLE
-         *  3: Security level is SEC_DPA_HIGH
-         *  For more information, please refer to Chapter mod:sysreg > Section
-         *  sec:sysreg-anti-dpa-attack-security-control.
+         *  configuring the clock random frequency division mode.\\ 0: Security level is
+         *  SEC_DPA_OFF\\ 1: Security level is SEC_DPA_LOW\\ 2: Security level is
+         *  SEC_DPA_MIDDLE\\ 3: Security level is SEC_DPA_HIGH\\ For more information, please
+         *  refer to Chapter mod:sysreg > Section sec:sysreg-anti-dpa-attack-security-control.\\
          */
         uint32_t sec_dpa_level:2;
         /** io_ldo_1p8 : RO; bitpos: [18]; default: 0;
-         *  Represents select IO LDO voltage to 1.8V or 3.3V.
-         *  1: 1.8V
-         *  0: 3.3V
+         *  Represents select IO LDO voltage to 1.8V or 3.3V.\\ 1: 1.8V\\ 0: 3.3V\\
          */
         uint32_t io_ldo_1p8:1;
         /** crypt_dpa_enable : RO; bitpos: [19]; default: 0;
-         *  Represents whether defense against DPA attack is enabled.
-         *  1: Enabled
-         *  0: Disabled
+         *  Represents whether defense against DPA attack is enabled.\\ 1: Enabled\\ 0:
+         *  Disabled\\
          */
         uint32_t crypt_dpa_enable:1;
         /** secure_boot_en : RO; bitpos: [20]; default: 0;
-         *  Represents whether Secure Boot is enabled.
-         *  1: Enabled
-         *  0: Disabled
+         *  Represents whether Secure Boot is enabled.\\ 1: Enabled\\ 0: Disabled\\
          */
         uint32_t secure_boot_en:1;
         /** secure_boot_aggressive_revoke : RO; bitpos: [21]; default: 0;
-         *  Represents whether aggressive revocation of Secure Boot is enabled.
-         *  1: Enabled
-         *  0: Disabled
+         *  Represents whether aggressive revocation of Secure Boot is enabled.\\ 1: Enabled\\
+         *  0: Disabled\\
          */
         uint32_t secure_boot_aggressive_revoke:1;
         /** powerglitch_en1 : RO; bitpos: [26:22]; default: 0;
-         *  Represents whether to enable power glitch function when chip power on.
+         *  Represents whether to enable power glitch function when chip power on.\\
          */
         uint32_t powerglitch_en1:5;
         /** dcdc_ccm_en : RO; bitpos: [27]; default: 0;
@@ -296,9 +269,9 @@ typedef union {
          */
         uint32_t dcdc_ccm_en:1;
         /** flash_tpuw : RO; bitpos: [31:28]; default: 0;
-         *  Represents the flash waiting time after power-up. Measurement unit: ms.
-         *  When the value is less than 15, the waiting time is the programmed value.
-         *  Otherwise, the waiting time is a fixed value, i.e. 30 ms.
+         *  Represents the flash waiting time after power-up. Measurement unit: ms.\\ When the
+         *  value is less than 15, the waiting time is the programmed value. Otherwise, the
+         *  waiting time is a fixed value, i.e. 30 ms.\\
          */
         uint32_t flash_tpuw:4;
     };
@@ -311,71 +284,57 @@ typedef union {
 typedef union {
     struct {
         /** dis_download_mode : RO; bitpos: [0]; default: 0;
-         *  Represents whether all download modes are disabled.
-         *  1: Disabled
-         *  0: Enabled
+         *  Represents whether all download modes are disabled.\\ 1: Disabled\\ 0: Enabled\\
          */
         uint32_t dis_download_mode:1;
         /** dis_direct_boot : RO; bitpos: [1]; default: 0;
-         *  Represents whether direct boot mode is disabled.
-         *  1: Disabled
-         *  0: Enabled
+         *  Represents whether direct boot mode is disabled.\\ 1: Disabled\\ 0: Enabled\\
          */
         uint32_t dis_direct_boot:1;
         /** dis_usb_serial_jtag_rom_print : RO; bitpos: [2]; default: 0;
-         *  Represents whether print from USB-Serial-JTAG during ROM boot is disabled.
-         *  1: Disabled
-         *  0: Enabled
+         *  Represents whether print from USB-Serial-JTAG during ROM boot is disabled.\\ 1:
+         *  Disabled\\ 0: Enabled\\
          */
         uint32_t dis_usb_serial_jtag_rom_print:1;
         /** flash_ldo_efuse_sel : RO; bitpos: [3]; default: 0;
-         *  Represents whether to select efuse control flash ldo default voltage.
-         *  1: efuse
-         *  0: strapping
+         *  Represents whether to select efuse control flash ldo default voltage. \\1:
+         *  efuse\\0: strapping\\
          */
         uint32_t flash_ldo_efuse_sel:1;
         /** dis_usb_serial_jtag_download_mode : RO; bitpos: [4]; default: 0;
-         *  Represents whether the USB-Serial-JTAG download function is disabled.
-         *  1: Disabled
-         *  0: Enabled
+         *  Represents whether the USB-Serial-JTAG download function is disabled.\\ 1:
+         *  Disabled\\ 0: Enabled\\
          */
         uint32_t dis_usb_serial_jtag_download_mode:1;
         /** enable_security_download : RO; bitpos: [5]; default: 0;
          *  Represents whether security download is enabled. Only UART is supported for
          *  download. Reading/writing RAM or registers is not supported (i.e. Stub download is
-         *  not supported).
-         *  1: Enabled
-         *  0: Disabled
+         *  not supported).\\ 1: Enabled\\ 0: Disabled\\
          */
         uint32_t enable_security_download:1;
         /** uart_print_control : RO; bitpos: [7:6]; default: 0;
-         *  Represents the type of UART printing.
-         *  0: Force enable printing.
-         *  1: Enable printing when GPIO8 is reset at low level.
-         *  2: Enable printing when GPIO8 is reset at high level.
-         *  3: Force disable printing.
+         *  Represents the type of UART printing.\\ 0: Force enable printing.\\ 1: Enable
+         *  printing when GPIO8 is reset at low level.\\ 2: Enable printing when GPIO8 is reset
+         *  at high level.\\ 3: Force disable printing.\\
          */
         uint32_t uart_print_control:2;
         /** force_send_resume : RO; bitpos: [8]; default: 0;
-         *  Represents whether ROM code is forced to send a resume command during SPI boot.
-         *  1: Forced
-         *  0: Not forced
+         *  Represents whether ROM code is forced to send a resume command during SPI boot.\\
+         *  1: Forced\\ 0: Not forced\\
          */
         uint32_t force_send_resume:1;
         /** secure_version : RO; bitpos: [24:9]; default: 0;
-         *  Represents the security version used by ESP-IDF anti-rollback feature.
+         *  Represents the security version used by ESP-IDF anti-rollback feature.\\
          */
         uint32_t secure_version:16;
         /** secure_boot_disable_fast_wake : RO; bitpos: [25]; default: 0;
-         *  Represents whether FAST VERIFY ON WAKE is disabled when Secure Boot is enabled.
-         *  1: Disabled
-         *  0: Enabled
+         *  Represents whether FAST VERIFY ON WAKE is disabled when Secure Boot is enabled.\\
+         *  1: Disabled\\ 0: Enabled\\
          */
         uint32_t secure_boot_disable_fast_wake:1;
         /** hys_en_pad0 : RO; bitpos: [31:26]; default: 0;
-         *  Represents whether to enable the hysteresis function of pad 0-5.
-         *  0: Disabled
-         *  1: Enabled
+         *  Represents whether to enable the hysteresis function of pad 0-5.\\ 0: Disabled\\ 1:
+         *  Enabled\\
          */
         uint32_t hys_en_pad0:6;
     };
@@ -388,15 +347,12 @@ typedef union {
 typedef union {
     struct {
         /** hys_en_pad1 : RO; bitpos: [21:0]; default: 0;
-         *  Represents whether to enable the hysteresis function of pad 6-27.
-         *  0: Disabled
-         *  1: Enabled
+         *  Represents whether to enable the hysteresis function of pad 6-27.\\ 0: Disabled\\
+         *  1: Enabled\\
          */
         uint32_t hys_en_pad1:22;
         /** flash_ldo_power_sel : RO; bitpos: [22]; default: 0;
-         *  Represents which flash LDO is selected.
-         *  0: FLASH LDO 1P8.
-         *  1: FLASH LDO 1P2.
+         *  Represents which flash LDO is selected.\\ 0: FLASH LDO 1P8.\\ 1: FLASH LDO 1P2.\\
          */
         uint32_t flash_ldo_power_sel:1;
         uint32_t reserved_23:9;
@@ -406,8 +362,8 @@ typedef union {
 
 
 /** Group: block1 registers */
-/** Type of rd_mac_sys_0 register
- *  Represents rd_mac_sys_
+/** Type of rd_mac_sys0 register
+ *  Represents rd_mac_sys
  */
 typedef union {
     struct {
@@ -419,8 +375,8 @@ typedef union {
     uint32_t val;
 } efuse_rd_mac_sys0_reg_t;
 
-/** Type of rd_mac_sys_1 register
- *  Represents rd_mac_sys_
+/** Type of rd_mac_sys1 register
+ *  Represents rd_mac_sys
  */
 typedef union {
     struct {
@@ -436,8 +392,8 @@ typedef union {
     uint32_t val;
 } efuse_rd_mac_sys1_reg_t;
 
-/** Type of rd_mac_sys_2 register
- *  Represents rd_mac_sys_
+/** Type of rd_mac_sys2 register
+ *  Represents rd_mac_sys
  */
 typedef union {
     struct {
@@ -453,8 +409,8 @@ typedef union {
     uint32_t val;
 } efuse_rd_mac_sys2_reg_t;
 
-/** Type of rd_mac_sys_3 register
- *  Represents rd_mac_sys_
+/** Type of rd_mac_sys3 register
+ *  Represents rd_mac_sys
  */
 typedef union {
     struct {
@@ -463,95 +419,320 @@ typedef union {
          */
         uint32_t mac_reserved_2:4;
         /** pvt_cell_select : RO; bitpos: [10:4]; default: 0;
-         *  Represents the selection of Power glitch monitor PVT cell.
+         *  Represents the selection of Power glitch monitor PVT cell.\\
          */
         uint32_t pvt_cell_select:7;
         /** mac_reserved_3 : RO; bitpos: [17:11]; default: 0;
          *  Reserved.
          */
         uint32_t mac_reserved_3:7;
-        /** sys_data_part0_0 : RO; bitpos: [31:18]; default: 0;
-         *  Represents the first 14-bit of zeroth part of system data.
+        /** blk_version_minor : R; bitpos: [20:18]; default: 0;
+         *  Minor version of BLOCK2
          */
-        uint32_t sys_data_part0_0:14;
+        uint32_t blk_version_minor:3;
+        /** blk_version_major : R; bitpos: [22:21]; default: 0;
+         *  Major version of BLOCK2
+         */
+        uint32_t blk_version_major:2;
+        /** disable_blk_version_major : R; bitpos: [23]; default: 0;
+         *  Disables check of blk version major
+         */
+        uint32_t disable_blk_version_major:1;
+        /** flash_cap : R; bitpos: [26:24]; default: 0;
+         *  Mark the capacity of in-package Flash
+         */
+        uint32_t flash_cap:3;
+        /** flash_vendor : R; bitpos: [29:27]; default: 0;
+         *  Mark the vendor of in-package Flash
+         */
+        uint32_t flash_vendor:3;
+        /** temp : R; bitpos: [31:30]; default: 0;
+         *  Mark the specified maximum ambient temperature that ESP Chip can work properly
+         */
+        uint32_t temp:2;
     };
     uint32_t val;
 } efuse_rd_mac_sys3_reg_t;
 
-/** Type of rd_mac_sys_4 register
- *  Represents rd_mac_sys_
+/** Type of rd_mac_sys4 register
+ *  Represents rd_mac_sys
  */
 typedef union {
     struct {
         uint32_t reserved_0:5;
         /** pvt_limit : RO; bitpos: [20:5]; default: 0;
-         *  Represents the threshold of power glitch monitor.
+         *  Represents the threshold of power glitch monitor.\\
          */
         uint32_t pvt_limit:16;
         /** pvt_glitch_charge_reset : RO; bitpos: [21]; default: 0;
-         *  Represents whether to trigger reset or charge pump when PVT power glitch happened.
-         *  1:Trigger charge pump.
-         *  0:Trigger reset
+         *  Represents whether to trigger reset or charge pump when PVT power glitch
+         *  happened.\\ 1:Trigger charge pump. \\ 0:Trigger reset\\
          */
         uint32_t pvt_glitch_charge_reset:1;
         /** pvt_glitch_mode : RO; bitpos: [23:22]; default: 0;
-         *  Represents the configuration of glitch mode.
+         *  Represents the configuration of glitch mode.\\
          */
         uint32_t pvt_glitch_mode:2;
         /** pvt_pump_limit : RO; bitpos: [31:24]; default: 0;
-         *  Represents the configuration voltage monitor limit for charge pump.
+         *  Represents the configuration voltage monitor limit for charge pump.\\
          */
         uint32_t pvt_pump_limit:8;
     };
     uint32_t val;
 } efuse_rd_mac_sys4_reg_t;
 
-/** Type of rd_mac_sys_5 register
- *  Represents rd_mac_sys_
+/** Type of rd_mac_sys5 register
+ *  Represents rd_mac_sys
  */
 typedef union {
     struct {
         /** pump_drv : RO; bitpos: [3:0]; default: 0;
-         *  Use to configure charge pump voltage gain.
+         *  Use to configure charge pump voltage gain.\\
          */
         uint32_t pump_drv:4;
-        /** sys_data_part0_2 : RO; bitpos: [31:4]; default: 0;
-         *  Represents the second 28-bit of zeroth part of system data.
+        /** wafer_version_minor : R; bitpos: [7:4]; default: 0;
+         *  Minor chip version
          */
-        uint32_t sys_data_part0_2:28;
+        uint32_t wafer_version_minor:4;
+        /** wafer_version_major : R; bitpos: [9:8]; default: 0;
+         *  Major chip version
+         */
+        uint32_t wafer_version_major:2;
+        /** disable_wafer_version_major : R; bitpos: [10]; default: 0;
+         *  Disables check of wafer version major
+         */
+        uint32_t disable_wafer_version_major:1;
+        /** pkg_version : R; bitpos: [13:11]; default: 0;
+         *  Package version
+         */
+        uint32_t pkg_version:3;
+        /** reserved_1_174 : R; bitpos: [31:14]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_1_174:18;
     };
     uint32_t val;
 } efuse_rd_mac_sys5_reg_t;
 
 
 /** Group: block2 registers */
-/** Type of rd_sys_part1_datan register
- *  Represents rd_sys_part1_datan
+/** Type of rd_sys_part1_data0 register
+ *  Represents rd_sys_part1_data0
  */
 typedef union {
     struct {
-        /** sys_data_part1_n : RO; bitpos: [31:0]; default: 0;
-         *  Represents the zeroth 32-bit of first part of system data.
+        /** optional_unique_id : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
          */
-        uint32_t sys_data_part1_n:32;
+        uint32_t optional_unique_id:32;
     };
     uint32_t val;
-} efuse_rd_sys_part1_datan_reg_t;
+} efuse_rd_sys_part1_data0_reg_t;
+
+/** Type of rd_sys_part1_data1 register
+ *  Represents rd_sys_part1_data1
+ */
+typedef union {
+    struct {
+        /** optional_unique_id_1 : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
+         */
+        uint32_t optional_unique_id_1:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data1_reg_t;
+
+/** Type of rd_sys_part1_data2 register
+ *  Represents rd_sys_part1_data2
+ */
+typedef union {
+    struct {
+        /** optional_unique_id_2 : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
+         */
+        uint32_t optional_unique_id_2:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data2_reg_t;
+
+/** Type of rd_sys_part1_data3 register
+ *  Represents rd_sys_part1_data3
+ */
+typedef union {
+    struct {
+        /** optional_unique_id_3 : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
+         */
+        uint32_t optional_unique_id_3:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data3_reg_t;
+
+/** Type of rd_sys_part1_data4 register
+ *  Represents rd_sys_part1_data4
+ */
+typedef union {
+    struct {
+        /** sys_data_part1_4 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of first part of system data.
+         */
+        uint32_t sys_data_part1_4:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data4_reg_t;
+
+/** Type of rd_sys_part1_data5 register
+ *  Represents rd_sys_part1_data5
+ */
+typedef union {
+    struct {
+        /** sys_data_part1_5 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of first part of system data.
+         */
+        uint32_t sys_data_part1_5:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data5_reg_t;
+
+/** Type of rd_sys_part1_data6 register
+ *  Represents rd_sys_part1_data6
+ */
+typedef union {
+    struct {
+        /** sys_data_part1_6 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of first part of system data.
+         */
+        uint32_t sys_data_part1_6:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data6_reg_t;
+
+/** Type of rd_sys_part1_data7 register
+ *  Represents rd_sys_part1_data7
+ */
+typedef union {
+    struct {
+        /** sys_data_part1_7 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of first part of system data.
+         */
+        uint32_t sys_data_part1_7:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data7_reg_t;
 
 
 /** Group: block3 registers */
-/** Type of rd_usr_datan register
- *  Represents rd_usr_datan
+/** Type of rd_usr_data0 register
+ *  Represents rd_usr_data0
  */
 typedef union {
     struct {
-        /** usr_datan : RO; bitpos: [31:0]; default: 0;
+        /** usr_data0 : RO; bitpos: [31:0]; default: 0;
          *  Represents the zeroth 32-bit of block3 (user).
          */
-        uint32_t usr_datan:32;
+        uint32_t usr_data0:32;
     };
     uint32_t val;
-} efuse_rd_usr_datan_reg_t;
+} efuse_rd_usr_data0_reg_t;
+
+/** Type of rd_usr_data1 register
+ *  Represents rd_usr_data1
+ */
+typedef union {
+    struct {
+        /** usr_data1 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of block3 (user).
+         */
+        uint32_t usr_data1:32;
+    };
+    uint32_t val;
+} efuse_rd_usr_data1_reg_t;
+
+/** Type of rd_usr_data2 register
+ *  Represents rd_usr_data2
+ */
+typedef union {
+    struct {
+        /** usr_data2 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of block3 (user).
+         */
+        uint32_t usr_data2:32;
+    };
+    uint32_t val;
+} efuse_rd_usr_data2_reg_t;
+
+/** Type of rd_usr_data3 register
+ *  Represents rd_usr_data3
+ */
+typedef union {
+    struct {
+        /** usr_data3 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of block3 (user).
+         */
+        uint32_t usr_data3:32;
+    };
+    uint32_t val;
+} efuse_rd_usr_data3_reg_t;
+
+/** Type of rd_usr_data4 register
+ *  Represents rd_usr_data4
+ */
+typedef union {
+    struct {
+        /** usr_data4 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of block3 (user).
+         */
+        uint32_t usr_data4:32;
+    };
+    uint32_t val;
+} efuse_rd_usr_data4_reg_t;
+
+/** Type of rd_usr_data5 register
+ *  Represents rd_usr_data5
+ */
+typedef union {
+    struct {
+        /** usr_data5 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of block3 (user).
+         */
+        uint32_t usr_data5:32;
+    };
+    uint32_t val;
+} efuse_rd_usr_data5_reg_t;
+
+/** Type of rd_usr_data6 register
+ *  Represents rd_usr_data6
+ */
+typedef union {
+    struct {
+        /** reserved_3_192 : R; bitpos: [7:0]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_3_192:8;
+        /** custom_mac : R; bitpos: [31:8]; default: 0;
+         *  Custom MAC
+         */
+        uint32_t custom_mac:24;
+    };
+    uint32_t val;
+} efuse_rd_usr_data6_reg_t;
+
+/** Type of rd_usr_data7 register
+ *  Represents rd_usr_data7
+ */
+typedef union {
+    struct {
+        /** custom_mac_1 : R; bitpos: [23:0]; default: 0;
+         *  Custom MAC
+         */
+        uint32_t custom_mac_1:24;
+        /** reserved_3_248 : R; bitpos: [31:24]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_3_248:8;
+    };
+    uint32_t val;
+} efuse_rd_usr_data7_reg_t;
 
 
 /** Group: block4 registers */
@@ -685,7 +866,10 @@ typedef union {
          *  Represents the programming error of EFUSE_POWERGLITCH_EN
          */
         uint32_t powerglitch_en_err:1;
-        uint32_t reserved_11:1;
+        /** dis_usb_serial_jtag_err : RO; bitpos: [11]; default: 0;
+         *  Represents the programming error of EFUSE_DIS_USB_SERIAL_JTAG
+         */
+        uint32_t dis_usb_serial_jtag_err:1;
         /** dis_force_download_err : RO; bitpos: [12]; default: 0;
          *  Represents the programming error of EFUSE_DIS_FORCE_DOWNLOAD
          */
@@ -714,7 +898,14 @@ typedef union {
          *  Represents the programming error of EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT
          */
         uint32_t dis_download_manual_encrypt_err:1;
-        uint32_t reserved_21:4;
+        /** usb_drefh_err : RO; bitpos: [22:21]; default: 0;
+         *  Represents the programming error of EFUSE_USB_DREFH
+         */
+        uint32_t usb_drefh_err:2;
+        /** usb_drefl_err : RO; bitpos: [24:23]; default: 0;
+         *  Represents the programming error of EFUSE_USB_DREFL
+         */
+        uint32_t usb_drefl_err:2;
         /** usb_exchg_pins_err : RO; bitpos: [25]; default: 0;
          *  Represents the programming error of EFUSE_USB_EXCHG_PINS
          */
@@ -919,99 +1110,92 @@ typedef union {
  */
 typedef union {
     struct {
-        /** rd_mac_sys__err_num : RO; bitpos: [2:0]; default: 0;
-         *  Represents the error number of registers.
-         *  The value of this signal means the number of error bytes in rd_mac_sys_
+        /** rd_mac_sys_err_num : RO; bitpos: [2:0]; default: 0;
+         *  Represents the error number of registers.\\The value of this signal means the
+         *  number of error bytes in rd_mac_sys
          */
-        uint32_t rd_mac_sys__err_num:3;
-        /** rd_mac_sys__fail : RO; bitpos: [3]; default: 0;
-         *  Represents error status of register.
-         *  0: Means no failure and that the data of rd_mac_sys_ is reliable
-         *  1: Means that programming rd_mac_sys_ failed and the number of error bytes is over 6.
+        uint32_t rd_mac_sys_err_num:3;
+        /** rd_mac_sys_fail : RO; bitpos: [3]; default: 0;
+         *  Represents error status of register.\\0: Means no failure and that the data of
+         *  rd_mac_sys is reliable\\ 1: Means that programming rd_mac_sys failed and the number
+         *  of error bytes is over 6.
          */
-        uint32_t rd_mac_sys__fail:1;
+        uint32_t rd_mac_sys_fail:1;
         /** rd_sys_part1_data_err_num : RO; bitpos: [6:4]; default: 0;
-         *  Represents the error number of registers.
-         *  The value of this signal means the number of error bytes in rd_sys_part1_data
+         *  Represents the error number of registers.\\The value of this signal means the
+         *  number of error bytes in rd_sys_part1_data
          */
         uint32_t rd_sys_part1_data_err_num:3;
         /** rd_sys_part1_data_fail : RO; bitpos: [7]; default: 0;
-         *  Represents error status of register.
-         *  0: Means no failure and that the data of rd_sys_part1_data is reliable
-         *  1: Means that programming rd_sys_part1_data failed and the number of error bytes is
-         *  over 6.
+         *  Represents error status of register.\\0: Means no failure and that the data of
+         *  rd_sys_part1_data is reliable\\ 1: Means that programming rd_sys_part1_data failed
+         *  and the number of error bytes is over 6.
          */
         uint32_t rd_sys_part1_data_fail:1;
         /** rd_usr_data_err_num : RO; bitpos: [10:8]; default: 0;
-         *  Represents the error number of registers.
-         *  The value of this signal means the number of error bytes in rd_usr_data
+         *  Represents the error number of registers.\\The value of this signal means the
+         *  number of error bytes in rd_usr_data
          */
         uint32_t rd_usr_data_err_num:3;
         /** rd_usr_data_fail : RO; bitpos: [11]; default: 0;
-         *  Represents error status of register.
-         *  0: Means no failure and that the data of rd_usr_data is reliable
-         *  1: Means that programming rd_usr_data failed and the number of error bytes is over
-         *  6.
+         *  Represents error status of register.\\0: Means no failure and that the data of
+         *  rd_usr_data is reliable\\ 1: Means that programming rd_usr_data failed and the
+         *  number of error bytes is over 6.
          */
         uint32_t rd_usr_data_fail:1;
         /** rd_key0_data_err_num : RO; bitpos: [14:12]; default: 0;
-         *  Represents the error number of registers.
-         *  The value of this signal means the number of error bytes in rd_key0_data
+         *  Represents the error number of registers.\\The value of this signal means the
+         *  number of error bytes in rd_key0_data
          */
         uint32_t rd_key0_data_err_num:3;
         /** rd_key0_data_fail : RO; bitpos: [15]; default: 0;
-         *  Represents error status of register.
-         *  0: Means no failure and that the data of rd_key0_data is reliable
-         *  1: Means that programming rd_key0_data failed and the number of error bytes is over
-         *  6.
+         *  Represents error status of register.\\0: Means no failure and that the data of
+         *  rd_key0_data is reliable\\ 1: Means that programming rd_key0_data failed and the
+         *  number of error bytes is over 6.
          */
         uint32_t rd_key0_data_fail:1;
         /** rd_key1_data_err_num : RO; bitpos: [18:16]; default: 0;
-         *  Represents the error number of registers.
-         *  The value of this signal means the number of error bytes in rd_key1_data
+         *  Represents the error number of registers.\\The value of this signal means the
+         *  number of error bytes in rd_key1_data
          */
         uint32_t rd_key1_data_err_num:3;
         /** rd_key1_data_fail : RO; bitpos: [19]; default: 0;
-         *  Represents error status of register.
-         *  0: Means no failure and that the data of rd_key1_data is reliable
-         *  1: Means that programming rd_key1_data failed and the number of error bytes is over
-         *  6.
+         *  Represents error status of register.\\0: Means no failure and that the data of
+         *  rd_key1_data is reliable\\ 1: Means that programming rd_key1_data failed and the
+         *  number of error bytes is over 6.
          */
         uint32_t rd_key1_data_fail:1;
         /** rd_key2_data_err_num : RO; bitpos: [22:20]; default: 0;
-         *  Represents the error number of registers.
-         *  The value of this signal means the number of error bytes in rd_key2_data
+         *  Represents the error number of registers.\\The value of this signal means the
+         *  number of error bytes in rd_key2_data
          */
         uint32_t rd_key2_data_err_num:3;
         /** rd_key2_data_fail : RO; bitpos: [23]; default: 0;
-         *  Represents error status of register.
-         *  0: Means no failure and that the data of rd_key2_data is reliable
-         *  1: Means that programming rd_key2_data failed and the number of error bytes is over
-         *  6.
+         *  Represents error status of register.\\0: Means no failure and that the data of
+         *  rd_key2_data is reliable\\ 1: Means that programming rd_key2_data failed and the
+         *  number of error bytes is over 6.
          */
         uint32_t rd_key2_data_fail:1;
         /** rd_key3_data_err_num : RO; bitpos: [26:24]; default: 0;
-         *  Represents the error number of registers.
-         *  The value of this signal means the number of error bytes in rd_key3_data
+         *  Represents the error number of registers.\\The value of this signal means the
+         *  number of error bytes in rd_key3_data
          */
         uint32_t rd_key3_data_err_num:3;
         /** rd_key3_data_fail : RO; bitpos: [27]; default: 0;
-         *  Represents error status of register.
-         *  0: Means no failure and that the data of rd_key3_data is reliable
-         *  1: Means that programming rd_key3_data failed and the number of error bytes is over
-         *  6.
+         *  Represents error status of register.\\0: Means no failure and that the data of
+         *  rd_key3_data is reliable\\ 1: Means that programming rd_key3_data failed and the
+         *  number of error bytes is over 6.
          */
         uint32_t rd_key3_data_fail:1;
         /** rd_key4_data_err_num : RO; bitpos: [30:28]; default: 0;
-         *  Represents the error number of registers.
-         *  The value of this signal means the number of error bytes in rd_key4_data
+         *  Represents the error number of registers.\\The value of this signal means the
+         *  number of error bytes in rd_key4_data
          */
         uint32_t rd_key4_data_err_num:3;
         /** rd_key4_data_fail : RO; bitpos: [31]; default: 0;
-         *  Represents error status of register.
-         *  0: Means no failure and that the data of rd_key4_data is reliable
-         *  1: Means that programming rd_key4_data failed and the number of error bytes is over
-         *  6.
+         *  Represents error status of register.\\0: Means no failure and that the data of
+         *  rd_key4_data is reliable\\ 1: Means that programming rd_key4_data failed and the
+         *  number of error bytes is over 6.
          */
         uint32_t rd_key4_data_fail:1;
     };
@@ -1024,27 +1208,25 @@ typedef union {
 typedef union {
     struct {
         /** rd_key5_data_err_num : RO; bitpos: [2:0]; default: 0;
-         *  Represents the error number of registers.
-         *  The value of this signal means the number of error bytes in rd_key5_data
+         *  Represents the error number of registers.\\The value of this signal means the
+         *  number of error bytes in rd_key5_data
          */
         uint32_t rd_key5_data_err_num:3;
         /** rd_key5_data_fail : RO; bitpos: [3]; default: 0;
-         *  Represents error status of register.
-         *  0: Means no failure and that the data of rd_key5_data is reliable
-         *  1: Means that programming rd_key5_data failed and the number of error bytes is over
-         *  6.
+         *  Represents error status of register.\\0: Means no failure and that the data of
+         *  rd_key5_data is reliable\\ 1: Means that programming rd_key5_data failed and the
+         *  number of error bytes is over 6.
          */
         uint32_t rd_key5_data_fail:1;
         /** rd_sys_part2_data_err_num : RO; bitpos: [6:4]; default: 0;
-         *  Represents the error number of registers.
-         *  The value of this signal means the number of error bytes in rd_sys_part2_data
+         *  Represents the error number of registers.\\The value of this signal means the
+         *  number of error bytes in rd_sys_part2_data
          */
         uint32_t rd_sys_part2_data_err_num:3;
         /** rd_sys_part2_data_fail : RO; bitpos: [7]; default: 0;
-         *  Represents error status of register.
-         *  0: Means no failure and that the data of rd_sys_part2_data is reliable
-         *  1: Means that programming rd_sys_part2_data failed and the number of error bytes is
-         *  over 6.
+         *  Represents error status of register.\\0: Means no failure and that the data of
+         *  rd_sys_part2_data is reliable\\ 1: Means that programming rd_sys_part2_data failed
+         *  and the number of error bytes is over 6.
          */
         uint32_t rd_sys_part2_data_fail:1;
         uint32_t reserved_8:24;
@@ -1076,28 +1258,22 @@ typedef union {
 typedef union {
     struct {
         /** mem_force_pd : R/W; bitpos: [0]; default: 0;
-         *  Configures whether to force power down eFuse SRAM.
-         *  1: Force
-         *  0: No effect
+         *  Configures whether to force power down eFuse SRAM.\\ 1: Force\\ 0: No effect\\
          */
         uint32_t mem_force_pd:1;
         /** mem_clk_force_on : R/W; bitpos: [1]; default: 1;
-         *  Configures whether to force activate clock signal of eFuse SRAM.
-         *  1: Force activate
-         *  0: No effect
+         *  Configures whether to force activate clock signal of eFuse SRAM.\\ 1: Force
+         *  activate\\ 0: No effect\\
          */
         uint32_t mem_clk_force_on:1;
         /** mem_force_pu : R/W; bitpos: [2]; default: 0;
-         *  Configures whether to force power up eFuse SRAM.
-         *  1: Force
-         *  0: No effect
+         *  Configures whether to force power up eFuse SRAM.\\ 1: Force\\ 0: No effect\\
          */
         uint32_t mem_force_pu:1;
         uint32_t reserved_3:13;
         /** clk_en : R/W; bitpos: [16]; default: 0;
-         *  Configures whether to force enable eFuse register configuration clock signal.
-         *  1: Force
-         *  0: The clock is enabled only during the reading and writing of registers
+         *  Configures whether to force enable eFuse register configuration clock signal.\\ 1:
+         *  Force\\ 0: The clock is enabled only during the reading and writing of registers\\
          */
         uint32_t clk_en:1;
         uint32_t reserved_17:15;
@@ -1113,10 +1289,8 @@ typedef union {
 typedef union {
     struct {
         /** op_code : R/W; bitpos: [15:0]; default: 0;
-         *  Configures operation command type.
-         *  0x5A5A: Program operation command
-         *  0x5AA5: Read operation command
-         *  Other values: No effect
+         *  Configures operation command type.\\ 0x5A5A: Program operation command\\ 0x5AA5:
+         *  Read operation command\\ Other values: No effect\\
          */
         uint32_t op_code:16;
         /** cfg_ecdsa_l_blk : R/W; bitpos: [19:16]; default: 0;
@@ -1151,9 +1325,8 @@ typedef union {
          */
         uint32_t dac_num:8;
         /** oe_clr : R/W; bitpos: [17]; default: 0;
-         *  Configures whether to reduce the power supply of programming voltage.
-         *  0: Not reduce
-         *  1: Reduce
+         *  Configures whether to reduce the power supply of programming voltage.\\ 0: Not
+         *  reduce\\ 1: Reduce\\
          */
         uint32_t oe_clr:1;
         uint32_t reserved_18:14;
@@ -1237,9 +1410,8 @@ typedef union {
 typedef union {
     struct {
         /** bypass_rs_correction : R/W; bitpos: [0]; default: 0;
-         *  Configures whether to bypass the Reed-Solomon (RS) correction step.
-         *  0: Not bypass
-         *  1: Bypass
+         *  Configures whether to bypass the Reed-Solomon (RS) correction step.\\ 0: Not
+         *  bypass\\ 1: Bypass\\
          */
         uint32_t bypass_rs_correction:1;
         /** bypass_rs_blk_num : R/W; bitpos: [11:1]; default: 0;
@@ -1247,9 +1419,8 @@ typedef union {
          */
         uint32_t bypass_rs_blk_num:11;
         /** update : WT; bitpos: [12]; default: 0;
-         *  Configures whether to update multi-bit register signals.
-         *  1: Update
-         *  0: No effect
+         *  Configures whether to update multi-bit register signals.\\ 1: Update\\ 0: No
+         *  effect\\
          */
         uint32_t update:1;
         /** tpgm_inactive : R/W; bitpos: [20:13]; default: 1;
@@ -1270,13 +1441,34 @@ typedef union {
 typedef union {
     struct {
         /** state : RO; bitpos: [3:0]; default: 0;
-         *  Represents the state of the eFuse state machine.
-         *  0: Reset state, the initial state after power-up
-         *  1: Idle state
-         *  Other values: Non-idle state
+         *  Represents the state of the eFuse state machine.\\ 0: Reset state, the initial
+         *  state after power-up\\ 1: Idle state\\ Other values: Non-idle state\\
          */
         uint32_t state:4;
-        uint32_t reserved_4:6;
+        /** otp_load_sw : RO; bitpos: [4]; default: 0;
+         *  Represents the value of OTP_LOAD_SW.
+         */
+        uint32_t otp_load_sw:1;
+        /** otp_vddq_c_sync2 : RO; bitpos: [5]; default: 0;
+         *  Represents the value of OTP_VDDQ_C_SYNC2.
+         */
+        uint32_t otp_vddq_c_sync2:1;
+        /** otp_strobe_sw : RO; bitpos: [6]; default: 0;
+         *  Represents the value of OTP_STROBE_SW.
+         */
+        uint32_t otp_strobe_sw:1;
+        /** otp_csb_sw : RO; bitpos: [7]; default: 0;
+         *  Represents the value of OTP_CSB_SW.
+         */
+        uint32_t otp_csb_sw:1;
+        /** otp_pgenb_sw : RO; bitpos: [8]; default: 0;
+         *  Represents the value of OTP_PGENB_SW.
+         */
+        uint32_t otp_pgenb_sw:1;
+        /** otp_vddq_is_sw : RO; bitpos: [9]; default: 0;
+         *  Represents the value of OTP_VDDQ_IS_SW.
+         */
+        uint32_t otp_vddq_is_sw:1;
         /** blk0_valid_bit_cnt : RO; bitpos: [19:10]; default: 0;
          *  Represents the number of block valid bit.
          */
@@ -1302,15 +1494,11 @@ typedef union {
 typedef union {
     struct {
         /** read_cmd : R/W/SC; bitpos: [0]; default: 0;
-         *  Configures whether to send read commands.
-         *  1: Send
-         *  0: No effect
+         *  Configures whether to send read commands.\\ 1: Send\\ 0: No effect\\
          */
         uint32_t read_cmd:1;
         /** pgm_cmd : R/W/SC; bitpos: [1]; default: 0;
-         *  Configures whether to send programming commands.
-         *  1: Send
-         *  0: No effect
+         *  Configures whether to send programming commands.\\ 1: Send\\ 0: No effect\\
          */
         uint32_t pgm_cmd:1;
         /** blk_num : R/W; bitpos: [5:2]; default: 0;
@@ -1407,14 +1595,28 @@ typedef struct {
     volatile efuse_rd_repeat_data2_reg_t rd_repeat_data2;
     volatile efuse_rd_repeat_data3_reg_t rd_repeat_data3;
     volatile efuse_rd_repeat_data4_reg_t rd_repeat_data4;
-    volatile efuse_rd_mac_sys0_reg_t rd_mac_sys_0;
-    volatile efuse_rd_mac_sys1_reg_t rd_mac_sys_1;
-    volatile efuse_rd_mac_sys2_reg_t rd_mac_sys_2;
-    volatile efuse_rd_mac_sys3_reg_t rd_mac_sys_3;
-    volatile efuse_rd_mac_sys4_reg_t rd_mac_sys_4;
-    volatile efuse_rd_mac_sys5_reg_t rd_mac_sys_5;
-    volatile efuse_rd_sys_part1_datan_reg_t rd_sys_part1_datan[8];
-    volatile efuse_rd_usr_datan_reg_t rd_usr_datan[8];
+    volatile efuse_rd_mac_sys0_reg_t rd_mac_sys0;
+    volatile efuse_rd_mac_sys1_reg_t rd_mac_sys1;
+    volatile efuse_rd_mac_sys2_reg_t rd_mac_sys2;
+    volatile efuse_rd_mac_sys3_reg_t rd_mac_sys3;
+    volatile efuse_rd_mac_sys4_reg_t rd_mac_sys4;
+    volatile efuse_rd_mac_sys5_reg_t rd_mac_sys5;
+    volatile efuse_rd_sys_part1_data0_reg_t rd_sys_part1_data0;
+    volatile efuse_rd_sys_part1_data1_reg_t rd_sys_part1_data1;
+    volatile efuse_rd_sys_part1_data2_reg_t rd_sys_part1_data2;
+    volatile efuse_rd_sys_part1_data3_reg_t rd_sys_part1_data3;
+    volatile efuse_rd_sys_part1_data4_reg_t rd_sys_part1_data4;
+    volatile efuse_rd_sys_part1_data5_reg_t rd_sys_part1_data5;
+    volatile efuse_rd_sys_part1_data6_reg_t rd_sys_part1_data6;
+    volatile efuse_rd_sys_part1_data7_reg_t rd_sys_part1_data7;
+    volatile efuse_rd_usr_data0_reg_t rd_usr_data0;
+    volatile efuse_rd_usr_data1_reg_t rd_usr_data1;
+    volatile efuse_rd_usr_data2_reg_t rd_usr_data2;
+    volatile efuse_rd_usr_data3_reg_t rd_usr_data3;
+    volatile efuse_rd_usr_data4_reg_t rd_usr_data4;
+    volatile efuse_rd_usr_data5_reg_t rd_usr_data5;
+    volatile efuse_rd_usr_data6_reg_t rd_usr_data6;
+    volatile efuse_rd_usr_data7_reg_t rd_usr_data7;
     volatile efuse_rd_key0_datan_reg_t rd_key0_datan[8];
     volatile efuse_rd_key1_datan_reg_t rd_key1_datan[8];
     volatile efuse_rd_key2_datan_reg_t rd_key2_datan[8];

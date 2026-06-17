@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,8 +24,10 @@
 #include "hal/assert.h"
 
 #define I2S_LL_GET(_attr)       I2S_LL_ ## _attr
+#define I2S_LL_SUPPORT(_feat)   I2S_LL_SUPPORT_ ## _feat
 #define I2S_LL_BUS_WIDTH        24
 #define I2S_LL_INST_NUM         1
+#define I2S_LL_PDM_SUPPORTED_PORT_MASK        (1U << 0)  // PDM is supported on I2S0
 
 #ifdef __cplusplus
 extern "C" {
@@ -301,6 +303,28 @@ static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
     hw->clkm_conf.clk_sel = (src == I2S_CLK_SRC_APLL) ? 1 : 2;
+}
+
+/**
+ * @brief Get TX source clock
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @return Current TX clock source (i2s_clock_src_t).
+ */
+static inline i2s_clock_src_t i2s_ll_tx_clk_get_src(i2s_dev_t *hw)
+{
+    return (hw->clkm_conf.clk_sel == 1) ? (i2s_clock_src_t)I2S_CLK_SRC_APLL : (i2s_clock_src_t)I2S_CLK_SRC_PLL_160M;
+}
+
+/**
+ * @brief Get RX source clock
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @return Current RX clock source (i2s_clock_src_t).
+ */
+static inline i2s_clock_src_t i2s_ll_rx_clk_get_src(i2s_dev_t *hw)
+{
+    return (hw->clkm_conf.clk_sel == 1) ? (i2s_clock_src_t)I2S_CLK_SRC_APLL : (i2s_clock_src_t)I2S_CLK_SRC_PLL_160M;
 }
 
 /**
@@ -990,6 +1014,51 @@ static inline void i2s_ll_enable_lcd(i2s_dev_t *hw, bool enable)
 static inline void i2s_ll_tx_stop_on_fifo_empty(i2s_dev_t *hw, bool en)
 {
     hw->conf1.tx_stop_en = en;
+}
+
+/**
+ * @brief Set I2S data destination
+ */
+static inline void i2s_ll_set_destination(i2s_dev_t *hw, i2s_dir_t dir, i2s_destination_t destination)
+{
+    (void)hw;
+    (void)dir;
+    (void)destination;
+}
+
+/**
+ * @brief Check whether an I2S data destination is supported on the specified port
+ */
+static inline bool i2s_ll_is_destination_supported(int port_id, i2s_destination_t destination)
+{
+    (void)port_id;
+    return destination == I2S_DESTINATION_DMA;
+}
+
+/**
+ * @brief Check whether I2S PDM mode is supported on the specified port
+ */
+static inline bool i2s_ll_is_pdm_supported(int port_id)
+{
+    return (I2S_LL_PDM_SUPPORTED_PORT_MASK & (1U << port_id)) != 0;
+}
+
+/**
+ * @brief Check whether I2S TX PCM2PDM converter is supported on the specified port
+ */
+static inline bool i2s_ll_is_pcm2pdm_supported(int port_id)
+{
+    (void)port_id;
+    return false;
+}
+
+/**
+ * @brief Check whether I2S RX PDM2PCM converter is supported on the specified port
+ */
+static inline bool i2s_ll_is_pdm2pcm_supported(int port_id)
+{
+    (void)port_id;
+    return false;
 }
 
 #ifdef __cplusplus

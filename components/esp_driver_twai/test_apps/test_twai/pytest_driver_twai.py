@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import subprocess
@@ -17,9 +17,18 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 # ---------------------------------------------------------------------------
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['release', 'cache_safe'], indirect=True)
-@idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
+@idf_parametrize(
+    'target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1 and IDF_TARGET not in ["esp32c5"]'), indirect=['target']
+)
 def test_driver_twai_loopbk(dut: Dut) -> None:
+    dut.run_all_single_board_cases(group='twai', reset=True)
+
+
+@pytest.mark.generic
+@pytest.mark.esp32c5_rev1
+@pytest.mark.parametrize('config', ['release', 'cache_safe'], indirect=True)
+@idf_parametrize('target', ['esp32c5'], indirect=['target'])
+def test_driver_twai_loopbk_c5rev1(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='twai', reset=True)
 
 
@@ -38,16 +47,10 @@ def esp_enter_flash_mode(dut: Dut) -> None:
     ser.setDTR(False)  # Back RTS/DTR to 1/1 to avoid affect to esptool
 
 
-def esp_reset_and_wait_ready(dut: Dut) -> None:
-    dut.serial.hard_reset()
-    time.sleep(0.5)
-    dut.expect_exact('Press ENTER to see the list of tests')
-
-
 @pytest.fixture(name='socket_can')
 def fixture_create_socket_can() -> Bus:
     # Set up the socket CAN with the bitrate
-    start_command = 'sudo -n ip link set can0 up type can bitrate 250000 restart-ms 100'
+    start_command = 'sudo -n ip link set can0 up type can bitrate 250000'
     stop_command = 'sudo -n ip link set can0 down'
     status_command = 'sudo -n ip -details link show can0'
 
@@ -75,13 +78,12 @@ def fixture_create_socket_can() -> Bus:
 # Interactive Tests
 # ---------------------------------------------------------------------------
 @pytest.mark.twai_std
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='no runner')
+@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='no runner')
 @pytest.mark.parametrize('config', ['release'], indirect=True)
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='no runner')  # TODO: IDFCI-11110
 def test_driver_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
-    esp_reset_and_wait_ready(dut)
-
+    dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('"twai_listen_only"')
 
     # wait the DUT to finish initialize
@@ -98,13 +100,12 @@ def test_driver_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
 
 
 @pytest.mark.twai_std
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='no runner')
+@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='no runner')
 @pytest.mark.parametrize('config', ['release'], indirect=True)
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='no runner')  # TODO: IDFCI-11110
 def test_driver_twai_remote_request(dut: Dut, socket_can: Bus) -> None:
-    esp_reset_and_wait_ready(dut)
-
+    dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('"twai_remote_request"')
 
     print('Waiting remote frame ...')

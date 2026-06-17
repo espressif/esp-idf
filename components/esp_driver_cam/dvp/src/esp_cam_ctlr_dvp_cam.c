@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,12 +35,6 @@
 #define DVP_CAM_BK_BUFFER_ALLOC_CAPS        (MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA)
 #else
 #define DVP_CAM_BK_BUFFER_ALLOC_CAPS        (MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA)
-#endif
-
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define DVP_CAM_CLK_ATOMIC()                PERIPH_RCC_ATOMIC()
-#else
-#define DVP_CAM_CLK_ATOMIC()
 #endif
 
 #if CAM_LL_DATA_WIDTH_MAX
@@ -272,10 +266,7 @@ static esp_err_t esp_cam_ctlr_dvp_cam_get_frame_size(const esp_cam_ctlr_dvp_conf
     if (config->pic_format_jpeg) {
         *p_size = config->h_res * config->v_res;
     } else {
-        color_space_pixel_format_t pixel_format = {
-            .color_type_id = config->input_data_color_type
-        };
-        uint32_t depth = color_hal_pixel_format_get_bit_depth(pixel_format);
+        uint32_t depth = color_hal_pixel_format_fourcc_get_bit_depth(config->input_data_color_type);
         if (!depth) {
             return ESP_ERR_INVALID_ARG;
         }
@@ -363,7 +354,7 @@ esp_err_t esp_cam_ctlr_dvp_init(int ctlr_id, cam_clock_source_t clk_src, const e
     }
 
     ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true));
-    DVP_CAM_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         cam_ll_enable_clk(ctlr_id, true);
         cam_ll_select_clk_src(ctlr_id, clk_src);
     };
@@ -394,7 +385,7 @@ esp_err_t esp_cam_ctlr_dvp_output_clock(int ctlr_id, cam_clock_source_t clk_src,
     ESP_LOGD(TAG, "DVP clock source frequency %" PRIu32 "Hz", src_clk_hz);
 
     if ((src_clk_hz % xclk_freq) == 0) {
-        DVP_CAM_CLK_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             // The camera sensors require precision without frequency and duty cycle jitter,
             // so the fractional divisor can't be used.
             cam_ll_set_group_clock_coeff(ctlr_id, src_clk_hz / xclk_freq, 0, 0);
@@ -456,7 +447,7 @@ esp_err_t esp_cam_ctlr_dvp_deinit(int ctlr_id)
 {
     ESP_RETURN_ON_FALSE(ctlr_id < CAP_DVP_PERIPH_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid argument: ctlr_id >= %d", CAP_DVP_PERIPH_NUM);
 
-    DVP_CAM_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         cam_ll_enable_clk(ctlr_id, false);
     };
 
@@ -815,7 +806,13 @@ esp_err_t esp_cam_ctlr_dvp_format_conversion(esp_cam_ctlr_handle_t cam_handle,
     esp_cam_ctlr_dvp_cam_t *ctlr = (esp_cam_ctlr_dvp_cam_t *)cam_handle;
 
     ESP_LOGD(TAG, "Configure format conversion: %d -> %d", config->src_format, config->dst_format);
+    if (config->src_format == config->dst_format) {
+        return ESP_OK;
+    }
 
+#if !SOC_LCDCAM_CAM_SUPPORT_RGB_YUV_CONV
+    return ESP_ERR_NOT_SUPPORTED;
+#else
 #if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     if (config->src_format == CAM_CTLR_COLOR_YUV420) {
         ESP_LOGE(TAG, "YUV420 is not allowed for source format");
@@ -826,6 +823,7 @@ esp_err_t esp_cam_ctlr_dvp_format_conversion(esp_cam_ctlr_handle_t cam_handle,
     cam_hal_color_format_convert(&ctlr->hal, config);
 
     return ESP_OK;
+#endif
 }
 
 /**
@@ -911,6 +909,16 @@ esp_err_t esp_cam_new_dvp_ctlr(const esp_cam_ctlr_dvp_config_t *config, esp_cam_
     }
 
     cam_hal_init(&ctlr->hal, &cam_hal_config);
+
+    cam_ctlr_format_conv_config_t format_conv_config = {
+        .src_format = config->input_data_color_type,
+        .dst_format = config->output_data_color_type,
+        .conv_std = config->conv_std,
+        .data_width = config->cam_data_width == 0 ? 8 : config->cam_data_width,
+        .input_range = config->input_range,
+        .output_range = config->output_range,
+    };
+    ESP_GOTO_ON_ERROR(esp_cam_ctlr_dvp_format_conversion(&(ctlr->base), &format_conv_config), fail5, TAG, "failed to configure format conversion");
 
     ctlr->ctlr_id = config->ctlr_id;
     ctlr->fb_size_in_bytes = fb_size_in_bytes;

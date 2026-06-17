@@ -16,6 +16,9 @@
 extern "C" {
 #endif
 
+#define MIPI_CSI_CUSTOM_DATA_TYPE_MIN      0x30
+#define MIPI_CSI_CUSTOM_DATA_TYPE_MAX      0x37
+
 #if SOC_MIPI_CSI_SUPPORTED
 /**
  * @brief MIPI CSI PHY clock source

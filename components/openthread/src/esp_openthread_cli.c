@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,12 +27,74 @@
 
 static TaskHandle_t s_cli_task;
 
+static ssize_t ot_cli_read_bytes(int fd, void *buf, size_t max_bytes)
+{
+    fd_set read_fds;
+    FD_ZERO(&read_fds);
+    FD_SET(fd, &read_fds);
+
+    int nread = select(fd + 1, &read_fds, NULL, NULL, NULL);
+    if (nread <= 0) {
+        return -1;
+    }
+
+    if (FD_ISSET(fd, &read_fds)) {
+        return read(fd, buf, max_bytes);
+    }
+
+    return -1;
+}
+
+static void ot_cli_set_read_characteristics(void)
+{
+    int stdin_fileno = fileno(stdin);
+    int flags = fcntl(stdin_fileno, F_GETFL);
+    if (flags == -1) {
+        ESP_LOGW(OT_PLAT_LOG_TAG, "Failed to get stdin flags: %d", errno);
+    } else {
+        flags |= O_NONBLOCK;
+        if (fcntl(stdin_fileno, F_SETFL, flags) == -1) {
+            ESP_LOGW(OT_PLAT_LOG_TAG, "Failed to set stdin non-blocking: %d", errno);
+        }
+    }
+    linenoiseSetReadFunction(ot_cli_read_bytes);
+}
+
+static bool append_escaped_ot_arg(char *buffer, size_t buffer_size, const char *arg)
+{
+    size_t len      = strlen(buffer);
+    size_t rem_size = (len < buffer_size) ? (buffer_size - len - 1) : 0;
+
+    ESP_RETURN_ON_FALSE(rem_size > 0, false, OT_PLAT_LOG_TAG, "CLI command buffer is full");
+
+    while (*arg) {
+        bool need_escape = (*arg == ' ') || (*arg == '\t') || (*arg == '\r') || (*arg == '\n') || (*arg == '\\');
+        size_t need = need_escape ? 2 : 1;
+
+        ESP_RETURN_ON_FALSE(rem_size >= need, false, OT_PLAT_LOG_TAG, "CLI command is too long");
+
+        if (need_escape) {
+            buffer[len++] = '\\';
+        }
+
+        buffer[len++] = *arg++;
+        rem_size -= need;
+    }
+
+    buffer[len] = '\0';
+    return true;
+}
+
 static int cli_output_callback(void *context, const char *format, va_list args)
 {
     char prompt_check[3];
     int ret = 0;
+    va_list args_copy;
 
-    vsnprintf(prompt_check, sizeof(prompt_check), format, args);
+    va_copy(args_copy, args);
+    vsnprintf(prompt_check, sizeof(prompt_check), format, args_copy);
+    va_end(args_copy);
+
     if (!strncmp(prompt_check, "> ", sizeof(prompt_check)) && s_cli_task) {
         xTaskNotifyGive(s_cli_task);
     } else {
@@ -60,17 +122,25 @@ esp_err_t esp_openthread_cli_input(const char *line)
 
     ESP_RETURN_ON_FALSE(line_copy != NULL, ESP_ERR_NO_MEM, OT_PLAT_LOG_TAG, "Failed to copy OpenThread CLI line input");
 
-    return esp_openthread_task_queue_post(line_handle_task, line_copy);
+    esp_err_t ret = esp_openthread_task_queue_post(line_handle_task, line_copy);
+    if (ret != ESP_OK) {
+        free(line_copy);
+    }
+    return ret;
 }
 
 static int ot_cli_console_callback(int argc, char **argv)
 {
     ESP_RETURN_ON_FALSE(argv[1] != NULL && strlen(argv[1]) > 0, ESP_FAIL, OT_PLAT_LOG_TAG, "Invalid OpenThread command");
     char cli_cmd[OT_CLI_MAX_LINE_LENGTH] = {0};
-    strncpy(cli_cmd, argv[1], sizeof(cli_cmd) - strlen(cli_cmd) - 1);
+    ESP_RETURN_ON_FALSE(append_escaped_ot_arg(cli_cmd, sizeof(cli_cmd), argv[1]), ESP_FAIL, OT_PLAT_LOG_TAG,
+                        "Failed to compose OpenThread command");
     for (int i = 2; i < argc; i++) {
+        ESP_RETURN_ON_FALSE(strlen(cli_cmd) < sizeof(cli_cmd) - 1, ESP_FAIL, OT_PLAT_LOG_TAG,
+                            "CLI command is too long");
         strncat(cli_cmd, " ", sizeof(cli_cmd) - strlen(cli_cmd) - 1);
-        strncat(cli_cmd, argv[i], sizeof(cli_cmd) - strlen(cli_cmd) - 1);
+        ESP_RETURN_ON_FALSE(append_escaped_ot_arg(cli_cmd, sizeof(cli_cmd), argv[i]), ESP_FAIL, OT_PLAT_LOG_TAG,
+                            "Failed to compose OpenThread command");
     }
     s_cli_task = xTaskGetCurrentTaskHandle();
     if (esp_openthread_cli_input(cli_cmd) == ESP_OK) {
@@ -107,6 +177,11 @@ static void ot_cli_loop(void *context)
 
     console_config.hint_color = -1;
     ret = esp_console_init(&console_config);
+    if (ret != ESP_OK) {
+        ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to initialize console: %s", esp_err_to_name(ret));
+        vTaskDelete(NULL);
+        return;
+    }
 
     linenoiseSetMultiLine(true);
     linenoiseHistorySetMaxLen(100);
@@ -116,10 +191,14 @@ static void ot_cli_loop(void *context)
     if (linenoiseProbe()) {
         linenoiseSetDumbMode(1);
     }
+    ot_cli_set_read_characteristics();
 
     while (true) {
         char *line = linenoise(prompt);
-        if (line && strnlen(line, OT_CLI_MAX_LINE_LENGTH)) {
+        if (line == NULL) {
+            continue;
+        }
+        if (strnlen(line, OT_CLI_MAX_LINE_LENGTH)) {
             printf("\r\n");
             if (memcmp(line, ESP_CONSOLE_PREFIX, ESP_CONSOLE_PREFIX_LENGTH) == 0) {
                 esp_err_t err = esp_console_run(line + ESP_CONSOLE_PREFIX_LENGTH, &ret);
@@ -146,9 +225,8 @@ static void ot_cli_loop(void *context)
     }
 }
 
-void esp_openthread_cli_create_task()
+void esp_openthread_cli_create_task(void)
 {
-    xTaskCreate(ot_cli_loop, "ot_cli", 4096, xTaskGetCurrentTaskHandle(), 4, &s_cli_task);
-
-    return;
+    BaseType_t ret = xTaskCreate(ot_cli_loop, "ot_cli", 4096, xTaskGetCurrentTaskHandle(), 4, &s_cli_task);
+    ESP_RETURN_ON_FALSE(ret == pdPASS, , OT_PLAT_LOG_TAG, "Failed to create OpenThread CLI task");
 }

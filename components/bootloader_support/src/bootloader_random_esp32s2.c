@@ -5,6 +5,7 @@
  */
 #include "sdkconfig.h"
 #include "bootloader_random.h"
+#include "hal/rng_ll.h"
 #include "soc/rtc_periph.h"
 #include "soc/sens_reg.h"
 #include "soc/dport_reg.h"
@@ -12,6 +13,7 @@
 #include "esp_log.h"
 #include "soc/apb_saradc_reg.h"
 #include "esp_private/regi2c_ctrl.h"
+#include "esp_private/sar_periph_ctrl.h"
 #include "hal/adc_ll.h"
 
 #include "esp_rom_sys.h"
@@ -77,10 +79,13 @@ void bootloader_random_enable(void)
     adc_ll_digi_set_clk_div(4);
     adc_ll_digi_set_trigger_interval(100);
     adc_ll_digi_trigger_enable();
+    rng_ll_enable();
 }
 
 void bootloader_random_disable(void)
 {
+    rng_ll_disable();
+
     adc_ll_calibration_clear();
     _adc_ll_enable_bus_clock(false);
     adc_ll_digi_trigger_disable();

@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-P4 | ESP32-S2 | ESP32-S3 | ESP32-S31 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | -------- | -------- | --------- |
 
 # Bootloader override
 
@@ -28,7 +28,7 @@ This custom bootloader will clear the monitor and show all the bootable partitio
 Please select a partition to boot.
 
 FOUND 3 BOOT PARTITIONS:
-     default
+     main
      hello_world
      console
 ```
@@ -66,4 +66,3 @@ Below is a short explanation of the files in the project folder.
 As stated in the `README.md` file in the upper level, when the bootloader components are named `main`, it overrides the whole second stage bootloader code.
 
 Please note that this example also relies on the `hello_world` and `console` examples, before building, make sure these two examples have a clean environment and a valid `sdkconfig`.
-

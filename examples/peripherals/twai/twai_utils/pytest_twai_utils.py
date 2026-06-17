@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import subprocess
@@ -310,7 +310,6 @@ def usb_can() -> CanBusManager:
 
 @pytest.mark.generic
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_twai_utils_basic_operations(twai: TwaiTestHelper) -> None:
     with twai.session(start_dump=False):
         # Test basic send operation
@@ -329,7 +328,6 @@ def test_twai_utils_basic_operations(twai: TwaiTestHelper) -> None:
 
 @pytest.mark.generic
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_twai_utils_bitrate_configuration(twai: TwaiTestHelper) -> None:
     for bitrate in [125000, 250000, 500000, 1000000]:
         with twai.session(mode='standard', bitrate=bitrate, tx_gpio=DEFAULT_TX_GPIO, rx_gpio=DEFAULT_RX_GPIO):
@@ -338,7 +336,6 @@ def test_twai_utils_bitrate_configuration(twai: TwaiTestHelper) -> None:
 
 @pytest.mark.generic
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_twai_utils_frame_formats(twai: TwaiTestHelper) -> None:
     with twai.session():
         BASIC_FRAMES = [
@@ -369,7 +366,6 @@ def test_twai_utils_frame_formats(twai: TwaiTestHelper) -> None:
 
 @pytest.mark.generic
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_twai_utils_info_and_recovery(twai: TwaiTestHelper) -> None:
     with twai.session():
         assert twai.info(), 'Info command failed'
@@ -390,7 +386,6 @@ def test_twai_utils_info_and_recovery(twai: TwaiTestHelper) -> None:
 
 @pytest.mark.generic
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_twai_utils_input_validation(twai: TwaiTestHelper) -> None:
     with twai.session(start_dump=False):
         INVALID_FRAMES = [
@@ -437,7 +432,6 @@ def test_twai_utils_input_validation(twai: TwaiTestHelper) -> None:
 
 @pytest.mark.generic
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_twai_utils_gpio_and_basic_send(twai: TwaiTestHelper) -> None:
     with twai.session():
         assert twai.info(), 'GPIO info failed'
@@ -465,7 +459,6 @@ def test_twai_utils_gpio_and_basic_send(twai: TwaiTestHelper) -> None:
 
 @pytest.mark.generic
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_twai_utils_send_various_frames(twai: TwaiTestHelper) -> None:
     with twai.session():
         # Boundary ID tests
@@ -499,7 +492,6 @@ def test_twai_utils_fd_frames(twai: TwaiTestHelper) -> None:
 
 @pytest.mark.generic
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_twai_utils_mask_filters(twai: TwaiTestHelper) -> None:
     """Test TWAI filtering including automatic extended frame detection."""
     MASK_FILTER_GROUPS = [
@@ -557,7 +549,11 @@ def test_twai_utils_mask_filters(twai: TwaiTestHelper) -> None:
 
 
 @pytest.mark.generic
-@idf_parametrize('target', soc_filtered_targets('SOC_TWAI_RANGE_FILTER_NUM > 0'), indirect=['target'])
+@idf_parametrize(
+    'target',
+    soc_filtered_targets('SOC_TWAI_RANGE_FILTER_NUM > 0'),
+    indirect=['target'],
+)
 def test_twai_utils_range_filters(twai: TwaiTestHelper) -> None:
     """Test TWAI range filters (available on chips with range filter support)."""
     RANGE_FILTER_GROUPS = [
@@ -602,9 +598,9 @@ def test_twai_utils_range_filters(twai: TwaiTestHelper) -> None:
 
 
 @pytest.mark.twai_std
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='no runner')
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='no runner')  # TODO: IDFCI-11110
+@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='no runner')
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration # TODO: IDF-14393')
 def test_twai_utils_external_communication(twai: TwaiTestHelper, usb_can: CanBusManager) -> None:
     test_frames = [
         ('123#DEADBEEF', 0x123, bytes.fromhex('DEADBEEF'), False),

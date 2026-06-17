@@ -14,7 +14,99 @@
 #include "constant_time_internal.h"
 #include "esp_log.h"
 
-static psa_status_t esp_crypto_aes_ecb_update(
+static const char *TAG = "psa_crypto_driver_esp_aes";
+
+static psa_status_t esp_aes_cipher_setup(
+    esp_aes_operation_t *esp_aes_driver_ctx,
+    const psa_key_attributes_t *attributes,
+    const uint8_t *key_buffer, size_t key_buffer_size,
+    psa_algorithm_t alg, psa_encrypt_or_decrypt_t mode)
+{
+    psa_status_t status = PSA_ERROR_GENERIC_ERROR;
+
+    if (!PSA_ALG_IS_CIPHER(alg)) {
+        status = PSA_ERROR_INVALID_ARGUMENT;
+        goto exit;
+    }
+
+    if (psa_get_key_type(attributes) != PSA_KEY_TYPE_AES) {
+        status = PSA_ERROR_NOT_SUPPORTED;
+        goto exit;
+    }
+
+    switch (alg) {
+        case PSA_ALG_ECB_NO_PADDING:
+        case PSA_ALG_CBC_NO_PADDING:
+        case PSA_ALG_CBC_PKCS7:
+        case PSA_ALG_CTR:
+        case PSA_ALG_XTS:
+        case PSA_ALG_CFB:
+        case PSA_ALG_OFB:
+            break;
+        default:
+            status = PSA_ERROR_NOT_SUPPORTED;
+            goto exit;
+    }
+
+    esp_aes_context *ctx = (esp_aes_context *) malloc(sizeof(esp_aes_context));
+    if (ctx == NULL) {
+        status = PSA_ERROR_INSUFFICIENT_MEMORY;
+        goto exit;
+    }
+
+    esp_aes_init(ctx);
+
+    status = mbedtls_to_psa_error(esp_aes_setkey(ctx, key_buffer, key_buffer_size * 8));
+
+    if (status != PSA_SUCCESS) {
+        free(ctx);
+        goto exit;
+    }
+
+    esp_aes_driver_ctx->aes_alg = alg;
+    esp_aes_driver_ctx->mode = mode;
+    esp_aes_driver_ctx->esp_aes_ctx = (void *) ctx;
+    esp_aes_driver_ctx->block_length = (PSA_ALG_IS_STREAM_CIPHER(alg) ? 1 : PSA_BLOCK_CIPHER_BLOCK_LENGTH(PSA_KEY_TYPE_AES));
+exit:
+    return status;
+}
+
+psa_status_t esp_aes_cipher_encrypt_setup(
+    esp_aes_operation_t *esp_aes_driver_ctx,
+    const psa_key_attributes_t *attributes,
+    const uint8_t *key_buffer, size_t key_buffer_size,
+    psa_algorithm_t alg)
+{
+    return esp_aes_cipher_setup(esp_aes_driver_ctx, attributes,
+                                key_buffer, key_buffer_size,
+                                alg, PSA_CRYPTO_DRIVER_ENCRYPT);
+}
+
+psa_status_t esp_aes_cipher_decrypt_setup(
+    esp_aes_operation_t *esp_aes_driver_ctx,
+    const psa_key_attributes_t *attributes,
+    const uint8_t *key_buffer, size_t key_buffer_size,
+    psa_algorithm_t alg)
+{
+    return esp_aes_cipher_setup(esp_aes_driver_ctx, attributes,
+                                key_buffer, key_buffer_size,
+                                alg, PSA_CRYPTO_DRIVER_DECRYPT);
+}
+
+psa_status_t esp_aes_cipher_set_iv(
+    esp_aes_operation_t *esp_aes_driver_ctx,
+    const uint8_t *iv,
+    size_t iv_length)
+{
+    if (iv_length != PSA_CIPHER_IV_LENGTH(PSA_KEY_TYPE_AES, esp_aes_driver_ctx->aes_alg)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    memcpy(esp_aes_driver_ctx->iv, iv, iv_length);
+    return PSA_SUCCESS;
+}
+
+static psa_status_t esp_aes_ecb_update(
     esp_aes_operation_t *esp_aes_driver_ctx,
     const uint8_t *input, size_t input_length,
     uint8_t *output, size_t *output_length)
@@ -74,7 +166,7 @@ exit:
     return status;
 }
 
-static psa_status_t esp_crypto_aes_cbc_update(
+static psa_status_t esp_aes_cbc_update(
     esp_aes_operation_t *esp_aes_driver_ctx,
     const uint8_t *input, size_t input_length,
     uint8_t *output, size_t output_size,
@@ -166,10 +258,12 @@ exit:
     return mbedtls_to_psa_error(ret);
 }
 
-psa_status_t esp_crypto_aes_update(
+psa_status_t esp_aes_cipher_update(
     esp_aes_operation_t *esp_aes_driver_ctx,
-    const uint8_t *input, size_t input_length,
-    uint8_t *output, size_t output_size,
+    const uint8_t *input,
+    size_t input_length,
+    uint8_t *output,
+    size_t output_size,
     size_t *output_length)
 {
     int ret = -1;
@@ -187,7 +281,7 @@ psa_status_t esp_crypto_aes_update(
     }
 
     if (output_size < expected_output_size) {
-        ESP_LOGE("TAG", "Output buffer too small: have %zu, need %zu", output_size, expected_output_size);
+        ESP_LOGE(TAG, "Output buffer too small: have %zu, need %zu", output_size, expected_output_size);
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
@@ -199,7 +293,7 @@ psa_status_t esp_crypto_aes_update(
     else if (esp_aes_driver_ctx->aes_alg == PSA_ALG_ECB_NO_PADDING) {
         /* esp_aes_crypt_ecb  will only process a single block at a time in
          * ECB mode. Abstract this away to match the PSA API behaviour. */
-        ret = esp_crypto_aes_ecb_update(esp_aes_driver_ctx,
+        ret = esp_aes_ecb_update(esp_aes_driver_ctx,
                                         input,
                                         input_length,
                                         output,
@@ -249,7 +343,7 @@ psa_status_t esp_crypto_aes_update(
 #endif /* CONFIG_MBEDTLS_CIPHER_MODE_OFB */
             case PSA_ALG_CBC_NO_PADDING:
             case PSA_ALG_CBC_PKCS7:
-                ret = esp_crypto_aes_cbc_update(esp_aes_driver_ctx,
+                ret = esp_aes_cbc_update(esp_aes_driver_ctx,
                                                 input,
                                                 input_length,
                                                 output,
@@ -314,9 +408,10 @@ static int get_pkcs_padding(unsigned char *input, size_t input_len, size_t *data
     return mbedtls_ct_error_if_else_0(bad, MBEDTLS_ERR_CIPHER_INVALID_PADDING);
 }
 
-psa_status_t esp_crypto_aes_finish(
+psa_status_t esp_aes_cipher_finish(
     esp_aes_operation_t *esp_aes_driver_ctx,
-    uint8_t *output, size_t output_size,
+    uint8_t *output,
+    size_t output_size,
     size_t *output_length)
 {
     int ret = -1;
@@ -421,7 +516,8 @@ exit:
     return status;
 }
 
-psa_status_t esp_crypto_aes_abort(esp_aes_operation_t *esp_aes_driver_ctx)
+psa_status_t esp_aes_cipher_abort(
+    esp_aes_operation_t *esp_aes_driver_ctx)
 {
     esp_aes_context *ctx = (esp_aes_context *) esp_aes_driver_ctx->esp_aes_ctx;
     if (ctx == NULL) {
@@ -430,85 +526,6 @@ psa_status_t esp_crypto_aes_abort(esp_aes_operation_t *esp_aes_driver_ctx)
     esp_aes_free(ctx);
     free(ctx);
     return PSA_SUCCESS;
-}
-
-psa_status_t esp_crypto_aes_set_iv(
-        esp_aes_operation_t *esp_aes_driver_ctx,
-        const uint8_t *iv, size_t iv_length)
-{
-    if (iv_length != PSA_CIPHER_IV_LENGTH(PSA_KEY_TYPE_AES, esp_aes_driver_ctx->aes_alg)) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    memcpy(esp_aes_driver_ctx->iv, iv, iv_length);
-    return PSA_SUCCESS;
-}
-
-
-static psa_status_t esp_crypto_aes_setup(
-    esp_aes_operation_t *esp_aes_driver_ctx,
-    const psa_key_attributes_t *attributes,
-    const uint8_t *key_buffer, size_t key_buffer_size,
-    psa_algorithm_t alg, psa_encrypt_or_decrypt_t mode)
-{
-    psa_status_t status = PSA_ERROR_GENERIC_ERROR;
-
-    if (!PSA_ALG_IS_CIPHER(alg)) {
-        status = PSA_ERROR_INVALID_ARGUMENT;
-        goto exit;
-    }
-
-    if (psa_get_key_type(attributes) != PSA_KEY_TYPE_AES) {
-        status = PSA_ERROR_NOT_SUPPORTED;
-        goto exit;
-    }
-
-    switch (alg) {
-        case PSA_ALG_ECB_NO_PADDING:
-        case PSA_ALG_CBC_NO_PADDING:
-        case PSA_ALG_CBC_PKCS7:
-        case PSA_ALG_CTR:
-        case PSA_ALG_XTS:
-        case PSA_ALG_CFB:
-        case PSA_ALG_OFB:
-            break;
-        default:
-            status = PSA_ERROR_NOT_SUPPORTED;
-            goto exit;
-    }
-
-    esp_aes_context *ctx = (esp_aes_context *) malloc(sizeof(esp_aes_context));
-    if (ctx == NULL) {
-        status = PSA_ERROR_INSUFFICIENT_MEMORY;
-        goto exit;
-    }
-
-    esp_aes_init(ctx);
-
-    status = mbedtls_to_psa_error(esp_aes_setkey(ctx, key_buffer, key_buffer_size * 8));
-
-    if (status != PSA_SUCCESS) {
-        free(ctx);
-        goto exit;
-    }
-
-    esp_aes_driver_ctx->aes_alg = alg;
-    esp_aes_driver_ctx->mode = mode;
-    esp_aes_driver_ctx->esp_aes_ctx = (void *) ctx;
-    esp_aes_driver_ctx->block_length = (PSA_ALG_IS_STREAM_CIPHER(alg) ? 1 : PSA_BLOCK_CIPHER_BLOCK_LENGTH(PSA_KEY_TYPE_AES));
-exit:
-    return status;
-}
-
-psa_status_t esp_aes_cipher_encrypt_setup(
-    esp_aes_operation_t *esp_aes_driver_ctx,
-    const psa_key_attributes_t *attributes,
-    const uint8_t *key_buffer, size_t key_buffer_size,
-    psa_algorithm_t alg)
-{
-    return esp_crypto_aes_setup(esp_aes_driver_ctx, attributes,
-                                key_buffer, key_buffer_size,
-                                alg, PSA_CRYPTO_DRIVER_ENCRYPT);
 }
 
 psa_status_t esp_aes_cipher_encrypt(
@@ -533,56 +550,40 @@ psa_status_t esp_aes_cipher_encrypt(
                                         key_buffer, key_buffer_size,
                                         alg);
     if (status != PSA_SUCCESS) {
-        ESP_LOGE("esp_aes_cipher_encrypt", "Failed to setup encryption: %ld", status);
+        ESP_LOGE(TAG, "Failed to setup encryption: %ld", status);
         goto exit;
     }
 
     if (iv_length > 0) {
-        status = esp_crypto_aes_set_iv(&esp_aes_driver_ctx, iv, iv_length);
+        status = esp_aes_cipher_set_iv(&esp_aes_driver_ctx, iv, iv_length);
         if (status != PSA_SUCCESS) {
-            ESP_LOGE("esp_aes_cipher_encrypt", "Failed to set IV: %ld", status);
+            ESP_LOGE(TAG, "Failed to set IV: %ld", status);
             goto exit;
         }
     }
 
-    status = esp_crypto_aes_update(&esp_aes_driver_ctx, input, input_length,
+    status = esp_aes_cipher_update(&esp_aes_driver_ctx, input, input_length,
                                 output, output_size,
                                 &update_output_length);
     if (status != PSA_SUCCESS) {
-        ESP_LOGE("esp_aes_cipher_encrypt", "Failed to update: %ld", status);
+        ESP_LOGE(TAG, "Failed to update: %ld", status);
         goto exit;
     }
 
-    status = esp_crypto_aes_finish(&esp_aes_driver_ctx,
+    status = esp_aes_cipher_finish(&esp_aes_driver_ctx,
         mbedtls_buffer_offset(output, update_output_length),
         output_size - update_output_length, &finish_output_length);
     if (status != PSA_SUCCESS) {
-        ESP_LOGE("esp_aes_cipher_encrypt", "Failed to finish: %ld", status);
+        ESP_LOGE(TAG, "Failed to finish: %ld", status);
         goto exit;
     }
 
     *output_length = update_output_length + finish_output_length;
 
 exit:
-    if (status == PSA_SUCCESS) {
-        status = esp_crypto_aes_abort(&esp_aes_driver_ctx);
-    } else {
-        ESP_LOGE("esp_aes_cipher_encrypt", "Failed to abort: %ld", status);
-        esp_crypto_aes_abort(&esp_aes_driver_ctx);
-    }
+    esp_aes_cipher_abort(&esp_aes_driver_ctx);
 
     return status;
-}
-
-psa_status_t esp_aes_cipher_decrypt_setup(
-    esp_aes_operation_t *esp_aes_driver_ctx,
-    const psa_key_attributes_t *attributes,
-    const uint8_t *key_buffer, size_t key_buffer_size,
-    psa_algorithm_t alg)
-{
-    return esp_crypto_aes_setup(esp_aes_driver_ctx, attributes,
-                                key_buffer, key_buffer_size,
-                                alg, PSA_CRYPTO_DRIVER_DECRYPT);
 }
 
 psa_status_t esp_aes_cipher_decrypt(
@@ -601,85 +602,44 @@ psa_status_t esp_aes_cipher_decrypt(
                                               key, key_length,
                                               alg);
     if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to setup decryption: %ld", status);
         goto exit;
     }
 
     uint8_t iv_length = PSA_CIPHER_IV_LENGTH(psa_get_key_type(attributes), alg);
 
     if (iv_length > 0) {
-        status = esp_crypto_aes_set_iv(&esp_aes_driver_ctx,
+        status = esp_aes_cipher_set_iv(&esp_aes_driver_ctx,
                                            input, iv_length);
         if (status != PSA_SUCCESS) {
+            ESP_LOGE(TAG, "Failed to set IV: %ld", status);
             goto exit;
         }
     }
 
-    status = esp_crypto_aes_update(&esp_aes_driver_ctx,
+    status = esp_aes_cipher_update(&esp_aes_driver_ctx,
         mbedtls_buffer_offset_const(input, iv_length),
         input_length - iv_length,
         output, output_size, &olength);
     if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to update: %ld", status);
         goto exit;
     }
 
     accumulated_length = olength;
 
-    status = esp_crypto_aes_finish(&esp_aes_driver_ctx,
+    status = esp_aes_cipher_finish(&esp_aes_driver_ctx,
         mbedtls_buffer_offset(output, accumulated_length),
         output_size - accumulated_length, &olength);
     if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to finish: %ld", status);
         goto exit;
     }
 
     *output_length = accumulated_length + olength;
 
 exit:
-    if (status == PSA_SUCCESS) {
-        status = esp_crypto_aes_abort(&esp_aes_driver_ctx);
-    } else {
-        esp_crypto_aes_abort(&esp_aes_driver_ctx);
-    }
+    esp_aes_cipher_abort(&esp_aes_driver_ctx);
 
     return status;
-}
-
-psa_status_t esp_aes_cipher_set_iv(
-    esp_aes_operation_t *operation,
-    const uint8_t *iv,
-    size_t iv_length)
-{
-    return esp_crypto_aes_set_iv(operation, iv, iv_length);
-}
-
-psa_status_t esp_aes_cipher_update(
-    esp_aes_operation_t *operation,
-    const uint8_t *input,
-    size_t input_length,
-    uint8_t *output,
-    size_t output_size,
-    size_t *output_length)
-{
-    return esp_crypto_aes_update(operation, input, input_length,
-                                output, output_size, output_length);
-}
-
-psa_status_t esp_aes_cipher_finish(
-    esp_aes_operation_t *operation,
-    uint8_t *output,
-    size_t output_size,
-    size_t *output_length)
-{
-    return esp_crypto_aes_finish(operation, output, output_size, output_length);
-}
-
-psa_status_t esp_aes_cipher_abort(
-    esp_aes_operation_t *operation)
-{
-    esp_aes_context *ctx = (esp_aes_context *) operation->esp_aes_ctx;
-    if (ctx == NULL) {
-        return PSA_SUCCESS;
-    }
-    esp_aes_free(ctx);
-    free(ctx);
-    return PSA_SUCCESS;
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,11 @@
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
 #include "soc/interrupts.h"
+#if SOC_CPU_CORES_NUM > 1
+#include "soc/interrupt_core0_reg.h"
+#else
+#include "soc/interrupt_matrix_reg.h"
+#endif
 
 #include "soc/apm_defs.h"
 #include "hal/apm_hal.h"
@@ -22,6 +27,7 @@
 
 #include "unity.h"
 
+#if SOC_APM_CTRL_FILTER_SUPPORTED
 /***************************** Utility - APM interrupts  *****************************/
 
 #define MAX_APM_CTRL_NUM  (4)
@@ -213,7 +219,7 @@ static const char *const excp_mid_strs[] = {
 #if SOC_PARLIO_SUPPORTED
     [APM_MASTER_GDMA_PARLIO]   = "GDMA_PARLIO",
 #endif /* SOC_PARLIO_SUPPORTED */
-    [26]                       = "GDMA_DUMMYX",
+    [27]                       = "GDMA_DUMMYX",
 };
 
 static const char *apm_excp_mid_to_str(uint8_t mid)
@@ -368,3 +374,232 @@ static void test_apm_ctrl_free_all_intr(void)
         }
     }
 }
+#elif SOC_APM_SUPPORTED
+/***************************** Utility - PMS interrupts *****************************/
+
+#include "soc/icm_sys_reg.h"
+#include "hal/lp_sys_ll.h"
+#include "test_pms_params.h"
+
+static intr_handle_t s_pms_hp_intr_hdl = NULL;
+static intr_handle_t s_pms_lp_intr_hdl = NULL;
+
+volatile bool pms_lp_excp_flag = false;
+volatile uint32_t pms_lp_excp_addr = 0;
+volatile bool pms_dma_excp_flag = false;
+
+/***************************** PMS exception check *****************************/
+
+static const char *apm_excp_type_to_str(bool is_secure)
+{
+    char *excp_type = "Unknown";
+
+    if (is_secure) {
+        excp_type = "Space exception";
+    } else {
+        excp_type = "Authority exception";
+    }
+
+    return excp_type;
+}
+
+static const char *apm_excp_src_to_str(apm_ctrl_exception_type type)
+{
+    char *excp_src = "Unknown";
+
+    switch (type) {
+    case APM_EXCP_HP_AXI:
+        excp_src = "HP_AXI";
+        break;
+    case APM_EXCP_HP_AHB:
+        excp_src = "HP_AHB";
+        break;
+    case APM_EXCP_LP_AHB:
+        excp_src = "LP_AHB";
+        break;
+    case APM_EXCP_LP_IDBUS:
+        excp_src = "LP_IDBUS";
+        break;
+    default:
+        break;
+    }
+
+    return excp_src;
+}
+
+IRAM_ATTR static void pms_log_violation(apm_ctrl_exception_type type, apm_ctrl_exception_info_t *info)
+{
+    apm_hal_get_exception_info(type, info);
+    esp_rom_printf("PMS violation: %s\n\r", apm_excp_type_to_str(info->is_secure));
+    esp_rom_printf("Access addr: 0x%08x | Type: %s\n\r", info->addr, info->is_wr ? "Write" : "Read");
+    esp_rom_printf("Master: %d | Source: %s\n\r", info->id, apm_excp_src_to_str(type));
+}
+
+IRAM_ATTR static void pms_hp_intr_cb(void *arg)
+{
+    apm_ctrl_exception_info_t info;
+    uint32_t status = apm_hal_get_intr_status();
+
+    if (status & APM_EXCP_HP_AXI) {
+        pms_log_violation(APM_EXCP_HP_AXI, &info);
+    }
+    if (status & APM_EXCP_HP_AHB) {
+        pms_log_violation(APM_EXCP_HP_AHB, &info);
+        pms_dma_excp_flag = true;
+    }
+
+    apm_hal_clear_intr(APM_CTRL_DMA_PMS);
+    apm_hal_clear_intr(APM_CTRL_HP_PERI_PMS);
+    apm_hal_clear_intr(APM_CTRL_LP2HP_PERI_PMS);
+}
+
+IRAM_ATTR static void pms_lp_intr_cb(void *arg)
+{
+    apm_ctrl_exception_info_t info;
+    uint32_t status = apm_hal_get_intr_status();
+
+    if (status & APM_EXCP_LP_AHB) {
+        pms_log_violation(APM_EXCP_LP_AHB, &info);
+        pms_lp_excp_addr = info.addr;
+        pms_lp_excp_flag = true;
+    }
+    if (status & APM_EXCP_LP_IDBUS) {
+        pms_log_violation(APM_EXCP_LP_IDBUS, &info);
+        pms_lp_excp_addr = info.addr;
+        pms_lp_excp_flag = true;
+    }
+
+    apm_hal_clear_intr(APM_CTRL_HP2LP_PERI_PMS);
+    apm_hal_clear_intr(APM_CTRL_LP_PERI_PMS);
+}
+
+void test_pms_enable_intr(apm_ctrl_module_t ctrl_mod)
+{
+    /* TODO: Investigate why this is required */
+    REG_CLR_BIT(ICM_INT_ENA_REG, ICM_REG_DLOCK_INT_ENA);
+
+    int intr_src = apm_hal_get_intr_src_num(ctrl_mod);
+    TEST_ASSERT(intr_src >= 0);
+
+    uint32_t flags = ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_LEVEL3;
+
+    switch (ctrl_mod) {
+    case APM_CTRL_DMA_PMS:
+    case APM_CTRL_HP_PERI_PMS:
+    case APM_CTRL_LP2HP_PERI_PMS:
+        if (!s_pms_hp_intr_hdl) {
+            TEST_ESP_OK(esp_intr_alloc(intr_src, flags, &pms_hp_intr_cb, NULL, &s_pms_hp_intr_hdl));
+        }
+        break;
+    case APM_CTRL_LP_PERI_PMS:
+    case APM_CTRL_HP2LP_PERI_PMS:
+        if (!s_pms_lp_intr_hdl) {
+            TEST_ESP_OK(esp_intr_alloc(intr_src, flags, &pms_lp_intr_cb, NULL, &s_pms_lp_intr_hdl));
+        }
+        break;
+    default:
+        TEST_ASSERT_MESSAGE(false, "Invalid PMS module");
+        return;
+    }
+
+    apm_hal_enable_intr(ctrl_mod, true);
+}
+
+static void test_pms_free_all_intr(void)
+{
+    if (s_pms_hp_intr_hdl) {
+        esp_intr_free(s_pms_hp_intr_hdl);
+        s_pms_hp_intr_hdl = NULL;
+    }
+    if (s_pms_lp_intr_hdl) {
+        esp_intr_free(s_pms_lp_intr_hdl);
+        s_pms_lp_intr_hdl = NULL;
+    }
+}
+
+/********************************** PMS Reset *************************************/
+
+static void test_dma_pms_reset(void)
+{
+    for (uint32_t regn = 0; regn < APM_DMA_PMS_REGION_NUM; regn++) {
+        apm_hal_dma_pms_set_region_bounds(regn, 0x00U, UINT32_MAX);
+    }
+
+    for (uint32_t mid = 0; mid < APM_MASTER_DMA_MAX; mid++) {
+        apm_hal_dma_pms_set_master_region_attr((apm_master_dma_id_t)mid, UINT32_MAX, UINT32_MAX);
+    }
+
+    apm_hal_enable_intr(APM_CTRL_DMA_PMS, false);
+    apm_hal_clear_intr(APM_CTRL_DMA_PMS);
+}
+
+static void test_hp_peri_pms_reset(void)
+{
+    const apm_hal_pms_hp_peri_cfg_t cfg = {
+        .cpu_peri = UINT32_MAX,
+        .hp_peri0 = UINT32_MAX,
+        .hp_peri1 = UINT64_MAX,
+    };
+    for (int core = 0; core < SOC_CPU_CORES_NUM; core++) {
+        apm_hal_hp_peri_pms_set_hpcpu_access(core, APM_SEC_MODE_TEE, &cfg);
+        apm_hal_hp_peri_pms_set_hpcpu_access(core, APM_SEC_MODE_REE, &cfg);
+    }
+
+    apm_hal_enable_intr(APM_CTRL_HP_PERI_PMS, false);
+    apm_hal_clear_intr(APM_CTRL_HP_PERI_PMS);
+}
+
+static void test_hp2lp_peri_pms_reset(void)
+{
+    uint32_t cfg_mask = UINT32_MAX;
+    for (int core = 0; core < SOC_CPU_CORES_NUM; core++) {
+        apm_hal_hp2lp_peri_pms_set_hpcpu_access(core, APM_SEC_MODE_TEE, cfg_mask);
+        apm_hal_hp2lp_peri_pms_set_hpcpu_access(core, APM_SEC_MODE_REE, cfg_mask);
+    }
+
+    apm_hal_enable_intr(APM_CTRL_HP2LP_PERI_PMS, false);
+    apm_hal_clear_intr(APM_CTRL_HP2LP_PERI_PMS);
+}
+
+static void test_lp_peri_pms_reset(void)
+{
+    uint32_t cfg_mask = UINT32_MAX;
+    apm_hal_lp_peri_pms_set_lpcpu_access(cfg_mask);
+
+    for (uint32_t regn = 0; regn < APM_LP_PERI_PMS_REGION_NUM; regn++) {
+        apm_hal_lp_peri_pms_set_region_bounds(regn, 0x00U, UINT32_MAX);
+    }
+
+    for (uint32_t mid = 0; mid < APM_MASTER_DMA; mid++) {
+        apm_hal_lp_peri_pms_set_master_region_attr(mid, APM_SEC_MODE_TEE, UINT32_MAX);
+        apm_hal_lp_peri_pms_set_master_region_attr(mid, APM_SEC_MODE_REE, UINT32_MAX);
+    }
+
+    apm_hal_enable_intr(APM_CTRL_LP_PERI_PMS, false);
+    apm_hal_clear_intr(APM_CTRL_LP_PERI_PMS);
+}
+
+static void test_lp2hp_peri_pms_reset(void)
+{
+    const apm_hal_pms_hp_peri_cfg_t cfg = {
+        .cpu_peri = UINT32_MAX,
+        .hp_peri0 = UINT32_MAX,
+        .hp_peri1 = UINT64_MAX,
+    };
+    apm_hal_lp2hp_peri_pms_set_lpcpu_access(&cfg);
+
+    apm_hal_enable_intr(APM_CTRL_LP2HP_PERI_PMS, false);
+    apm_hal_clear_intr(APM_CTRL_LP2HP_PERI_PMS);
+    lp_sys_ll_enable_lp_core_err_resp(true);
+}
+
+void test_pms_ctrl_reset_all(void)
+{
+    test_dma_pms_reset();
+    test_hp_peri_pms_reset();
+    test_hp2lp_peri_pms_reset();
+    test_lp_peri_pms_reset();
+    test_lp2hp_peri_pms_reset();
+    test_pms_free_all_intr();
+}
+#endif

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -302,91 +302,40 @@ static inline void cam_ll_set_yuv_convert_std(lcd_cam_dev_t *dev, color_conv_std
 }
 
 /**
- * @brief Set the converter mode: RGB565 to YUV
+ * @brief Set converter mode
  *
  * @param dev CAM register base address
- * @param yuv_sample YUV sample mode
+ * @param src_fourcc Source format FourCC
+ * @param dst_fourcc Destination format FourCC
  */
-static inline void cam_ll_set_convert_mode_rgb_to_yuv(lcd_cam_dev_t *dev, color_pixel_yuv_format_t yuv_sample)
+static inline void cam_ll_set_convert_mode(lcd_cam_dev_t *dev, uint32_t src_fourcc, uint32_t dst_fourcc)
 {
-    dev->cam_rgb_yuv.cam_conv_trans_mode = 1;
-    dev->cam_rgb_yuv.cam_conv_yuv2yuv_mode = 3;
-    switch (yuv_sample) {
-    case COLOR_PIXEL_YUV422:
-        dev->cam_rgb_yuv.cam_conv_yuv_mode = 0;
-        break;
-    case COLOR_PIXEL_YUV420:
-        dev->cam_rgb_yuv.cam_conv_yuv_mode = 1;
-        break;
-    case COLOR_PIXEL_YUV411:
-        dev->cam_rgb_yuv.cam_conv_yuv_mode = 2;
-        break;
-    default:
-        abort();
-    }
-}
+    bool src_is_yuv = (src_fourcc == ESP_COLOR_FOURCC_OUYY_EVYY ||
+                       src_fourcc == ESP_COLOR_FOURCC_YVYU ||
+                       src_fourcc == ESP_COLOR_FOURCC_YUYV ||
+                       src_fourcc == ESP_COLOR_FOURCC_UYVY ||
+                       src_fourcc == ESP_COLOR_FOURCC_VYUY ||
+                       src_fourcc == ESP_COLOR_FOURCC_YUV);
+    bool dst_is_yuv = (dst_fourcc == ESP_COLOR_FOURCC_OUYY_EVYY ||
+                       dst_fourcc == ESP_COLOR_FOURCC_YVYU ||
+                       dst_fourcc == ESP_COLOR_FOURCC_YUYV ||
+                       dst_fourcc == ESP_COLOR_FOURCC_UYVY ||
+                       dst_fourcc == ESP_COLOR_FOURCC_VYUY ||
+                       dst_fourcc == ESP_COLOR_FOURCC_YUV);
 
-/**
- * @brief Set the converter mode: YUV to RGB565
- *
- * @param dev CAM register base address
- * @param yuv_sample YUV sample mode
- */
-static inline void cam_ll_set_convert_mode_yuv_to_rgb(lcd_cam_dev_t *dev, color_pixel_yuv_format_t yuv_sample)
-{
-    dev->cam_rgb_yuv.cam_conv_trans_mode = 0;
-    dev->cam_rgb_yuv.cam_conv_yuv2yuv_mode = 3;
-    switch (yuv_sample) {
-    case COLOR_PIXEL_YUV422:
-        dev->cam_rgb_yuv.cam_conv_yuv_mode = 0;
-        break;
-    case COLOR_PIXEL_YUV420:
-        dev->cam_rgb_yuv.cam_conv_yuv_mode = 1;
-        break;
-    case COLOR_PIXEL_YUV411:
-        dev->cam_rgb_yuv.cam_conv_yuv_mode = 2;
-        break;
-    default:
-        abort();
-    }
-}
-
-/**
- * @brief Set the converter mode: YUV to YUV
- *
- * @param dev CAM register base address
- * @param src_sample Source YUV sample mode
- * @param dst_sample Destination YUV sample mode
- */
-static inline void cam_ll_set_convert_mode_yuv_to_yuv(lcd_cam_dev_t *dev, color_pixel_yuv_format_t src_sample, color_pixel_yuv_format_t dst_sample)
-{
-    HAL_ASSERT(src_sample != dst_sample);
-    dev->cam_rgb_yuv.cam_conv_trans_mode = 1;
-    switch (src_sample) {
-    case COLOR_PIXEL_YUV422:
-        dev->cam_rgb_yuv.cam_conv_yuv_mode = 0;
-        break;
-    case COLOR_PIXEL_YUV420:
-        dev->cam_rgb_yuv.cam_conv_yuv_mode = 1;
-        break;
-    case COLOR_PIXEL_YUV411:
-        dev->cam_rgb_yuv.cam_conv_yuv_mode = 2;
-        break;
-    default:
-        abort();
-    }
-    switch (dst_sample) {
-    case COLOR_PIXEL_YUV422:
-        dev->cam_rgb_yuv.cam_conv_yuv2yuv_mode = 0;
-        break;
-    case COLOR_PIXEL_YUV420:
-        dev->cam_rgb_yuv.cam_conv_yuv2yuv_mode = 1;
-        break;
-    case COLOR_PIXEL_YUV411:
-        dev->cam_rgb_yuv.cam_conv_yuv2yuv_mode = 2;
-        break;
-    default:
-        abort();
+    if (src_is_yuv && dst_is_yuv) {
+        HAL_ASSERT(src_fourcc != dst_fourcc);
+        dev->cam_rgb_yuv.cam_conv_trans_mode = 1;
+        dev->cam_rgb_yuv.cam_conv_yuv_mode = (src_fourcc == ESP_COLOR_FOURCC_OUYY_EVYY) ? 1 : 0;
+        dev->cam_rgb_yuv.cam_conv_yuv2yuv_mode = (dst_fourcc == ESP_COLOR_FOURCC_OUYY_EVYY) ? 1 : 0;
+    } else if (src_is_yuv) {
+        dev->cam_rgb_yuv.cam_conv_trans_mode = 0;
+        dev->cam_rgb_yuv.cam_conv_yuv2yuv_mode = 3;
+        dev->cam_rgb_yuv.cam_conv_yuv_mode = (src_fourcc == ESP_COLOR_FOURCC_OUYY_EVYY) ? 1 : 0;
+    } else if (dst_is_yuv) {
+        dev->cam_rgb_yuv.cam_conv_trans_mode = 1;
+        dev->cam_rgb_yuv.cam_conv_yuv2yuv_mode = 3;
+        dev->cam_rgb_yuv.cam_conv_yuv_mode = (dst_fourcc == ESP_COLOR_FOURCC_OUYY_EVYY) ? 1 : 0;
     }
 }
 

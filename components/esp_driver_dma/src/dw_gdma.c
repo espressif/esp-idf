@@ -34,13 +34,6 @@
 
 ESP_LOG_ATTR_TAG(TAG, "dw-gdma");
 
-#if !SOC_RCC_IS_INDEPENDENT
-// Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
-#define DW_GDMA_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define DW_GDMA_RCC_ATOMIC()
-#endif
-
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #define DW_GDMA_GET_NON_CACHE_ADDR(addr) ((addr) ? CACHE_LL_L2MEM_NON_CACHE_ADDR(addr) : 0)
 #define DW_GDMA_GET_CACHE_ADDRESS(nc_addr) ((nc_addr) ? CACHE_LL_L2MEM_CACHE_ADDR(nc_addr) : 0)
@@ -83,7 +76,6 @@ typedef struct {
 struct dw_gdma_group_t {
     int group_id;              // Group ID, index from 0
     dw_gdma_hal_context_t hal; // HAL instance is at group level
-    int intr_priority;         // all channels in the same group should share the same interrupt priority
     portMUX_TYPE spinlock;     // group level spinlock, protect group level stuffs, e.g. hal object, pair handle slots and reference count of each pair
     dw_gdma_channel_t *channels[DW_GDMA_LL_CHANNELS_PER_GROUP]; // handles of DMA channels
 };
@@ -91,6 +83,7 @@ struct dw_gdma_group_t {
 struct dw_gdma_channel_t {
     int chan_id;            // channel ID, index from 0
     intr_handle_t intr;     // per-channel interrupt handle
+    int intr_priority;      // channel requested interrupt priority
     portMUX_TYPE spinlock;  // channel level spinlock
     dw_gdma_group_t *group; // pointer to the group which the channel belongs to
     void *user_data;        // user registered DMA event data
@@ -116,7 +109,7 @@ static dw_gdma_group_t *dw_gdma_acquire_group_handle(int group_id)
             new_group = true;
             s_platform.groups[group_id] = group;
             // enable APB to access DMA registers
-            DW_GDMA_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 dw_gdma_ll_enable_bus_clock(group_id, true);
                 dw_gdma_ll_reset_register(group_id);
             }
@@ -137,7 +130,6 @@ static dw_gdma_group_t *dw_gdma_acquire_group_handle(int group_id)
     if (new_group) {
         portMUX_INITIALIZE(&group->spinlock);
         group->group_id = group_id;
-        group->intr_priority = -1; // interrupt priority not assigned yet
         ESP_LOGD(TAG, "new group (%d) at %p", group_id, group);
     }
 
@@ -157,7 +149,7 @@ static void dw_gdma_release_group_handle(dw_gdma_group_t *group)
         s_platform.groups[group_id] = NULL;
         // deinitialize the HAL context
         dw_gdma_hal_deinit(&group->hal);
-        DW_GDMA_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             dw_gdma_ll_enable_bus_clock(group_id, false);
         }
     }
@@ -246,22 +238,11 @@ esp_err_t dw_gdma_new_channel(const dw_gdma_channel_alloc_config_t *config, dw_g
     ESP_GOTO_ON_ERROR(channel_register_to_group(chan), err, TAG, "register to group failed");
     dw_gdma_group_t *group = chan->group;
     dw_gdma_hal_context_t *hal = &group->hal;
-    int group_id = group->group_id;
     int chan_id = chan->chan_id;
-
-    // all channels in the same group should use the same interrupt priority
-    bool intr_priority_conflict = false;
-    esp_os_enter_critical(&group->spinlock);
-    if (group->intr_priority == -1) {
-        group->intr_priority = config->intr_priority;
-    } else if (config->intr_priority != 0) {
-        intr_priority_conflict = (group->intr_priority != config->intr_priority);
-    }
-    esp_os_exit_critical(&group->spinlock);
-    ESP_GOTO_ON_FALSE(!intr_priority_conflict, ESP_ERR_INVALID_STATE, err, TAG, "intr_priority conflict, already is %d but attempt to %d", group->intr_priority, config->intr_priority);
 
     // basic initialization
     portMUX_INITIALIZE(&chan->spinlock);
+    chan->intr_priority = config->intr_priority;
     chan->src_transfer_type = config->src.block_transfer_type;
     chan->dst_transfer_type = config->dst.block_transfer_type;
     // set transfer flow type
@@ -291,7 +272,7 @@ esp_err_t dw_gdma_new_channel(const dw_gdma_channel_alloc_config_t *config, dw_g
     // enable all channel events (notes, they can't trigger an interrupt until `dw_gdma_ll_channel_enable_intr_propagation` is called)
     dw_gdma_ll_channel_enable_intr_generation(hal->dev, chan_id, UINT32_MAX, true);
 
-    ESP_LOGD(TAG, "new channel (%d,%d) at %p", group_id, chan_id, chan);
+    ESP_LOGD(TAG, "new channel (%d,%d) at %p", group->group_id, chan_id, chan);
     *ret_chan = chan;
     return ESP_OK;
 err:
@@ -634,17 +615,24 @@ static esp_err_t dw_gdma_install_channel_interrupt(dw_gdma_channel_t *chan)
     dw_gdma_ll_channel_clear_intr(hal->dev, chan_id, UINT32_MAX);
 
     // pre-alloc a interrupt handle, with handler disabled
-    // DW_GDMA multiple channels share the same interrupt source, so we use a shared interrupt handle
+    // DW_GDMA channels in the same group share one private interrupt group
     intr_handle_t intr = NULL;
-    int isr_flags = DW_GDMA_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED;
-    if (group->intr_priority) {
-        isr_flags |= 1 << (group->intr_priority);
+    int isr_flags = DW_GDMA_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED_PRIVATE;
+    if (chan->intr_priority) {
+        isr_flags |= 1 << (chan->intr_priority);
     } else {
         isr_flags |= DW_GDMA_ALLOW_INTR_PRIORITY_MASK;
     }
-    ret = esp_intr_alloc_intrstatus(ETS_DW_GDMA_INTR_SOURCE, isr_flags,
-                                    (uint32_t)dw_gdma_ll_get_intr_status_reg(hal->dev), DW_GDMA_LL_CHANNEL_EVENT_MASK(chan_id),
-                                    dw_gdma_channel_default_isr, chan, &intr);
+    esp_intr_alloc_info_t intr_info = {
+        .source = ETS_DW_GDMA_INTR_SOURCE,
+        .flags = isr_flags,
+        .intrstatusreg = (uint32_t)dw_gdma_ll_get_intr_status_reg(hal->dev),
+        .intrstatusmask = DW_GDMA_LL_CHANNEL_EVENT_MASK(chan_id),
+        .handler = dw_gdma_channel_default_isr,
+        .arg = chan,
+        .bind_by.name = "dw_gdma0",
+    };
+    ret = esp_intr_alloc_info(&intr_info, &intr);
     ESP_RETURN_ON_ERROR(ret, TAG, "alloc interrupt failed");
 
     ESP_LOGD(TAG, "install interrupt service for channel (%d,%d)", group->group_id, chan_id);

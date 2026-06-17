@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -178,6 +178,12 @@ esp_err_t httpd_resp_set_hdr(httpd_req_t *r, const char *field, const char *valu
         return ESP_ERR_HTTPD_INVALID_REQ;
     }
 
+    /* Reject CRLF in header field or value */
+    if (strpbrk(field, "\r\n") || strpbrk(value, "\r\n")) {
+        ESP_LOGW(TAG, LOG_FMT("rejecting header with CRLF: %.32s"), field);
+        return ESP_ERR_INVALID_ARG;
+    }
+
     struct httpd_req_aux *ra = r->aux;
     struct httpd_data *hd = (struct httpd_data *) r->handle;
 
@@ -209,6 +215,12 @@ esp_err_t httpd_resp_set_status(httpd_req_t *r, const char *status)
         return ESP_ERR_HTTPD_INVALID_REQ;
     }
 
+    /* Reject CRLF in status */
+    if (strpbrk(status, "\r\n")) {
+        ESP_LOGW(TAG, LOG_FMT("rejecting status with CRLF: %.32s"), status);
+        return ESP_ERR_INVALID_ARG;
+    }
+
     struct httpd_req_aux *ra = r->aux;
     ra->status = (char *)status;
     return ESP_OK;
@@ -226,6 +238,12 @@ esp_err_t httpd_resp_set_type(httpd_req_t *r, const char *type)
 
     if (!httpd_valid_req(r)) {
         return ESP_ERR_HTTPD_INVALID_REQ;
+    }
+
+    /* Reject CRLF in content type */
+    if (strpbrk(type, "\r\n")) {
+        ESP_LOGW(TAG, LOG_FMT("rejecting content type with CRLF: %.32s"), type);
+        return ESP_ERR_INVALID_ARG;
     }
 
     struct httpd_req_aux *ra = r->aux;
@@ -720,9 +738,19 @@ esp_err_t httpd_req_async_handler_complete(httpd_req_t *r)
     // will now re-add this FD to its select() descriptor list. This ensures that subsequent requests
     // on the same FD are processed correctly
     struct httpd_ctrl_data msg = {.hc_msg = HTTPD_CTRL_MAX};
+
+    /* Reserve an mbox slot so we don't overrun ctrl_sock_semaphore's
+     * accounting and starve concurrent httpd_queue_work() producers. The
+     * httpd main task is the consumer and will drain the mbox shortly. */
+    if (xSemaphoreTake(hd->ctrl_sock_semaphore, portMAX_DELAY) != pdTRUE) {
+        ESP_LOGW(TAG, LOG_FMT("failed to acquire ctrl socket semaphore"));
+        return ESP_FAIL;
+    }
+
     int ret = cs_send_to_ctrl_sock(msg_fd, port, &msg, sizeof(msg));
     if (ret < 0) {
         ESP_LOGW(TAG, LOG_FMT("failed to send socket notification"));
+        xSemaphoreGive(hd->ctrl_sock_semaphore);
         return ESP_FAIL;
     }
 

@@ -18,6 +18,14 @@ log_config:
       tags: [@BLE_HOST_TAGS@]
       tags_with_preserve: [@BLE_HOST_TAGS_PRESERVE@]
 
+    BLE_ISO:
+      description: "BLE ISO (and consumers: esp_ble_audio, future HID-over-ISO)"
+      code_path: [@BLE_ISO_CODE_PATH_YAML@]
+      log_index_file: @BLE_ISO_LOG_INDEX_HEADER@
+      script: @BLE_ISO_LOG_SCRIPT_PATH@
+      tags: [@BLE_ISO_TAGS@]
+      tags_with_preserve: [@BLE_ISO_TAGS_PRESERVE@]
+
     @BLE_COMPRESSED_LIB_NAME@:
       description: "@BLE_COMPRESSED_LIB_DESC@"
       code_path: [@BLE_COMPRESSED_LIB_CODE_DIR@]

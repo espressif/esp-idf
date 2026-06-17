@@ -59,7 +59,7 @@ static void test_parlio_bitscrambler(void)
         .trans_queue_depth = 8,
         .max_transfer_size = 128,
         .bit_pack_order = PARLIO_BIT_PACK_ORDER_LSB,
-        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .shift_edge = PARLIO_SHIFT_EDGE_NEG,
     };
 
     parlio_rx_unit_handle_t rx_unit = NULL;
@@ -95,7 +95,7 @@ static void test_parlio_bitscrambler(void)
         .idle_value = 0x00,
         .bitscrambler_program = bitscrambler_program_test_tx_LSB_to_MSB,
     };
-    uint8_t tx_payload[TEST_PAYLOAD_SIZE] = {0};
+    __attribute__((aligned(TEST_PAYLOAD_SIZE))) uint8_t tx_payload[TEST_PAYLOAD_SIZE] = {0};
     for (int i = 0; i < TEST_PAYLOAD_SIZE; i++) {
         tx_payload[i] = i;
     }

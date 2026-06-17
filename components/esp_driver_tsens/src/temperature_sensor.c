@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,7 @@
 #include "esp_check.h"
 #include "esp_types.h"
 #include "esp_heap_caps.h"
-#include "clk_ctrl_os.h"
+#include "esp_clk_tree.h"
 #include "freertos/FreeRTOS.h"
 #include "driver/temperature_sensor.h"
 #include "esp_private/periph_ctrl.h"
@@ -39,7 +39,7 @@ static const char *TAG = "temperature_sensor";
 static int s_deltaT = INT_MIN; // unused number
 
 #if SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
-static int8_t s_temperature_regval_2_celsius(temperature_sensor_handle_t tsens, uint8_t regval);
+static int s_temperature_regval_2_celsius(temperature_sensor_handle_t tsens, uint8_t regval);
 #endif // SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
 
 static temperature_sensor_attribute_t *s_tsens_attribute_copy;
@@ -242,11 +242,7 @@ esp_err_t temperature_sensor_enable(temperature_sensor_handle_t tsens)
     ESP_RETURN_ON_FALSE((tsens != NULL), ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(tsens->fsm == TEMP_SENSOR_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "tsens not in init state");
 
-#if SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC
-    if (tsens->clk_src == TEMPERATURE_SENSOR_CLK_SRC_RC_FAST) {
-        periph_rtc_dig_clk8m_enable();
-    }
-#endif
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(tsens->clk_src, true), TAG, "clock source enable failed");
 
 #if SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
     temperature_sensor_ll_wakeup_enable(true);
@@ -271,13 +267,10 @@ esp_err_t temperature_sensor_disable(temperature_sensor_handle_t tsens)
     temperature_sensor_ll_sample_enable(false);
 #endif
 
-#if SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC
-    if (tsens->clk_src == TEMPERATURE_SENSOR_CLK_SRC_RC_FAST) {
-        periph_rtc_dig_clk8m_disable();
-    }
-#endif
-
     tsens->fsm = TEMP_SENSOR_FSM_INIT;
+
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(tsens->clk_src, false), TAG, "clock source disable failed");
+
     return ESP_OK;
 }
 
@@ -326,9 +319,10 @@ static uint8_t s_temperature_celsius_2_regval(temperature_sensor_handle_t tsens,
     return (uint8_t)((celsius + TEMPERATURE_SENSOR_LL_OFFSET_FACTOR + TEMPERATURE_SENSOR_LL_DAC_FACTOR * tsens->tsens_attribute->offset) / TEMPERATURE_SENSOR_LL_ADC_FACTOR);
 }
 
-IRAM_ATTR static int8_t s_temperature_regval_2_celsius(temperature_sensor_handle_t tsens, uint8_t regval)
+IRAM_ATTR static int s_temperature_regval_2_celsius(temperature_sensor_handle_t tsens, uint8_t regval)
 {
-    return TEMPERATURE_SENSOR_LL_ADC_FACTOR * regval - TEMPERATURE_SENSOR_LL_DAC_FACTOR * tsens->tsens_attribute->offset - TEMPERATURE_SENSOR_LL_OFFSET_FACTOR;
+    int result = TEMPERATURE_SENSOR_LL_ADC_FACTOR_INT * regval - TEMPERATURE_SENSOR_LL_DAC_FACTOR_INT * tsens->tsens_attribute->offset - TEMPERATURE_SENSOR_LL_OFFSET_FACTOR_INT;
+    return (result / TEMPERATURE_SENSOR_LL_DENOMINATOR);
 }
 
 esp_err_t temperature_sensor_set_absolute_threshold(temperature_sensor_handle_t tsens, const temperature_sensor_abs_threshold_config_t *abs_cfg)

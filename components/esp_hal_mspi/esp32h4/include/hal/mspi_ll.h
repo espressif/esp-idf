@@ -33,6 +33,10 @@
 #define MSPI_LL_PERIPH_NUM                            2
 #define MSPI_TIMING_LL_MSPI_ID_0                      0
 #define MSPI_TIMING_LL_MSPI_ID_1                      1
+
+// PSRAM frequency should be constrained by AXI frequency to avoid FIFO underflow.
+#define MSPI_TIMING_LL_PSRAM_FREQ_AXI_CONSTRAINED     1
+
 #define MSPI_LL_EVENT_SLV_ST_END                      (1<<3)
 #define MSPI_LL_EVENT_MST_ST_END                      (1<<4)
 #define MSPI_LL_EVENT_ECC_ERR                         (1<<5)

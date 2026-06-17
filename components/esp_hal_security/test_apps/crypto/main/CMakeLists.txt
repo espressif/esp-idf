@@ -23,6 +23,7 @@ endif()
 
 if(CONFIG_CRYPTO_IS_KEY_MANAGER_SUPPORTED)
    list(APPEND srcs "key_manager/test_key_manager.c"
+                    "key_manager/km_ecdh0_verify.c"
                     "$ENV{IDF_PATH}/components/esp_security/src/esp_key_mgr.c")
    list(APPEND priv_include_dirs "$ENV{IDF_PATH}/components/esp_security/include")
 endif()
@@ -72,7 +73,7 @@ if(CONFIG_SOC_SHA_SUPPORTED)
    endif()
 endif()
 
-if(CONFIG_SOC_FLASH_ENCRYPTION_XTS_AES)
+if(CONFIG_SOC_FLASH_ENCRYPTION_XTS_AES AND CONFIG_CRYPTO_TEST_APP_ENABLE_XTS_AES_TESTS)
    list(APPEND srcs "xts_aes/test_xts_aes.c")
 endif()
 

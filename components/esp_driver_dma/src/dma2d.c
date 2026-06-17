@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,7 @@
 #include "hal/dma2d_periph.h"
 #include "soc/soc_caps.h"
 #include "esp_bit_defs.h"
+#include "esp_efuse.h"
 
 /**
  * The 2D-DMA driver is designed with a pool & client model + queue design pattern.
@@ -377,7 +378,6 @@ esp_err_t dma2d_acquire_pool(const dma2d_pool_config_t *config, dma2d_pool_handl
             pre_alloc_group->rx_channel_reserved_mask = dma2d_rx_channel_reserved_mask[group_id];
             pre_alloc_group->tx_periph_m2m_free_id_mask = DMA2D_LL_TX_CHANNEL_PERIPH_M2M_AVAILABLE_ID_MASK;
             pre_alloc_group->rx_periph_m2m_free_id_mask = DMA2D_LL_RX_CHANNEL_PERIPH_M2M_AVAILABLE_ID_MASK;
-            pre_alloc_group->intr_priority = -1;
             for (int i = 0; i < DMA2D_LL_GET(TX_CHANS_PER_INST); i++) {
                 pre_alloc_group->tx_chans[i] = &pre_alloc_tx_channels[i];
                 dma2d_tx_channel_t *tx_chan = pre_alloc_group->tx_chans[i];
@@ -417,51 +417,38 @@ esp_err_t dma2d_acquire_pool(const dma2d_pool_config_t *config, dma2d_pool_handl
         s_platform.group_ref_counts[group_id]++;
     }
 
-    // Allocate interrupts
-    // First figure out the interrupt priority
-    bool intr_priority_conflict = false;
-    if (s_platform.groups[group_id]->intr_priority == -1) {
-        s_platform.groups[group_id]->intr_priority = config->intr_priority;
-    } else if (config->intr_priority != 0) {
-        intr_priority_conflict = (s_platform.groups[group_id]->intr_priority != config->intr_priority);
-    }
-    ESP_GOTO_ON_FALSE(!intr_priority_conflict, ESP_ERR_INVALID_ARG, wrap_up, TAG, "intr_priority conflict, already is %d but attempt to %" PRIu32, s_platform.groups[group_id]->intr_priority, config->intr_priority);
-    uint32_t intr_flags = DMA2D_INTR_ALLOC_FLAGS;
-    if (s_platform.groups[group_id]->intr_priority) {
-        intr_flags |= (1 << s_platform.groups[group_id]->intr_priority);
-    } else {
-        intr_flags |= ESP_INTR_FLAG_LOWMED;
-    }
-
     // Allocate TX and RX interrupts
+    uint32_t intr_flags = DMA2D_INTR_ALLOC_FLAGS | (config->intr_priority ? (1 << config->intr_priority) : ESP_INTR_FLAG_LOWMED);
     if (s_platform.groups[group_id]) {
         for (int i = 0; i < DMA2D_LL_GET(RX_CHANS_PER_INST); i++) {
             dma2d_rx_channel_t *rx_chan = s_platform.groups[group_id]->rx_chans[i];
             if (rx_chan->base.intr == NULL) {
-                ret = esp_intr_alloc_intrstatus(dma2d_periph_signals.groups[group_id].rx_irq_id[i],
-                                                intr_flags,
-                                                (uint32_t)dma2d_ll_rx_get_interrupt_status_reg(s_platform.groups[group_id]->hal.dev, i),
-                                                DMA2D_LL_RX_EVENT_MASK, dma2d_default_isr, &rx_chan->base, &rx_chan->base.intr);
-                if (ret != ESP_OK) {
-                    ret = ESP_FAIL;
-                    ESP_LOGE(TAG, "alloc interrupt failed on rx channel (%d, %d)", group_id, i);
-                    goto wrap_up;
-                }
+                esp_intr_alloc_info_t intr_info = {
+                    .source = dma2d_periph_signals.groups[group_id].rx_irq_id[i],
+                    .flags = intr_flags,
+                    .intrstatusreg = (uint32_t)dma2d_ll_rx_get_interrupt_status_reg(s_platform.groups[group_id]->hal.dev, i),
+                    .intrstatusmask = DMA2D_LL_RX_EVENT_MASK,
+                    .handler = dma2d_default_isr,
+                    .arg = &rx_chan->base,
+                    .bind_by.name = dma2d_periph_signals.groups[group_id].module_name,
+                };
+                ESP_GOTO_ON_ERROR(esp_intr_alloc_info(&intr_info, &rx_chan->base.intr), wrap_up, TAG, "alloc interrupt failed on rx channel (%d, %d)", group_id, i);
             }
         }
 
         for (int i = 0; i < DMA2D_LL_GET(TX_CHANS_PER_INST); i++) {
             dma2d_tx_channel_t *tx_chan = s_platform.groups[group_id]->tx_chans[i];
             if (tx_chan->base.intr == NULL) {
-                ret = esp_intr_alloc_intrstatus(dma2d_periph_signals.groups[group_id].tx_irq_id[i],
-                                                intr_flags,
-                                                (uint32_t)dma2d_ll_tx_get_interrupt_status_reg(s_platform.groups[group_id]->hal.dev, i),
-                                                DMA2D_LL_TX_EVENT_MASK, dma2d_default_isr, &tx_chan->base, &tx_chan->base.intr);
-                if (ret != ESP_OK) {
-                    ret = ESP_FAIL;
-                    ESP_LOGE(TAG, "alloc interrupt failed on tx channel (%d, %d)", group_id, i);
-                    goto wrap_up;
-                }
+                esp_intr_alloc_info_t intr_info = {
+                    .source = dma2d_periph_signals.groups[group_id].tx_irq_id[i],
+                    .flags = intr_flags,
+                    .intrstatusreg = (uint32_t)dma2d_ll_tx_get_interrupt_status_reg(s_platform.groups[group_id]->hal.dev, i),
+                    .intrstatusmask = DMA2D_LL_TX_EVENT_MASK,
+                    .handler = dma2d_default_isr,
+                    .arg = &tx_chan->base,
+                    .bind_by.name = dma2d_periph_signals.groups[group_id].module_name,
+                };
+                ESP_GOTO_ON_ERROR(esp_intr_alloc_info(&intr_info, &tx_chan->base.intr), wrap_up, TAG, "alloc interrupt failed on tx channel (%d, %d)", group_id, i);
             }
         }
     }
@@ -584,7 +571,7 @@ esp_err_t dma2d_connect(dma2d_channel_handle_t dma2d_chan, const dma2d_trigger_t
         dma2d_ll_tx_enable_auto_write_back(group->hal.dev, channel_id, false);
         dma2d_ll_tx_enable_eof_mode(group->hal.dev, channel_id, true);
         dma2d_ll_tx_enable_descriptor_burst(group->hal.dev, channel_id, false);
-        dma2d_ll_tx_set_data_burst_length(group->hal.dev, channel_id, DMA2D_DATA_BURST_LENGTH_128);
+        dma2d_ll_tx_set_data_burst_length(group->hal.dev, channel_id, 128);
         dma2d_ll_tx_enable_page_bound_wrap(group->hal.dev, channel_id, true);
         dma2d_ll_tx_set_macro_block_size(group->hal.dev, channel_id, DMA2D_MACRO_BLOCK_SIZE_NONE);
         if ((1 << channel_id) & DMA2D_LL_TX_CHANNEL_SUPPORT_CSC_MASK) {
@@ -608,7 +595,7 @@ esp_err_t dma2d_connect(dma2d_channel_handle_t dma2d_chan, const dma2d_trigger_t
         dma2d_ll_rx_enable_owner_check(group->hal.dev, channel_id, false);
         dma2d_ll_rx_set_auto_return_owner(group->hal.dev, channel_id, DMA2D_DESCRIPTOR_BUFFER_OWNER_CPU); // After auto write back, the owner field will be cleared
         dma2d_ll_rx_enable_descriptor_burst(group->hal.dev, channel_id, false);
-        dma2d_ll_rx_set_data_burst_length(group->hal.dev, channel_id, DMA2D_DATA_BURST_LENGTH_128);
+        dma2d_ll_rx_set_data_burst_length(group->hal.dev, channel_id, 128);
         dma2d_ll_rx_enable_page_bound_wrap(group->hal.dev, channel_id, true);
         dma2d_ll_rx_set_macro_block_size(group->hal.dev, channel_id, DMA2D_MACRO_BLOCK_SIZE_NONE);
         if ((1 << channel_id) & DMA2D_LL_RX_CHANNEL_SUPPORT_CSC_MASK) {
@@ -711,8 +698,14 @@ esp_err_t dma2d_set_desc_addr(dma2d_channel_handle_t dma2d_chan, intptr_t desc_b
 {
     esp_err_t ret = ESP_OK;
     ESP_GOTO_ON_FALSE_ISR(dma2d_chan && desc_base_addr, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    // 2D-DMA descriptor addr needs 8-byte alignment and not in TCM (addr not in TCM is IDF restriction)
-    ESP_GOTO_ON_FALSE_ISR((desc_base_addr & 0x7) == 0 && !esp_ptr_in_tcm((void *)desc_base_addr), ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    // 2D-DMA descriptor addr needs 8-byte alignment and not in SPM (addr not in SPM is IDF restriction)
+    bool addr_in_spm = false;
+#if SOC_MEM_SPM_SUPPORTED
+    addr_in_spm = esp_ptr_in_spm((void *)desc_base_addr);
+#endif
+    ESP_GOTO_ON_FALSE_ISR((desc_base_addr & 0x7) == 0 && !addr_in_spm, ESP_ERR_INVALID_ARG, err, TAG, "invalid descriptor base addr");
+    // When flash encryption is enabled, the descriptor must be in internal RAM because descriptor size is not 16-byte aligned, which breaks flash encryption alignment restriction
+    ESP_GOTO_ON_FALSE_ISR(!esp_efuse_is_flash_encryption_enabled() || esp_ptr_internal((void *)desc_base_addr), ESP_ERR_INVALID_ARG, err, TAG, "invalid description base addr");
 
     dma2d_group_t *group = dma2d_chan->group;
     int channel_id = dma2d_chan->channel_id;
@@ -828,19 +821,30 @@ esp_err_t dma2d_set_transfer_ability(dma2d_channel_handle_t dma2d_chan, const dm
 {
     esp_err_t ret = ESP_OK;
     ESP_GOTO_ON_FALSE_ISR(dma2d_chan && ability, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    ESP_GOTO_ON_FALSE_ISR(ability->data_burst_length < DMA2D_DATA_BURST_LENGTH_INVALID, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    ESP_GOTO_ON_FALSE_ISR(ability->data_burst_length && ((ability->data_burst_length & (ability->data_burst_length - 1)) == 0), ESP_ERR_INVALID_ARG, err, TAG, "invalid argument"); // burst size must be power of 2
     ESP_GOTO_ON_FALSE_ISR(ability->mb_size < DMA2D_MACRO_BLOCK_SIZE_INVALID, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
 
     dma2d_group_t *group = dma2d_chan->group;
     int channel_id = dma2d_chan->channel_id;
 
+    // When flash encryption is enabled, and the channel is accessing external memory, burst length has to be as least as the encryption alignment restriction size
+    uint32_t data_burst_length = ability->data_burst_length;
+#if SOC_PSRAM_DMA_CAPABLE || SOC_DMA_CAN_ACCESS_FLASH
+    if (esp_efuse_is_flash_encryption_enabled() && ability->access_ext_mem) {
+        if (data_burst_length < SOC_MEMSPI_ENCRYPTION_ALIGNMENT) {
+            data_burst_length = SOC_MEMSPI_ENCRYPTION_ALIGNMENT;
+            ESP_LOGW(TAG, "channel access encrypted external memory, adjust burst size to %d", SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
+        }
+    }
+#endif
+
     if (dma2d_chan->direction == DMA2D_CHANNEL_DIRECTION_TX) {
         dma2d_ll_tx_enable_descriptor_burst(group->hal.dev, channel_id, ability->desc_burst_en);
-        dma2d_ll_tx_set_data_burst_length(group->hal.dev, channel_id, ability->data_burst_length);
+        dma2d_ll_tx_set_data_burst_length(group->hal.dev, channel_id, data_burst_length);
         dma2d_ll_tx_set_macro_block_size(group->hal.dev, channel_id, ability->mb_size);
     } else {
         dma2d_ll_rx_enable_descriptor_burst(group->hal.dev, channel_id, ability->desc_burst_en);
-        dma2d_ll_rx_set_data_burst_length(group->hal.dev, channel_id, ability->data_burst_length);
+        dma2d_ll_rx_set_data_burst_length(group->hal.dev, channel_id, data_burst_length);
         dma2d_ll_rx_set_macro_block_size(group->hal.dev, channel_id, ability->mb_size);
     }
 

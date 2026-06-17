@@ -4,6 +4,9 @@ components/ulp/test_apps/lp_core/lp_core_basic_tests:
   disable:
     - if: SOC_LP_CORE_SUPPORTED != 1
     - if: CONFIG_NAME == "xtal" and SOC_CLK_LP_FAST_SUPPORT_XTAL != 1
+    - if: IDF_TARGET in ["esp32s31"] and CONFIG_NAME == "xtal"
+      temporary: true
+      reason: CONFIG_RTC_FAST_CLK_SRC_XTAL not supported yet # TODO: [ESP32S31] IDF-15576
     - if: CONFIG_NAME == "lp_vad" and SOC_LP_VAD_SUPPORTED != 1
   depends_components:
     - ulp
@@ -12,6 +15,16 @@ components/ulp/test_apps/lp_core/lp_core_basic_tests:
     - esp_hal_i2c
     - esp_hal_touch_sens
     - esp_hal_gpspi
+    - esp_hal_pmu
+    - esp_hw_support
+
+
+components/ulp/test_apps/lp_core/lp_core_hp_mem:
+  disable:
+    - if: SOC_LP_CORE_SUPPORTED != 1
+  depends_components:
+    - ulp
+    - esp_hal_uart
     - esp_hal_pmu
     - esp_hw_support
 

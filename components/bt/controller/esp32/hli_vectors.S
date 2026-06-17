@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include <xtensa/coreasm.h>
 #include <xtensa/corebits.h>
 #include <xtensa/config/system.h>
+#include "xtensa/config/core-isa.h"
 #include "xtensa_context.h"
 #include "sdkconfig.h"
 #include "soc/soc.h"
@@ -46,7 +47,7 @@ _l4_save_ctx:
 
 xt_highint4:
 
-#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+#if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
     /*
     Here, Timer2 is used to count a little time(50us).
     The subsequent dram0 write operation is blocked due to live lock, which will
@@ -87,16 +88,20 @@ xt_highint4:
     s32i    a2, a0, 4
     rsr     a2, XT_REG_SAR
     s32i    a2, a0, 8
+    #if XCHAL_HAVE_LOOPS
     rsr     a2, XT_REG_LBEG
     s32i    a2, a0, 12
     rsr     a2, XT_REG_LEND
     s32i    a2, a0, 16
-    rsr     a2, XT_REG_LCOUNT
+    /* Save and disable active zero-overhead loop state while executing high-level ISR code. */
+    movi    a2,  0
+    xsr     a2, XT_REG_LCOUNT   /* a2 = LCOUNT, LCOUNT = 0 */
     s32i    a2, a0, 20
+    #endif
     rsr     a2, EPC1
     s32i    a2, a0, 24
 
-#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+#if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
     movi    a0, 0
     xsr     a0, XT_REG_INTENABLE     /* disable all interrupts */
     movi    a2, ~(1<<16)
@@ -189,12 +194,14 @@ _highint4_stack_switch:
     movi    a0, _l4_save_ctx + SPECREG_OFFSET
     l32i    a2, a0, 8
     wsr     a2, XT_REG_SAR
+    #if XCHAL_HAVE_LOOPS
     l32i    a2, a0, 12
     wsr     a2, XT_REG_LBEG
     l32i    a2, a0, 16
     wsr     a2, XT_REG_LEND
     l32i    a2, a0, 20
     wsr     a2, XT_REG_LCOUNT
+    #endif
     l32i    a2, a0, 24
     wsr     a2, EPC1
 

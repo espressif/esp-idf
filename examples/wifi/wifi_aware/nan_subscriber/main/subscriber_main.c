@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -37,6 +37,29 @@
 
 static const char *TAG = "subscriber";
 
+#ifdef CONFIG_EXAMPLE_NAN_SEC_METHOD_PMK
+/* Decode lowercase hex string into a fixed-size byte buffer. Returns true on
+ * success. Mirrors the helper in the publisher example so both endpoints
+ * derive the same PMK from the same hex input. */
+static bool decode_hex_string(const char *hex, uint8_t *out, size_t out_len)
+{
+    if (!hex || !out) {
+        return false;
+    }
+    if (strlen(hex) != out_len * 2) {
+        return false;
+    }
+    for (size_t i = 0; i < out_len; i++) {
+        unsigned int byte;
+        if (sscanf(hex + 2 * i, "%2x", &byte) != 1) {
+            return false;
+        }
+        out[i] = (uint8_t)byte;
+    }
+    return true;
+}
+#endif
+
 static EventGroupHandle_t nan_event_group;
 
 const int NAN_SERVICE_MATCH = BIT0;
@@ -44,6 +67,8 @@ const int NDP_CONFIRMED = BIT1;
 const int NDP_FAILED = BIT2;
 
 static wifi_event_nan_svc_match_t g_svc_match_evt;
+
+static uint8_t s_ipv6_identifier[NAN_IPV6_IDENTIFIER_LEN] = {0};
 
 static void nan_receive_event_handler(void *arg, esp_event_base_t event_base,
                                       int32_t event_id, void *event_data)
@@ -58,6 +83,23 @@ static void nan_receive_event_handler(void *arg, esp_event_base_t event_base,
 #ifdef CONFIG_EXAMPLE_NAN_SEND_PING
 static uint8_t g_peer_ndi[ETH_ALEN];
 
+static void nan_ndp_confirmed_event_handler(void *arg, esp_event_base_t event_base,
+        int32_t event_id, void *event_data)
+{
+    wifi_event_ndp_confirm_t *evt = (wifi_event_ndp_confirm_t *)event_data;
+
+    if (evt->status == NDP_STATUS_REJECTED) {
+        ESP_LOGE(TAG, "NDP request to Peer "MACSTR" rejected [NDP ID - %d]", MAC2STR(evt->peer_nmi), evt->ndp_id);
+        xEventGroupSetBits(nan_event_group, NDP_FAILED);
+    } else {
+        memcpy(g_peer_ndi, evt->peer_ndi, sizeof(g_peer_ndi));
+        memcpy(s_ipv6_identifier, evt->ipv6_identifier, sizeof(evt->ipv6_identifier));
+        xEventGroupSetBits(nan_event_group, NDP_CONFIRMED);
+    }
+}
+#endif
+
+#ifdef CONFIG_EXAMPLE_NAN_SEND_PING
 static void cmd_ping_on_ping_success(esp_ping_handle_t hdl, void *args)
 {
     uint8_t ttl;
@@ -101,28 +143,13 @@ static void cmd_ping_on_ping_end(esp_ping_handle_t hdl, void *args)
     esp_ping_delete_session(hdl);
 }
 
-static void nan_ndp_confirmed_event_handler(void *arg, esp_event_base_t event_base,
-        int32_t event_id, void *event_data)
-{
-    wifi_event_ndp_confirm_t *evt = (wifi_event_ndp_confirm_t *)event_data;
-
-    if (evt->status == NDP_STATUS_REJECTED) {
-        ESP_LOGE(TAG, "NDP request to Peer "MACSTR" rejected [NDP ID - %d]", MAC2STR(evt->peer_nmi), evt->ndp_id);
-        xEventGroupSetBits(nan_event_group, NDP_FAILED);
-    } else {
-        memcpy(g_peer_ndi, evt->peer_ndi, sizeof(g_peer_ndi));
-        xEventGroupSetBits(nan_event_group, NDP_CONFIRMED);
-    }
-}
-
 static void ping_nan_peer(esp_netif_t *netif)
 {
     esp_ping_config_t config = ESP_PING_DEFAULT_CONFIG();
     config.task_stack_size = 4096;
     ip_addr_t target_addr = {0};
 
-    esp_wifi_nan_get_ipv6_linklocal_from_mac(&target_addr.u_addr.ip6, g_peer_ndi);
-    target_addr.type = IPADDR_TYPE_V6;
+    ESP_NAN_SET_IPV6_LINKLOCAL_FROM_IDENTIFIER(target_addr, s_ipv6_identifier);
     config.target_addr = target_addr;
     config.interface = esp_netif_get_netif_impl_index(netif);
 
@@ -183,6 +210,7 @@ void wifi_nan_subscribe(void)
     esp_wifi_nan_sync_start(&nan_cfg);
 
     /* Subscribe a service */
+    memset(s_ipv6_identifier, 0, sizeof(s_ipv6_identifier));
     uint8_t sub_id;
     wifi_nan_subscribe_cfg_t subscribe_cfg = {
         .service_name = EXAMPLE_NAN_SERV_NAME,
@@ -193,7 +221,34 @@ void wifi_nan_subscribe(void)
 #endif
         .matching_filter = EXAMPLE_NAN_MATCHING_FILTER,
         .single_match_event = 1,
+#ifdef CONFIG_EXAMPLE_NAN_SECURITY_ENABLED
+        .security_reqd = 1,
+#endif
     };
+#ifdef CONFIG_EXAMPLE_NAN_SECURITY_ENABLED
+    wifi_nan_discovery_security_params_t security_cfg = {
+        .num_credentials = 1,
+        .creds = {
+            {
+                .csid = WIFI_NAN_CSID_NCS_SK_128,
+#ifdef CONFIG_EXAMPLE_NAN_SEC_METHOD_PMK
+                .use_pmk = true,
+#else
+                .use_pmk = false,
+                .passphrase = CONFIG_EXAMPLE_NAN_PASSPHRASE,
+#endif
+            },
+        },
+    };
+    subscribe_cfg.security_cfg = &security_cfg;
+#endif
+#if defined(CONFIG_EXAMPLE_NAN_SECURITY_ENABLED) && defined(CONFIG_EXAMPLE_NAN_SEC_METHOD_PMK)
+    if (!decode_hex_string(CONFIG_EXAMPLE_NAN_PMK, security_cfg.creds[0].pmk,
+                           sizeof(security_cfg.creds[0].pmk))) {
+        ESP_LOGE(TAG, "Failed to decode CONFIG_EXAMPLE_NAN_PMK");
+        return;
+    }
+#endif
 
     sub_id = esp_wifi_nan_subscribe_service(&subscribe_cfg);
     if (sub_id == 0) {
@@ -216,7 +271,6 @@ void wifi_nan_subscribe(void)
             return;
         }
         memcpy((char *)fup.ssi, EXAMPLE_NAN_SVC_MSG, fup.ssi_len);
-
         if (esp_wifi_nan_send_message(&fup) == ESP_OK)
             ESP_LOGI(TAG, "Sending message '%s' to Publisher "MACSTR" ...",
                           EXAMPLE_NAN_SVC_MSG, MAC2STR(g_svc_match_evt.pub_if_mac));
@@ -229,7 +283,8 @@ void wifi_nan_subscribe(void)
         memcpy(ndp_req.peer_mac, g_svc_match_evt.pub_if_mac, sizeof(ndp_req.peer_mac));
         esp_wifi_nan_datapath_req(&ndp_req);
 
-        EventBits_t bits_2 = xEventGroupWaitBits(nan_event_group, NDP_CONFIRMED, pdFALSE, pdFALSE, portMAX_DELAY);
+        EventBits_t bits_2 = xEventGroupWaitBits(nan_event_group, NDP_CONFIRMED | NDP_FAILED,
+                                                 pdFALSE, pdFALSE, portMAX_DELAY);
         if (bits_2 & NDP_CONFIRMED) {
             vTaskDelay(5000 / portTICK_PERIOD_MS);
             ping_nan_peer(nan_netif);

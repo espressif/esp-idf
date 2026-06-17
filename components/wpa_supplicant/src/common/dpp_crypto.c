@@ -35,8 +35,6 @@ const struct dpp_curve_params dpp_curves[] = {
 #endif
 	{ NULL, 0, 0, 0, 0, NULL, 0, NULL }
 };
-
-
 const struct dpp_curve_params * dpp_get_curve_name(const char *name)
 {
 	int i;

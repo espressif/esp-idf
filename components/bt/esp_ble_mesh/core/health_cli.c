@@ -270,7 +270,7 @@ int bt_mesh_health_fault_test(bt_mesh_client_common_param_t *param,
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_FAULT_TEST, 3);
 
-    BT_DBG("HealthFaultTest, CID 0x%04x TestID 0x%04x NeedAck %u", cid, test_id, need_ack);
+    BT_DBG("HealthFaultTest, CID 0x%04x TestID 0x%02x NeedAck %u", cid, test_id, need_ack);
 
     bt_mesh_model_msg_init(&msg, need_ack ? OP_HEALTH_FAULT_TEST : OP_HEALTH_FAULT_TEST_UNREL);
     net_buf_simple_add_u8(&msg, test_id);

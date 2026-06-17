@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -120,11 +120,17 @@ TEST_CASE_MULTIPLE_STAGES("invalid access to cache raises panic (APP CPU)", "[ms
 #endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 
 #if MSPI_LL_AXI_DISABLE_SUPPORTED
+#if CONFIG_IDF_TARGET_ESP32P4
+#define AXI_RESET_REASON    ESP_RST_WDT
+#elif CONFIG_IDF_TARGET_ESP32S31
+//aligned with rom impl
+#define AXI_RESET_REASON    5
+#endif
 static void reset_after_disable_axi(void)
 {
-    //For now we only support AXI disabling LL APIs, so the reset reason will be `ESP_RST_WDT`
+    //For now we only support AXI disabling LL APIs, so the reset reason will be AXI_RESET_REASON
     //This will be updated when AXI disabling methods are fully supported
-    TEST_ASSERT_EQUAL(ESP_RST_WDT, esp_reset_reason());
+    TEST_ASSERT_EQUAL(AXI_RESET_REASON, esp_reset_reason());
 }
 
 static void NOINLINE_ATTR IRAM_ATTR s_invalid_axi_access(void)

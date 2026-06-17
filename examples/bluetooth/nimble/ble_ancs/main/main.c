@@ -72,7 +72,7 @@ static uint8_t ext_adv_pattern_1[] = {
     0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
     0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
     0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x18, 0x11,
-    0x0e, BLE_HS_ADV_TYPE_COMP_NAME, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'a', 'n', 'c', 's', '-', 'e',
+    0x0d, BLE_HS_ADV_TYPE_COMP_NAME, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'a', 'n', 'c', 's', '-', 'e',
 };
 #endif
 
@@ -338,14 +338,13 @@ ext_ble_ancs_advertise(void)
     }
 
     /* use defaults for non-set params */
-    memset (&params, 0, sizeof(params));
+    memset(&params, 0, sizeof(params));
 
     /* enable connectable advertising */
     params.connectable = 1;
 
-    /* advertise using random addr */
+    /* advertise using configured addr */
     params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
-
     params.primary_phy = BLE_HCI_LE_PHY_1M;
     params.secondary_phy = BLE_HCI_LE_PHY_2M;
     params.tx_power = 127;
@@ -358,8 +357,6 @@ ext_ble_ancs_advertise(void)
     rc = ble_gap_ext_adv_configure(instance, &params, NULL,
                                    ble_ancs_gap_event, NULL);
     assert (rc == 0);
-
-    /* in this case only scan response is allowed */
 
     /* get mbuf for scan rsp data */
     data = os_msys_get_pkthdr(sizeof(ext_adv_pattern_1), 0);
@@ -578,10 +575,18 @@ ble_ancs_gap_event(struct ble_gap_event *event, void *arg)
                                                 notificationUID, sizeof(p_attr)/sizeof(ble_noti_attr_list_t), p_attr);
             }
         } else if (event->notify_rx.attr_handle == data_source_handle) {
+            uint16_t new_len = data_buffer.len + event->notify_rx.om->om_len;
+            if (new_len > sizeof(data_buffer.buffer)) {
+                MODLOG_DFLT(ERROR, "data_buffer overflow: %d + %d > %d",
+                            data_buffer.len, event->notify_rx.om->om_len,
+                            (int)sizeof(data_buffer.buffer));
+                data_buffer.len = 0;
+                return 0;
+            }
             memcpy(&data_buffer.buffer[data_buffer.len],
-            event->notify_rx.om->om_data,
-            event->notify_rx.om->om_len);
-            data_buffer.len += event->notify_rx.om->om_len;
+                   event->notify_rx.om->om_data,
+                   event->notify_rx.om->om_len);
+            data_buffer.len = new_len;
 
             if (event->notify_rx.om->om_len == (MTU_size - 3)) {
                 esp_timer_start_periodic(periodic_timer, 500000);
@@ -640,6 +645,8 @@ ble_ancs_gap_event(struct ble_gap_event *event, void *arg)
 
         if (event->passkey.params.action == BLE_SM_IOACT_DISP) {
             pkey.action = event->passkey.params.action;
+            /* WARNING: Hardcoded passkey for demonstration only.
+             * In production, generate a random passkey per pairing. */
             pkey.passkey = 123456; // This is the passkey to be entered on peer
             ESP_LOGI(tag, "Enter passkey %" PRIu32 "on the peer side", pkey.passkey);
             rc = ble_sm_inject_io(event->passkey.conn_handle, &pkey);

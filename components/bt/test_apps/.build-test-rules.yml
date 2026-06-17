@@ -2,7 +2,8 @@
 
 components/bt/test_apps/basic_unit_test:
   disable:
-    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+# TODO: Need to enable test for ESP32-S31 for tinycrypt ECC P-192 test
+    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32c5"]
       reason: Sufficient to run the tests on one chip of each architecture
   depends_components:
     - bt

@@ -107,6 +107,67 @@ Xtensa 特殊寄存器头文件已更新，使用新的命名约定。旧的 ``s
         handle_timer_wakeup();
     }
 
+.. _gpio_wakeup_api_changes:
+
+GPIO 唤醒 API 变更
+^^^^^^^^^^^^^^^^^^
+
+以下 API 和类型已被移除，并替换为支持 Deep Sleep 和 Light Sleep（当外设电源域掉电时）的新 API：
+
+**已移除的 API：**
+
+- :func:`esp_deep_sleep_enable_gpio_wakeup` - 请使用 :func:`esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown` 替代
+- :func:`gpio_deep_sleep_wakeup_enable` - 请使用 :func:`gpio_wakeup_enable_on_hp_periph_powerdown_sleep` 替代
+- :func:`gpio_deep_sleep_wakeup_disable` - 请使用 :func:`gpio_wakeup_disable_on_hp_periph_powerdown_sleep` 替代
+
+**已移除的类型：**
+
+- :cpp:type:`esp_deepsleep_gpio_wake_up_mode_t` - 请使用 :cpp:type:`esp_sleep_gpio_wake_up_mode_t` 替代
+
+**已移除的宏：**
+
+- ``GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO()`` - 请使用 ``GPIO_IS_HP_PERIPH_PD_WAKEUP_VALID_IO()`` 替代
+
+**迁移示例：**
+
+旧代码：
+
+.. code-block:: c
+
+    #include "esp_sleep.h"
+    #include "driver/gpio.h"
+
+    // 为深度睡眠启用 GPIO 唤醒
+    esp_deep_sleep_enable_gpio_wakeup(BIT(GPIO_NUM_0), ESP_GPIO_WAKEUP_GPIO_LOW);
+
+    // 或使用 GPIO 驱动 API
+    gpio_deep_sleep_wakeup_enable(GPIO_NUM_0, GPIO_INTR_LOW_LEVEL);
+
+    // 检查 GPIO 是否可用于深度睡眠唤醒
+    if (GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO(GPIO_NUM_0)) {
+        // ...
+    }
+
+新代码：
+
+.. code-block:: c
+
+    #include "esp_sleep.h"
+    #include "driver/gpio.h"
+
+    // 为深度睡眠或轻量睡眠（当外设电源域掉电时）启用 GPIO 唤醒
+    esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown(BIT(GPIO_NUM_0), ESP_GPIO_WAKEUP_GPIO_LOW);
+
+    // 或使用 GPIO 驱动 API
+    gpio_wakeup_enable_on_hp_periph_powerdown_sleep(GPIO_NUM_0, GPIO_INTR_LOW_LEVEL);
+
+    // 检查 GPIO 是否可用于外设电源域掉电睡眠唤醒
+    if (GPIO_IS_HP_PERIPH_PD_WAKEUP_VALID_IO(GPIO_NUM_0)) {
+        // ...
+    }
+
+**注意：** 新的 API 同时支持 Deep Sleep 和 Light Sleep 模式（当在 menuconfig 中启用 ``PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`` 时）。
+
 引导加载程序
 ------------
 

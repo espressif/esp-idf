@@ -271,13 +271,13 @@ static inline esp_err_t ulp_riscv_i2c_wait_for_interrupt(int32_t ticks_to_wait)
             break;
         }
 
-        if (ticks_to_wait > -1) {
+        if ((uint32_t)ticks_to_wait != (uint32_t) -1) {
             /* If the ticks_to_wait value is not -1, keep track of ticks and
              * break from the loop once the timeout is reached.
              */
             vTaskDelay(1);
             to++;
-            if (to >= ticks_to_wait) {
+            if (to >= (uint32_t)ticks_to_wait) {
                 ret = ESP_ERR_TIMEOUT;
                 break;
             }

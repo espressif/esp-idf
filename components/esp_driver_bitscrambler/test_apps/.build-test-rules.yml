@@ -3,4 +3,7 @@ components/esp_driver_bitscrambler/test_apps/bitscrambler:
     - if: SOC_BITSCRAMBLER_SUPPORTED != 1
   depends_components:
     - esp_driver_bitscrambler
+    - esp_driver_dma
     - esp_hal_dma
+    - esp_hw_support
+    - soc

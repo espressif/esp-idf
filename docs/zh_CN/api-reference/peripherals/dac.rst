@@ -22,27 +22,6 @@ DAC 外设支持以下列方式输出模拟信号：
 
 其他模拟输出选项可参考 :doc:`Sigma-Delta 调制 <sdm>` 和 :doc:`LED PWM 控制器 <ledc>`。这两个模块均输出高频的 PWM/PDM 信号，也可借助硬件低通滤波输出较低频率的模拟信号。
 
-DAC 文件结构
-------------
-
-.. figure:: ../../../_static/diagrams/dac/dac_file_structure.png
-    :align: center
-    :alt: DAC 文件结构
-
-    DAC 文件结构
-
-
-**需包含在 DAC 应用程序中的公共头文件包括：**
-
-- ``dac.h``：原有 DAC 驱动的最上层头文件，只包含在使用原有驱动 API 的应用程序中。
-- ``dac_oneshot.h``：新 DAC 驱动的最上层头文件，应包含在使用新驱动 API（单次模式）的应用程序中。
-- ``dac_cosine.h``：新 DAC 驱动的最上层头文件，应包含在使用新驱动 API（余弦模式）的应用程序中。
-- ``dac_continuous.h``：新 DAC 驱动的最上层头文件，应包含在使用新驱动 API（连续模式）的应用程序中。
-
-.. note::
-
-    原有驱动程序与新驱动程序无法共存。使用原有驱动需包含 ``dac.h``，使用新驱动需包含 ``dac_oneshot.h``、 ``dac_cosine.h`` 和 ``dac_continuous.h``。后续更新或将移除原有驱动程序。
-
 功能概览
 --------
 
@@ -111,6 +90,8 @@ IRAM 安全
 
 此时在 cache 被禁用时仍可以运行中断，但会增加 IRAM 内存消耗。
 
+.. _dac-iram-safe:
+
 线程安全
 ^^^^^^^^
 
@@ -119,7 +100,7 @@ IRAM 安全
 Kconfig 选项
 ^^^^^^^^^^^^^
 
-- :ref:`CONFIG_DAC_ISR_IRAM_SAFE` 控制默认 ISR 处理程序在 cache 被禁用时能否继续运行。更多信息可参考 `IRAM 安全 <#iram-safe>`__。
+- :ref:`CONFIG_DAC_ISR_IRAM_SAFE` 控制默认 ISR 处理程序在 cache 被禁用时能否继续运行。更多信息可参考 :ref:`dac-iram-safe`。
 - :ref:`CONFIG_DAC_ENABLE_DEBUG_LOG` 用于启用调试日志输出。启用该选项将增加固件的二进制文件大小。
 
 .. only:: esp32

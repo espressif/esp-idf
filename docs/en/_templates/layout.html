@@ -13,10 +13,12 @@
 
 <script>
     function submitFeedbackForm(user_likes_document) {
-        // Send to GA4 the user reaction
-        gtag('event', 'user_reaction', {
-            'user_likes_document': user_likes_document
-        });
+        // Send to GA4 the user reaction (gtag is only available when google_analytics_id is configured)
+        if (typeof gtag === 'function') {
+            gtag('event', 'user_reaction', {
+                'user_likes_document': user_likes_document
+            });
+        }
 
         if (user_likes_document === 1) {
             document.querySelector('.like-btn').classList.add('click-like-or-dislike');
@@ -50,14 +52,14 @@
 <div class="expand-feedback-content" id="expandContentLike">
     <ul style="text-align:center">
         <li>Thank you! We received your feedback.</li>
-        <li>If you have any comments, fill in <a href='https://www.espressif.com/en/company/documents/documentation_feedback?docId=4287&sections={{ title|striptags|e }} ({{ pagename }})&version={{ idf_target }} {{ release }} ({{ version }})'>Espressif Documentation Feedback Form</a>.</li>
+        <li>If you have any comments, fill in <a href='https://www.espressif.com/en/company/documents/documentation_feedback?docId=10757&sections={{ title|striptags|e }} ({{ pagename }})&version={{ idf_target }} {{ release }} ({{ version }})'>Espressif Documentation Feedback Form</a>.</li>
     </ul>
 </div>
 
 <div class="expand-feedback-content" id="expandContent">
     <ul style="text-align:center">
         <li>We value your feedback.</li>
-        <li>Let us know how we can improve this page by filling in <a href='https://www.espressif.com/en/company/documents/documentation_feedback?docId=4287&sections={{ title|striptags|e }} ({{ pagename }})&version={{ idf_target }} {{ release }} ({{ version }})'>Espressif Documentation Feedback Form</a>.</li>
+        <li>Let us know how we can improve this page by filling in <a href='https://www.espressif.com/en/company/documents/documentation_feedback?docId=10757&sections={{ title|striptags|e }} ({{ pagename }})&version={{ idf_target }} {{ release }} ({{ version }})'>Espressif Documentation Feedback Form</a>.</li>
     </ul>
 </div>
 

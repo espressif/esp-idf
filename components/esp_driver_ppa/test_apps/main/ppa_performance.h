@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
  */
 
 #if CONFIG_IDF_TARGET_ESP32P4
+
 #if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 #define PPA_SRM_MIN_PERFORMANCE_PX_PER_SEC      (21000 * 1000)  // k_min
 #define PPA_SRM_TIME_OFFSET                     (-26000)        // b_approx
@@ -28,4 +29,15 @@
 
 #define PPA_FILL_MIN_PERFORMANCE_PX_PER_SEC     (150000 * 1000)  // k_min
 #define PPA_FILL_TIME_OFFSET                    (-106000)        // b_approx
+
+#elif CONFIG_IDF_TARGET_ESP32S31
+
+#define PPA_SRM_MIN_PERFORMANCE_PX_PER_SEC      (25900 * 1000)  // k_min
+#define PPA_SRM_TIME_OFFSET                     (-64000)        // b_approx
+
+#define PPA_BLEND_MIN_PERFORMANCE_PX_PER_SEC    (22000 * 1000)  // k_min
+#define PPA_BLEND_TIME_OFFSET                   (-57000)        // b_approx
+
+#define PPA_FILL_MIN_PERFORMANCE_PX_PER_SEC     (79800 * 1000)  // k_min
+#define PPA_FILL_TIME_OFFSET                    (-137000)        // b_approx
 #endif

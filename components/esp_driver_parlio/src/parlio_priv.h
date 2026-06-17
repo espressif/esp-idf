@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -71,6 +71,16 @@
 // Use retention link only when the target supports sleep retention is enabled
 #define PARLIO_USE_RETENTION_LINK  (SOC_PARLIO_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
+#if SOC_PARLIO_SUPPORT_SLEEP_RETENTION
+typedef struct {
+    const periph_retention_module_t retention_module;
+    const regdma_entries_config_t *regdma_entry_array;
+    uint32_t array_size;
+} parlio_retention_desc_t;
+
+extern const parlio_retention_desc_t parlio_retention_infos[PARLIO_LL_GET(INST_NUM)];
+#endif // SOC_PARLIO_SUPPORT_SLEEP_RETENTION
+
 #define PARLIO_DMA_DESCRIPTOR_BUFFER_MAX_SIZE 4095
 
 #if defined(SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS) // Parlio uses GDMA
@@ -85,19 +95,6 @@
 
 // loop transmission requires ping-pong link to prevent data tearing.
 #define PARLIO_DMA_LINK_NUM         2
-
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define PARLIO_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define PARLIO_CLOCK_SRC_ATOMIC()
-#endif
-
-#if !SOC_RCC_IS_INDEPENDENT
-// Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
-#define PARLIO_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define PARLIO_RCC_ATOMIC()
-#endif  // SOC_RCC_IS_INDEPENDENT
 
 ///!< Logging settings
 #define TAG "parlio"

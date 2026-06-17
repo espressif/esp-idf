@@ -330,6 +330,10 @@ esp_err_t esp_local_ctrl_remove_property(const char *name)
         }
         local_ctrl_inst_ctx->props[i-1] = local_ctrl_inst_ctx->props[i];
     }
+    /* Clear the stale pointer left in the last slot after compaction to
+     * prevent a double-free if esp_local_ctrl_stop() is called before the
+     * slot is overwritten by a subsequent add_property(). */
+    local_ctrl_inst_ctx->props[local_ctrl_inst_ctx->props_count - 1] = NULL;
     local_ctrl_inst_ctx->props_count--;
     return ESP_OK;
 }

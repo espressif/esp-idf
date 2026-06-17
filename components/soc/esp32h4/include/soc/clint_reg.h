@@ -10,8 +10,6 @@
 extern "C" {
 #endif
 
-//TODO: [ESP32H4] IDF-12303
-
 /*CLINT MINT*/
 #define CLINT_MINT_SIP_REG          (DR_REG_CLINT_M_BASE + 0x0)
 /* CLINT_CPU_MINT_SIP : R/W ;bitpos:[0] ;default: 1'b0 ; */

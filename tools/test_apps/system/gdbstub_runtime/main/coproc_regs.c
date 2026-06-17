@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -7,7 +7,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#if CONFIG_IDF_TARGET_ARCH_RISCV
 #include "riscv/rvruntime-frames.h"
+#endif
 #include "soc/soc_caps.h"
 
 static SemaphoreHandle_t sem = NULL;
@@ -74,12 +76,26 @@ pie_start:
 #if SOC_CPU_HAS_FPU
 static void test_fpu(void * arg)
 {
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
+    struct {
+        float f[16];
+    } fpu_regs_sample, fpu_regs;
+#endif
+#if CONFIG_IDF_TARGET_ARCH_RISCV
     RvFPUSaveArea fpu_regs_sample, fpu_regs;
-
+#endif
     uint32_t *ptr = (uint32_t *)&fpu_regs_sample;
     for (int i = 0; i < sizeof(fpu_regs_sample)/sizeof(uint32_t); i++) {
-        ptr[i] = i + (uintptr_t) arg;
+        ptr[i] = i + (int) arg;
     }
+
+    /* Set FPU owner to current task by calling an instruction */
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
+    __asm__ volatile ("ssi f0, %0, 0" :: "a" (&fpu_regs));
+#endif
+#if CONFIG_IDF_TARGET_ARCH_RISCV
+    __asm__ volatile ("fsw ft0, %0" : "=m" (fpu_regs.ft0));
+#endif
 
 fpu_start:
     asm volatile ("nop");
@@ -88,6 +104,25 @@ fpu_start:
         vTaskDelay(50 / portTICK_PERIOD_MS);
     }
 
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
+    __asm__ volatile ("ssi f0, %0, 0" :: "a" (&fpu_regs));
+    __asm__ volatile ("ssi f1, %0, 4" :: "a" (&fpu_regs));
+    __asm__ volatile ("ssi f2, %0, 8" :: "a" (&fpu_regs));
+    __asm__ volatile ("ssi f3, %0, 12" :: "a" (&fpu_regs));
+    __asm__ volatile ("ssi f4, %0, 16" :: "a" (&fpu_regs));
+    __asm__ volatile ("ssi f5, %0, 20" :: "a" (&fpu_regs));
+    __asm__ volatile ("ssi f6, %0, 24" :: "a" (&fpu_regs));
+    __asm__ volatile ("ssi f7, %0, 28" :: "a" (&fpu_regs));
+    __asm__ volatile ("ssi f8, %0, 32" :: "a" (&fpu_regs));
+    __asm__ volatile ("ssi f9, %0, 36" :: "a" (&fpu_regs));
+    __asm__ volatile ("ssi f10, %0, 40" :: "a" (&fpu_regs));
+    __asm__ volatile ("ssi f11, %0, 44" :: "a" (&fpu_regs));
+    __asm__ volatile ("ssi f12, %0, 48" :: "a" (&fpu_regs));
+    __asm__ volatile ("ssi f13, %0, 52" :: "a" (&fpu_regs));
+    __asm__ volatile ("ssi f14, %0, 56" :: "a" (&fpu_regs));
+    __asm__ volatile ("ssi f15, %0, 60" :: "a" (&fpu_regs));
+#endif
+#if CONFIG_IDF_TARGET_ARCH_RISCV
     __asm__ volatile ("fsw ft0, %0" : "=m" (fpu_regs.ft0));
     __asm__ volatile ("fsw ft1, %0" : "=m" (fpu_regs.ft1));
     __asm__ volatile ("fsw ft2, %0" : "=m" (fpu_regs.ft2));
@@ -121,6 +156,7 @@ fpu_start:
     __asm__ volatile ("fsw ft10, %0" : "=m" (fpu_regs.ft10));
     __asm__ volatile ("fsw ft11, %0" : "=m" (fpu_regs.ft11));
     __asm__ volatile ("csrr %0, fcsr" : "=r" (fpu_regs.fcsr));
+#endif
 
     if (!memcmp(&fpu_regs_sample, &fpu_regs, sizeof(fpu_regs))) {
         xSemaphoreGive((SemaphoreHandle_t) sem);

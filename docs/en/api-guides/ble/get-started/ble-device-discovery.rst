@@ -263,7 +263,7 @@ These advertising behaviors can be combined into four common types of advertisin
         -   N
         -   Y
         -   `ADV_NONCONN_IND`
-        -   Used by beacon devices to advertising data without connection
+        -   Used by beacon devices to advertise data without connection
     *   -   N
         -   Y
         -   Y
@@ -1003,7 +1003,7 @@ Finally, we set the advertising parameters and initiate the advertising by calli
 
         ...
 
-        /* Set non-connetable and general discoverable mode to be a beacon */
+        /* Set non-connectable and general discoverable mode to be a beacon */
         adv_params.conn_mode = BLE_GAP_CONN_MODE_NON;
         adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
 

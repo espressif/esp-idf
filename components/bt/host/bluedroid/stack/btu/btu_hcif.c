@@ -50,7 +50,7 @@
 #include "stack/btu.h"
 
 extern void btm_process_cancel_complete(UINT8 status, UINT8 mode);
-extern void btm_ble_test_command_complete(UINT8 *p);
+extern void btm_ble_test_command_complete(UINT8 *p, UINT16 len);
 
 #if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 // BLE Channel Sounding parameter validation macros per BLE spec
@@ -100,7 +100,7 @@ static void btu_hcif_hardware_error_evt (UINT8 *p);
 static void btu_hcif_flush_occured_evt (void);
 static void btu_hcif_role_change_evt (UINT8 *p);
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
-static void btu_hcif_num_compl_data_pkts_evt (UINT8 *p);
+static void btu_hcif_num_compl_data_pkts_evt (UINT8 *p, UINT8 evt_len);
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
 static void btu_hcif_mode_change_evt (UINT8 *p);
@@ -171,6 +171,9 @@ static void btu_ble_phy_update_complete_evt(UINT8 *p);
 #if (BLE_50_EXTEND_SCAN_EN == TRUE)
 static void btu_ble_ext_adv_report_evt(UINT8 *p, UINT16 evt_len);
 #endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+static void btu_ble_monitor_adv_report_evt(UINT8 *p);
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 static void btu_ble_periodic_adv_sync_establish_evt(UINT8 *p, bool v2_evt);
 static void btu_ble_periodic_adv_report_evt(UINT8 *p, UINT8 evt_len, bool v2_evt);
@@ -192,16 +195,16 @@ static void btu_ble_periodic_adv_sync_trans_recv(UINT8 *p);
 
 #if (BLE_FEAT_ISO_EN == TRUE)
 
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 void btu_ble_create_big_cmd_status(UINT8 status);
-static void btu_ble_big_create_complete_evt(UINT8 *p);
+static void btu_ble_big_create_complete_evt(UINT8 *p, UINT8 evt_len);
 void btu_ble_big_terminate_cmd_status(UINT8 status);
 static void btu_ble_big_terminate_complete_evt(UINT8 *p);
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 static void btu_ble_create_big_sync_cmd_status(UINT8 status);
-static void btu_ble_big_sync_establish_evt(UINT8 *p);
+static void btu_ble_big_sync_establish_evt(UINT8 *p, UINT8 evt_len);
 static void btu_ble_big_sync_lost_evt(UINT8 *p);
 static void btu_ble_biginfo_adv_report_evt(UINT8 *p);
 #endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
@@ -222,10 +225,10 @@ static void btu_ble_cis_disconnected(UINT16 handle, UINT8 reason);
 
 #if (BLE_FEAT_CTE_EN == TRUE)
 #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
-static void btu_ble_cte_connless_iq_report_evt(UINT8 *p);
+static void btu_ble_cte_connless_iq_report_evt(UINT8 *p, UINT8 evt_len);
 #endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
 #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
-static void btu_ble_cte_conn_iq_report_evt(UINT8 *p);
+static void btu_ble_cte_conn_iq_report_evt(UINT8 *p, UINT8 evt_len);
 static void btu_ble_cte_req_failed_evt(UINT8 *p);
 #endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
 #endif // #if (BLE_FEAT_CTE_EN == TRUE)
@@ -241,7 +244,7 @@ static void btu_ble_subrate_change_evt(UINT8 *p);
 
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 static void btu_ble_pa_subevt_data_request_evt(UINT8 *p);
-static void btu_ble_pa_response_report_evt(UINT8 *p);
+static void btu_ble_pa_response_report_evt(UINT8 *p, UINT8 evt_len);
 #endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
 
 #if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
@@ -250,24 +253,10 @@ static void btu_ble_cs_read_remote_fae_tab_evt(UINT8 *p);
 static void btu_ble_cs_security_enable_cmpl_evt(UINT8 *p);
 static void btu_ble_cs_config_cmpl_evt(UINT8 *p);
 static void btu_ble_cs_proc_enable_cmpl_evt(UINT8 *p);
-static void btu_ble_cs_subevt_result_evt(UINT8 *p);
-static void btu_ble_cs_subevt_result_continue_evt(UINT8 *p);
+static void btu_ble_cs_subevt_result_evt(UINT8 *p, UINT8 evt_len);
+static void btu_ble_cs_subevt_result_continue_evt(UINT8 *p, UINT8 evt_len);
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 
-#if (BLE_42_ADV_EN == TRUE)
-extern osi_sem_t adv_enable_sem;
-extern osi_sem_t adv_data_sem;
-extern osi_sem_t adv_param_sem;
-extern uint8_t adv_enable_status;
-extern uint8_t adv_data_status;
-extern uint8_t adv_param_status;
-#endif // #if (BLE_42_ADV_EN == TRUE)
-#if (BLE_42_SCAN_EN == TRUE)
-extern osi_sem_t scan_enable_sem;
-extern osi_sem_t scan_param_sem;
-extern uint8_t scan_enable_status;
-extern uint8_t scan_param_status;
-#endif // #if (BLE_42_SCAN_EN == TRUE)
 #endif
 
 /*******************************************************************************
@@ -287,8 +276,19 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
 #if BLE_INCLUDED == TRUE
     UINT8   ble_sub_code;
 #endif
+    if (p_msg->len < 2) {
+        HCI_TRACE_ERROR("%s: HCI event too short (len=%u), dropping", __func__, p_msg->len);
+        return;
+    }
+
     STREAM_TO_UINT8  (hci_evt_code, p);
     STREAM_TO_UINT8  (hci_evt_len, p);
+
+    if (hci_evt_len > p_msg->len - 2) {
+        HCI_TRACE_ERROR("%s: HCI evt 0x%02x param len %u exceeds buffer (avail=%u), dropping",
+                        __func__, hci_evt_code, hci_evt_len, p_msg->len - 2);
+        return;
+    }
 
     switch (hci_evt_code) {
 #if (CLASSIC_BT_INCLUDED == TRUE)
@@ -372,7 +372,7 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
         break;
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     case HCI_NUM_COMPL_DATA_PKTS_EVT:
-        btu_hcif_num_compl_data_pkts_evt (p);
+        btu_hcif_num_compl_data_pkts_evt (p, hci_evt_len);
         break;
  #if (CLASSIC_BT_INCLUDED == TRUE)
     case HCI_MODE_CHANGE_EVT:
@@ -469,6 +469,10 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
 
 #if (BLE_INCLUDED == TRUE)
     case HCI_BLE_EVENT:
+        if (hci_evt_len < 1) {
+            HCI_TRACE_ERROR("%s: BLE meta event param len %u invalid (need >= 1), dropping", __func__, hci_evt_len);
+            break;
+        }
         STREAM_TO_UINT8  (ble_sub_code, p);
         hci_evt_len--;
         HCI_TRACE_DEBUG("BLE HCI(id=%d) event = 0x%02x)", hci_evt_code,  ble_sub_code);
@@ -551,6 +555,11 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
             btu_ble_channel_select_alg_evt(p);
             break;
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+        case HCI_BLE_MONITOR_ADV_REPORT_EVT:
+            btu_ble_monitor_adv_report_evt(p);
+            break;
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
         case HCI_BLE_PERIOD_ADV_SYNC_TRANS_RECV_EVT:
             btu_ble_periodic_adv_sync_trans_recv(p);
@@ -570,17 +579,17 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
             btu_ble_cis_request_evt(p);
             break;
 #endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
         case HCI_BLE_BIG_CREATE_COMPLETE_EVT:
-            btu_ble_big_create_complete_evt(p);
+            btu_ble_big_create_complete_evt(p, hci_evt_len);
             break;
         case HCI_BLE_BIG_TERMINATE_COMPLETE_EVT:
             btu_ble_big_terminate_complete_evt(p);
             break;
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
         case HCI_BLE_BIG_SYNC_ESTABLISHED_EVT:
-            btu_ble_big_sync_establish_evt(p);
+            btu_ble_big_sync_establish_evt(p, hci_evt_len);
             break;
         case HCI_BLE_BIG_SYNC_LOST_EVT:
             btu_ble_big_sync_lost_evt(p);
@@ -593,13 +602,13 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
 #if (BLE_FEAT_CTE_EN == TRUE)
 #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
         case HCI_BLE_CONNLESS_IQ_REPORT_EVT:
-            btu_ble_cte_connless_iq_report_evt(p);
+            btu_ble_cte_connless_iq_report_evt(p, hci_evt_len);
             break;
 #endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
 
 #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
         case HCI_BLE_CONN_IQ_REPORT_EVT:
-            btu_ble_cte_conn_iq_report_evt(p);
+            btu_ble_cte_conn_iq_report_evt(p, hci_evt_len);
             break;
         case HCI_BLE_CTE_REQUEST_FAILED_EVT:
             btu_ble_cte_req_failed_evt(p);
@@ -625,7 +634,7 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
             btu_ble_pa_subevt_data_request_evt(p);
             break;
         case HCI_BLE_PA_RESPONSE_REPORT_EVT:
-            btu_ble_pa_response_report_evt(p);
+            btu_ble_pa_response_report_evt(p, hci_evt_len);
             break;
 #endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 #if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
@@ -645,10 +654,10 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
             btu_ble_cs_proc_enable_cmpl_evt(p);
             break;
         case HCI_BLE_CS_SUBEVENT_RESULT_EVT:
-            btu_ble_cs_subevt_result_evt(p);
+            btu_ble_cs_subevt_result_evt(p, hci_evt_len);
             break;
         case HCI_BLE_CS_SUBEVENT_RESULT_CONTINUE_EVT:
-            btu_ble_cs_subevt_result_continue_evt(p);
+            btu_ble_cs_subevt_result_continue_evt(p, hci_evt_len);
             break;
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
         }
@@ -711,7 +720,7 @@ void btu_hcif_send_cmd (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_buf)
 #endif
 }
 
-#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
 UINT8 btu_hcif_send_cmd_sync (UINT8 controller_id, BT_HDR *p_buf)
 {
     if (!p_buf) {
@@ -762,8 +771,7 @@ UINT8 btu_hcif_send_cmd_sync (UINT8 controller_id, BT_HDR *p_buf)
 #endif
     return btsnd_hcic_ble_get_status();
 }
-#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
-
+#endif // ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
 
 /*******************************************************************************
 **
@@ -1245,7 +1253,10 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
     case HCI_READ_INQ_TX_POWER_LEVEL:
-        btm_read_linq_tx_power_complete (p);
+        btm_read_iscan_tx_power_complete (p);
+        break;
+    case HCI_WRITE_INQ_TX_POWER_LEVEL:
+        btm_write_inq_tx_power_complete(p);
         break;
     case HCI_SET_AFH_CHANNELS:
         btm_set_afh_channels_complete(p);
@@ -1320,11 +1331,17 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         btm_ble_create_ll_conn_complete(*p);
         break;
 
+#if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
     case HCI_BLE_TRANSMITTER_TEST:
     case HCI_BLE_RECEIVER_TEST:
-#if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
     case HCI_BLE_TEST_END:
-        btm_ble_test_command_complete(p);
+        /* Forward raw parameters + length; upper layers validate before parsing. */
+        btm_ble_test_command_complete(p, evt_len);
+        break;
+#else
+    case HCI_BLE_TRANSMITTER_TEST:
+    case HCI_BLE_RECEIVER_TEST:
+    case HCI_BLE_TEST_END:
         break;
 #endif // #if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
     case HCI_BLE_CREATE_CONN_CANCEL:
@@ -1386,7 +1403,7 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
 #if (BLE_50_DTM_TEST_EN == TRUE)
     case HCI_BLE_ENH_RX_TEST:
     case HCI_BLE_ENH_TX_TEST:
-        btm_ble_test_command_complete(p);
+        btm_ble_test_command_complete(p, evt_len);
         break;
 #endif // #if (BLE_50_DTM_TEST_EN == TRUE)
 
@@ -1407,7 +1424,7 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
     case HCI_BLE_BIG_TERMINATE_SYNC:
-        UINT16 big_handle;
+        UINT8 big_handle;
         STREAM_TO_UINT8(status, p);
         STREAM_TO_UINT8(big_handle, p);
         btm_ble_big_sync_terminate_complete(status, big_handle);
@@ -1461,6 +1478,11 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         btm_ble_cs_read_local_supp_caps_cmpl_evt(p);
         break;
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+    case HCI_BLE_READ_MONITOR_ADV_LIST_SIZE:
+        btm_ble_read_monitor_adv_list_size_complete(p);
+        break;
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 #endif /* (BLE_INCLUDED == TRUE) */
 
     default: {
@@ -1505,52 +1527,14 @@ static void btu_hcif_command_complete_evt_on_task(BT_HDR *event)
 
 static void btu_hcif_command_complete_evt(BT_HDR *response, void *context)
 {
-#if (BLE_INCLUDED == TRUE)
-    command_opcode_t opcode;
-    uint8_t *stream = response->data + response->offset + 3;
-    STREAM_TO_UINT16(opcode, stream);
-    switch (opcode) {
-#if (BLE_42_ADV_EN == TRUE)
-        case HCI_BLE_WRITE_ADV_DATA:
-            adv_data_status = *stream;
-            osi_sem_give(&adv_data_sem);
-            break;
-        case HCI_BLE_WRITE_SCAN_RSP_DATA:
-            adv_data_status = *stream;
-            osi_sem_give(&adv_data_sem);
-            break;
-        case HCI_BLE_WRITE_ADV_ENABLE: {
-            adv_enable_status = *stream;
-            osi_sem_give(&adv_enable_sem);
-            break;
-        }
-        case HCI_BLE_WRITE_ADV_PARAMS:
-            adv_param_status = *stream;
-            osi_sem_give(&adv_param_sem);
-            break;
-#endif // #if (BLE_42_ADV_EN == TRUE)
-#if (BLE_42_SCAN_EN == TRUE)
-        case HCI_BLE_WRITE_SCAN_PARAMS:
-            scan_param_status = *stream;
-            osi_sem_give(&scan_param_sem);
-            break;
-        case HCI_BLE_WRITE_SCAN_ENABLE:
-            scan_enable_status = *stream;
-            osi_sem_give(&scan_enable_sem);
-            break;
-#endif // #if (BLE_42_SCAN_EN == TRUE)
-        default:
-            break;
-    }
-#endif
     BT_HDR *event = osi_calloc(sizeof(BT_HDR) + sizeof(command_complete_hack_t));
     command_complete_hack_t *hack = (command_complete_hack_t *)&event->data[0];
-#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
     UINT8 status = 0;
-    stream = response->data + response->offset + 3 + 2; // 2 to skip the event headers, 1 to skip the command credits, 2 to opcode.
+    uint8_t *stream = response->data + response->offset + 3 + 2; // 2 to skip the event headers, 1 to skip the command credits, 2 to opcode.
     STREAM_TO_UINT8(status, stream);
     btsnd_hci_ble_set_status(status);
-#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#endif // #if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
     HCI_TRACE_DEBUG("btu_hcif_command_complete_evt\n");
 
     hack->callback = btu_hcif_command_complete_evt_on_task;
@@ -1633,7 +1617,7 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
     }
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #if (BLE_FEAT_ISO_EN == TRUE)
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
     case HCI_BLE_CREATE_BIG:
     case HCI_BLE_CREATE_BIG_TEST:
         btu_ble_create_big_cmd_status(status);
@@ -1641,7 +1625,7 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
     case HCI_BLE_TERMINATE_BIG:
         btu_ble_big_terminate_cmd_status(status);
         break;
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
     case HCI_BLE_BIG_CREATE_SYNC:
         btu_ble_create_big_sync_cmd_status(status);
@@ -1933,14 +1917,14 @@ static void btu_hcif_role_change_evt (UINT8 *p)
 ** Returns          void
 **
 *******************************************************************************/
-static void btu_hcif_num_compl_data_pkts_evt (UINT8 *p)
+static void btu_hcif_num_compl_data_pkts_evt (UINT8 *p, UINT8 evt_len)
 {
     /* Process for L2CAP and SCO */
-    l2c_link_process_num_completed_pkts (p);
+    l2c_link_process_num_completed_pkts (p, evt_len);
 
     /* Send on to SCO */
 #if (BTM_SCO_HCI_INCLUDED == TRUE) && (BTM_SCO_INCLUDED == TRUE)
-    btm_sco_process_num_completed_pkts (p);
+    btm_sco_process_num_completed_pkts (p, evt_len);
 #endif
 }
 #if (CLASSIC_BT_INCLUDED == TRUE)
@@ -2538,9 +2522,9 @@ static void btm_ble_resolve_random_addr_adv_ext(void *p_rec, void *p)
 {
     tBTM_SEC_DEV_REC    *match_rec = (tBTM_SEC_DEV_REC *) p_rec;
     BD_ADDR     bda;
-    UINT8       *pp = (UINT8 *)p+4; //jump to the location of bd addr
+    UINT8       *pp = (UINT8 *)p+2; //jump to the location of addr_type
     if (match_rec) {
-        // Assign the original address to be the current report address
+        UINT8_TO_STREAM(pp, match_rec->ble.ble_addr_type);
         memcpy(bda, match_rec->ble.pseudo_addr, BD_ADDR_LEN);
         BDADDR_TO_STREAM(pp,bda);
     }
@@ -2554,28 +2538,47 @@ static void btu_ble_ext_adv_report_evt(UINT8 *p, UINT16 evt_len)
     tBTM_BLE_EXT_ADV_REPORT ext_adv_report = {0};
     UINT8 num_reports = {0};
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
-    UINT8 *pp = p;
+    UINT8 *pp;
+    BOOLEAN             match = FALSE;
 #endif
     //UINT8 legacy_event_type = 0;
     UINT16 evt_type = 0;
     uint8_t addr_type;
     BD_ADDR bda;
-    #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
-    BOOLEAN             match = FALSE;
-    #endif
+    UINT16 remaining;
 
     if (!p) {
         HCI_TRACE_ERROR("%s, Invalid params.", __func__);
         return;
     }
 
+    if (evt_len < 1) {
+        HCI_TRACE_ERROR("%s, evt_len too short (%u)", __func__, evt_len);
+        return;
+    }
+
     STREAM_TO_UINT8(num_reports, p);
+    remaining = evt_len - 1;
 
     if (num_reports == 0) {
         HCI_TRACE_ERROR("%s, Invalid number reports is 0", __func__);
     }
 
+    /* Per-report fixed fields: evt_type(2) + addr_type(1) + bda(6) +
+     * primary_phy(1) + secondary_phy(1) + sid(1) + tx_power(1) + rssi(1) +
+     * per_adv_interval(2) + dir_addr_type(1) + dir_addr(6) + adv_data_len(1) = 24 */
+    #define EXT_ADV_RPT_FIXED_LEN 24
+
     while (num_reports--) {
+        if (remaining < EXT_ADV_RPT_FIXED_LEN) {
+            HCI_TRACE_ERROR("%s, remaining %u too short for report (need %u)",
+                            __func__, remaining, EXT_ADV_RPT_FIXED_LEN);
+            return;
+        }
+#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
+        /* Save current report start position for address resolution callback */
+        pp = p;
+#endif
         STREAM_TO_UINT16(evt_type, p);
         ext_adv_report.event_type = evt_type & 0x1F;
         if(ext_adv_report.event_type & BTM_BLE_ADV_LEGACY_MASK) {
@@ -2601,8 +2604,9 @@ static void btu_ble_ext_adv_report_evt(UINT8 *p, UINT16 evt_len)
             match = btm_identity_addr_to_random_pseudo(bda, &addr_type, FALSE);
             if (!match && BTM_BLE_IS_RESOLVE_BDA(bda)) {
                 btm_ble_resolve_random_addr(bda, btm_ble_resolve_random_addr_adv_ext, pp);
-                //the BDADDR may be updated, so read it again
-                p = p - sizeof(bda);
+                //the addr_type and BDADDR may be updated, so read them again
+                p = p - sizeof(bda) - 1;
+                STREAM_TO_UINT8(addr_type, p);
                 STREAM_TO_BDADDR(bda, p);
             }
         }
@@ -2618,6 +2622,14 @@ static void btu_ble_ext_adv_report_evt(UINT8 *p, UINT16 evt_len)
         STREAM_TO_UINT8(ext_adv_report.dir_addr_type, p);
         STREAM_TO_BDADDR(ext_adv_report.dir_addr, p);
         STREAM_TO_UINT8(ext_adv_report.adv_data_len, p);
+        remaining -= EXT_ADV_RPT_FIXED_LEN;
+
+        if (ext_adv_report.adv_data_len > remaining) {
+            HCI_TRACE_ERROR("%s, adv_data_len %u exceeds remaining %u",
+                            __func__, ext_adv_report.adv_data_len, remaining);
+            return;
+        }
+
         if (ext_adv_report.adv_data_len) {
             ext_adv_report.adv_data = p;
         } else {
@@ -2626,10 +2638,28 @@ static void btu_ble_ext_adv_report_evt(UINT8 *p, UINT16 evt_len)
 
         btm_ble_ext_adv_report_evt(&ext_adv_report);
         p += ext_adv_report.adv_data_len;
+        remaining -= ext_adv_report.adv_data_len;
     }
 
 }
 #endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
+
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+static void btu_ble_monitor_adv_report_evt(UINT8 *p)
+{
+    tBTM_BLE_MONITOR_ADV_REPORT report = {0};
+
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+    /* HCI LE Monitor Adv Report: Addr_Type(1) + Address(6) + Condition(1) */
+    STREAM_TO_UINT8(report.addr_type, p);
+    STREAM_TO_BDADDR(report.address, p);
+    STREAM_TO_UINT8(report.condition, p);
+    btm_ble_monitor_adv_report_evt(&report);
+}
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 
 #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 static void btu_ble_periodic_adv_sync_establish_evt(UINT8 *p, bool v2_evt)
@@ -2656,6 +2686,13 @@ static void btu_ble_periodic_adv_sync_establish_evt(UINT8 *p, bool v2_evt)
         STREAM_TO_UINT8(sync_estab.rsp_slot_delay, p);
         STREAM_TO_UINT8(sync_estab.rsp_slot_spacing, p);
     }
+#else
+    if (v2_evt) {
+        STREAM_SKIP_UINT8(p);
+        STREAM_SKIP_UINT8(p);
+        STREAM_SKIP_UINT8(p);
+        STREAM_SKIP_UINT8(p);
+    }
 #endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
 
     btm_ble_periodic_adv_sync_establish_evt(&sync_estab);
@@ -2666,15 +2703,15 @@ static void btu_ble_periodic_adv_report_evt(UINT8 *p, UINT8 evt_len, bool v2_evt
     tBTM_PERIOD_ADV_REPORT adv_report = {0};
     /* This parameter is intended to be used in a future feature. */
     UINT8 unused = 0;
-    UINT8 min_len = MIN_BLE_PERIODIC_ADV_REPORT_LEN;
+    UINT8 min_len = v2_evt ? (MIN_BLE_PERIODIC_ADV_REPORT_LEN + 3) : MIN_BLE_PERIODIC_ADV_REPORT_LEN;
 
     if (!p) {
         HCI_TRACE_ERROR("%s, Invalid params.", __func__);
         return;
     }
 
-    if (evt_len < MIN_BLE_PERIODIC_ADV_REPORT_LEN) {
-        HCI_TRACE_ERROR("%s, Invalid params, the adv len is too short.", __func__);
+    if (evt_len < min_len) {
+        HCI_TRACE_ERROR("%s, Invalid params, the adv len %d is too short.", __func__, evt_len);
         return;
     }
 
@@ -2686,7 +2723,11 @@ static void btu_ble_periodic_adv_report_evt(UINT8 *p, UINT8 evt_len, bool v2_evt
     if (v2_evt) {
         STREAM_TO_UINT16(adv_report.periodic_evt_cnt, p);
         STREAM_TO_UINT8(adv_report.subevt, p);
-        min_len += 3;
+    }
+#else
+    if (v2_evt) {
+        STREAM_SKIP_UINT16(p);
+        STREAM_SKIP_UINT8(p);
     }
 #endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
     STREAM_TO_UINT8(adv_report.data_status, p);
@@ -2885,6 +2926,15 @@ static void btu_ble_cis_established_evt(UINT8 *p, bool v2_evt)
         STREAM_TO_UINT24(cis_estab_evt.sdu_int_p_to_c, p);
         STREAM_TO_UINT8(cis_estab_evt.framing, p);
     }
+#else
+    if (v2_evt) {
+        STREAM_SKIP_UINT24(p);
+        STREAM_SKIP_UINT16(p);
+        STREAM_SKIP_UINT16(p);
+        STREAM_SKIP_UINT24(p);
+        STREAM_SKIP_UINT24(p);
+        STREAM_SKIP_UINT8(p);
+    }
 #endif // #if (BLE_FEAT_ISO_60_EN == TRUE)
 
     btm_ble_cis_established_evt(&cis_estab_evt);
@@ -2912,7 +2962,7 @@ static void btu_ble_cis_request_evt(UINT8 *p)
 }
 #endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
 
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 void btu_ble_create_big_cmd_status(UINT8 status)
 {
     if (status != HCI_SUCCESS) {
@@ -2922,7 +2972,7 @@ void btu_ble_create_big_cmd_status(UINT8 status)
     }
 }
 
-static void btu_ble_big_create_complete_evt(UINT8 *p)
+static void btu_ble_big_create_complete_evt(UINT8 *p, UINT8 evt_len)
 {
     HCI_TRACE_DEBUG("%s", __func__);
     tBTM_BLE_BIG_CREATE_CMPL big_cmpl = {0};
@@ -2930,6 +2980,15 @@ static void btu_ble_big_create_complete_evt(UINT8 *p)
 
     if (!p) {
         HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    /* Fixed fields: status(1) + big_handle(1) + big_sync_delay(3)
+     * + transport_latency(3) + phy(1) + nse(1) + bn(1) + pto(1) + irc(1)
+     * + max_pdu(2) + iso_interval(2) + num_bis(1) = 18 bytes
+     * (subevent_code already subtracted from evt_len by caller) */
+    if (evt_len < 18) {
+        HCI_TRACE_ERROR("%s, evt too short (len=%u, need>=18)", __func__, evt_len);
         return;
     }
 
@@ -2946,10 +3005,13 @@ static void btu_ble_big_create_complete_evt(UINT8 *p)
     STREAM_TO_UINT16(big_cmpl.iso_interval, p);
     STREAM_TO_UINT8(num_bis, p);
 
-    // Validate num_bis to prevent buffer overflow
     if (num_bis > BLE_ISO_BIS_MAX_COUNT) {
         HCI_TRACE_ERROR("%s, num_bis %d exceeds BLE_ISO_BIS_MAX_COUNT %d", __func__, num_bis, BLE_ISO_BIS_MAX_COUNT);
         num_bis = BLE_ISO_BIS_MAX_COUNT;
+    }
+    if (num_bis > (evt_len - 18) / 2) {
+        HCI_TRACE_ERROR("%s, num_bis %d exceeds evt_len %u, truncating", __func__, num_bis, evt_len);
+        num_bis = (evt_len - 18) / 2;
     }
     big_cmpl.num_bis = num_bis;
 
@@ -2987,7 +3049,7 @@ static void btu_ble_big_terminate_complete_evt(UINT8 *p)
 
     btm_ble_big_terminate_cmpl_evt(&big_term);
 }
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 void btu_ble_create_big_sync_cmd_status(UINT8 status)
@@ -2999,13 +3061,22 @@ void btu_ble_create_big_sync_cmd_status(UINT8 status)
     }
 }
 
-static void btu_ble_big_sync_establish_evt(UINT8 *p)
+static void btu_ble_big_sync_establish_evt(UINT8 *p, UINT8 evt_len)
 {
     tBTM_BLE_BIG_SYNC_ESTAB_CMPL big_estb = {0};
     UINT8 num_bis;
 
     if (!p) {
         HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    /* Fixed fields: status(1) + big_handle(1) + transport_latency_big(3)
+     * + nse(1) + bn(1) + pto(1) + irc(1) + max_pdu(2) + iso_interval(2)
+     * + num_bis(1) = 14 bytes
+     * (subevent_code already subtracted from evt_len by caller) */
+    if (evt_len < 14) {
+        HCI_TRACE_ERROR("%s, evt too short (len=%u, need>=14)", __func__, evt_len);
         return;
     }
 
@@ -3020,10 +3091,13 @@ static void btu_ble_big_sync_establish_evt(UINT8 *p)
     STREAM_TO_UINT16(big_estb.iso_interval, p);
     STREAM_TO_UINT8(num_bis, p);
 
-    // Validate num_bis to prevent buffer overflow
     if (num_bis > BLE_ISO_BIS_MAX_COUNT) {
         HCI_TRACE_ERROR("%s, num_bis %d exceeds BLE_ISO_BIS_MAX_COUNT %d", __func__, num_bis, BLE_ISO_BIS_MAX_COUNT);
         num_bis = BLE_ISO_BIS_MAX_COUNT;
+    }
+    if (num_bis > (evt_len - 14) / 2) {
+        HCI_TRACE_ERROR("%s, num_bis %d exceeds evt_len %u, truncating", __func__, num_bis, evt_len);
+        num_bis = (evt_len - 14) / 2;
     }
     big_estb.num_bis = num_bis;
 
@@ -3080,13 +3154,22 @@ static void btu_ble_biginfo_adv_report_evt(UINT8 *p)
 
 #if (BLE_FEAT_CTE_EN == TRUE)
 #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
-static void btu_ble_cte_connless_iq_report_evt(UINT8 *p)
+static void btu_ble_cte_connless_iq_report_evt(UINT8 *p, UINT8 evt_len)
 {
     tBTM_BLE_CTE_CONNLESS_IQ_REPORT_EVT connless_iq_rpt = {0};
     UINT8 sample_count;
 
     if (!p) {
         HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    /* Fixed fields: sync_handle(2) + channel_idx(1) + rssi(2)
+     * + rssi_ant_id(1) + cte_type(1) + slot_dur(1) + pkt_status(1)
+     * + periodic_evt_counter(2) + sample_count(1) = 12 bytes
+     * (subevent_code already subtracted from evt_len by caller) */
+    if (evt_len < 12) {
+        HCI_TRACE_ERROR("%s, evt too short (len=%u, need>=12)", __func__, evt_len);
         return;
     }
 
@@ -3100,10 +3183,13 @@ static void btu_ble_cte_connless_iq_report_evt(UINT8 *p)
     STREAM_TO_UINT16(connless_iq_rpt.periodic_evt_counter, p);
     STREAM_TO_UINT8(sample_count, p);
 
-    // Validate sample_count to prevent buffer overflow
     if (sample_count > BTM_BLE_CTE_MAX_SAMPLE_COUNT) {
         HCI_TRACE_ERROR("%s, sample_count %d exceeds maximum %d", __func__, sample_count, BTM_BLE_CTE_MAX_SAMPLE_COUNT);
         sample_count = BTM_BLE_CTE_MAX_SAMPLE_COUNT;
+    }
+    if (sample_count > (evt_len - 12) / 2) {
+        HCI_TRACE_ERROR("%s, sample_count %d exceeds evt_len %u, truncating", __func__, sample_count, evt_len);
+        sample_count = (evt_len - 12) / 2;
     }
     connless_iq_rpt.sample_count = sample_count;
 
@@ -3122,13 +3208,22 @@ static void btu_ble_cte_connless_iq_report_evt(UINT8 *p)
 #endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
 
 #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
-static void btu_ble_cte_conn_iq_report_evt(UINT8 *p)
+static void btu_ble_cte_conn_iq_report_evt(UINT8 *p, UINT8 evt_len)
 {
     tBTM_BLE_CTE_CONN_IQ_REPORT_EVT conn_iq_rpt = {0};
     UINT8 sample_count;
 
     if (!p) {
         HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    /* Fixed fields: conn_handle(2) + rx_phy(1) + data_channel_idx(1)
+     * + rssi(2) + rssi_ant_id(1) + cte_type(1) + slot_dur(1) + pkt_status(1)
+     * + conn_evt_counter(2) + sample_count(1) = 13 bytes
+     * (subevent_code already subtracted from evt_len by caller) */
+    if (evt_len < 13) {
+        HCI_TRACE_ERROR("%s, evt too short (len=%u, need>=13)", __func__, evt_len);
         return;
     }
 
@@ -3143,10 +3238,13 @@ static void btu_ble_cte_conn_iq_report_evt(UINT8 *p)
     STREAM_TO_UINT16(conn_iq_rpt.conn_evt_counter, p);
     STREAM_TO_UINT8(sample_count, p);
 
-    // Validate sample_count to prevent buffer overflow
     if (sample_count > BTM_BLE_CTE_MAX_SAMPLE_COUNT) {
         HCI_TRACE_ERROR("%s, sample_count %d exceeds maximum %d", __func__, sample_count, BTM_BLE_CTE_MAX_SAMPLE_COUNT);
         sample_count = BTM_BLE_CTE_MAX_SAMPLE_COUNT;
+    }
+    if (sample_count > (evt_len - 13) / 2) {
+        HCI_TRACE_ERROR("%s, sample_count %d exceeds evt_len %u, truncating", __func__, sample_count, evt_len);
+        sample_count = (evt_len - 13) / 2;
     }
     conn_iq_rpt.sample_count = sample_count;
 
@@ -3253,11 +3351,18 @@ static void btu_ble_pa_subevt_data_request_evt(UINT8 *p)
     btm_ble_pa_subevt_data_req_evt(&pa_subevt_req_evt);
 }
 
-static void btu_ble_pa_response_report_evt(UINT8 *p)
+static void btu_ble_pa_response_report_evt(UINT8 *p, UINT8 evt_len)
 {
     tBTM_BLE_PA_RSP_REPORT_EVT pa_rsp_rpt_evt = {0};
     if (!p) {
         HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    /* Fixed fields: adv_handle(1) + subevt(1) + tx_status(1) + num_rsp(1) = 4 bytes
+     * (subevent_code already subtracted from evt_len by caller) */
+    if (evt_len < 4) {
+        HCI_TRACE_ERROR("%s, evt too short (len=%u, need>=4)", __func__, evt_len);
         return;
     }
 
@@ -3266,28 +3371,46 @@ static void btu_ble_pa_response_report_evt(UINT8 *p)
     STREAM_TO_UINT8(pa_rsp_rpt_evt.tx_status, p);
     STREAM_TO_UINT8(pa_rsp_rpt_evt.num_rsp, p);
 
-    // num_rsp is UINT8, range 0x00 to 0xFF (0 to 255), no need to validate
+    UINT8 remaining = evt_len - 4;
+
     if (pa_rsp_rpt_evt.num_rsp) {
         pa_rsp_rpt_evt.rsp_data_info = osi_malloc(pa_rsp_rpt_evt.num_rsp * sizeof(tBTM_BLE_PA_RSP_DATA_INFO));
         if (pa_rsp_rpt_evt.rsp_data_info)
         {
             for (UINT8 i = 0; i < pa_rsp_rpt_evt.num_rsp; i++)
             {
+                /* Per-response fixed: tx_power(1)+rssi(1)+cte_type(1)+rsp_slot(1)+data_status(1)+data_len(1) = 6 */
+                if (remaining < 6) {
+                    HCI_TRACE_ERROR("%s, remaining %u too short for response %d", __func__, remaining, i);
+                    pa_rsp_rpt_evt.num_rsp = i;
+                    break;
+                }
                 STREAM_TO_UINT8(pa_rsp_rpt_evt.rsp_data_info[i].tx_power, p);
                 STREAM_TO_UINT8(pa_rsp_rpt_evt.rsp_data_info[i].rssi, p);
                 STREAM_TO_UINT8(pa_rsp_rpt_evt.rsp_data_info[i].cte_type, p);
                 STREAM_TO_UINT8(pa_rsp_rpt_evt.rsp_data_info[i].rsp_slot, p);
                 STREAM_TO_UINT8(pa_rsp_rpt_evt.rsp_data_info[i].data_status, p);
                 STREAM_TO_UINT8(pa_rsp_rpt_evt.rsp_data_info[i].data_len, p);
-                // data_len is UINT8, range 0x00 to 0xFF (0 to 255), no need to validate
+                remaining -= 6;
+                if (pa_rsp_rpt_evt.rsp_data_info[i].data_len > remaining) {
+                    HCI_TRACE_ERROR("%s, data_len %d exceeds remaining %u at index %d",
+                                    __func__, pa_rsp_rpt_evt.rsp_data_info[i].data_len, remaining, i);
+                    pa_rsp_rpt_evt.rsp_data_info[i].data_len = 0;
+                    pa_rsp_rpt_evt.rsp_data_info[i].data = NULL;
+                    pa_rsp_rpt_evt.num_rsp = i + 1;
+                    break;
+                }
                 if (pa_rsp_rpt_evt.rsp_data_info[i].data_len) {
                     pa_rsp_rpt_evt.rsp_data_info[i].data = osi_malloc(pa_rsp_rpt_evt.rsp_data_info[i].data_len);
                     if (pa_rsp_rpt_evt.rsp_data_info[i].data) {
                         STREAM_TO_ARRAY(pa_rsp_rpt_evt.rsp_data_info[i].data, p, pa_rsp_rpt_evt.rsp_data_info[i].data_len);
                     } else {
                         HCI_TRACE_ERROR("%s, no enough memory for data_len %d at index %d", __func__, pa_rsp_rpt_evt.rsp_data_info[i].data_len, i);
+                        p += pa_rsp_rpt_evt.rsp_data_info[i].data_len;
+                        remaining -= pa_rsp_rpt_evt.rsp_data_info[i].data_len;
                         pa_rsp_rpt_evt.rsp_data_info[i].data_len = 0;
                     }
+                    remaining -= pa_rsp_rpt_evt.rsp_data_info[i].data_len;
                 } else {
                     pa_rsp_rpt_evt.rsp_data_info[i].data = NULL;
                 }
@@ -3436,13 +3559,25 @@ static void btu_ble_cs_proc_enable_cmpl_evt(UINT8 *p)
     btm_ble_cs_proc_enable_cmpl_evt(&proc_en);
 }
 
-static void btu_ble_cs_subevt_result_evt(UINT8 *p)
+static void btu_ble_cs_subevt_result_evt(UINT8 *p, UINT8 evt_len)
 {
     tBTM_BLE_CS_SUBEVT_RESULT_CMPL_EVT subevt_result = {0};
     if (!p) {
         HCI_TRACE_ERROR("%s, Invalid params.", __func__);
         return;
     }
+
+    /* Fixed fields: conn_handle(2) + config_id(1) +
+     * start_acl_conn_event_counter(2) + procedure_counter(2) +
+     * frequency_compensation(2) + reference_power_level(1) +
+     * procedure_done_status(1) + subevent_done_status(1) + abort_reason(1) +
+     * num_ant_paths(1) + num_steps_reported(1) = 15 bytes
+     * (subevent_code already subtracted from evt_len by caller) */
+    if (evt_len < 15) {
+        HCI_TRACE_ERROR("%s, evt too short (len=%u, need>=15)", __func__, evt_len);
+        return;
+    }
+
     STREAM_TO_UINT16(subevt_result.conn_handle, p);
     STREAM_TO_UINT8(subevt_result.config_id, p);
     STREAM_TO_UINT16(subevt_result.start_acl_conn_event_counter, p);
@@ -3456,27 +3591,49 @@ static void btu_ble_cs_subevt_result_evt(UINT8 *p)
     UINT8 num_steps_reported;
     STREAM_TO_UINT8(num_steps_reported, p);
 
-    // Validate num_steps_reported per BLE spec: Range 0x00 to 0xA0 (0 to 160)
     if (num_steps_reported > BTM_BLE_CS_MAX_STEPS_REPORTED) {
         HCI_TRACE_ERROR("%s, num_steps_reported %d exceeds maximum %d", __func__, num_steps_reported, BTM_BLE_CS_MAX_STEPS_REPORTED);
         num_steps_reported = BTM_BLE_CS_MAX_STEPS_REPORTED;
     }
     subevt_result.num_steps_reported = num_steps_reported;
 
-    subevt_result.step_info = osi_malloc(subevt_result.num_steps_reported * sizeof(tBTM_BLE_CS_STEP_INFO));
-    if (subevt_result.step_info) {
+    UINT8 remaining = evt_len - 15;
+    subevt_result.step_info = (subevt_result.num_steps_reported > 0)
+        ? osi_malloc(subevt_result.num_steps_reported * sizeof(tBTM_BLE_CS_STEP_INFO))
+        : NULL;
+    if (subevt_result.step_info || subevt_result.num_steps_reported == 0) {
         for (uint8_t i = 0; i < subevt_result.num_steps_reported; i++)
         {
+            /* Per-step fixed: step_mode(1) + step_channel(1) + step_data_len(1) = 3 */
+            if (remaining < 3) {
+                HCI_TRACE_ERROR("%s, remaining %u too short for step %d", __func__, remaining, i);
+                subevt_result.num_steps_reported = i;
+                break;
+            }
             STREAM_TO_UINT8(subevt_result.step_info[i].step_mode, p);
             STREAM_TO_UINT8(subevt_result.step_info[i].step_channel, p);
             STREAM_TO_UINT8(subevt_result.step_info[i].step_data_len, p);
-            // step_data_len is UINT8, range 0x00 to 0xFF (0 to 255), no need to validate
+            remaining -= 3;
+            if (subevt_result.step_info[i].step_data_len > remaining) {
+                HCI_TRACE_ERROR("%s, step_data_len %d exceeds remaining %u at step %d",
+                                __func__, subevt_result.step_info[i].step_data_len, remaining, i);
+                subevt_result.step_info[i].step_data_len = 0;
+                subevt_result.step_info[i].data = NULL;
+                subevt_result.num_steps_reported = i + 1;
+                break;
+            }
             subevt_result.step_info[i].data = osi_malloc(subevt_result.step_info[i].step_data_len);
             if (subevt_result.step_info[i].data) {
                 STREAM_TO_ARRAY(subevt_result.step_info[i].data, p, subevt_result.step_info[i].step_data_len);
             } else if (subevt_result.step_info[i].step_data_len) {
                 HCI_TRACE_ERROR("%s, no memory.", __func__);
+                p += subevt_result.step_info[i].step_data_len;
+                subevt_result.step_info[i].step_data_len = 0;
+                subevt_result.step_info[i].data = NULL;
+                subevt_result.num_steps_reported = i + 1;
+                break;
             }
+            remaining -= subevt_result.step_info[i].step_data_len;
         }
     }
 
@@ -3495,12 +3652,21 @@ static void btu_ble_cs_subevt_result_evt(UINT8 *p)
 
 }
 
-static void btu_ble_cs_subevt_result_continue_evt(UINT8 *p)
+static void btu_ble_cs_subevt_result_continue_evt(UINT8 *p, UINT8 evt_len)
 {
     tBTM_BLE_CS_SUBEVT_RESULT_CONTINUE_EVT subevt_continue_result = {0};
 
     if (!p) {
         HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    /* Fixed fields: conn_handle(2) + config_id(1) + proc_done_status(1)
+     * + subevt_done_status(1) + abort_reason(1) + num_ant_paths(1)
+     * + num_steps_reported(1) = 8 bytes
+     * (subevent_code already subtracted from evt_len by caller) */
+    if (evt_len < 8) {
+        HCI_TRACE_ERROR("%s, evt too short (len=%u, need>=8)", __func__, evt_len);
         return;
     }
 
@@ -3513,27 +3679,50 @@ static void btu_ble_cs_subevt_result_continue_evt(UINT8 *p)
     UINT8 num_steps_reported;
     STREAM_TO_UINT8(num_steps_reported, p);
 
-    // Validate num_steps_reported per BLE spec: Range 0x00 to 0xA0 (0 to 160)
     if (num_steps_reported > BTM_BLE_CS_MAX_STEPS_REPORTED) {
         HCI_TRACE_ERROR("%s, num_steps_reported %d exceeds maximum %d", __func__, num_steps_reported, BTM_BLE_CS_MAX_STEPS_REPORTED);
         num_steps_reported = BTM_BLE_CS_MAX_STEPS_REPORTED;
     }
     subevt_continue_result.num_steps_reported = num_steps_reported;
 
-    subevt_continue_result.step_info = osi_malloc(subevt_continue_result.num_steps_reported * sizeof(tBTM_BLE_CS_STEP_INFO));
-    if (subevt_continue_result.step_info) {
+    UINT8 remaining = evt_len - 8;
+    subevt_continue_result.step_info = (subevt_continue_result.num_steps_reported > 0)
+        ? osi_malloc(subevt_continue_result.num_steps_reported * sizeof(tBTM_BLE_CS_STEP_INFO))
+        : NULL;
+    if (subevt_continue_result.step_info || subevt_continue_result.num_steps_reported == 0) {
         for (uint8_t i = 0; i < subevt_continue_result.num_steps_reported; i++) {
+            if (remaining < 3) {
+                HCI_TRACE_ERROR("%s, remaining %u too short for step %d", __func__, remaining, i);
+                subevt_continue_result.num_steps_reported = i;
+                break;
+            }
             STREAM_TO_UINT8(subevt_continue_result.step_info[i].step_mode, p);
             STREAM_TO_UINT8(subevt_continue_result.step_info[i].step_channel, p);
             STREAM_TO_UINT8(subevt_continue_result.step_info[i].step_data_len, p);
-            // step_data_len is UINT8, range 0x00 to 0xFF (0 to 255), no need to validate
+            remaining -= 3;
+            if (subevt_continue_result.step_info[i].step_data_len > remaining) {
+                HCI_TRACE_ERROR("%s, step_data_len %d exceeds remaining %u at step %d",
+                                __func__, subevt_continue_result.step_info[i].step_data_len, remaining, i);
+                subevt_continue_result.step_info[i].step_data_len = 0;
+                subevt_continue_result.step_info[i].data = NULL;
+                subevt_continue_result.num_steps_reported = i + 1;
+                break;
+            }
             subevt_continue_result.step_info[i].data = osi_malloc(subevt_continue_result.step_info[i].step_data_len);
             if (subevt_continue_result.step_info[i].data) {
                 STREAM_TO_ARRAY(subevt_continue_result.step_info[i].data, p, subevt_continue_result.step_info[i].step_data_len);
             } else if (subevt_continue_result.step_info[i].step_data_len) {
                 HCI_TRACE_ERROR("%s, no memory.", __func__);
+                p += subevt_continue_result.step_info[i].step_data_len;
+                subevt_continue_result.step_info[i].step_data_len = 0;
+                subevt_continue_result.step_info[i].data = NULL;
+                subevt_continue_result.num_steps_reported = i + 1;
+                break;
             }
+            remaining -= subevt_continue_result.step_info[i].step_data_len;
         }
+    } else {
+        HCI_TRACE_ERROR("%s, no memory for step_info.", __func__);
     }
 
     btm_ble_cs_subevt_continue_result_evt(&subevt_continue_result);

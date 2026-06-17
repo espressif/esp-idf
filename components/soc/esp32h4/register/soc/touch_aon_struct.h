@@ -334,7 +334,7 @@ typedef union {
     uint32_t val;
 } touch_aon_approach_reg_t;
 
-/** Type of aon_freq0_scan_para register
+/** Type of aon_freq_scan_para register
  *  need_des
  */
 typedef union {
@@ -480,7 +480,6 @@ typedef union {
     };
     uint32_t val;
 } touch_aon_date_reg_t;
-
 
 typedef struct {
     volatile touch_aon_threshold_reg_t thresh[3];

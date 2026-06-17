@@ -33,8 +33,12 @@ typedef union {
         uint32_t outdscr_burst_en_chn:1;
         /** out_ecc_aes_en_chn : R/W; bitpos: [3]; default: 0;
          *  When access address space is ecc/aes area, this bit should be set to 1. In this
-         *  case, the start address of square should be 16-bit aligned. The width of square
-         *  multiply byte number of one pixel should be 16-bit aligned.
+         *  case, the start address of square should be 16-byte aligned. The width of square
+         *  multiply byte number of one pixel should be 16-byte aligned.
+         *
+         *  2D-DMA w/ flash encryption enabled can still work properly even if this bit is not set to 1
+         *  Meanwhile, enabling this bit will restrict addr and size in internal RAM also has to be 16-byte aligned
+         *  Therefore, this bit is not used.
          */
         uint32_t out_ecc_aes_en_chn:1;
         /** out_check_owner_chn : R/W; bitpos: [4]; default: 0;
@@ -749,8 +753,12 @@ typedef union {
         uint32_t indscr_burst_en_chn:1;
         /** in_ecc_aes_en_chn : R/W; bitpos: [3]; default: 0;
          *  When access address space is ecc/aes area, this bit should be set to 1. In this
-         *  case, the start address of square should be 16-bit aligned. The width of square
-         *  multiply byte number of one pixel should be 16-bit aligned.
+         *  case, the start address of square should be 16-byte aligned. The width of square
+         *  multiply byte number of one pixel should be 16-byte aligned.
+         *
+         *  2D-DMA w/ flash encryption enabled can still work properly even if this bit is not set to 1
+         *  Meanwhile, enabling this bit will restrict addr and size in internal RAM also has to be 16-byte aligned
+         *  Therefore, this bit is not used.
          */
         uint32_t in_ecc_aes_en_chn:1;
         /** in_check_owner_chn : R/W; bitpos: [4]; default: 0;

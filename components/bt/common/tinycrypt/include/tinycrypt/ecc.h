@@ -77,10 +77,22 @@
 #ifndef __TC_UECC_H__
 #define __TC_UECC_H__
 
+#include "sdkconfig.h"
 #include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#define uECC_VLI_NATIVE_LITTLE_ENDIAN 1
+#define uECC_SUPPORTS_secp256r1       1
+
+#ifndef uECC_SUPPORTS_secp192r1
+#if defined(CONFIG_BT_CTRL_BREDR_ENABLE) && (CONFIG_BT_SMP_CRYPTO_STACK_TINYCRYPT)
+    #define uECC_SUPPORTS_secp192r1       1
+#else
+    #define uECC_SUPPORTS_secp192r1       0
+#endif
 #endif
 
 /* Word size (4 bytes considering 32-bits architectures) */
@@ -111,6 +123,13 @@ typedef uint64_t uECC_dword_t;
 #define NUM_ECC_WORDS 8
 /* Number of bytes to represent an element of the the curve p-256: */
 #define NUM_ECC_BYTES (uECC_WORD_SIZE*NUM_ECC_WORDS)
+
+#if uECC_SUPPORTS_secp192r1
+/* Number of words of 32 bits to represent an element of the the curve p-192: */
+#define NUM_ECC_WORDS_SECP192R1 6
+/* Number of bytes to represent an element of the the curve p-192: */
+#define NUM_ECC_BYTES_SECP192R1 (uECC_WORD_SIZE * NUM_ECC_WORDS_SECP192R1)
+#endif
 
 /* structure that represents an elliptic curve (e.g. p256):*/
 struct uECC_Curve_t;
@@ -199,6 +218,43 @@ static const struct uECC_Curve_t curve_secp256r1 = {
 };
 
 uECC_Curve uECC_secp256r1(void);
+
+#if uECC_SUPPORTS_secp192r1
+
+uECC_Curve uECC_secp192r1(void);
+
+/*
+ * @brief Computes result = product % curve_p (NIST P-192)
+ * from http://www.nsa.gov/ia/_files/nist-routines.pdf
+ * @param result OUT -- product % curve_p
+ * @param product IN -- value to be reduced mod curve_p
+ */
+void vli_mmod_fast_secp192r1(unsigned int *result, unsigned int *product);
+
+/* definition of curve NIST p-192: */
+static const struct uECC_Curve_t curve_secp192r1 = { NUM_ECC_WORDS_SECP192R1,
+                                                     NUM_ECC_BYTES_SECP192R1,
+                                                     192, /* num_n_bits */
+                                                     { BYTES_TO_WORDS_8(FF, FF, FF, FF, FF, FF, FF, FF),
+                                                       BYTES_TO_WORDS_8(FE, FF, FF, FF, FF, FF, FF, FF),
+                                                       BYTES_TO_WORDS_8(FF, FF, FF, FF, FF, FF, FF, FF) },
+                                                     { BYTES_TO_WORDS_8(31, 28, D2, B4, B1, C9, 6B, 14),
+                                                       BYTES_TO_WORDS_8(36, F8, DE, 99, FF, FF, FF, FF),
+                                                       BYTES_TO_WORDS_8(FF, FF, FF, FF, FF, FF, FF, FF) },
+                                                     { BYTES_TO_WORDS_8(12, 10, FF, 82, FD, 0A, FF, F4),
+                                                       BYTES_TO_WORDS_8(00, 88, A1, 43, EB, 20, BF, 7C),
+                                                       BYTES_TO_WORDS_8(F6, 90, 30, B0, 0E, A8, 8D, 18),
+
+                                                       BYTES_TO_WORDS_8(11, 48, 79, 1E, A1, 77, F9, 73),
+                                                       BYTES_TO_WORDS_8(D5, CD, 24, 6B, ED, 11, 10, 63),
+                                                       BYTES_TO_WORDS_8(78, DA, C8, FF, 95, 2B, 19, 07) },
+                                                     { BYTES_TO_WORDS_8(B1, B9, 46, C1, EC, DE, B8, FE),
+                                                       BYTES_TO_WORDS_8(49, 30, 24, 72, AB, E9, A7, 0F),
+                                                       BYTES_TO_WORDS_8(E7, 80, 9C, E5, 19, 05, 21, 64) },
+                                                     &double_jacobian_default,
+                                                     &x_side_default,
+                                                     &vli_mmod_fast_secp192r1 };
+#endif /* uECC_SUPPORTS_secp192r1 */
 
 /*
  * @brief Generates a random integer in the range 0 < random < top.

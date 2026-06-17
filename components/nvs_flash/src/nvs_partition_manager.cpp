@@ -195,17 +195,19 @@ esp_err_t NVSPartitionManager::open_handle(const char *part_name,
         return ESP_ERR_NVS_PART_NOT_FOUND;
     }
 
-    if (open_mode == NVS_READWRITE && const_cast<Partition*>(sHandle->getPart())->get_readonly()) {
+    #define WANTS_WRITE_MODE(mode) ((mode) == NVS_READWRITE || (mode) == NVS_READWRITE_PURGE)
+
+    if (WANTS_WRITE_MODE(open_mode) && const_cast<Partition*>(sHandle->getPart())->get_readonly()) {
         return ESP_ERR_NOT_ALLOWED;
     }
 
 
-    esp_err_t err = sHandle->createOrOpenNamespace(ns_name, open_mode == NVS_READWRITE, nsIndex);
+    esp_err_t err = sHandle->createOrOpenNamespace(ns_name, WANTS_WRITE_MODE(open_mode), nsIndex);
     if (err != ESP_OK) {
         return err;
     }
 
-    NVSHandleSimple* new_handle = new (std::nothrow) NVSHandleSimple(open_mode==NVS_READONLY, nsIndex, sHandle);
+    NVSHandleSimple* new_handle = new (std::nothrow) NVSHandleSimple(open_mode==NVS_READONLY, nsIndex, sHandle, open_mode==NVS_READWRITE_PURGE);
     if (new_handle == nullptr) {
         return ESP_ERR_NO_MEM;
     }

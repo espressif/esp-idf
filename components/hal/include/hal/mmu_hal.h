@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -81,6 +81,19 @@ uint32_t mmu_hal_bytes_to_pages(uint32_t mmu_id, uint32_t bytes);
  */
 void mmu_hal_map_region(uint32_t mmu_id, mmu_target_t mem_type, uint32_t vaddr, uint32_t paddr, uint32_t len, uint32_t *out_len);
 
+#if SOC_PSRAM_ENCRYPTION_PAGE_CONFIGURABLE
+/**
+ * Map a PSRAM physical range to virtual memory without setting the encryption
+ * SENSITIVE bit on each MMU entry. Used only for the explicitly carved-out
+ * unencrypted PSRAM region (see CONFIG_SPIRAM_ENC_EXEMPT).
+ *
+ * @param vaddr        start virtual address (MMU-page-aligned)
+ * @param paddr        start physical address (MMU-page-aligned)
+ * @param len          length in bytes
+ */
+void mmu_hal_map_region_no_enc(uint32_t vaddr, uint32_t paddr, uint32_t len);
+#endif
+
 /**
  * To unmap a virtual address block that is mapped to a physical memory block previously
  *
@@ -121,7 +134,6 @@ bool mmu_hal_vaddr_to_paddr(uint32_t mmu_id, uint32_t vaddr, uint32_t *out_paddr
  *        - false: not found a matched vaddr
  */
 bool mmu_hal_paddr_to_vaddr(uint32_t mmu_id, uint32_t paddr, mmu_target_t target, mmu_vaddr_t type, uint32_t *out_vaddr);
-
 
 /**
  * Check if the vaddr region is valid

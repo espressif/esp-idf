@@ -16,13 +16,24 @@ api-reference/ethernet/esp_eth                  api-reference/network/esp_eth
 api-reference/mesh/index                        api-reference/network/index
 api-reference/mesh/esp_mesh                     api-reference/network/esp_mesh
 api-reference/peripherals/can                   api-reference/peripherals/twai
-api-reference/peripherals/usb                   api-reference/peripherals/usb_device
+api-reference/peripherals/usb                   "https://docs.espressif.com/projects/esp-usb/en/latest/{IDF_TARGET_PATH_NAME}/introduction.html"
+api-reference/peripherals/usb_device            "https://docs.espressif.com/projects/esp-usb/en/latest/{IDF_TARGET_PATH_NAME}/usb_device.html"
+api-reference/peripherals/usb_host              "https://docs.espressif.com/projects/esp-usb/en/latest/{IDF_TARGET_PATH_NAME}/usb_host.html"
+api-reference/peripherals/usb_host/usb_host_notes_index     "https://docs.espressif.com/projects/esp-usb/en/latest/{IDF_TARGET_PATH_NAME}/usb_host/usb_host_notes_index.html"
+api-reference/peripherals/usb_host/usb_host_notes_arch      "https://docs.espressif.com/projects/esp-usb/en/latest/{IDF_TARGET_PATH_NAME}/usb_host/usb_host_notes_arch.html"
+api-reference/peripherals/usb_host/usb_host_notes_design    "https://docs.espressif.com/projects/esp-usb/en/latest/{IDF_TARGET_PATH_NAME}/usb_host/usb_host_notes_design.html"
+api-reference/peripherals/usb_host/usb_host_notes_dwc_otg   "https://docs.espressif.com/projects/esp-usb/en/latest/{IDF_TARGET_PATH_NAME}/usb_host/usb_host_notes_dwc_otg.html"
+api-reference/peripherals/usb_host/usb_host_notes_usbh      "https://docs.espressif.com/projects/esp-usb/en/latest/{IDF_TARGET_PATH_NAME}/usb_host/usb_host_notes_usbh.html"
+api-reference/peripherals/usb_host/usb_host_notes_enum      "https://docs.espressif.com/projects/esp-usb/en/latest/{IDF_TARGET_PATH_NAME}/usb_host/usb_host_notes_enum.html"
+api-reference/peripherals/usb_host/usb_host_notes_ext_hub   "https://docs.espressif.com/projects/esp-usb/en/latest/{IDF_TARGET_PATH_NAME}/usb_host/usb_host_notes_ext_hub.html"
+api-reference/peripherals/usb_host/usb_host_notes_ext_port  "https://docs.espressif.com/projects/esp-usb/en/latest/{IDF_TARGET_PATH_NAME}/usb_host/usb_host_notes_ext_port.html"
 api-reference/wifi/index                        api-reference/network/index
 api-reference/wifi/esp_now                      api-reference/network/esp_now
 api-reference/wifi/esp_smartconfig              api-reference/network/esp_smartconfig
 api-reference/wifi/esp_wifi                     api-reference/network/esp_wifi
 api-reference/system/tcpip_adapter              migration-guides/tcpip-adapter
 api-reference/system/esp_pthread                api-reference/system/pthread
+api-reference/system/async_memcpy               api-reference/peripherals/async_memcpy
 api-reference/storage/spi_flash                 api-reference/peripherals/spi_flash/index
 api-reference/storage/spi_flash_concurrency     api-reference/peripherals/spi_flash/spi_flash_concurrency
 api-reference/storage/spi_flash_override_driver api-reference/peripherals/spi_flash/spi_flash_override_driver
@@ -118,3 +129,6 @@ get-started/windows-setup-update                get-started/windows-setup
 
 # Kconfig documentation got pretty serious file structure changes
 api-reference/kconfig                          api-reference/kconfig-reference
+
+# The LE Audio overview page 'ble-audio' is now the 'esp-ble-audio' landing page
+api-guides/ble/ble-audio                        api-guides/esp-ble-audio/ble-audio-index

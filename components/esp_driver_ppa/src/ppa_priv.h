@@ -231,6 +231,8 @@ bool ppa_transaction_done_cb(dma2d_channel_handle_t dma2d_chan, dma2d_event_data
 
 bool ppa_recycle_transaction(ppa_client_handle_t ppa_client, ppa_trans_t *trans_elm);
 
+bool ppa_check_buffer_alignment(ppa_client_handle_t ppa_client, const void *pic_blk_config, bool is_input, uint32_t block_width);
+
 /****************************** PPA DRIVER ***********************************/
 
 struct ppa_platform_t {
@@ -242,7 +244,8 @@ struct ppa_platform_t {
     ppa_blend_engine_t *blending;               // Pointer to the PPA blending engine
     uint32_t srm_engine_ref_count;              // Reference count used to protect PPA SRM engine acquire and release
     uint32_t blend_engine_ref_count;            // Reference count used to protect PPA blending engine acquire and release
-    size_t buf_alignment_size;                  // Alignment requirement for the outgoing buffer addr and size to satisfy cache line size
+    size_t int_mem_align;                       // Alignment requirement for the internal outgoing buffer to satisfy cache line size
+    size_t ext_mem_align;                       // Alignment requirement for the external outgoing buffer to satisfy cache line size
     uint32_t dma_desc_mem_size;                 // Alignment requirement for the 2D-DMA descriptor to satisfy cache line size
 };
 

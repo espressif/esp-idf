@@ -48,6 +48,21 @@ config BT_CLASSIC_ENABLED
     help
         For now this option needs "SMP_ENABLE" to be set to yes
 
+config BT_CLASSIC_MAX_RECONNECT_ON_COLLISION
+    int "Maximum number of reconnection attempts in case of collision"
+    depends on BT_CLASSIC_ENABLED
+    default 5
+    help
+        The maximum number of reconnection attempts when encountering rejection of connection
+        request with error code 0x0B(Connection Already Exists) from peer device
+
+config BT_CLASSIC_ENABLE_POWER_CTRL_VSC
+    bool "Enable Espressif Vendor-specific HCI commands for power control of Classic Bluetooth"
+    depends on BT_CLASSIC_ENABLED
+    default n
+    help
+        Enable Espressif Vendor-specific HCI commands for power control of Classic Bluetooth
+
 choice BT_ENC_KEY_SIZE_CTRL_ENABLED
     prompt "configure encryption key size"
     depends on BT_CLASSIC_ENABLED
@@ -90,6 +105,24 @@ config BT_A2DP_USE_EXTERNAL_CODEC
         If enable, user shall register audio codec capability to A2DP and encode/decode
         audio data in application layer. The internal codec in A2DP will be remove in
         the future, it is recommend to use external codec for new design.
+
+config BT_A2DP_CODEC_AAC_ENABLED
+    bool "A2DP AAC codec"
+    depends on BT_A2DP_USE_EXTERNAL_CODEC
+    default n
+    help
+        Enable support for A2DP AAC codec when using an external codec.
+        Currently, only the A2DP sink supports AAC codec.
+
+config BT_A2DP_SEP_NUM_MAX
+    int "Maximum number of Stream End Points that can be registered for A2DP"
+    depends on BT_A2DP_USE_EXTERNAL_CODEC
+    default 2 if BT_A2DP_CODEC_AAC_ENABLED
+    default 1
+    range 1 3
+    help
+        The maximum number of Stream End Points (SEPs) that can be registered for A2DP.
+        The default value is 2. If you need to register more SEPs, you can increase this value.
 
 config BT_AVRCP_ENABLED
     bool
@@ -265,7 +298,7 @@ config BT_GOEPC_ENABLED
 
 config BT_BLE_ENABLED
     bool "Bluetooth Low Energy"
-    depends on BT_BLUEDROID_ENABLED
+    depends on BT_BLUEDROID_ENABLED && (!BTDM_CTRL_MODE_BR_EDR_ONLY)
     default y
     help
         This enables Bluetooth Low Energy
@@ -538,7 +571,9 @@ menu "BT DEBUG LOG LEVEL"
 
     choice BT_LOG_HCI_TRACE_LEVEL
         prompt "HCI layer"
-        default BT_LOG_HCI_TRACE_LEVEL_WARNING
+        default BT_LOG_HCI_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_HCI_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_HCI_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
         depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
         help
             Define BT trace level for HCI layer
@@ -573,7 +608,9 @@ menu "BT DEBUG LOG LEVEL"
 
     choice BT_LOG_BTM_TRACE_LEVEL
         prompt "BTM layer"
-        default BT_LOG_BTM_TRACE_LEVEL_WARNING
+        default BT_LOG_BTM_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_BTM_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_BTM_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
         depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
         help
             Define BT trace level for BTM layer
@@ -608,7 +645,9 @@ menu "BT DEBUG LOG LEVEL"
 
     choice BT_LOG_L2CAP_TRACE_LEVEL
         prompt "L2CAP layer"
-        default BT_LOG_L2CAP_TRACE_LEVEL_WARNING
+        default BT_LOG_L2CAP_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_L2CAP_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_L2CAP_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
         depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
         help
             Define BT trace level for L2CAP layer
@@ -713,7 +752,9 @@ menu "BT DEBUG LOG LEVEL"
 
     choice BT_LOG_GAP_TRACE_LEVEL
         prompt "GAP layer"
-        default BT_LOG_GAP_TRACE_LEVEL_WARNING
+        default BT_LOG_GAP_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_GAP_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_GAP_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
         depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
         help
             Define BT trace level for GAP layer
@@ -1028,7 +1069,9 @@ menu "BT DEBUG LOG LEVEL"
 
     choice BT_LOG_APPL_TRACE_LEVEL
         prompt "APPL layer"
-        default BT_LOG_APPL_TRACE_LEVEL_WARNING
+        default BT_LOG_APPL_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_APPL_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_APPL_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
         depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
         help
             Define BT trace level for APPL layer
@@ -1063,7 +1106,9 @@ menu "BT DEBUG LOG LEVEL"
 
     choice BT_LOG_GATT_TRACE_LEVEL
         prompt "GATT layer"
-        default BT_LOG_GATT_TRACE_LEVEL_WARNING
+        default BT_LOG_GATT_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_GATT_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_GATT_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
         depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
         help
             Define BT trace level for GATT layer
@@ -1098,7 +1143,9 @@ menu "BT DEBUG LOG LEVEL"
 
     choice BT_LOG_SMP_TRACE_LEVEL
         prompt "SMP layer"
-        default BT_LOG_SMP_TRACE_LEVEL_WARNING
+        default BT_LOG_SMP_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_SMP_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_SMP_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
         depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
         help
             Define BT trace level for SMP layer
@@ -1133,7 +1180,9 @@ menu "BT DEBUG LOG LEVEL"
 
     choice BT_LOG_BTIF_TRACE_LEVEL
         prompt "BTIF layer"
-        default BT_LOG_BTIF_TRACE_LEVEL_WARNING
+        default BT_LOG_BTIF_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_BTIF_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_BTIF_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
         depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
         help
             Define BT trace level for BTIF layer
@@ -1168,7 +1217,9 @@ menu "BT DEBUG LOG LEVEL"
 
     choice BT_LOG_BTC_TRACE_LEVEL
         prompt "BTC layer"
-        default BT_LOG_BTC_TRACE_LEVEL_WARNING
+        default BT_LOG_BTC_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_BTC_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_BTC_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
         depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
         help
             Define BT trace level for BTC layer
@@ -1203,7 +1254,9 @@ menu "BT DEBUG LOG LEVEL"
 
     choice BT_LOG_OSI_TRACE_LEVEL
         prompt "OSI layer"
-        default BT_LOG_OSI_TRACE_LEVEL_WARNING
+        default BT_LOG_OSI_TRACE_LEVEL_EVENT   if BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_OSI_TRACE_LEVEL_VERBOSE if BLE_LOG_HOST_LOG && !BT_LOG_CRITICAL_ONLY_HOST
+        default BT_LOG_OSI_TRACE_LEVEL_WARNING if !BLE_LOG_ENABLED
         depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
         help
             Define BT trace level for OSI layer
@@ -1430,7 +1483,7 @@ config BT_BLE_FEAT_CREATE_SYNC_RETRY_MAX
 
 menuconfig BT_BLE_FEAT_ISO_EN
     bool "Enable BLE 5.2 iso feature"
-    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_AUDIO_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_ISO_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
     default n
     help
         Enable BLE 5.2 iso
@@ -1443,11 +1496,11 @@ config BT_BLE_FEAT_ISO_60_EN
         Enable iso 6.0 feature
 
 config BT_BLE_FEAT_ISO_BIG_BROCASTER
-    bool "Enable BLE iso BIG brocaster"
+    bool "Enable BLE iso BIG broadcaster"
     depends on BT_BLE_FEAT_ISO_EN
     default y
     help
-        Enable BLE 5.2 BIG brocaster
+        Enable BLE 5.2 BIG broadcaster
 
 config BT_BLE_FEAT_ISO_BIG_SYNCER
     bool "Enable BLE iso BIG syncer"
@@ -1560,6 +1613,15 @@ config BT_BLE_FEAT_CHANNEL_SOUNDING
     default n
     help
         Enable BLE channel sounding
+
+config BT_BLE_FEAT_ADV_MONITOR
+    bool "Enable BLE Advertising Monitor (LE Monitor Advertisement)"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_ADV_MONITOR_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable LE Monitor Advertisement feature (Bluetooth Core 6.0).
+        Allows the host to add devices to a monitor list and receive reports when
+        the controller detects advertising from those devices (e.g. RSSI threshold).
 
 menuconfig BT_BLE_42_FEATURES_SUPPORTED
     bool "Enable BLE 4.2 features(please disable BLE 5.0 if enable BLE 4.2)"

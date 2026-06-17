@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,23 @@ extern "C" {
 
 #define CACHE_LL_L1_ACCESS_EVENT_MASK               (0x1f)
 
+/**
+ * @brief Preload strategy
+ */
+typedef enum {
+    CACHE_LL_PRELOAD_UNTIL_FETCH_DONE = 0,
+    CACHE_LL_PRELOAD_AFTER_FETCH = 1,
+    CACHE_LL_PRELOAD_ARBITRARY = 2,
+} cache_ll_preload_strategy_t;
+
+/**
+ * @brief Initialize the cache clock
+ */
+__attribute__((always_inline))
+static inline void cache_ll_clk_init(void)
+{
+    //for compatibility
+}
 
 /**
  * @brief Check if Cache auto preload is enabled or not.
@@ -183,6 +200,53 @@ __attribute__((always_inline))
 static inline void cache_ll_unfreeze_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
 {
     Cache_Freeze_Disable();
+}
+
+/**
+ * @brief Set the preload strategy (L1 unified)
+ */
+__attribute__((always_inline))
+static inline void cache_ll_preload_set_strategy(uint32_t cache_level, cache_type_t type, uint32_t cache_id, cache_ll_preload_strategy_t strategy)
+{
+    (void)cache_id;
+    (void)type;
+    if (cache_level == CACHE_LL_LEVEL_EXT_MEM || cache_level == CACHE_LL_LEVEL_ALL) {
+        CACHE.l1_icache_ctrl.l1_icache_undef_op = strategy;
+    }
+}
+
+/**
+ * @brief Preload cache (L1 unified)
+ *
+ * Starts preload and does not wait. Use cache_ll_preload_wait_done() to wait for completion.
+ *
+ * @param cache_level  level of the cache (CACHE_LL_LEVEL_EXT_MEM or CACHE_LL_LEVEL_ALL)
+ * @param type         see `cache_type_t`
+ * @param cache_id     id of the cache (unused; pass 0)
+ * @param vaddr        start virtual address of the preload region
+ * @param size         size of the preload region in bytes
+ * @param order        preload order, see `cache_preload_order_t`
+ */
+__attribute__((always_inline))
+static inline void cache_ll_preload(uint32_t cache_level, cache_type_t type, uint32_t cache_id, uint32_t vaddr, uint32_t size, cache_preload_order_t order)
+{
+    (void)cache_id;
+    (void)type;
+    HAL_ASSERT(cache_level == CACHE_LL_LEVEL_EXT_MEM);
+    Cache_Start_Preload(vaddr, size, order);
+}
+
+/**
+ * @brief Wait until cache preload is done (L1 only)
+ */
+__attribute__((always_inline))
+static inline void cache_ll_preload_wait_done(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
+{
+    (void)cache_id;
+    (void)type;
+    HAL_ASSERT(cache_level == CACHE_LL_LEVEL_EXT_MEM);
+    while (Cache_Preload_Done() == 0) {
+    }
 }
 
 /**

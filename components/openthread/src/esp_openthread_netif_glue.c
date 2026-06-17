@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,8 +45,6 @@ typedef struct {
 static esp_openthread_netif_glue_t s_openthread_netif_glue = {
     .event_fd = -1,
 };
-
-ESP_EVENT_DEFINE_BASE(OPENTHREAD_EVENT);
 
 static QueueHandle_t s_packet_queue;
 static esp_netif_t *s_openthread_netif;
@@ -183,7 +181,21 @@ static esp_err_t openthread_netif_transmit(void *handle, void *buffer, size_t le
     otError ot_error = OT_ERROR_NONE;
 
     esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
-    otMessage *message = otIp6NewMessage(esp_openthread_get_instance(), NULL);
+
+    otMessageSettings settings = {};
+    switch (otThreadGetDeviceRole(esp_openthread_get_instance()))
+    {
+    case OT_DEVICE_ROLE_DISABLED:
+        settings.mLinkSecurityEnabled = false;
+        settings.mPriority = OT_MESSAGE_PRIORITY_LOW;
+        break;
+    default:
+        settings.mLinkSecurityEnabled = true;
+        settings.mPriority = OT_MESSAGE_PRIORITY_NORMAL;
+        break;
+    }
+
+    otMessage *message = otIp6NewMessage(esp_openthread_get_instance(), &settings);
     if (message == NULL) {
         ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to allocate OpenThread message");
         ExitNow(error = ESP_ERR_NO_MEM);
@@ -229,10 +241,8 @@ void esp_openthread_register_meshcop_e_handler(esp_event_handler_t handler, bool
 {
     if (for_publish) {
         meshcop_e_publish_handler = handler;
-    } else if (!for_publish) {
-        meshcop_e_remove_handler = handler;
     } else {
-        ESP_ERROR_CHECK(ESP_FAIL);
+        meshcop_e_remove_handler = handler;
     }
 }
 
@@ -331,6 +341,8 @@ void *esp_openthread_netif_glue_init(const esp_openthread_platform_config_t *con
     s_openthread_netif_glue.event_fd = eventfd(0, 0);
     if (s_openthread_netif_glue.event_fd < 0) {
         ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to create event fd for Thread netif");
+        vQueueDelete(s_packet_queue);
+        s_packet_queue = NULL;
         ExitNow(error = ESP_FAIL);
     }
     s_openthread_netif_glue.base.post_attach = openthread_netif_post_attach;

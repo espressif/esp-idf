@@ -13,6 +13,9 @@ set(ld_output "${CMAKE_CURRENT_BINARY_DIR}/ld/esp_tee.ld")
 
 target_linker_script(${COMPONENT_LIB} INTERFACE "${ld_output}")
 
+idf_component_get_property(heap_dir heap COMPONENT_DIR)
+target_linker_script(${COMPONENT_LIB} INTERFACE "${heap_dir}/port/${target}/ld/${target}.rom.heap.ld")
+
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/ld")
 
 # Preprocess esp_tee.ld.in linker script to include configuration, becomes esp_tee.ld

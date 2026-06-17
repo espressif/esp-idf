@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -144,25 +144,29 @@ esp_err_t esp_tee_sec_storage_ecdsa_get_pubkey(const esp_tee_sec_storage_key_cfg
  * @brief Perform encryption using AES256-GCM with the key from secure storage
  *
  * @param[in]  ctx      Pointer to the AEAD operation context
+ * @param[out] iv       Pointer to the output buffer for the generated initialization vector
+ * @param[in]  iv_len   Length of the initialization vector buffer
  * @param[out] tag      Pointer to the authentication tag buffer
  * @param[in]  tag_len  Length of the authentication tag
  * @param[out] output   Pointer to the output data buffer
  *
  * @return esp_err_t ESP_OK on success, appropriate error code otherwise.
  */
-esp_err_t esp_tee_sec_storage_aead_encrypt(const esp_tee_sec_storage_aead_ctx_t *ctx, uint8_t *tag, size_t tag_len, uint8_t *output);
+esp_err_t esp_tee_sec_storage_aead_encrypt(const esp_tee_sec_storage_aead_ctx_t *ctx, uint8_t *iv, size_t iv_len, uint8_t *tag, size_t tag_len, uint8_t *output);
 
 /**
  * @brief Perform decryption using AES256-GCM with the key from secure storage
  *
  * @param[in]  ctx      Pointer to the AEAD operation context
+ * @param[in]  iv       Pointer to the initialization vector used during encryption
+ * @param[in]  iv_len   Length of the initialization vector
  * @param[in]  tag      Pointer to the authentication tag buffer
  * @param[in]  tag_len  Length of the authentication tag
  * @param[out] output   Pointer to the output data buffer
  *
  * @return esp_err_t ESP_OK on success, appropriate error code otherwise.
  */
-esp_err_t esp_tee_sec_storage_aead_decrypt(const esp_tee_sec_storage_aead_ctx_t *ctx, const uint8_t *tag, size_t tag_len, uint8_t *output);
+esp_err_t esp_tee_sec_storage_aead_decrypt(const esp_tee_sec_storage_aead_ctx_t *ctx, const uint8_t *iv, size_t iv_len, const uint8_t *tag, size_t tag_len, uint8_t *output);
 
 /**
  * @brief Generate and return the signature for the specified message digest using

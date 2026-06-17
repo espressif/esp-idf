@@ -9,9 +9,8 @@ components/esp_rom/test_apps/linux_rom_apis:
 components/esp_rom/test_apps/rom_impl_components:
   disable:
     # For ROM impl build tests, disable them if none of the tested features are supported in the ROM
-    - if: CONFIG_NAME == "rom_impl_components" and ((ESP_ROM_HAS_HAL_WDT != 1  and ESP_ROM_HAS_HAL_SYSTIMER != 1) and (ESP_ROM_HAS_HEAP_TLSF != 1 and ESP_ROM_HAS_SPI_FLASH != 1))
-    - if: CONFIG_NAME == "no_rom_impl_components" and ((ESP_ROM_HAS_HAL_WDT != 1 and ESP_ROM_HAS_HAL_SYSTIMER != 1) and (ESP_ROM_HAS_HEAP_TLSF != 1 and ESP_ROM_HAS_SPI_FLASH != 1))
-    - if: SOC_WDT_SUPPORTED != 1
+    - if: CONFIG_NAME == "rom_impl_components" and (ESP_ROM_HAS_HEAP_TLSF != 1 and ESP_ROM_HAS_SPI_FLASH != 1)
+    - if: CONFIG_NAME == "no_rom_impl_components" and (ESP_ROM_HAS_HEAP_TLSF != 1 and ESP_ROM_HAS_SPI_FLASH != 1)
   depends_components:
     - esp_rom
 

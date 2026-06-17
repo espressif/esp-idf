@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -16,7 +16,7 @@
 #include <spi_flash_mmap.h>
 #include <esp_attr.h>
 #include <esp_partition.h>
-#include <esp_flash_encrypt.h>
+#include "esp_efuse.h"
 #include "esp_flash.h"
 
 #include "test_utils.h"
@@ -32,7 +32,7 @@ static spi_flash_mmap_handle_t handle1, handle2, handle3;
 
 static esp_err_t spi_flash_read_maybe_encrypted(size_t src_addr, void *des_addr, size_t size)
 {
-    if (!esp_flash_encryption_enabled()) {
+    if (!esp_efuse_is_flash_encryption_enabled()) {
         return esp_flash_read(NULL, des_addr, src_addr, size);
     } else {
         return esp_flash_read_encrypted(NULL, src_addr, des_addr, size);
@@ -41,7 +41,7 @@ static esp_err_t spi_flash_read_maybe_encrypted(size_t src_addr, void *des_addr,
 
 static esp_err_t spi_flash_write_maybe_encrypted(size_t des_addr, const void *src_addr, size_t size)
 {
-    if (!esp_flash_encryption_enabled()) {
+    if (!esp_efuse_is_flash_encryption_enabled()) {
         return esp_flash_write(NULL, src_addr, des_addr, size);
     } else {
         return esp_flash_write_encrypted(NULL, des_addr, src_addr, size);
@@ -293,7 +293,7 @@ TEST_CASE("flash_mmap invalidates just-written data", "[spi_flash][mmap]")
 
     setup_mmap_tests();
 
-    if (esp_flash_encryption_enabled()) {
+    if (esp_efuse_is_flash_encryption_enabled()) {
         TEST_IGNORE_MESSAGE("flash encryption enabled, spi_flash_write_encrypted() test won't pass as-is");
     }
 

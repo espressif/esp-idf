@@ -11,9 +11,6 @@
 #ifdef CONFIG_ESP_TLS_USING_MBEDTLS
 #include "mbedtls/error.h"
 #include "mbedtls/ssl.h"
-#elif CONFIG_ESP_TLS_USING_WOLFSSL
-#include "wolfssl/wolfcrypt/settings.h"
-#include "wolfssl/ssl.h"
 #endif
 
 
@@ -49,17 +46,6 @@ extern "C" {
 #define ESP_ERR_MBEDTLS_SSL_TICKET_SETUP_FAILED           (ESP_ERR_ESP_TLS_BASE + 0x1C)  /*!< mbedtls api returned failed  */
 #define ESP_ERR_MBEDTLS_SSL_READ_FAILED                   (ESP_ERR_ESP_TLS_BASE + 0x1D)  /*!< mbedtls api returned failed  */
 
-/* wolfssl specific error codes */
-#define ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED           (ESP_ERR_ESP_TLS_BASE + 0x31)  /*!< wolfSSL api returned error */
-#define ESP_ERR_WOLFSSL_SSL_CONF_ALPN_PROTOCOLS_FAILED    (ESP_ERR_ESP_TLS_BASE + 0x32)  /*!< wolfSSL api returned error */
-#define ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED          (ESP_ERR_ESP_TLS_BASE + 0x33)  /*!< wolfSSL api returned error */
-#define ESP_ERR_WOLFSSL_KEY_VERIFY_SETUP_FAILED           (ESP_ERR_ESP_TLS_BASE + 0x34)  /*!< wolfSSL api returned error */
-#define ESP_ERR_WOLFSSL_SSL_HANDSHAKE_FAILED              (ESP_ERR_ESP_TLS_BASE + 0x35)  /*!< wolfSSL api returned failed  */
-#define ESP_ERR_WOLFSSL_CTX_SETUP_FAILED                  (ESP_ERR_ESP_TLS_BASE + 0x36)  /*!< wolfSSL api returned failed */
-#define ESP_ERR_WOLFSSL_SSL_SETUP_FAILED                  (ESP_ERR_ESP_TLS_BASE + 0x37)  /*!< wolfSSL api returned failed */
-#define ESP_ERR_WOLFSSL_SSL_WRITE_FAILED                  (ESP_ERR_ESP_TLS_BASE + 0x38)  /*!< wolfSSL api returned failed */
-
-
 /**
 * Definition of errors reported from IO API (potentially non-blocking) in case of error:
 * - esp_tls_conn_read()
@@ -69,11 +55,12 @@ extern "C" {
 #define ESP_TLS_ERR_SSL_WANT_READ                          MBEDTLS_ERR_SSL_WANT_READ
 #define ESP_TLS_ERR_SSL_WANT_WRITE                         MBEDTLS_ERR_SSL_WANT_WRITE
 #define ESP_TLS_ERR_SSL_TIMEOUT                            MBEDTLS_ERR_SSL_TIMEOUT
-#elif CONFIG_ESP_TLS_USING_WOLFSSL /* CONFIG_ESP_TLS_USING_MBEDTLS */
-#define ESP_TLS_ERR_SSL_WANT_READ                          -0x6900
-#define ESP_TLS_ERR_SSL_WANT_WRITE                         -0x6880
-#define ESP_TLS_ERR_SSL_TIMEOUT                            WOLFSSL_CBIO_ERR_TIMEOUT
-#endif /*CONFIG_ESP_TLS_USING_WOLFSSL */
+#elif CONFIG_ESP_TLS_CUSTOM_STACK
+/* For custom stacks, use standard error codes that match mbedTLS conventions */
+#define ESP_TLS_ERR_SSL_WANT_READ                          -0x6900  /* SSL wants to read more data */
+#define ESP_TLS_ERR_SSL_WANT_WRITE                         -0x6880  /* SSL wants to write more data */
+#define ESP_TLS_ERR_SSL_TIMEOUT                            -0x6800  /* SSL operation timed out */
+#endif
 
 /**
 * Definition of different types/sources of error codes reported
@@ -81,13 +68,13 @@ extern "C" {
 */
 typedef enum {
     ESP_TLS_ERR_TYPE_UNKNOWN = 0,
-    ESP_TLS_ERR_TYPE_SYSTEM,                /*!< System error -- errno */
-    ESP_TLS_ERR_TYPE_MBEDTLS,               /*!< Error code from mbedTLS library */
-    ESP_TLS_ERR_TYPE_MBEDTLS_CERT_FLAGS,    /*!< Certificate flags defined in mbedTLS */
-    ESP_TLS_ERR_TYPE_ESP,                   /*!< ESP-IDF error type -- esp_err_t  */
-    ESP_TLS_ERR_TYPE_WOLFSSL,               /*!< Error code from wolfSSL library */
-    ESP_TLS_ERR_TYPE_WOLFSSL_CERT_FLAGS,    /*!< Certificate flags defined in wolfSSL */
-    ESP_TLS_ERR_TYPE_MAX,                   /*!< Last err type -- invalid entry */
+    ESP_TLS_ERR_TYPE_SYSTEM,                     /*!< System error -- errno */
+    ESP_TLS_ERR_TYPE_MBEDTLS,                    /*!< Error code from mbedTLS library */
+    ESP_TLS_ERR_TYPE_MBEDTLS_CERT_FLAGS,         /*!< Certificate flags defined in mbedTLS */
+    ESP_TLS_ERR_TYPE_ESP,                        /*!< ESP-IDF error type -- esp_err_t  */
+    ESP_TLS_ERR_TYPE_CUSTOM_STACK,               /*!< Error code from custom TLS stack */
+    ESP_TLS_ERR_TYPE_CUSTOM_STACK_CERT_FLAGS,    /*!< Certificate flags from custom TLS stack */
+    ESP_TLS_ERR_TYPE_MAX,                        /*!< Last err type -- invalid entry */
 } esp_tls_error_type_t;
 
 typedef struct esp_tls_last_error* esp_tls_error_handle_t;

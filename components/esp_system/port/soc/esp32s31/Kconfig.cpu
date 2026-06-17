@@ -1,14 +1,21 @@
 choice ESP_DEFAULT_CPU_FREQ_MHZ
     prompt "CPU frequency"
     default ESP_DEFAULT_CPU_FREQ_MHZ_40 if IDF_ENV_FPGA || ESP_BRINGUP_BYPASS_CPU_CLK_SETTING
+    default ESP_DEFAULT_CPU_FREQ_MHZ_320
     help
         CPU frequency to be set on application startup.
 
     config ESP_DEFAULT_CPU_FREQ_MHZ_40
         bool "40 MHz"
         depends on IDF_ENV_FPGA || ESP_BRINGUP_BYPASS_CPU_CLK_SETTING
+    config ESP_DEFAULT_CPU_FREQ_MHZ_240
+        bool "240 MHz"
+    config ESP_DEFAULT_CPU_FREQ_MHZ_320
+        bool "320 MHz"
 endchoice
 
 config ESP_DEFAULT_CPU_FREQ_MHZ
     int
     default 40 if ESP_DEFAULT_CPU_FREQ_MHZ_40
+    default 240 if ESP_DEFAULT_CPU_FREQ_MHZ_240
+    default 320 if ESP_DEFAULT_CPU_FREQ_MHZ_320

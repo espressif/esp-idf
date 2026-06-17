@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,12 +8,23 @@
 #include <stdbool.h>
 #include <esp_system.h>
 #include <esp_http_server.h>
+#include <esp_heap_caps.h>
+#include <net/if.h>
+#include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+#include "../../src/esp_httpd_priv.h"
+#endif
 
 #include "unity.h"
 #include "test_utils.h"
 
 int pre_start_mem, post_stop_mem, post_stop_min_mem;
 bool basic_sanity = true;
+
+#define TAG "test_http_server"
 
 esp_err_t null_func(httpd_req_t *req)
 {
@@ -30,6 +41,40 @@ httpd_uri_t handler_limit_uri (char* path)
     };
     return uri;
 };
+
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+static httpd_uri_t handler_limit_ws_uri(char *path, const char *subprotocol)
+{
+    httpd_uri_t uri = {
+        .uri                   = path,
+        .method                = HTTP_GET,
+        .handler               = null_func,
+        .user_ctx              = NULL,
+        .is_websocket          = true,
+        .supported_subprotocol = subprotocol,
+    };
+    return uri;
+}
+
+static int ws_recv_fail_handler_calls;
+
+static int ws_recv_fail_override(httpd_handle_t hd, int sockfd, char *buf, size_t buf_len, int flags)
+{
+    (void)hd;
+    (void)sockfd;
+    (void)buf;
+    (void)buf_len;
+    (void)flags;
+    return HTTPD_SOCK_ERR_FAIL;
+}
+
+static esp_err_t ws_counting_handler(httpd_req_t *req)
+{
+    (void)req;
+    ws_recv_fail_handler_calls++;
+    return ESP_OK;
+}
+#endif /* CONFIG_HTTPD_WS_SUPPORT */
 
 static inline unsigned num_digits(unsigned x)
 {
@@ -81,6 +126,36 @@ void test_handler_limit(httpd_handle_t hd)
         TEST_ASSERT(httpd_unregister_uri_handler(hd, uris[i].uri, uris[i].method) == ESP_OK);
     }
     basic_sanity = false;
+
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+    /* --- WS subprotocol memory leak check ---
+     * Each registration strdup's the supported_subprotocol string.
+     * Verify that unregistration frees it (expected leak per handler:
+     * strlen(subprotocol) + 1 bytes if the bug is present).
+     */
+    char ws_paths[HTTPD_TEST_MAX_URI_HANDLERS][8];
+    httpd_uri_t ws_uris[HTTPD_TEST_MAX_URI_HANDLERS];
+    const char *subprotocol = "chat";
+
+    for (i = 0; i < HTTPD_TEST_MAX_URI_HANDLERS; i++) {
+        sprintf(ws_paths[i], "/ws%d", i);
+        ws_uris[i] = handler_limit_ws_uri(ws_paths[i], subprotocol);
+    }
+
+    size_t heap_before = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+
+    for (i = 0; i < HTTPD_TEST_MAX_URI_HANDLERS; i++) {
+        TEST_ASSERT(httpd_register_uri_handler(hd, &ws_uris[i]) == ESP_OK);
+    }
+    for (i = 0; i < HTTPD_TEST_MAX_URI_HANDLERS; i++) {
+        TEST_ASSERT(httpd_unregister_uri_handler(hd, ws_uris[i].uri, ws_uris[i].method) == ESP_OK);
+    }
+
+    size_t heap_after = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+    int leaked = (int)heap_before - (int)heap_after;
+
+    TEST_ASSERT_MESSAGE(leaked <= 0, "Heap leaked after WS handler unregister");
+#endif /* CONFIG_HTTPD_WS_SUPPORT */
 }
 
 /********************* Test Handler Limit End *******************/
@@ -100,7 +175,7 @@ httpd_handle_t test_httpd_start(uint16_t id)
 
 /* Currently this only tests for the number of tasks.
  * Heap leakage is not tested as LWIP allocates memory
- * which may not be freed immedietly causing erroneous
+ * which may not be freed immediately causing erroneous
  * evaluation. Another test to implement would be the
  * monitoring of open sockets, but LWIP presently provides
  * no such API for getting the number of open sockets.
@@ -114,7 +189,7 @@ TEST_CASE("Leak Test", "[HTTP SERVER]")
     test_case_uses_tcpip();
 
     task_count = uxTaskGetNumberOfTasks();
-    printf("Initial task count: %d\n", task_count);
+    ESP_LOGI(TAG, "Initial task count: %d\n", task_count);
 
     pre_start_mem = esp_get_free_heap_size();
 
@@ -124,7 +199,7 @@ TEST_CASE("Leak Test", "[HTTP SERVER]")
         unsigned num_tasks = uxTaskGetNumberOfTasks();
         task_count++;
         if (num_tasks != task_count) {
-            printf("Incorrect task count (starting): %d expected %d\n",
+            ESP_LOGE(TAG, "Incorrect task count (starting): %d expected %d\n",
                    num_tasks, task_count);
             res = false;
         }
@@ -132,14 +207,14 @@ TEST_CASE("Leak Test", "[HTTP SERVER]")
 
     for (int i = 0; i < SERVER_INSTANCES; i++) {
         if (httpd_stop(hd[i]) != ESP_OK) {
-            printf("Failed to stop httpd task %d\n", i);
+            ESP_LOGE(TAG, "Failed to stop httpd task %d\n", i);
             res = false;
         }
         vTaskDelay(10);
         unsigned num_tasks = uxTaskGetNumberOfTasks();
         task_count--;
         if (num_tasks != task_count) {
-            printf("Incorrect task count (stopping): %d expected %d\n",
+            ESP_LOGE(TAG, "Incorrect task count (stopping): %d expected %d\n",
                    num_tasks, task_count);
             res = false;
         }
@@ -243,6 +318,208 @@ TEST_CASE("Max Allowed Sockets Test", "[HTTP SERVER]")
     config.max_open_sockets += 1;
     TEST_ASSERT(httpd_start(&hd, &config) != ESP_OK);
 }
+
+TEST_CASE("Interface Binding Test", "[HTTP SERVER]")
+{
+    test_case_uses_tcpip();
+
+    httpd_handle_t hd;
+    struct ifreq ifr;
+
+    /* Test 1: Server starts successfully with NULL if_name (default behavior - INADDR_ANY) */
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    config.server_port = 8080;
+    TEST_ASSERT(config.if_name == NULL);
+    TEST_ASSERT(httpd_start(&hd, &config) == ESP_OK);
+    TEST_ASSERT(httpd_stop(hd) == ESP_OK);
+
+    /* Test 2: Server starts successfully with loopback interface binding */
+    memset(&ifr, 0, sizeof(ifr));
+    strcpy(ifr.ifr_name, "lo0");  // Loopback interface
+    config.server_port = 8081;
+    config.if_name = &ifr;
+
+    /* On embedded systems, loopback may not exist, so we test both success and expected failure */
+    esp_err_t ret = httpd_start(&hd, &config);
+    if (ret == ESP_OK) {
+        /* If loopback exists and binding succeeds, verify we can stop cleanly */
+        TEST_ASSERT(httpd_stop(hd) == ESP_OK);
+    } else {
+        /* If loopback doesn't exist or binding fails, that's also acceptable */
+        /* The important part is that the server doesn't crash */
+        ESP_LOGI(TAG, "Loopback binding failed as expected on this platform\n");
+    }
+
+    /* Test 3: Server handles empty interface name (should bind to all interfaces) */
+    memset(&ifr, 0, sizeof(ifr));
+    ifr.ifr_name[0] = '\0';  // Empty interface name
+    config.server_port = 8082;
+    config.if_name = &ifr;
+
+    /* Empty interface name should be ignored and server should start normally */
+    TEST_ASSERT(httpd_start(&hd, &config) == ESP_OK);
+    TEST_ASSERT(httpd_stop(hd) == ESP_OK);
+
+    /* Test 4: Server handles invalid interface name gracefully */
+    memset(&ifr, 0, sizeof(ifr));
+    strcpy(ifr.ifr_name, "nonex");  // Invalid interface
+    config.server_port = 8083;
+    config.if_name = &ifr;
+
+    /* Starting with invalid interface should fail gracefully */
+    ret = httpd_start(&hd, &config);
+    TEST_ASSERT(ret != ESP_OK);
+    if (ret != ESP_OK) {
+        /* Expected failure - invalid interface */
+        ESP_LOGI(TAG, "Invalid interface binding failed as expected\n");
+    } else {
+        /* On some platforms, the check might not happen until actual use */
+        httpd_stop(hd);
+    }
+
+    /* Test 5: Verify backward compatibility - multiple servers without interface binding */
+    httpd_handle_t hd1, hd2;
+    httpd_config_t config1 = HTTPD_DEFAULT_CONFIG();
+    httpd_config_t config2 = HTTPD_DEFAULT_CONFIG();
+    config1.server_port = 8084;
+    config1.ctrl_port = ESP_HTTPD_DEF_CTRL_PORT + 1;
+    config2.server_port = 8085;
+    config2.ctrl_port = ESP_HTTPD_DEF_CTRL_PORT + 2;
+
+    TEST_ASSERT(httpd_start(&hd1, &config1) == ESP_OK);
+    TEST_ASSERT(httpd_start(&hd2, &config2) == ESP_OK);
+    TEST_ASSERT(httpd_stop(hd1) == ESP_OK);
+    TEST_ASSERT(httpd_stop(hd2) == ESP_OK);
+}
+
+TEST_CASE("httpd_resp_set_hdr rejects CRLF in header field and value", "[HTTP SERVER][security]")
+{
+    httpd_req_t fake_req = {0};
+
+    /* \r\n in value */
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      httpd_resp_set_hdr(&fake_req, "X-Field", "val\r\nX-Injected: pwned"));
+    /* bare \n in value */
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      httpd_resp_set_hdr(&fake_req, "X-Field", "val\nX-Injected: pwned"));
+    /* \r\n in field name */
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      httpd_resp_set_hdr(&fake_req, "X-Field\r\nX-Injected: pwned", "val"));
+}
+
+TEST_CASE("httpd_resp_set_status rejects CRLF in status string", "[HTTP SERVER][security]")
+{
+    httpd_req_t fake_req = {0};
+
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      httpd_resp_set_status(&fake_req, "200 OK\r\nX-Injected: pwned"));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      httpd_resp_set_status(&fake_req, "200 OK\nX-Injected: pwned"));
+}
+
+TEST_CASE("httpd_resp_set_type rejects CRLF in content type", "[HTTP SERVER][security]")
+{
+    httpd_req_t fake_req = {0};
+
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      httpd_resp_set_type(&fake_req, "text/html\r\nX-Injected: pwned"));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      httpd_resp_set_type(&fake_req, "text/html\nX-Injected: pwned"));
+}
+
+/* ---- httpd_queue_work backpressure ---- */
+
+static SemaphoreHandle_t s_qw_gate;
+static volatile int s_qw_work_runs;
+
+static void qw_blocking_work(void *arg)
+{
+    /* Hold the httpd thread inside this work fn so the ctrl-socket mbox
+     * stops draining. Auto-release after 2 s as a safety net in case the
+     * test asserts mid-way and never reaches the explicit give. */
+    xSemaphoreTake((SemaphoreHandle_t)arg, pdMS_TO_TICKS(2000));
+}
+
+static void qw_counting_work(void *arg)
+{
+    (void)arg;
+    s_qw_work_runs++;
+}
+
+TEST_CASE("httpd_queue_work fast-fails on ctrl mbox saturation", "[HTTP SERVER]")
+{
+    test_case_uses_tcpip();
+
+    httpd_handle_t hd = NULL;
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_start(&hd, &config));
+
+    s_qw_gate = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(s_qw_gate);
+    s_qw_work_runs = 0;
+
+    /* Park the httpd thread in a blocked work item so the mbox can fill. */
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_queue_work(hd, qw_blocking_work, s_qw_gate));
+    vTaskDelay(pdMS_TO_TICKS(100));
+
+    /* Spam queue_work past the mbox cap; first ones succeed, rest must
+     * return ESP_FAIL synchronously (default non-blocking behavior). */
+    int ok_count = 0;
+    int fail_count = 0;
+    for (int i = 0; i < CONFIG_LWIP_UDP_RECVMBOX_SIZE * 2 + 4; i++) {
+        esp_err_t err = httpd_queue_work(hd, qw_counting_work, NULL);
+        if (err == ESP_OK) {
+            ok_count++;
+        } else {
+            TEST_ASSERT_EQUAL(ESP_FAIL, err);
+            fail_count++;
+        }
+    }
+    TEST_ASSERT_GREATER_THAN(0, ok_count);
+    TEST_ASSERT_LESS_OR_EQUAL(CONFIG_LWIP_UDP_RECVMBOX_SIZE, ok_count);
+    TEST_ASSERT_GREATER_THAN(0, fail_count);
+
+    /* Release the parked work; every accepted item must now actually run. */
+    xSemaphoreGive(s_qw_gate);
+    vTaskDelay(pdMS_TO_TICKS(300));
+    TEST_ASSERT_EQUAL(ok_count, s_qw_work_runs);
+
+    vSemaphoreDelete(s_qw_gate);
+    s_qw_gate = NULL;
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_stop(hd));
+}
+
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+TEST_CASE("WS recv failure marks close without dispatching handler", "[HTTP SERVER][websocket]")
+{
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    struct httpd_data hd = {0};
+    struct sock_db session = {0};
+
+    hd.config = config;
+    hd.hd_req_aux.resp_hdrs = calloc(config.max_resp_headers, sizeof(*hd.hd_req_aux.resp_hdrs));
+    TEST_ASSERT_NOT_NULL(hd.hd_req_aux.resp_hdrs);
+
+    session.fd = 123;
+    session.handle = (httpd_handle_t) &hd;
+    session.recv_fn = ws_recv_fail_override;
+    session.ws_handshake_done = true;
+    session.ws_handler = ws_counting_handler;
+    session.ws_control_frames = false;
+    session.ws_close = false;
+
+    ws_recv_fail_handler_calls = 0;
+
+    esp_err_t ret = httpd_req_new(&hd, &session);
+
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+    TEST_ASSERT_EQUAL(0, ws_recv_fail_handler_calls);
+    TEST_ASSERT_TRUE(session.ws_close);
+    TEST_ASSERT_EQUAL(HTTPD_WS_TYPE_CLOSE, hd.hd_req_aux.ws_type);
+
+    free(hd.hd_req_aux.resp_hdrs);
+}
+#endif /* CONFIG_HTTPD_WS_SUPPORT */
 
 void app_main(void)
 {

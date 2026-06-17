@@ -55,6 +55,30 @@ INPUT = \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_sensor_model_api.h \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_time_scene_model_api.h \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/v1.1/api/models/include/esp_ble_mesh_mbt_model_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_aics_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_bap_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_bap_lc3_preset_defs.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_cap_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_ccp_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_codec_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_common_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_csip_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_defs.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_gmap_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_gmap_lc3_preset_defs.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_has_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_lc3_defs.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_mcc_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_mcs_defs.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_media_proxy_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_micp_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_pacs_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_pbp_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_tbs_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_tmap_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_vcp_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_audio/api/include/esp_ble_audio_vocs_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_iso/api/include/esp_ble_iso_common_api.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_a2dp_api.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_avrc_api.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_bt_defs.h \
@@ -82,6 +106,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_adc/include/esp_adc/adc_continuous.h \
     $(PROJECT_PATH)/components/esp_adc/include/esp_adc/adc_oneshot.h \
     $(PROJECT_PATH)/components/esp_app_format/include/esp_app_desc.h \
+    $(PROJECT_PATH)/components/esp_blockdev/include/esp_blockdev.h \
     $(PROJECT_PATH)/components/esp_bootloader_format/include/esp_bootloader_desc.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_check.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_err.h \
@@ -92,10 +117,15 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_driver_ana_cmpr/include/driver/ana_cmpr.h \
     $(PROJECT_PATH)/components/esp_driver_ana_cmpr/include/driver/ana_cmpr_etm.h \
     $(PROJECT_PATH)/components/esp_driver_ana_cmpr/include/driver/ana_cmpr_types.h \
+    $(PROJECT_PATH)/components/esp_driver_bitscrambler/include/driver/bitscrambler.h \
+    $(PROJECT_PATH)/components/esp_driver_bitscrambler/include/driver/bitscrambler_loopback.h \
+    $(PROJECT_PATH)/components/esp_driver_cordic/include/driver/cordic.h \
+    $(PROJECT_PATH)/components/esp_driver_cordic/include/driver/cordic_types.h \
     $(PROJECT_PATH)/components/esp_driver_dac/include/driver/dac_continuous.h \
     $(PROJECT_PATH)/components/esp_driver_dac/include/driver/dac_cosine.h \
     $(PROJECT_PATH)/components/esp_driver_dac/include/driver/dac_oneshot.h \
     $(PROJECT_PATH)/components/esp_driver_dac/include/driver/dac_types.h \
+    $(PROJECT_PATH)/components/esp_driver_dma/include/esp_async_crc.h \
     $(PROJECT_PATH)/components/esp_driver_dma/include/esp_async_memcpy.h \
     $(PROJECT_PATH)/components/esp_driver_gpio/include/driver/dedic_gpio.h \
     $(PROJECT_PATH)/components/esp_driver_gpio/include/driver/gpio.h \
@@ -171,7 +201,9 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_hal_ana_conv/include/hal/adc_types.h \
     $(PROJECT_PATH)/components/esp_hal_ana_conv/include/hal/dac_types.h \
     $(PROJECT_PATH)/components/esp_hal_ana_conv/include/hal/temperature_sensor_types.h \
+    $(PROJECT_PATH)/components/esp_hal_cordic/include/hal/cordic_types.h \
     $(PROJECT_PATH)/components/esp_hal_emac/include/hal/eth_types.h \
+    $(PROJECT_PATH)/components/esp_hal_gpio/$(IDF_TARGET)/include/soc/gpio_num.h \
     $(PROJECT_PATH)/components/esp_hal_gpio/include/hal/gpio_types.h \
     $(PROJECT_PATH)/components/esp_hal_gpio/include/hal/rtc_io_types.h \
     $(PROJECT_PATH)/components/esp_hal_gpio/include/hal/sdm_types.h \
@@ -185,10 +217,11 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_hal_ledc/include/hal/ledc_types.h \
     $(PROJECT_PATH)/components/esp_hal_parlio/include/hal/parlio_types.h \
     $(PROJECT_PATH)/components/esp_hal_mcpwm/include/hal/mcpwm_types.h \
-    $(PROJECT_PATH)/components/esp_hal_mspi/include/hal/esp_flash_err.h \
     $(PROJECT_PATH)/components/esp_hal_mspi/include/hal/spi_flash_types.h \
     $(PROJECT_PATH)/components/esp_hal_pcnt/include/hal/pcnt_types.h \
     $(PROJECT_PATH)/components/esp_hal_rmt/include/hal/rmt_types.h \
+    $(PROJECT_PATH)/components/esp_hal_sd/include/hal/sdio_slave_types.h \
+    $(PROJECT_PATH)/components/esp_hal_sd/include/hal/sd_types.h \
     $(PROJECT_PATH)/components/esp_hal_twai/include/hal/twai_types.h \
     $(PROJECT_PATH)/components/esp_hal_uart/include/hal/uart_types.h \
     $(PROJECT_PATH)/components/esp_hal_uart/include/hal/uhci_types.h \
@@ -232,7 +265,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_ringbuf/include/freertos/ringbuf.h \
     $(PROJECT_PATH)/components/esp_rom/include/esp_rom_sys.h \
     $(PROJECT_PATH)/components/esp_security/include/esp_ds.h \
-    $(PROJECT_PATH)/components/esp_security/include/esp_hmac.h \
+    $(PROJECT_PATH)/components/esp_system/include/esp_debug_helpers.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_expression_with_stack.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_freertos_hooks.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_ipc_isr.h \
@@ -262,6 +295,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_wifi/wifi_apps/nan_app/include/esp_nan.h \
     $(PROJECT_PATH)/components/esp-tls/esp_tls_errors.h \
     $(PROJECT_PATH)/components/esp-tls/esp_tls.h \
+    $(PROJECT_PATH)/components/esp-tls/esp_tls_custom_stack.h \
     $(PROJECT_PATH)/components/fatfs/diskio/diskio_impl.h \
     $(PROJECT_PATH)/components/fatfs/diskio/diskio_rawflash.h \
     $(PROJECT_PATH)/components/fatfs/diskio/diskio_sdmmc.h \
@@ -276,10 +310,8 @@ INPUT = \
     $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/task.h \
     $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/timers.h \
     $(PROJECT_PATH)/components/hal/include/hal/color_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/sdio_slave_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/efuse_hal.h \
     $(PROJECT_PATH)/components/hal/include/hal/lp_core_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/sd_types.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_caps_init.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_caps.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_task_info.h \
@@ -297,6 +329,10 @@ INPUT = \
     $(PROJECT_PATH)/components/lwip/include/apps/ping/ping_sock.h \
     $(PROJECT_PATH)/components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h \
     $(PROJECT_PATH)/components/mbedtls/port/psa_driver/include/psa_crypto_driver_esp_ecdsa_contexts.h \
+    $(PROJECT_PATH)/components/mbedtls/port/psa_driver/include/psa_crypto_driver_esp_hmac_opaque_contexts.h \
+    $(PROJECT_PATH)/components/mbedtls/port/psa_driver/include/psa_crypto_driver_esp_rsa_ds_contexts.h \
+    $(PROJECT_PATH)/components/mbedtls/port/psa_driver/include/psa_crypto_driver_esp_sha_contexts.h \
+    $(PROJECT_PATH)/components/mbedtls/port/psa_driver/include/psa_crypto_driver_esp_aes_contexts.h \
     $(PROJECT_PATH)/components/nvs_flash/include/nvs_flash.h \
     $(PROJECT_PATH)/components/nvs_flash/include/nvs.h \
     $(PROJECT_PATH)/components/nvs_flash/include/nvs_bootloader.h \
@@ -323,11 +359,11 @@ INPUT = \
     $(PROJECT_PATH)/components/soc/include/soc/soc_caps_eval.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/clk_tree_defs.h \
-    $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/gpio_num.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/soc_caps.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/uart_pins.h \
     $(PROJECT_PATH)/components/spi_flash/include/esp_flash_spi_init.h \
     $(PROJECT_PATH)/components/spi_flash/include/esp_flash.h \
+    $(PROJECT_PATH)/components/spi_flash/include/esp_flash_err.h \
     $(PROJECT_PATH)/components/spi_flash/include/spi_flash_mmap.h \
     $(PROJECT_PATH)/components/spi_flash/include/esp_spi_flash_counters.h \
     $(PROJECT_PATH)/components/spiffs/include/esp_spiffs.h \
@@ -374,6 +410,8 @@ PREDEFINED             = \
     configTASKLIST_INCLUDE_COREID=1 \
     configUSE_SB_COMPLETED_CALLBACK=1 \
     PRIVILEGED_FUNCTION= \
+    PACKED_ATTR= \
+    WORD_ALIGNED_ATTR= \
     "ESP_EVENT_DECLARE_BASE(x)=extern esp_event_base_t x"
 
 ## Do not complain about not having dot

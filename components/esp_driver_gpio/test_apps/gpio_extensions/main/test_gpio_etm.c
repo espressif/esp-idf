@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -89,6 +89,9 @@ TEST_CASE("gpio_etm_self_trigger", "[gpio_etm]")
     TEST_ESP_OK(esp_etm_del_task(gpio_task));
     TEST_ESP_OK(esp_etm_del_event(gpio_event));
     TEST_ESP_OK(esp_etm_del_channel(etm_channel_a));
+
+    TEST_ESP_OK(gpio_reset_pin(output_gpio));
+    TEST_ESP_OK(gpio_reset_pin(input_gpio));
 }
 
 TEST_CASE("gpio_etm_self_trigger_multi_action", "[gpio_etm]")
@@ -204,4 +207,8 @@ TEST_CASE("gpio_etm_self_trigger_multi_action", "[gpio_etm]")
     TEST_ESP_OK(esp_etm_del_event(gpio_event_b));
     TEST_ESP_OK(esp_etm_del_channel(etm_channel_a));
     TEST_ESP_OK(esp_etm_del_channel(etm_channel_b));
+
+    TEST_ESP_OK(gpio_reset_pin(output_gpio));
+    TEST_ESP_OK(gpio_reset_pin(input_gpio1));
+    TEST_ESP_OK(gpio_reset_pin(input_gpio2));
 }

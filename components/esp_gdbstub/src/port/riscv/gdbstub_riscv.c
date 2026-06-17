@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -100,27 +100,6 @@ static void esp_gdbstub_pie_regs_to_regfile (esp_gdbstub_gdb_regfile_t *dst)
 #endif
 
 #if SOC_CPU_HAS_FPU || SOC_CPU_HAS_PIE
-const StaticTask_t *esp_gdbstub_find_tcb_by_frame(const esp_gdbstub_frame_t *frame)
-{
-    /*
-     * Determine which task owns the current frame.
-     * Perform a search across all tasks, as GDBstub may not include task information
-     * if configured with ESP_GDBSTUB_SUPPORT_TASKS disabled.
-     */
-
-    TaskIterator_t xTaskIter = {0}; /* Point to the first task list */
-
-    while(xTaskGetNext(&xTaskIter) != -1)
-    {
-        StaticTask_t *tcb = (StaticTask_t *)xTaskIter.pxTaskHandle;
-        if (tcb->pxDummy1 /* pxTopOfStack */ == frame) {
-            return tcb;
-        }
-    }
-
-    return NULL;  /* Task not found. */
-}
-
 static void *esp_gdbstub_coproc_saved_area(const StaticTask_t *tcb, int coproc, bool is_read) {
     /*
      * Coprocessors have lazy register saving mechanism:
@@ -269,6 +248,22 @@ void esp_gdbstub_int(__attribute__((unused)) void *frame)
 
 void esp_gdbstub_init_dports(void)
 {
+}
+
+bool esp_gdbstub_get_watchpoint_trigger_addr(uint32_t *addr)
+{
+    for (int i = 0; i < SOC_CPU_BREAKPOINTS_NUM; i++) {
+        RV_WRITE_CSR(tselect, i);
+        uint32_t tdata1 = RV_READ_CSR(tdata1);
+        bool is_load = tdata1 & TDATA1_LOAD;
+        bool is_store = tdata1 & TDATA1_STORE;
+        bool is_exec = tdata1 & TDATA1_EXECUTE;
+        if (!is_exec && (is_load || is_store)) {
+            *addr = RV_READ_CSR(tdata2);
+            return true;
+        }
+    }
+    return false;
 }
 
 #endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME

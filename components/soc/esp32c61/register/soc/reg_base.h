@@ -62,4 +62,3 @@
 // below are not generated but pick from old file
 #define DR_REG_CLINT_M_BASE                     0x20000000
 #define PWDET_CONF_REG                          0x600A0808
-#define DR_REG_I2C_ANA_MST_BASE                 0x600AF800

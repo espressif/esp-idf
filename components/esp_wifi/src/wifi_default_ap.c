@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,7 +30,17 @@ esp_err_t esp_wifi_ap_get_sta_list_with_ip(const wifi_sta_list_t *wifi_sta_list,
         memcpy(wifi_sta_ip_mac_list->sta[i].mac, wifi_sta_list->sta[i].mac, 6);
         memset(&wifi_sta_ip_mac_list->sta[i].ip, 0, sizeof(esp_ip4_addr_t));
     }
-    return esp_netif_dhcps_get_clients_by_mac(ap, num, wifi_sta_ip_mac_list->sta);
+    esp_err_t err = esp_netif_dhcps_get_clients_by_mac(ap, num, wifi_sta_ip_mac_list->sta);
+    if (err != ESP_OK && err != ESP_ERR_NOT_SUPPORTED) {
+        return err;
+    }
+    for (int i = 0; i < num; i++) {
+        if (wifi_sta_ip_mac_list->sta[i].ip.addr == 0) {
+            // Try to get the IP from the ARP table, and not care about the result
+            esp_netif_arp_get_client_by_mac(ap, &wifi_sta_ip_mac_list->sta[i]);
+        }
+    }
+    return ESP_OK;
 #else
     return ESP_ERR_NOT_SUPPORTED;
 #endif

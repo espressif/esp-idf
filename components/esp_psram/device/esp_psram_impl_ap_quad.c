@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -344,8 +344,8 @@ esp_err_t esp_psram_impl_enable(void)
 #endif
 
 #if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
-    //enter MSPI slow mode to init PSRAM device registers
-    mspi_timing_enter_low_speed_mode(true);
+    //enter MSPI slow mode to init PSRAM device registers (early init: see mspi_timing_enter_low_speed_early)
+    mspi_timing_enter_low_speed_early();
 #else
     s_config_psram_clock(true);
 #endif // SOC_SPI_MEM_SUPPORT_TIMING_TUNING
@@ -356,7 +356,7 @@ esp_err_t esp_psram_impl_enable(void)
     psram_disable_qio_mode(PSRAM_CTRLR_LL_MSPI_ID_1);
 
     if (s_check_psram_connected(PSRAM_CTRLR_LL_MSPI_ID_1) != ESP_OK) {
-        ESP_EARLY_LOGE(TAG, "PSRAM chip is not connected, or wrong PSRAM line mode");
+        PSRAM_LOG_NOTFOUND(TAG, "PSRAM chip is not connected, or wrong PSRAM line mode");
         return ESP_ERR_NOT_SUPPORTED;
     }
 
@@ -412,7 +412,7 @@ esp_err_t esp_psram_impl_enable(void)
     //Configure SPI0 PSRAM related SPI Phases
     config_psram_spi_phases();
     //Back to the high speed mode. Flash/PSRAM clocks are set to the clock that user selected. SPI0/1 registers are all set correctly
-    mspi_timing_enter_high_speed_mode(true);
+    mspi_timing_enter_high_speed_early();
 #else
     s_config_psram_clock(false);
     //Configure SPI0 PSRAM related SPI Phases
@@ -431,6 +431,20 @@ static void config_psram_spi_phases(void)
     psram_ctrlr_ll_set_addr_bitlen(PSRAM_CTRLR_LL_MSPI_ID_0, PSRAM_QUAD_ADDR_LENGTH);
     psram_ctrlr_ll_set_rd_dummy(PSRAM_CTRLR_LL_MSPI_ID_0, PSRAM_QUAD_FAST_READ_QUAD_DUMMY);
     psram_ctrlr_ll_set_cs_pin(PSRAM_CTRLR_LL_MSPI_ID_0, PSRAM_LL_CS_ID_1);
+}
+
+/******************************* Halfsleep Mode *******************************/
+// This PSRAM device does not support halfsleep mode
+PSRAM_HALFSLEEP_SLEEP_CODE_ATTR void esp_psram_impl_enter_halfsleep_mode(void)
+{
+}
+
+PSRAM_HALFSLEEP_SLEEP_CODE_ATTR void esp_psram_impl_exit_halfsleep_mode(void)
+{
+}
+
+PSRAM_HALFSLEEP_RESUME_CODE_ATTR void esp_psram_impl_resume_from_halfsleep_mode(uint32_t slowclk_period)
+{
 }
 
 /*---------------------------------------------------------------------------------

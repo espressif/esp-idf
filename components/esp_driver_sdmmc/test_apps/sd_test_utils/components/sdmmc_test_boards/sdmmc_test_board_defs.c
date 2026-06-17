@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -481,6 +481,34 @@ static const sdmmc_test_board_info_t s_board_info = {
             .cd = CONFIG_SDMMC_BOARD_CUSTOM_CD,
             .wp = CONFIG_SDMMC_BOARD_CUSTOM_WP,
             .unused_pin = CONFIG_SDMMC_BOARD_CUSTOM_UNUSED,
+        }
+    },
+};
+
+#elif CONFIG_SDMMC_BOARD_ESP32S31_KORVO_BOARD
+
+static const sdmmc_test_board_info_t s_board_info = {
+    .name = "ESP32-S31 KORVO Board",
+    .slot = {
+        {
+            .slot_exists = true,
+            .bus_width = 4,
+            .clk = SDMMC_SLOT0_IOMUX_PIN_NUM_CLK,
+            .cmd_mosi = SDMMC_SLOT0_IOMUX_PIN_NUM_CMD,
+            .d0_miso = SDMMC_SLOT0_IOMUX_PIN_NUM_D0,
+            .d1 = SDMMC_SLOT0_IOMUX_PIN_NUM_D1,
+            .d2 = SDMMC_SLOT0_IOMUX_PIN_NUM_D2,
+            .d3_cs = SDMMC_SLOT0_IOMUX_PIN_NUM_D3,
+            .d4 = GPIO_NUM_NC,
+            .d5 = GPIO_NUM_NC,
+            .d6 = GPIO_NUM_NC,
+            .d7 = GPIO_NUM_NC,
+            .cd = GPIO_NUM_NC,
+            .wp = GPIO_NUM_NC,
+            .unused_pin = 26,
+        },
+        {
+            .slot_exists = false,
         }
     },
 };

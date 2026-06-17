@@ -15,6 +15,10 @@ menu "Example Ethernet Configuration"
 
         config EXAMPLE_ETH_PHY_INTERFACE_RMII
             bool "Reduced Media Independent Interface (RMII)"
+
+        config EXAMPLE_ETH_PHY_INTERFACE_RGMII
+            depends on SOC_EMAC_SUPPORT_1000M
+            bool "Reduced Gigabit Media Independent Interface (RGMII)"
     endchoice
 
     if EXAMPLE_ETH_PHY_INTERFACE_RMII
@@ -124,11 +128,120 @@ menu "Example Ethernet Configuration"
 
     endif # EXAMPLE_ETH_PHY_INTERFACE_RMII
 
+    if EXAMPLE_ETH_PHY_INTERFACE_RGMII
+        config EXAMPLE_ETH_RGMII_RX_CLK_GPIO
+            int "RGMII RX_CLK GPIO number"
+            range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
+            default 14
+            help
+                Set the GPIO number used by RGMII RX clock input.
+                See SoC/board datasheet for available GPIOs.
+
+        config EXAMPLE_ETH_RGMII_TX_CLK_GPIO
+            int "RGMII TX_CLK GPIO number"
+            range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+            default 13
+            help
+                Set the GPIO number used by RGMII TX clock output.
+                See SoC/board datasheet for available GPIOs.
+
+        config EXAMPLE_ETH_RGMII_PHY_REF_CLK_GPIO
+            int "RGMII REF_50M CLK GPIO number"
+            range -1 ENV_GPIO_RANGE_MAX
+            default -1
+            help
+                Optional 50 MHz reference clock output GPIO for the PHY.
+                Set to -1 to disable.
+
+        if SOC_EMAC_USE_MULTI_IO_MUX
+            config EXAMPLE_ETH_RGMII_TX_CTL_GPIO
+                int "RGMII TX_CTL GPIO number"
+                range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+                default 12
+                help
+                    Set the GPIO number used by RGMII TX_CTL signal.
+                    See SoC/board datasheet for available GPIOs.
+
+            config EXAMPLE_ETH_RGMII_TXD0_GPIO
+                int "RGMII TXD0 GPIO number"
+                range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+                default 8
+                help
+                    Set the GPIO number used by RGMII TXD0 signal.
+                    See SoC/board datasheet for available GPIOs.
+
+            config EXAMPLE_ETH_RGMII_TXD1_GPIO
+                int "RGMII TXD1 GPIO number"
+                range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+                default 9
+                help
+                    Set the GPIO number used by RGMII TXD1 signal.
+                    See SoC/board datasheet for available GPIOs.
+
+            config EXAMPLE_ETH_RGMII_TXD2_GPIO
+                int "RGMII TXD2 GPIO number"
+                range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+                default 10
+                help
+                    Set the GPIO number used by RGMII TXD2 signal.
+                    See SoC/board datasheet for available GPIOs.
+
+            config EXAMPLE_ETH_RGMII_TXD3_GPIO
+                int "RGMII TXD3 GPIO number"
+                range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+                default 11
+                help
+                    Set the GPIO number used by RGMII TXD3 signal.
+                    See SoC/board datasheet for available GPIOs.
+
+            config EXAMPLE_ETH_RGMII_RX_CTL_GPIO
+                int "RGMII RX_CTL GPIO number"
+                range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
+                default 15
+                help
+                    Set the GPIO number used by RGMII RX_CTL signal.
+                    See SoC/board datasheet for available GPIOs.
+
+            config EXAMPLE_ETH_RGMII_RXD0_GPIO
+                int "RGMII RXD0 GPIO number"
+                range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
+                default 19
+                help
+                    Set the GPIO number used by RGMII RXD0 signal.
+                    See SoC/board datasheet for available GPIOs.
+
+            config EXAMPLE_ETH_RGMII_RXD1_GPIO
+                int "RGMII RXD1 GPIO number"
+                range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
+                default 18
+                help
+                    Set the GPIO number used by RGMII RXD1 signal.
+                    See SoC/board datasheet for available GPIOs.
+
+            config EXAMPLE_ETH_RGMII_RXD2_GPIO
+                int "RGMII RXD2 GPIO number"
+                range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
+                default 17
+                help
+                    Set the GPIO number used by RGMII RXD2 signal.
+                    See SoC/board datasheet for available GPIOs.
+
+            config EXAMPLE_ETH_RGMII_RXD3_GPIO
+                int "RGMII RXD3 GPIO number"
+                range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
+                default 16
+                help
+                    Set the GPIO number used by RGMII RXD3 signal.
+                    See SoC/board datasheet for available GPIOs.
+        endif # SOC_EMAC_USE_MULTI_IO_MUX
+    endif # EXAMPLE_ETH_PHY_INTERFACE_RGMII
+
     config EXAMPLE_ETH_MDC_GPIO
         int "SMI MDC GPIO number"
         range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
         default 23 if IDF_TARGET_ESP32
         default 31 if IDF_TARGET_ESP32P4
+        default 5 if IDF_TARGET_ESP32S31
         help
             Set the GPIO number used by SMI MDC.
 
@@ -137,13 +250,14 @@ menu "Example Ethernet Configuration"
         range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
         default 18 if IDF_TARGET_ESP32
         default 52 if IDF_TARGET_ESP32P4
+        default 6 if IDF_TARGET_ESP32S31
         help
             Set the GPIO number used by SMI MDIO.
 
     config EXAMPLE_ETH_PHY_ADDR
         int "PHY Address"
         range -1 31
-        default 1
+        default -1
         help
             Set PHY address according your board schematic.
             Set to -1 to driver find the PHY address automatically.
@@ -153,6 +267,7 @@ menu "Example Ethernet Configuration"
         range -1 ENV_GPIO_OUT_RANGE_MAX
         default 5 if IDF_TARGET_ESP32
         default 51 if IDF_TARGET_ESP32P4
+        default 7 if IDF_TARGET_ESP32S31
         help
             Set the GPIO number used to reset PHY chip.
             Set to -1 to disable PHY chip hardware reset.
@@ -190,5 +305,19 @@ menu "Example Ethernet Configuration"
         help
             This option is for demonstration purposes only to demonstrate deinitialization of the Ethernet driver.
             Set to -1 to not deinitialize.
+
+    config EXAMPLE_ETH_PHY_YT8531_INIT
+        bool "YT8531 RGMII PHY Specific Initialization"
+        depends on IDF_TARGET_ESP32S31
+        default y
+        help
+            This example uses the Generic 802.3 PHY driver, which handles standard PHY operations
+            (auto-negotiation, link detection, etc.) for any IEEE 802.3 compliant PHY. However,
+            the YT8531 PHY requires additional chip-specific steps to operate correctly in RGMII mode:
+
+            - Re-enable auto-negotiation after reset (the YT8531 disables it upon hardware reset,
+              which is undocumented but observed behavior).
+            - Configure RGMII Tx and Rx internal clock delays (~2 ns each) via the PHY's extended
+              register interface. Proper delay tuning is required for reliable RGMII data sampling.
 
 endmenu

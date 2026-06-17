@@ -41,6 +41,7 @@ static const char *TAG = "lcd_panel.ssd1306";
 #define SSD1306_CMD_MIRROR_Y_OFF          0xC0
 #define SSD1306_CMD_MIRROR_Y_ON           0xC8
 #define SSD1306_CMD_SET_COMPINS           0xDA
+#define SSD1306_CMD_SET_CONTRAST          0x81
 
 static esp_err_t panel_ssd1306_del(esp_lcd_panel_t *panel);
 static esp_err_t panel_ssd1306_reset(esp_lcd_panel_t *panel);
@@ -56,6 +57,7 @@ typedef struct {
     esp_lcd_panel_t base;
     esp_lcd_panel_io_handle_t io;
     uint8_t height;
+    uint8_t contrast;
     gpio_num_t reset_gpio_num;
     int x_gap;
     int y_gap;
@@ -91,7 +93,8 @@ esp_err_t esp_lcd_new_panel_ssd1306(const esp_lcd_panel_io_handle_t io, const es
     ssd1306->bits_per_pixel = panel_dev_config->bits_per_pixel;
     ssd1306->reset_gpio_num = panel_dev_config->reset_gpio_num;
     ssd1306->reset_level = panel_dev_config->flags.reset_active_high;
-    ssd1306->height = ssd1306_spec_config ? ssd1306_spec_config->height : 64;
+    ssd1306->height = (ssd1306_spec_config != NULL && ssd1306_spec_config->height != 0) ? ssd1306_spec_config->height : 64;
+    ssd1306->contrast = (ssd1306_spec_config != NULL && ssd1306_spec_config->contrast != 0) ? ssd1306_spec_config->contrast : 128;
     ssd1306->base.del = panel_ssd1306_del;
     ssd1306->base.reset = panel_ssd1306_reset;
     ssd1306->base.init = panel_ssd1306_init;
@@ -166,6 +169,10 @@ static esp_err_t panel_ssd1306_init(esp_lcd_panel_t *panel)
                         "io tx param SSD1306_CMD_MIRROR_X_OFF failed");
     ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SSD1306_CMD_MIRROR_Y_OFF, NULL, 0), TAG,
                         "io tx param SSD1306_CMD_MIRROR_Y_OFF failed");
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_CONTRAST, (uint8_t[]) {
+        ssd1306->contrast  // set display contrast
+    }, 1), TAG, "io tx param SSD1306_CMD_SET_CONTRAST failed");
+
     return ESP_OK;
 }
 

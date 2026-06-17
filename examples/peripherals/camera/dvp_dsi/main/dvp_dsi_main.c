@@ -92,6 +92,7 @@ void app_main(void)
         .h_res = CONFIG_EXAMPLE_CAM_HRES,
         .v_res = CONFIG_EXAMPLE_CAM_VRES,
         .input_data_color_type = CAM_CTLR_COLOR_RGB565,
+        .output_data_color_type = CAM_CTLR_COLOR_RGB565,
         .dma_burst_size = 128,
         .pin = &pin_cfg,
         .bk_buffer_dis = 1,
@@ -124,6 +125,9 @@ void app_main(void)
         .i2c_port_num = I2C_NUM_0,
         .i2c_sda_io_num = EXAMPLE_DVP_CAM_SCCB_SDA_IO,
         .i2c_scl_io_num = EXAMPLE_DVP_CAM_SCCB_SCL_IO,
+        .reset_pin = -1,
+        .pwdn_pin = -1,
+        .xclk_pin = EXAMPLE_DVP_CAM_XCLK_IO,
         .port = ESP_CAM_SENSOR_DVP,
         .format_name = EXAMPLE_CAM_FORMAT,
     };

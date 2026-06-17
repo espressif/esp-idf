@@ -1,32 +1,35 @@
-workflow:
-  rules:
-    # Disable those non-protected push triggered pipelines
-    - if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && $CI_COMMIT_TAG !~ /^qa-test/ && $CI_PIPELINE_SOURCE == "push"'
-      when: never
-    # merged result pipelines
-    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA
-      variables:
-        PIPELINE_COMMIT_SHA: $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA
-    # else
-    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA == null || $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA == ""
-      variables:
-        PIPELINE_COMMIT_SHA: $CI_COMMIT_SHA
-    - when: always
-
 # Place the default settings in `.gitlab/ci/common.yml` instead
 
 include:
+  - project: "ci/actions/common"
+    file:
+      - "templates/stable/default-workflow.yml"
+      - "templates/idf/deploy-github.yml"
+      - "templates/idf/deploy-docs.yml"
+      - "templates/idf/integration-test.yml"
+      - "templates/idf/pre_check.yml"
+  - project: "ci/actions/common"
+    file: "templates/idf/build-docs.yml"
+    inputs:
+      full-build-matrix:
+        - DOCLANG: ["en", "zh_CN"]
+          DOCTGT: ["esp32", "esp32s2", "esp32s3", "esp32s31", "esp32c3", "esp32c2", "esp32c6", "esp32c61", "esp32c5", "esp32h2", "esp32h4", "esp32h21", "esp32p4"]
+      partial-build-matrix:
+        - DOCLANG: "en"
+          DOCTGT: "esp32"
+        - DOCLANG: "zh_CN"
+          DOCTGT: "esp32p4"
   - ".gitlab/ci/danger.yml"
   - ".gitlab/ci/common.yml"
   - ".gitlab/ci/rules.yml"
+  - ".gitlab/ci/manual_gate.yml"
   - ".gitlab/ci/upload_cache.yml"
-  - ".gitlab/ci/docs.yml"
   - ".gitlab/ci/static-code-analysis.yml"
   - ".gitlab/ci/pre_commit.yml"
   - ".gitlab/ci/pre_check.yml"
   - ".gitlab/ci/build.yml"
-  - ".gitlab/ci/integration_test.yml"
   - ".gitlab/ci/host-test.yml"
+  - ".gitlab/ci/pre_deploy.yml"
   - ".gitlab/ci/deploy.yml"
   - ".gitlab/ci/post_deploy.yml"
   - ".gitlab/ci/test-win.yml"

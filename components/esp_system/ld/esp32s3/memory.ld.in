@@ -185,9 +185,6 @@ _heap_start = _heap_low_start;
 /* Heap ends at top of dram0_0_seg */
 _heap_end = 0x40000000;
 
-_data_seg_org = ORIGIN(rtc_data_seg);
-
-
 /* RTC fast memory shares the same range for both data and instructions */
 REGION_ALIAS("rtc_data_seg", rtc_iram_seg );
 

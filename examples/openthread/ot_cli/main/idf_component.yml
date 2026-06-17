@@ -8,3 +8,5 @@ dependencies:
     path: ${IDF_PATH}/examples/openthread/ot_common_components/ot_led
   ot_examples_common:
     path: ${IDF_PATH}/examples/openthread/ot_common_components/ot_examples_common
+  esp-qa/coexist-cmd:
+    version: "~0.0.1"

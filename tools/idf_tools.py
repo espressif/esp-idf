@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -183,10 +183,17 @@ def print_hints_on_download_error(err: str) -> None:
         info('Certificate issues are usually caused by an outdated certificate database on your computer.')
         info('Please check the documentation of your operating system for how to upgrade it.')
 
+        info('The following commands may help resolve this issue:')
         if sys.platform == 'darwin':
-            info('Running "./Install\\ Certificates.command" might be able to fix this issue.')
-
-        info(f'Running "{sys.executable} -m pip install --upgrade certifi" can also resolve this issue in some cases.')
+            # Python.org macOS installer puts Install Certificates.command in /Applications/Python X.Y/
+            app_certs = (
+                f'/Applications/Python {sys.version_info.major}.{sys.version_info.minor}/Install Certificates.command'
+            )
+            if os.path.isfile(app_certs):
+                info(f'\tRun: open "{app_certs}"  (or double-click it in Finder)')
+            else:
+                info('\tGo to Python installation location and execute: ./Install\\ Certificates.command')
+        info(f'\t{sys.executable} -m pip install --upgrade pip-system-certs certifi')
 
     # Certificate issue on Windows can be hidden under different errors which might be even translated,
     # e.g. "[WinError -2146881269] ASN1 valor de tag inválido encontrado"
@@ -202,6 +209,7 @@ PYTHON_PLATFORM = f'{platform.system()}-{platform.machine()}'
 # Identifiers used in tools.json for different platforms.
 PLATFORM_WIN32 = 'win32'
 PLATFORM_WIN64 = 'win64'
+PLATFORM_WIN_ARM64 = 'win-arm64'
 PLATFORM_MACOS = 'macos'
 PLATFORM_MACOS_ARM64 = 'macos-arm64'
 PLATFORM_LINUX32 = 'linux-i686'
@@ -232,7 +240,9 @@ class Platforms:
         'Windows-x86_64': PLATFORM_WIN64,
         'Windows-AMD64': PLATFORM_WIN64,
         'x86_64-w64-mingw32': PLATFORM_WIN64,
-        'Windows-ARM64': PLATFORM_WIN64,
+        PLATFORM_WIN_ARM64: PLATFORM_WIN_ARM64,
+        'Windows-ARM64': PLATFORM_WIN_ARM64,
+        'aarch64-w64-mingw32': PLATFORM_WIN_ARM64,
         # macOS
         PLATFORM_MACOS: PLATFORM_MACOS,
         'osx': PLATFORM_MACOS,
@@ -260,6 +270,7 @@ class Platforms:
         'Linux-aarch64': PLATFORM_LINUX_ARM64,
         'Linux-armv8l': PLATFORM_LINUX_ARM64,
         'aarch64': PLATFORM_LINUX_ARM64,
+        'aarch64-linux-gnu': PLATFORM_LINUX_ARM64,
         PLATFORM_LINUX_ARMHF: PLATFORM_LINUX_ARMHF,
         'arm-linux-gnueabihf': PLATFORM_LINUX_ARMHF,
         PLATFORM_LINUX_ARM32: PLATFORM_LINUX_ARM32,
@@ -773,11 +784,15 @@ class IDFToolVersion:
     def get_download_for_platform(self, platform_name: str | None) -> IDFToolDownload | None:
         """
         Get download for given platform if usable download already exists.
+        On win-arm64, falls back to win64 when no native build is available.
         """
         try:
             platform_name = Platforms.get(platform_name)
             if platform_name in self.downloads.keys():
                 return self.downloads[platform_name]
+            # On Windows ARM64, use win64 (x86_64) build when no native win-arm64 exists
+            if platform_name == PLATFORM_WIN_ARM64 and PLATFORM_WIN64 in self.downloads:
+                return self.downloads[PLATFORM_WIN64]
         # exception can be omitted, as not detected platform is handled without err message
         except ValueError:
             pass
@@ -3111,6 +3126,7 @@ def action_uninstall(args: Any) -> None:
             else:
                 tool_name, tool_version = tool_spec.split('@', 1)
             tool_obj = tools_info_for_platform[tool_name]
+            archive_version = None
             if tool_version is None:
                 tool_version = tool_obj.get_preferred_installed_version()
             # mypy-checks
@@ -3118,9 +3134,8 @@ def action_uninstall(args: Any) -> None:
                 archive_version = tool_obj.versions[tool_version].get_download_for_platform(CURRENT_PLATFORM)
             if archive_version is not None:
                 archive_version_url = archive_version.url
-
-            archive = os.path.basename(archive_version_url)
-            used_archives.append(archive)
+                archive = os.path.basename(archive_version_url)
+                used_archives.append(archive)
 
         downloaded_archives = os.listdir(dist_path)
         for archive in downloaded_archives:

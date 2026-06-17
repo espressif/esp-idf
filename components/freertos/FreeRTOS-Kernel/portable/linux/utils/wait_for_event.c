@@ -1,110 +1,94 @@
 /*
- * SPDX-FileCopyrightText: 2021 Amazon.com, Inc. or its affiliates
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: MIT
+ * SPDX-License-Identifier: Apache-2.0
  */
-/*
- * FreeRTOS Kernel V10.4.6
- * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
- *
- * SPDX-License-Identifier: MIT
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- *
- * https://www.FreeRTOS.org
- * https://github.com/FreeRTOS
- *
- */
-
 #include <pthread.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <assert.h>
-
 #include "wait_for_event.h"
 
-struct event
+/*-----------------------------------------------------------*/
+/* Create a new event */
+event_t *event_create(void)
 {
-    pthread_mutex_t mutex;
-    pthread_cond_t cond;
-    bool event_triggered;
-};
-
-struct event * event_create(void)
-{
-    struct event * ev = malloc( sizeof( struct event ) );
+    event_t * ev = malloc(sizeof(event_t));
     assert(ev != NULL);
+
     ev->event_triggered = false;
-    pthread_mutex_init( &ev->mutex, NULL );
-    pthread_cond_init( &ev->cond, NULL );
+    pthread_mutex_init(&ev->mutex, NULL);
+    pthread_cond_init(&ev->cond, NULL);
+
     return ev;
 }
 
-void event_delete( struct event * ev )
+/*-----------------------------------------------------------*/
+/* Delete an event */
+void event_delete(event_t *ev)
 {
-    pthread_mutex_destroy( &ev->mutex );
-    pthread_cond_destroy( &ev->cond );
-    free( ev );
+    pthread_mutex_destroy(&ev->mutex);
+    pthread_cond_destroy(&ev->cond);
+    free(ev);
 }
 
-bool event_wait( struct event * ev )
+/*-----------------------------------------------------------*/
+/* Wait for event indefinitely (cooperative blocking) */
+bool event_wait(event_t *ev)
 {
-    pthread_mutex_lock( &ev->mutex );
+    pthread_mutex_lock(&ev->mutex);
 
-    while( ev->event_triggered == false )
+    while (!ev->event_triggered)
     {
-        pthread_cond_wait( &ev->cond, &ev->mutex );
+        pthread_cond_wait(&ev->cond, &ev->mutex);
     }
 
     ev->event_triggered = false;
-    pthread_mutex_unlock( &ev->mutex );
+    pthread_mutex_unlock(&ev->mutex);
     return true;
 }
-bool event_wait_timed( struct event * ev,
-                       time_t ms )
+
+/*-----------------------------------------------------------*/
+/* Wait for event with timeout (milliseconds) */
+bool event_wait_timed(event_t *ev, time_t ms)
 {
     struct timespec ts;
     int ret = 0;
 
-    clock_gettime( CLOCK_REALTIME, &ts );
-    ts.tv_sec += ms / 1000;
-    ts.tv_nsec += ((ms % 1000) * 1000000);
-    pthread_mutex_lock( &ev->mutex );
+    clock_gettime(CLOCK_REALTIME, &ts);
+    ts.tv_sec  += ms / 1000;
+    ts.tv_nsec += (ms % 1000) * 1000000;
 
-    while( (ev->event_triggered == false) && (ret == 0) )
+    /* Normalize tv_nsec in case it exceeds 1,000,000,000 */
+    if (ts.tv_nsec >= 1000000000L) {
+        ts.tv_sec += ts.tv_nsec / 1000000000L;
+        ts.tv_nsec = ts.tv_nsec % 1000000000L;
+    }
+
+    pthread_mutex_lock(&ev->mutex);
+
+    while (!ev->event_triggered && ret == 0)
     {
-        ret = pthread_cond_timedwait( &ev->cond, &ev->mutex, &ts );
-
-        if( ( ret == -1 ) && ( errno == ETIMEDOUT ) )
+        ret = pthread_cond_timedwait(&ev->cond, &ev->mutex, &ts);
+        if (ret == ETIMEDOUT)
         {
+            ev->event_triggered = false;
+            pthread_mutex_unlock(&ev->mutex);
             return false;
         }
     }
 
     ev->event_triggered = false;
-    pthread_mutex_unlock( &ev->mutex );
+    pthread_mutex_unlock(&ev->mutex);
     return true;
 }
 
-void event_signal( struct event * ev )
+/*-----------------------------------------------------------*/
+/* Signal / resume an event */
+void event_signal(event_t *ev)
 {
-    pthread_mutex_lock( &ev->mutex );
+    pthread_mutex_lock(&ev->mutex);
     ev->event_triggered = true;
-    pthread_cond_signal( &ev->cond );
-    pthread_mutex_unlock( &ev->mutex );
+    pthread_cond_signal(&ev->cond);
+    pthread_mutex_unlock(&ev->mutex);
 }

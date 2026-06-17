@@ -1,20 +1,23 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
-#include <stdint.h>
 #include "soc/soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+//#define DR_REG_LEDC0_BASE                         0x20392000
+//#define DR_REG_LEDC1_BASE                         0x2039C000
+#define DR_REG_LEDC_BASE(i)  (DR_REG_LEDC0_BASE + (i) * 0xA000)
+
 /** LEDC_CH0_CONF0_REG register
  *  Configuration register 0 for channel 0
  */
-#define LEDC_CH0_CONF0_REG (DR_REG_LEDC_BASE + 0x0)
+#define LEDC_CH0_CONF0_REG(i) (DR_REG_LEDC_BASE(i) + 0x0)
 /** LEDC_TIMER_SEL_CH0 : R/W; bitpos: [1:0]; default: 0;
  *  Configures which timer is channel 0 selected.
  *  0: Select timer0
@@ -86,7 +89,7 @@ extern "C" {
 /** LEDC_CH0_HPOINT_REG register
  *  High point register for channel 0
  */
-#define LEDC_CH0_HPOINT_REG (DR_REG_LEDC_BASE + 0x4)
+#define LEDC_CH0_HPOINT_REG(i) (DR_REG_LEDC_BASE(i) + 0x4)
 /** LEDC_HPOINT_CH0 : R/W; bitpos: [19:0]; default: 0;
  *  Configures high point of signal output on channel 0. The output value changes to
  *  high when the selected timers has reached the value specified by this register.
@@ -99,7 +102,7 @@ extern "C" {
 /** LEDC_CH0_DUTY_REG register
  *  Initial duty cycle register for channel 0
  */
-#define LEDC_CH0_DUTY_REG (DR_REG_LEDC_BASE + 0x8)
+#define LEDC_CH0_DUTY_REG(i) (DR_REG_LEDC_BASE(i) + 0x8)
 /** LEDC_DUTY_CH0 : R/W; bitpos: [24:0]; default: 0;
  *  Configures the duty of signal output on channel 0.
  */
@@ -111,7 +114,7 @@ extern "C" {
 /** LEDC_CH0_CONF1_REG register
  *  Configuration register 1 for channel 0
  */
-#define LEDC_CH0_CONF1_REG (DR_REG_LEDC_BASE + 0xc)
+#define LEDC_CH0_CONF1_REG(i) (DR_REG_LEDC_BASE(i) + 0xc)
 /** LEDC_DUTY_START_CH0 : R/W/SC; bitpos: [31]; default: 0;
  *  Configures whether the duty cycle fading configurations take effect.
  *  0: Not take effect
@@ -125,7 +128,7 @@ extern "C" {
 /** LEDC_CH0_DUTY_R_REG register
  *  Current duty cycle register for channel 0
  */
-#define LEDC_CH0_DUTY_R_REG (DR_REG_LEDC_BASE + 0x10)
+#define LEDC_CH0_DUTY_R_REG(i) (DR_REG_LEDC_BASE(i) + 0x10)
 /** LEDC_DUTY_CH0_R : RO; bitpos: [24:0]; default: 0;
  *  Represents the current duty of output signal on channel 0.
  */
@@ -137,7 +140,7 @@ extern "C" {
 /** LEDC_CH1_CONF0_REG register
  *  Configuration register 0 for channel 1
  */
-#define LEDC_CH1_CONF0_REG (DR_REG_LEDC_BASE + 0x14)
+#define LEDC_CH1_CONF0_REG(i) (DR_REG_LEDC_BASE(i) + 0x14)
 /** LEDC_TIMER_SEL_CH1 : R/W; bitpos: [1:0]; default: 0;
  *  Configures which timer is channel 1 selected.
  *  0: Select timer0
@@ -209,7 +212,7 @@ extern "C" {
 /** LEDC_CH1_HPOINT_REG register
  *  High point register for channel 1
  */
-#define LEDC_CH1_HPOINT_REG (DR_REG_LEDC_BASE + 0x18)
+#define LEDC_CH1_HPOINT_REG(i) (DR_REG_LEDC_BASE(i) + 0x18)
 /** LEDC_HPOINT_CH1 : R/W; bitpos: [19:0]; default: 0;
  *  Configures high point of signal output on channel 1. The output value changes to
  *  high when the selected timers has reached the value specified by this register.
@@ -222,7 +225,7 @@ extern "C" {
 /** LEDC_CH1_DUTY_REG register
  *  Initial duty cycle register for channel 1
  */
-#define LEDC_CH1_DUTY_REG (DR_REG_LEDC_BASE + 0x1c)
+#define LEDC_CH1_DUTY_REG(i) (DR_REG_LEDC_BASE(i) + 0x1c)
 /** LEDC_DUTY_CH1 : R/W; bitpos: [24:0]; default: 0;
  *  Configures the duty of signal output on channel 1.
  */
@@ -234,7 +237,7 @@ extern "C" {
 /** LEDC_CH1_CONF1_REG register
  *  Configuration register 1 for channel 1
  */
-#define LEDC_CH1_CONF1_REG (DR_REG_LEDC_BASE + 0x20)
+#define LEDC_CH1_CONF1_REG(i) (DR_REG_LEDC_BASE(i) + 0x20)
 /** LEDC_DUTY_START_CH1 : R/W/SC; bitpos: [31]; default: 0;
  *  Configures whether the duty cycle fading configurations take effect.
  *  0: Not take effect
@@ -248,7 +251,7 @@ extern "C" {
 /** LEDC_CH1_DUTY_R_REG register
  *  Current duty cycle register for channel 1
  */
-#define LEDC_CH1_DUTY_R_REG (DR_REG_LEDC_BASE + 0x24)
+#define LEDC_CH1_DUTY_R_REG(i) (DR_REG_LEDC_BASE(i) + 0x24)
 /** LEDC_DUTY_CH1_R : RO; bitpos: [24:0]; default: 0;
  *  Represents the current duty of output signal on channel 1.
  */
@@ -260,7 +263,7 @@ extern "C" {
 /** LEDC_CH2_CONF0_REG register
  *  Configuration register 0 for channel 2
  */
-#define LEDC_CH2_CONF0_REG (DR_REG_LEDC_BASE + 0x28)
+#define LEDC_CH2_CONF0_REG(i) (DR_REG_LEDC_BASE(i) + 0x28)
 /** LEDC_TIMER_SEL_CH2 : R/W; bitpos: [1:0]; default: 0;
  *  Configures which timer is channel 2 selected.
  *  0: Select timer0
@@ -332,7 +335,7 @@ extern "C" {
 /** LEDC_CH2_HPOINT_REG register
  *  High point register for channel 2
  */
-#define LEDC_CH2_HPOINT_REG (DR_REG_LEDC_BASE + 0x2c)
+#define LEDC_CH2_HPOINT_REG(i) (DR_REG_LEDC_BASE(i) + 0x2c)
 /** LEDC_HPOINT_CH2 : R/W; bitpos: [19:0]; default: 0;
  *  Configures high point of signal output on channel 2. The output value changes to
  *  high when the selected timers has reached the value specified by this register.
@@ -345,7 +348,7 @@ extern "C" {
 /** LEDC_CH2_DUTY_REG register
  *  Initial duty cycle register for channel 2
  */
-#define LEDC_CH2_DUTY_REG (DR_REG_LEDC_BASE + 0x30)
+#define LEDC_CH2_DUTY_REG(i) (DR_REG_LEDC_BASE(i) + 0x30)
 /** LEDC_DUTY_CH2 : R/W; bitpos: [24:0]; default: 0;
  *  Configures the duty of signal output on channel 2.
  */
@@ -357,7 +360,7 @@ extern "C" {
 /** LEDC_CH2_CONF1_REG register
  *  Configuration register 1 for channel 2
  */
-#define LEDC_CH2_CONF1_REG (DR_REG_LEDC_BASE + 0x34)
+#define LEDC_CH2_CONF1_REG(i) (DR_REG_LEDC_BASE(i) + 0x34)
 /** LEDC_DUTY_START_CH2 : R/W/SC; bitpos: [31]; default: 0;
  *  Configures whether the duty cycle fading configurations take effect.
  *  0: Not take effect
@@ -371,7 +374,7 @@ extern "C" {
 /** LEDC_CH2_DUTY_R_REG register
  *  Current duty cycle register for channel 2
  */
-#define LEDC_CH2_DUTY_R_REG (DR_REG_LEDC_BASE + 0x38)
+#define LEDC_CH2_DUTY_R_REG(i) (DR_REG_LEDC_BASE(i) + 0x38)
 /** LEDC_DUTY_CH2_R : RO; bitpos: [24:0]; default: 0;
  *  Represents the current duty of output signal on channel 2.
  */
@@ -383,7 +386,7 @@ extern "C" {
 /** LEDC_CH3_CONF0_REG register
  *  Configuration register 0 for channel 3
  */
-#define LEDC_CH3_CONF0_REG (DR_REG_LEDC_BASE + 0x3c)
+#define LEDC_CH3_CONF0_REG(i) (DR_REG_LEDC_BASE(i) + 0x3c)
 /** LEDC_TIMER_SEL_CH3 : R/W; bitpos: [1:0]; default: 0;
  *  Configures which timer is channel 3 selected.
  *  0: Select timer0
@@ -455,7 +458,7 @@ extern "C" {
 /** LEDC_CH3_HPOINT_REG register
  *  High point register for channel 3
  */
-#define LEDC_CH3_HPOINT_REG (DR_REG_LEDC_BASE + 0x40)
+#define LEDC_CH3_HPOINT_REG(i) (DR_REG_LEDC_BASE(i) + 0x40)
 /** LEDC_HPOINT_CH3 : R/W; bitpos: [19:0]; default: 0;
  *  Configures high point of signal output on channel 3. The output value changes to
  *  high when the selected timers has reached the value specified by this register.
@@ -468,7 +471,7 @@ extern "C" {
 /** LEDC_CH3_DUTY_REG register
  *  Initial duty cycle register for channel 3
  */
-#define LEDC_CH3_DUTY_REG (DR_REG_LEDC_BASE + 0x44)
+#define LEDC_CH3_DUTY_REG(i) (DR_REG_LEDC_BASE(i) + 0x44)
 /** LEDC_DUTY_CH3 : R/W; bitpos: [24:0]; default: 0;
  *  Configures the duty of signal output on channel 3.
  */
@@ -480,7 +483,7 @@ extern "C" {
 /** LEDC_CH3_CONF1_REG register
  *  Configuration register 1 for channel 3
  */
-#define LEDC_CH3_CONF1_REG (DR_REG_LEDC_BASE + 0x48)
+#define LEDC_CH3_CONF1_REG(i) (DR_REG_LEDC_BASE(i) + 0x48)
 /** LEDC_DUTY_START_CH3 : R/W/SC; bitpos: [31]; default: 0;
  *  Configures whether the duty cycle fading configurations take effect.
  *  0: Not take effect
@@ -494,7 +497,7 @@ extern "C" {
 /** LEDC_CH3_DUTY_R_REG register
  *  Current duty cycle register for channel 3
  */
-#define LEDC_CH3_DUTY_R_REG (DR_REG_LEDC_BASE + 0x4c)
+#define LEDC_CH3_DUTY_R_REG(i) (DR_REG_LEDC_BASE(i) + 0x4c)
 /** LEDC_DUTY_CH3_R : RO; bitpos: [24:0]; default: 0;
  *  Represents the current duty of output signal on channel 3.
  */
@@ -506,7 +509,7 @@ extern "C" {
 /** LEDC_CH4_CONF0_REG register
  *  Configuration register 0 for channel 4
  */
-#define LEDC_CH4_CONF0_REG (DR_REG_LEDC_BASE + 0x50)
+#define LEDC_CH4_CONF0_REG(i) (DR_REG_LEDC_BASE(i) + 0x50)
 /** LEDC_TIMER_SEL_CH4 : R/W; bitpos: [1:0]; default: 0;
  *  Configures which timer is channel 4 selected.
  *  0: Select timer0
@@ -578,7 +581,7 @@ extern "C" {
 /** LEDC_CH4_HPOINT_REG register
  *  High point register for channel 4
  */
-#define LEDC_CH4_HPOINT_REG (DR_REG_LEDC_BASE + 0x54)
+#define LEDC_CH4_HPOINT_REG(i) (DR_REG_LEDC_BASE(i) + 0x54)
 /** LEDC_HPOINT_CH4 : R/W; bitpos: [19:0]; default: 0;
  *  Configures high point of signal output on channel 4. The output value changes to
  *  high when the selected timers has reached the value specified by this register.
@@ -591,7 +594,7 @@ extern "C" {
 /** LEDC_CH4_DUTY_REG register
  *  Initial duty cycle register for channel 4
  */
-#define LEDC_CH4_DUTY_REG (DR_REG_LEDC_BASE + 0x58)
+#define LEDC_CH4_DUTY_REG(i) (DR_REG_LEDC_BASE(i) + 0x58)
 /** LEDC_DUTY_CH4 : R/W; bitpos: [24:0]; default: 0;
  *  Configures the duty of signal output on channel 4.
  */
@@ -603,7 +606,7 @@ extern "C" {
 /** LEDC_CH4_CONF1_REG register
  *  Configuration register 1 for channel 4
  */
-#define LEDC_CH4_CONF1_REG (DR_REG_LEDC_BASE + 0x5c)
+#define LEDC_CH4_CONF1_REG(i) (DR_REG_LEDC_BASE(i) + 0x5c)
 /** LEDC_DUTY_START_CH4 : R/W/SC; bitpos: [31]; default: 0;
  *  Configures whether the duty cycle fading configurations take effect.
  *  0: Not take effect
@@ -617,7 +620,7 @@ extern "C" {
 /** LEDC_CH4_DUTY_R_REG register
  *  Current duty cycle register for channel 4
  */
-#define LEDC_CH4_DUTY_R_REG (DR_REG_LEDC_BASE + 0x60)
+#define LEDC_CH4_DUTY_R_REG(i) (DR_REG_LEDC_BASE(i) + 0x60)
 /** LEDC_DUTY_CH4_R : RO; bitpos: [24:0]; default: 0;
  *  Represents the current duty of output signal on channel 4.
  */
@@ -629,7 +632,7 @@ extern "C" {
 /** LEDC_CH5_CONF0_REG register
  *  Configuration register 0 for channel 5
  */
-#define LEDC_CH5_CONF0_REG (DR_REG_LEDC_BASE + 0x64)
+#define LEDC_CH5_CONF0_REG(i) (DR_REG_LEDC_BASE(i) + 0x64)
 /** LEDC_TIMER_SEL_CH5 : R/W; bitpos: [1:0]; default: 0;
  *  Configures which timer is channel 5 selected.
  *  0: Select timer0
@@ -701,7 +704,7 @@ extern "C" {
 /** LEDC_CH5_HPOINT_REG register
  *  High point register for channel 5
  */
-#define LEDC_CH5_HPOINT_REG (DR_REG_LEDC_BASE + 0x68)
+#define LEDC_CH5_HPOINT_REG(i) (DR_REG_LEDC_BASE(i) + 0x68)
 /** LEDC_HPOINT_CH5 : R/W; bitpos: [19:0]; default: 0;
  *  Configures high point of signal output on channel 5. The output value changes to
  *  high when the selected timers has reached the value specified by this register.
@@ -714,7 +717,7 @@ extern "C" {
 /** LEDC_CH5_DUTY_REG register
  *  Initial duty cycle register for channel 5
  */
-#define LEDC_CH5_DUTY_REG (DR_REG_LEDC_BASE + 0x6c)
+#define LEDC_CH5_DUTY_REG(i) (DR_REG_LEDC_BASE(i) + 0x6c)
 /** LEDC_DUTY_CH5 : R/W; bitpos: [24:0]; default: 0;
  *  Configures the duty of signal output on channel 5.
  */
@@ -726,7 +729,7 @@ extern "C" {
 /** LEDC_CH5_CONF1_REG register
  *  Configuration register 1 for channel 5
  */
-#define LEDC_CH5_CONF1_REG (DR_REG_LEDC_BASE + 0x70)
+#define LEDC_CH5_CONF1_REG(i) (DR_REG_LEDC_BASE(i) + 0x70)
 /** LEDC_DUTY_START_CH5 : R/W/SC; bitpos: [31]; default: 0;
  *  Configures whether the duty cycle fading configurations take effect.
  *  0: Not take effect
@@ -740,7 +743,7 @@ extern "C" {
 /** LEDC_CH5_DUTY_R_REG register
  *  Current duty cycle register for channel 5
  */
-#define LEDC_CH5_DUTY_R_REG (DR_REG_LEDC_BASE + 0x74)
+#define LEDC_CH5_DUTY_R_REG(i) (DR_REG_LEDC_BASE(i) + 0x74)
 /** LEDC_DUTY_CH5_R : RO; bitpos: [24:0]; default: 0;
  *  Represents the current duty of output signal on channel 5.
  */
@@ -752,7 +755,7 @@ extern "C" {
 /** LEDC_CH6_CONF0_REG register
  *  Configuration register 0 for channel 6
  */
-#define LEDC_CH6_CONF0_REG (DR_REG_LEDC_BASE + 0x78)
+#define LEDC_CH6_CONF0_REG(i) (DR_REG_LEDC_BASE(i) + 0x78)
 /** LEDC_TIMER_SEL_CH6 : R/W; bitpos: [1:0]; default: 0;
  *  Configures which timer is channel 6 selected.
  *  0: Select timer0
@@ -824,7 +827,7 @@ extern "C" {
 /** LEDC_CH6_HPOINT_REG register
  *  High point register for channel 6
  */
-#define LEDC_CH6_HPOINT_REG (DR_REG_LEDC_BASE + 0x7c)
+#define LEDC_CH6_HPOINT_REG(i) (DR_REG_LEDC_BASE(i) + 0x7c)
 /** LEDC_HPOINT_CH6 : R/W; bitpos: [19:0]; default: 0;
  *  Configures high point of signal output on channel 6. The output value changes to
  *  high when the selected timers has reached the value specified by this register.
@@ -837,7 +840,7 @@ extern "C" {
 /** LEDC_CH6_DUTY_REG register
  *  Initial duty cycle register for channel 6
  */
-#define LEDC_CH6_DUTY_REG (DR_REG_LEDC_BASE + 0x80)
+#define LEDC_CH6_DUTY_REG(i) (DR_REG_LEDC_BASE(i) + 0x80)
 /** LEDC_DUTY_CH6 : R/W; bitpos: [24:0]; default: 0;
  *  Configures the duty of signal output on channel 6.
  */
@@ -849,7 +852,7 @@ extern "C" {
 /** LEDC_CH6_CONF1_REG register
  *  Configuration register 1 for channel 6
  */
-#define LEDC_CH6_CONF1_REG (DR_REG_LEDC_BASE + 0x84)
+#define LEDC_CH6_CONF1_REG(i) (DR_REG_LEDC_BASE(i) + 0x84)
 /** LEDC_DUTY_START_CH6 : R/W/SC; bitpos: [31]; default: 0;
  *  Configures whether the duty cycle fading configurations take effect.
  *  0: Not take effect
@@ -863,7 +866,7 @@ extern "C" {
 /** LEDC_CH6_DUTY_R_REG register
  *  Current duty cycle register for channel 6
  */
-#define LEDC_CH6_DUTY_R_REG (DR_REG_LEDC_BASE + 0x88)
+#define LEDC_CH6_DUTY_R_REG(i) (DR_REG_LEDC_BASE(i) + 0x88)
 /** LEDC_DUTY_CH6_R : RO; bitpos: [24:0]; default: 0;
  *  Represents the current duty of output signal on channel 6.
  */
@@ -875,7 +878,7 @@ extern "C" {
 /** LEDC_CH7_CONF0_REG register
  *  Configuration register 0 for channel 7
  */
-#define LEDC_CH7_CONF0_REG (DR_REG_LEDC_BASE + 0x8c)
+#define LEDC_CH7_CONF0_REG(i) (DR_REG_LEDC_BASE(i) + 0x8c)
 /** LEDC_TIMER_SEL_CH7 : R/W; bitpos: [1:0]; default: 0;
  *  Configures which timer is channel 7 selected.
  *  0: Select timer0
@@ -947,7 +950,7 @@ extern "C" {
 /** LEDC_CH7_HPOINT_REG register
  *  High point register for channel 7
  */
-#define LEDC_CH7_HPOINT_REG (DR_REG_LEDC_BASE + 0x90)
+#define LEDC_CH7_HPOINT_REG(i) (DR_REG_LEDC_BASE(i) + 0x90)
 /** LEDC_HPOINT_CH7 : R/W; bitpos: [19:0]; default: 0;
  *  Configures high point of signal output on channel 7. The output value changes to
  *  high when the selected timers has reached the value specified by this register.
@@ -960,7 +963,7 @@ extern "C" {
 /** LEDC_CH7_DUTY_REG register
  *  Initial duty cycle register for channel 7
  */
-#define LEDC_CH7_DUTY_REG (DR_REG_LEDC_BASE + 0x94)
+#define LEDC_CH7_DUTY_REG(i) (DR_REG_LEDC_BASE(i) + 0x94)
 /** LEDC_DUTY_CH7 : R/W; bitpos: [24:0]; default: 0;
  *  Configures the duty of signal output on channel 7.
  */
@@ -972,7 +975,7 @@ extern "C" {
 /** LEDC_CH7_CONF1_REG register
  *  Configuration register 1 for channel 7
  */
-#define LEDC_CH7_CONF1_REG (DR_REG_LEDC_BASE + 0x98)
+#define LEDC_CH7_CONF1_REG(i) (DR_REG_LEDC_BASE(i) + 0x98)
 /** LEDC_DUTY_START_CH7 : R/W/SC; bitpos: [31]; default: 0;
  *  Configures whether the duty cycle fading configurations take effect.
  *  0: Not take effect
@@ -986,7 +989,7 @@ extern "C" {
 /** LEDC_CH7_DUTY_R_REG register
  *  Current duty cycle register for channel 7
  */
-#define LEDC_CH7_DUTY_R_REG (DR_REG_LEDC_BASE + 0x9c)
+#define LEDC_CH7_DUTY_R_REG(i) (DR_REG_LEDC_BASE(i) + 0x9c)
 /** LEDC_DUTY_CH7_R : RO; bitpos: [24:0]; default: 0;
  *  Represents the current duty of output signal on channel 7.
  */
@@ -998,7 +1001,7 @@ extern "C" {
 /** LEDC_TIMER0_CONF_REG register
  *  Timer 0 configuration register
  */
-#define LEDC_TIMER0_CONF_REG (DR_REG_LEDC_BASE + 0xa0)
+#define LEDC_TIMER0_CONF_REG(i) (DR_REG_LEDC_BASE(i) + 0xa0)
 /** LEDC_TIMER0_DUTY_RES : R/W; bitpos: [4:0]; default: 0;
  *  Configures the bit width of the counter in timer 0. Valid values are 1 to 20.
  */
@@ -1045,7 +1048,7 @@ extern "C" {
 /** LEDC_TIMER0_VALUE_REG register
  *  Timer 0 current counter value register
  */
-#define LEDC_TIMER0_VALUE_REG (DR_REG_LEDC_BASE + 0xa4)
+#define LEDC_TIMER0_VALUE_REG(i) (DR_REG_LEDC_BASE(i) + 0xa4)
 /** LEDC_TIMER0_CNT : RO; bitpos: [19:0]; default: 0;
  *  Represents the current counter value of timer 0.
  */
@@ -1057,7 +1060,7 @@ extern "C" {
 /** LEDC_TIMER1_CONF_REG register
  *  Timer 1 configuration register
  */
-#define LEDC_TIMER1_CONF_REG (DR_REG_LEDC_BASE + 0xa8)
+#define LEDC_TIMER1_CONF_REG(i) (DR_REG_LEDC_BASE(i) + 0xa8)
 /** LEDC_TIMER1_DUTY_RES : R/W; bitpos: [4:0]; default: 0;
  *  Configures the bit width of the counter in timer 1. Valid values are 1 to 20.
  */
@@ -1104,7 +1107,7 @@ extern "C" {
 /** LEDC_TIMER1_VALUE_REG register
  *  Timer 1 current counter value register
  */
-#define LEDC_TIMER1_VALUE_REG (DR_REG_LEDC_BASE + 0xac)
+#define LEDC_TIMER1_VALUE_REG(i) (DR_REG_LEDC_BASE(i) + 0xac)
 /** LEDC_TIMER1_CNT : RO; bitpos: [19:0]; default: 0;
  *  Represents the current counter value of timer 1.
  */
@@ -1116,7 +1119,7 @@ extern "C" {
 /** LEDC_TIMER2_CONF_REG register
  *  Timer 2 configuration register
  */
-#define LEDC_TIMER2_CONF_REG (DR_REG_LEDC_BASE + 0xb0)
+#define LEDC_TIMER2_CONF_REG(i) (DR_REG_LEDC_BASE(i) + 0xb0)
 /** LEDC_TIMER2_DUTY_RES : R/W; bitpos: [4:0]; default: 0;
  *  Configures the bit width of the counter in timer 2. Valid values are 1 to 20.
  */
@@ -1163,7 +1166,7 @@ extern "C" {
 /** LEDC_TIMER2_VALUE_REG register
  *  Timer 2 current counter value register
  */
-#define LEDC_TIMER2_VALUE_REG (DR_REG_LEDC_BASE + 0xb4)
+#define LEDC_TIMER2_VALUE_REG(i) (DR_REG_LEDC_BASE(i) + 0xb4)
 /** LEDC_TIMER2_CNT : RO; bitpos: [19:0]; default: 0;
  *  Represents the current counter value of timer 2.
  */
@@ -1175,7 +1178,7 @@ extern "C" {
 /** LEDC_TIMER3_CONF_REG register
  *  Timer 3 configuration register
  */
-#define LEDC_TIMER3_CONF_REG (DR_REG_LEDC_BASE + 0xb8)
+#define LEDC_TIMER3_CONF_REG(i) (DR_REG_LEDC_BASE(i) + 0xb8)
 /** LEDC_TIMER3_DUTY_RES : R/W; bitpos: [4:0]; default: 0;
  *  Configures the bit width of the counter in timer 3. Valid values are 1 to 20.
  */
@@ -1222,7 +1225,7 @@ extern "C" {
 /** LEDC_TIMER3_VALUE_REG register
  *  Timer 3 current counter value register
  */
-#define LEDC_TIMER3_VALUE_REG (DR_REG_LEDC_BASE + 0xbc)
+#define LEDC_TIMER3_VALUE_REG(i) (DR_REG_LEDC_BASE(i) + 0xbc)
 /** LEDC_TIMER3_CNT : RO; bitpos: [19:0]; default: 0;
  *  Represents the current counter value of timer 3.
  */
@@ -1234,7 +1237,7 @@ extern "C" {
 /** LEDC_INT_RAW_REG register
  *  Interrupt raw status register
  */
-#define LEDC_INT_RAW_REG (DR_REG_LEDC_BASE + 0xc0)
+#define LEDC_INT_RAW_REG(i) (DR_REG_LEDC_BASE(i) + 0xc0)
 /** LEDC_TIMER0_OVF_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  Raw status bit: The raw interrupt status of LEDC_TIMER0_OVF_INT. Triggered when the
  *  timer0 has reached its maximum counter value.
@@ -1399,7 +1402,7 @@ extern "C" {
 /** LEDC_INT_ST_REG register
  *  Interrupt masked status register
  */
-#define LEDC_INT_ST_REG (DR_REG_LEDC_BASE + 0xc4)
+#define LEDC_INT_ST_REG(i) (DR_REG_LEDC_BASE(i) + 0xc4)
 /** LEDC_TIMER0_OVF_INT_ST : RO; bitpos: [0]; default: 0;
  *  Masked status bit: The masked interrupt status of LEDC_TIMER0_OVF_INT. Valid only
  *  when LEDC_TIMER0_OVF_INT_ENA is set to 1.
@@ -1564,7 +1567,7 @@ extern "C" {
 /** LEDC_INT_ENA_REG register
  *  Interrupt enable register
  */
-#define LEDC_INT_ENA_REG (DR_REG_LEDC_BASE + 0xc8)
+#define LEDC_INT_ENA_REG(i) (DR_REG_LEDC_BASE(i) + 0xc8)
 /** LEDC_TIMER0_OVF_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  Enable bit: Write 1 to enable LEDC_TIMER0_OVF_INT.
  */
@@ -1709,7 +1712,7 @@ extern "C" {
 /** LEDC_INT_CLR_REG register
  *  Interrupt clear register
  */
-#define LEDC_INT_CLR_REG (DR_REG_LEDC_BASE + 0xcc)
+#define LEDC_INT_CLR_REG(i) (DR_REG_LEDC_BASE(i) + 0xcc)
 /** LEDC_TIMER0_OVF_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Clear bit: Write 1 to clear LEDC_TIMER0_OVF_INT.
  */
@@ -1854,7 +1857,7 @@ extern "C" {
 /** LEDC_CH0_GAMMA_CONF_REG register
  *  Ledc ch0 gamma config register.
  */
-#define LEDC_CH0_GAMMA_CONF_REG (DR_REG_LEDC_BASE + 0x100)
+#define LEDC_CH0_GAMMA_CONF_REG(i) (DR_REG_LEDC_BASE(i) + 0x100)
 /** LEDC_CH0_GAMMA_ENTRY_NUM : R/W; bitpos: [4:0]; default: 0;
  *  Configures the number of duty cycle fading rages for LEDC ch0.
  */
@@ -1884,7 +1887,7 @@ extern "C" {
 /** LEDC_CH1_GAMMA_CONF_REG register
  *  Ledc ch1 gamma config register.
  */
-#define LEDC_CH1_GAMMA_CONF_REG (DR_REG_LEDC_BASE + 0x104)
+#define LEDC_CH1_GAMMA_CONF_REG(i) (DR_REG_LEDC_BASE(i) + 0x104)
 /** LEDC_CH1_GAMMA_ENTRY_NUM : R/W; bitpos: [4:0]; default: 0;
  *  Configures the number of duty cycle fading rages for LEDC ch1.
  */
@@ -1914,7 +1917,7 @@ extern "C" {
 /** LEDC_CH2_GAMMA_CONF_REG register
  *  Ledc ch2 gamma config register.
  */
-#define LEDC_CH2_GAMMA_CONF_REG (DR_REG_LEDC_BASE + 0x108)
+#define LEDC_CH2_GAMMA_CONF_REG(i) (DR_REG_LEDC_BASE(i) + 0x108)
 /** LEDC_CH2_GAMMA_ENTRY_NUM : R/W; bitpos: [4:0]; default: 0;
  *  Configures the number of duty cycle fading rages for LEDC ch2.
  */
@@ -1944,7 +1947,7 @@ extern "C" {
 /** LEDC_CH3_GAMMA_CONF_REG register
  *  Ledc ch3 gamma config register.
  */
-#define LEDC_CH3_GAMMA_CONF_REG (DR_REG_LEDC_BASE + 0x10c)
+#define LEDC_CH3_GAMMA_CONF_REG(i) (DR_REG_LEDC_BASE(i) + 0x10c)
 /** LEDC_CH3_GAMMA_ENTRY_NUM : R/W; bitpos: [4:0]; default: 0;
  *  Configures the number of duty cycle fading rages for LEDC ch3.
  */
@@ -1974,7 +1977,7 @@ extern "C" {
 /** LEDC_CH4_GAMMA_CONF_REG register
  *  Ledc ch4 gamma config register.
  */
-#define LEDC_CH4_GAMMA_CONF_REG (DR_REG_LEDC_BASE + 0x110)
+#define LEDC_CH4_GAMMA_CONF_REG(i) (DR_REG_LEDC_BASE(i) + 0x110)
 /** LEDC_CH4_GAMMA_ENTRY_NUM : R/W; bitpos: [4:0]; default: 0;
  *  Configures the number of duty cycle fading rages for LEDC ch4.
  */
@@ -2004,7 +2007,7 @@ extern "C" {
 /** LEDC_CH5_GAMMA_CONF_REG register
  *  Ledc ch5 gamma config register.
  */
-#define LEDC_CH5_GAMMA_CONF_REG (DR_REG_LEDC_BASE + 0x114)
+#define LEDC_CH5_GAMMA_CONF_REG(i) (DR_REG_LEDC_BASE(i) + 0x114)
 /** LEDC_CH5_GAMMA_ENTRY_NUM : R/W; bitpos: [4:0]; default: 0;
  *  Configures the number of duty cycle fading rages for LEDC ch5.
  */
@@ -2034,7 +2037,7 @@ extern "C" {
 /** LEDC_CH6_GAMMA_CONF_REG register
  *  Ledc ch6 gamma config register.
  */
-#define LEDC_CH6_GAMMA_CONF_REG (DR_REG_LEDC_BASE + 0x118)
+#define LEDC_CH6_GAMMA_CONF_REG(i) (DR_REG_LEDC_BASE(i) + 0x118)
 /** LEDC_CH6_GAMMA_ENTRY_NUM : R/W; bitpos: [4:0]; default: 0;
  *  Configures the number of duty cycle fading rages for LEDC ch6.
  */
@@ -2064,7 +2067,7 @@ extern "C" {
 /** LEDC_CH7_GAMMA_CONF_REG register
  *  Ledc ch7 gamma config register.
  */
-#define LEDC_CH7_GAMMA_CONF_REG (DR_REG_LEDC_BASE + 0x11c)
+#define LEDC_CH7_GAMMA_CONF_REG(i) (DR_REG_LEDC_BASE(i) + 0x11c)
 /** LEDC_CH7_GAMMA_ENTRY_NUM : R/W; bitpos: [4:0]; default: 0;
  *  Configures the number of duty cycle fading rages for LEDC ch7.
  */
@@ -2094,7 +2097,7 @@ extern "C" {
 /** LEDC_EVT_TASK_EN0_REG register
  *  Ledc event task enable bit register0.
  */
-#define LEDC_EVT_TASK_EN0_REG (DR_REG_LEDC_BASE + 0x120)
+#define LEDC_EVT_TASK_EN0_REG(i) (DR_REG_LEDC_BASE(i) + 0x120)
 /** LEDC_EVT_DUTY_CHNG_END_CH0_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable the LEDC_EVT_DUTY_CHNG_END_CH0 event.
  *  0: Disable
@@ -2387,7 +2390,7 @@ extern "C" {
 /** LEDC_EVT_TASK_EN1_REG register
  *  Ledc event task enable bit register1.
  */
-#define LEDC_EVT_TASK_EN1_REG (DR_REG_LEDC_BASE + 0x124)
+#define LEDC_EVT_TASK_EN1_REG(i) (DR_REG_LEDC_BASE(i) + 0x124)
 /** LEDC_TASK_TIMER0_RES_UPDATE_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable LEDC_TASK_TIMER0_RES_UPDATE task.
  *  0: Disable
@@ -2684,7 +2687,7 @@ extern "C" {
 /** LEDC_EVT_TASK_EN2_REG register
  *  Ledc event task enable bit register2.
  */
-#define LEDC_EVT_TASK_EN2_REG (DR_REG_LEDC_BASE + 0x128)
+#define LEDC_EVT_TASK_EN2_REG(i) (DR_REG_LEDC_BASE(i) + 0x128)
 /** LEDC_TASK_GAMMA_RESTART_CH0_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable LEDC_TASK_GAMMA_RESTART_CH0 task.
  *  0: Disable
@@ -2905,7 +2908,7 @@ extern "C" {
 /** LEDC_TIMER0_CMP_REG register
  *  Ledc timer0 compare value register.
  */
-#define LEDC_TIMER0_CMP_REG (DR_REG_LEDC_BASE + 0x140)
+#define LEDC_TIMER0_CMP_REG(i) (DR_REG_LEDC_BASE(i) + 0x140)
 /** LEDC_TIMER0_CMP : R/W; bitpos: [19:0]; default: 0;
  *  Configures the comparison value for LEDC timer0.
  */
@@ -2917,7 +2920,7 @@ extern "C" {
 /** LEDC_TIMER1_CMP_REG register
  *  Ledc timer1 compare value register.
  */
-#define LEDC_TIMER1_CMP_REG (DR_REG_LEDC_BASE + 0x144)
+#define LEDC_TIMER1_CMP_REG(i) (DR_REG_LEDC_BASE(i) + 0x144)
 /** LEDC_TIMER1_CMP : R/W; bitpos: [19:0]; default: 0;
  *  Configures the comparison value for LEDC timer1.
  */
@@ -2929,7 +2932,7 @@ extern "C" {
 /** LEDC_TIMER2_CMP_REG register
  *  Ledc timer2 compare value register.
  */
-#define LEDC_TIMER2_CMP_REG (DR_REG_LEDC_BASE + 0x148)
+#define LEDC_TIMER2_CMP_REG(i) (DR_REG_LEDC_BASE(i) + 0x148)
 /** LEDC_TIMER2_CMP : R/W; bitpos: [19:0]; default: 0;
  *  Configures the comparison value for LEDC timer2.
  */
@@ -2941,7 +2944,7 @@ extern "C" {
 /** LEDC_TIMER3_CMP_REG register
  *  Ledc timer3 compare value register.
  */
-#define LEDC_TIMER3_CMP_REG (DR_REG_LEDC_BASE + 0x14c)
+#define LEDC_TIMER3_CMP_REG(i) (DR_REG_LEDC_BASE(i) + 0x14c)
 /** LEDC_TIMER3_CMP : R/W; bitpos: [19:0]; default: 0;
  *  Configures the comparison value for LEDC timer3.
  */
@@ -2953,7 +2956,7 @@ extern "C" {
 /** LEDC_TIMER0_CNT_CAP_REG register
  *  Ledc timer0 captured count value register.
  */
-#define LEDC_TIMER0_CNT_CAP_REG (DR_REG_LEDC_BASE + 0x150)
+#define LEDC_TIMER0_CNT_CAP_REG(i) (DR_REG_LEDC_BASE(i) + 0x150)
 /** LEDC_TIMER0_CNT_CAP : RO; bitpos: [19:0]; default: 0;
  *  Represents the captured LEDC timer0 count value.
  */
@@ -2965,7 +2968,7 @@ extern "C" {
 /** LEDC_TIMER1_CNT_CAP_REG register
  *  Ledc timer1 captured count value register.
  */
-#define LEDC_TIMER1_CNT_CAP_REG (DR_REG_LEDC_BASE + 0x154)
+#define LEDC_TIMER1_CNT_CAP_REG(i) (DR_REG_LEDC_BASE(i) + 0x154)
 /** LEDC_TIMER1_CNT_CAP : RO; bitpos: [19:0]; default: 0;
  *  Represents the captured LEDC timer1 count value.
  */
@@ -2977,7 +2980,7 @@ extern "C" {
 /** LEDC_TIMER2_CNT_CAP_REG register
  *  Ledc timer2 captured count value register.
  */
-#define LEDC_TIMER2_CNT_CAP_REG (DR_REG_LEDC_BASE + 0x158)
+#define LEDC_TIMER2_CNT_CAP_REG(i) (DR_REG_LEDC_BASE(i) + 0x158)
 /** LEDC_TIMER2_CNT_CAP : RO; bitpos: [19:0]; default: 0;
  *  Represents the captured LEDC timer2 count value.
  */
@@ -2989,7 +2992,7 @@ extern "C" {
 /** LEDC_TIMER3_CNT_CAP_REG register
  *  Ledc timer3 captured count value register.
  */
-#define LEDC_TIMER3_CNT_CAP_REG (DR_REG_LEDC_BASE + 0x15c)
+#define LEDC_TIMER3_CNT_CAP_REG(i) (DR_REG_LEDC_BASE(i) + 0x15c)
 /** LEDC_TIMER3_CNT_CAP : RO; bitpos: [19:0]; default: 0;
  *  Represents the captured LEDC timer3 count value.
  */
@@ -3001,7 +3004,7 @@ extern "C" {
 /** LEDC_CONF_REG register
  *  LEDC global configuration register
  */
-#define LEDC_CONF_REG (DR_REG_LEDC_BASE + 0x170)
+#define LEDC_CONF_REG(i) (DR_REG_LEDC_BASE(i) + 0x170)
 /** LEDC_GAMMA_RAM_CLK_EN_CH0 : R/W; bitpos: [2]; default: 0;
  *  Configures whether or not to open LEDC ch0 gamma ram clock gate.
  *  0: Open the clock gate only when application writes or reads LEDC ch0 gamma ram
@@ -3087,7 +3090,7 @@ extern "C" {
 /** LEDC_CH_POWER_UP_CONF_REG register
  *  LEDC channel power up configuration register
  */
-#define LEDC_CH_POWER_UP_CONF_REG (DR_REG_LEDC_BASE + 0x174)
+#define LEDC_CH_POWER_UP_CONF_REG(i) (DR_REG_LEDC_BASE(i) + 0x174)
 /** LEDC_CH0_POWER_UP : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to power up ch0.
  *  0: power down
@@ -3236,7 +3239,7 @@ extern "C" {
 /** LEDC_TIMER_POWER_UP_CONF_REG register
  *  LEDC timer power up configuration register
  */
-#define LEDC_TIMER_POWER_UP_CONF_REG (DR_REG_LEDC_BASE + 0x178)
+#define LEDC_TIMER_POWER_UP_CONF_REG(i) (DR_REG_LEDC_BASE(i) + 0x178)
 /** LEDC_TIMER0_POWER_UP : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to power up timer0.
  *  0: power down
@@ -3313,7 +3316,7 @@ extern "C" {
 /** LEDC_DATE_REG register
  *  Version control register
  */
-#define LEDC_DATE_REG (DR_REG_LEDC_BASE + 0x17c)
+#define LEDC_DATE_REG(i) (DR_REG_LEDC_BASE(i) + 0x17c)
 /** LEDC_LEDC_DATE : R/W; bitpos: [27:0]; default: 38801744;
  *  Configures the version.
  */
@@ -3321,6 +3324,2832 @@ extern "C" {
 #define LEDC_LEDC_DATE_M  (LEDC_LEDC_DATE_V << LEDC_LEDC_DATE_S)
 #define LEDC_LEDC_DATE_V  0x0FFFFFFFU
 #define LEDC_LEDC_DATE_S  0
+
+/** LEDC gamma fade config ram registers
+ *  16 words (32bit) per channel * 8 channels
+ */
+#define LEDC_CH0_GAMMA_RANGE0_REG(i)  (DR_REG_LEDC_BASE(i) + 0x400)
+/* LEDC_CH0_GAMMA_RANGE0_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE0_DUTY_NUM    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE0_DUTY_NUM_M  ((LEDC_CH0_GAMMA_RANGE0_DUTY_NUM_V)<<(LEDC_CH0_GAMMA_RANGE0_DUTY_NUM_S))
+#define LEDC_CH0_GAMMA_RANGE0_DUTY_NUM_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE0_DUTY_NUM_S  21
+/* LEDC_CH0_GAMMA_RANGE0_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE0_SCALE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE0_SCALE_M  ((LEDC_CH0_GAMMA_RANGE0_SCALE_V)<<(LEDC_CH0_GAMMA_RANGE0_SCALE_S))
+#define LEDC_CH0_GAMMA_RANGE0_SCALE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE0_SCALE_S  11
+/* LEDC_CH0_GAMMA_RANGE0_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE0_DUTY_CYCLE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE0_DUTY_CYCLE_M  ((LEDC_CH0_GAMMA_RANGE0_DUTY_CYCLE_V)<<(LEDC_CH0_GAMMA_RANGE0_DUTY_CYCLE_S))
+#define LEDC_CH0_GAMMA_RANGE0_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE0_DUTY_CYCLE_S  1
+/* LEDC_CH0_GAMMA_RANGE0_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE0_DUTY_INC    (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE0_DUTY_INC_M  (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE0_DUTY_INC_V  0x1
+#define LEDC_CH0_GAMMA_RANGE0_DUTY_INC_S  0
+
+#define LEDC_CH0_GAMMA_RANGE1_REG(i)  (DR_REG_LEDC_BASE(i) + 0x404)
+/* LEDC_CH0_GAMMA_RANGE1_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE1_DUTY_NUM    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE1_DUTY_NUM_M  ((LEDC_CH0_GAMMA_RANGE1_DUTY_NUM_V)<<(LEDC_CH0_GAMMA_RANGE1_DUTY_NUM_S))
+#define LEDC_CH0_GAMMA_RANGE1_DUTY_NUM_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE1_DUTY_NUM_S  21
+/* LEDC_CH0_GAMMA_RANGE1_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE1_SCALE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE1_SCALE_M  ((LEDC_CH0_GAMMA_RANGE1_SCALE_V)<<(LEDC_CH0_GAMMA_RANGE1_SCALE_S))
+#define LEDC_CH0_GAMMA_RANGE1_SCALE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE1_SCALE_S  11
+/* LEDC_CH0_GAMMA_RANGE1_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE1_DUTY_CYCLE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE1_DUTY_CYCLE_M  ((LEDC_CH0_GAMMA_RANGE1_DUTY_CYCLE_V)<<(LEDC_CH0_GAMMA_RANGE1_DUTY_CYCLE_S))
+#define LEDC_CH0_GAMMA_RANGE1_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE1_DUTY_CYCLE_S  1
+/* LEDC_CH0_GAMMA_RANGE1_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE1_DUTY_INC    (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE1_DUTY_INC_M  (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE1_DUTY_INC_V  0x1
+#define LEDC_CH0_GAMMA_RANGE1_DUTY_INC_S  0
+
+#define LEDC_CH0_GAMMA_RANGE2_REG(i)  (DR_REG_LEDC_BASE(i) + 0x408)
+/* LEDC_CH0_GAMMA_RANGE2_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE2_DUTY_NUM    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE2_DUTY_NUM_M  ((LEDC_CH0_GAMMA_RANGE2_DUTY_NUM_V)<<(LEDC_CH0_GAMMA_RANGE2_DUTY_NUM_S))
+#define LEDC_CH0_GAMMA_RANGE2_DUTY_NUM_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE2_DUTY_NUM_S  21
+/* LEDC_CH0_GAMMA_RANGE2_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE2_SCALE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE2_SCALE_M  ((LEDC_CH0_GAMMA_RANGE2_SCALE_V)<<(LEDC_CH0_GAMMA_RANGE2_SCALE_S))
+#define LEDC_CH0_GAMMA_RANGE2_SCALE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE2_SCALE_S  11
+/* LEDC_CH0_GAMMA_RANGE2_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE2_DUTY_CYCLE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE2_DUTY_CYCLE_M  ((LEDC_CH0_GAMMA_RANGE2_DUTY_CYCLE_V)<<(LEDC_CH0_GAMMA_RANGE2_DUTY_CYCLE_S))
+#define LEDC_CH0_GAMMA_RANGE2_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE2_DUTY_CYCLE_S  1
+/* LEDC_CH0_GAMMA_RANGE2_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE2_DUTY_INC    (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE2_DUTY_INC_M  (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE2_DUTY_INC_V  0x1
+#define LEDC_CH0_GAMMA_RANGE2_DUTY_INC_S  0
+
+#define LEDC_CH0_GAMMA_RANGE3_REG(i)  (DR_REG_LEDC_BASE(i) + 0x40c)
+/* LEDC_CH0_GAMMA_RANGE3_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE3_DUTY_NUM    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE3_DUTY_NUM_M  ((LEDC_CH0_GAMMA_RANGE3_DUTY_NUM_V)<<(LEDC_CH0_GAMMA_RANGE3_DUTY_NUM_S))
+#define LEDC_CH0_GAMMA_RANGE3_DUTY_NUM_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE3_DUTY_NUM_S  21
+/* LEDC_CH0_GAMMA_RANGE3_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE3_SCALE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE3_SCALE_M  ((LEDC_CH0_GAMMA_RANGE3_SCALE_V)<<(LEDC_CH0_GAMMA_RANGE3_SCALE_S))
+#define LEDC_CH0_GAMMA_RANGE3_SCALE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE3_SCALE_S  11
+/* LEDC_CH0_GAMMA_RANGE3_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE3_DUTY_CYCLE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE3_DUTY_CYCLE_M  ((LEDC_CH0_GAMMA_RANGE3_DUTY_CYCLE_V)<<(LEDC_CH0_GAMMA_RANGE3_DUTY_CYCLE_S))
+#define LEDC_CH0_GAMMA_RANGE3_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE3_DUTY_CYCLE_S  1
+/* LEDC_CH0_GAMMA_RANGE3_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE3_DUTY_INC    (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE3_DUTY_INC_M  (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE3_DUTY_INC_V  0x1
+#define LEDC_CH0_GAMMA_RANGE3_DUTY_INC_S  0
+
+#define LEDC_CH0_GAMMA_RANGE4_REG(i)  (DR_REG_LEDC_BASE(i) + 0x410)
+/* LEDC_CH0_GAMMA_RANGE4_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE4_DUTY_NUM    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE4_DUTY_NUM_M  ((LEDC_CH0_GAMMA_RANGE4_DUTY_NUM_V)<<(LEDC_CH0_GAMMA_RANGE4_DUTY_NUM_S))
+#define LEDC_CH0_GAMMA_RANGE4_DUTY_NUM_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE4_DUTY_NUM_S  21
+/* LEDC_CH0_GAMMA_RANGE4_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE4_SCALE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE4_SCALE_M  ((LEDC_CH0_GAMMA_RANGE4_SCALE_V)<<(LEDC_CH0_GAMMA_RANGE4_SCALE_S))
+#define LEDC_CH0_GAMMA_RANGE4_SCALE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE4_SCALE_S  11
+/* LEDC_CH0_GAMMA_RANGE4_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE4_DUTY_CYCLE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE4_DUTY_CYCLE_M  ((LEDC_CH0_GAMMA_RANGE4_DUTY_CYCLE_V)<<(LEDC_CH0_GAMMA_RANGE4_DUTY_CYCLE_S))
+#define LEDC_CH0_GAMMA_RANGE4_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE4_DUTY_CYCLE_S  1
+/* LEDC_CH0_GAMMA_RANGE4_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE4_DUTY_INC    (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE4_DUTY_INC_M  (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE4_DUTY_INC_V  0x1
+#define LEDC_CH0_GAMMA_RANGE4_DUTY_INC_S  0
+
+#define LEDC_CH0_GAMMA_RANGE5_REG(i)  (DR_REG_LEDC_BASE(i) + 0x414)
+/* LEDC_CH0_GAMMA_RANGE5_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE5_DUTY_NUM    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE5_DUTY_NUM_M  ((LEDC_CH0_GAMMA_RANGE5_DUTY_NUM_V)<<(LEDC_CH0_GAMMA_RANGE5_DUTY_NUM_S))
+#define LEDC_CH0_GAMMA_RANGE5_DUTY_NUM_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE5_DUTY_NUM_S  21
+/* LEDC_CH0_GAMMA_RANGE5_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE5_SCALE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE5_SCALE_M  ((LEDC_CH0_GAMMA_RANGE5_SCALE_V)<<(LEDC_CH0_GAMMA_RANGE5_SCALE_S))
+#define LEDC_CH0_GAMMA_RANGE5_SCALE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE5_SCALE_S  11
+/* LEDC_CH0_GAMMA_RANGE5_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE5_DUTY_CYCLE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE5_DUTY_CYCLE_M  ((LEDC_CH0_GAMMA_RANGE5_DUTY_CYCLE_V)<<(LEDC_CH0_GAMMA_RANGE5_DUTY_CYCLE_S))
+#define LEDC_CH0_GAMMA_RANGE5_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE5_DUTY_CYCLE_S  1
+/* LEDC_CH0_GAMMA_RANGE5_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE5_DUTY_INC    (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE5_DUTY_INC_M  (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE5_DUTY_INC_V  0x1
+#define LEDC_CH0_GAMMA_RANGE5_DUTY_INC_S  0
+
+#define LEDC_CH0_GAMMA_RANGE6_REG(i)  (DR_REG_LEDC_BASE(i) + 0x418)
+/* LEDC_CH0_GAMMA_RANGE6_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE6_DUTY_NUM    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE6_DUTY_NUM_M  ((LEDC_CH0_GAMMA_RANGE6_DUTY_NUM_V)<<(LEDC_CH0_GAMMA_RANGE6_DUTY_NUM_S))
+#define LEDC_CH0_GAMMA_RANGE6_DUTY_NUM_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE6_DUTY_NUM_S  21
+/* LEDC_CH0_GAMMA_RANGE6_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE6_SCALE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE6_SCALE_M  ((LEDC_CH0_GAMMA_RANGE6_SCALE_V)<<(LEDC_CH0_GAMMA_RANGE6_SCALE_S))
+#define LEDC_CH0_GAMMA_RANGE6_SCALE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE6_SCALE_S  11
+/* LEDC_CH0_GAMMA_RANGE6_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE6_DUTY_CYCLE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE6_DUTY_CYCLE_M  ((LEDC_CH0_GAMMA_RANGE6_DUTY_CYCLE_V)<<(LEDC_CH0_GAMMA_RANGE6_DUTY_CYCLE_S))
+#define LEDC_CH0_GAMMA_RANGE6_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE6_DUTY_CYCLE_S  1
+/* LEDC_CH0_GAMMA_RANGE6_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE6_DUTY_INC    (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE6_DUTY_INC_M  (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE6_DUTY_INC_V  0x1
+#define LEDC_CH0_GAMMA_RANGE6_DUTY_INC_S  0
+
+#define LEDC_CH0_GAMMA_RANGE7_REG(i)  (DR_REG_LEDC_BASE(i) + 0x41c)
+/* LEDC_CH0_GAMMA_RANGE7_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE7_DUTY_NUM    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE7_DUTY_NUM_M  ((LEDC_CH0_GAMMA_RANGE7_DUTY_NUM_V)<<(LEDC_CH0_GAMMA_RANGE7_DUTY_NUM_S))
+#define LEDC_CH0_GAMMA_RANGE7_DUTY_NUM_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE7_DUTY_NUM_S  21
+/* LEDC_CH0_GAMMA_RANGE7_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE7_SCALE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE7_SCALE_M  ((LEDC_CH0_GAMMA_RANGE7_SCALE_V)<<(LEDC_CH0_GAMMA_RANGE7_SCALE_S))
+#define LEDC_CH0_GAMMA_RANGE7_SCALE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE7_SCALE_S  11
+/* LEDC_CH0_GAMMA_RANGE7_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE7_DUTY_CYCLE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE7_DUTY_CYCLE_M  ((LEDC_CH0_GAMMA_RANGE7_DUTY_CYCLE_V)<<(LEDC_CH0_GAMMA_RANGE7_DUTY_CYCLE_S))
+#define LEDC_CH0_GAMMA_RANGE7_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE7_DUTY_CYCLE_S  1
+/* LEDC_CH0_GAMMA_RANGE7_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE7_DUTY_INC    (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE7_DUTY_INC_M  (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE7_DUTY_INC_V  0x1
+#define LEDC_CH0_GAMMA_RANGE7_DUTY_INC_S  0
+
+#define LEDC_CH0_GAMMA_RANGE8_REG(i)  (DR_REG_LEDC_BASE(i) + 0x420)
+/* LEDC_CH0_GAMMA_RANGE8_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE8_DUTY_NUM    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE8_DUTY_NUM_M  ((LEDC_CH0_GAMMA_RANGE8_DUTY_NUM_V)<<(LEDC_CH0_GAMMA_RANGE8_DUTY_NUM_S))
+#define LEDC_CH0_GAMMA_RANGE8_DUTY_NUM_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE8_DUTY_NUM_S  21
+/* LEDC_CH0_GAMMA_RANGE8_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE8_SCALE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE8_SCALE_M  ((LEDC_CH0_GAMMA_RANGE8_SCALE_V)<<(LEDC_CH0_GAMMA_RANGE8_SCALE_S))
+#define LEDC_CH0_GAMMA_RANGE8_SCALE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE8_SCALE_S  11
+/* LEDC_CH0_GAMMA_RANGE8_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE8_DUTY_CYCLE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE8_DUTY_CYCLE_M  ((LEDC_CH0_GAMMA_RANGE8_DUTY_CYCLE_V)<<(LEDC_CH0_GAMMA_RANGE8_DUTY_CYCLE_S))
+#define LEDC_CH0_GAMMA_RANGE8_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE8_DUTY_CYCLE_S  1
+/* LEDC_CH0_GAMMA_RANGE8_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE8_DUTY_INC    (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE8_DUTY_INC_M  (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE8_DUTY_INC_V  0x1
+#define LEDC_CH0_GAMMA_RANGE8_DUTY_INC_S  0
+
+#define LEDC_CH0_GAMMA_RANGE9_REG(i)  (DR_REG_LEDC_BASE(i) + 0x424)
+/* LEDC_CH0_GAMMA_RANGE9_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE9_DUTY_NUM    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE9_DUTY_NUM_M  ((LEDC_CH0_GAMMA_RANGE9_DUTY_NUM_V)<<(LEDC_CH0_GAMMA_RANGE9_DUTY_NUM_S))
+#define LEDC_CH0_GAMMA_RANGE9_DUTY_NUM_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE9_DUTY_NUM_S  21
+/* LEDC_CH0_GAMMA_RANGE9_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE9_SCALE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE9_SCALE_M  ((LEDC_CH0_GAMMA_RANGE9_SCALE_V)<<(LEDC_CH0_GAMMA_RANGE9_SCALE_S))
+#define LEDC_CH0_GAMMA_RANGE9_SCALE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE9_SCALE_S  11
+/* LEDC_CH0_GAMMA_RANGE9_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE9_DUTY_CYCLE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE9_DUTY_CYCLE_M  ((LEDC_CH0_GAMMA_RANGE9_DUTY_CYCLE_V)<<(LEDC_CH0_GAMMA_RANGE9_DUTY_CYCLE_S))
+#define LEDC_CH0_GAMMA_RANGE9_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE9_DUTY_CYCLE_S  1
+/* LEDC_CH0_GAMMA_RANGE9_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE9_DUTY_INC    (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE9_DUTY_INC_M  (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE9_DUTY_INC_V  0x1
+#define LEDC_CH0_GAMMA_RANGE9_DUTY_INC_S  0
+
+#define LEDC_CH0_GAMMA_RANGE10_REG(i)  (DR_REG_LEDC_BASE(i) + 0x428)
+/* LEDC_CH0_GAMMA_RANGE10_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE10_DUTY_NUM    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE10_DUTY_NUM_M  ((LEDC_CH0_GAMMA_RANGE10_DUTY_NUM_V)<<(LEDC_CH0_GAMMA_RANGE10_DUTY_NUM_S))
+#define LEDC_CH0_GAMMA_RANGE10_DUTY_NUM_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE10_DUTY_NUM_S  21
+/* LEDC_CH0_GAMMA_RANGE10_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE10_SCALE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE10_SCALE_M  ((LEDC_CH0_GAMMA_RANGE10_SCALE_V)<<(LEDC_CH0_GAMMA_RANGE10_SCALE_S))
+#define LEDC_CH0_GAMMA_RANGE10_SCALE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE10_SCALE_S  11
+/* LEDC_CH0_GAMMA_RANGE10_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE10_DUTY_CYCLE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE10_DUTY_CYCLE_M  ((LEDC_CH0_GAMMA_RANGE10_DUTY_CYCLE_V)<<(LEDC_CH0_GAMMA_RANGE10_DUTY_CYCLE_S))
+#define LEDC_CH0_GAMMA_RANGE10_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE10_DUTY_CYCLE_S  1
+/* LEDC_CH0_GAMMA_RANGE10_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE10_DUTY_INC    (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE10_DUTY_INC_M  (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE10_DUTY_INC_V  0x1
+#define LEDC_CH0_GAMMA_RANGE10_DUTY_INC_S  0
+
+#define LEDC_CH0_GAMMA_RANGE11_REG(i)  (DR_REG_LEDC_BASE(i) + 0x42c)
+/* LEDC_CH0_GAMMA_RANGE11_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE11_DUTY_NUM    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE11_DUTY_NUM_M  ((LEDC_CH0_GAMMA_RANGE11_DUTY_NUM_V)<<(LEDC_CH0_GAMMA_RANGE11_DUTY_NUM_S))
+#define LEDC_CH0_GAMMA_RANGE11_DUTY_NUM_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE11_DUTY_NUM_S  21
+/* LEDC_CH0_GAMMA_RANGE11_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE11_SCALE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE11_SCALE_M  ((LEDC_CH0_GAMMA_RANGE11_SCALE_V)<<(LEDC_CH0_GAMMA_RANGE11_SCALE_S))
+#define LEDC_CH0_GAMMA_RANGE11_SCALE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE11_SCALE_S  11
+/* LEDC_CH0_GAMMA_RANGE11_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE11_DUTY_CYCLE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE11_DUTY_CYCLE_M  ((LEDC_CH0_GAMMA_RANGE11_DUTY_CYCLE_V)<<(LEDC_CH0_GAMMA_RANGE11_DUTY_CYCLE_S))
+#define LEDC_CH0_GAMMA_RANGE11_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE11_DUTY_CYCLE_S  1
+/* LEDC_CH0_GAMMA_RANGE11_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE11_DUTY_INC    (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE11_DUTY_INC_M  (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE11_DUTY_INC_V  0x1
+#define LEDC_CH0_GAMMA_RANGE11_DUTY_INC_S  0
+
+#define LEDC_CH0_GAMMA_RANGE12_REG(i)  (DR_REG_LEDC_BASE(i) + 0x430)
+/* LEDC_CH0_GAMMA_RANGE12_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE12_DUTY_NUM    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE12_DUTY_NUM_M  ((LEDC_CH0_GAMMA_RANGE12_DUTY_NUM_V)<<(LEDC_CH0_GAMMA_RANGE12_DUTY_NUM_S))
+#define LEDC_CH0_GAMMA_RANGE12_DUTY_NUM_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE12_DUTY_NUM_S  21
+/* LEDC_CH0_GAMMA_RANGE12_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE12_SCALE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE12_SCALE_M  ((LEDC_CH0_GAMMA_RANGE12_SCALE_V)<<(LEDC_CH0_GAMMA_RANGE12_SCALE_S))
+#define LEDC_CH0_GAMMA_RANGE12_SCALE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE12_SCALE_S  11
+/* LEDC_CH0_GAMMA_RANGE12_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE12_DUTY_CYCLE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE12_DUTY_CYCLE_M  ((LEDC_CH0_GAMMA_RANGE12_DUTY_CYCLE_V)<<(LEDC_CH0_GAMMA_RANGE12_DUTY_CYCLE_S))
+#define LEDC_CH0_GAMMA_RANGE12_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE12_DUTY_CYCLE_S  1
+/* LEDC_CH0_GAMMA_RANGE12_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE12_DUTY_INC    (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE12_DUTY_INC_M  (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE12_DUTY_INC_V  0x1
+#define LEDC_CH0_GAMMA_RANGE12_DUTY_INC_S  0
+
+#define LEDC_CH0_GAMMA_RANGE13_REG(i)  (DR_REG_LEDC_BASE(i) + 0x434)
+/* LEDC_CH0_GAMMA_RANGE13_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE13_DUTY_NUM    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE13_DUTY_NUM_M  ((LEDC_CH0_GAMMA_RANGE13_DUTY_NUM_V)<<(LEDC_CH0_GAMMA_RANGE13_DUTY_NUM_S))
+#define LEDC_CH0_GAMMA_RANGE13_DUTY_NUM_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE13_DUTY_NUM_S  21
+/* LEDC_CH0_GAMMA_RANGE13_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE13_SCALE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE13_SCALE_M  ((LEDC_CH0_GAMMA_RANGE13_SCALE_V)<<(LEDC_CH0_GAMMA_RANGE13_SCALE_S))
+#define LEDC_CH0_GAMMA_RANGE13_SCALE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE13_SCALE_S  11
+/* LEDC_CH0_GAMMA_RANGE13_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE13_DUTY_CYCLE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE13_DUTY_CYCLE_M  ((LEDC_CH0_GAMMA_RANGE13_DUTY_CYCLE_V)<<(LEDC_CH0_GAMMA_RANGE13_DUTY_CYCLE_S))
+#define LEDC_CH0_GAMMA_RANGE13_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE13_DUTY_CYCLE_S  1
+/* LEDC_CH0_GAMMA_RANGE13_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE13_DUTY_INC    (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE13_DUTY_INC_M  (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE13_DUTY_INC_V  0x1
+#define LEDC_CH0_GAMMA_RANGE13_DUTY_INC_S  0
+
+#define LEDC_CH0_GAMMA_RANGE14_REG(i)  (DR_REG_LEDC_BASE(i) + 0x438)
+/* LEDC_CH0_GAMMA_RANGE14_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE14_DUTY_NUM    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE14_DUTY_NUM_M  ((LEDC_CH0_GAMMA_RANGE14_DUTY_NUM_V)<<(LEDC_CH0_GAMMA_RANGE14_DUTY_NUM_S))
+#define LEDC_CH0_GAMMA_RANGE14_DUTY_NUM_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE14_DUTY_NUM_S  21
+/* LEDC_CH0_GAMMA_RANGE14_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE14_SCALE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE14_SCALE_M  ((LEDC_CH0_GAMMA_RANGE14_SCALE_V)<<(LEDC_CH0_GAMMA_RANGE14_SCALE_S))
+#define LEDC_CH0_GAMMA_RANGE14_SCALE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE14_SCALE_S  11
+/* LEDC_CH0_GAMMA_RANGE14_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE14_DUTY_CYCLE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE14_DUTY_CYCLE_M  ((LEDC_CH0_GAMMA_RANGE14_DUTY_CYCLE_V)<<(LEDC_CH0_GAMMA_RANGE14_DUTY_CYCLE_S))
+#define LEDC_CH0_GAMMA_RANGE14_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE14_DUTY_CYCLE_S  1
+/* LEDC_CH0_GAMMA_RANGE14_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE14_DUTY_INC    (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE14_DUTY_INC_M  (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE14_DUTY_INC_V  0x1
+#define LEDC_CH0_GAMMA_RANGE14_DUTY_INC_S  0
+
+#define LEDC_CH0_GAMMA_RANGE15_REG(i)  (DR_REG_LEDC_BASE(i) + 0x43c)
+/* LEDC_CH0_GAMMA_RANGE15_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE15_DUTY_NUM    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE15_DUTY_NUM_M  ((LEDC_CH0_GAMMA_RANGE15_DUTY_NUM_V)<<(LEDC_CH0_GAMMA_RANGE15_DUTY_NUM_S))
+#define LEDC_CH0_GAMMA_RANGE15_DUTY_NUM_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE15_DUTY_NUM_S  21
+/* LEDC_CH0_GAMMA_RANGE15_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE15_SCALE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE15_SCALE_M  ((LEDC_CH0_GAMMA_RANGE15_SCALE_V)<<(LEDC_CH0_GAMMA_RANGE15_SCALE_S))
+#define LEDC_CH0_GAMMA_RANGE15_SCALE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE15_SCALE_S  11
+/* LEDC_CH0_GAMMA_RANGE15_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE15_DUTY_CYCLE    0x000003FF
+#define LEDC_CH0_GAMMA_RANGE15_DUTY_CYCLE_M  ((LEDC_CH0_GAMMA_RANGE15_DUTY_CYCLE_V)<<(LEDC_CH0_GAMMA_RANGE15_DUTY_CYCLE_S))
+#define LEDC_CH0_GAMMA_RANGE15_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH0_GAMMA_RANGE15_DUTY_CYCLE_S  1
+/* LEDC_CH0_GAMMA_RANGE15_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH0_GAMMA_RANGE15_DUTY_INC    (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE15_DUTY_INC_M  (BIT(0))
+#define LEDC_CH0_GAMMA_RANGE15_DUTY_INC_V  0x1
+#define LEDC_CH0_GAMMA_RANGE15_DUTY_INC_S  0
+
+
+#define LEDC_CH1_GAMMA_RANGE0_REG(i)  (DR_REG_LEDC_BASE(i) + 0x440)
+/* LEDC_CH1_GAMMA_RANGE0_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE0_DUTY_NUM    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE0_DUTY_NUM_M  ((LEDC_CH1_GAMMA_RANGE0_DUTY_NUM_V)<<(LEDC_CH1_GAMMA_RANGE0_DUTY_NUM_S))
+#define LEDC_CH1_GAMMA_RANGE0_DUTY_NUM_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE0_DUTY_NUM_S  21
+/* LEDC_CH1_GAMMA_RANGE0_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE0_SCALE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE0_SCALE_M  ((LEDC_CH1_GAMMA_RANGE0_SCALE_V)<<(LEDC_CH1_GAMMA_RANGE0_SCALE_S))
+#define LEDC_CH1_GAMMA_RANGE0_SCALE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE0_SCALE_S  11
+/* LEDC_CH1_GAMMA_RANGE0_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE0_DUTY_CYCLE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE0_DUTY_CYCLE_M  ((LEDC_CH1_GAMMA_RANGE0_DUTY_CYCLE_V)<<(LEDC_CH1_GAMMA_RANGE0_DUTY_CYCLE_S))
+#define LEDC_CH1_GAMMA_RANGE0_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE0_DUTY_CYCLE_S  1
+/* LEDC_CH1_GAMMA_RANGE0_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE0_DUTY_INC    (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE0_DUTY_INC_M  (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE0_DUTY_INC_V  0x1
+#define LEDC_CH1_GAMMA_RANGE0_DUTY_INC_S  0
+
+#define LEDC_CH1_GAMMA_RANGE1_REG(i)  (DR_REG_LEDC_BASE(i) + 0x444)
+/* LEDC_CH1_GAMMA_RANGE1_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE1_DUTY_NUM    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE1_DUTY_NUM_M  ((LEDC_CH1_GAMMA_RANGE1_DUTY_NUM_V)<<(LEDC_CH1_GAMMA_RANGE1_DUTY_NUM_S))
+#define LEDC_CH1_GAMMA_RANGE1_DUTY_NUM_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE1_DUTY_NUM_S  21
+/* LEDC_CH1_GAMMA_RANGE1_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE1_SCALE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE1_SCALE_M  ((LEDC_CH1_GAMMA_RANGE1_SCALE_V)<<(LEDC_CH1_GAMMA_RANGE1_SCALE_S))
+#define LEDC_CH1_GAMMA_RANGE1_SCALE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE1_SCALE_S  11
+/* LEDC_CH1_GAMMA_RANGE1_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE1_DUTY_CYCLE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE1_DUTY_CYCLE_M  ((LEDC_CH1_GAMMA_RANGE1_DUTY_CYCLE_V)<<(LEDC_CH1_GAMMA_RANGE1_DUTY_CYCLE_S))
+#define LEDC_CH1_GAMMA_RANGE1_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE1_DUTY_CYCLE_S  1
+/* LEDC_CH1_GAMMA_RANGE1_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE1_DUTY_INC    (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE1_DUTY_INC_M  (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE1_DUTY_INC_V  0x1
+#define LEDC_CH1_GAMMA_RANGE1_DUTY_INC_S  0
+
+#define LEDC_CH1_GAMMA_RANGE2_REG(i)  (DR_REG_LEDC_BASE(i) + 0x448)
+/* LEDC_CH1_GAMMA_RANGE2_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE2_DUTY_NUM    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE2_DUTY_NUM_M  ((LEDC_CH1_GAMMA_RANGE2_DUTY_NUM_V)<<(LEDC_CH1_GAMMA_RANGE2_DUTY_NUM_S))
+#define LEDC_CH1_GAMMA_RANGE2_DUTY_NUM_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE2_DUTY_NUM_S  21
+/* LEDC_CH1_GAMMA_RANGE2_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE2_SCALE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE2_SCALE_M  ((LEDC_CH1_GAMMA_RANGE2_SCALE_V)<<(LEDC_CH1_GAMMA_RANGE2_SCALE_S))
+#define LEDC_CH1_GAMMA_RANGE2_SCALE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE2_SCALE_S  11
+/* LEDC_CH1_GAMMA_RANGE2_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE2_DUTY_CYCLE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE2_DUTY_CYCLE_M  ((LEDC_CH1_GAMMA_RANGE2_DUTY_CYCLE_V)<<(LEDC_CH1_GAMMA_RANGE2_DUTY_CYCLE_S))
+#define LEDC_CH1_GAMMA_RANGE2_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE2_DUTY_CYCLE_S  1
+/* LEDC_CH1_GAMMA_RANGE2_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE2_DUTY_INC    (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE2_DUTY_INC_M  (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE2_DUTY_INC_V  0x1
+#define LEDC_CH1_GAMMA_RANGE2_DUTY_INC_S  0
+
+#define LEDC_CH1_GAMMA_RANGE3_REG(i)  (DR_REG_LEDC_BASE(i) + 0x44c)
+/* LEDC_CH1_GAMMA_RANGE3_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE3_DUTY_NUM    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE3_DUTY_NUM_M  ((LEDC_CH1_GAMMA_RANGE3_DUTY_NUM_V)<<(LEDC_CH1_GAMMA_RANGE3_DUTY_NUM_S))
+#define LEDC_CH1_GAMMA_RANGE3_DUTY_NUM_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE3_DUTY_NUM_S  21
+/* LEDC_CH1_GAMMA_RANGE3_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE3_SCALE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE3_SCALE_M  ((LEDC_CH1_GAMMA_RANGE3_SCALE_V)<<(LEDC_CH1_GAMMA_RANGE3_SCALE_S))
+#define LEDC_CH1_GAMMA_RANGE3_SCALE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE3_SCALE_S  11
+/* LEDC_CH1_GAMMA_RANGE3_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE3_DUTY_CYCLE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE3_DUTY_CYCLE_M  ((LEDC_CH1_GAMMA_RANGE3_DUTY_CYCLE_V)<<(LEDC_CH1_GAMMA_RANGE3_DUTY_CYCLE_S))
+#define LEDC_CH1_GAMMA_RANGE3_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE3_DUTY_CYCLE_S  1
+/* LEDC_CH1_GAMMA_RANGE3_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE3_DUTY_INC    (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE3_DUTY_INC_M  (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE3_DUTY_INC_V  0x1
+#define LEDC_CH1_GAMMA_RANGE3_DUTY_INC_S  0
+
+#define LEDC_CH1_GAMMA_RANGE4_REG(i)  (DR_REG_LEDC_BASE(i) + 0x450)
+/* LEDC_CH1_GAMMA_RANGE4_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE4_DUTY_NUM    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE4_DUTY_NUM_M  ((LEDC_CH1_GAMMA_RANGE4_DUTY_NUM_V)<<(LEDC_CH1_GAMMA_RANGE4_DUTY_NUM_S))
+#define LEDC_CH1_GAMMA_RANGE4_DUTY_NUM_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE4_DUTY_NUM_S  21
+/* LEDC_CH1_GAMMA_RANGE4_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE4_SCALE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE4_SCALE_M  ((LEDC_CH1_GAMMA_RANGE4_SCALE_V)<<(LEDC_CH1_GAMMA_RANGE4_SCALE_S))
+#define LEDC_CH1_GAMMA_RANGE4_SCALE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE4_SCALE_S  11
+/* LEDC_CH1_GAMMA_RANGE4_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE4_DUTY_CYCLE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE4_DUTY_CYCLE_M  ((LEDC_CH1_GAMMA_RANGE4_DUTY_CYCLE_V)<<(LEDC_CH1_GAMMA_RANGE4_DUTY_CYCLE_S))
+#define LEDC_CH1_GAMMA_RANGE4_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE4_DUTY_CYCLE_S  1
+/* LEDC_CH1_GAMMA_RANGE4_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE4_DUTY_INC    (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE4_DUTY_INC_M  (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE4_DUTY_INC_V  0x1
+#define LEDC_CH1_GAMMA_RANGE4_DUTY_INC_S  0
+
+#define LEDC_CH1_GAMMA_RANGE5_REG(i)  (DR_REG_LEDC_BASE(i) + 0x454)
+/* LEDC_CH1_GAMMA_RANGE5_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE5_DUTY_NUM    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE5_DUTY_NUM_M  ((LEDC_CH1_GAMMA_RANGE5_DUTY_NUM_V)<<(LEDC_CH1_GAMMA_RANGE5_DUTY_NUM_S))
+#define LEDC_CH1_GAMMA_RANGE5_DUTY_NUM_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE5_DUTY_NUM_S  21
+/* LEDC_CH1_GAMMA_RANGE5_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE5_SCALE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE5_SCALE_M  ((LEDC_CH1_GAMMA_RANGE5_SCALE_V)<<(LEDC_CH1_GAMMA_RANGE5_SCALE_S))
+#define LEDC_CH1_GAMMA_RANGE5_SCALE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE5_SCALE_S  11
+/* LEDC_CH1_GAMMA_RANGE5_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE5_DUTY_CYCLE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE5_DUTY_CYCLE_M  ((LEDC_CH1_GAMMA_RANGE5_DUTY_CYCLE_V)<<(LEDC_CH1_GAMMA_RANGE5_DUTY_CYCLE_S))
+#define LEDC_CH1_GAMMA_RANGE5_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE5_DUTY_CYCLE_S  1
+/* LEDC_CH1_GAMMA_RANGE5_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE5_DUTY_INC    (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE5_DUTY_INC_M  (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE5_DUTY_INC_V  0x1
+#define LEDC_CH1_GAMMA_RANGE5_DUTY_INC_S  0
+
+#define LEDC_CH1_GAMMA_RANGE6_REG(i)  (DR_REG_LEDC_BASE(i) + 0x458)
+/* LEDC_CH1_GAMMA_RANGE6_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE6_DUTY_NUM    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE6_DUTY_NUM_M  ((LEDC_CH1_GAMMA_RANGE6_DUTY_NUM_V)<<(LEDC_CH1_GAMMA_RANGE6_DUTY_NUM_S))
+#define LEDC_CH1_GAMMA_RANGE6_DUTY_NUM_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE6_DUTY_NUM_S  21
+/* LEDC_CH1_GAMMA_RANGE6_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE6_SCALE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE6_SCALE_M  ((LEDC_CH1_GAMMA_RANGE6_SCALE_V)<<(LEDC_CH1_GAMMA_RANGE6_SCALE_S))
+#define LEDC_CH1_GAMMA_RANGE6_SCALE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE6_SCALE_S  11
+/* LEDC_CH1_GAMMA_RANGE6_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE6_DUTY_CYCLE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE6_DUTY_CYCLE_M  ((LEDC_CH1_GAMMA_RANGE6_DUTY_CYCLE_V)<<(LEDC_CH1_GAMMA_RANGE6_DUTY_CYCLE_S))
+#define LEDC_CH1_GAMMA_RANGE6_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE6_DUTY_CYCLE_S  1
+/* LEDC_CH1_GAMMA_RANGE6_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE6_DUTY_INC    (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE6_DUTY_INC_M  (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE6_DUTY_INC_V  0x1
+#define LEDC_CH1_GAMMA_RANGE6_DUTY_INC_S  0
+
+#define LEDC_CH1_GAMMA_RANGE7_REG(i)  (DR_REG_LEDC_BASE(i) + 0x45c)
+/* LEDC_CH1_GAMMA_RANGE7_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE7_DUTY_NUM    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE7_DUTY_NUM_M  ((LEDC_CH1_GAMMA_RANGE7_DUTY_NUM_V)<<(LEDC_CH1_GAMMA_RANGE7_DUTY_NUM_S))
+#define LEDC_CH1_GAMMA_RANGE7_DUTY_NUM_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE7_DUTY_NUM_S  21
+/* LEDC_CH1_GAMMA_RANGE7_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE7_SCALE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE7_SCALE_M  ((LEDC_CH1_GAMMA_RANGE7_SCALE_V)<<(LEDC_CH1_GAMMA_RANGE7_SCALE_S))
+#define LEDC_CH1_GAMMA_RANGE7_SCALE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE7_SCALE_S  11
+/* LEDC_CH1_GAMMA_RANGE7_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE7_DUTY_CYCLE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE7_DUTY_CYCLE_M  ((LEDC_CH1_GAMMA_RANGE7_DUTY_CYCLE_V)<<(LEDC_CH1_GAMMA_RANGE7_DUTY_CYCLE_S))
+#define LEDC_CH1_GAMMA_RANGE7_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE7_DUTY_CYCLE_S  1
+/* LEDC_CH1_GAMMA_RANGE7_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE7_DUTY_INC    (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE7_DUTY_INC_M  (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE7_DUTY_INC_V  0x1
+#define LEDC_CH1_GAMMA_RANGE7_DUTY_INC_S  0
+
+#define LEDC_CH1_GAMMA_RANGE8_REG(i)  (DR_REG_LEDC_BASE(i) + 0x460)
+/* LEDC_CH1_GAMMA_RANGE8_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE8_DUTY_NUM    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE8_DUTY_NUM_M  ((LEDC_CH1_GAMMA_RANGE8_DUTY_NUM_V)<<(LEDC_CH1_GAMMA_RANGE8_DUTY_NUM_S))
+#define LEDC_CH1_GAMMA_RANGE8_DUTY_NUM_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE8_DUTY_NUM_S  21
+/* LEDC_CH1_GAMMA_RANGE8_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE8_SCALE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE8_SCALE_M  ((LEDC_CH1_GAMMA_RANGE8_SCALE_V)<<(LEDC_CH1_GAMMA_RANGE8_SCALE_S))
+#define LEDC_CH1_GAMMA_RANGE8_SCALE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE8_SCALE_S  11
+/* LEDC_CH1_GAMMA_RANGE8_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE8_DUTY_CYCLE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE8_DUTY_CYCLE_M  ((LEDC_CH1_GAMMA_RANGE8_DUTY_CYCLE_V)<<(LEDC_CH1_GAMMA_RANGE8_DUTY_CYCLE_S))
+#define LEDC_CH1_GAMMA_RANGE8_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE8_DUTY_CYCLE_S  1
+/* LEDC_CH1_GAMMA_RANGE8_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE8_DUTY_INC    (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE8_DUTY_INC_M  (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE8_DUTY_INC_V  0x1
+#define LEDC_CH1_GAMMA_RANGE8_DUTY_INC_S  0
+
+#define LEDC_CH1_GAMMA_RANGE9_REG(i)  (DR_REG_LEDC_BASE(i) + 0x464)
+/* LEDC_CH1_GAMMA_RANGE9_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE9_DUTY_NUM    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE9_DUTY_NUM_M  ((LEDC_CH1_GAMMA_RANGE9_DUTY_NUM_V)<<(LEDC_CH1_GAMMA_RANGE9_DUTY_NUM_S))
+#define LEDC_CH1_GAMMA_RANGE9_DUTY_NUM_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE9_DUTY_NUM_S  21
+/* LEDC_CH1_GAMMA_RANGE9_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE9_SCALE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE9_SCALE_M  ((LEDC_CH1_GAMMA_RANGE9_SCALE_V)<<(LEDC_CH1_GAMMA_RANGE9_SCALE_S))
+#define LEDC_CH1_GAMMA_RANGE9_SCALE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE9_SCALE_S  11
+/* LEDC_CH1_GAMMA_RANGE9_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE9_DUTY_CYCLE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE9_DUTY_CYCLE_M  ((LEDC_CH1_GAMMA_RANGE9_DUTY_CYCLE_V)<<(LEDC_CH1_GAMMA_RANGE9_DUTY_CYCLE_S))
+#define LEDC_CH1_GAMMA_RANGE9_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE9_DUTY_CYCLE_S  1
+/* LEDC_CH1_GAMMA_RANGE9_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE9_DUTY_INC    (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE9_DUTY_INC_M  (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE9_DUTY_INC_V  0x1
+#define LEDC_CH1_GAMMA_RANGE9_DUTY_INC_S  0
+
+#define LEDC_CH1_GAMMA_RANGE10_REG(i)  (DR_REG_LEDC_BASE(i) + 0x468)
+/* LEDC_CH1_GAMMA_RANGE10_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE10_DUTY_NUM    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE10_DUTY_NUM_M  ((LEDC_CH1_GAMMA_RANGE10_DUTY_NUM_V)<<(LEDC_CH1_GAMMA_RANGE10_DUTY_NUM_S))
+#define LEDC_CH1_GAMMA_RANGE10_DUTY_NUM_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE10_DUTY_NUM_S  21
+/* LEDC_CH1_GAMMA_RANGE10_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE10_SCALE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE10_SCALE_M  ((LEDC_CH1_GAMMA_RANGE10_SCALE_V)<<(LEDC_CH1_GAMMA_RANGE10_SCALE_S))
+#define LEDC_CH1_GAMMA_RANGE10_SCALE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE10_SCALE_S  11
+/* LEDC_CH1_GAMMA_RANGE10_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE10_DUTY_CYCLE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE10_DUTY_CYCLE_M  ((LEDC_CH1_GAMMA_RANGE10_DUTY_CYCLE_V)<<(LEDC_CH1_GAMMA_RANGE10_DUTY_CYCLE_S))
+#define LEDC_CH1_GAMMA_RANGE10_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE10_DUTY_CYCLE_S  1
+/* LEDC_CH1_GAMMA_RANGE10_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE10_DUTY_INC    (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE10_DUTY_INC_M  (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE10_DUTY_INC_V  0x1
+#define LEDC_CH1_GAMMA_RANGE10_DUTY_INC_S  0
+
+#define LEDC_CH1_GAMMA_RANGE11_REG(i)  (DR_REG_LEDC_BASE(i) + 0x46c)
+/* LEDC_CH1_GAMMA_RANGE11_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE11_DUTY_NUM    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE11_DUTY_NUM_M  ((LEDC_CH1_GAMMA_RANGE11_DUTY_NUM_V)<<(LEDC_CH1_GAMMA_RANGE11_DUTY_NUM_S))
+#define LEDC_CH1_GAMMA_RANGE11_DUTY_NUM_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE11_DUTY_NUM_S  21
+/* LEDC_CH1_GAMMA_RANGE11_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE11_SCALE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE11_SCALE_M  ((LEDC_CH1_GAMMA_RANGE11_SCALE_V)<<(LEDC_CH1_GAMMA_RANGE11_SCALE_S))
+#define LEDC_CH1_GAMMA_RANGE11_SCALE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE11_SCALE_S  11
+/* LEDC_CH1_GAMMA_RANGE11_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE11_DUTY_CYCLE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE11_DUTY_CYCLE_M  ((LEDC_CH1_GAMMA_RANGE11_DUTY_CYCLE_V)<<(LEDC_CH1_GAMMA_RANGE11_DUTY_CYCLE_S))
+#define LEDC_CH1_GAMMA_RANGE11_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE11_DUTY_CYCLE_S  1
+/* LEDC_CH1_GAMMA_RANGE11_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE11_DUTY_INC    (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE11_DUTY_INC_M  (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE11_DUTY_INC_V  0x1
+#define LEDC_CH1_GAMMA_RANGE11_DUTY_INC_S  0
+
+#define LEDC_CH1_GAMMA_RANGE12_REG(i)  (DR_REG_LEDC_BASE(i) + 0x470)
+/* LEDC_CH1_GAMMA_RANGE12_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE12_DUTY_NUM    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE12_DUTY_NUM_M  ((LEDC_CH1_GAMMA_RANGE12_DUTY_NUM_V)<<(LEDC_CH1_GAMMA_RANGE12_DUTY_NUM_S))
+#define LEDC_CH1_GAMMA_RANGE12_DUTY_NUM_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE12_DUTY_NUM_S  21
+/* LEDC_CH1_GAMMA_RANGE12_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE12_SCALE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE12_SCALE_M  ((LEDC_CH1_GAMMA_RANGE12_SCALE_V)<<(LEDC_CH1_GAMMA_RANGE12_SCALE_S))
+#define LEDC_CH1_GAMMA_RANGE12_SCALE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE12_SCALE_S  11
+/* LEDC_CH1_GAMMA_RANGE12_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE12_DUTY_CYCLE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE12_DUTY_CYCLE_M  ((LEDC_CH1_GAMMA_RANGE12_DUTY_CYCLE_V)<<(LEDC_CH1_GAMMA_RANGE12_DUTY_CYCLE_S))
+#define LEDC_CH1_GAMMA_RANGE12_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE12_DUTY_CYCLE_S  1
+/* LEDC_CH1_GAMMA_RANGE12_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE12_DUTY_INC    (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE12_DUTY_INC_M  (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE12_DUTY_INC_V  0x1
+#define LEDC_CH1_GAMMA_RANGE12_DUTY_INC_S  0
+
+#define LEDC_CH1_GAMMA_RANGE13_REG(i)  (DR_REG_LEDC_BASE(i) + 0x474)
+/* LEDC_CH1_GAMMA_RANGE13_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE13_DUTY_NUM    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE13_DUTY_NUM_M  ((LEDC_CH1_GAMMA_RANGE13_DUTY_NUM_V)<<(LEDC_CH1_GAMMA_RANGE13_DUTY_NUM_S))
+#define LEDC_CH1_GAMMA_RANGE13_DUTY_NUM_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE13_DUTY_NUM_S  21
+/* LEDC_CH1_GAMMA_RANGE13_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE13_SCALE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE13_SCALE_M  ((LEDC_CH1_GAMMA_RANGE13_SCALE_V)<<(LEDC_CH1_GAMMA_RANGE13_SCALE_S))
+#define LEDC_CH1_GAMMA_RANGE13_SCALE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE13_SCALE_S  11
+/* LEDC_CH1_GAMMA_RANGE13_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE13_DUTY_CYCLE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE13_DUTY_CYCLE_M  ((LEDC_CH1_GAMMA_RANGE13_DUTY_CYCLE_V)<<(LEDC_CH1_GAMMA_RANGE13_DUTY_CYCLE_S))
+#define LEDC_CH1_GAMMA_RANGE13_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE13_DUTY_CYCLE_S  1
+/* LEDC_CH1_GAMMA_RANGE13_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE13_DUTY_INC    (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE13_DUTY_INC_M  (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE13_DUTY_INC_V  0x1
+#define LEDC_CH1_GAMMA_RANGE13_DUTY_INC_S  0
+
+#define LEDC_CH1_GAMMA_RANGE14_REG(i)  (DR_REG_LEDC_BASE(i) + 0x478)
+/* LEDC_CH1_GAMMA_RANGE14_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE14_DUTY_NUM    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE14_DUTY_NUM_M  ((LEDC_CH1_GAMMA_RANGE14_DUTY_NUM_V)<<(LEDC_CH1_GAMMA_RANGE14_DUTY_NUM_S))
+#define LEDC_CH1_GAMMA_RANGE14_DUTY_NUM_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE14_DUTY_NUM_S  21
+/* LEDC_CH1_GAMMA_RANGE14_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE14_SCALE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE14_SCALE_M  ((LEDC_CH1_GAMMA_RANGE14_SCALE_V)<<(LEDC_CH1_GAMMA_RANGE14_SCALE_S))
+#define LEDC_CH1_GAMMA_RANGE14_SCALE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE14_SCALE_S  11
+/* LEDC_CH1_GAMMA_RANGE14_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE14_DUTY_CYCLE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE14_DUTY_CYCLE_M  ((LEDC_CH1_GAMMA_RANGE14_DUTY_CYCLE_V)<<(LEDC_CH1_GAMMA_RANGE14_DUTY_CYCLE_S))
+#define LEDC_CH1_GAMMA_RANGE14_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE14_DUTY_CYCLE_S  1
+/* LEDC_CH1_GAMMA_RANGE14_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE14_DUTY_INC    (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE14_DUTY_INC_M  (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE14_DUTY_INC_V  0x1
+#define LEDC_CH1_GAMMA_RANGE14_DUTY_INC_S  0
+
+#define LEDC_CH1_GAMMA_RANGE15_REG(i)  (DR_REG_LEDC_BASE(i) + 0x47c)
+/* LEDC_CH1_GAMMA_RANGE15_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE15_DUTY_NUM    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE15_DUTY_NUM_M  ((LEDC_CH1_GAMMA_RANGE15_DUTY_NUM_V)<<(LEDC_CH1_GAMMA_RANGE15_DUTY_NUM_S))
+#define LEDC_CH1_GAMMA_RANGE15_DUTY_NUM_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE15_DUTY_NUM_S  21
+/* LEDC_CH1_GAMMA_RANGE15_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE15_SCALE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE15_SCALE_M  ((LEDC_CH1_GAMMA_RANGE15_SCALE_V)<<(LEDC_CH1_GAMMA_RANGE15_SCALE_S))
+#define LEDC_CH1_GAMMA_RANGE15_SCALE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE15_SCALE_S  11
+/* LEDC_CH1_GAMMA_RANGE15_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE15_DUTY_CYCLE    0x000003FF
+#define LEDC_CH1_GAMMA_RANGE15_DUTY_CYCLE_M  ((LEDC_CH1_GAMMA_RANGE15_DUTY_CYCLE_V)<<(LEDC_CH1_GAMMA_RANGE15_DUTY_CYCLE_S))
+#define LEDC_CH1_GAMMA_RANGE15_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH1_GAMMA_RANGE15_DUTY_CYCLE_S  1
+/* LEDC_CH1_GAMMA_RANGE15_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH1_GAMMA_RANGE15_DUTY_INC    (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE15_DUTY_INC_M  (BIT(0))
+#define LEDC_CH1_GAMMA_RANGE15_DUTY_INC_V  0x1
+#define LEDC_CH1_GAMMA_RANGE15_DUTY_INC_S  0
+
+
+#define LEDC_CH2_GAMMA_RANGE0_REG(i)  (DR_REG_LEDC_BASE(i) + 0x480)
+/* LEDC_CH2_GAMMA_RANGE0_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE0_DUTY_NUM    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE0_DUTY_NUM_M  ((LEDC_CH2_GAMMA_RANGE0_DUTY_NUM_V)<<(LEDC_CH2_GAMMA_RANGE0_DUTY_NUM_S))
+#define LEDC_CH2_GAMMA_RANGE0_DUTY_NUM_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE0_DUTY_NUM_S  21
+/* LEDC_CH2_GAMMA_RANGE0_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE0_SCALE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE0_SCALE_M  ((LEDC_CH2_GAMMA_RANGE0_SCALE_V)<<(LEDC_CH2_GAMMA_RANGE0_SCALE_S))
+#define LEDC_CH2_GAMMA_RANGE0_SCALE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE0_SCALE_S  11
+/* LEDC_CH2_GAMMA_RANGE0_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE0_DUTY_CYCLE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE0_DUTY_CYCLE_M  ((LEDC_CH2_GAMMA_RANGE0_DUTY_CYCLE_V)<<(LEDC_CH2_GAMMA_RANGE0_DUTY_CYCLE_S))
+#define LEDC_CH2_GAMMA_RANGE0_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE0_DUTY_CYCLE_S  1
+/* LEDC_CH2_GAMMA_RANGE0_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE0_DUTY_INC    (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE0_DUTY_INC_M  (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE0_DUTY_INC_V  0x1
+#define LEDC_CH2_GAMMA_RANGE0_DUTY_INC_S  0
+
+#define LEDC_CH2_GAMMA_RANGE1_REG(i)  (DR_REG_LEDC_BASE(i) + 0x484)
+/* LEDC_CH2_GAMMA_RANGE1_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE1_DUTY_NUM    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE1_DUTY_NUM_M  ((LEDC_CH2_GAMMA_RANGE1_DUTY_NUM_V)<<(LEDC_CH2_GAMMA_RANGE1_DUTY_NUM_S))
+#define LEDC_CH2_GAMMA_RANGE1_DUTY_NUM_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE1_DUTY_NUM_S  21
+/* LEDC_CH2_GAMMA_RANGE1_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE1_SCALE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE1_SCALE_M  ((LEDC_CH2_GAMMA_RANGE1_SCALE_V)<<(LEDC_CH2_GAMMA_RANGE1_SCALE_S))
+#define LEDC_CH2_GAMMA_RANGE1_SCALE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE1_SCALE_S  11
+/* LEDC_CH2_GAMMA_RANGE1_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE1_DUTY_CYCLE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE1_DUTY_CYCLE_M  ((LEDC_CH2_GAMMA_RANGE1_DUTY_CYCLE_V)<<(LEDC_CH2_GAMMA_RANGE1_DUTY_CYCLE_S))
+#define LEDC_CH2_GAMMA_RANGE1_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE1_DUTY_CYCLE_S  1
+/* LEDC_CH2_GAMMA_RANGE1_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE1_DUTY_INC    (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE1_DUTY_INC_M  (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE1_DUTY_INC_V  0x1
+#define LEDC_CH2_GAMMA_RANGE1_DUTY_INC_S  0
+
+#define LEDC_CH2_GAMMA_RANGE2_REG(i)  (DR_REG_LEDC_BASE(i) + 0x488)
+/* LEDC_CH2_GAMMA_RANGE2_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE2_DUTY_NUM    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE2_DUTY_NUM_M  ((LEDC_CH2_GAMMA_RANGE2_DUTY_NUM_V)<<(LEDC_CH2_GAMMA_RANGE2_DUTY_NUM_S))
+#define LEDC_CH2_GAMMA_RANGE2_DUTY_NUM_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE2_DUTY_NUM_S  21
+/* LEDC_CH2_GAMMA_RANGE2_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE2_SCALE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE2_SCALE_M  ((LEDC_CH2_GAMMA_RANGE2_SCALE_V)<<(LEDC_CH2_GAMMA_RANGE2_SCALE_S))
+#define LEDC_CH2_GAMMA_RANGE2_SCALE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE2_SCALE_S  11
+/* LEDC_CH2_GAMMA_RANGE2_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE2_DUTY_CYCLE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE2_DUTY_CYCLE_M  ((LEDC_CH2_GAMMA_RANGE2_DUTY_CYCLE_V)<<(LEDC_CH2_GAMMA_RANGE2_DUTY_CYCLE_S))
+#define LEDC_CH2_GAMMA_RANGE2_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE2_DUTY_CYCLE_S  1
+/* LEDC_CH2_GAMMA_RANGE2_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE2_DUTY_INC    (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE2_DUTY_INC_M  (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE2_DUTY_INC_V  0x1
+#define LEDC_CH2_GAMMA_RANGE2_DUTY_INC_S  0
+
+#define LEDC_CH2_GAMMA_RANGE3_REG(i)  (DR_REG_LEDC_BASE(i) + 0x48c)
+/* LEDC_CH2_GAMMA_RANGE3_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE3_DUTY_NUM    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE3_DUTY_NUM_M  ((LEDC_CH2_GAMMA_RANGE3_DUTY_NUM_V)<<(LEDC_CH2_GAMMA_RANGE3_DUTY_NUM_S))
+#define LEDC_CH2_GAMMA_RANGE3_DUTY_NUM_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE3_DUTY_NUM_S  21
+/* LEDC_CH2_GAMMA_RANGE3_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE3_SCALE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE3_SCALE_M  ((LEDC_CH2_GAMMA_RANGE3_SCALE_V)<<(LEDC_CH2_GAMMA_RANGE3_SCALE_S))
+#define LEDC_CH2_GAMMA_RANGE3_SCALE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE3_SCALE_S  11
+/* LEDC_CH2_GAMMA_RANGE3_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE3_DUTY_CYCLE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE3_DUTY_CYCLE_M  ((LEDC_CH2_GAMMA_RANGE3_DUTY_CYCLE_V)<<(LEDC_CH2_GAMMA_RANGE3_DUTY_CYCLE_S))
+#define LEDC_CH2_GAMMA_RANGE3_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE3_DUTY_CYCLE_S  1
+/* LEDC_CH2_GAMMA_RANGE3_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE3_DUTY_INC    (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE3_DUTY_INC_M  (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE3_DUTY_INC_V  0x1
+#define LEDC_CH2_GAMMA_RANGE3_DUTY_INC_S  0
+
+#define LEDC_CH2_GAMMA_RANGE4_REG(i)  (DR_REG_LEDC_BASE(i) + 0x490)
+/* LEDC_CH2_GAMMA_RANGE4_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE4_DUTY_NUM    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE4_DUTY_NUM_M  ((LEDC_CH2_GAMMA_RANGE4_DUTY_NUM_V)<<(LEDC_CH2_GAMMA_RANGE4_DUTY_NUM_S))
+#define LEDC_CH2_GAMMA_RANGE4_DUTY_NUM_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE4_DUTY_NUM_S  21
+/* LEDC_CH2_GAMMA_RANGE4_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE4_SCALE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE4_SCALE_M  ((LEDC_CH2_GAMMA_RANGE4_SCALE_V)<<(LEDC_CH2_GAMMA_RANGE4_SCALE_S))
+#define LEDC_CH2_GAMMA_RANGE4_SCALE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE4_SCALE_S  11
+/* LEDC_CH2_GAMMA_RANGE4_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE4_DUTY_CYCLE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE4_DUTY_CYCLE_M  ((LEDC_CH2_GAMMA_RANGE4_DUTY_CYCLE_V)<<(LEDC_CH2_GAMMA_RANGE4_DUTY_CYCLE_S))
+#define LEDC_CH2_GAMMA_RANGE4_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE4_DUTY_CYCLE_S  1
+/* LEDC_CH2_GAMMA_RANGE4_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE4_DUTY_INC    (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE4_DUTY_INC_M  (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE4_DUTY_INC_V  0x1
+#define LEDC_CH2_GAMMA_RANGE4_DUTY_INC_S  0
+
+#define LEDC_CH2_GAMMA_RANGE5_REG(i)  (DR_REG_LEDC_BASE(i) + 0x494)
+/* LEDC_CH2_GAMMA_RANGE5_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE5_DUTY_NUM    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE5_DUTY_NUM_M  ((LEDC_CH2_GAMMA_RANGE5_DUTY_NUM_V)<<(LEDC_CH2_GAMMA_RANGE5_DUTY_NUM_S))
+#define LEDC_CH2_GAMMA_RANGE5_DUTY_NUM_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE5_DUTY_NUM_S  21
+/* LEDC_CH2_GAMMA_RANGE5_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE5_SCALE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE5_SCALE_M  ((LEDC_CH2_GAMMA_RANGE5_SCALE_V)<<(LEDC_CH2_GAMMA_RANGE5_SCALE_S))
+#define LEDC_CH2_GAMMA_RANGE5_SCALE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE5_SCALE_S  11
+/* LEDC_CH2_GAMMA_RANGE5_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE5_DUTY_CYCLE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE5_DUTY_CYCLE_M  ((LEDC_CH2_GAMMA_RANGE5_DUTY_CYCLE_V)<<(LEDC_CH2_GAMMA_RANGE5_DUTY_CYCLE_S))
+#define LEDC_CH2_GAMMA_RANGE5_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE5_DUTY_CYCLE_S  1
+/* LEDC_CH2_GAMMA_RANGE5_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE5_DUTY_INC    (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE5_DUTY_INC_M  (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE5_DUTY_INC_V  0x1
+#define LEDC_CH2_GAMMA_RANGE5_DUTY_INC_S  0
+
+#define LEDC_CH2_GAMMA_RANGE6_REG(i)  (DR_REG_LEDC_BASE(i) + 0x498)
+/* LEDC_CH2_GAMMA_RANGE6_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE6_DUTY_NUM    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE6_DUTY_NUM_M  ((LEDC_CH2_GAMMA_RANGE6_DUTY_NUM_V)<<(LEDC_CH2_GAMMA_RANGE6_DUTY_NUM_S))
+#define LEDC_CH2_GAMMA_RANGE6_DUTY_NUM_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE6_DUTY_NUM_S  21
+/* LEDC_CH2_GAMMA_RANGE6_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE6_SCALE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE6_SCALE_M  ((LEDC_CH2_GAMMA_RANGE6_SCALE_V)<<(LEDC_CH2_GAMMA_RANGE6_SCALE_S))
+#define LEDC_CH2_GAMMA_RANGE6_SCALE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE6_SCALE_S  11
+/* LEDC_CH2_GAMMA_RANGE6_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE6_DUTY_CYCLE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE6_DUTY_CYCLE_M  ((LEDC_CH2_GAMMA_RANGE6_DUTY_CYCLE_V)<<(LEDC_CH2_GAMMA_RANGE6_DUTY_CYCLE_S))
+#define LEDC_CH2_GAMMA_RANGE6_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE6_DUTY_CYCLE_S  1
+/* LEDC_CH2_GAMMA_RANGE6_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE6_DUTY_INC    (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE6_DUTY_INC_M  (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE6_DUTY_INC_V  0x1
+#define LEDC_CH2_GAMMA_RANGE6_DUTY_INC_S  0
+
+#define LEDC_CH2_GAMMA_RANGE7_REG(i)  (DR_REG_LEDC_BASE(i) + 0x49c)
+/* LEDC_CH2_GAMMA_RANGE7_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE7_DUTY_NUM    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE7_DUTY_NUM_M  ((LEDC_CH2_GAMMA_RANGE7_DUTY_NUM_V)<<(LEDC_CH2_GAMMA_RANGE7_DUTY_NUM_S))
+#define LEDC_CH2_GAMMA_RANGE7_DUTY_NUM_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE7_DUTY_NUM_S  21
+/* LEDC_CH2_GAMMA_RANGE7_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE7_SCALE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE7_SCALE_M  ((LEDC_CH2_GAMMA_RANGE7_SCALE_V)<<(LEDC_CH2_GAMMA_RANGE7_SCALE_S))
+#define LEDC_CH2_GAMMA_RANGE7_SCALE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE7_SCALE_S  11
+/* LEDC_CH2_GAMMA_RANGE7_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE7_DUTY_CYCLE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE7_DUTY_CYCLE_M  ((LEDC_CH2_GAMMA_RANGE7_DUTY_CYCLE_V)<<(LEDC_CH2_GAMMA_RANGE7_DUTY_CYCLE_S))
+#define LEDC_CH2_GAMMA_RANGE7_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE7_DUTY_CYCLE_S  1
+/* LEDC_CH2_GAMMA_RANGE7_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE7_DUTY_INC    (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE7_DUTY_INC_M  (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE7_DUTY_INC_V  0x1
+#define LEDC_CH2_GAMMA_RANGE7_DUTY_INC_S  0
+
+#define LEDC_CH2_GAMMA_RANGE8_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4a0)
+/* LEDC_CH2_GAMMA_RANGE8_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE8_DUTY_NUM    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE8_DUTY_NUM_M  ((LEDC_CH2_GAMMA_RANGE8_DUTY_NUM_V)<<(LEDC_CH2_GAMMA_RANGE8_DUTY_NUM_S))
+#define LEDC_CH2_GAMMA_RANGE8_DUTY_NUM_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE8_DUTY_NUM_S  21
+/* LEDC_CH2_GAMMA_RANGE8_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE8_SCALE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE8_SCALE_M  ((LEDC_CH2_GAMMA_RANGE8_SCALE_V)<<(LEDC_CH2_GAMMA_RANGE8_SCALE_S))
+#define LEDC_CH2_GAMMA_RANGE8_SCALE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE8_SCALE_S  11
+/* LEDC_CH2_GAMMA_RANGE8_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE8_DUTY_CYCLE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE8_DUTY_CYCLE_M  ((LEDC_CH2_GAMMA_RANGE8_DUTY_CYCLE_V)<<(LEDC_CH2_GAMMA_RANGE8_DUTY_CYCLE_S))
+#define LEDC_CH2_GAMMA_RANGE8_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE8_DUTY_CYCLE_S  1
+/* LEDC_CH2_GAMMA_RANGE8_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE8_DUTY_INC    (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE8_DUTY_INC_M  (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE8_DUTY_INC_V  0x1
+#define LEDC_CH2_GAMMA_RANGE8_DUTY_INC_S  0
+
+#define LEDC_CH2_GAMMA_RANGE9_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4a4)
+/* LEDC_CH2_GAMMA_RANGE9_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE9_DUTY_NUM    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE9_DUTY_NUM_M  ((LEDC_CH2_GAMMA_RANGE9_DUTY_NUM_V)<<(LEDC_CH2_GAMMA_RANGE9_DUTY_NUM_S))
+#define LEDC_CH2_GAMMA_RANGE9_DUTY_NUM_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE9_DUTY_NUM_S  21
+/* LEDC_CH2_GAMMA_RANGE9_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE9_SCALE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE9_SCALE_M  ((LEDC_CH2_GAMMA_RANGE9_SCALE_V)<<(LEDC_CH2_GAMMA_RANGE9_SCALE_S))
+#define LEDC_CH2_GAMMA_RANGE9_SCALE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE9_SCALE_S  11
+/* LEDC_CH2_GAMMA_RANGE9_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE9_DUTY_CYCLE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE9_DUTY_CYCLE_M  ((LEDC_CH2_GAMMA_RANGE9_DUTY_CYCLE_V)<<(LEDC_CH2_GAMMA_RANGE9_DUTY_CYCLE_S))
+#define LEDC_CH2_GAMMA_RANGE9_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE9_DUTY_CYCLE_S  1
+/* LEDC_CH2_GAMMA_RANGE9_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE9_DUTY_INC    (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE9_DUTY_INC_M  (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE9_DUTY_INC_V  0x1
+#define LEDC_CH2_GAMMA_RANGE9_DUTY_INC_S  0
+
+#define LEDC_CH2_GAMMA_RANGE10_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4a8)
+/* LEDC_CH2_GAMMA_RANGE10_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE10_DUTY_NUM    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE10_DUTY_NUM_M  ((LEDC_CH2_GAMMA_RANGE10_DUTY_NUM_V)<<(LEDC_CH2_GAMMA_RANGE10_DUTY_NUM_S))
+#define LEDC_CH2_GAMMA_RANGE10_DUTY_NUM_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE10_DUTY_NUM_S  21
+/* LEDC_CH2_GAMMA_RANGE10_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE10_SCALE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE10_SCALE_M  ((LEDC_CH2_GAMMA_RANGE10_SCALE_V)<<(LEDC_CH2_GAMMA_RANGE10_SCALE_S))
+#define LEDC_CH2_GAMMA_RANGE10_SCALE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE10_SCALE_S  11
+/* LEDC_CH2_GAMMA_RANGE10_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE10_DUTY_CYCLE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE10_DUTY_CYCLE_M  ((LEDC_CH2_GAMMA_RANGE10_DUTY_CYCLE_V)<<(LEDC_CH2_GAMMA_RANGE10_DUTY_CYCLE_S))
+#define LEDC_CH2_GAMMA_RANGE10_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE10_DUTY_CYCLE_S  1
+/* LEDC_CH2_GAMMA_RANGE10_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE10_DUTY_INC    (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE10_DUTY_INC_M  (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE10_DUTY_INC_V  0x1
+#define LEDC_CH2_GAMMA_RANGE10_DUTY_INC_S  0
+
+#define LEDC_CH2_GAMMA_RANGE11_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4ac)
+/* LEDC_CH2_GAMMA_RANGE11_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE11_DUTY_NUM    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE11_DUTY_NUM_M  ((LEDC_CH2_GAMMA_RANGE11_DUTY_NUM_V)<<(LEDC_CH2_GAMMA_RANGE11_DUTY_NUM_S))
+#define LEDC_CH2_GAMMA_RANGE11_DUTY_NUM_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE11_DUTY_NUM_S  21
+/* LEDC_CH2_GAMMA_RANGE11_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE11_SCALE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE11_SCALE_M  ((LEDC_CH2_GAMMA_RANGE11_SCALE_V)<<(LEDC_CH2_GAMMA_RANGE11_SCALE_S))
+#define LEDC_CH2_GAMMA_RANGE11_SCALE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE11_SCALE_S  11
+/* LEDC_CH2_GAMMA_RANGE11_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE11_DUTY_CYCLE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE11_DUTY_CYCLE_M  ((LEDC_CH2_GAMMA_RANGE11_DUTY_CYCLE_V)<<(LEDC_CH2_GAMMA_RANGE11_DUTY_CYCLE_S))
+#define LEDC_CH2_GAMMA_RANGE11_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE11_DUTY_CYCLE_S  1
+/* LEDC_CH2_GAMMA_RANGE11_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE11_DUTY_INC    (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE11_DUTY_INC_M  (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE11_DUTY_INC_V  0x1
+#define LEDC_CH2_GAMMA_RANGE11_DUTY_INC_S  0
+
+#define LEDC_CH2_GAMMA_RANGE12_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4b0)
+/* LEDC_CH2_GAMMA_RANGE12_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE12_DUTY_NUM    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE12_DUTY_NUM_M  ((LEDC_CH2_GAMMA_RANGE12_DUTY_NUM_V)<<(LEDC_CH2_GAMMA_RANGE12_DUTY_NUM_S))
+#define LEDC_CH2_GAMMA_RANGE12_DUTY_NUM_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE12_DUTY_NUM_S  21
+/* LEDC_CH2_GAMMA_RANGE12_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE12_SCALE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE12_SCALE_M  ((LEDC_CH2_GAMMA_RANGE12_SCALE_V)<<(LEDC_CH2_GAMMA_RANGE12_SCALE_S))
+#define LEDC_CH2_GAMMA_RANGE12_SCALE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE12_SCALE_S  11
+/* LEDC_CH2_GAMMA_RANGE12_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE12_DUTY_CYCLE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE12_DUTY_CYCLE_M  ((LEDC_CH2_GAMMA_RANGE12_DUTY_CYCLE_V)<<(LEDC_CH2_GAMMA_RANGE12_DUTY_CYCLE_S))
+#define LEDC_CH2_GAMMA_RANGE12_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE12_DUTY_CYCLE_S  1
+/* LEDC_CH2_GAMMA_RANGE12_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE12_DUTY_INC    (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE12_DUTY_INC_M  (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE12_DUTY_INC_V  0x1
+#define LEDC_CH2_GAMMA_RANGE12_DUTY_INC_S  0
+
+#define LEDC_CH2_GAMMA_RANGE13_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4b4)
+/* LEDC_CH2_GAMMA_RANGE13_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE13_DUTY_NUM    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE13_DUTY_NUM_M  ((LEDC_CH2_GAMMA_RANGE13_DUTY_NUM_V)<<(LEDC_CH2_GAMMA_RANGE13_DUTY_NUM_S))
+#define LEDC_CH2_GAMMA_RANGE13_DUTY_NUM_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE13_DUTY_NUM_S  21
+/* LEDC_CH2_GAMMA_RANGE13_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE13_SCALE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE13_SCALE_M  ((LEDC_CH2_GAMMA_RANGE13_SCALE_V)<<(LEDC_CH2_GAMMA_RANGE13_SCALE_S))
+#define LEDC_CH2_GAMMA_RANGE13_SCALE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE13_SCALE_S  11
+/* LEDC_CH2_GAMMA_RANGE13_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE13_DUTY_CYCLE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE13_DUTY_CYCLE_M  ((LEDC_CH2_GAMMA_RANGE13_DUTY_CYCLE_V)<<(LEDC_CH2_GAMMA_RANGE13_DUTY_CYCLE_S))
+#define LEDC_CH2_GAMMA_RANGE13_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE13_DUTY_CYCLE_S  1
+/* LEDC_CH2_GAMMA_RANGE13_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE13_DUTY_INC    (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE13_DUTY_INC_M  (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE13_DUTY_INC_V  0x1
+#define LEDC_CH2_GAMMA_RANGE13_DUTY_INC_S  0
+
+#define LEDC_CH2_GAMMA_RANGE14_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4b8)
+/* LEDC_CH2_GAMMA_RANGE14_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE14_DUTY_NUM    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE14_DUTY_NUM_M  ((LEDC_CH2_GAMMA_RANGE14_DUTY_NUM_V)<<(LEDC_CH2_GAMMA_RANGE14_DUTY_NUM_S))
+#define LEDC_CH2_GAMMA_RANGE14_DUTY_NUM_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE14_DUTY_NUM_S  21
+/* LEDC_CH2_GAMMA_RANGE14_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE14_SCALE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE14_SCALE_M  ((LEDC_CH2_GAMMA_RANGE14_SCALE_V)<<(LEDC_CH2_GAMMA_RANGE14_SCALE_S))
+#define LEDC_CH2_GAMMA_RANGE14_SCALE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE14_SCALE_S  11
+/* LEDC_CH2_GAMMA_RANGE14_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE14_DUTY_CYCLE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE14_DUTY_CYCLE_M  ((LEDC_CH2_GAMMA_RANGE14_DUTY_CYCLE_V)<<(LEDC_CH2_GAMMA_RANGE14_DUTY_CYCLE_S))
+#define LEDC_CH2_GAMMA_RANGE14_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE14_DUTY_CYCLE_S  1
+/* LEDC_CH2_GAMMA_RANGE14_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE14_DUTY_INC    (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE14_DUTY_INC_M  (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE14_DUTY_INC_V  0x1
+#define LEDC_CH2_GAMMA_RANGE14_DUTY_INC_S  0
+
+#define LEDC_CH2_GAMMA_RANGE15_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4bc)
+/* LEDC_CH2_GAMMA_RANGE15_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE15_DUTY_NUM    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE15_DUTY_NUM_M  ((LEDC_CH2_GAMMA_RANGE15_DUTY_NUM_V)<<(LEDC_CH2_GAMMA_RANGE15_DUTY_NUM_S))
+#define LEDC_CH2_GAMMA_RANGE15_DUTY_NUM_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE15_DUTY_NUM_S  21
+/* LEDC_CH2_GAMMA_RANGE15_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE15_SCALE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE15_SCALE_M  ((LEDC_CH2_GAMMA_RANGE15_SCALE_V)<<(LEDC_CH2_GAMMA_RANGE15_SCALE_S))
+#define LEDC_CH2_GAMMA_RANGE15_SCALE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE15_SCALE_S  11
+/* LEDC_CH2_GAMMA_RANGE15_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE15_DUTY_CYCLE    0x000003FF
+#define LEDC_CH2_GAMMA_RANGE15_DUTY_CYCLE_M  ((LEDC_CH2_GAMMA_RANGE15_DUTY_CYCLE_V)<<(LEDC_CH2_GAMMA_RANGE15_DUTY_CYCLE_S))
+#define LEDC_CH2_GAMMA_RANGE15_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH2_GAMMA_RANGE15_DUTY_CYCLE_S  1
+/* LEDC_CH2_GAMMA_RANGE15_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH2_GAMMA_RANGE15_DUTY_INC    (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE15_DUTY_INC_M  (BIT(0))
+#define LEDC_CH2_GAMMA_RANGE15_DUTY_INC_V  0x1
+#define LEDC_CH2_GAMMA_RANGE15_DUTY_INC_S  0
+
+
+#define LEDC_CH3_GAMMA_RANGE0_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4c0)
+/* LEDC_CH3_GAMMA_RANGE0_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE0_DUTY_NUM    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE0_DUTY_NUM_M  ((LEDC_CH3_GAMMA_RANGE0_DUTY_NUM_V)<<(LEDC_CH3_GAMMA_RANGE0_DUTY_NUM_S))
+#define LEDC_CH3_GAMMA_RANGE0_DUTY_NUM_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE0_DUTY_NUM_S  21
+/* LEDC_CH3_GAMMA_RANGE0_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE0_SCALE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE0_SCALE_M  ((LEDC_CH3_GAMMA_RANGE0_SCALE_V)<<(LEDC_CH3_GAMMA_RANGE0_SCALE_S))
+#define LEDC_CH3_GAMMA_RANGE0_SCALE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE0_SCALE_S  11
+/* LEDC_CH3_GAMMA_RANGE0_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE0_DUTY_CYCLE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE0_DUTY_CYCLE_M  ((LEDC_CH3_GAMMA_RANGE0_DUTY_CYCLE_V)<<(LEDC_CH3_GAMMA_RANGE0_DUTY_CYCLE_S))
+#define LEDC_CH3_GAMMA_RANGE0_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE0_DUTY_CYCLE_S  1
+/* LEDC_CH3_GAMMA_RANGE0_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE0_DUTY_INC    (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE0_DUTY_INC_M  (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE0_DUTY_INC_V  0x1
+#define LEDC_CH3_GAMMA_RANGE0_DUTY_INC_S  0
+
+#define LEDC_CH3_GAMMA_RANGE1_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4c4)
+/* LEDC_CH3_GAMMA_RANGE1_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE1_DUTY_NUM    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE1_DUTY_NUM_M  ((LEDC_CH3_GAMMA_RANGE1_DUTY_NUM_V)<<(LEDC_CH3_GAMMA_RANGE1_DUTY_NUM_S))
+#define LEDC_CH3_GAMMA_RANGE1_DUTY_NUM_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE1_DUTY_NUM_S  21
+/* LEDC_CH3_GAMMA_RANGE1_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE1_SCALE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE1_SCALE_M  ((LEDC_CH3_GAMMA_RANGE1_SCALE_V)<<(LEDC_CH3_GAMMA_RANGE1_SCALE_S))
+#define LEDC_CH3_GAMMA_RANGE1_SCALE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE1_SCALE_S  11
+/* LEDC_CH3_GAMMA_RANGE1_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE1_DUTY_CYCLE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE1_DUTY_CYCLE_M  ((LEDC_CH3_GAMMA_RANGE1_DUTY_CYCLE_V)<<(LEDC_CH3_GAMMA_RANGE1_DUTY_CYCLE_S))
+#define LEDC_CH3_GAMMA_RANGE1_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE1_DUTY_CYCLE_S  1
+/* LEDC_CH3_GAMMA_RANGE1_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE1_DUTY_INC    (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE1_DUTY_INC_M  (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE1_DUTY_INC_V  0x1
+#define LEDC_CH3_GAMMA_RANGE1_DUTY_INC_S  0
+
+#define LEDC_CH3_GAMMA_RANGE2_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4c8)
+/* LEDC_CH3_GAMMA_RANGE2_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE2_DUTY_NUM    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE2_DUTY_NUM_M  ((LEDC_CH3_GAMMA_RANGE2_DUTY_NUM_V)<<(LEDC_CH3_GAMMA_RANGE2_DUTY_NUM_S))
+#define LEDC_CH3_GAMMA_RANGE2_DUTY_NUM_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE2_DUTY_NUM_S  21
+/* LEDC_CH3_GAMMA_RANGE2_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE2_SCALE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE2_SCALE_M  ((LEDC_CH3_GAMMA_RANGE2_SCALE_V)<<(LEDC_CH3_GAMMA_RANGE2_SCALE_S))
+#define LEDC_CH3_GAMMA_RANGE2_SCALE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE2_SCALE_S  11
+/* LEDC_CH3_GAMMA_RANGE2_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE2_DUTY_CYCLE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE2_DUTY_CYCLE_M  ((LEDC_CH3_GAMMA_RANGE2_DUTY_CYCLE_V)<<(LEDC_CH3_GAMMA_RANGE2_DUTY_CYCLE_S))
+#define LEDC_CH3_GAMMA_RANGE2_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE2_DUTY_CYCLE_S  1
+/* LEDC_CH3_GAMMA_RANGE2_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE2_DUTY_INC    (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE2_DUTY_INC_M  (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE2_DUTY_INC_V  0x1
+#define LEDC_CH3_GAMMA_RANGE2_DUTY_INC_S  0
+
+#define LEDC_CH3_GAMMA_RANGE3_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4cc)
+/* LEDC_CH3_GAMMA_RANGE3_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE3_DUTY_NUM    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE3_DUTY_NUM_M  ((LEDC_CH3_GAMMA_RANGE3_DUTY_NUM_V)<<(LEDC_CH3_GAMMA_RANGE3_DUTY_NUM_S))
+#define LEDC_CH3_GAMMA_RANGE3_DUTY_NUM_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE3_DUTY_NUM_S  21
+/* LEDC_CH3_GAMMA_RANGE3_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE3_SCALE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE3_SCALE_M  ((LEDC_CH3_GAMMA_RANGE3_SCALE_V)<<(LEDC_CH3_GAMMA_RANGE3_SCALE_S))
+#define LEDC_CH3_GAMMA_RANGE3_SCALE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE3_SCALE_S  11
+/* LEDC_CH3_GAMMA_RANGE3_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE3_DUTY_CYCLE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE3_DUTY_CYCLE_M  ((LEDC_CH3_GAMMA_RANGE3_DUTY_CYCLE_V)<<(LEDC_CH3_GAMMA_RANGE3_DUTY_CYCLE_S))
+#define LEDC_CH3_GAMMA_RANGE3_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE3_DUTY_CYCLE_S  1
+/* LEDC_CH3_GAMMA_RANGE3_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE3_DUTY_INC    (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE3_DUTY_INC_M  (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE3_DUTY_INC_V  0x1
+#define LEDC_CH3_GAMMA_RANGE3_DUTY_INC_S  0
+
+#define LEDC_CH3_GAMMA_RANGE4_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4d0)
+/* LEDC_CH3_GAMMA_RANGE4_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE4_DUTY_NUM    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE4_DUTY_NUM_M  ((LEDC_CH3_GAMMA_RANGE4_DUTY_NUM_V)<<(LEDC_CH3_GAMMA_RANGE4_DUTY_NUM_S))
+#define LEDC_CH3_GAMMA_RANGE4_DUTY_NUM_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE4_DUTY_NUM_S  21
+/* LEDC_CH3_GAMMA_RANGE4_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE4_SCALE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE4_SCALE_M  ((LEDC_CH3_GAMMA_RANGE4_SCALE_V)<<(LEDC_CH3_GAMMA_RANGE4_SCALE_S))
+#define LEDC_CH3_GAMMA_RANGE4_SCALE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE4_SCALE_S  11
+/* LEDC_CH3_GAMMA_RANGE4_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE4_DUTY_CYCLE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE4_DUTY_CYCLE_M  ((LEDC_CH3_GAMMA_RANGE4_DUTY_CYCLE_V)<<(LEDC_CH3_GAMMA_RANGE4_DUTY_CYCLE_S))
+#define LEDC_CH3_GAMMA_RANGE4_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE4_DUTY_CYCLE_S  1
+/* LEDC_CH3_GAMMA_RANGE4_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE4_DUTY_INC    (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE4_DUTY_INC_M  (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE4_DUTY_INC_V  0x1
+#define LEDC_CH3_GAMMA_RANGE4_DUTY_INC_S  0
+
+#define LEDC_CH3_GAMMA_RANGE5_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4d4)
+/* LEDC_CH3_GAMMA_RANGE5_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE5_DUTY_NUM    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE5_DUTY_NUM_M  ((LEDC_CH3_GAMMA_RANGE5_DUTY_NUM_V)<<(LEDC_CH3_GAMMA_RANGE5_DUTY_NUM_S))
+#define LEDC_CH3_GAMMA_RANGE5_DUTY_NUM_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE5_DUTY_NUM_S  21
+/* LEDC_CH3_GAMMA_RANGE5_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE5_SCALE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE5_SCALE_M  ((LEDC_CH3_GAMMA_RANGE5_SCALE_V)<<(LEDC_CH3_GAMMA_RANGE5_SCALE_S))
+#define LEDC_CH3_GAMMA_RANGE5_SCALE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE5_SCALE_S  11
+/* LEDC_CH3_GAMMA_RANGE5_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE5_DUTY_CYCLE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE5_DUTY_CYCLE_M  ((LEDC_CH3_GAMMA_RANGE5_DUTY_CYCLE_V)<<(LEDC_CH3_GAMMA_RANGE5_DUTY_CYCLE_S))
+#define LEDC_CH3_GAMMA_RANGE5_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE5_DUTY_CYCLE_S  1
+/* LEDC_CH3_GAMMA_RANGE5_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE5_DUTY_INC    (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE5_DUTY_INC_M  (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE5_DUTY_INC_V  0x1
+#define LEDC_CH3_GAMMA_RANGE5_DUTY_INC_S  0
+
+#define LEDC_CH3_GAMMA_RANGE6_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4d8)
+/* LEDC_CH3_GAMMA_RANGE6_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE6_DUTY_NUM    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE6_DUTY_NUM_M  ((LEDC_CH3_GAMMA_RANGE6_DUTY_NUM_V)<<(LEDC_CH3_GAMMA_RANGE6_DUTY_NUM_S))
+#define LEDC_CH3_GAMMA_RANGE6_DUTY_NUM_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE6_DUTY_NUM_S  21
+/* LEDC_CH3_GAMMA_RANGE6_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE6_SCALE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE6_SCALE_M  ((LEDC_CH3_GAMMA_RANGE6_SCALE_V)<<(LEDC_CH3_GAMMA_RANGE6_SCALE_S))
+#define LEDC_CH3_GAMMA_RANGE6_SCALE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE6_SCALE_S  11
+/* LEDC_CH3_GAMMA_RANGE6_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE6_DUTY_CYCLE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE6_DUTY_CYCLE_M  ((LEDC_CH3_GAMMA_RANGE6_DUTY_CYCLE_V)<<(LEDC_CH3_GAMMA_RANGE6_DUTY_CYCLE_S))
+#define LEDC_CH3_GAMMA_RANGE6_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE6_DUTY_CYCLE_S  1
+/* LEDC_CH3_GAMMA_RANGE6_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE6_DUTY_INC    (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE6_DUTY_INC_M  (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE6_DUTY_INC_V  0x1
+#define LEDC_CH3_GAMMA_RANGE6_DUTY_INC_S  0
+
+#define LEDC_CH3_GAMMA_RANGE7_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4dc)
+/* LEDC_CH3_GAMMA_RANGE7_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE7_DUTY_NUM    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE7_DUTY_NUM_M  ((LEDC_CH3_GAMMA_RANGE7_DUTY_NUM_V)<<(LEDC_CH3_GAMMA_RANGE7_DUTY_NUM_S))
+#define LEDC_CH3_GAMMA_RANGE7_DUTY_NUM_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE7_DUTY_NUM_S  21
+/* LEDC_CH3_GAMMA_RANGE7_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE7_SCALE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE7_SCALE_M  ((LEDC_CH3_GAMMA_RANGE7_SCALE_V)<<(LEDC_CH3_GAMMA_RANGE7_SCALE_S))
+#define LEDC_CH3_GAMMA_RANGE7_SCALE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE7_SCALE_S  11
+/* LEDC_CH3_GAMMA_RANGE7_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE7_DUTY_CYCLE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE7_DUTY_CYCLE_M  ((LEDC_CH3_GAMMA_RANGE7_DUTY_CYCLE_V)<<(LEDC_CH3_GAMMA_RANGE7_DUTY_CYCLE_S))
+#define LEDC_CH3_GAMMA_RANGE7_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE7_DUTY_CYCLE_S  1
+/* LEDC_CH3_GAMMA_RANGE7_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE7_DUTY_INC    (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE7_DUTY_INC_M  (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE7_DUTY_INC_V  0x1
+#define LEDC_CH3_GAMMA_RANGE7_DUTY_INC_S  0
+
+#define LEDC_CH3_GAMMA_RANGE8_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4e0)
+/* LEDC_CH3_GAMMA_RANGE8_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE8_DUTY_NUM    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE8_DUTY_NUM_M  ((LEDC_CH3_GAMMA_RANGE8_DUTY_NUM_V)<<(LEDC_CH3_GAMMA_RANGE8_DUTY_NUM_S))
+#define LEDC_CH3_GAMMA_RANGE8_DUTY_NUM_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE8_DUTY_NUM_S  21
+/* LEDC_CH3_GAMMA_RANGE8_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE8_SCALE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE8_SCALE_M  ((LEDC_CH3_GAMMA_RANGE8_SCALE_V)<<(LEDC_CH3_GAMMA_RANGE8_SCALE_S))
+#define LEDC_CH3_GAMMA_RANGE8_SCALE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE8_SCALE_S  11
+/* LEDC_CH3_GAMMA_RANGE8_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE8_DUTY_CYCLE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE8_DUTY_CYCLE_M  ((LEDC_CH3_GAMMA_RANGE8_DUTY_CYCLE_V)<<(LEDC_CH3_GAMMA_RANGE8_DUTY_CYCLE_S))
+#define LEDC_CH3_GAMMA_RANGE8_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE8_DUTY_CYCLE_S  1
+/* LEDC_CH3_GAMMA_RANGE8_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE8_DUTY_INC    (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE8_DUTY_INC_M  (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE8_DUTY_INC_V  0x1
+#define LEDC_CH3_GAMMA_RANGE8_DUTY_INC_S  0
+
+#define LEDC_CH3_GAMMA_RANGE9_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4e4)
+/* LEDC_CH3_GAMMA_RANGE9_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE9_DUTY_NUM    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE9_DUTY_NUM_M  ((LEDC_CH3_GAMMA_RANGE9_DUTY_NUM_V)<<(LEDC_CH3_GAMMA_RANGE9_DUTY_NUM_S))
+#define LEDC_CH3_GAMMA_RANGE9_DUTY_NUM_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE9_DUTY_NUM_S  21
+/* LEDC_CH3_GAMMA_RANGE9_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE9_SCALE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE9_SCALE_M  ((LEDC_CH3_GAMMA_RANGE9_SCALE_V)<<(LEDC_CH3_GAMMA_RANGE9_SCALE_S))
+#define LEDC_CH3_GAMMA_RANGE9_SCALE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE9_SCALE_S  11
+/* LEDC_CH3_GAMMA_RANGE9_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE9_DUTY_CYCLE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE9_DUTY_CYCLE_M  ((LEDC_CH3_GAMMA_RANGE9_DUTY_CYCLE_V)<<(LEDC_CH3_GAMMA_RANGE9_DUTY_CYCLE_S))
+#define LEDC_CH3_GAMMA_RANGE9_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE9_DUTY_CYCLE_S  1
+/* LEDC_CH3_GAMMA_RANGE9_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE9_DUTY_INC    (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE9_DUTY_INC_M  (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE9_DUTY_INC_V  0x1
+#define LEDC_CH3_GAMMA_RANGE9_DUTY_INC_S  0
+
+#define LEDC_CH3_GAMMA_RANGE10_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4e8)
+/* LEDC_CH3_GAMMA_RANGE10_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE10_DUTY_NUM    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE10_DUTY_NUM_M  ((LEDC_CH3_GAMMA_RANGE10_DUTY_NUM_V)<<(LEDC_CH3_GAMMA_RANGE10_DUTY_NUM_S))
+#define LEDC_CH3_GAMMA_RANGE10_DUTY_NUM_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE10_DUTY_NUM_S  21
+/* LEDC_CH3_GAMMA_RANGE10_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE10_SCALE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE10_SCALE_M  ((LEDC_CH3_GAMMA_RANGE10_SCALE_V)<<(LEDC_CH3_GAMMA_RANGE10_SCALE_S))
+#define LEDC_CH3_GAMMA_RANGE10_SCALE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE10_SCALE_S  11
+/* LEDC_CH3_GAMMA_RANGE10_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE10_DUTY_CYCLE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE10_DUTY_CYCLE_M  ((LEDC_CH3_GAMMA_RANGE10_DUTY_CYCLE_V)<<(LEDC_CH3_GAMMA_RANGE10_DUTY_CYCLE_S))
+#define LEDC_CH3_GAMMA_RANGE10_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE10_DUTY_CYCLE_S  1
+/* LEDC_CH3_GAMMA_RANGE10_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE10_DUTY_INC    (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE10_DUTY_INC_M  (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE10_DUTY_INC_V  0x1
+#define LEDC_CH3_GAMMA_RANGE10_DUTY_INC_S  0
+
+#define LEDC_CH3_GAMMA_RANGE11_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4ec)
+/* LEDC_CH3_GAMMA_RANGE11_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE11_DUTY_NUM    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE11_DUTY_NUM_M  ((LEDC_CH3_GAMMA_RANGE11_DUTY_NUM_V)<<(LEDC_CH3_GAMMA_RANGE11_DUTY_NUM_S))
+#define LEDC_CH3_GAMMA_RANGE11_DUTY_NUM_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE11_DUTY_NUM_S  21
+/* LEDC_CH3_GAMMA_RANGE11_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE11_SCALE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE11_SCALE_M  ((LEDC_CH3_GAMMA_RANGE11_SCALE_V)<<(LEDC_CH3_GAMMA_RANGE11_SCALE_S))
+#define LEDC_CH3_GAMMA_RANGE11_SCALE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE11_SCALE_S  11
+/* LEDC_CH3_GAMMA_RANGE11_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE11_DUTY_CYCLE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE11_DUTY_CYCLE_M  ((LEDC_CH3_GAMMA_RANGE11_DUTY_CYCLE_V)<<(LEDC_CH3_GAMMA_RANGE11_DUTY_CYCLE_S))
+#define LEDC_CH3_GAMMA_RANGE11_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE11_DUTY_CYCLE_S  1
+/* LEDC_CH3_GAMMA_RANGE11_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE11_DUTY_INC    (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE11_DUTY_INC_M  (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE11_DUTY_INC_V  0x1
+#define LEDC_CH3_GAMMA_RANGE11_DUTY_INC_S  0
+
+#define LEDC_CH3_GAMMA_RANGE12_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4f0)
+/* LEDC_CH3_GAMMA_RANGE12_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE12_DUTY_NUM    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE12_DUTY_NUM_M  ((LEDC_CH3_GAMMA_RANGE12_DUTY_NUM_V)<<(LEDC_CH3_GAMMA_RANGE12_DUTY_NUM_S))
+#define LEDC_CH3_GAMMA_RANGE12_DUTY_NUM_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE12_DUTY_NUM_S  21
+/* LEDC_CH3_GAMMA_RANGE12_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE12_SCALE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE12_SCALE_M  ((LEDC_CH3_GAMMA_RANGE12_SCALE_V)<<(LEDC_CH3_GAMMA_RANGE12_SCALE_S))
+#define LEDC_CH3_GAMMA_RANGE12_SCALE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE12_SCALE_S  11
+/* LEDC_CH3_GAMMA_RANGE12_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE12_DUTY_CYCLE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE12_DUTY_CYCLE_M  ((LEDC_CH3_GAMMA_RANGE12_DUTY_CYCLE_V)<<(LEDC_CH3_GAMMA_RANGE12_DUTY_CYCLE_S))
+#define LEDC_CH3_GAMMA_RANGE12_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE12_DUTY_CYCLE_S  1
+/* LEDC_CH3_GAMMA_RANGE12_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE12_DUTY_INC    (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE12_DUTY_INC_M  (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE12_DUTY_INC_V  0x1
+#define LEDC_CH3_GAMMA_RANGE12_DUTY_INC_S  0
+
+#define LEDC_CH3_GAMMA_RANGE13_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4f4)
+/* LEDC_CH3_GAMMA_RANGE13_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE13_DUTY_NUM    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE13_DUTY_NUM_M  ((LEDC_CH3_GAMMA_RANGE13_DUTY_NUM_V)<<(LEDC_CH3_GAMMA_RANGE13_DUTY_NUM_S))
+#define LEDC_CH3_GAMMA_RANGE13_DUTY_NUM_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE13_DUTY_NUM_S  21
+/* LEDC_CH3_GAMMA_RANGE13_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE13_SCALE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE13_SCALE_M  ((LEDC_CH3_GAMMA_RANGE13_SCALE_V)<<(LEDC_CH3_GAMMA_RANGE13_SCALE_S))
+#define LEDC_CH3_GAMMA_RANGE13_SCALE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE13_SCALE_S  11
+/* LEDC_CH3_GAMMA_RANGE13_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE13_DUTY_CYCLE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE13_DUTY_CYCLE_M  ((LEDC_CH3_GAMMA_RANGE13_DUTY_CYCLE_V)<<(LEDC_CH3_GAMMA_RANGE13_DUTY_CYCLE_S))
+#define LEDC_CH3_GAMMA_RANGE13_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE13_DUTY_CYCLE_S  1
+/* LEDC_CH3_GAMMA_RANGE13_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE13_DUTY_INC    (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE13_DUTY_INC_M  (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE13_DUTY_INC_V  0x1
+#define LEDC_CH3_GAMMA_RANGE13_DUTY_INC_S  0
+
+#define LEDC_CH3_GAMMA_RANGE14_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4f8)
+/* LEDC_CH3_GAMMA_RANGE14_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE14_DUTY_NUM    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE14_DUTY_NUM_M  ((LEDC_CH3_GAMMA_RANGE14_DUTY_NUM_V)<<(LEDC_CH3_GAMMA_RANGE14_DUTY_NUM_S))
+#define LEDC_CH3_GAMMA_RANGE14_DUTY_NUM_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE14_DUTY_NUM_S  21
+/* LEDC_CH3_GAMMA_RANGE14_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE14_SCALE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE14_SCALE_M  ((LEDC_CH3_GAMMA_RANGE14_SCALE_V)<<(LEDC_CH3_GAMMA_RANGE14_SCALE_S))
+#define LEDC_CH3_GAMMA_RANGE14_SCALE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE14_SCALE_S  11
+/* LEDC_CH3_GAMMA_RANGE14_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE14_DUTY_CYCLE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE14_DUTY_CYCLE_M  ((LEDC_CH3_GAMMA_RANGE14_DUTY_CYCLE_V)<<(LEDC_CH3_GAMMA_RANGE14_DUTY_CYCLE_S))
+#define LEDC_CH3_GAMMA_RANGE14_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE14_DUTY_CYCLE_S  1
+/* LEDC_CH3_GAMMA_RANGE14_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE14_DUTY_INC    (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE14_DUTY_INC_M  (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE14_DUTY_INC_V  0x1
+#define LEDC_CH3_GAMMA_RANGE14_DUTY_INC_S  0
+
+#define LEDC_CH3_GAMMA_RANGE15_REG(i)  (DR_REG_LEDC_BASE(i) + 0x4fc)
+/* LEDC_CH3_GAMMA_RANGE15_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE15_DUTY_NUM    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE15_DUTY_NUM_M  ((LEDC_CH3_GAMMA_RANGE15_DUTY_NUM_V)<<(LEDC_CH3_GAMMA_RANGE15_DUTY_NUM_S))
+#define LEDC_CH3_GAMMA_RANGE15_DUTY_NUM_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE15_DUTY_NUM_S  21
+/* LEDC_CH3_GAMMA_RANGE15_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE15_SCALE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE15_SCALE_M  ((LEDC_CH3_GAMMA_RANGE15_SCALE_V)<<(LEDC_CH3_GAMMA_RANGE15_SCALE_S))
+#define LEDC_CH3_GAMMA_RANGE15_SCALE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE15_SCALE_S  11
+/* LEDC_CH3_GAMMA_RANGE15_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE15_DUTY_CYCLE    0x000003FF
+#define LEDC_CH3_GAMMA_RANGE15_DUTY_CYCLE_M  ((LEDC_CH3_GAMMA_RANGE15_DUTY_CYCLE_V)<<(LEDC_CH3_GAMMA_RANGE15_DUTY_CYCLE_S))
+#define LEDC_CH3_GAMMA_RANGE15_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH3_GAMMA_RANGE15_DUTY_CYCLE_S  1
+/* LEDC_CH3_GAMMA_RANGE15_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH3_GAMMA_RANGE15_DUTY_INC    (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE15_DUTY_INC_M  (BIT(0))
+#define LEDC_CH3_GAMMA_RANGE15_DUTY_INC_V  0x1
+#define LEDC_CH3_GAMMA_RANGE15_DUTY_INC_S  0
+
+
+#define LEDC_CH4_GAMMA_RANGE0_REG(i)  (DR_REG_LEDC_BASE(i) + 0x500)
+/* LEDC_CH4_GAMMA_RANGE0_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE0_DUTY_NUM    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE0_DUTY_NUM_M  ((LEDC_CH4_GAMMA_RANGE0_DUTY_NUM_V)<<(LEDC_CH4_GAMMA_RANGE0_DUTY_NUM_S))
+#define LEDC_CH4_GAMMA_RANGE0_DUTY_NUM_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE0_DUTY_NUM_S  21
+/* LEDC_CH4_GAMMA_RANGE0_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE0_SCALE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE0_SCALE_M  ((LEDC_CH4_GAMMA_RANGE0_SCALE_V)<<(LEDC_CH4_GAMMA_RANGE0_SCALE_S))
+#define LEDC_CH4_GAMMA_RANGE0_SCALE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE0_SCALE_S  11
+/* LEDC_CH4_GAMMA_RANGE0_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE0_DUTY_CYCLE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE0_DUTY_CYCLE_M  ((LEDC_CH4_GAMMA_RANGE0_DUTY_CYCLE_V)<<(LEDC_CH4_GAMMA_RANGE0_DUTY_CYCLE_S))
+#define LEDC_CH4_GAMMA_RANGE0_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE0_DUTY_CYCLE_S  1
+/* LEDC_CH4_GAMMA_RANGE0_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE0_DUTY_INC    (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE0_DUTY_INC_M  (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE0_DUTY_INC_V  0x1
+#define LEDC_CH4_GAMMA_RANGE0_DUTY_INC_S  0
+
+#define LEDC_CH4_GAMMA_RANGE1_REG(i)  (DR_REG_LEDC_BASE(i) + 0x504)
+/* LEDC_CH4_GAMMA_RANGE1_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE1_DUTY_NUM    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE1_DUTY_NUM_M  ((LEDC_CH4_GAMMA_RANGE1_DUTY_NUM_V)<<(LEDC_CH4_GAMMA_RANGE1_DUTY_NUM_S))
+#define LEDC_CH4_GAMMA_RANGE1_DUTY_NUM_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE1_DUTY_NUM_S  21
+/* LEDC_CH4_GAMMA_RANGE1_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE1_SCALE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE1_SCALE_M  ((LEDC_CH4_GAMMA_RANGE1_SCALE_V)<<(LEDC_CH4_GAMMA_RANGE1_SCALE_S))
+#define LEDC_CH4_GAMMA_RANGE1_SCALE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE1_SCALE_S  11
+/* LEDC_CH4_GAMMA_RANGE1_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE1_DUTY_CYCLE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE1_DUTY_CYCLE_M  ((LEDC_CH4_GAMMA_RANGE1_DUTY_CYCLE_V)<<(LEDC_CH4_GAMMA_RANGE1_DUTY_CYCLE_S))
+#define LEDC_CH4_GAMMA_RANGE1_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE1_DUTY_CYCLE_S  1
+/* LEDC_CH4_GAMMA_RANGE1_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE1_DUTY_INC    (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE1_DUTY_INC_M  (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE1_DUTY_INC_V  0x1
+#define LEDC_CH4_GAMMA_RANGE1_DUTY_INC_S  0
+
+#define LEDC_CH4_GAMMA_RANGE2_REG(i)  (DR_REG_LEDC_BASE(i) + 0x508)
+/* LEDC_CH4_GAMMA_RANGE2_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE2_DUTY_NUM    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE2_DUTY_NUM_M  ((LEDC_CH4_GAMMA_RANGE2_DUTY_NUM_V)<<(LEDC_CH4_GAMMA_RANGE2_DUTY_NUM_S))
+#define LEDC_CH4_GAMMA_RANGE2_DUTY_NUM_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE2_DUTY_NUM_S  21
+/* LEDC_CH4_GAMMA_RANGE2_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE2_SCALE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE2_SCALE_M  ((LEDC_CH4_GAMMA_RANGE2_SCALE_V)<<(LEDC_CH4_GAMMA_RANGE2_SCALE_S))
+#define LEDC_CH4_GAMMA_RANGE2_SCALE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE2_SCALE_S  11
+/* LEDC_CH4_GAMMA_RANGE2_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE2_DUTY_CYCLE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE2_DUTY_CYCLE_M  ((LEDC_CH4_GAMMA_RANGE2_DUTY_CYCLE_V)<<(LEDC_CH4_GAMMA_RANGE2_DUTY_CYCLE_S))
+#define LEDC_CH4_GAMMA_RANGE2_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE2_DUTY_CYCLE_S  1
+/* LEDC_CH4_GAMMA_RANGE2_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE2_DUTY_INC    (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE2_DUTY_INC_M  (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE2_DUTY_INC_V  0x1
+#define LEDC_CH4_GAMMA_RANGE2_DUTY_INC_S  0
+
+#define LEDC_CH4_GAMMA_RANGE3_REG(i)  (DR_REG_LEDC_BASE(i) + 0x50c)
+/* LEDC_CH4_GAMMA_RANGE3_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE3_DUTY_NUM    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE3_DUTY_NUM_M  ((LEDC_CH4_GAMMA_RANGE3_DUTY_NUM_V)<<(LEDC_CH4_GAMMA_RANGE3_DUTY_NUM_S))
+#define LEDC_CH4_GAMMA_RANGE3_DUTY_NUM_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE3_DUTY_NUM_S  21
+/* LEDC_CH4_GAMMA_RANGE3_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE3_SCALE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE3_SCALE_M  ((LEDC_CH4_GAMMA_RANGE3_SCALE_V)<<(LEDC_CH4_GAMMA_RANGE3_SCALE_S))
+#define LEDC_CH4_GAMMA_RANGE3_SCALE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE3_SCALE_S  11
+/* LEDC_CH4_GAMMA_RANGE3_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE3_DUTY_CYCLE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE3_DUTY_CYCLE_M  ((LEDC_CH4_GAMMA_RANGE3_DUTY_CYCLE_V)<<(LEDC_CH4_GAMMA_RANGE3_DUTY_CYCLE_S))
+#define LEDC_CH4_GAMMA_RANGE3_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE3_DUTY_CYCLE_S  1
+/* LEDC_CH4_GAMMA_RANGE3_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE3_DUTY_INC    (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE3_DUTY_INC_M  (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE3_DUTY_INC_V  0x1
+#define LEDC_CH4_GAMMA_RANGE3_DUTY_INC_S  0
+
+#define LEDC_CH4_GAMMA_RANGE4_REG(i)  (DR_REG_LEDC_BASE(i) + 0x510)
+/* LEDC_CH4_GAMMA_RANGE4_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE4_DUTY_NUM    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE4_DUTY_NUM_M  ((LEDC_CH4_GAMMA_RANGE4_DUTY_NUM_V)<<(LEDC_CH4_GAMMA_RANGE4_DUTY_NUM_S))
+#define LEDC_CH4_GAMMA_RANGE4_DUTY_NUM_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE4_DUTY_NUM_S  21
+/* LEDC_CH4_GAMMA_RANGE4_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE4_SCALE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE4_SCALE_M  ((LEDC_CH4_GAMMA_RANGE4_SCALE_V)<<(LEDC_CH4_GAMMA_RANGE4_SCALE_S))
+#define LEDC_CH4_GAMMA_RANGE4_SCALE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE4_SCALE_S  11
+/* LEDC_CH4_GAMMA_RANGE4_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE4_DUTY_CYCLE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE4_DUTY_CYCLE_M  ((LEDC_CH4_GAMMA_RANGE4_DUTY_CYCLE_V)<<(LEDC_CH4_GAMMA_RANGE4_DUTY_CYCLE_S))
+#define LEDC_CH4_GAMMA_RANGE4_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE4_DUTY_CYCLE_S  1
+/* LEDC_CH4_GAMMA_RANGE4_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE4_DUTY_INC    (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE4_DUTY_INC_M  (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE4_DUTY_INC_V  0x1
+#define LEDC_CH4_GAMMA_RANGE4_DUTY_INC_S  0
+
+#define LEDC_CH4_GAMMA_RANGE5_REG(i)  (DR_REG_LEDC_BASE(i) + 0x514)
+/* LEDC_CH4_GAMMA_RANGE5_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE5_DUTY_NUM    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE5_DUTY_NUM_M  ((LEDC_CH4_GAMMA_RANGE5_DUTY_NUM_V)<<(LEDC_CH4_GAMMA_RANGE5_DUTY_NUM_S))
+#define LEDC_CH4_GAMMA_RANGE5_DUTY_NUM_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE5_DUTY_NUM_S  21
+/* LEDC_CH4_GAMMA_RANGE5_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE5_SCALE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE5_SCALE_M  ((LEDC_CH4_GAMMA_RANGE5_SCALE_V)<<(LEDC_CH4_GAMMA_RANGE5_SCALE_S))
+#define LEDC_CH4_GAMMA_RANGE5_SCALE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE5_SCALE_S  11
+/* LEDC_CH4_GAMMA_RANGE5_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE5_DUTY_CYCLE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE5_DUTY_CYCLE_M  ((LEDC_CH4_GAMMA_RANGE5_DUTY_CYCLE_V)<<(LEDC_CH4_GAMMA_RANGE5_DUTY_CYCLE_S))
+#define LEDC_CH4_GAMMA_RANGE5_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE5_DUTY_CYCLE_S  1
+/* LEDC_CH4_GAMMA_RANGE5_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE5_DUTY_INC    (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE5_DUTY_INC_M  (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE5_DUTY_INC_V  0x1
+#define LEDC_CH4_GAMMA_RANGE5_DUTY_INC_S  0
+
+#define LEDC_CH4_GAMMA_RANGE6_REG(i)  (DR_REG_LEDC_BASE(i) + 0x518)
+/* LEDC_CH4_GAMMA_RANGE6_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE6_DUTY_NUM    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE6_DUTY_NUM_M  ((LEDC_CH4_GAMMA_RANGE6_DUTY_NUM_V)<<(LEDC_CH4_GAMMA_RANGE6_DUTY_NUM_S))
+#define LEDC_CH4_GAMMA_RANGE6_DUTY_NUM_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE6_DUTY_NUM_S  21
+/* LEDC_CH4_GAMMA_RANGE6_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE6_SCALE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE6_SCALE_M  ((LEDC_CH4_GAMMA_RANGE6_SCALE_V)<<(LEDC_CH4_GAMMA_RANGE6_SCALE_S))
+#define LEDC_CH4_GAMMA_RANGE6_SCALE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE6_SCALE_S  11
+/* LEDC_CH4_GAMMA_RANGE6_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE6_DUTY_CYCLE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE6_DUTY_CYCLE_M  ((LEDC_CH4_GAMMA_RANGE6_DUTY_CYCLE_V)<<(LEDC_CH4_GAMMA_RANGE6_DUTY_CYCLE_S))
+#define LEDC_CH4_GAMMA_RANGE6_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE6_DUTY_CYCLE_S  1
+/* LEDC_CH4_GAMMA_RANGE6_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE6_DUTY_INC    (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE6_DUTY_INC_M  (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE6_DUTY_INC_V  0x1
+#define LEDC_CH4_GAMMA_RANGE6_DUTY_INC_S  0
+
+#define LEDC_CH4_GAMMA_RANGE7_REG(i)  (DR_REG_LEDC_BASE(i) + 0x51c)
+/* LEDC_CH4_GAMMA_RANGE7_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE7_DUTY_NUM    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE7_DUTY_NUM_M  ((LEDC_CH4_GAMMA_RANGE7_DUTY_NUM_V)<<(LEDC_CH4_GAMMA_RANGE7_DUTY_NUM_S))
+#define LEDC_CH4_GAMMA_RANGE7_DUTY_NUM_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE7_DUTY_NUM_S  21
+/* LEDC_CH4_GAMMA_RANGE7_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE7_SCALE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE7_SCALE_M  ((LEDC_CH4_GAMMA_RANGE7_SCALE_V)<<(LEDC_CH4_GAMMA_RANGE7_SCALE_S))
+#define LEDC_CH4_GAMMA_RANGE7_SCALE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE7_SCALE_S  11
+/* LEDC_CH4_GAMMA_RANGE7_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE7_DUTY_CYCLE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE7_DUTY_CYCLE_M  ((LEDC_CH4_GAMMA_RANGE7_DUTY_CYCLE_V)<<(LEDC_CH4_GAMMA_RANGE7_DUTY_CYCLE_S))
+#define LEDC_CH4_GAMMA_RANGE7_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE7_DUTY_CYCLE_S  1
+/* LEDC_CH4_GAMMA_RANGE7_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE7_DUTY_INC    (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE7_DUTY_INC_M  (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE7_DUTY_INC_V  0x1
+#define LEDC_CH4_GAMMA_RANGE7_DUTY_INC_S  0
+
+#define LEDC_CH4_GAMMA_RANGE8_REG(i)  (DR_REG_LEDC_BASE(i) + 0x520)
+/* LEDC_CH4_GAMMA_RANGE8_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE8_DUTY_NUM    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE8_DUTY_NUM_M  ((LEDC_CH4_GAMMA_RANGE8_DUTY_NUM_V)<<(LEDC_CH4_GAMMA_RANGE8_DUTY_NUM_S))
+#define LEDC_CH4_GAMMA_RANGE8_DUTY_NUM_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE8_DUTY_NUM_S  21
+/* LEDC_CH4_GAMMA_RANGE8_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE8_SCALE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE8_SCALE_M  ((LEDC_CH4_GAMMA_RANGE8_SCALE_V)<<(LEDC_CH4_GAMMA_RANGE8_SCALE_S))
+#define LEDC_CH4_GAMMA_RANGE8_SCALE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE8_SCALE_S  11
+/* LEDC_CH4_GAMMA_RANGE8_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE8_DUTY_CYCLE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE8_DUTY_CYCLE_M  ((LEDC_CH4_GAMMA_RANGE8_DUTY_CYCLE_V)<<(LEDC_CH4_GAMMA_RANGE8_DUTY_CYCLE_S))
+#define LEDC_CH4_GAMMA_RANGE8_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE8_DUTY_CYCLE_S  1
+/* LEDC_CH4_GAMMA_RANGE8_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE8_DUTY_INC    (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE8_DUTY_INC_M  (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE8_DUTY_INC_V  0x1
+#define LEDC_CH4_GAMMA_RANGE8_DUTY_INC_S  0
+
+#define LEDC_CH4_GAMMA_RANGE9_REG(i)  (DR_REG_LEDC_BASE(i) + 0x524)
+/* LEDC_CH4_GAMMA_RANGE9_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE9_DUTY_NUM    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE9_DUTY_NUM_M  ((LEDC_CH4_GAMMA_RANGE9_DUTY_NUM_V)<<(LEDC_CH4_GAMMA_RANGE9_DUTY_NUM_S))
+#define LEDC_CH4_GAMMA_RANGE9_DUTY_NUM_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE9_DUTY_NUM_S  21
+/* LEDC_CH4_GAMMA_RANGE9_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE9_SCALE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE9_SCALE_M  ((LEDC_CH4_GAMMA_RANGE9_SCALE_V)<<(LEDC_CH4_GAMMA_RANGE9_SCALE_S))
+#define LEDC_CH4_GAMMA_RANGE9_SCALE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE9_SCALE_S  11
+/* LEDC_CH4_GAMMA_RANGE9_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE9_DUTY_CYCLE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE9_DUTY_CYCLE_M  ((LEDC_CH4_GAMMA_RANGE9_DUTY_CYCLE_V)<<(LEDC_CH4_GAMMA_RANGE9_DUTY_CYCLE_S))
+#define LEDC_CH4_GAMMA_RANGE9_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE9_DUTY_CYCLE_S  1
+/* LEDC_CH4_GAMMA_RANGE9_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE9_DUTY_INC    (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE9_DUTY_INC_M  (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE9_DUTY_INC_V  0x1
+#define LEDC_CH4_GAMMA_RANGE9_DUTY_INC_S  0
+
+#define LEDC_CH4_GAMMA_RANGE10_REG(i)  (DR_REG_LEDC_BASE(i) + 0x528)
+/* LEDC_CH4_GAMMA_RANGE10_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE10_DUTY_NUM    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE10_DUTY_NUM_M  ((LEDC_CH4_GAMMA_RANGE10_DUTY_NUM_V)<<(LEDC_CH4_GAMMA_RANGE10_DUTY_NUM_S))
+#define LEDC_CH4_GAMMA_RANGE10_DUTY_NUM_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE10_DUTY_NUM_S  21
+/* LEDC_CH4_GAMMA_RANGE10_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE10_SCALE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE10_SCALE_M  ((LEDC_CH4_GAMMA_RANGE10_SCALE_V)<<(LEDC_CH4_GAMMA_RANGE10_SCALE_S))
+#define LEDC_CH4_GAMMA_RANGE10_SCALE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE10_SCALE_S  11
+/* LEDC_CH4_GAMMA_RANGE10_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE10_DUTY_CYCLE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE10_DUTY_CYCLE_M  ((LEDC_CH4_GAMMA_RANGE10_DUTY_CYCLE_V)<<(LEDC_CH4_GAMMA_RANGE10_DUTY_CYCLE_S))
+#define LEDC_CH4_GAMMA_RANGE10_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE10_DUTY_CYCLE_S  1
+/* LEDC_CH4_GAMMA_RANGE10_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE10_DUTY_INC    (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE10_DUTY_INC_M  (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE10_DUTY_INC_V  0x1
+#define LEDC_CH4_GAMMA_RANGE10_DUTY_INC_S  0
+
+#define LEDC_CH4_GAMMA_RANGE11_REG(i)  (DR_REG_LEDC_BASE(i) + 0x52c)
+/* LEDC_CH4_GAMMA_RANGE11_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE11_DUTY_NUM    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE11_DUTY_NUM_M  ((LEDC_CH4_GAMMA_RANGE11_DUTY_NUM_V)<<(LEDC_CH4_GAMMA_RANGE11_DUTY_NUM_S))
+#define LEDC_CH4_GAMMA_RANGE11_DUTY_NUM_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE11_DUTY_NUM_S  21
+/* LEDC_CH4_GAMMA_RANGE11_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE11_SCALE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE11_SCALE_M  ((LEDC_CH4_GAMMA_RANGE11_SCALE_V)<<(LEDC_CH4_GAMMA_RANGE11_SCALE_S))
+#define LEDC_CH4_GAMMA_RANGE11_SCALE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE11_SCALE_S  11
+/* LEDC_CH4_GAMMA_RANGE11_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE11_DUTY_CYCLE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE11_DUTY_CYCLE_M  ((LEDC_CH4_GAMMA_RANGE11_DUTY_CYCLE_V)<<(LEDC_CH4_GAMMA_RANGE11_DUTY_CYCLE_S))
+#define LEDC_CH4_GAMMA_RANGE11_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE11_DUTY_CYCLE_S  1
+/* LEDC_CH4_GAMMA_RANGE11_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE11_DUTY_INC    (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE11_DUTY_INC_M  (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE11_DUTY_INC_V  0x1
+#define LEDC_CH4_GAMMA_RANGE11_DUTY_INC_S  0
+
+#define LEDC_CH4_GAMMA_RANGE12_REG(i)  (DR_REG_LEDC_BASE(i) + 0x530)
+/* LEDC_CH4_GAMMA_RANGE12_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE12_DUTY_NUM    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE12_DUTY_NUM_M  ((LEDC_CH4_GAMMA_RANGE12_DUTY_NUM_V)<<(LEDC_CH4_GAMMA_RANGE12_DUTY_NUM_S))
+#define LEDC_CH4_GAMMA_RANGE12_DUTY_NUM_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE12_DUTY_NUM_S  21
+/* LEDC_CH4_GAMMA_RANGE12_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE12_SCALE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE12_SCALE_M  ((LEDC_CH4_GAMMA_RANGE12_SCALE_V)<<(LEDC_CH4_GAMMA_RANGE12_SCALE_S))
+#define LEDC_CH4_GAMMA_RANGE12_SCALE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE12_SCALE_S  11
+/* LEDC_CH4_GAMMA_RANGE12_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE12_DUTY_CYCLE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE12_DUTY_CYCLE_M  ((LEDC_CH4_GAMMA_RANGE12_DUTY_CYCLE_V)<<(LEDC_CH4_GAMMA_RANGE12_DUTY_CYCLE_S))
+#define LEDC_CH4_GAMMA_RANGE12_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE12_DUTY_CYCLE_S  1
+/* LEDC_CH4_GAMMA_RANGE12_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE12_DUTY_INC    (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE12_DUTY_INC_M  (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE12_DUTY_INC_V  0x1
+#define LEDC_CH4_GAMMA_RANGE12_DUTY_INC_S  0
+
+#define LEDC_CH4_GAMMA_RANGE13_REG(i)  (DR_REG_LEDC_BASE(i) + 0x534)
+/* LEDC_CH4_GAMMA_RANGE13_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE13_DUTY_NUM    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE13_DUTY_NUM_M  ((LEDC_CH4_GAMMA_RANGE13_DUTY_NUM_V)<<(LEDC_CH4_GAMMA_RANGE13_DUTY_NUM_S))
+#define LEDC_CH4_GAMMA_RANGE13_DUTY_NUM_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE13_DUTY_NUM_S  21
+/* LEDC_CH4_GAMMA_RANGE13_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE13_SCALE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE13_SCALE_M  ((LEDC_CH4_GAMMA_RANGE13_SCALE_V)<<(LEDC_CH4_GAMMA_RANGE13_SCALE_S))
+#define LEDC_CH4_GAMMA_RANGE13_SCALE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE13_SCALE_S  11
+/* LEDC_CH4_GAMMA_RANGE13_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE13_DUTY_CYCLE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE13_DUTY_CYCLE_M  ((LEDC_CH4_GAMMA_RANGE13_DUTY_CYCLE_V)<<(LEDC_CH4_GAMMA_RANGE13_DUTY_CYCLE_S))
+#define LEDC_CH4_GAMMA_RANGE13_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE13_DUTY_CYCLE_S  1
+/* LEDC_CH4_GAMMA_RANGE13_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE13_DUTY_INC    (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE13_DUTY_INC_M  (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE13_DUTY_INC_V  0x1
+#define LEDC_CH4_GAMMA_RANGE13_DUTY_INC_S  0
+
+#define LEDC_CH4_GAMMA_RANGE14_REG(i)  (DR_REG_LEDC_BASE(i) + 0x538)
+/* LEDC_CH4_GAMMA_RANGE14_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE14_DUTY_NUM    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE14_DUTY_NUM_M  ((LEDC_CH4_GAMMA_RANGE14_DUTY_NUM_V)<<(LEDC_CH4_GAMMA_RANGE14_DUTY_NUM_S))
+#define LEDC_CH4_GAMMA_RANGE14_DUTY_NUM_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE14_DUTY_NUM_S  21
+/* LEDC_CH4_GAMMA_RANGE14_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE14_SCALE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE14_SCALE_M  ((LEDC_CH4_GAMMA_RANGE14_SCALE_V)<<(LEDC_CH4_GAMMA_RANGE14_SCALE_S))
+#define LEDC_CH4_GAMMA_RANGE14_SCALE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE14_SCALE_S  11
+/* LEDC_CH4_GAMMA_RANGE14_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE14_DUTY_CYCLE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE14_DUTY_CYCLE_M  ((LEDC_CH4_GAMMA_RANGE14_DUTY_CYCLE_V)<<(LEDC_CH4_GAMMA_RANGE14_DUTY_CYCLE_S))
+#define LEDC_CH4_GAMMA_RANGE14_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE14_DUTY_CYCLE_S  1
+/* LEDC_CH4_GAMMA_RANGE14_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE14_DUTY_INC    (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE14_DUTY_INC_M  (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE14_DUTY_INC_V  0x1
+#define LEDC_CH4_GAMMA_RANGE14_DUTY_INC_S  0
+
+#define LEDC_CH4_GAMMA_RANGE15_REG(i)  (DR_REG_LEDC_BASE(i) + 0x53c)
+/* LEDC_CH4_GAMMA_RANGE15_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE15_DUTY_NUM    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE15_DUTY_NUM_M  ((LEDC_CH4_GAMMA_RANGE15_DUTY_NUM_V)<<(LEDC_CH4_GAMMA_RANGE15_DUTY_NUM_S))
+#define LEDC_CH4_GAMMA_RANGE15_DUTY_NUM_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE15_DUTY_NUM_S  21
+/* LEDC_CH4_GAMMA_RANGE15_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE15_SCALE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE15_SCALE_M  ((LEDC_CH4_GAMMA_RANGE15_SCALE_V)<<(LEDC_CH4_GAMMA_RANGE15_SCALE_S))
+#define LEDC_CH4_GAMMA_RANGE15_SCALE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE15_SCALE_S  11
+/* LEDC_CH4_GAMMA_RANGE15_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE15_DUTY_CYCLE    0x000003FF
+#define LEDC_CH4_GAMMA_RANGE15_DUTY_CYCLE_M  ((LEDC_CH4_GAMMA_RANGE15_DUTY_CYCLE_V)<<(LEDC_CH4_GAMMA_RANGE15_DUTY_CYCLE_S))
+#define LEDC_CH4_GAMMA_RANGE15_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH4_GAMMA_RANGE15_DUTY_CYCLE_S  1
+/* LEDC_CH4_GAMMA_RANGE15_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH4_GAMMA_RANGE15_DUTY_INC    (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE15_DUTY_INC_M  (BIT(0))
+#define LEDC_CH4_GAMMA_RANGE15_DUTY_INC_V  0x1
+#define LEDC_CH4_GAMMA_RANGE15_DUTY_INC_S  0
+
+
+#define LEDC_CH5_GAMMA_RANGE0_REG(i)  (DR_REG_LEDC_BASE(i) + 0x540)
+/* LEDC_CH5_GAMMA_RANGE0_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE0_DUTY_NUM    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE0_DUTY_NUM_M  ((LEDC_CH5_GAMMA_RANGE0_DUTY_NUM_V)<<(LEDC_CH5_GAMMA_RANGE0_DUTY_NUM_S))
+#define LEDC_CH5_GAMMA_RANGE0_DUTY_NUM_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE0_DUTY_NUM_S  21
+/* LEDC_CH5_GAMMA_RANGE0_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE0_SCALE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE0_SCALE_M  ((LEDC_CH5_GAMMA_RANGE0_SCALE_V)<<(LEDC_CH5_GAMMA_RANGE0_SCALE_S))
+#define LEDC_CH5_GAMMA_RANGE0_SCALE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE0_SCALE_S  11
+/* LEDC_CH5_GAMMA_RANGE0_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE0_DUTY_CYCLE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE0_DUTY_CYCLE_M  ((LEDC_CH5_GAMMA_RANGE0_DUTY_CYCLE_V)<<(LEDC_CH5_GAMMA_RANGE0_DUTY_CYCLE_S))
+#define LEDC_CH5_GAMMA_RANGE0_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE0_DUTY_CYCLE_S  1
+/* LEDC_CH5_GAMMA_RANGE0_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE0_DUTY_INC    (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE0_DUTY_INC_M  (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE0_DUTY_INC_V  0x1
+#define LEDC_CH5_GAMMA_RANGE0_DUTY_INC_S  0
+
+#define LEDC_CH5_GAMMA_RANGE1_REG(i)  (DR_REG_LEDC_BASE(i) + 0x544)
+/* LEDC_CH5_GAMMA_RANGE1_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE1_DUTY_NUM    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE1_DUTY_NUM_M  ((LEDC_CH5_GAMMA_RANGE1_DUTY_NUM_V)<<(LEDC_CH5_GAMMA_RANGE1_DUTY_NUM_S))
+#define LEDC_CH5_GAMMA_RANGE1_DUTY_NUM_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE1_DUTY_NUM_S  21
+/* LEDC_CH5_GAMMA_RANGE1_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE1_SCALE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE1_SCALE_M  ((LEDC_CH5_GAMMA_RANGE1_SCALE_V)<<(LEDC_CH5_GAMMA_RANGE1_SCALE_S))
+#define LEDC_CH5_GAMMA_RANGE1_SCALE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE1_SCALE_S  11
+/* LEDC_CH5_GAMMA_RANGE1_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE1_DUTY_CYCLE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE1_DUTY_CYCLE_M  ((LEDC_CH5_GAMMA_RANGE1_DUTY_CYCLE_V)<<(LEDC_CH5_GAMMA_RANGE1_DUTY_CYCLE_S))
+#define LEDC_CH5_GAMMA_RANGE1_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE1_DUTY_CYCLE_S  1
+/* LEDC_CH5_GAMMA_RANGE1_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE1_DUTY_INC    (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE1_DUTY_INC_M  (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE1_DUTY_INC_V  0x1
+#define LEDC_CH5_GAMMA_RANGE1_DUTY_INC_S  0
+
+#define LEDC_CH5_GAMMA_RANGE2_REG(i)  (DR_REG_LEDC_BASE(i) + 0x548)
+/* LEDC_CH5_GAMMA_RANGE2_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE2_DUTY_NUM    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE2_DUTY_NUM_M  ((LEDC_CH5_GAMMA_RANGE2_DUTY_NUM_V)<<(LEDC_CH5_GAMMA_RANGE2_DUTY_NUM_S))
+#define LEDC_CH5_GAMMA_RANGE2_DUTY_NUM_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE2_DUTY_NUM_S  21
+/* LEDC_CH5_GAMMA_RANGE2_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE2_SCALE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE2_SCALE_M  ((LEDC_CH5_GAMMA_RANGE2_SCALE_V)<<(LEDC_CH5_GAMMA_RANGE2_SCALE_S))
+#define LEDC_CH5_GAMMA_RANGE2_SCALE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE2_SCALE_S  11
+/* LEDC_CH5_GAMMA_RANGE2_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE2_DUTY_CYCLE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE2_DUTY_CYCLE_M  ((LEDC_CH5_GAMMA_RANGE2_DUTY_CYCLE_V)<<(LEDC_CH5_GAMMA_RANGE2_DUTY_CYCLE_S))
+#define LEDC_CH5_GAMMA_RANGE2_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE2_DUTY_CYCLE_S  1
+/* LEDC_CH5_GAMMA_RANGE2_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE2_DUTY_INC    (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE2_DUTY_INC_M  (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE2_DUTY_INC_V  0x1
+#define LEDC_CH5_GAMMA_RANGE2_DUTY_INC_S  0
+
+#define LEDC_CH5_GAMMA_RANGE3_REG(i)  (DR_REG_LEDC_BASE(i) + 0x54c)
+/* LEDC_CH5_GAMMA_RANGE3_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE3_DUTY_NUM    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE3_DUTY_NUM_M  ((LEDC_CH5_GAMMA_RANGE3_DUTY_NUM_V)<<(LEDC_CH5_GAMMA_RANGE3_DUTY_NUM_S))
+#define LEDC_CH5_GAMMA_RANGE3_DUTY_NUM_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE3_DUTY_NUM_S  21
+/* LEDC_CH5_GAMMA_RANGE3_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE3_SCALE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE3_SCALE_M  ((LEDC_CH5_GAMMA_RANGE3_SCALE_V)<<(LEDC_CH5_GAMMA_RANGE3_SCALE_S))
+#define LEDC_CH5_GAMMA_RANGE3_SCALE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE3_SCALE_S  11
+/* LEDC_CH5_GAMMA_RANGE3_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE3_DUTY_CYCLE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE3_DUTY_CYCLE_M  ((LEDC_CH5_GAMMA_RANGE3_DUTY_CYCLE_V)<<(LEDC_CH5_GAMMA_RANGE3_DUTY_CYCLE_S))
+#define LEDC_CH5_GAMMA_RANGE3_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE3_DUTY_CYCLE_S  1
+/* LEDC_CH5_GAMMA_RANGE3_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE3_DUTY_INC    (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE3_DUTY_INC_M  (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE3_DUTY_INC_V  0x1
+#define LEDC_CH5_GAMMA_RANGE3_DUTY_INC_S  0
+
+#define LEDC_CH5_GAMMA_RANGE4_REG(i)  (DR_REG_LEDC_BASE(i) + 0x550)
+/* LEDC_CH5_GAMMA_RANGE4_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE4_DUTY_NUM    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE4_DUTY_NUM_M  ((LEDC_CH5_GAMMA_RANGE4_DUTY_NUM_V)<<(LEDC_CH5_GAMMA_RANGE4_DUTY_NUM_S))
+#define LEDC_CH5_GAMMA_RANGE4_DUTY_NUM_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE4_DUTY_NUM_S  21
+/* LEDC_CH5_GAMMA_RANGE4_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE4_SCALE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE4_SCALE_M  ((LEDC_CH5_GAMMA_RANGE4_SCALE_V)<<(LEDC_CH5_GAMMA_RANGE4_SCALE_S))
+#define LEDC_CH5_GAMMA_RANGE4_SCALE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE4_SCALE_S  11
+/* LEDC_CH5_GAMMA_RANGE4_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE4_DUTY_CYCLE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE4_DUTY_CYCLE_M  ((LEDC_CH5_GAMMA_RANGE4_DUTY_CYCLE_V)<<(LEDC_CH5_GAMMA_RANGE4_DUTY_CYCLE_S))
+#define LEDC_CH5_GAMMA_RANGE4_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE4_DUTY_CYCLE_S  1
+/* LEDC_CH5_GAMMA_RANGE4_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE4_DUTY_INC    (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE4_DUTY_INC_M  (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE4_DUTY_INC_V  0x1
+#define LEDC_CH5_GAMMA_RANGE4_DUTY_INC_S  0
+
+#define LEDC_CH5_GAMMA_RANGE5_REG(i)  (DR_REG_LEDC_BASE(i) + 0x554)
+/* LEDC_CH5_GAMMA_RANGE5_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE5_DUTY_NUM    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE5_DUTY_NUM_M  ((LEDC_CH5_GAMMA_RANGE5_DUTY_NUM_V)<<(LEDC_CH5_GAMMA_RANGE5_DUTY_NUM_S))
+#define LEDC_CH5_GAMMA_RANGE5_DUTY_NUM_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE5_DUTY_NUM_S  21
+/* LEDC_CH5_GAMMA_RANGE5_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE5_SCALE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE5_SCALE_M  ((LEDC_CH5_GAMMA_RANGE5_SCALE_V)<<(LEDC_CH5_GAMMA_RANGE5_SCALE_S))
+#define LEDC_CH5_GAMMA_RANGE5_SCALE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE5_SCALE_S  11
+/* LEDC_CH5_GAMMA_RANGE5_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE5_DUTY_CYCLE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE5_DUTY_CYCLE_M  ((LEDC_CH5_GAMMA_RANGE5_DUTY_CYCLE_V)<<(LEDC_CH5_GAMMA_RANGE5_DUTY_CYCLE_S))
+#define LEDC_CH5_GAMMA_RANGE5_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE5_DUTY_CYCLE_S  1
+/* LEDC_CH5_GAMMA_RANGE5_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE5_DUTY_INC    (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE5_DUTY_INC_M  (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE5_DUTY_INC_V  0x1
+#define LEDC_CH5_GAMMA_RANGE5_DUTY_INC_S  0
+
+#define LEDC_CH5_GAMMA_RANGE6_REG(i)  (DR_REG_LEDC_BASE(i) + 0x558)
+/* LEDC_CH5_GAMMA_RANGE6_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE6_DUTY_NUM    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE6_DUTY_NUM_M  ((LEDC_CH5_GAMMA_RANGE6_DUTY_NUM_V)<<(LEDC_CH5_GAMMA_RANGE6_DUTY_NUM_S))
+#define LEDC_CH5_GAMMA_RANGE6_DUTY_NUM_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE6_DUTY_NUM_S  21
+/* LEDC_CH5_GAMMA_RANGE6_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE6_SCALE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE6_SCALE_M  ((LEDC_CH5_GAMMA_RANGE6_SCALE_V)<<(LEDC_CH5_GAMMA_RANGE6_SCALE_S))
+#define LEDC_CH5_GAMMA_RANGE6_SCALE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE6_SCALE_S  11
+/* LEDC_CH5_GAMMA_RANGE6_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE6_DUTY_CYCLE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE6_DUTY_CYCLE_M  ((LEDC_CH5_GAMMA_RANGE6_DUTY_CYCLE_V)<<(LEDC_CH5_GAMMA_RANGE6_DUTY_CYCLE_S))
+#define LEDC_CH5_GAMMA_RANGE6_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE6_DUTY_CYCLE_S  1
+/* LEDC_CH5_GAMMA_RANGE6_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE6_DUTY_INC    (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE6_DUTY_INC_M  (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE6_DUTY_INC_V  0x1
+#define LEDC_CH5_GAMMA_RANGE6_DUTY_INC_S  0
+
+#define LEDC_CH5_GAMMA_RANGE7_REG(i)  (DR_REG_LEDC_BASE(i) + 0x55c)
+/* LEDC_CH5_GAMMA_RANGE7_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE7_DUTY_NUM    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE7_DUTY_NUM_M  ((LEDC_CH5_GAMMA_RANGE7_DUTY_NUM_V)<<(LEDC_CH5_GAMMA_RANGE7_DUTY_NUM_S))
+#define LEDC_CH5_GAMMA_RANGE7_DUTY_NUM_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE7_DUTY_NUM_S  21
+/* LEDC_CH5_GAMMA_RANGE7_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE7_SCALE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE7_SCALE_M  ((LEDC_CH5_GAMMA_RANGE7_SCALE_V)<<(LEDC_CH5_GAMMA_RANGE7_SCALE_S))
+#define LEDC_CH5_GAMMA_RANGE7_SCALE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE7_SCALE_S  11
+/* LEDC_CH5_GAMMA_RANGE7_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE7_DUTY_CYCLE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE7_DUTY_CYCLE_M  ((LEDC_CH5_GAMMA_RANGE7_DUTY_CYCLE_V)<<(LEDC_CH5_GAMMA_RANGE7_DUTY_CYCLE_S))
+#define LEDC_CH5_GAMMA_RANGE7_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE7_DUTY_CYCLE_S  1
+/* LEDC_CH5_GAMMA_RANGE7_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE7_DUTY_INC    (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE7_DUTY_INC_M  (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE7_DUTY_INC_V  0x1
+#define LEDC_CH5_GAMMA_RANGE7_DUTY_INC_S  0
+
+#define LEDC_CH5_GAMMA_RANGE8_REG(i)  (DR_REG_LEDC_BASE(i) + 0x560)
+/* LEDC_CH5_GAMMA_RANGE8_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE8_DUTY_NUM    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE8_DUTY_NUM_M  ((LEDC_CH5_GAMMA_RANGE8_DUTY_NUM_V)<<(LEDC_CH5_GAMMA_RANGE8_DUTY_NUM_S))
+#define LEDC_CH5_GAMMA_RANGE8_DUTY_NUM_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE8_DUTY_NUM_S  21
+/* LEDC_CH5_GAMMA_RANGE8_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE8_SCALE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE8_SCALE_M  ((LEDC_CH5_GAMMA_RANGE8_SCALE_V)<<(LEDC_CH5_GAMMA_RANGE8_SCALE_S))
+#define LEDC_CH5_GAMMA_RANGE8_SCALE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE8_SCALE_S  11
+/* LEDC_CH5_GAMMA_RANGE8_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE8_DUTY_CYCLE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE8_DUTY_CYCLE_M  ((LEDC_CH5_GAMMA_RANGE8_DUTY_CYCLE_V)<<(LEDC_CH5_GAMMA_RANGE8_DUTY_CYCLE_S))
+#define LEDC_CH5_GAMMA_RANGE8_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE8_DUTY_CYCLE_S  1
+/* LEDC_CH5_GAMMA_RANGE8_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE8_DUTY_INC    (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE8_DUTY_INC_M  (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE8_DUTY_INC_V  0x1
+#define LEDC_CH5_GAMMA_RANGE8_DUTY_INC_S  0
+
+#define LEDC_CH5_GAMMA_RANGE9_REG(i)  (DR_REG_LEDC_BASE(i) + 0x564)
+/* LEDC_CH5_GAMMA_RANGE9_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE9_DUTY_NUM    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE9_DUTY_NUM_M  ((LEDC_CH5_GAMMA_RANGE9_DUTY_NUM_V)<<(LEDC_CH5_GAMMA_RANGE9_DUTY_NUM_S))
+#define LEDC_CH5_GAMMA_RANGE9_DUTY_NUM_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE9_DUTY_NUM_S  21
+/* LEDC_CH5_GAMMA_RANGE9_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE9_SCALE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE9_SCALE_M  ((LEDC_CH5_GAMMA_RANGE9_SCALE_V)<<(LEDC_CH5_GAMMA_RANGE9_SCALE_S))
+#define LEDC_CH5_GAMMA_RANGE9_SCALE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE9_SCALE_S  11
+/* LEDC_CH5_GAMMA_RANGE9_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE9_DUTY_CYCLE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE9_DUTY_CYCLE_M  ((LEDC_CH5_GAMMA_RANGE9_DUTY_CYCLE_V)<<(LEDC_CH5_GAMMA_RANGE9_DUTY_CYCLE_S))
+#define LEDC_CH5_GAMMA_RANGE9_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE9_DUTY_CYCLE_S  1
+/* LEDC_CH5_GAMMA_RANGE9_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE9_DUTY_INC    (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE9_DUTY_INC_M  (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE9_DUTY_INC_V  0x1
+#define LEDC_CH5_GAMMA_RANGE9_DUTY_INC_S  0
+
+#define LEDC_CH5_GAMMA_RANGE10_REG(i)  (DR_REG_LEDC_BASE(i) + 0x568)
+/* LEDC_CH5_GAMMA_RANGE10_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE10_DUTY_NUM    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE10_DUTY_NUM_M  ((LEDC_CH5_GAMMA_RANGE10_DUTY_NUM_V)<<(LEDC_CH5_GAMMA_RANGE10_DUTY_NUM_S))
+#define LEDC_CH5_GAMMA_RANGE10_DUTY_NUM_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE10_DUTY_NUM_S  21
+/* LEDC_CH5_GAMMA_RANGE10_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE10_SCALE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE10_SCALE_M  ((LEDC_CH5_GAMMA_RANGE10_SCALE_V)<<(LEDC_CH5_GAMMA_RANGE10_SCALE_S))
+#define LEDC_CH5_GAMMA_RANGE10_SCALE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE10_SCALE_S  11
+/* LEDC_CH5_GAMMA_RANGE10_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE10_DUTY_CYCLE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE10_DUTY_CYCLE_M  ((LEDC_CH5_GAMMA_RANGE10_DUTY_CYCLE_V)<<(LEDC_CH5_GAMMA_RANGE10_DUTY_CYCLE_S))
+#define LEDC_CH5_GAMMA_RANGE10_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE10_DUTY_CYCLE_S  1
+/* LEDC_CH5_GAMMA_RANGE10_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE10_DUTY_INC    (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE10_DUTY_INC_M  (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE10_DUTY_INC_V  0x1
+#define LEDC_CH5_GAMMA_RANGE10_DUTY_INC_S  0
+
+#define LEDC_CH5_GAMMA_RANGE11_REG(i)  (DR_REG_LEDC_BASE(i) + 0x56c)
+/* LEDC_CH5_GAMMA_RANGE11_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE11_DUTY_NUM    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE11_DUTY_NUM_M  ((LEDC_CH5_GAMMA_RANGE11_DUTY_NUM_V)<<(LEDC_CH5_GAMMA_RANGE11_DUTY_NUM_S))
+#define LEDC_CH5_GAMMA_RANGE11_DUTY_NUM_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE11_DUTY_NUM_S  21
+/* LEDC_CH5_GAMMA_RANGE11_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE11_SCALE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE11_SCALE_M  ((LEDC_CH5_GAMMA_RANGE11_SCALE_V)<<(LEDC_CH5_GAMMA_RANGE11_SCALE_S))
+#define LEDC_CH5_GAMMA_RANGE11_SCALE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE11_SCALE_S  11
+/* LEDC_CH5_GAMMA_RANGE11_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE11_DUTY_CYCLE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE11_DUTY_CYCLE_M  ((LEDC_CH5_GAMMA_RANGE11_DUTY_CYCLE_V)<<(LEDC_CH5_GAMMA_RANGE11_DUTY_CYCLE_S))
+#define LEDC_CH5_GAMMA_RANGE11_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE11_DUTY_CYCLE_S  1
+/* LEDC_CH5_GAMMA_RANGE11_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE11_DUTY_INC    (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE11_DUTY_INC_M  (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE11_DUTY_INC_V  0x1
+#define LEDC_CH5_GAMMA_RANGE11_DUTY_INC_S  0
+
+#define LEDC_CH5_GAMMA_RANGE12_REG(i)  (DR_REG_LEDC_BASE(i) + 0x570)
+/* LEDC_CH5_GAMMA_RANGE12_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE12_DUTY_NUM    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE12_DUTY_NUM_M  ((LEDC_CH5_GAMMA_RANGE12_DUTY_NUM_V)<<(LEDC_CH5_GAMMA_RANGE12_DUTY_NUM_S))
+#define LEDC_CH5_GAMMA_RANGE12_DUTY_NUM_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE12_DUTY_NUM_S  21
+/* LEDC_CH5_GAMMA_RANGE12_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE12_SCALE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE12_SCALE_M  ((LEDC_CH5_GAMMA_RANGE12_SCALE_V)<<(LEDC_CH5_GAMMA_RANGE12_SCALE_S))
+#define LEDC_CH5_GAMMA_RANGE12_SCALE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE12_SCALE_S  11
+/* LEDC_CH5_GAMMA_RANGE12_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE12_DUTY_CYCLE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE12_DUTY_CYCLE_M  ((LEDC_CH5_GAMMA_RANGE12_DUTY_CYCLE_V)<<(LEDC_CH5_GAMMA_RANGE12_DUTY_CYCLE_S))
+#define LEDC_CH5_GAMMA_RANGE12_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE12_DUTY_CYCLE_S  1
+/* LEDC_CH5_GAMMA_RANGE12_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE12_DUTY_INC    (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE12_DUTY_INC_M  (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE12_DUTY_INC_V  0x1
+#define LEDC_CH5_GAMMA_RANGE12_DUTY_INC_S  0
+
+#define LEDC_CH5_GAMMA_RANGE13_REG(i)  (DR_REG_LEDC_BASE(i) + 0x574)
+/* LEDC_CH5_GAMMA_RANGE13_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE13_DUTY_NUM    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE13_DUTY_NUM_M  ((LEDC_CH5_GAMMA_RANGE13_DUTY_NUM_V)<<(LEDC_CH5_GAMMA_RANGE13_DUTY_NUM_S))
+#define LEDC_CH5_GAMMA_RANGE13_DUTY_NUM_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE13_DUTY_NUM_S  21
+/* LEDC_CH5_GAMMA_RANGE13_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE13_SCALE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE13_SCALE_M  ((LEDC_CH5_GAMMA_RANGE13_SCALE_V)<<(LEDC_CH5_GAMMA_RANGE13_SCALE_S))
+#define LEDC_CH5_GAMMA_RANGE13_SCALE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE13_SCALE_S  11
+/* LEDC_CH5_GAMMA_RANGE13_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE13_DUTY_CYCLE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE13_DUTY_CYCLE_M  ((LEDC_CH5_GAMMA_RANGE13_DUTY_CYCLE_V)<<(LEDC_CH5_GAMMA_RANGE13_DUTY_CYCLE_S))
+#define LEDC_CH5_GAMMA_RANGE13_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE13_DUTY_CYCLE_S  1
+/* LEDC_CH5_GAMMA_RANGE13_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE13_DUTY_INC    (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE13_DUTY_INC_M  (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE13_DUTY_INC_V  0x1
+#define LEDC_CH5_GAMMA_RANGE13_DUTY_INC_S  0
+
+#define LEDC_CH5_GAMMA_RANGE14_REG(i)  (DR_REG_LEDC_BASE(i) + 0x578)
+/* LEDC_CH5_GAMMA_RANGE14_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE14_DUTY_NUM    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE14_DUTY_NUM_M  ((LEDC_CH5_GAMMA_RANGE14_DUTY_NUM_V)<<(LEDC_CH5_GAMMA_RANGE14_DUTY_NUM_S))
+#define LEDC_CH5_GAMMA_RANGE14_DUTY_NUM_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE14_DUTY_NUM_S  21
+/* LEDC_CH5_GAMMA_RANGE14_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE14_SCALE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE14_SCALE_M  ((LEDC_CH5_GAMMA_RANGE14_SCALE_V)<<(LEDC_CH5_GAMMA_RANGE14_SCALE_S))
+#define LEDC_CH5_GAMMA_RANGE14_SCALE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE14_SCALE_S  11
+/* LEDC_CH5_GAMMA_RANGE14_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE14_DUTY_CYCLE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE14_DUTY_CYCLE_M  ((LEDC_CH5_GAMMA_RANGE14_DUTY_CYCLE_V)<<(LEDC_CH5_GAMMA_RANGE14_DUTY_CYCLE_S))
+#define LEDC_CH5_GAMMA_RANGE14_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE14_DUTY_CYCLE_S  1
+/* LEDC_CH5_GAMMA_RANGE14_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE14_DUTY_INC    (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE14_DUTY_INC_M  (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE14_DUTY_INC_V  0x1
+#define LEDC_CH5_GAMMA_RANGE14_DUTY_INC_S  0
+
+#define LEDC_CH5_GAMMA_RANGE15_REG(i)  (DR_REG_LEDC_BASE(i) + 0x57c)
+/* LEDC_CH5_GAMMA_RANGE15_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE15_DUTY_NUM    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE15_DUTY_NUM_M  ((LEDC_CH5_GAMMA_RANGE15_DUTY_NUM_V)<<(LEDC_CH5_GAMMA_RANGE15_DUTY_NUM_S))
+#define LEDC_CH5_GAMMA_RANGE15_DUTY_NUM_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE15_DUTY_NUM_S  21
+/* LEDC_CH5_GAMMA_RANGE15_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE15_SCALE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE15_SCALE_M  ((LEDC_CH5_GAMMA_RANGE15_SCALE_V)<<(LEDC_CH5_GAMMA_RANGE15_SCALE_S))
+#define LEDC_CH5_GAMMA_RANGE15_SCALE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE15_SCALE_S  11
+/* LEDC_CH5_GAMMA_RANGE15_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE15_DUTY_CYCLE    0x000003FF
+#define LEDC_CH5_GAMMA_RANGE15_DUTY_CYCLE_M  ((LEDC_CH5_GAMMA_RANGE15_DUTY_CYCLE_V)<<(LEDC_CH5_GAMMA_RANGE15_DUTY_CYCLE_S))
+#define LEDC_CH5_GAMMA_RANGE15_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH5_GAMMA_RANGE15_DUTY_CYCLE_S  1
+/* LEDC_CH5_GAMMA_RANGE15_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH5_GAMMA_RANGE15_DUTY_INC    (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE15_DUTY_INC_M  (BIT(0))
+#define LEDC_CH5_GAMMA_RANGE15_DUTY_INC_V  0x1
+#define LEDC_CH5_GAMMA_RANGE15_DUTY_INC_S  0
+
+
+#define LEDC_CH6_GAMMA_RANGE0_REG(i)  (DR_REG_LEDC_BASE(i) + 0x580)
+/* LEDC_CH6_GAMMA_RANGE0_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE0_DUTY_NUM    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE0_DUTY_NUM_M  ((LEDC_CH6_GAMMA_RANGE0_DUTY_NUM_V)<<(LEDC_CH6_GAMMA_RANGE0_DUTY_NUM_S))
+#define LEDC_CH6_GAMMA_RANGE0_DUTY_NUM_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE0_DUTY_NUM_S  21
+/* LEDC_CH6_GAMMA_RANGE0_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE0_SCALE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE0_SCALE_M  ((LEDC_CH6_GAMMA_RANGE0_SCALE_V)<<(LEDC_CH6_GAMMA_RANGE0_SCALE_S))
+#define LEDC_CH6_GAMMA_RANGE0_SCALE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE0_SCALE_S  11
+/* LEDC_CH6_GAMMA_RANGE0_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE0_DUTY_CYCLE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE0_DUTY_CYCLE_M  ((LEDC_CH6_GAMMA_RANGE0_DUTY_CYCLE_V)<<(LEDC_CH6_GAMMA_RANGE0_DUTY_CYCLE_S))
+#define LEDC_CH6_GAMMA_RANGE0_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE0_DUTY_CYCLE_S  1
+/* LEDC_CH6_GAMMA_RANGE0_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE0_DUTY_INC    (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE0_DUTY_INC_M  (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE0_DUTY_INC_V  0x1
+#define LEDC_CH6_GAMMA_RANGE0_DUTY_INC_S  0
+
+#define LEDC_CH6_GAMMA_RANGE1_REG(i)  (DR_REG_LEDC_BASE(i) + 0x584)
+/* LEDC_CH6_GAMMA_RANGE1_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE1_DUTY_NUM    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE1_DUTY_NUM_M  ((LEDC_CH6_GAMMA_RANGE1_DUTY_NUM_V)<<(LEDC_CH6_GAMMA_RANGE1_DUTY_NUM_S))
+#define LEDC_CH6_GAMMA_RANGE1_DUTY_NUM_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE1_DUTY_NUM_S  21
+/* LEDC_CH6_GAMMA_RANGE1_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE1_SCALE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE1_SCALE_M  ((LEDC_CH6_GAMMA_RANGE1_SCALE_V)<<(LEDC_CH6_GAMMA_RANGE1_SCALE_S))
+#define LEDC_CH6_GAMMA_RANGE1_SCALE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE1_SCALE_S  11
+/* LEDC_CH6_GAMMA_RANGE1_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE1_DUTY_CYCLE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE1_DUTY_CYCLE_M  ((LEDC_CH6_GAMMA_RANGE1_DUTY_CYCLE_V)<<(LEDC_CH6_GAMMA_RANGE1_DUTY_CYCLE_S))
+#define LEDC_CH6_GAMMA_RANGE1_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE1_DUTY_CYCLE_S  1
+/* LEDC_CH6_GAMMA_RANGE1_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE1_DUTY_INC    (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE1_DUTY_INC_M  (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE1_DUTY_INC_V  0x1
+#define LEDC_CH6_GAMMA_RANGE1_DUTY_INC_S  0
+
+#define LEDC_CH6_GAMMA_RANGE2_REG(i)  (DR_REG_LEDC_BASE(i) + 0x588)
+/* LEDC_CH6_GAMMA_RANGE2_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE2_DUTY_NUM    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE2_DUTY_NUM_M  ((LEDC_CH6_GAMMA_RANGE2_DUTY_NUM_V)<<(LEDC_CH6_GAMMA_RANGE2_DUTY_NUM_S))
+#define LEDC_CH6_GAMMA_RANGE2_DUTY_NUM_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE2_DUTY_NUM_S  21
+/* LEDC_CH6_GAMMA_RANGE2_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE2_SCALE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE2_SCALE_M  ((LEDC_CH6_GAMMA_RANGE2_SCALE_V)<<(LEDC_CH6_GAMMA_RANGE2_SCALE_S))
+#define LEDC_CH6_GAMMA_RANGE2_SCALE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE2_SCALE_S  11
+/* LEDC_CH6_GAMMA_RANGE2_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE2_DUTY_CYCLE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE2_DUTY_CYCLE_M  ((LEDC_CH6_GAMMA_RANGE2_DUTY_CYCLE_V)<<(LEDC_CH6_GAMMA_RANGE2_DUTY_CYCLE_S))
+#define LEDC_CH6_GAMMA_RANGE2_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE2_DUTY_CYCLE_S  1
+/* LEDC_CH6_GAMMA_RANGE2_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE2_DUTY_INC    (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE2_DUTY_INC_M  (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE2_DUTY_INC_V  0x1
+#define LEDC_CH6_GAMMA_RANGE2_DUTY_INC_S  0
+
+#define LEDC_CH6_GAMMA_RANGE3_REG(i)  (DR_REG_LEDC_BASE(i) + 0x58c)
+/* LEDC_CH6_GAMMA_RANGE3_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE3_DUTY_NUM    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE3_DUTY_NUM_M  ((LEDC_CH6_GAMMA_RANGE3_DUTY_NUM_V)<<(LEDC_CH6_GAMMA_RANGE3_DUTY_NUM_S))
+#define LEDC_CH6_GAMMA_RANGE3_DUTY_NUM_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE3_DUTY_NUM_S  21
+/* LEDC_CH6_GAMMA_RANGE3_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE3_SCALE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE3_SCALE_M  ((LEDC_CH6_GAMMA_RANGE3_SCALE_V)<<(LEDC_CH6_GAMMA_RANGE3_SCALE_S))
+#define LEDC_CH6_GAMMA_RANGE3_SCALE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE3_SCALE_S  11
+/* LEDC_CH6_GAMMA_RANGE3_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE3_DUTY_CYCLE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE3_DUTY_CYCLE_M  ((LEDC_CH6_GAMMA_RANGE3_DUTY_CYCLE_V)<<(LEDC_CH6_GAMMA_RANGE3_DUTY_CYCLE_S))
+#define LEDC_CH6_GAMMA_RANGE3_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE3_DUTY_CYCLE_S  1
+/* LEDC_CH6_GAMMA_RANGE3_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE3_DUTY_INC    (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE3_DUTY_INC_M  (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE3_DUTY_INC_V  0x1
+#define LEDC_CH6_GAMMA_RANGE3_DUTY_INC_S  0
+
+#define LEDC_CH6_GAMMA_RANGE4_REG(i)  (DR_REG_LEDC_BASE(i) + 0x590)
+/* LEDC_CH6_GAMMA_RANGE4_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE4_DUTY_NUM    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE4_DUTY_NUM_M  ((LEDC_CH6_GAMMA_RANGE4_DUTY_NUM_V)<<(LEDC_CH6_GAMMA_RANGE4_DUTY_NUM_S))
+#define LEDC_CH6_GAMMA_RANGE4_DUTY_NUM_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE4_DUTY_NUM_S  21
+/* LEDC_CH6_GAMMA_RANGE4_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE4_SCALE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE4_SCALE_M  ((LEDC_CH6_GAMMA_RANGE4_SCALE_V)<<(LEDC_CH6_GAMMA_RANGE4_SCALE_S))
+#define LEDC_CH6_GAMMA_RANGE4_SCALE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE4_SCALE_S  11
+/* LEDC_CH6_GAMMA_RANGE4_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE4_DUTY_CYCLE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE4_DUTY_CYCLE_M  ((LEDC_CH6_GAMMA_RANGE4_DUTY_CYCLE_V)<<(LEDC_CH6_GAMMA_RANGE4_DUTY_CYCLE_S))
+#define LEDC_CH6_GAMMA_RANGE4_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE4_DUTY_CYCLE_S  1
+/* LEDC_CH6_GAMMA_RANGE4_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE4_DUTY_INC    (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE4_DUTY_INC_M  (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE4_DUTY_INC_V  0x1
+#define LEDC_CH6_GAMMA_RANGE4_DUTY_INC_S  0
+
+#define LEDC_CH6_GAMMA_RANGE5_REG(i)  (DR_REG_LEDC_BASE(i) + 0x594)
+/* LEDC_CH6_GAMMA_RANGE5_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE5_DUTY_NUM    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE5_DUTY_NUM_M  ((LEDC_CH6_GAMMA_RANGE5_DUTY_NUM_V)<<(LEDC_CH6_GAMMA_RANGE5_DUTY_NUM_S))
+#define LEDC_CH6_GAMMA_RANGE5_DUTY_NUM_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE5_DUTY_NUM_S  21
+/* LEDC_CH6_GAMMA_RANGE5_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE5_SCALE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE5_SCALE_M  ((LEDC_CH6_GAMMA_RANGE5_SCALE_V)<<(LEDC_CH6_GAMMA_RANGE5_SCALE_S))
+#define LEDC_CH6_GAMMA_RANGE5_SCALE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE5_SCALE_S  11
+/* LEDC_CH6_GAMMA_RANGE5_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE5_DUTY_CYCLE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE5_DUTY_CYCLE_M  ((LEDC_CH6_GAMMA_RANGE5_DUTY_CYCLE_V)<<(LEDC_CH6_GAMMA_RANGE5_DUTY_CYCLE_S))
+#define LEDC_CH6_GAMMA_RANGE5_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE5_DUTY_CYCLE_S  1
+/* LEDC_CH6_GAMMA_RANGE5_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE5_DUTY_INC    (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE5_DUTY_INC_M  (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE5_DUTY_INC_V  0x1
+#define LEDC_CH6_GAMMA_RANGE5_DUTY_INC_S  0
+
+#define LEDC_CH6_GAMMA_RANGE6_REG(i)  (DR_REG_LEDC_BASE(i) + 0x598)
+/* LEDC_CH6_GAMMA_RANGE6_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE6_DUTY_NUM    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE6_DUTY_NUM_M  ((LEDC_CH6_GAMMA_RANGE6_DUTY_NUM_V)<<(LEDC_CH6_GAMMA_RANGE6_DUTY_NUM_S))
+#define LEDC_CH6_GAMMA_RANGE6_DUTY_NUM_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE6_DUTY_NUM_S  21
+/* LEDC_CH6_GAMMA_RANGE6_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE6_SCALE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE6_SCALE_M  ((LEDC_CH6_GAMMA_RANGE6_SCALE_V)<<(LEDC_CH6_GAMMA_RANGE6_SCALE_S))
+#define LEDC_CH6_GAMMA_RANGE6_SCALE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE6_SCALE_S  11
+/* LEDC_CH6_GAMMA_RANGE6_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE6_DUTY_CYCLE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE6_DUTY_CYCLE_M  ((LEDC_CH6_GAMMA_RANGE6_DUTY_CYCLE_V)<<(LEDC_CH6_GAMMA_RANGE6_DUTY_CYCLE_S))
+#define LEDC_CH6_GAMMA_RANGE6_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE6_DUTY_CYCLE_S  1
+/* LEDC_CH6_GAMMA_RANGE6_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE6_DUTY_INC    (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE6_DUTY_INC_M  (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE6_DUTY_INC_V  0x1
+#define LEDC_CH6_GAMMA_RANGE6_DUTY_INC_S  0
+
+#define LEDC_CH6_GAMMA_RANGE7_REG(i)  (DR_REG_LEDC_BASE(i) + 0x59c)
+/* LEDC_CH6_GAMMA_RANGE7_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE7_DUTY_NUM    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE7_DUTY_NUM_M  ((LEDC_CH6_GAMMA_RANGE7_DUTY_NUM_V)<<(LEDC_CH6_GAMMA_RANGE7_DUTY_NUM_S))
+#define LEDC_CH6_GAMMA_RANGE7_DUTY_NUM_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE7_DUTY_NUM_S  21
+/* LEDC_CH6_GAMMA_RANGE7_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE7_SCALE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE7_SCALE_M  ((LEDC_CH6_GAMMA_RANGE7_SCALE_V)<<(LEDC_CH6_GAMMA_RANGE7_SCALE_S))
+#define LEDC_CH6_GAMMA_RANGE7_SCALE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE7_SCALE_S  11
+/* LEDC_CH6_GAMMA_RANGE7_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE7_DUTY_CYCLE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE7_DUTY_CYCLE_M  ((LEDC_CH6_GAMMA_RANGE7_DUTY_CYCLE_V)<<(LEDC_CH6_GAMMA_RANGE7_DUTY_CYCLE_S))
+#define LEDC_CH6_GAMMA_RANGE7_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE7_DUTY_CYCLE_S  1
+/* LEDC_CH6_GAMMA_RANGE7_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE7_DUTY_INC    (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE7_DUTY_INC_M  (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE7_DUTY_INC_V  0x1
+#define LEDC_CH6_GAMMA_RANGE7_DUTY_INC_S  0
+
+#define LEDC_CH6_GAMMA_RANGE8_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5a0)
+/* LEDC_CH6_GAMMA_RANGE8_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE8_DUTY_NUM    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE8_DUTY_NUM_M  ((LEDC_CH6_GAMMA_RANGE8_DUTY_NUM_V)<<(LEDC_CH6_GAMMA_RANGE8_DUTY_NUM_S))
+#define LEDC_CH6_GAMMA_RANGE8_DUTY_NUM_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE8_DUTY_NUM_S  21
+/* LEDC_CH6_GAMMA_RANGE8_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE8_SCALE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE8_SCALE_M  ((LEDC_CH6_GAMMA_RANGE8_SCALE_V)<<(LEDC_CH6_GAMMA_RANGE8_SCALE_S))
+#define LEDC_CH6_GAMMA_RANGE8_SCALE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE8_SCALE_S  11
+/* LEDC_CH6_GAMMA_RANGE8_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE8_DUTY_CYCLE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE8_DUTY_CYCLE_M  ((LEDC_CH6_GAMMA_RANGE8_DUTY_CYCLE_V)<<(LEDC_CH6_GAMMA_RANGE8_DUTY_CYCLE_S))
+#define LEDC_CH6_GAMMA_RANGE8_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE8_DUTY_CYCLE_S  1
+/* LEDC_CH6_GAMMA_RANGE8_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE8_DUTY_INC    (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE8_DUTY_INC_M  (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE8_DUTY_INC_V  0x1
+#define LEDC_CH6_GAMMA_RANGE8_DUTY_INC_S  0
+
+#define LEDC_CH6_GAMMA_RANGE9_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5a4)
+/* LEDC_CH6_GAMMA_RANGE9_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE9_DUTY_NUM    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE9_DUTY_NUM_M  ((LEDC_CH6_GAMMA_RANGE9_DUTY_NUM_V)<<(LEDC_CH6_GAMMA_RANGE9_DUTY_NUM_S))
+#define LEDC_CH6_GAMMA_RANGE9_DUTY_NUM_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE9_DUTY_NUM_S  21
+/* LEDC_CH6_GAMMA_RANGE9_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE9_SCALE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE9_SCALE_M  ((LEDC_CH6_GAMMA_RANGE9_SCALE_V)<<(LEDC_CH6_GAMMA_RANGE9_SCALE_S))
+#define LEDC_CH6_GAMMA_RANGE9_SCALE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE9_SCALE_S  11
+/* LEDC_CH6_GAMMA_RANGE9_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE9_DUTY_CYCLE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE9_DUTY_CYCLE_M  ((LEDC_CH6_GAMMA_RANGE9_DUTY_CYCLE_V)<<(LEDC_CH6_GAMMA_RANGE9_DUTY_CYCLE_S))
+#define LEDC_CH6_GAMMA_RANGE9_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE9_DUTY_CYCLE_S  1
+/* LEDC_CH6_GAMMA_RANGE9_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE9_DUTY_INC    (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE9_DUTY_INC_M  (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE9_DUTY_INC_V  0x1
+#define LEDC_CH6_GAMMA_RANGE9_DUTY_INC_S  0
+
+#define LEDC_CH6_GAMMA_RANGE10_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5a8)
+/* LEDC_CH6_GAMMA_RANGE10_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE10_DUTY_NUM    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE10_DUTY_NUM_M  ((LEDC_CH6_GAMMA_RANGE10_DUTY_NUM_V)<<(LEDC_CH6_GAMMA_RANGE10_DUTY_NUM_S))
+#define LEDC_CH6_GAMMA_RANGE10_DUTY_NUM_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE10_DUTY_NUM_S  21
+/* LEDC_CH6_GAMMA_RANGE10_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE10_SCALE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE10_SCALE_M  ((LEDC_CH6_GAMMA_RANGE10_SCALE_V)<<(LEDC_CH6_GAMMA_RANGE10_SCALE_S))
+#define LEDC_CH6_GAMMA_RANGE10_SCALE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE10_SCALE_S  11
+/* LEDC_CH6_GAMMA_RANGE10_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE10_DUTY_CYCLE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE10_DUTY_CYCLE_M  ((LEDC_CH6_GAMMA_RANGE10_DUTY_CYCLE_V)<<(LEDC_CH6_GAMMA_RANGE10_DUTY_CYCLE_S))
+#define LEDC_CH6_GAMMA_RANGE10_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE10_DUTY_CYCLE_S  1
+/* LEDC_CH6_GAMMA_RANGE10_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE10_DUTY_INC    (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE10_DUTY_INC_M  (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE10_DUTY_INC_V  0x1
+#define LEDC_CH6_GAMMA_RANGE10_DUTY_INC_S  0
+
+#define LEDC_CH6_GAMMA_RANGE11_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5ac)
+/* LEDC_CH6_GAMMA_RANGE11_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE11_DUTY_NUM    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE11_DUTY_NUM_M  ((LEDC_CH6_GAMMA_RANGE11_DUTY_NUM_V)<<(LEDC_CH6_GAMMA_RANGE11_DUTY_NUM_S))
+#define LEDC_CH6_GAMMA_RANGE11_DUTY_NUM_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE11_DUTY_NUM_S  21
+/* LEDC_CH6_GAMMA_RANGE11_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE11_SCALE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE11_SCALE_M  ((LEDC_CH6_GAMMA_RANGE11_SCALE_V)<<(LEDC_CH6_GAMMA_RANGE11_SCALE_S))
+#define LEDC_CH6_GAMMA_RANGE11_SCALE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE11_SCALE_S  11
+/* LEDC_CH6_GAMMA_RANGE11_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE11_DUTY_CYCLE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE11_DUTY_CYCLE_M  ((LEDC_CH6_GAMMA_RANGE11_DUTY_CYCLE_V)<<(LEDC_CH6_GAMMA_RANGE11_DUTY_CYCLE_S))
+#define LEDC_CH6_GAMMA_RANGE11_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE11_DUTY_CYCLE_S  1
+/* LEDC_CH6_GAMMA_RANGE11_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE11_DUTY_INC    (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE11_DUTY_INC_M  (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE11_DUTY_INC_V  0x1
+#define LEDC_CH6_GAMMA_RANGE11_DUTY_INC_S  0
+
+#define LEDC_CH6_GAMMA_RANGE12_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5b0)
+/* LEDC_CH6_GAMMA_RANGE12_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE12_DUTY_NUM    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE12_DUTY_NUM_M  ((LEDC_CH6_GAMMA_RANGE12_DUTY_NUM_V)<<(LEDC_CH6_GAMMA_RANGE12_DUTY_NUM_S))
+#define LEDC_CH6_GAMMA_RANGE12_DUTY_NUM_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE12_DUTY_NUM_S  21
+/* LEDC_CH6_GAMMA_RANGE12_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE12_SCALE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE12_SCALE_M  ((LEDC_CH6_GAMMA_RANGE12_SCALE_V)<<(LEDC_CH6_GAMMA_RANGE12_SCALE_S))
+#define LEDC_CH6_GAMMA_RANGE12_SCALE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE12_SCALE_S  11
+/* LEDC_CH6_GAMMA_RANGE12_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE12_DUTY_CYCLE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE12_DUTY_CYCLE_M  ((LEDC_CH6_GAMMA_RANGE12_DUTY_CYCLE_V)<<(LEDC_CH6_GAMMA_RANGE12_DUTY_CYCLE_S))
+#define LEDC_CH6_GAMMA_RANGE12_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE12_DUTY_CYCLE_S  1
+/* LEDC_CH6_GAMMA_RANGE12_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE12_DUTY_INC    (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE12_DUTY_INC_M  (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE12_DUTY_INC_V  0x1
+#define LEDC_CH6_GAMMA_RANGE12_DUTY_INC_S  0
+
+#define LEDC_CH6_GAMMA_RANGE13_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5b4)
+/* LEDC_CH6_GAMMA_RANGE13_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE13_DUTY_NUM    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE13_DUTY_NUM_M  ((LEDC_CH6_GAMMA_RANGE13_DUTY_NUM_V)<<(LEDC_CH6_GAMMA_RANGE13_DUTY_NUM_S))
+#define LEDC_CH6_GAMMA_RANGE13_DUTY_NUM_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE13_DUTY_NUM_S  21
+/* LEDC_CH6_GAMMA_RANGE13_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE13_SCALE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE13_SCALE_M  ((LEDC_CH6_GAMMA_RANGE13_SCALE_V)<<(LEDC_CH6_GAMMA_RANGE13_SCALE_S))
+#define LEDC_CH6_GAMMA_RANGE13_SCALE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE13_SCALE_S  11
+/* LEDC_CH6_GAMMA_RANGE13_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE13_DUTY_CYCLE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE13_DUTY_CYCLE_M  ((LEDC_CH6_GAMMA_RANGE13_DUTY_CYCLE_V)<<(LEDC_CH6_GAMMA_RANGE13_DUTY_CYCLE_S))
+#define LEDC_CH6_GAMMA_RANGE13_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE13_DUTY_CYCLE_S  1
+/* LEDC_CH6_GAMMA_RANGE13_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE13_DUTY_INC    (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE13_DUTY_INC_M  (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE13_DUTY_INC_V  0x1
+#define LEDC_CH6_GAMMA_RANGE13_DUTY_INC_S  0
+
+#define LEDC_CH6_GAMMA_RANGE14_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5b8)
+/* LEDC_CH6_GAMMA_RANGE14_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE14_DUTY_NUM    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE14_DUTY_NUM_M  ((LEDC_CH6_GAMMA_RANGE14_DUTY_NUM_V)<<(LEDC_CH6_GAMMA_RANGE14_DUTY_NUM_S))
+#define LEDC_CH6_GAMMA_RANGE14_DUTY_NUM_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE14_DUTY_NUM_S  21
+/* LEDC_CH6_GAMMA_RANGE14_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE14_SCALE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE14_SCALE_M  ((LEDC_CH6_GAMMA_RANGE14_SCALE_V)<<(LEDC_CH6_GAMMA_RANGE14_SCALE_S))
+#define LEDC_CH6_GAMMA_RANGE14_SCALE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE14_SCALE_S  11
+/* LEDC_CH6_GAMMA_RANGE14_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE14_DUTY_CYCLE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE14_DUTY_CYCLE_M  ((LEDC_CH6_GAMMA_RANGE14_DUTY_CYCLE_V)<<(LEDC_CH6_GAMMA_RANGE14_DUTY_CYCLE_S))
+#define LEDC_CH6_GAMMA_RANGE14_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE14_DUTY_CYCLE_S  1
+/* LEDC_CH6_GAMMA_RANGE14_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE14_DUTY_INC    (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE14_DUTY_INC_M  (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE14_DUTY_INC_V  0x1
+#define LEDC_CH6_GAMMA_RANGE14_DUTY_INC_S  0
+
+#define LEDC_CH6_GAMMA_RANGE15_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5bc)
+/* LEDC_CH6_GAMMA_RANGE15_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE15_DUTY_NUM    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE15_DUTY_NUM_M  ((LEDC_CH6_GAMMA_RANGE15_DUTY_NUM_V)<<(LEDC_CH6_GAMMA_RANGE15_DUTY_NUM_S))
+#define LEDC_CH6_GAMMA_RANGE15_DUTY_NUM_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE15_DUTY_NUM_S  21
+/* LEDC_CH6_GAMMA_RANGE15_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE15_SCALE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE15_SCALE_M  ((LEDC_CH6_GAMMA_RANGE15_SCALE_V)<<(LEDC_CH6_GAMMA_RANGE15_SCALE_S))
+#define LEDC_CH6_GAMMA_RANGE15_SCALE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE15_SCALE_S  11
+/* LEDC_CH6_GAMMA_RANGE15_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE15_DUTY_CYCLE    0x000003FF
+#define LEDC_CH6_GAMMA_RANGE15_DUTY_CYCLE_M  ((LEDC_CH6_GAMMA_RANGE15_DUTY_CYCLE_V)<<(LEDC_CH6_GAMMA_RANGE15_DUTY_CYCLE_S))
+#define LEDC_CH6_GAMMA_RANGE15_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH6_GAMMA_RANGE15_DUTY_CYCLE_S  1
+/* LEDC_CH6_GAMMA_RANGE15_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH6_GAMMA_RANGE15_DUTY_INC    (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE15_DUTY_INC_M  (BIT(0))
+#define LEDC_CH6_GAMMA_RANGE15_DUTY_INC_V  0x1
+#define LEDC_CH6_GAMMA_RANGE15_DUTY_INC_S  0
+
+
+#define LEDC_CH7_GAMMA_RANGE0_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5c0)
+/* LEDC_CH7_GAMMA_RANGE0_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE0_DUTY_NUM    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE0_DUTY_NUM_M  ((LEDC_CH7_GAMMA_RANGE0_DUTY_NUM_V)<<(LEDC_CH7_GAMMA_RANGE0_DUTY_NUM_S))
+#define LEDC_CH7_GAMMA_RANGE0_DUTY_NUM_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE0_DUTY_NUM_S  21
+/* LEDC_CH7_GAMMA_RANGE0_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE0_SCALE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE0_SCALE_M  ((LEDC_CH7_GAMMA_RANGE0_SCALE_V)<<(LEDC_CH7_GAMMA_RANGE0_SCALE_S))
+#define LEDC_CH7_GAMMA_RANGE0_SCALE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE0_SCALE_S  11
+/* LEDC_CH7_GAMMA_RANGE0_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE0_DUTY_CYCLE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE0_DUTY_CYCLE_M  ((LEDC_CH7_GAMMA_RANGE0_DUTY_CYCLE_V)<<(LEDC_CH7_GAMMA_RANGE0_DUTY_CYCLE_S))
+#define LEDC_CH7_GAMMA_RANGE0_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE0_DUTY_CYCLE_S  1
+/* LEDC_CH7_GAMMA_RANGE0_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE0_DUTY_INC    (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE0_DUTY_INC_M  (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE0_DUTY_INC_V  0x1
+#define LEDC_CH7_GAMMA_RANGE0_DUTY_INC_S  0
+
+#define LEDC_CH7_GAMMA_RANGE1_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5c4)
+/* LEDC_CH7_GAMMA_RANGE1_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE1_DUTY_NUM    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE1_DUTY_NUM_M  ((LEDC_CH7_GAMMA_RANGE1_DUTY_NUM_V)<<(LEDC_CH7_GAMMA_RANGE1_DUTY_NUM_S))
+#define LEDC_CH7_GAMMA_RANGE1_DUTY_NUM_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE1_DUTY_NUM_S  21
+/* LEDC_CH7_GAMMA_RANGE1_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE1_SCALE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE1_SCALE_M  ((LEDC_CH7_GAMMA_RANGE1_SCALE_V)<<(LEDC_CH7_GAMMA_RANGE1_SCALE_S))
+#define LEDC_CH7_GAMMA_RANGE1_SCALE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE1_SCALE_S  11
+/* LEDC_CH7_GAMMA_RANGE1_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE1_DUTY_CYCLE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE1_DUTY_CYCLE_M  ((LEDC_CH7_GAMMA_RANGE1_DUTY_CYCLE_V)<<(LEDC_CH7_GAMMA_RANGE1_DUTY_CYCLE_S))
+#define LEDC_CH7_GAMMA_RANGE1_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE1_DUTY_CYCLE_S  1
+/* LEDC_CH7_GAMMA_RANGE1_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE1_DUTY_INC    (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE1_DUTY_INC_M  (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE1_DUTY_INC_V  0x1
+#define LEDC_CH7_GAMMA_RANGE1_DUTY_INC_S  0
+
+#define LEDC_CH7_GAMMA_RANGE2_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5c8)
+/* LEDC_CH7_GAMMA_RANGE2_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE2_DUTY_NUM    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE2_DUTY_NUM_M  ((LEDC_CH7_GAMMA_RANGE2_DUTY_NUM_V)<<(LEDC_CH7_GAMMA_RANGE2_DUTY_NUM_S))
+#define LEDC_CH7_GAMMA_RANGE2_DUTY_NUM_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE2_DUTY_NUM_S  21
+/* LEDC_CH7_GAMMA_RANGE2_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE2_SCALE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE2_SCALE_M  ((LEDC_CH7_GAMMA_RANGE2_SCALE_V)<<(LEDC_CH7_GAMMA_RANGE2_SCALE_S))
+#define LEDC_CH7_GAMMA_RANGE2_SCALE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE2_SCALE_S  11
+/* LEDC_CH7_GAMMA_RANGE2_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE2_DUTY_CYCLE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE2_DUTY_CYCLE_M  ((LEDC_CH7_GAMMA_RANGE2_DUTY_CYCLE_V)<<(LEDC_CH7_GAMMA_RANGE2_DUTY_CYCLE_S))
+#define LEDC_CH7_GAMMA_RANGE2_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE2_DUTY_CYCLE_S  1
+/* LEDC_CH7_GAMMA_RANGE2_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE2_DUTY_INC    (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE2_DUTY_INC_M  (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE2_DUTY_INC_V  0x1
+#define LEDC_CH7_GAMMA_RANGE2_DUTY_INC_S  0
+
+#define LEDC_CH7_GAMMA_RANGE3_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5cc)
+/* LEDC_CH7_GAMMA_RANGE3_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE3_DUTY_NUM    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE3_DUTY_NUM_M  ((LEDC_CH7_GAMMA_RANGE3_DUTY_NUM_V)<<(LEDC_CH7_GAMMA_RANGE3_DUTY_NUM_S))
+#define LEDC_CH7_GAMMA_RANGE3_DUTY_NUM_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE3_DUTY_NUM_S  21
+/* LEDC_CH7_GAMMA_RANGE3_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE3_SCALE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE3_SCALE_M  ((LEDC_CH7_GAMMA_RANGE3_SCALE_V)<<(LEDC_CH7_GAMMA_RANGE3_SCALE_S))
+#define LEDC_CH7_GAMMA_RANGE3_SCALE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE3_SCALE_S  11
+/* LEDC_CH7_GAMMA_RANGE3_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE3_DUTY_CYCLE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE3_DUTY_CYCLE_M  ((LEDC_CH7_GAMMA_RANGE3_DUTY_CYCLE_V)<<(LEDC_CH7_GAMMA_RANGE3_DUTY_CYCLE_S))
+#define LEDC_CH7_GAMMA_RANGE3_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE3_DUTY_CYCLE_S  1
+/* LEDC_CH7_GAMMA_RANGE3_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE3_DUTY_INC    (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE3_DUTY_INC_M  (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE3_DUTY_INC_V  0x1
+#define LEDC_CH7_GAMMA_RANGE3_DUTY_INC_S  0
+
+#define LEDC_CH7_GAMMA_RANGE4_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5d0)
+/* LEDC_CH7_GAMMA_RANGE4_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE4_DUTY_NUM    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE4_DUTY_NUM_M  ((LEDC_CH7_GAMMA_RANGE4_DUTY_NUM_V)<<(LEDC_CH7_GAMMA_RANGE4_DUTY_NUM_S))
+#define LEDC_CH7_GAMMA_RANGE4_DUTY_NUM_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE4_DUTY_NUM_S  21
+/* LEDC_CH7_GAMMA_RANGE4_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE4_SCALE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE4_SCALE_M  ((LEDC_CH7_GAMMA_RANGE4_SCALE_V)<<(LEDC_CH7_GAMMA_RANGE4_SCALE_S))
+#define LEDC_CH7_GAMMA_RANGE4_SCALE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE4_SCALE_S  11
+/* LEDC_CH7_GAMMA_RANGE4_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE4_DUTY_CYCLE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE4_DUTY_CYCLE_M  ((LEDC_CH7_GAMMA_RANGE4_DUTY_CYCLE_V)<<(LEDC_CH7_GAMMA_RANGE4_DUTY_CYCLE_S))
+#define LEDC_CH7_GAMMA_RANGE4_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE4_DUTY_CYCLE_S  1
+/* LEDC_CH7_GAMMA_RANGE4_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE4_DUTY_INC    (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE4_DUTY_INC_M  (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE4_DUTY_INC_V  0x1
+#define LEDC_CH7_GAMMA_RANGE4_DUTY_INC_S  0
+
+#define LEDC_CH7_GAMMA_RANGE5_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5d4)
+/* LEDC_CH7_GAMMA_RANGE5_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE5_DUTY_NUM    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE5_DUTY_NUM_M  ((LEDC_CH7_GAMMA_RANGE5_DUTY_NUM_V)<<(LEDC_CH7_GAMMA_RANGE5_DUTY_NUM_S))
+#define LEDC_CH7_GAMMA_RANGE5_DUTY_NUM_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE5_DUTY_NUM_S  21
+/* LEDC_CH7_GAMMA_RANGE5_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE5_SCALE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE5_SCALE_M  ((LEDC_CH7_GAMMA_RANGE5_SCALE_V)<<(LEDC_CH7_GAMMA_RANGE5_SCALE_S))
+#define LEDC_CH7_GAMMA_RANGE5_SCALE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE5_SCALE_S  11
+/* LEDC_CH7_GAMMA_RANGE5_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE5_DUTY_CYCLE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE5_DUTY_CYCLE_M  ((LEDC_CH7_GAMMA_RANGE5_DUTY_CYCLE_V)<<(LEDC_CH7_GAMMA_RANGE5_DUTY_CYCLE_S))
+#define LEDC_CH7_GAMMA_RANGE5_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE5_DUTY_CYCLE_S  1
+/* LEDC_CH7_GAMMA_RANGE5_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE5_DUTY_INC    (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE5_DUTY_INC_M  (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE5_DUTY_INC_V  0x1
+#define LEDC_CH7_GAMMA_RANGE5_DUTY_INC_S  0
+
+#define LEDC_CH7_GAMMA_RANGE6_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5d8)
+/* LEDC_CH7_GAMMA_RANGE6_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE6_DUTY_NUM    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE6_DUTY_NUM_M  ((LEDC_CH7_GAMMA_RANGE6_DUTY_NUM_V)<<(LEDC_CH7_GAMMA_RANGE6_DUTY_NUM_S))
+#define LEDC_CH7_GAMMA_RANGE6_DUTY_NUM_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE6_DUTY_NUM_S  21
+/* LEDC_CH7_GAMMA_RANGE6_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE6_SCALE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE6_SCALE_M  ((LEDC_CH7_GAMMA_RANGE6_SCALE_V)<<(LEDC_CH7_GAMMA_RANGE6_SCALE_S))
+#define LEDC_CH7_GAMMA_RANGE6_SCALE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE6_SCALE_S  11
+/* LEDC_CH7_GAMMA_RANGE6_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE6_DUTY_CYCLE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE6_DUTY_CYCLE_M  ((LEDC_CH7_GAMMA_RANGE6_DUTY_CYCLE_V)<<(LEDC_CH7_GAMMA_RANGE6_DUTY_CYCLE_S))
+#define LEDC_CH7_GAMMA_RANGE6_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE6_DUTY_CYCLE_S  1
+/* LEDC_CH7_GAMMA_RANGE6_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE6_DUTY_INC    (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE6_DUTY_INC_M  (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE6_DUTY_INC_V  0x1
+#define LEDC_CH7_GAMMA_RANGE6_DUTY_INC_S  0
+
+#define LEDC_CH7_GAMMA_RANGE7_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5dc)
+/* LEDC_CH7_GAMMA_RANGE7_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE7_DUTY_NUM    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE7_DUTY_NUM_M  ((LEDC_CH7_GAMMA_RANGE7_DUTY_NUM_V)<<(LEDC_CH7_GAMMA_RANGE7_DUTY_NUM_S))
+#define LEDC_CH7_GAMMA_RANGE7_DUTY_NUM_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE7_DUTY_NUM_S  21
+/* LEDC_CH7_GAMMA_RANGE7_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE7_SCALE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE7_SCALE_M  ((LEDC_CH7_GAMMA_RANGE7_SCALE_V)<<(LEDC_CH7_GAMMA_RANGE7_SCALE_S))
+#define LEDC_CH7_GAMMA_RANGE7_SCALE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE7_SCALE_S  11
+/* LEDC_CH7_GAMMA_RANGE7_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE7_DUTY_CYCLE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE7_DUTY_CYCLE_M  ((LEDC_CH7_GAMMA_RANGE7_DUTY_CYCLE_V)<<(LEDC_CH7_GAMMA_RANGE7_DUTY_CYCLE_S))
+#define LEDC_CH7_GAMMA_RANGE7_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE7_DUTY_CYCLE_S  1
+/* LEDC_CH7_GAMMA_RANGE7_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE7_DUTY_INC    (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE7_DUTY_INC_M  (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE7_DUTY_INC_V  0x1
+#define LEDC_CH7_GAMMA_RANGE7_DUTY_INC_S  0
+
+#define LEDC_CH7_GAMMA_RANGE8_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5e0)
+/* LEDC_CH7_GAMMA_RANGE8_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE8_DUTY_NUM    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE8_DUTY_NUM_M  ((LEDC_CH7_GAMMA_RANGE8_DUTY_NUM_V)<<(LEDC_CH7_GAMMA_RANGE8_DUTY_NUM_S))
+#define LEDC_CH7_GAMMA_RANGE8_DUTY_NUM_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE8_DUTY_NUM_S  21
+/* LEDC_CH7_GAMMA_RANGE8_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE8_SCALE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE8_SCALE_M  ((LEDC_CH7_GAMMA_RANGE8_SCALE_V)<<(LEDC_CH7_GAMMA_RANGE8_SCALE_S))
+#define LEDC_CH7_GAMMA_RANGE8_SCALE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE8_SCALE_S  11
+/* LEDC_CH7_GAMMA_RANGE8_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE8_DUTY_CYCLE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE8_DUTY_CYCLE_M  ((LEDC_CH7_GAMMA_RANGE8_DUTY_CYCLE_V)<<(LEDC_CH7_GAMMA_RANGE8_DUTY_CYCLE_S))
+#define LEDC_CH7_GAMMA_RANGE8_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE8_DUTY_CYCLE_S  1
+/* LEDC_CH7_GAMMA_RANGE8_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE8_DUTY_INC    (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE8_DUTY_INC_M  (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE8_DUTY_INC_V  0x1
+#define LEDC_CH7_GAMMA_RANGE8_DUTY_INC_S  0
+
+#define LEDC_CH7_GAMMA_RANGE9_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5e4)
+/* LEDC_CH7_GAMMA_RANGE9_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE9_DUTY_NUM    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE9_DUTY_NUM_M  ((LEDC_CH7_GAMMA_RANGE9_DUTY_NUM_V)<<(LEDC_CH7_GAMMA_RANGE9_DUTY_NUM_S))
+#define LEDC_CH7_GAMMA_RANGE9_DUTY_NUM_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE9_DUTY_NUM_S  21
+/* LEDC_CH7_GAMMA_RANGE9_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE9_SCALE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE9_SCALE_M  ((LEDC_CH7_GAMMA_RANGE9_SCALE_V)<<(LEDC_CH7_GAMMA_RANGE9_SCALE_S))
+#define LEDC_CH7_GAMMA_RANGE9_SCALE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE9_SCALE_S  11
+/* LEDC_CH7_GAMMA_RANGE9_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE9_DUTY_CYCLE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE9_DUTY_CYCLE_M  ((LEDC_CH7_GAMMA_RANGE9_DUTY_CYCLE_V)<<(LEDC_CH7_GAMMA_RANGE9_DUTY_CYCLE_S))
+#define LEDC_CH7_GAMMA_RANGE9_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE9_DUTY_CYCLE_S  1
+/* LEDC_CH7_GAMMA_RANGE9_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE9_DUTY_INC    (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE9_DUTY_INC_M  (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE9_DUTY_INC_V  0x1
+#define LEDC_CH7_GAMMA_RANGE9_DUTY_INC_S  0
+
+#define LEDC_CH7_GAMMA_RANGE10_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5e8)
+/* LEDC_CH7_GAMMA_RANGE10_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE10_DUTY_NUM    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE10_DUTY_NUM_M  ((LEDC_CH7_GAMMA_RANGE10_DUTY_NUM_V)<<(LEDC_CH7_GAMMA_RANGE10_DUTY_NUM_S))
+#define LEDC_CH7_GAMMA_RANGE10_DUTY_NUM_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE10_DUTY_NUM_S  21
+/* LEDC_CH7_GAMMA_RANGE10_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE10_SCALE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE10_SCALE_M  ((LEDC_CH7_GAMMA_RANGE10_SCALE_V)<<(LEDC_CH7_GAMMA_RANGE10_SCALE_S))
+#define LEDC_CH7_GAMMA_RANGE10_SCALE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE10_SCALE_S  11
+/* LEDC_CH7_GAMMA_RANGE10_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE10_DUTY_CYCLE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE10_DUTY_CYCLE_M  ((LEDC_CH7_GAMMA_RANGE10_DUTY_CYCLE_V)<<(LEDC_CH7_GAMMA_RANGE10_DUTY_CYCLE_S))
+#define LEDC_CH7_GAMMA_RANGE10_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE10_DUTY_CYCLE_S  1
+/* LEDC_CH7_GAMMA_RANGE10_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE10_DUTY_INC    (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE10_DUTY_INC_M  (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE10_DUTY_INC_V  0x1
+#define LEDC_CH7_GAMMA_RANGE10_DUTY_INC_S  0
+
+#define LEDC_CH7_GAMMA_RANGE11_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5ec)
+/* LEDC_CH7_GAMMA_RANGE11_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE11_DUTY_NUM    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE11_DUTY_NUM_M  ((LEDC_CH7_GAMMA_RANGE11_DUTY_NUM_V)<<(LEDC_CH7_GAMMA_RANGE11_DUTY_NUM_S))
+#define LEDC_CH7_GAMMA_RANGE11_DUTY_NUM_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE11_DUTY_NUM_S  21
+/* LEDC_CH7_GAMMA_RANGE11_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE11_SCALE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE11_SCALE_M  ((LEDC_CH7_GAMMA_RANGE11_SCALE_V)<<(LEDC_CH7_GAMMA_RANGE11_SCALE_S))
+#define LEDC_CH7_GAMMA_RANGE11_SCALE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE11_SCALE_S  11
+/* LEDC_CH7_GAMMA_RANGE11_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE11_DUTY_CYCLE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE11_DUTY_CYCLE_M  ((LEDC_CH7_GAMMA_RANGE11_DUTY_CYCLE_V)<<(LEDC_CH7_GAMMA_RANGE11_DUTY_CYCLE_S))
+#define LEDC_CH7_GAMMA_RANGE11_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE11_DUTY_CYCLE_S  1
+/* LEDC_CH7_GAMMA_RANGE11_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE11_DUTY_INC    (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE11_DUTY_INC_M  (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE11_DUTY_INC_V  0x1
+#define LEDC_CH7_GAMMA_RANGE11_DUTY_INC_S  0
+
+#define LEDC_CH7_GAMMA_RANGE12_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5f0)
+/* LEDC_CH7_GAMMA_RANGE12_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE12_DUTY_NUM    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE12_DUTY_NUM_M  ((LEDC_CH7_GAMMA_RANGE12_DUTY_NUM_V)<<(LEDC_CH7_GAMMA_RANGE12_DUTY_NUM_S))
+#define LEDC_CH7_GAMMA_RANGE12_DUTY_NUM_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE12_DUTY_NUM_S  21
+/* LEDC_CH7_GAMMA_RANGE12_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE12_SCALE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE12_SCALE_M  ((LEDC_CH7_GAMMA_RANGE12_SCALE_V)<<(LEDC_CH7_GAMMA_RANGE12_SCALE_S))
+#define LEDC_CH7_GAMMA_RANGE12_SCALE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE12_SCALE_S  11
+/* LEDC_CH7_GAMMA_RANGE12_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE12_DUTY_CYCLE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE12_DUTY_CYCLE_M  ((LEDC_CH7_GAMMA_RANGE12_DUTY_CYCLE_V)<<(LEDC_CH7_GAMMA_RANGE12_DUTY_CYCLE_S))
+#define LEDC_CH7_GAMMA_RANGE12_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE12_DUTY_CYCLE_S  1
+/* LEDC_CH7_GAMMA_RANGE12_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE12_DUTY_INC    (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE12_DUTY_INC_M  (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE12_DUTY_INC_V  0x1
+#define LEDC_CH7_GAMMA_RANGE12_DUTY_INC_S  0
+
+#define LEDC_CH7_GAMMA_RANGE13_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5f4)
+/* LEDC_CH7_GAMMA_RANGE13_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE13_DUTY_NUM    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE13_DUTY_NUM_M  ((LEDC_CH7_GAMMA_RANGE13_DUTY_NUM_V)<<(LEDC_CH7_GAMMA_RANGE13_DUTY_NUM_S))
+#define LEDC_CH7_GAMMA_RANGE13_DUTY_NUM_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE13_DUTY_NUM_S  21
+/* LEDC_CH7_GAMMA_RANGE13_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE13_SCALE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE13_SCALE_M  ((LEDC_CH7_GAMMA_RANGE13_SCALE_V)<<(LEDC_CH7_GAMMA_RANGE13_SCALE_S))
+#define LEDC_CH7_GAMMA_RANGE13_SCALE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE13_SCALE_S  11
+/* LEDC_CH7_GAMMA_RANGE13_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE13_DUTY_CYCLE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE13_DUTY_CYCLE_M  ((LEDC_CH7_GAMMA_RANGE13_DUTY_CYCLE_V)<<(LEDC_CH7_GAMMA_RANGE13_DUTY_CYCLE_S))
+#define LEDC_CH7_GAMMA_RANGE13_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE13_DUTY_CYCLE_S  1
+/* LEDC_CH7_GAMMA_RANGE13_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE13_DUTY_INC    (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE13_DUTY_INC_M  (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE13_DUTY_INC_V  0x1
+#define LEDC_CH7_GAMMA_RANGE13_DUTY_INC_S  0
+
+#define LEDC_CH7_GAMMA_RANGE14_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5f8)
+/* LEDC_CH7_GAMMA_RANGE14_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE14_DUTY_NUM    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE14_DUTY_NUM_M  ((LEDC_CH7_GAMMA_RANGE14_DUTY_NUM_V)<<(LEDC_CH7_GAMMA_RANGE14_DUTY_NUM_S))
+#define LEDC_CH7_GAMMA_RANGE14_DUTY_NUM_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE14_DUTY_NUM_S  21
+/* LEDC_CH7_GAMMA_RANGE14_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE14_SCALE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE14_SCALE_M  ((LEDC_CH7_GAMMA_RANGE14_SCALE_V)<<(LEDC_CH7_GAMMA_RANGE14_SCALE_S))
+#define LEDC_CH7_GAMMA_RANGE14_SCALE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE14_SCALE_S  11
+/* LEDC_CH7_GAMMA_RANGE14_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE14_DUTY_CYCLE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE14_DUTY_CYCLE_M  ((LEDC_CH7_GAMMA_RANGE14_DUTY_CYCLE_V)<<(LEDC_CH7_GAMMA_RANGE14_DUTY_CYCLE_S))
+#define LEDC_CH7_GAMMA_RANGE14_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE14_DUTY_CYCLE_S  1
+/* LEDC_CH7_GAMMA_RANGE14_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE14_DUTY_INC    (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE14_DUTY_INC_M  (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE14_DUTY_INC_V  0x1
+#define LEDC_CH7_GAMMA_RANGE14_DUTY_INC_S  0
+
+#define LEDC_CH7_GAMMA_RANGE15_REG(i)  (DR_REG_LEDC_BASE(i) + 0x5fc)
+/* LEDC_CH7_GAMMA_RANGE15_DUTY_NUM : R/W ;bitpos:[30:21] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE15_DUTY_NUM    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE15_DUTY_NUM_M  ((LEDC_CH7_GAMMA_RANGE15_DUTY_NUM_V)<<(LEDC_CH7_GAMMA_RANGE15_DUTY_NUM_S))
+#define LEDC_CH7_GAMMA_RANGE15_DUTY_NUM_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE15_DUTY_NUM_S  21
+/* LEDC_CH7_GAMMA_RANGE15_SCALE : R/W ;bitpos:[20:11] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE15_SCALE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE15_SCALE_M  ((LEDC_CH7_GAMMA_RANGE15_SCALE_V)<<(LEDC_CH7_GAMMA_RANGE15_SCALE_S))
+#define LEDC_CH7_GAMMA_RANGE15_SCALE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE15_SCALE_S  11
+/* LEDC_CH7_GAMMA_RANGE15_DUTY_CYCLE : R/W ;bitpos:[10:1] ;default: 10'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE15_DUTY_CYCLE    0x000003FF
+#define LEDC_CH7_GAMMA_RANGE15_DUTY_CYCLE_M  ((LEDC_CH7_GAMMA_RANGE15_DUTY_CYCLE_V)<<(LEDC_CH7_GAMMA_RANGE15_DUTY_CYCLE_S))
+#define LEDC_CH7_GAMMA_RANGE15_DUTY_CYCLE_V  0x3FF
+#define LEDC_CH7_GAMMA_RANGE15_DUTY_CYCLE_S  1
+/* LEDC_CH7_GAMMA_RANGE15_DUTY_INC : R/W ;bitpos:[0] ;default: 1'h0 ; */
+#define LEDC_CH7_GAMMA_RANGE15_DUTY_INC    (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE15_DUTY_INC_M  (BIT(0))
+#define LEDC_CH7_GAMMA_RANGE15_DUTY_INC_V  0x1
+#define LEDC_CH7_GAMMA_RANGE15_DUTY_INC_S  0
 
 #ifdef __cplusplus
 }

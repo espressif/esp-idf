@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,8 +7,6 @@
 #include "hal/uart_periph.h"
 #include "soc/lp_gpio_sig_map.h"
 #include "soc/uart_reg.h"
-
-// TODO: to be checked IDF-14789
 
 /*
     Bunch of constants for every UART peripheral: GPIO signals, irqs, hw addr of registers etc
@@ -43,7 +41,20 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
                 .iomux_func = U0CTS_MUX_FUNC,
                 .input = 1,
                 .signal = UART0_CTS_PAD_IN_IDX,
-            }
+            },
+            [SOC_UART_PERIPH_SIGNAL_DTR] = {
+                .default_gpio = U0DTR_GPIO_NUM,
+                .iomux_func = U0DTR_MUX_FUNC,
+                .input = 0,
+                .signal = UART0_DTR_PAD_OUT_IDX,
+            },
+
+            [SOC_UART_PERIPH_SIGNAL_DSR] = {
+                .default_gpio = U0DSR_GPIO_NUM,
+                .iomux_func = U0DSR_MUX_FUNC,
+                .input = 1,
+                .signal = UART0_DSR_PAD_IN_IDX,
+            },
         },
         .irq = ETS_UART0_INTR_SOURCE,
     },
@@ -77,6 +88,19 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
                 .iomux_func = U1CTS_MUX_FUNC,
                 .input = 1,
                 .signal = UART1_CTS_PAD_IN_IDX,
+            },
+            [SOC_UART_PERIPH_SIGNAL_DTR] = {
+                .default_gpio = U1DTR_GPIO_NUM,
+                .iomux_func = U1DTR_MUX_FUNC,
+                .input = 0,
+                .signal = UART1_DTR_PAD_OUT_IDX,
+            },
+
+            [SOC_UART_PERIPH_SIGNAL_DSR] = {
+                .default_gpio = U1DSR_GPIO_NUM,
+                .iomux_func = U1DSR_MUX_FUNC,
+                .input = 1,
+                .signal = UART1_DSR_PAD_IN_IDX,
             },
         },
         .irq = ETS_UART1_INTR_SOURCE,
@@ -112,6 +136,19 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
                 .input = 1,
                 .signal = UART2_CTS_PAD_IN_IDX,
             },
+            [SOC_UART_PERIPH_SIGNAL_DTR] = {
+                .default_gpio = U2DTR_GPIO_NUM,
+                .iomux_func = U2DTR_MUX_FUNC,
+                .input = 0,
+                .signal = UART2_DTR_PAD_OUT_IDX,
+            },
+
+            [SOC_UART_PERIPH_SIGNAL_DSR] = {
+                .default_gpio = U2DSR_GPIO_NUM,
+                .iomux_func = U2DSR_MUX_FUNC,
+                .input = 1,
+                .signal = UART2_DSR_PAD_IN_IDX,
+            },
         },
         .irq = ETS_UART2_INTR_SOURCE,
     },
@@ -145,7 +182,130 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
                 .input = 1,
                 .signal = -1,
             },
+            [SOC_UART_PERIPH_SIGNAL_DTR] = {
+                .default_gpio = U3DTR_GPIO_NUM,
+                .iomux_func = U3DTR_MUX_FUNC,
+                .input = 0,
+                .signal = UART3_DTR_PAD_OUT_IDX,
+            },
+
+            [SOC_UART_PERIPH_SIGNAL_DSR] = {
+                .default_gpio = U3DSR_GPIO_NUM,
+                .iomux_func = U3DSR_MUX_FUNC,
+                .input = 1,
+                .signal = UART3_DSR_PAD_IN_IDX,
+            },
         },
         .irq = ETS_UART3_INTR_SOURCE,
+    },
+    {
+        // LP UART0
+        .pins = {
+            [SOC_UART_PERIPH_SIGNAL_TX] = {
+                .default_gpio = LP_U0TXD_GPIO_NUM,
+                .iomux_func = LP_U0TXD_MUX_FUNC,
+                .input = 0,
+                .signal = LP_UART_TXD_PAD_OUT_IDX,
+            },
+
+            [SOC_UART_PERIPH_SIGNAL_RX] = {
+                .default_gpio = LP_U0RXD_GPIO_NUM,
+                .iomux_func = LP_U0RXD_MUX_FUNC,
+                .input = 1,
+                .signal = LP_UART_RXD_PAD_IN_IDX,
+            },
+
+            [SOC_UART_PERIPH_SIGNAL_RTS] = {
+                .default_gpio = LP_U0RTS_GPIO_NUM,
+                .iomux_func = LP_U0RTS_MUX_FUNC,
+                .input = 0,
+                .signal = LP_UART_RTSN_PAD_OUT_IDX,
+            },
+
+            [SOC_UART_PERIPH_SIGNAL_CTS] = {
+                .default_gpio = LP_U0CTS_GPIO_NUM,
+                .iomux_func = LP_U0CTS_MUX_FUNC,
+                .input = 1,
+                .signal = LP_UART_CTSN_PAD_IN_IDX,
+            },
+
+            [SOC_UART_PERIPH_SIGNAL_DTR] = {
+                .default_gpio = LP_U0DTR_GPIO_NUM,
+                .iomux_func = LP_U0DTR_MUX_FUNC,
+                .input = 0,
+                .signal = LP_UART_DTRN_PAD_OUT_IDX,
+            },
+
+            [SOC_UART_PERIPH_SIGNAL_DSR] = {
+                .default_gpio = LP_U0DSR_GPIO_NUM,
+                .iomux_func = LP_U0DSR_MUX_FUNC,
+                .input = 1,
+                .signal = LP_UART_DSRN_PAD_IN_IDX,
+            },
+        },
+        .irq = ETS_LP_UART_INTR_SOURCE,
+    },
+};
+
+/**
+ * UART registers to be saved during sleep retention
+ *
+ * Reset TXFIFO and RXFIFO
+ * UART registers require set the reg_update bit to make the configuration take effect
+ *
+ * UART_INT_ENA_REG, UART_CLKDIV_SYNC_REG, UART_RX_FILT_REG, UART_CONF0_SYNC_REG, UART_CONF1_REG,
+ * UART_HWFC_CONF_SYNC_REG, UART_SLEEP_CONF0_REG, UART_SLEEP_CONF1_REG, UART_SLEEP_CONF2_REG,
+ * UART_SWFC_CONF0_SYNC_REG, UART_SWFC_CONF1_REG, UART_TXBRK_CONF_SYNC_REG, UART_IDLE_CONF_SYNC_REG,
+ * UART_RS485_CONF_SYNC_REG, UART_AT_CMD_PRECNT_SYNC_REG, UART_AT_CMD_POSTCNT_SYNC_REG, UART_AT_CMD_GAPTOUT_SYNC_REG,
+ * UART_AT_CMD_CHAR_SYNC_REG, UART_MEM_CONF_REG, UART_TOUT_CONF_SYNC_REG, UART_CLK_CONF_REG, UART_ID_REG
+ */
+#define UART_RETENTION_ADDR_MAP_REGS_CNT 22
+#define UART_RETENTION_REGS_BASE(i) UART_INT_ENA_REG(i)
+static const uint32_t uart_regs_map[4] = {0x807fff6d, 0x10, 0x0, 0x0};
+#define UART_SLEEP_RETENTION_ENTRIES(uart_num) { \
+     [0] = {.config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_UART_LINK(0x00), \
+                                                UART_RETENTION_REGS_BASE(uart_num), UART_RETENTION_REGS_BASE(uart_num), \
+                                                UART_RETENTION_ADDR_MAP_REGS_CNT, 0, 0, \
+                                                uart_regs_map[0], uart_regs_map[1], \
+                                                uart_regs_map[2], uart_regs_map[3] \
+                                               ), \
+            .owner = ENTRY(0) | ENTRY(2) }, \
+     [1] = {.config = REGDMA_LINK_WRITE_INIT(REGDMA_UART_LINK(0x01), \
+                                             UART_REG_UPDATE_REG(uart_num), UART_REG_UPDATE, \
+                                             UART_REG_UPDATE_M, 1, 0 \
+                                            ), \
+            .owner = ENTRY(0) | ENTRY(2) }, \
+     [2] = {.config = REGDMA_LINK_WAIT_INIT(REGDMA_UART_LINK(0x02), \
+                                            UART_REG_UPDATE_REG(uart_num), 0x0, \
+                                            UART_REG_UPDATE_M, 1, 0 \
+                                           ), \
+            .owner = ENTRY(0) | ENTRY(2) }, \
+ }
+
+static const regdma_entries_config_t uart0_regdma_entries[] = UART_SLEEP_RETENTION_ENTRIES(0);
+static const regdma_entries_config_t uart1_regdma_entries[] = UART_SLEEP_RETENTION_ENTRIES(1);
+static const regdma_entries_config_t uart2_regdma_entries[] = UART_SLEEP_RETENTION_ENTRIES(2);
+static const regdma_entries_config_t uart3_regdma_entries[] = UART_SLEEP_RETENTION_ENTRIES(3);
+
+const uart_reg_retention_info_t uart_reg_retention_info[SOC_UART_HP_NUM] = {
+    [0] = {
+        .module = SLEEP_RETENTION_MODULE_UART0,
+        .regdma_entry_array = uart0_regdma_entries,
+        .array_size = ARRAY_SIZE(uart0_regdma_entries),
+    },
+    [1] = {
+        .module = SLEEP_RETENTION_MODULE_UART1,
+        .regdma_entry_array = uart1_regdma_entries,
+        .array_size = ARRAY_SIZE(uart1_regdma_entries),
+    },
+    [2] = {
+        .module = SLEEP_RETENTION_MODULE_UART2,
+        .regdma_entry_array = uart2_regdma_entries,
+        .array_size = ARRAY_SIZE(uart2_regdma_entries),
+    },
+    [3] = {
+        .module = SLEEP_RETENTION_MODULE_UART3,
+        .regdma_entry_array = uart3_regdma_entries,
+        .array_size = ARRAY_SIZE(uart3_regdma_entries),
     },
 };

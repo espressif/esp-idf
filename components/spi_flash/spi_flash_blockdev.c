@@ -6,10 +6,11 @@
 
 #include <inttypes.h>
 #include <string.h>
-#include "esp_flash.h"
-#include "spi_flash_chip_driver.h"
 #include "esp_heap_caps.h"
 #include "esp_blockdev.h"
+
+#include "esp_flash.h"
+#include "esp_flash_chips/spi_flash_chip_driver.h"
 
 static inline esp_err_t esp_flash_blockdev_read(esp_blockdev_handle_t handle, uint8_t* dst_buf, size_t dst_buf_size, uint64_t src_addr, size_t data_read_len)
 {

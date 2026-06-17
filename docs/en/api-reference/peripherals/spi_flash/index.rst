@@ -175,6 +175,10 @@ Note that since memory mapping happens in pages, it may be possible to read data
 SPI Flash Implementation
 ------------------------
 
+.. note::
+
+    The header files in ``components/spi_flash/include/esp_flash_chips/`` directory are **semi-public** - they are intended for expert users who need to implement custom chip drivers for unsupported flash chips, but they are **not considered stable API** and may change without notice. For most use cases, you should use the public APIs in ``esp_flash.h`` instead.
+
 The ``esp_flash_t`` structure holds chip data as well as three important parts of this API:
 
 1. The host driver, which provides the hardware support to access the chip;
@@ -193,7 +197,7 @@ You can also implement your own host driver, even with the GPIO. As long as all 
 Chip Driver
 ^^^^^^^^^^^
 
-The chip driver, defined in ``spi_flash_chip_driver.h``, wraps basic functions provided by the host driver for the API layer to use.
+The chip driver, defined in ``esp_flash_chips/spi_flash_chip_driver.h``, wraps basic functions provided by the host driver for the API layer to use.
 
 Some operations need some commands to be sent first, or read some status afterwards. Some chips need different commands or values, or need special communication ways.
 

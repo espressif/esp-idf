@@ -1,13 +1,13 @@
 .. _configuration-structure:
 
-Configuration Files Structure and Relationships
+Configuration File Structure and Relationships
 ===============================================
 
 .. note::
 
-    This article primarily focuses on the structure of the files. For more information about project configuration, please refer to the :ref:`Project Configuration Guide <project-configuration-guide>`. For the component configuration, please refer to the :ref:`Component Configuration Guide <component-configuration-guide>`.
+    This article primarily focuses on the structure of the configuration files. For more information about project configuration, please refer to the :ref:`Project Configuration Guide <project-configuration-guide>`. For the component configuration, please refer to the :ref:`Component Configuration Guide <component-configuration-guide>`.
 
-ESP-IDF uses `Kconfig language <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/kconfiglib/language.html>`_ for configuration of the project. Configuration consists of config options (e.g. ``CONFIG_IDF_TARGET``) and their values (e.g. ``esp32``). Every config option gets a prefix ``CONFIG_`` when written out to e.g. ``sdkconfig`` file to distinguish it from e.g. environment variables.
+ESP-IDF uses `Kconfig language <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/kconfiglib/language.html>`_ for configuration of the project. Configuration consists of config options (e.g., ``CONFIG_IDF_TARGET``) and their values (e.g., ``esp32``). Every config option gets a prefix ``CONFIG_`` when written out to a file such as ``sdkconfig``, to distinguish it from other variables (e.g., environment variables).
 
 In context of ESP-IDF, configuration consists of several files, most importantly:
 
@@ -70,7 +70,7 @@ The ``sdkconfig.old`` file is a backup of the previous configuration. It is gene
 sdkconfig.rename and sdkconfig.rename.<chip>
 ----------------------------------------------------
 
-The ``sdkconfig.rename`` files are used by the build system to ensure backward compatibility. These files are created and maintained by component or ESP-IDF developers and application developer should have no need to edit them.
+The ``sdkconfig.rename`` files are used by the build system to ensure backward compatibility. These files are created and maintained by component or ESP-IDF developers and application developers do not need to edit them.
 
 The structure of the ``sdkconfig.rename`` file is as follows:
 
@@ -78,6 +78,8 @@ The structure of the ``sdkconfig.rename`` file is as follows:
 * All other lines should follow one of these formats:
     * ``CONFIG_DEPRECATED_NAME CONFIG_NEW_NAME``, where ``CONFIG_DEPRECATED_NAME`` is the old config name which was renamed in a newer ESP-IDF version to ``CONFIG_NEW_NAME``.
     * ``CONFIG_DEPRECATED_NAME !CONFIG_NEW_INVERTED_NAME`` where ``CONFIG_NEW_INVERTED_NAME`` was introduced in a newer ESP-IDF version by Boolean inversion of the logic value of ``CONFIG_DEPRECATED_NAME``.
+
+If there is more than one mapping for the same deprecated option name (i.e. the same deprecated option name is renamed more than once), the last occurrence is used. Configuration system will report this only if configuration report verbosity is set to ``verbose`` (e.g., via ``KCONFIG_REPORT_VERBOSITY`` environment variable).
 
 Primary use case of this file is to ensure backward compatibility when the config name is changed in the newer ESP-IDF version.
 
@@ -111,7 +113,7 @@ sdkconfig.defaults and sdkconfig.defaults.<chip>
 
 Kconfig language provides a way to set default values for configs: ``default`` option in ``Kconfig`` files. However, input ``Kconfig`` file may be in a different project, under version control or there is another reason why it would be inconvenient to directly edit it. In this case, ``sdkconfig.defaults`` file can be used. The file structure is the same as ``sdkconfig`` file; on every line, there is a full config name (including the ``CONFIG_`` prefix) and its value. This value has precedence over the default value in the Kconfig file by ``default`` option.
 
-It is also possible to override the default values only for specific target. In this case, you can create ``sdkconfig.defaults.<chip>`` file, where ``<chip>`` is the target name (e.g. ``esp32s2``). In this case, it is mandatory to create the ``sdkconfig.defaults`` file as well, otherwise the ``sdkconfig.defaults.<chip>`` file will be ignored. However, the ``sdkconfig.defaults`` file can be empty.
+It is also possible to override the default values only for specific target. In this case, you can create ``sdkconfig.defaults.<chip>`` file, where ``<chip>`` is the target name (e.g., ``esp32s2``). In this case, it is mandatory to create the ``sdkconfig.defaults`` file as well, otherwise the ``sdkconfig.defaults.<chip>`` file will be ignored. However, the ``sdkconfig.defaults`` file can be empty.
 
 How to generate ``sdkconfig.defaults`` file:
 
@@ -124,14 +126,16 @@ How to generate ``sdkconfig.defaults`` file:
     User-set values from ``sdkconfig`` file have precedence before ``sdkconfig.defaults`` file. In other words, if the user changes value of some config option which is also set in ``sdkconfig.defaults`` file, the value from ``sdkconfig.defaults`` file will be ignored:
 
     ``sdkconfig.defaults``
+
     .. code-block:: kconfig
 
         CONFIG_SUBLIGHT_SPEED=42
 
     ``sdkconfig``
+
     .. code-block:: kconfig
 
-        # user changed the value e.g. in menuconfig -> value from sdkconfig.defaults will be ignored
+        # user changed the value (e.g., in menuconfig) -> value from sdkconfig.defaults will be ignored
         CONFIG_SUBLIGHT_SPEED=10
 
 It is also possible to override the name of this file by setting an environment variable. For information on how to set the custom file name and in which order the files are processed if multiple files with default values are present, please visit :ref:`Custom Sdkconfig Defaults <custom-sdkconfig-defaults>` section of Build System documentation.
@@ -148,13 +152,13 @@ Example:
         default 10
     (...)
 
-``sdkconifg.defaults``:
+``sdkconfig.defaults``:
 
 .. code-block:: text
 
     CONFIG_SUBLIGHT_SPEED=42
 
-When running e.g. ``idf.py menuconfig``, the ``SUBLIGHT_SPEED`` will be set to 42. If the value will be changed in the GUI, the value from the GUI will be used and saved into ``sdkconfig`` file.
+When running a command such as ``idf.py menuconfig``, the ``SUBLIGHT_SPEED`` will be set to 42. If the value is changed in the GUI, the value from the GUI will be used and saved into ``sdkconfig`` file.
 
 sdkconfig.ci
 ^^^^^^^^^^^^

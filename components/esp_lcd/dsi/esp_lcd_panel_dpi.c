@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,7 @@ struct esp_lcd_dpi_panel_t {
     uint32_t v_pixels;            // Vertical pixels
     size_t fb_size;               // Frame buffer size, in bytes
     size_t bits_per_pixel;        // Bits per pixel
+    soc_module_clk_t clk_src;     // DPI clock source, SOC_MOD_CLK_INVALID if not enabled
     lcd_color_format_t in_color_format;  // Input color format
     lcd_color_format_t out_color_format; // Output color format
     dw_gdma_channel_handle_t dma_chan;   // DMA channel
@@ -51,7 +52,8 @@ struct esp_lcd_dpi_panel_t {
     esp_pm_lock_handle_t pm_lock;          // Power management lock
 #endif
     esp_lcd_dpi_panel_color_trans_done_cb_t on_color_trans_done; // Callback invoked when color data transfer has finished
-    esp_lcd_dpi_panel_refresh_done_cb_t on_refresh_done; // Callback invoked when one refresh operation finished (kinda like a vsync end)
+    esp_lcd_dpi_panel_frame_buf_complete_cb_t on_frame_buf_complete; // Callback invoked when the frame buffer can be reused safely
+    esp_lcd_dpi_panel_vsync_cb_t on_vsync; // VSYNC event callback
     void *user_ctx; // User context for the callback
 };
 
@@ -101,10 +103,16 @@ bool mipi_dsi_dma_trans_done_cb(dw_gdma_channel_handle_t chan, const dw_gdma_tra
     dw_gdma_channel_use_link_list(chan, link_list);
     dw_gdma_channel_enable_ctrl(chan, true);
 
+    if (dpi_panel->on_frame_buf_complete) {
+        if (dpi_panel->on_frame_buf_complete(&dpi_panel->base, NULL, dpi_panel->user_ctx)) {
+            yield_needed = true;
+        }
+    }
+
 #if !MIPI_DSI_BRG_LL_EVENT_VSYNC
     // the DMA descriptor is large enough to carry a whole frame buffer, so this event can also be treated as a fake "vsync end"
-    if (dpi_panel->on_refresh_done) {
-        if (dpi_panel->on_refresh_done(&dpi_panel->base, NULL, dpi_panel->user_ctx)) {
+    if (dpi_panel->on_vsync) {
+        if (dpi_panel->on_vsync(&dpi_panel->base, NULL, dpi_panel->user_ctx)) {
             yield_needed = true;
         }
     }
@@ -127,8 +135,8 @@ void mipi_dsi_bridge_isr_handler(void *args)
         ESP_DRAM_LOGE(TAG, "can't fetch data from external memory fast enough, underrun happens");
     }
     if (intr_status & MIPI_DSI_BRG_LL_EVENT_VSYNC) {
-        if (dpi_panel->on_refresh_done) {
-            if (dpi_panel->on_refresh_done(&dpi_panel->base, NULL, dpi_panel->user_ctx)) {
+        if (dpi_panel->on_vsync) {
+            if (dpi_panel->on_vsync(&dpi_panel->base, NULL, dpi_panel->user_ctx)) {
                 portYIELD_FROM_ISR();
             }
         }
@@ -215,6 +223,7 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
 
     dpi_panel = heap_caps_calloc(1, sizeof(esp_lcd_dpi_panel_t), DSI_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(dpi_panel, ESP_ERR_NO_MEM, err, TAG, "no memory for DPI panel");
+    dpi_panel->clk_src = SOC_MOD_CLK_INVALID;
     dpi_panel->virtual_channel = panel_config->virtual_channel;
     dpi_panel->in_color_format = in_color_format;
     dpi_panel->out_color_format = out_color_format;
@@ -253,6 +262,7 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
     float dpi_clk_src_freq_mhz = (float)dpi_clk_src_freq_hz / 1000.0f / 1000.0f;
     uint32_t dpi_div = mipi_dsi_hal_host_dpi_calculate_divider(hal, dpi_clk_src_freq_mhz, panel_config->dpi_clock_freq_mhz);
     ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)dpi_clk_src, true), err, TAG, "clock source enable failed");
+    dpi_panel->clk_src = (soc_module_clk_t)dpi_clk_src;
     // set the clock source, set the divider, and enable the dpi clock
     PERIPH_RCC_ATOMIC() {
         mipi_dsi_ll_set_dpi_clock_source(bus_id, dpi_clk_src);
@@ -360,6 +370,10 @@ static esp_err_t dpi_panel_del(esp_lcd_panel_t *panel)
     PERIPH_RCC_ATOMIC() {
         mipi_dsi_ll_enable_dpi_clock(bus_id, false);
     }
+    if (dpi_panel->clk_src != SOC_MOD_CLK_INVALID) {
+        esp_clk_tree_enable_src(dpi_panel->clk_src, false);
+        dpi_panel->clk_src = SOC_MOD_CLK_INVALID;
+    }
     // disable the DSI bridge
     mipi_dsi_brg_ll_enable(hal->bridge, false);
     // free memory
@@ -460,8 +474,6 @@ static esp_err_t dpi_panel_init(esp_lcd_panel_t *panel)
 
     // enable the video mode
     mipi_dsi_host_ll_enable_video_mode(hal->host, true);
-    // switch the clock lane to high speed mode
-    mipi_dsi_host_ll_set_clock_lane_state(hal->host, MIPI_DSI_LL_CLOCK_LANE_STATE_AUTO);
 
     // enable the DPI output of the DSI bridge
     mipi_dsi_brg_ll_enable_dpi_output(hal->bridge, true);
@@ -620,7 +632,20 @@ static esp_err_t dpi_panel_draw_bitmap_2d(esp_lcd_panel_t *panel, int x_start, i
         do_copy = true;
     }
 
-    if (dpi_panel->draw_bitmap_hook) { // copy using draw bitmap hook
+    if (!do_copy) { // no copy, just do cache memory write back
+        ESP_LOGV(TAG, "draw buffer is in frame buffer memory range, do cache write back only");
+        // only write back the LCD lines that updated by the draw buffer
+        uint8_t *cache_sync_start = dpi_panel->fbs[draw_buf_fb_index] + (y_start * dpi_panel->h_pixels) * bits_per_pixel / 8;
+        size_t cache_sync_size = (y_end - y_start) * dpi_panel->h_pixels * bits_per_pixel / 8;
+        // the buffer to be flushed is still within the frame buffer, so even an unaligned address is OK
+        esp_cache_msync(cache_sync_start, cache_sync_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+
+        dpi_panel->cur_fb_index = draw_buf_fb_index;
+        // invoke the trans done callback
+        if (dpi_panel->on_color_trans_done) {
+            dpi_panel->on_color_trans_done(&dpi_panel->base, NULL, dpi_panel->user_ctx);
+        }
+    } else if (dpi_panel->draw_bitmap_hook) { // copy using draw bitmap hook
         ESP_LOGV(TAG, "copy draw buffer by draw bitmap hook");
         // Note, whether the previous draw operation is finished should be ensured by the hook
 
@@ -642,21 +667,7 @@ static esp_err_t dpi_panel_draw_bitmap_2d(esp_lcd_panel_t *panel, int x_start, i
             .bits_per_pixel = bits_per_pixel,
             .on_hook_end = dpi_panel_draw_bitmap_hook_end,
         };
-
         ESP_RETURN_ON_ERROR(dpi_panel->draw_bitmap_hook(panel, &hook_data, dpi_panel->hook_ctx), TAG, "draw_bitmap_hook failed");
-    } else if (!do_copy) { // no copy, just do cache memory write back
-        ESP_LOGV(TAG, "draw buffer is in frame buffer memory range, do cache write back only");
-        // only write back the LCD lines that updated by the draw buffer
-        uint8_t *cache_sync_start = dpi_panel->fbs[draw_buf_fb_index] + (y_start * dpi_panel->h_pixels) * bits_per_pixel / 8;
-        size_t cache_sync_size = (y_end - y_start) * dpi_panel->h_pixels * bits_per_pixel / 8;
-        // the buffer to be flushed is still within the frame buffer, so even an unaligned address is OK
-        esp_cache_msync(cache_sync_start, cache_sync_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
-
-        dpi_panel->cur_fb_index = draw_buf_fb_index;
-        // invoke the trans done callback
-        if (dpi_panel->on_color_trans_done) {
-            dpi_panel->on_color_trans_done(&dpi_panel->base, NULL, dpi_panel->user_ctx);
-        }
     } else { // copy by CPU
         ESP_LOGV(TAG, "copy draw buffer by CPU");
         const uint8_t *from = draw_buffer + (src_y_start * src_x_size + src_x_start) * bits_per_pixel / 8;
@@ -729,19 +740,23 @@ esp_err_t esp_lcd_dpi_panel_register_event_callbacks(esp_lcd_panel_handle_t pane
     if (cbs->on_color_trans_done) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_color_trans_done), ESP_ERR_INVALID_ARG, TAG, "on_color_trans_done callback not in IRAM");
     }
-    if (cbs->on_refresh_done) {
-        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_refresh_done), ESP_ERR_INVALID_ARG, TAG, "on_refresh_done callback not in IRAM");
+    if (cbs->on_vsync) {
+        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_vsync), ESP_ERR_INVALID_ARG, TAG, "on_vsync callback not in IRAM");
+    }
+    if (cbs->on_frame_buf_complete) {
+        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_frame_buf_complete), ESP_ERR_INVALID_ARG, TAG, "on_frame_buf_complete callback not in IRAM");
     }
     if (user_ctx) {
         ESP_RETURN_ON_FALSE(esp_ptr_internal(user_ctx), ESP_ERR_INVALID_ARG, TAG, "user context not in internal RAM");
     }
 #endif // CONFIG_LCD_DSI_ISR_CACHE_SAFE
     dpi_panel->on_color_trans_done = cbs->on_color_trans_done;
-    dpi_panel->on_refresh_done = cbs->on_refresh_done;
+    dpi_panel->on_vsync = cbs->on_vsync;
+    dpi_panel->on_frame_buf_complete = cbs->on_frame_buf_complete;
     dpi_panel->user_ctx = user_ctx;
 
     // enable the vsync interrupt if the callback is provided
-    mipi_dsi_brg_ll_enable_interrupt(dpi_panel->bus->hal.bridge, MIPI_DSI_BRG_LL_EVENT_VSYNC, cbs->on_refresh_done != NULL);
+    mipi_dsi_brg_ll_enable_interrupt(dpi_panel->bus->hal.bridge, MIPI_DSI_BRG_LL_EVENT_VSYNC, cbs->on_vsync != NULL);
 
     return ESP_OK;
 }

@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include "esp_sleep.h"
 #include "sdkconfig.h"
+#include "driver/gpio.h"
 #include "driver/rtc_io.h"
 #include "driver/gpio.h"
 
@@ -25,6 +26,7 @@ void example_deep_sleep_register_ext0_wakeup(void)
     // Configure pullup/downs via RTCIO to tie wakeup pins to inactive level during deepsleep.
     // EXT0 resides in the same power domain (RTC_PERIPH) as the RTC IO pullup/downs.
     // No need to keep that power domain explicitly, unlike EXT1.
+    ESP_ERROR_CHECK(rtc_gpio_init(ext_wakeup_pin_0));
     ESP_ERROR_CHECK(rtc_gpio_pullup_dis(ext_wakeup_pin_0));
     ESP_ERROR_CHECK(rtc_gpio_pulldown_en(ext_wakeup_pin_0));
 }
@@ -52,6 +54,8 @@ void example_deep_sleep_register_ext1_wakeup(void)
      * domain, we will use the HOLD feature to maintain the pull-up and pull-down on the pins during sleep.*/
 #if CONFIG_EXAMPLE_EXT1_USE_INTERNAL_PULLUPS
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+        ESP_ERROR_CHECK(rtc_gpio_init(ext_wakeup_pin_1));
+        ESP_ERROR_CHECK(rtc_gpio_init(ext_wakeup_pin_2));
 #if SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
     if (CONFIG_EXAMPLE_EXT1_WAKEUP_MODE_PIN_1) {
         ESP_ERROR_CHECK(rtc_gpio_pullup_dis(ext_wakeup_pin_1));
@@ -81,6 +85,11 @@ void example_deep_sleep_register_ext1_wakeup(void)
     }
 #endif
 #else // ! SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+    const gpio_config_t config = {
+        .pin_bit_mask = BIT(ext_wakeup_pin_1) | BIT(ext_wakeup_pin_2),
+        .mode = GPIO_MODE_INPUT,
+    };
+    ESP_ERROR_CHECK(gpio_config(&config));
 #if SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
     if (CONFIG_EXAMPLE_EXT1_WAKEUP_MODE_PIN_1) {
         gpio_pullup_dis(ext_wakeup_pin_1);

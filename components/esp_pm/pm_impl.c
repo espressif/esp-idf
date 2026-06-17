@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <sys/lock.h>
 #include <sys/param.h>
 #include <assert.h>
@@ -48,7 +49,6 @@
 #include "esp_private/sleep_cpu.h"
 #include "esp_private/sleep_gpio.h"
 #include "esp_private/sleep_modem.h"
-#include "esp_private/uart_share_hw_ctrl.h"
 #include "esp_private/esp_clk_utils.h"
 #include "esp_sleep.h"
 #include "esp_memory_utils.h"
@@ -82,27 +82,6 @@
 #elif CONFIG_IDF_TARGET_ESP32S2
 /* Minimal divider at which REF_CLK_FREQ can be obtained */
 #define REF_CLK_DIV_MIN 2
-#elif CONFIG_IDF_TARGET_ESP32S3
-/* Minimal divider at which REF_CLK_FREQ can be obtained */
-#define REF_CLK_DIV_MIN 2         // TODO: IDF-5660
-#elif CONFIG_IDF_TARGET_ESP32C3
-#define REF_CLK_DIV_MIN 2
-#elif CONFIG_IDF_TARGET_ESP32C2
-#define REF_CLK_DIV_MIN 2
-#elif CONFIG_IDF_TARGET_ESP32C6
-#define REF_CLK_DIV_MIN 2
-#elif CONFIG_IDF_TARGET_ESP32C61
-#define REF_CLK_DIV_MIN 2
-#elif CONFIG_IDF_TARGET_ESP32C5
-#define REF_CLK_DIV_MIN 2
-#elif CONFIG_IDF_TARGET_ESP32H2
-#define REF_CLK_DIV_MIN 2
-#elif CONFIG_IDF_TARGET_ESP32H21
-#define REF_CLK_DIV_MIN 2
-#elif CONFIG_IDF_TARGET_ESP32P4
-#define REF_CLK_DIV_MIN 2
-#elif CONFIG_IDF_TARGET_ESP32H4
-#define REF_CLK_DIV_MIN 2
 #endif
 
 #ifdef CONFIG_PM_PROFILING
@@ -125,7 +104,7 @@ static uint32_t s_mode_mask;
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
-#define PERIPH_SKIP_LIGHT_SLEEP_NO 2
+#define PERIPH_SKIP_LIGHT_SLEEP_NO 3
 
 /* Indicates if light sleep should be skipped by peripherals. */
 static skip_light_sleep_cb_t s_periph_skip_light_sleep_cb[PERIPH_SKIP_LIGHT_SLEEP_NO];
@@ -451,11 +430,13 @@ esp_err_t esp_pm_configure(const void* vconfig)
         return ESP_ERR_INVALID_ARG;
     }
 
+#ifdef REF_CLK_DIV_MIN
     int xtal_freq_mhz = esp_clk_xtal_freq() / MHZ;
     if (min_freq_mhz < xtal_freq_mhz && min_freq_mhz * MHZ / REF_CLK_FREQ < REF_CLK_DIV_MIN) {
         ESP_LOGW(TAG, "min_freq_mhz should be >= %d", REF_CLK_FREQ * REF_CLK_DIV_MIN / MHZ);
         return ESP_ERR_INVALID_ARG;
     }
+#endif
 
     if (!rtc_clk_cpu_freq_mhz_to_config(max_freq_mhz, &freq_config)) {
         ESP_LOGW(TAG, "invalid max_freq_mhz value (%d)", max_freq_mhz);
@@ -479,7 +460,7 @@ esp_err_t esp_pm_configure(const void* vconfig)
     /* Maximum SOC APB clock frequency is 40 MHz, maximum Modem (WiFi,
      * Bluetooth, etc..) APB clock frequency is 80 MHz */
     int apb_clk_freq = esp_clk_apb_freq() / MHZ;
-#if (CONFIG_ESP_WIFI_ENABLED || CONFIG_BT_ENABLED || CONFIG_IEEE802154_ENABLED) && SOC_PHY_SUPPORTED
+#if (CONFIG_ESP_WIFI_ENABLED || CONFIG_BT_ENABLED || CONFIG_IEEE802154_ENABLED) && SOC_PHY_SUPPORTED && !SOC_MODEM_APB_CLOCK_IS_INDEPENDENT
     apb_clk_freq = MAX(apb_clk_freq, MODEM_REQUIRED_MIN_APB_CLK_FREQ / MHZ);
 #endif
     int apb_max_freq = MIN(max_freq_mhz, apb_clk_freq); /* CPU frequency in APB_MAX mode */
@@ -701,7 +682,18 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
 #endif
         extern portMUX_TYPE s_time_update_lock;
         portENTER_CRITICAL_SAFE(&s_time_update_lock);
+#if SOC_CLK_ROOT_CLK_SWITCH_PROTECT
+        /* On ESP32-C5 ECO1 and later: before switching the main system clock
+        * between 240 MHz and 160 MHz, clear BIT(31) of PCR_FPGA_DEBUG_REG.
+        * After the switch is completed, set BIT(31) back to 1.
+        * This operation fixes WiFi packet TX/RX abnormalities and missed interrupts.
+        * See WIFI-7270 for details.*/
+        rtc_clk_root_clk_switch_protect(&new_config, &old_config, true);
+#endif
         rtc_clk_cpu_freq_set_config_fast(&new_config);
+#if SOC_CLK_ROOT_CLK_SWITCH_PROTECT
+        rtc_clk_root_clk_switch_protect(&new_config, &old_config, false);
+#endif
         portEXIT_CRITICAL_SAFE(&s_time_update_lock);
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
         esp_clk_utils_mspi_speed_mode_sync_after_cpu_freq_switching(new_config.source_freq_mhz, new_config.freq_mhz);
@@ -834,10 +826,21 @@ static inline void IRAM_ATTR other_core_should_skip_light_sleep(int core_id)
 }
 
 // Adjust RTOS tick count based on the amount of time spent in sleep.
-FORCE_INLINE_ATTR void pm_step_tick(int64_t slept_us)
+FORCE_INLINE_ATTR void pm_step_tick(int64_t slept_us, TickType_t xExpectedIdleTime)
 {
     uint32_t slept_ticks = slept_us / (portTICK_PERIOD_MS * 1000LL);
     if (slept_ticks) {
+#if CONFIG_PM_LIGHTSLEEP_TICK_OVERFLOW_PROTECTION
+        /* Limit slept_ticks when oversleep is within tolerance to prevent assertion failure */
+        if ((slept_ticks > xExpectedIdleTime) &&
+            (slept_ticks <= (xExpectedIdleTime + CONFIG_PM_LIGHTSLEEP_TICK_OVERFLOW_TOLERANCE))) {
+            slept_ticks = xExpectedIdleTime;
+        }
+#endif // CONFIG_PM_LIGHTSLEEP_TICK_OVERFLOW_PROTECTION
+        if (slept_ticks > xExpectedIdleTime) {
+            ESP_EARLY_LOGE(TAG, "Light sleep overslept: expect %"PRIu32" idle ticks but slept %"PRIu32" ticks.",
+                     (uint32_t)xExpectedIdleTime, slept_ticks);
+        }
         /* Adjust RTOS tick count based on the amount of time spent in sleep */
         vTaskStepTick(slept_ticks);
 
@@ -886,7 +889,7 @@ void vApplicationSleep( TickType_t xExpectedIdleTime )
             // In this case, there is no need to call vTaskStepTick, because the OS tick count will
             // automatically catch up in the next systick interrupt handler.
             if (err == ESP_OK) {
-                pm_step_tick(slept_us);
+                pm_step_tick(slept_us, xExpectedIdleTime);
             }
             other_core_should_skip_light_sleep(core_id);
 #ifdef WITH_PROFILING
@@ -979,7 +982,7 @@ void esp_pm_impl_init(void)
 
     ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)clk_source, true));
     /* When DFS is enabled, override system setting and use REFTICK as UART clock source */
-    HP_UART_SRC_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), (soc_module_clk_t)clk_source);
     }
     uint32_t sclk_freq;
@@ -987,7 +990,7 @@ void esp_pm_impl_init(void)
     // Return value unused if asserts are disabled
     esp_err_t __attribute__((unused)) err = esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_source, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
     assert(err == ESP_OK);
-    HP_UART_SRC_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE, sclk_freq);
     }
 #endif // CONFIG_ESP_CONSOLE_UART

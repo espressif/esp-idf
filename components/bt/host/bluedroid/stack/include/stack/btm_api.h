@@ -171,23 +171,20 @@ typedef void (tBTM_VSC_CMPL_CB) (tBTM_VSC_CMPL *p1);
 ** Parameters are the BD Address of remote and the Dev Class of remote.
 ** If the app returns none zero, the connection or inquiry result will be dropped.
 */
-typedef UINT8 (tBTM_FILTER_CB) (BD_ADDR bd_addr, DEV_CLASS dc);
+// typedef UINT8 (tBTM_FILTER_CB) (BD_ADDR bd_addr, DEV_CLASS dc);
 
-typedef void (tBTM_UPDATE_CONN_PARAM_CBACK) (UINT8 status, BD_ADDR bd_addr, tBTM_LE_UPDATE_CONN_PRAMS *update_conn_params);
-
-typedef void (tBTM_SET_PKT_DATA_LENGTH_CBACK) (UINT8 status, tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS *data_length_params);
-
-typedef void (tBTM_DTM_CMD_CMPL_CBACK) (void *p1);
+/*
+ * DTM (Direct Test Mode) command complete callback.
+ *
+ * The controller returns a variable-length parameter block depending on the
+ * specific LE test command. Propagate the parameter length so upper layers can
+ * validate before parsing and avoid OOB reads on malformed/truncated responses.
+ */
+typedef void (tBTM_DTM_CMD_CMPL_CBACK) (UINT8 *p, UINT16 len);
 
 typedef void (tBTM_SET_RAND_ADDR_CBACK) (UINT8 status);
 
-typedef void (tBTM_UPDATE_WHITELIST_CBACK) (UINT8 status, tBTM_WL_OPERATION wl_opration);
-
-typedef void (tBTM_SET_LOCAL_PRIVACY_CBACK) (UINT8 status);
-
-typedef void (tBTM_SET_RPA_TIMEOUT_CMPL_CBACK) (UINT8 status);
-
-typedef void (tBTM_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK) (UINT8 status);
+// typedef void (tBTM_UPDATE_WHITELIST_CBACK) (UINT8 status, tBTM_WL_OPERATION wl_opration);
 
 typedef void (tBTM_BLE_VENDOR_HCI_EVT_CBACK) (UINT8 subevt_code, UINT8 param_len, UINT8 *params);
 /*******************************
@@ -795,6 +792,66 @@ typedef struct {
     BD_ADDR     rem_bda;
 } tBTM_RSSI_RESULTS;
 
+#if (ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC == TRUE)
+/* Structure returned with read ACL real RSSI event (in tBTM_CMPL_CB callback function)
+** in response to BTM_ReadAclRealRSSI call.
+*/
+typedef struct {
+    tBTM_STATUS status;
+    UINT8       hci_status;
+    INT8        rssi;
+    BD_ADDR     rem_bda;
+} tBTM_ACL_REAL_RSSI_RESULTS;
+
+/* Structure returned with read new connection transmit power level event (in tBTM_CMPL_CB callback function)
+** in response to BTM_ReadNewConnTxPwrLvl call.
+*/
+typedef struct {
+    tBTM_STATUS status;
+    UINT8       hci_status;
+    INT8        pwr_lvl_min;
+    INT8        pwr_lvl_max;
+} tBTM_READ_NEW_CONN_TX_PWR_LVL_RESULTS;
+
+/* Structure returned with write new connection transmit power level event (in tBTM_CMPL_CB callback function)
+** in response to BTM_WriteNewConnTxPwrLvl call.
+*/
+typedef struct {
+    tBTM_STATUS status;
+    UINT8       hci_status;
+} tBTM_WRITE_NEW_CONN_TX_PWR_LVL_RESULTS;
+#endif // #if (ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC == TRUE)
+
+#if (CLASSIC_BT_INCLUDED == TRUE)
+/* BR/EDR tx power level type for inq/iscan/page/pscan control */
+typedef enum {
+    BTM_TX_PWR_LVL_INQ = 0,
+    BTM_TX_PWR_LVL_ISCAN,
+    BTM_TX_PWR_LVL_PAGE,
+    BTM_TX_PWR_LVL_PSCAN,
+    BTM_TX_PWR_LVL_MAX,
+} tBTM_TX_PWR_LVL_TYPE;
+
+/* Structure returned with read inq/iscan/page/pscan tx power level event (in tBTM_CMPL_CB callback function)
+** in response to BTM_ReadBredrTxPwrLvl/BTM_ReadInquiryRspTxPower call.
+*/
+typedef struct {
+    tBTM_STATUS status;
+    UINT8       hci_status;
+    INT8        tx_power;
+    tBTM_TX_PWR_LVL_TYPE type;
+} tBTM_READ_TX_PWR_LVL_RESULTS;
+
+/* Structure returned with write inq/iscan/page/pscan tx power level event (in tBTM_CMPL_CB callback function)
+** in response to BTM_WriteBredrTxPwrLvl/BTM_WriteInquiryTxPower call.
+*/
+typedef struct {
+    tBTM_STATUS status;
+    UINT8       hci_status;
+    tBTM_TX_PWR_LVL_TYPE type;
+} tBTM_WRITE_TX_PWR_LVL_RESULTS;
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
+
 /* Structure returned with read channel map event (in tBTM_CMPL_CB callback function)
 ** in response to BTM_ReadChannelMap call.
 */
@@ -804,16 +861,6 @@ typedef struct {
     UINT8       channel_map[5]; /* Channel map (5 bytes) */
     BD_ADDR     rem_bda;                 /* Remote device Bluetooth address */
 } tBTM_BLE_CH_MAP_RESULTS;
-
-/* Structure returned with read current TX power event (in tBTM_CMPL_CB callback function)
-** in response to BTM_ReadTxPower call.
-*/
-typedef struct {
-    tBTM_STATUS status;
-    UINT8       hci_status;
-    INT8        tx_power;
-    BD_ADDR     rem_bda;
-} tBTM_TX_POWER_RESULTS;
 
 /* Structure returned with read link quality event (in tBTM_CMPL_CB callback function)
 ** in response to BTM_ReadLinkQuality call.
@@ -875,16 +922,6 @@ typedef struct {
     tBTM_STATUS status;
     UINT8       hci_status;
 } tBTM_BLE_SET_CHANNELS_RESULTS;
-
-/* Structure returned with read inq tx power quality event (in tBTM_CMPL_CB callback function)
-** in response to BTM_ReadInquiryRspTxPower call.
-*/
-typedef struct {
-    tBTM_STATUS status;
-    UINT8       hci_status;
-    INT8        tx_power;
-} tBTM_INQ_TXPWR_RESULTS;
-
 
 enum {
     BTM_ACL_CONN_CMPL_EVT,
@@ -1556,8 +1593,13 @@ typedef UINT8 tBTM_IO_CAP;
 #define BTM_BLE_CSR_KEY_MASK    (1 << 2)
 #define BTM_BLE_LINK_KEY_MASK   (1 << 3)
 
-#define BTM_BLE_INITIATOR_KEY_SIZE 15
-#define BTM_BLE_RESPONDER_KEY_SIZE 15
+#if (CLASSIC_BT_INCLUDED == TRUE)
+#define BTM_BLE_INITIATOR_KEY_MASK  (BTM_BLE_ENC_KEY_MASK | BTM_BLE_ID_KEY_MASK | BTM_BLE_CSR_KEY_MASK | BTM_BLE_LINK_KEY_MASK)
+#define BTM_BLE_RESPONDER_KEY_MASK  (BTM_BLE_ENC_KEY_MASK | BTM_BLE_ID_KEY_MASK | BTM_BLE_CSR_KEY_MASK | BTM_BLE_LINK_KEY_MASK)
+#else
+#define BTM_BLE_INITIATOR_KEY_MASK  (BTM_BLE_ENC_KEY_MASK | BTM_BLE_ID_KEY_MASK | BTM_BLE_CSR_KEY_MASK)
+#define BTM_BLE_RESPONDER_KEY_MASK  (BTM_BLE_ENC_KEY_MASK | BTM_BLE_ID_KEY_MASK | BTM_BLE_CSR_KEY_MASK)
+#endif
 #define BTM_BLE_MAX_KEY_SIZE       16
 #define BTM_BLE_MIN_KEY_SIZE       7
 
@@ -2798,6 +2840,7 @@ tBTM_INQ_INFO *BTM_InqDbNext (tBTM_INQ_INFO *p_cur);
 //extern
 tBTM_STATUS  BTM_ClearInqDb (BD_ADDR p_bda);
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_ReadInquiryRspTxPower
@@ -2811,6 +2854,21 @@ tBTM_STATUS  BTM_ClearInqDb (BD_ADDR p_bda);
 *******************************************************************************/
 //extern
 tBTM_STATUS BTM_ReadInquiryRspTxPower (tBTM_CMPL_CB *p_cb);
+
+/*******************************************************************************
+**
+** Function         BTM_WriteInquiryTxPower
+**
+** Description      This command writes the inquiry transmit power level used
+**                  to transmit inquiry response packets.
+**
+** Returns          BTM_CMD_STARTED if command issued to controller.
+**                  BTM_NO_RESOURCES if couldn't allocate memory to issue command
+**                  BTM_BUSY if command is already in progress
+**
+*******************************************************************************/
+tBTM_STATUS BTM_WriteInquiryTxPower(INT8 tx_power, tBTM_CMPL_CB *p_cb);
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 #if SDP_INCLUDED == TRUE
 /*******************************************************************************
@@ -3018,6 +3076,88 @@ tBTM_STATUS BTM_SwitchRole (BD_ADDR remote_bd_addr,
 //extern
 tBTM_STATUS BTM_ReadRSSI (BD_ADDR remote_bda, tBT_TRANSPORT transport, tBTM_CMPL_CB *p_cb);
 
+#if (ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC == TRUE)
+/*******************************************************************************
+**
+** Function         BTM_ReadAclRealRSSI
+**
+** Description      This function is called to read ACL real RSSI.
+**                  The RSSI of results are returned in the callback.
+**                  (tBTM_ACL_REAL_RSSI_RESULTS)
+**
+** Returns          BTM_CMD_STARTED if command issued to controller.
+**                  BTM_NO_RESOURCES if couldn't allocate memory to issue command
+**                  BTM_UNKNOWN_ADDR if no active link with bd addr specified
+**                  BTM_BUSY if command is already in progress
+**
+*******************************************************************************/
+tBTM_STATUS BTM_ReadAclRealRSSI(BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb);
+
+/*******************************************************************************
+**
+** Function         BTM_ReadNewConnTxPwrLvl
+**
+** Description      This function is called to read new connection transmit power level.
+**                  The new connection transmit power level value returned in the callback.
+**                  (tBTM_READ_NEW_CONN_TX_PWR_LVL_RESULTS)
+**
+** Returns          BTM_CMD_STARTED if command issued to controller.
+**                  BTM_NO_RESOURCES if couldn't allocate memory to issue command
+**                  BTM_BUSY if command is already in progress
+**
+*******************************************************************************/
+tBTM_STATUS BTM_ReadNewConnTxPwrLvl(tBTM_CMPL_CB *p_cb);
+
+/*******************************************************************************
+**
+** Function         BTM_WriteNewConnTxPwrLvl
+**
+** Description      This function is called to write new connection transmit power level.
+**                  The new connection transmit power level value returned in the callback.
+**                  (tBTM_WRITE_NEW_CONN_TX_PWR_LVL_RESULTS)
+**
+** Returns          BTM_CMD_STARTED if command issued to controller.
+**                  BTM_NO_RESOURCES if couldn't allocate memory to issue command
+**                  BTM_BUSY if command is already in progress
+**
+*******************************************************************************/
+tBTM_STATUS BTM_WriteNewConnTxPwrLvl(INT8 pwr_lvl_min, INT8 pwr_lvl_max, tBTM_CMPL_CB *p_cb);
+#endif // #if (ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC == TRUE)
+
+#if (CLASSIC_BT_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         BTM_ReadBredrTxPwrLvl
+**
+** Description      This function is called to read inq/iscan/page/pscan transmit power level.
+**                  The corresponding transmit power level value returned in the callback.
+**                  (tBTM_READ_TX_PWR_LVL_RESULTS)
+**
+** Returns          BTM_CMD_STARTED if command issued to controller.
+**                  BTM_NO_RESOURCES if couldn't allocate memory to issue command
+**                  BTM_BUSY if command is already in progress
+**                  BTM_ILLEGAL_VALUE if type is invalid
+**
+*******************************************************************************/
+tBTM_STATUS BTM_ReadBredrTxPwrLvl(tBTM_TX_PWR_LVL_TYPE type, tBTM_CMPL_CB *p_cb);
+
+/*******************************************************************************
+**
+** Function         BTM_WriteBredrTxPwrLvl
+**
+** Description      This function is called to write inq/iscan/page/pscan transmit power level.
+**                  The corresponding write status returned in the callback.
+**                  (tBTM_WRITE_TX_PWR_LVL_RESULTS)
+**
+** Returns          BTM_CMD_STARTED if command issued to controller.
+**                  BTM_NO_RESOURCES if couldn't allocate memory to issue command
+**                  BTM_BUSY if command is already in progress
+**                  BTM_ILLEGAL_VALUE if type is invalid
+**
+*******************************************************************************/
+tBTM_STATUS BTM_WriteBredrTxPwrLvl(tBTM_TX_PWR_LVL_TYPE type, INT8 tx_power, tBTM_CMPL_CB *p_cb);
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
+
 /*******************************************************************************
 **
 ** Function         BTM_ReadChannelMap
@@ -3029,7 +3169,7 @@ tBTM_STATUS BTM_ReadRSSI (BD_ADDR remote_bda, tBT_TRANSPORT transport, tBTM_CMPL
 ** Returns          BTM_CMD_STARTED if successfully initiated or error code
 **
 *******************************************************************************/
-tBTM_STATUS BTM_ReadChannelMap(BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb);
+tBTM_STATUS BTM_ReadChannelMap(BD_ADDR remote_bda);
 
 void BTM_BleGetWhiteListSize(uint16_t *length);
 
@@ -4342,7 +4482,7 @@ tBTM_STATUS BTM_SetAfhChannels (AFH_CHANNELS channels, tBTM_CMPL_CB *p_afh_chann
 ** Returns          status of the operation
 **
 *******************************************************************************/
-tBTM_STATUS BTM_BleSetChannels (BLE_CHANNELS channels, tBTM_CMPL_CB *p_ble_channels_cmpl_cback);
+tBTM_STATUS BTM_BleSetChannels (BLE_CHANNELS channels);
 
 /*******************************************************************************
 **

@@ -1,5 +1,8 @@
 name: Create zip file with recursive source clone for release
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:

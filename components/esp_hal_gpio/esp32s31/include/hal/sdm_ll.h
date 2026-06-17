@@ -14,7 +14,7 @@
 #include "soc/soc.h"
 
 // Get SDM register base address with giving group number
-#define SDM_LL_GET_HW(group_id) ((group_id == 0) ? (&SDM) : NULL)
+#define SDM_LL_GET_HW(group_id) ((group_id == 0) ? ((gpio_sd_dev_t *)(void *)&GPIO_EXT.sigma_delta) : NULL)
 
 #define SDM_LL_PRESCALE_MAX     (GPIO_EXT_SD0_PRESCALE_V + 1)
 

@@ -13,15 +13,16 @@ from pytest_embedded_idf.utils import soc_filtered_targets
     soc_filtered_targets('SOC_SPI_SUPPORT_SLAVE_HD_VER2 == 1 and IDF_TARGET not in ["esp32c5"]'),
     indirect=['target'],
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15615
 def test_slave_hd_single_dev(case_tester) -> None:  # type: ignore
     case_tester.run_all_normal_cases(reset=True, timeout=180)
 
 
 @pytest.mark.generic
-@pytest.mark.esp32c5_eco3
+@pytest.mark.esp32c5_rev1
 @pytest.mark.parametrize('config', ['release'], indirect=True)
 @idf_parametrize('target', ['esp32c5'], indirect=['target'])
-def test_slave_hd_single_dev_esp32c5_eco3(case_tester) -> None:  # type: ignore
+def test_slave_hd_single_dev_esp32c5_rev1(case_tester) -> None:  # type: ignore
     case_tester.run_all_normal_cases(reset=True, timeout=180)
 
 

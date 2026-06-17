@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -10,8 +10,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-// TODO: to be checked IDF-14669
 
 #if !SOC_MMU_PAGE_SIZE
 /**
@@ -34,13 +32,13 @@ extern "C" {
 #define SOC_DRAM0_CACHE_ADDRESS_HIGH                 SOC_IRAM0_CACHE_ADDRESS_HIGH               //I/D share the same vaddr range
 
 #define SOC_IRAM_FLASH_ADDRESS_LOW                   0x40000000
-#define SOC_IRAM_FLASH_ADDRESS_HIGH                  0x44000000
+#define SOC_IRAM_FLASH_ADDRESS_HIGH                  (SOC_IRAM_FLASH_ADDRESS_LOW + ((SOC_MMU_PAGE_SIZE) * SOC_MMU_ENTRY_NUM))  //max 0x44000000 for nor, 0x50000000 for nand
 
 #define SOC_DRAM_FLASH_ADDRESS_LOW                   SOC_IRAM_FLASH_ADDRESS_LOW
 #define SOC_DRAM_FLASH_ADDRESS_HIGH                  SOC_IRAM_FLASH_ADDRESS_HIGH
 
 #define SOC_IRAM_PSRAM_ADDRESS_LOW                   0x50000000
-#define SOC_IRAM_PSRAM_ADDRESS_HIGH                  0x54000000
+#define SOC_IRAM_PSRAM_ADDRESS_HIGH                  (SOC_IRAM_PSRAM_ADDRESS_LOW + ((SOC_MMU_PAGE_SIZE) * SOC_MMU_ENTRY_NUM))  //max 0x54000000 for psram
 
 #define SOC_DRAM_PSRAM_ADDRESS_LOW                   SOC_IRAM_PSRAM_ADDRESS_LOW
 #define SOC_DRAM_PSRAM_ADDRESS_HIGH                  SOC_IRAM_PSRAM_ADDRESS_HIGH
@@ -74,7 +72,7 @@ extern "C" {
  * - For a PSRAM MMU entry:
  *   physical page number is BIT(0)~BIT(9), so value bits are 0x3ff
  */
-#define SOC_MMU_FLASH_VALID_VAL_MASK        0x3ff
+#define SOC_MMU_FLASH_VALID_VAL_MASK        0x7ff
 #define SOC_MMU_PSRAM_VALID_VAL_MASK        0x3ff
 /**
  * Max MMU available paddr page num.
@@ -99,12 +97,14 @@ extern "C" {
  * MMU Linear Address
  *----------------------------------------------------------------------------*/
 /**
- * - 64KB MMU page size: the last 0xFFFF, which is the offset
- * - 1024 MMU entries for flash, 1024 MMU entries for psram, needs 0xFFF to hold it.
+ * - 64KB MMU page size: the lower 0xFFFF bits are the page offset
+ * - Flash linear addresses start from 0x00000000, PSRAM linear addresses start from 0x10000000
+ * - The mask keeps the bits needed to distinguish flash and PSRAM linear ranges while discarding
+ *   the upper virtual-address tag bits
  *
- * Therefore, 0x3F,FFFF
+ * Therefore, use 0x1FFFFFFF.
  */
-#define SOC_MMU_LINEAR_ADDR_MASK            0x1FFFFFFF //distinguish between flash and psram addresses
+#define SOC_MMU_LINEAR_ADDR_MASK            0x1FFFFFFF
 
 /**
  * - If high linear address isn't 0, this means MMU can recognize these addresses

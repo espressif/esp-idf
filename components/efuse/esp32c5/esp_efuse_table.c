@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table a89a21bde56c3936f31af16ba1de1fe3
+// md5_digest_table e18555ab3140262c47fb3f6a03944676
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -389,6 +389,10 @@ static const esp_efuse_desc_t WR_DIS_ADC1_CH4_ATTEN0_INITCODE_DIFF[] = {
 
 static const esp_efuse_desc_t WR_DIS_ADC1_CH5_ATTEN0_INITCODE_DIFF[] = {
     {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_CH5_ATTEN0_INITCODE_DIFF,
+};
+
+static const esp_efuse_desc_t WR_DIS_PVT_DBIAS[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of PVT_DBIAS,
 };
 
 static const esp_efuse_desc_t WR_DIS_BLOCK_USR_DATA[] = {
@@ -867,6 +871,10 @@ static const esp_efuse_desc_t ADC1_CH4_ATTEN0_INITCODE_DIFF[] = {
 
 static const esp_efuse_desc_t ADC1_CH5_ATTEN0_INITCODE_DIFF[] = {
     {EFUSE_BLK2, 245, 4}, 	 // [] Gap between ADC1 CH5 and average initcode,
+};
+
+static const esp_efuse_desc_t PVT_DBIAS[] = {
+    {EFUSE_BLK2, 249, 5}, 	 // [] Average initcode of ADC1 atten0,
 };
 
 static const esp_efuse_desc_t USER_DATA[] = {
@@ -1376,6 +1384,11 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH4_ATTEN0_INITCODE_DIFF[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH5_ATTEN0_INITCODE_DIFF[] = {
     &WR_DIS_ADC1_CH5_ATTEN0_INITCODE_DIFF[0],    		// [] wr_dis of ADC1_CH5_ATTEN0_INITCODE_DIFF
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PVT_DBIAS[] = {
+    &WR_DIS_PVT_DBIAS[0],    		// [] wr_dis of PVT_DBIAS
     NULL
 };
 
@@ -1972,6 +1985,11 @@ const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH4_ATTEN0_INITCODE_DIFF[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH5_ATTEN0_INITCODE_DIFF[] = {
     &ADC1_CH5_ATTEN0_INITCODE_DIFF[0],    		// [] Gap between ADC1 CH5 and average initcode
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_PVT_DBIAS[] = {
+    &PVT_DBIAS[0],    		// [] Average initcode of ADC1 atten0
     NULL
 };
 

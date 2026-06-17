@@ -149,6 +149,8 @@ A brief description of where the states are set:
 Anti-rollback
 -------------
 
+{IDF_TARGET_SECURE_VERSION_EFUSE_BITS:default = "16", esp32 = "32", esp32c2 = "4", esp32c5 = "9"}
+
 Anti-rollback prevents rollback to application with security version lower than one programmed in eFuse of chip.
 
 This function works if set :ref:`CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK` option. In the bootloader, when selecting a bootable application, an additional security version check is added which is on the chip and in the application image. The version in the bootable firmware must be greater than or equal to the version in the chip.
@@ -204,8 +206,7 @@ Restrictions:
 
 .. list::
 
-    :esp32: - The number of bits in the ``secure_version`` field is limited to 32 bits. This means that only 32 times you can do an anti-rollback. You can reduce the length of this efuse field using :ref:`CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD` option.
-    :not esp32: - The number of bits in the ``secure_version`` field is limited to 16 bits. This means that only 16 times you can do an anti-rollback. You can reduce the length of this efuse field using :ref:`CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD` option.
+    - The number of bits in the ``secure_version`` field is limited to {IDF_TARGET_SECURE_VERSION_EFUSE_BITS} bits. This means that only {IDF_TARGET_SECURE_VERSION_EFUSE_BITS} times you can do an anti-rollback. You can reduce the length of this efuse field using :ref:`CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD` option.
     :esp32: - Anti-rollback works only if the encoding scheme for efuse is set to ``NONE``.
     - Factory and Test partitions are not supported in anti rollback scheme and hence partition table should not have partition with SubType set to ``factory`` or ``test``.
 
@@ -228,6 +229,23 @@ The verification of signed OTA updates can be performed even without enabling ha
 .. only:: esp32
 
   For more information, please refer to :ref:`signed-app-verify`.
+
+.. _secure-signed-data-partition:
+
+Signed Data Partition Updates
+------------------------------
+
+Data partition images can be verified using the same Secure Boot v2 signature mechanism as application images. Enable :ref:`CONFIG_SECURE_SIGNED_DATA_PARTITION` to verify data partitions with subtype ``ESP_PARTITION_SUBTYPE_DATA_UNDEFINED`` during OTA updates.
+
+Sign data partition images using:
+
+.. code-block:: bash
+
+    idf.py secure-sign-data --keyfile PRIVATE_SIGNING_KEY --output signed_data.bin data.bin
+
+The signing key must match the one used for application signing, with its public key digest programmed into eFuse. The signed image format is: data content (padded to 4 KB) + 4 KB signature block (see :ref:`signature-block-format` in :doc:`/security/secure-boot-v2`).
+
+For a complete example, see :example:`system/ota/partitions_ota`.
 
 Tuning OTA Performance
 ----------------------

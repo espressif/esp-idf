@@ -37,19 +37,6 @@ static inline uint32_t time_get_us_by_ccount(uint32_t counter)
 
 ESP_LOG_ATTR_TAG(TAG, "hal-i2c");
 
-// If Reset and Clock Control is independent, we need this macro to avoid concurrency issue
-#if !SOC_RCC_IS_INDEPENDENT
-#define I2C_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define I2C_RCC_ATOMIC()
-#endif
-
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define I2C_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define I2C_CLOCK_SRC_ATOMIC()
-#endif
-
 typedef struct {
     i2c_dev_t *i2c_dev;
     bool initialized;
@@ -76,7 +63,7 @@ esp_err_t hal_i2c_init(hal_i2c_config *cfg)
     uint32_t freq = cfg->freq;
     i2c_dev_t *dev = i2c_context[cfg->i2c_port].i2c_dev;
 
-    I2C_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i2c_ll_enable_bus_clock(0, true);
         i2c_ll_reset_register(0);
     }
@@ -130,7 +117,7 @@ esp_err_t hal_i2c_init(hal_i2c_config *cfg)
 
     // init clock, always use xtal in hal driver.
     i2c_hal_clk_config_t clk_cal = {0};
-    I2C_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i2c_ll_set_source_clk(dev, SOC_MOD_CLK_XTAL);
     }
     uint32_t xtal_freq = 0;

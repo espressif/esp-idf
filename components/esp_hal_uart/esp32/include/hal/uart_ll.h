@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,9 @@
 #include "soc/uart_struct.h"
 #include "soc/dport_reg.h"
 #include "hal/uart_types.h"
+#include "hal/assert.h"
+
+#define UART_LL_GLITCH_FILT_ONLY_ON_AUTOBAUD            1       // On ESP32, only autobaud can filter glitches. The data UART RX hardware processes is always the one without getting filtered.
 
 // The default fifo depth
 #define UART_LL_FIFO_DEF_LEN  (SOC_UART_FIFO_LEN)
@@ -58,6 +61,10 @@ typedef enum {
     UART_INTR_RS485_CLASH      = (0x1 << 17),
     UART_INTR_CMD_CHAR_DET     = (0x1 << 18),
 } uart_intr_t;
+
+typedef enum {
+    UART_LL_MEM_LP_MODE_SHUT_DOWN, /*!< mem_pd only; no mem_lp_mode stage field (cf. rmt_ll_mem_set_low_power_mode) */
+} uart_ll_mem_lp_mode_t;
 
 /**
  * @brief Check if UART is enabled or disabled.
@@ -206,6 +213,47 @@ FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *source
 }
 
 /**
+ * @brief UART FIFO/RAM memory power control (HP blocks).
+ */
+/**
+ * @brief Force UART FIFO memory powered on for this block (clear mem_pd).
+ */
+FORCE_INLINE_ATTR void uart_ll_mem_force_power_on(uart_port_t uart_num)
+{
+    uart_dev_t *hw = UART_LL_GET_HW(uart_num);
+    hw->mem_conf.mem_pd = 0;
+}
+
+/**
+ * @brief Set UART memory low power mode in low power stage (ESP32 has no mem_lp_mode; no-op).
+ */
+FORCE_INLINE_ATTR void uart_ll_mem_set_low_power_mode(uart_port_t uart_num, uart_ll_mem_lp_mode_t mode)
+{
+    HAL_ASSERT(mode == UART_LL_MEM_LP_MODE_SHUT_DOWN);
+    (void)uart_num;
+}
+
+/**
+ * @brief Let UART FIFO memory power follow PMU (clear software mem_pd), same idea as rmt_ll_mem_power_by_pmu.
+ */
+FORCE_INLINE_ATTR void uart_ll_mem_power_by_pmu(uart_port_t uart_num)
+{
+    uart_dev_t *hw = UART_LL_GET_HW(uart_num);
+    hw->mem_conf.mem_pd = 0;
+}
+
+/**
+ * @brief Force UART FIFO memory to low power (set mem_pd), same idea as rmt_ll_mem_force_low_power.
+ *
+ * @note When all three UART instances have mem_pd set, shared memory enters low power (TRM).
+ */
+FORCE_INLINE_ATTR void uart_ll_mem_force_low_power(uart_port_t uart_num)
+{
+    uart_dev_t *hw = UART_LL_GET_HW(uart_num);
+    hw->mem_conf.mem_pd = 1;
+}
+
+/**
  * @brief  Configure the baud-rate.
  *
  * @param  hw Beginning address of the peripheral registers.
@@ -246,6 +294,24 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_fr
     typeof(hw->clk_div) div_reg;
     div_reg.val = hw->clk_div.val;
     return ((sclk_freq << 4)) / ((div_reg.div_int << 4) | div_reg.div_frag);
+}
+
+/**
+ * @brief  Set the UART glitch filter threshold. Any high pulse lasting shorter than this value will be ignored when the filter is enabled.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  glitch_filt_thrd The glitch filter threshold to be set (unit: ns)
+ * @param  sclk_freq Frequency of the clock source of UART, in Hz.
+ */
+FORCE_INLINE_ATTR void uart_ll_set_glitch_filt_thrd(uart_dev_t *hw, uint32_t glitch_filt_thrd, uint32_t sclk_freq)
+{
+    uint32_t clk_cycles = 0;
+    if (glitch_filt_thrd > 0) {
+        uint32_t ref_clk_freq = sclk_freq; // no pre-divider
+        clk_cycles = ((uint64_t)glitch_filt_thrd * ref_clk_freq + 1000000000 - 1) / 1000000000; // round up to always filter something
+        HAL_ASSERT(clk_cycles <= UART_GLITCH_FILT_V);
+    }
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->auto_baud, glitch_filt, clk_cycles);
 }
 
 /**
@@ -1065,6 +1131,20 @@ FORCE_INLINE_ATTR uint16_t uart_ll_max_tout_thrd(uart_dev_t *hw)
 FORCE_INLINE_ATTR void uart_ll_set_autobaud_en(uart_dev_t *hw, bool enable)
 {
     hw->auto_baud.en = enable ? 1 : 0;
+}
+
+/**
+ * @brief  Enable or disable the UART glitch filter
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  enable True to enable the filter, False to disable the filter
+ */
+FORCE_INLINE_ATTR void uart_ll_enable_glitch_filt(uart_dev_t *hw, bool enable)
+{
+    // No such register on ESP32 to independently enable or disable the glitch filter
+    // Glitch filter is coupled with auto baudrate detection
+    (void)hw;
+    (void)enable;
 }
 
 /**

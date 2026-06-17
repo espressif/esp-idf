@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,8 @@
 #include <openthread/thread.h>
 
 #define TAG "OT_STATE"
+
+ESP_EVENT_DEFINE_BASE(OPENTHREAD_EVENT);
 
 #if CONFIG_OPENTHREAD_BORDER_ROUTER
 static void handle_ot_border_router_state_changed(otInstance* instance)
@@ -82,7 +84,7 @@ static void handle_ot_netdata_change(void)
 
 static void handle_ot_role_change(otInstance* instance)
 {
-#if ((CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE) && OPENTHREAD_RADIO_NATIVE)
+#if ((CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE) && CONFIG_OPENTHREAD_RADIO_NATIVE)
         otLinkModeConfig linkmode = otThreadGetLinkMode(instance);
         esp_ieee802154_coex_config_t config = esp_openthread_get_coex_config();
         config.txrx = (linkmode.mRxOnWhenIdle) ? IEEE802154_LOW : IEEE802154_MIDDLE;

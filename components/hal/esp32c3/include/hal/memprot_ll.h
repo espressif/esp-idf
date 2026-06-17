@@ -228,7 +228,6 @@ static inline void memprot_ll_iram0_get_pms_area_3(bool *r, bool *w, bool *x)
     memprot_ll_iram0_get_permissions(permissions, r, w, x);
 }
 
-
 ///////////////////////////////////
 // IRAM0 - MONITOR
 
@@ -309,7 +308,6 @@ static inline uint32_t memprot_ll_iram0_get_monitor_status_register(void)
 {
     return REG_READ(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_2_REG);
 }
-
 
 /* ******************************************************************************************************
  * *** RTC_FAST ***
@@ -590,7 +588,6 @@ static inline uint32_t memprot_ll_rtcfast_get_monitor_status_fault_wr(void)
     return REG_GET_FIELD(SENSITIVE_CORE_0_PIF_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_PIF_PMS_MONITOR_VIOLATE_STATUS_HWRITE);
 }
 
-
 /* ******************************************************************************************************
  * *** DRAM0 ***
  * ******************************************************************************************************/
@@ -719,7 +716,7 @@ static inline void memprot_ll_dram0_set_pms_area_3(bool r, bool w)
     REG_SET_FIELD(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_1_REG, SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_3, memprot_ll_dram0_set_permissions(r, w));
 }
 
-static inline void memprot_ll_dram0_get_permissions(uint32_t perms, bool *r, bool *w )
+static inline void memprot_ll_dram0_get_permissions(uint32_t perms, bool *r, bool *w)
 {
     *r = perms & SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_X_R;
     *w = perms & SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_X_W;

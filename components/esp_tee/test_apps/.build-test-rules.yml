@@ -4,6 +4,8 @@ components/esp_tee/test_apps/tee_cli_app:
   enable:
     - if: IDF_TARGET in ["esp32c6", "esp32h2", "esp32c5", "esp32c61"]
       reason: supported only the above targets
+  depends_components:
+    - esp_tee
 
 components/esp_tee/test_apps/tee_test_fw:
   enable:

@@ -1,0 +1,23 @@
+menu "Example Configuration"
+
+    config EXAMPLE_SRC_GPIO_NUM
+        int "Source GPIO number"
+        default 0
+        help
+            GPIO connected to analog comparator source channel 0.
+
+    config EXAMPLE_MONITOR_GPIO_NUM
+        int "Monitor GPIO number"
+        default 4
+        range 0 SOC_GPIO_OUT_RANGE_MAX
+        help
+            GPIO that outputs the square wave converted from the analog comparator result.
+
+    config EXAMPLE_SCAN_PERIOD_US
+        int "Comparator scan period (us)"
+        default 50
+        range 10 1000000
+        help
+            Period of the GPTimer ETM event that triggers the analog comparator scan task.
+
+endmenu

@@ -151,7 +151,6 @@ Now you are ready to try some other :idf:`examples`, or go straight to developin
     If building an example, please check the README file for the ``Supported Targets`` table. If this is present including {IDF_TARGET_NAME} target, or the table does not exist at all, the example will work on {IDF_TARGET_NAME}.
 
 
-
 Additional Tips
 ===============
 

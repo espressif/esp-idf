@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,6 @@
 #include "soc/rtc.h"
 #include "hal/mspi_ll.h"
 #include "hal/clk_tree_ll.h"
-#include "hal/regi2c_ctrl_ll.h"
 #include "esp_private/mspi_timing_config.h"
 #include "esp_private/mspi_timing_by_mspi_delay.h"
 #include "bootloader_flash.h"
@@ -364,7 +363,7 @@ static bool get_working_pll_freq(const uint8_t *reference_data, bool is_flash, u
 
     for (int pll_mhz_tuning = MSPI_TIMING_PLL_FREQ_SCAN_RANGE_MHZ_MIN; pll_mhz_tuning <= MSPI_TIMING_PLL_FREQ_SCAN_RANGE_MHZ_MAX; pll_mhz_tuning += 8) {
         //bbpll calibration start
-        regi2c_ctrl_ll_bbpll_calibration_start();
+        clk_ll_bbpll_calibration_start();
 
         /**
          * pll_mhz = xtal_mhz * (oc_div + 4) / (oc_ref_div + 1)
@@ -372,10 +371,10 @@ static bool get_working_pll_freq(const uint8_t *reference_data, bool is_flash, u
         clk_ll_bbpll_set_frequency_for_mspi_tuning(xtal_freq, pll_mhz_tuning, ((pll_mhz_tuning / 4) - 4), 9);
 
         //wait calibration done
-        while(!regi2c_ctrl_ll_bbpll_calibration_is_done());
+        while(!clk_ll_bbpll_calibration_is_done());
 
         //bbpll calibration stop
-        regi2c_ctrl_ll_bbpll_calibration_stop();
+        clk_ll_bbpll_calibration_stop();
 
         memset(read_data, 0, MSPI_TIMING_TEST_DATA_LEN);
         if (is_flash) {
@@ -403,13 +402,13 @@ static bool get_working_pll_freq(const uint8_t *reference_data, bool is_flash, u
     //restore PLL config
     clk_ll_bbpll_set_freq_mhz(previous_config.source_freq_mhz);
     //bbpll calibration start
-    regi2c_ctrl_ll_bbpll_calibration_start();
+    clk_ll_bbpll_calibration_start();
     //set pll
     clk_ll_bbpll_set_config(previous_config.source_freq_mhz, xtal_freq);
     //wait calibration done
-    while(!regi2c_ctrl_ll_bbpll_calibration_is_done());
+    while(!clk_ll_bbpll_calibration_is_done());
     //bbpll calibration stop
-    regi2c_ctrl_ll_bbpll_calibration_stop();
+    clk_ll_bbpll_calibration_stop();
 
     *out_max_freq = max_freq;
     *out_min_freq = min_freq;

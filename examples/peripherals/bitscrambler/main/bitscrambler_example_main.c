@@ -40,7 +40,7 @@ void app_main(void)
     assert(result_buf_size >= output_data_len);
 
     bitscrambler_handle_t bs;
-    ESP_ERROR_CHECK(bitscrambler_loopback_create(&bs, SOC_BITSCRAMBLER_ATTACH_I2S0, result_buf_size));
+    ESP_ERROR_CHECK(bitscrambler_loopback_create(&bs, SOC_BITSCRAMBLER_ATTACH_GPSPI2, result_buf_size));
     ESP_ERROR_CHECK(bitscrambler_load_program(bs, bitscrambler_program_example));
 
     size_t result_len;

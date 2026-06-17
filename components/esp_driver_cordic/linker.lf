@@ -1,0 +1,19 @@
+[mapping:esp_driver_cordic]
+archive: libesp_driver_cordic.a
+entries:
+    if CORDIC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
+        cordic: cordic_calculate_polling (noflash)
+
+[mapping:esp_hal_cordic]
+archive: libesp_hal_cordic.a
+entries:
+    if CORDIC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
+        cordic_periph: cordic_hal_algorithm_allowable_scale (noflash)
+        cordic_hal: cordic_hal_set_argument_funcs (noflash)
+        cordic_hal: cordic_hal_get_result_funcs (noflash)
+        cordic_hal: cordic_hal_set_argument_q15_two_args (noflash)
+        cordic_hal: cordic_hal_set_argument_q15_one_arg (noflash)
+        cordic_hal: cordic_hal_set_argument_q31_two_args (noflash)
+        cordic_hal: cordic_hal_set_argument_q31_one_arg (noflash)
+        cordic_hal: cordic_hal_get_result_q15 (noflash)
+        cordic_hal: cordic_hal_get_result_q31 (noflash)

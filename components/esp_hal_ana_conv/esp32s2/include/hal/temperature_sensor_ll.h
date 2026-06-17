@@ -89,6 +89,7 @@ static inline void temperature_sensor_ll_clk_sel(temperature_sensor_clk_src_t cl
  *
  * @param tsens_dac ``reg_val`` in table ``temperature_sensor_attributes``
  */
+__attribute__((always_inline))
 static inline void temperature_sensor_ll_set_range(uint32_t tsens_dac)
 {
     REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_TSENS_DAC, tsens_dac);
@@ -115,6 +116,7 @@ static inline uint32_t temperature_sensor_ll_get_raw_value(void)
  *
  * @return uint32_t offset value
  */
+__attribute__((always_inline))
 static inline uint32_t temperature_sensor_ll_get_offset(void)
 {
     return REGI2C_READ_MASK(I2C_SAR_ADC, I2C_SARADC_TSENS_DAC);

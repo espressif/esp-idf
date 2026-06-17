@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,11 +43,10 @@ bool bt_mesh_is_initialized(void)
     return mesh_init;
 }
 
-int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
-                      uint8_t flags, uint32_t iv_index, uint16_t addr,
-                      const uint8_t dev_key[16])
+int bt_mesh_pre_provision(const uint8_t net_key[16], uint16_t net_idx,
+                          uint8_t flags, uint32_t iv_index,
+                          uint16_t addr, const uint8_t dev_key[16])
 {
-    bool pb_gatt_enabled = false;
     int err = 0;
 
     BT_INFO("NodeProvisioned");
@@ -62,28 +61,10 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
         return -EALREADY;
     }
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
-        if (bt_mesh_proxy_server_prov_disable(false) == 0) {
-            pb_gatt_enabled = true;
-        } else {
-            pb_gatt_enabled = false;
-        }
-    } else {
-        pb_gatt_enabled = false;
-    }
-
-    BT_DBG("PbGattEnabled %u", pb_gatt_enabled);
-
     err = bt_mesh_net_create(net_idx, flags, net_key, iv_index);
     if (err) {
         BT_ERR("Create network for node failed");
-
         bt_mesh_atomic_clear_bit(bt_mesh.flags, BLE_MESH_VALID);
-
-        if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT) && pb_gatt_enabled) {
-            bt_mesh_proxy_server_prov_enable();
-        }
-
         return err;
     }
 
@@ -92,6 +73,15 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
     bt_mesh_comp_provision(addr);
 
     memcpy(bt_mesh.dev_key, dev_key, 16);
+
+    return 0;
+}
+
+void bt_mesh_provision(void)
+{
+    if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
+        bt_mesh_proxy_server_prov_disable(false);
+    }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER) &&
         IS_ENABLED(CONFIG_BLE_MESH_LPN_SUB_ALL_NODES_ADDR)) {
@@ -106,8 +96,6 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
     }
 
     bt_mesh_net_start();
-
-    return 0;
 }
 
 void bt_mesh_node_reset(void)
@@ -722,13 +710,13 @@ int bt_mesh_provisioner_enable(bt_mesh_prov_bearer_t bearers)
     err = bt_mesh_provisioner_net_create();
     if (err) {
         BT_ERR("Failed to create network");
-        return err;
+        goto end;
     }
 
     err = bt_mesh_provisioner_init_prov_info();
     if (err) {
         BT_ERR("Failed to init prov info");
-        return err;
+        goto end;
     }
 
     bt_mesh_provisioner_set_prov_bearer(bearers, false);
@@ -772,10 +760,14 @@ int bt_mesh_provisioner_enable(bt_mesh_prov_bearer_t bearers)
 
     err = bt_mesh_scan_enable();
     if (err) {
-        return err;
+        goto end;
     }
 
     return 0;
+
+end:
+    bt_mesh_atomic_clear_bit(bt_mesh.flags, BLE_MESH_VALID_PROV);
+    return err;
 }
 
 int bt_mesh_provisioner_disable(bt_mesh_prov_bearer_t bearers)

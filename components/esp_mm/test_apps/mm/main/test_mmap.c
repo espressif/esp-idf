@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,7 @@
 #include "esp_rom_sys.h"
 
 #define TEST_BLOCK_SIZE    CONFIG_MMU_PAGE_SIZE
+#define ALIGN_DOWN(num, align)  (((uint32_t)num) & ~((align) - 1))
 
 const static char *TAG = "MMU_TEST";
 
@@ -53,6 +54,42 @@ TEST_CASE("Can dump mapped block stats", "[mmu]")
     TEST_ESP_OK(esp_mmu_unmap(ptr1));
     TEST_ESP_OK(esp_mmu_unmap(ptr2));
 }
+
+TEST_CASE("Can map partition to a given virtual address", "[mmu]")
+{
+    const esp_partition_t *part = s_get_partition();
+    ESP_LOGI(TAG, "found partition '%s' at offset 0x%"PRIx32" with size 0x%"PRIx32, part->label, part->address, part->size);
+
+    /* Map in the middle of the address space, if the MMU page size is smaller than 64KB, not the whole range is accessible */
+    const uint32_t range_divider = (64 * 1024) / SOC_MMU_PAGE_SIZE;
+    const uint32_t virt_range_size = (SOC_DROM_HIGH - SOC_DROM_LOW) / range_divider;
+    const uint32_t vaddr = SOC_DROM_LOW + virt_range_size / 2;
+    ESP_LOGI(TAG, "mapping to virtual address 0x%x", vaddr);
+    void *ptr0 = NULL;
+    TEST_ESP_OK(esp_mmu_map_virt(vaddr, part->address, TEST_BLOCK_SIZE, MMU_TARGET_FLASH0, MMU_MEM_CAP_READ, 0, &ptr0));
+    TEST_ESP_OK(esp_mmu_unmap(ptr0));
+
+    TEST_ASSERT((uint32_t)ptr0 == vaddr);
+}
+
+/**
+ * When PSRAM XIP is enabled, the flash rodata is mapped to the PSRAM's MMU, so it will not be visible to
+ * the NOR flash MMU.
+ */
+#if !CONFIG_SPIRAM_XIP_FROM_PSRAM
+TEST_CASE("Cannot map partition to a reserved addresses", "[mmu]")
+{
+    const esp_partition_t *part = s_get_partition();
+    ESP_LOGI(TAG, "found partition '%s' at offset 0x%"PRIx32" with size 0x%"PRIx32, part->label, part->address, part->size);
+
+    /* Map in the address space of the flash ROM area, should fail */
+    void *ptr0 = NULL;
+    extern uint8_t _flash_rodata_start[];
+    const esp_vaddr_t addr = ALIGN_DOWN(_flash_rodata_start, CONFIG_MMU_PAGE_SIZE);
+    esp_err_t err = esp_mmu_map_virt(addr, part->address, TEST_BLOCK_SIZE, MMU_TARGET_FLASH0, MMU_MEM_CAP_READ, 0, &ptr0);
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, err);
+}
+#endif
 
 TEST_CASE("Can find paddr caps by any paddr offset", "[mmu]")
 {

@@ -54,6 +54,9 @@ void jpeg_create_retention_module(jpeg_codec_handle_t jpeg_codec)
             ESP_LOGW(TAG, "create retention module failed, power domain can't turn off");
         } else {
             jpeg_codec->retention_link_created = true;
+            if (sleep_retention_module_attach(jpeg_regs_retention.module_id) != ESP_OK) {
+                ESP_LOGW(TAG, "attach retention module failed, power domain can't turn off");
+            }
         }
     }
     _lock_release(&s_jpeg_platform.mutex);
@@ -90,6 +93,7 @@ esp_err_t jpeg_acquire_codec_handle(jpeg_codec_handle_t *jpeg_new_codec)
                         .arg = (void *)codec
                     },
                 },
+                .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
                 .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
             };
             esp_err_t err = sleep_retention_module_init(jpeg_regs_retention.module_id, &init_param);
@@ -147,6 +151,7 @@ esp_err_t jpeg_release_codec_handle(jpeg_codec_handle_t jpeg_codec)
 
 #if JPEG_USE_RETENTION_LINK
             if (jpeg_codec->retention_link_created) {
+                sleep_retention_module_detach(jpeg_regs_retention.module_id);
                 sleep_retention_module_free(jpeg_regs_retention.module_id);
             }
             sleep_retention_module_deinit(jpeg_regs_retention.module_id);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,6 @@
 #include "hal/rtc_io_types.h"
 #include "esp_clk_tree.h"
 #include "esp_private/periph_ctrl.h"
-#include "esp_private/uart_share_hw_ctrl.h"
 
 static const char *LP_UART_TAG = "lp_uart";
 
@@ -34,9 +33,9 @@ static esp_err_t lp_core_uart_param_config(const lp_core_uart_cfg_t *cfg)
     esp_err_t ret = ESP_OK;
 
     /* Argument sanity check */
-    if ((cfg->uart_proto_cfg.rx_flow_ctrl_thresh > SOC_LP_UART_FIFO_LEN) ||
-            (cfg->uart_proto_cfg.flow_ctrl > UART_HW_FLOWCTRL_MAX) ||
-            (cfg->uart_proto_cfg.data_bits > UART_DATA_BITS_MAX)) {
+    if ((cfg->uart_proto_cfg.rx_flow_ctrl_thresh >= SOC_LP_UART_FIFO_LEN) ||
+            (cfg->uart_proto_cfg.flow_ctrl >= UART_HW_FLOWCTRL_MAX) ||
+            (cfg->uart_proto_cfg.data_bits >= UART_DATA_BITS_MAX)) {
         // Invalid config
         return ESP_ERR_INVALID_ARG;
     }
@@ -51,7 +50,7 @@ static esp_err_t lp_core_uart_param_config(const lp_core_uart_cfg_t *cfg)
     }
 
     // LP UART clock source is mixed with other peripherals in the same register
-    LP_UART_SRC_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         /* Enable LP UART bus clock */
         lp_uart_ll_enable_bus_clock(0, true);
         lp_uart_ll_set_source_clk(hal.dev, clk_src);
@@ -92,29 +91,31 @@ static esp_err_t lp_uart_config_io(gpio_num_t pin, rtc_gpio_mode_t direction, ui
         return ESP_FAIL;
     }
 
-    /* Set LP_IO direction */
-    ret = rtc_gpio_set_direction(pin, direction);
-    if (ret != ESP_OK) {
-        return ESP_FAIL;
-    }
-
     /* Connect pins */
     const uart_periph_sig_t *upin = &uart_periph_signal[LP_UART_PORT_NUM].pins[idx];
 #if !SOC_LP_GPIO_MATRIX_SUPPORTED
-    /* When LP_IO Matrix is not support, LP_IO Mux must be connected to the pins */
-    ret = rtc_gpio_iomux_func_sel(pin, upin->iomux_func);
-#else
-    /* If the configured pin is the default LP_IO Mux pin for LP UART, then set the LP_IO MUX function */
-    if (upin->default_gpio == pin) {
-        ret = rtc_gpio_iomux_func_sel(pin, upin->iomux_func);
+    /* On targets that do not support the LP IO Matrix, LP UART uses fixed pads.
+     * rtc_gpio_iomux_output / rtc_gpio_iomux_input select the UART RTC IOMUX function and direction. */
+    if (direction == RTC_GPIO_MODE_OUTPUT_ONLY) {
+        ret = rtc_gpio_iomux_output(pin, upin->iomux_func);
     } else {
-        /* Select FUNC1 for LP_IO Matrix */
-        ret = rtc_gpio_iomux_func_sel(pin, 1);
-        /* Connect the LP_IO to the LP UART peripheral signal */
+        ret = rtc_gpio_iomux_input(pin, upin->iomux_func, UART_PERIPH_SIGNAL(LP_UART_PORT_NUM, idx));
+    }
+#else
+    /* Default LP UART pin: same RTC IOMUX path as on targets that do not support the LP IO Matrix. */
+    if (upin->default_gpio == pin) {
+        /* Select LP UART on this pin including direction and LP IO Matrix bypass. */
         if (direction == RTC_GPIO_MODE_OUTPUT_ONLY) {
-            ret = lp_gpio_connect_out_signal(pin, UART_PERIPH_SIGNAL(LP_UART_PORT_NUM, idx), 0, 0);
+            ret = rtc_gpio_iomux_output(pin, upin->iomux_func);
         } else {
-            ret = lp_gpio_connect_in_signal(pin, UART_PERIPH_SIGNAL(LP_UART_PORT_NUM, idx), 0);
+            ret = rtc_gpio_iomux_input(pin, upin->iomux_func, UART_PERIPH_SIGNAL(LP_UART_PORT_NUM, idx));
+        }
+    } else {
+        /* Non-default pin: route LP UART TX/RX through the LP IO Matrix. */
+        if (direction == RTC_GPIO_MODE_OUTPUT_ONLY) {
+            ret = lp_gpio_matrix_output(pin, UART_PERIPH_SIGNAL(LP_UART_PORT_NUM, idx), false, false);
+        } else {
+            ret = lp_gpio_matrix_input(pin, UART_PERIPH_SIGNAL(LP_UART_PORT_NUM, idx), false);
         }
     }
 #endif /* SOC_LP_GPIO_MATRIX_SUPPORTED */
@@ -146,10 +147,13 @@ static esp_err_t lp_core_uart_set_pin(const lp_core_uart_cfg_t *cfg)
     ret = lp_uart_config_io(cfg->uart_pin_cfg.tx_io_num, RTC_GPIO_MODE_OUTPUT_ONLY, SOC_UART_PERIPH_SIGNAL_TX);
     /* Configure Rx Pin */
     ret = lp_uart_config_io(cfg->uart_pin_cfg.rx_io_num, RTC_GPIO_MODE_INPUT_ONLY, SOC_UART_PERIPH_SIGNAL_RX);
-    /* Configure RTS Pin */
-    ret = lp_uart_config_io(cfg->uart_pin_cfg.rts_io_num, RTC_GPIO_MODE_OUTPUT_ONLY, SOC_UART_PERIPH_SIGNAL_RTS);
-    /* Configure CTS Pin */
-    ret = lp_uart_config_io(cfg->uart_pin_cfg.cts_io_num, RTC_GPIO_MODE_INPUT_ONLY, SOC_UART_PERIPH_SIGNAL_CTS);
+    /* Configure RTS/CTS only when hardware flow control is enabled */
+    if (cfg->uart_proto_cfg.flow_ctrl & UART_HW_FLOWCTRL_RTS) {
+        ret = lp_uart_config_io(cfg->uart_pin_cfg.rts_io_num, RTC_GPIO_MODE_OUTPUT_ONLY, SOC_UART_PERIPH_SIGNAL_RTS);
+    }
+    if (cfg->uart_proto_cfg.flow_ctrl & UART_HW_FLOWCTRL_CTS) {
+        ret = lp_uart_config_io(cfg->uart_pin_cfg.cts_io_num, RTC_GPIO_MODE_INPUT_ONLY, SOC_UART_PERIPH_SIGNAL_CTS);
+    }
 
     return ret;
 }

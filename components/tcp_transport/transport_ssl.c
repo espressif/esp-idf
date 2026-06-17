@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -71,6 +71,8 @@ static int esp_tls_connect_async(esp_transport_handle_t t, const char *host, int
         ssl->ssl_initialized = true;
         ssl->tls = esp_tls_init();
         if (!ssl->tls) {
+            ESP_LOGE(TAG, "Failed to initialize TLS");
+            ssl->ssl_initialized = false;
             return -1;
         }
         ssl->conn_state = TRANS_SSL_CONNECTING;
@@ -82,6 +84,10 @@ static int esp_tls_connect_async(esp_transport_handle_t t, const char *host, int
             if (esp_tls_get_conn_sockfd(ssl->tls, &ssl->sockfd) != ESP_OK) {
                 ESP_LOGE(TAG, "Error in obtaining socket fd for the session");
                 esp_tls_conn_destroy(ssl->tls);
+                ssl->tls = NULL;
+                ssl->conn_state = TRANS_SSL_INIT;
+                ssl->ssl_initialized = false;
+                ssl->sockfd = INVALID_SOCKET;
                 return -1;
             }
         }
@@ -112,6 +118,7 @@ static int ssl_connect(esp_transport_handle_t t, const char *host, int port, int
     ssl->tls = esp_tls_init();
     if (ssl->tls == NULL) {
         ESP_LOGE(TAG, "Failed to initialize new connection object");
+        ssl->ssl_initialized = false;
         capture_tcp_transport_error(t, ERR_TCP_TRANSPORT_NO_MEM);
         return -1;
     }
@@ -135,6 +142,7 @@ static int ssl_connect(esp_transport_handle_t t, const char *host, int port, int
 exit_failure:
         esp_tls_conn_destroy(ssl->tls);
         ssl->tls = NULL;
+        ssl->ssl_initialized = false;
         ssl->sockfd = INVALID_SOCKET;
         return -1;
 }
@@ -517,6 +525,46 @@ static int base_get_socket(esp_transport_handle_t t)
         return ctx->sockfd;
     }
     return INVALID_SOCKET;
+}
+
+int esp_transport_poll_connection_closed(esp_transport_handle_t t, int timeout_ms)
+{
+    int sock = base_get_socket(t);
+    if (sock < 0) {
+        return -1;
+    }
+
+    struct timeval timeout;
+    fd_set readset;
+    fd_set errset;
+    FD_ZERO(&readset);
+    FD_ZERO(&errset);
+    FD_SET(sock, &readset);
+    FD_SET(sock, &errset);
+
+    int ret = select(sock + 1, &readset, NULL, &errset, esp_transport_utils_ms_to_timeval(timeout_ms, &timeout));
+    if (ret > 0) {
+        if (FD_ISSET(sock, &readset)) {
+            uint8_t buffer;
+            if (recv(sock, &buffer, 1, MSG_PEEK) <= 0) {
+                // Socket readable but zero bytes available: clean closure by FIN
+                return 1;
+            }
+            ESP_LOGW(TAG, "poll_connection_closed: unexpected data readable on socket=%d", sock);
+        } else if (FD_ISSET(sock, &errset)) {
+            int sock_errno = 0;
+            uint32_t optlen = sizeof(sock_errno);
+            getsockopt(sock, SOL_SOCKET, SO_ERROR, &sock_errno, &optlen);
+            ESP_LOGD(TAG, "poll_connection_closed select error %d, errno = %s, fd = %d", sock_errno, strerror(sock_errno), sock);
+            if (sock_errno == ENOTCONN || sock_errno == ECONNRESET || sock_errno == ECONNABORTED) {
+                // RST-based closure: treat as expected connection termination
+                return 1;
+            }
+            ESP_LOGE(TAG, "poll_connection_closed: unexpected errno=%d on socket=%d", sock_errno, sock);
+        }
+        return -1;
+    }
+    return ret; // 0 on timeout, -1 on select error
 }
 
 #ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL

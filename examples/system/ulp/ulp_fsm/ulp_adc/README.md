@@ -9,7 +9,7 @@ ULP program periodically measures the input voltage on ADC_CHANNEL_6 (GPIO34 on 
 
 By default, thresholds are set to 1.35V and 1.75V, approximately.
 
-GPIO15 is connected to ground to supress output from ROM bootloader.
+GPIO15 is connected to ground to suppress output from ROM bootloader.
 
 Average current drawn by the ESP32 in this example (with the default 4x averaging) depending on the measurement frequency is as follows:
 

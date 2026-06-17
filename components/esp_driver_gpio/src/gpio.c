@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,8 +20,10 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "hal/gpio_hal.h"
+#include "hal/gpio_caps.h"
 #include "esp_private/esp_gpio_reserve.h"
 #include "esp_private/io_mux.h"
+#include "esp_private/periph_ctrl.h"
 
 #if (SOC_RTCIO_PIN_COUNT > 0)
 #include "hal/rtc_io_hal.h"
@@ -38,6 +40,12 @@ static const char *GPIO_TAG = "gpio";
 #define GPIO_RTCIO_ARE_INDEPENDENT 0
 #else // for any other target has RTC_IO (LP_IOMUX) registers
 #define GPIO_RTCIO_ARE_INDEPENDENT 1
+#endif
+
+#if SOC_RTC_CNTL_NEEDS_ATOMIC_ACCESS
+#define RTC_CNTL_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define RTC_CNTL_ATOMIC()
 #endif
 
 typedef struct {
@@ -364,6 +372,36 @@ esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
 
     do {
         if (((gpio_pin_mask >> io_num) & BIT(0))) {
+            // This function will set the pin to a certain mode, instead of adding new modes to current status
+            // If GPIO_MODE_DEF_OUTPUT flag is not set, output will be disabled; Same for GPIO_MODE_DEF_INPUT flag
+            // Also the func sel will always be set to GPIO function in this function
+            // so IO conflict check is tight here
+            uint64_t bit_mask = BIT64(io_num);
+            bool conflict = false;
+            // No need to reserve any pin for reading pad level (and do input check first, since output needs reserve IO which will make esp_gpio_is_reserved return true)
+            // but if the pin has been used as an IOMUX input, neither it can be configured to GPIO function, nor input can be disabled
+            if (esp_gpio_is_reserved(bit_mask) && gpio_hal_input_is_enabled(gpio_context.gpio_hal, io_num)) {
+                conflict = true;
+            }
+            // Currently, we have no way to know if an IO has been used as a GPIO matrix input (no reserve for this case),
+            // so we cannot check such case and skip if input will be disabled
+            if ((pGPIOConfig->mode) & GPIO_MODE_DEF_OUTPUT) {
+                // need to reserve the pin if it is used as an output
+                uint64_t old_busy_mask = esp_gpio_reserve(bit_mask);
+                if (old_busy_mask & bit_mask) {
+                    conflict = true;
+                }
+            } else {
+                // gpio output will be disabled, so should skip for any reserved output pins
+                if (esp_gpio_is_reserved(bit_mask) && !gpio_hal_input_is_enabled(gpio_context.gpio_hal, io_num)) {
+                    conflict = true;
+                }
+            }
+            if (conflict) {
+                ESP_LOGW(GPIO_TAG, "conflict found for GPIO[%"PRIu32"]", io_num);
+                // Right now, we just give a warning
+                // Later, we should skip the pin and continue with the next one
+            }
 
 #if SOC_RTCIO_PIN_COUNT > 0
             if (rtc_gpio_is_valid_gpio(io_num)) {
@@ -450,9 +488,6 @@ esp_err_t gpio_config_as_analog(gpio_num_t gpio_num)
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
     if (rtc_gpio_is_valid_gpio(gpio_num)) {
         rtc_gpio_deinit(gpio_num);
-        rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED);
-        rtc_gpio_pullup_dis(gpio_num);
-        rtc_gpio_pulldown_dis(gpio_num);
     }
 #endif
     return ESP_OK;
@@ -617,7 +652,7 @@ esp_err_t gpio_isr_register(void (*fn)(void *), void *arg, int intr_alloc_flags,
     gpio_isr_alloc_t p;
     p.source = GPIO_LL_INTR_SOURCE0;
     p.intr_alloc_flags = intr_alloc_flags;
-#if SOC_ANA_CMPR_INTR_SHARE_WITH_GPIO
+#if GPIO_CAPS_GET(INTR_SHARED)
     p.intr_alloc_flags |= ESP_INTR_FLAG_SHARED;
 #endif
     p.fn = fn;
@@ -742,7 +777,6 @@ esp_err_t gpio_get_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t *stren
 
 esp_err_t gpio_hold_en(gpio_num_t gpio_num)
 {
-    GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "Only output-capable GPIO support this function", ESP_ERR_NOT_SUPPORTED);
     int ret = ESP_OK;
 
     if (rtc_gpio_is_valid_gpio(gpio_num)) {
@@ -750,6 +784,7 @@ esp_err_t gpio_hold_en(gpio_num_t gpio_num)
         ret = rtc_gpio_hold_en(gpio_num);
 #endif
     } else if (GPIO_HOLD_MASK[gpio_num]) {
+        GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "Only output-capable GPIO support this function", ESP_ERR_NOT_SUPPORTED);
         portENTER_CRITICAL(&gpio_context.gpio_spinlock);
         gpio_hal_hold_en(gpio_context.gpio_hal, gpio_num);
         portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
@@ -762,7 +797,6 @@ esp_err_t gpio_hold_en(gpio_num_t gpio_num)
 
 esp_err_t gpio_hold_dis(gpio_num_t gpio_num)
 {
-    GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "Only output-capable GPIO support this function", ESP_ERR_NOT_SUPPORTED);
     int ret = ESP_OK;
 
     if (rtc_gpio_is_valid_gpio(gpio_num)) {
@@ -770,6 +804,7 @@ esp_err_t gpio_hold_dis(gpio_num_t gpio_num)
         ret = rtc_gpio_hold_dis(gpio_num);
 #endif
     } else if (GPIO_HOLD_MASK[gpio_num]) {
+        GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "Only output-capable GPIO support this function", ESP_ERR_NOT_SUPPORTED);
         portENTER_CRITICAL(&gpio_context.gpio_spinlock);
         gpio_hal_hold_dis(gpio_context.gpio_hal, gpio_num);
         portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
@@ -784,14 +819,18 @@ esp_err_t gpio_hold_dis(gpio_num_t gpio_num)
 void gpio_deep_sleep_hold_en(void)
 {
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
-    gpio_hal_deep_sleep_hold_en(gpio_context.gpio_hal);
+    RTC_CNTL_ATOMIC() {
+        gpio_hal_deep_sleep_hold_en(gpio_context.gpio_hal);
+    }
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
 }
 
 void gpio_deep_sleep_hold_dis(void)
 {
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
-    gpio_hal_deep_sleep_hold_dis(gpio_context.gpio_hal);
+    RTC_CNTL_ATOMIC() {
+        gpio_hal_deep_sleep_hold_dis(gpio_context.gpio_hal);
+    }
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
 }
 #endif //!SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
@@ -803,7 +842,9 @@ esp_err_t IRAM_ATTR gpio_force_hold_all()
     rtc_gpio_force_hold_en_all();
 #endif
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
-    gpio_hal_force_hold_all();
+    RTC_CNTL_ATOMIC() {
+        gpio_hal_force_hold_all();
+    }
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
     return ESP_OK;
 }
@@ -811,7 +852,9 @@ esp_err_t IRAM_ATTR gpio_force_hold_all()
 esp_err_t IRAM_ATTR gpio_force_unhold_all()
 {
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
-    gpio_hal_force_unhold_all();
+    RTC_CNTL_ATOMIC() {
+        gpio_hal_force_unhold_all();
+    }
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
 #if SOC_RTCIO_HOLD_SUPPORTED
     rtc_gpio_force_hold_dis_all();
@@ -1017,22 +1060,29 @@ esp_err_t gpio_sleep_sel_dis(gpio_num_t gpio_num)
     return ESP_OK;
 }
 
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && SOC_DEEP_SLEEP_SUPPORTED
-esp_err_t gpio_deep_sleep_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
+#if SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
+esp_err_t gpio_wakeup_enable_on_hp_periph_powerdown_sleep(gpio_num_t gpio_num, gpio_int_type_t intr_type)
 {
-    if (!GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO(gpio_num)) {
-        ESP_LOGE(GPIO_TAG, "GPIO %d does not support deep sleep wakeup", gpio_num);
+    if (!GPIO_IS_HP_PERIPH_PD_WAKEUP_VALID_IO(gpio_num)) {
+        ESP_LOGE(GPIO_TAG, "GPIO %d does not support wakeup on peripheral powerdown sleep", gpio_num);
         return ESP_ERR_INVALID_ARG;
     }
+#if SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED
+    if (intr_type == GPIO_INTR_DISABLE || intr_type > GPIO_INTR_HIGH_LEVEL) {
+        ESP_LOGE(GPIO_TAG, "invalid intr_type for wakeup, gpio_num:%u", gpio_num);
+        return ESP_ERR_INVALID_ARG;
+    }
+#else
     if ((intr_type != GPIO_INTR_LOW_LEVEL) && (intr_type != GPIO_INTR_HIGH_LEVEL)) {
         ESP_LOGE(GPIO_TAG, "GPIO wakeup only supports level mode, but edge mode set. gpio_num:%u", gpio_num);
         return ESP_ERR_INVALID_ARG;
     }
+#endif
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
 #if SOC_LP_IO_CLOCK_IS_INDEPENDENT
     io_mux_enable_lp_io_clock(gpio_num, true);
 #endif
-    gpio_hal_deepsleep_wakeup_enable(gpio_context.gpio_hal, gpio_num, intr_type);
+    gpio_hal_wakeup_enable_on_hp_periph_powerdown_sleep(gpio_context.gpio_hal, gpio_num, intr_type);
 #if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
     gpio_hal_sleep_sel_dis(gpio_context.gpio_hal, gpio_num);
 #endif
@@ -1040,14 +1090,14 @@ esp_err_t gpio_deep_sleep_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t int
     return ESP_OK;
 }
 
-esp_err_t gpio_deep_sleep_wakeup_disable(gpio_num_t gpio_num)
+esp_err_t gpio_wakeup_disable_on_hp_periph_powerdown_sleep(gpio_num_t gpio_num)
 {
-    if (!GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO(gpio_num)) {
-        ESP_LOGE(GPIO_TAG, "GPIO %d does not support deep sleep wakeup", gpio_num);
+    if (!GPIO_IS_HP_PERIPH_PD_WAKEUP_VALID_IO(gpio_num)) {
+        ESP_LOGE(GPIO_TAG, "GPIO %d does not support wakeup on peripheral powerdown sleep", gpio_num);
         return ESP_ERR_INVALID_ARG;
     }
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
-    gpio_hal_deepsleep_wakeup_disable(gpio_context.gpio_hal, gpio_num);
+    gpio_hal_wakeup_disable_on_hp_periph_powerdown_sleep(gpio_context.gpio_hal, gpio_num);
 #if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
     gpio_hal_sleep_sel_en(gpio_context.gpio_hal, gpio_num);
 #endif
@@ -1057,7 +1107,7 @@ esp_err_t gpio_deep_sleep_wakeup_disable(gpio_num_t gpio_num)
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
     return ESP_OK;
 }
-#endif // SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && SOC_DEEP_SLEEP_SUPPORTED
+#endif // SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 
 esp_err_t gpio_get_io_config(gpio_num_t gpio_num, gpio_io_config_t *out_io_config)
 {
@@ -1100,9 +1150,9 @@ esp_err_t gpio_dump_io_configuration(FILE *out_stream, uint64_t io_bit_mask)
         fprintf(out_stream, "IO[%"PRIu32"]%s -\n", gpio_num, esp_gpio_is_reserved(BIT64(gpio_num)) ? " **RESERVED**" : "");
         fprintf(out_stream, "  Pullup: %d, Pulldown: %d, DriveCap: %"PRIu32"\n", io_config.pu, io_config.pd, (uint32_t)io_config.drv);
         fprintf(out_stream, "  InputEn: %d, OutputEn: %s%s, OpenDrain: %d\n", io_config.ie, oe_str, ((io_config.fun_sel == PIN_FUNC_GPIO) && (io_config.oe_inv)) ? " (inversed)" : "", io_config.od);
-        fprintf(out_stream, "  FuncSel: %"PRIu32" (%s)\n", io_config.fun_sel, (io_config.fun_sel == PIN_FUNC_GPIO) ? "GPIO" : "IOMUX");
+        fprintf(out_stream, "  FuncSel: %"PRIu32" (%s)\n", (uint32_t)io_config.fun_sel, (io_config.fun_sel == PIN_FUNC_GPIO) ? "GPIO" : "IOMUX");
         if (io_config.fun_sel == PIN_FUNC_GPIO) {
-            fprintf(out_stream, "  GPIO Matrix SigOut ID: %"PRIu32"%s\n", io_config.sig_out, (io_config.sig_out == SIG_GPIO_OUT_IDX) ? " (simple GPIO output)" : "");
+            fprintf(out_stream, "  GPIO Matrix SigOut ID: %"PRIu32"%s\n", (uint32_t)io_config.sig_out, (io_config.sig_out == SIG_GPIO_OUT_IDX) ? " (simple GPIO output)" : "");
         }
         if (io_config.ie && io_config.fun_sel == PIN_FUNC_GPIO) {
             uint32_t cnt = 0;

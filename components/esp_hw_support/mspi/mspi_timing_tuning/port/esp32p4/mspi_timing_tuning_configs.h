@@ -1,11 +1,16 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
 #include "sdkconfig.h"
+#include "esp_assert.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define MSPI_TIMING_MSPI1_IS_INVOLVED       CONFIG_ESPTOOLPY_FLASHFREQ_120M   //This means esp flash driver needs to be notified
 #define MSPI_TIMING_CONFIG_NUM_MAX          32  //This should be larger than the max available timing config num
@@ -49,6 +54,14 @@
 #define MSPI_TIMING_FLASH_CORE_CLOCK_MHZ    80
 #endif
 
+/**
+ * @note
+ * Limitation 1: SDR mode requires the core clock divider (core_clk / div = module_clk) to be even number or 1.
+ */
+#if MSPI_TIMING_FLASH_STR_MODE
+ESP_STATIC_ASSERT((MSPI_TIMING_FLASH_CORE_CLOCK_MHZ == MSPI_TIMING_FLASH_MODULE_CLOCK) || (MSPI_TIMING_FLASH_CORE_CLOCK_MHZ % (2 * MSPI_TIMING_FLASH_MODULE_CLOCK) == 0), "FLASH Mode configuration are not supported");
+#endif
+
 //------------------------------------------Helper Macros to get FLASH/PSRAM tuning configs-----------------------------------------------//
 #define __GET_TUNING_CONFIG(type, core_clock, module_clock, mode) \
         (mspi_timing_config_t) { .tuning_config_table = MSPI_TIMING_##type##_CONFIG_TABLE_CORE_CLK_##core_clock##M_MODULE_CLK_##module_clock##M_##mode, \
@@ -66,3 +79,7 @@
 #define MSPI_TIMING_FLASH_CONFIG_TABLE_CORE_CLK_120M_MODULE_CLK_120M_STR_MODE        {{2, 0, 1}, {0, 0, 0}, {2, 2, 2}, {2, 1, 2}, {2, 0, 2}, {0, 0, 1}, {2, 2, 3}, {2, 1, 3}, {2, 0, 3}, {0, 0, 2}, {2, 2, 4}, {2, 1, 4}}
 #define MSPI_TIMING_FLASH_CONFIG_NUM_CORE_CLK_120M_MODULE_CLK_120M_STR_MODE          12
 #define MSPI_TIMING_FLASH_DEFAULT_CONFIG_ID_CORE_CLK_120M_MODULE_CLK_120M_STR_MODE   2
+
+#ifdef __cplusplus
+}
+#endif

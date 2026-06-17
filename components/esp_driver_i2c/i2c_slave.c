@@ -182,7 +182,7 @@ IRAM_ATTR static void i2c_slave_isr_handler(void *arg)
         if (slave_rw == I2C_SLAVE_READ_BY_MASTER) {
 #if !SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE
             i2c_slave_request_event_data_t evt_data = {};
-            if (i2c_slave->request_callback) {
+            if (i2c_slave->request_callback && i2c_ll_slave_wait_ack(hal->dev)) {
                 pxHigherPriorityTaskWoken |= i2c_slave->request_callback(i2c_slave, &evt_data, i2c_slave->user_ctx);
             }
 #endif
@@ -305,7 +305,8 @@ esp_err_t i2c_new_slave_device(const i2c_slave_config_t *slave_config, i2c_slave
     i2c_ll_set_slave_addr(hal->dev, slave_config->slave_addr, false);
     i2c_ll_set_tout(hal->dev, I2C_LL_MAX_TIMEOUT);
 
-    I2C_CLOCK_SRC_ATOMIC() {
+    ESP_GOTO_ON_ERROR(i2c_select_periph_clock(i2c_slave->base, slave_config->clk_source), err, TAG, "select periph clock failed");
+    PERIPH_RCC_ATOMIC() {
         i2c_ll_set_source_clk(hal->dev, slave_config->clk_source);
     }
     bool addr_10bit_en = slave_config->addr_bit_len != I2C_ADDR_BIT_LEN_7;

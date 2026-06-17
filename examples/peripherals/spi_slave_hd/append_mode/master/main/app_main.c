@@ -30,9 +30,9 @@
 
 //---------This should be negotiated with the Slave!!!!-------------//
 #define SLAVE_READY_FLAG    0x88
-#define READY_FLAG_REG      0
-#define SYNC_REG_FROM_HOST  (14 * 4)
-#define SYNC_REG_TO_HOST    (15 * 4)
+#define READY_FLAG_REG      (0 * 4) // first register is used for ready flag
+#define SYNC_REG_FROM_HOST  (1 * 4) // second register is used for sync from host
+#define SYNC_REG_TO_HOST    (2 * 4) // third register is used for sync to host
 
 static void init_driver(spi_device_handle_t *out_spi, essl_handle_t *out_essl)
 {

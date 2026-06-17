@@ -296,7 +296,7 @@ The GPTimer driver supports dynamically updating the alarm value in the interrup
     // Start the timer
     ESP_ERROR_CHECK(gptimer_start(gptimer));
 
-.. only:: SOC_TIMER_SUPPORT_ETM
+.. only:: SOC_TIMER_SUPPORT_ETM and SOC_ETM_SUPPORTED
 
     .. _gptimer-etm-event-and-task:
 
@@ -393,7 +393,7 @@ Application Examples
 
     - :example:`peripherals/timer_group/gptimer` demonstrates how to use the general-purpose timer APIs on ESP SOC chips to generate periodic alarm events and trigger different alarm actions.
     - :example:`peripherals/timer_group/wiegand_interface` uses two timers (one in one-shot alarm mode and the other in periodic alarm mode) to trigger interrupts and change the GPIO output state in the alarm event callback function, simulating the output waveform of the Wiegand protocol.
-    :SOC_TIMER_SUPPORT_ETM: - :example:`peripherals/timer_group/gptimer_capture_hc_sr04` demonstrates how to use the general-purpose timer and Event Task Matrix (ETM) to accurately capture timestamps of ultrasonic sensor events and convert them into distance information.
+    :SOC_TIMER_SUPPORT_ETM and SOC_ETM_SUPPORTED: - :example:`peripherals/timer_group/gptimer_capture_hc_sr04` demonstrates how to use the general-purpose timer and Event Task Matrix (ETM) to accurately capture timestamps of ultrasonic sensor events and convert them into distance information.
 
 API Reference
 =============
@@ -416,6 +416,6 @@ GPTimer HAL Types
 GPTimer ETM APIs
 ----------------
 
-.. only:: SOC_TIMER_SUPPORT_ETM
+.. only:: SOC_TIMER_SUPPORT_ETM and SOC_ETM_SUPPORTED
 
     .. include-build-file:: inc/gptimer_etm.inc

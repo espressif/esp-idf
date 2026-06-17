@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -19,7 +19,8 @@
 #include "esp_system.h"
 #include "unity_test_utils_memory.h"
 
-#if SOC_KEY_MANAGER_SUPPORTED
+// TODO: IDF-15703 re-enable Key Manager driver tests on esp32s31 once the TRNG support update lands
+#if SOC_KEY_MANAGER_SUPPORTED && !CONFIG_IDF_TARGET_ESP32S31
 #include "hal/key_mgr_ll.h"
 
 #if SOC_KEY_MANAGER_HMAC_KEY_DEPLOY
@@ -41,13 +42,34 @@ typedef struct {
 
 #if SOC_RSA_MAX_BIT_LEN == 4096
 #include "digital_signature_test_cases_4096.h"
+
+// Note: generated using the hmac_key_idx = 2 of digital_signature_test_cases_4096
+#define DS_KEY_IDX 1
+static const uint8_t k1_ds_encrypt[] = {
+    0xf1, 0xbf, 0xa0, 0x27, 0x83, 0x02, 0x85, 0x94, 0x07, 0xb4, 0x20, 0x46, 0x1f, 0x1d, 0x4e, 0x24, 0x1d, 0x38, 0xcb, 0x21, 0xed, 0xcf, 0x85, 0x79, 0xe7, 0x17, 0xbf, 0x9d, 0xbb, 0xb8, 0x6f, 0xbd
+};
+
 #elif SOC_RSA_MAX_BIT_LEN == 3072
 #include "digital_signature_test_cases_3072.h"
+
+// Note: generated using the hmac_key_idx = 0 of digital_signature_test_cases_3072
+#define DS_KEY_IDX 0
+static const uint8_t k1_ds_encrypt[] = {
+    0xdc, 0xcc, 0x8e, 0xd4, 0x66, 0xb4, 0x1a, 0x4b, 0x9f, 0xba, 0xa3, 0x2e, 0x99, 0x6b, 0x45, 0x07, 0xd4, 0xf6, 0xe4, 0x4e, 0x6f, 0x26, 0xca, 0x20, 0xbd, 0xb4, 0x98, 0x7c, 0x32, 0x4f, 0x21, 0x55
+};
 #endif
 #endif /* SOC_KEY_MANAGER_DS_KEY_DEPLOY */
 
 static const char *TAG = "key_mgr_test";
 
+#define SKIP_IF_KEY_MGR_NOT_SUPPORTED()                                                   \
+    do {                                                                                  \
+        if (!key_mgr_ll_is_supported()) {                                                 \
+            TEST_IGNORE_MESSAGE("Key Manager not supported on this chip");                \
+        }                                                                                 \
+    } while (0)
+
+#if SOC_KEY_MANAGER_FE_KEY_DEPLOY
 #define ENCRYPTED_DATA_SIZE 128
 static const uint8_t plaintext_data[ENCRYPTED_DATA_SIZE] = {
     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10,
@@ -61,15 +83,16 @@ static const uint8_t plaintext_data[ENCRYPTED_DATA_SIZE] = {
 };
 
 static const uint8_t expected_ciphertext[ENCRYPTED_DATA_SIZE] = {
-    0xf9, 0xb6, 0x08, 0x0f, 0xfb, 0x37, 0x46, 0xe4, 0x99, 0x3c, 0xf9, 0x29, 0xab, 0x90, 0xd5, 0x3f,
-    0xc8, 0x70, 0x45, 0xae, 0x28, 0x16, 0xbd, 0x83, 0x66, 0x16, 0x83, 0x86, 0x01, 0xc9, 0xa2, 0x97,
-    0xa4, 0xf6, 0xf0, 0x40, 0xb5, 0xfd, 0xb7, 0x13, 0x60, 0xc3, 0x39, 0xf2, 0x32, 0x5a, 0xa3, 0x89,
-    0xfd, 0x77, 0x9c, 0x6b, 0x0e, 0x98, 0xdf, 0x8f, 0xf7, 0xcc, 0x2a, 0x1e, 0xce, 0xdc, 0xef, 0x41,
-    0xac, 0x0f, 0x48, 0x97, 0xa1, 0x1a, 0xc0, 0x82, 0x42, 0x7e, 0x1a, 0x35, 0xcd, 0xcb, 0x2b, 0x1d,
-    0x72, 0xc6, 0x78, 0xab, 0x35, 0x58, 0xd1, 0xe3, 0xb1, 0x61, 0x8d, 0x11, 0x70, 0x91, 0x62, 0xb4,
-    0x5f, 0xdd, 0x75, 0x2f, 0x78, 0xc4, 0x95, 0x67, 0x3a, 0xd3, 0x87, 0x02, 0x35, 0x78, 0x48, 0xef,
-    0xf2, 0xde, 0xdb, 0x59, 0xda, 0x33, 0xa6, 0x27, 0xdd, 0x33, 0x18, 0x0c, 0x57, 0x24, 0x95, 0x38,
+    0xa, 0x6, 0x88, 0xb9, 0x9f, 0x3e, 0xff, 0xf5, 0x63, 0x37, 0xa2, 0xd6, 0xbb, 0x71, 0x50, 0x89,
+    0xa7, 0xbf, 0xa1, 0x5d, 0x3a, 0xc7, 0x18, 0x66, 0xa7, 0xab, 0x5f, 0x7, 0xd, 0x7c, 0xad, 0xcc,
+    0x8c, 0x9a, 0xc7, 0xff, 0x10, 0xf6, 0xab, 0xef, 0x62, 0x71, 0xdf, 0xc, 0x60, 0x18, 0x4f, 0xa2,
+    0x2c, 0x55, 0x14, 0x41, 0xd5, 0xfc, 0x87, 0x44, 0xe1, 0xd1, 0xd1, 0x78, 0x76, 0x9f, 0x43, 0x87,
+    0xa0, 0xb4, 0xea, 0x66, 0xbc, 0x56, 0x35, 0x39, 0x53, 0x60, 0xa6, 0xea, 0x1e, 0x7d, 0x48, 0x17,
+    0x6e, 0x58, 0x4c, 0x68, 0xc0, 0xfb, 0x54, 0x35, 0x92, 0x7b, 0x89, 0x9f, 0x69, 0x33, 0x1, 0x17,
+    0x85, 0xe2, 0x69, 0x26, 0xfb, 0x61, 0x7e, 0x15, 0x11, 0x26, 0x59, 0xf1, 0x4f, 0xeb, 0x4d, 0x25,
+    0x8e, 0xc5, 0xb9, 0x64, 0xdf, 0xc7, 0x52, 0x87, 0x2d, 0xb, 0xd6, 0xdd, 0xb1, 0xb3, 0xfe, 0xaf,
 };
+#endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY */
 
 /* Big endian */
 static const uint8_t init_key[] = {
@@ -79,27 +102,23 @@ static const uint8_t init_key[] = {
 
 /* Big endian */
 static const uint8_t k2_info[] = {
-    0x8f, 0x96, 0x33, 0x47, 0xe1, 0xa5, 0x57, 0xe9, 0x2a, 0x51, 0xa9, 0xbe, 0x48, 0x84, 0x25, 0x4e,
-    0x6f, 0x50, 0x1c, 0x45, 0xdb, 0xb6, 0xfa, 0xeb, 0x35, 0xd2, 0x27, 0x91, 0x3f, 0x67, 0x57, 0xd9,
-    0xcb, 0x55, 0xe4, 0x2b, 0x18, 0x16, 0xe7, 0xce, 0x6c, 0xf2, 0x58, 0x71, 0x17, 0x76, 0x2a, 0x86,
-    0x05, 0xe7, 0x37, 0x45, 0x71, 0x34, 0xca, 0xaf, 0x60, 0x07, 0xdf, 0xf4, 0xd2, 0xee, 0x3d, 0x4b,
+    0xba, 0x7f, 0xe1, 0x43, 0xce, 0x19, 0xaf, 0xe8, 0xee, 0x04, 0x17, 0xcf, 0x67, 0x9d, 0xf4, 0xeb,
+    0x44, 0x12, 0x6f, 0xee, 0x9f, 0xfe, 0x9f, 0x5f, 0x20, 0x18, 0x9f, 0x27, 0x3f, 0xcb, 0x7b, 0xba,
+    0x92, 0x37, 0x07, 0x92, 0x47, 0xee, 0x1a, 0xbe, 0xa8, 0x7e, 0x32, 0x70, 0xc1, 0x05, 0x42, 0xe4,
+    0x88, 0x9d, 0x0b, 0x2b, 0x40, 0x87, 0x6e, 0x58, 0xf3, 0xf3, 0x63, 0x62, 0xd1, 0x5c, 0x9a, 0xe8
 };
 
+#if SOC_KEY_MANAGER_FE_KEY_DEPLOY
 /* Big endian */
-static const uint8_t k1_encrypt[] = {
-    0xe0, 0xe8, 0x41, 0xe3, 0xd0, 0x92, 0x71, 0x84, 0x4b, 0x02, 0x1e, 0xec, 0x14, 0xdd, 0xaf, 0xf8,
-    0x39, 0xf9, 0x6a, 0x8d, 0x1b, 0xd7, 0x64, 0x3b, 0x7b, 0xa6, 0x05, 0x42, 0x01, 0xfb, 0xab, 0xe1,
+static const uint8_t k1_xts_aes_encrypt[] = {
+    0x0a, 0x43, 0x2a, 0xee, 0xb5, 0xd0, 0x6b, 0x58, 0x34, 0x2d, 0x0d, 0xbf, 0xf7, 0x04, 0x60, 0x81,
+    0x08, 0x79, 0x38, 0xb3, 0xb5, 0xdf, 0x25, 0xb4, 0x38, 0x8e, 0x93, 0x5d, 0xbf, 0xd1, 0x91, 0x6d,
 };
+#endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY */
 
 static const uint8_t k1_hmac_encrypt[] = {
-    0x9e, 0xd8, 0x62, 0x4f, 0x27, 0xe1, 0x13, 0xfc, 0x50, 0x4b, 0x7f, 0x68, 0x70, 0x7b, 0xa1, 0xb2,
-    0xb1, 0x75, 0x21, 0x43, 0x88, 0x7d, 0xed, 0x4b, 0x58, 0x27, 0xb4, 0x15, 0x57, 0xc2, 0x46, 0x78,
-};
-
-// Note: generated using the hmac_key_idx = 0 of digital_signature_test_cases_3072
-static const uint8_t k1_ds_encrypt[] = {
-    0xa9, 0xf7, 0xd1, 0xd9, 0xaa, 0x80, 0xfa, 0x6f, 0xfa, 0x34, 0xf6, 0x66, 0xbf, 0xba, 0x7b, 0xc9,
-    0xa9, 0xf4, 0xeb, 0xba, 0x43, 0x61, 0x59, 0x32, 0x5d, 0xa0, 0xda, 0xd9, 0x0d, 0xc7, 0xde, 0xb2,
+    0x02, 0xf7, 0x05, 0x75, 0xfd, 0x12, 0x99, 0xc2, 0xb9, 0xc0, 0x2e, 0x40, 0xd0, 0x69, 0xb0, 0x83,
+    0x13, 0xfc, 0x74, 0xc3, 0xec, 0x4f, 0xf4, 0xd4, 0xe2, 0x35, 0xb5, 0x42, 0x4e, 0x61, 0x0f, 0x6d,
 };
 
 static const uint8_t k1_G[] = {
@@ -140,11 +159,13 @@ static esp_err_t test_xts_aes_key(bool verify)
 
 TEST_CASE("Key Manager AES mode: XTS-AES-128 key deployment", "[hw_crypto] [key_mgr]")
 {
+    SKIP_IF_KEY_MGR_NOT_SUPPORTED();
+
     esp_key_mgr_aes_key_config_t *key_config = calloc(1, sizeof(esp_key_mgr_aes_key_config_t));
     TEST_ASSERT_NOT_NULL(key_config);
 
     memcpy(key_config->k2_info, (uint8_t*) k2_info, KEY_MGR_K2_INFO_SIZE);
-    memcpy(key_config->k1_encrypted, (uint8_t*) k1_encrypt, KEY_MGR_K1_ENCRYPTED_SIZE);
+    memcpy(key_config->k1_encrypted, (uint8_t*) k1_xts_aes_encrypt, KEY_MGR_K1_ENCRYPTED_SIZE);
     memcpy(key_config->sw_init_key, (uint8_t*) init_key, KEY_MGR_SW_INIT_KEY_SIZE);
     key_config->use_pre_generated_sw_init_key = 1;
     key_config->key_type = ESP_KEY_MGR_FLASH_XTS_AES_KEY;
@@ -164,6 +185,8 @@ TEST_CASE("Key Manager AES mode: XTS-AES-128 key deployment", "[hw_crypto] [key_
 
 TEST_CASE("Key Manager ECDH0 mode: XTS-AES-128 key deployment", "[hw_crypto] [key_mgr]")
 {
+    SKIP_IF_KEY_MGR_NOT_SUPPORTED();
+
     esp_key_mgr_ecdh0_key_config_t *key_config = calloc(1, sizeof(esp_key_mgr_ecdh0_key_config_t));
     TEST_ASSERT_NOT_NULL(key_config);
 
@@ -189,6 +212,8 @@ TEST_CASE("Key Manager ECDH0 mode: XTS-AES-128 key deployment", "[hw_crypto] [ke
 
 TEST_CASE("Key Manager Random mode: XTS-AES-128 key deployment", "[hw_crypto] [key_mgr]")
 {
+    SKIP_IF_KEY_MGR_NOT_SUPPORTED();
+
     esp_key_mgr_random_key_config_t *key_config = calloc(1, sizeof(esp_key_mgr_random_key_config_t));
     TEST_ASSERT_NOT_NULL(key_config);
 
@@ -206,11 +231,43 @@ TEST_CASE("Key Manager Random mode: XTS-AES-128 key deployment", "[hw_crypto] [k
     free(key_config);
     free(key_recovery_info);
 }
+
+TEST_CASE("Key Manager ECDH1 mode: XTS-AES-128 key deployment", "[hw_crypto] [key_mgr]")
+{
+    SKIP_IF_KEY_MGR_NOT_SUPPORTED();
+
+    esp_key_mgr_ecdh1_key_config_t *key_config = calloc(1, sizeof(esp_key_mgr_ecdh1_key_config_t));
+    TEST_ASSERT_NOT_NULL(key_config);
+
+    memcpy(key_config->k2_info, (uint8_t*) k2_info, KEY_MGR_K2_INFO_SIZE);
+    memcpy(key_config->k1_G[0], (uint8_t*) k1_G, KEY_MGR_ECDH0_INFO_SIZE);
+    memcpy(key_config->sw_init_key, (uint8_t*) init_key, KEY_MGR_SW_INIT_KEY_SIZE);
+    key_config->use_pre_generated_sw_init_key = 1;
+    key_config->key_type = ESP_KEY_MGR_FLASH_XTS_AES_KEY;
+    key_config->key_len = ESP_KEY_MGR_XTS_AES_LEN_128;
+
+    esp_key_mgr_key_recovery_info_t *key_recovery_info = calloc(1, sizeof(esp_key_mgr_key_recovery_info_t));
+    TEST_ASSERT_NOT_NULL(key_recovery_info);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deploy_key_in_ecdh1_mode(key_config, key_recovery_info));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_activate_key(key_recovery_info));
+    /* verify=false: same convention as the ECDH0 case above. The expected
+     * ciphertext IS derivable (k2 = AES_DEC(k2_info, init_key); deployed key
+     * = x(k1*k2*G)) but this app doesn't carry the off-device ECC code.
+     * Bitwise verification lives in the HAL crypto test app. */
+    TEST_ASSERT_EQUAL(ESP_OK, test_xts_aes_key(false));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deactivate_key(key_recovery_info->key_type));
+
+    free(key_config);
+    free(key_recovery_info);
+}
 #endif /* SOC_KEY_MANAGER_FE_KEY_DEPLOY */
 
 #if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
 TEST_CASE("Key Manager random mode: ECDSA key deployment", "[hw_crypto] [key_mgr]")
 {
+    SKIP_IF_KEY_MGR_NOT_SUPPORTED();
+
     esp_key_mgr_random_key_config_t *key_config = calloc(1, sizeof(esp_key_mgr_random_key_config_t));
     TEST_ASSERT_NOT_NULL(key_config);
 
@@ -242,6 +299,8 @@ static esp_err_t test_hmac_key(bool verify)
 
 TEST_CASE("Key Manager AES mode: HMAC key deployment", "[hw_crypto] [key_mgr]")
 {
+    SKIP_IF_KEY_MGR_NOT_SUPPORTED();
+
     esp_key_mgr_aes_key_config_t *key_config = calloc(1, sizeof(esp_key_mgr_aes_key_config_t));
     TEST_ASSERT_NOT_NULL(key_config);
 
@@ -265,6 +324,8 @@ TEST_CASE("Key Manager AES mode: HMAC key deployment", "[hw_crypto] [key_mgr]")
 
 TEST_CASE("Key Manager ECDH0 mode: HMAC key deployment", "[hw_crypto] [key_mgr]")
 {
+    SKIP_IF_KEY_MGR_NOT_SUPPORTED();
+
     esp_key_mgr_ecdh0_key_config_t *key_config = calloc(1, sizeof(esp_key_mgr_ecdh0_key_config_t));
     TEST_ASSERT_NOT_NULL(key_config);
 
@@ -289,6 +350,8 @@ TEST_CASE("Key Manager ECDH0 mode: HMAC key deployment", "[hw_crypto] [key_mgr]"
 
 TEST_CASE("Key Manager random mode: HMAC key deployment", "[hw_crypto] [key_mgr]")
 {
+    SKIP_IF_KEY_MGR_NOT_SUPPORTED();
+
     esp_key_mgr_random_key_config_t *key_config = calloc(1, sizeof(esp_key_mgr_random_key_config_t));
     TEST_ASSERT_NOT_NULL(key_config);
 
@@ -298,6 +361,31 @@ TEST_CASE("Key Manager random mode: HMAC key deployment", "[hw_crypto] [key_mgr]
     TEST_ASSERT_NOT_NULL(key_recovery_info);
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deploy_key_in_random_mode(key_config, key_recovery_info));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_activate_key(key_recovery_info));
+    TEST_ASSERT_EQUAL(ESP_OK, test_hmac_key(false));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deactivate_key(key_recovery_info->key_type));
+
+    free(key_config);
+    free(key_recovery_info);
+}
+
+TEST_CASE("Key Manager ECDH1 mode: HMAC key deployment", "[hw_crypto] [key_mgr]")
+{
+    SKIP_IF_KEY_MGR_NOT_SUPPORTED();
+
+    esp_key_mgr_ecdh1_key_config_t *key_config = calloc(1, sizeof(esp_key_mgr_ecdh1_key_config_t));
+    TEST_ASSERT_NOT_NULL(key_config);
+
+    memcpy(key_config->k2_info, (uint8_t*) k2_info, KEY_MGR_K2_INFO_SIZE);
+    memcpy(key_config->k1_G[0], (uint8_t*) k1_G, KEY_MGR_ECDH0_INFO_SIZE);
+    memcpy(key_config->sw_init_key, (uint8_t*) init_key, KEY_MGR_SW_INIT_KEY_SIZE);
+    key_config->use_pre_generated_sw_init_key = 1;
+    key_config->key_type = ESP_KEY_MGR_HMAC_KEY;
+
+    esp_key_mgr_key_recovery_info_t *key_recovery_info = calloc(1, sizeof(esp_key_mgr_key_recovery_info_t));
+    TEST_ASSERT_NOT_NULL(key_recovery_info);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deploy_key_in_ecdh1_mode(key_config, key_recovery_info));
     TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_activate_key(key_recovery_info));
     TEST_ASSERT_EQUAL(ESP_OK, test_hmac_key(false));
     TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deactivate_key(key_recovery_info->key_type));
@@ -317,7 +405,7 @@ static esp_err_t test_ds_key(void)
     for (int i = 0; i < NUM_MESSAGES; i++) {
         printf("Running test case %d...\n", i);
         const encrypt_testcase_t *t = &test_cases[0];
-        assert(t->hmac_key_idx == 0); // as the key deployed using Key Manager is the HMAC key ID 0
+        assert(t->hmac_key_idx == DS_KEY_IDX); // as the key deployed using Key Manager is the HMAC key with index DS_KEY_IDX
 
         // copy encrypt parameter test case into ds_data structure
         memcpy(ds_data.iv, t->iv, ESP_DS_IV_LEN);
@@ -337,6 +425,8 @@ static esp_err_t test_ds_key(void)
 
 TEST_CASE("Key Manager AES mode: DS key deployment", "[hw_crypto] [key_mgr]")
 {
+    SKIP_IF_KEY_MGR_NOT_SUPPORTED();
+
     esp_key_mgr_aes_key_config_t *key_config = calloc(1, sizeof(esp_key_mgr_aes_key_config_t));
     TEST_ASSERT_NOT_NULL(key_config);
 
@@ -360,6 +450,8 @@ TEST_CASE("Key Manager AES mode: DS key deployment", "[hw_crypto] [key_mgr]")
 
 TEST_CASE("Key Manager ECDH0 mode: DS key deployment", "[hw_crypto] [key_mgr]")
 {
+    SKIP_IF_KEY_MGR_NOT_SUPPORTED();
+
     esp_key_mgr_ecdh0_key_config_t *key_config = calloc(1, sizeof(esp_key_mgr_ecdh0_key_config_t));
     TEST_ASSERT_NOT_NULL(key_config);
 
@@ -384,6 +476,8 @@ TEST_CASE("Key Manager ECDH0 mode: DS key deployment", "[hw_crypto] [key_mgr]")
 
 TEST_CASE("Key Manager random mode: DS key deployment", "[hw_crypto] [key_mgr]")
 {
+    SKIP_IF_KEY_MGR_NOT_SUPPORTED();
+
     esp_key_mgr_random_key_config_t *key_config = calloc(1, sizeof(esp_key_mgr_random_key_config_t));
     TEST_ASSERT_NOT_NULL(key_config);
 
@@ -400,5 +494,33 @@ TEST_CASE("Key Manager random mode: DS key deployment", "[hw_crypto] [key_mgr]")
     free(key_config);
     free(key_recovery_info);
 }
+
+TEST_CASE("Key Manager ECDH1 mode: DS key deployment", "[hw_crypto] [key_mgr]")
+{
+    SKIP_IF_KEY_MGR_NOT_SUPPORTED();
+
+    esp_key_mgr_ecdh1_key_config_t *key_config = calloc(1, sizeof(esp_key_mgr_ecdh1_key_config_t));
+    TEST_ASSERT_NOT_NULL(key_config);
+
+    memcpy(key_config->k2_info, (uint8_t*) k2_info, KEY_MGR_K2_INFO_SIZE);
+    memcpy(key_config->k1_G[0], (uint8_t*) k1_G, KEY_MGR_ECDH0_INFO_SIZE);
+    memcpy(key_config->sw_init_key, (uint8_t*) init_key, KEY_MGR_SW_INIT_KEY_SIZE);
+    key_config->use_pre_generated_sw_init_key = 1;
+    key_config->key_type = ESP_KEY_MGR_DS_KEY;
+
+    esp_key_mgr_key_recovery_info_t *key_recovery_info = calloc(1, sizeof(esp_key_mgr_key_recovery_info_t));
+    TEST_ASSERT_NOT_NULL(key_recovery_info);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deploy_key_in_ecdh1_mode(key_config, key_recovery_info));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_activate_key(key_recovery_info));
+    // Deploy/activate path coverage only. The deployed AES-CBC key for DS
+    // is x(k1*k2*G); pre-generating the encrypted DS input params would
+    // require running that key derivation plus the DS-blob AES-CBC step
+    // off-device, neither of which this app carries.
+    TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deactivate_key(key_recovery_info->key_type));
+
+    free(key_config);
+    free(key_recovery_info);
+}
 #endif /* SOC_KEY_MANAGER_DS_KEY_DEPLOY */
-#endif /* SOC_KEY_MANAGER_SUPPORTED */
+#endif /* SOC_KEY_MANAGER_SUPPORTED && !CONFIG_IDF_TARGET_ESP32S31 */

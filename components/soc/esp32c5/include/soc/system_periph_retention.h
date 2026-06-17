@@ -54,7 +54,7 @@ extern const regdma_entries_config_t tee_apm_highpri_regs_retention[TEE_APM_HIGH
  * This is an internal function of the sleep retention driver, and is not
  * useful for external use.
  */
-#define IOMUX_RETENTION_LINK_LEN    5
+#define IOMUX_RETENTION_LINK_LEN    7
 extern const regdma_entries_config_t iomux_regs_retention[IOMUX_RETENTION_LINK_LEN];
 
 /**

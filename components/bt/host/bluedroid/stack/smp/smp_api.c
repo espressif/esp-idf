@@ -483,6 +483,10 @@ void SMP_SecureConnectionOobDataReply(UINT8 *p_data)
         return;
     }
 
+    if (p_cb->state != SMP_STATE_WAIT_APP_RSP || p_cb->cb_evt != SMP_SC_OOB_REQ_EVT) {
+        return;
+    }
+
     /* Set local oob data when req_oob_type = SMP_OOB_BOTH */
     memcpy(&p_oob->loc_oob_data, smp_get_local_oob_data(), sizeof(tSMP_LOC_OOB_DATA));
 
@@ -490,10 +494,6 @@ void SMP_SecureConnectionOobDataReply(UINT8 *p_data)
                      "peer_oob_data.present: %d",
                      __FUNCTION__, p_cb->req_oob_type, p_oob->loc_oob_data.present,
                      p_oob->peer_oob_data.present);
-
-    if (p_cb->state != SMP_STATE_WAIT_APP_RSP || p_cb->cb_evt != SMP_SC_OOB_REQ_EVT) {
-        return;
-    }
 
     BOOLEAN  data_missing = FALSE;
     switch (p_cb->req_oob_type) {

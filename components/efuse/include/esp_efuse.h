@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include <stdint.h>
 
 #include "esp_err.h"
+#include "esp_assert.h"
 #include "esp_log.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
@@ -26,15 +27,18 @@ extern "C" {
 #define ESP_ERR_CODING                            (ESP_ERR_EFUSE + 0x04)      /*!< Error while a encoding operation. */
 #define ESP_ERR_NOT_ENOUGH_UNUSED_KEY_BLOCKS      (ESP_ERR_EFUSE + 0x05)      /*!< Error not enough unused key blocks available */
 #define ESP_ERR_DAMAGED_READING                   (ESP_ERR_EFUSE + 0x06)      /*!< Error. Burn or reset was done during a reading operation leads to damage read data. This error is internal to the efuse component and not returned by any public API. */
+#define ESP_ERR_BURN_WR_DIS                       (ESP_ERR_EFUSE + 0x07)      /*!< Error to burn WR_DIS field. */
 
 /**
  * @brief Type definition for an eFuse field
  */
 typedef struct {
-    esp_efuse_block_t   efuse_block: 8; /**< Block of eFuse */
-    uint8_t             bit_start;      /**< Start bit [0..255] */
+    esp_efuse_block_t   efuse_block: 7; /**< Block of eFuse */
+    uint16_t            bit_start: 9;  /**< Start bit [0..511] */
     uint16_t            bit_count;      /**< Length of bit field [1..-]*/
 } esp_efuse_desc_t;
+
+ESP_STATIC_ASSERT(sizeof(esp_efuse_desc_t) == sizeof(uint32_t), "esp_efuse_desc_t should be 32 bits");
 
 /**
  * @brief Type definition for ROM log scheme
@@ -175,6 +179,7 @@ esp_err_t esp_efuse_write_field_bit(const esp_efuse_desc_t* field[]);
  *    - ESP_ERR_INVALID_ARG: Error in the passed arguments.
  *    - ESP_ERR_EFUSE_CNT_IS_FULL: Not all requested cnt bits is set.
  *    - ESP_ERR_NOT_SUPPORTED: The block does not support this command.
+ *    - ESP_ERR_BURN_WR_DIS: Failed to burn WR_DIS field.
  */
 esp_err_t esp_efuse_set_write_protect(esp_efuse_block_t blk);
 
@@ -498,6 +503,8 @@ esp_err_t esp_efuse_batch_write_cancel(void);
  * @return
  *          - ESP_OK: Successful.
  *          - ESP_ERR_INVALID_STATE: The deferred writing mode was not set.
+ *          - ESP_FAIL: Failed to write efuse fields.
+ *          - ESP_ERR_BURN_WR_DIS: Failed to burn WR_DIS field.
  */
 esp_err_t esp_efuse_batch_write_commit(void);
 
@@ -553,6 +560,7 @@ bool esp_efuse_get_key_dis_write(esp_efuse_block_t block);
  *    - ESP_ERR_INVALID_ARG: Error in the passed arguments.
  *    - ESP_ERR_EFUSE_REPEATED_PROG: Error repeated programming of programmed bits is strictly forbidden.
  *    - ESP_ERR_CODING: Error range of data does not match the coding scheme.
+ *    - ESP_ERR_BURN_WR_DIS: Failed to burn WR_DIS field.
  */
 esp_err_t esp_efuse_set_key_dis_write(esp_efuse_block_t block);
 
@@ -651,6 +659,7 @@ esp_err_t esp_efuse_set_key_purpose(esp_efuse_block_t block, esp_efuse_purpose_t
  *    - ESP_ERR_INVALID_ARG: Error in the passed arguments.
  *    - ESP_ERR_EFUSE_REPEATED_PROG: Error repeated programming of programmed bits is strictly forbidden.
  *    - ESP_ERR_CODING: Error range of data does not match the coding scheme.
+ *    - ESP_ERR_BURN_WR_DIS: Failed to burn WR_DIS field.
  */
 esp_err_t esp_efuse_set_keypurpose_dis_write(esp_efuse_block_t block);
 
@@ -715,6 +724,7 @@ bool esp_efuse_get_write_protect_of_digest_revoke(unsigned num_digest);
  *    - ESP_ERR_INVALID_ARG: Error in the passed arguments.
  *    - ESP_ERR_EFUSE_REPEATED_PROG: Error repeated programming of programmed bits is strictly forbidden.
  *    - ESP_ERR_CODING: Error range of data does not match the coding scheme.
+ *    - ESP_ERR_BURN_WR_DIS: Failed to burn WR_DIS field.
  */
 esp_err_t esp_efuse_set_write_protect_of_digest_revoke(unsigned num_digest);
 
@@ -742,6 +752,7 @@ esp_err_t esp_efuse_set_write_protect_of_digest_revoke(unsigned num_digest);
  *    - ESP_ERR_INVALID_STATE: Error in efuses state, unused block not found.
  *    - ESP_ERR_EFUSE_REPEATED_PROG: Error repeated programming of programmed bits is strictly forbidden.
  *    - ESP_ERR_CODING: Error range of data does not match the coding scheme.
+ *    - ESP_ERR_BURN_WR_DIS: Failed to burn WR_DIS field.
  */
 esp_err_t esp_efuse_write_key(esp_efuse_block_t block, esp_efuse_purpose_t purpose, const void *key, size_t key_size_bytes);
 
@@ -767,6 +778,7 @@ esp_err_t esp_efuse_write_key(esp_efuse_block_t block, esp_efuse_purpose_t purpo
  *    - ESP_ERR_NOT_ENOUGH_UNUSED_KEY_BLOCKS: Error not enough unused key blocks available
  *    - ESP_ERR_EFUSE_REPEATED_PROG: Error repeated programming of programmed bits is strictly forbidden.
  *    - ESP_ERR_CODING: Error range of data does not match the coding scheme.
+ *    - ESP_ERR_BURN_WR_DIS: Failed to burn WR_DIS field.
  */
 esp_err_t esp_efuse_write_keys(const esp_efuse_purpose_t purposes[], uint8_t keys[][32], unsigned number_of_keys);
 
@@ -823,6 +835,13 @@ esp_err_t esp_efuse_check_errors(void);
  */
 esp_err_t esp_efuse_destroy_block(esp_efuse_block_t block);
 
+/**
+ * @brief Checks if flash encryption is enabled.
+ *
+ * This function checks if the current eFuse configuration supports flash encryption.
+*/
+bool esp_efuse_is_flash_encryption_enabled(void);
+
 #if SOC_ECDSA_SUPPORTED
 /**
  * @brief Checks if 192-bit ECDSA curve operations are supported.
@@ -861,6 +880,112 @@ typedef enum {
  */
 esp_err_t esp_efuse_enable_ecdsa_p192_curve_mode(void);
 #endif
+
+/**
+ * @brief Flags specifying which source(s) to use when dumping eFUSE data.
+ */
+
+/**
+ * @brief Prefix used in device log lines to trigger automatic token decoding in idf.py monitor.
+ */
+#define ESP_EFUSE_MONITOR_EXECUTE_ESPEFUSE_SUMMARY "IDF_MONITOR_EXECUTE_ESPEFUSE_SUMMARY"
+
+/**
+ * @brief Prefix used in device log lines to trigger token dump decoding in idf.py monitor.
+ */
+#define ESP_EFUSE_MONITOR_EXECUTE_ESPEFUSE_DUMP "IDF_MONITOR_EXECUTE_ESPEFUSE_DUMP"
+
+/**
+ * @brief Recommended minimum buffer length for esp_efuse_token_dump().
+ */
+#define ESP_EFUSE_TOKEN_DUMP_MIN_LEN 512
+
+typedef enum {
+    ESP_EFUSE_TOKEN_FROM_READ = 1, /**< Dump from the eFUSE read registers (the final, permanently programmed values). */
+    ESP_EFUSE_TOKEN_FROM_STAGED = 2, /**< Dump from write/staging registers or programming buffer (pending or staged writes). This can expose keys in plaintext because it shows values that are not yet burned and not yet read-protected. Requires CONFIG_EFUSE_ENABLE_STAGED_TOKEN_API. */
+    ESP_EFUSE_TOKEN_FROM_READ_STAGED = ESP_EFUSE_TOKEN_FROM_READ | ESP_EFUSE_TOKEN_FROM_STAGED, /**< Combine both read and staged sources to show committed and pending values. The staged portion can expose keys in plaintext because it shows values that are not yet burned and not yet read-protected. Requires CONFIG_EFUSE_ENABLE_STAGED_TOKEN_API. */
+} esp_efuse_token_type_t;
+
+/**
+ * @brief Print a single-line dump token that serializes all eFuse blocks.
+ *
+ * Token formats (null-terminated strings):
+ * - Read efuse area  EFSR:chip_name:chip_version:b64_blocks:b64_cerr:b64_crc32
+ * - Staged efuse area EFSW:chip_name:chip_version:b64_blocks:b64_cerr:b64_crc32
+ * - Combination of two areas (read and staged) EFSRW:...
+ *
+ * This token is useful when a host tool cannot read the device directly (for example,
+ * when UART download mode is disabled, secure download is enabled).
+ * Copy the entire token string and decode it on a host that has access to espefuse.
+ *
+ * Example (decode token and show only active fields):
+ * @code
+ * espefuse --token EFSR:esp32:300:AAABAAAAAAAAAAAAAIAAAAAAAAAAABAAAAAAAA::oKGio6SlpqeoqaqrrK2ur7CxsrO0tba3uLm6u7y9vr8:::fPaC-A summary --active
+ * @endcode
+ *
+ * Where:
+ *  - token_marker = EFSR, EFSW, or EFSRW
+ *  - chip_name = CONFIG_IDF_TARGET (e.g., "esp32c5")
+ *  - chip_version = chip version (e.g., "100" for v1.0). version = major wafer version * 100 + minor wafer version.
+ *  - b64_blocks = concatenation of all blocks’ 32-bit words (little-endian byte order),
+ *                      encoded as Base64URL without padding, for BLK0..BLK_MAX-1.
+ *  - b64_cerr = optional coding-error snapshot.
+ *  - b64_crc32 = crc32("token_marker:chip:ver:b64_blocks:b64_cerr:")
+ * b64 - base 64 format (Base64URL, UNPADDED)
+ *
+ * @note Dump modes that include staged data (ESP_EFUSE_TOKEN_FROM_STAGED and
+ *       ESP_EFUSE_TOKEN_FROM_READ_STAGED) can expose sensitive data, including
+ *       plaintext key material, because they show values before they are
+ *       burned and before read-protection is applied. Treat EFSW/EFSRW tokens
+ *       as sensitive artifacts and enable them only with CONFIG_EFUSE_ENABLE_STAGED_TOKEN_API.
+ *
+ * @note When @p buf is NULL, the token is printed with esp_log() using a
+ *       non-constrained logging configuration. If the token must be emitted
+ *       from a constrained environment, pass a buffer to this function and
+ *       print or transport the resulting token with a constrained-safe method.
+ *
+ * @param dump_type Select which efuse data to dump: read, staged writes, or both.
+ * @param buf       Buffer to store the resulting token string. If NULL, output goes to console.
+ * @param buf_len   Length of the buffer. Must be at least ESP_EFUSE_TOKEN_DUMP_MIN_LEN bytes to hold
+ *                  the full token for esp32xx series.
+ *
+ * @return
+ *  - ESP_OK on success.
+ *  - ESP_ERR_NOT_SUPPORTED if @p dump_type requests staged data and
+ *    CONFIG_EFUSE_ENABLE_STAGED_TOKEN_API is disabled to avoid exposing
+ *    staged values, including plaintext key material, before burn/read-protect.
+ *  - ESP_ERR_INVALID_ARG if @p dump_type is invalid.
+ *  - ESP_ERR_INVALID_SIZE if buf_len is too small
+ */
+esp_err_t esp_efuse_token_dump(esp_efuse_token_type_t dump_type, char *buf, size_t buf_len);
+
+/**
+ * @brief Burns the EFSW token dump
+ *
+ * @note The EFSW token dump can be produced from a host or from-device utility. Examples:
+ *       - Host: `espefuse burn-bit BLOCK2 1 --show-token`
+ *       - Device: `esp_efuse_token_dump(ESP_EFUSE_TOKEN_FROM_STAGED, buf, len)`
+ *
+ * EFSW:chip_name:chip_version:b64_blocks::b64_crc32
+ *
+ * The function validates:
+ *  - Token marker EFSW
+ *  - Chip name (must match CONFIG_IDF_TARGET)
+ *  - Chip version is validated unless ignore_ver is set to true. The major version must be equal.
+ *  - Chip version unless ignore_ver is true
+ *  - CRC32
+ *
+ * @param token_in   Null-terminated EFSW token string.
+ * @param ignore_ver If true, skip enforcing the wafer chip version in the token.
+ *
+ * @return
+ *  - ESP_OK on success (token parsed and write efuse area is populated).
+ *  - ESP_ERR_INVALID_ARG on format/mismatch errors (bad token marker/chip/ver/layout)
+ *  - ESP_ERR_INVALID_CRC if CRC verification fails
+ *  - ESP_ERR_INVALID_VERSION if chip version mismatches and ignore_ver is false
+ *  - Other esp_err_t from lower layers if writing/burning fails
+ */
+esp_err_t esp_efuse_token_burn(const char *token_in, bool ignore_ver);
 
 #ifdef __cplusplus
 }

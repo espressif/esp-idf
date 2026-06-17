@@ -32,11 +32,15 @@ __attribute__((always_inline)) static inline void esp_log_vprintf(esp_log_config
 #else // APP
     extern vprintf_like_t esp_log_vprint_func;
 #if ESP_LOG_VERSION == 2
+#if CONFIG_LOG_API_CONSTRAINED_ENV_SAFE
     vprintf_like_t vprint_func[2] = {
         esp_log_vprint_func,
         esp_rom_vprintf,
     };
     vprint_func[config.opts.constrained_env](format, args);
+#else
+    esp_log_vprint_func(format, args);
+#endif // CONFIG_LOG_API_CONSTRAINED_ENV_SAFE
 #else // ESP_LOG_VERSION == 1
     esp_log_vprint_func(format, args);
 #endif // ESP_LOG_VERSION == 1

@@ -122,3 +122,11 @@ config ESP_ROM_HAS_OUTPUT_PUTC_FUNC
 config ESP_ROM_CONSOLE_OUTPUT_SECONDARY
     bool
     default y
+
+config ESP_ROM_HAS_REGI2C_IMPL
+    bool
+    default y
+
+config ESP_ROM_BOOTLOADER_OFFSET_FLASH
+    hex
+    default 0x0

@@ -152,6 +152,17 @@ struct esp_lcd_panel_t {
      */
     esp_err_t (*disp_sleep)(esp_lcd_panel_t *panel, bool sleep);
 
+    /**
+     * @brief Set the brightness of the display
+     *
+     * @param[in] panel LCD panel handle, which is created by other factory API like `esp_lcd_new_panel_st7789()`
+     * @param[in] brightness Brightness value (range depends on panel implementation, typically 0-255, 0-1023, or 0-100)
+     * @return
+     *          - ESP_OK on success
+     *          - ESP_ERR_NOT_SUPPORTED if this function is not supported by the panel
+     */
+    esp_err_t (*set_brightness)(esp_lcd_panel_t *panel, int brightness);
+
     void *user_data;    /*!< User data, used to store externally customized data */
 };
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,10 +8,11 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#include "spi_flash_defs.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_spiflash.h"
-#include "spi_flash_override.h"
+
+#include "esp_flash_chips/spi_flash_defs.h"
+#include "esp_flash_chips/spi_flash_override.h"
 
 // TODO: These dependencies will be removed after remove bootloader_flash to G0.IDF-4609
 #include "bootloader_flash_override.h"
@@ -221,6 +222,71 @@ static void spi_flash_hpm_get_dummy_xmc(spi_flash_hpm_dummy_conf_t *dummy_conf)
     dummy_conf->qout_dummy = SPI_FLASH_QOUT_DUMMY_BITLEN;
     dummy_conf->fastrd_dummy = SPI_FLASH_FASTRD_DUMMY_BITLEN;
 }
+
+
+/**
+ * @brief Probe the chip whether adjust dummy (bit3,4) to enable HPM mode. Take XMC as an example:
+ *        Adjust dummy bits to enable HPM mode of the flash. If XMC works under 80MHz, the dummy bits
+ *        might be 6, but when works under 120MHz, the dummy bits might be 10.
+ */
+static esp_err_t spi_flash_hpm_probe_chip_with_dummy_bit3_4(uint32_t flash_id)
+{
+    esp_err_t ret = ESP_OK;
+
+    switch (flash_id) {
+    /* The flash listed here should enter the HPM by adjusting dummy cycles */
+    // XMC chips.
+    case 0x204019:
+    case 0x204020:
+        break;
+    default:
+        ret = ESP_ERR_NOT_FOUND;
+        break;
+    }
+    return ret;
+}
+
+static spi_flash_requirement_t spi_flash_hpm_chip_hpm_requirement_check_with_dummy_bit3_4(uint32_t flash_id, uint32_t freq_mhz, int voltage_mv, int temperautre)
+{
+    // voltage and temperature are not been used now, to be completed in the future.
+    (void)voltage_mv;
+    (void)temperautre;
+    spi_flash_requirement_t chip_cap = SPI_FLASH_HPM_UNNEEDED;
+
+    if (freq_mhz >= 104) {
+        chip_cap = SPI_FLASH_HPM_DUMMY_NEEDED;
+    }
+    ESP_EARLY_LOGD(HPM_TAG, "HPM with dummy bit3,4, status is %d", chip_cap);
+    return chip_cap;
+}
+
+/**
+* @brief Adjust dummy cycles. This function modifies the Dummy Cycle Bits in SR3.
+*        Usually, the bits are at bit-0, bit-1, sr-3 and set DC[1:0]=[1,1].
+*
+* @note Don't forget to adjust dummy configurations for MSPI, you can get the
+*       correct dummy from interface `spi_flash_hpm_get_dummy`.
+*/
+static void spi_flash_turn_high_performance_dummy_bit3_4(void)
+{
+    uint8_t old_status_3 = bootloader_read_status_8b_rdsr3();
+    uint8_t new_status = (old_status_3 | 0x18);
+    bootloader_execute_flash_command(CMD_WRENVSR, 0, 0, 0);
+    bootloader_write_status_8b_wrsr3(new_status);
+    esp_rom_spiflash_wait_idle(&g_rom_flashchip);
+}
+
+/**
+* @brief Check whether HPM has been enabled. This function checks the DC bits
+*/
+static esp_err_t spi_flash_high_performance_check_dummy_bit3_4(void)
+{
+    if((bootloader_read_status_8b_rdsr3() & 0x18) == 0) {
+        return ESP_FAIL;
+    }
+    return ESP_OK;
+}
+
 #elif !CONFIG_SPI_FLASH_HPM_DC_DISABLE
 
 //This is because bootloader doesn't support this
@@ -316,7 +382,8 @@ const spi_flash_hpm_info_t __attribute__((weak)) spi_flash_hpm_enable_list[] = {
     /* vendor, chip_id, freq_threshold,  temperature threshold,   operation for setting high performance,         reading HPF status,                         get dummy        */
     { "command",    spi_flash_hpm_probe_chip_with_cmd,     spi_flash_hpm_chip_hpm_requirement_check_with_cmd,        spi_flash_enable_high_performance_send_cmd,       spi_flash_high_performance_check_hpf_bit_5,  spi_flash_hpm_get_dummy_generic },
 #if CONFIG_SPI_FLASH_HPM_DC_ON
-    { "dummy",   spi_flash_hpm_probe_chip_with_dummy,     spi_flash_hpm_chip_hpm_requirement_check_with_dummy,    spi_flash_turn_high_performance_reconfig_dummy,   spi_flash_high_performance_check_dummy_sr,  spi_flash_hpm_get_dummy_xmc},
+    { "dummy sr3-bit01",   spi_flash_hpm_probe_chip_with_dummy,     spi_flash_hpm_chip_hpm_requirement_check_with_dummy,    spi_flash_turn_high_performance_reconfig_dummy,   spi_flash_high_performance_check_dummy_sr,  spi_flash_hpm_get_dummy_xmc},
+    { "dummy sr3-bit3_4", spi_flash_hpm_probe_chip_with_dummy_bit3_4, spi_flash_hpm_chip_hpm_requirement_check_with_dummy_bit3_4, spi_flash_turn_high_performance_dummy_bit3_4, spi_flash_high_performance_check_dummy_bit3_4, spi_flash_hpm_get_dummy_xmc},
 #endif //CONFIG_SPI_FLASH_HPM_DC_ON
     { "write sr3-bit5", spi_flash_hpm_probe_chip_with_write_hpf_bit_5, spi_flash_hpm_chip_hpm_requirement_check_with_write_hpf_bit_5, spi_flash_turn_high_performance_write_hpf_bit_5, spi_flash_high_performance_check_hpf_bit_5, spi_flash_hpm_get_dummy_generic},
     { "noting-to-do", spi_flash_hpm_probe_chip_with_doing_nothing, spi_flash_hpm_chip_hpm_requirement_check_with_doing_nothing, NULL, NULL, spi_flash_hpm_get_dummy_generic},

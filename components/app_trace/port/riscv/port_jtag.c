@@ -44,7 +44,7 @@ typedef struct {
 const static char *TAG = "esp_apptrace";
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-#define APPTRACE_DRAM_ATTR TCM_DRAM_ATTR
+#define APPTRACE_DRAM_ATTR SPM_DRAM_ATTR
 #else
 #define APPTRACE_DRAM_ATTR
 #endif

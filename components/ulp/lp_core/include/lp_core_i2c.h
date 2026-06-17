@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,9 @@ extern "C" {
 #include "hal/i2c_types.h"
 #include "hal/gpio_types.h"
 #include "esp_err.h"
+#include "soc/soc_caps.h"
+
+#if SOC_LP_CORE_SUPPORT_I2C
 
 /**
  * @brief LP Core I2C pin config parameters
@@ -49,6 +52,9 @@ typedef struct {
 #define LP_I2C_SCL_IO   GPIO_NUM_3
 #define LP_I2C_SDA_IO   GPIO_NUM_2
 #elif CONFIG_IDF_TARGET_ESP32C6
+#define LP_I2C_SCL_IO   GPIO_NUM_7
+#define LP_I2C_SDA_IO   GPIO_NUM_6
+#elif CONFIG_IDF_TARGET_ESP32S31
 #define LP_I2C_SCL_IO   GPIO_NUM_7
 #define LP_I2C_SDA_IO   GPIO_NUM_6
 #else
@@ -94,6 +100,8 @@ typedef struct {
  * external pull-ups for better performance at higher SCL frequencies.
  */
 esp_err_t lp_core_i2c_master_init(i2c_port_t lp_i2c_num, const lp_core_i2c_cfg_t *cfg);
+
+#endif /* SOC_LP_CORE_SUPPORT_I2C */
 
 #ifdef __cplusplus
 }

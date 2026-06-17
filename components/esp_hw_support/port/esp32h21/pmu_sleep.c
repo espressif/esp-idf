@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,9 @@
 #include "esp_hw_log.h"
 #include "soc/regi2c_bias.h"
 #include "regi2c_ctrl.h"
+#if !SOC_APM_SUPPORTED
+#include "hal/apm_hal.h"
+#endif
 
 ESP_HW_LOG_ATTR_TAG(TAG, "pmu_sleep");
 
@@ -167,19 +170,20 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         config->digital = digital_default;
 
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(sleep_flags);
-        analog_default.hp_sys.analog.dbias = PMU_HP_DBIAS_LIGHTSLEEP_0V6_DEFAULT;
+        analog_default.hp_sys.analog.drv_b = PMU_HP_DRVB_LIGHTSLEEP;
         analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_slp_lp_dbias();
         if (!(sleep_flags & PMU_SLEEP_PD_XTAL)){
             analog_default.hp_sys.analog.xpd_trx = PMU_XPD_TRX_SLEEP_ON;
-            analog_default.hp_sys.analog.dbias = get_act_hp_dbias();
+            analog_default.hp_sys.analog.drv_b = get_act_hp_drvb();
             analog_default.hp_sys.analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
             analog_default.hp_sys.analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
 
             analog_default.lp_sys[LP(SLEEP)].analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
             analog_default.lp_sys[LP(SLEEP)].analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
             analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_act_lp_dbias();
+            analog_default.lp_sys[LP(SLEEP)].analog.dcm_vset = 20;
         } else if (!(sleep_flags & PMU_SLEEP_PD_RC_FAST)) {
-            analog_default.hp_sys.analog.dbias = get_act_hp_dbias();
+            analog_default.hp_sys.analog.drv_b = get_act_hp_drvb();
             analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_act_lp_dbias();
         }
         config->analog = analog_default;
@@ -192,6 +196,7 @@ static void pmu_sleep_power_init(pmu_context_t *ctx, const pmu_sleep_power_confi
     pmu_ll_hp_set_dig_power(ctx->hal->dev, HP(SLEEP), power->hp_sys.dig_power.val);
     pmu_ll_hp_set_clk_power(ctx->hal->dev, HP(SLEEP), power->hp_sys.clk_power.val);
     pmu_ll_hp_set_xtal_xpd (ctx->hal->dev, HP(SLEEP), power->hp_sys.xtal.xpd_xtal);
+    pmu_ll_hp_set_xtalx2_xpd (ctx->hal->dev, HP(SLEEP), power->hp_sys.xtal.xpd_xtalx2);
 
     if (dslp) {
         pmu_ll_hp_set_memory_power_on_mask(ctx->hal->dev, 0);
@@ -205,6 +210,7 @@ static void pmu_sleep_power_init(pmu_context_t *ctx, const pmu_sleep_power_confi
     pmu_ll_lp_set_dig_power(ctx->hal->dev, LP(SLEEP), power->lp_sys[LP(SLEEP)].dig_power.val);
     pmu_ll_lp_set_clk_power(ctx->hal->dev, LP(SLEEP), power->lp_sys[LP(SLEEP)].clk_power.val);
     pmu_ll_lp_set_xtal_xpd (ctx->hal->dev, LP(SLEEP), power->lp_sys[LP(SLEEP)].xtal.xpd_xtal);
+    pmu_ll_lp_set_xtalx2_xpd (ctx->hal->dev, LP(SLEEP), power->lp_sys[LP(SLEEP)].xtal.xpd_xtalx2);
 }
 
 static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_config_t *dig, bool dslp)
@@ -220,12 +226,13 @@ static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_c
 static void pmu_sleep_analog_init(pmu_context_t *ctx, const pmu_sleep_analog_config_t *analog, bool dslp)
 {
     assert(ctx->hal);
+    // Core power supply (include DCDC, HP LDO, LP LDO) configuration
     pmu_ll_hp_set_current_power_off         (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.pd_cur);
     pmu_ll_hp_set_bias_sleep_enable         (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.bias_sleep);
     pmu_ll_hp_set_regulator_xpd             (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.xpd);
-    pmu_ll_hp_set_regulator_dbias           (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.dbias);
     pmu_ll_hp_set_regulator_driver_bar      (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.drv_b);
     pmu_ll_hp_set_trx_xpd                   (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.xpd_trx);
+
     pmu_ll_lp_set_current_power_off         (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.pd_cur);
     pmu_ll_lp_set_bias_sleep_enable         (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.bias_sleep);
     pmu_ll_lp_set_regulator_slp_xpd         (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.slp_xpd);
@@ -233,6 +240,9 @@ static void pmu_sleep_analog_init(pmu_context_t *ctx, const pmu_sleep_analog_con
     pmu_ll_lp_set_regulator_sleep_dbias     (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.slp_dbias);
     pmu_ll_lp_set_regulator_dbias           (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.dbias);
     pmu_ll_lp_set_regulator_driver_bar      (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.drv_b);
+
+    pmu_ll_hp_set_dcm_mode                  (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.dcm_mode);
+    pmu_ll_hp_set_dcm_vset                  (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.dcm_vset);
     pmu_ll_lp_set_dcm_vset                  (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.dcm_vset);
     pmu_ll_lp_set_dcm_mode                  (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.dcm_mode);
 }
@@ -292,6 +302,13 @@ uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp
 bool pmu_sleep_finish(bool dslp)
 {
     (void)dslp;
+
+#if !SOC_APM_SUPPORTED
+    apm_hal_enable_ctrl_filter_all(false);
+#else
+    ESP_STATIC_ASSERT(0, "TEE/APM retention need to be supported!"); //TODO: IDF-15711
+#endif
+
     return pmu_ll_hp_is_sleep_reject(PMU_instance()->hal->dev);
 }
 

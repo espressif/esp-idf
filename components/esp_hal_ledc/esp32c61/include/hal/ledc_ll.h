@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <stddef.h>
 #include "hal/assert.h"
 #include "hal/ledc_types.h"
 #include "soc/ledc_struct.h"
@@ -18,8 +19,11 @@
 #include "soc/soc_caps.h"
 #include "soc/soc_etm_source.h"
 
-#define LEDC_LL_GET_HW()           &LEDC
+#define LEDC_LL_GET(attr)                  (LEDC_LL_ ## attr)
 
+#define LEDC_LL_GET_HW(group_id)           ((group_id == 0) ? &LEDC : NULL)
+
+#define LEDC_LL_GROUP_NUM                  (1)
 #define LEDC_LL_CHANNEL_SUPPORT_OVF_CNT     1
 
 #define LEDC_LL_DUTY_NUM_MAX       (LEDC_CH0_GAMMA_RANGE0_DUTY_NUM_V)
@@ -30,8 +34,13 @@
 #define LEDC_LL_FRACTIONAL_BITS    (8)
 #define LEDC_LL_FRACTIONAL_MAX     ((1 << LEDC_LL_FRACTIONAL_BITS) - 1)
 #define LEDC_LL_GLOBAL_CLOCKS      SOC_LEDC_CLKS
-/// Get the mask of the fade end interrupt status register.
-#define LEDC_LL_FADE_END_INTR_MASK  (0x3fUL << LEDC_DUTY_CHNG_END_CH0_INT_ENA_S)
+
+/// Get the mask of the duty change end interrupt status register.
+#define LEDC_LL_DUTY_CHANGE_END_INTR_MASK(speed_mode)  (0x3fUL << LEDC_DUTY_CHNG_END_CH0_INT_ENA_S)
+
+#define LEDC_LL_EVENT_CHANNEL_DUTY_CHANGE_END(speed_mode, channel)  BIT(LEDC_DUTY_CHNG_END_CH0_INT_ENA_S + (channel))
+#define LEDC_LL_EVENT_CHANNEL_OVF_CNT(speed_mode, channel)          BIT(LEDC_OVF_CNT_CH0_INT_ENA_S + (channel))
+#define LEDC_LL_EVENT_CHANNEL_MASK(speed_mode, channel)             (LEDC_LL_EVENT_CHANNEL_DUTY_CHANGE_END(speed_mode, channel) | LEDC_LL_EVENT_CHANNEL_OVF_CNT(speed_mode, channel))
 
 // Channel tasks: ID, enable register and bit
 #define LEDC_LL_ETM_CHANNEL_TASK_ID(group, channel, task) \
@@ -125,45 +134,90 @@
 extern "C" {
 #endif
 
+typedef enum {
+    LEDC_LL_MEM_LP_MODE_SHUT_DOWN,   // power down memory during low power stage
+} ledc_ll_mem_lp_mode_t;
+
 /**
  * @brief Enable peripheral register clock
  *
+ * @param group_id  LEDC group ID
  * @param enable    Enable/Disable
  */
-static inline void ledc_ll_enable_bus_clock(bool enable)
+static inline void ledc_ll_enable_bus_clock(int group_id, bool enable)
 {
+    (void)group_id;
     PCR.ledc_conf.ledc_clk_en = enable;
 }
 
 /**
  * @brief Reset whole peripheral register to init value defined by HW design
+ *
+ * @param group_id  LEDC group ID
  */
-static inline void ledc_ll_enable_reset_reg(bool enable)
+static inline void ledc_ll_reset_register(int group_id)
 {
-    PCR.ledc_conf.ledc_rst_en = enable;
+    (void)group_id;
+    PCR.ledc_conf.ledc_rst_en = 1;
+    PCR.ledc_conf.ledc_rst_en = 0;
 }
 
 /**
- * @brief Enable the power for LEDC memory block
+ * @brief Force power on the LEDC memory block, regardless of the outside PMU logic
  *
- * Note. This function cannot overwrite the power control of the mem block in sleep mode
+ * @param dev Peripheral instance address
  */
-static inline void ledc_ll_enable_mem_power(bool enable)
+static inline void ledc_ll_mem_force_power_on(ledc_dev_t *dev)
 {
-    PCR.ledc_pd_ctrl.ledc_mem_force_pd = !enable;
+    PCR.ledc_pd_ctrl.ledc_mem_force_pu = 1;
+    PCR.ledc_pd_ctrl.ledc_mem_force_pd = 0;
+}
+
+/**
+ * @brief Force the LEDC memory block into low power mode, regardless of the outside PMU logic
+ *
+ * @param dev Peripheral instance address
+ */
+static inline void ledc_ll_mem_force_low_power(ledc_dev_t *dev)
+{
+    PCR.ledc_pd_ctrl.ledc_mem_force_pd = 1;
+    PCR.ledc_pd_ctrl.ledc_mem_force_pu = 0;
+}
+
+/**
+ * @brief Power control the LEDC memory block by the outside PMU logic
+ *
+ * @param dev Peripheral instance address
+ */
+static inline void ledc_ll_mem_power_by_pmu(ledc_dev_t *dev)
+{
+    PCR.ledc_pd_ctrl.ledc_mem_force_pd = 0;
+    PCR.ledc_pd_ctrl.ledc_mem_force_pu = 0;
+}
+
+/**
+ * @brief Set low power mode for LEDC memory block
+ *
+ * @param dev Peripheral instance address
+ * @param mode LEDC memory low power mode in low power stage
+ */
+static inline void ledc_ll_mem_set_low_power_mode(ledc_dev_t *dev, ledc_ll_mem_lp_mode_t mode)
+{
+    (void)dev;
+    HAL_ASSERT(mode == LEDC_LL_MEM_LP_MODE_SHUT_DOWN);
 }
 
 /**
  * @brief Enable LEDC function clock
  *
- * @param hw Beginning address of the peripheral registers
+ * @param group_id  LEDC group ID
  * @param en True to enable, false to disable
  *
  * @return None
  */
-static inline void ledc_ll_enable_clock(ledc_dev_t *hw, bool en)
+static inline void ledc_ll_enable_clock(int group_id, bool en)
 {
-    (void)hw;
+    (void)group_id;
     PCR.ledc_sclk_conf.ledc_sclk_en = en;
 }
 
@@ -489,12 +543,11 @@ static inline void ledc_ll_get_duty(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc
 static inline void ledc_ll_set_fade_param_range(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint8_t range, uint32_t dir, uint32_t cycle, uint32_t scale, uint32_t step)
 {
     HAL_ASSERT(range < SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX);
-    ledc_channel_gamma_fade_param_t range_param = {
-        .duty_inc = dir,
-        .duty_cycle = cycle,
-        .scale = scale,
-        .duty_num = step,
-    };
+    ledc_channel_gamma_fade_param_t range_param = {};
+    range_param.duty_inc = dir;
+    range_param.duty_cycle = cycle;
+    range_param.scale = scale;
+    range_param.duty_num = step;
     LEDC_GAMMA_RAM.channel[channel_num].entry[range].val = range_param.val;
 }
 
@@ -601,62 +654,58 @@ static inline void ledc_ll_set_idle_level(ledc_dev_t *hw, ledc_mode_t speed_mode
 }
 
 /**
- * @brief Set fade end interrupt enable
+ * @brief Enable LEDC interrupt for specific event mask
  *
  * @param hw Beginning address of the peripheral registers
- * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
- * @param fade_end_intr_en The fade end interrupt enable status
- *
- * @return None
+ * @param mask Interrupt enable mask
+ * @param enable True to enable, False to disable
  */
-static inline void ledc_ll_set_fade_end_intr(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, bool fade_end_intr_en)
+__attribute__((always_inline))
+static inline void ledc_ll_enable_interrupt(ledc_dev_t *hw, uint32_t mask, bool enable)
 {
-    uint32_t value = hw->int_ena.val;
-    uint32_t int_en_base = LEDC_DUTY_CHNG_END_CH0_INT_ENA_S;
-    hw->int_ena.val = fade_end_intr_en ? (value | BIT(int_en_base + channel_num)) : (value & (~(BIT(int_en_base + channel_num))));
+    if (enable) {
+        hw->int_ena.val |= mask;
+    } else {
+        hw->int_ena.val &= ~mask;
+    }
 }
 
 /**
- * @brief Get fade end interrupt status
+ * @brief Get interrupt status.
  *
  * @param hw Beginning address of the peripheral registers
- * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param intr_status The fade end interrupt status
  *
- * @return None
+ * @return Interrupt status.
  */
-static inline void ledc_ll_get_fade_end_intr_status(ledc_dev_t *hw, ledc_mode_t speed_mode, uint32_t *intr_status)
+__attribute__((always_inline))
+static inline uint32_t ledc_ll_get_intr_status(ledc_dev_t *hw)
 {
-    uint32_t value = hw->int_st.val;
-    uint32_t int_en_base = LEDC_DUTY_CHNG_END_CH0_INT_ENA_S;
-    *intr_status = (value >> int_en_base) & 0xff;
+    return hw->int_st.val;
 }
 
 /**
- * @brief Get the address of the fade end interrupt status register.
+ * @brief Get the address of the interrupt status register.
  *
  * @param hw Beginning address of the peripheral registers
- * @return Pointer to the fade end interrupt status register.
+ * @return Pointer to the interrupt status register.
  */
-static inline volatile void* ledc_ll_get_fade_end_intr_addr(ledc_dev_t *hw)
+static inline volatile void* ledc_ll_get_intr_status_reg(ledc_dev_t *hw)
 {
-    return &hw->int_st.val;
+    return (volatile void *)&hw->int_st;
 }
 
 /**
- * @brief Clear fade end interrupt status
+ * @brief Clear interrupt status.
  *
  * @param hw Beginning address of the peripheral registers
- * @param speed_mode LEDC speed_mode, low-speed mode only
- * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param intr_mask Interrupt status mask to clear
  *
  * @return None
  */
-static inline void ledc_ll_clear_fade_end_intr_status(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num)
+__attribute__((always_inline))
+static inline void ledc_ll_clear_intr_status(ledc_dev_t *hw, uint32_t intr_mask)
 {
-    uint32_t int_en_base = LEDC_DUTY_CHNG_END_CH0_INT_ENA_S;
-    hw->int_clr.val = BIT(int_en_base + channel_num);
+    hw->int_clr.val = intr_mask;
 }
 
 /**

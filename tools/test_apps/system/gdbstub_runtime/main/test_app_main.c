@@ -10,7 +10,7 @@
 #include "freertos/task.h"
 #include "sdkconfig.h"
 
-#define TEST_COPROCESSOR_REGISTERS (__riscv && (SOC_CPU_HAS_FPU || SOC_CPU_HAS_PIE))
+#define TEST_COPROCESSOR_REGISTERS (SOC_CPU_HAS_FPU || SOC_CPU_HAS_PIE)
 #define TEST_HWLOOP_INSTRUCTIONS (__riscv && SOC_CPU_HAS_HWLOOP)
 
 int var_1;

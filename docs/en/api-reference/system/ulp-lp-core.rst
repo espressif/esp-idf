@@ -13,6 +13,10 @@ The ULP LP core coprocessor has the following features:
 * Can access all of the High-power (HP) SRAM and peripherals when the entire system is active.
 * Can access the Low-power (LP) SRAM and peripherals when the HP system is in sleep mode.
 
+.. only:: SOC_LP_CORE_HAS_PMP
+
+    On supported targets, the LP core includes RISC-V Physical Memory Protection (PMP). Enable :ref:`CONFIG_ULP_LP_CORE_MEMPROT` to apply a deny-by-default layout at LP-core startup: LP RAM is split into an executable region (code and read-only data) and a read-write region (writable data, stack, and shared memory), LP peripheral address space is read-write, and an optional region covers HP UART MMIO when using :ref:`CONFIG_ULP_HP_UART_CONSOLE_PRINT`. It cannot be used together with :ref:`CONFIG_ULP_COPROC_RUN_FROM_HP_MEM`. Addresses that do not fall into an allowed region cause a load, store, or instruction access fault.
+
 Compiling Code for the ULP LP Core
 ----------------------------------
 
@@ -105,7 +109,7 @@ Building Your Project
 
 To compile and build your project:
 
-1. Enable both :ref:`CONFIG_ULP_COPROC_ENABLED` and :ref:`CONFIG_ULP_COPROC_TYPE` in menuconfig, and set :ref:`CONFIG_ULP_COPROC_TYPE` to ``CONFIG_ULP_COPROC_TYPE_LP_CORE``. The :ref:`CONFIG_ULP_COPROC_RESERVE_MEM` option reserves RTC memory for the ULP, and must be set to a value big enough to store both the ULP LP core code and data. If the application components contain multiple ULP programs, then the size of the RTC memory must be sufficient to hold the largest one.
+1. Enable :ref:`CONFIG_ULP_COPROC_ENABLED` in menuconfig, and inside ``ULP Coprocessor types`` menu, select :ref:`CONFIG_ULP_COPROC_TYPE_LP_CORE`. The :ref:`CONFIG_ULP_COPROC_RESERVE_MEM` option reserves RTC memory for the ULP, and must be set to a value big enough to store both the ULP LP core code and data. If the application components contain multiple ULP programs, then the size of the RTC memory must be sufficient to hold the largest one.
 
 2. Build the application as usual (e.g., ``idf.py app``).
 
@@ -202,6 +206,17 @@ Once the program is loaded into LP memory, the application can be configured and
 
     ESP_ERROR_CHECK( ulp_lp_core_run(&cfg) );
 
+Running the LP Core from HP Memory
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:ref:`CONFIG_ULP_COPROC_RUN_FROM_HP_MEM` allows placing most of the LP core application in reserved HP SRAM instead of LP RAM. This can be useful when the application is too large to fit in LP RAM, while still keeping the LP reset and handler code in LP memory.
+
+When this option is enabled, :ref:`CONFIG_ULP_COPROC_RESERVE_HP_MEM_BYTES` reserves a window at the top of HP SRAM for the LP core binary. During :cpp:func:`ulp_lp_core_load_binary`, LP-memory segments are still loaded into the reserved LP region, while data and code segments mapped to the HP-memory window are copied into the reserved HP SRAM region.
+
+This mode has an important limitation: the LP core cannot keep running while the chip is in Deep-sleep, because HP SRAM is powered down in that sleep mode. Use this mode for cases where the LP core only needs to run while the HP system remains powered, and keep the default LP-memory-only mode for Deep-sleep use cases.
+
+:ref:`CONFIG_ULP_LP_CORE_MEMPROT` cannot be enabled together with this HP-memory mode.
+
 ULP LP Core Program Flow
 ------------------------
 
@@ -234,8 +249,8 @@ To enhance the capabilities of the ULP LP core coprocessor, it has access to per
 .. list::
 
     * LP IO
-    * LP I2C
-    * LP UART
+    :SOC_LP_CORE_SUPPORT_I2C: * LP I2C
+    :SOC_ULP_LP_UART_SUPPORTED: * LP UART
     :SOC_LP_SPI_SUPPORTED: * LP SPI
     :SOC_LP_MAILBOX_SUPPORTED: * LP Mailbox
 
@@ -277,7 +292,7 @@ In addition to configuring the interrupt related registers for the interrupt sou
 ULP LP Core Clock Configuration
 -------------------------------
 
-{IDF_TARGET_XTAL_FREQ:default="Not updated", esp32c5="48 MHz", esp32p4="40 MHz"}
+{IDF_TARGET_XTAL_FREQ:default="Not updated", esp32c5="48 MHz", esp32p4="40 MHz", esp32s31="40 MHz"}
 
 The ULP LP Core clock source is based on the system clock ``LP_FAST_CLK``, see `TRM <{IDF_TARGET_TRM_EN_URL}>`__ > ``Reset and Clock`` for more details.
 
@@ -285,7 +300,7 @@ The ULP LP Core clock source is based on the system clock ``LP_FAST_CLK``, see `
 
     On {IDF_TARGET_NAME}, ``LP_FAST_CLK`` supports using the external {IDF_TARGET_XTAL_FREQ} crystal (XTAL) as its clock source. This allows the ULP LP Core to run at a higher frequency than with the default ``RTC_FAST_CLOCK``, which runs at around 20 MHz. However, there is a trade-off: this clock is normally powered down during sleep to reduce power consumption, but if XTAL is selected as the source, it will remain powered up during sleep, which increases power consumption. If you only plan to use the LP Core as a coprocessor while the HP Core is active, then selecting XTAL can enhance both the performance and frequency stability of the LP Core.
 
-    To enable this feature, set :ref:`CONFIG_RTC_FAST_CLK_SRC` to ``CONFIG_RTC_FAST_CLK_SRC_XTAL``.
+    To enable this feature, set ``CONFIG_RTC_FAST_CLK_SRC`` to ``CONFIG_RTC_FAST_CLK_SRC_XTAL``.
 
 
 Debugging ULP LP-Core Applications
@@ -293,13 +308,17 @@ Debugging ULP LP-Core Applications
 
 When programming the LP core, it can sometimes be challenging to figure out why the program is not behaving as expected. Here are some strategies to help you debug your LP core program:
 
-* Use the LP UART to print: the LP core has access to the LP UART peripheral, which can be used for printing information independently of the main CPU sleep state. See :example:`system/ulp/lp_core/lp_uart/lp_uart_print` for an example of how to use this driver.
+.. only:: SOC_ULP_LP_UART_SUPPORTED
+
+    * Use the LP UART to print: the LP core has access to the LP UART peripheral, which can be used for printing information independently of the main CPU sleep state. See :example:`system/ulp/lp_core/lp_uart/lp_uart_print` for an example of how to use this driver.
 
 * Routing :cpp:func:`lp_core_printf` to the HP-Core console UART with :ref:`CONFIG_ULP_HP_UART_CONSOLE_PRINT`. This allows you to easily print LP core information to the already connected HP-Core console UART. The drawback of this approach is that it requires the main CPU to be awake and since there is no synchronization between the LP and HP cores, the output may be interleaved.
 
 * Share program state through shared variables: as described in :ref:`ulp-lp-core-access-variables`, both the main CPU and the ULP core can easily access global variables in RTC memory. Writing state information to such a variable from the ULP and reading it from the main CPU can help you discern what is happening on the ULP core. The downside of this approach is that it requires the main CPU to be awake, which will not always be the case. Keeping the main CPU awake might even, in some cases, mask problems, as some issues may only occur when certain power domains are powered down.
 
-* Panic handler: the LP core has a panic handler that can dump the state of the LP core registers by the LP UART when an exception is detected. To enable the panic handler, set the :ref:`CONFIG_ULP_PANIC_OUTPUT_ENABLE` option to ``y``. This option can be kept disabled to reduce LP-RAM usage by the LP core application. To recover a backtrace from the panic dump, it is possible to use ``idf.py monitor``.
+.. only:: SOC_ULP_LP_UART_SUPPORTED
+
+    * Panic handler: the LP core has a panic handler that can dump the state of the LP core registers by the LP UART when an exception is detected. To enable the panic handler, set the :ref:`CONFIG_ULP_PANIC_OUTPUT_ENABLE` option to ``y``. This option can be kept disabled to reduce LP-RAM usage by the LP core application. To recover a backtrace from the panic dump, it is possible to use ``idf.py monitor``.
 
 .. warning::
 
@@ -358,7 +377,7 @@ LP Core Debugging Specifics
 .. list::
 
     #. For convenient debugging, you may need to add ``-O0`` compile option for ULP app in its ``CMakeLists.txt``. See :example:`system/ulp/lp_core/debugging/` on how to do this.
-    :not esp32p4: #. LP core supports limited set of HW exceptions, so, for example, writing at address `0x0` will not cause a panic as it would be for the code running on HP core. This can be overcome to some extent by enabling undefined behavior sanitizer for LP core application, so `ubsan` can help to catch some errors. But note that it will increase code size significantly and it can happen that application won't fit into RTC RAM. To enable `ubsan` for ULP app, add ``-fsanitize=undefined -fno-sanitize=shift-base`` compile option to its ``CMakeLists.txt``. See :example:`system/ulp/lp_core/debugging/` on how to do this.
+    :not esp32p4 and not esp32s31: #. LP core supports limited set of HW exceptions, so, for example, writing at address `0x0` will not cause a panic as it would be for the code running on HP core. This can be overcome to some extent by enabling undefined behavior sanitizer for LP core application, so `ubsan` can help to catch some errors. But note that it will increase code size significantly and it can happen that application won't fit into RTC RAM. To enable `ubsan` for ULP app, add ``-fsanitize=undefined -fno-sanitize=shift-base`` compile option to its ``CMakeLists.txt``. See :example:`system/ulp/lp_core/debugging/` on how to do this.
     #. To be able to debug program running on LP core, debugging information and symbols need to be loaded to GDB. It can be done via GDB command line or in ``gdbinit`` file. See section above.
     #. Upon startup, LP core application is loaded into RAM, so all SW breakpoints set before that moment will get overwritten. The best moment to set breakpoints for LP core application is to do this when LP core program reaches `main` function.
     #. When using IDEs, it may lack support for configuring breakpoint actions or commands shown in ``gdbinit`` above. Consequently, you have to preset all breakpoints before debug session start and disable all of them except for ``main``. When program stops at ``main``, enable the remaining breakpoints and resume execution manually.
@@ -388,11 +407,11 @@ Application Examples
 .. list::
 
     - :example:`system/ulp/lp_core/gpio` polls GPIO while main CPU is in Deep-sleep.
-    :esp32c6: - :example:`system/ulp/lp_core/lp_i2c` reads external I2C ambient light sensor (BH1750) while the main CPU is in Deep-sleep and wakes up the main CPU once a threshold is met.
-    - :example:`system/ulp/lp_core/lp_uart/lp_uart_echo` reads data written to a serial console and echoes it back. This example demonstrates the usage of the LP UART driver running on the LP core.
-    - :example:`system/ulp/lp_core/lp_uart/lp_uart_print` shows how to print various statements from a program running on the LP core.
-    - :example:`system/ulp/lp_core/lp_uart/lp_uart_char_seq_wakeup` shows how to trigger a wakeup using the LP UART specific character sequence wakeup mode.
-    - :example:`system/ulp/lp_core/lp_mailbox` shows how to use the mailbox for both synchronous and asynchronous communication between the HP and LP cores. Depending on the target, the implementation may use the hardware mailbox controller (if available) or a software-only implementation using interrupts.
+    :SOC_LP_CORE_SUPPORT_I2C: - :example:`system/ulp/lp_core/lp_i2c` reads external I2C ambient light sensor (BH1750) while the main CPU is in Deep-sleep and wakes up the main CPU once a threshold is met.
+    :SOC_ULP_LP_UART_SUPPORTED: - :example:`system/ulp/lp_core/lp_uart/lp_uart_echo` reads data written to a serial console and echoes it back. This example demonstrates the usage of the LP UART driver running on the LP core.
+    :SOC_ULP_LP_UART_SUPPORTED: - :example:`system/ulp/lp_core/lp_uart/lp_uart_print` shows how to print various statements from a program running on the LP core.
+    :SOC_ULP_LP_UART_SUPPORTED: - :example:`system/ulp/lp_core/lp_uart/lp_uart_char_seq_wakeup` shows how to trigger a wakeup using the LP UART specific character sequence wakeup mode.
+    :SOC_LP_MAILBOX_SUPPORTED: - :example:`system/ulp/lp_core/lp_mailbox` shows how to use the mailbox for both synchronous and asynchronous communication between the HP and LP cores. Depending on the target, the implementation may use the hardware mailbox controller (if available) or a software-only implementation using interrupts.
     - :example:`system/ulp/lp_core/interrupt` shows how to register an interrupt handler on the LP core to receive an interrupt triggered by the main CPU.
     - :example:`system/ulp/lp_core/gpio_intr_pulse_counter` shows how to use GPIO interrupts to count pulses while the main CPU is in Deep-sleep mode.
     - :example:`system/ulp/lp_core/build_system/` demonstrates how to include custom ``CMakeLists.txt`` file for the ULP app.
@@ -405,8 +424,14 @@ Main CPU API Reference
 ~~~~~~~~~~~~~~~~~~~~~~
 
 .. include-build-file:: inc/ulp_lp_core.inc
-.. include-build-file:: inc/lp_core_i2c.inc
-.. include-build-file:: inc/lp_core_uart.inc
+
+.. only:: SOC_LP_CORE_SUPPORT_I2C
+
+    .. include-build-file:: inc/lp_core_i2c.inc
+
+.. only:: SOC_ULP_LP_UART_SUPPORTED
+
+    .. include-build-file:: inc/lp_core_uart.inc
 
 .. only:: SOC_LP_SPI_SUPPORTED
 
@@ -423,9 +448,19 @@ LP Core API Reference
 
 .. include-build-file:: inc/ulp_lp_core_utils.inc
 .. include-build-file:: inc/ulp_lp_core_gpio.inc
-.. include-build-file:: inc/ulp_lp_core_i2c.inc
-.. include-build-file:: inc/ulp_lp_core_uart.inc
-.. include-build-file:: inc/ulp_lp_core_mailbox.inc
+
+.. only:: SOC_LP_CORE_SUPPORT_I2C
+
+    .. include-build-file:: inc/ulp_lp_core_i2c.inc
+
+.. only:: SOC_ULP_LP_UART_SUPPORTED
+
+    .. include-build-file:: inc/ulp_lp_core_uart.inc
+
+.. only:: SOC_LP_MAILBOX_SUPPORTED
+
+    .. include-build-file:: inc/ulp_lp_core_mailbox.inc
+
 .. include-build-file:: inc/ulp_lp_core_print.inc
 .. include-build-file:: inc/ulp_lp_core_interrupts.inc
 

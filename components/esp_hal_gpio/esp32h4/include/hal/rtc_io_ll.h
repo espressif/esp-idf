@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,9 @@
 #include "hal/misc.h"
 #include "hal/assert.h"
 
-#define RTCIO_LL_PIN_FUNC       1
+#define RTCIO_LL_PIN_FUNC           1
+
+#define RTCIO_LL_GPIO_NUM_OFFSET    0 // rtcio 0-5 correspond to gpio 0-5
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,17 +42,6 @@ typedef enum {
     RTCIO_LL_OUTPUT_NORMAL = 0,    /*!< RTCIO output mode is normal. */
     RTCIO_LL_OUTPUT_OD = 0x1,      /*!< RTCIO output mode is open-drain. */
 } rtcio_ll_out_mode_t;
-
-/**
- * @brief Select a RTC IOMUX function for the RTC IO
- *
- * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
- * @param func Function to assign to the pin
- */
-static inline void rtcio_ll_iomux_func_sel(int rtcio_num, int func)
-{
-    LP_IO_MUX.gpion[rtcio_num].gpion_mcu_sel = func;
-}
 
 /**
  * @brief Enable/Disable LP_GPIO peripheral clock.
@@ -71,6 +62,17 @@ static inline void _rtcio_ll_enable_io_clock(bool enable)
     } while(0)
 
 /**
+ * @brief Select a RTC IOMUX function for the RTC IO
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ * @param func Function to assign to the pin
+ */
+static inline void rtcio_ll_iomux_func_sel(int rtcio_num, int func)
+{
+    LP_IO_MUX.gpion[rtcio_num].gpion_mcu_sel = func;
+}
+
+/**
  * @brief Select the rtcio function.
  *
  * @note The RTC function must be selected before the pad analog function is enabled.
@@ -87,8 +89,6 @@ static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
         uint32_t sel_mask = LP_AON.gpio_mux.gpio_mux_sel;
         sel_mask |= BIT(rtcio_num);
         LP_AON.gpio_mux.gpio_mux_sel = sel_mask;
-        // LP_GPIO is FUNC 1
-        rtcio_ll_iomux_func_sel(rtcio_num, RTCIO_LL_PIN_FUNC);
     } else if (func == RTCIO_LL_FUNC_DIGITAL) {
         // Clear the bit to use digital GPIO module
         uint32_t sel_mask = LP_AON.gpio_mux.gpio_mux_sel;
@@ -332,6 +332,16 @@ static inline void rtcio_ll_wakeup_disable(int rtcio_num)
 {
     LP_GPIO.pinn[rtcio_num].pinn_wakeup_enable = 0;
     LP_GPIO.pinn[rtcio_num].pinn_int_type = 0;
+}
+
+/**
+ * Clear edge-wakeup latch.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ */
+static inline void rtcio_ll_clear_edge_wakeup_latch(int rtcio_num)
+{
+    LP_GPIO.pinn[rtcio_num].pinn_edge_wakeup_clr = 1;
 }
 
 /**

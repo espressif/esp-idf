@@ -82,6 +82,8 @@
 | release/v5.1           | v5.1.3+     | v5.1.3   |
 | release/v5.2 及以上     | v5.2+       | v5.2     |
 
+注意：对于需要使用不同于默认 UART0 的主控制台输出的用户，请升级到 v5.0.8+、v5.1.6+、v5.2.4+、v5.3.2+、v5.4 及以上版本。参阅公告： [AR2025-006](https://documentation.espressif.com/AR2025-006_%E5%85%B3%E4%BA%8EESP32-C3%E8%8A%AF%E7%89%87%E7%89%88%E6%9C%ACv1.1%E9%85%8D%E7%BD%AEconsole%E8%BE%93%E5%87%BA%E9%80%9A%E9%81%93%E7%9A%84%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9.html).
+
 ### ESP32-S3
 
 #### v0.1, v0.2

@@ -1,13 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc/soc.h"
-#include "hal/mcpwm_ll.h"
 #include "hal/mcpwm_periph.h"
 #include "soc/gpio_sig_map.h"
+#include "soc/interrupts.h"
 
 const soc_mcpwm_signal_desc_t soc_mcpwm_signals[2] = {
     {

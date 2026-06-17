@@ -90,6 +90,11 @@ This section provides an overview of compatibility issues that might occur when 
         - :ref:`sd_pull-up_no_pull-ups`
         - :ref:`strapping_conflicts_dat2`
 
+    - ESP32-WROVER-E Series, including ESP32-WROVER-E and ESP32-WROVER-IE
+
+        - :ref:`sd_pull-up_no_pull-ups`
+        - :ref:`strapping_conflicts_dat2`
+
 
 .. only:: esp32
 
@@ -306,9 +311,9 @@ No Pull-ups
 
     MTDI (GPIO12) is used as a bootstrapping pin to select the output voltage of an internal regulator (VDD_SDIO) which powers the flash chip. This pin has an internal pull-down, so, if left unconnected, it will read low level at startup, which leads to selecting the default 3.3 V operation.
 
-    All ESP32-WROVER modules, excluding ESP32-WROVER-B, use 1.8 V flash and have internal pull-ups on GPIO12. Other modules that use 3.3 V flash have no pull-ups on the GPIO12 pin, and this pin is slightly pulled down internally.
+    For ESP32 modules that use 1.8 V flash (such as ESP32-WROVER and ESP32-WROVER-I), they have pull-up resistors on GPIO12. For ESP32 modules that use 3.3 V flash, they have no pull-up resistors on GPIO12, and this pin is slightly pulled down internally.
 
-    When adding a pull-up to this pin for SD card operation, consider the following:
+    When adding a pull-up to GPIO12 for SD card operation, consider the following:
 
     - For boards that do not use the internal regulator (VDD_SDIO) to power flash, GPIO12 can be pulled high.
     - For boards using 1.8 V flash chips, GPIO12 needs to be pulled high at reset. This is fully compatible with the SD card operation.

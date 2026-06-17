@@ -157,9 +157,6 @@ typedef struct {
     UINT16 adv_interval_max;
     tBTM_BLE_AFP afp; /* advertising filter policy */
     tBTM_BLE_SFP sfp; /* scanning filter policy */
-    tBTM_START_ADV_CMPL_CBACK *p_adv_cb;
-    tBTM_START_STOP_ADV_CMPL_CBACK *p_stop_adv_cb;
-    tBTM_CLEAR_ADV_CMPL_CBACK *p_clear_adv_cb;
     tBLE_ADDR_TYPE adv_addr_type;
     UINT8 evt_type;
     UINT8 adv_mode;
@@ -206,7 +203,6 @@ typedef struct {
     tBTM_BLE_ADDR_CBACK         *p_generate_cback;
     void                        *p;
     TIMER_LIST_ENT              raddr_timer_ent;
-    tBTM_SET_LOCAL_PRIVACY_CBACK *set_local_privacy_cback;
 } tBTM_LE_RANDOM_CB;
 
 #define BTM_BLE_MAX_BG_CONN_DEV_NUM    10
@@ -358,7 +354,6 @@ typedef struct {
     /* periodic list information */
     UINT8 periodic_adv_list_size;
 #endif //#if (BLE_50_EXTEND_SYNC_EN == TRUE)
-    tBTM_UPDATE_WHITELIST_CBACK *update_wl_cb;
     tBTM_BLE_WL_STATE wl_state;
 
     fixed_queue_t *conn_pending_q;
@@ -386,13 +381,6 @@ typedef struct {
     tBTM_BLE_STATE_MASK cur_states; /* bit mask of tBTM_BLE_STATE */
     UINT8 link_count[2]; /* total link count master and slave*/
 #endif // (BLE_TOPOLOGY_CHECK == TRUE)
-#if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
-    tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK *update_exceptional_list_cmp_cb;
-#endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
-#if (BLE_VENDOR_HCI_EN == TRUE)
-    tBTM_SET_CSA_SUPPORT_CMPL_CBACK *set_csa_support_cmpl_cb;
-    tBTM_SET_VENDOR_EVT_MASK_CBACK *set_vendor_evt_mask_cmpl_cb;
-#endif // (BLE_VENDOR_HCI_EN == TRUE)
 } tBTM_BLE_CB;
 
 #ifdef __cplusplus
@@ -401,7 +389,7 @@ extern "C" {
 
 void btm_ble_timeout(TIMER_LIST_ENT *p_tle);
 #if (BLE_42_SCAN_EN == TRUE)
-void btm_ble_process_adv_pkt (UINT8 *p);
+void btm_ble_process_adv_pkt (UINT8 *p, UINT8 evt_len);
 void btm_ble_process_adv_discard_evt(UINT8 *p);
 void btm_ble_process_direct_adv_pkt (UINT8 *p);
 bool btm_ble_adv_pkt_ready(void);
@@ -456,7 +444,7 @@ void btm_ble_increment_sign_ctr(BD_ADDR bd_addr, BOOLEAN is_local );
 BOOLEAN btm_get_local_div (BD_ADDR bd_addr, UINT16 *p_div);
 BOOLEAN btm_ble_get_enc_key_type(BD_ADDR bd_addr, UINT8 *p_key_types);
 
-void btm_ble_test_command_complete(UINT8 *p);
+void btm_ble_test_command_complete(UINT8 *p, UINT16 len);
 void btm_ble_rand_enc_complete (UINT8 *p, UINT16 op_code, tBTM_RAND_ENC_CB *p_enc_cplt_cback);
 
 void btm_sec_save_le_key(BD_ADDR bd_addr, tBTM_LE_KEY_TYPE key_type, tBTM_LE_KEY_VALUE *p_keys, BOOLEAN pass_to_application);
@@ -464,10 +452,10 @@ void btm_ble_update_sec_key_size(BD_ADDR bd_addr, UINT8 enc_key_size);
 UINT8 btm_ble_read_sec_key_size(BD_ADDR bd_addr);
 
 /* white list function */
-BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type, tBTM_UPDATE_WHITELIST_CBACK *update_wl_cb);
+BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type);
 void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy);
 void btm_update_adv_filter_policy(tBTM_BLE_AFP adv_policy);
-void btm_ble_clear_white_list (tBTM_UPDATE_WHITELIST_CBACK *update_wl_cb);
+void btm_ble_clear_white_list (void);
 void btm_read_white_list_size_complete(UINT8 *p, UINT16 evt_len);
 void btm_ble_add_2_white_list_complete(UINT8 status);
 void btm_ble_remove_from_white_list_complete(UINT8 *p, UINT16 evt_len);
@@ -554,6 +542,10 @@ void btm_ble_periodic_adv_sync_establish_evt(tBTM_BLE_PERIOD_ADV_SYNC_ESTAB *par
 void btm_ble_periodic_adv_list_init(UINT8 periodic_adv_size);
 #endif //#if (BLE_50_EXTEND_SYNC_EN == TRUE)
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+void btm_ble_monitor_adv_report_evt(tBTM_BLE_MONITOR_ADV_REPORT *params);
+void btm_ble_read_monitor_adv_list_size_complete(UINT8 *p);
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 void btm_ble_periodic_adv_sync_trans_recv_evt(tBTM_BLE_PERIOD_ADV_SYNC_TRANS_RECV *params);
@@ -574,10 +566,10 @@ void btm_ble_accept_cis_req_cmd_status(tBTM_BLE_ISO_CB_PARAMS *cb_params);
 void btm_ble_create_cis_cmd_status(tBTM_BLE_ISO_CB_PARAMS *cb_params);
 void btm_ble_iso_set_cig_params_complete(UINT8 *p);
 #endif // #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 void btm_ble_big_create_cmpl_evt(tBTM_BLE_BIG_CREATE_CMPL *param);
 void btm_ble_big_terminate_cmpl_evt(tBTM_BLE_BIG_TERMINATE_CMPL *params);
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 void btm_ble_big_sync_estab_evt(tBTM_BLE_BIG_SYNC_ESTAB_CMPL *params);
 void btm_ble_big_sync_lost_evt(tBTM_BLE_BIG_SYNC_LOST_EVT *params);

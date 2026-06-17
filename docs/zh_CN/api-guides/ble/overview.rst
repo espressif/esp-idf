@@ -13,7 +13,7 @@
 
     {IDF_TARGET_NAME} 支持蓝牙 5.0 (LE)，并且已经通过低功耗蓝牙 5.4 认证。
 
-.. only:: esp32c2 or esp32c6 or esp32h2 or esp32c5 or esp32c61
+.. only:: esp32c2 or esp32c6 or esp32h2 or esp32h21 or esp32c5 or esp32c61
 
     {IDF_TARGET_NAME} 支持蓝牙 5.0 (LE)，并且已经通过低功耗蓝牙 5.3 认证。
 
@@ -37,7 +37,7 @@ ESP-IDF 中的低功耗蓝牙协议栈是一个分层架构，可在 {IDF_TARGET
 
         {IDF_TARGET_NAME} 蓝牙协议栈架构
 
-.. only:: esp32h2
+.. only:: esp32h2 or esp32h21
 
     .. figure:: ../../../_static/bluetooth-architecture-no-blufi.png
         :align: center
@@ -58,23 +58,31 @@ ESP-IDF 中的低功耗蓝牙协议栈是一个分层架构，可在 {IDF_TARGET
       - ESP-Bluedroid
       - ESP-NimBLE
       - ESP-BLE-MESH
+      - ESP-BLE-ISO
+      - ESP-BLE-AUDIO
       - BluFi
     * - ESP32
       - Y
       - Y
       - Y
       - Y
+      - \–
+      - \–
       - Y
     * - ESP32-S3
       - Y
       - Y
       - Y
       - Y
+      - \–
+      - \–
       - Y
     * - ESP32-C2
       - Y
       - Y
       - Y
+      - \–
+      - \–
       - \–
       - Y
     * - ESP32-C3
@@ -82,26 +90,44 @@ ESP-IDF 中的低功耗蓝牙协议栈是一个分层架构，可在 {IDF_TARGET
       - Y
       - Y
       - Y
+      - \–
+      - \–
       - Y
     * - ESP32-C5
       - Y
       - Y
       - Y
       - Y
+      - \–
+      - \–
       - Y
     * - ESP32-C6
       - Y
       - Y
       - Y
       - Y
+      - \–
+      - \–
       - Y
     * - ESP32-C61
       - Y
       - Y
       - Y
       - Y
+      - \–
+      - \–
       - Y
     * - ESP32-H2
+      - Y
+      - Y
+      - Y
+      - Y
+      - \–
+      - \–
+      - \–
+    * - ESP32-H4
+      - Y
+      - Y
       - Y
       - Y
       - Y

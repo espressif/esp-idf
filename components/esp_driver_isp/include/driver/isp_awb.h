@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,12 +20,10 @@ extern "C" {
  */
 typedef struct {
     isp_awb_sample_point_t sample_point;                /*!< AWB sample point of the ISP pipeline.
-                                                         *   ISP_AWB_SAMPLE_POINT_BEFORE_CCM: sample before Color Correction Matrix(CCM).
-                                                         *   ISP_AWB_SAMPLE_POINT_AFTER_CCM: sample after Color Correction Matrix(CCM).
-                                                         *   If your camera support to set the manual gain to the RGB channels,
-                                                         *   then you can choose to sample before CCM, and set the gain to the camera registers.
-                                                         *   If your camera doesn't support the manual gain or don't want to change the camera configuration,
-                                                         *   then you can choose to sample after CCM, and set the calculated gain to the CCM
+                                                         *   ISP_AWB_SAMPLE_POINT_x: see TRM for more details
+                                                         *
+                                                         *   Different sample points collect different color statistics, which can be used
+                                                         *   to match different hardware pipelines and AWB tuning strategies.
                                                          */
     isp_window_t window;                                /*!< Statistic main window of AWB.
                                                          *   Suggest to set it at the middle of the image and a little smaller than the whole image.

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,13 +16,14 @@
 #include "services/gap/ble_svc_gap.h"
 #include "gatts_sens.h"
 #include "../src/ble_hs_hci_priv.h"
+#include "esp_timer.h"
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
 static uint8_t ext_adv_pattern[] = {
     0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
     0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
     0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xAB, 0xF2,
-    0x0e, BLE_HS_ADV_TYPE_COMP_NAME, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'b', 'l', 'e', 'p', 'r', 'p', 'h'
+    0x0c, BLE_HS_ADV_TYPE_COMP_NAME, 'n', 'i', 'm', 'b', 'l', 'e', '_', 'p', 'r', 'p', 'h'
 };
 
 static uint8_t s_current_phy;
@@ -30,8 +31,9 @@ static uint8_t s_current_phy;
 
 static const char *device_name = "nimble_prph";
 
-#define NOTIFY_THROUGHPUT_PAYLOAD 495
-#define MIN_REQUIRED_MBUF         2 /* Assuming payload of 500Bytes and each mbuf can take 292Bytes.  */
+#define NOTIFY_THROUGHPUT_PAYLOAD 509 /* MTU(512) - ATT notify header(3) */
+#define MIN_REQUIRED_MBUF         2 /* Assuming payload of 500Bytes and each mbuf can take 292Bytes. */
+#define NOTIFY_PIPELINE_DEPTH    15 /* Number of notifications to keep in flight for throughput */
 #define PREFERRED_MTU_VALUE       512
 #define LL_PACKET_TIME            2120
 #define LL_PACKET_LENGTH          251
@@ -276,8 +278,8 @@ notify_task(void *arg)
                     do {
                         om = ble_hs_mbuf_from_flat(payload, sizeof(payload));
                         if (om == NULL) {
-                            /* Memory not available for mbuf */
-                            vTaskDelay(100 / portTICK_PERIOD_MS);
+                            /* Memory not available for mbuf, yield briefly */
+                            vTaskDelay(1);
                         }
                     } while (om == NULL);
 
@@ -286,18 +288,14 @@ notify_task(void *arg)
                         ESP_LOGE(tag, "Error while sending notification; rc = %d", rc);
                         notify_count -= 1;
                         xSemaphoreGive(notify_sem);
-                        /* Most probably error is because we ran out of mbufs (rc = 6),
-                         * increase the mbuf count/size from menuconfig. Though
-                         * inserting delay is not good solution let us keep it
-                         * simple for time being so that the mbufs get freed up
-                         * (?), of course assumption is we ran out of mbufs */
-                        vTaskDelay(10 / portTICK_PERIOD_MS);
+                        /* Yield to let mbufs free up */
+                        vTaskDelay(1);
                     }
                 } else {
-                    ESP_LOGE(tag, "Not enough OS_MBUFs available; reduce notify count ");
                     xSemaphoreGive(notify_sem);
                     notify_count -= 1;
-                    vTaskDelay(10 / portTICK_PERIOD_MS);
+                    /* Yield briefly to let mbufs free up */
+                    vTaskDelay(1);
                 }
 
                 end_time = esp_timer_get_time();
@@ -395,7 +393,14 @@ gatts_gap_event(struct ble_gap_event *event, void *arg)
                 ESP_LOGI(tag, "notify test time = %d", *(int *)arg);
                 notify_test_time = *((int *)arg);
             }
-            xSemaphoreGive(notify_sem);
+            if (notify_state) {
+                /* Prime the notification pipeline to allow multiple in-flight
+                 * notifications. This enables the controller to fill connection
+                 * events with back-to-back PDUs for maximum throughput. */
+                for (int i = 0; i < NOTIFY_PIPELINE_DEPTH; i++) {
+                    xSemaphoreGive(notify_sem);
+                }
+            }
         } else if (event->subscribe.attr_handle != notify_handle) {
             notify_state = event->subscribe.cur_notify;
         }
@@ -507,8 +512,11 @@ void app_main(void)
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
     /* Initialize Notify Task */
-    xTaskCreate(notify_task, "notify_task", 4096, NULL, 10, NULL);
-
+    BaseType_t task_rc = xTaskCreate(notify_task, "notify_task", 4096, NULL, 10, NULL);
+    if (task_rc != pdPASS) {
+        ESP_LOGE(tag, "Failed to create notify_task (rc=%d)", task_rc);
+        return ;
+    }
 #if MYNEWT_VAL(BLE_GATTS)
     rc = gatt_svr_init();
     assert(rc == 0);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,7 +64,7 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_ocode(void)
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_active_hp_dbias(void)
 {
-    return (EFUSE0.rd_mac_sys3.active_hp_dbias_1 << 3)|EFUSE0.rd_mac_sys2.active_hp_dbias;
+    return (EFUSE0.rd_mac_sys3.active_hp_dbias_1 << 3) | EFUSE0.rd_mac_sys2.active_hp_dbias;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_active_lp_dbias(void)
@@ -139,10 +139,31 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_ecdsa_key_blk
     return EFUSE0.conf.cfg_ecdsa_blk;
 }
 
-
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_recovery_bootloader_sector(void)
 {
     return EFUSE0.rd_repeat_data3.recovery_bootloader_flash_sector;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_coding_error(unsigned index)
+{
+    switch (index) {
+    case 0:
+        return EFUSE0.rd_repeat_data_err0.val;
+    case 1:
+        return EFUSE0.rd_repeat_data_err1.val;
+    case 2:
+        return EFUSE0.rd_repeat_data_err2.val;
+    case 3:
+        return EFUSE0.rd_repeat_data_err3.val;
+    case 4:
+        return EFUSE0.rd_repeat_data_err4.val;
+    case 5:
+        return EFUSE0.rd_rs_data_err0.val;
+    case 6:
+        return EFUSE0.rd_rs_data_err1.val;
+    default:
+        return 0;
+    }
 }
 
 /******************* eFuse control functions *************************/

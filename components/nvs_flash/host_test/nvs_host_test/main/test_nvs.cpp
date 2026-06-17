@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,8 @@
 #include <string.h>
 #include <string>
 #include <random>
+#include <cmath>
+#include <cstring>
 #include "test_fixtures.hpp"
 #include "spi_flash_mmap.h"
 
@@ -31,6 +33,8 @@ using namespace std;
 #define TEST_ESP_OK(rc) CHECK((rc) == ESP_OK)
 
 #define WD_PREFIX "./components/nvs_flash/host_test/nvs_host_test/" // path from ci cwd to the location of host test
+
+#define TEST_DEFAULT_PURGE_AFTER_ERASE true             // erase with purge after erase
 
 #if defined(SEGGER_H) && defined(GLOBAL_H)
 NVS_GUARD_SYSVIEW_MACRO_EXPANSION_PUSH();
@@ -155,6 +159,7 @@ TEST_CASE("Page when writing and erasing, used/erased counts are updated correct
     // The remaining, not deleted entry is the namespace entry.
 
     NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+    const bool purgeAfterErase = TEST_DEFAULT_PURGE_AFTER_ERASE;
 
     nvs::Page page;
     TEST_ESP_OK(page.load(&h, 0));
@@ -165,7 +170,7 @@ TEST_CASE("Page when writing and erasing, used/erased counts are updated correct
     CHECK(page.getUsedEntryCount() == 1);
     TEST_ESP_OK(page.writeItem(2, "foo1", foo1));
     CHECK(page.getUsedEntryCount() == 2);
-    TEST_ESP_OK(page.eraseItem<uint32_t>(2, "foo1"));
+    TEST_ESP_OK(page.eraseItem<uint32_t>(2, "foo1", purgeAfterErase));
     CHECK(page.getUsedEntryCount() == 1);
     CHECK(page.getErasedEntryCount() == 1);
     for (size_t i = 0; i < nvs::Page::ENTRY_COUNT - 2; ++i) {
@@ -178,7 +183,7 @@ TEST_CASE("Page when writing and erasing, used/erased counts are updated correct
     for (size_t i = 0; i < nvs::Page::ENTRY_COUNT - 2; ++i) {
         char name[16];
         snprintf(name, sizeof(name), "i%ld", (long int)i);
-        TEST_ESP_OK(page.eraseItem(1, nvs::itemTypeOf<size_t>(), name));
+        TEST_ESP_OK(page.eraseItem(1, nvs::itemTypeOf<size_t>(), name, purgeAfterErase));
     }
     CHECK(page.getUsedEntryCount() == 1);
     CHECK(page.getErasedEntryCount() == nvs::Page::ENTRY_COUNT - 1);
@@ -447,13 +452,14 @@ TEST_CASE("storage doesn't add duplicates within one page", "[nvs]")
     // - overwriting the same item sets the erased entry count to 1
 
     NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+    const bool purgeAfterErase = TEST_DEFAULT_PURGE_AFTER_ERASE;
 
     nvs::Storage storage(&h);
 
     TEST_ESP_OK(storage.init(0, h.get_sectors()));
     int bar = 0;
-    TEST_ESP_OK(storage.writeItem(1, "bar", ++bar));
-    TEST_ESP_OK(storage.writeItem(1, "bar", ++bar));
+    TEST_ESP_OK(storage.writeItem(1, "bar", ++bar, purgeAfterErase));
+    TEST_ESP_OK(storage.writeItem(1, "bar", ++bar, purgeAfterErase));
 
     nvs::Page page;
 
@@ -468,6 +474,7 @@ TEST_CASE("can write one item a thousand times", "[nvs]")
     // TC verifies that Storage.writeItem can write one item a thousand times.
 
     NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+    const bool purgeAfterErase = TEST_DEFAULT_PURGE_AFTER_ERASE;
 
     const size_t NO_WRITES = 1000;
     nvs::Storage storage(&h);
@@ -477,7 +484,7 @@ TEST_CASE("can write one item a thousand times", "[nvs]")
     NVSPartitionTestHelper::clear_stats(); // Clear statistics before writing
 
     for (size_t i = 0; i < NO_WRITES; ++i) {
-        TEST_ESP_OK(storage.writeItem(1, "i", static_cast<int>(i)));
+        TEST_ESP_OK(storage.writeItem(1, "i", static_cast<int>(i), purgeAfterErase));
     }
     s_perf << "Time to write one item a " << NO_WRITES << " times: " << NVSPartitionTestHelper::get_total_time() << " us (" << NVSPartitionTestHelper::get_erase_ops() << " " << NVSPartitionTestHelper::get_write_ops() << " " << NVSPartitionTestHelper::get_read_ops() << " " << NVSPartitionTestHelper::get_write_bytes() << " " << NVSPartitionTestHelper::get_read_bytes() << ")" << std::endl;
 }
@@ -493,17 +500,17 @@ TEST_CASE("storage doesn't add duplicates within multiple pages", "[nvs]")
 
     // - reading the item "bar" from the second page works
     NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+    const bool purgeAfterErase = TEST_DEFAULT_PURGE_AFTER_ERASE;
 
     nvs::Storage storage(&h);
 
     TEST_ESP_OK(storage.init(0, h.get_sectors()));
     int bar = 0;
-    TEST_ESP_OK(storage.writeItem(1, "bar", ++bar));
+    TEST_ESP_OK(storage.writeItem(1, "bar", ++bar, purgeAfterErase));
     for (size_t i = 0; i < nvs::Page::ENTRY_COUNT; ++i) {
-        TEST_ESP_OK(storage.writeItem(1, "foo", static_cast<int>(++bar)));
+        TEST_ESP_OK(storage.writeItem(1, "foo", static_cast<int>(++bar), purgeAfterErase));
     }
-    TEST_ESP_OK(storage.writeItem(1, "bar", ++bar));
-
+    TEST_ESP_OK(storage.writeItem(1, "bar", ++bar, purgeAfterErase));
     nvs::Page page;
     TEST_ESP_OK(page.load(&h, 0));  // first page attempt
     CHECK(page.findItem(1, nvs::itemTypeOf<int>(), "bar") == ESP_ERR_NVS_NOT_FOUND);
@@ -517,18 +524,19 @@ TEST_CASE("storage can find items on second page if first is not fully written a
     // The first page is occupied by the item "1" and "2" which occupy enough of the first page in order to not fit the third item "3".
 
     NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+    const bool purgeAfterErase = TEST_DEFAULT_PURGE_AFTER_ERASE;
 
     nvs::Storage storage(&h);
     TEST_ESP_OK(storage.init(0, h.get_sectors()));
 
     uint8_t bigdata[(nvs::Page::CHUNK_MAX_SIZE - nvs::Page::ENTRY_SIZE) / 2] = {0};
     // write one big chunk of data
-    ESP_ERROR_CHECK(storage.writeItem(1, nvs::ItemType::BLOB, "1", bigdata, sizeof(bigdata)));
+    ESP_ERROR_CHECK(storage.writeItem(1, nvs::ItemType::BLOB, "1", bigdata, sizeof(bigdata), purgeAfterErase));
     // write another big chunk of data
-    ESP_ERROR_CHECK(storage.writeItem(1, nvs::ItemType::BLOB, "2", bigdata, sizeof(bigdata)));
+    ESP_ERROR_CHECK(storage.writeItem(1, nvs::ItemType::BLOB, "2", bigdata, sizeof(bigdata), purgeAfterErase));
 
     // write third one; it will not fit into the first page
-    ESP_ERROR_CHECK(storage.writeItem(1, nvs::ItemType::BLOB, "3", bigdata, sizeof(bigdata)));
+    ESP_ERROR_CHECK(storage.writeItem(1, nvs::ItemType::BLOB, "3", bigdata, sizeof(bigdata), purgeAfterErase));
 
     size_t size;
     ESP_ERROR_CHECK(storage.getItemDataSize(1, nvs::ItemType::BLOB, "1", size));
@@ -543,6 +551,7 @@ TEST_CASE("can write and read variable length data lots of times", "[nvs]")
     // of variable length data interleaved with fixed length data.
 
     NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+    const bool purgeAfterErase = TEST_DEFAULT_PURGE_AFTER_ERASE;
 
     const size_t NO_WRITES = 1000;
     nvs::Storage storage(&h);
@@ -556,8 +565,8 @@ TEST_CASE("can write and read variable length data lots of times", "[nvs]")
 
     for (size_t i = 0; i < NO_WRITES; ++i) {
         CAPTURE(i);
-        TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::SZ, "foobaar", str, len + 1));
-        TEST_ESP_OK(storage.writeItem(1, "foo", static_cast<uint32_t>(i)));
+        TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::SZ, "foobaar", str, len + 1, purgeAfterErase));
+        TEST_ESP_OK(storage.writeItem(1, "foo", static_cast<uint32_t>(i), purgeAfterErase));
 
         uint32_t value;
         TEST_ESP_OK(storage.readItem(1, "foo", value));
@@ -577,6 +586,7 @@ TEST_CASE("can get length of variable length data", "[nvs]")
     // - getting the size of a string and blob works correctly and independently between namespaces
 
     NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+    const bool purgeAfterErase = TEST_DEFAULT_PURGE_AFTER_ERASE;
 
     TEST_ESP_OK(NVSPartitionTestHelper::randomize_partition(TEST_DEFAULT_PARTITION_NAME, 200));
 
@@ -586,12 +596,12 @@ TEST_CASE("can get length of variable length data", "[nvs]")
 
     const char str[] = "foobar1234foobar1234foobar1234foobar1234foobar1234foobar1234foobar1234foobar1234";
     size_t len = strlen(str);
-    TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::SZ, "foobaar", str, len + 1));      // namespace 1
+    TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::SZ, "foobaar", str, len + 1, purgeAfterErase));      // namespace 1
     size_t dataSize;
     TEST_ESP_OK(storage.getItemDataSize(1, nvs::ItemType::SZ, "foobaar", dataSize));    // namespace 1
     CHECK(dataSize == len + 1);
 
-    TEST_ESP_OK(storage.writeItem(2, nvs::ItemType::BLOB, "foobaar", str, len));        // namespace 2
+    TEST_ESP_OK(storage.writeItem(2, nvs::ItemType::BLOB, "foobaar", str, len, purgeAfterErase));        // namespace 2
     TEST_ESP_OK(storage.getItemDataSize(2, nvs::ItemType::BLOB, "foobaar", dataSize));  // namespace 2
     CHECK(dataSize == len);
 }
@@ -626,6 +636,7 @@ TEST_CASE("storage may become full", "[nvs]")
     // - writing an item when the storage is full returns ESP_ERR_NVS_NOT_ENOUGH_SPACE
 
     NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+    const bool purgeAfterErase = TEST_DEFAULT_PURGE_AFTER_ERASE;
 
     nvs::Storage storage(&h);
 
@@ -638,9 +649,9 @@ TEST_CASE("storage may become full", "[nvs]")
     for (size_t i = 0; i < max_items; ++i) {
         char name[nvs::Item::MAX_KEY_LENGTH + 1];
         snprintf(name, sizeof(name), "key%05d", static_cast<int>(i));
-        TEST_ESP_OK(storage.writeItem(1, name, static_cast<int>(i)));
+        TEST_ESP_OK(storage.writeItem(1, name, static_cast<int>(i), purgeAfterErase));
     }
-    REQUIRE(storage.writeItem(1, "foo", 10) == ESP_ERR_NVS_NOT_ENOUGH_SPACE);
+    REQUIRE(storage.writeItem(1, "foo", 10, purgeAfterErase) == ESP_ERR_NVS_NOT_ENOUGH_SPACE);
 }
 
 TEST_CASE("can reuse the space previously occupied by the overwritten item", "[nvs]")
@@ -651,6 +662,7 @@ TEST_CASE("can reuse the space previously occupied by the overwritten item", "[n
     // marked as erased and thus space occupied by some of them will be reclaimed and page will be erased.
 
     NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+    const bool purgeAfterErase = TEST_DEFAULT_PURGE_AFTER_ERASE;
 
     nvs::Storage storage(&h);
     TEST_ESP_OK(storage.init(0, h.get_sectors()));
@@ -662,7 +674,7 @@ TEST_CASE("can reuse the space previously occupied by the overwritten item", "[n
     max_usable_items += 1;
 
     for (size_t i = 0; i < max_usable_items; ++i) {
-        TEST_ESP_OK(storage.writeItem(1, "foo", 42U));
+        TEST_ESP_OK(storage.writeItem(1, "foo", 42U, purgeAfterErase));
     }
 }
 
@@ -673,6 +685,7 @@ TEST_CASE("erase operations are distributed among sectors", "[nvs]")
     // on the same item, and finally checks that erase counts are distributed among the remaining sectors.
 
     NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+    const bool purgeAfterErase = TEST_DEFAULT_PURGE_AFTER_ERASE;
 
     // Test parameters
     const size_t static_pages = 2;  // Number of NVS pages to fill with stable items
@@ -694,14 +707,14 @@ TEST_CASE("erase operations are distributed among sectors", "[nvs]")
     for (size_t i = 0; i < static_pages * nvs::Page::ENTRY_COUNT; ++i) {
         char name[nvs::Item::MAX_KEY_LENGTH];
         snprintf(name, sizeof(name), "static%d", (int) i);
-        TEST_ESP_OK(storage.writeItem(1, name, i));
+        TEST_ESP_OK(storage.writeItem(1, name, i, purgeAfterErase));
     }
 
     // Calculate how many write operations we need to perform to ensure that every page will be erased
     size_t write_ops = (all_pages - static_pages) * nvs::Page::ENTRY_COUNT * erase_count;
 
     for (size_t i = 0; i < write_ops; ++i) {
-        TEST_ESP_OK(storage.writeItem(1, "value", i));
+        TEST_ESP_OK(storage.writeItem(1, "value", i, purgeAfterErase));
     }
 
     const size_t max_erase_cnt = write_ops / nvs::Page::ENTRY_COUNT / (all_pages - static_pages);
@@ -735,6 +748,7 @@ TEST_CASE("can erase items", "[nvs]")
     // - namespace id is respected in eraseItem and readItem
 
     NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+    const bool purgeAfterErase = TEST_DEFAULT_PURGE_AFTER_ERASE;
 
     nvs::Storage storage(&h);
     TEST_ESP_OK(storage.init(0, h.get_sectors()));
@@ -743,15 +757,15 @@ TEST_CASE("can erase items", "[nvs]")
     for (size_t i = 0; i < nvs::Page::ENTRY_COUNT * 2 - 3; ++i) {
         char name[nvs::Item::MAX_KEY_LENGTH + 1];
         snprintf(name, sizeof(name), "key%05d", static_cast<int>(i));
-        TEST_ESP_OK(storage.writeItem(3, name, static_cast<int>(i)));
+        TEST_ESP_OK(storage.writeItem(3, name, static_cast<int>(i), purgeAfterErase));
     }
-    TEST_ESP_OK(storage.writeItem(1, "foo", 32));
-    TEST_ESP_OK(storage.writeItem(2, "foo", 64));
-    TEST_ESP_OK(storage.eraseItem(2, "foo"));
+    TEST_ESP_OK(storage.writeItem(1, "foo", 32, purgeAfterErase));
+    TEST_ESP_OK(storage.writeItem(2, "foo", 64, purgeAfterErase));
+    TEST_ESP_OK(storage.eraseItem(2, "foo", purgeAfterErase));
     int val;
     TEST_ESP_OK(storage.readItem(1, "foo", val));
     CHECK(val == 32);
-    TEST_ESP_OK(storage.eraseNamespace(3));
+    TEST_ESP_OK(storage.eraseNamespace(3, purgeAfterErase));
     CHECK(storage.readItem(2, "foo", val) == ESP_ERR_NVS_NOT_FOUND);
     CHECK(storage.readItem(3, "key00222", val) == ESP_ERR_NVS_NOT_FOUND);
 }
@@ -2335,6 +2349,7 @@ TEST_CASE("Check that orphaned blobs are erased during init", "[nvs]")
 
     // Use NVSPartitionTestHelper to provide nvs::Partition instance for the test
     NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+    const bool purgeAfterErase = true;
 
     // Make sure the partition has enough NVS pages
     // Requires 1 namespace entry, 1 + 3  metadata entries for the blob,
@@ -2350,13 +2365,13 @@ TEST_CASE("Check that orphaned blobs are erased during init", "[nvs]")
 
     TEST_ESP_OK(storage.init(0, required_sectors));
 
-    TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::BLOB, "key", blob, sizeof(blob)));
+    TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::BLOB, "key", blob, sizeof(blob), purgeAfterErase));
 
     TEST_ESP_OK(storage.init(0, required_sectors));
     // Check that multi-page item is still available.
     TEST_ESP_OK(storage.readItem(1, nvs::ItemType::BLOB, "key", blob, sizeof(blob)));
 
-    TEST_ESP_ERR(storage.writeItem(1, nvs::ItemType::BLOB, "key2", blob, sizeof(blob)), ESP_ERR_NVS_NOT_ENOUGH_SPACE);
+    TEST_ESP_ERR(storage.writeItem(1, nvs::ItemType::BLOB, "key2", blob, sizeof(blob), purgeAfterErase), ESP_ERR_NVS_NOT_ENOUGH_SPACE);
 
     nvs::Page p;
     TEST_ESP_OK(p.load(&h, 3)); // This is where index will be placed.
@@ -2365,7 +2380,7 @@ TEST_CASE("Check that orphaned blobs are erased during init", "[nvs]")
     TEST_ESP_OK(storage.init(0, required_sectors));
 
     TEST_ESP_ERR(storage.readItem(1, nvs::ItemType::BLOB, "key", blob, sizeof(blob)), ESP_ERR_NVS_NOT_FOUND);
-    TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::BLOB, "key3", blob, sizeof(blob)));
+    TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::BLOB, "key3", blob, sizeof(blob), purgeAfterErase));
 }
 
 TEST_CASE("nvs blob fragmentation test", "[nvs]")
@@ -2434,6 +2449,7 @@ TEST_CASE("nvs code handles errors properly when partition is near to full", "[n
 
     // Initialize NVS partition
     NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+    const bool purgeAfterErase = TEST_DEFAULT_PURGE_AFTER_ERASE;
 
     // This test requires at least 4+1 NVS pages to run.
     CHECK(h.get_sectors() >= 5);
@@ -2449,12 +2465,12 @@ TEST_CASE("nvs code handles errors properly when partition is near to full", "[n
     // Four pages should fit roughly 12 blobs
     for (uint8_t count = 1; count <= 12; count++) {
         snprintf(nvs_key, sizeof(nvs_key), "key:%u", count);
-        TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::BLOB, nvs_key, blob, sizeof(blob)));
+        TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::BLOB, nvs_key, blob, sizeof(blob), purgeAfterErase));
     }
 
     for (uint8_t count = 13; count <= 20; count++) {
         snprintf(nvs_key, sizeof(nvs_key), "key:%u", count);
-        TEST_ESP_ERR(storage.writeItem(1, nvs::ItemType::BLOB, nvs_key, blob, sizeof(blob)), ESP_ERR_NVS_NOT_ENOUGH_SPACE);
+        TEST_ESP_ERR(storage.writeItem(1, nvs::ItemType::BLOB, nvs_key, blob, sizeof(blob), purgeAfterErase), ESP_ERR_NVS_NOT_ENOUGH_SPACE);
     }
 }
 
@@ -2513,6 +2529,7 @@ TEST_CASE("monkey test with old-format blob present", "[nvs][monkey][xxx]")
 
     // Clear partition stats before testing
     NVSPartitionTestHelper::clear_stats();
+    const bool purgeAfterErase = true;
 
     static const size_t smallBlobLen = nvs::Page::CHUNK_MAX_SIZE / 3;
 
@@ -2531,9 +2548,9 @@ TEST_CASE("monkey test with old-format blob present", "[nvs][monkey][xxx]")
         for (uint8_t num = 0; num < sector_count; num++) {
             nvs::Page p;
             TEST_ESP_OK(p.load(&h, num));
-            p.eraseItem(1, nvs::ItemType::BLOB, "singlepage", nvs::Item::CHUNK_ANY, nvs::VerOffset::VER_ANY);
-            p.eraseItem(1, nvs::ItemType::BLOB_IDX, "singlepage", nvs::Item::CHUNK_ANY, nvs::VerOffset::VER_ANY);
-            p.eraseItem(1, nvs::ItemType::BLOB_DATA, "singlepage", nvs::Item::CHUNK_ANY, nvs::VerOffset::VER_ANY);
+            p.eraseItem(1, nvs::ItemType::BLOB, "singlepage", purgeAfterErase, nvs::Item::CHUNK_ANY, nvs::VerOffset::VER_ANY);
+            p.eraseItem(1, nvs::ItemType::BLOB_IDX, "singlepage", purgeAfterErase, nvs::Item::CHUNK_ANY, nvs::VerOffset::VER_ANY);
+            p.eraseItem(1, nvs::ItemType::BLOB_DATA, "singlepage", purgeAfterErase, nvs::Item::CHUNK_ANY, nvs::VerOffset::VER_ANY);
         }
 
         // Now write "singlepage" blob in old format
@@ -3186,6 +3203,7 @@ TEST_CASE("recovery after failure to write data", "[nvs]")
 
     // PartitionTestHelper is used to provide nvs::Partition instance for the test
     NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+    const bool purgeAfterErase = TEST_DEFAULT_PURGE_AFTER_ERASE;
 
     const char str[] = "value 0123456789abcdef012345678value 0123456789abcdef012345678";
 
@@ -3195,10 +3213,10 @@ TEST_CASE("recovery after failure to write data", "[nvs]")
         nvs::Storage storage(&h);
         TEST_ESP_OK(storage.init(0, 3));
 
-        TEST_ESP_ERR(storage.writeItem(1, nvs::ItemType::SZ, "key", str, strlen(str)), ESP_ERR_FLASH_OP_FAIL);
+        TEST_ESP_ERR(storage.writeItem(1, nvs::ItemType::SZ, "key", str, strlen(str), purgeAfterErase), ESP_ERR_FLASH_OP_FAIL);
 
         // check that repeated operations cause an error
-        TEST_ESP_ERR(storage.writeItem(1, nvs::ItemType::SZ, "key", str, strlen(str)), ESP_ERR_NVS_INVALID_STATE);
+        TEST_ESP_ERR(storage.writeItem(1, nvs::ItemType::SZ, "key", str, strlen(str), purgeAfterErase), ESP_ERR_NVS_INVALID_STATE);
 
         uint8_t val;
         TEST_ESP_ERR(storage.readItem(1, nvs::ItemType::U8, "key", &val, sizeof(val)), ESP_ERR_NVS_NOT_FOUND);
@@ -3226,13 +3244,14 @@ TEST_CASE("crc errors in item header are handled", "[nvs]")
 
     // PartitionTestHelper is used to provide nvs::Partition instance for the test
     NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+    const bool purgeAfterErase = TEST_DEFAULT_PURGE_AFTER_ERASE;
 
     nvs::Storage storage(&h);
     // prepare some data
     TEST_ESP_OK(storage.init(0, 3));
-    TEST_ESP_OK(storage.writeItem(0, "ns1", static_cast<uint8_t>(1)));
-    TEST_ESP_OK(storage.writeItem(1, "value1", static_cast<uint32_t>(1)));
-    TEST_ESP_OK(storage.writeItem(1, "value2", static_cast<uint32_t>(2)));
+    TEST_ESP_OK(storage.writeItem(0, "ns1", static_cast<uint8_t>(1), purgeAfterErase));
+    TEST_ESP_OK(storage.writeItem(1, "value1", static_cast<uint32_t>(1), purgeAfterErase));
+    TEST_ESP_OK(storage.writeItem(1, "value2", static_cast<uint32_t>(2), purgeAfterErase));
 
     // corrupt item header
     uint32_t val = 0;
@@ -3249,7 +3268,7 @@ TEST_CASE("crc errors in item header are handled", "[nvs]")
     for (size_t i = 0; i < nvs::Page::ENTRY_COUNT; ++i) {
         char item_name[nvs::Item::MAX_KEY_LENGTH + 1];
         snprintf(item_name, sizeof(item_name), "item_%ld", (long int)i);
-        TEST_ESP_OK(storage.writeItem(1, item_name, static_cast<uint32_t>(i)));
+        TEST_ESP_OK(storage.writeItem(1, item_name, static_cast<uint32_t>(i), purgeAfterErase));
     }
 
     // corrupt another item on the full page
@@ -3316,13 +3335,14 @@ TEST_CASE("zero span in item header with correct crc is handled", "[nvs]")
 
     // PartitionTestHelper is used to provide nvs::Partition instance for the test
     NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+    const bool purgeAfterErase = TEST_DEFAULT_PURGE_AFTER_ERASE;
 
     nvs::Storage storage(&h);
     // prepare some data
     TEST_ESP_OK(storage.init(0, 3));
-    TEST_ESP_OK(storage.writeItem(0, "ns1", static_cast<uint8_t>(1)));
-    TEST_ESP_OK(storage.writeItem(1, "value1", static_cast<uint32_t>(1)));
-    TEST_ESP_OK(storage.writeItem(1, "value2", static_cast<uint32_t>(2)));
+    TEST_ESP_OK(storage.writeItem(0, "ns1", static_cast<uint8_t>(1), purgeAfterErase));
+    TEST_ESP_OK(storage.writeItem(1, "value1", static_cast<uint32_t>(1), purgeAfterErase));
+    TEST_ESP_OK(storage.writeItem(1, "value2", static_cast<uint32_t>(2), purgeAfterErase));
 
     // damage item header of value1 to introduce span==0 error, recalculate crc
     {
@@ -3357,7 +3377,7 @@ TEST_CASE("zero span in item header with correct crc is handled", "[nvs]")
     for (size_t i = 0; i < nvs::Page::ENTRY_COUNT; ++i) {
         char item_name[nvs::Item::MAX_KEY_LENGTH + 1];
         snprintf(item_name, sizeof(item_name), "item_%ld", (long int)i);
-        TEST_ESP_OK(storage.writeItem(1, item_name, static_cast<uint32_t>(i)));
+        TEST_ESP_OK(storage.writeItem(1, item_name, static_cast<uint32_t>(i), purgeAfterErase));
     }
 
     // damage item header of item_125 to introduce span==0 error, recalculate crc
@@ -3397,18 +3417,19 @@ TEST_CASE("inconsistent fields in item header with correct crc are handled for s
 
     // PartitionTestHelper is used to provide nvs::Partition instance for the test
     NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+    const bool purgeAfterErase = TEST_DEFAULT_PURGE_AFTER_ERASE;
 
     nvs::Storage storage(&h);
     // prepare some data
     TEST_ESP_OK(storage.init(0, 3));
-    TEST_ESP_OK(storage.writeItem(0, "ns1", static_cast<uint8_t>(1)));
+    TEST_ESP_OK(storage.writeItem(0, "ns1", static_cast<uint8_t>(1), purgeAfterErase));
     const char str[] = "String67890123456789012345678901String67890123456789012345678901String6789012345678901234567890"; // 95 + 1 bytes data occupy 3 entries, overhead 1
 
-    TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::SZ, "valuestr1", str, strlen(str)));
-    TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::SZ, "valuestr2", str, strlen(str)));
-    TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::SZ, "valuestr3", str, strlen(str)));
-    TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::SZ, "valuestr4", str, strlen(str)));
-    TEST_ESP_OK(storage.writeItem(1, "valueu32", static_cast<uint32_t>(2)));
+    TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::SZ, "valuestr1", str, strlen(str), purgeAfterErase));
+    TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::SZ, "valuestr2", str, strlen(str), purgeAfterErase));
+    TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::SZ, "valuestr3", str, strlen(str), purgeAfterErase));
+    TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::SZ, "valuestr4", str, strlen(str), purgeAfterErase));
+    TEST_ESP_OK(storage.writeItem(1, "valueu32", static_cast<uint32_t>(2), purgeAfterErase));
 
     // read the values back
     char read_str[sizeof(str)] = {0};
@@ -3789,14 +3810,15 @@ TEST_CASE("invalid data type in item header with correct crc is handled", "[nvs]
 
     // PartitionTestHelper is used to provide nvs::Partition instance for the test
     NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+    const bool purgeAfterErase = TEST_DEFAULT_PURGE_AFTER_ERASE;
 
     nvs::Storage storage(&h);
     // prepare some data
     TEST_ESP_OK(storage.init(0, 3));
-    TEST_ESP_OK(storage.writeItem(0, "ns1", static_cast<uint8_t>(1)));
-    TEST_ESP_OK(storage.writeItem(1, "value1", static_cast<uint32_t>(1)));
-    TEST_ESP_OK(storage.writeItem(1, "value2", static_cast<uint32_t>(2)));
-    TEST_ESP_OK(storage.writeItem(1, "value3", static_cast<uint32_t>(3)));
+    TEST_ESP_OK(storage.writeItem(0, "ns1", static_cast<uint8_t>(1), purgeAfterErase));
+    TEST_ESP_OK(storage.writeItem(1, "value1", static_cast<uint32_t>(1), purgeAfterErase));
+    TEST_ESP_OK(storage.writeItem(1, "value2", static_cast<uint32_t>(2), purgeAfterErase));
+    TEST_ESP_OK(storage.writeItem(1, "value3", static_cast<uint32_t>(3), purgeAfterErase));
 
     // damage item header of value2 to introduce data type error, recalculate crc
     {
@@ -4745,6 +4767,760 @@ TEST_CASE("nvs find key tests", "[nvs]")
     nvs_close(handle_2);
     TEST_ESP_OK(nvs_flash_deinit_partition(TEST_DEFAULT_PARTITION_NAME));
 }
+
+TEST_CASE("nvs handle purge test", "[nvs]")
+{
+    // TC validating that erased and overwritten entries are purged from NVS storage based on the mode of handle opening.
+    // The test covers both modes: with implicit purge enabled and disabled.
+    // To validate the behavior, the test:
+    // Writes entries of different types to NVS storage. Entries include: integer, string and multi page blob.
+    // Inf first round, the data contains initial markers to identify them.
+    // Then it erases / overwrites the entries one by one and after each erase it checks whether the markers are still present in the storage
+
+    // SECTIONS:
+    // 1. Open writable namespace without implicit purge. Erase data. Should find markers.
+    // 2/ Open writable namespace without implicit purge. Overwrite data. Should find old markers.
+    // 3. Open writable namespace with implicit purge. Erase data. Should NOT find markers.
+    // 4. Open writable namespace with implicit purge. Overwrite data. Should NOT find old markers.
+
+    const char* part_name = TEST_DEFAULT_PARTITION_NAME;
+    const char* ns_name = "ns1";
+
+
+    // Markers and lengths used in the test
+    // String mrkers are fixed strings at the beginning of the string data as well as at the end of the string data
+    const char str_key[] = "str_key";
+    const char str_marker_start[] = "STR_START_";;
+    const char str_marker_end[] = "_STR_END";
+    const size_t string_len = 3000;                 // 4000 is max, 3000 fills almost entire page
+
+    // Blob markers are fixed patterns at the beginning of the blob data as well as at the end of the blob data
+    const char blob_key[] = "blob_key";
+    const uint8_t blob_marker_start[] = {0xBA, 0xAD, 0xF0, 0x0D};
+    const uint8_t blob_marker_end[]   = {0xD0, 0x0F, 0xDA, 0xAB};
+    const size_t blob_len = 8192;                   // 8192 bytes to ensure multipage blob
+
+    // uint64_t marker is used for integer data
+    const char uint_key[] = "uint_key";
+    const uint64_t uint_marker = 0xDEADBEEFFEEBDAED;
+
+    // Overwrite patterns
+    const char str_overwrite_pattern = 'X';
+    const uint8_t blob_overwrite_pattern = 0x5A;
+    const uint64_t uint_overwrite_pattern = 0xA5A5A5A5A5A5A5A5;
+
+
+    // nvs_flash_erase_partition to start with clean partition
+    TEST_ESP_OK(nvs_flash_erase_partition(part_name));
+    TEST_ESP_OK(nvs_flash_init_partition(part_name));
+
+    // init non-purge handle
+    nvs_handle_t handle;
+    TEST_ESP_OK(nvs_open_from_partition(part_name, ns_name, NVS_READWRITE, &handle));
+
+    // populate with markers
+    // string
+    char* str_data = (char*) malloc(string_len);
+    CHECK(str_data != nullptr);
+    memset(str_data, 'A', string_len);
+    memcpy(str_data, str_marker_start, strlen(str_marker_start));
+    memcpy(str_data + string_len - (strlen(str_marker_end) + 1), str_marker_end, strlen(str_marker_end));
+    str_data[string_len - 1] = '\0'; // ensure null termination
+    TEST_ESP_OK(nvs_set_str(handle, str_key, str_data));
+    free(str_data);
+
+    // blob
+    uint8_t* blob_data = (uint8_t*) malloc(blob_len);
+    CHECK(blob_data != nullptr);
+    memset(blob_data, 0xFF, blob_len);
+    memcpy(blob_data, blob_marker_start, sizeof(blob_marker_start));
+    memcpy(blob_data + blob_len - sizeof(blob_marker_end), blob_marker_end, sizeof(blob_marker_end));
+    TEST_ESP_OK(nvs_set_blob(handle, blob_key, blob_data, blob_len));
+    free(blob_data);
+
+    // uint64_t
+    TEST_ESP_OK(nvs_set_u64(handle, uint_key, uint_marker));
+    TEST_ESP_OK(nvs_commit(handle));
+
+    // make sure markers are written
+    // check string marker
+    TEST_ESP_OK(NVSPartitionTestHelper::check_marker(part_name, (const uint8_t*)str_marker_start, strlen(str_marker_start)));
+    TEST_ESP_OK(NVSPartitionTestHelper::check_marker(part_name, (const uint8_t*)str_marker_end, strlen(str_marker_end)));
+    // check blob marker
+    TEST_ESP_OK(NVSPartitionTestHelper::check_marker(part_name, blob_marker_start, sizeof(blob_marker_start)));
+    TEST_ESP_OK(NVSPartitionTestHelper::check_marker(part_name, blob_marker_end, sizeof(blob_marker_end)));
+    // check uint64_t marker
+    TEST_ESP_OK(NVSPartitionTestHelper::check_marker(part_name, (const uint8_t*)&uint_marker, sizeof(uint_marker)));
+
+    // deinit
+    nvs_close(handle);
+
+    SECTION("non-purge handle - erase entries")
+    {
+        // init non-purge handle
+        TEST_ESP_OK(nvs_open_from_partition(part_name, ns_name, NVS_READWRITE, &handle));
+
+        // erase / check markers
+        TEST_ESP_OK(nvs_erase_key(handle, str_key));
+        TEST_ESP_OK(nvs_erase_key(handle, blob_key));
+        TEST_ESP_OK(nvs_erase_key(handle, uint_key));
+
+        TEST_ESP_OK(nvs_commit(handle));
+
+        // this is non implicit purge handle, so markers should be found
+        // check string marker
+        TEST_ESP_OK(NVSPartitionTestHelper::check_marker(part_name, (const uint8_t*)str_marker_start, strlen(str_marker_start)));
+        TEST_ESP_OK(NVSPartitionTestHelper::check_marker(part_name, (const uint8_t*)str_marker_end, strlen(str_marker_end)));
+        // check blob marker
+        TEST_ESP_OK(NVSPartitionTestHelper::check_marker(part_name, blob_marker_start, sizeof(blob_marker_start)));
+        TEST_ESP_OK(NVSPartitionTestHelper::check_marker(part_name, blob_marker_end, sizeof(blob_marker_end)));
+        // check uint64_t marker
+        TEST_ESP_OK(NVSPartitionTestHelper::check_marker(part_name, (const uint8_t*)&uint_marker, sizeof(uint_marker)));
+
+        // explicitly call purge
+        TEST_ESP_OK(nvs_purge_all(handle));
+
+        // after purge, markers should NOT be found
+        // check string marker
+        TEST_ESP_ERR(NVSPartitionTestHelper::check_marker(part_name, (const uint8_t*)str_marker_start, strlen(str_marker_start)), ESP_ERR_NVS_NOT_FOUND);
+        TEST_ESP_ERR(NVSPartitionTestHelper::check_marker(part_name, (const uint8_t*)str_marker_end, strlen(str_marker_end)), ESP_ERR_NVS_NOT_FOUND);
+        // check blob marker
+        TEST_ESP_ERR(NVSPartitionTestHelper::check_marker(part_name, blob_marker_start, sizeof(blob_marker_start)), ESP_ERR_NVS_NOT_FOUND);
+        TEST_ESP_ERR(NVSPartitionTestHelper::check_marker(part_name, blob_marker_end, sizeof(blob_marker_end)), ESP_ERR_NVS_NOT_FOUND);
+        // check uint64_t marker
+        TEST_ESP_ERR(NVSPartitionTestHelper::check_marker(part_name, (const uint8_t*)&uint_marker, sizeof(uint_marker)), ESP_ERR_NVS_NOT_FOUND);
+    }
+
+    SECTION("non-purge handle - overwrite entries")
+    {
+        // init non-purge handle
+        TEST_ESP_OK(nvs_open_from_partition(part_name, ns_name, NVS_READWRITE, &handle));
+
+        // overwrite / check markers
+        // string
+        char* str_data_ov = (char*) malloc(string_len);
+        CHECK(str_data_ov != nullptr);
+        memset(str_data_ov, str_overwrite_pattern, string_len);
+        str_data_ov[string_len - 1] = '\0'; // ensure null termination
+        TEST_ESP_OK(nvs_set_str(handle, str_key, str_data_ov));
+
+        // blob
+        uint8_t* blob_data_ov = (uint8_t*) malloc(blob_len);
+        CHECK(blob_data_ov != nullptr);
+        memset(blob_data_ov, blob_overwrite_pattern, blob_len);
+        TEST_ESP_OK(nvs_set_blob(handle, blob_key, blob_data_ov, blob_len));
+
+        // uint64_t
+        TEST_ESP_OK(nvs_set_u64(handle, uint_key, uint_overwrite_pattern));
+        TEST_ESP_OK(nvs_commit(handle));
+
+        free(str_data_ov);
+        free(blob_data_ov);
+
+        // this is non implicit purge handle, so old markers should be found
+        // check string marker
+        TEST_ESP_OK(NVSPartitionTestHelper::check_marker(part_name, (const uint8_t*)str_marker_start, strlen(str_marker_start)));
+        TEST_ESP_OK(NVSPartitionTestHelper::check_marker(part_name, (const uint8_t*)str_marker_end, strlen(str_marker_end)));
+        // check blob marker
+        TEST_ESP_OK(NVSPartitionTestHelper::check_marker(part_name, blob_marker_start, sizeof(blob_marker_start)));
+        TEST_ESP_OK(NVSPartitionTestHelper::check_marker(part_name, blob_marker_end, sizeof(blob_marker_end)));
+        // check uint64_t marker
+        TEST_ESP_OK(NVSPartitionTestHelper::check_marker(part_name, (const uint8_t*)&uint_marker, sizeof(uint_marker)));
+
+        // explicitly call purge
+        TEST_ESP_OK(nvs_purge_all(handle));
+
+        // after purge, markers should NOT be found
+        // check string marker
+        TEST_ESP_ERR(NVSPartitionTestHelper::check_marker(part_name, (const uint8_t*)str_marker_start, strlen(str_marker_start)), ESP_ERR_NVS_NOT_FOUND);
+        TEST_ESP_ERR(NVSPartitionTestHelper::check_marker(part_name, (const uint8_t*)str_marker_end, strlen(str_marker_end)), ESP_ERR_NVS_NOT_FOUND);
+        // check blob marker
+        TEST_ESP_ERR(NVSPartitionTestHelper::check_marker(part_name, blob_marker_start, sizeof(blob_marker_start)), ESP_ERR_NVS_NOT_FOUND);
+        TEST_ESP_ERR(NVSPartitionTestHelper::check_marker(part_name, blob_marker_end, sizeof(blob_marker_end)), ESP_ERR_NVS_NOT_FOUND);
+        // check uint64_t marker
+        TEST_ESP_ERR(NVSPartitionTestHelper::check_marker(part_name, (const uint8_t*)&uint_marker, sizeof(uint_marker)), ESP_ERR_NVS_NOT_FOUND);
+    }
+
+    SECTION("purge handle - erase entries")
+    {
+        // init purge handle
+        TEST_ESP_OK(nvs_open_from_partition(part_name, ns_name, NVS_READWRITE_PURGE, &handle));
+
+        // erase / check markers
+        TEST_ESP_OK(nvs_erase_key(handle, str_key));
+        TEST_ESP_OK(nvs_erase_key(handle, blob_key));
+        TEST_ESP_OK(nvs_erase_key(handle, uint_key));
+
+        TEST_ESP_OK(nvs_commit(handle));
+
+        // this is purge handle, so markers should NOT be found
+        // check string marker
+        TEST_ESP_ERR(NVSPartitionTestHelper::check_marker(part_name, (const uint8_t*)str_marker_start, strlen(str_marker_start)), ESP_ERR_NVS_NOT_FOUND);
+        TEST_ESP_ERR(NVSPartitionTestHelper::check_marker(part_name, (const uint8_t*)str_marker_end, strlen(str_marker_end)), ESP_ERR_NVS_NOT_FOUND);
+        // check blob marker
+        TEST_ESP_ERR(NVSPartitionTestHelper::check_marker(part_name, blob_marker_start, sizeof(blob_marker_start)), ESP_ERR_NVS_NOT_FOUND);
+        TEST_ESP_ERR(NVSPartitionTestHelper::check_marker(part_name, blob_marker_end, sizeof(blob_marker_end)), ESP_ERR_NVS_NOT_FOUND);
+        // check uint64_t marker
+        TEST_ESP_ERR(NVSPartitionTestHelper::check_marker(part_name, (const uint8_t*)&uint_marker, sizeof(uint_marker)), ESP_ERR_NVS_NOT_FOUND);
+    }
+
+    SECTION("purge handle - overwrite entries")
+    {
+        // init purge handle
+        TEST_ESP_OK(nvs_open_from_partition(part_name, ns_name, NVS_READWRITE_PURGE, &handle));
+
+        // overwrite / check markers
+        // string
+        char* str_data_ov = (char*) malloc(string_len);
+        CHECK(str_data_ov != nullptr);
+        memset(str_data_ov, str_overwrite_pattern, string_len);
+        str_data_ov[string_len - 1] = '\0'; // ensure null termination
+
+        TEST_ESP_OK(nvs_set_str(handle, str_key, str_data_ov));
+
+        // blob
+        uint8_t* blob_data_ov = (uint8_t*) malloc(blob_len);
+        CHECK(blob_data_ov != nullptr);
+        memset(blob_data_ov, blob_overwrite_pattern, blob_len);
+        TEST_ESP_OK(nvs_set_blob(handle, blob_key, blob_data_ov, blob_len));
+
+        // uint64_t
+        TEST_ESP_OK(nvs_set_u64(handle, uint_key, uint_overwrite_pattern));
+        TEST_ESP_OK(nvs_commit(handle));
+
+        free(str_data_ov);
+        free(blob_data_ov);
+
+        // this is purge handle, so old markers should NOT be found
+        // check string marker
+        TEST_ESP_ERR(NVSPartitionTestHelper::check_marker(part_name, (const uint8_t*)str_marker_start, strlen(str_marker_start)), ESP_ERR_NVS_NOT_FOUND);
+        TEST_ESP_ERR(NVSPartitionTestHelper::check_marker(part_name, (const uint8_t*)str_marker_end, strlen(str_marker_end)), ESP_ERR_NVS_NOT_FOUND);
+        // check blob marker
+        TEST_ESP_ERR(NVSPartitionTestHelper::check_marker(part_name, blob_marker_start, sizeof(blob_marker_start)), ESP_ERR_NVS_NOT_FOUND);
+        TEST_ESP_ERR(NVSPartitionTestHelper::check_marker(part_name, blob_marker_end, sizeof(blob_marker_end)), ESP_ERR_NVS_NOT_FOUND);
+        // check uint64_t marker
+        TEST_ESP_ERR(NVSPartitionTestHelper::check_marker(part_name, (const uint8_t*)&uint_marker, sizeof(uint_marker)), ESP_ERR_NVS_NOT_FOUND);
+    }
+
+    // deinit
+    nvs_close(handle);
+
+    // clean up partition
+    TEST_ESP_OK(nvs_flash_erase_partition(part_name));
+}
+
+
+// ============================================================================
+// IEEE 754 float and double type tests
+// ============================================================================
+
+TEST_CASE("Page write and read float value", "[nvs]")
+{
+    NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+
+    nvs::Page page;
+    TEST_ESP_OK(page.load(&h, 0));
+    float val = 3.14159265f;
+    TEST_ESP_OK(page.writeItem(1, nvs::ItemType::FLOAT, "floatval", &val, sizeof(val)));
+
+    float readVal = 0.0f;
+    TEST_ESP_OK(page.readItem(1, nvs::ItemType::FLOAT, "floatval", &readVal, sizeof(readVal)));
+    CHECK(readVal == val);
+}
+
+TEST_CASE("Page write and read double value", "[nvs]")
+{
+    NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+
+    nvs::Page page;
+    TEST_ESP_OK(page.load(&h, 0));
+    double val = 2.718281828459045;
+    TEST_ESP_OK(page.writeItem(1, nvs::ItemType::DOUBLE, "dblval", &val, sizeof(val)));
+
+    double readVal = 0.0;
+    TEST_ESP_OK(page.readItem(1, nvs::ItemType::DOUBLE, "dblval", &readVal, sizeof(readVal)));
+    CHECK(readVal == val);
+}
+
+TEST_CASE("Page reading float with different type causes type mismatch error", "[nvs]")
+{
+    NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+
+    nvs::Page page;
+    TEST_ESP_OK(page.load(&h, 0));
+    float val = 1.5f;
+    TEST_ESP_OK(page.writeItem(1, nvs::ItemType::FLOAT, "fval", &val, sizeof(val)));
+
+    double readDouble = 0.0;
+    CHECK(page.readItem(1, nvs::ItemType::DOUBLE, "fval", &readDouble, sizeof(readDouble)) == ESP_ERR_NVS_TYPE_MISMATCH);
+
+    int32_t readInt = 0;
+    CHECK(page.readItem(1, nvs::ItemType::I32, "fval", &readInt, sizeof(readInt)) == ESP_ERR_NVS_TYPE_MISMATCH);
+
+    uint32_t readUint = 0;
+    CHECK(page.readItem(1, nvs::ItemType::U32, "fval", &readUint, sizeof(readUint)) == ESP_ERR_NVS_TYPE_MISMATCH);
+}
+
+TEST_CASE("Page reading i32 as float causes type mismatch error", "[nvs]")
+{
+    NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+
+    nvs::Page page;
+    TEST_ESP_OK(page.load(&h, 0));
+    int32_t val = 42;
+    TEST_ESP_OK(page.writeItem(1, nvs::ItemType::I32, "intval", &val, sizeof(val)));
+
+    float readFloat = 0.0f;
+    CHECK(page.readItem(1, nvs::ItemType::FLOAT, "intval", &readFloat, sizeof(readFloat)) == ESP_ERR_NVS_TYPE_MISMATCH);
+}
+
+TEST_CASE("Page reading double with different type causes type mismatch error", "[nvs]")
+{
+    NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+
+    nvs::Page page;
+    TEST_ESP_OK(page.load(&h, 0));
+    double val = 9.99;
+    TEST_ESP_OK(page.writeItem(1, nvs::ItemType::DOUBLE, "dval", &val, sizeof(val)));
+
+    float readFloat = 0.0f;
+    CHECK(page.readItem(1, nvs::ItemType::FLOAT, "dval", &readFloat, sizeof(readFloat)) == ESP_ERR_NVS_TYPE_MISMATCH);
+
+    int64_t readInt64 = 0;
+    CHECK(page.readItem(1, nvs::ItemType::I64, "dval", &readInt64, sizeof(readInt64)) == ESP_ERR_NVS_TYPE_MISMATCH);
+}
+
+TEST_CASE("nvs api float and double positive tests", "[nvs]")
+{
+    TEST_ESP_OK(nvs_flash_erase_partition(TEST_3SEC_PARTITION_NAME));
+    TEST_ESP_OK(nvs_flash_init_partition(TEST_3SEC_PARTITION_NAME));
+
+    nvs_handle_t handle;
+    TEST_ESP_OK(nvs_open_from_partition(TEST_3SEC_PARTITION_NAME, "ns_fp", NVS_READWRITE, &handle));
+
+    SECTION("set and get float") {
+        float val = 3.14159265f;
+        TEST_ESP_OK(nvs_set_float(handle, "pi", val));
+        TEST_ESP_OK(nvs_commit(handle));
+
+        float read_val = 0.0f;
+        TEST_ESP_OK(nvs_get_float(handle, "pi", &read_val));
+        CHECK(read_val == val);
+    }
+
+    SECTION("set and get double") {
+        double val = 2.718281828459045;
+        TEST_ESP_OK(nvs_set_double(handle, "euler", val));
+        TEST_ESP_OK(nvs_commit(handle));
+
+        double read_val = 0.0;
+        TEST_ESP_OK(nvs_get_double(handle, "euler", &read_val));
+        CHECK(read_val == val);
+    }
+
+    SECTION("overwrite float with new value") {
+        TEST_ESP_OK(nvs_set_float(handle, "val", 1.0f));
+        TEST_ESP_OK(nvs_set_float(handle, "val", 2.5f));
+        TEST_ESP_OK(nvs_commit(handle));
+
+        float read_val = 0.0f;
+        TEST_ESP_OK(nvs_get_float(handle, "val", &read_val));
+        CHECK(read_val == 2.5f);
+    }
+
+    SECTION("overwrite double with new value") {
+        TEST_ESP_OK(nvs_set_double(handle, "val", 1.0));
+        TEST_ESP_OK(nvs_set_double(handle, "val", 99.99));
+        TEST_ESP_OK(nvs_commit(handle));
+
+        double read_val = 0.0;
+        TEST_ESP_OK(nvs_get_double(handle, "val", &read_val));
+        CHECK(read_val == 99.99);
+    }
+
+    SECTION("float special values: positive and negative infinity") {
+        float pos_inf = INFINITY;
+        float neg_inf = -INFINITY;
+
+        TEST_ESP_OK(nvs_set_float(handle, "pinf", pos_inf));
+        TEST_ESP_OK(nvs_set_float(handle, "ninf", neg_inf));
+        TEST_ESP_OK(nvs_commit(handle));
+
+        float read_pinf = 0.0f, read_ninf = 0.0f;
+        TEST_ESP_OK(nvs_get_float(handle, "pinf", &read_pinf));
+        TEST_ESP_OK(nvs_get_float(handle, "ninf", &read_ninf));
+        CHECK(read_pinf == pos_inf);
+        CHECK(read_ninf == neg_inf);
+    }
+
+    SECTION("float special values: negative zero") {
+        float neg_zero = -0.0f;
+        TEST_ESP_OK(nvs_set_float(handle, "nz", neg_zero));
+        TEST_ESP_OK(nvs_commit(handle));
+
+        float read_val = 1.0f;
+        TEST_ESP_OK(nvs_get_float(handle, "nz", &read_val));
+        CHECK(read_val == neg_zero);
+        uint32_t bits;
+        memcpy(&bits, &read_val, sizeof(bits));
+        CHECK(bits == 0x80000000);
+    }
+
+    SECTION("float special values: smallest subnormal") {
+        uint32_t subnormal_bits = 0x00000001;
+        float subnormal;
+        memcpy(&subnormal, &subnormal_bits, sizeof(subnormal));
+
+        TEST_ESP_OK(nvs_set_float(handle, "sub", subnormal));
+        TEST_ESP_OK(nvs_commit(handle));
+
+        float read_val = 0.0f;
+        TEST_ESP_OK(nvs_get_float(handle, "sub", &read_val));
+        uint32_t read_bits;
+        memcpy(&read_bits, &read_val, sizeof(read_bits));
+        CHECK(read_bits == subnormal_bits);
+    }
+
+    SECTION("double special values: positive and negative infinity") {
+        double pos_inf = (double)INFINITY;
+        double neg_inf = (double)(-INFINITY);
+
+        TEST_ESP_OK(nvs_set_double(handle, "pinf", pos_inf));
+        TEST_ESP_OK(nvs_set_double(handle, "ninf", neg_inf));
+        TEST_ESP_OK(nvs_commit(handle));
+
+        double read_pinf = 0.0, read_ninf = 0.0;
+        TEST_ESP_OK(nvs_get_double(handle, "pinf", &read_pinf));
+        TEST_ESP_OK(nvs_get_double(handle, "ninf", &read_ninf));
+        CHECK(read_pinf == pos_inf);
+        CHECK(read_ninf == neg_inf);
+    }
+
+    nvs_close(handle);
+    TEST_ESP_OK(nvs_flash_deinit_partition(TEST_3SEC_PARTITION_NAME));
+}
+
+TEST_CASE("nvs api float and double negative tests", "[nvs]")
+{
+    TEST_ESP_OK(nvs_flash_erase_partition(TEST_3SEC_PARTITION_NAME));
+    TEST_ESP_OK(nvs_flash_init_partition(TEST_3SEC_PARTITION_NAME));
+
+    nvs_handle_t handle;
+    TEST_ESP_OK(nvs_open_from_partition(TEST_3SEC_PARTITION_NAME, "ns_fp_neg", NVS_READWRITE, &handle));
+
+    SECTION("set float NaN returns ESP_ERR_INVALID_ARG") {
+        float nan_val = NAN;
+        TEST_ESP_ERR(nvs_set_float(handle, "nan", nan_val), ESP_ERR_INVALID_ARG);
+    }
+
+    SECTION("set double NaN returns ESP_ERR_INVALID_ARG") {
+        double nan_val = NAN;
+        TEST_ESP_ERR(nvs_set_double(handle, "nan", nan_val), ESP_ERR_INVALID_ARG);
+    }
+
+    SECTION("set float quiet NaN returns ESP_ERR_INVALID_ARG") {
+        uint32_t qnan_bits = 0x7FC00001;
+        float qnan;
+        memcpy(&qnan, &qnan_bits, sizeof(qnan));
+        TEST_ESP_ERR(nvs_set_float(handle, "qnan", qnan), ESP_ERR_INVALID_ARG);
+    }
+
+    SECTION("set float signaling NaN returns ESP_ERR_INVALID_ARG") {
+        uint32_t snan_bits = 0x7F800001;
+        float snan;
+        memcpy(&snan, &snan_bits, sizeof(snan));
+        TEST_ESP_ERR(nvs_set_float(handle, "snan", snan), ESP_ERR_INVALID_ARG);
+    }
+
+    SECTION("get float for nonexistent key returns ESP_ERR_NVS_NOT_FOUND") {
+        float val;
+        TEST_ESP_ERR(nvs_get_float(handle, "nokey", &val), ESP_ERR_NVS_NOT_FOUND);
+    }
+
+    SECTION("get double for nonexistent key returns ESP_ERR_NVS_NOT_FOUND") {
+        double val;
+        TEST_ESP_ERR(nvs_get_double(handle, "nokey", &val), ESP_ERR_NVS_NOT_FOUND);
+    }
+
+    SECTION("type mismatch: set float, get double") {
+        TEST_ESP_OK(nvs_set_float(handle, "fval", 1.5f));
+        TEST_ESP_OK(nvs_commit(handle));
+
+        double read_val;
+        TEST_ESP_ERR(nvs_get_double(handle, "fval", &read_val), ESP_ERR_NVS_NOT_FOUND);
+    }
+
+    SECTION("type mismatch: set double, get float") {
+        TEST_ESP_OK(nvs_set_double(handle, "dval", 1.5));
+        TEST_ESP_OK(nvs_commit(handle));
+
+        float read_val;
+        TEST_ESP_ERR(nvs_get_float(handle, "dval", &read_val), ESP_ERR_NVS_NOT_FOUND);
+    }
+
+    SECTION("type mismatch: set i32, get float") {
+        TEST_ESP_OK(nvs_set_i32(handle, "ival", 42));
+        TEST_ESP_OK(nvs_commit(handle));
+
+        float read_val;
+        TEST_ESP_ERR(nvs_get_float(handle, "ival", &read_val), ESP_ERR_NVS_NOT_FOUND);
+    }
+
+    SECTION("type mismatch: set float, get i32") {
+        TEST_ESP_OK(nvs_set_float(handle, "fval2", 3.14f));
+        TEST_ESP_OK(nvs_commit(handle));
+
+        int32_t read_val;
+        TEST_ESP_ERR(nvs_get_i32(handle, "fval2", &read_val), ESP_ERR_NVS_NOT_FOUND);
+    }
+
+    SECTION("type mismatch: set u64, get double") {
+        TEST_ESP_OK(nvs_set_u64(handle, "u64v", 12345ULL));
+        TEST_ESP_OK(nvs_commit(handle));
+
+        double read_val;
+        TEST_ESP_ERR(nvs_get_double(handle, "u64v", &read_val), ESP_ERR_NVS_NOT_FOUND);
+    }
+
+    SECTION("type mismatch: set double, get i64") {
+        TEST_ESP_OK(nvs_set_double(handle, "dval2", 1.0));
+        TEST_ESP_OK(nvs_commit(handle));
+
+        int64_t read_val;
+        TEST_ESP_ERR(nvs_get_i64(handle, "dval2", &read_val), ESP_ERR_NVS_NOT_FOUND);
+    }
+
+    nvs_close(handle);
+    TEST_ESP_OK(nvs_flash_deinit_partition(TEST_3SEC_PARTITION_NAME));
+}
+
+TEST_CASE("nvs api float and double read-only handle test", "[nvs]")
+{
+    TEST_ESP_OK(nvs_flash_erase_partition(TEST_3SEC_PARTITION_NAME));
+    TEST_ESP_OK(nvs_flash_init_partition(TEST_3SEC_PARTITION_NAME));
+
+    nvs_handle_t rw_handle;
+    TEST_ESP_OK(nvs_open_from_partition(TEST_3SEC_PARTITION_NAME, "ns_fp_ro", NVS_READWRITE, &rw_handle));
+    TEST_ESP_OK(nvs_set_float(rw_handle, "fval", 1.23f));
+    TEST_ESP_OK(nvs_set_double(rw_handle, "dval", 4.56));
+    TEST_ESP_OK(nvs_commit(rw_handle));
+    nvs_close(rw_handle);
+
+    nvs_handle_t ro_handle;
+    TEST_ESP_OK(nvs_open_from_partition(TEST_3SEC_PARTITION_NAME, "ns_fp_ro", NVS_READONLY, &ro_handle));
+
+    float fval = 0.0f;
+    TEST_ESP_OK(nvs_get_float(ro_handle, "fval", &fval));
+    CHECK(fval == 1.23f);
+
+    double dval = 0.0;
+    TEST_ESP_OK(nvs_get_double(ro_handle, "dval", &dval));
+    CHECK(dval == 4.56);
+
+    TEST_ESP_ERR(nvs_set_float(ro_handle, "fval", 9.0f), ESP_ERR_NVS_READ_ONLY);
+    TEST_ESP_ERR(nvs_set_double(ro_handle, "dval", 9.0), ESP_ERR_NVS_READ_ONLY);
+
+    nvs_close(ro_handle);
+    TEST_ESP_OK(nvs_flash_deinit_partition(TEST_3SEC_PARTITION_NAME));
+}
+
+TEST_CASE("nvs iterators find float and double entries", "[nvs]")
+{
+    TEST_ESP_OK(nvs_flash_erase_partition(TEST_DEFAULT_PARTITION_NAME));
+    TEST_ESP_OK(nvs_flash_init_partition(TEST_DEFAULT_PARTITION_NAME));
+
+    nvs_handle_t handle;
+    TEST_ESP_OK(nvs_open_from_partition(TEST_DEFAULT_PARTITION_NAME, "ns_iter_fp", NVS_READWRITE, &handle));
+
+    TEST_ESP_OK(nvs_set_float(handle, "fval1", 1.0f));
+    TEST_ESP_OK(nvs_set_float(handle, "fval2", 2.0f));
+    TEST_ESP_OK(nvs_set_double(handle, "dval1", 3.0));
+    TEST_ESP_OK(nvs_set_i32(handle, "ival1", 42));
+    TEST_ESP_OK(nvs_commit(handle));
+
+    auto entry_count = [](nvs_handle_t h, nvs_type_t type) -> int {
+        int count = 0;
+        nvs_iterator_t it = nullptr;
+        esp_err_t res = nvs_entry_find_in_handle(h, type, &it);
+        for (count = 0; res == ESP_OK; count++) {
+            res = nvs_entry_next(&it);
+        }
+        nvs_release_iterator(it);
+        return count;
+    };
+
+    CHECK(entry_count(handle, NVS_TYPE_FLOAT) == 2);
+    CHECK(entry_count(handle, NVS_TYPE_DOUBLE) == 1);
+    CHECK(entry_count(handle, NVS_TYPE_I32) == 1);
+    CHECK(entry_count(handle, NVS_TYPE_ANY) == 4);
+
+    nvs_iterator_t it = nullptr;
+    nvs_entry_info_t info;
+    TEST_ESP_OK(nvs_entry_find_in_handle(handle, NVS_TYPE_FLOAT, &it));
+    TEST_ESP_OK(nvs_entry_info(it, &info));
+    CHECK(info.type == NVS_TYPE_FLOAT);
+    nvs_release_iterator(it);
+
+    it = nullptr;
+    TEST_ESP_OK(nvs_entry_find_in_handle(handle, NVS_TYPE_DOUBLE, &it));
+    TEST_ESP_OK(nvs_entry_info(it, &info));
+    CHECK(info.type == NVS_TYPE_DOUBLE);
+    nvs_release_iterator(it);
+
+    nvs_close(handle);
+    TEST_ESP_OK(nvs_flash_deinit_partition(TEST_DEFAULT_PARTITION_NAME));
+}
+
+TEST_CASE("nvs find_key reports correct type for float and double", "[nvs]")
+{
+    TEST_ESP_OK(nvs_flash_erase_partition(TEST_3SEC_PARTITION_NAME));
+    TEST_ESP_OK(nvs_flash_init_partition(TEST_3SEC_PARTITION_NAME));
+
+    nvs_handle_t handle;
+    TEST_ESP_OK(nvs_open_from_partition(TEST_3SEC_PARTITION_NAME, "ns_fk_fp", NVS_READWRITE, &handle));
+
+    TEST_ESP_OK(nvs_set_float(handle, "fval", 1.0f));
+    TEST_ESP_OK(nvs_set_double(handle, "dval", 2.0));
+    TEST_ESP_OK(nvs_commit(handle));
+
+    nvs_type_t out_type = NVS_TYPE_ANY;
+    TEST_ESP_OK(nvs_find_key(handle, "fval", &out_type));
+    CHECK(out_type == NVS_TYPE_FLOAT);
+
+    out_type = NVS_TYPE_ANY;
+    TEST_ESP_OK(nvs_find_key(handle, "dval", &out_type));
+    CHECK(out_type == NVS_TYPE_DOUBLE);
+
+    nvs_close(handle);
+    TEST_ESP_OK(nvs_flash_deinit_partition(TEST_3SEC_PARTITION_NAME));
+}
+
+TEST_CASE("nvs multiple write with same key but different types involving float", "[nvs]")
+{
+    TEST_ESP_OK(nvs_flash_erase_partition(TEST_3SEC_PARTITION_NAME));
+    TEST_ESP_OK(nvs_flash_init_partition(TEST_3SEC_PARTITION_NAME));
+
+    nvs_handle_t handle;
+    TEST_ESP_OK(nvs_open_from_partition(TEST_3SEC_PARTITION_NAME, "ns_fp_dup", NVS_READWRITE, &handle));
+
+    int32_t v32;
+    float vf;
+
+    TEST_ESP_OK(nvs_set_i32(handle, "foo", (int32_t)12345678));
+    TEST_ESP_OK(nvs_set_float(handle, "foo", 3.14f));
+    TEST_ESP_OK(nvs_commit(handle));
+
+#ifdef CONFIG_NVS_LEGACY_DUP_KEYS_COMPATIBILITY
+    TEST_ESP_ERR(nvs_get_float(handle, "foo", &vf), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_get_i32(handle, "foo", &v32));
+    CHECK(v32 == (int32_t)12345678);
+    TEST_ESP_OK(nvs_erase_key(handle, "foo"));
+
+    TEST_ESP_OK(nvs_get_float(handle, "foo", &vf));
+    CHECK(vf == 3.14f);
+    TEST_ESP_ERR(nvs_get_i32(handle, "foo", &v32), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_erase_key(handle, "foo"));
+
+    TEST_ESP_ERR(nvs_erase_key(handle, "foo"), ESP_ERR_NVS_NOT_FOUND);
+#else
+    TEST_ESP_OK(nvs_get_float(handle, "foo", &vf));
+    CHECK(vf == 3.14f);
+    TEST_ESP_ERR(nvs_get_i32(handle, "foo", &v32), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_erase_key(handle, "foo"));
+
+    TEST_ESP_ERR(nvs_get_float(handle, "foo", &vf), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_get_i32(handle, "foo", &v32), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_erase_key(handle, "foo"), ESP_ERR_NVS_NOT_FOUND);
+#endif
+
+    nvs_close(handle);
+    TEST_ESP_OK(nvs_flash_deinit_partition(TEST_3SEC_PARTITION_NAME));
+}
+
+TEST_CASE("nvs multiple write with same key but different types involving double", "[nvs]")
+{
+    TEST_ESP_OK(nvs_flash_erase_partition(TEST_3SEC_PARTITION_NAME));
+    TEST_ESP_OK(nvs_flash_init_partition(TEST_3SEC_PARTITION_NAME));
+
+    nvs_handle_t handle;
+    TEST_ESP_OK(nvs_open_from_partition(TEST_3SEC_PARTITION_NAME, "ns_dbl_dup", NVS_READWRITE, &handle));
+
+    int64_t v64;
+    double vd;
+
+    TEST_ESP_OK(nvs_set_i64(handle, "bar", (int64_t)123456789LL));
+    TEST_ESP_OK(nvs_set_double(handle, "bar", 2.71828));
+    TEST_ESP_OK(nvs_commit(handle));
+
+#ifdef CONFIG_NVS_LEGACY_DUP_KEYS_COMPATIBILITY
+    TEST_ESP_ERR(nvs_get_double(handle, "bar", &vd), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_get_i64(handle, "bar", &v64));
+    CHECK(v64 == (int64_t)123456789LL);
+    TEST_ESP_OK(nvs_erase_key(handle, "bar"));
+
+    TEST_ESP_OK(nvs_get_double(handle, "bar", &vd));
+    CHECK(vd == 2.71828);
+    TEST_ESP_ERR(nvs_get_i64(handle, "bar", &v64), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_erase_key(handle, "bar"));
+
+    TEST_ESP_ERR(nvs_erase_key(handle, "bar"), ESP_ERR_NVS_NOT_FOUND);
+#else
+    TEST_ESP_OK(nvs_get_double(handle, "bar", &vd));
+    CHECK(vd == 2.71828);
+    TEST_ESP_ERR(nvs_get_i64(handle, "bar", &v64), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_erase_key(handle, "bar"));
+
+    TEST_ESP_ERR(nvs_get_double(handle, "bar", &vd), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_get_i64(handle, "bar", &v64), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_erase_key(handle, "bar"), ESP_ERR_NVS_NOT_FOUND);
+#endif
+
+    nvs_close(handle);
+    TEST_ESP_OK(nvs_flash_deinit_partition(TEST_3SEC_PARTITION_NAME));
+}
+
+TEST_CASE("nvs multiple write with same key float then double", "[nvs]")
+{
+    TEST_ESP_OK(nvs_flash_erase_partition(TEST_3SEC_PARTITION_NAME));
+    TEST_ESP_OK(nvs_flash_init_partition(TEST_3SEC_PARTITION_NAME));
+
+    nvs_handle_t handle;
+    TEST_ESP_OK(nvs_open_from_partition(TEST_3SEC_PARTITION_NAME, "ns_fd_dup", NVS_READWRITE, &handle));
+
+    float vf;
+    double vd;
+
+    TEST_ESP_OK(nvs_set_float(handle, "baz", 1.5f));
+    TEST_ESP_OK(nvs_set_double(handle, "baz", 9.99));
+    TEST_ESP_OK(nvs_commit(handle));
+
+#ifdef CONFIG_NVS_LEGACY_DUP_KEYS_COMPATIBILITY
+    TEST_ESP_ERR(nvs_get_double(handle, "baz", &vd), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_get_float(handle, "baz", &vf));
+    CHECK(vf == 1.5f);
+    TEST_ESP_OK(nvs_erase_key(handle, "baz"));
+
+    TEST_ESP_OK(nvs_get_double(handle, "baz", &vd));
+    CHECK(vd == 9.99);
+    TEST_ESP_ERR(nvs_get_float(handle, "baz", &vf), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_erase_key(handle, "baz"));
+
+    TEST_ESP_ERR(nvs_erase_key(handle, "baz"), ESP_ERR_NVS_NOT_FOUND);
+#else
+    TEST_ESP_OK(nvs_get_double(handle, "baz", &vd));
+    CHECK(vd == 9.99);
+    TEST_ESP_ERR(nvs_get_float(handle, "baz", &vf), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_erase_key(handle, "baz"));
+
+    TEST_ESP_ERR(nvs_get_double(handle, "baz", &vd), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_get_float(handle, "baz", &vf), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_erase_key(handle, "baz"), ESP_ERR_NVS_NOT_FOUND);
+#endif
+
+    nvs_close(handle);
+    TEST_ESP_OK(nvs_flash_deinit_partition(TEST_3SEC_PARTITION_NAME));
+}
+
 // Add new tests above
 // This test has to be the final one
 

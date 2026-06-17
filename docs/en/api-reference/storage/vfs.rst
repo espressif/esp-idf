@@ -19,6 +19,10 @@ FS Registration
 
 To register an FS driver, an application needs to define an instance of the :cpp:type:`esp_vfs_fs_ops_t` structure and populate it with function pointers to FS APIs:
 
+.. warning::
+
+    The API version without a context pointer is deprecated, and will be removed in the future. See :ref:`context_api` for details.
+
 .. highlight:: c
 
 ::
@@ -65,6 +69,7 @@ The recommended approach for registering filesystem is to use statically allocat
         ESP_ERROR_CHECK(esp_vfs_register_fs("/data", &myfs, ESP_VFS_FLAG_DEFAULT, NULL));
     }
 
+.. _context_api:
 
 Context Aware Filesystem
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -163,7 +168,7 @@ A socket VFS driver needs to be registered with the following functions defined:
 
 :cpp:func:`stop_socket_select_isr` has the same functionality as :cpp:func:`stop_socket_select` but it can be used from ISR.
 
-Please see :component_file:`lwip/port/esp32xx/vfs_lwip.c` for a reference socket driver implementation using LWIP.
+Please see :component_file:`lwip/port/vfs_lwip.c` for a reference socket driver implementation using LWIP.
 
 .. note::
 

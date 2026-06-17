@@ -6,6 +6,12 @@ if(CONFIG_SPIRAM_MODE_QUAD)
     endif()
 endif()
 
+if(CONFIG_SPIRAM_MODE_OCT)
+    if(NOT ${target} STREQUAL "esp32s3")
+        list(APPEND srcs "esp_psram_impl_ap_oct.c")
+    endif()
+endif()
+
 if(CONFIG_SPIRAM_MODE_HEX)
     list(APPEND srcs "esp_psram_impl_ap_hex.c")
 endif()

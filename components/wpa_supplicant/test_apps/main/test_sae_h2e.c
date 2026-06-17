@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@
 #include "utils/wpabuf.h"
 #include "test_utils.h"
 #include "test_wpa_supplicant_common.h"
+#include "esp_timer.h"
 
 /* Helper functions for random SSID and password generation */
 static void generate_random_string(char *str, size_t len, bool include_special)
@@ -55,13 +56,23 @@ static void generate_random_password(char *password)
 TEST_CASE("Test SAE H2E complete workflow", "[wpa3_sae_h2e]")
 {
     set_leak_threshold(600);
-    struct sae_data sae;
-    struct wpabuf *buf = NULL;
+    struct sae_data sae1;
+    struct sae_data sae2;
+    struct wpabuf *buf1 = NULL;
+    struct wpabuf *buf2 = NULL;
+    struct wpabuf *confirm1 = NULL;
+    struct wpabuf *confirm2 = NULL;
     const u8 addr1[ETH_ALEN] = { 0x4d, 0x3f, 0x2f, 0xff, 0xe3, 0x87 };
     const u8 addr2[ETH_ALEN] = { 0xa5, 0xd8, 0xaa, 0x95, 0x8e, 0x3c };
     char password[64];
     char ssid[33];
     size_t ssid_len;
+    struct sae_pt *pt = NULL;
+    int default_groups[] = { IANA_SECP256R1, 0 };
+    int64_t start_us;
+    int64_t prepare1_us, write1_us, form1_us, parse1_us;
+    int64_t prepare2_us, write2_us, form2_us, parse2_us;
+    int64_t process1_us, process2_us;
 
     /* Generate random SSID and password */
     generate_random_ssid(ssid, &ssid_len);
@@ -73,80 +84,144 @@ TEST_CASE("Test SAE H2E complete workflow", "[wpa3_sae_h2e]")
 
     /* Step 1: Test H2E initialization */
     ESP_LOGI("H2E", "\nStep 1: Testing H2E initialization");
-    memset(&sae, 0, sizeof(sae));
-    ESP_LOGI("H2E", "- Initial SAE state: h2e=%d", sae.h2e);
+    memset(&sae1, 0, sizeof(sae1));
+    memset(&sae2, 0, sizeof(sae2));
+    ESP_LOGI("H2E", "- Initial SAE state: sta1.h2e=%d sta2.h2e=%d",
+             sae1.h2e, sae2.h2e);
 
-    TEST_ASSERT_MESSAGE(sae_set_group(&sae, IANA_SECP256R1) == 0, "Failed to set SAE group");
-    ESP_LOGI("H2E", "- After group set: group=%d", sae.group);
-    TEST_ASSERT_MESSAGE(sae.h2e == 0, "H2E should be disabled by default");
+    TEST_ASSERT_MESSAGE(sae_set_group(&sae1, IANA_SECP256R1) == 0, "Failed to set SAE group for STA1");
+    TEST_ASSERT_MESSAGE(sae_set_group(&sae2, IANA_SECP256R1) == 0, "Failed to set SAE group for STA2");
+    ESP_LOGI("H2E", "- After group set: sta1.group=%d sta2.group=%d", sae1.group, sae2.group);
+    TEST_ASSERT_MESSAGE(sae1.h2e == 0 && sae2.h2e == 0, "H2E should be disabled by default");
 
-    sae.h2e = 1;
-    ESP_LOGI("H2E", "- After H2E enable: h2e=%d", sae.h2e);
-    TEST_ASSERT_MESSAGE(sae.h2e == 1, "Failed to enable H2E");
+    sae1.h2e = 1;
+    sae2.h2e = 1;
+    ESP_LOGI("H2E", "- After H2E enable: sta1.h2e=%d sta2.h2e=%d", sae1.h2e, sae2.h2e);
+    TEST_ASSERT_MESSAGE(sae1.h2e == 1 && sae2.h2e == 1, "Failed to enable H2E");
 
-    /* Step 2: Test password identifier validation */
-    ESP_LOGI("H2E", "\nStep 2: Testing password identifier validation");
+    /* Step 2: Derive PT and prepare commits for both peers */
+    ESP_LOGI("H2E", "\nStep 2: Deriving PT and preparing commits");
     ESP_LOGI("H2E", "- Addr1: %02x:%02x:%02x:%02x:%02x:%02x",
              addr1[0], addr1[1], addr1[2], addr1[3], addr1[4], addr1[5]);
     ESP_LOGI("H2E", "- Addr2: %02x:%02x:%02x:%02x:%02x:%02x",
              addr2[0], addr2[1], addr2[2], addr2[3], addr2[4], addr2[5]);
 
-    struct sae_pt *pt = sae_derive_pt(NULL, (const u8 *)ssid, ssid_len,
-                                      (const u8 *)password, strlen(password), NULL);
+    pt = sae_derive_pt(NULL, (const u8 *)ssid, ssid_len,
+                       (const u8 *)password, strlen(password), NULL);
     TEST_ASSERT_MESSAGE(pt != NULL, "Failed to derive PT");
-    TEST_ASSERT_MESSAGE(sae_prepare_commit_pt(&sae, pt, addr1, addr2, NULL, NULL) == 0,
-                        "Failed to prepare SAE commit with password");
-    sae.state = SAE_NOTHING;
-    ESP_LOGI("H2E", "- After commit prep: h2e=%d, tmp=%p", sae.h2e, (void*)sae.tmp);
-    TEST_ASSERT_MESSAGE(sae.h2e == 1, "H2E state not maintained after commit preparation");
-    TEST_ASSERT_MESSAGE(sae.tmp != NULL, "Temporary data not allocated");
+    start_us = esp_timer_get_time();
+    TEST_ASSERT_MESSAGE(sae_prepare_commit_pt(&sae1, pt, addr1, addr2, NULL, NULL) == 0,
+                        "Failed to prepare SAE commit for STA1");
+    prepare1_us = esp_timer_get_time() - start_us;
+    TEST_ASSERT_MESSAGE(sae1.h2e == 1 && sae1.tmp != NULL,
+                        "STA1 H2E state not maintained after commit preparation");
 
-    /* Step 3: Test commit message validation */
-    ESP_LOGI("H2E", "\nStep 3: Testing commit message validation");
-    buf = wpabuf_alloc(1000);
-    ESP_LOGI("H2E", "- Allocated buffer size: 1000 bytes");
-    TEST_ASSERT_MESSAGE(buf != NULL, "Failed to allocate commit message buffer");
+    start_us = esp_timer_get_time();
+    TEST_ASSERT_MESSAGE(sae_prepare_commit_pt(&sae2, pt, addr2, addr1, NULL, NULL) == 0,
+                        "Failed to prepare SAE commit for STA2");
+    prepare2_us = esp_timer_get_time() - start_us;
+    TEST_ASSERT_MESSAGE(sae2.h2e == 1 && sae2.tmp != NULL,
+                        "STA2 H2E state not maintained after commit preparation");
 
-    TEST_ASSERT_MESSAGE(sae_write_commit(&sae, buf, NULL, NULL) == 0,
-                        "Failed to write SAE commit message");
-    sae.state = SAE_COMMITTED;
-    ESP_LOGI("H2E", "- Commit message length: %zu bytes", wpabuf_len(buf));
-    TEST_ASSERT_MESSAGE(wpabuf_len(buf) > 0, "Commit message length is zero");
+    /* Step 3: Form commit messages and measure timing */
+    ESP_LOGI("H2E", "\nStep 3: Forming commit messages");
+    buf1 = wpabuf_alloc(SAE_COMMIT_MAX_LEN);
+    buf2 = wpabuf_alloc(SAE_COMMIT_MAX_LEN);
+    TEST_ASSERT_MESSAGE(buf1 != NULL && buf2 != NULL, "Failed to allocate commit message buffers");
 
-    ESP_LOGI("H2E", "- Parsing commit message...");
-    /* Reset SAE context for parsing */
-    sae_clear_data(&sae);
-    memset(&sae, 0, sizeof(sae));
+    start_us = esp_timer_get_time();
+    TEST_ASSERT_MESSAGE(sae_write_commit(&sae1, buf1, NULL, NULL) == 0,
+                        "Failed to write SAE commit message for STA1");
+    write1_us = esp_timer_get_time() - start_us;
+    form1_us = prepare1_us + write1_us;
+    sae1.state = SAE_COMMITTED;
 
-    /* Initialize SAE parameters for parsing */
-    TEST_ASSERT_MESSAGE(sae_set_group(&sae, IANA_SECP256R1) == 0, "Failed to set SAE group for parsing");
-    sae.h2e = 1;
-    sae.state = SAE_COMMITTED;
+    start_us = esp_timer_get_time();
+    TEST_ASSERT_MESSAGE(sae_write_commit(&sae2, buf2, NULL, NULL) == 0,
+                        "Failed to write SAE commit message for STA2");
+    write2_us = esp_timer_get_time() - start_us;
+    form2_us = prepare2_us + write2_us;
+    sae2.state = SAE_COMMITTED;
 
-    /* Parse the commit message */
-    TEST_ASSERT_MESSAGE(sae_parse_commit(&sae, wpabuf_head(buf), wpabuf_len(buf),
-                                         NULL, NULL, NULL, 1) == 0,
-                        "Failed to parse SAE commit message");
-    TEST_ASSERT_MESSAGE(sae.peer_commit_scalar != NULL,
-                        "Peer commit scalar not parsed");
-    TEST_ASSERT_MESSAGE(sae.tmp != NULL &&
-                        (sae.tmp->peer_commit_element_ecc != NULL || sae.tmp->peer_commit_element_ffc != NULL),
-                        "Peer commit element not parsed");
-    ESP_LOGI("H2E", "- Commit message parsed successfully");
+    ESP_LOGI("H2E",
+             "Commit formation timing(us): sta1_prepare=%lld sta1_write=%lld sta1_total=%lld sta2_prepare=%lld sta2_write=%lld sta2_total=%lld",
+             (long long) prepare1_us, (long long) write1_us, (long long) form1_us,
+             (long long) prepare2_us, (long long) write2_us, (long long) form2_us);
+    ESP_LOGI("H2E", "- Commit1 length: %zu bytes", wpabuf_len(buf1));
+    ESP_LOGI("H2E", "- Commit2 length: %zu bytes", wpabuf_len(buf2));
+    TEST_ASSERT_MESSAGE(wpabuf_len(buf1) > 0 && wpabuf_len(buf2) > 0,
+                        "Commit message length is zero");
 
-    /* Cleanup */
-    if (buf) {
-        wpabuf_free(buf);
-        buf = NULL;
+    /* Step 4: Parse commits and complete H2E handshake */
+    ESP_LOGI("H2E", "\nStep 4: Parsing commits and completing handshake");
+    start_us = esp_timer_get_time();
+    TEST_ASSERT_MESSAGE(sae_parse_commit(&sae1, wpabuf_head(buf2), wpabuf_len(buf2),
+                                         NULL, 0, default_groups, 1) == 0,
+                        "Failed to parse SAE commit message for STA1");
+    parse1_us = esp_timer_get_time() - start_us;
+    TEST_ASSERT_MESSAGE(sae1.peer_commit_scalar != NULL &&
+                        sae1.tmp != NULL &&
+                        (sae1.tmp->peer_commit_element_ecc != NULL || sae1.tmp->peer_commit_element_ffc != NULL),
+                        "STA1 peer commit not parsed");
+
+    start_us = esp_timer_get_time();
+    TEST_ASSERT_MESSAGE(sae_parse_commit(&sae2, wpabuf_head(buf1), wpabuf_len(buf1),
+                                         NULL, 0, default_groups, 1) == 0,
+                        "Failed to parse SAE commit message for STA2");
+    parse2_us = esp_timer_get_time() - start_us;
+    TEST_ASSERT_MESSAGE(sae2.peer_commit_scalar != NULL &&
+                        sae2.tmp != NULL &&
+                        (sae2.tmp->peer_commit_element_ecc != NULL || sae2.tmp->peer_commit_element_ffc != NULL),
+                        "STA2 peer commit not parsed");
+
+    ESP_LOGI("H2E",
+             "Commit parse timing(us): sta1=%lld sta2=%lld avg=%lld",
+             (long long) parse1_us, (long long) parse2_us,
+             (long long)((parse1_us + parse2_us) / 2));
+
+    start_us = esp_timer_get_time();
+    TEST_ASSERT_MESSAGE(sae_process_commit(&sae1) == 0, "Failed to process commit for STA1");
+    process1_us = esp_timer_get_time() - start_us;
+
+    start_us = esp_timer_get_time();
+    TEST_ASSERT_MESSAGE(sae_process_commit(&sae2) == 0, "Failed to process commit for STA2");
+    process2_us = esp_timer_get_time() - start_us;
+
+    ESP_LOGI("H2E",
+             "Process commit timing(us): sta1=%lld sta2=%lld avg=%lld",
+             (long long) process1_us, (long long) process2_us,
+             (long long)((process1_us + process2_us) / 2));
+
+    confirm1 = wpabuf_alloc(SAE_COMMIT_MAX_LEN);
+    confirm2 = wpabuf_alloc(SAE_COMMIT_MAX_LEN);
+    TEST_ASSERT_MESSAGE(confirm1 != NULL && confirm2 != NULL, "Failed to allocate confirm buffers");
+
+    sae_write_confirm(&sae1, confirm1);
+    sae_write_confirm(&sae2, confirm2);
+
+    TEST_ASSERT_MESSAGE(sae_check_confirm(&sae1, wpabuf_head(confirm2), wpabuf_len(confirm2)) == 0,
+                        "Failed to verify confirm for STA1");
+    TEST_ASSERT_MESSAGE(sae_check_confirm(&sae2, wpabuf_head(confirm1), wpabuf_len(confirm1)) == 0,
+                        "Failed to verify confirm for STA2");
+    ESP_LOGI("H2E", "- Full H2E handshake completed successfully");
+
+    if (confirm1) {
+        wpabuf_free(confirm1);
     }
-
-    /* Free SAE PT data */
+    if (confirm2) {
+        wpabuf_free(confirm2);
+    }
+    if (buf1) {
+        wpabuf_free(buf1);
+    }
+    if (buf2) {
+        wpabuf_free(buf2);
+    }
     if (pt) {
         sae_deinit_pt(pt);
-        pt = NULL;
     }
-
-    sae_clear_data(&sae);
+    sae_clear_data(&sae1);
+    sae_clear_data(&sae2);
 }
 
 #endif /* CONFIG_WPA3_SAE */

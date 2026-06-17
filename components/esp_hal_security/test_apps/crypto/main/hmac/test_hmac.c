@@ -33,9 +33,12 @@ static esp_err_t hmac_jtag_disable(void)
 
 #include "hal/hmac_hal.h"
 #include "hal/hmac_ll.h"
-#include "hal/ds_ll.h"
 #include "hal/sha_ll.h"
 #include "esp_private/periph_ctrl.h"
+
+#if SOC_DIG_SIGN_SUPPORTED
+#include "hal/ds_ll.h"
+#endif
 
 #define SHA256_BLOCK_SZ 64
 #define SHA256_PAD_SZ 8
@@ -67,7 +70,9 @@ esp_err_t hmac_calculate(uint32_t key_id, const void *message, size_t message_le
 
     esp_crypto_hmac_enable_periph_clk(true);
     esp_crypto_sha_enable_periph_clk(true);
+#if SOC_DIG_SIGN_SUPPORTED
     esp_crypto_ds_enable_periph_clk(true);
+#endif
 
     hmac_hal_start();
 
@@ -121,7 +126,9 @@ esp_err_t hmac_calculate(uint32_t key_id, const void *message, size_t message_le
 
     esp_crypto_hmac_enable_periph_clk(false);
     esp_crypto_sha_enable_periph_clk(false);
+#if SOC_DIG_SIGN_SUPPORTED
     esp_crypto_ds_enable_periph_clk(false);
+#endif
 
     return ESP_OK;
 }

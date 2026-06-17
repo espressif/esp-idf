@@ -110,6 +110,9 @@ void avdt_process_timeout(TIMER_LIST_ENT *p_tle)
 *******************************************************************************/
 void AVDT_Register(tAVDT_REG *p_reg, tAVDT_CTRL_CBACK *p_cback)
 {
+    if (p_reg == NULL || p_cback == NULL) {
+        return;
+    }
     /* register PSM with L2CAP */
     L2CA_Register(AVDT_PSM, (tL2CAP_APPL_INFO *) &avdt_l2c_appl);
 
@@ -251,6 +254,9 @@ UINT16 AVDT_CreateStream(UINT8 *p_handle, tAVDT_CS *p_cs)
     UINT16      result = AVDT_SUCCESS;
     tAVDT_SCB   *p_scb;
 
+    if (p_handle == NULL) {
+        return AVDT_BAD_PARAMS;
+    }
     /* Verify parameters; if invalid, return failure */
     if (((p_cs->cfg.psc_mask & (~AVDT_PSC)) != 0) || (p_cs->p_ctrl_cback == NULL)) {
         result = AVDT_BAD_PARAMS;
@@ -929,6 +935,9 @@ UINT16 AVDT_WriteReqOpt(UINT8 handle, BT_HDR *p_pkt, UINT32 time_stamp, UINT8 m_
     tAVDT_SCB_EVT   evt;
     UINT16          result = AVDT_SUCCESS;
 
+    if (p_pkt == NULL) {
+        return AVDT_BAD_PARAMS;
+    }
     /* map handle to scb */
     if ((p_scb = avdt_scb_by_hdl(handle)) == NULL) {
         result = AVDT_BAD_HANDLE;
@@ -1188,7 +1197,7 @@ UINT16 AVDT_SendReport(UINT8 handle, AVDT_REPORT_TYPE type,
 
         /* build SR - assume fit in one packet */
         p_tbl = avdt_ad_tc_tbl_by_type(AVDT_CHAN_REPORT, p_scb->p_ccb, p_scb);
-        if ((p_tbl->state == AVDT_AD_ST_OPEN) &&
+        if ((p_tbl != NULL) && (p_tbl->state == AVDT_AD_ST_OPEN) &&
                 (p_pkt = (BT_HDR *)osi_malloc(p_tbl->peer_mtu)) != NULL) {
             p_pkt->offset = L2CAP_MIN_OFFSET;
             p = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
@@ -1221,9 +1230,12 @@ UINT16 AVDT_SendReport(UINT8 handle, AVDT_REPORT_TYPE type,
             case AVDT_RTCP_PT_RR:   /* Receiver Report */
                 *p++ = p_data->rr.frag_lost;
                 AVDT_TRACE_API("packet_lost: %d\n", p_data->rr.packet_lost);
-                p_data->rr.packet_lost &= 0xFFFFFF;
-                AVDT_TRACE_API("packet_lost: %d\n", p_data->rr.packet_lost);
-                UINT24_TO_BE_STREAM(p, p_data->rr.packet_lost);
+                /* Use local 24-bit value so caller's p_data->rr.packet_lost is not mutated */
+                {
+                    UINT32 packet_lost_24 = p_data->rr.packet_lost & 0xFFFFFF;
+                    AVDT_TRACE_API("packet_lost_24: %d\n", packet_lost_24);
+                    UINT24_TO_BE_STREAM(p, packet_lost_24);
+                }
                 UINT32_TO_BE_STREAM(p, p_data->rr.seq_num_rcvd);
                 UINT32_TO_BE_STREAM(p, p_data->rr.jitter);
                 UINT32_TO_BE_STREAM(p, p_data->rr.lsr);

@@ -27,6 +27,7 @@
 extern "C" {
 #endif
 
+#define SPI_LL_GET_HW(ID) ((ID)==SPI1_HOST ? &SPI1:((ID)==SPI2_HOST ? &SPI2 : &SPI3))
 /// Registers to reset during initialization. Don't use in app.
 #define SPI_LL_DMA_FIFO_RST_MASK (SPI_AHBM_RST | SPI_AHBM_FIFO_RST)
 /// Interrupt not used. Don't use in app.
@@ -36,14 +37,15 @@ extern "C" {
 #define SPI_LL_ONE_LINE_USER_MASK (SPI_FWRITE_DUAL | SPI_FWRITE_QUAD | SPI_FWRITE_DIO | SPI_FWRITE_QIO)
 /// Swap the bit order to its correct place to send
 #define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)(data) << (32 - len))
-#define SPI_LL_GET_HW(ID) ((ID)==0? &SPI1:((ID)==1? &SPI2 : &SPI3))
 
+#define SPI_LL_PERIPH_CS_NUM(i)  3
 #define SPI_LL_DMA_CHANNEL_NUM    (2)
 #define SPI_LL_DMA_MAX_BIT_LEN    (1 << 24)    //reg len: 24 bits
 #define SPI_LL_CPU_MAX_BIT_LEN    (16 * 32)    //Fifo len: 16 words
 #define SPI_LL_TX_MINI_EXTRA_BITS 1            //Minimum length of TX non byte aligned data in bits
 #define SPI_LL_RX_MINI_EXTRA_BITS 1            //Minimum length of RX non byte aligned data in bits
 #define SPI_LL_MAX_PRE_DIV_NUM    (8192)
+#define SPI_LL_PERIPH_BITWIDTH(host) (4)       //Supported line mode: DIO, DOUT, QIO, or QOUT
 #define SPI_LL_SUPPORT_CLK_AS_CS  1            //Output clock on CS line if CS is active
 #define SPI_LL_MOSI_FREE_LEVEL    0            //Default level after bus initialized
 

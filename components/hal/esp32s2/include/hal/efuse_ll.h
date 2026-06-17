@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -119,6 +119,28 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_ocode(void)
     // OCODE2,  BLOCK2, 144, 3,   (#4 reg, pos 16)
     // OCODE = (ocode2 << 4) + ocode1
     return (((EFUSE.rd_sys_part1_data4.val >> 16) & 0x7) << 4) + (EFUSE.rd_sys_part1_data4.val & 0xF);
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_coding_error(unsigned index)
+{
+    switch (index) {
+    case 0:
+        return EFUSE.rd_repeat_err0.val;
+    case 1:
+        return EFUSE.rd_repeat_err1.val;
+    case 2:
+        return EFUSE.rd_repeat_err2.val;
+    case 3:
+        return EFUSE.rd_repeat_err3.val;
+    case 4:
+        return EFUSE.rd_repeat_err4.val;
+    case 5:
+        return EFUSE.rd_rs_err0.val;
+    case 6:
+        return EFUSE.rd_rs_err1.val;
+    default:
+        return 0;
+    }
 }
 
 /******************* eFuse control functions *************************/

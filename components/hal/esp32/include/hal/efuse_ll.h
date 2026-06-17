@@ -180,6 +180,12 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_adc2_tp_high(
     return EFUSE.blk3_rdata3.rd_adc2_tp_high;
 }
 
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_coding_error(unsigned index)
+{
+    (void) index;
+    return EFUSE.dec_status.val;
+}
+
 __attribute__((always_inline)) static inline bool efuse_ll_get_dec_warnings(unsigned block)
 {
     if (block == 0 || block > 4) {

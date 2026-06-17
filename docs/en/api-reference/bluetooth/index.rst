@@ -65,15 +65,38 @@ For additional details and API reference from the upstream documentation, refer 
 
         esp-ble-mesh
 
+.. only:: SOC_BLE_ISO_SUPPORTED
+
+    **ESP-BLE-ISO API**
+
+    Bluetooth LE Isochronous Channels (CIS/BIS) for LE Audio and time-synchronized streaming.
+
+    .. toctree::
+        :maxdepth: 1
+
+        esp-ble-iso
+
+.. only:: SOC_BLE_AUDIO_SUPPORTED
+
+    **ESP-BLE-AUDIO API**
+
+    Bluetooth LE Audio profiles and services (BAP, PACS, VCP, HAS, CSIP, etc.).
+
+    .. toctree::
+        :maxdepth: 1
+
+        esp-ble-audio
+
 ----
 
 Examples and Tutorials
----------------------------
+----------------------
 
 Explore examples and tutorials in the ESP-IDF examples directory:
 
 - **Bluedroid**: :example:`bluetooth/bluedroid`
 - **NimBLE**: :example:`bluetooth/nimble`
+- **BLE UART Service** (turnkey serial-over-BLE peripheral on top of NimBLE or Bluedroid, exposing the BLE UART Service GATT layout): :example:`bluetooth/ble_uart_service`
 
 Step-by-step tutorials for developing with the Bluedroid stack:
 

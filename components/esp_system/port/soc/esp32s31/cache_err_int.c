@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,14 +23,12 @@ static const char *TAG = "CACHE_ERR";
 
 const char cache_error_msg[] = "Cache access error";
 
-// TODO: ["ESP32S31"] IDF-14650
-
 void esp_cache_err_get_panic_info(esp_cache_err_info_t *err_info)
 {
     if (err_info == NULL) {
         return;
     }
-    uint32_t access_err_status = cache_ll_l1_get_access_error_intr_status(0, CACHE_LL_L1_ACCESS_EVENT_MASK) | cache_ll_l2_get_access_error_intr_status(0, CACHE_LL_L2_ACCESS_EVENT_MASK);
+    const uint32_t access_err_status = cache_ll_l1_get_access_error_intr_status(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
 
     /* Return the error string if a cache error is active */
     err_info->err_str = access_err_status ? cache_error_msg : NULL;
@@ -38,8 +36,12 @@ void esp_cache_err_get_panic_info(esp_cache_err_info_t *err_info)
 
 bool esp_cache_err_has_active_err(void)
 {
-    bool has_active_err = cache_ll_l1_get_access_error_intr_status(0, CACHE_LL_L1_ACCESS_EVENT_MASK) | cache_ll_l2_get_access_error_intr_status(0, CACHE_LL_L2_ACCESS_EVENT_MASK);
-    return has_active_err;
+    return cache_ll_l1_get_access_error_intr_status(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
+}
+
+void esp_cache_err_clear_active_err(void)
+{
+    cache_ll_l1_clear_access_error_intr(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
 }
 
 void esp_cache_err_int_init(void)
@@ -65,21 +67,20 @@ void esp_cache_err_int_init(void)
     esprv_int_set_priority(ETS_CACHEERR_INUM, SOC_INTERRUPT_LEVEL_MEDIUM);
 
     ESP_DRAM_LOGV(TAG, "access error intr clr & ena mask is: 0x%x", CACHE_LL_L1_ACCESS_EVENT_MASK);
+    /**
+     * Here we
+     * 1. enable the cache fail tracer to take cache error interrupt into effect.
+     * 2. clear potential cache error interrupt raw bits
+     * 3. enable cache error interrupt en bits
+     */
+    cache_ll_l1_enable_fail_tracer(0, true);
     /* On the hardware side, start by clearing all the bits responsible for cache access error */
     cache_ll_l1_clear_access_error_intr(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
-    cache_ll_l2_clear_access_error_intr(0, CACHE_LL_L2_ACCESS_EVENT_MASK);
-
     /* Then enable cache access error interrupts. */
     cache_ll_l1_enable_access_error_intr(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
-    cache_ll_l2_enable_access_error_intr(0, CACHE_LL_L2_ACCESS_EVENT_MASK);
 
     /* Enable the interrupts for cache error. */
     ESP_INTR_ENABLE(ETS_CACHEERR_INUM);
-}
-
-void esp_cache_err_clear_active_err(void)
-{
-
 }
 
 int esp_cache_err_get_cpuid(void)

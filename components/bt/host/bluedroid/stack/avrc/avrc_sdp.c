@@ -110,7 +110,9 @@ static void avrc_sdp_cback(UINT16 status)
     avrc_cb.service_uuid = 0;
 
     /* return info from sdp record in app callback function */
-    (*avrc_cb.p_cback) (status);
+    if (avrc_cb.p_cback != NULL) {
+        (*avrc_cb.p_cback) (status);
+    }
 
     return;
 }

@@ -125,6 +125,10 @@ The ``DROM`` segment of the application binary starts with the :cpp:type:`esp_ap
 * ``time`` and ``date``: compile time and date
 * ``idf_ver``: version of ESP-IDF [#f1]_
 * ``app_elf_sha256``: contains SHA256 hash for the application ELF file
+* ``min_efuse_blk_rev_full``: minimal eFuse block revision supported by the image, in format: major * 100 + minor
+* ``max_efuse_blk_rev_full``: maximal eFuse block revision supported by the image, in format: major * 100 + minor
+* ``mmu_page_size``: MMU page size in log base 2 format
+* ``spi_flash_mode``: SPI flash mode as per ``CONFIG_ESPTOOLPY_FLASHMODE_VAL`` for compatibility check during OTA
 
 .. [#f1] The maximum length is 32 characters, including null-termination character. For example, if the length of ``PROJECT_NAME`` exceeds 31 characters, the excess characters will be disregarded.
 

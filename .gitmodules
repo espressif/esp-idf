@@ -41,11 +41,11 @@
 [submodule "components/spiffs/spiffs"]
 	path = components/spiffs/spiffs
 	url = ../../pellepl/spiffs.git
-	sbom-version = 0.2-255-g0dbb3f71c5f6
+	sbom-version = 0.2-265-gad902ca
 	sbom-supplier = Person: Peter Andersson
 	sbom-url = https://github.com/pellepl/spiffs
 	sbom-description = Wear-leveled SPI flash file system for embedded devices
-	sbom-hash = 0dbb3f71c5f6fae3747a9d935372773762baf852
+	sbom-hash = ad902cadceb39d0825a97e25ecb5867641f606ba
 
 [submodule "components/mbedtls/mbedtls"]
 	path = components/mbedtls/mbedtls
@@ -116,6 +116,11 @@
 	url = ../../espressif/esp32h2-bt-lib.git
 	shallow = true
 
+[submodule "components/bt/controller/lib_esp32h4/esp32h4-bt-lib"]
+	path = components/bt/controller/lib_esp32h4/esp32h4-bt-lib
+	url = ../../espressif/esp32h4-bt-lib.git
+	shallow = true
+
 [submodule "components/bt/controller/lib_esp32c2/esp32c2-bt-lib"]
 	path = components/bt/controller/lib_esp32c2/esp32c2-bt-lib
 	url = ../../espressif/esp32c2-bt-lib.git
@@ -143,4 +148,14 @@
 [submodule "components/bt/esp_ble_mesh/lib/lib"]
 	path = components/bt/esp_ble_mesh/lib/lib
 	url = ../../espressif/esp-ble-mesh-lib.git
+	shallow = true
+
+[submodule "components/bt/esp_ble_audio/lib/lib"]
+	path = components/bt/esp_ble_audio/lib/lib
+	url = ../../espressif/esp-ble-audio-lib.git
+	shallow = true
+
+[submodule "components/bt/controller/lib_esp32s31/esp32s31-bt-lib"]
+	path = components/bt/controller/lib_esp32s31/esp32s31-bt-lib
+	url = ../../espressif/esp32s31-bt-lib.git
 	shallow = true

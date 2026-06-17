@@ -5,11 +5,22 @@ idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 if(${target} STREQUAL "linux")
     idf_component_register(SRCS "esp_system.c"
                         "esp_err.c"
+                        "esp_sys_event.c"
                         "port/soc/linux/reset_reason.c"
                         "port/soc/linux/system_internal.c"
                         "port/esp_system_linux.c"
+                        "freertos_hooks.c"
+                        "startup.c"
                         INCLUDE_DIRS "include"
                         PRIV_REQUIRES spi_flash)
+
+    # Add custom ld file (used to place system init functions).
+    # Mach-O (Apple) does not support linker scripts; section bounds are resolved
+    # at runtime via getsectiondata() so no -T flag is needed there.
+    if(NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        target_link_options(${COMPONENT_TARGET} INTERFACE "-Wl,-T,${CMAKE_CURRENT_SOURCE_DIR}/ld/linux/sections.ld")
+    endif()
+
     return()
 endif()
 
@@ -36,16 +47,21 @@ else()
     list(APPEND srcs "crosscore_int.c"
             "esp_ipc.c"
             "esp_err.c"
+            "esp_sys_event.c"
             "freertos_hooks.c"
-            "int_wdt.c"
             "panic.c"
             "esp_system.c"
             "startup.c"
             "startup_funcs.c"
             "system_time.c"
             "stack_check.c"
-            "ubsan.c"
-            "xt_wdt.c")
+            "ubsan.c")
+    if(CONFIG_SOC_WDT_SUPPORTED)
+        list(APPEND srcs "int_wdt.c")
+    endif()
+    if(CONFIG_SOC_XT_WDT_SUPPORTED)
+        list(APPEND srcs "xt_wdt.c")
+    endif()
 
     if(CONFIG_ESP_TASK_WDT_EN)
         list(APPEND srcs "task_wdt/task_wdt.c")
@@ -69,8 +85,8 @@ else()
         list(APPEND srcs "systick_etm.c")
     endif()
 
-    if(CONFIG_ESP_SYSTEM_HW_STACK_GUARD)
-        list(APPEND srcs "hw_stack_guard.c")
+    if(CONFIG_ESP_SYSTEM_HW_STACK_GUARD OR CONFIG_ESP_SYSTEM_HW_PC_RECORD OR CONFIG_SOC_CPU_LOCKUP_DEBUG_SUPPORTED)
+        list(APPEND srcs "debug_assist.c")
     endif()
 
     idf_component_register(SRCS "${srcs}"
@@ -103,11 +119,7 @@ else()
     target_linker_script(${COMPONENT_LIB} INTERFACE "ld/${target}/memory.ld.in")
 
     # Generate sections.ld.in and pass it through linker script generator
-    set(sections_name "ld/${target}/sections.ld.in")
-    if(CONFIG_IDF_TARGET_ESP32P4 AND NOT CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
-        set(sections_name "ld/${target}/sections.rev3.ld.in")
-    endif()
-    target_linker_script(${COMPONENT_LIB} INTERFACE "${sections_name}"
+    target_linker_script(${COMPONENT_LIB} INTERFACE "ld/${target}/sections.ld.in"
                         PROCESS "${CMAKE_CURRENT_BINARY_DIR}/ld/sections.ld")
 endif()
 
@@ -147,14 +159,6 @@ endif()
 
 if(CONFIG_PM_ENABLE)
     idf_component_optional_requires(PRIVATE pm)
-endif()
-
-if(CONFIG_VFS_SUPPORT_IO)
-    idf_component_optional_requires(PRIVATE vfs)
-endif()
-
-if(CONFIG_SW_COEXIST_ENABLE OR CONFIG_EXTERNAL_COEX_ENABLE)
-    idf_component_optional_requires(PRIVATE esp_coex)
 endif()
 
 if(NOT BOOTLOADER_BUILD)

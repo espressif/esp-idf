@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -108,14 +108,14 @@ typedef union {
          *  YUV output range when reg_sr_tx_cm is 4'd8. 0: limit range. 1: full range
          */
         uint32_t yuv_tx_range:1;
-        /** yuv2rgb_protocal : R/W; bitpos: [10]; default: 0;
+        /** yuv2rgb_protocol : R/W; bitpos: [10]; default: 0;
          *  YUV to RGB protocol when reg_sr_rx_cm is 4'd8. 0: BT601. 1: BT709
          */
-        uint32_t yuv2rgb_protocal:1;
-        /** rgb2yuv_protocal : R/W; bitpos: [11]; default: 0;
+        uint32_t yuv2rgb_protocol:1;
+        /** rgb2yuv_protocol : R/W; bitpos: [11]; default: 0;
          *  RGB to YUV protocol when reg_sr_tx_cm is 4'd8. 0: BT601. 1: BT709
          */
-        uint32_t rgb2yuv_protocal:1;
+        uint32_t rgb2yuv_protocol:1;
         /** yuv422_rx_byte_order : R/W; bitpos: [13:12]; default: 0;
          *  YUV422 input byte order when reg_sr_rx_cm is 4'd9. 0: YVYU, 1:YUYV, 2: VYUY, 3: UYVY (high addr -> low addr)
          */
@@ -153,14 +153,14 @@ typedef union {
          *  YUV output range when blend tx cm is yuv. 0: limit range. 1: full range
          */
         uint32_t blend_tx_yuv_range:1;
-        /** blend0_rx_yuv2rgb_protocal : R/W; bitpos: [14]; default: 0;
+        /** blend0_rx_yuv2rgb_protocol : R/W; bitpos: [14]; default: 0;
          *  YUV to RGB protocol when blend0 rx cm is yuv. 0: BT601. 1: BT709
          */
-        uint32_t blend0_rx_yuv2rgb_protocal:1;
-        /** blend_tx_rgb2yuv_protocal : R/W; bitpos: [15]; default: 0;
+        uint32_t blend0_rx_yuv2rgb_protocol:1;
+        /** blend_tx_rgb2yuv_protocol : R/W; bitpos: [15]; default: 0;
          *  RGB to YUV protocol when blend tx cm is yuv. 0: BT601. 1: BT709
          */
-        uint32_t blend_tx_rgb2yuv_protocal:1;
+        uint32_t blend_tx_rgb2yuv_protocol:1;
         /** blend0_rx_yuv422_byte_order : R/W; bitpos: [17:16]; default: 0;
          *  YUV422 input byte order when reg_sr_rx_cm is 4'd9. 0: YVYU, 1:YUYV, 2: VYUY, 3: UYVY (high addr -> low addr)
          */
@@ -969,7 +969,7 @@ typedef union {
 } ppa_date_reg_t;
 
 
-typedef struct {
+typedef struct ppa_dev_t {
     volatile ppa_blend0_clut_data_reg_t blend0_clut_data;
     volatile ppa_blend1_clut_data_reg_t blend1_clut_data;
     uint32_t reserved_008;
@@ -1013,6 +1013,7 @@ typedef struct {
     volatile ppa_date_reg_t date;
 } ppa_dev_t;
 
+extern ppa_dev_t PPA;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(ppa_dev_t) == 0x104, "Invalid size of ppa_dev_t structure");

@@ -54,7 +54,7 @@ const spi_signal_conn_t spi_periph_signal[3] = {
         .spics0_iomux_pin = SPI2_IOMUX_PIN_NUM_CS,
         .irq = ETS_SPI2_INTR_SOURCE,
         .irq_dma = ETS_SPI2_DMA_INTR_SOURCE,
-        .func = SPI2_FUNC_NUM,
+        .func = SPI2_FUNC_NUM_QUAD,
         .hw = &SPI2
     }, {
         .spiclk_out = VSPICLK_OUT_IDX,

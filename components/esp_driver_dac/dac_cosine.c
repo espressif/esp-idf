@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include "driver/dac_cosine.h"
 #include "hal/clk_tree_ll.h"
 #include "dac_priv_common.h"
-#include "clk_ctrl_os.h"
+#include "esp_clk_tree.h"
 
 #if CONFIG_DAC_ENABLE_DEBUG_LOG
 // The local log level must be defined before including esp_log.h
@@ -57,13 +57,10 @@ esp_err_t dac_cosine_new_channel(const dac_cosine_config_t *cos_cfg, dac_cosine_
     /* Register the handle */
     ESP_GOTO_ON_ERROR(dac_priv_register_channel(cos_cfg->chan_id, "dac cosine"), err1, TAG, "register dac channel %d failed", cos_cfg->chan_id);
 
-    /* Only enabled for getting the correct rtc clock frequency */
-    periph_rtc_dig_clk8m_enable();
     /* Cosine wave generator uses RTC_FAST clock which is divided from RC_FAST */
-    // [clk_tree] TODO: replace the following calculation with the RTC_FAST frequency getter
-    uint32_t rtc_clk_freq = periph_rtc_dig_clk8m_get_freq() / clk_ll_rc_fast_get_divider();
-    /* Disabled after getting the frequency, will re-enabled again when start outputting cosine wave */
-    periph_rtc_dig_clk8m_disable();
+    uint32_t rtc_clk_freq = 0;
+    esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RC_FAST, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &rtc_clk_freq);
+
     if (rtc_clk_freq == 0) {
         ESP_LOGW(TAG, "RTC clock calibration failed, using the approximate value as default");
         rtc_clk_freq = SOC_CLK_RC_FAST_FREQ_APPROX;
@@ -106,14 +103,15 @@ esp_err_t dac_cosine_del_channel(dac_cosine_handle_t handle)
 
 esp_err_t dac_cosine_start(dac_cosine_handle_t handle)
 {
+    esp_err_t ret = ESP_OK;
     DAC_NULL_POINTER_CHECK(handle);
     ESP_RETURN_ON_FALSE(!handle->is_started, ESP_ERR_INVALID_STATE, TAG,
                         "the dac channel has already started");
     /* Acquire the RTC clock */
-    periph_rtc_dig_clk8m_enable();
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(SOC_MOD_CLK_RC_FAST, true), TAG, "RC_FAST clock enable failed");
     /* Enabled DAC channel */
-    ESP_RETURN_ON_ERROR(dac_priv_enable_channel(handle->cfg.chan_id), TAG,
-                        "enable dac channel %d failed", handle->cfg.chan_id);
+    ESP_GOTO_ON_ERROR(dac_priv_enable_channel(handle->cfg.chan_id), err, TAG,
+                      "enable dac channel %d failed", handle->cfg.chan_id);
     /* Enabled the cosine wave generator if no channel using it before */
     DAC_RTC_ENTER_CRITICAL();
     if (s_cwg_refer_cnt == 0) {
@@ -126,6 +124,10 @@ esp_err_t dac_cosine_start(dac_cosine_handle_t handle)
     DAC_RTC_EXIT_CRITICAL();
 
     return ESP_OK;
+
+err:
+    esp_clk_tree_enable_src(SOC_MOD_CLK_RC_FAST, false);
+    return ret;
 }
 
 esp_err_t dac_cosine_stop(dac_cosine_handle_t handle)
@@ -148,7 +150,7 @@ esp_err_t dac_cosine_stop(dac_cosine_handle_t handle)
     handle->is_started = false;
     DAC_RTC_EXIT_CRITICAL();
     /* Release the RTC clock */
-    periph_rtc_dig_clk8m_disable();
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(SOC_MOD_CLK_RC_FAST, false), TAG, "RC_FAST clock disable failed");
 
     return ESP_OK;
 }

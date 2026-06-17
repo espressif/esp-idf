@@ -10,11 +10,14 @@ if(CONFIG_SOC_RMT_SUPPORTED)
                      "src/rmt_encoder_simple.c"
                      "src/rmt_rx.c"
                      "src/rmt_tx.c")
+    if(CONFIG_SOC_PAU_SUPPORTED AND CONFIG_SOC_RMT_SUPPORT_SLEEP_RETENTION)
+        list(APPEND srcs "${target}/rmt_retention.c")
+    endif()
+    if(CONFIG_SOC_BITSCRAMBLER_SUPPORTED AND CONFIG_SOC_RMT_SUPPORT_DMA)
+        list(APPEND srcs "src/rmt_encoder_bs.c")
+    endif()
 endif()
 
-if(CONFIG_SOC_BITSCRAMBLER_SUPPORTED AND CONFIG_SOC_RMT_SUPPORT_DMA)
-    list(APPEND srcs "src/rmt_encoder_bs.c")
-endif()
 
 if(${target} STREQUAL "linux")
     set(requires "")
@@ -26,7 +29,8 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
+                       PRIV_INCLUDE_DIRS "src"
                        REQUIRES "${requires}"
                        PRIV_REQUIRES "${priv_requires}"
                        LDFRAGMENTS "linker.lf"
-                      )
+                       )

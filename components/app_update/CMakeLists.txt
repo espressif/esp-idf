@@ -9,6 +9,12 @@ idf_component_register(SRCS "esp_ota_ops.c"
                     REQUIRES partition_table bootloader_support esp_app_format esp_bootloader_format esp_partition
                     PRIV_REQUIRES esptool_py efuse spi_flash)
 
+if(CONFIG_SECURE_SIGNED_DATA_PARTITION)
+    idf_component_optional_requires(PRIVATE mbedtls)
+endif()
+
+idf_define_esp_err_codes(HEADERS include/esp_ota_ops.h)
+
 if(NOT BOOTLOADER_BUILD)
     partition_table_get_partition_info(otadata_offset "--partition-type data --partition-subtype ota" "offset")
     partition_table_get_partition_info(otadata_size "--partition-type data --partition-subtype ota" "size")

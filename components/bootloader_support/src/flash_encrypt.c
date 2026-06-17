@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,7 +36,7 @@ void esp_flash_encryption_init_checks()
     esp_flash_enc_mode_t mode;
 
 #ifdef CONFIG_SECURE_FLASH_CHECK_ENC_EN_IN_APP
-    if (!esp_flash_encryption_enabled()) {
+    if (!esp_efuse_is_flash_encryption_enabled()) {
         ESP_LOGE(TAG, "Flash encryption eFuse bit was not enabled in bootloader but CONFIG_SECURE_FLASH_ENC_ENABLED is on");
         abort();
     }
@@ -47,14 +47,14 @@ void esp_flash_encryption_init_checks()
     // if bootloader is IDF V4.0 or newer but may not have happened for previous ESP-IDF bootloaders.
 #ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE
 #ifdef CONFIG_SECURE_BOOT
-    if (esp_secure_boot_enabled() && esp_flash_encryption_enabled()) {
+    if (esp_secure_boot_enabled() && esp_efuse_is_flash_encryption_enabled()) {
         bool flash_crypt_cnt_wr_dis = esp_efuse_read_field_bit(WR_DIS_CRYPT_CNT);
         if (!flash_crypt_cnt_wr_dis) {
             uint8_t flash_crypt_cnt = 0;
             esp_efuse_read_field_blob(CRYPT_CNT, &flash_crypt_cnt,  CRYPT_CNT[0]->bit_count);
             if (flash_crypt_cnt == (1<<(CRYPT_CNT[0]->bit_count))-1) {
                 // If encryption counter is already max, no need to write protect it
-                // (this distinction is important on ESP32 ECO3 where write-procted FLASH_CRYPT_CNT also write-protects UART_DL_DIS)
+                // (this distinction is important on ESP32 ECO3 where write-protected FLASH_CRYPT_CNT also write-protects UART_DL_DIS)
             } else {
                 ESP_LOGE(TAG, "Flash encryption & Secure Boot together requires FLASH_CRYPT_CNT efuse to be write protected. Fixing now...");
                 esp_flash_write_protect_crypt_cnt();
@@ -69,8 +69,7 @@ void esp_flash_encryption_init_checks()
     mode = esp_get_flash_encryption_mode();
     if (mode == ESP_FLASH_ENC_MODE_DEVELOPMENT) {
 #ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE
-        ESP_LOGE(TAG, "Flash encryption settings error: app is configured for RELEASE but efuses are set for DEVELOPMENT");
-        ESP_LOGE(TAG, "Mismatch found in security options in bootloader menuconfig and efuse settings. Device is not secure.");
+        ESP_LOGE(TAG, "Flash encryption error: app is set for RELEASE, but efuses are DEVELOPMENT (device is not secure). See Flash Encryption docs to transition.");
 #else
         ESP_LOGW(TAG, "Flash encryption mode is DEVELOPMENT (not secure)");
 #endif // CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE
@@ -80,35 +79,6 @@ void esp_flash_encryption_init_checks()
 }
 #endif // BOOTLOADER_BUILD
 
-/**
- * This former inlined function must not be defined in the header file anymore.
- * As it depends on efuse component, any use of it outside of `bootloader_support`,
- * would require the caller component to include `efuse` as part of its `REQUIRES` or
- * `PRIV_REQUIRES` entries.
- * Attribute IRAM_ATTR must be specified for the app build.
- */
-bool IRAM_ATTR esp_flash_encryption_enabled(void)
-{
-#ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
-    return efuse_hal_flash_encryption_enabled();
-#else
-    uint32_t flash_crypt_cnt = 0;
-#if CONFIG_IDF_TARGET_ESP32
-    esp_efuse_read_field_blob(ESP_EFUSE_FLASH_CRYPT_CNT, &flash_crypt_cnt, ESP_EFUSE_FLASH_CRYPT_CNT[0]->bit_count);
-#else
-    esp_efuse_read_field_blob(ESP_EFUSE_SPI_BOOT_CRYPT_CNT, &flash_crypt_cnt, ESP_EFUSE_SPI_BOOT_CRYPT_CNT[0]->bit_count);
-#endif
-    /* __builtin_parity is in flash, so we calculate parity inline */
-    bool enabled = false;
-    while (flash_crypt_cnt) {
-        if (flash_crypt_cnt & 1) {
-            enabled = !enabled;
-        }
-        flash_crypt_cnt >>= 1;
-    }
-    return enabled;
-#endif // CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
-}
 
 void esp_flash_write_protect_crypt_cnt(void)
 {
@@ -120,7 +90,7 @@ esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
     bool flash_crypt_cnt_wr_dis = false;
     esp_flash_enc_mode_t mode = ESP_FLASH_ENC_MODE_DEVELOPMENT;
 
-    if (esp_flash_encryption_enabled()) {
+    if (esp_efuse_is_flash_encryption_enabled()) {
         /* Check if FLASH CRYPT CNT is write protected */
 
         flash_crypt_cnt_wr_dis = esp_efuse_read_field_bit(WR_DIS_CRYPT_CNT);
@@ -253,7 +223,7 @@ bool esp_flash_encryption_cfg_verify_release_mode(void)
     bool result = false;
     bool secure;
 
-    secure = esp_flash_encryption_enabled();
+    secure = esp_efuse_is_flash_encryption_enabled();
     result = secure;
     if (!secure) {
         ESP_LOGW(TAG, "Not enabled Flash Encryption (FLASH_CRYPT_CNT->1 or max)");
@@ -314,13 +284,13 @@ bool esp_flash_encryption_cfg_verify_release_mode(void)
     secure = esp_efuse_read_field_bit(ESP_EFUSE_RD_DIS_BLK1);
     result &= secure;
     if (!secure) {
-        ESP_LOGW(TAG, "Not read-protected flash ecnryption key (set RD_DIS_BLK1->1)");
+        ESP_LOGW(TAG, "Not read-protected flash encryption key (set RD_DIS_BLK1->1)");
     }
 
     secure = esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_BLK1);
     result &= secure;
     if (!secure) {
-        ESP_LOGW(TAG, "Not write-protected flash ecnryption key (set WR_DIS_BLK1->1)");
+        ESP_LOGW(TAG, "Not write-protected flash encryption key (set WR_DIS_BLK1->1)");
     }
     return result;
 }
@@ -330,7 +300,7 @@ bool esp_flash_encryption_cfg_verify_release_mode(void)
     bool result = false;
     bool secure;
 
-    secure = esp_flash_encryption_enabled();
+    secure = esp_efuse_is_flash_encryption_enabled();
     result = secure;
     if (!secure) {
         ESP_LOGW(TAG, "Not enabled Flash Encryption (SPI_BOOT_CRYPT_CNT->1 or max)");
@@ -435,7 +405,7 @@ bool esp_flash_encryption_cfg_verify_release_mode(void)
     secure = esp_efuse_read_field_bit(ESP_EFUSE_DIS_LEGACY_SPI_BOOT);
     result &= secure;
     if (!secure) {
-        ESP_LOGW(TAG, "Not disabled Legcy SPI boot (set DIS_LEGACY_SPI_BOOT->1)");
+        ESP_LOGW(TAG, "Not disabled Legacy SPI boot (set DIS_LEGACY_SPI_BOOT->1)");
     }
 #endif
 
@@ -462,7 +432,8 @@ bool esp_flash_encryption_cfg_verify_release_mode(void)
     // are mutually exclusive because this will make the chip not functional.
     // Only one type key must be configured in eFuses.
     secure = false;
-    for (unsigned i = 0; i < sizeof(purposes) / sizeof(esp_efuse_purpose_t); i++) {
+    size_t purpose_count = sizeof(purposes) / sizeof(esp_efuse_purpose_t);
+    for (size_t i = 0; i < purpose_count; i++) {
         esp_efuse_block_t block;
         if (esp_efuse_find_purpose(purposes[i], &block)) {
             secure = esp_efuse_get_key_dis_read(block);
@@ -517,3 +488,9 @@ bool esp_flash_encryption_cfg_verify_release_mode(void)
     return result;
 }
 #endif // not CONFIG_IDF_TARGET_ESP32
+
+// Deprecated function
+bool IRAM_ATTR esp_flash_encryption_enabled(void)
+{
+    return esp_efuse_is_flash_encryption_enabled();
+}

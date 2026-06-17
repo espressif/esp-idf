@@ -5,7 +5,14 @@ function add_ssh_keys() {
   mkdir -p ~/.ssh
   chmod 700 ~/.ssh
   echo -n "${key_string}" >~/.ssh/id_rsa_base64
-  base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 >~/.ssh/id_rsa
+  # Detect base64 implementation via --help output
+  if base64 --help 2>&1 | grep -q -- '--ignore-garbage'; then
+    # GNU coreutils base64
+    base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 >~/.ssh/id_rsa
+  else
+    # macOS/BSD base64 - requires stdin or -i flag
+    base64 --decode -i ~/.ssh/id_rsa_base64 -o ~/.ssh/id_rsa
+  fi
   chmod 600 ~/.ssh/id_rsa
 }
 

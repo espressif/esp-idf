@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,6 @@
 
 #include <stdint.h>
 #include "hal/color_types.h"
-#include "hal/dma2d_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -115,11 +114,11 @@ typedef enum {
  * @brief Enumeration of PPA supported data burst length
  */
 typedef enum {
-    PPA_DATA_BURST_LENGTH_8 = DMA2D_DATA_BURST_LENGTH_8,        /*!< Data burst length: 8 bytes */
-    PPA_DATA_BURST_LENGTH_16 = DMA2D_DATA_BURST_LENGTH_16,      /*!< Data burst length: 16 bytes */
-    PPA_DATA_BURST_LENGTH_32 = DMA2D_DATA_BURST_LENGTH_32,      /*!< Data burst length: 32 bytes */
-    PPA_DATA_BURST_LENGTH_64 = DMA2D_DATA_BURST_LENGTH_64,      /*!< Data burst length: 64 bytes */
-    PPA_DATA_BURST_LENGTH_128 = DMA2D_DATA_BURST_LENGTH_128,    /*!< Data burst length: 128 bytes */
+    PPA_DATA_BURST_LENGTH_8 = 8,                    /*!< Data burst length: 8 bytes */
+    PPA_DATA_BURST_LENGTH_16 = 16,                  /*!< Data burst length: 16 bytes */
+    PPA_DATA_BURST_LENGTH_32 = 32,                  /*!< Data burst length: 32 bytes */
+    PPA_DATA_BURST_LENGTH_64 = 64,                  /*!< Data burst length: 64 bytes */
+    PPA_DATA_BURST_LENGTH_128 = 128,                /*!< Data burst length: 128 bytes */
 } ppa_data_burst_length_t;
 
 #ifdef __cplusplus

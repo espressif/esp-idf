@@ -1,7 +1,6 @@
 .build_template:
   stage: build
   extends:
-    - .before_script:build
     - .after_script:build
   image: $ESP_ENV_IMAGE
   tags: [build, shiny]
@@ -10,49 +9,6 @@
     IDF_CCACHE_ENABLE: "1"
   dependencies: # set dependencies to null to avoid missing artifacts issue
 
-######################
-# build_template_app #
-######################
-.build_template_app_template:
-  extends:
-    - .build_template
-  artifacts:
-    paths:
-      - log_template_app/*
-      - size_info.txt
-      - build_template_app/**/size*.json
-    expire_in: 1 week
-    when: always
-  script:
-    # Set the variable for 'esp-idf-template' testing
-    - ESP_IDF_TEMPLATE_GIT=${ESP_IDF_TEMPLATE_GIT:-"https://github.com/espressif/esp-idf-template.git"}
-    - retry_failed git clone ${ESP_IDF_TEMPLATE_GIT}
-    # Try to use the same branch name for esp-idf-template that we're
-    # using on esp-idf. If it doesn't exist then just stick to the default branch
-    - python $CHECKOUT_REF_SCRIPT esp-idf-template esp-idf-template
-    - export PATH="$IDF_PATH/tools:$PATH"
-    # Only do the default cmake build for each target, remaining part are done in the build_template_app job
-    - tools/ci/build_template_app.sh ${BUILD_COMMAND_ARGS}
-
-# Build at least one project for each target at earliest stage to reduce build cost for obvious failing commits
-fast_template_app:
-  extends:
-    - .build_template_app_template
-    - .rules:build
-  stage: pre_check
-  tags: [fast_run, shiny]
-  variables:
-    BUILD_COMMAND_ARGS: "-p"
-
-# This job builds template app with permutations of targets and optimization levels
-build_template_app:
-  extends:
-    - .build_template_app_template
-    - .rules:build
-  stage: host_test
-  needs:
-    - job: fast_template_app
-      artifacts: false
 
 ########################################
 # Clang Build Apps Without Tests Cases #
@@ -62,7 +18,7 @@ build_template_app:
     - .build_template
     - .rules:build
   needs:
-    - job: fast_template_app
+    - job: fast_build_check
       artifacts: false
     - pipeline_variables
   artifacts:
@@ -111,6 +67,18 @@ build_clang_test_apps_riscv:
 ####################
 # Dynamic Pipeline #
 ####################
+pre_check_complete:
+  stage: build
+  image: $ESP_ENV_IMAGE
+  tags: [fast_run, shiny]
+  variables:
+    GIT_STRATEGY: none
+  cache: []
+  before_script: []
+  dependencies: []
+  script:
+    - echo "pre_check stage completed"
+
 generate_build_child_pipeline:
   extends:
     - .build_template
@@ -118,6 +86,8 @@ generate_build_child_pipeline:
   dependencies: # set dependencies to null to avoid missing artifacts issue
   needs:
     - pipeline_variables
+    - job: pre_check_complete
+      artifacts: false
     - job: baseline_manifest_sha
       optional: true
   artifacts:
@@ -133,11 +103,13 @@ generate_build_child_pipeline:
       -p examples
       -p tools/test_apps
       --modified-files $MR_MODIFIED_FILES
+    - shuf test_related_apps.txt -o test_related_apps.txt
+    - shuf non_test_related_apps.txt -o non_test_related_apps.txt
 
 build_child_pipeline:
   stage: build
   needs:
-    - job: fast_template_app
+    - job: fast_build_check
       optional: true
       artifacts: false
     - pipeline_variables
@@ -155,21 +127,17 @@ build_child_pipeline:
         job: generate_build_child_pipeline
     strategy: depend
 
-generate_disabled_apps_report:
+generate_prebuild_report:
   extends:
     - .build_template
   tags: [fast_run, shiny]
-  dependencies: # set dependencies to null to avoid missing artifacts issue
   needs:
     - pipeline_variables
-    - job: baseline_manifest_sha
-      optional: true
   artifacts:
     paths:
-      - disabled_report.html
+      - prebuild_report.html
     expire_in: 1 week
     when: always
   script:
-    - pip install dominate idf-build-apps
-    - run_cmd python tools/ci/gen_disabled_report.py --output disabled_report.html --verbose --enable-preview-targets
-    - echo "Report generated at https://${CI_PAGES_HOSTNAME}:${CI_SERVER_PORT}/-/esp-idf/-/jobs/${CI_JOB_ID}/artifacts/disabled_report.html"
+    - run_cmd idf-ci build collect --format html -o prebuild_report.html
+    - echo "Report generated at https://${CI_PAGES_HOSTNAME}:${CI_SERVER_PORT}/-/esp-idf/-/jobs/${CI_JOB_ID}/artifacts/prebuild_report.html"

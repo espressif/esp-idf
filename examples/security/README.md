@@ -37,6 +37,14 @@ The steps include:
 * Generating token data from the key.
 * Using commands to re-enable JTAG access.
 
+## Key Manager Signing
+
+This example demonstrates how to use the Key Manager peripheral for cryptographic signing operations on Key Manager supported chips. The Key Manager provides secure key deployment and management, allowing keys to be used for cryptographic operations without exposing the raw key material.
+The example showcases:
+* ECDSA signing using Key Manager deployed keys via PSA Crypto API.
+* RSA-DS (Digital Signature) signing using Key Manager deployed keys via PSA Crypto API.
+* Key deployment in AES mode with pre-generated key material.
+
 # ESP-TEE (Trusted Execution Environment)
 
 For examples demonstrating the ESP-TEE framework, please refer to the [ESP-TEE examples](tee/README.md) directory. It contains examples showcasing operations like AES encryption/decryption in the TEE, secure storage with signing and encryption capabilities, secure OTA updates for TEE applications, and entity attestation token generation.

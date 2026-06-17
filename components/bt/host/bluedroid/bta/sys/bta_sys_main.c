@@ -103,6 +103,7 @@ enum {
 #define BTA_SYS_ACTIONS              2       /* number of actions */
 #define BTA_SYS_NEXT_STATE           2       /* position of next state */
 #define BTA_SYS_NUM_COLS             3       /* number of columns in state tables */
+#define BTA_SYS_NUM_STATES           4       /* OFF, STARTING, ON, STOPPING */
 
 
 /* state table for OFF state */
@@ -213,21 +214,38 @@ BOOLEAN bta_sys_sm_execute(BT_HDR *p_msg)
     BOOLEAN freebuf = TRUE;
     tBTA_SYS_ST_TBL      state_table;
     UINT8               action;
+    UINT8               evt_idx;
     int                 i;
+
+    if (p_msg == NULL) {
+        return freebuf;
+    }
+
+    evt_idx = p_msg->event & 0x00ff;
+    if (evt_idx >= BTA_SYS_NUM_ACTIONS) {
+        APPL_TRACE_ERROR("bta_sys_sm_execute: event 0x%x out of range (evt_idx=%u)", p_msg->event, evt_idx);
+        return freebuf;
+    }
+    if (bta_sys_cb.state >= BTA_SYS_NUM_STATES) {
+        APPL_TRACE_ERROR("bta_sys_sm_execute: invalid state %u", bta_sys_cb.state);
+        return freebuf;
+    }
 
     APPL_TRACE_EVENT("bta_sys_sm_execute state:%d, event:0x%x\n",  bta_sys_cb.state, p_msg->event);
 
     /* look up the state table for the current state */
     state_table = bta_sys_st_tbl[bta_sys_cb.state];
     /* update state */
-    bta_sys_cb.state = state_table[p_msg->event & 0x00ff][BTA_SYS_NEXT_STATE];
+    bta_sys_cb.state = state_table[evt_idx][BTA_SYS_NEXT_STATE];
 
     /* execute action functions */
     for (i = 0; i < BTA_SYS_ACTIONS; i++) {
-        if ((action = state_table[p_msg->event & 0x00ff][i]) != BTA_SYS_IGNORE) {
-            (*bta_sys_action[action])( (tBTA_SYS_HW_MSG *) p_msg);
-        } else {
+        action = state_table[evt_idx][i];
+        if (action == BTA_SYS_IGNORE) {
             break;
+        }
+        if (action < BTA_SYS_NUM_ACTIONS) {
+            (*bta_sys_action[action])( (tBTA_SYS_HW_MSG *) p_msg);
         }
     }
     return freebuf;
@@ -598,16 +616,29 @@ void bta_alarm_cb(void *data)
 
 void bta_sys_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, INT32 timeout_ms)
 {
+    osi_alarm_t *alarm = NULL;
+
     assert(p_tle != NULL);
 
     // Get the alarm for this p_tle.
     osi_mutex_lock(&bta_alarm_lock, OSI_MUTEX_MAX_TIMEOUT);
     if (!hash_map_has_key(bta_alarm_hash_map, p_tle)) {
-        hash_map_set(bta_alarm_hash_map, p_tle, osi_alarm_new("bta_sys", bta_alarm_cb, p_tle, 0));
+        alarm = osi_alarm_new("bta_sys", bta_alarm_cb, p_tle, 0);
+        if (alarm == NULL) {
+            APPL_TRACE_ERROR("%s unable to create new alarm.", __func__);
+            osi_mutex_unlock(&bta_alarm_lock);
+            return;
+        }
+        if (!hash_map_set(bta_alarm_hash_map, p_tle, alarm)) {
+            APPL_TRACE_ERROR("%s unable to set alarm in map.", __func__);
+            osi_alarm_free(alarm);
+            osi_mutex_unlock(&bta_alarm_lock);
+            return;
+        }
     }
     osi_mutex_unlock(&bta_alarm_lock);
 
-    osi_alarm_t *alarm = hash_map_get(bta_alarm_hash_map, p_tle);
+    alarm = hash_map_get(bta_alarm_hash_map, p_tle);
     if (alarm == NULL) {
         APPL_TRACE_ERROR("%s unable to create alarm.", __func__);
         return;

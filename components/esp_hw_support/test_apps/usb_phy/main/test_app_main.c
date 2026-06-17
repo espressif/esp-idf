@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -8,12 +8,12 @@
 #include "unity_test_runner.h"
 #include "unity_test_utils_memory.h"
 #include "esp_private/usb_phy.h"
-#include "hal/usb_wrap_ll.h" // For USB_WRAP_LL_EXT_PHY_SUPPORTED symbol
-#include "soc/soc_caps.h"    // For SOC_USB_UTMI_PHY_NUM symbol
+#include "soc/soc_caps.h"
 #include "sdkconfig.h"       // For CONFIG_IDF_TARGET_***
 
-#if USB_WRAP_LL_EXT_PHY_SUPPORTED
-#define EXT_PHY_SUPPORTED 1
+#if (SOC_USB_FSLS_PHY_NUM > 0)
+#include "hal/usb_wrap_ll.h"
+#define EXT_PHY_SUPPORTED USB_WRAP_LL_EXT_PHY_SUPPORTED
 #else
 #define EXT_PHY_SUPPORTED 0
 #endif
@@ -22,6 +22,18 @@
 #define UTMI_PHY_SUPPORTED 1
 #else
 #define UTMI_PHY_SUPPORTED 0
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32S31
+#define INT_PHY_ALIASES_UTMI 1
+#else
+#define INT_PHY_ALIASES_UTMI 0
+#endif
+
+#if (SOC_USB_FSLS_PHY_NUM > 0) || INT_PHY_ALIASES_UTMI
+#define INT_PHY_SUPPORTED 1
+#else
+#define INT_PHY_SUPPORTED 0
 #endif
 
 void setUp(void)
@@ -55,12 +67,15 @@ void app_main(void)
 }
 
 /**
- * Test init and deinit of internal FSLS PHY
+ * Test init and deinit of the internal PHY target
+ *
+ * On UTMI-only targets, the internal PHY target can be mapped to UTMI for
+ * backward compatibility.
  *
  * 1. Init + deinit in Host mode
  * 2. Init + deinit in Device mode
  */
-TEST_CASE("Init internal FSLS PHY", "[phy]")
+TEST_CASE("Init internal PHY target", "[phy]")
 {
     // Host mode
     usb_phy_handle_t phy_handle = NULL;
@@ -72,9 +87,14 @@ TEST_CASE("Init internal FSLS PHY", "[phy]")
         .ext_io_conf = NULL,
         .otg_io_conf = NULL,
     };
+#if INT_PHY_SUPPORTED
     TEST_ASSERT_EQUAL(ESP_OK, usb_new_phy(&phy_config, &phy_handle));
     TEST_ASSERT_NOT_NULL(phy_handle);
     TEST_ASSERT_EQUAL(ESP_OK, usb_del_phy(phy_handle));
+#else
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, usb_new_phy(&phy_config, &phy_handle));
+    TEST_ASSERT_NULL(phy_handle);
+#endif
 
     // Device mode
     usb_phy_handle_t phy_handle_2 = NULL;
@@ -86,9 +106,14 @@ TEST_CASE("Init internal FSLS PHY", "[phy]")
         .ext_io_conf = NULL,
         .otg_io_conf = NULL,
     };
+#if INT_PHY_SUPPORTED
     TEST_ASSERT_EQUAL(ESP_OK, usb_new_phy(&phy_config_2, &phy_handle_2));
     TEST_ASSERT_NOT_NULL(phy_handle_2);
     TEST_ASSERT_EQUAL(ESP_OK, usb_del_phy(phy_handle_2));
+#else
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, usb_new_phy(&phy_config_2, &phy_handle_2));
+    TEST_ASSERT_NULL(phy_handle_2);
+#endif
 }
 
 /**
@@ -156,10 +181,14 @@ TEST_CASE("Init internal UTMI PHY", "[phy]")
 }
 
 /**
- * Test init and deinit of all PHYs at the same time multiple times
+ * Test init and deinit of all available PHY targets multiple times
  */
 TEST_CASE("Init all PHYs in a loop", "[phy]")
 {
+#if !INT_PHY_SUPPORTED
+    TEST_IGNORE_MESSAGE("Internal PHY target is not supported on this target");
+#endif
+
     for (int i = 0; i < 2; i++) {
         usb_phy_handle_t phy_handle = NULL;
         usb_phy_handle_t phy_handle_2 = NULL;
@@ -174,11 +203,14 @@ TEST_CASE("Init all PHYs in a loop", "[phy]")
         TEST_ASSERT_EQUAL(ESP_OK, usb_new_phy(&phy_config, &phy_handle));
         TEST_ASSERT_NOT_NULL(phy_handle);
 
-        // Our current targets support either UTMI or external PHY
-        // so if/else suffice here
-#if UTMI_PHY_SUPPORTED
+        // UTMI-only targets can alias the internal PHY target to UTMI, in
+        // which case a second UTMI allocation must fail because it is the same
+        // physical PHY instance.
+#if UTMI_PHY_SUPPORTED && !INT_PHY_ALIASES_UTMI
         phy_config.target = USB_PHY_TARGET_UTMI;
-#else
+        TEST_ASSERT_EQUAL(ESP_OK, usb_new_phy(&phy_config, &phy_handle_2));
+        TEST_ASSERT_NOT_NULL(phy_handle_2);
+#elif EXT_PHY_SUPPORTED
         phy_config.target = USB_PHY_TARGET_EXT;
         const usb_phy_ext_io_conf_t ext_io_conf = { // Some random values
             .vp_io_num = 1,
@@ -191,12 +223,18 @@ TEST_CASE("Init all PHYs in a loop", "[phy]")
             .fs_edge_sel_io_num = 1,
         };
         phy_config.ext_io_conf = &ext_io_conf;
-#endif
         TEST_ASSERT_EQUAL(ESP_OK, usb_new_phy(&phy_config, &phy_handle_2));
         TEST_ASSERT_NOT_NULL(phy_handle_2);
+#elif INT_PHY_ALIASES_UTMI
+        phy_config.target = USB_PHY_TARGET_UTMI;
+        TEST_ASSERT_NOT_EQUAL(ESP_OK, usb_new_phy(&phy_config, &phy_handle_2));
+        TEST_ASSERT_NULL(phy_handle_2);
+#endif
 
         TEST_ASSERT_EQUAL(ESP_OK, usb_del_phy(phy_handle));
-        TEST_ASSERT_EQUAL(ESP_OK, usb_del_phy(phy_handle_2));
+        if (phy_handle_2) {
+            TEST_ASSERT_EQUAL(ESP_OK, usb_del_phy(phy_handle_2));
+        }
     }
 }
 

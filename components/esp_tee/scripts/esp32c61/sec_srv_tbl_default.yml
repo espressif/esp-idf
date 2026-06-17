@@ -239,11 +239,11 @@ secure_services:
       - id: 179
         type: custom
         function: esp_tee_sec_storage_aead_encrypt
-        args: 4
+        args: 6
       - id: 180
         type: custom
         function: esp_tee_sec_storage_aead_decrypt
-        args: 4
+        args: 6
   # ID: 195-199 (5) - OTA
   - family: ota
     entries:

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,8 +15,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-// TODO: [ESP32S31] IDF-14678
 
 /************************************************************************************/
 /***************** THIS FILE IS CONSIDERED AS A PRIVATE HEADER FILE *****************/
@@ -52,18 +50,18 @@ extern "C" {
 
 #define MHZ (1000000)
 
+/* Delays for various clock sources to be enabled/switched.
+ * All values are in microseconds.
+ */
+#define SOC_DELAY_RTC_FAST_CLK_SWITCH       3
+#define SOC_DELAY_RTC_SLOW_CLK_SWITCH       300
+#define SOC_DELAY_RC_FAST_ENABLE            50
+#define SOC_DELAY_RC_FAST_DIGI_SWITCH       5
+#define SOC_DELAY_RC32K_ENABLE              300
+
 #define RTC_CNTL_CK8M_DFREQ_DEFAULT  100
 #define RTC_CNTL_SCK_DCAP_DEFAULT    128
 #define RTC_CNTL_RC32K_DFREQ_DEFAULT 700
-
-/*
-The follow value is used to get a reasonable rtc voltage dbias value according to digital dbias & some other value
-storing in efuse (based on ATE 5k ECO3 chips)
-*/
-#define K_RTC_MID_MUL10000 215
-#define K_DIG_MID_MUL10000 213
-#define V_RTC_MID_MUL10000  10800
-#define V_DIG_MID_MUL10000  10860
 
 /**
  * @brief CPU clock configuration structure
@@ -76,31 +74,6 @@ typedef struct rtc_cpu_freq_config_s {
 } rtc_cpu_freq_config_t;
 
 #define RTC_CLK_CAL_FRACT  19  //!< Number of fractional bits in values returned by rtc_clk_cal
-
-#define RTC_VDDSDIO_TIEH_1_8V 0 //!< TIEH field value for 1.8V VDDSDIO
-#define RTC_VDDSDIO_TIEH_3_3V 1 //!< TIEH field value for 3.3V VDDSDIO
-
-/**
- * @brief Clock source to be calibrated using rtc_clk_cal function
- *
- * @note On ESP32S31, the enum values somehow reflects the register field values of HP_SYS_CLKRST_REG_TIMERGRP0_TGRT_CLK_SRC_SEL.
- */
-typedef enum {
-    RTC_CAL_RTC_MUX = -1,       //!< Currently selected RTC_SLOW_CLK
-    RTC_CAL_MPLL = 0,           //!< 500MHz MSPI_PLL_CLK
-    RTC_CAL_SPLL = 1,           //!< 480MHz SYS_PLL_CLK
-    RTC_CAL_CPLL = 2,           //!< 400MHz CPU_PLL_CLK
-    RTC_CAL_APLL = 3,           //!< AUDIO_PLL_CLK
-    RTC_CAL_SDIO_PLL0 = 4,      //!< SDIO_PLL0_CLK
-    RTC_CAL_SDIO_PLL1 = 5,      //!< SDIO_PLL1_CLK
-    RTC_CAL_SDIO_PLL2 = 6,      //!< SDIO_PLL2_CLK
-    RTC_CAL_RC_FAST = 7,        //!< Internal 20MHz RC oscillator
-    RTC_CAL_RC_SLOW = 8,        //!< Internal 150kHz RC oscillator
-    RTC_CAL_RC32K = 9,          //!< Internal 32kHz RC oscillator, as one type of 32k clock
-    RTC_CAL_32K_XTAL = 10,      //!< External 32kHz XTAL, as one type of 32k clock
-    RTC_CAL_LP_PLL = 11,        //!< 8MHz LP_PLL_CLK
-    RTC_CAL_INVALID_CLK,        //!< Clock not available to calibrate
-} rtc_cal_sel_t;
 
 /**
  * Initialization parameters for rtc_clk_init
@@ -122,7 +95,7 @@ typedef struct {
  */
 #define RTC_CLK_CONFIG_DEFAULT() { \
     .xtal_freq = CONFIG_XTAL_FREQ, \
-    .cpu_freq_mhz = 90, \
+    .cpu_freq_mhz = CONFIG_BOOTLOADER_CPU_CLK_FREQ_MHZ, \
     .fast_clk_src = SOC_RTC_FAST_CLK_SRC_RC_FAST, \
     .slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW, \
     .clk_rtc_clk_div = 0, \
@@ -148,16 +121,6 @@ void rtc_clk_init(rtc_clk_config_t cfg);
  * @return XTAL frequency, one of soc_xtal_freq_t
  */
 soc_xtal_freq_t rtc_clk_xtal_freq_get(void);
-
-/**
- * @brief Update XTAL frequency
- *
- * Updates the XTAL value stored in RTC_XTAL_FREQ_REG. Usually this value is ignored
- * after startup.
- *
- * @param xtal_freq New frequency value
- */
-void rtc_clk_xtal_freq_update(soc_xtal_freq_t xtal_freq);
 
 /**
  * @brief Enable or disable 32 kHz XTAL oscillator
@@ -201,20 +164,6 @@ void rtc_clk_8m_enable(bool clk_8m_en);
  * @return true if the oscillator is enabled
  */
 bool rtc_clk_8m_enabled(void);
-
-/**
- * @brief Enable or disable LP_PLL_CLK
- * Note that to be able to use LP_PLL clock, besides turn on the power for LP_PLL, also needs to turn on the power for
- * the LP_PLL clock source (either XTAL32K or RC32K).
- * @param enable true to enable, false to disable
- */
-void rtc_clk_lp_pll_enable(bool enable);
-
-/**
- * @brief Select clock source for LP_PLL_CLK
- * @param clk_src clock source (one of soc_lp_pll_clk_src_t values)
- */
-void rtc_clk_lp_pll_src_set(soc_lp_pll_clk_src_t clk_src);
 
 /**
  * @brief Select source for RTC_SLOW_CLK
@@ -323,26 +272,6 @@ void rtc_clk_cpu_freq_set_xtal(void);
 uint32_t rtc_clk_apb_freq_get(void);
 
 /**
- * @brief Clock calibration function used by rtc_clk_cal
- *
- * Calibration of RTC_SLOW_CLK is performed using a special feature of TIMG0.
- * This feature counts the number of XTAL clock cycles within a given number of
- * RTC_SLOW_CLK cycles.
- *
- * Slow clock calibration feature has two modes of operation: one-off and cycling.
- * In cycling mode (which is enabled by default on SoC reset), counting of XTAL
- * cycles within RTC_SLOW_CLK cycle is done continuously. Cycling mode is enabled
- * using TIMG_RTC_CALI_START_CYCLING bit. In one-off mode counting is performed
- * once, and TIMG_RTC_CALI_RDY bit is set when counting is done. One-off mode is
- * enabled using TIMG_RTC_CALI_START bit.
- *
- * @param cal_clk which clock to calibrate
- * @param slowclk_cycles number of slow clock cycles to count
- * @return number of XTAL clock cycles within the given number of slow clock cycles
- */
-uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles);
-
-/**
  * @brief Measure RTC slow clock's period, based on main XTAL frequency
  *
  * This function will time out and return 0 if the time for the given number
@@ -360,7 +289,7 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles);
  * @return average slow clock period in microseconds, Q13.19 fixed point format,
  *         or 0 if calibration has timed out
  */
-uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slow_clk_cycles);
+uint32_t rtc_clk_cal(soc_clk_freq_calculation_src_t cal_clk, uint32_t slow_clk_cycles);
 
 /**
  * @brief Convert time interval from microseconds to RTC_SLOW_CLK cycles

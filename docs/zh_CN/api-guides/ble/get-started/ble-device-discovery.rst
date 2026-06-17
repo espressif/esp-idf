@@ -1003,7 +1003,7 @@ PDU 有效负载也分为两部分
 
         ...
 
-        /* Set non-connetable and general discoverable mode to be a beacon */
+        /* Set non-connectable and general discoverable mode to be a beacon */
         adv_params.conn_mode = BLE_GAP_CONN_MODE_NON;
         adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
 

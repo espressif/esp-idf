@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -24,6 +24,8 @@
 #define SD_CARD_CDATA7_2_PAD_OUT_IDX            7
 #define PAD_MODEM_ANT_SEL0_IDX                  8
 #define PAD_MODEM_ANT_SEL1_IDX                  9
+#define ANT_SEL0_IDX                            PAD_MODEM_ANT_SEL0_IDX
+#define ANT_SEL1_IDX                            PAD_MODEM_ANT_SEL1_IDX
 #define UART0_RXD_PAD_IN_IDX                    10
 #define UART0_TXD_PAD_OUT_IDX                   10
 #define UART0_CTS_PAD_IN_IDX                    11
@@ -46,6 +48,11 @@
 #define GPIO_EXTERN_ACTIVE_PAD_OUT_IDX          19
 #define GPIO_EXTERN_PRIORITY_PAD_IN_IDX         20
 #define GPIO_EXTERN_PRIORITY_PAD_OUT_IDX        20
+/* Same GPIO matrix indices as EXTERN_* on other targets (used by esp_coex external coexist). */
+#define EXTERN_ACTIVE_I_IDX                     GPIO_EXTERN_ACTIVE_PAD_IN_IDX
+#define EXTERN_ACTIVE_O_IDX                     GPIO_EXTERN_ACTIVE_PAD_OUT_IDX
+#define EXTERN_PRIORITY_I_IDX                   GPIO_EXTERN_PRIORITY_PAD_IN_IDX
+#define EXTERN_PRIORITY_O_IDX                   GPIO_EXTERN_PRIORITY_PAD_OUT_IDX
 #define GPIO_EVENT_MATRIX_IN0_IDX               21
 #define GPIO_TASK_MATRIX_OUT0_IDX               21
 #define GPIO_EVENT_MATRIX_IN1_IDX               22
@@ -80,8 +87,10 @@
 #define I2S1_I_WS_PAD_OUT_IDX                   36
 #define PCNT1_RST_IN0_IDX                       37
 #define PAD_MODEM_ANT_SEL2_IDX                  37
+#define ANT_SEL2_IDX                            PAD_MODEM_ANT_SEL2_IDX
 #define PCNT1_RST_IN1_IDX                       38
 #define PAD_MODEM_ANT_SEL3_IDX                  38
+#define ANT_SEL3_IDX                            PAD_MODEM_ANT_SEL3_IDX
 #define PCNT1_RST_IN2_IDX                       39
 #define PAD_MODEM_ANT_SEL4_IDX                  39
 #define PCNT1_RST_IN3_IDX                       40
@@ -504,3 +513,20 @@
 #define SIG_IN_FUNC255_IDX                      255
 // version date 2312260
 #define SIG_GPIO_OUT_IDX                        256
+
+#define ANT_SEL0_IDX  PAD_MODEM_ANT_SEL0_IDX
+#define ANT_SEL1_IDX  PAD_MODEM_ANT_SEL1_IDX
+#define ANT_SEL2_IDX  PAD_MODEM_ANT_SEL2_IDX
+#define ANT_SEL3_IDX  PAD_MODEM_ANT_SEL3_IDX
+#define ANT_SEL4_IDX  PAD_MODEM_ANT_SEL4_IDX
+#define ANT_SEL5_IDX  PAD_MODEM_ANT_SEL5_IDX
+#define ANT_SEL6_IDX  PAD_MODEM_ANT_SEL6_IDX
+#define ANT_SEL7_IDX  PAD_MODEM_ANT_SEL7_IDX
+#define ANT_SEL8_IDX  PAD_MODEM_ANT_SEL8_IDX
+#define ANT_SEL9_IDX  PAD_MODEM_ANT_SEL9_IDX
+#define ANT_SEL10_IDX  PAD_MODEM_ANT_SEL10_IDX
+#define ANT_SEL11_IDX  PAD_MODEM_ANT_SEL11_IDX
+#define ANT_SEL12_IDX  PAD_MODEM_ANT_SEL12_IDX
+#define ANT_SEL13_IDX  PAD_MODEM_ANT_SEL13_IDX
+#define ANT_SEL14_IDX  PAD_MODEM_ANT_SEL14_IDX
+#define ANT_SEL15_IDX  PAD_MODEM_ANT_SEL15_IDX

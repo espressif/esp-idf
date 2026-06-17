@@ -222,7 +222,8 @@ typedef struct emac_mac_dev_s {
     } emacaddr0high;
     uint32_t emacaddr0low; /*This field contains the lower 32 bits of the first 6-byte MAC address. This is used by the MAC for filtering the received frames and inserting the MAC address in the Transmit Flow Control (Pause) Frames.*/
     emac_mac_addr_t emacaddr[15];    /*Offset: 0x40-0xC0. MAC Address1-15 registers. Each MAC address register contains the high and low 32-bit fields for MAC addresses 1-15.*/
-    uint32_t reserved_10c4; // AN control register
+    uint32_t reserved_10c0;  // AN control register
+    uint32_t reserved_10c4;
     uint32_t reserved_10c8;
     uint32_t reserved_10cc;
     uint32_t reserved_10d0;

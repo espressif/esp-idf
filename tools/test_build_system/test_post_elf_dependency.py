@@ -2,11 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 from pathlib import Path
 
+import pytest
 from test_build_system_helpers import append_to_file
 from test_build_system_helpers import get_snapshot
 from test_build_system_helpers import run_cmake_and_build
 
 
+@pytest.mark.buildv2_skip('Post-ELF dependency API is not used in cmakev2. Component callback method replaces this')
 def test_post_elf_dependency_runs_before_bin(test_app_copy: Path) -> None:
     """
     Verify idf_build_add_post_elf_dependency(<elf_filename> <dep_target>) adds a post-ELF step

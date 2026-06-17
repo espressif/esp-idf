@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,10 +50,12 @@ esp_err_t spi_hal_cal_clock_conf(const spi_hal_timing_param_t *timing_param, spi
     spi_hal_cal_timing(timing_param->clk_src_hz, eff_clk_n, timing_param->use_gpio, timing_param->input_delay_ns, &dummy, &miso_delay);
 
 #if SPI_LL_SUPPORT_TIME_TUNING
-    const int freq_limit = spi_hal_get_freq_limit(timing_param->use_gpio, timing_param->input_delay_ns);
-
     if (!(timing_param->half_duplex || dummy == 0 || timing_param->no_compensate)) {
-        // This only a short log used as a "key" of the idf hint system, see `hints.yml`
+        // Short log used as a "key" by the idf hint system (see `hints.yml`).
+        // freq_limit is consumed only by HAL_EARLY_LOGE; mark unused so
+        // -Wunused-variable stays quiet when the macro expands to empty.
+        const int freq_limit __attribute__((unused)) =
+            spi_hal_get_freq_limit(timing_param->use_gpio, timing_param->input_delay_ns);
         HAL_EARLY_LOGE(SPI_HAL_TAG, "The clock_speed_hz should less than %d", freq_limit);
         return ESP_ERR_NOT_SUPPORTED;
     }
@@ -264,7 +266,7 @@ void spi_hal_fetch_result(const spi_hal_context_t *hal)
     }
 }
 
-#ifdef SOC_SPI_SCT_SUPPORTED
+#ifdef SPI_LL_PERIPH_HAS_SCT
 /*------------------------------------------------------------------------------
  * Segmented-Configure-Transfer
 *----------------------------------------------------------------------------*/
@@ -294,4 +296,4 @@ void spi_hal_sct_format_conf_buffer(spi_hal_context_t *hal, const spi_hal_seg_co
 #endif
 }
 
-#endif  //#ifdef SOC_SPI_SCT_SUPPORTED
+#endif  //#ifdef SPI_LL_PERIPH_HAS_SCT

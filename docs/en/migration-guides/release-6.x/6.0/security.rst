@@ -6,7 +6,7 @@ Security
 Mbed TLS
 --------
 
-Starting from **ESP-IDF v6.0**, some already deprecated mbedtls header files like ``esp32/aes.h``, ``esp32/sha.h``, ``esp32s2/aes.h``, ``esp32s2/sha.h`` and ``esp32s2/gcm.h`` have been removed, instead, you should include ``aes/esp_aes.h``, ``sha/sha_core.h`` and ``aes/esp_aes_gcm.h`` respectively.
+Starting from **ESP-IDF v6.0**, some already deprecated mbedtls header files like ``esp32/aes.h``, ``esp32/sha.h``, ``esp32s2/aes.h``, ``esp32s2/sha.h`` and ``esp32s2/gcm.h`` have been removed. Please use ``aes/esp_aes.h``, ``sha/sha_core.h`` and ``aes/esp_aes_gcm.h`` instead.
 
 .. only:: SOC_SHA_SUPPORTED
 
@@ -32,7 +32,7 @@ ESP-IDF v6.0 updates to Mbed TLS v4.0, where **PSA Crypto is the primary cryptog
 - **Breaking change**: certificates/peers using elliptic curves of less than 250 bits (for example secp192r1/secp224r1) are no longer supported in certificates and in TLS.
 - **Note**:
 
-  - void relying on Mbed TLS private declarations (for example headers under ``mbedtls/private/`` or declarations enabled via ``MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS`` / ``MBEDTLS_ALLOW_PRIVATE_ACCESS``). Such private interfaces may change without notice.
+  - Avoid relying on Mbed TLS private declarations (for example headers under ``mbedtls/private/`` or declarations enabled via ``MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS`` / ``MBEDTLS_ALLOW_PRIVATE_ACCESS``). Such private interfaces may change without notice.
   - The PSA Crypto migration (TF-PSA-Crypto) can increase flash footprint, depending on the features enabled. As reference points:
 
     .. list-table::
@@ -59,6 +59,19 @@ ESP-IDF v6.0 updates to Mbed TLS v4.0, where **PSA Crypto is the primary cryptog
          - 826909
          - 41084
          - 4.97
+
+
+Default configuration changes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Note: The default Mbed TLS configuration in ESP-IDF v6.0 has been tightened for security and footprint:
+
+  - ``MBEDTLS_ARIA_C`` is disabled by default. Applications that rely on ARIA must explicitly enable it in ``menuconfig`` (Component config -> mbedTLS) or by customizing ``components/mbedtls/config/mbedtls_preset_default.conf``.
+  - Support for ``secp192r1`` is disabled by default, consistent with the removal of support for elliptic curves smaller than 250 bits in certificates and TLS. If an application still requires legacy curve support outside TLS/certificates, it must be enabled explicitly (for example by defining ``PSA_WANT_ECC_SECP_R1_192=1``) and validated for compatibility. Note: this legacy support may be disabled in the next minor ESP-IDF release.
+- ``MBEDTLS_THREADING_C`` is enabled by default. This provides thread-safety for the PSA Crypto key management API and ``psa_crypto_init()``. It is recommended to keep this configuration enabled when using PSA Crypto from multiple threads (for example, concurrent TLS connections, certificate operations, or any scenario where cryptographic operations may be invoked from different threads). Applications that only call PSA functions from a single thread are not affected by this change and can optionally disable threading support if desired.
+- ``MBEDTLS_THREADING_PTHREAD`` is enabled by default. This enables Mbed TLS threading support using pthread primitives.
+- ``MBEDTLS_THREADING_ALT`` is disabled by default. This disables Mbed TLS threading support using alternate threading primitives.
+
 
 References
 ^^^^^^^^^^
@@ -88,6 +101,28 @@ The following deprecated functions have been removed:
 
 Note that the new AES functions return error codes for better error handling, unlike the old void functions.
 
+.. only:: SOC_DIG_SIGN_SUPPORTED
+
+    Digital Signature (DS) Peripheral
+    ---------------------------------
+
+    The DS peripheral is now used via the **PSA Crypto RSA DS driver** instead of the legacy Mbed TLS RSA sign/decrypt alternates. The application-facing flow (obtain DS context from secure cert/NVS, pass to ESP-TLS or use for signing/decryption) is unchanged; only the internal implementation uses the PSA driver.
+
+    - **Breaking change**: The legacy DS integration has been removed and replaced by the PSA RSA DS driver.
+
+    - **Migration**:
+
+      * **For TLS (ESP-TLS):** Enable ``CONFIG_ESP_TLS_USE_DS_PERIPHERAL`` and pass ``esp_ds_data_ctx_t`` as ``ds_data`` in :cpp:type:`esp_tls_cfg_t`. See :ref:`digital-signature-with-esp-tls` in the :doc:`ESP-TLS documentation </api-reference/protocols/esp_tls>`.
+      * **For direct use (signing/decryption in application code):** Enable ``CONFIG_MBEDTLS_HARDWARE_RSA_DS_PERIPHERAL``, import ``esp_rsa_ds_opaque_key_t`` with ``psa_import_key()`` using ``PSA_KEY_LIFETIME_ESP_RSA_DS_VOLATILE``, then use ``psa_sign_hash()`` or ``psa_asymmetric_decrypt()``. See the :doc:`Digital Signature (DS) </api-reference/peripherals/ds>` documentation, section **Using DS with PSA Crypto**.
+
+.. only:: SOC_HMAC_SUPPORTED
+
+    HMAC Peripheral
+    ---------------
+
+    The HMAC peripheral is now used via the **PSA Crypto HMAC driver** instead of the legacy :cpp:func:`esp_hmac_calculate` API. The applications are expected to populate the :cpp:type:`esp_hmac_opaque_key_t` structure and import it via :cpp:func:`psa_import_key` API using the ``PSA_KEY_LIFETIME_ESP_HMAC`` lifetime attribute. Then, they can use the :cpp:func:`psa_mac_compute` API to compute HMAC.
+
+
 BluFi
 -----
 
@@ -102,8 +137,21 @@ BluFi (Wi-Fi provisioning over BLE) is affected by the Mbed TLS v4.x / PSA Crypt
   - Update the device firmware to ESP-IDF v6.0.
   - Update the BluFi client application to a version compatible with the updated BluFi protocol and security negotiation used by ESP-IDF v6.0.
 
+
 Bootloader Support
 ------------------
+
+**Deprecated APIs**
+
+The following function has been deprecated:
+
+- :cpp:func:`esp_flash_encryption_enabled` – Use :cpp:func:`esp_efuse_is_flash_encryption_enabled` instead. The component dependency has been changed from ``bootloader_support`` to ``efuse``.
+
+**Secure Boot ECDSA curve selection**
+
+- In ESP-IDF v6.0, secure boot ECDSA should use NISTP256/NISTP384.
+- Legacy NISTP192 support is deprecated and is only available when explicitly enabled via ``CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_192_BITS``.
+- Legacy NISTP192 support may be disabled in the next ESP-IDF release, so migration to NISTP256/NISTP384 is strongly recommended.
 
 **Removed Deprecated APIs**
 
@@ -117,3 +165,12 @@ The following deprecated functions have been removed:
     ---------------------
 
     - When NVS encryption is enabled on SoCs with the HMAC peripheral that have flash encryption enabled, the HMAC-based NVS encryption scheme is now selected as default instead of the flash encryption-based scheme. If your application previously used the flash encryption-based scheme, you need to manually configure the NVS encryption scheme to flash encryption from HMAC through ``menuconfig`` or your project's ``sdkconfig`` (i.e., setting ``CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC=y``).
+
+
+Mbed TLS v4.1 migration
+-----------------------
+
+Bootloader Support
+~~~~~~~~~~~~~~~~~~
+
+- Starting with Mbed TLS 4.1, legacy NISTP192 support has been removed.

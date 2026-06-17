@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,20 +59,28 @@ typedef enum {
  * @brief Type of key purpose
  */
 typedef enum {
-    ESP_EFUSE_KEY_PURPOSE_USER = 0,                         /**< User purposes (software-only use) */
-    ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY = 1,                    /**< ECDSA private key (Expected in little endian order)*/
-    ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 = 2,            /**< XTS_AES_256_KEY_1 (flash/PSRAM encryption) */
-    ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 = 3,            /**< XTS_AES_256_KEY_2 (flash/PSRAM encryption) */
-    ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY = 4,              /**< XTS_AES_128_KEY (flash/PSRAM encryption) */
-    ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL = 5,                /**< HMAC Downstream mode */
-    ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG = 6,               /**< JTAG soft enable key (uses HMAC Downstream mode) */
-    ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_DIGITAL_SIGNATURE = 7,  /**< Digital Signature peripheral key (uses HMAC Downstream mode) */
-    ESP_EFUSE_KEY_PURPOSE_HMAC_UP = 8,                      /**< HMAC Upstream mode */
-    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST0 = 9,          /**< SECURE_BOOT_DIGEST0 (Secure Boot key digest) */
-    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST1 = 10,         /**< SECURE_BOOT_DIGEST1 (Secure Boot key digest) */
-    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2 = 11,         /**< SECURE_BOOT_DIGEST2 (Secure Boot key digest) */
-    ESP_EFUSE_KEY_PURPOSE_KM_INIT_KEY = 12,                 /**< KM_INIT_KEY */
-    ESP_EFUSE_KEY_PURPOSE_MAX,                              /**< MAX PURPOSE */
+    ESP_EFUSE_KEY_PURPOSE_USER = 0,                             /**< User purposes (software-only use) */
+    ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY = 1,                        /**< ECDSA private key (P256) (Expected in little endian order)*/
+    ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P256 = ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY, /**< ECDSA private key (P256) (Expected in little endian order)*/
+    ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 = 2,                /**< XTS_AES_256 flash key 1 */
+    ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 = 3,                /**< XTS_AES_256 flash key 2 */
+    ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY = 4,                  /**< XTS_AES_128 flash key */
+    ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL = 5,                    /**< HMAC Downstream mode */
+    ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG = 6,                   /**< JTAG soft enable key (uses HMAC Downstream mode) */
+    ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_DIGITAL_SIGNATURE = 7,      /**< Digital Signature peripheral key (uses HMAC Downstream mode) */
+    ESP_EFUSE_KEY_PURPOSE_HMAC_UP = 8,                          /**< HMAC Upstream mode */
+    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST0 = 9,              /**< SECURE_BOOT_DIGEST0 (Secure Boot key digest) */
+    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST1 = 10,             /**< SECURE_BOOT_DIGEST1 (Secure Boot key digest) */
+    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2 = 11,             /**< SECURE_BOOT_DIGEST2 (Secure Boot key digest) */
+    ESP_EFUSE_KEY_PURPOSE_KM_INIT_KEY = 12,                     /**< KM_INIT_KEY */
+    ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_PSRAM_KEY_1 = 13,         /**< XTS_AES_256 PSRAM key 1 */
+    ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_PSRAM_KEY_2 = 14,         /**< XTS_AES_256 PSRAM key 2 */
+    ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_PSRAM_KEY = 15,           /**< XTS_AES_128 PSRAM key */
+    ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P192 = 16,                  /**< ECDSA private key P-192 */
+    ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_L = 17,                /**< ECDSA private key P-384 low part */
+    ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY_P384_H = 18,                /**< ECDSA private key P-384 high part */
+    ESP_EFUSE_KEY_PURPOSE_SDC_KEY_DIGEST = 19,                  /**< SDC key digest */
+    ESP_EFUSE_KEY_PURPOSE_MAX = 32,                             /**< MAX PURPOSE */
 } esp_efuse_purpose_t;
 
 #ifdef __cplusplus

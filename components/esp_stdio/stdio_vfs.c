@@ -1,34 +1,41 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "sdkconfig.h"
+#include <assert.h>
+#include <stdbool.h>
 #include <fcntl.h>
+#include <string.h>
 #include "esp_err.h"
+#include "esp_log.h"
 #include "esp_rom_sys.h"
 #include "esp_stdio.h"
+#include "esp_vfs.h"
 #include <sys/errno.h>
+
 #if CONFIG_VFS_SUPPORT_IO
 
 #if CONFIG_ESP_CONSOLE_USB_CDC
 #include "esp_vfs_cdcacm.h"
-#include "esp_private/usb_console.h"
-#endif
-#if CONFIG_ESP_CONSOLE_USB_CDC
 #include "esp_private/esp_vfs_cdcacm.h"
-#endif
+#endif // CONFIG_ESP_CONSOLE_USB_CDC
 
 #if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
 #include "driver/esp_private/usb_serial_jtag_vfs.h"
-#endif
+#include "driver/usb_serial_jtag_vfs.h"
+#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
+
 #if CONFIG_ESP_CONSOLE_UART
 #include "driver/esp_private/uart_vfs.h"
-#endif
+#include "driver/uart_vfs.h"
+#endif // CONFIG_ESP_CONSOLE_UART
 
 #include "esp_private/startup_internal.h"
 #include "esp_private/nullfs.h"
+#include <sys/lock.h>
 #endif
 
 #define STRINGIFY(s) STRINGIFY2(s)
@@ -42,167 +49,299 @@
  * while the secondary is only used for output.
  */
 
-typedef struct {
-    int fd_primary;
-    int fd_secondary;
-} vfs_console_context_t;
-
 #if CONFIG_VFS_SUPPORT_IO
 
-// Secondary register part.
-#if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
-const static esp_vfs_fs_ops_t *secondary_vfs = NULL;
-#endif // Secondary part
+typedef struct {
+    const esp_vfs_fs_ops_t *ops;  /* NULL = slot is free */
+    void *vfs_ctx;
+    const char *path;
+    int fd;  /* -1 if not opened (used by auxiliaries) */
+} mux_entry_t;
 
-const static esp_vfs_fs_ops_t *primary_vfs = NULL;
+/* Primary backend (all ops forwarded except open + write + fsync) */
+static mux_entry_t s_primary = { .fd = -1 };
 
-static vfs_console_context_t vfs_console = {0};
+/* Auxiliary sinks (write-only fan-out) */
+#define STDIO_MAX_AUXILIARY (CONFIG_ESP_STDIO_MAX_VFS_ENTRIES - 1)
+static mux_entry_t s_auxiliary[STDIO_MAX_AUXILIARY] = { [0 ... STDIO_MAX_AUXILIARY - 1] = { .fd = -1 } };
+static int s_open_count = 0;
+static _lock_t s_lock;
 
-static size_t s_open_count = 0;
+static const char *TAG = "esp_stdio";
 
-int console_open(const char * path, int flags, int mode)
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
+static const mux_entry_t *get_primary_termios_entry(int fd, const esp_vfs_termios_ops_t **out_ops)
 {
-    if (s_open_count > 0) {
-        // Underlying fd is already open, so just increment the open count
-        // and return the same fd
+    const mux_entry_t *entry = &s_primary;
+    assert(entry);
 
-        s_open_count++;
-        return 0;
+    const esp_vfs_termios_ops_t *termios = entry->ops->termios;
+    if (!termios) {
+        errno = ENOSYS;
+        return NULL;
     }
 
-// Primary port open
-#if CONFIG_ESP_CONSOLE_UART
-    vfs_console.fd_primary = open("/dev/uart/"STRINGIFY(CONFIG_ESP_CONSOLE_UART_NUM), flags, mode);
-#elif CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
-    vfs_console.fd_primary = open("/dev/usbserjtag", flags, mode);
-#elif CONFIG_ESP_CONSOLE_USB_CDC
-    vfs_console.fd_primary = open("/dev/cdcacm", flags, mode);
-#else
-    vfs_console.fd_primary = open("/dev/null", flags, mode);
-#endif
+    if (out_ops) {
+        *out_ops = termios;
+    }
 
-// Secondary port open
-#if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
-    vfs_console.fd_secondary = open("/dev/secondary", flags, mode);
-#endif
+    return entry;
+}
+#endif // CONFIG_VFS_SUPPORT_TERMIOS
 
-    s_open_count++;
-    return 0;
+static esp_err_t __attribute__((unused)) register_auxiliary(const esp_vfs_fs_ops_t *ops, void *ctx, const char *path)
+{
+    if (!ops || !path || !ops->write_p) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    _lock_acquire(&s_lock);
+    for (size_t i = 0; i < STDIO_MAX_AUXILIARY; i++) {
+        if (s_auxiliary[i].ops == NULL) {
+            s_auxiliary[i] = (mux_entry_t) {
+                .ops = ops,
+                .vfs_ctx = ctx,
+                .path = path,
+                .fd = -1,
+            };
+            _lock_release(&s_lock);
+            return ESP_OK;
+        }
+    }
+    _lock_release(&s_lock);
+    ESP_EARLY_LOGE(TAG, "Too many auxiliary sinks");
+    return ESP_ERR_NO_MEM;
 }
 
-ssize_t console_write(int fd, const void *data, size_t size)
+int console_open(__attribute__((unused)) void *ctx, const char * path, int flags, int mode)
 {
-    write(vfs_console.fd_primary, data, size);
-#if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
-    write(vfs_console.fd_secondary, data, size);
-#endif
-    return size;
-}
-
-int console_fstat(int fd, struct stat * st)
-{
-    return fstat(vfs_console.fd_primary, st);
-}
-
-int console_close(int fd)
-{
-    if (s_open_count == 0) {
-        errno = EBADF;
+    (void)path;
+    const mux_entry_t *entry = &s_primary;
+    if (!entry->ops || !entry->ops->open_p) {
+        errno = ENOSYS;
         return -1;
     }
 
-    s_open_count--;
-
-    // We don't actually close the underlying fd until the open count reaches 0
-    if (s_open_count > 0) {
-        return 0;
+    int local_fd = entry->ops->open_p(entry->vfs_ctx, entry->path, flags, mode);
+    if (local_fd < 0) {
+        return -1;
     }
 
-    // All function calls are to primary, except from write and close, which will be forwarded to both primary and secondary.
-    close(vfs_console.fd_primary);
-#if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
-    close(vfs_console.fd_secondary);
-#endif
+    /* Lazily open auxiliaries on first console open */
+    _lock_acquire(&s_lock);
+    if (s_open_count == 0) {
+        for (size_t i = 0; i < STDIO_MAX_AUXILIARY; i++) {
+            mux_entry_t *aux = &s_auxiliary[i];
+            if (aux->ops && aux->ops->open_p && aux->fd < 0) {
+                aux->fd = aux->ops->open_p(aux->vfs_ctx, aux->path, O_WRONLY, 0);
+            }
+        }
+    }
+    s_open_count++;
+    _lock_release(&s_lock);
+
+    return local_fd;
+}
+
+int console_close(__attribute__((unused)) void *ctx, int fd)
+{
+    const mux_entry_t *entry = &s_primary;
+    if (!entry->ops || !entry->ops->close_p) {
+        errno = ENOSYS;
+        return -1;
+    }
+
+    int ret = entry->ops->close_p(entry->vfs_ctx, fd);
+    if (ret != 0) {
+        return ret;
+    }
+
+    /* Close auxiliaries when last console fd is closed */
+    _lock_acquire(&s_lock);
+    if (s_open_count > 0) {
+        s_open_count--;
+    }
+    if (s_open_count == 0) {
+        for (size_t i = 0; i < STDIO_MAX_AUXILIARY; i++) {
+            mux_entry_t *aux = &s_auxiliary[i];
+            if (aux->ops && aux->ops->close_p && aux->fd >= 0) {
+                aux->ops->close_p(aux->vfs_ctx, aux->fd);
+                aux->fd = -1;
+            }
+        }
+    }
+    _lock_release(&s_lock);
+
     return 0;
 }
 
-ssize_t console_read(int fd, void * dst, size_t size)
+ssize_t console_write(__attribute__((unused)) void *ctx, int fd, const void *data, size_t size)
 {
-    return read(vfs_console.fd_primary, dst, size);
+    const mux_entry_t *primary = &s_primary;
+    ssize_t ret_val = primary->ops->write_p(primary->vfs_ctx, fd, data, size);
+
+    _lock_acquire(&s_lock);
+    for (size_t i = 0; i < STDIO_MAX_AUXILIARY; i++) {
+        const mux_entry_t *entry = &s_auxiliary[i];
+        if (entry->ops && entry->ops->write_p && entry->fd >= 0) {
+            (void) entry->ops->write_p(entry->vfs_ctx, entry->fd, data, size);
+        }
+    }
+    _lock_release(&s_lock);
+
+    return ret_val;
 }
 
-int console_fcntl(int fd, int cmd, int arg)
+int console_fstat(__attribute__((unused)) void *ctx, int fd, struct stat * st)
 {
-    return fcntl(vfs_console.fd_primary, cmd, arg);
+    const mux_entry_t *entry = &s_primary;
+    if (!entry->ops->fstat_p) {
+        errno = ENOSYS;
+        return -1;
+    }
+    return entry->ops->fstat_p(entry->vfs_ctx, fd, st);
 }
 
-int console_fsync(int fd)
+ssize_t console_read(__attribute__((unused)) void *ctx, int fd, void * dst, size_t size)
 {
-    const int ret_val = fsync(vfs_console.fd_primary);
-#if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
-    (void)fsync(vfs_console.fd_secondary);
-#endif
+    const mux_entry_t *entry = &s_primary;
+    if (!entry->ops->read_p) {
+        errno = ENOSYS;
+        return -1;
+    }
+    return entry->ops->read_p(entry->vfs_ctx, fd, dst, size);
+}
+
+int console_fcntl(__attribute__((unused)) void *ctx, int fd, int cmd, int arg)
+{
+    const mux_entry_t *entry = &s_primary;
+    if (!entry->ops->fcntl_p) {
+        errno = ENOSYS;
+        return -1;
+    }
+    return entry->ops->fcntl_p(entry->vfs_ctx, fd, cmd, arg);
+}
+
+int console_fsync(__attribute__((unused)) void *ctx, int fd)
+{
+    const mux_entry_t *primary = &s_primary;
+    if (!primary->ops->fsync_p) {
+        errno = ENOSYS;
+        return -1;
+    }
+
+    int ret_val = primary->ops->fsync_p(primary->vfs_ctx, fd);
+
+    _lock_acquire(&s_lock);
+    for (size_t i = 0; i < STDIO_MAX_AUXILIARY; i++) {
+        const mux_entry_t *entry = &s_auxiliary[i];
+        if (entry->ops && entry->ops->fsync_p && entry->fd >= 0) {
+            (void) entry->ops->fsync_p(entry->vfs_ctx, entry->fd);
+        }
+    }
+    _lock_release(&s_lock);
+
     return ret_val;
 }
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
-int console_access(const char *path, int amode)
+int console_access(__attribute__((unused)) void *ctx, const char *path, int amode)
 {
-    // currently only UART support DIR.
-    return access("/dev/uart/"STRINGIFY(CONFIG_ESP_CONSOLE_UART_NUM), amode);
+    const mux_entry_t *entry = &s_primary;
+    assert(entry);
+    if (!entry->ops->dir || !entry->ops->dir->access_p) {
+        errno = ENOSYS;
+        return -1;
+    }
+    (void) path;
+    return entry->ops->dir->access_p(entry->vfs_ctx, entry->path, amode);
 }
 #endif // CONFIG_VFS_SUPPORT_DIR
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
+
 static esp_err_t console_start_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
                                       esp_vfs_select_sem_t select_sem, void **end_select_args)
 {
-    // start_select is not guaranteed be implemented even though CONFIG_VFS_SUPPORT_SELECT is enabled in sdkconfig
-    if (primary_vfs->select->start_select) {
-        return primary_vfs->select->start_select(nfds, readfds, writefds, exceptfds, select_sem, end_select_args);
+    const mux_entry_t *entry = &s_primary;
+    if (!entry->ops || !entry->ops->select || !entry->ops->select->start_select) {
+        return ESP_ERR_NOT_SUPPORTED;
     }
-
-    return ESP_ERR_NOT_SUPPORTED;
+    return entry->ops->select->start_select(nfds, readfds, writefds, exceptfds, select_sem, end_select_args);
 }
 
-esp_err_t console_end_select(void *end_select_args)
+static esp_err_t console_end_select(void *end_select_args)
 {
-    // end_select is not guaranteed be implemented even though CONFIG_VFS_SUPPORT_SELECT is enabled in sdkconfig
-    if (primary_vfs->select->end_select) {
-        return primary_vfs->select->end_select(end_select_args);
+    const mux_entry_t *entry = &s_primary;
+    if (!entry->ops || !entry->ops->select || !entry->ops->select->end_select) {
+        return ESP_ERR_NOT_SUPPORTED;
     }
-
-    return ESP_ERR_NOT_SUPPORTED;
+    return entry->ops->select->end_select(end_select_args);
 }
 
 #endif // CONFIG_VFS_SUPPORT_SELECT
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
 
-int console_tcsetattr(int fd, int optional_actions, const struct termios *p)
+int console_tcsetattr(__attribute__((unused)) void *ctx, int fd, int optional_actions, const struct termios *p)
 {
-    return tcsetattr(vfs_console.fd_primary, optional_actions, p);
+    const esp_vfs_termios_ops_t *termios = NULL;
+    const mux_entry_t *entry = get_primary_termios_entry(fd, &termios);
+    if (!entry) {
+        return -1;
+    }
+    if (!termios->tcsetattr_p) {
+        errno = ENOSYS;
+        return -1;
+    }
+    return entry->ops->termios->tcsetattr_p(entry->vfs_ctx, fd, optional_actions, p);
 }
 
-int console_tcgetattr(int fd, struct termios *p)
+int console_tcgetattr(__attribute__((unused)) void *ctx, int fd, struct termios *p)
 {
-    return tcgetattr(vfs_console.fd_primary, p);
+    const esp_vfs_termios_ops_t *termios = NULL;
+    const mux_entry_t *entry = get_primary_termios_entry(fd, &termios);
+    if (!entry) {
+        return -1;
+    }
+    if (!termios->tcgetattr_p) {
+        errno = ENOSYS;
+        return -1;
+    }
+    return entry->ops->termios->tcgetattr_p(entry->vfs_ctx, fd, p);
 }
 
-int console_tcdrain(int fd)
+int console_tcdrain(__attribute__((unused)) void *ctx, int fd)
 {
-    return tcdrain(vfs_console.fd_primary);
+    const esp_vfs_termios_ops_t *termios = NULL;
+    const mux_entry_t *entry = get_primary_termios_entry(fd, &termios);
+    if (!entry) {
+        return -1;
+    }
+    if (!termios->tcdrain_p) {
+        errno = ENOSYS;
+        return -1;
+    }
+    return entry->ops->termios->tcdrain_p(entry->vfs_ctx, fd);
 }
 
-int console_tcflush(int fd, int select)
+int console_tcflush(__attribute__((unused)) void *ctx, int fd, int select)
 {
-    return tcflush(vfs_console.fd_primary, select);
+    const esp_vfs_termios_ops_t *termios = NULL;
+    const mux_entry_t *entry = get_primary_termios_entry(fd, &termios);
+    if (!entry) {
+        return -1;
+    }
+    if (!termios->tcflush_p) {
+        errno = ENOSYS;
+        return -1;
+    }
+    return entry->ops->termios->tcflush_p(entry->vfs_ctx, fd, select);
 }
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
 static const esp_vfs_dir_ops_t s_vfs_console_dir = {
-    .access = &console_access,
+    .access_p = &console_access,
 };
 #endif // CONFIG_VFS_SUPPORT_DIR
 
@@ -215,21 +354,21 @@ static const esp_vfs_select_ops_t s_vfs_console_select = {
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
 static const esp_vfs_termios_ops_t s_vfs_console_termios = {
-    .tcsetattr = &console_tcsetattr,
-    .tcgetattr = &console_tcgetattr,
-    .tcdrain = &console_tcdrain,
-    .tcflush = &console_tcflush,
+    .tcsetattr_p = &console_tcsetattr,
+    .tcgetattr_p = &console_tcgetattr,
+    .tcdrain_p = &console_tcdrain,
+    .tcflush_p = &console_tcflush,
 };
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 
 static const esp_vfs_fs_ops_t s_vfs_console = {
-    .write = &console_write,
-    .open = &console_open,
-    .fstat = &console_fstat,
-    .close = &console_close,
-    .read = &console_read,
-    .fcntl = &console_fcntl,
-    .fsync = &console_fsync,
+    .write_p = &console_write,
+    .open_p = &console_open,
+    .fstat_p = &console_fstat,
+    .close_p = &console_close,
+    .read_p = &console_read,
+    .fcntl_p = &console_fcntl,
+    .fsync_p = &console_fsync,
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
     .dir = &s_vfs_console_dir,
@@ -244,31 +383,55 @@ static const esp_vfs_fs_ops_t s_vfs_console = {
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 };
 
-static esp_err_t esp_vfs_dev_console_register(void)
-{
-    return esp_vfs_register_fs(ESP_VFS_DEV_CONSOLE, &s_vfs_console, ESP_VFS_FLAG_STATIC, NULL);
-}
-
 esp_err_t esp_stdio_register(void)
 {
-    esp_err_t err = ESP_OK;
+    _lock_init(&s_lock);
+
 // Primary vfs part.
 #if CONFIG_ESP_CONSOLE_UART
-    primary_vfs = esp_vfs_uart_get_vfs();
+    s_primary = (mux_entry_t) {
+        .ops = esp_vfs_uart_get_vfs(),
+        .vfs_ctx = NULL,
+        .path = "/" STRINGIFY(CONFIG_ESP_CONSOLE_UART_NUM),
+        .fd = -1,
+    };
 #elif CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
-    primary_vfs = esp_vfs_usb_serial_jtag_get_vfs();
+    s_primary = (mux_entry_t) {
+        .ops = esp_vfs_usb_serial_jtag_get_vfs(),
+        .vfs_ctx = NULL,
+        .path = "/",
+        .fd = -1,
+    };
 #elif CONFIG_ESP_CONSOLE_USB_CDC
-    primary_vfs = esp_vfs_cdcacm_get_vfs();
+    s_primary = (mux_entry_t) {
+        .ops = esp_vfs_cdcacm_get_vfs(),
+        .vfs_ctx = NULL,
+        .path = "/",
+        .fd = -1,
+    };
 #else
-    primary_vfs = esp_vfs_null_get_vfs();
+    s_primary = (mux_entry_t) {
+        .ops = esp_vfs_null_get_vfs(),
+        .vfs_ctx = NULL,
+        .path = "/",
+        .fd = -1,
+    };
 #endif
 
-// Secondary vfs part.
+    if (!s_primary.ops) {
+        ESP_EARLY_LOGE(TAG, "No primary console backend available");
+        return ESP_FAIL;
+    }
+
+// Auxiliary sinks (write-only fan-out).
 #if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
-    secondary_vfs = esp_vfs_usb_serial_jtag_get_vfs();
+    esp_err_t err = register_auxiliary(esp_vfs_usb_serial_jtag_get_vfs(), NULL, "/");
+    if (err != ESP_OK) {
+        return err;
+    }
 #endif
-    err = esp_vfs_dev_console_register();
-    return err;
+
+    return esp_vfs_register_fs(ESP_VFS_DEV_CONSOLE, &s_vfs_console, ESP_VFS_FLAG_STATIC | ESP_VFS_FLAG_CONTEXT_PTR, NULL);
 }
 
 ESP_SYSTEM_INIT_FN(init_vfs_console, CORE, BIT(0), 119)

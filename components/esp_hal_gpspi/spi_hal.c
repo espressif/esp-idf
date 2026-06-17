@@ -9,11 +9,12 @@
 #include "hal/spi_hal.h"
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
+#include "soc/spi_periph.h"
 
 void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id)
 {
     memset(hal, 0, sizeof(spi_hal_context_t));
-    spi_dev_t *hw = SPI_LL_GET_HW(host_id);
+    spi_dev_t *hw = spi_periph_signal[host_id].hw;
     hal->hw = hw;
     spi_ll_master_init(hw);
 
@@ -45,7 +46,7 @@ void spi_hal_deinit(spi_hal_context_t *hal)
     }
 }
 
-#ifdef SOC_SPI_SCT_SUPPORTED
+#ifdef SPI_LL_PERIPH_HAS_SCT
 void spi_hal_sct_init(spi_hal_context_t *hal)
 {
     spi_ll_conf_state_enable(hal->hw, true);
@@ -63,7 +64,7 @@ void spi_hal_sct_deinit(spi_hal_context_t *hal)
     spi_ll_clear_int_stat(hal->hw);
     spi_ll_enable_int(hal->hw); //recover trans_done intr
 }
-#endif  //#ifdef SOC_SPI_SCT_SUPPORTED
+#endif  //#ifdef SPI_LL_PERIPH_HAS_SCT
 
 int spi_hal_master_cal_clock(int fapb, int hz, int duty_cycle)
 {

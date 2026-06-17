@@ -1,11 +1,10 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
-#include <stdint.h>
 #include "soc/soc.h"
 #include "soc/efuse_defs.h"
 #ifdef __cplusplus
@@ -689,13 +688,20 @@ extern "C" {
 #define EFUSE_DBIAS_VOL_GAP_SIGN_M  (EFUSE_DBIAS_VOL_GAP_SIGN_V << EFUSE_DBIAS_VOL_GAP_SIGN_S)
 #define EFUSE_DBIAS_VOL_GAP_SIGN_V  0x00000001U
 #define EFUSE_DBIAS_VOL_GAP_SIGN_S  3
-/** EFUSE_MAC_RESERVED_2 : RO; bitpos: [17:4]; default: 0;
- *  Reserved.
+/** EFUSE_LSLP_HP_DBIAS : R; bitpos: [6:4]; default: 0;
+ *  LSLP_HP_DBIAS (available on Wafer v1.2 and BLK_VERSION >= 0.4)
  */
-#define EFUSE_MAC_RESERVED_2    0x00003FFFU
-#define EFUSE_MAC_RESERVED_2_M  (EFUSE_MAC_RESERVED_2_V << EFUSE_MAC_RESERVED_2_S)
-#define EFUSE_MAC_RESERVED_2_V  0x00003FFFU
-#define EFUSE_MAC_RESERVED_2_S  4
+#define EFUSE_LSLP_HP_DBIAS    0x00000007U
+#define EFUSE_LSLP_HP_DBIAS_M  (EFUSE_LSLP_HP_DBIAS_V << EFUSE_LSLP_HP_DBIAS_S)
+#define EFUSE_LSLP_HP_DBIAS_V  0x00000007U
+#define EFUSE_LSLP_HP_DBIAS_S  4
+/** EFUSE_RESERVED_1_103 : R; bitpos: [17:7]; default: 0;
+ *  reserved
+ */
+#define EFUSE_RESERVED_1_103    0x000007FFU
+#define EFUSE_RESERVED_1_103_M  (EFUSE_RESERVED_1_103_V << EFUSE_RESERVED_1_103_S)
+#define EFUSE_RESERVED_1_103_V  0x000007FFU
+#define EFUSE_RESERVED_1_103_S  7
 /** EFUSE_WAFER_VERSION_MINOR : RO; bitpos: [20:18]; default: 0;
  *  Stores the wafer version minor.
  */

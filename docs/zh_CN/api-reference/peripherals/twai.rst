@@ -168,6 +168,13 @@ TWAI 报文有多种类型，由报头指定。一个典型的数据帧报文主
 
 同样，驱动使用指针进行传递，因此需要在接收前配置 :cpp:member:`twai_frame_t::buffer` 的指针及其内存长度 :cpp:member:`twai_frame_t::buffer_len`
 
+报文时间戳
+----------
+
+TWAI 驱动支持为每个成功接收的报文创建一个 64 位的时间戳，在创建节点时配置 :cpp:member:`twai_onchip_node_config_t::timestamp_resolution_hz` 字段即可启用该功能，时间戳保存在接收报文的 :cpp:member:`twai_frame_t::header::timestamp` 字段中。
+
+节点时间继承自系统时间，即时间起点同为芯片上电启动时开始计时，期间不受驱动停止/启动/BUS_OFF 状态的影响。
+
 停止和删除节点
 --------------
 
@@ -326,6 +333,15 @@ TWAI控制器能够检测由于总线干扰产生的/损坏的不符合帧格式
 ----------
 
 当启用电源管理 :ref:`CONFIG_PM_ENABLE` 时，系统在进入睡眠模式前可能会调整或关闭时钟源，从而导致 TWAI 出错。为了防止这种情况发生，驱动内部使用电源锁管理。当调用 :cpp:func:`twai_node_enable` 函数后，该锁将被激活，确保系统不会进入睡眠模式，从而保持 TWAI 功能正常。如果需要降低功耗，可以调用 :cpp:func:`twai_node_disable` 函数来释放电源管理锁，使系统能够进入睡眠模式，睡眠期间 TWAI 控制器也将停止工作。
+
+.. only:: SOC_TWAI_SUPPORT_SLEEP_RETENTION
+
+    关于睡眠保留
+    ^^^^^^^^^^^^
+
+    {IDF_TARGET_NAME} 支持在 **Light Sleep** 期间将 TWAI 控制器断电以进一步降低功耗，并在唤醒后自动恢复。即程序不需要在 **Light Sleep** 唤醒后重新配置 TWAI。
+
+    启用选项 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`，并在初始化 TWAI 节点时，将 :cpp:member:`twai_onchip_node_config_t::flags::sleep_allow_pd` 设置为 ``true`` 即可启用该功能，否则 TWAI 控制器在 **Light Sleep** 期间将保持供电。它可以帮助降低轻度睡眠时的功耗，但需要花费一些额外的存储来保存寄存器的配置。
 
 关于 Cache 安全
 ---------------

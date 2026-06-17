@@ -58,8 +58,8 @@ extern "C" {
  * actually triggering the interrupt.
  */
 
- /* These functions are optimized and designed for internal usage.
-  * So, the API may differ from general ll layer pattern */
+/* These functions are optimized and designed for internal usage.
+ * So, the API may differ from general ll layer pattern */
 
 FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_monitor_enable(__attribute__((unused)) uint32_t core_id)
 {
@@ -133,7 +133,7 @@ FORCE_INLINE_ATTR void assist_debug_ll_reset_register(__attribute__((unused)) ui
 
 FORCE_INLINE_ATTR bool assist_debug_ll_is_debugger_active(void)
 {
-   return REG_GET_BIT(ASSIST_DEBUG_CORE_0_DEBUG_MODE_REG, ASSIST_DEBUG_CORE_0_DEBUG_MODULE_ACTIVE);
+    return REG_GET_BIT(ASSIST_DEBUG_CORE_0_DEBUG_MODE_REG, ASSIST_DEBUG_CORE_0_DEBUG_MODULE_ACTIVE);
 }
 
 #ifdef __cplusplus

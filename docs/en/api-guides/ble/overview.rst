@@ -13,7 +13,7 @@ This document provides an architecture overview of the Bluetooth Low Energy (Blu
 
     {IDF_TARGET_NAME} supports Bluetooth 5.0 (LE) and is certified for Bluetooth LE 5.4.
 
-.. only:: esp32c2 or esp32c6 or esp32h2 or esp32c5 or esp32c61
+.. only:: esp32c2 or esp32c6 or esp32h2 or esp32h21 or esp32c5 or esp32c61
 
     {IDF_TARGET_NAME} supports Bluetooth 5.0 (LE) and is certified for Bluetooth LE 5.3.
 
@@ -37,7 +37,7 @@ The Bluetooth LE stack in ESP-IDF is a layered architecture that enables Bluetoo
 
         {IDF_TARGET_NAME} Bluetooth LE Stack Architecture
 
-.. only:: esp32h2
+.. only:: esp32h2 or esp32h21
 
     .. figure:: ../../../_static/bluetooth-architecture-no-blufi.png
         :align: center
@@ -58,23 +58,31 @@ The table below shows whether the Bluetooth LE modules are supported in a specif
       - ESP-Bluedroid
       - ESP-NimBLE
       - ESP-BLE-MESH
+      - ESP-BLE-ISO
+      - ESP-BLE-AUDIO
       - BluFi
     * - ESP32
       - Y
       - Y
       - Y
       - Y
+      - \–
+      - \–
       - Y
     * - ESP32-S3
       - Y
       - Y
       - Y
       - Y
+      - \–
+      - \–
       - Y
     * - ESP32-C2
       - Y
       - Y
       - Y
+      - \–
+      - \–
       - \–
       - Y
     * - ESP32-C3
@@ -82,26 +90,44 @@ The table below shows whether the Bluetooth LE modules are supported in a specif
       - Y
       - Y
       - Y
+      - \–
+      - \–
       - Y
     * - ESP32-C5
       - Y
       - Y
       - Y
       - Y
+      - \–
+      - \–
       - Y
     * - ESP32-C6
       - Y
       - Y
       - Y
       - Y
+      - \–
+      - \–
       - Y
     * - ESP32-C61
       - Y
       - Y
       - Y
       - Y
+      - \–
+      - \–
       - Y
     * - ESP32-H2
+      - Y
+      - Y
+      - Y
+      - Y
+      - \–
+      - \–
+      - \–
+    * - ESP32-H4
+      - Y
+      - Y
       - Y
       - Y
       - Y

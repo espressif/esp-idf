@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -91,14 +91,7 @@ esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_source_t s
     uint32_t counter_src_hz = 0;
     int timer_id = timer->timer_id;
     int group_id = timer->group->group_id;
-    // TODO: [clk_tree] to use a generic clock enable/disable or acquire/release function for all clock source
-#if TIMER_LL_FUNC_CLOCK_SUPPORT_RC_FAST
-    if (src_clk == GPTIMER_CLK_SRC_RC_FAST) {
-        // RC_FAST clock is not enabled automatically on start up, we enable it here manually.
-        // Note there's a ref count in the enable/disable function, we must call them in pair in the driver.
-        periph_rtc_dig_clk8m_enable();
-    }
-#endif // TIMER_LL_FUNC_CLOCK_SUPPORT_RC_FAST
+    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(src_clk, true), TAG, "clock source enable failed");
     timer->clk_src = src_clk;
 
     // get clock source frequency
@@ -143,7 +136,7 @@ esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_source_t s
     // !!! HARDWARE SHARED RESOURCE !!!
     // on some ESP chip, different peripheral's clock source setting are mixed in the same register
     // so we need to make this done in an atomic way
-    GPTIMER_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         timer_ll_set_clock_source(group_id, timer_id, src_clk);
         timer_ll_enable_clock(group_id, timer_id, true);
     }

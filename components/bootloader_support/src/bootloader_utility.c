@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -393,7 +393,7 @@ int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
     ESP_LOGD(TAG, "otadata[1]: sequence values 0x%08"PRIx32, otadata[1].ota_seq);
 
 #ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
-    bool write_encrypted = esp_flash_encryption_enabled();
+    bool write_encrypted = esp_efuse_is_flash_encryption_enabled();
     for (int i = 0; i < 2; ++i) {
         if (otadata[i].ota_state == ESP_OTA_IMG_PENDING_VERIFY) {
             ESP_LOGD(TAG, "otadata[%d] is marking as ABORTED", i);
@@ -496,7 +496,7 @@ static void set_actual_ota_seq(const bootloader_state_t *bs, int index)
         otadata.ota_state = ESP_OTA_IMG_VALID;
         otadata.crc = bootloader_common_ota_select_crc(&otadata);
 
-        bool write_encrypted = esp_flash_encryption_enabled();
+        bool write_encrypted = esp_efuse_is_flash_encryption_enabled();
         write_otadata(&otadata, bs->ota_info.offset + FLASH_SECTOR_SIZE * 0, write_encrypted);
         ESP_LOGI(TAG, "Set actual ota_seq=%"PRIu32" in otadata[0]", otadata.ota_seq);
 #ifdef CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
@@ -684,7 +684,7 @@ static void load_image(const esp_image_metadata_t *image_data)
         return;
     }
 
-    if (!esp_secure_boot_enabled() || !esp_flash_encryption_enabled()) {
+    if (!esp_secure_boot_enabled() || !esp_efuse_is_flash_encryption_enabled()) {
         esp_efuse_batch_write_begin();
     }
 #endif // CONFIG_SECURE_BOOT_FLASH_ENC_KEYS_BURN_TOGETHER
@@ -777,7 +777,7 @@ static void load_image(const esp_image_metadata_t *image_data)
 #endif
 
 #ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
-    if (!flash_encryption_enabled && esp_flash_encryption_enabled()) {
+    if (!flash_encryption_enabled && esp_efuse_is_flash_encryption_enabled()) {
         /* Flash encryption was just enabled for the first time,
            so issue a system reset to ensure flash encryption
            cache resets properly */

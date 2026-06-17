@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -163,7 +163,9 @@ ble_spp_server_gap_event(struct ble_gap_event *event, void *arg)
         ble_spp_server_print_conn_desc(&event->disconnect.conn);
         MODLOG_DFLT(INFO, "\n");
 
-        conn_handle_subs[event->disconnect.conn.conn_handle] = false;
+        if (event->disconnect.conn.conn_handle <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS) {
+            conn_handle_subs[event->disconnect.conn.conn_handle] = false;
+        }
 
         /* Connection terminated; resume advertising. */
         ble_spp_server_advertise();
@@ -202,7 +204,9 @@ ble_spp_server_gap_event(struct ble_gap_event *event, void *arg)
                     event->subscribe.cur_notify,
                     event->subscribe.prev_indicate,
                     event->subscribe.cur_indicate);
-        conn_handle_subs[event->subscribe.conn_handle] = true;
+        if (event->subscribe.conn_handle <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS) {
+            conn_handle_subs[event->subscribe.conn_handle] = true;
+        }
         return 0;
 
     default:
@@ -328,9 +332,12 @@ gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *arg)
 int gatt_svr_init(void)
 {
     int rc = 0;
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     ble_svc_gap_init();
+#endif
+#if MYNEWT_VAL(BLE_GATTS)
     ble_svc_gatt_init();
-
+#endif
     rc = ble_gatts_count_cfg(new_ble_svc_gatt_defs);
 
     if (rc != 0) {
@@ -360,6 +367,10 @@ void ble_server_uart_task(void *pvParameters)
                 if (event.size) {
                     uint8_t *ntf;
                     ntf = (uint8_t *)malloc(sizeof(uint8_t) * event.size);
+                    if (ntf == NULL) {
+                        MODLOG_DFLT(ERROR, "malloc failed for UART data, size=%u", event.size);
+                        continue;
+                    }
                     memset(ntf, 0x00, event.size);
                     uart_read_bytes(UART_NUM_0, ntf, event.size, portMAX_DELAY);
 

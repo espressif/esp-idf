@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -311,14 +311,45 @@ typedef struct {
     volatile iomux_mspi_pin_psram_dqs_pin_reg_t dqs1;
 } iomux_mspi_pin_psram_pin_grp_reg_t;
 
+/**
+ * @brief Union type for Flash MSPI IOMUX pin registers
+ * All Flash register types share the same size (uint32_t) and have a 'val' member for atomic access
+ */
+typedef union {
+    iomux_mspi_pin_flash_cs_pin0_reg_t flash_cs;
+    iomux_mspi_pin_flash_q_pin0_reg_t flash_q;
+    iomux_mspi_pin_flash_wp_pin0_reg_t flash_wp;
+    iomux_mspi_pin_flash_hold_pin0_reg_t flash_hold;
+    iomux_mspi_pin_flash_ck_pin0_reg_t flash_ck;
+    iomux_mspi_pin_flash_d_pin0_reg_t flash_d;
+    uint32_t val;
+} iomux_mspi_pin_reg_union_t;
+
 typedef struct {
     volatile iomux_mspi_pin_clk_en0_reg_t clk_en0;
-    volatile iomux_mspi_pin_flash_cs_pin0_reg_t flash_cs_pin0;
-    volatile iomux_mspi_pin_flash_q_pin0_reg_t flash_q_pin0;
-    volatile iomux_mspi_pin_flash_wp_pin0_reg_t flash_wp_pin0;
-    volatile iomux_mspi_pin_flash_hold_pin0_reg_t flash_hold_pin0;
-    volatile iomux_mspi_pin_flash_ck_pin0_reg_t flash_ck_pin0;
-    volatile iomux_mspi_pin_flash_d_pin0_reg_t flash_d_pin0;
+    union {
+        struct {
+            volatile iomux_mspi_pin_flash_cs_pin0_reg_t flash_cs_pin0;
+            volatile iomux_mspi_pin_flash_q_pin0_reg_t flash_q_pin0;
+            volatile iomux_mspi_pin_flash_wp_pin0_reg_t flash_wp_pin0;
+            volatile iomux_mspi_pin_flash_hold_pin0_reg_t flash_hold_pin0;
+            volatile iomux_mspi_pin_flash_ck_pin0_reg_t flash_ck_pin0;
+            volatile iomux_mspi_pin_flash_d_pin0_reg_t flash_d_pin0;
+        };
+        /**
+         * @brief Flash pin register array for direct access by pin ID
+         * Array layout matches Flash pins in mspi_iomux_pin_t enumeration:
+         *   [0]: Flash CS pin
+         *   [1]: Flash Q pin
+         *   [2]: Flash WP pin
+         *   [3]: Flash HOLD pin
+         *   [4]: Flash CK pin
+         *   [5]: Flash D pin
+         */
+        struct {
+            volatile iomux_mspi_pin_reg_union_t flash_pin_regs[6];
+        };
+    };
     volatile iomux_mspi_pin_psram_pin_grp_reg_t psram_pin_group;
 } iomux_mspi_pin_dev_t;
 

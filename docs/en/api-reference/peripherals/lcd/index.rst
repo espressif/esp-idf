@@ -55,6 +55,15 @@ LCD Data Panel Operations
 * :cpp:func:`esp_lcd_panel_draw_bitmap` is the function which does the magic to flush the user draw buffer to the LCD screen, where the target draw window is configurable. Please note, this function expects that the draw buffer is a 1-D array and there's no stride in between each lines.
 * :cpp:func:`esp_lcd_panel_draw_bitmap_2d` is the function which does the magic to flush the user draw buffer to the LCD screen, where the source and target draw windows are configurable. Please note, the draw buffer can be a 2-D array or a 1-D array with no stride in between each lines.
 
+Advanced Frame Buffer Debugging
+-------------------------------
+
+For advanced debugging, ESP-IDF can load the ``idf-drivers-gdb`` Python package in a GDB session. This package provides the ``framebuffer_display`` command, which reads LCD frame buffer memory from the target and renders it on the host side.
+
+This is useful when the panel does not show the expected image and you need to check whether the frame buffer content is already wrong, or whether the problem is in the LCD interface timing, GPIO routing, panel initialization, or color format configuration.
+
+For installation steps, supported pixel formats, command syntax, examples, and troubleshooting tips, see the `idf-drivers-gdb package documentation <https://pypi.org/project/idf-drivers-gdb/>`__.
+
 .. _steps_add_manufacture_init:
 
 Steps to Add Manufacturer Specific Initialization

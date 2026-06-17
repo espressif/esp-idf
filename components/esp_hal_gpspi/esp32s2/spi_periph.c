@@ -65,7 +65,7 @@ const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM] = {
         .irq = ETS_SPI2_INTR_SOURCE,
         .irq_dma = ETS_SPI2_DMA_INTR_SOURCE,
         .hw = &GPSPI2,
-        .func = SPI2_FUNC_NUM,
+        .func = SPI2_FUNC_NUM_QUAD,
     }, {
         .spiclk_out = SPI3_CLK_OUT_MUX_IDX,
         .spiclk_in = SPI3_CLK_IN_IDX,

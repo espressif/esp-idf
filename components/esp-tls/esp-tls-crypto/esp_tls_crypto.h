@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,12 +22,9 @@ extern "C" {
  * @param[out]  output  calculated sha1 sum
  *
  * @return
- * mbedtls stack:-
- *              - MBEDTLS_ERR_SHA1_BAD_INPUT_DATA   on BAD INPUT.
- *              -  0 on success.
- * wolfssl stack:-
- *              - -1    on failure.
- *              -  0    on success.
+ *              -  0   if successful.
+ *              - -1   if error.
+ *              - MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED if SHA1 is not supported.
  */
 int esp_crypto_sha1(const unsigned char *input,
                     size_t ilen,
@@ -43,12 +40,8 @@ int esp_crypto_sha1(const unsigned char *input,
  * @param[in]   slen  src buffer len
  *
  * @return
- * mbedtls stack:-
  *               - MBEDTLS_ERR_BASE64_BUFFER_TOO_SMALL  if buffer is of insufficient size.
  *               -  0   if successful.
- * wolfssl stack:-
- *               - <0   on failure.
- *               -  0   if succcessful.
  */
 int esp_crypto_base64_encode(unsigned char *dst, size_t dlen,
                              size_t *olen, const unsigned char *src,

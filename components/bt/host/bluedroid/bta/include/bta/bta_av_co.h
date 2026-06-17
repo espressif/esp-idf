@@ -84,7 +84,7 @@ typedef struct {
 ** Returns          Stream codec and content protection capabilities info.
 **
 *******************************************************************************/
-extern BOOLEAN bta_av_co_audio_init(UINT8 *p_codec_type, UINT8 *p_codec_info,
+extern BOOLEAN bta_av_co_audio_init(UINT8 seid, UINT8 *p_codec_type, UINT8 *p_codec_info,
                                     UINT8 *p_num_protect, UINT8 *p_protect_info, UINT8 tsep);
 
 /*******************************************************************************

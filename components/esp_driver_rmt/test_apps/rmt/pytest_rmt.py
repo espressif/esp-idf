@@ -3,6 +3,7 @@
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
@@ -14,8 +15,38 @@ from pytest_embedded_idf.utils import idf_parametrize
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32', 'esp32s2', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32p4'], indirect=['target'])
+@idf_parametrize(
+    'target',
+    soc_filtered_targets('SOC_RMT_SUPPORTED == 1 and IDF_TARGET not in ["esp32c5", "esp32s3"]'),
+    indirect=['target'],
+)
 def test_rmt(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config, skip_autoflash',
+    [
+        ('virt_flash_enc', 'y'),
+    ],
+    indirect=True,
+)
+@idf_parametrize(
+    'target',
+    soc_filtered_targets('SOC_RMT_SUPPORTED == 1 and SOC_FLASH_ENC_SUPPORTED == 1 and IDF_TARGET not in ["esp32s3"]'),
+    indirect=['target'],
+)
+def test_rmt_with_virt_flash_enc(dut: Dut) -> None:
+    print(' - Erase flash')
+    dut.serial.erase_flash()
+
+    print(' - Start app (flash partition_table and app)')
+    dut.serial.write_flash_no_enc()
+    dut.expect('Loading virtual efuse blocks from real efuses')
+    dut.expect('Checking flash encryption...')
+    dut.expect('Generating new flash encryption key...')
+
     dut.run_all_single_board_cases()
 
 
@@ -33,7 +64,7 @@ def test_rmt_esp32c5(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.esp32c5_eco3
+@pytest.mark.esp32c5_rev1
 @pytest.mark.parametrize(
     'config',
     [
@@ -42,7 +73,7 @@ def test_rmt_esp32c5(dut: Dut) -> None:
     indirect=True,
 )
 @idf_parametrize('target', ['esp32c5'], indirect=['target'])
-def test_rmt_esp32c5_eco3(dut: Dut) -> None:
+def test_rmt_esp32c5_rev1(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
@@ -57,4 +88,26 @@ def test_rmt_esp32c5_eco3(dut: Dut) -> None:
 )
 @idf_parametrize('target', ['esp32s3'], indirect=['target'])
 def test_rmt_psram(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
+
+
+@pytest.mark.octal_psram
+@pytest.mark.parametrize(
+    'config, skip_autoflash',
+    [
+        ('virt_flash_enc', 'y'),
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32s3'], indirect=['target'])
+def test_rmt_psram_with_virt_flash_enc(dut: Dut) -> None:
+    print(' - Erase flash')
+    dut.serial.erase_flash()
+
+    print(' - Start app (flash partition_table and app)')
+    dut.serial.write_flash_no_enc()
+    dut.expect('Loading virtual efuse blocks from real efuses')
+    dut.expect('Checking flash encryption...')
+    dut.expect('Generating new flash encryption key...')
+
     dut.run_all_single_board_cases()

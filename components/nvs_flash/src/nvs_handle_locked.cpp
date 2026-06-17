@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,6 +53,11 @@ esp_err_t NVSHandleLocked::erase_item(const char* key) {
 esp_err_t NVSHandleLocked::erase_all() {
     Lock lock;
     return handle->erase_all();
+}
+
+esp_err_t NVSHandleLocked::purge_all() {
+    Lock lock;
+    return handle->purge_all();
 }
 
 esp_err_t NVSHandleLocked::commit() {

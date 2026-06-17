@@ -67,14 +67,17 @@ tBTA_STATUS BTA_AgEnable(tBTA_AG_PARSE_MODE parse_mode, tBTA_AG_CBACK *p_cback)
             return BTA_FAILURE;
         }
     }
-    /* register with BTA system manager */
-    bta_sys_register(BTA_ID_AG, &bta_ag_reg);
 
     if ((p_buf = (tBTA_AG_API_ENABLE *) osi_malloc(sizeof(tBTA_AG_API_ENABLE))) != NULL) {
+        /* register with BTA system manager */
+        bta_sys_register(BTA_ID_AG, &bta_ag_reg);
+
         p_buf->hdr.event = BTA_AG_API_ENABLE_EVT;
         p_buf->parse_mode = parse_mode;
         p_buf->p_cback = p_cback;
         bta_sys_sendmsg(p_buf);
+    } else {
+        return BTA_NO_RESOURCES;
     }
     return BTA_SUCCESS;
 }
@@ -121,7 +124,7 @@ void BTA_AgRegister(tBTA_SERVICE_MASK services, tBTA_SEC sec_mask,tBTA_AG_FEAT f
         p_buf->services = services;
         p_buf->app_id = app_id;
         for (i = 0; i < BTA_AG_NUM_IDX; i++) {
-            if(p_service_names[i]) {
+            if (p_service_names != NULL && p_service_names[i]) {
                 BCM_STRNCPY_S(p_buf->p_name[i], p_service_names[i], BTA_SERVICE_NAME_LEN);
                 p_buf->p_name[i][BTA_SERVICE_NAME_LEN] = '\0';
             } else {

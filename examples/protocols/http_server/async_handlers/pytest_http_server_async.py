@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import http.client
 import logging
@@ -10,6 +10,50 @@ from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
 
+def _connect_with_retry(
+    ip: str, port: int, timeout: int = 10, retries: int = 3, delay: float = 2
+) -> http.client.HTTPConnection:
+    """
+    Create an HTTP connection with retry logic.
+
+    On CI runners, the network path between the test host and the ESP32
+    board can be transiently unreliable right after the server starts,
+    causing sock.connect() to time out or get connection refused.
+    """
+    last_err: Exception = Exception()
+    for attempt in range(retries):
+        try:
+            conn = http.client.HTTPConnection(ip, port, timeout=timeout)
+            conn.connect()
+            return conn
+        except (TimeoutError, ConnectionRefusedError, OSError) as e:
+            last_err = e
+            logging.warning('HTTP connect attempt %d/%d to %s:%d failed: %s', attempt + 1, retries, ip, port, e)
+            try:
+                conn.close()
+            except Exception:
+                pass
+            if attempt < retries - 1:
+                time.sleep(delay)
+    raise last_err
+
+
+def _wait_for_server_ready(dut: Dut, port: int) -> str:
+    """Wait for the async handler server to be fully ready and return the IP."""
+    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+    logging.info(f'Got IP   : {got_ip}')
+    dut.expect('starting async req task worker', timeout=30)
+    dut.expect('starting async req task worker', timeout=30)
+    dut.expect(f"Starting server on port: '{port}'", timeout=30)
+    dut.expect('Registering URI handlers', timeout=30)
+
+    # Allow the server and network path to stabilize before sending requests
+    time.sleep(2)
+
+    logging.info(f'Connecting to server at {got_ip}:{port}')
+    return str(got_ip)
+
+
 @pytest.mark.ethernet
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_http_server_async_handler_multiple_long_requests(dut: Dut) -> None:
@@ -19,19 +63,11 @@ def test_http_server_async_handler_multiple_long_requests(dut: Dut) -> None:
     logging.info(f'http_server_bin_size : {bin_size // 1024}KB')
     logging.info('Waiting to connect with Ethernet')
 
-    # Parse IP address of Ethernet
-    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
-    got_port = 80  # Assuming the server is running on port 80
-    logging.info(f'Got IP   : {got_ip}')
-    dut.expect('starting async req task worker', timeout=30)
-    dut.expect('starting async req task worker', timeout=30)
-    dut.expect(f"Starting server on port: '{got_port}'", timeout=30)
-    dut.expect('Registering URI handlers', timeout=30)
-    logging.info(f'Connecting to server at {got_ip}:{got_port}')
+    got_ip = _wait_for_server_ready(dut, 80)
 
-    # Create two HTTP connections for long requests
-    conn_long1 = http.client.HTTPConnection(got_ip, got_port, timeout=30)
-    conn_long2 = http.client.HTTPConnection(got_ip, got_port, timeout=30)
+    # Create two HTTP connections with retry for transient network issues
+    conn_long1 = _connect_with_retry(got_ip, 80)
+    conn_long2 = _connect_with_retry(got_ip, 80)
 
     # Test first long URI with Host header and query param
     long_uri1 = '/long?param=async1'
@@ -74,20 +110,10 @@ def test_http_server_async_handler(dut: Dut) -> None:
     logging.info(f'http_server_bin_size : {bin_size // 1024}KB')
     logging.info('Waiting to connect with Ethernet')
 
-    # Parse IP address of Ethernet
-    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
-    got_port = 80  # Assuming the server is running on port 80
-    logging.info(f'Got IP   : {got_ip}')
-    dut.expect('starting async req task worker', timeout=30)
-    dut.expect('starting async req task worker', timeout=30)
-    dut.expect(f"Starting server on port: '{got_port}'", timeout=30)
-    dut.expect('Registering URI handlers', timeout=30)
-    logging.info(f'Connecting to server at {got_ip}:{got_port}')
+    got_ip = _wait_for_server_ready(dut, 80)
 
-    # Create HTTP connection
-    conn_long = http.client.HTTPConnection(got_ip, got_port, timeout=15)
-
-    # Test long URI
+    # Test long URI with retry
+    conn_long = _connect_with_retry(got_ip, 80, timeout=15)
     long_uri = '/long'
     logging.info(f'Sending request to long URI: {long_uri}')
     conn_long.request('GET', long_uri)
@@ -98,7 +124,7 @@ def test_http_server_async_handler(dut: Dut) -> None:
 
     # Test quick URI
     for i in range(3):
-        conn_quick = http.client.HTTPConnection(got_ip, got_port, timeout=15)
+        conn_quick = _connect_with_retry(got_ip, 80, timeout=15)
         quick_uri = '/quick'
         logging.info(f'Sending request to quick URI: {quick_uri}')
         conn_quick.request('GET', quick_uri)
@@ -128,18 +154,10 @@ def test_http_server_async_handler_same_session_sequential(dut: Dut) -> None:
     logging.info(f'http_server_bin_size : {bin_size // 1024}KB')
     logging.info('Waiting to connect with Ethernet')
 
-    # Parse IP address of Ethernet
-    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
-    got_port = 80  # Assuming the server is running on port 80
-    logging.info(f'Got IP   : {got_ip}')
-    dut.expect('starting async req task worker', timeout=30)
-    dut.expect('starting async req task worker', timeout=30)
-    dut.expect(f"Starting server on port: '{got_port}'", timeout=30)
-    dut.expect('Registering URI handlers', timeout=30)
-    logging.info(f'Connecting to server at {got_ip}:{got_port}')
+    got_ip = _wait_for_server_ready(dut, 80)
 
-    # Create HTTP connection for same session testing
-    conn = http.client.HTTPConnection(got_ip, got_port, timeout=70)  # Longer timeout for async
+    # Create HTTP connection with retry for same session testing
+    conn = _connect_with_retry(got_ip, 80, timeout=70)
 
     # Test 1: Send /long request (async, 60 seconds)
     logging.info('=== Test 1: Sending /long request (async) ===')
@@ -203,19 +221,11 @@ def test_http_server_async_handler_force_close_and_recovery(dut: Dut) -> None:
     logging.info(f'http_server_bin_size : {bin_size // 1024}KB')
     logging.info('Waiting to connect with Ethernet')
 
-    # Parse IP address of Ethernet
-    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
-    got_port = 80  # Assuming the server is running on port 80
-    logging.info(f'Got IP   : {got_ip}')
-    dut.expect('starting async req task worker', timeout=30)
-    dut.expect('starting async req task worker', timeout=30)
-    dut.expect(f"Starting server on port: '{got_port}'", timeout=30)
-    dut.expect('Registering URI handlers', timeout=30)
-    logging.info(f'Connecting to server at {got_ip}:{got_port}')
+    got_ip = _wait_for_server_ready(dut, 80)
 
     # Test 1: Send /long request and forcefully close connection
     logging.info('=== Test 1: Sending /long request and forcefully closing connection ===')
-    conn_force_close = http.client.HTTPConnection(got_ip, got_port, timeout=10)
+    conn_force_close = _connect_with_retry(got_ip, 80, timeout=10)
     conn_force_close.request('GET', '/long?test=force_close')
 
     # Verify request is received
@@ -239,7 +249,7 @@ def test_http_server_async_handler_force_close_and_recovery(dut: Dut) -> None:
 
     # Test 2: Verify server is still functional by sending another /long request
     logging.info('=== Test 2: Sending another /long request to verify server recovery ===')
-    conn_recovery = http.client.HTTPConnection(got_ip, got_port, timeout=70)
+    conn_recovery = _connect_with_retry(got_ip, 80, timeout=70)
     conn_recovery.request('GET', '/long?test=recovery')
 
     # Verify request is received
@@ -250,7 +260,7 @@ def test_http_server_async_handler_force_close_and_recovery(dut: Dut) -> None:
     logging.info('=== Test 3: Hitting /quick while /long is running ===')
     time.sleep(5)  # Let /long run for a bit
 
-    conn_quick = http.client.HTTPConnection(got_ip, got_port, timeout=10)
+    conn_quick = _connect_with_retry(got_ip, 80, timeout=10)
     conn_quick.request('GET', '/quick?test=concurrent')
     dut.expect('uri: /quick', timeout=30)
 

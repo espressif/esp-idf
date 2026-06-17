@@ -97,6 +97,9 @@ ESP 本地控制
 3. ``PROTOCOM_SEC0``: 指定以明文（无安全性）方式交换数据。
 4. ``PROTOCOM_SEC_CUSTOM``: 自定义安全需求。注意，使用这一选项时，必须提供 ``protocomm_security_t *`` 类型的 ``custom_handle``。
 
+.. warning::
+    强烈建议在生产部署中使用 ``PROTOCOM_SEC2``。``PROTOCOM_SEC0`` 不提供加密或身份验证，本地网络上的任何客户端都可以访问设备属性。``PROTOCOM_SEC1`` 的安全性弱于 ``PROTOCOM_SEC2``，不建议在新设计中使用。
+
 .. note::
     相应的安全方案需通过项目配置菜单启用。要了解详情，请参考 :doc:`Protocol Communication </api-reference/provisioning/protocomm>` 中关于启用 protocomm 安全版本的章节。
 

@@ -13,7 +13,6 @@
 
 #define FLASH_SECTOR_SIZE (4096)
 
-
 void efuse_hal_get_mac(uint8_t *mac)
 {
     *((uint32_t*)&mac[0]) = efuse_ll_get_mac0();
@@ -57,8 +56,6 @@ IRAM_ATTR bool efuse_hal_flash_encryption_enabled(void)
     }
     return enabled;
 }
-
-
 
 #if SOC_RECOVERY_BOOTLOADER_SUPPORTED
 uint32_t efuse_hal_get_recovery_bootloader_address(void)

@@ -1,4 +1,4 @@
-# ESP-IDF 项目路线图 2025
+# ESP-IDF 项目路线图 2026
 
 * [English Version](./ROADMAP.md)
 
@@ -12,28 +12,29 @@
 
 此外，ESP-IDF 各活跃分支的 Bugfix 版本发布也是我们项目的重中之重，着力提升已量产产品的稳定性和性能。通过及时解决问题，我们期待提升用户的整体体验，切实惠及使用乐鑫解决方案的客户。通过积极维护 ESP-IDF 的各活跃分支，我们践行了对宝贵的客户群提供可靠、高质量产品的承诺。
 
-以下是 ESP-IDF 项目在 2025 年计划实现的主要目标。
+以下是 ESP-IDF 项目在 2026 年计划实现的主要目标。
 
 * 新芯片支持
 
-	* 增加对 ESP32-C5 芯片的支持
-	* 增加对 ESP32-C61 芯片的支持
+	* 增加对 ESP32-H21 芯片的支持
+	* 增加对 ESP32-H4 芯片的支持
 
 * 发布更多的次要和主要版本
 
-	* 在 2025 年中发布 IDF v5.5 
-	* 在 2025 年底发布 IDF v6.0
+	* 在 2026 年第一季度发布 IDF v6.0
+	* 在 2026 年中发布 IDF v6.1 
+	* 在 2026 年底发布 IDF v6.2
 
 * 发布更多 bugfix 版本
 
-	* 在 2025 年 5 月底 IDF v5.0 停止维护之前，发布 IDF v5.0.8 和 IDF v5.0.9
-	* 在 2025 年 12 月底 IDF v5.1 停止维护之前，发布 IDF v5.1.6 和 IDF v5.1.7
-	* 在 release/5.2 分支和 release/5.3 分支进入维护周期之前，发布更多 bugfix 版本
-	* release/5.4 分支和 release/5.5 分支发布更多 bugfix 版本，使这两个分支更加稳定和产品化
+	* 在 2026 年 8 月底 IDF v5.2 停止维护之前，发布 IDF v5.2.7 和 IDF v5.2.8
+	* 在 2027 年 1 月底 IDF v5.3 停止维护之前，发布 IDF v5.3.5，v5.3.6 和 IDF v5.3.7
+	* 在 release/5.4 分支和 release/5.5 分支进入维护周期之前，发布更多 bugfix 版本
+	* release/6.0 分支和 release/6.1 分支发布更多 bugfix 版本，使这两个分支更加稳定和产品化
 
 * 重大变更
 
-	* 我们计划在 IDF v6.0 中将 MbedTLS 版本升级到 v4.x。另外，我们还会在升级中迁移到更新版的 PSA 加密 API，但请注意，这可能会导致应用程序端在使用加密 API 时出现一些非兼容性更新。
+	* ESP-IDF v6.0 正在升级至 MbedTLS v4.x 和新的 PSA 加密 API。由于该项工作仍在进行中，因此即将发布的 beta 版本或 RC 版本可能会包含对加密 API 的进一步更新或非兼容性更新。
 
 请注意，获取之前芯片的支持状态，请参阅 [ESP-IDF 发布和 SoC 兼容性](https://github.com/espressif/esp-idf/blob/master/README_CN.md#esp-idf-与乐鑫芯片)。
 
@@ -47,16 +48,16 @@ ESP-IDF 项目重视持续维护和更新，确保我们的客户始终处于技
 
 * 新芯片支持
 
-	* 在 ESP-IDF v5.4 中为 ESP32-C5 提供预览支持，并在 ESP-IDF v5.5 中为 ESP32-C5 提供完整支持，参考 [ESP32-C5 支持状态](https://github.com/espressif/esp-idf/issues/14021)
-	* 在 ESP-IDF v5.4 中增加对 ESP32-C61 早期样品的预览支持，并在 IDF v5.5 中增加对 ESP32-C61 量产版本的完整支持，参考 [ESP32-C61 支持状态](https://developer.espressif.com/pages/chip-support-status/esp32c61/#esp-idf)
+	* 当 ESP32-H21 芯片达到量产状态时，将增加对其量产版本的初步支持。支持进展将通过开发者门户中的[新芯片支持状态页面](https://developer.espressif.com/hardware/) 进行跟踪。
+	* 当 ESP32-H4 芯片达到量产状态时，将增加对其量产版本的初步支持。支持进展将通过开发者门户中的[新芯片支持状态页面](https://developer.espressif.com/hardware/) 进行跟踪。
 
 * Bugfix 版本发布
 
-	* 发布 Bugfix 版本 IDF v5.0.8 和 IDF v5.0.9，并在 2025 年 5 月底停止维护 ESP-IDF v5.0
-	* 发布 Bugfix 版本 IDF v5.1.6 和 IDF v5.1.7，并在 2025 年 12 月底停止维护 ESP-IDF v5.1
-	* 发布 Bugfix 版本 IDF v5.2.4，IDF v5.2.5 和 IDF v5.2.6，release/5.2 分支自 2025 年 2 月进入维护周期
-	* 发布 Bugfix 版本 IDF v5.3.3 和 IDF v5.3.4，release/5.3 分支自 2025 年 7 月进入维护周期
-	* release/5.4 分支发布更多 bugfix 版本，包括 IDF v5.4.1、IDF v5.4.2、IDF v5.4.3；release/5.5 分支发布更多 bugfix 版本，包括 IDF v5.5.1、IDF v5.5.2。通过发布这些 Bugfix 版本，使 release/5.4 分支和 release/5.5 分支更加稳定和产品化。
+	* 在 2026 年 8 月底 IDF v5.2 停止维护之前，发布 IDF v5.2.7 和 IDF v5.2.8
+	* 在 2027 年 1 月底 IDF v5.3 停止维护之前，发布 IDF v5.3.5，v5.3.6 和 IDF v5.3.7
+	* release/5.4 分支自 2026 年 1 月进入维护周期，在 2026 年发布 Bugfix 版本 IDF v5.4.4，IDF v5.4.5 
+	* release/5.5 分支自 2026 年 7 月进入维护周期，在 2026 年发布 Bugfix 版本 IDF v5.5.3，IDF v5.5.4，IDF v5.5.5，IDF v5.5.6 和 IDF v5.5.7
+	* release/6.0 分支和 release/6.1 分支发布更多 bugfix 版本，使 release/6.0 分支和 release/6.1 分支更加稳定和产品化。
 
 ## ESP-IDF 发布计划
 
@@ -70,61 +71,70 @@ ESP-IDF 项目重视持续维护和更新，确保我们的客户始终处于技
 timeline
 
         title ESP-IDF Major Releases
-        section 2025 Q1 <br> Major Release Planning
-          No version planned : N/A             
-        section 2025 Q2 <br> Major Release Planning
-          No version planned : N/A     
-        section 2025 Q3 <br> Major Release Planning
+        section 2026 Q1 <br> Major Release Planning
+          v6.0-beta2 : 2026/01/27   
+          v6.0-rc1 : 2026/02/22
+          v6.0: 2026/02/27     
+        section 2026 Q2 <br> Major Release Planning
           No version planned : N/A   
-        section 2025 Q4 <br> Major Release Planning
-          v6.0-beta1 : 2025/11/13
-          v6.0-beta2 : 2025/12/05
-          v6.0-RC1 : 2026/01/14   
-          v6.0-RC2 : 2026/02/06  
-          v6.0 : 2026/02/13   
+        section 2026 Q3 <br> Major Release Planning
+          No version planned : N/A      
+        section 2026 Q4 <br> Major Release Planning
+          No version planned : N/A 
 ```
   
-### ESP-IDF 次要版本发布
+### ESP-IDF Minor Releases
 
 ```mermaid
 timeline
 
         title ESP-IDF Minor Releases
-        section 2025 Q1 <br> Minor Release Planning
-          No version planned : N/A                
-        section 2025 Q2 <br> Minor Release Planning
-          v5.5-beta1 : 2025/05/14
-          v5.5-beta2 : 2025/06/04    
-        section 2025 Q3 <br> Minor Release Planning
-          v5.5-RC1 : 2025/07/07  
-          v5.5-RC2 : 2025/07/28  
-          v5.5 : 2025/08/04       
-        section 2025 Q4 <br> Minor Release Planning
+        section 2026 Q1 <br> Minor Release Planning
+          No version planned : N/A               
+        section 2026 Q2 <br> Minor Release Planning
+          v6.1-beta1 : 2026/06/11   
+          v6.1-rc1 : 2026/07/23
+          v6.1: 2026/07/31    
+        section 2026 Q3 <br> Minor Release Planning
           No version planned : N/A   
+        section 2026 Q4 <br> Minor Release Planning
+          v6.2-beta1 : 2026/11/11   
+          v6.2-rc1 : 2026/12/23
+          v6.2: 2026/12/31     
 ```
 
-### ESP-IDF Bugfix 版本发布
+### ESP-IDF Bugfix Releases
 
 ```mermaid
 timeline
 
         title ESP-IDF Bugfix Releases
-        section 2025 Q1 <br> Bugfix Release Planning
-          v5.0.8 : 2025/01/14
-          v5.1.6 : 2025/02/18
-          v5.2.4 : 2025/02/23
-          v5.2.5 : 2025/02/28         
-          v5.4.1 : 2025/03/27
-          v5.3.3 : 2025/04/04                
-        section 2025 Q2 <br> Bugfix Release Planning
-          v5.0.9 : 2025/05/16
-          v5.4.2 : 2025/06/30 
-        section 2025 Q3 <br> Bugfix Release Planning
-          v5.3.4 : 2025/08/03
-          v5.2.6 : 2025/09/04
-          v5.5.1 : 2025/09/11   
-          v5.4.3 : 2025/10/08
-        section 2025 Q4 <br> Bugfix Release Planning
-          v5.5.2 : 2025/11/12
-          v5.1.7 : 2026/01/06   
+        section 2026 Q1 <br> Bugfix Release Planning
+          v5.5.3 : 2026/02/13   
+          v5.3.5 : 2026/03/09
+          v6.0.1 : 2026/04/10
+          v5.4.4 : 2026/04/03                  
+        section 2026 Q2 <br> Bugfix Release Planning
+          v5.2.7 : 2026/04/28
+          v5.5.4 : 2026/05/08
+          v6.0.2 : 2026/06/04
+          v5.3.6 : 2026/07/02    
+```
+
+ ```mermaid
+timeline
+
+        section 2026 Q3 <br> Bugfix Release Planning
+          v5.5.5 : 2026/07/30
+          v5.2.8 : 2026/08/17
+          v6.1.1 : 2026/09/03   
+          v6.0.3 : 2026/09/10
+          v5.4.5 : 2026/09/28
+        section 2026 Q4 <br> Bugfix Release Planning
+          v5.5.6 : 2026/10/08
+          v6.1.2 : 2026/10/22
+          v6.0.4 : 2026/11/18
+          v6.1.3 : 2026/12/16         
+          v5.5.7 : 2027/01/11
+          v5.3.7 : 2027/01/18   
 ```

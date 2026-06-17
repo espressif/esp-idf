@@ -5,3 +5,6 @@ components/esp_partition/test_apps:
     - if: IDF_TARGET in ["esp32", "esp32c3"]
       temporary: false
       reason: sufficient to test on one Xtensa and one RISC-V target
+  depends_components:
+    - esp_partition
+    - esp_blockdev

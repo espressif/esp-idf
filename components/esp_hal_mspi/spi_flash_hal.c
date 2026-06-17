@@ -13,6 +13,7 @@
 #include "soc/soc_caps.h"
 #include "hal/gpio_caps.h"    //for GPIO_CAPS_GET(MATRIX_DELAY_NS)
 #include "hal/spi_flash_hal.h"
+#include "hal/spi_ll.h"
 #include "hal/assert.h"
 #include "hal/log.h"
 #include "hal/spi_flash_types.h"
@@ -101,7 +102,7 @@ static inline int extra_dummy_under_timing_tuning(const spi_flash_hal_config_t *
 
 esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_hal_config_t *cfg)
 {
-    if (cfg->cs_num >= SOC_SPI_PERIPH_CS_NUM(cfg->host_id)) {
+    if (cfg->cs_num >= SPI_LL_PERIPH_CS_NUM(cfg->host_id)) {
         return ESP_ERR_INVALID_ARG;
     }
 

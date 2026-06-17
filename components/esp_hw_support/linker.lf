@@ -37,18 +37,22 @@ entries:
         rtc_sleep:rtc_sleep_pd (noflash)
     if IDF_TARGET_ESP32S3 = y || IDF_TARGET_ESP32C2 = y || IDF_TARGET_ESP32C3 = y:
         rtc_sleep:rtc_sleep_pu (noflash)
-    if SOC_PMU_SUPPORTED = y && SOC_LIGHT_SLEEP_SUPPORTED = y:
-        pmu_sleep (noflash)
-        sleep_mspi (noflash)
+    sleep_cache (noflash)
+    if SOC_PMU_SUPPORTED = y:
         if SPIRAM_FLASH_LOAD_TO_PSRAM = y:
             pmu_init (noflash)
             pmu_param (noflash)
-        elif PM_SLP_IRAM_OPT = y && IDF_TARGET_ESP32P4 != y:
-            pmu_param:get_act_lp_dbias (noflash)
-            if IDF_TARGET_ESP32H4 = y:
-                pmu_param:get_act_hp_drvb (noflash)
-            else:
-                pmu_param:get_act_hp_dbias (noflash)
+        if SOC_LIGHT_SLEEP_SUPPORTED = y:
+            pmu_sleep (noflash)
+            if SOC_PM_SLEEP_CLK_ICG_USE_REGDMA = y && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP != y:
+                pmu_sleep_clock_icg:pmu_sleep_clock_icg_config (noflash)
+            sleep_mspi (noflash)
+            if PM_SLP_IRAM_OPT = y && IDF_TARGET_ESP32S31 != y:
+                pmu_param:get_act_lp_dbias (noflash)
+                if IDF_TARGET_ESP32H4 || IDF_TARGET_ESP32H21 = y:
+                    pmu_param:get_act_hp_drvb (noflash)
+                else:
+                    pmu_param:get_act_hp_dbias (noflash)
     if SOC_PMU_PVT_SUPPORTED = y && ESP_ENABLE_PVT = y:
         pmu_pvt (noflash)
     if PM_SLP_IRAM_OPT = y && SOC_USB_SERIAL_JTAG_SUPPORTED = y:
@@ -69,12 +73,7 @@ entries:
         periph_ctrl: wifi_module_enable (noflash)
         periph_ctrl: wifi_module_disable (noflash)
     if ESP_REGI2C_CTRL_FUNC_IN_IRAM = y:
-        regi2c_ctrl:regi2c_ctrl_read_reg (noflash)
-        regi2c_ctrl:regi2c_ctrl_read_reg_mask (noflash)
-        regi2c_ctrl:regi2c_ctrl_write_reg (noflash)
-        regi2c_ctrl:regi2c_ctrl_write_reg_mask (noflash)
-        regi2c_ctrl:regi2c_enter_critical (noflash)
-        regi2c_ctrl:regi2c_exit_critical (noflash)
+        regi2c_ctrl (noflash)
     if SOC_SYSTIMER_SUPPORTED = y:
         systimer (noflash)
     if SOC_ADC_SHARED_POWER = y:
@@ -87,6 +86,20 @@ entries:
         sleep_modes: esp_sleep_enable_vbat_under_volt_wakeup (noflash)
         sleep_modes: esp_sleep_sub_mode_config (noflash)
         sleep_modes: esp_sleep_sub_mode_force_disable (noflash)
+    if (SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP = n || SOC_GPIO_NEED_SOFT_ISOLATE_DURING_PD = y):
+        esp_gpio_reserve (noflash)
+    if SOC_PM_MODEM_RETENTION_BY_REGDMA = y && ESP_PHY_MAC_BB_PD = y:
+        sleep_retention:sleep_retention_find_link_by_id (noflash)
+        regdma_link:regdma_find_link_by_id (noflash)
+        regdma_link:regdma_link_get_next (noflash)
+        regdma_link:regdma_link_get_next_continuous_wrapper (noflash)
+        regdma_link:regdma_link_get_next_addr_map_wrapper (noflash)
+        regdma_link:regdma_link_get_next_write_wait_wrapper (noflash)
+        regdma_link:regdma_link_get_next_branch_continuous_wrapper (noflash)
+        regdma_link:regdma_link_get_next_branch_addr_map_wrapper (noflash)
+        regdma_link:regdma_link_get_next_branch_write_wait_wrapper (noflash)
+        regdma_link:regdma_link_set_write_wait_content (noflash)
+        regdma_link:regdma_link_get_instance (noflash)
 
 [mapping:hal_gpio_pm]
 archive: libesp_hal_gpio.a
@@ -104,3 +117,7 @@ archive: libesp_hal_ana_conv.a
 entries:
     if PM_SLP_IRAM_OPT = y && SOC_TEMP_SENSOR_SUPPORTED = y:
         temperature_sensor_periph:temperature_sensor_attributes (noflash)
+        if SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION = y:
+            temperature_sensor_hal: dac_offset_regi2c (noflash)
+            temperature_sensor_hal: temperature_sensor_hal_i2c_saradc_reg_backup (noflash)
+            temperature_sensor_hal: temperature_sensor_hal_i2c_saradc_reg_restore (noflash)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,8 @@
 #include "nvs_partition_manager.hpp"
 #include "esp_partition.h"
 #include <functional>
+#include <cmath>
+#include <limits>
 #include "nvs_handle_simple.hpp"
 #include "nvs_memory_management.hpp"
 #include "esp_err.h"
@@ -381,6 +383,20 @@ extern "C" esp_err_t nvs_erase_all(nvs_handle_t c_handle)
     return handle->erase_all();
 }
 
+extern "C" esp_err_t nvs_purge_all(nvs_handle_t c_handle)
+{
+    Lock lock;
+    ESP_LOGD(TAG, "%s", __func__);
+    NVSHandleSimple *handle;
+    auto err = nvs_find_ns_handle(c_handle, &handle);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    return handle->purge_all();
+}
+
+
 template<typename T>
 static esp_err_t nvs_set(nvs_handle_t c_handle, const char* key, T value)
 {
@@ -433,6 +449,41 @@ extern "C" esp_err_t nvs_set_i64 (nvs_handle_t handle, const char* key, int64_t 
 extern "C" esp_err_t nvs_set_u64 (nvs_handle_t handle, const char* key, uint64_t value)
 {
     return nvs_set(handle, key, value);
+}
+
+static_assert(std::numeric_limits<float>::is_iec559, "float must conform to IEEE 754");
+static_assert(sizeof(float) == 4, "float must be 4 bytes");
+static_assert(std::numeric_limits<double>::is_iec559, "double must conform to IEEE 754");
+static_assert(sizeof(double) == 8, "double must be 8 bytes");
+
+extern "C" esp_err_t nvs_set_float (nvs_handle_t c_handle, const char* key, float value)
+{
+    if (std::isnan(value)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    Lock lock;
+    ESP_LOGD(TAG, "%s %s %f", __func__, key, static_cast<double>(value));
+    NVSHandleSimple *handle;
+    auto err = nvs_find_ns_handle(c_handle, &handle);
+    if (err != ESP_OK) {
+        return err;
+    }
+    return handle->set_item(key, value);
+}
+
+extern "C" esp_err_t nvs_set_double (nvs_handle_t c_handle, const char* key, double value)
+{
+    if (std::isnan(value)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    Lock lock;
+    ESP_LOGD(TAG, "%s %s %f", __func__, key, value);
+    NVSHandleSimple *handle;
+    auto err = nvs_find_ns_handle(c_handle, &handle);
+    if (err != ESP_OK) {
+        return err;
+    }
+    return handle->set_item(key, value);
 }
 
 extern "C" esp_err_t nvs_commit(nvs_handle_t c_handle)
@@ -521,6 +572,16 @@ extern "C" esp_err_t nvs_get_i64 (nvs_handle_t c_handle, const char* key, int64_
 }
 
 extern "C" esp_err_t nvs_get_u64 (nvs_handle_t c_handle, const char* key, uint64_t* out_value)
+{
+    return nvs_get(c_handle, key, out_value);
+}
+
+extern "C" esp_err_t nvs_get_float (nvs_handle_t c_handle, const char* key, float* out_value)
+{
+    return nvs_get(c_handle, key, out_value);
+}
+
+extern "C" esp_err_t nvs_get_double (nvs_handle_t c_handle, const char* key, double* out_value)
 {
     return nvs_get(c_handle, key, out_value);
 }

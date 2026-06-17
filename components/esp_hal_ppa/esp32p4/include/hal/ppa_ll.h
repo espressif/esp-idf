@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef enum {
+    PPA_LL_MEM_LP_MODE_SHUT_DOWN,     // memory will be powered down during low power stage
+} ppa_ll_mem_lp_mode_t;
 
 /**
  * @brief Enumeration of PPA SRM macro block size options
@@ -80,6 +84,48 @@ static inline void ppa_ll_reset_register(void)
         (void)__DECLARE_RCC_ATOMIC_ENV; \
         ppa_ll_reset_register(__VA_ARGS__); \
     } while(0)
+
+/**
+ * @brief Force power on the PPA memory block, regardless of the outside PMU logic
+ *
+ * @param dev Peripheral instance address
+ */
+static inline void ppa_ll_mem_force_power_on(ppa_dev_t *dev)
+{
+    (void)dev;
+}
+
+/**
+ * @brief Force the PPA memory block into low power mode, regardless of the outside PMU logic
+ *
+ * @param dev Peripheral instance address
+ */
+static inline void ppa_ll_mem_force_low_power(ppa_dev_t *dev)
+{
+    (void)dev;
+}
+
+/**
+ * @brief Power control the PPA memory block by the outside PMU logic
+ *
+ * @param dev Peripheral instance address
+ */
+static inline void ppa_ll_mem_power_by_pmu(ppa_dev_t *dev)
+{
+    (void)dev;
+}
+
+/**
+ * @brief Set low power mode for PPA memory block
+ *
+ * @param dev Peripheral instance address
+ * @param mode PPA memory low power mode in low power stage
+ */
+static inline void ppa_ll_mem_set_low_power_mode(ppa_dev_t *dev, ppa_ll_mem_lp_mode_t mode)
+{
+    (void)dev;
+    HAL_ASSERT(mode == PPA_LL_MEM_LP_MODE_SHUT_DOWN);
+}
 
 /**
  * @brief Configure the RGB888 to GRAY8 color conversion coefficients for SRM and Blending (excluding Fill)
@@ -1110,6 +1156,7 @@ static inline void ppa_ll_blend_configure_filling_block(ppa_dev_t *dev, ppa_fill
         fill_color_data = ((yuv_data->y) << 24) | ((yuv_data->v) << 16) | ((yuv_data->y) << 8) | (yuv_data->u);
         break;
     }
+    // Non-typical YUV420, U and V components have to be the same value
     // case PPA_FILL_COLOR_MODE_YUV420: {
     //     color_macroblock_yuv_data_t *yuv_data = (color_macroblock_yuv_data_t *)data;
     //     if (yuv_data->u != yuv_data->v) {

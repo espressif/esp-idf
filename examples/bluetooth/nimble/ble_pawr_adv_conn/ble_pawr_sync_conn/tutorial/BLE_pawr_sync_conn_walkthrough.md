@@ -112,18 +112,26 @@ esp_err_t esp_nimble_init(void)
 
 ### Start Scanning
 
-Configures a passive extended scan to detect periodic advertisers:
+Configures a passive extended scan to detect periodic advertisers. The address type is determined dynamically using `ble_hs_id_infer_auto()`:
 ```c
     memset(&disc_params, 0, sizeof(disc_params));
     disc_params.itvl = BLE_GAP_SCAN_ITVL_MS(600);
     disc_params.window = BLE_GAP_SCAN_ITVL_MS(300);
     disc_params.passive = 1;
 
-    rc = ble_gap_ext_disc(BLE_OWN_ADDR_PUBLIC, 0, 0, 1, 0, 0,  NULL, &disc_params,
+    uint8_t own_addr_type;
+    int rc_addr = ble_hs_id_infer_auto(0, &own_addr_type);
+    if (rc_addr != 0) {
+        ESP_LOGE(TAG, "error determining address type; rc=%d\n", rc_addr);
+        return;
+    }
+
+    rc = ble_gap_ext_disc(own_addr_type, 0, 0, 1, 0, 0,  NULL, &disc_params,
                           gap_event_cb, NULL);
 ```
 
-- gap_event_cb: Processes discovery events (EXT_DISC) to find our target.`
+- `ble_hs_id_infer_auto()`: Dynamically determines the best address type to use instead of hardcoding `BLE_OWN_ADDR_PUBLIC`.
+- gap_event_cb: Processes discovery events (EXT_DISC) to find our target.
 
 ## Create Periodic Sync
 
@@ -153,13 +161,13 @@ static int create_periodic_sync(struct ble_gap_ext_disc_desc *disc) {
 After sync establishment, sync to configurable subevents:
 
 ```c
-// Choose subevents to listen to
-uint8_t subevents[] = {0, 1, 2, 3, 4};
+// choose subevents in range 0 to (num_subevents - 1)
+uint8_t subevents[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 int result = ble_gap_periodic_adv_sync_subev(
     event->periodic_sync.sync_handle, 0, sizeof(subevents), subevents);
 ```
 
-The subevents sync selection depends on the subevent number of the Periodic Advertising device.
+The subevents sync selection depends on the subevent number of the Periodic Advertising device. In this example, all 10 subevents are synced.
 
 ## Sending Response Data
 
@@ -187,9 +195,22 @@ case BLE_GAP_EVENT_PERIODIC_REPORT:
         // create a special data for checking manually in ADV side
 
         sub_data_pattern[0] = event->periodic_report.subevent;
-        rc = ble_hs_id_copy_addr(BLE_ADDR_PUBLIC, device_addr, NULL);
+        uint8_t addr_type;
+        rc = ble_hs_id_infer_auto(0, &addr_type);
+        if (rc != 0) {
+            ESP_LOGE(TAG, "Failed to infer address type; rc=%d", rc);
+            os_mbuf_free_chain(data);
+            return 0;
+        }
+        rc = ble_hs_id_copy_addr(addr_type, device_addr, NULL);
+        if (rc != 0) {
+            ESP_LOGE(TAG, "Failed to copy address; rc=%d", rc);
+            os_mbuf_free_chain(data);
+            return 0;
+        }
         sub_data_pattern[1] = param.response_slot;
         memcpy(&sub_data_pattern[2],device_addr,BLE_DEV_ADDR_LEN);
+        sub_data_pattern[8] = addr_type;
 
         os_mbuf_append(data, sub_data_pattern, BLE_PAWR_RSP_DATA_LEN);
 
@@ -197,7 +218,9 @@ case BLE_GAP_EVENT_PERIODIC_REPORT:
 ```
 - os_msys_get_pkthdr: Allocates memory for the response.
 
-- Payload layout: [subevent, 6-byte address, slot index].
+- The device address is obtained using `ble_hs_id_infer_auto()` to dynamically determine the correct address type, followed by `ble_hs_id_copy_addr()` to copy the address. Return values are checked to prevent sending uninitialized data. This ensures compatibility across all ESP32 variants.
+
+- Payload layout: [subevent, slot index, 6-byte address, address type].
 
 - ble_gap_periodic_adv_set_response_data: Transmits response in the next slot.
 
@@ -236,6 +259,26 @@ gap_event_cb() covers:
 
 - CONNECT/DISCONNECT → Handle connection lifecycle.
 
+
+## Sync Callback
+
+When the BLE host and controller are synced, the `on_sync` callback is invoked. It ensures a valid identity address is set before starting the scan:
+
+```c
+static void
+on_sync(void)
+{
+    int rc;
+
+    /* Make sure we have proper identity address set (public preferred) */
+    rc = ble_hs_util_ensure_addr(0);
+    assert(rc == 0);
+
+    start_scan();
+}
+```
+
+- `ble_hs_util_ensure_addr(0)`: Ensures the device has a valid identity address configured (prefers public address).
 
 ## Host Task
 ```c

@@ -4,6 +4,10 @@ entries:
     if ANA_CMPR_CTRL_FUNC_IN_IRAM = y:
         ana_cmpr: ana_cmpr_set_internal_reference (noflash)
         ana_cmpr: ana_cmpr_set_debounce (noflash)
-        ana_cmpr: ana_cmpr_set_cross_type (noflash)
+        ana_cmpr: ana_cmpr_set_src_chan_cross_type (noflash)
+        ana_cmpr: ana_cmpr_trigger_scan (noflash)
+        ana_cmpr: _ana_cmpr_refresh_masks (noflash)
+        ana_cmpr: _ana_cmpr_build_intr_mask (noflash)
+        ana_cmpr: _ana_cmpr_build_scan_mask (noflash)
     if ANA_CMPR_ISR_HANDLER_IN_IRAM = y:
         ana_cmpr: ana_cmpr_default_intr_handler (noflash)

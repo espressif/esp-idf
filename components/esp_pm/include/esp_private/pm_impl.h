@@ -140,15 +140,6 @@ esp_err_t esp_pm_register_skip_light_sleep_callback(skip_light_sleep_cb_t cb);
   */
 esp_err_t esp_pm_unregister_skip_light_sleep_callback(skip_light_sleep_cb_t cb);
 
-
-/**
- * @brief Initialize flash frequency limit
- *
- * This function initializes the flash frequency limit.
- * @note This function is only available when CONFIG_PM_WORKAROUND_FREQ_LIMIT_ENABLED is enabled.
- */
-void esp_pm_flash_freq_limit_init(void);
-
 #ifdef CONFIG_PM_PROFILING
 #define WITH_PROFILING
 #include "esp_timer.h"

@@ -326,7 +326,7 @@ Next, we want the device to be connectable, so we need to modify the advertising
     static void start_advertising(void) {
         ...
 
-        /* Set non-connetable and general discoverable mode to be a beacon */
+        /* Undirected connectable and general discoverable advertising */
         adv_params.conn_mode = BLE_GAP_CONN_MODE_UND;
         adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
 

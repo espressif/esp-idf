@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -636,6 +636,7 @@ esp_err_t esp_srp_get_session_key(esp_srp_handle_t *hd, char *bytes_A, int len_A
 
     char *bytes_S;
     int len_S;
+    psa_hash_operation_t hash_op = PSA_HASH_OPERATION_INIT;
 
     u = vu = avu = S = NULL;
     bytes_S = NULL;
@@ -651,8 +652,35 @@ esp_err_t esp_srp_get_session_key(esp_srp_handle_t *hd, char *bytes_A, int len_A
     if (! hd->A) {
         goto error;
     }
+
+    /* RFC 5054 Section 2.5.4: abort if A % N == 0
+     * This prevents an attacker from sending A=0 (or A=k*N) which would
+     * force the shared secret S to zero, yielding a deterministic session
+     * key regardless of the password. */
+    esp_mpi_t *a_mod_n = esp_mpi_new();
+    if (!a_mod_n) {
+        goto error;
+    }
+    if (esp_mpi_a_mod_b(a_mod_n, hd->A, hd->n) != 0) {
+        esp_mpi_free(a_mod_n);
+        ESP_LOGE(TAG, "Failed to compute A mod N");
+        goto error;
+    }
+    int a_mod_n_is_zero = (esp_mpi_cmp_int(a_mod_n, 0) == 0);
+    esp_mpi_free(a_mod_n);
+    if (a_mod_n_is_zero) {
+        ESP_LOGE(TAG, "Rejected client public key: A mod N == 0 (RFC 5054 Section 2.5.4)");
+        ret = ESP_ERR_INVALID_ARG;
+        goto error;
+    }
+
     u = calculate_u(hd, bytes_A, len_A);
     if (! u) {
+        goto error;
+    }
+    if (esp_mpi_cmp_int(u, 0) == 0) {
+        ESP_LOGE(TAG, "Rejected SRP scrambling parameter: u == 0 (RFC 5054 Section 2.5.3)");
+        ret = ESP_ERR_INVALID_ARG;
         goto error;
     }
     hexdump_mpi("u", u);
@@ -676,7 +704,6 @@ esp_err_t esp_srp_get_session_key(esp_srp_handle_t *hd, char *bytes_A, int len_A
         goto error;
     }
 
-    psa_hash_operation_t hash_op = PSA_HASH_OPERATION_INIT;
     psa_status_t status = psa_hash_setup(&hash_op, PSA_ALG_SHA_512);
     ESP_GOTO_ON_FALSE(status == PSA_SUCCESS, ESP_FAIL, error, TAG, "Failed to setup hash operation: %d", status);
     psa_hash_update(&hash_op, (unsigned char *)bytes_S, len_S);
@@ -774,10 +801,10 @@ esp_err_t esp_srp_exchange_proofs(esp_srp_handle_t *hd, char *username, uint16_t
                       "Hash operation failed: status=%d, hash_len=%d", status, hash_len);
     int pad_len = hd->len_n - hd->len_g;
     s = calloc(pad_len, sizeof(char));
-    ESP_RETURN_ON_FALSE(s, ESP_ERR_NO_MEM, TAG, "Failed to allocate memory");
+    ESP_GOTO_ON_FALSE(s, ESP_ERR_NO_MEM, error, TAG, "Failed to allocate memory");
 
     status = psa_hash_setup(&hash_op, PSA_ALG_SHA_512);
-    ESP_RETURN_ON_FALSE(status == PSA_SUCCESS, ESP_FAIL, TAG, "Failed to setup hash operation: %d", status);
+    ESP_GOTO_ON_FALSE(status == PSA_SUCCESS, ESP_FAIL, error, TAG, "Failed to setup hash operation: %d", status);
 
     psa_hash_update(&hash_op, (unsigned char *)s, pad_len);
     psa_hash_update(&hash_op, (unsigned char *)hd->bytes_g, hd->len_g);
@@ -790,7 +817,7 @@ esp_err_t esp_srp_exchange_proofs(esp_srp_handle_t *hd, char *username, uint16_t
 
     unsigned char digest[SHA512_HASH_SZ];
     status = psa_hash_setup(&hash_op, PSA_ALG_SHA_512);
-    ESP_RETURN_ON_FALSE(status == PSA_SUCCESS, ESP_FAIL, TAG, "Failed to setup hash operation: %d", status);
+    ESP_GOTO_ON_FALSE(status == PSA_SUCCESS, ESP_FAIL, error, TAG, "Failed to setup hash operation: %d", status);
 
     psa_hash_update(&hash_op, hash_n_xor_g, SHA512_HASH_SZ);
     psa_hash_update(&hash_op, hash_I, SHA512_HASH_SZ);
@@ -808,7 +835,7 @@ esp_err_t esp_srp_exchange_proofs(esp_srp_handle_t *hd, char *username, uint16_t
 
     /* M is now validated, let's proceed to H(AMK) */
     status = psa_hash_setup(&hash_op, PSA_ALG_SHA_512);
-    ESP_RETURN_ON_FALSE(status == PSA_SUCCESS, ESP_FAIL, TAG, "Failed to setup hash operation: %d", status);
+    ESP_GOTO_ON_FALSE(status == PSA_SUCCESS, ESP_FAIL, error, TAG, "Failed to setup hash operation: %d", status);
 
     psa_hash_update(&hash_op, (unsigned char *)hd->bytes_A, hd->len_A);
     psa_hash_update(&hash_op, digest, SHA512_HASH_SZ);

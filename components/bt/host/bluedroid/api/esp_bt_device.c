@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,9 +16,7 @@
 
 esp_err_t esp_bt_dev_register_callback(esp_bt_dev_cb_t callback)
 {
-    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
-        return ESP_ERR_INVALID_STATE;
-    }
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (callback == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -31,7 +29,7 @@ esp_err_t esp_bt_dev_register_callback(esp_bt_dev_cb_t callback)
 const uint8_t *esp_bt_dev_get_address(void)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
-	return NULL;
+        return NULL;
     }
     return controller_get_interface()->get_address()->address;
 }
@@ -59,6 +57,8 @@ esp_err_t esp_bt_dev_coex_status_config(esp_bt_dev_coex_type_t type, esp_bt_dev_
 
 esp_err_t esp_bt_config_file_path_get(char *file_path)
 {
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
     return btc_config_file_path_get(file_path);
 }
 

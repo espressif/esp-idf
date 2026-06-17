@@ -46,6 +46,8 @@ The work flow of the example is then as follows:
 
 To run this example, it's recommended that you have either an official ESP32 Ethernet development board - [ESP32-Ethernet-Kit](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/get-started-ethernet-kit.html), or 3rd party ESP32 board as long as it's integrated with a supported Ethernet PHY chips and connected with supported SPI Ethernet modules (for example `DM9051`, `W5500` or `KSZ8851SNL`). Or ESP32(S/C series) board without internal Ethernet interface but connected to multiple SPI Ethernet modules. Note that it is recommended to use multiple SPI Ethernet modules of the same type rather than combination of internal EMAC and SPI module since you don't need to take care of load balancing (internal EMAC has much higher bandwidth than SPI Ethernet modules).
 
+The example will also work on the [ESP32-P4-Function-EV-Board](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32p4/esp32-p4-function-ev-board/index.html). It has an internal Ethernet interface, with WiFi provided by the onboard ESP32-C6 using the [ESP-Hosted](https://components.espressif.com/components/espressif/esp_hosted/) component.
+
 ### Pin Assignment
 
 See common pin assignments for [Ethernet examples](../../ethernet/README.md#common-pin-assignments).

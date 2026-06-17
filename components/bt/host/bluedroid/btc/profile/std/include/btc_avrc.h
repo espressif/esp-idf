@@ -151,7 +151,7 @@ typedef enum {
         BTC_TRACE_DEBUG("## %s ##", __FUNCTION__); \
         if (btc_rc_cb.rc_connected == FALSE) { \
             BTC_TRACE_WARNING("Function %s() called when RC is not connected", __FUNCTION__); \
-        return ESP_ERR_INVALID_STATE; \
+            return BT_STATUS_FAIL; \
         } \
     } while (0)
 

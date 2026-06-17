@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -11,8 +11,8 @@
 extern "C" {
 #endif
 
-typedef volatile struct sens_dev_s {
-    union {
+typedef struct sens_dev_t {
+    volatile union {
         struct {
             uint32_t sar1_clk_div:    8;                    /*clock divider*/
             uint32_t reserved8:      10;
@@ -25,8 +25,8 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_reader1_ctrl;
-    uint32_t sar_reader1_status;                            /**/
-    union {
+    volatile uint32_t sar_reader1_status;                            /**/
+    volatile union {
         struct {
             uint32_t reserved0:              22;
             uint32_t rtc_saradc_reset:        1;
@@ -38,7 +38,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_meas1_ctrl1;
-    union {
+    volatile union {
         struct {
             uint32_t meas1_data_sar:   16;                  /*SAR ADC1 data*/
             uint32_t meas1_done_sar:    1;                  /*SAR ADC1 conversion done indication*/
@@ -49,22 +49,22 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_meas1_ctrl2;
-    union {
+    volatile union {
         struct {
             uint32_t reserved0:     31;
             uint32_t sar1_dig_force: 1;                     /*1: SAR ADC1 controlled by DIG ADC1 CTRL*/
         };
         uint32_t val;
     } sar_meas1_mux;
-    uint32_t sar_atten1;                                    /*2-bit attenuation for each pad*/
-    union {
+    volatile uint32_t sar_atten1;                                    /*2-bit attenuation for each pad*/
+    volatile union {
         struct {
             uint32_t sar_amp_wait1:16;
             uint32_t sar_amp_wait2:16;
         };
         uint32_t val;
     } sar_amp_ctrl1;
-    union {
+    volatile union {
         struct {
             uint32_t sar1_dac_xpd_fsm_idle:      1;
             uint32_t xpd_sar_amp_fsm_idle:       1;
@@ -78,7 +78,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_amp_ctrl2;
-    union {
+    volatile union {
         struct {
             uint32_t sar1_dac_xpd_fsm:      4;
             uint32_t xpd_sar_amp_fsm:       4;
@@ -91,7 +91,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_amp_ctrl3;
-    union {
+    volatile union {
         struct {
             uint32_t sar2_clk_div:        8;                /*clock divider*/
             uint32_t reserved8:           8;
@@ -105,8 +105,8 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_reader2_ctrl;
-    uint32_t sar_reader2_status;                            /**/
-    union {
+    volatile uint32_t sar_reader2_status;                            /**/
+    volatile union {
         struct {
             uint32_t sar2_cntl_state:   3;                  /*saradc2_cntl_fsm*/
             uint32_t sar2_pwdet_cal_en: 1;                  /*rtc control pwdet enable*/
@@ -119,7 +119,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_meas2_ctrl1;
-    union {
+    volatile union {
         struct {
             uint32_t meas2_data_sar:   16;                  /*SAR ADC2 data*/
             uint32_t meas2_done_sar:    1;                  /*SAR ADC2 conversion done indication*/
@@ -130,7 +130,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_meas2_ctrl2;
-    union {
+    volatile union {
         struct {
             uint32_t reserved0:     28;
             uint32_t sar2_pwdet_cct: 3;                     /*SAR2_PWDET_CCT*/
@@ -138,8 +138,8 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_meas2_mux;
-    uint32_t sar_atten2;                                    /*2-bit attenuation for each pad*/
-    union {
+    volatile uint32_t sar_atten2;                                    /*2-bit attenuation for each pad*/
+    volatile union {
         struct {
             uint32_t reserved0:    29;
             uint32_t force_xpd_sar: 2;
@@ -147,7 +147,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_power_xpd_sar;
-    union {
+    volatile union {
         struct {
             uint32_t i2c_slave_addr1:   11;
             uint32_t i2c_slave_addr0:   11;
@@ -156,7 +156,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_slave_addr1;
-    union {
+    volatile union {
         struct {
             uint32_t i2c_slave_addr3:11;
             uint32_t i2c_slave_addr2:11;
@@ -164,7 +164,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_slave_addr2;
-    union {
+    volatile union {
         struct {
             uint32_t i2c_slave_addr5:11;
             uint32_t i2c_slave_addr4:11;
@@ -172,7 +172,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_slave_addr3;
-    union {
+    volatile union {
         struct {
             uint32_t i2c_slave_addr7:11;
             uint32_t i2c_slave_addr6:11;
@@ -180,7 +180,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_slave_addr4;
-    union {
+    volatile union {
         struct {
             uint32_t tsens_out:            8;               /*temperature sensor data out*/
             uint32_t tsens_ready:          1;               /*indicate temperature sensor out ready*/
@@ -195,7 +195,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_tctrl;
-    union {
+    volatile union {
         struct {
             uint32_t tsens_xpd_wait:  12;
             uint32_t tsens_xpd_force:  2;
@@ -206,7 +206,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_tctrl2;
-    union {
+    volatile union {
         struct {
             uint32_t sar_i2c_ctrl:       28;                /*I2C control data*/
             uint32_t sar_i2c_start:       1;                /*start I2C*/
@@ -215,7 +215,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_i2c_ctrl;
-    union {
+    volatile union {
         struct {
             uint32_t touch_outen:        15;                /*touch controller output enable*/
             uint32_t touch_status_clr:    1;                /*clear all touch active status*/
@@ -228,7 +228,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_touch_conf;
-    union {
+    volatile union {
         struct {
             uint32_t thresh:       22;                      /*Finger threshold for touch pad 1*/
             uint32_t reserved22:   10;
@@ -250,7 +250,7 @@ typedef volatile struct sens_dev_s {
     uint32_t reserved_c8;
     uint32_t reserved_cc;
     uint32_t reserved_d0;
-    union {
+    volatile union {
         struct {
             uint32_t touch_pad_active: 15;                  /*touch active status*/
             uint32_t touch_channel_clr:15;                  /*Clear touch channel*/
@@ -259,7 +259,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_touch_chn_st;
-    union {
+    volatile union {
         struct {
             uint32_t touch_denoise_data:22;                 /*the counter for touch pad 0*/
             uint32_t touch_scan_curr:    4;
@@ -267,7 +267,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_touch_status0;
-    union {
+    volatile union {
         struct {
             uint32_t touch_pad_data: 22;
             uint32_t reserved22:          7;
@@ -275,7 +275,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_touch_status[14];
-    union {
+    volatile union {
         struct {
             uint32_t touch_slp_data:    22;
             uint32_t reserved22:         7;
@@ -283,7 +283,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_touch_slp_status;
-    union {
+    volatile union {
         struct {
             uint32_t touch_approach_pad2_cnt: 8;
             uint32_t touch_approach_pad1_cnt: 8;
@@ -292,7 +292,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_touch_appr_status;
-    union {
+    volatile union {
         struct {
             uint32_t sw_fstep:          16;                 /*frequency step for CW generator*/
             uint32_t sw_tone_en:         1;                 /*1: enable CW generator*/
@@ -307,7 +307,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_dac_ctrl1;
-    union {
+    volatile union {
         struct {
             uint32_t dac_dc1:    8;                         /*DC offset for DAC1 CW generator*/
             uint32_t dac_dc2:    8;                         /*DC offset for DAC2 CW generator*/
@@ -321,7 +321,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_dac_ctrl2;
-    union {
+    volatile union {
         struct {
             uint32_t reserved0:        25;
             uint32_t dbg_trigger:       1;                  /*trigger cocpu debug registers*/
@@ -334,7 +334,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_cocpu_state;
-    union {
+    volatile union {
         struct {
             uint32_t touch_done:                   1;       /*int from touch done*/
             uint32_t touch_inactive:               1;       /*int from touch inactive*/
@@ -349,7 +349,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_cocpu_int_raw;
-    union {
+    volatile union {
         struct {
             uint32_t touch_done:                   1;
             uint32_t touch_inactive:               1;
@@ -364,7 +364,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_cocpu_int_ena;
-    union {
+    volatile union {
         struct {
             uint32_t touch_done:                  1;
             uint32_t touch_inactive:              1;
@@ -379,7 +379,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_cocpu_int_st;
-    union {
+    volatile union {
         struct {
             uint32_t touch_done:                   1;
             uint32_t touch_inactive:               1;
@@ -394,7 +394,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_cocpu_int_clr;
-    union {
+    volatile union {
         struct {
             uint32_t pc:            13;                     /*cocpu Program counter*/
             uint32_t mem_vld:        1;                     /*cocpu mem valid output*/
@@ -404,7 +404,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_cocpu_debug;
-    union {
+    volatile union {
         struct {
             uint32_t reserved0:       28;
             uint32_t xpd_hall:         1;                   /*Power on hall sensor and connect to VP and VN*/
@@ -414,8 +414,8 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_hall_ctrl;
-    uint32_t sar_nouse;                                     /**/
-    union {
+    volatile uint32_t sar_nouse;                                     /**/
+    volatile union {
         struct {
             uint32_t reserved0:        30;
             uint32_t iomux_reset:       1;
@@ -423,7 +423,7 @@ typedef volatile struct sens_dev_s {
         };
         uint32_t val;
     } sar_io_mux_conf;
-    union {
+    volatile union {
         struct {
             uint32_t sar_date:  28;
             uint32_t reserved28: 4;

@@ -15,7 +15,7 @@ menu "Example Configuration"
 
     choice
         prompt "Select MIPI LCD model"
-        default EXAMPLE_LCD_EK79007_SUPPORT
+        default EXAMPLE_LCD_USE_EK79007
         help
             Select LCD controller model.
 

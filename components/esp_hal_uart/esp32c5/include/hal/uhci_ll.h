@@ -14,6 +14,7 @@
 #include "soc/pcr_struct.h"
 #include "hal/misc.h"
 
+#define UHCI_LL_NUM (1UL)
 #define UHCI_LL_GET_HW(num) (((num) == 0) ? (&UHCI) : (NULL))
 #define UHCI_LL_MAX_RECEIVE_PACKET_THRESHOLD  (8192)
 

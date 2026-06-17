@@ -13,6 +13,7 @@ const gdma_signal_conn_t gdma_periph_signals = {
                 [0]  = {
                     .rx_irq_id = ETS_DMA_CH0_INTR_SOURCE,
                     .tx_irq_id = ETS_DMA_CH0_INTR_SOURCE,
+                    .name = "gdma_g0p0",
                 },
             }
         }

@@ -11,6 +11,8 @@
 /* Power Control Service UUIDs */
 #define BLE_UUID_POWER_CONTROL_SERVICE_VAL   0xFF01
 
+#define BLE_UUID_POWER_LEVEL_CHAR_UUID   0xFF02
+
 /* Attributes State Machine */
 enum {
     IDX_POWER_CONTROL_SVC,

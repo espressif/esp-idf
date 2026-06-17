@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,17 +10,15 @@
 #include "driver/lp_io.h"
 #include "hal/rtc_io_types.h"
 #include "include/lp_core_spi.h"
-#include "soc/lp_spi_struct.h"
 #include "soc/lp_gpio_sig_map.h"
-#include "soc/lpperi_struct.h"
+#include "hal/lp_spi_ll.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "hal/spi_ll.h"
 
 static const char *LP_SPI_TAG = "lp_spi";
 
-/* Use the LP SPI register structure to access peripheral registers */
-lp_spi_dev_t *lp_spi_dev = &LP_SPI;
+static lp_spi_ll_dev_t *lp_spi_dev = LP_SPI_LL_GET_HW();
 
 static esp_err_t lp_spi_config_io(gpio_num_t pin, rtc_gpio_mode_t direction, uint32_t out_pad_idx, uint32_t in_pad_idx)
 {
@@ -34,12 +32,9 @@ static esp_err_t lp_spi_config_io(gpio_num_t pin, rtc_gpio_mode_t direction, uin
     /* Initialize LP_IO */
     ESP_RETURN_ON_ERROR(rtc_gpio_init(pin), LP_SPI_TAG, "LP IO Init failed for GPIO %d", pin);
 
-    /* Set LP_IO direction */
-    ESP_RETURN_ON_ERROR(rtc_gpio_set_direction(pin, direction), LP_SPI_TAG, "LP IO Set direction failed for %d", pin);
-
-    /* Connect the LP SPI signals to the LP_IO Matrix */
-    ESP_RETURN_ON_ERROR(lp_gpio_connect_out_signal(pin, out_pad_idx, 0, 0), LP_SPI_TAG, "LP IO Matrix connect out signal failed for %d", pin);
-    ESP_RETURN_ON_ERROR(lp_gpio_connect_in_signal(pin, in_pad_idx, 0), LP_SPI_TAG, "LP IO Matrix connect in signal failed for %d", pin);
+    /* Connect this LP_IO to the LP SPI pad-out and pad-in indices on the LP IO Matrix. */
+    ESP_RETURN_ON_ERROR(lp_gpio_matrix_output(pin, out_pad_idx, false, false), LP_SPI_TAG, "LP IO matrix output failed for %d", pin);
+    ESP_RETURN_ON_ERROR(lp_gpio_matrix_input(pin, in_pad_idx, false), LP_SPI_TAG, "LP IO matrix input failed for %d", pin);
 
     return ret;
 }
@@ -87,10 +82,9 @@ static esp_err_t lp_spi_cs_pin_init(int cs_io_num)
 
 static void lp_spi_enable_clock_gate(void)
 {
-    lpperi_dev_t *lp_peri_dev = &LPPERI;
     PERIPH_RCC_ATOMIC() {
         (void)__DECLARE_RCC_ATOMIC_ENV; // Avoid warnings for unused variable __DECLARE_RCC_ATOMIC_ENV
-        lp_peri_dev->clk_en.ck_en_lp_spi = 1;
+        lp_spi_ll_enable_clock(lp_spi_dev);
     }
 }
 
@@ -108,135 +102,125 @@ static esp_err_t lp_spi_clock_init(const lp_spi_device_config_t *dev_config)
     /* Calculate the clock pre-div values. We use the HP SPI LL function here for the calculation. */
     spi_ll_clock_val_t spi_clock;
     spi_ll_master_cal_clock(max_clock_source_hz, dev_config->clock_speed_hz, duty_cycle, &spi_clock);
-    lp_spi_dev->spi_clock.val = spi_clock;
+    lp_spi_ll_set_clock_val(lp_spi_dev, spi_clock);
 
     return ret;
 }
 
 static void lp_spi_master_init(void)
 {
-    /* Initialize the LP SPI in master mode.
-     * (We do not have a HAL/LL layer for LP SPI, yet, so let's use the LP SPI registers directly).
-     */
-
     /* Clear Slave mode to enable Master mode */
-    lp_spi_dev->spi_slave.reg_slave_mode = 0;
-    lp_spi_dev->spi_slave.reg_clk_mode = 0;
+    lp_spi_ll_set_slave_mode(lp_spi_dev, false);
+    lp_spi_ll_set_slave_clk_mode(lp_spi_dev, 0);
 
     /* Reset CS timing */
-    lp_spi_dev->spi_user1.reg_cs_setup_time = 0;
-    lp_spi_dev->spi_user1.reg_cs_hold_time = 0;
+    lp_spi_ll_reset_cs_timing(lp_spi_dev);
 
     /* Use all 64 bytes of the Tx/Rx buffers in CPU controlled transfer */
-    lp_spi_dev->spi_user.reg_usr_mosi_highpart = 0;
-    lp_spi_dev->spi_user.reg_usr_miso_highpart = 0;
+    lp_spi_ll_disable_highpart(lp_spi_dev);
 }
 
 static void lp_spi_slave_init(void)
 {
     /* Set Slave mode */
-    lp_spi_dev->spi_slave.reg_slave_mode = 1;
+    lp_spi_ll_set_slave_mode(lp_spi_dev, true);
 
     /* Reset the SPI peripheral */
-    lp_spi_dev->spi_slave.reg_soft_reset = 1;
-    lp_spi_dev->spi_slave.reg_soft_reset = 0;
+    lp_spi_ll_soft_reset(lp_spi_dev);
 
     /* Configure slave */
-    lp_spi_dev->spi_clock.val = 0;
-    lp_spi_dev->spi_user.val = 0;
-    lp_spi_dev->spi_ctrl.val = 0;
-    lp_spi_dev->spi_user.reg_doutdin = 1; //we only support full duplex
-    lp_spi_dev->spi_user.reg_sio = 0;
+    lp_spi_ll_reset_slave_regs(lp_spi_dev);
+    lp_spi_ll_set_full_duplex(lp_spi_dev, true);
+    lp_spi_ll_set_sio_mode(lp_spi_dev, false);
 
     /* Use all 64 bytes of the Tx/Rx buffers in CPU controlled transfer */
-    lp_spi_dev->spi_user.reg_usr_miso_highpart = 0;
-    lp_spi_dev->spi_user.reg_usr_mosi_highpart = 0;
+    lp_spi_ll_disable_highpart(lp_spi_dev);
 }
 
 static void lp_spi_master_setup_device(const lp_spi_device_config_t *dev_config)
 {
     /* Configure transmission bit order */
-    lp_spi_dev->spi_ctrl.reg_rd_bit_order = dev_config->flags & LP_SPI_DEVICE_RXBIT_LSBFIRST ? 1 : 0;
-    lp_spi_dev->spi_ctrl.reg_wr_bit_order = dev_config->flags & LP_SPI_DEVICE_TXBIT_LSBFIRST ? 1 : 0;
+    lp_spi_ll_set_bit_order(lp_spi_dev,
+                            (dev_config->flags & LP_SPI_DEVICE_RXBIT_LSBFIRST) != 0,
+                            (dev_config->flags & LP_SPI_DEVICE_TXBIT_LSBFIRST) != 0);
 
     /* Configure SPI mode in master mode */
     if (dev_config->spi_mode == 0) {
-        lp_spi_dev->spi_misc.reg_ck_idle_edge = 0;
-        lp_spi_dev->spi_user.reg_ck_out_edge = 0;
+        lp_spi_ll_set_ck_idle_edge(lp_spi_dev, false);
+        lp_spi_ll_set_ck_out_edge(lp_spi_dev, false);
     } else if (dev_config->spi_mode == 1) {
-        lp_spi_dev->spi_misc.reg_ck_idle_edge = 0;
-        lp_spi_dev->spi_user.reg_ck_out_edge = 1;
+        lp_spi_ll_set_ck_idle_edge(lp_spi_dev, false);
+        lp_spi_ll_set_ck_out_edge(lp_spi_dev, true);
     } else if (dev_config->spi_mode == 2) {
-        lp_spi_dev->spi_misc.reg_ck_idle_edge = 1;
-        lp_spi_dev->spi_user.reg_ck_out_edge = 1;
+        lp_spi_ll_set_ck_idle_edge(lp_spi_dev, true);
+        lp_spi_ll_set_ck_out_edge(lp_spi_dev, true);
     } else if (dev_config->spi_mode == 3) {
-        lp_spi_dev->spi_misc.reg_ck_idle_edge = 1;
-        lp_spi_dev->spi_user.reg_ck_out_edge = 0;
+        lp_spi_ll_set_ck_idle_edge(lp_spi_dev, true);
+        lp_spi_ll_set_ck_out_edge(lp_spi_dev, false);
     }
 
     /* Configure the polarity of the CS line */
-    lp_spi_dev->spi_misc.reg_master_cs_pol = dev_config->flags & LP_SPI_DEVICE_CS_ACTIVE_HIGH ? 1 : 0;
+    lp_spi_ll_set_master_cs_pol(lp_spi_dev, (dev_config->flags & LP_SPI_DEVICE_CS_ACTIVE_HIGH) != 0);
 
     /* Configure half-duplex (0) or full-duplex (1) mode for LP SPI master */
-    lp_spi_dev->spi_user.reg_doutdin = dev_config->flags & LP_SPI_DEVICE_HALF_DUPLEX ? 0 : 1;
+    lp_spi_ll_set_full_duplex(lp_spi_dev, (dev_config->flags & LP_SPI_DEVICE_HALF_DUPLEX) == 0);
 
     /* Configure 3-Wire half-duplex mode */
-    lp_spi_dev->spi_user.reg_sio = dev_config->flags & LP_SPI_DEVICE_3WIRE ? 1 : 0;
+    lp_spi_ll_set_sio_mode(lp_spi_dev, (dev_config->flags & LP_SPI_DEVICE_3WIRE) != 0);
 
     /* Configure CS setup and hold times */
-    lp_spi_dev->spi_user1.reg_cs_setup_time = dev_config->cs_ena_pretrans == 0 ? 0 : dev_config->cs_ena_pretrans - 1;
-    lp_spi_dev->spi_user.reg_cs_setup = dev_config->cs_ena_pretrans ? 1 : 0;
-    lp_spi_dev->spi_user1.reg_cs_hold_time = dev_config->cs_ena_posttrans;
-    lp_spi_dev->spi_user.reg_cs_hold = dev_config->cs_ena_posttrans ? 1 : 0;
+    lp_spi_ll_set_cs_setup(lp_spi_dev,
+                           dev_config->cs_ena_pretrans != 0,
+                           dev_config->cs_ena_pretrans == 0 ? 0 : dev_config->cs_ena_pretrans - 1);
+    lp_spi_ll_set_cs_hold(lp_spi_dev,
+                          dev_config->cs_ena_posttrans != 0,
+                          dev_config->cs_ena_posttrans);
 
     /* Select the CS pin */
-    lp_spi_dev->spi_misc.reg_cs0_dis = 0;
+    lp_spi_ll_enable_cs0(lp_spi_dev);
 }
 
 static void lp_spi_slave_setup_device(const lp_spi_slave_config_t *slave_config)
 {
     /* Configure transmission bit order */
-    lp_spi_dev->spi_ctrl.reg_rd_bit_order = slave_config->flags & LP_SPI_DEVICE_RXBIT_LSBFIRST ? 1 : 0;
-    lp_spi_dev->spi_ctrl.reg_wr_bit_order = slave_config->flags & LP_SPI_DEVICE_TXBIT_LSBFIRST ? 1 : 0;
+    lp_spi_ll_set_bit_order(lp_spi_dev,
+                            (slave_config->flags & LP_SPI_DEVICE_RXBIT_LSBFIRST) != 0,
+                            (slave_config->flags & LP_SPI_DEVICE_TXBIT_LSBFIRST) != 0);
 
     /* Configure SPI mode in slave mode */
     if (slave_config->spi_mode == 0) {
-        lp_spi_dev->spi_misc.reg_ck_idle_edge = 0;
-        lp_spi_dev->spi_user.reg_rsck_i_edge = 0;
-        lp_spi_dev->spi_user.reg_tsck_i_edge = 0;
-        lp_spi_dev->spi_slave.reg_clk_mode_13 = 0;
+        lp_spi_ll_set_ck_idle_edge(lp_spi_dev, false);
+        lp_spi_ll_set_slave_clk_edges(lp_spi_dev, false, false);
+        lp_spi_ll_set_slave_clk_mode_13(lp_spi_dev, false);
     } else if (slave_config->spi_mode == 1) {
-        lp_spi_dev->spi_misc.reg_ck_idle_edge = 0;
-        lp_spi_dev->spi_user.reg_rsck_i_edge = 1;
-        lp_spi_dev->spi_user.reg_tsck_i_edge = 1;
-        lp_spi_dev->spi_slave.reg_clk_mode_13 = 1;
+        lp_spi_ll_set_ck_idle_edge(lp_spi_dev, false);
+        lp_spi_ll_set_slave_clk_edges(lp_spi_dev, true, true);
+        lp_spi_ll_set_slave_clk_mode_13(lp_spi_dev, true);
     } else if (slave_config->spi_mode == 2) {
-        lp_spi_dev->spi_misc.reg_ck_idle_edge = 1;
-        lp_spi_dev->spi_user.reg_rsck_i_edge = 1;
-        lp_spi_dev->spi_user.reg_tsck_i_edge = 1;
-        lp_spi_dev->spi_slave.reg_clk_mode_13 = 0;
+        lp_spi_ll_set_ck_idle_edge(lp_spi_dev, true);
+        lp_spi_ll_set_slave_clk_edges(lp_spi_dev, true, true);
+        lp_spi_ll_set_slave_clk_mode_13(lp_spi_dev, false);
     } else if (slave_config->spi_mode == 3) {
-        lp_spi_dev->spi_misc.reg_ck_idle_edge = 1;
-        lp_spi_dev->spi_user.reg_rsck_i_edge = 0;
-        lp_spi_dev->spi_user.reg_tsck_i_edge = 0;
-        lp_spi_dev->spi_slave.reg_clk_mode_13 = 1;
+        lp_spi_ll_set_ck_idle_edge(lp_spi_dev, true);
+        lp_spi_ll_set_slave_clk_edges(lp_spi_dev, false, false);
+        lp_spi_ll_set_slave_clk_mode_13(lp_spi_dev, true);
     }
 
     if (slave_config->flags & LP_SPI_DEVICE_CS_ACTIVE_HIGH) {
         ESP_LOGW(LP_SPI_TAG, "Active high CS line is not supported in slave mode. Using active low CS line.");
     }
-    lp_spi_dev->spi_misc.reg_slave_cs_pol = 0;
+    lp_spi_ll_set_slave_cs_pol(lp_spi_dev, false);
 
     if (slave_config->flags & LP_SPI_DEVICE_HALF_DUPLEX) {
         ESP_LOGW(LP_SPI_TAG, "Half-duplex mode is not supported in slave mode. Using full-duplex mode.");
     }
-    lp_spi_dev->spi_user.reg_doutdin = 1;
+    lp_spi_ll_set_full_duplex(lp_spi_dev, true);
 
     /* Configure 3-Wire half-duplex mode */
-    lp_spi_dev->spi_user.reg_sio = slave_config->flags & LP_SPI_DEVICE_3WIRE ? 1 : 0;
+    lp_spi_ll_set_sio_mode(lp_spi_dev, (slave_config->flags & LP_SPI_DEVICE_3WIRE) != 0);
 
     /* Select the CS pin */
-    lp_spi_dev->spi_misc.reg_cs0_dis = 0;
+    lp_spi_ll_enable_cs0(lp_spi_dev);
 }
 
 //////////////////////////////////////////////////////////////////////////////////

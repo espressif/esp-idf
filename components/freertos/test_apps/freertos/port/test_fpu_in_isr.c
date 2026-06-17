@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -60,7 +60,7 @@ Expected:
 TEST_CASE("FPU: Usage in level 1 ISR", "[freertos]")
 {
     intr_handle_t isr_handle;
-    TEST_ASSERT_EQUAL(ESP_OK, esp_intr_alloc(ETS_INTERNAL_SW0_INTR_SOURCE, ESP_INTR_FLAG_LEVEL1, &fpu_isr, NULL, &isr_handle));
+    TEST_ESP_OK(esp_intr_alloc(ETS_INTERNAL_SW0_INTR_SOURCE, ESP_INTR_FLAG_LEVEL1, &fpu_isr, NULL, &isr_handle));
     /*
     Use the FPU (calculate a different value than in the ISR)
     - We test using a calculation that will cause a change in mantissa and exponent for extra thoroughness
@@ -85,8 +85,9 @@ TEST_CASE("FPU: Usage in level 1 ISR", "[freertos]")
     // We allow a 0.1% delta on the final result in case of any loss of precision from floating point calculations
     TEST_ASSERT_FLOAT_WITHIN(0.00001f, 0.01f, test_float);
 
-    // Free the ISR
-    esp_intr_free(isr_handle);
+    // Free the ISR for ongoing tests
+    TEST_ESP_OK(esp_intr_free(isr_handle));
+    vTaskDelay(10); // Short delay to allow task memory to be freed
 }
 
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -125,11 +126,9 @@ static void unpinned_task(void *arg)
 
     // Allocate an ISR to use the FPU
     intr_handle_t isr_handle;
-    TEST_ASSERT_EQUAL(ESP_OK, esp_intr_alloc(ETS_INTERNAL_SW0_INTR_SOURCE, ESP_INTR_FLAG_LEVEL1, &fpu_isr, NULL, &isr_handle));
+    TEST_ESP_OK(esp_intr_alloc(ETS_INTERNAL_SW0_INTR_SOURCE, ESP_INTR_FLAG_LEVEL1, &fpu_isr, NULL, &isr_handle));
     // Trigger the ISR
     xt_set_intset(1 << SW_ISR_LEVEL_1);
-    // Free the ISR
-    esp_intr_free(isr_handle);
 
     // Task should remain unpinned after the ISR uses the FPU
 #if !CONFIG_FREERTOS_UNICORE
@@ -139,12 +138,15 @@ static void unpinned_task(void *arg)
     TEST_ASSERT_EQUAL(tskNO_AFFINITY, xTaskGetCoreID(NULL));
 #endif
 #endif // !CONFIG_FREERTOS_UNICORE
-    // Reenable scheduling/preemption
+    // Re-enable scheduling/preemption
 #if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
     vTaskPreemptionEnable(NULL);
 #else
     xTaskResumeAll();
 #endif
+
+    // Free the ISR for ongoing tests
+    TEST_ESP_OK(esp_intr_free(isr_handle));
 
     // Indicate done and self delete
     xTaskNotifyGive((TaskHandle_t)arg);

@@ -118,8 +118,8 @@ static void smp_connect_callback (UINT16 channel, BD_ADDR bd_addr, BOOLEAN conne
     if (memcmp(bd_addr, p_cb->pairing_bda, BD_ADDR_LEN) == 0) {
         SMP_TRACE_EVENT ("%s()  for pairing BDA: %08x%04x  Event: %s\n",
                          __FUNCTION__,
-                         (bd_addr[0] << 24) + (bd_addr[1] << 16) + (bd_addr[2] << 8) + bd_addr[3],
-                         (bd_addr[4] << 8) + bd_addr[5],
+                         ((UINT32)bd_addr[0] << 24) + ((UINT32)bd_addr[1] << 16) + ((UINT32)bd_addr[2] << 8) + bd_addr[3],
+                         ((UINT32)bd_addr[4] << 8) + bd_addr[5],
                          (connected) ? "connected" : "disconnected");
 
         if (connected) {
@@ -283,8 +283,8 @@ static void smp_br_connect_callback(UINT16 channel, BD_ADDR bd_addr, BOOLEAN con
 
     SMP_TRACE_EVENT ("%s for pairing BDA: %08x%04x  Event: %s\n",
                      __func__,
-                     (bd_addr[0] << 24) + (bd_addr[1] << 16) + (bd_addr[2] << 8) + bd_addr[3],
-                     (bd_addr[4] << 8) + bd_addr[5],
+                     ((UINT32)bd_addr[0] << 24) + ((UINT32)bd_addr[1] << 16) + ((UINT32)bd_addr[2] << 8) + bd_addr[3],
+                     ((UINT32)bd_addr[4] << 8) + bd_addr[5],
                      (connected) ? "connected" : "disconnected");
 
     if (connected) {
@@ -335,13 +335,15 @@ static void smp_br_data_received(UINT16 channel, BD_ADDR bd_addr, BT_HDR *p_buf)
         return;
     }
 
+    /* Validate command length to prevent out-of-bounds read in handler functions */
+    if (p_buf->len != smp_cmd_size_per_spec[cmd]) {
+        SMP_TRACE_WARNING( "Ignore received command 0x%02x with invalid length %d", cmd, p_buf->len);
+        osi_free(p_buf);
+        return;
+    }
+
     /* reject the pairing request if there is an on-going SMP pairing */
     if (SMP_OPCODE_PAIRING_REQ == cmd) {
-        if (p_buf->len != smp_cmd_size_per_spec[cmd]) {
-            SMP_TRACE_WARNING( "Ignore received command 0x%02x with invalid length %d", cmd, p_buf->len);
-            osi_free(p_buf);
-            return;
-        }
         if ((p_cb->state == SMP_STATE_IDLE) && (p_cb->br_state == SMP_BR_STATE_IDLE)) {
             p_cb->role = HCI_ROLE_SLAVE;
             p_cb->smp_over_br = TRUE;

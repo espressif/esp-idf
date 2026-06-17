@@ -86,12 +86,12 @@ Note
    .. |max_bluedroid_connections| replace:: 2
    .. |max_nimble_connections| replace:: 2
 
-.. only:: esp32h2
+.. only:: esp32h2 or esp32h21
 
    .. |max_bluedroid_connections| replace:: 15
    .. |max_nimble_connections| replace:: 70
 
-.. only:: esp32c6 or esp32c5 or esp32c61
+.. only:: esp32c6 or esp32c5 or esp32c61 or esp32h4 or esp32s31
 
    .. |max_bluedroid_connections| replace:: 50
    .. |max_nimble_connections| replace:: 70

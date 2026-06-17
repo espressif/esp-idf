@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import os
@@ -336,13 +336,13 @@ if __name__ == '__main__':
 
     if check_all:
         check_dirs = {IDF_PATH}
-        _exclude_dirs = [
-            os.path.join(IDF_PATH, 'tools', 'test_build_system', 'build_test_app'),
-            os.path.join(IDF_PATH, 'tools', 'test_build_system', 'buildv2_test_app'),
-            os.path.join(IDF_PATH, 'tools', 'templates', 'sample_project'),
-        ]
-    else:
-        _exclude_dirs = [os.path.join(IDF_PATH, 'tools', 'templates', 'sample_project')]
+
+    _exclude_dirs = [
+        os.path.join(IDF_PATH, 'tools', 'test_build_system'),
+        os.path.join(IDF_PATH, 'tools', 'templates', 'sample_project'),
+        os.path.join(IDF_PATH, 'tools', 'templates', 'sample_project_cpp'),
+        os.path.join(IDF_PATH, 'tools', 'cmakev2', 'test'),
+    ]
 
     _bypass_targets: list[str] = []
     if arg.config:

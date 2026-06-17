@@ -1,11 +1,10 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
-#include <stdint.h>
 #include "soc/soc.h"
 #ifdef __cplusplus
 extern "C" {
@@ -1440,11 +1439,11 @@ extern "C" {
 #define HP_PERI0_PMS_HP_RMT_LOCK_S  8
 
 /** HP_PERI0_PMS_HP_BITSCRAMBLER_CTRL_REG register
- *  hp_bitsrambler read/write control register
+ *  hp_bitscrambler read/write control register
  */
 #define HP_PERI0_PMS_HP_BITSCRAMBLER_CTRL_REG (DR_REG_HP_PERI0_PMS_BASE + 0x44)
 /** HP_PERI0_PMS_READ_TEE_HP_BITSCRAMBLER : R/W; bitpos: [0]; default: 1;
- *  Configures hp_bitsrambler registers read permission in tee mode.
+ *  Configures hp_bitscrambler registers read permission in tee mode.
  *  0: can not be read
  *  1: can be read
  */
@@ -1453,7 +1452,7 @@ extern "C" {
 #define HP_PERI0_PMS_READ_TEE_HP_BITSCRAMBLER_V  0x00000001U
 #define HP_PERI0_PMS_READ_TEE_HP_BITSCRAMBLER_S  0
 /** HP_PERI0_PMS_READ_REE0_HP_BITSCRAMBLER : R/W; bitpos: [1]; default: 0;
- *  Configures hp_bitsrambler registers read permission in ree0 mode.
+ *  Configures hp_bitscrambler registers read permission in ree0 mode.
  *  0: can not be read
  *  1: can be read
  */
@@ -1462,7 +1461,7 @@ extern "C" {
 #define HP_PERI0_PMS_READ_REE0_HP_BITSCRAMBLER_V  0x00000001U
 #define HP_PERI0_PMS_READ_REE0_HP_BITSCRAMBLER_S  1
 /** HP_PERI0_PMS_READ_REE1_HP_BITSCRAMBLER : R/W; bitpos: [2]; default: 0;
- *  Configures hp_bitsrambler registers read permission in ree1 mode.
+ *  Configures hp_bitscrambler registers read permission in ree1 mode.
  *  0: can not be read
  *  1: can be read
  */
@@ -1471,7 +1470,7 @@ extern "C" {
 #define HP_PERI0_PMS_READ_REE1_HP_BITSCRAMBLER_V  0x00000001U
 #define HP_PERI0_PMS_READ_REE1_HP_BITSCRAMBLER_S  2
 /** HP_PERI0_PMS_READ_REE2_HP_BITSCRAMBLER : R/W; bitpos: [3]; default: 0;
- *  Configures hp_bitsrambler registers read permission in ree2 mode.
+ *  Configures hp_bitscrambler registers read permission in ree2 mode.
  *  0: can not be read
  *  1: can be read
  */
@@ -1480,7 +1479,7 @@ extern "C" {
 #define HP_PERI0_PMS_READ_REE2_HP_BITSCRAMBLER_V  0x00000001U
 #define HP_PERI0_PMS_READ_REE2_HP_BITSCRAMBLER_S  3
 /** HP_PERI0_PMS_WRITE_TEE_HP_BITSCRAMBLER : R/W; bitpos: [4]; default: 1;
- *  Configures hp_bitsrambler registers write permission in tee mode.
+ *  Configures hp_bitscrambler registers write permission in tee mode.
  *  0: can not be write
  *  1: can be write
  */
@@ -1489,7 +1488,7 @@ extern "C" {
 #define HP_PERI0_PMS_WRITE_TEE_HP_BITSCRAMBLER_V  0x00000001U
 #define HP_PERI0_PMS_WRITE_TEE_HP_BITSCRAMBLER_S  4
 /** HP_PERI0_PMS_WRITE_REE0_HP_BITSCRAMBLER : R/W; bitpos: [5]; default: 0;
- *  Configures hp_bitsrambler registers write permission in ree0 mode.
+ *  Configures hp_bitscrambler registers write permission in ree0 mode.
  *  0: can not be write
  *  1: can be write
  */
@@ -1498,7 +1497,7 @@ extern "C" {
 #define HP_PERI0_PMS_WRITE_REE0_HP_BITSCRAMBLER_V  0x00000001U
 #define HP_PERI0_PMS_WRITE_REE0_HP_BITSCRAMBLER_S  5
 /** HP_PERI0_PMS_WRITE_REE1_HP_BITSCRAMBLER : R/W; bitpos: [6]; default: 0;
- *  Configures hp_bitsrambler registers write permission in ree1 mode.
+ *  Configures hp_bitscrambler registers write permission in ree1 mode.
  *  0: can not be write
  *  1: can be write
  */
@@ -1507,7 +1506,7 @@ extern "C" {
 #define HP_PERI0_PMS_WRITE_REE1_HP_BITSCRAMBLER_V  0x00000001U
 #define HP_PERI0_PMS_WRITE_REE1_HP_BITSCRAMBLER_S  6
 /** HP_PERI0_PMS_WRITE_REE2_HP_BITSCRAMBLER : R/W; bitpos: [7]; default: 0;
- *  Configures hp_bitsrambler registers write permission in ree2 mode.
+ *  Configures hp_bitscrambler registers write permission in ree2 mode.
  *  0: can not be write
  *  1: can be write
  */
@@ -1516,7 +1515,7 @@ extern "C" {
 #define HP_PERI0_PMS_WRITE_REE2_HP_BITSCRAMBLER_V  0x00000001U
 #define HP_PERI0_PMS_WRITE_REE2_HP_BITSCRAMBLER_S  7
 /** HP_PERI0_PMS_HP_BITSCRAMBLER_LOCK : R/W; bitpos: [8]; default: 0;
- *  Set 1 to lock hp_bitsrambler peri_apm configuration
+ *  Set 1 to lock hp_bitscrambler peri_apm configuration
  */
 #define HP_PERI0_PMS_HP_BITSCRAMBLER_LOCK    (BIT(8))
 #define HP_PERI0_PMS_HP_BITSCRAMBLER_LOCK_M  (HP_PERI0_PMS_HP_BITSCRAMBLER_LOCK_V << HP_PERI0_PMS_HP_BITSCRAMBLER_LOCK_S)

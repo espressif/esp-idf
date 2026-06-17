@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "driver/uart_vfs.h"
+#include "driver/esp_private/uart_vfs.h"
 #include "driver/uart.h"
 #include "driver/uart_select.h"
 #include "esp_rom_serial_output.h"
@@ -147,7 +148,7 @@ static esp_err_t uart_end_select(void *end_select_args);
 
 #endif // CONFIG_VFS_SUPPORT_SELECT
 
-static int uart_open(const char *path, int flags, int mode)
+static int uart_open(__attribute__((unused)) void *ctx, const char *path, int flags, int mode)
 {
     // this is fairly primitive, we should check if file is opened read only,
     // and error out if write is requested
@@ -223,7 +224,7 @@ static int uart_rx_char_via_driver(int fd)
     return c;
 }
 
-static ssize_t uart_write(int fd, const void * data, size_t size)
+static ssize_t uart_write(__attribute__((unused)) void *ctx, int fd, const void * data, size_t size)
 {
     assert(fd >= 0 && fd < 3);
     tx_func_t tx_func = s_ctx[fd]->tx_func;
@@ -270,7 +271,7 @@ static void uart_return_char(int fd, int c)
     s_ctx[fd]->peek_char = c;
 }
 
-static ssize_t uart_read(int fd, void* data, size_t size)
+static ssize_t uart_read(__attribute__((unused)) void *ctx, int fd, void* data, size_t size)
 {
     assert(fd >= 0 && fd < 3);
     char *data_c = (char *) data;
@@ -343,7 +344,7 @@ static ssize_t uart_read(int fd, void* data, size_t size)
     return -1;
 }
 
-static int uart_fstat(int fd, struct stat * st)
+static int uart_fstat(__attribute__((unused)) void *ctx, int fd, struct stat * st)
 {
     assert(fd >= 0 && fd < 3);
     memset(st, 0, sizeof(*st));
@@ -351,13 +352,13 @@ static int uart_fstat(int fd, struct stat * st)
     return 0;
 }
 
-static int uart_close(int fd)
+static int uart_close(__attribute__((unused)) void *ctx, int fd)
 {
     assert(fd >= 0 && fd < 3);
     return 0;
 }
 
-static int uart_fcntl(int fd, int cmd, int arg)
+static int uart_fcntl(__attribute__((unused)) void *ctx, int fd, int cmd, int arg)
 {
     assert(fd >= 0 && fd < 3);
     int result = 0;
@@ -378,7 +379,7 @@ static int uart_fcntl(int fd, int cmd, int arg)
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
 
-static int uart_access(const char *path, int amode)
+static int uart_access(__attribute__((unused)) void *ctx, const char *path, int amode)
 {
     int ret = -1;
 
@@ -401,7 +402,7 @@ static int uart_access(const char *path, int amode)
 
 #endif // CONFIG_VFS_SUPPORT_DIR
 
-static int uart_fsync(int fd)
+static int uart_fsync(__attribute__((unused)) void *ctx, int fd)
 {
     assert(fd >= 0 && fd < 3);
     _lock_acquire_recursive(&s_ctx[fd]->write_lock);
@@ -587,7 +588,6 @@ static esp_err_t uart_end_select(void *end_select_args)
             if (s_uart_select_count[i] == 0) {
                 uart_set_select_notif_callback(i, NULL);
             }
-            break;
         }
     }
     portEXIT_CRITICAL(uart_get_selectlock());
@@ -602,7 +602,7 @@ static esp_err_t uart_end_select(void *end_select_args)
 #endif // CONFIG_VFS_SUPPORT_SELECT
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
-static int uart_tcsetattr(int fd, int optional_actions, const struct termios *p)
+static int uart_tcsetattr(__attribute__((unused)) void *ctx, int fd, int optional_actions, const struct termios *p)
 {
     if (fd < 0 || fd >= UART_NUM) {
         errno = EBADF;
@@ -807,7 +807,7 @@ static int uart_tcsetattr(int fd, int optional_actions, const struct termios *p)
     return 0;
 }
 
-static int uart_tcgetattr(int fd, struct termios *p)
+static int uart_tcgetattr(__attribute__((unused)) void *ctx, int fd, struct termios *p)
 {
     if (fd < 0 || fd >= UART_NUM) {
         errno = EBADF;
@@ -1016,7 +1016,7 @@ static int uart_tcgetattr(int fd, struct termios *p)
     return 0;
 }
 
-static int uart_tcdrain(int fd)
+static int uart_tcdrain(__attribute__((unused)) void *ctx, int fd)
 {
     if (fd < 0 || fd >= UART_NUM) {
         errno = EBADF;
@@ -1031,7 +1031,7 @@ static int uart_tcdrain(int fd)
     return 0;
 }
 
-static int uart_tcflush(int fd, int select)
+static int uart_tcflush(__attribute__((unused)) void *ctx, int fd, int select)
 {
     if (fd < 0 || fd >= UART_NUM) {
         errno = EBADF;
@@ -1055,7 +1055,7 @@ static int uart_tcflush(int fd, int select)
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
 static const esp_vfs_dir_ops_t s_vfs_uart_dir = {
-    .access = &uart_access,
+    .access_p = &uart_access,
 };
 #endif // CONFIG_VFS_SUPPORT_DIR
 
@@ -1068,21 +1068,21 @@ static const esp_vfs_select_ops_t s_vfs_uart_select = {
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
 static const esp_vfs_termios_ops_t s_vfs_uart_termios = {
-    .tcsetattr = &uart_tcsetattr,
-    .tcgetattr = &uart_tcgetattr,
-    .tcdrain = &uart_tcdrain,
-    .tcflush = &uart_tcflush,
+    .tcsetattr_p = &uart_tcsetattr,
+    .tcgetattr_p = &uart_tcgetattr,
+    .tcdrain_p = &uart_tcdrain,
+    .tcflush_p = &uart_tcflush,
 };
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 
 static const esp_vfs_fs_ops_t s_vfs_uart = {
-    .write = &uart_write,
-    .open = &uart_open,
-    .fstat = &uart_fstat,
-    .close = &uart_close,
-    .read = &uart_read,
-    .fcntl = &uart_fcntl,
-    .fsync = &uart_fsync,
+    .write_p = &uart_write,
+    .open_p = &uart_open,
+    .fstat_p = &uart_fstat,
+    .close_p = &uart_close,
+    .read_p = &uart_read,
+    .fcntl_p = &uart_fcntl,
+    .fsync_p = &uart_fsync,
 #ifdef CONFIG_VFS_SUPPORT_DIR
     .dir = &s_vfs_uart_dir,
 #endif // CONFIG_VFS_SUPPORT_DIR
@@ -1101,7 +1101,7 @@ const esp_vfs_fs_ops_t *esp_vfs_uart_get_vfs(void)
 
 void uart_vfs_dev_register(void)
 {
-    ESP_ERROR_CHECK(esp_vfs_register_fs("/dev/uart", &s_vfs_uart, ESP_VFS_FLAG_STATIC, NULL));
+    ESP_ERROR_CHECK(esp_vfs_register_fs("/dev/uart", &s_vfs_uart, ESP_VFS_FLAG_STATIC | ESP_VFS_FLAG_CONTEXT_PTR, NULL));
 }
 
 int uart_vfs_dev_port_set_rx_line_endings(int uart_num, esp_line_endings_t mode)
@@ -1163,12 +1163,73 @@ void uart_vfs_dev_use_driver(int uart_num)
 }
 
 #if CONFIG_ESP_CONSOLE_UART
+esp_err_t uart_vfs_dev_port_init(const esp_console_dev_uart_config_t *config,
+                                 esp_line_endings_t rx_mode,
+                                 esp_line_endings_t tx_mode)
+{
+    if (config == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (uart_vfs_dev_port_set_rx_line_endings(config->channel, rx_mode) == -1) {
+        return ESP_FAIL;
+    }
+
+    if (uart_vfs_dev_port_set_tx_line_endings(config->channel, tx_mode) == -1) {
+        return ESP_FAIL;
+    }
+
+    /* Configure UART. Note that REF_TICK/XTAL is used so that the baud rate remains
+     * correct while APB frequency is changing in light sleep mode.
+     */
+#if SOC_UART_SUPPORT_REF_TICK
+    uart_sclk_t clk_source = UART_SCLK_REF_TICK;
+    // REF_TICK clock can't provide a high baudrate
+    if (config->baud_rate > 1 * 1000 * 1000) {
+        clk_source = UART_SCLK_DEFAULT;
+        ESP_LOGW("uart_vfs", "light sleep UART wakeup might not work at the configured baud rate");
+    }
+#elif SOC_UART_SUPPORT_XTAL_CLK
+    uart_sclk_t clk_source = UART_SCLK_XTAL;
+#else
+#error "No UART clock source is aware of DFS"
+#endif // SOC_UART_SUPPORT_xxx
+    const uart_config_t uart_driver_config = {
+        .baud_rate = config->baud_rate,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .source_clk = clk_source,
+    };
+
+    uart_param_config(config->channel, &uart_driver_config);
+    uart_set_pin(config->channel, config->tx_gpio_num, config->rx_gpio_num, -1, -1);
+
+    /* Install UART driver for interrupt-driven reads and writes */
+    const esp_err_t ret = uart_driver_install(config->channel, 256, 0, 0, NULL, 0);
+    if (ret != ESP_OK) {
+        uart_driver_delete(config->channel);
+        return ret;
+    }
+
+    /* Tell VFS to use UART driver */
+    uart_vfs_dev_use_driver(config->channel);
+
+    return ESP_OK;
+}
+
+void uart_vfs_dev_port_deinit(const esp_console_dev_uart_config_t *config)
+{
+    uart_vfs_dev_use_nonblocking(config->channel);
+    uart_driver_delete(config->channel);
+}
+
 ESP_SYSTEM_INIT_FN(init_vfs_uart, CORE, BIT(0), 110)
 {
     uart_vfs_dev_register();
     return ESP_OK;
 }
-#endif
+#endif // CONFIG_ESP_CONSOLE_UART
 
 void uart_vfs_include_dev_init(void)
 {

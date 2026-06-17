@@ -80,6 +80,8 @@
 #include "esp32p4/rom/ets_sys.h"
 #elif CONFIG_IDF_TARGET_ESP32C61
 #include "esp32c61/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32S31
+#include "esp32s31/rom/ets_sys.h"
 #endif
 
 #endif /* !__ets__ */

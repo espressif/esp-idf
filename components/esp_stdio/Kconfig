@@ -22,7 +22,7 @@ menu "ESP-STDIO"
         config ESP_CONSOLE_USB_CDC
             bool "USB CDC"
             # && !TINY_USB is because the ROM CDC driver is currently incompatible with TinyUSB.
-            depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3)  && !TINY_USB
+            depends on SOC_USB_OTG_CONSOLE_SUPPORTED && !TINY_USB
         config ESP_CONSOLE_USB_SERIAL_JTAG
             bool "USB Serial/JTAG Controller"
             depends on SOC_USB_SERIAL_JTAG_SUPPORTED
@@ -184,5 +184,13 @@ menu "ESP-STDIO"
         help
             If enabled, esp_rom_printf and ESP_EARLY_LOG output will also be sent over USB CDC.
             Disabling this option saves about 1kB or RAM.
+
+    config ESP_STDIO_MAX_VFS_ENTRIES
+        int "Maximum number of registerable VFS sinks"
+        depends on VFS_SUPPORT_IO
+        range 1 10
+        default 2
+        help
+            Maximum number of filesystems that can be registered as sinks for console output.
 
 endmenu

@@ -59,7 +59,7 @@ static void anim_timer_cb(lv_timer_t *timer)
         // Create new image and make it transparent
         img_text = lv_image_create(scr);
 #if CONFIG_EXAMPLE_LCD_IMAGE_FROM_FILE_SYSTEM
-        lv_image_set_src(img_text, "S:/spiffs/esp_text.png");
+        lv_image_set_src(img_text, "S:/littlefs/esp_text.png");
 #elif CONFIG_EXAMPLE_LCD_IMAGE_FROM_EMBEDDED_BINARY
         lv_image_set_src(img_text, &esp_text);
 #endif
@@ -123,7 +123,7 @@ void example_lvgl_demo_ui(lv_disp_t *disp)
     // Create image
     img_logo = lv_image_create(scr);
 #if CONFIG_EXAMPLE_LCD_IMAGE_FROM_FILE_SYSTEM
-    lv_image_set_src(img_logo, "S:/spiffs/esp_logo.png");
+    lv_image_set_src(img_logo, "S:/littlefs/esp_logo.png");
 #elif CONFIG_EXAMPLE_LCD_IMAGE_FROM_EMBEDDED_BINARY
     lv_image_set_src(img_logo, &esp_logo);
 #endif

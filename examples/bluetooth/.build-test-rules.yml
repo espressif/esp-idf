@@ -19,6 +19,13 @@ examples/bluetooth/bluedroid/ble:
   <<: *bt_default_depends
   disable:
     - if: SOC_BLE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32s31"
+      temporary: true
+      reason: lack of runners
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
   depends_components+:
     - esp_console
     - esp_driver_gpio
@@ -48,6 +55,13 @@ examples/bluetooth/bluedroid/ble/ble_throughput:
   <<: *bt_default_depends
   disable:
     - if: SOC_BLE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32s31"
+      temporary: true
+      reason: lack of runners
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
   depends_components+:
     - esp_console
     - esp_driver_gpio
@@ -60,6 +74,13 @@ examples/bluetooth/bluedroid/ble_50:
   <<: *bt_default_depends
   disable:
     - if: SOC_BLE_50_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32s31"
+      temporary: true
+      reason: lack of runners
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
   depends_components+:
     - esp_console
     - esp_driver_gpio
@@ -127,6 +148,10 @@ examples/bluetooth/bluedroid/classic_bt:
   <<: *bt_default_depends
   disable:
     - if: SOC_BT_CLASSIC_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      temporary: true
+      reason: temporarily lack of runners
   depends_components+:
     - esp_lcd
     - esp_console
@@ -146,7 +171,8 @@ examples/bluetooth/bluedroid/classic_bt:
 examples/bluetooth/bluedroid/coex/a2dp_gatts_coex:
   <<: *bt_default_depends
   disable:
-    - if: IDF_TARGET != "esp32"
+    - if: SOC_BT_CLASSIC_SUPPORTED != 1
+    - if: SOC_BLE_SUPPORTED != 1
       temporary: true
       reason: the other targets are not tested yet
   depends_components+:
@@ -156,11 +182,24 @@ examples/bluetooth/bluedroid/coex/a2dp_gatts_coex:
 examples/bluetooth/blufi:
   <<: *bt_default_depends
   disable:
-    - if: SOC_BT_SUPPORTED != 1
-    - if: SOC_WIFI_SUPPORTED != 1
+    - if: SOC_BLUFI_SUPPORTED != 1
   depends_components+:
     - esp_console
     - esp_wifi
+
+examples/bluetooth/esp_ble_audio:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_AUDIO_SUPPORTED != 1
+  depends_filepatterns:
+    - examples/bluetooth/esp_ble_audio/common_components/**/*
+
+examples/bluetooth/esp_ble_iso:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_ISO_SUPPORTED != 1
+  depends_filepatterns:
+    - examples/bluetooth/esp_ble_iso/common_components/**/*
 
 examples/bluetooth/esp_ble_mesh:
   <<: *bt_default_depends
@@ -350,6 +389,13 @@ examples/bluetooth/nimble/blecent:
   <<: *bt_default_depends
   disable:
     - if: SOC_BLE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32s31"
+      temporary: true
+      reason: lack of runners
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
   depends_components+:
     - esp_coex
     - esp_pm
@@ -392,6 +438,13 @@ examples/bluetooth/nimble/power_save:
   <<: *bt_default_depends
   disable:
     - if: SOC_BLE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32s31"
+      temporary: true
+      reason: lack of runners, and light sleep not supported yet
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
   depends_components+:
     - esp_coex
     - esp_pm

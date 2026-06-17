@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,6 +37,8 @@
 #define GPIO_LL_PRO_CPU_NMI_INTR_ENA  (BIT(1))
 
 #define GPIO_LL_INTR_SOURCE0   ETS_GPIO_INTERRUPT_PRO_SOURCE
+
+#define GPIO_LL_CLK_SRC_SELECTABLE 1
 
 #ifdef __cplusplus
 extern "C" {
@@ -231,6 +233,19 @@ __attribute__((always_inline))
 static inline void gpio_ll_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     IO_MUX.gpio[gpio_num].fun_ie = 1;
+}
+
+/**
+  * @brief Check if input mode is enabled on GPIO.
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param gpio_num GPIO number
+  * @return true if input mode is enabled, false otherwise
+  */
+__attribute__((always_inline))
+static inline bool gpio_ll_input_is_enabled(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    return IO_MUX.gpio[gpio_num].fun_ie ? true : false;
 }
 
 /**
@@ -507,6 +522,7 @@ static inline int gpio_ll_get_in_signal_connected_io(gpio_dev_t *hw, uint32_t in
   * @param ctrl_by_periph True if use output enable signal from peripheral, false if force the output enable signal to be sourced from bit n of GPIO_ENABLE_REG
   * @param oen_inv True if the output enable needs to be inverted, otherwise False.
   */
+__attribute__((always_inline))
 static inline void gpio_ll_set_output_enable_ctrl(gpio_dev_t *hw, uint8_t gpio_num, bool ctrl_by_periph, bool oen_inv)
 {
     hw->funcn_out_sel_cfg[gpio_num].funcn_oe_inv_sel = oen_inv;       // control valid only when using gpio matrix to route signal to the IO
@@ -522,6 +538,7 @@ static inline void gpio_ll_set_output_enable_ctrl(gpio_dev_t *hw, uint8_t gpio_n
  * @param signal_idx Peripheral signal index (tagged as output attribute). Particularly, `SIG_GPIO_OUT_IDX` means disconnect GPIO and other peripherals. Only the GPIO driver can control the output level.
  * @param out_inv True if the signal output needs to be inverted, otherwise False.
  */
+__attribute__((always_inline))
 static inline void gpio_ll_set_output_signal_matrix_source(gpio_dev_t *hw, uint32_t gpio_num, uint32_t signal_idx, bool out_inv)
 {
     hw->funcn_out_sel_cfg[gpio_num].funcn_out_sel = signal_idx;
@@ -712,13 +729,13 @@ static inline void gpio_ll_sleep_output_enable(gpio_dev_t *hw, uint32_t gpio_num
 }
 
 /**
- * @brief Enable GPIO deep-sleep wake-up function.
+ * @brief Enable GPIO wake-up on HP periph powerdown sleep function.
  *
  * @param hw Peripheral GPIO hardware instance address.
  * @param gpio_num GPIO number.
  * @param intr_type GPIO wake-up type. Only GPIO_INTR_LOW_LEVEL or GPIO_INTR_HIGH_LEVEL can be used.
  */
-static inline void gpio_ll_deepsleep_wakeup_enable(gpio_dev_t *hw, uint32_t gpio_num, gpio_int_type_t intr_type)
+static inline void gpio_ll_wakeup_enable_on_hp_periph_powerdown_sleep(gpio_dev_t *hw, uint32_t gpio_num, gpio_int_type_t intr_type)
 {
     HAL_ASSERT((gpio_num >= GPIO_NUM_5 && gpio_num <= GPIO_NUM_11) &&
                "only gpio5~11 support deep sleep wake-up function");
@@ -740,12 +757,12 @@ static inline void gpio_ll_deepsleep_wakeup_enable(gpio_dev_t *hw, uint32_t gpio
 }
 
 /**
- * @brief Disable GPIO deep-sleep wake-up function.
+ * @brief Disable GPIO wake-up on HP periph powerdown sleep function.
  *
  * @param hw Peripheral GPIO hardware instance address.
  * @param gpio_num GPIO number
  */
-static inline void gpio_ll_deepsleep_wakeup_disable(gpio_dev_t *hw, uint32_t gpio_num)
+static inline void gpio_ll_wakeup_disable_on_hp_periph_powerdown_sleep(gpio_dev_t *hw, uint32_t gpio_num)
 {
     HAL_ASSERT((gpio_num >= GPIO_NUM_5 && gpio_num <= GPIO_NUM_11) &&
                "only gpio5~11 support deep sleep wake-up function");
@@ -756,13 +773,13 @@ static inline void gpio_ll_deepsleep_wakeup_disable(gpio_dev_t *hw, uint32_t gpi
 }
 
 /**
- * @brief Get the status of whether an IO is used for deep-sleep wake-up.
+ * @brief Get the status of whether an IO is used for HP periph powerdown sleep wake-up.
  *
  * @param hw Peripheral GPIO hardware instance address.
  * @param gpio_num GPIO number
- * @return True if the pin is enabled to wake up from deep-sleep
+ * @return True if the pin is enabled to wake up from HP periph powerdown sleep.
  */
-static inline bool gpio_ll_deepsleep_wakeup_is_enabled(gpio_dev_t *hw, uint32_t gpio_num)
+static inline bool gpio_ll_hp_periph_powerdown_sleep_wakeup_is_enabled(gpio_dev_t *hw, uint32_t gpio_num)
 {
     HAL_ASSERT((gpio_num >= GPIO_NUM_5 && gpio_num <= GPIO_NUM_11) &&
                "only gpio5~11 support deep sleep wake-up function");

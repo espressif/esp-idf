@@ -49,9 +49,9 @@
   - "tools/idf.py"
   - "tools/idf_py_actions/**/*"
   - "tools/ci/ignore_build_warnings.txt"
+  - "tools/ci/esp_err_to_name_exceptions.txt"
   - "tools/ci/test_build_system*.sh"
   - "tools/ci/test_build_system*.py"
-  - "tools/ci/build_template_app.sh"
   - "tools/test_build_system/**/*"
 
 .patterns-host_test_ldgen: &patterns-host_test_ldgen
@@ -66,12 +66,17 @@
   - "tools/test_build_system/**/*"
   - "tools/ci/test_configure_ci_environment.sh"
   - "tools/gen_esp_err_to_name.py"
+  - "tools/err_codes_extract.py"
+  - "tools/err_codes_to_c.py"
+  - "tools/err_codes_to_rst.py"
   - "tools/ci/check_soc_headers_leak.py"
   - "tools/ci/check_esp_memory_utils_headers.sh"
   - "tools/ci/check_blobs.sh"
   - "tools/ci/check_public_headers.py"
+  - "tools/ci/check_public_headers_exceptions.txt"
   - "tools/ci/check_register_rw_half_word.cmake"
   - "tools/ci/check_register_rw_half_word.py"
+  - "components/esp_wifi/remote/scripts/generate_and_check.py"
   - "examples/build_system/**/*"
 
 .patterns-host_test_cli_installer: &patterns-host_test_cli_installer
@@ -84,6 +89,7 @@
   - "tools/idf_tools.py"
   - "tools/test_idf_tools/**/*"
   - "tools/install_util.py"
+  - "tools/idf_extra_components.yml"
 
   - "tools/export_utils/utils.py"
   - "tools/export_utils/shell_types.py"
@@ -163,7 +169,10 @@
   - "components/heap/tlsf"
   - "components/bt/controller/lib_esp32c6/esp32c6-bt-lib"
   - "components/bt/controller/lib_esp32c5/esp32c5-bt-lib"
+  - "components/bt/controller/lib_esp32h4/esp32h4-bt-lib"
+  - "components/bt/controller/lib_esp32s31/esp32s31-bt-lib"
   - "components/bt/esp_ble_mesh/lib/lib"
+  - "components/bt/esp_ble_audio/lib/lib"
   - ".gitmodules"
 
 ##############
@@ -213,12 +222,6 @@
 .rules:protected:check:
   rules:
     - <<: *if-protected-check
-
-.rules:protected:deploy:
-  rules:
-    - <<: *if-qa-test-tag
-      when: never
-    - <<: *if-protected-deploy
 
 .rules:master:push:
   rules:

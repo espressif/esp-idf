@@ -83,7 +83,7 @@ static inline void * cpu_domain_clic_sleep_frame_alloc_and_init(uint8_t core_id)
 }
 
 #if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
-esp_err_t esp_sleep_cpu_retention_init_impl(sleep_cpu_retention_t *sleep_cpu_retention_ptr, smp_retention_state_t *s_smp_retention_state)
+esp_err_t esp_sleep_cpu_retention_init_impl(sleep_cpu_retention_t *sleep_cpu_retention_ptr, _Atomic(smp_retention_state_t) *s_smp_retention_state)
 {
     static DRAM_ATTR uint8_t rv_core_critical_regs[RV_SLEEP_CTX_FRMSZ * portNUM_PROCESSORS] __attribute__((aligned(4)));
     static DRAM_ATTR uint8_t rv_core_non_critical_regs[sizeof(RvCoreNonCriticalSleepFrame)* portNUM_PROCESSORS] __attribute__((aligned(4)));

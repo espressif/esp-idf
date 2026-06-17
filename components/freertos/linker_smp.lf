@@ -77,6 +77,7 @@ entries:
         #   - vTaskSwitchContext
         #   - xTaskGetSchedulerState
         #   - xTaskGetTickCount
+        #   - vTaskEnterCritical / vTaskExitCritical (called via taskENTER_CRITICAL()
         # - Place all functions that are called from an ISR context into Flash if
         #   CONFIG_FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH is enabled
         # --------------------------------------------------------------------------------------------------------------
@@ -85,6 +86,8 @@ entries:
         tasks:vTaskSwitchContext (noflash_text)
         tasks:xTaskGetSchedulerState (noflash_text)
         tasks:xTaskGetTickCount (noflash_text)
+        tasks:vTaskEnterCritical (noflash_text)
+        tasks:vTaskExitCritical (noflash_text)
         if FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH = n:
             tasks:uxTaskPriorityGetFromISR (noflash_text)
             tasks:prvTaskIsTaskSuspended (noflash_text)

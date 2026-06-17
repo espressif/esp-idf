@@ -35,6 +35,12 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid, size_t *sae_msg_len)
     const u8 *pw = (const u8 *)esp_wifi_sta_get_prof_password_internal();
     char sae_pwd_id[SAE_H2E_IDENTIFIER_LEN + 1] = {0};
     bool valid_pwd_id = false;
+
+    if (wpa_sta_cur_pmksa_matches_akm()) {
+        wpa_printf(MSG_INFO, "wpa3: Skip SAE and use cached PMK instead");
+        *sae_msg_len = 0;
+        return ESP_FAIL;
+    }
 #ifdef CONFIG_SAE_H2E
     uint8_t sae_pwe = esp_wifi_get_config_sae_pwe_h2e_internal(WIFI_IF_STA);
     const u8 *rsnxe = NULL;
@@ -106,12 +112,6 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid, size_t *sae_msg_len)
         g_sae_pt = sae_derive_pt(g_allowed_groups, ssid->ssid, ssid->len, pw, strlen((const char *)pw), valid_pwd_id ? sae_pwd_id : NULL);
     }
 #endif /* CONFIG_SAE_H2E */
-
-    if (wpa_sta_cur_pmksa_matches_akm()) {
-        wpa_printf(MSG_INFO, "wpa3: Skip SAE and use cached PMK instead");
-        *sae_msg_len = 0;
-        return ESP_FAIL;
-    }
 
     if (g_sae_commit) {
         wpabuf_free(g_sae_commit);
@@ -219,6 +219,11 @@ static esp_err_t wpa3_build_sae_confirm(void)
 
 void esp_wpa3_free_sae_data(void)
 {
+    if (g_sae_token) {
+        wpabuf_free(g_sae_token);
+        g_sae_token = NULL;
+    }
+
     if (g_sae_commit) {
         wpabuf_free(g_sae_commit);
         g_sae_commit = NULL;
@@ -440,6 +445,7 @@ void esp_wifi_unregister_wpa3_cb(void)
 
 static TaskHandle_t g_wpa3_hostap_task_hdl = NULL;
 static QueueHandle_t g_wpa3_hostap_evt_queue = NULL;
+/* Global API lock - created once, never deleted */
 SemaphoreHandle_t g_wpa3_hostap_auth_api_lock = NULL;
 
 int wpa3_hostap_post_evt(uint32_t evt_id, uint32_t data)
@@ -460,9 +466,17 @@ int wpa3_hostap_post_evt(uint32_t evt_id, uint32_t data)
         wpa_printf(MSG_DEBUG, "g_wpa3_hostap_auth_api_lock not found");
         return ESP_FAIL;
     }
-    if (evt.id == SIG_WPA3_RX_CONFIRM || evt.id == SIG_TASK_DEL) {
+    if (evt.id == SIG_WPA3_RX_CONFIRM) {
         /* prioritising confirm for completing handshake for committed sta */
         if (os_queue_send_to_front(g_wpa3_hostap_evt_queue, &evt, 0) != pdPASS) {
+            WPA3_HOSTAP_AUTH_API_UNLOCK();
+            wpa_printf(MSG_DEBUG, "failed to add msg to queue front");
+            return ESP_FAIL;
+        }
+    } else if (evt.id == SIG_TASK_DEL) {
+        /* Wi-Fi blocks until SIG_TASK_DEL is queued; only Wi-Fi calls wpa3_hostap_post_evt. */
+        /* Hence there will be no deadlock for g_wpa3_hostap_auth_api_lock. */
+        if (os_queue_send_to_front(g_wpa3_hostap_evt_queue, &evt, portMAX_DELAY) != pdPASS) {
             WPA3_HOSTAP_AUTH_API_UNLOCK();
             wpa_printf(MSG_DEBUG, "failed to add msg to queue front");
             return ESP_FAIL;
@@ -487,17 +501,26 @@ static void wpa3_process_rx_commit(wpa3_hostap_auth_event_t *evt)
     struct hostapd_data *hapd = (struct hostapd_data *)esp_wifi_get_hostap_private_internal();
     struct sta_info *sta = NULL;
     int ret;
+
+    if (!hapd || !hapd->sta_list_lock) {
+        wpa_printf(MSG_ERROR, "hapd or sta_list_lock not initialized in %s", __func__);
+        return;
+    }
+    HOSTAPD_STA_LIST_LOCK(hapd);
     frm = dl_list_first(&hapd->sae_commit_queue,
                         struct hostapd_sae_commit_queue, list);
     if (!frm) {
+        HOSTAPD_STA_LIST_UNLOCK(hapd);
         return;
     }
 
     dl_list_del(&frm->list);
+
     wpa_printf(MSG_DEBUG, "SAE: Process next available message from queue");
 
-    sta = ap_get_sta(hapd, frm->bssid);
+    sta = ap_get_sta_internal(hapd, frm->bssid);
     if (!sta) {
+        HOSTAPD_STA_LIST_UNLOCK(hapd);
         sta = ap_sta_add(hapd, frm->bssid);
         if (!sta) {
             wpa_printf(MSG_DEBUG, "ap_sta_add() failed");
@@ -507,19 +530,30 @@ static void wpa3_process_rx_commit(wpa3_hostap_auth_event_t *evt)
                                         0) != 0) {
                 wpa_printf(MSG_INFO, "esp_send_sae_auth_reply: send failed");
             }
-            goto free;
+            os_free(frm);
+            return;
+        }
+        HOSTAPD_STA_LIST_LOCK(hapd);
+        sta = ap_get_sta_internal(hapd, frm->bssid);
+        if (!sta) {
+            HOSTAPD_STA_LIST_UNLOCK(hapd);
+            os_free(frm);
+            return;
         }
     }
 
     if (sta->lock && os_semphr_take(sta->lock, 0)) {
-        sta->sae_commit_processing = true;
+        atomic_store(&sta->sae_commit_processing, true);
+        HOSTAPD_STA_LIST_UNLOCK(hapd);
+
         ret = handle_auth_sae(hapd, sta, frm->msg, frm->len, frm->bssid, frm->auth_transaction, frm->status);
 
-        if (sta->remove_pending) {
+        if (atomic_load(&sta->remove_pending)) {
             ap_free_sta(hapd, sta);
-            goto free;
+            os_free(frm);
+            return;
         }
-        sta->sae_commit_processing = false;
+        atomic_store(&sta->sae_commit_processing, false);
         os_semphr_give(sta->lock);
         uint16_t aid = 0;
         if (ret != WLAN_STATUS_SUCCESS &&
@@ -529,9 +563,11 @@ static void wpa3_process_rx_commit(wpa3_hostap_auth_event_t *evt)
                 esp_wifi_ap_deauth_internal(frm->bssid, ret);
             }
         }
+        os_free(frm);
+        return;
     }
 
-free:
+    HOSTAPD_STA_LIST_UNLOCK(hapd);
     os_free(frm);
 }
 
@@ -541,45 +577,70 @@ static void wpa3_process_rx_confirm(wpa3_hostap_auth_event_t *evt)
     struct sta_info *sta = NULL;
     int ret = WLAN_STATUS_SUCCESS;
     struct sae_hostap_confirm_data *frm = (struct sae_hostap_confirm_data *)evt->data;
+
     if (!frm) {
         return;
     }
-    sta = ap_get_sta(hapd, frm->bssid);
-    if (!sta) {
+
+    if (!hapd || !hapd->sta_list_lock) {
+        wpa_printf(MSG_ERROR, "hapd or sta_list_lock not initialized in %s", __func__);
         os_free(frm);
         return;
     }
 
-    if (sta->lock && os_semphr_take(sta->lock, 0)) {
-        ret = handle_auth_sae(hapd, sta, frm->msg, frm->len, frm->bssid, frm->auth_transaction, frm->status);
+    HOSTAPD_STA_LIST_LOCK(hapd);
+    sta = ap_get_sta_internal(hapd, frm->bssid);
+    if (!sta) {
+        HOSTAPD_STA_LIST_UNLOCK(hapd);
+        os_free(frm);
+        return;
+    }
 
-        if (sta->remove_pending) {
+    if (!sta->lock) {
+        wpa_printf(MSG_DEBUG, "SAE: sta->lock is NULL for " MACSTR, MAC2STR(frm->bssid));
+        HOSTAPD_STA_LIST_UNLOCK(hapd);
+        os_free(frm);
+        return;
+    }
+
+    if (os_semphr_take(sta->lock, 0) != pdTRUE) {
+        HOSTAPD_STA_LIST_UNLOCK(hapd);
+        os_free(frm);
+        return;
+    }
+
+    HOSTAPD_STA_LIST_UNLOCK(hapd);
+
+    ret = handle_auth_sae(hapd, sta, frm->msg, frm->len, frm->bssid, frm->auth_transaction, frm->status);
+
+    if (atomic_load(&sta->remove_pending)) {
+        ap_free_sta(hapd, sta);
+        goto done;
+    }
+
+    if (ret == WLAN_STATUS_SUCCESS) {
+        if (sta->sae_data && esp_send_sae_auth_reply(hapd, sta->addr, frm->bssid, WLAN_AUTH_SAE, 2,
+                                                     WLAN_STATUS_SUCCESS, wpabuf_head(sta->sae_data), wpabuf_len(sta->sae_data)) != ESP_OK) {
             ap_free_sta(hapd, sta);
             goto done;
         }
-        if (ret == WLAN_STATUS_SUCCESS) {
-            if (sta->sae_data && esp_send_sae_auth_reply(hapd, sta->addr, frm->bssid, WLAN_AUTH_SAE, 2,
-                                                         WLAN_STATUS_SUCCESS, wpabuf_head(sta->sae_data), wpabuf_len(sta->sae_data)) != ESP_OK) {
-                ap_free_sta(hapd, sta);
-                goto done;
-            }
-            if (esp_wifi_ap_notify_node_sae_auth_done(frm->bssid) != true) {
-                ap_free_sta(hapd, sta);
-                goto done;
-            }
+        if (esp_wifi_ap_notify_node_sae_auth_done(frm->bssid) != true) {
+            ap_free_sta(hapd, sta);
+            goto done;
         }
         os_semphr_give(sta->lock);
-        if (ret != WLAN_STATUS_SUCCESS) {
-            uint16_t aid = 0;
-            esp_wifi_ap_get_sta_aid(frm->bssid, &aid);
-            if (aid == 0) {
-                esp_wifi_ap_deauth_internal(frm->bssid, ret);
-            } else {
-                if (sta && sta->sae_data) {
-                    wpabuf_free(sta->sae_data);
-                    sta->sae_data = NULL;
-                }
+    } else {
+        uint16_t aid = 0;
+        esp_wifi_ap_get_sta_aid(frm->bssid, &aid);
+        if (aid == 0) {
+            os_semphr_give(sta->lock);
+            esp_wifi_ap_deauth_internal(frm->bssid, ret);
+        } else {
+            if (sta->sae_data) {
+                wpabuf_free(sta->sae_data);
+                sta->sae_data = NULL;
             }
+            os_semphr_give(sta->lock);
         }
     }
 done:
@@ -625,33 +686,67 @@ static void esp_wpa3_hostap_task(void *pvParameters)
     os_queue_delete(g_wpa3_hostap_evt_queue);
     g_wpa3_hostap_evt_queue = NULL;
 
+    struct hostapd_data *hapd = hostapd_get_hapd_data();
+    if (hapd && hapd->sta_list_lock) {
+        struct hostapd_sae_commit_queue *q, *tmp;
+        HOSTAPD_STA_LIST_LOCK(hapd);
+        dl_list_for_each_safe(q, tmp, &hapd->sae_commit_queue,
+                              struct hostapd_sae_commit_queue, list) {
+            dl_list_del(&q->list);
+            os_free(q);
+        }
+        HOSTAPD_STA_LIST_UNLOCK(hapd);
+        /*
+         * Safe to delete sta_list_lock after unlock: only the WPA3 hostap task and
+         * the Wi-Fi task take this lock; the Wi-Fi task is blocked while posting
+         * SIG_TASK_DEL, so it cannot acquire sta_list_lock again until teardown
+         * sequencing completes.
+         */
+        os_mutex_delete(hapd->sta_list_lock);
+        hapd->sta_list_lock = NULL;
+    }
+
     if (g_wpa3_hostap_auth_api_lock) {
         WPA3_HOSTAP_AUTH_API_UNLOCK();
     }
-    /* At this point, task is deleted*/
+    /* At this point, task is deleted */
     os_task_delete(NULL);
 }
 
 int wpa3_hostap_auth_init(void *data)
 {
+    struct hostapd_data *hapd = (struct hostapd_data *)data;
     if (g_wpa3_hostap_evt_queue) {
         wpa_printf(MSG_ERROR, "esp_wpa3_hostap_task has already been initialised");
         return ESP_OK;
     }
 
+    hapd->sta_list_lock = os_mutex_create();
+    if (!hapd->sta_list_lock) {
+        wpa_printf(MSG_ERROR, "wpa3_hostap_auth_init: failed to create sta_list_lock");
+        return ESP_FAIL;
+    }
+
+    /* g_wpa3_hostap_auth_api_lock is global - created once, never deleted */
     if (g_wpa3_hostap_auth_api_lock == NULL) {
         g_wpa3_hostap_auth_api_lock = os_semphr_create(1, 1);
         if (!g_wpa3_hostap_auth_api_lock) {
             wpa_printf(MSG_ERROR, "wpa3_hostap_auth_init: failed to create WPA3 hostap auth API lock");
+            os_mutex_delete(hapd->sta_list_lock);
+            hapd->sta_list_lock = NULL;
             return ESP_FAIL;
         }
     }
 
-    g_wpa3_hostap_evt_queue =  os_queue_create(10, sizeof(wpa3_hostap_auth_event_t));
+    g_wpa3_hostap_evt_queue = os_queue_create(10, sizeof(wpa3_hostap_auth_event_t));
     if (!g_wpa3_hostap_evt_queue) {
         wpa_printf(MSG_ERROR, "wpa3_hostap_auth_init: failed to create queue");
+        os_mutex_delete(hapd->sta_list_lock);
+        hapd->sta_list_lock = NULL;
         return ESP_FAIL;
     }
+
+    dl_list_init(&hapd->sae_commit_queue);
 
     if (os_task_create(esp_wpa3_hostap_task, "esp_wpa3_hostap_task",
                        WPA3_HOSTAP_HANDLE_AUTH_TASK_STACK_SIZE, NULL,
@@ -660,11 +755,11 @@ int wpa3_hostap_auth_init(void *data)
         wpa_printf(MSG_ERROR, "wpa3_hostap_auth_init: failed to create task");
         os_queue_delete(g_wpa3_hostap_evt_queue);
         g_wpa3_hostap_evt_queue = NULL;
+        os_mutex_delete(hapd->sta_list_lock);
+        hapd->sta_list_lock = NULL;
         return ESP_FAIL;
     }
 
-    struct hostapd_data *hapd = (struct hostapd_data *)data;
-    dl_list_init(&hapd->sae_commit_queue);
     return ESP_OK;
 }
 
@@ -673,9 +768,8 @@ bool wpa3_hostap_auth_deinit(void)
     if (wpa3_hostap_post_evt(SIG_TASK_DEL, 0) != 0) {
         wpa_printf(MSG_DEBUG, "failed to send task delete event");
         return false;
-    } else {
-        return true;
     }
+    return true;
 }
 
 static int wpa3_hostap_handle_auth(u8 *buf, size_t len, u32 auth_transaction, u16 status, u8 *bssid)
@@ -684,16 +778,25 @@ static int wpa3_hostap_handle_auth(u8 *buf, size_t len, u32 auth_transaction, u1
     if (!hapd) {
         return ESP_FAIL;
     }
-    struct sta_info *sta = ap_get_sta(hapd, bssid);
+
     if (auth_transaction == SAE_MSG_COMMIT) {
-        if (sta && sta->sae_commit_processing) {
-            /* Ignore commit msg as we are already processing commit msg for this station */
+        HOSTAPD_STA_LIST_LOCK(hapd);
+        struct sta_info *sta = ap_get_sta_internal(hapd, bssid);
+        if (sta && atomic_load(&sta->sae_commit_processing)) {
+            HOSTAPD_STA_LIST_UNLOCK(hapd);
             return ESP_OK;
         }
+        HOSTAPD_STA_LIST_UNLOCK(hapd);
         return auth_sae_queue(hapd, buf, len, bssid, status, auth_transaction);
     }
 
-    if (sta && auth_transaction == SAE_MSG_CONFIRM) {
+    if (auth_transaction == SAE_MSG_CONFIRM) {
+        HOSTAPD_STA_LIST_LOCK(hapd);
+        bool sta_exists = (ap_get_sta_internal(hapd, bssid) != NULL);
+        HOSTAPD_STA_LIST_UNLOCK(hapd);
+        if (!sta_exists) {
+            return ESP_OK;
+        }
         struct sae_hostap_confirm_data *frm = os_malloc(sizeof(struct sae_hostap_confirm_data) + len);
         if (!frm) {
             wpa_printf(MSG_ERROR, "failed to allocate memory for confirm event");

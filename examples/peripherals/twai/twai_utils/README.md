@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-P4 | ESP32-S2 | ESP32-S3 | ESP32-S31 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- | --------- |
 
 # TWAI Console Example
 
@@ -34,7 +34,7 @@ ESP32 Pin     Transceiver    TWAI Bus
 ---------     -----------    --------
 GPIO4 (TX) -->  CTX
 GPIO5 (RX) <--  CRX
-3.3V       -->  VCC
+3.3V/5V    -->  VCC
 GND        -->  GND
               TWAI_H     <-->  TWAI_H
               TWAI_L     <-->  TWAI_L

@@ -19,6 +19,12 @@ void IRAM_ATTR modem_clock_hal_enable_modem_common_fe_clock(modem_clock_hal_cont
     modem_syscon_ll_enable_fe_32m_clock(hal->syscon_dev, enable);
 }
 
+bool IRAM_ATTR modem_clock_hal_modem_common_fe_clock_is_enabled(modem_clock_hal_context_t *hal)
+{
+    return modem_syscon_ll_fe_apb_clock_is_enabled(hal->syscon_dev) &&
+           modem_syscon_ll_fe_32m_clock_is_enabled(hal->syscon_dev);
+}
+
 void IRAM_ATTR modem_clock_hal_enable_modem_private_fe_clock(modem_clock_hal_context_t *hal, bool enable)
 {
     modem_lpcon_ll_enable_fe_mem_clock(hal->lpcon_dev, enable);
@@ -26,6 +32,15 @@ void IRAM_ATTR modem_clock_hal_enable_modem_private_fe_clock(modem_clock_hal_con
     modem_syscon_ll_enable_fe_adc_clock(hal->syscon_dev, enable);
     modem_syscon_ll_enable_fe_txlogain_clock(hal->syscon_dev, enable);
     modem_syscon_ll_enable_fe_16m_clock(hal->syscon_dev, enable);
+}
+
+bool IRAM_ATTR modem_clock_hal_modem_private_fe_clock_is_enabled(modem_clock_hal_context_t *hal)
+{
+    return modem_lpcon_ll_fe_mem_clock_is_enabled(hal->lpcon_dev) &&
+           modem_syscon_ll_fe_sdm_clock_is_enabled(hal->syscon_dev) &&
+           modem_syscon_ll_fe_adc_clock_is_enabled(hal->syscon_dev) &&
+           modem_syscon_ll_fe_txlogain_clock_is_enabled(hal->syscon_dev) &&
+           modem_syscon_ll_fe_16m_clock_is_enabled(hal->syscon_dev);
 }
 
 void modem_clock_hal_set_ble_rtc_timer_divisor_value(modem_clock_hal_context_t *hal, uint32_t divider)
@@ -50,8 +65,7 @@ void modem_clock_hal_select_ble_rtc_timer_lpclk_source(modem_clock_hal_context_t
 {
     HAL_ASSERT(src < MODEM_CLOCK_LPCLK_SRC_MAX);
 
-    switch (src)
-    {
+    switch (src) {
     case MODEM_CLOCK_LPCLK_SRC_RC_SLOW:
         lp_clkrst_ll_enable_ble_rtc_timer_slow_osc(&LP_CLKRST, true);
         break;
@@ -90,8 +104,7 @@ void modem_clock_hal_select_coex_lpclk_source(modem_clock_hal_context_t *hal, mo
 {
     HAL_ASSERT(src < MODEM_CLOCK_LPCLK_SRC_MAX);
 
-    switch (src)
-    {
+    switch (src) {
     case MODEM_CLOCK_LPCLK_SRC_RC_SLOW:
         modem_lpcon_ll_enable_coex_lpclk_slow_osc(hal->lpcon_dev, true);
         break;

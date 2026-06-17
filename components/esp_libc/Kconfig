@@ -1,4 +1,5 @@
 menu "LibC"
+    depends on !IDF_TARGET_LINUX
 
     choice LIBC
         prompt "LibC to build application with"

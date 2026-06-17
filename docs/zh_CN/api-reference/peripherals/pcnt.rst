@@ -50,15 +50,19 @@ PCNT 单元和通道分别用 :cpp:type:`pcnt_unit_handle_t` 与 :cpp:type:`pcnt
 
 .. list::
 
+    -  :cpp:member:`pcnt_unit_config_t::group_id` 用于指定从哪个 PCNT 外设组（硬件实例）中分配该单元。必须是合法的组索引，范围为 ``[0, PCNT_LL_INST_NUM)``。当芯片拥有多个独立 PCNT 组时（例如 ESP32-S31），可通过此字段将单元绑定到特定的组。
+    -  :cpp:member:`pcnt_unit_config_t::clk_src` 用于选择 PCNT 单元的时钟源。
     -  :cpp:member:`pcnt_unit_config_t::low_limit` 与 :cpp:member:`pcnt_unit_config_t::high_limit` 用于指定内部计数器的最小值和最大值。当计数器超过任一限值时，计数器将归零。
+    -  :cpp:member:`pcnt_unit_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
     -  :cpp:member:`pcnt_unit_config_t::flags::accum_count` 用于设置是否需要软件在硬件计数值溢出的时候进行累加保存，这有助于“拓宽”计数器的实际位宽。默认情况下，计数器的位宽最高只有 16 比特。请参考 :ref:`pcnt-compensate-overflow-loss` 了解如何利用此功能来补偿硬件计数器的溢出损失。
     :SOC_PCNT_SUPPORT_STEP_NOTIFY: -  :cpp:member:`pcnt_unit_config_t::flags::en_step_notify_up` 配置是否使能观察正方向步进。
     :SOC_PCNT_SUPPORT_STEP_NOTIFY: -  :cpp:member:`pcnt_unit_config_t::flags::en_step_notify_down` 配置是否使能观察负方向步进。
-    -  :cpp:member:`pcnt_unit_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
 
 .. note::
 
-    由于所有 PCNT 单元共享一个中断源，安装多个 PCNT 单元时请确保每个单元的中断优先级 :cpp:member:`pcnt_unit_config_t::intr_priority` 一致。
+    **同一 PCNT 组** 内的所有单元共享同一硬件中断源和同一外设时钟，因此在同一组内安装多个 PCNT 单元时，需满足以下约束：
+
+    - :cpp:member:`pcnt_unit_config_t::intr_priority` 和 :cpp:member:`pcnt_unit_config_t::clk_src` 在同组内须一致，不一致将导致 :cpp:func:`pcnt_new_unit` 返回 :c:macro:`ESP_ERR_INVALID_ARG`。
 
 调用函数 :cpp:func:`pcnt_new_unit` 并将 :cpp:type:`pcnt_unit_config_t` 作为其输入值，可对 PCNT 单元进行分配和初始化。该函数正常运行时，会返回一个 PCNT 单元句柄。没有可用的 PCNT 单元时（即 PCNT 单元全部被占用），该函数会返回错误 :c:macro:`ESP_ERR_NOT_FOUND`。
 

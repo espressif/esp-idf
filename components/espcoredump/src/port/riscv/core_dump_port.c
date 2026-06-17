@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,8 +28,9 @@ const static char TAG[] __attribute__((unused)) = "esp_core_dump_port";
 #define COREDUMP_EM_RISCV                   0xF3
 
 #define COREDUMP_INVALID_CAUSE_VALUE        0xFFFF
-#define COREDUMP_FAKE_STACK_START           0x20000000U
-#define COREDUMP_FAKE_STACK_LIMIT           0x30000000U
+// Fake stack range is outside of DRAM and EXTRAM regions
+#define COREDUMP_FAKE_STACK_START           0x70000000U
+#define COREDUMP_FAKE_STACK_LIMIT           0x80000000U
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #define max(a,b) ((a) < (b) ? (b) : (a))

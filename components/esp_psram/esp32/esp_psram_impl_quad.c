@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2013-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2013-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -988,7 +988,7 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(void)   //psram init
          */
         psram_read_id(spi_num, &s_psram_id);
         if (!PSRAM_IS_VALID(s_psram_id)) {
-            ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08" PRIx32 ", PSRAM chip not found or not supported", (uint32_t)s_psram_id);
+            PSRAM_LOG_NOTFOUND(TAG, "PSRAM ID read error: 0x%08" PRIx32 ", PSRAM chip not found or not supported", (uint32_t)s_psram_id);
             return ESP_ERR_NOT_SUPPORTED;
         }
     }
@@ -1175,4 +1175,19 @@ esp_err_t esp_psram_impl_get_available_size(uint32_t *out_size_bytes)
 {
     return esp_psram_impl_get_physical_size(out_size_bytes);
 }
+
+/******************************* Halfsleep Mode *******************************/
+// This PSRAM device does not support halfsleep mode
+PSRAM_HALFSLEEP_SLEEP_CODE_ATTR void esp_psram_impl_enter_halfsleep_mode(void)
+{
+}
+
+PSRAM_HALFSLEEP_SLEEP_CODE_ATTR void esp_psram_impl_exit_halfsleep_mode(void)
+{
+}
+
+PSRAM_HALFSLEEP_RESUME_CODE_ATTR void esp_psram_impl_resume_from_halfsleep_mode(uint32_t slowclk_period)
+{
+}
+
 #endif // CONFIG_SPIRAM

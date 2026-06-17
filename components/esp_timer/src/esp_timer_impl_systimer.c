@@ -153,6 +153,7 @@ esp_err_t esp_timer_impl_early_init(void)
         if (ref_count == 0) {
             systimer_ll_enable_bus_clock(true);
             systimer_ll_reset_register();
+            systimer_ll_enable_sys_clock(true);
         }
     }
     systimer_hal_tick_rate_ops_t ops = {
@@ -162,7 +163,7 @@ esp_err_t esp_timer_impl_early_init(void)
     systimer_hal_init(&systimer_hal);
     systimer_hal_set_tick_rate_ops(&systimer_hal, &ops);
 
-#if !SOC_SYSTIMER_FIXED_DIVIDER
+#if !SYSTIMER_LL_FIXED_DIVIDER
     assert(esp_clk_xtal_freq() == (40 * 1000000) &&
            "update the step for xtal to support other XTAL:APB frequency ratios");
     systimer_hal_set_steps_per_tick(&systimer_hal, 0, 2); // for xtal
@@ -190,7 +191,7 @@ esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
 
     int isr_flags = ESP_INTR_FLAG_INTRDISABLED
                     | ((1 << CONFIG_ESP_TIMER_INTERRUPT_LEVEL) & ESP_INTR_FLAG_LEVELMASK)
-#if !SOC_SYSTIMER_INT_LEVEL
+#if !SYSTIMER_LL_INT_LEVEL
                     | ESP_INTR_FLAG_EDGE
 #endif
 #if CONFIG_ESP_TIMER_IN_IRAM

@@ -33,7 +33,8 @@ def safe_cleanup_tmpdir(tmpdir: tempfile.TemporaryDirectory) -> None:
     """Safely cleanup temporary directory, handling specific errors on Windows."""
     try:
         tmpdir.cleanup()
-    except (PermissionError, NotADirectoryError):
+    except (PermissionError, NotADirectoryError, OSError):
+        # OSError: The directory is not empty
         warnings.warn(
             f'Failed to cleanup temporary directory {tmpdir.name}. '
             'This is common on Windows when files are still in use.',

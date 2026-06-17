@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -70,7 +70,7 @@ static void ulp_riscv_i2c_format_cmd(uint32_t cmd_idx, uint8_t op_code, uint8_t 
 static inline int32_t ulp_riscv_i2c_wait_for_interrupt(int32_t cycles_to_wait)
 {
     uint32_t status = 0;
-    uint32_t to = 0;
+    uint32_t timeout_start = ulp_riscv_get_cpu_cycles();
 
     while (1) {
         status = READ_PERI_REG(RTC_I2C_INT_ST_REG);
@@ -90,15 +90,8 @@ static inline int32_t ulp_riscv_i2c_wait_for_interrupt(int32_t cycles_to_wait)
             return -1;
         }
 
-        if (cycles_to_wait > -1) {
-            /* If the cycles_to_wait value is not -1, keep track of cycles and
-             * break from the loop once the timeout is reached.
-             */
-            ulp_riscv_delay_cycles(1);
-            to++;
-            if (to >= cycles_to_wait) {
-                return -1;
-            }
+        if (ulp_riscv_is_timeout_elapsed(timeout_start, cycles_to_wait)) {
+            return -1;
         }
     }
 }

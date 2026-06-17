@@ -245,7 +245,7 @@ _test_user_ecall:
 
     .global rtos_int_enter
     .global rtos_int_exit
-    .global _test_global_interrupt_handler
+    .global _global_interrupt_handler
     /* Interrupt handler */
 	.type _test_interrupt_handler, @function
 _test_interrupt_handler:
@@ -296,7 +296,7 @@ _test_interrupt_handler:
     /* mask off the interrupt flag of mcause */
     li      t0, VECTORS_MCAUSE_REASON_MASK
     and     a1, a1, t0
-    jal     _test_global_interrupt_handler
+    jal     _global_interrupt_handler
 
     /* After dispatch c handler, disable interrupt to make freertos make context switch */
 

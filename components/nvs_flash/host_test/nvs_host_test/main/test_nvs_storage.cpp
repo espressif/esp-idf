@@ -12,6 +12,7 @@
 using namespace std;
 
 #define TEST_DEFAULT_PARTITION_NAME "nvs"
+#define TEST_DEFAULT_PURGE_AFTER_ERASE true        // erase with purge after erase
 
 TEST_CASE("Storage iterator recognizes blob with VerOffset::VER_1_OFFSET", "[nvs_storage]")
 {
@@ -31,11 +32,10 @@ TEST_CASE("Storage iterator recognizes blob with VerOffset::VER_1_OFFSET", "[nvs
     REQUIRE(storage != nullptr);
     storage->createOrOpenNamespace("test_ns", true, ns_index);
 
-    CHECK(storage->writeItem(ns_index, nvs::ItemType::BLOB, "test_blob", blob, sizeof(blob)) == ESP_OK);
+    CHECK(storage->writeItem(ns_index, nvs::ItemType::BLOB, "test_blob", blob, sizeof(blob), TEST_DEFAULT_PURGE_AFTER_ERASE) == ESP_OK);
 
     // changing provokes a blob with version offset 1 (VerOffset::VER_1_OFFSET)
-    CHECK(storage->writeItem(ns_index, nvs::ItemType::BLOB, "test_blob", blob_new, sizeof(blob_new)) == ESP_OK);
-
+    CHECK(storage->writeItem(ns_index, nvs::ItemType::BLOB, "test_blob", blob_new, sizeof(blob_new), TEST_DEFAULT_PURGE_AFTER_ERASE) == ESP_OK);
     nvs_opaque_iterator_t it;
     it.storage = storage;
     it.type = NVS_TYPE_ANY;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -71,7 +71,7 @@ static void bmp180_read_ut_data(int16_t *ut_data)
     ulp_riscv_i2c_master_write_to_device(&cmd, 1);
 
     /* Wait at least 4.5 milliseconds for the sensor to complete the reading */
-    ulp_riscv_delay_cycles(5 * ULP_RISCV_CYCLES_PER_MS);
+    ulp_riscv_delay_us(5000);
 
     /* Read uncompensated temperature data */
     bmp180_read16((uint16_t *)ut_data, BMP180_SENSOR_REG_ADDR_SENSOR_DATA_MSB, BMP180_SENSOR_REG_ADDR_SENSOR_DATA_LSB);
@@ -92,26 +92,26 @@ static void bmp180_read_up_data(int32_t *up_data, oss_mode_t oss_mode)
     {
         case OSS_0:
             cmd = BMP180_SENSOR_CMD_READ_PRESSURE_OSS_0;
-            wait = 5; // Wait atleast 4.5 msec
+            wait = 5; // Wait at least 4.5 msec
             break;
         case OSS_1:
             cmd = BMP180_SENSOR_CMD_READ_PRESSURE_OSS_1;
-            wait = 8; // Wait atleast 7.5 msec
+            wait = 8; // Wait at least 7.5 msec
             break;
         case OSS_2:
             cmd = BMP180_SENSOR_CMD_READ_PRESSURE_OSS_2;
-            wait = 14; // Wait atleast 13.5 msec
+            wait = 14; // Wait at least 13.5 msec
             break;
         case OSS_3:
             cmd = BMP180_SENSOR_CMD_READ_PRESSURE_OSS_3;
-            wait = 26; // Wait atleast 25.5 msec
+            wait = 26; // Wait at least 25.5 msec
             break;
     }
 
     ulp_riscv_i2c_master_write_to_device(&cmd, 1);
 
     /* Wait for the required amount of time for the sensor to complete the reading */
-    ulp_riscv_delay_cycles(wait * ULP_RISCV_CYCLES_PER_MS);
+    ulp_riscv_delay_us(wait * 1000);
 
     /* Read uncompensated temperature data */
 

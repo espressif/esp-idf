@@ -3491,6 +3491,12 @@ void btm_io_capabilities_rsp (UINT8 *p)
     /* Allocate a new device record or reuse the oldest one */
     p_dev_rec = btm_find_or_alloc_dev (evt_data.bd_addr);
 
+    if (p_dev_rec == NULL) {
+        BTM_TRACE_ERROR ("%s: no device record available\n", __FUNCTION__);
+        return;
+    }
+
+
     /* If no security is in progress, this indicates incoming security */
     if (btm_cb.pairing_state == BTM_PAIR_STATE_IDLE) {
         memcpy (btm_cb.pairing_bda, evt_data.bd_addr, BD_ADDR_LEN);
@@ -4337,6 +4343,16 @@ void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
         /* There is no device record for new connection.  Allocate one */
         if (status == HCI_SUCCESS) {
             p_dev_rec = btm_sec_alloc_dev (bda);
+            // no memory to allocate device record
+            if (p_dev_rec == NULL) {
+                if ((btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
+                    (memcmp (btm_cb.pairing_bda, bda, BD_ADDR_LEN) == 0)) {
+                    btm_sec_change_pairing_state(BTM_PAIR_STATE_IDLE);
+                }
+                BTM_TRACE_ERROR ("%s: no device record available\n", __FUNCTION__);
+                return;
+            }
+
         } else {
             /* If the device matches with stored paring address
              * reset the paring state to idle */
@@ -4899,6 +4915,12 @@ void btm_sec_link_key_notification (UINT8 *p_bda, UINT8 *p_link_key, UINT8 key_t
 void btm_sec_link_key_request (UINT8 *p_bda)
 {
     tBTM_SEC_DEV_REC *p_dev_rec = btm_find_or_alloc_dev (p_bda);
+    // no memory to allocate device record
+    if (p_dev_rec == NULL) {
+        btsnd_hcic_link_key_neg_reply (p_bda);
+        BTM_TRACE_ERROR ("%s: no device record available\n", __FUNCTION__);
+        return;
+    }
 
     BTM_TRACE_EVENT ("btm_sec_link_key_request()  BDA: %02x:%02x:%02x:%02x:%02x:%02x\n",
                      p_bda[0], p_bda[1], p_bda[2], p_bda[3], p_bda[4], p_bda[5]);
@@ -6011,13 +6033,22 @@ static BOOLEAN btm_sec_queue_encrypt_request (BD_ADDR bd_addr, tBT_TRANSPORT tra
         tBTM_SEC_CALLBACK *p_callback, void *p_ref_data)
 {
     tBTM_SEC_QUEUE_ENTRY  *p_e;
+    if (bd_addr == NULL) {
+        BTM_TRACE_ERROR("%s: bd_addr is NULL\n", __func__);
+        return FALSE;
+    }
+
     p_e = (tBTM_SEC_QUEUE_ENTRY *)osi_malloc(sizeof(tBTM_SEC_QUEUE_ENTRY) + 1);
 
     if (p_e) {
         p_e->psm  = 0;  /* if PSM 0, encryption request */
         p_e->p_callback  = p_callback;
-        p_e->p_ref_data = (void *)(p_e + 1);
-        *(UINT8 *)p_e->p_ref_data = *(UINT8 *)(p_ref_data);
+        if (p_ref_data != NULL) {
+            p_e->p_ref_data = (void *)(p_e + 1);
+            *(UINT8 *)p_e->p_ref_data = *(UINT8 *)p_ref_data;
+        } else {
+            p_e->p_ref_data = NULL;
+        }
         p_e->transport  = transport;
         memcpy(p_e->bd_addr, bd_addr, BD_ADDR_LEN);
         fixed_queue_enqueue(btm_cb.sec_pending_q, p_e, FIXED_QUEUE_MAX_TIMEOUT);
@@ -6256,36 +6287,6 @@ BOOLEAN btm_sec_is_le_capable_dev (BD_ADDR bda)
     return le_capable;
 }
 
-/*******************************************************************************
-**
-** Function         btm_sec_find_bonded_dev
-**
-** Description      Find a bonded device starting from the specified index
-**
-** Returns          TRUE - found a bonded device
-**
-*******************************************************************************/
-#if (BLE_INCLUDED == TRUE)
-BOOLEAN btm_sec_find_bonded_dev (UINT8 start_idx, UINT16 *p_found_handle, tBTM_SEC_DEV_REC **p_rec)
-{
-    BOOLEAN found = FALSE;
-
-#if (SMP_INCLUDED== TRUE)
-    tBTM_SEC_DEV_REC *p_dev_rec;
-    list_node_t *p_node  = NULL;
-    for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
-        p_dev_rec = list_node(p_node);
-        if (p_dev_rec->ble.key_type || (p_dev_rec->sec_flags & BTM_SEC_LINK_KEY_KNOWN)) {
-            *p_found_handle = p_dev_rec->hci_handle;
-            *p_rec = p_dev_rec;
-            break;
-        }
-    }
-    BTM_TRACE_DEBUG ("%s() found=%d\n", __func__, found);
-#endif
-    return (found);
-}
-#endif  ///BLE_INCLUDED == TRUE
 /*******************************************************************************
 **
 ** Function         btm_sec_use_smp_br_chnl

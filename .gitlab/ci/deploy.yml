@@ -1,108 +1,21 @@
-.deploy_job_template:
-  stage: deploy
-  image: $ESP_ENV_IMAGE
-  tags: [ deploy ]
-
 .metrics_template:
   stage: deploy
   tags: [ fast_run, shiny ]
   image: python:3.13-slim
-  dependencies: []
-  needs: []
+  needs:
+    - job: manual_gate
+      optional: true
+  dependencies: null
   variables:
-    PIP_CACHE_DIR: ".cache/pip"
     # Metrics - related env vars
     ESP_METRICS_PROJECT_URL: "$CI_PROJECT_URL"
     ESP_METRICS_PROJECT_ID: "$CI_PROJECT_ID"
     ESP_METRICS_COMMIT_SHA: "$PIPELINE_COMMIT_SHA"
     ESP_METRICS_BRANCH_NAME: "$CI_COMMIT_REF_NAME"
-  cache:
-    key: metrics-pip
-    paths:
-      - .cache/pip
+  cache: []
   before_script:
     - echo "Installing esp-metrics-cli tool"
     - pip install "esp-metrics-cli>=0.3,<1"
-
-check_submodule_sync:
-  extends:
-    - .deploy_job_template
-    - .rules:test:submodule
-  stage: test_deploy
-  tags: [ brew, github_sync ]
-  retry: 2
-  variables:
-    GIT_STRATEGY: fetch  # use brew local mirror first
-    SUBMODULES_TO_FETCH: "none"
-    PUBLIC_IDF_URL: "https://github.com/espressif/esp-idf.git"
-  dependencies: []
-  script:
-    - git submodule deinit --force .
-    - rm -rf .git/modules  # remove all the cached metadata
-    # setting the default remote URL to the public one, to resolve relative location URLs
-    - git config remote.origin.url ${PUBLIC_IDF_URL}
-    # check if all submodules are correctly synced to public repository
-    - git submodule init
-    - git config --get-regexp '^submodule\..*\.url$' || true
-    - git submodule update --recursive
-    - echo "IDF was cloned from ${PUBLIC_IDF_URL} completely"
-
-push_to_github:
-  extends:
-    - .deploy_job_template
-    - .before_script:minimal
-    - .rules:protected:deploy
-  needs:
-    # submodule must be synced before pushing to github
-    - check_submodule_sync
-  tags: [ brew, github_sync ]
-  variables:
-    GIT_STRATEGY: fetch  # use brew local mirror first
-    GIT_DEPTH: 0  # github needs full record of commits
-  script:
-    - add_github_ssh_keys
-    - git remote remove github &>/dev/null || true
-    - git remote add github git@github.com:espressif/esp-idf.git
-    - tools/ci/push_to_github.sh
-  environment:
-    name: push_to_github_production
-    deployment_tier: production
-    url: "https://github.com/espressif/esp-idf"
-
-deploy_update_SHA_in_esp-dockerfiles:
-  extends:
-    - .deploy_job_template
-    - .before_script:minimal
-    - .rules:protected:deploy
-  dependencies: []
-  variables:
-    GIT_DEPTH: 2
-  tags: [build, shiny]
-  script:
-    - 'curl --header "PRIVATE-TOKEN: ${ESPCI_SCRIPTS_TOKEN}" -o create_MR_in_esp_dockerfile.sh $GITLAB_HTTP_SERVER/api/v4/projects/1260/repository/files/create_MR_in_esp_dockerfile%2Fcreate_MR_in_esp_dockerfile.sh/raw\?ref\=master'
-    - chmod +x create_MR_in_esp_dockerfile.sh
-    - ./create_MR_in_esp_dockerfile.sh
-  environment:
-    name: deploy_update_SHA_in_esp-dockerfiles_production
-    deployment_tier: production
-
-upload_junit_report:
-  extends:
-    - .deploy_job_template
-  tags: [ fast_run, shiny ]
-  needs:
-    - pipeline_variables
-    - job: build_child_pipeline
-      artifacts: false
-  script:
-    - run_cmd idf-ci gitlab download-artifacts --type junit
-  rules:
-    - when: always
-  artifacts:
-    reports:
-      junit: XUNIT_RESULT_*.xml
-    expire_in: 1 week
-    when: always
 
 target-examples-count-metrics:
   extends:

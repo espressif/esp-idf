@@ -1,17 +1,16 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
+#include "psa/crypto.h"
+#include "psa_crypto_driver_esp_sha_contexts.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "psa_crypto_driver_esp_sha_contexts.h"
-#include <stdbool.h>
-#include "psa/crypto.h"
 
 #ifdef CONFIG_MBEDTLS_HARDWARE_SHA
 #ifndef PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT

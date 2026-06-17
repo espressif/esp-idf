@@ -20,6 +20,13 @@ if(CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP OR
                     APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-u rv_core_critical_regs_save")
         set_property(TARGET ${COMPONENT_LIB}
                     APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-u rv_core_critical_regs_restore")
+        if(CONFIG_SOC_CPU_HAS_FPU AND CONFIG_SOC_PM_FPU_RETENTION_BY_SW)
+            list(APPEND srcs "port/${target}/sleep_fpu_asm.S")
+            set_property(TARGET ${COMPONENT_LIB}
+                        APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-u rv_core_fpu_save")
+            set_property(TARGET ${COMPONENT_LIB}
+                        APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-u rv_core_fpu_restore")
+        endif()
     endif()
 endif()
 
@@ -31,6 +38,12 @@ endif()
 
 if((CONFIG_SOC_PM_SUPPORT_MODEM_PD OR CONFIG_SOC_PM_SUPPORT_TOP_PD) AND CONFIG_SOC_PAU_SUPPORTED)
     list(APPEND srcs "port/${target}/sleep_clock.c")
+endif()
+
+if(CONFIG_BT_CTRL_SLEEP_ENABLE AND CONFIG_SOC_PM_MODEM_LOCK_CLK_WORKAROUND)
+    list(APPEND srcs "port/${target}/sleep_power.c")
+    set_property(TARGET ${COMPONENT_LIB}
+            APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-u sleep_power_system_retention_init")
 endif()
 
 if(CONFIG_SOC_PM_SUPPORT_PMU_MODEM_STATE)

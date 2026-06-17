@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,9 +16,6 @@
 #ifdef CONFIG_ESP_TLS_SERVER_SESSION_TICKETS
 #include "mbedtls/ssl_ticket.h"
 #endif
-#elif CONFIG_ESP_TLS_USING_WOLFSSL
-#include "wolfssl/wolfcrypt/settings.h"
-#include "wolfssl/ssl.h"
 #endif
 
 
@@ -201,8 +198,14 @@ typedef struct esp_tls_cfg {
     const char *common_name;                /*!< If non-NULL, server certificate CN must match this name.
                                                  If NULL, server certificate CN must match hostname. */
 
-    bool skip_common_name;                  /*!< Skip any validation of server certificate CN field.
-                                                 This field should be set to false for SNI to function correctly. */
+    bool skip_common_name;                  /*!< When true, esp-tls skips the call to
+                                                 mbedtls_ssl_set_hostname(). This disables BOTH
+                                                 server-hostname matching against the certificate
+                                                 (CN/SAN) and Server Name Indication (SNI), not just
+                                                 the legacy CN field. Only set on loopback / debug
+                                                 clients that can tolerate the loss of hostname
+                                                 authentication. Must be false for SNI to function
+                                                 correctly. */
 
     tls_keep_alive_cfg_t *keep_alive_cfg;   /*!< Enable TCP keep-alive timeout for SSL connection */
 
@@ -423,10 +426,17 @@ esp_tls_t *esp_tls_init(void);
  *                       structure should be zero-initialized
  * @param[in]  tls       Pointer to esp-tls as esp-tls handle.
  *
+ * @note       The cfg->timeout_ms parameter controls the connection timeout:
+ *             - timeout_ms > 0:  The connection attempt will be aborted if it does not
+ *                                complete within the specified duration.
+ *             - timeout_ms <= 0: No application-level timeout is applied. The connection
+ *                                relies on the underlying socket timeout (ESP_TLS_DEFAULT_CONN_TIMEOUT).
+ *             On timeout, the function returns -1 and records
+ *             ESP_ERR_ESP_TLS_CONNECTION_TIMEOUT in the error handle.
+ *
  * @return
- *             - -1      If connection establishment fails.
+ *             - -1      If connection establishment fails (including timeout).
  *             -  1      If connection establishment is successful.
- *             -  0      If connection state is in progress.
  */
 int esp_tls_conn_new_sync(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_t *tls);
 

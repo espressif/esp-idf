@@ -198,10 +198,9 @@ TEST_CASE("I2C master clock frequency test", "[i2c]")
 
     TEST_ESP_OK(i2c_master_transmit(dev_handle, data_wr, 500, 0));
 
-    uart_bitrate_detect_config_t conf = {
-        .rx_io_num = I2C_MASTER_SCL_IO,
-        .source_clk = UART_SCLK_DEFAULT,
-    };
+    uart_bitrate_detect_config_t conf = {};
+    conf.rx_io_num = I2C_MASTER_SCL_IO;
+    conf.source_clk = UART_SCLK_DEFAULT;
     uart_bitrate_res_t res = {};
     uart_detect_bitrate_start(UART_NUM_1, &conf);
     vTaskDelay(pdMS_TO_TICKS(50));
@@ -307,7 +306,7 @@ TEST_CASE("I2C master transaction non-blocking mode with large amount of transac
     i2c_device_config_t dev_cfg = {};
     dev_cfg.dev_addr_length = I2C_ADDR_BIT_LEN_7;
     dev_cfg.device_address = 0x58;
-    dev_cfg.scl_speed_hz = 400000;
+    dev_cfg.scl_speed_hz = 200000;
     dev_cfg.flags.disable_ack_check = true;
 
     i2c_master_dev_handle_t dev_handle;

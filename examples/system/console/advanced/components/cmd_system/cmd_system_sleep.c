@@ -24,6 +24,7 @@
 #include "driver/rtc_io.h"
 #include "driver/gpio.h"
 #include "driver/uart.h"
+#include "driver/uart_wakeup.h"
 #include "argtable3/argtable3.h"
 #include "cmd_system.h"
 #include "sdkconfig.h"
@@ -161,7 +162,8 @@ static int light_sleep(int argc, char **argv)
     }
     if (CONFIG_ESP_CONSOLE_UART_NUM >= 0 && CONFIG_ESP_CONSOLE_UART_NUM <= UART_NUM_1) {
         ESP_LOGI(TAG, "Enabling UART wakeup (press ENTER to exit light sleep)");
-        ESP_ERROR_CHECK( uart_set_wakeup_threshold(CONFIG_ESP_CONSOLE_UART_NUM, 3) );
+        uart_wakeup_cfg_t uart_wakeup_cfg = {.wakeup_mode = UART_WK_MODE_ACTIVE_THRESH, .rx_edge_threshold = 3};
+        ESP_ERROR_CHECK( uart_wakeup_setup(CONFIG_ESP_CONSOLE_UART_NUM, &uart_wakeup_cfg) );
         ESP_ERROR_CHECK( esp_sleep_enable_uart_wakeup(CONFIG_ESP_CONSOLE_UART_NUM) );
     }
     fflush(stdout);

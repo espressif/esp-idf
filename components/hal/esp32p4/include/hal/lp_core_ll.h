@@ -21,7 +21,6 @@
 extern "C" {
 #endif
 
-
 #define LP_CORE_LL_WAKEUP_SOURCE_LP_IO      BIT(9)
 #define LP_CORE_LL_WAKEUP_SOURCE_LP_UART    BIT(10)
 #define LP_CORE_LL_WAKEUP_SOURCE_LP_TIMER_0 BIT(13)
@@ -67,7 +66,6 @@ static inline void lp_core_ll_reset_register(void)
         (void)__DECLARE_RCC_ATOMIC_ENV; \
         lp_core_ll_reset_register(__VA_ARGS__); \
     } while(0)
-
 
 /**
  * @brief Trigger a LP_CORE_LL_WAKEUP_SOURCE_HP_CPU wake-up on the lp core
@@ -135,7 +133,6 @@ static inline void lp_core_ll_set_boot_address(intptr_t boot_address)
 {
     LP_SYS.lp_core_boot_addr.lp_cpu_boot_addr = boot_address;
 }
-
 
 /**
  * @brief Set address LP-ROM bootloader will jump to after initialization

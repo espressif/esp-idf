@@ -13,7 +13,7 @@ if(CONFIG_SOC_PMU_SUPPORTED)
 endif()
 
 if(NOT BOOTLOADER_BUILD)
-    # list(APPEND srcs "sar_periph_ctrl.c") // TODO: [ESP32H4] IDF-12368
+    list(APPEND srcs "sar_periph_ctrl.c")
 endif()
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")

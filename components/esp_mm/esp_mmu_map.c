@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -150,7 +150,7 @@ static void s_reserve_irom_region(mem_region_t *hw_mem_regions, int region_nums)
     cache_bus_mask_t bus_mask = s_get_bus_mask((uint32_t)&_instruction_reserved_start, irom_len_to_reserve);
 
     for (int i = 0; i < SOC_MMU_LINEAR_ADDRESS_REGION_NUM; i++) {
-        if (bus_mask & hw_mem_regions[i].bus_id) {
+        if ((bus_mask & hw_mem_regions[i].bus_id) == bus_mask) {
             if (hw_mem_regions[i].region_size <= irom_len_to_reserve) {
                 hw_mem_regions[i].free_head = hw_mem_regions[i].end;
                 hw_mem_regions[i].max_slot_size = 0;
@@ -178,7 +178,7 @@ static void s_reserve_drom_region(mem_region_t *hw_mem_regions, int region_nums)
     cache_bus_mask_t bus_mask = s_get_bus_mask((uint32_t)&_rodata_reserved_start, drom_len_to_reserve);
 
     for (int i = 0; i < SOC_MMU_LINEAR_ADDRESS_REGION_NUM; i++) {
-        if (bus_mask & hw_mem_regions[i].bus_id) {
+        if ((bus_mask & hw_mem_regions[i].bus_id) == bus_mask) {
             if (hw_mem_regions[i].region_size <= drom_len_to_reserve) {
                 hw_mem_regions[i].free_head = hw_mem_regions[i].end;
                 hw_mem_regions[i].max_slot_size = 0;
@@ -279,6 +279,7 @@ esp_err_t esp_mmu_map_get_max_consecutive_free_block_size(mmu_mem_caps_t caps, m
     ESP_RETURN_ON_ERROR(s_mem_caps_check(caps), TAG, "invalid caps");
     *out_len = 0;
 
+    _lock_acquire(&s_mmu_ctx.mutex);
     size_t max = 0;
 
     for (int i = 0; i < s_mmu_ctx.num_regions; i++) {
@@ -290,18 +291,61 @@ esp_err_t esp_mmu_map_get_max_consecutive_free_block_size(mmu_mem_caps_t caps, m
     }
 
     *out_len = max;
+    _lock_release(&s_mmu_ctx.mutex);
 
     return ESP_OK;
 }
 
-static int32_t s_find_available_region(mem_region_t *mem_regions, uint32_t region_nums, size_t size, mmu_mem_caps_t caps, mmu_target_t target)
+static bool s_is_vaddr_in_region(esp_vaddr_t vaddr, size_t size, mem_region_t *region)
 {
+    return vaddr >= region->start && vaddr + size <= region->end;
+}
+
+static bool s_is_block_overlapped(esp_vaddr_t vaddr, size_t size, mem_block_t *block)
+{
+    const esp_vaddr_t end = vaddr + size;
+    return (vaddr < block->laddr_end) && (end > block->laddr_start);
+}
+
+static bool s_is_range_available(esp_vaddr_t vaddr, size_t size, mem_region_t *region)
+{
+    /* Browse all the allocated blocks in the region, looking for the one that contains our start address */
+    mem_block_t *mem_block = NULL;
+    TAILQ_FOREACH(mem_block, &region->mem_block_head, entries) {
+        /* Skip the dummy blocks */
+        if (mem_block->size == 0) {
+            continue;
+        }
+        if (s_is_block_overlapped(vaddr, size, mem_block)) {
+            return false;
+        }
+        /* Since the entries are sorted, we can stop searching if the start address of the next block is after the end address of our range */
+        if (mem_block->laddr_start >= vaddr + size) {
+            break;
+        }
+    }
+    /* If we didn't find any overlap, our range is available */
+    return true;
+}
+
+/* The virtual address is optional, passing 0 will search for the first available region. */
+static int32_t s_find_available_region(mem_region_t *mem_regions, uint32_t region_nums,
+                                       esp_vaddr_t vaddr_start, size_t size,
+                                       mmu_mem_caps_t caps, mmu_target_t target)
+{
+    const esp_vaddr_t linear_addr = vaddr_start & SOC_MMU_LINEAR_ADDR_MASK;
     int32_t found_region_id = -1;
     for (int i = 0; i < region_nums; i++) {
-        if (((mem_regions[i].caps & caps) == caps) && ((mem_regions[i].targets & target) == target)) {
-            if (mem_regions[i].max_slot_size >= size) {
+        /* Regardless of the virtual address, check if the region has the proper capabilities, has enough space and is the target */
+        if (((mem_regions[i].caps & caps) == caps) && ((mem_regions[i].targets & target) == target) && mem_regions[i].max_slot_size >= size) {
+            /* If a virtual address is specified and the region contains it, use this region if the range is available */
+            if (vaddr_start == 0) {
                 found_region_id = i;
                 break;
+            }
+            /* If the virtual address is specified, check if the region contains it */
+            if (s_is_vaddr_in_region(linear_addr, size, &mem_regions[i])) {
+                return s_is_range_available(linear_addr, size, &mem_regions[i]) ? i : -1;
             }
         }
     }
@@ -316,7 +360,7 @@ esp_err_t esp_mmu_map_reserve_block_with_caps(size_t size, mmu_mem_caps_t caps, 
     size_t aligned_size = ALIGN_UP_BY(size, CONFIG_MMU_PAGE_SIZE);
     uint32_t laddr = 0;
 
-    int32_t found_region_id = s_find_available_region(s_mmu_ctx.mem_regions, s_mmu_ctx.num_regions, aligned_size, caps, target);
+    int32_t found_region_id = s_find_available_region(s_mmu_ctx.mem_regions, s_mmu_ctx.num_regions, 0, aligned_size, caps, target);
     if (found_region_id == -1) {
         ESP_EARLY_LOGE(TAG, "no such vaddr range");
         return ESP_ERR_NOT_FOUND;
@@ -459,26 +503,26 @@ static void IRAM_ATTR NOINLINE_ATTR s_do_mapping(mmu_target_t target, uint32_t v
     ESP_EARLY_LOGV(TAG, "actual_mapped_len is 0x%"PRIx32, actual_mapped_len);
 }
 
-esp_err_t esp_mmu_map(esp_paddr_t paddr_start, size_t size, mmu_target_t target, mmu_mem_caps_t caps, int flags, void **out_ptr)
+esp_err_t esp_mmu_map_virt(esp_vaddr_t vaddr_start, esp_paddr_t paddr_start, size_t size, mmu_target_t target, mmu_mem_caps_t caps, int flags, void **out_ptr)
 {
     esp_err_t ret = ESP_FAIL;
-    ESP_RETURN_ON_FALSE(out_ptr, ESP_ERR_INVALID_ARG, TAG, "null pointer");
+    mem_block_t *new_block = NULL;
 #if !SOC_SPIRAM_SUPPORTED || CONFIG_IDF_TARGET_ESP32
     ESP_RETURN_ON_FALSE(!(target & MMU_TARGET_PSRAM0), ESP_ERR_NOT_SUPPORTED, TAG, "PSRAM is not supported");
 #endif
     ESP_RETURN_ON_FALSE((paddr_start % CONFIG_MMU_PAGE_SIZE == 0), ESP_ERR_INVALID_ARG, TAG, "paddr must be rounded up to the nearest multiple of CONFIG_MMU_PAGE_SIZE");
+    ESP_RETURN_ON_FALSE((vaddr_start % CONFIG_MMU_PAGE_SIZE == 0), ESP_ERR_INVALID_ARG, TAG, "vaddr must be rounded up to the nearest multiple of CONFIG_MMU_PAGE_SIZE");
     ESP_RETURN_ON_ERROR(s_mem_caps_check(caps), TAG, "invalid caps");
 
     _lock_acquire(&s_mmu_ctx.mutex);
     mem_block_t *dummy_head = NULL;
     mem_block_t *dummy_tail = NULL;
     size_t aligned_size = ALIGN_UP_BY(size, CONFIG_MMU_PAGE_SIZE);
-    int32_t found_region_id = s_find_available_region(s_mmu_ctx.mem_regions, s_mmu_ctx.num_regions, aligned_size, caps, target);
+    int32_t found_region_id = s_find_available_region(s_mmu_ctx.mem_regions, s_mmu_ctx.num_regions, vaddr_start, aligned_size, caps, target);
     ESP_GOTO_ON_FALSE(found_region_id != -1, ESP_ERR_NOT_FOUND, err, TAG, "no such vaddr range");
 
     //Now we're sure we can find an available block inside a certain region
     mem_region_t *found_region = &s_mmu_ctx.mem_regions[found_region_id];
-    mem_block_t *new_block = NULL;
 
     if (TAILQ_EMPTY(&found_region->mem_block_head)) {
         dummy_head = (mem_block_t *)heap_caps_calloc(1, sizeof(mem_block_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
@@ -534,7 +578,9 @@ esp_err_t esp_mmu_map(esp_paddr_t paddr_start, size_t size, mmu_target_t target,
          * address.
          */
         const uint32_t new_paddr_offset = paddr_start - mem_block->paddr_start;
-        *out_ptr = (void *)mem_block->vaddr_start + new_paddr_offset;
+        if (out_ptr) {
+            *out_ptr = (void *)mem_block->vaddr_start + new_paddr_offset;
+        }
         ESP_LOGD(TAG, "paddr block is mapped already, vaddr_start: %p, size: 0x%x", (void *)mem_block->vaddr_start, mem_block->size);
         ret = ESP_ERR_INVALID_STATE;
         goto err;
@@ -556,16 +602,53 @@ esp_err_t esp_mmu_map(esp_paddr_t paddr_start, size_t size, mmu_target_t target,
     size_t max_slot_len = 0;
     mem_block_t *found_block = NULL;  //This stands for the block we found, whose slot between its prior block is where we will insert the new block to
 
+    /* Convert virtual address to linear address if specified */
+    uint32_t requested_laddr_start = 0;
+    uint32_t requested_laddr_end = 0;
+    if (vaddr_start != 0) {
+        requested_laddr_start = mmu_ll_vaddr_to_laddr(vaddr_start);
+        requested_laddr_end = requested_laddr_start + aligned_size;
+        /* Verify the virtual address is valid for this region and target */
+        uint32_t vaddr_check = 0;
+        if (caps & MMU_MEM_CAP_EXEC) {
+            vaddr_check = mmu_ll_laddr_to_vaddr(requested_laddr_start, MMU_VADDR_INSTRUCTION, target);
+        } else {
+            vaddr_check = mmu_ll_laddr_to_vaddr(requested_laddr_start, MMU_VADDR_DATA, target);
+        }
+        ESP_GOTO_ON_FALSE(vaddr_check == vaddr_start, ESP_ERR_INVALID_ARG, err, TAG, "invalid virtual address for target and caps");
+        /* Verify the linear address is within the region */
+        ESP_GOTO_ON_FALSE(requested_laddr_start >= found_region->start && requested_laddr_end <= found_region->end,
+                          ESP_ERR_INVALID_ARG, err, TAG, "virtual address range is outside the region");
+        ESP_GOTO_ON_FALSE(requested_laddr_start >= found_region->free_head,
+                          ESP_ERR_INVALID_ARG, err, TAG, "virtual address range is referencing reserved memory");
+    }
+
     TAILQ_FOREACH(mem_block, &found_region->mem_block_head, entries) {
         slot_len = mem_block->laddr_start - last_end;
 
-        if (!found) {
-            if (slot_len >= aligned_size) {
+        /* Ignore dummy blocks and any block with size 0 */
+        if (!found && slot_len > 0) {
+            /* If we have no virtual address to map to, we need to find a block that has enough space */
+            if (vaddr_start == 0 && slot_len >= aligned_size) {
                 //Found it
                 found = true;
                 found_block = mem_block;
                 slot_len -= aligned_size;
                 new_block->laddr_start = last_end;
+            } else if (vaddr_start != 0) {
+                /* If we have a virtual address to map to, we need to make sure the range [last_end;mem_block->laddr_start[
+                 * contains the range [requested_laddr_start;requested_laddr_end[ */
+                if (last_end <= requested_laddr_start && requested_laddr_end <= mem_block->laddr_start) {
+                    found = true;
+                    found_block = mem_block;
+                    size_t left_len = requested_laddr_start - last_end;
+                    size_t right_len = mem_block->laddr_start - requested_laddr_end;
+                    slot_len = MAX(left_len, right_len);
+                    new_block->laddr_start = requested_laddr_start;
+                } else if (last_end <= requested_laddr_start && requested_laddr_start < mem_block->laddr_end) {
+                    /* Another block is already mapping part of our range, trigger an error */
+                    ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "cannot map virtual address, range overlaps with existing mapping");
+                }
             }
         }
 
@@ -596,21 +679,34 @@ esp_err_t esp_mmu_map(esp_paddr_t paddr_start, size_t size, mmu_target_t target,
 
     //do mapping
     s_do_mapping(target, new_block->vaddr_start, paddr_start, aligned_size);
-    *out_ptr = (void *)new_block->vaddr_start;
+    if (out_ptr) {
+        *out_ptr = (void *)new_block->vaddr_start;
+    }
     _lock_release(&s_mmu_ctx.mutex);
 
     return ESP_OK;
 
 err:
+    if (new_block) {
+        free(new_block);
+    }
     if (dummy_tail) {
+        TAILQ_REMOVE(&found_region->mem_block_head, dummy_tail, entries);
         free(dummy_tail);
     }
     if (dummy_head) {
+        TAILQ_REMOVE(&found_region->mem_block_head, dummy_head, entries);
         free(dummy_head);
     }
     _lock_release(&s_mmu_ctx.mutex);
 
     return ret;
+}
+
+esp_err_t esp_mmu_map(esp_paddr_t paddr_start, size_t size, mmu_target_t target, mmu_mem_caps_t caps, int flags, void **out_ptr)
+{
+    ESP_RETURN_ON_FALSE(out_ptr != NULL, ESP_ERR_INVALID_ARG, TAG, "null pointer");
+    return esp_mmu_map_virt(0, paddr_start, size, target, caps, flags, out_ptr);
 }
 
 #if SOC_MMU_PER_EXT_MEM_TARGET
@@ -777,13 +873,11 @@ esp_err_t IRAM_ATTR esp_mmu_map_dump_mapped_blocks_private(void)
 /*---------------------------------------------------------------
     Helper APIs for conversion between vaddr and paddr
 ---------------------------------------------------------------*/
-static bool NOINLINE_ATTR IRAM_ATTR s_vaddr_to_paddr(uint32_t vaddr, esp_paddr_t *out_paddr, mmu_target_t *out_target)
+static bool s_vaddr_to_paddr(uint32_t vaddr, esp_paddr_t *out_paddr, mmu_target_t *out_target)
 {
     uint32_t mmu_id = 0;
-    /**
-     * Disable Cache, after this function, involved code and data should be placed in internal RAM.
-     */
-    s_stop_cache();
+
+    _lock_acquire(&s_mmu_ctx.mutex);
 
 #if SOC_MMU_PER_EXT_MEM_TARGET
     mmu_id = mmu_hal_get_id_from_vaddr(vaddr);
@@ -795,8 +889,7 @@ static bool NOINLINE_ATTR IRAM_ATTR s_vaddr_to_paddr(uint32_t vaddr, esp_paddr_t
     }
 #endif
 
-    //enable Cache, after this function, internal RAM access is no longer mandatory
-    s_start_cache();
+    _lock_release(&s_mmu_ctx.mutex);
 
     return is_mapped;
 }
@@ -818,12 +911,9 @@ esp_err_t esp_mmu_vaddr_to_paddr(void *vaddr, esp_paddr_t *out_paddr, mmu_target
     return ESP_OK;
 }
 
-static bool NOINLINE_ATTR IRAM_ATTR s_paddr_to_vaddr(esp_paddr_t paddr, mmu_target_t target, mmu_vaddr_t type, uint32_t *out_vaddr)
+static bool s_paddr_to_vaddr(esp_paddr_t paddr, mmu_target_t target, mmu_vaddr_t type, uint32_t *out_vaddr)
 {
-    /**
-     * Disable Cache, after this function, involved code and data should be placed in internal RAM.
-     */
-    s_stop_cache();
+    _lock_acquire(&s_mmu_ctx.mutex);
 
     uint32_t mmu_id = 0;
 #if SOC_MMU_PER_EXT_MEM_TARGET
@@ -831,8 +921,7 @@ static bool NOINLINE_ATTR IRAM_ATTR s_paddr_to_vaddr(esp_paddr_t paddr, mmu_targ
 #endif
     bool found = mmu_hal_paddr_to_vaddr(mmu_id, paddr, target, type, out_vaddr);
 
-    //enable Cache, after this function, internal RAM access is no longer mandatory
-    s_start_cache();
+    _lock_release(&s_mmu_ctx.mutex);
 
     return found;
 }

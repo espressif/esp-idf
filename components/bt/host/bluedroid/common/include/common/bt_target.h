@@ -73,10 +73,14 @@
 #define SDP_INCLUDED                TRUE
 #define BTA_DM_QOS_INCLUDED         TRUE
 
+#define BR_EDR_MAX_RECONNECT_ON_COLLISION UC_BT_CLASSIC_MAX_RECONNECT_ON_COLLISION
+
 #define ENC_KEY_SIZE_CTRL_MODE_NONE 0
 #define ENC_KEY_SIZE_CTRL_MODE_STD  1
 #define ENC_KEY_SIZE_CTRL_MODE_VSC  2
 #define ENC_KEY_SIZE_CTRL_MODE      UC_BT_ENC_KEY_SIZE_CTRL_MODE
+
+#define ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC UC_BT_CLASSIC_ENABLE_POWER_CTRL_VSC
 
 #if (UC_BT_A2DP_ENABLED == TRUE)
 #define BTA_AR_INCLUDED             TRUE
@@ -95,6 +99,11 @@
 #else
 #define SBC_DEC_INCLUDED            TRUE
 #define SBC_ENC_INCLUDED            TRUE
+#endif
+#if (UC_BT_A2DP_CODEC_AAC_ENABLED == TRUE)
+#define BTC_AV_CODEC_AAC_INCLUDED   TRUE
+#define BTA_AV_CODEC_AAC_INCLUDED   TRUE
+#define A2D_AV_CODEC_AAC_INCLUDED   TRUE
 #endif
 #if UC_BT_AVRCP_CT_COVER_ART_ENABLED
 #define BTA_AV_CA_INCLUDED          TRUE
@@ -337,10 +346,10 @@
 #define BLE_FEAT_ISO_60_EN     FALSE
 #endif
 
-#if (UC_BT_BLE_FEAT_ISO_BIG_BROCASTER == TRUE)
-#define BLE_FEAT_ISO_BIG_BROCASTER_EN   TRUE
+#if (UC_BT_BLE_FEAT_ISO_BIG_BROADCASTER == TRUE)
+#define BLE_FEAT_ISO_BIG_BROADCASTER_EN   TRUE
 #else
-#define BLE_FEAT_ISO_BIG_BROCASTER_EN   FALSE
+#define BLE_FEAT_ISO_BIG_BROADCASTER_EN   FALSE
 #endif
 
 #if (UC_BT_BLE_FEAT_ISO_BIG_SYNCER == TRUE)
@@ -439,6 +448,13 @@
 #define BT_BLE_FEAT_CHANNEL_SOUNDING     FALSE
 #endif
 
+/* LE Monitor Advertisement (Bluetooth Core 6.0) */
+#if (BLE_50_FEATURE_SUPPORT == TRUE) && (defined UC_BT_BLE_FEAT_ADV_MONITOR) && (UC_BT_BLE_FEAT_ADV_MONITOR == TRUE)
+#define BLE_FEAT_ADV_MONITOR     TRUE
+#else
+#define BLE_FEAT_ADV_MONITOR     FALSE
+#endif
+
 #if (UC_BT_BLE_VENDOR_HCI_EN == TRUE)
 #define BLE_VENDOR_HCI_EN TRUE
 #else
@@ -449,6 +465,24 @@
 #define BLE_HIGH_DUTY_ADV_INTERVAL TRUE
 #else
 #define BLE_HIGH_DUTY_ADV_INTERVAL FALSE
+#endif
+
+/* Host-side parameter validation floor (in 1.25 ms units) for the BLE
+ * connection interval. Internal to the Bluedroid host: not sent on air, not
+ * exposed via the GATT Preferred Connection Parameters Characteristic, and
+ * not a public API constant - those use BTM_BLE_CONN_INT_MIN (0x0006).
+ *
+ * When UC_BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT == 1 the host stops
+ * enforcing a minimum (the actual lower limit is then defined entirely by
+ * the controller). 0x0001 is used rather than 0x0000 so the existing
+ * `uint16_t < MIN` range checks remain well-defined under GCC
+ * `-Wtype-limits`. */
+#ifndef BLE_CONN_INT_MIN_HOST_CHECK
+#if (UC_BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT == 1)
+#define BLE_CONN_INT_MIN_HOST_CHECK             0x0001
+#else
+#define BLE_CONN_INT_MIN_HOST_CHECK             0x0006
+#endif
 #endif
 
 #if (UC_BT_BLE_RPA_SUPPORTED  == TRUE)
@@ -677,10 +711,6 @@
 
 #ifndef BTA_DM_QOS_INCLUDED
 #define BTA_DM_QOS_INCLUDED FALSE
-#endif
-
-#ifndef BTA_PAN_INCLUDED
-#define BTA_PAN_INCLUDED FALSE
 #endif
 
 #ifndef BTA_HD_INCLUDED
@@ -1410,6 +1440,19 @@
 #define BTM_BLE_CONFORMANCE_TESTING           FALSE
 #endif
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
+#if (BT_CONTROLLER_INCLUDED == TRUE) && (CONFIG_IDF_TARGET_ESP32)
+#define BR_EDR_SET_CTRL_SCO_DATAPATH     (TRUE)
+#else
+#define BR_EDR_SET_CTRL_SCO_DATAPATH     (FALSE)
+#endif
+
+#if (BT_CONTROLLER_INCLUDED == TRUE) && (CONFIG_IDF_TARGET_ESP32)
+#define BR_EDR_GET_EIR_TX_PWR_LEVEL      (TRUE)
+#else
+#define BR_EDR_GET_EIR_TX_PWR_LEVEL      (FALSE)
+#endif
+#endif
 /******************************************************************************
 **
 ** CONTROLLER TO HOST FLOW CONTROL
@@ -2263,7 +2306,7 @@
 
 /* Number of simultaneous stream endpoints. */
 #ifndef AVDT_NUM_SEPS
-#define AVDT_NUM_SEPS               3
+#define AVDT_NUM_SEPS               UC_BT_A2DP_SEP_NUM_MAX
 #endif
 
 /* Number of transport channels setup per media stream(audio or video) */

@@ -1,13 +1,17 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  *
  */
 
 #include <string.h>
-#include "esp_hmac.h"
+#include <stdlib.h>
 #include "sdkconfig.h"
+#include "psa/crypto.h"
+#include "psa_crypto_driver_esp_hmac_opaque.h"
+#include "esp_efuse.h"
+#include "esp_efuse_chip.h"
 
 #include "esp_hmac_pbkdf2.h"
 
@@ -33,22 +37,58 @@ esp_err_t esp_hmac_derive_pbkdf2_key(hmac_key_id_t key_id, const uint8_t *salt, 
     }
 
     esp_err_t err = ESP_FAIL;
+    psa_status_t status;
+    psa_key_id_t psa_key_id = 0;
     size_t remaining = key_len;
     uint8_t *out_p = out_key;
+
+    // Setup key attributes for ESP-HMAC opaque driver
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE);
+    psa_set_key_algorithm(&attributes, PSA_ALG_HMAC(PSA_ALG_SHA_256));
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_HMAC);
+    psa_set_key_bits(&attributes, 256);
+    psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_ESP_HMAC_VOLATILE);
+
+    // Create opaque key reference
+    esp_hmac_opaque_key_t opaque_key = {
+    // TODO: Support key recovery info for HMAC key in PBKDF2 after PSA migration of this API is done
+#if SOC_KEY_MANAGER_SUPPORTED
+        .key_recovery_info = NULL,
+#endif /* SOC_KEY_MANAGER_SUPPORTED */
+        .efuse_key_id = key_id,
+    };
+
+    // Import the opaque key
+    status = psa_import_key(&attributes, (uint8_t *)&opaque_key,
+                           sizeof(opaque_key), &psa_key_id);
+    psa_reset_key_attributes(&attributes);
+
+    if (status != PSA_SUCCESS) {
+        err = ESP_ERR_INVALID_ARG;
+        goto cleanup;
+    }
 
     while (remaining > 0) {
         memcpy(hmac_input, salt, salt_len);
         memcpy(hmac_input + salt_len, counter, sizeof(counter));
 
-        err = esp_hmac_calculate(key_id, hmac_input, salt_len + sizeof(counter), U);
-        if (err != ESP_OK) {
+        size_t mac_length = 0;
+        status = psa_mac_compute(psa_key_id, PSA_ALG_HMAC(PSA_ALG_SHA_256),
+                                hmac_input, salt_len + sizeof(counter),
+                                U, SHA256_DIGEST_SZ, &mac_length);
+        if (status != PSA_SUCCESS) {
+            err = ESP_FAIL;
             goto cleanup;
         }
 
         memcpy(T, U, SHA256_DIGEST_SZ);
         for (int i = 1; i < iterations; i++) {
-            err = esp_hmac_calculate(key_id, U, SHA256_DIGEST_SZ, U);
-            if (err != ESP_OK) {
+            status = psa_mac_compute(psa_key_id, PSA_ALG_HMAC(PSA_ALG_SHA_256),
+                                    U, SHA256_DIGEST_SZ,
+                                    U, SHA256_DIGEST_SZ, &mac_length);
+            if (status != PSA_SUCCESS) {
+                err = ESP_FAIL;
                 goto cleanup;
             }
 
@@ -72,6 +112,9 @@ esp_err_t esp_hmac_derive_pbkdf2_key(hmac_key_id_t key_id, const uint8_t *salt, 
     err = ESP_OK;
 
 cleanup:
+    if (psa_key_id != 0) {
+        psa_destroy_key(psa_key_id);
+    }
     memset(U, 0x00, sizeof(U));
     memset(T, 0x00, sizeof(T));
     if (hmac_input) {

@@ -1,30 +1,24 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
+
+#include "esp_types.h"
+#include "psa/crypto_driver_common.h"
+#include "psa_crypto_driver_esp_aes_contexts.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if defined(ESP_AES_DRIVER_ENABLED) || defined(PSA_CRYPTO_DRIVER_TEST)
-
-#if defined(ESP_SHA_DRIVER_ENABLED)
-#include "psa_crypto_driver_esp_sha_contexts.h"
-#include "psa_crypto_driver_esp_sha.h"
-#endif /* ESP_SHA_DRIVER_ENABLED */
+#if defined(ESP_CMAC_DRIVER_ENABLED)
 
 #define PSA_AES_BLOCK_SIZE PSA_BLOCK_CIPHER_BLOCK_LENGTH(PSA_KEY_TYPE_AES)
-#define PSA_DES_BLOCK_SIZE PSA_BLOCK_CIPHER_BLOCK_LENGTH(PSA_KEY_TYPE_DES)
-
-#if defined(PSA_WANT_KEY_TYPE_AES)
-#define PSA_CMAC_MAX_BLOCK_SIZE PSA_AES_BLOCK_SIZE /**< The longest block used by CMAC is that of AES. */
-#else
-#define PSA_CMAC_MAX_BLOCK_SIZE PSA_DES_BLOCK_SIZE /**< The longest block used by CMAC is that of 3DES. */
-#endif
+#define PSA_CMAC_MAX_BLOCK_SIZE PSA_AES_BLOCK_SIZE
 
 typedef struct {
     /** The CMAC key identifier for cipher operations */
@@ -42,16 +36,12 @@ typedef struct {
 
     uint8_t cipher_block_length;
 
-    struct psa_cipher_operation_s cipher_ctx;
+    esp_aes_operation_t esp_aes_ctx;
 
     psa_algorithm_t alg;
-#if defined(ESP_SHA_DRIVER_ENABLED)
-    esp_sha_hash_operation_t hmac_operation;
-    uint8_t opad[PSA_HMAC_MAX_HASH_BLOCK_SIZE];
-#endif /* ESP_SHA_DRIVER_ENABLED */
 } esp_cmac_operation_t;
 
-#endif /* ESP_AES_DRIVER_ENABLED */
+#endif /* ESP_CMAC_DRIVER_ENABLED */
 
 #ifdef __cplusplus
 }

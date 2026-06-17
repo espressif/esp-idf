@@ -8,6 +8,7 @@
 #include <string.h>
 #include "sdkconfig.h"
 #include "esp_ieee802154.h"
+#include "esp_check.h"
 #include "esp_err.h"
 #include "esp_phy_init.h"
 #include "esp_ieee802154_ack.h"
@@ -26,6 +27,7 @@ esp_err_t esp_ieee802154_event_callback_list_register(esp_ieee802154_event_cb_li
 {
     return ieee802154_event_callback_list_register(cb_list);
 }
+
 esp_err_t esp_ieee802154_event_callback_list_unregister(void)
 {
     return ieee802154_event_callback_list_unregister();
@@ -54,6 +56,7 @@ uint8_t esp_ieee802154_get_channel(void)
 
 esp_err_t esp_ieee802154_set_channel(uint8_t channel)
 {
+    assert(ieee802154_is_valid_channel(channel));
     ieee802154_pib_set_channel(channel);
     return ESP_OK;
 }
@@ -66,7 +69,9 @@ int8_t esp_ieee802154_get_txpower(void)
 esp_err_t esp_ieee802154_set_txpower(int8_t power)
 {
     esp_ieee802154_txpower_table_t power_table;
-    memset(&power_table, power, sizeof(power_table));
+    for (int i = 0; i < 16; i++) {
+        power_table.channel[i] = power;
+    }
     return ieee802154_pib_set_power_table(power_table);
 }
 
@@ -77,6 +82,7 @@ esp_err_t esp_ieee802154_set_power_table(esp_ieee802154_txpower_table_t power_ta
 
 esp_err_t esp_ieee802154_get_power_table(esp_ieee802154_txpower_table_t *out_power_table)
 {
+    assert(out_power_table != NULL);
     return ieee802154_pib_get_power_table(out_power_table);
 }
 
@@ -87,6 +93,7 @@ esp_err_t esp_ieee802154_set_power_with_channel(uint8_t channel, int8_t power)
 
 esp_err_t esp_ieee802154_get_power_with_channel(uint8_t channel, int8_t *out_power)
 {
+    assert(out_power != NULL);
     return ieee802154_pib_get_power_with_channel(channel, out_power);
 }
 
@@ -190,6 +197,7 @@ esp_err_t esp_ieee802154_set_multipan_short_address(esp_ieee802154_multipan_inde
 esp_err_t esp_ieee802154_get_multipan_extended_address(esp_ieee802154_multipan_index_t index, uint8_t *ext_addr)
 {
     assert(index < CONFIG_IEEE802154_INTERFACE_NUM);
+    assert(ext_addr != NULL);
     ieee802154_ll_get_multipan_ext_addr(index, ext_addr);
     return ESP_OK;
 }
@@ -197,6 +205,7 @@ esp_err_t esp_ieee802154_get_multipan_extended_address(esp_ieee802154_multipan_i
 esp_err_t esp_ieee802154_set_multipan_extended_address(esp_ieee802154_multipan_index_t index, const uint8_t *ext_addr)
 {
     assert(index < CONFIG_IEEE802154_INTERFACE_NUM);
+    assert(ext_addr != NULL);
     ieee802154_ll_set_multipan_ext_addr(index, ext_addr);
     return ESP_OK;
 }
@@ -251,7 +260,7 @@ esp_err_t esp_ieee802154_set_ack_timeout(uint32_t timeout)
 {
     // Divide by 16 and round it up.
     uint32_t target_reg_value = (timeout + 15) / 16;
-    if((timeout % 16) != 0) {
+    if ((timeout % 16) != 0) {
         ESP_LOGW(IEEE802154_TAG, "Ack timeout should be a multiple of 16, input %"PRIu32", will be replaced by %"PRIu32"", timeout, (target_reg_value * 16));
     }
     ieee802154_ll_set_ack_timeout(target_reg_value);
@@ -287,12 +296,14 @@ esp_err_t esp_ieee802154_set_short_address(uint16_t short_address)
 
 esp_err_t esp_ieee802154_get_extended_address(uint8_t *ext_addr)
 {
+    assert(ext_addr != NULL);
     ieee802154_ll_get_multipan_ext_addr(ESP_IEEE802154_MULTIPAN_0, ext_addr);
     return ESP_OK;
 }
 
 esp_err_t esp_ieee802154_set_extended_address(const uint8_t *ext_addr)
 {
+    assert(ext_addr != NULL);
     ieee802154_ll_set_multipan_ext_addr(ESP_IEEE802154_MULTIPAN_0, ext_addr);
     return ESP_OK;
 }
@@ -321,11 +332,15 @@ bool esp_ieee802154_get_rx_when_idle(void)
 
 esp_err_t esp_ieee802154_transmit(const uint8_t *frame, bool cca)
 {
+    assert(frame != NULL);
+    assert(frame[0] <= 127);
     return ieee802154_transmit(frame, cca);
 }
 
 esp_err_t esp_ieee802154_transmit_at(const uint8_t *frame, bool cca, uint32_t time)
 {
+    assert(frame != NULL);
+    assert(frame[0] <= 127);
     return ieee802154_transmit_at(frame, cca, time);
 }
 
@@ -375,10 +390,12 @@ esp_ieee802154_state_t esp_ieee802154_get_state(void)
     case IEEE802154_STATE_TX_CCA:
     case IEEE802154_STATE_CCA:
     case IEEE802154_STATE_TX:
+    case IEEE802154_STATE_TEST_TX:
     case IEEE802154_STATE_RX_ACK:
         return ESP_IEEE802154_RADIO_TRANSMIT;
 
     default:
+        ESP_LOGE(IEEE802154_TAG, "Invalid state: %d", ieee802154_get_state());
         assert(false);
         return ESP_IEEE802154_RADIO_DISABLE;
     }
@@ -386,23 +403,28 @@ esp_ieee802154_state_t esp_ieee802154_get_state(void)
 
 esp_err_t esp_ieee802154_set_transmit_security(uint8_t *frame, uint8_t *key, uint8_t *addr)
 {
+    assert(frame != NULL);
+    assert(key != NULL);
+    assert(addr != NULL);
     ieee802154_transmit_security_config(frame, key, addr);
     return ESP_OK;
 }
 
 esp_err_t esp_ieee802154_add_pending_addr(const uint8_t *addr, bool is_short)
 {
-    return ieee802154_add_pending_addr(0, addr, is_short);
+    assert(addr != NULL);
+    return ieee802154_add_pending_addr(ESP_IEEE802154_MULTIPAN_0, addr, is_short);
 }
 
 esp_err_t esp_ieee802154_clear_pending_addr(const uint8_t *addr, bool is_short)
 {
-    return ieee802154_clear_pending_addr(0, addr, is_short);
+    assert(addr != NULL);
+    return ieee802154_clear_pending_addr(ESP_IEEE802154_MULTIPAN_0, addr, is_short);
 }
 
 esp_err_t esp_ieee802154_reset_pending_table(bool is_short)
 {
-    ieee802154_reset_pending_table(0, is_short);
+    ieee802154_reset_pending_table(ESP_IEEE802154_MULTIPAN_0, is_short);
     return ESP_OK;
 }
 
@@ -465,6 +487,7 @@ __attribute__((weak)) void esp_ieee802154_ed_failed(uint16_t error)
 {
 
 }
+
 __attribute__((weak)) void esp_ieee802154_receive_at_done(void)
 {
 
@@ -472,7 +495,7 @@ __attribute__((weak)) void esp_ieee802154_receive_at_done(void)
 
 __attribute__((weak)) esp_err_t esp_ieee802154_enh_ack_generator(uint8_t *frame, esp_ieee802154_frame_info_t *frame_info, uint8_t* enhack_frame)
 {
-    ESP_EARLY_LOGE(IEEE802154_TAG, "Not implement for the enh-ack generating handler");
+    ESP_EARLY_LOGE(IEEE802154_TAG, "Not implemented for the enh-ack generating handler");
     return ESP_FAIL;
 }
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 #endif
 #include "esp_newlib.h"
 #include "psa/crypto.h"
+#include "esp_crypto_lock.h"
 #if SOC_SHA_SUPPORT_SHA512
 #define SHA_TYPE SHA2_512
 #else
@@ -58,6 +59,12 @@ void setUp(void)
     psa_cipher_encrypt(key_id, PSA_ALG_ECB_NO_PADDING, buf, CALL_SZ, buf, CALL_SZ, &output_length);
     heap_caps_free(buf);
     psa_destroy_key(key_id);
+
+    // Trigger lazy initialization of the MPI hardware mutex.
+    // In mbedtls 4.x, RSA key parsing goes through PSA which validates
+    // the key using MPI hardware, creating this lock on first use.
+    esp_crypto_mpi_lock_acquire();
+    esp_crypto_mpi_lock_release();
 
     test_utils_record_free_mem();
     TEST_ESP_OK(test_utils_set_leak_level(0, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL));

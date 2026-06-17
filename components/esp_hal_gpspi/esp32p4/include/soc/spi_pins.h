@@ -24,7 +24,7 @@
 #define MSPI_IOMUX_PIN_NUM_DQS      GPIO_NUM_INVALID
 
 // Normal IOMUX pins
-#define SPI2_FUNC_NUM               3
+#define SPI2_FUNC_NUM_QUAD          3
 #define SPI2_IOMUX_PIN_NUM_HD       6
 #define SPI2_IOMUX_PIN_NUM_CS       7
 #define SPI2_IOMUX_PIN_NUM_MOSI     8

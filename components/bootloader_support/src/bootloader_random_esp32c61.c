@@ -5,6 +5,7 @@
  */
 #include "sdkconfig.h"
 #include "bootloader_random.h"
+#include "hal/rng_ll.h"
 #include "hal/regi2c_ctrl_ll.h"
 #include "hal/adc_ll.h"
 #include "hal/adc_types.h"
@@ -64,10 +65,13 @@ void bootloader_random_enable(void)
     adc_ll_digi_set_clk_div(15);
     adc_ll_digi_set_trigger_interval(200);
     adc_ll_digi_trigger_enable();
+    rng_ll_enable();
 }
 
 void bootloader_random_disable(void)
 {
+    rng_ll_disable();
+
     adc_ll_digi_trigger_disable();
     adc_ll_digi_reset_pattern_table();
     adc_ll_set_calibration_param(ADC_UNIT_1, 0x0);

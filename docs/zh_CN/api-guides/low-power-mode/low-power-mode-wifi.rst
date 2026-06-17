@@ -6,8 +6,9 @@ Wi-Fi 场景下低功耗模式介绍
 本节将结合纯系统下的功耗模式来介绍 Wi-Fi 场景下的低功耗模式。因为 Wi-Fi 场景的复杂性，本节会首先介绍 Wi-Fi 省电的基本原理，然后再介绍具体的低功耗模式。本节主要针对 station 模式。
 
 .. todo - add sleep-current/esp32c61_summary.inc
+.. todo - add sleep-current/esp32s31_summary.inc
 
-.. only:: not esp32c61
+.. only:: not esp32c61 and not esp32s31
 
   Wi-Fi 场景如何选择低功耗模式
   --------------------------------------
@@ -50,8 +51,8 @@ Wi-Fi 省电的基本原理
 
   - 时钟准确性导致的 time offset，主要原因是时钟或多或少都会与理想的时间存在偏移，同时偏移的正负不定。
   - 处理 beacon 漏听后的时间，如漏听后持续监听时间、允许最多丢失 beacon 数目等，这段时间存不存在以及存在多久都不定，但是可以配置范围。
-  - 为了确保能够接受突发数据包而添加的 active 时间，可由配置决定。
-  - ILDE 时间是具体某些功耗模式进入条件要求。因此在满足通信需求的情况下，降低工作时间可以改善功耗表现。
+  - 为了确保能够接收突发数据包而添加的 active 时间，可由配置决定。
+  - IDLE 时间是具体某些功耗模式进入条件要求。因此在满足通信需求的情况下，降低工作时间可以改善功耗表现。
 
 .. code-block:: text
 
@@ -364,8 +365,9 @@ Modem-sleep 模式配置
           - false
 
     .. todo - add sleep-current/esp32c61_modem_sleep.inc
+    .. todo - add sleep-current/esp32s31_modem_sleep.inc
 
-    .. only:: not esp32c61
+    .. only:: not esp32c61 and not esp32s31
 
       - 配置表现
 
@@ -378,8 +380,9 @@ Auto Light-sleep 模式 + Wi-Fi 场景配置
 Auto Light-sleep 在 Wi-Fi 场景下的配置比纯系统下少了唤醒源的配置要求，其余几乎与纯系统下配置一致，因此可配置选项、配置步骤、推荐配置的详细介绍可以参考上文 :ref:`Deep-sleep 模式`。同时 Wi-Fi 相关配置保持默认。
 
 .. todo - add sleep-current/esp32c61_light_sleep.inc
+.. todo - add sleep-current/esp32s31_light_sleep.inc
 
-.. only:: not esp32c61
+.. only:: not esp32c61 and not esp32s31
 
   - 配置表现
 

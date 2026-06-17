@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,6 +37,7 @@
  */
 
 #include "xtensa_rtos.h"
+#include "xtensa/xtensa_zol_macros.h"
 #include "sdkconfig.h"
 #include "soc/soc.h"
 
@@ -124,10 +125,11 @@ LoadStoreErrorHandler:
 
 2:
     /* a4 contains the value */
+    wsr     a0, sar
     rsr     a3, epc1
     addi    a3, a3, 3
+    XT_ZOL_EPC_LCOUNT_RESTORE a3, a0   // If faulted at LEND, rewinds loop and leaves adjusted PC in a3
     wsr     a3, epc1
-    wsr     a0, sar
     rsr     a0, excsave1
 
     extui   a2, a2, 3, 5
@@ -169,6 +171,7 @@ LoadStoreErrorHandler:
     /* a4 contains the value */
     rsr     a6, epc1
     addi    a6, a6, 3
+    XT_ZOL_EPC_LCOUNT_RESTORE a6, a5   // If faulted at LEND, rewinds loop and leaves adjusted PC in a6
     wsr     a6, epc1
 
     ssa8b   a3
@@ -321,8 +324,9 @@ AlignmentErrorHandler:
     srai    a4, a4, 16                          // a4 contains the value
 
 1:
-    wsr     a3, epc1
     wsr     a0, sar
+    XT_ZOL_EPC_LCOUNT_RESTORE a3, a0   // If faulted at LEND, rewinds loop and leaves adjusted PC in a3
+    wsr     a3, epc1
     rsr     a0, excsave1
 
     extui   a2, a2, 4, 4
@@ -379,6 +383,7 @@ AlignmentErrorHandler:
     slli    a6, a5, 16                          // 0xffff0000
 
 1:
+    XT_ZOL_EPC_LCOUNT_RESTORE a7, a5   // If faulted at LEND, rewinds loop and leaves adjusted PC in a7
     wsr     a7, epc1
     movi    a5, ~3
     and     a5, a3, a5                          // a5 has the aligned address

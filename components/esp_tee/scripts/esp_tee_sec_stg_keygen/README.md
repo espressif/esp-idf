@@ -40,16 +40,13 @@ python esp_tee_sec_stg_keygen.py -k ecdsa_p256 -o ecdsa_p256_k1.bin -i ecdsa_p25
 python esp_tee_sec_stg_keygen.py -k aes256 -o aes256_gcm_k0.bin --write-once
 ```
 
-#### With custom key and IV
+#### With custom key
 
 ```bash
 # Generate 32 bytes AES key
 openssl rand 32 > aes_key.bin
 
-# Generate 12 bytes IV (optional)
-openssl rand 12 >> aes_key.bin
-
-# Generate AES key blob using custom key + IV
+# Generate AES key blob using custom key
 python esp_tee_sec_stg_keygen.py -k aes256 -o aes256_gcm_k1.bin -i aes_key.bin
 ```
 

@@ -11,6 +11,5 @@
 static inline void esp_crypto_clk_init(void)
 {
     // Set crypto clock (`clk_sec`) to use 240M PLL clock
-    // TODO: ["ESP32S31"] IDF-14629
-    // REG_SET_FIELD(HP_SYS_CLKRST_CRYPTO_CTRL0_REG, HP_SYS_CLKRST_REG_CRYPTO_CLK_SRC_SEL, 0x2);
+    REG_SET_FIELD(HP_SYS_CLKRST_CRYPTO_CTRL0_REG, HP_SYS_CLKRST_REG_CRYPTO_CLK_SRC_SEL, 0x2);
 }

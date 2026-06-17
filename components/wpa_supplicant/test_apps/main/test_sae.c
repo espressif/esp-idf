@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,8 +20,40 @@
 #include "utils/wpabuf.h"
 #include "test_utils.h"
 #include "test_wpa_supplicant_common.h"
+#include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 typedef struct crypto_bignum crypto_bignum;
+
+static unsigned int test_task_stack_high_watermark_bytes(void)
+{
+    return (unsigned int)(uxTaskGetStackHighWaterMark(NULL) *
+                          sizeof(StackType_t));
+}
+
+static int sae_commit_parse_limit_us(void)
+{
+#if CONFIG_IDF_TARGET_ESP32
+    return 400000;
+#elif CONFIG_IDF_TARGET_ESP32S3
+    return 300000;
+#elif CONFIG_IDF_TARGET_ESP32S2
+    return 380000;
+#elif CONFIG_IDF_TARGET_ESP32C3
+    return 340000;
+#elif CONFIG_IDF_TARGET_ESP32C5
+    return 130000;
+#elif CONFIG_IDF_TARGET_ESP32C6
+    return 180000;
+#elif CONFIG_IDF_TARGET_ESP32C61
+    return 200000;
+#elif CONFIG_IDF_TARGET_ESP32C2
+    return 230000;
+#else
+    return 230000;
+#endif
+}
 
 static struct wpabuf *wpabuf_alloc2(size_t len)
 {
@@ -233,26 +265,54 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
         u8 pwd[] = "ESP32-WPA3";
         struct wpabuf *buf;
         int default_groups[] = { IANA_SECP256R1, 0 };
+        int64_t start_us;
+        int64_t total_start_us;
+        int64_t total_us;
+        int64_t prepare_us;
+        int64_t write_us;
+        int64_t parse_us;
+        int64_t formation_us;
+        int limit_us = sae_commit_parse_limit_us();
 
         memset(&sae, 0, sizeof(sae));
+        total_start_us = esp_timer_get_time();
 
         TEST_ASSERT(sae_set_group(&sae, IANA_SECP256R1) == 0);
 
+        start_us = esp_timer_get_time();
         TEST_ASSERT(sae_prepare_commit(addr1, addr2, pwd, strlen((const char *)pwd), &sae) == 0);
+        prepare_us = esp_timer_get_time() - start_us;
 
         buf = wpabuf_alloc2(SAE_COMMIT_MAX_LEN);
 
         TEST_ASSERT(buf != NULL);
 
+        start_us = esp_timer_get_time();
         sae_write_commit(&sae, buf, NULL, NULL);// No anti-clogging token
+        write_us = esp_timer_get_time() - start_us;
+        formation_us = prepare_us + write_us;
 
         /* Parsing commit created by self will be detected as reflection attack*/
+        start_us = esp_timer_get_time();
         TEST_ASSERT(sae_parse_commit(&sae,
                                      wpabuf_mhead(buf), buf->used, NULL, 0, default_groups, 0) == SAE_SILENTLY_DISCARD);
+        parse_us = esp_timer_get_time() - start_us;
 
         wpabuf_free2(buf);
         sae_clear_temp_data(&sae);
         sae_clear_data(&sae);
+        total_us = esp_timer_get_time() - total_start_us;
+
+        ESP_LOGI("SAE Test",
+                 "Commit/parse timing(us): prepare=%lld write=%lld formation=%lld parse=%lld total=%lld limit=%d",
+                 (long long) prepare_us, (long long) write_us,
+                 (long long) formation_us, (long long) parse_us,
+                 (long long) total_us, limit_us);
+        ESP_LOGI("SAE Test", "Task stack high watermark(bytes): %u",
+                 test_task_stack_high_watermark_bytes());
+#if defined(CONFIG_MBEDTLS_HARDWARE_ECC) || defined(CONFIG_MBEDTLS_HARDWARE_MPI)
+        TEST_ASSERT_MESSAGE(total_us <= limit_us, "SAE commit/parse timing regression");
+#endif
 
     }
     ESP_LOGI("SAE Test", "=========== Complete ============");

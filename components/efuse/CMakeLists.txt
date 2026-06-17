@@ -25,6 +25,7 @@ else()
 endif()
 
 list(APPEND srcs "src/esp_efuse_api.c"
+                 "src/esp_efuse_dump.c"
                  "src/esp_efuse_fields.c"
                  "src/esp_efuse_utility.c"
                  "src/efuse_controller/keys/${type}/esp_efuse_api_key.c")
@@ -45,6 +46,7 @@ else()
                     PRIV_REQUIRES "${priv_requires}"
                     INCLUDE_DIRS "${include_dirs}"
                     PRIV_INCLUDE_DIRS "${private_include}")
+    idf_define_esp_err_codes(HEADERS include/esp_efuse.h)
     if(NOT ${target} STREQUAL "linux")
         # Forces the linker to include esp_efuse_startup.c
         target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_efuse_startup_include_func")

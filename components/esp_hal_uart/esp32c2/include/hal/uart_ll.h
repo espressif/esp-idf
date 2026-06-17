@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,7 @@
 #include "soc/system_reg.h"
 #include "soc/dport_access.h"
 #include "esp_attr.h"
+#include "hal/assert.h"
 
 // The default fifo depth
 #define UART_LL_FIFO_DEF_LEN  (SOC_UART_FIFO_LEN)
@@ -62,6 +63,10 @@ typedef enum {
     UART_INTR_CMD_CHAR_DET     = (0x1 << 18),
     UART_INTR_WAKEUP           = (0x1 << 19),
 } uart_intr_t;
+
+typedef enum {
+    UART_LL_MEM_LP_MODE_SHUT_DOWN, // force memory low power
+} uart_ll_mem_lp_mode_t;
 
 /**
  * @brief Check if UART is enabled or disabled.
@@ -211,6 +216,62 @@ FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *source
 }
 
 /**
+ * @brief  Force UART memory block powered on by software.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_mem_force_power_on(uart_port_t uart_num)
+{
+    uart_dev_t *hw = UART_LL_GET_HW(uart_num);
+    hw->mem_conf.force_pd = 0;
+    hw->mem_conf.force_pu = 1;
+}
+
+/**
+ * @brief  Force UART memory block in low power by software.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_mem_force_low_power(uart_port_t uart_num)
+{
+    uart_dev_t *hw = UART_LL_GET_HW(uart_num);
+    hw->mem_conf.force_pu = 0;
+    hw->mem_conf.force_pd = 1;
+}
+
+/**
+ * @brief  Control UART memory block by PMU logic.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_mem_power_by_pmu(uart_port_t uart_num)
+{
+    uart_dev_t *hw = UART_LL_GET_HW(uart_num);
+    hw->mem_conf.force_pd = 0;
+    hw->mem_conf.force_pu = 0;
+}
+
+/**
+ * @brief  Set UART memory low power mode in low power stage.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  mode UART memory low power mode.
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_mem_set_low_power_mode(uart_port_t uart_num, uart_ll_mem_lp_mode_t mode)
+{
+    HAL_ASSERT(mode == UART_LL_MEM_LP_MODE_SHUT_DOWN);
+    (void)uart_num;
+}
+
+/**
  * @brief  Configure the baud-rate.
  *
  * @param  hw Beginning address of the peripheral registers.
@@ -257,6 +318,35 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_fr
     div_reg.val = hw->clk_div.val;
     return ((sclk_freq << 4)) /
            (((div_reg.div_int << 4) | div_reg.div_frag) * (HAL_FORCE_READ_U32_REG_FIELD(hw->clk_conf, sclk_div_num) + 1));
+}
+
+/**
+ * @brief  Set the UART glitch filter threshold. Any high pulse lasting shorter than this value will be ignored when the filter is enabled.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  glitch_filt_thrd The glitch filter threshold to be set (unit: ns)
+ * @param  sclk_freq Frequency of the clock source of UART, in Hz.
+ */
+FORCE_INLINE_ATTR void uart_ll_set_glitch_filt_thrd(uart_dev_t *hw, uint32_t glitch_filt_thrd, uint32_t sclk_freq)
+{
+    uint32_t clk_cycles = 0;
+    if (glitch_filt_thrd > 0) {
+        uint32_t ref_clk_freq = sclk_freq / (HAL_FORCE_READ_U32_REG_FIELD(hw->clk_conf, sclk_div_num) + 1);
+        clk_cycles = ((uint64_t)glitch_filt_thrd * ref_clk_freq + 1000000000 - 1) / 1000000000; // round up to always filter something
+        HAL_ASSERT(clk_cycles <= UART_GLITCH_FILT_V);
+    }
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->rx_filt, glitch_filt, clk_cycles);
+}
+
+/**
+ * @brief  Enable or disable the UART glitch filter
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  enable True to enable the filter, False to disable the filter
+ */
+FORCE_INLINE_ATTR void uart_ll_enable_glitch_filt(uart_dev_t *hw, bool enable)
+{
+    hw->rx_filt.glitch_filt_en = enable;
 }
 
 /**

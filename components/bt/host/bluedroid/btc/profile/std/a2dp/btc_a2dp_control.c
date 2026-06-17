@@ -78,7 +78,9 @@ static void btc_a2dp_datapath_open(void)
     }
 #endif
 #if (BTC_AV_SINK_INCLUDED == TRUE)
-    btc_aa_ctrl_cb.data_channel_open = TRUE;
+    if (btc_av_get_peer_sep() == AVDT_TSEP_SRC && btc_av_get_service_id() == BTA_A2DP_SINK_SERVICE_ID) {
+        btc_aa_ctrl_cb.data_channel_open = TRUE;
+    }
 #endif
 }
 

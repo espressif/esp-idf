@@ -80,7 +80,8 @@ esp_err_t esp_apptrace_lock_give(esp_apptrace_lock_t *lock);
 static inline void esp_apptrace_rb_init(esp_apptrace_rb_t *rb, uint8_t *data, uint32_t size)
 {
     rb->data = data;
-    rb->size = rb->cur_size = size;
+    rb->size = size;
+    rb->cur_size = size;
     rb->rd = 0;
     rb->wr = 0;
 }

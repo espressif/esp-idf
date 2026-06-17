@@ -25,7 +25,11 @@ static const char* TAG = "lp_core_spi_test";
 
 #define TEST_GPIO_PIN_MISO   6
 #define TEST_GPIO_PIN_MOSI   7
+#if CONFIG_IDF_TARGET_ESP32S31
+#define TEST_GPIO_PIN_CLK    5  // S31 only has RTC GPIOs 0-7; GPIO 8 is not a valid LP IO
+#else
 #define TEST_GPIO_PIN_CLK    8
+#endif
 #define TEST_GPIO_PIN_CS     4
 
 #define TEST_DATA_LEN_BYTES 42

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,12 +10,20 @@
 #include "esp_err.h"
 #include "esp_bt_defs.h"
 #include "esp_a2dp_legacy_api.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define ESP_A2D_MAX_SEPS        1               /*!< Maximum number of Stream Endpoint that supported */
+/**
+ * @brief Maximum number of Stream Endpoint that supported
+ */
+#ifdef CONFIG_BT_A2DP_SEP_NUM_MAX
+#define ESP_A2D_MAX_SEPS        CONFIG_BT_A2DP_SEP_NUM_MAX
+#else
+#define ESP_A2D_MAX_SEPS        1
+#endif
 
 typedef uint16_t esp_a2d_conn_hdl_t;            /*!< Connection handle, associate with specific device that connected */
 
@@ -59,6 +67,50 @@ typedef uint16_t esp_a2d_psc_t;                /*!< Protocol service capabilitie
 #define ESP_A2D_SBC_CIE_ALLOC_MTHD_SRN          _Pragma("GCC warning \"'ESP_A2D_SBC_CIE_ALLOC_MTHD_SRN' macro is deprecated, use 'ESP_A2D_SBC_CIE_ALLOC_MTHD_SNR'\"") ESP_A2D_SBC_CIE_ALLOC_MTHD_SNR
 #define ESP_A2D_SBC_CIE_ALLOC_MTHD_LOUDNESS     (0x1)       /*!< SBC allocation method Loudness */
 
+/* A2DP M24 (MPEG-2, 4 AAC) DRC bit mask in CIE */
+#define ESP_A2D_M24_CIE_DRC_SUPPORT             (0x1)       /*!< M24 MPEG-D DRC supported */
+#define ESP_A2D_M24_CIE_DRC_NS                  (0x0)       /*!< M24 MPEG-D DRC not supported */
+
+/* A2DP M24 object type bit mask in CIE */
+#define ESP_A2D_M24_CIE_OBJ_TYPE_2_AAC_LC       (0x40)      /*!< M24 MPEG-2 AAC LC */
+#define ESP_A2D_M24_CIE_OBJ_TYPE_4_AAC_LC       (0x20)      /*!< M24 MPEG-4 AAC LC */
+#define ESP_A2D_M24_CIE_OBJ_TYPE_4_AAC_LTP      (0x10)      /*!< M24 MPEG-4 AAC LTP */
+#define ESP_A2D_M24_CIE_OBJ_TYPE_4_AAC_SCALABLE (0x08)      /*!< M24 MPEG-4 AAC Scalable */
+#define ESP_A2D_M24_CIE_OBJ_TYPE_4_HE_AAC       (0x04)      /*!< M24 MPEG-4 HE-AAC */
+#define ESP_A2D_M24_CIE_OBJ_TYPE_4_HE_AAC_V2    (0x02)      /*!< M24 MPEG-4 HE-AAC v2 */
+#define ESP_A2D_M24_CIE_OBJ_TYPE_4_AAC_ELD_V2   (0x01)      /*!< M24 MPEG-4 AAC-ELD v2 */
+
+/* A2DP M24 sampling frequency part 1 bit mask in CIE */
+#define ESP_A2D_M24_CIE_SF1_8K                  (0x80)      /*!< M24 sampling frequency 8 kHz */
+#define ESP_A2D_M24_CIE_SF1_11K                 (0x40)      /*!< M24 sampling frequency 11.025 kHz */
+#define ESP_A2D_M24_CIE_SF1_12K                 (0x20)      /*!< M24 sampling frequency 12 kHz */
+#define ESP_A2D_M24_CIE_SF1_16K                 (0x10)      /*!< M24 sampling frequency 16 kHz */
+#define ESP_A2D_M24_CIE_SF1_22K                 (0x08)      /*!< M24 sampling frequency 22.05 kHz */
+#define ESP_A2D_M24_CIE_SF1_24K                 (0x04)      /*!< M24 sampling frequency 24 kHz */
+#define ESP_A2D_M24_CIE_SF1_32K                 (0x02)      /*!< M24 sampling frequency 32 kHz */
+#define ESP_A2D_M24_CIE_SF1_44K                 (0x01)      /*!< M24 sampling frequency 44.1 kHz */
+
+/* A2DP M24 sampling frequency part 2 bit mask in CIE */
+#define ESP_A2D_M24_CIE_SF2_48K                 (0x08)      /*!< M24 sampling frequency 48 kHz */
+#define ESP_A2D_M24_CIE_SF2_64K                 (0x04)      /*!< M24 sampling frequency 64 kHz */
+#define ESP_A2D_M24_CIE_SF2_88K                 (0x02)      /*!< M24 sampling frequency 88.2 kHz */
+#define ESP_A2D_M24_CIE_SF2_96K                 (0x01)      /*!< M24 sampling frequency 96 kHz */
+
+/* A2DP M24 channels bit mask in CIE */
+#define ESP_A2D_M24_CIE_CH_1                    (0x08)      /*!< M24 1 channel */
+#define ESP_A2D_M24_CIE_CH_2                    (0x04)      /*!< M24 2 channels */
+#define ESP_A2D_M24_CIE_CH_6                    (0x02)      /*!< M24 6 channels */
+#define ESP_A2D_M24_CIE_CH_8                    (0x01)      /*!< M24 8 channels */
+
+/* A2DP M24 VBR bit mask in CIE */
+#define ESP_A2D_M24_CIE_VBR_SUPPORT             (0x1)       /*!< M24 VBR supported */
+#define ESP_A2D_M24_CIE_VBR_NS                  (0x0)       /*!< M24 VBR not supported */
+
+/* A2DP M24 bit rate bit mask in CIE */
+#define ESP_A2D_M24_CIE_BR1_MSK                 (0x7F)      /*!< M24 bit rate part 1 mask */
+#define ESP_A2D_M24_CIE_BR2_MSK                 (0xFF)      /*!< M24 bit rate part 2 mask */
+#define ESP_A2D_M24_CIE_BR3_MSK                 (0xFF)      /*!< M24 bit rate part 3 mask */
+
 /**
  * @brief A2DP SBC media codec capabilities information struct
  */
@@ -88,7 +140,7 @@ typedef struct {
 } __attribute__((packed)) esp_a2d_cie_m12_t;
 
 /**
- * @brief A2DP MPEG-2, 4 media codec capabilities information struct (Not supported yet)
+ * @brief A2DP MPEG-2, 4 media codec capabilities information struct
  */
 typedef struct {
     uint8_t     drc             : 1;        /*!< Support of MPEG-D DRC */
@@ -135,6 +187,14 @@ typedef struct {
         esp_a2d_cie_atrac_t atrac_info;        /*!< ATRAC family codec capabilities */
     } cie;                                     /*!< A2DP codec information element */
 } __attribute__((packed)) esp_a2d_mcc_t;
+
+/**
+ * @brief A2DP SEP media codec capabilities
+ */
+typedef struct {
+    uint8_t       seid;         /*!< stream endpoint id */
+    esp_a2d_mcc_t mcc;          /*!< media codec capabilities */
+} esp_a2d_sep_mcc_t;
 
 /**
  * @brief Bluetooth A2DP connection states
@@ -230,6 +290,9 @@ typedef enum {
     ESP_A2D_SNK_SET_DELAY_VALUE_EVT,           /*!< indicate a2dp sink set delay report value complete,  only used for A2DP SINK */
     ESP_A2D_SNK_GET_DELAY_VALUE_EVT,           /*!< indicate a2dp sink get delay report value complete,  only used for A2DP SINK */
     ESP_A2D_REPORT_SNK_DELAY_VALUE_EVT,        /*!< report delay value,  only used for A2DP SRC */
+    ESP_A2D_REPORT_SNK_CODEC_CAPS_EVT,         /*!< report currently selected sink codec capabilities, only used for A2DP SRC */
+    ESP_A2D_SRC_SET_PREF_MCC_EVT,              /*!< indicate a2dp source set preferred media codec configuration status, only used for A2DP SRC */
+    ESP_A2D_REPORT_SNK_ALL_CODEC_CAPS_EVT,     /*!< report all supported sink codec capabilities, only used for A2DP SRC */
 } esp_a2d_cb_event_t;
 
 /**
@@ -328,6 +391,34 @@ typedef union {
         uint16_t delay_value;                  /*!< delay report value */
     } a2d_report_delay_value_stat;             /*!< A2DP source received sink report value status */
 
+    /**
+     * @brief ESP_A2D_REPORT_SNK_CODEC_CAPS_EVT
+     */
+    struct a2d_report_snk_codec_caps_param {
+        esp_a2d_conn_hdl_t conn_hdl;           /*!< connection handle */
+        esp_a2d_mcc_t mcc;                     /*!< A2DP sink media codec capability information */
+    } a2d_report_snk_codec_caps_stat;          /*!< A2DP source received sink codec capabilities */
+
+    /**
+     * @brief ESP_A2D_SRC_SET_PREF_MCC_EVT
+     */
+    struct a2d_set_pref_mcc_param {
+        esp_bt_status_t set_status;                /*!< set status.
+                                                        @note Possible values: ESP_BT_STATUS_SUCCESS, ESP_BT_STATUS_FAIL,
+                                                              ESP_BT_STATUS_NOT_READY, ESP_BT_STATUS_BUSY, ESP_BT_STATUS_UNSUPPORTED. */
+        esp_a2d_conn_hdl_t conn_hdl;               /*!< connection handle */
+    } a2d_set_pref_mcc_stat;                       /*!< A2DP source set preferred media codec configuration */
+
+    /**
+     * @brief ESP_A2D_REPORT_SNK_ALL_CODEC_CAPS_EVT
+     */
+    struct a2d_report_snk_all_codec_caps_param {
+        esp_a2d_conn_hdl_t conn_hdl;            /*!< connection handle */
+        esp_a2d_sep_mcc_t *sep_mcc;             /*!< A2DP sink SEP information
+                                                     @note The memory will be released after the callback function ends */
+        uint8_t sep_num;                        /*!< number of A2DP sink SEP information */
+    } a2d_report_snk_all_codec_caps_stat;       /*!< A2DP source received all sink codec capabilities */
+
 } esp_a2d_cb_param_t;
 
 /**
@@ -386,7 +477,7 @@ esp_err_t esp_a2d_register_callback(esp_a2d_cb_t callback);
 /**
  * @brief           Register A2DP sink audio data output function, the output format is undecoded audio data
  *                  frame in esp_a2d_audio_buff_t, user shall call esp_a2d_audio_buff_free to free the buff
- *                  when the data is consumed.
+ *                  when the data is consumed. It is necessary to set BT_A2DP_USE_EXTERNAL_CODEC to y.
  *
  * @param[in]       callback: A2DP sink audio data callback function
  *
@@ -418,10 +509,14 @@ esp_err_t esp_a2d_sink_init(void);
  * @brief           Register a a2dp sink Stream Endpoint (SEP) with specific codec capability, shall register
  *                  SEP after a2dp sink initializing and before a2dp connection establishing. Register the same
  *                  SEP index repeatedly will overwrite the old one.
+ *                  It is necessary to set BT_A2DP_USE_EXTERNAL_CODEC to y.
+ *
+ * @note            The SEID determines the priority of negotiating the configuration with the peer for initiator.
+ *                  The lower the SEID, the higher the priority of the codec capability.
  *
  * @param[in]       seid: local SEP identifier, start from 0, less than ESP_A2D_MAX_SEPS
  *
- * @param[in]       mcc: codec capability, currently only supports SBC
+ * @param[in]       mcc: codec capability, currently supports SBC and AAC
  *
  * @return
  *                  - ESP_OK: success
@@ -550,13 +645,34 @@ esp_err_t esp_a2d_get_profile_status(esp_a2d_profile_status_t *profile_status);
 esp_err_t esp_a2d_source_init(void);
 
 /**
+ *
+ * @brief           Set the preferred A2DP source media codec configuration after establishing A2DP connection
+ *                  and before starting A2DP stream.
+ *
+ * @param[in]       conn_hdl : connection handle
+ * @param[in]       pref_mcc : preferred media codec configuration
+ *
+ * @return
+ *                  - ESP_OK: success
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: invalid parameter
+ *                  - ESP_FAIL: others
+ *
+ */
+esp_err_t esp_a2d_source_set_pref_mcc(esp_a2d_conn_hdl_t conn_hdl, const esp_a2d_mcc_t *pref_mcc);
+
+/**
  * @brief           Register a a2dp source Stream Endpoint (SEP) with specific codec capability, shall register
  *                  SEP after a2dp source initializing and before a2dp connection establishing. Register the same
  *                  SEP index repeatedly will overwrite the old one.
+ *                  It is necessary to set BT_A2DP_USE_EXTERNAL_CODEC to y.
+ *
+ * @note            The SEID determines the priority of negotiating the configuration with the peer for initiator.
+ *                  The lower the SEID, the higher the priority of the codec capability.
  *
  * @param[in]       seid: local SEP identifier, start from 0, less than ESP_A2D_MAX_SEPS
  *
- * @param[in]       mcc: codec capability, currently, only SBC supported
+ * @param[in]       mcc: codec capability, currently, SBC/AAC supported
  *
  * @return
  *                  - ESP_OK: success
@@ -585,6 +701,9 @@ esp_err_t esp_a2d_source_deinit(void);
  * @brief           Send an audio buffer with encoded audio data to sink. The audio data length shall not be bigger than
  *                  audio connection mtu (retrieved from ESP_A2D_CONNECTION_STATE_EVT). if the return value is
  *                  ESP_OK, then the audio buff is consumed, otherwise, audio buff can be reused by user.
+ *
+ * @note            If use AAC codec, the raw AAC data length shall not be bigger than (mtu - 20).
+ *                  20 is the reserved length for encapsulating LATM.
  *
  * @param[in]       conn_hdl: connection handle
  *

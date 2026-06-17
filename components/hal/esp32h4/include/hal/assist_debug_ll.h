@@ -17,6 +17,7 @@
 #include "esp_attr.h"
 #include "soc/pcr_struct.h"
 #include "soc/bus_monitor_struct.h"
+#include "soc/lp_clkrst_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -170,6 +171,73 @@ FORCE_INLINE_ATTR void assist_debug_ll_reset_register(uint32_t core_id)
 FORCE_INLINE_ATTR bool assist_debug_ll_is_debugger_active(void)
 {
     return BUS_MONITOR.monitor_core_0_debug_mode.monitor_core_0_debug_module_active;
+}
+
+FORCE_INLINE_ATTR void assist_debug_ll_lockup_monitor_enable(uint32_t core_id, bool enable)
+{
+    if (core_id) {
+        BUS_MONITOR.monitor_core_1_montr_ena.monitor_core_1_trace_lockup_ena = enable;
+    } else {
+        BUS_MONITOR.monitor_core_0_montr_ena.monitor_core_0_trace_lockup_ena = enable;
+    }
+}
+
+// trap_idx: 0 = latest trap, 1 = previous trap
+// MCause for the exception
+FORCE_INLINE_ATTR uint32_t assist_debug_ll_lockup_get_cause(uint32_t core_id, int trap_idx)
+{
+    if (core_id) {
+        return trap_idx ? BUS_MONITOR.monitor_core_1_trace_lockup_cause_1.monitor_core_1_trace_lockup_recording_cause_1
+               : BUS_MONITOR.monitor_core_1_trace_lockup_cause_0.monitor_core_1_trace_lockup_recording_cause_0;
+    } else {
+        return trap_idx ? BUS_MONITOR.monitor_core_0_trace_lockup_cause_1.monitor_core_0_trace_lockup_recording_cause_1
+               : BUS_MONITOR.monitor_core_0_trace_lockup_cause_0.monitor_core_0_trace_lockup_recording_cause_0;
+    }
+}
+
+FORCE_INLINE_ATTR uint32_t assist_debug_ll_lockup_get_tval(uint32_t core_id, int trap_idx)
+{
+    if (core_id) {
+        return trap_idx ? BUS_MONITOR.monitor_core_1_trace_lockup_tval_1.monitor_core_1_trace_lockup_recording_tval_1
+               : BUS_MONITOR.monitor_core_1_trace_lockup_tval_0.monitor_core_1_trace_lockup_recording_tval_0;
+    } else {
+        return trap_idx ? BUS_MONITOR.monitor_core_0_trace_lockup_tval_1.monitor_core_0_trace_lockup_recording_tval_1
+               : BUS_MONITOR.monitor_core_0_trace_lockup_tval_0.monitor_core_0_trace_lockup_recording_tval_0;
+    }
+}
+
+FORCE_INLINE_ATTR uint32_t assist_debug_ll_lockup_get_iaddr(uint32_t core_id, int trap_idx)
+{
+    if (core_id) {
+        return trap_idx ? BUS_MONITOR.monitor_core_1_trace_lockup_iaddr_1.monitor_core_1_trace_lockup_recording_iaddr_1
+               : BUS_MONITOR.monitor_core_1_trace_lockup_iaddr_0.monitor_core_1_trace_lockup_recording_iaddr_0;
+    } else {
+        return trap_idx ? BUS_MONITOR.monitor_core_0_trace_lockup_iaddr_1.monitor_core_0_trace_lockup_recording_iaddr_1
+               : BUS_MONITOR.monitor_core_0_trace_lockup_iaddr_0.monitor_core_0_trace_lockup_recording_iaddr_0;
+    }
+}
+
+FORCE_INLINE_ATTR uint32_t assist_debug_ll_lockup_get_priv(uint32_t core_id, int trap_idx)
+{
+    if (core_id) {
+        return trap_idx ? BUS_MONITOR.monitor_core_1_trace_lockup_priv_1.monitor_core_1_trace_lockup_recording_priv_1
+               : BUS_MONITOR.monitor_core_1_trace_lockup_priv_0.monitor_core_1_trace_lockup_recording_priv_0;
+    } else {
+        return trap_idx ? BUS_MONITOR.monitor_core_0_trace_lockup_priv_1.monitor_core_0_trace_lockup_recording_priv_1
+               : BUS_MONITOR.monitor_core_0_trace_lockup_priv_0.monitor_core_0_trace_lockup_recording_priv_0;
+    }
+}
+
+/* Enable the hardware lockup reset for the given core via LP_CLKRST.
+ * This controls whether a CPU lockup (exception inside exception handler) triggers
+ * a system reset. Defaults to 1 on H4 but must be set explicitly to be safe. */
+FORCE_INLINE_ATTR void assist_debug_ll_lockup_reset_enable(uint32_t core_id)
+{
+    if (core_id) {
+        LP_CLKRST.cpu_core1_reset.hpcore1_lockup_reset_en = 1;
+    } else {
+        LP_CLKRST.cpu_core0_reset.hpcore0_lockup_reset_en = 1;
+    }
 }
 
 #ifdef __cplusplus

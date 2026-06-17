@@ -84,6 +84,7 @@ TEST_CASE("async_memcpy_eof_event", "[GDMA][ETM]")
     TEST_ESP_OK(esp_etm_del_event(mcp_event));
     TEST_ESP_OK(esp_etm_del_channel(etm_channel_a));
     TEST_ESP_OK(esp_async_memcpy_uninstall(mcp_ctx));
+    TEST_ESP_OK(gpio_reset_pin(output_gpio));
     free(src_buf);
     free(dst_buf);
 }

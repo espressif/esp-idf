@@ -27,10 +27,11 @@ class NVSHandleSimple : public intrusive_list_node<NVSHandleSimple>,
         public ExceptionlessAllocatable {
     friend class NVSPartitionManager;
 public:
-    NVSHandleSimple(bool readOnly, uint8_t nsIndex, Storage *StoragePtr) :
+    NVSHandleSimple(bool readOnly, uint8_t nsIndex, Storage *StoragePtr, bool purgeAfterErase) :
         mStoragePtr(StoragePtr),
         mNsIndex(nsIndex),
         mReadOnly(readOnly),
+        mPurgeAfterErase(purgeAfterErase),
         valid(1)
     { }
 
@@ -55,6 +56,8 @@ public:
     esp_err_t erase_item(const char *key) override;
 
     esp_err_t erase_all() override;
+
+    esp_err_t purge_all() override;
 
     esp_err_t commit() override;
 
@@ -91,11 +94,16 @@ private:
 
     /**
      * Whether this handle is marked as read-only or read-write.
-     * 0 indicates read-only, any other value read-write.
+     * 1 indicates read-only, 0 indicates read-write.
      */
     uint8_t mReadOnly;
 
     /**
+     * Whether this handle purges the erased or updated items right after erasing or updating them.
+     * 0 indicates no purge, any other value indicates purge.
+     */
+
+     uint8_t mPurgeAfterErase;     /**
      * Indicates the validity of this handle.
      * Upon opening, a handle is valid. It becomes invalid if the underlying storage is de-initialized.
      */

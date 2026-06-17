@@ -6,7 +6,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['esp32', 'esp32s3', 'esp32p4'], indirect=['target'])
+@idf_parametrize('target', ['esp32', 'esp32s3', 'esp32p4', 'esp32s31'], indirect=['target'])
 def test_i2s_recorder_generic(dut: Dut) -> None:
     dut.expect('PDM microphone recording example start')
     dut.expect('--------------------------------------')

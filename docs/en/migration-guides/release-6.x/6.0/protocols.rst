@@ -58,7 +58,44 @@ For more information:
 ESP-TLS
 -------
 
-**Removed Deprecated API**
+Removed wolfSSL Support
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The built-in wolfSSL TLS stack support has been removed from ESP-TLS. Users who were using wolfSSL should migrate to either:
+
+1. **mbedTLS (Recommended)**: The default TLS stack, fully integrated and maintained within ESP-IDF.
+2. **Custom TLS Stack**: Register your own TLS implementation using the new custom stack API (see Option B below).
+
+**Removed Kconfig Options**
+
+The following Kconfig options have been removed:
+
+- ``CONFIG_ESP_TLS_USING_WOLFSSL`` - Use ``CONFIG_ESP_TLS_USING_MBEDTLS`` or ``CONFIG_ESP_TLS_CUSTOM_STACK`` instead
+- ``CONFIG_ESP_DEBUG_WOLFSSL`` - For mbedTLS debugging, use ``CONFIG_MBEDTLS_DEBUG``
+- ``CONFIG_ESP_TLS_OCSP_CHECKALL`` - OCSP functionality should be handled by the chosen TLS stack
+
+**Migration Steps for wolfSSL Users**
+
+If your project was using wolfSSL via ESP-TLS:
+
+1. **Option A - Switch to mbedTLS**
+
+   - Remove ``CONFIG_ESP_TLS_USING_WOLFSSL=y`` from your sdkconfig
+   - The default ``CONFIG_ESP_TLS_USING_MBEDTLS`` will be used automatically
+   - No code changes required for standard TLS operations
+
+2. **Option B - Use Custom Stack API**
+
+   If you need to continue using wolfSSL or another TLS library, you can register it as a custom stack:
+
+   - Enable ``CONFIG_ESP_TLS_CUSTOM_STACK`` in menuconfig
+   - Implement the :cpp:type:`esp_tls_stack_ops_t` interface for your TLS library
+   - Call :cpp:func:`esp_tls_register_stack` before creating any TLS connections
+
+   For detailed documentation on implementing a custom TLS stack, see :ref:`esp_tls_custom_stack`.
+
+Removed Deprecated API
+~~~~~~~~~~~~~~~~~~~~~~
 
 The deprecated :cpp:func:`esp_tls_conn_http_new` function has been removed. Use either:
 
@@ -66,6 +103,74 @@ The deprecated :cpp:func:`esp_tls_conn_http_new` function has been removed. Use 
 - :cpp:func:`esp_tls_conn_http_new_async` for non-blocking connections
 
 The new API requires you to create the :cpp:type:`esp_tls_t` structure using :cpp:func:`esp_tls_init` and provides better control over the connection process.
+
+ESP HTTP Server
+---------------
+
+WebSocket Handler No Longer Called During Handshake
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+From v6.0.1, the URI handler registered for a WebSocket endpoint is **no longer called** during the WebSocket handshake.
+
+Prior to this change, the handler was invoked with ``req->method == HTTP_GET`` immediately after the handshake completed, which applications used for connection-time initialization:
+
+.. code-block:: c
+
+    /* Pre-v6.0.1 pattern — no longer works from v6.0.1 onwards */
+    static esp_err_t ws_handler(httpd_req_t *req)
+    {
+        if (req->method == HTTP_GET) {
+            ESP_LOGI(TAG, "New WebSocket connection established");
+            return ESP_OK;
+        }
+        /* Handle WebSocket frames ... */
+    }
+
+From v6.0.1, the handler is invoked only for subsequent WebSocket data frames, so the ``HTTP_GET`` check is no longer needed in frame handlers.
+
+Migration Options
+^^^^^^^^^^^^^^^^^
+
+**Option 1 (Recommended)** — Move connection-time logic into a dedicated post-handshake callback:
+
+1. Enable :ref:`CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT` in menuconfig.
+2. Register a ``ws_post_handshake_cb`` on the ``httpd_uri_t`` struct. The frame handler remains clean with no ``HTTP_GET`` check.
+
+.. code-block:: c
+
+    static esp_err_t ws_on_connect(httpd_req_t *req)
+    {
+        ESP_LOGI(TAG, "New WebSocket connection established");
+        return ESP_OK;
+    }
+
+    static esp_err_t ws_handler(httpd_req_t *req)
+    {
+        /* Handle WebSocket frames only */
+    }
+
+    static const httpd_uri_t ws_uri = {
+        .uri                  = "/ws",
+        .method               = HTTP_GET,
+        .handler              = ws_handler,
+        .is_websocket         = true,
+        .ws_post_handshake_cb = ws_on_connect,
+    };
+
+**Option 2 (Minimal change)** — Set ``.ws_post_handshake_cb`` to the same function as ``.handler``:
+
+1. Enable :ref:`CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT` in menuconfig.
+2. Set ``.ws_post_handshake_cb = ws_handler`` in the URI registration. The existing ``if (req->method == HTTP_GET)`` check inside the handler continues to work without any further code changes.
+
+.. code-block:: c
+
+    static const httpd_uri_t ws_uri = {
+        .uri                  = "/ws",
+        .method               = HTTP_GET,
+        .handler              = ws_handler,
+        .is_websocket         = true,
+        .ws_post_handshake_cb = ws_handler,   /* same function restores old behavior */
+    };
 
 ESP-Modbus
 ----------
@@ -121,5 +226,5 @@ Breaking change: ESP-MQTT moved to a managed component and example set updated.
   - Legacy MQTT TLS examples under ``examples/protocols/mqtt/ssl*`` were removed.
   - New reference examples are available:
 
-    - ``examples/protocols/mqtt``: MQTT over TLS.
-    - ``examples/protocols/mqtt5``: MQTT v5.0 over TLS.
+    - :example:`protocols/mqtt`: MQTT over TLS.
+    - :example:`protocols/mqtt5`: MQTT v5.0 over TLS.

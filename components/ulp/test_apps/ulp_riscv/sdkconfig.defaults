@@ -4,4 +4,6 @@ CONFIG_ULP_COPROC_ENABLED=y
 CONFIG_ULP_COPROC_TYPE_RISCV=y
 CONFIG_ULP_COPROC_RESERVE_MEM=4096
 
-CONFIG_I2C_SUPPRESS_DEPRECATE_WARN=y
+# RTC I2C timeout: default 500 cycles is too short for real I2C transactions.
+# At 17.5 MHz ULP clock, the first RX_DATA interrupt arrives after ~1140 cycles.
+CONFIG_ULP_RISCV_I2C_RW_TIMEOUT=5000

@@ -146,6 +146,10 @@ static struct bt_mesh_dfu_target *target_get(struct bt_mesh_dfu_cli *cli,
 {
     struct bt_mesh_dfu_target *target;
 
+    if (!cli || !cli->blob.inputs) {
+        return NULL;
+    }
+
     TARGETS_FOR_EACH(cli, target) {
         if (addr == target->blob.addr) {
             return target;
@@ -181,11 +185,14 @@ static void req_timeout_handler(struct k_work *work)
                                          req->dfu_cli->mod, &ctx, NULL, 0);
     }
 
-    bt_mesh_dfu_cli_rm_req_from_list(req);
-    if (req->params) {
-        bt_mesh_free(req->params);
+    if (req) {
+        bt_mesh_dfu_cli_rm_req_from_list(req);
+        if (req->params) {
+            bt_mesh_free(req->params);
+        }
+        /* Timer has already been freed */
+        bt_mesh_free(req);
     }
-    req_free(req);
     bt_mesh_r_mutex_unlock(&dfu_req_list.op_lock);
 }
 
@@ -193,7 +200,7 @@ static bt_mesh_dfu_cli_req_t* req_alloc(void)
 {
     bt_mesh_dfu_cli_req_t *req = bt_mesh_calloc(sizeof(bt_mesh_dfu_cli_req_t));
     if (!req) {
-        BT_ERR("device firmware client allocl failed");
+        BT_ERR("device firmware client alloc failed");
         return NULL;
     }
 
@@ -210,6 +217,9 @@ static int req_free(bt_mesh_dfu_cli_req_t *req)
         return -EINVAL;
     }
 
+    if (req->params) {
+        bt_mesh_free(req->params);
+    }
     k_delayed_work_free(&req->timer);
     bt_mesh_free(req);
     return 0;
@@ -708,7 +718,6 @@ static void skip_targets_from_broadcast(struct bt_mesh_dfu_cli *cli, bool skip)
         if (bt_mesh_has_addr(target->blob.addr) ||
                 target->phase == BLE_MESH_DFU_PHASE_VERIFY) {
             target->blob.skip = skip;
-            break;
         }
     }
 }
@@ -718,7 +727,7 @@ static bool transfer_skip(struct bt_mesh_dfu_cli *cli)
     struct bt_mesh_dfu_target *target;
 
     TARGETS_FOR_EACH(cli, target) {
-        if (!bt_mesh_has_addr(target->blob.addr) || !target->blob.skip) {
+        if (!bt_mesh_has_addr(target->blob.addr) && !target->blob.skip) {
             return false;
         }
     }
@@ -883,7 +892,10 @@ static void confirmed(struct bt_mesh_blob_cli *b)
     struct bt_mesh_dfu_target *target;
     bool success = false;
 
-    cli->req->img_cb = NULL;
+    if (cli->req) {
+        cli->req->img_cb = NULL;
+        cli->req = NULL;
+    }
 
     TARGETS_FOR_EACH(cli, target) {
         if (target->status != BLE_MESH_DFU_SUCCESS) {
@@ -994,7 +1006,6 @@ static int handle_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx
         bt_mesh_dfu_client_cb_evt_to_btc(req->opcode, BTC_BLE_MESH_EVT_DFU_CLIENT_RECV_GET_RSP,
                                          req->dfu_cli->mod, &req->ctx, req->params,
                                          sizeof(struct bt_mesh_dfu_target_status));
-        bt_mesh_free(req->params);
         bt_mesh_dfu_cli_rm_req_from_list(req);
         k_delayed_work_cancel(&req->timer);
         req_free(req);
@@ -1194,7 +1205,7 @@ static int handle_info_status(const struct bt_mesh_model *mod, struct bt_mesh_ms
     } else {
         if (req->img_cb) {
             // used to notify cb function the image output finished
-            req->img_cb(cli, ctx, idx, img_cnt, NULL, NULL);
+            req->img_cb(cli, ctx, idx, img_cnt, NULL, req->params);
         }
     }
 
@@ -1257,7 +1268,6 @@ static int handle_metadata_status(const struct bt_mesh_model *mod, struct bt_mes
                                      req->dfu_cli->mod, &req->ctx, req->params,
                                      sizeof(struct bt_mesh_dfu_metadata_status));
 
-    bt_mesh_free(rsp);
     bt_mesh_dfu_cli_rm_req_from_list(req);
     req_free(req);
 
@@ -1415,16 +1425,20 @@ int bt_mesh_dfu_cli_cancel(struct bt_mesh_dfu_cli *cli,
         cli->req = req;
         err = req_setup(cli, REQ_STATUS, BLE_MESH_DFU_OP_UPDATE_CANCEL, ctx, NULL);
         if (err) {
+            req_free(req);
+            cli->req = NULL;
             return err;
         }
-        bt_mesh_dfu_cli_add_req_to_list(req);
+        /* bt_mesh_dfu_cli_add_req_to_list(req); */
 
         BLE_MESH_MODEL_BUF_DEFINE(buf, BLE_MESH_DFU_OP_UPDATE_CANCEL, 0);
         bt_mesh_model_msg_init(&buf, BLE_MESH_DFU_OP_UPDATE_CANCEL);
 
         err = bt_mesh_model_send(cli->mod, ctx, &buf, NULL, NULL);
         if (err) {
-            cli->req->type = REQ_NONE;
+            /* cli->req->type = REQ_NONE; */
+            req_free(req);
+            cli->req = NULL;
             return err;
         }
 
@@ -1455,6 +1469,7 @@ int bt_mesh_dfu_cli_apply(struct bt_mesh_dfu_cli *cli)
 int bt_mesh_dfu_cli_confirm(struct bt_mesh_dfu_cli *cli)
 {
     bt_mesh_dfu_cli_req_t *req = NULL;
+    int err = 0;
 
     if (cli->xfer.state != STATE_APPLIED) {
         return -EBUSY;
@@ -1462,12 +1477,22 @@ int bt_mesh_dfu_cli_confirm(struct bt_mesh_dfu_cli *cli)
 
     req = req_alloc();
     if (!req) {
-        BT_ERR("%s: alloc req failed", req);
+        BT_ERR("alloc req failed");
         return -ENOMEM;
     }
 
     cli->req = req;
-    req_setup(cli, INTERNAL_REQ_IMG, BLE_MESH_DFU_OP_UPDATE_INFO_GET, NULL, NULL);
+    err = req_setup(cli, INTERNAL_REQ_IMG, BLE_MESH_DFU_OP_UPDATE_INFO_GET, NULL, NULL);
+    if (err) {
+        req_free(req);
+        cli->req = NULL;
+        return err;
+    }
+    if (!is_valid_req(req)) {
+        req_free(req);
+        cli->req = NULL;
+        return -EINVAL;
+    }
     bt_mesh_dfu_cli_add_req_to_list(req);
 
     cli->xfer.state = STATE_CONFIRM;
@@ -1478,7 +1503,8 @@ int bt_mesh_dfu_cli_confirm(struct bt_mesh_dfu_cli *cli)
 
 uint8_t bt_mesh_dfu_cli_progress(struct bt_mesh_dfu_cli *cli)
 {
-    if (cli->xfer.state == STATE_TRANSFER) {
+    if (cli->xfer.state == STATE_TRANSFER ||
+        cli->xfer.state == STATE_SUSPENDED) {
         return bt_mesh_blob_cli_xfer_progress_active_get(&cli->blob);
     }
 
@@ -1555,11 +1581,15 @@ int bt_mesh_dfu_cli_metadata_check(struct bt_mesh_dfu_cli *cli,
     }
     req = req_alloc();
     if (!req) {
+        bt_mesh_free(rsp);
         return -ENOMEM;
     }
     cli->req = req;
     err = req_setup(cli, REQ_METADATA, BLE_MESH_DFU_OP_UPDATE_METADATA_CHECK, ctx, rsp);
     if (err) {
+        bt_mesh_free(rsp);
+        req_free(cli->req);
+        cli->req = NULL;
         return err;
     }
 
@@ -1577,7 +1607,10 @@ int bt_mesh_dfu_cli_metadata_check(struct bt_mesh_dfu_cli *cli,
 
     err = bt_mesh_model_send(cli->mod, ctx, &buf, NULL, NULL);
     if (err) {
-        cli->req->type = REQ_NONE;
+        /* cli->req->type = REQ_NONE; */
+        /* rsp will be freed in req_free() */
+        req_free(cli->req);
+        cli->req = NULL;
         return err;
     }
 
@@ -1598,11 +1631,15 @@ int bt_mesh_dfu_cli_status_get(struct bt_mesh_dfu_cli *cli,
 
     req = req_alloc();
     if (!req) {
+        bt_mesh_free(rsp);
         return -ENOMEM;
     }
     cli->req = req;
     err = req_setup(cli, REQ_STATUS, BLE_MESH_DFU_OP_UPDATE_GET, ctx, rsp);
     if (err) {
+        bt_mesh_free(rsp);
+        req_free(cli->req);
+        cli->req = NULL;
         return err;
     }
 
@@ -1611,7 +1648,10 @@ int bt_mesh_dfu_cli_status_get(struct bt_mesh_dfu_cli *cli,
 
     err = bt_mesh_model_send(cli->mod, ctx, &buf, NULL, NULL);
     if (err) {
-        cli->req->type = REQ_NONE;
+        /* cli->req->type = REQ_NONE; */
+        /* rsp will be freed in req_free() */
+        req_free(cli->req);
+        cli->req = NULL;
         return err;
     }
 

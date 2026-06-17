@@ -42,14 +42,14 @@ entries:
 entries:
     .ext_ram.bss+
 
-[sections:tcm_text]
+[sections:spm_text]
 entries:
-    .tcm.text+
+    .spm.text+
 
-[sections:tcm_data]
+[sections:spm_data]
 entries:
-    .tcm.data+
+    .spm.data+
 
-[sections:tcm_bss]
+[sections:spm_bss]
 entries:
-    .tcm.bss+
+    .spm.bss+

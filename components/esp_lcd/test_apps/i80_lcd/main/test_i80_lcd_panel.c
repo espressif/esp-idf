@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -9,7 +9,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
-#include "esp_random.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_nt35510.h"
@@ -367,7 +366,7 @@ TEST_CASE("lcd_panel_i80_io_test", "[lcd]")
 TEST_CASE("lcd_panel_with_i80_interface (st7789, 8bits)", "[lcd]")
 {
 #define TEST_IMG_SIZE (100 * 100 * sizeof(uint16_t))
-    uint8_t *img = heap_caps_malloc(TEST_IMG_SIZE, MALLOC_CAP_DMA);
+    uint8_t *img = heap_caps_malloc(TEST_IMG_SIZE, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     TEST_ASSERT_NOT_NULL(img);
 
     gpio_config_t bk_gpio_config = {
@@ -432,9 +431,9 @@ TEST_CASE("lcd_panel_with_i80_interface (st7789, 8bits)", "[lcd]")
     gpio_set_level(TEST_LCD_BK_LIGHT_GPIO, 1);
 
     for (int i = 0; i < 200; i++) {
-        uint8_t color_byte = esp_random() & 0xFF;
-        int x_start = esp_random() % (TEST_LCD_H_RES - 100);
-        int y_start = esp_random() % (TEST_LCD_V_RES - 100);
+        uint8_t color_byte = rand() & 0xFF;
+        int x_start = rand() % (TEST_LCD_H_RES - 100);
+        int y_start = rand() % (TEST_LCD_V_RES - 100);
         memset(img, color_byte, TEST_IMG_SIZE);
         esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 100, y_start + 100, img);
     }
@@ -460,7 +459,7 @@ TEST_CASE("i80_lcd_send_colors_to_fixed_region", "[lcd]")
     size_t color_size = (x_end - x_start) * (y_end - y_start) * 2;
     void *color_data = malloc(color_size);
     TEST_ASSERT_NOT_NULL(color_data);
-    uint8_t color_byte = esp_random() & 0xFF;
+    uint8_t color_byte = rand() & 0xFF;
     memset(color_data, color_byte, color_size);
 
     printf("creating i80 bus and IO driver\r\n");
@@ -545,7 +544,7 @@ TEST_CASE("i80_lcd_send_colors_to_fixed_region", "[lcd]")
     }
     vTaskDelay(pdMS_TO_TICKS(1000));
     // change to another color
-    color_byte = esp_random() & 0xFF;
+    color_byte = rand() & 0xFF;
     memset(color_data, color_byte, color_size);
     for (int i = 0; i < steps; i++) {
         TEST_ESP_OK(esp_lcd_panel_io_tx_color(io_handle, -1, color_data + i * color_size_per_step, color_size_per_step));

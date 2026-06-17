@@ -406,7 +406,7 @@ The target provides an ability to disable JTAG access in the device for the soft
 
 5. Configuring appropriate JTAG interface
 
-    By default esp32 is set to use the [built-in JTAG interface](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/jtag-debugging/configure-builtin-jtag.html). Please follow the steps given [here](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/jtag-debugging/configure-other-jtag.html) to configure the alternative JTAG interface.
+    By default the target is set to use the [built-in JTAG interface](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/api-guides/jtag-debugging/configure-builtin-jtag.html). Please follow the steps given [here](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/api-guides/jtag-debugging/configure-other-jtag.html) to configure the alternative JTAG interface.
     Please note that JTAG configuration cannot be done once the application firmware is flashed on the device.
 
 ## Build

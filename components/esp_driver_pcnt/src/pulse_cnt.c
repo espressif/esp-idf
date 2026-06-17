@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,18 +50,6 @@
 
 #define PCNT_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
 
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define PCNT_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define PCNT_CLOCK_SRC_ATOMIC()
-#endif
-
-#if !SOC_RCC_IS_INDEPENDENT
-#define PCNT_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define PCNT_RCC_ATOMIC()
-#endif
-
 static const char *TAG = "pcnt";
 
 typedef struct pcnt_platform_t pcnt_platform_t;
@@ -81,7 +69,6 @@ struct pcnt_platform_t {
 
 struct pcnt_group_t {
     int group_id;          // Group ID, index from 0
-    int intr_priority;     // PCNT interrupt priority
     pcnt_clock_source_t clk_src; // PCNT clock source
     portMUX_TYPE spinlock; // to protect per-group register level concurrent access
     pcnt_hal_context_t hal;
@@ -118,6 +105,7 @@ struct pcnt_unit_t {
     int low_limit;                                        // low limit value
     int high_limit;                                       // high limit value
     int clear_signal_gpio_num;                            // which gpio clear signal input
+    int intr_priority;                                    // PCNT interrupt priority
     int accum_value;                                      // accumulated count value
     pcnt_step_interval_t step_info;                       // step interval info
     pcnt_chan_t *channels[PCNT_LL_GET(CHANS_PER_UNIT)];    // array of PCNT channels
@@ -150,32 +138,57 @@ static void pcnt_release_group_handle(pcnt_group_t *group);
 static void pcnt_default_isr(void *args);
 static esp_err_t pcnt_select_periph_clock(pcnt_unit_t *unit, pcnt_clock_source_t clk_src);
 
-static esp_err_t pcnt_register_to_group(pcnt_unit_t *unit)
+static esp_err_t pcnt_unit_install_interrupt(pcnt_unit_t *unit)
 {
-    pcnt_group_t *group = NULL;
+    pcnt_group_t *group = unit->group;
+    int group_id = group->group_id;
+    int unit_id = unit->unit_id;
+    int isr_flags = PCNT_INTR_ALLOC_FLAGS;
+
+    if (unit->intr_priority) {
+        isr_flags |= 1 << (unit->intr_priority);
+    } else {
+        isr_flags |= PCNT_ALLOW_INTR_PRIORITY_MASK;
+    }
+
+    esp_intr_alloc_info_t intr_info = {
+        .source = soc_pcnt_signals[group_id].irq_id,
+        .flags = isr_flags,
+        .intrstatusreg = (uint32_t)pcnt_ll_get_intr_status_reg(group->hal.dev),
+        .intrstatusmask = PCNT_LL_UNIT_WATCH_EVENT(unit_id),
+        .handler = pcnt_default_isr,
+        .arg = unit,
+        .bind_by.name = soc_pcnt_signals[group_id].module_name,
+    };
+
+    return esp_intr_alloc_info(&intr_info, &unit->intr);
+}
+
+static esp_err_t pcnt_register_to_group(pcnt_unit_t *unit, int requested_group)
+{
+    int group_id = requested_group;
+
+    pcnt_group_t *group = pcnt_acquire_group_handle(group_id);
+    ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no mem for group (%d)", group_id);
+
     int unit_id = -1;
-    for (int i = 0; i < PCNT_LL_GET(INST_NUM); i++) {
-        group = pcnt_acquire_group_handle(i);
-        ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no mem for group (%d)", i);
-        // loop to search free unit in the group
-        portENTER_CRITICAL(&group->spinlock);
-        for (int j = 0; j < PCNT_LL_GET(UNITS_PER_INST); j++) {
-            if (!group->units[j]) {
-                unit_id = j;
-                group->units[j] = unit;
-                break;
-            }
-        }
-        portEXIT_CRITICAL(&group->spinlock);
-        if (unit_id < 0) {
-            pcnt_release_group_handle(group);
-        } else {
-            unit->group = group;
-            unit->unit_id = unit_id;
+    portENTER_CRITICAL(&group->spinlock);
+    for (int j = 0; j < PCNT_LL_GET(UNITS_PER_INST); j++) {
+        if (!group->units[j]) {
+            unit_id = j;
+            group->units[j] = unit;
             break;
         }
     }
-    ESP_RETURN_ON_FALSE(unit_id != -1, ESP_ERR_NOT_FOUND, TAG, "no free unit");
+    portEXIT_CRITICAL(&group->spinlock);
+
+    if (unit_id < 0) {
+        // No free unit in the requested instance; release the reference we just took
+        pcnt_release_group_handle(group);
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_FOUND, TAG, "no free unit in group (%d)", group_id);
+    }
+    unit->group = group;
+    unit->unit_id = unit_id;
     return ESP_OK;
 }
 
@@ -223,10 +236,12 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
         ESP_LOGW(TAG, "can't overflow at high limit: %d due to hardware limitation", config->high_limit);
     }
 #endif
+    ESP_GOTO_ON_FALSE(config->group_id >= 0 && config->group_id < PCNT_LL_GET(INST_NUM),
+                      ESP_ERR_INVALID_ARG, err, TAG, "invalid group_id %d", config->group_id);
     unit = heap_caps_calloc(1, sizeof(pcnt_unit_t), PCNT_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(unit, ESP_ERR_NO_MEM, err, TAG, "no mem for unit");
     // register unit to the group (because one group can have several units)
-    ESP_GOTO_ON_ERROR(pcnt_register_to_group(unit), err, TAG, "register unit failed");
+    ESP_GOTO_ON_ERROR(pcnt_register_to_group(unit, config->group_id), err, TAG, "register unit failed");
     pcnt_group_t *group = unit->group;
     int group_id = group->group_id;
     int unit_id = unit->unit_id;
@@ -235,30 +250,11 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
     ESP_GOTO_ON_ERROR(pcnt_select_periph_clock(unit, pcnt_clk_src), err, TAG, "select periph clock failed");
     ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)group->clk_src, true), err, TAG, "clock source enable failed");
 
-    // if interrupt priority specified before, it cannot be changed until the group is released
-    // check if the new priority specified consistents with the old one
-    bool intr_priority_conflict = false;
-    portENTER_CRITICAL(&group->spinlock);
-    if (group->intr_priority == -1) {
-        group->intr_priority = config->intr_priority;
-    } else if (config->intr_priority != 0) {
-        intr_priority_conflict = (group->intr_priority != config->intr_priority);
-    }
-    portEXIT_CRITICAL(&group->spinlock);
-    ESP_GOTO_ON_FALSE(!intr_priority_conflict, ESP_ERR_INVALID_STATE, err, TAG, "intr_priority conflict, already is %d but attempt to %d", group->intr_priority, config->intr_priority);
-
     // to accumulate count value, we should install the interrupt handler first, and in the ISR we do the accumulation
     bool to_install_isr = (config->flags.accum_count == 1);
+    unit->intr_priority = config->intr_priority;
     if (to_install_isr) {
-        int isr_flags = PCNT_INTR_ALLOC_FLAGS;
-        if (group->intr_priority) {
-            isr_flags |= 1 << (group->intr_priority);
-        } else {
-            isr_flags |= PCNT_ALLOW_INTR_PRIORITY_MASK;
-        }
-        ESP_GOTO_ON_ERROR(esp_intr_alloc_intrstatus(soc_pcnt_signals[group_id].irq_id, isr_flags,
-                                                    (uint32_t)pcnt_ll_get_intr_status_reg(group->hal.dev), PCNT_LL_UNIT_WATCH_EVENT(unit_id),
-                                                    pcnt_default_isr, unit, &unit->intr), err,
+        ESP_GOTO_ON_ERROR(pcnt_unit_install_interrupt(unit), err,
                           TAG, "install interrupt service failed");
     }
 
@@ -528,7 +524,6 @@ esp_err_t pcnt_unit_register_event_callbacks(pcnt_unit_handle_t unit, const pcnt
     ESP_RETURN_ON_FALSE(unit && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     // unit event callbacks should be registered in init state
     pcnt_group_t *group = unit->group;
-    int group_id = group->group_id;
     int unit_id = unit->unit_id;
 
 #if CONFIG_PCNT_ISR_IRAM_SAFE
@@ -543,15 +538,7 @@ esp_err_t pcnt_unit_register_event_callbacks(pcnt_unit_handle_t unit, const pcnt
     // lazy install interrupt service
     if (!unit->intr) {
         ESP_RETURN_ON_FALSE(unit->fsm == PCNT_UNIT_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "unit not in init state");
-        int isr_flags = PCNT_INTR_ALLOC_FLAGS;
-        if (group->intr_priority) {
-            isr_flags |= 1 << (group->intr_priority);
-        } else {
-            isr_flags |= PCNT_ALLOW_INTR_PRIORITY_MASK;
-        }
-        ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(soc_pcnt_signals[group_id].irq_id, isr_flags,
-                                                      (uint32_t)pcnt_ll_get_intr_status_reg(group->hal.dev), PCNT_LL_UNIT_WATCH_EVENT(unit_id),
-                                                      pcnt_default_isr, unit, &unit->intr),
+        ESP_RETURN_ON_ERROR(pcnt_unit_install_interrupt(unit),
                             TAG, "install interrupt service failed");
     }
     // enable/disable PCNT interrupt events
@@ -919,10 +906,9 @@ static pcnt_group_t *pcnt_acquire_group_handle(int group_id)
             s_platform.groups[group_id] = group; // register to platform
             // initialize pcnt group members
             group->group_id = group_id;
-            group->intr_priority = -1;
             group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
             // enable APB access pcnt registers
-            PCNT_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 pcnt_ll_enable_bus_clock(group_id, true);
                 pcnt_ll_reset_register(group_id);
             }
@@ -962,7 +948,7 @@ static void pcnt_release_group_handle(pcnt_group_t *group)
         assert(s_platform.groups[group_id]);
         do_deinitialize = true;
         s_platform.groups[group_id] = NULL; // deregister from platform
-        PCNT_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             pcnt_ll_enable_bus_clock(group_id, false);
         }
 #if PCNT_USE_RETENTION_LINK
@@ -1017,7 +1003,7 @@ static esp_err_t pcnt_select_periph_clock(pcnt_unit_t *unit, pcnt_clock_source_t
         ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
 #endif // CONFIG_PM_ENABLE
 
-        PCNT_CLOCK_SRC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             pcnt_ll_set_clock_source(group->hal.dev, clk_src);
         }
     }

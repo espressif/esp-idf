@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 1dc5045e8a74c32825696ca314128499
+// md5_digest_table 4b1296d3b432e2675dd1c7bbceef856c
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -221,6 +221,10 @@ static const esp_efuse_desc_t WR_DIS_DSLP_DBIAS[] = {
 
 static const esp_efuse_desc_t WR_DIS_DBIAS_VOL_GAP[] = {
     {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of DBIAS_VOL_GAP,
+};
+
+static const esp_efuse_desc_t WR_DIS_LSLP_HP_DBIAS[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of LSLP_HP_DBIAS,
 };
 
 static const esp_efuse_desc_t WR_DIS_WAFER_VERSION_MINOR[] = {
@@ -621,6 +625,10 @@ static const esp_efuse_desc_t DBIAS_VOL_GAP[] = {
     {EFUSE_BLK1, 95, 5}, 	 // [] Stores the low 1 bit of dbias_vol_gap,
 };
 
+static const esp_efuse_desc_t LSLP_HP_DBIAS[] = {
+    {EFUSE_BLK1, 100, 3}, 	 // [] LSLP_HP_DBIAS (available on Wafer v1.2 and BLK_VERSION >= 0.4),
+};
+
 static const esp_efuse_desc_t WAFER_VERSION_MINOR[] = {
     {EFUSE_BLK1, 114, 3}, 	 // [] Stores the wafer version minor,
 };
@@ -1018,6 +1026,11 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DSLP_DBIAS[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DBIAS_VOL_GAP[] = {
     &WR_DIS_DBIAS_VOL_GAP[0],    		// [] wr_dis of DBIAS_VOL_GAP
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LSLP_HP_DBIAS[] = {
+    &WR_DIS_LSLP_HP_DBIAS[0],    		// [] wr_dis of LSLP_HP_DBIAS
     NULL
 };
 
@@ -1514,6 +1527,11 @@ const esp_efuse_desc_t* ESP_EFUSE_DSLP_DBIAS[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_DBIAS_VOL_GAP[] = {
     &DBIAS_VOL_GAP[0],    		// [] Stores the low 1 bit of dbias_vol_gap
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_LSLP_HP_DBIAS[] = {
+    &LSLP_HP_DBIAS[0],    		// [] LSLP_HP_DBIAS (available on Wafer v1.2 and BLK_VERSION >= 0.4)
     NULL
 };
 

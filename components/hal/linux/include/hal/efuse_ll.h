@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -114,6 +114,12 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_v_dig_dbias20
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_dig_dbias_hvt(void)
 {
+    return 0;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_coding_error(unsigned index)
+{
+    (void) index;
     return 0;
 }
 

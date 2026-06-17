@@ -39,7 +39,22 @@ MAC 地址
 
 在 ESP-IDF 中，各个网络接口的 MAC 地址是根据单个 **基准 MAC 地址 (Base MAC address)** 计算出来的。默认情况下使用乐鑫指定的基准 MAC 地址，该基准地址在产品生产过程中已预烧录至 {IDF_TARGET_NAME} eFuse。
 
-.. only:: not esp32s2
+.. only:: esp32p4
+
+    .. list-table::
+        :widths: 20 80
+        :header-rows: 1
+
+        * - 接口
+          - MAC 地址（一个默认的通用管理地址）
+        * - 以太网
+          - base_mac
+
+    .. note::
+
+        在 ESP32-P4 上，:ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` 固定为单个通用管理型 MAC 地址。
+
+.. only:: (not esp32s2) and (not esp32p4)
 
     .. list-table::
         :widths: 20 40 40
@@ -213,6 +228,18 @@ SDK 版本
       #endif
 
 
+调试辅助功能
+-----------------
+
+``esp_debug_helpers.h`` 中的调试辅助 API 提供了运行时调试和堆栈回溯输出相关功能。
+
+- :cpp:func:`esp_backtrace_print` 用于打印当前堆栈回溯。
+- :cpp:func:`esp_backtrace_print_all_tasks` 用于打印所有任务的堆栈回溯。
+- :cpp:func:`esp_backtrace_get_start` 和 :cpp:func:`esp_backtrace_get_next_frame` 用于手动遍历回溯帧。
+
+这些 API 适用于诊断崩溃、看门狗超时或异常控制流等问题。
+
+
 .. _app-version:
 
 应用程序版本
@@ -237,4 +264,5 @@ API 参考
 .. include-build-file:: inc/esp_mac.inc
 .. include-build-file:: inc/esp_chip_info.inc
 .. include-build-file:: inc/esp_cpu.inc
+.. include-build-file:: inc/esp_debug_helpers.inc
 .. include-build-file:: inc/esp_app_desc.inc

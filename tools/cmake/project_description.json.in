@@ -35,5 +35,6 @@
         "03_py_extensions": "${gdbinit_files_py_extensions}",
         "04_connect": "${gdbinit_files_connect}"
     },
-    "debug_arguments_openocd": "${debug_arguments_openocd}"
+    "debug_arguments_openocd": "${debug_arguments_openocd}",
+    "hints_file": "${HINTS_FILE}"
 }

@@ -1,22 +1,18 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
 #include "esp_log.h"
-// #include "mbedtls/aes.h"
 #include "psa_crypto_core.h"
-// #include "mbedtls/cipher.h"
-
 #include "aes/esp_aes_gcm.h"
 #include "psa_crypto_driver_esp_aes_gcm.h"
 #include "../include/psa_crypto_driver_esp_aes_contexts.h"
-// #ifdef ESP_MBEDTLS_AES_ACCEL
 
 #if defined(ESP_AES_DRIVER_ENABLED)
 
-#define ESP_AES_GCM_TAG_LENGTH 16
+#define ESP_AES_GCM_TAG_LENGTH_DEFAULT 16
 
 static psa_status_t esp_crypto_aes_gcm_setup(
     esp_aes_gcm_operation_t *esp_aes_gcm_driver_ctx,
@@ -26,11 +22,17 @@ static psa_status_t esp_crypto_aes_gcm_setup(
 {
     psa_status_t status = PSA_ERROR_GENERIC_ERROR;
     esp_gcm_context *ctx = NULL;
+    size_t tag_length;
 
-    if (alg != PSA_ALG_GCM) {
+    /* Extract the base algorithm and tag length */
+    psa_algorithm_t base_alg = PSA_ALG_AEAD_WITH_SHORTENED_TAG(alg, 0);
+    if (base_alg != PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_GCM, 0)) {
         status = PSA_ERROR_NOT_SUPPORTED;
         goto exit;
     }
+
+    /* Get the tag length from the algorithm */
+    tag_length = PSA_ALG_AEAD_GET_TAG_LENGTH(alg);
 
     if (psa_get_key_type(attributes) != PSA_KEY_TYPE_AES) {
         status = PSA_ERROR_NOT_SUPPORTED;
@@ -48,12 +50,14 @@ static psa_status_t esp_crypto_aes_gcm_setup(
     status = mbedtls_to_psa_error(esp_aes_gcm_setkey(ctx, 2, key_buffer, key_buffer_size * 8));
 
     if (status != PSA_SUCCESS) {
+        esp_aes_gcm_free(ctx);
         free(ctx);
         goto exit;
     }
 
     esp_aes_gcm_driver_ctx->esp_aes_gcm_ctx = (void *) ctx;
     esp_aes_gcm_driver_ctx->mode = mode;
+    esp_aes_gcm_driver_ctx->tag_length = tag_length;
 
 exit:
     return status;
@@ -129,18 +133,29 @@ psa_status_t esp_crypto_aes_gcm_finish(
 {
     psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
     size_t finish_output_size = 0;
+    size_t requested_tag_length = esp_aes_gcm_driver_ctx->tag_length;
 
-    if (tag_size < ESP_AES_GCM_TAG_LENGTH) {
+    if (tag_size < requested_tag_length) {
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
+    if (requested_tag_length > ESP_AES_GCM_TAG_LENGTH_DEFAULT) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
     esp_gcm_context *ctx = (esp_gcm_context *) esp_aes_gcm_driver_ctx->esp_aes_gcm_ctx;
-    status = mbedtls_to_psa_error(esp_aes_gcm_finish(ctx, output, output_size, output_length, tag, tag_size));
+
+    /* esp_aes_gcm_finish always generates a 16-byte tag, but we'll only use
+     * the first requested_tag_length bytes */
+    uint8_t full_tag[ESP_AES_GCM_TAG_LENGTH_DEFAULT];
+    status = mbedtls_to_psa_error(esp_aes_gcm_finish(ctx, output, output_size, output_length, full_tag, sizeof(full_tag)));
     if (status == PSA_SUCCESS) {
         /* This will be zero for all supported algorithms currently, but left
          * here for future support. */
         *output_length = finish_output_size;
-        *tag_length = ESP_AES_GCM_TAG_LENGTH;
+        *tag_length = requested_tag_length;
+        /* Copy only the requested tag length */
+        memcpy(tag, full_tag, requested_tag_length);
     }
     return status;
 }
@@ -178,13 +193,18 @@ psa_status_t esp_crypto_aes_gcm_encrypt(
         goto exit;
     }
 
+    size_t tag_length = esp_aes_gcm_driver_ctx.tag_length;
+
     /* For all currently supported modes, the tag is at the end of the
      * ciphertext. */
-    if (ciphertext_size < (plaintext_length + ESP_AES_GCM_TAG_LENGTH)) {
+    if (ciphertext_size < (plaintext_length + tag_length)) {
         status = PSA_ERROR_BUFFER_TOO_SMALL;
         goto exit;
     }
     tag = ciphertext + plaintext_length;
+
+    /* esp_aes_gcm_crypt_and_tag always generates a 16-byte tag */
+    uint8_t full_tag[ESP_AES_GCM_TAG_LENGTH_DEFAULT];
     status = mbedtls_to_psa_error(
                 esp_aes_gcm_crypt_and_tag((esp_gcm_context *) esp_aes_gcm_driver_ctx.esp_aes_gcm_ctx,
                                       PSA_CRYPTO_DRIVER_ENCRYPT,
@@ -192,10 +212,12 @@ psa_status_t esp_crypto_aes_gcm_encrypt(
                                       nonce, nonce_length,
                                       additional_data, additional_data_length,
                                       plaintext, ciphertext,
-                                      ESP_AES_GCM_TAG_LENGTH, tag));
+                                      ESP_AES_GCM_TAG_LENGTH_DEFAULT, full_tag));
 
     if (status == PSA_SUCCESS) {
-        *ciphertext_length = plaintext_length + ESP_AES_GCM_TAG_LENGTH;
+        /* Copy only the requested tag length */
+        memcpy(tag, full_tag, tag_length);
+        *ciphertext_length = plaintext_length + tag_length;
     }
 
 exit:
@@ -248,22 +270,26 @@ psa_status_t esp_crypto_aes_gcm_decrypt(
         goto exit;
     }
 
-    status = psa_aead_unpadded_locate_tag(ESP_AES_GCM_TAG_LENGTH, ciphertext, ciphertext_length, plaintext_size, &tag);
+    size_t tag_length = esp_aes_gcm_driver_ctx.tag_length;
+
+    status = psa_aead_unpadded_locate_tag(tag_length, ciphertext, ciphertext_length, plaintext_size, &tag);
     if (status != PSA_SUCCESS) {
         goto exit;
-        }
+    }
 
+    /* esp_aes_gcm_auth_decrypt supports variable tag lengths (4-16 bytes)
+     * and will compare only the first tag_length bytes */
     status = mbedtls_to_psa_error(
         esp_aes_gcm_auth_decrypt((esp_gcm_context *) esp_aes_gcm_driver_ctx.esp_aes_gcm_ctx,
-                                ciphertext_length - ESP_AES_GCM_TAG_LENGTH,
+                                ciphertext_length - tag_length,
                                 nonce, nonce_length,
                                 additional_data,
                                 additional_data_length,
-                                tag, ESP_AES_GCM_TAG_LENGTH,
+                                tag, tag_length,
                                 ciphertext, plaintext));
 
     if (status == PSA_SUCCESS) {
-        *plaintext_length = ciphertext_length - ESP_AES_GCM_TAG_LENGTH;
+        *plaintext_length = ciphertext_length - tag_length;
     }
 
 exit:

@@ -82,6 +82,8 @@ Supported since ESP-IDF v4.3.
 | release/v5.1           | v5.1.3+     | v5.1.3   |
 | release/v5.2 and above | v5.2+       | v5.2     |
 
+Note: For users that needs to use a different primary console output than the default UART0, please upgrade to v5.0.8+, v5.1.6+, v5.2.4+, v5.3.2+, v5.4 and above. See advisory: [AR2025-006](https://documentation.espressif.com/AR2025-006_Usage_Instructions_for_Configuring_the_Console_Output_Channel_for_the_ESP32-C3_Chip_Revision_v1.1.html).
+
 ### ESP32-S3
 
 #### v0.1, v0.2

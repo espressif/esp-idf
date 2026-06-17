@@ -27,6 +27,8 @@ Some common lwIP app APIs are supported indirectly by ESP-IDF:
 - Dynamic Host Configuration Protocol (DHCP) Server & Client are supported indirectly via the :doc:`/api-reference/network/esp_netif` functionality.
 - Domain Name System (DNS) is supported in lwIP; DNS servers could be assigned automatically when acquiring a DHCP address, or manually configured using the :doc:`/api-reference/network/esp_netif` API.
 
+  For DNS over HTTPS, see :example:`protocols/dns_over_https`.
+
 .. note::
 
     DNS server configuration in lwIP is global, not interface-specific. If you are using multiple network interfaces with distinct DNS servers, exercise caution to prevent inadvertent overwrites of one interface's DNS settings when acquiring a DHCP lease from another interface.
@@ -75,6 +77,10 @@ A number of ESP-IDF examples show how to use the BSD Sockets APIs:
 
 - :example:`protocols/sockets/tcp_client` demonstrates how to create a TCP client that connects to a server using a predefined IP address and port.
 
+- :example:`protocols/sockets/tcp_transport_client` demonstrates how to create a TCP client with the ``tcp_transport`` component, including optional SOCKS proxy support.
+
+- :example:`protocols/http_request` demonstrates a minimal HTTP request over a plain TCP socket using the BSD Sockets API.
+
 - :example:`protocols/sockets/tcp_client_multi_net` demonstrates how to use Ethernet and Wi-Fi interfaces together, connect to both simultaneously, create a TCP client for each interface, and send a basic HTTP request and response.
 
 - :example:`protocols/sockets/udp_server` demonstrates how to create a UDP server that receives client connection requests and data.
@@ -82,6 +88,12 @@ A number of ESP-IDF examples show how to use the BSD Sockets APIs:
 - :example:`protocols/sockets/udp_client` demonstrates how to create a UDP client that connects to a server using a predefined IP address and port.
 
 - :example:`protocols/sockets/udp_multicast` demonstrates how to use the IPV4 and IPV6 UDP multicast features via the BSD-style sockets interface.
+
+The :doc:`Ethernet driver </api-reference/network/esp_eth>` shows the same BSD socket and TCP/IP path over an EMAC-attached interface. Use these reference applications:
+
+- :example:`ethernet/basic` for driver bring-up, ``esp_netif``, DHCP, and basic IP connectivity.
+- :example:`ethernet/iperf` for TCP/UDP throughput measurement on Ethernet.
+- :example:`ethernet/ptp` for IEEE 1588/PTP time synchronization over Ethernet.
 
 Supported Functions
 ^^^^^^^^^^^^^^^^^^^
@@ -559,7 +571,7 @@ TCP/IP performance is a complex subject, and performance can be optimized toward
 Maximum Throughput
 ^^^^^^^^^^^^^^^^^^
 
-Espressif tests ESP-IDF TCP/IP throughput using the iperf test application: https://iperf.fr/, please refer to :ref:`improve-network-speed` for more details about the actual testing and using the optimized configuration.
+Espressif tests ESP-IDF TCP/IP throughput using the iperf test application: https://iperf.fr/, please refer to :ref:`improve-network-speed` for more details about the actual testing and using the optimized configuration. Reference iperf example projects are :example:`wifi/iperf` and :example:`ethernet/iperf`.
 
 .. important::
 

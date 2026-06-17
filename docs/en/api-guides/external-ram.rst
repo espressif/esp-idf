@@ -87,11 +87,13 @@ It is recommended to access the PSRAM by ESP-IDF heap memory allocator (see next
 Add External RAM to the Capability Allocator
 --------------------------------------------
 
-Select this option by choosing ``Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPIRAM)`` from :ref:`CONFIG_SPIRAM_USE`.
+Select this option by choosing ``Add RAM to heap_caps allocator (malloc() stays internal by default)`` from :ref:`CONFIG_SPIRAM_USE`.
 
-When enabled, memory is mapped to data virtual address space and also added to the :doc:`capabilities-based heap memory allocator </api-reference/system/mem_alloc>` using ``MALLOC_CAP_SPIRAM``.
+When enabled, memory is mapped to data virtual address space and also added to the :doc:`capabilities-based heap memory allocator </api-reference/system/mem_alloc>` using ``MALLOC_CAP_SPIRAM``. Since this memory is also tagged with ``MALLOC_CAP_DEFAULT``, calls such as ``heap_caps_malloc(size, MALLOC_CAP_DEFAULT)`` can still return PSRAM pointers.
 
-To allocate memory from external RAM, a program should call ``heap_caps_malloc(size, MALLOC_CAP_SPIRAM)``. After use, this memory can be freed by calling the normal ``free()`` function.
+To explicitly allocate memory from external RAM, a program should call ``heap_caps_malloc(size, MALLOC_CAP_SPIRAM)``. After use, this memory can be freed by calling the normal ``free()`` function.
+
+In this mode, standard ``malloc()`` does not allocate from external RAM by default because it uses a separate default allocation policy.
 
 .. _external_ram_config_malloc:
 
@@ -219,10 +221,30 @@ External RAM use has the following restrictions:
 
     - External RAM uses the same cache region as the external flash. This means that frequently accessed variables in external RAM can be read and modified almost as quickly as in internal RAM. However, when accessing large chunks of data (> 32 KB), the cache can be insufficient, and speeds will fall back to the access speed of the external RAM. Moreover, accessing large chunks of data can "push out" cached flash, possibly making the execution of code slower afterwards.
 
-    - In general, external RAM will not be used as task stack memory. :cpp:func:`xTaskCreate` and similar functions will always allocate internal memory for stack and task TCBs.
+    - In general, external RAM will not be used as task stack memory. :cpp:func:`xTaskCreate` and similar functions will always allocate internal memory for stack and task TCBs. Task stacks can optionally be placed in external RAM — see :ref:`task-stack-in-external-ram` below.
 
-The option :ref:`CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM` can be used to allow placing task stacks into external memory. In these cases :cpp:func:`xTaskCreateStatic` must be used to specify a task stack buffer allocated from external memory, otherwise task stacks will still be allocated from internal memory.
+.. _task-stack-in-external-ram:
 
+Task Stack Placement in External RAM
+-------------------------------------
+
+There are three ways to place task stacks in external RAM:
+
+1. **Per-task (explicit)** – Use :cpp:func:`xTaskCreateWithCaps` with ``MALLOC_CAP_SPIRAM``.  Requires :ref:`CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM`.
+
+2. **Per-task (static)** – Use :cpp:func:`xTaskCreateStatic` with a caller-supplied buffer in external RAM.  Requires :ref:`CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM`.
+
+3. **Global default (automatic)** – Enable :ref:`CONFIG_FREERTOS_PLACE_TASK_STACKS_IN_EXT_RAM`.  When set, every call to :cpp:func:`xTaskCreate` / :cpp:func:`xTaskCreatePinnedToCore` allocates the stack from PSRAM first, falling back to internal RAM if PSRAM is exhausted.  TCBs are always kept in internal DRAM.
+
+
+When :ref:`CONFIG_FREERTOS_PLACE_TASK_STACKS_IN_EXT_RAM` is enabled, the following additional restrictions apply:
+
+- **Flash operations** – Any code path that temporarily disables the CPU cache (flash erase/write, NVS, OTA) must run on a task whose stack is in internal RAM, or the operations must be routed through the `espressif/esp_flash_dispatcher <https://components.espressif.com/components/espressif/esp_flash_dispatcher>`__ component, which executes flash operations on a dedicated internal-RAM task.
+- **Deep sleep** – Calling :cpp:func:`esp_deep_sleep_start` from a task with a PSRAM stack logs an error and proceeds anyway, which will likely crash when the cache is disabled during the sleep transition.  Use :cpp:func:`esp_deep_sleep_try_to_start` instead: it returns :c:macro:`ESP_ERR_NOT_ALLOWED` cleanly when called from a PSRAM-stacked task.  If deep sleep is required, trigger it from a task whose stack is in internal RAM.
+- **Light sleep** – Calling :cpp:func:`esp_light_sleep_start` directly from a PSRAM-stacked task is also rejected with :c:macro:`ESP_ERR_NOT_ALLOWED`.  Tickless-idle light sleep (auto-light-sleep) is safe because it is initiated by the idle task, whose stack is always in internal RAM; PSRAM-stacked tasks simply block and resume normally after wake-up.
+- **pthread** – :cpp:func:`pthread_create` delegates to :cpp:func:`xTaskCreate`, so pthread stacks will also move to PSRAM when this option is on.
+
+See the :example:`system/freertos/psram_stack` example for a working demonstration.
 
 Failure to Initialize
 =====================
@@ -242,6 +264,38 @@ By default, failure to initialize external RAM will cause the ESP-IDF startup to
     It is possible to enable automatic encryption for data stored in external RAM. When this is enabled any data read and written through the cache will automatically be encrypted or decrypted by the external memory encryption hardware.
 
     This feature is enabled whenever flash encryption is enabled. For more information on how to enable and how it works see :doc:`Flash Encryption </security/flash-encryption>`.
+
+    .. only:: SOC_PSRAM_ENCRYPTION_PAGE_CONFIGURABLE
+
+        On {IDF_TARGET_NAME}, PSRAM encryption can be controlled on a per-MMU-page basis, allowing individual PSRAM pages to be selectively encrypted or left unencrypted. However, in the default configuration, all PSRAM pages are encrypted when flash encryption is enabled.
+
+        Reserving an Unencrypted PSRAM Region
+        -------------------------------------
+
+        Enabling :ref:`CONFIG_SPIRAM_ENC_EXEMPT` reserves a region at the upper end of PSRAM (highest physical addresses; sized by :ref:`CONFIG_SPIRAM_ENC_EXEMPT_SIZE`, in KB, rounded up to the MMU page size) that is mapped without encryption. This region is registered as a separate heap pool reachable only via the ``MALLOC_CAP_SPIRAM_NO_ENC`` capability. The rest of PSRAM (and flash) remains encrypted.
+
+        .. warning::
+
+            Memory allocated with ``MALLOC_CAP_SPIRAM_NO_ENC`` is stored as plaintext in PSRAM and can be observed by an attacker with physical access to the PSRAM interface. Never place TLS state, keys, or other secrets in this region.
+
+        Typical use case: PSRAM encryption imposes alignment constraints on buffers that some DMA engines (for example, 2D-DMA) cannot satisfy. Buffers that need to be DMA-accessed from such engines can be allocated from this unencrypted region:
+
+        .. code-block:: c
+
+            #if CONFIG_SPIRAM_ENC_EXEMPT
+            uint32_t caps = MALLOC_CAP_SPIRAM_NO_ENC;
+            #else
+            uint32_t caps = MALLOC_CAP_SPIRAM;
+            #endif
+            uint8_t *buf = heap_caps_malloc(buf_size, caps);
+
+        ``MALLOC_CAP_SPIRAM_NO_ENC`` must be requested explicitly. It is intentionally not combined with ``MALLOC_CAP_SPIRAM`` or ``MALLOC_CAP_DEFAULT``, so ordinary SPIRAM/heap allocations cannot accidentally land in the unencrypted region.
+
+        To verify after the fact that a buffer was allocated from the unencrypted carve-out (for example after a ``heap_caps_malloc_prefer()`` call that may have fallen back to encrypted PSRAM), use ``esp_psram_ptr_is_no_enc()``.
+
+    .. only:: SOC_PSRAM_ENCRYPTION_SEPARATE_KEY
+
+        On {IDF_TARGET_NAME}, PSRAM encryption can use an independent encryption key. If the PSRAM encryption key is not programmed, the flash encryption key will be used as the PSRAM encryption key.
 
 
 .. only:: esp32

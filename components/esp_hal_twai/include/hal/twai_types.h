@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,26 +63,16 @@ typedef int twai_clock_source_t;
 #endif
 
 /**
- * @brief TWAI bitrate timing config advanced mode
- * @note  Setting one of `quanta_resolution_hz` and `brp` is enough, otherwise, `brp` is not used.
+ * @brief TWAI bitrate timing advanced config structure
  */
 typedef struct {
-    twai_clock_source_t clk_src;    /**< Optional, clock source, remain 0 to using TWAI_CLK_SRC_DEFAULT by default */
-    uint32_t quanta_resolution_hz;  /**< The resolution of one timing quanta, in Hz. If setting, brp will be ignored */
-    uint32_t brp;                   /**< Bit rate pre-divider, f(clk_src) / brp = quanta_resolution_hz, f(clk_src) can be obtained using esp_clk_tree_src_get_freq_hz(clk_src,,)*/
+    uint32_t brp;                   /**< Bitrate pre-divider, which decides the quanta time */
     uint8_t  prop_seg;              /**< Prop_seg length, in quanta time */
     uint8_t  tseg_1;                /**< Seg_1 length, in quanta time */
     uint8_t  tseg_2;                /**< Seg_2 length, in quanta time */
     uint8_t  sjw;                   /**< Sync jump width, in quanta time */
     uint8_t  ssp_offset;            /**< Secondary sample point offset refet to Sync seg, in quanta time, set 0 to disable ssp */
-    bool triple_sampling;           /**< Deprecated, in favor of `ssp_offset` */
-} twai_timing_config_t;
-
-/**
- * @brief TWAI bitrate timing config advanced mode for esp_driver_twai
- * @note  `quanta_resolution_hz` is not supported in this driver
- */
-typedef twai_timing_config_t twai_timing_advanced_config_t;
+} twai_timing_advanced_config_t;
 
 /**
  * @brief Configuration for TWAI mask filter

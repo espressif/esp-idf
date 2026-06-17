@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,13 +42,23 @@ extern "C" {
 #endif
 
 #if CONFIG_MCPWM_ISR_CACHE_SAFE
-#define MCPWM_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM)
+#define MCPWM_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED_PRIVATE | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM)
 #else
-#define MCPWM_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_INTRDISABLED)
+#define MCPWM_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED_PRIVATE | ESP_INTR_FLAG_INTRDISABLED)
 #endif
 
 // Use retention link only when the target supports sleep retention is enabled
 #define MCPWM_USE_RETENTION_LINK  (SOC_MCPWM_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+
+#if SOC_MCPWM_SUPPORT_SLEEP_RETENTION
+typedef struct {
+    const regdma_entries_config_t *regdma_entry_array;
+    uint32_t array_size;
+    const periph_retention_module_t retention_module;
+} mcpwm_retention_desc_t;
+
+extern const mcpwm_retention_desc_t mcpwm_retention_infos[MCPWM_LL_GET(GROUP_NUM)];
+#endif // SOC_MCPWM_SUPPORT_SLEEP_RETENTION
 
 #define MCPWM_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
 
@@ -76,7 +86,6 @@ typedef struct mcpwm_cap_channel_t mcpwm_cap_channel_t;
 
 struct mcpwm_group_t {
     int group_id;            // group ID, index from 0
-    int intr_priority;       // MCPWM interrupt priority
     mcpwm_hal_context_t hal; // HAL instance is at group level
     portMUX_TYPE spinlock;   // group level spinlock
     uint32_t prescale;       // group prescale
@@ -103,6 +112,7 @@ struct mcpwm_timer_t {
     mcpwm_timer_fsm_t fsm;  // driver FSM
     portMUX_TYPE spinlock;  // spin lock
     intr_handle_t intr;     // interrupt handle
+    int intr_priority;      // interrupt priority used by this timer
     uint32_t resolution_hz; // resolution of the timer
     uint32_t peak_ticks;    // peak ticks that the timer could reach to
     mcpwm_timer_sync_src_t *sync_src;      // timer sync_src
@@ -125,6 +135,7 @@ struct mcpwm_oper_t {
     mcpwm_timer_t *timer;  // which timer is connected to this operator
     portMUX_TYPE spinlock; // spin lock
     intr_handle_t intr;    // interrupt handle
+    int intr_priority;     // interrupt priority used by this operator
     mcpwm_gen_t *generators[MCPWM_LL_GET(GENERATORS_PER_OPERATOR)];    // mcpwm generator array
     mcpwm_oper_cmpr_t *comparators[MCPWM_LL_GET(COMPARATORS_PER_OPERATOR)]; // mcpwm operator comparator array
 #if SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
@@ -160,6 +171,7 @@ struct mcpwm_cmpr_t {
 struct mcpwm_oper_cmpr_t {
     mcpwm_cmpr_t base;                 // base class
     intr_handle_t intr;                // interrupt handle
+    int intr_priority;                 // interrupt priority used by this comparator
     mcpwm_compare_event_cb_t on_reach; // ISR callback function  which would be invoked on timer counter reaches compare value
     void *user_data;                   // user data which would be passed to the comparator callbacks
 };
@@ -191,6 +203,7 @@ struct mcpwm_gpio_fault_t {
     int fault_id;        // fault detector ID, index from 0
     int gpio_num;        // GPIO number of fault detector
     intr_handle_t intr;  // interrupt handle
+    int intr_priority;   // interrupt priority used by this fault detector
     mcpwm_fault_event_cb_t on_fault_enter; // ISR callback function that would be invoked when fault signal got triggered
     mcpwm_fault_event_cb_t on_fault_exit;  // ISR callback function that would be invoked when fault signal got clear
     void *user_data;      // user data which would be passed to the isr_cb
@@ -267,14 +280,13 @@ struct mcpwm_cap_channel_t {
     int gpio_num;                     // GPIO number used by the channel
     mcpwm_cap_channel_fsm_t fsm;      // driver FSM
     intr_handle_t intr;               // Interrupt handle
+    int intr_priority;                // interrupt priority used by this capture channel
     mcpwm_capture_event_cb_t on_cap;  // Callback function which would be invoked in capture interrupt routine
     void *user_data;                  // user data which would be passed to the capture callback
 };
 
 mcpwm_group_t *mcpwm_acquire_group_handle(int group_id);
 void mcpwm_release_group_handle(mcpwm_group_t *group);
-esp_err_t mcpwm_check_intr_priority(mcpwm_group_t *group, int intr_priority);
-int mcpwm_get_intr_priority_flag(mcpwm_group_t *group);
 esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_src);
 esp_err_t mcpwm_set_prescale(mcpwm_group_t *group, uint32_t expect_module_resolution_hz, uint32_t module_prescale_max, uint32_t *ret_module_prescale);
 

@@ -69,7 +69,6 @@
 
 #elif CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32H21 || CONFIG_IDF_TARGET_ESP32H4
 
-// Just use the same pins for HSPI
 #define SPI2_PIN_NUM_MOSI   5
 #define SPI2_PIN_NUM_MISO   0
 #define SPI2_PIN_NUM_CLK    4
@@ -77,7 +76,7 @@
 #define SPI2_PIN_NUM_WP     2
 #define SPI2_PIN_NUM_CS     1
 
-#elif CONFIG_IDF_TARGET_ESP32P4
+#elif CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32S31
 
 // Just use the same pins for HSPI
 #define SPI2_PIN_NUM_MOSI   8

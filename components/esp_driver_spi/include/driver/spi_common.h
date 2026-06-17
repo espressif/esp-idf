@@ -123,7 +123,8 @@ typedef struct {
         int iocfg[9];               ///< GPIO config in array format follow the above order.
     };
     bool data_io_default_level; ///< Output data IO default level when no transaction.
-    int max_transfer_sz;  ///< Maximum transfer size, in bytes. Defaults to 4092 if 0 when DMA enabled, or to `SOC_SPI_MAXIMUM_BUFFER_SIZE` if DMA is disabled.
+    int max_transfer_sz;  ///< Maximum transfer size, in bytes. Defaults to 4092 if 0 when DMA enabled, or to hardware fifo length (usually 64 bytes) if DMA is disabled.
+    uint32_t dma_burst_size; ///< DMA data burst size in bytes. Only used when DMA is enabled. Set to 0 to use driver default. When non-zero, must be one of the chip-supported values (see GDMA driver or chip TRM). Ignored on chips that do not support configurable burst size.
     uint32_t flags;       ///< Abilities of bus to be checked by the driver. Or-ed value of ``SPICOMMON_BUSFLAG_*`` flags.
     esp_intr_cpu_affinity_t  isr_cpu_id;    ///< Select cpu core to register SPI ISR.
     int intr_flags;       /**< Interrupt flag for the bus to set the priority, and IRAM attribute, see

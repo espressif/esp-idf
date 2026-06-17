@@ -20,7 +20,7 @@
 #include "soc/spi_mem_struct.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/clk_tree_defs.h"
-#include "rom/spi_flash.h"
+#include "rom/opi_flash.h"
 #include "hal/psram_types.h"
 
 #ifdef __cplusplus
@@ -38,6 +38,7 @@ extern "C" {
 #define PSRAM_CTRLR_LL_PMS_ATTR_READABLE    (1<<1)
 
 #define PSRAM_CTRLR_LL_PMS_INT_SUPPORTED         1
+#define PSRAM_CTRLR_LL_ADDR_INT_SUPPORTED        1
 #define PSRAM_CTRLR_LL_EVENT_SLV_ST_END          (1<<3)
 #define PSRAM_CTRLR_LL_EVENT_MST_ST_END          (1<<4)
 #define PSRAM_CTRLR_LL_EVENT_ECC_ERR             (1<<5)

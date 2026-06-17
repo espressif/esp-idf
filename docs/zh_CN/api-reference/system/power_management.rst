@@ -48,9 +48,16 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
   Light-sleep 状态下，外设设有时钟门控，不会产生来自 GPIO 和内部外设的中断。:doc:`sleep_modes` 文档中所提到的唤醒源可用于从 Light-sleep 状态触发唤醒。
 
-.. only:: SOC_PM_SUPPORT_EXT0_WAKEUP or SOC_PM_SUPPORT_EXT1_WAKEUP
+.. warning::
+  自动 Light-sleep 模式基于定时器唤醒实现，请勿手动配置定时器唤醒源。
+
+.. only:: SOC_PM_SUPPORT_EXT0_WAKEUP and SOC_PM_SUPPORT_EXT1_WAKEUP
 
   例如，EXT0 和 EXT1 唤醒源可以通过 GPIO 唤醒芯片。
+
+.. only:: SOC_PM_SUPPORT_EXT1_WAKEUP and not SOC_PM_SUPPORT_EXT0_WAKEUP
+
+  例如，EXT1 唤醒源可以通过 GPIO 唤醒芯片。
 
 
 电源管理锁
@@ -92,6 +99,26 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
 为了跳过不必要的唤醒，可以将 ``skip_unhandled_events`` 选项设置为 ``true`` 来初始化 ``esp_timer``。带有此标志的定时器不会唤醒系统，有助于减少功耗。
 
+自动 Light-sleep 时间补偿机制
+---------------------------------------
+
+ESP-IDF 使用预测性时间补偿机制来实现自动 Light-sleep。系统会在每次 Light-sleep 周期后测量实际的唤醒开销，并使用该测量值来预测下一次睡眠周期的唤醒开销。
+
+系统根据下一个计划事件计算睡眠持续时间，并减去预测的唤醒开销（来自上一周期）来设置唤醒定时器。唤醒后，由于睡眠期间 FreeRTOS systick 中断被暂停，系统需要调用 :cpp:func:`vTaskStepTick()` 来补偿睡眠期间经过的 tick 数，以保持 FreeRTOS tick 计数的准确性。同时，系统测量实际开销并记录，用于下次预测，形成自适应系统行为的反馈循环。
+
+但实际开销可能因缓存未命中、CPU 频率变化、Flash 延迟变化或硬件状态恢复时间而有所不同。当实际开销超过预测值时，实际睡眠时间可能超过预期，导致 :cpp:func:`vTaskStepTick()` 接收到的 tick 补偿值过大，触发断言失败。
+
+:ref:`CONFIG_PM_LIGHTSLEEP_TICK_OVERFLOW_PROTECTION` 选项提供了一个安全机制，用于在唤醒开销超过预测时防止断言失败。启用后，系统会限制 tick 补偿值以防止溢出。在 menuconfig 中可通过 ``Component config`` > ``Power Management`` > ``Enable light sleep tick overflow protection`` 启用此选项。
+
+启用该选项时，系统对睡过超时情况的处理如下：
+- 如果睡过超时在容忍范围内（可通过 :ref:`CONFIG_PM_LIGHTSLEEP_TICK_OVERFLOW_TOLERANCE` 配置，默认：2 个 tick），系统会静默地将 ``slept_ticks`` 限制为 ``xExpectedIdleTime``，防止断言失败
+- 如果睡过超时超过容忍范围（可能存在 bug），系统不会限制 tick，会抛出错误日志，并触发断言失败
+- 在极少数边缘场景下可能会丢失 tick，导致 FreeRTOS tick 计数（``xTickCount``）落后于真实时间（``esp_timer``），使用 :cpp:func:`vTaskDelay()` 的任务可能比预期延迟稍长，FreeRTOS 软件定时器精度可能降低。
+
+禁用该选项时（默认），可以获得准确的 tick 补偿，对时间关键应用具有更好的精度。在边缘情况下, 如果唤醒开销估算不足导致 Light-sleep 睡过超时时，可能会触发断言失败导致系统崩溃。
+
+建议默认保持禁用状态以维持 tick 精度。仅在遇到与 :cpp:func:`vTaskStepTick()` 相关的断言失败，且可以接受 RTOS tick 时间相较于真实时间轻微不准时启用。
+
 调试和性能分析
 -----------------------
 
@@ -109,6 +136,11 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 4. 调试与应用程序中锁管理相关的问题
 
 要启用性能分析功能（单个锁的计时信息），请在 menuconfig 中启用 :ref:`CONFIG_PM_PROFILING` 选项。
+
+应用示例
+-------------------
+
+:example:`lowpower/power_management` 示例演示了动态调频、自动 Light-sleep 与电源管理锁。
 
 动态调频和外设驱动
 ------------------------------------------------
@@ -173,6 +205,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
             :SOC_PARLIO_SUPPORT_SLEEP_RETENTION: - PARL_IO
             :SOC_SPI_SUPPORT_SLEEP_RETENTION: - All GPSPIs
             :SOC_EMAC_SUPPORT_SLEEP_RETENTION: - EMAC
+            :SOC_LCDCAM_LCD_SUPPORT_SLEEP_RETENTION: - I80 LCD
 
         一些外设尚未支持睡眠上下文恢复，或者寄存器丢失后根本无法恢复。即使外设下电功能被启用，它们也会阻止外设下电的发生：
 

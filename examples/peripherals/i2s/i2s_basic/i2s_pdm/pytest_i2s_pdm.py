@@ -3,15 +3,17 @@
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['pdm_tx'], indirect=True)
 @idf_parametrize(
     'target',
-    ['esp32', 'esp32s3', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32c61'],
+    soc_filtered_targets('SOC_I2S_SUPPORTS_PDM == 1'),
     indirect=['target'],
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
 def test_i2s_pdm_tx_example(dut: Dut) -> None:
     dut.expect(r'I2S PDM TX example start', timeout=5)
     dut.expect(r'---------------------------', timeout=5)
@@ -33,7 +35,7 @@ def test_i2s_pdm_tx_example(dut: Dut) -> None:
 
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['pdm_rx'], indirect=True)
-@idf_parametrize('target', ['esp32', 'esp32s3', 'esp32p4'], indirect=['target'])
+@idf_parametrize('target', ['esp32', 'esp32s3', 'esp32s31', 'esp32p4'], indirect=['target'])
 def test_i2s_pdm_rx_example(dut: Dut) -> None:
     dut.expect(r'I2S PDM RX example start', timeout=5)
     dut.expect(r'---------------------------', timeout=5)

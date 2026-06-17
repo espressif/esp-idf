@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -30,15 +30,19 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved_0: 21;
-        /** clk_etm_en : R/W; bitpos: [21]; default: 0;
+        uint32_t reserved_0: 20;
+        /** clk_etm_en : R/W; bitpos: [20]; default: 0;
          *  No description
          */
         uint32_t clk_etm_en: 1;
-        /** clk_zb_apb_en : R/W; bitpos: [22]; default: 0;
+        /** clk_zb_apb_en : R/W; bitpos: [21]; default: 0;
          *  No description
          */
         uint32_t clk_zb_apb_en: 1;
+        /** clk_zb_mac_sys_en : R/W; bitpos: [22]; default: 0;
+         *  No description
+         */
+        uint32_t clk_zb_mac_sys_en: 1;
         /** clk_zb_mac_en : R/W; bitpos: [23]; default: 0;
          *  No description
          */

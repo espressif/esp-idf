@@ -174,7 +174,7 @@ static inline void periph_ll_clk_gate_set_default(soc_reset_reason_t rst_reason,
 
         if (config->disable_assist_clk) {
             /* Disable ASSIST Debug module clock if PC recoreding function is not used,
-             * if stack guard function needs it, it will be re-enabled at esp_hw_stack_guard_init */
+             * if stack guard function needs it, it will be re-enabled at esp_hw_debug_assist_init */
             PCR.assist_conf.assist_clk_en = 0;
         }
 

@@ -60,7 +60,7 @@ def esp_reset_and_wait_ready_esp32c5(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.esp32c5_eco3
+@pytest.mark.esp32c5_rev1
 @idf_parametrize(
     'config',
     [
@@ -70,11 +70,11 @@ def esp_reset_and_wait_ready_esp32c5(dut: Dut) -> None:
     indirect=['config'],
 )
 @idf_parametrize('target', ['esp32c5'], indirect=['target'])
-def test_esp_system_esp32c5_eco3(dut: Dut) -> None:
+def test_esp_system_esp32c5_rev1(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=60)
 
 
-def esp_reset_and_wait_ready_esp32c5_eco3(dut: Dut) -> None:
+def esp_reset_and_wait_ready_esp32c5_rev1(dut: Dut) -> None:
     dut.serial.hard_reset()
     time.sleep(0.5)
     dut.expect_exact('Press ENTER to see the list of tests')
@@ -125,6 +125,40 @@ def test_sleep_uart_handling(dut: Dut) -> None:
 
 @pytest.mark.generic
 @idf_parametrize('config', ['default'], indirect=['config'])
+@idf_parametrize(
+    'target',
+    [target for target in soc_filtered_targets('SOC_CPU_LOCKUP_DEBUG_SUPPORTED == 1')],
+    indirect=['target'],
+)
+def test_cpu_lockup_trap_chain(dut: Dut) -> None:
+    """Trigger a PRO CPU lockup and verify the lockup output."""
+    esp_reset_and_wait_ready(dut)
+    dut.write('"CPU lockup output"')
+
+    if dut.target == 'esp32s31':
+        # ROM should print a non-zero Core0 trap PC for both exceptions.
+        dut.expect(r'\[Core0\]', timeout=10)
+        dut.expect(r'1st Exception:', timeout=5)
+        dut.expect(r'PCAddr:\s+0x(?!00000000)[0-9a-f]{8}', timeout=5)
+        dut.expect(r'2nd Exception:', timeout=5)
+        dut.expect(r'PCAddr:\s+0x(?!00000000)[0-9a-f]{8}', timeout=5)
+    else:
+        # 2nd stage bootloader should log the trap chain after the lockup reset.
+        dut.expect('PRO CPU reset due to CPU lockup', timeout=10)
+        dut.expect('PRO CPU trap chain:', timeout=5)
+        # Both traps should be illegal instruction (RISC-V mcause=2)
+        dut.expect(
+            r'\[latest trap\] cause=0x02 PCAddr=0x(?!00000000)[0-9a-f]{8} tval=0x[0-9a-f]{8} priv=[0-9]+', timeout=5
+        )
+        dut.expect(
+            r'\[previous trap\] cause=0x02 PCAddr=0x(?!00000000)[0-9a-f]{8} tval=0x[0-9a-f]{8} priv=[0-9]+', timeout=5
+        )
+
+    dut.expect_exact('Press ENTER to see the list of tests', timeout=30)
+
+
+@pytest.mark.generic
+@idf_parametrize('config', ['default'], indirect=['config'])
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_stack_smash_protection(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
@@ -150,3 +184,18 @@ def test_frame_pointer_backtracing(dut: Dut) -> None:
     # The backtrace should have two entries
     dut.expect(r'Backtrace: 0x[0-9a-f]{8}:0x[0-9a-f]{8} 0x[0-9a-f]{8}:0x[0-9a-f]{8}\s*[\r]?\n')
     dut.expect_exact('Rebooting...')
+
+
+@pytest.mark.generic
+@idf_parametrize('config', ['framepointer'], indirect=['config'])
+@idf_parametrize('target', ['esp32s31'], indirect=['target'])
+def test_print_all_tasks_backtracing(dut: Dut) -> None:
+    # With frame-pointer mode enabled, esp_backtrace_print_all_tasks() should print a
+    # valid backtrace for each task. Run on a multi-core RISC-V target so the dual-core
+    # IPC path is exercised: the task running on each core is captured via UNW_GET_CONTEXT,
+    # so we expect a well-formed "Backtrace:" line for each of the cores.
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('"Test esp_backtrace_print_all_tasks() on RISC-V"')
+    for _ in range(2):
+        dut.expect(r'Backtrace: 0x[0-9a-f]{8}:0x[0-9a-f]{8}')
+    dut.expect_unity_test_output()

@@ -22,7 +22,7 @@ def test_examples_protocol_http_request(dut: Dut) -> None:
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'http_request.bin')
     bin_size = os.path.getsize(binary_file)
-    logging.info('http_request_bin_size : {}KB'.format(bin_size // 1024))
+    logging.info(f'http_request_bin_size : {bin_size // 1024}KB')
     # start test
     dut.expect(r'DNS lookup succeeded.', timeout=30)
     # check if connected or not
@@ -30,7 +30,7 @@ def test_examples_protocol_http_request(dut: Dut) -> None:
     dut.expect(' ... socket send success')
     dut.expect(' ... set socket receiving timeout success')
     # check server response
-    dut.expect(r'HTTP/1.0 200 OK')
+    dut.expect(r'HTTP/1.1 200 OK')
     # read from the socket completed
     dut.expect('... done reading from socket. Last read return=0 errno=128')
     dut.expect(r'(\d)...')

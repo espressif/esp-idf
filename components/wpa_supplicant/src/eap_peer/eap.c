@@ -59,7 +59,7 @@ u8 *g_wpa_password;
 int g_wpa_password_len;
 u8 *g_wpa_new_password;
 int g_wpa_new_password_len;
-char *g_wpa_ttls_phase2_type;
+const char *g_wpa_ttls_phase2_type;
 char *g_wpa_phase1_options;
 u8 *g_wpa_pac_file;
 int g_wpa_pac_file_len;

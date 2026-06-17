@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <sys/param.h>
 #include "esp_sleep.h"
 #include "esp_private/esp_sleep_internal.h"
+#include "esp_private/periph_ctrl.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -29,7 +30,6 @@
 #include "esp_timer.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/esp_clk_tree_common.h"
-#include "esp_private/uart_share_hw_ctrl.h"
 #include "esp_random.h"
 #include "nvs_flash.h"
 #include "nvs.h"
@@ -96,6 +96,7 @@ TEST_CASE("light sleep stress test", "[lightsleep]")
 #if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
     xSemaphoreTake(done, portMAX_DELAY);
 #endif
+    vTaskDelay(10 / portTICK_PERIOD_MS);  // Give some time for the test task to suspend itself
     vSemaphoreDelete(done);
 }
 
@@ -122,6 +123,7 @@ TEST_CASE("light sleep stress test with periodic esp_timer", "[lightsleep]")
 #if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
     xSemaphoreTake(done, portMAX_DELAY);
 #endif
+    vTaskDelay(10 / portTICK_PERIOD_MS);  // Give some time for the test task to suspend itself
     vSemaphoreDelete(done);
     esp_timer_stop(timer);
     esp_timer_delete(timer);
@@ -183,12 +185,12 @@ TEST_CASE("light sleep and frequency switching", "[lightsleep]")
     clk_source = UART_SCLK_XTAL;
 #endif
     esp_clk_tree_enable_src((soc_module_clk_t)clk_source, true);
-    HP_UART_SRC_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), (soc_module_clk_t)clk_source);
     }
     uint32_t sclk_freq;
     TEST_ESP_OK(uart_get_sclk_freq(clk_source, &sclk_freq));
-    HP_UART_SRC_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE, sclk_freq);
     }
 #endif
@@ -318,6 +320,24 @@ static void test_psram_accessible_after_lightsleep(void)
     TEST_ESP_OK(sleep_cpu_configure(true));
 #endif
 
+    // Verify PSRAM was not corrupted after light sleep
+    uint8_t *psram_data = (uint8_t *)heap_caps_malloc(1024 * 1024, MALLOC_CAP_SPIRAM);
+    uint8_t test_pattern = 0x5a;
+    for (int i = 0; i < 5; i++) {
+        memset(psram_data, test_pattern, 1024 * 1024);
+        esp_sleep_enable_timer_wakeup(100 * 1000);
+        esp_light_sleep_start();
+        for (int j = 0; j < (1024 * 1024); j++) {
+            TEST_ASSERT_EQUAL(test_pattern, psram_data[j]);
+        }
+        test_pattern = ~test_pattern;
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+        TEST_ASSERT_EQUAL(PMU_SLEEP_PD_TOP, sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP);
+#endif
+    }
+    free(psram_data);
+
+    // Verify that all addresses in PSRAM are accessible after light sleep
     esp_sleep_enable_timer_wakeup(100 * 1000);
     esp_light_sleep_start();
     TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);

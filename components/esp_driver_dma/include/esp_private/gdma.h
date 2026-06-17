@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,15 +17,14 @@ extern "C" {
 
 /**
  * @brief Type of GDMA channel handle
- *
  */
 typedef struct gdma_channel_t *gdma_channel_handle_t;
 
 /**
  * @brief Collection of configuration items that used for allocating GDMA channel
- *
  */
 typedef struct {
+    int intr_priority;           /*!< DMA interrupt priority, if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
     struct {
         int isr_cache_safe: 1;  /*!< If set, DMA channel allocator would allocate interrupt in cache-safe region, and ISR is serviceable when cache is disabled */
     } flags;
@@ -64,6 +63,7 @@ typedef bool (*gdma_event_callback_t)(gdma_channel_handle_t dma_chan, gdma_event
 typedef struct {
     gdma_event_callback_t on_trans_eof; /*!< Invoked when TX engine meets EOF descriptor */
     gdma_event_callback_t on_descr_err; /*!< Invoked when DMA encounters a descriptor error */
+    gdma_event_callback_t on_link_switch; /*!< Invoked when TX link list switches to a new descriptor chain */
 } gdma_tx_event_callbacks_t;
 
 /**
@@ -74,12 +74,14 @@ typedef struct {
     gdma_event_callback_t on_recv_eof;  /*!< Invoked when RX engine meets EOF descriptor */
     gdma_event_callback_t on_descr_err; /*!< Invoked when DMA encounters a descriptor error */
     gdma_event_callback_t on_recv_done; /*!< Invoked when finished to receive one RX descriptor */
+    gdma_event_callback_t on_descr_empty; /*!< Invoked when RX has no more descriptor space for incoming data.
+                                              This event is abnormal and non-recoverable for the current transfer;
+                                              software should fix descriptor/buffer sizing and restart DMA. */
 } gdma_rx_event_callbacks_t;
 
 /**
  * @brief Type of GDMA engine trigger
  * @note It's recommended to initialize this structure with `GDMA_MAKE_TRIGGER`.
- *
  */
 typedef struct {
     int instance_id;                  /*!< Peripheral instance ID. Supported IDs are listed in `hal/gdma_channel.h`, e.g. SOC_GDMA_TRIG_PERIPH_UHCI0 */
@@ -142,6 +144,26 @@ esp_err_t gdma_new_ahb_channel(const gdma_channel_alloc_config_t *config, gdma_c
  *      - ESP_FAIL: Create DMA channel failed because of other error
  */
 esp_err_t gdma_new_axi_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_tx_chan, gdma_channel_handle_t *ret_rx_chan);
+
+/**
+ * @brief Create LP-AHB-GDMA channel(s)
+ * @note This API won't install interrupt service for the allocated channel.
+ *       If interrupt service is needed, user has to register GDMA event callback by `gdma_register_tx_event_callbacks` or `gdma_register_rx_event_callbacks`.
+ * @note To allocate both TX and RX channels in a pair, pass non-NULL pointers for both ret_tx_chan and ret_rx_chan.
+ *       To allocate only one direction, pass NULL for the unwanted direction.
+ * @note Allocation is atomic: if any channel fails to allocate, all partially allocated resources are cleaned up automatically.
+ *       Either all requested channels are successfully allocated, or the function fails with no channels allocated.
+ *
+ * @param[in] config Pointer to a collection of configurations for allocating GDMA channel
+ * @param[out] ret_tx_chan Returned TX channel handle. Pass NULL if TX channel is not needed. Must not be NULL if ret_rx_chan is also NULL.
+ * @param[out] ret_rx_chan Returned RX channel handle. Pass NULL if RX channel is not needed. Must not be NULL if ret_tx_chan is also NULL.
+ * @return
+ *      - ESP_OK: Create DMA channel(s) successfully
+ *      - ESP_ERR_INVALID_ARG: Create DMA channel failed because both ret_tx_chan and ret_rx_chan are NULL
+ *      - ESP_ERR_NO_MEM: Create DMA channel failed because out of memory
+ *      - ESP_FAIL: Create DMA channel failed because of other error
+ */
+esp_err_t gdma_new_lp_ahb_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_tx_chan, gdma_channel_handle_t *ret_rx_chan);
 
 /**
  * @brief Connect GDMA channel to trigger peripheral
@@ -283,6 +305,26 @@ esp_err_t gdma_get_group_channel_id(gdma_channel_handle_t dma_chan, int *group_i
  *      - ESP_FAIL: Set event callbacks failed because of other error
  */
 esp_err_t gdma_register_tx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_tx_event_callbacks_t *cbs, void *user_data);
+
+/**
+ * @brief Request an interrupt when the TX channel switches to a new descriptor chain
+ *
+ * @note This API is only available on targets that support TX link switch interrupt.
+ * @note Register the `on_link_switch` callback by `gdma_register_tx_event_callbacks()` before calling this API.
+ * @note The TX EOF event indicates that GDMA has reached an EOF descriptor. By contrast, the TX link switch
+ *       event indicates that GDMA has started using the next descriptor chain after a link update.
+ *       GDMA can prefetch descriptors from the updated link before the EOF event, so EOF doesn't always mean
+ *       the previous descriptor chain is no longer referenced by GDMA. The link switch event is needed when
+ *       the caller must know that the previous descriptor chain can be reused safely.
+ *
+ * @param[in] dma_tx_chan GDMA TX channel handle
+ * @return
+ *      - ESP_OK: Request link switch event successfully
+ *      - ESP_ERR_INVALID_ARG: Invalid argument
+ *      - ESP_ERR_NOT_SUPPORTED: Link switch event is not supported
+ *      - ESP_ERR_INVALID_STATE: Link switch callback is not registered
+ */
+esp_err_t gdma_request_link_switch_event(gdma_channel_handle_t dma_tx_chan);
 
 /**
  * @brief Set GDMA event callbacks for RX channel

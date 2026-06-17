@@ -139,8 +139,6 @@
 
 #define PIN_FUNC_GPIO								1
 
-#define MAX_RTC_GPIO_NUM             7
-
 #define USB_INT_PHY0_DM_GPIO_NUM     33
 #define USB_INT_PHY0_DP_GPIO_NUM     34
 

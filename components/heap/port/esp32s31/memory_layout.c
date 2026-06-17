@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,8 +11,6 @@
 #include "soc/soc.h"
 #include "heap_memory_layout.h"
 #include "esp_heap_caps.h"
-
-/* TODO: ["ESP32S31"] IDF-14840 */
 
 /**
  * @brief Memory type descriptors. These describe the capabilities of a type of memory in the SoC.
@@ -86,7 +84,6 @@ const size_t soc_memory_region_count = sizeof(soc_memory_regions) / sizeof(soc_m
 
 extern int _data_start, _heap_start, _iram_start, _iram_end, _rtc_force_slow_end;
 extern int _rtc_reserved_start, _rtc_reserved_end;
-extern int _rtc_ulp_memory_start;
 
 /**
  * Reserved memory regions.
@@ -100,14 +97,20 @@ SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start, (intptr_t)&_heap_start, dram_d
 // Target has a shared D/IRAM virtual address, no need to calculate I_D_OFFSET like previous chips
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start, (intptr_t)&_iram_end, iram_code);
 
+#if CONFIG_ULP_COPROC_RUN_FROM_HP_MEM
+extern uint32_t _ulp_hp_mem_resv_start;
+extern uint32_t _ulp_hp_mem_resv_end;
+SOC_RESERVE_MEMORY_REGION((intptr_t)&_ulp_hp_mem_resv_start, (intptr_t)&_ulp_hp_mem_resv_end, ulp_hp_mem);
+#endif
+
 #ifdef CONFIG_SPIRAM
 SOC_RESERVE_MEMORY_REGION( SOC_EXTRAM_LOW, SOC_EXTRAM_HIGH, extram_region);
 #endif
 
 
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-SOC_RESERVE_MEMORY_REGION((intptr_t)&_rtc_reserved_start, (intptr_t)&_rtc_reserved_end, rtc_reserved_data);
-/* This includes any memory reserved for ULP RAM */
-SOC_RESERVE_MEMORY_REGION((intptr_t)&_rtc_reserved_end, (intptr_t)&_rtc_force_slow_end, rtcram_data);
-
+/* Reserve LP RAM from base up to end of .rtc.force_slow (includes ULP code/data area) */
+SOC_RESERVE_MEMORY_REGION(SOC_LP_RAM_LOW, (intptr_t)&_rtc_force_slow_end, rtcram_data);
 #endif
+
+SOC_RESERVE_MEMORY_REGION((intptr_t)&_rtc_reserved_start, (intptr_t)&_rtc_reserved_end, rtc_reserved_data);

@@ -25,6 +25,7 @@ add_custom_target(blank_bin ALL DEPENDS ${blank_file})
 idf_build_get_property(target IDF_TARGET)
 
 if(NOT ${target} STREQUAL "linux")
-    add_dependencies(flash blank_bin)
-    esptool_py_flash_to_partition(flash "${partition}" "${blank_file}")
+    esp_partition_register_target("${partition}" "${blank_file}"
+        DEPENDS blank_bin
+        FLASH_IN_PROJECT)
 endif()

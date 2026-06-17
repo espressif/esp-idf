@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,10 @@
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/hp_system_struct.h"
 #include "soc/usb_utmi_struct.h"
+#include "hal/config.h"
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+#include "soc/lp_system_struct.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -80,6 +84,29 @@ FORCE_INLINE_ATTR void _usb_utmi_ll_reset_register(void)
         (void)__DECLARE_RCC_ATOMIC_ENV; \
         _usb_utmi_ll_reset_register(__VA_ARGS__); \
     } while(0)
+
+/**
+ * @brief Enable/disable 15k pulldown resistors on D+/D- lines
+ *
+ * In USB Host mode, 15k pulldown resistors must be connected on both D+ and D-.
+ * In USB Device mode, pulldown resistors must be disconnected.
+ *
+ * @note On ESP32-P4 v3+, pulldowns are no longer controlled by USB-OTG peripheral
+ *       and must be controlled by software via LP_SYS registers.
+ *       On earlier revisions, pulldowns are controlled by USB-OTG hardware.
+ *
+ * @param[in] enable true to connect pulldowns (Host mode), false to disconnect (Device mode)
+ */
+FORCE_INLINE_ATTR void usb_utmi_ll_enable_data_pulldowns(bool enable)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    LP_SYS.hp_usb_otghs_phy_ctrl.hp_utmiotg_dppulldown = enable;
+    LP_SYS.hp_usb_otghs_phy_ctrl.hp_utmiotg_dmpulldown = enable;
+#else
+    // On pre-v3 ESP32-P4, pulldowns are controlled by the USB-OTG peripheral
+    (void)enable;
+#endif
+}
 
 /**
  * @brief Enable precise detection of VBUS

@@ -16,7 +16,7 @@
 #include "driver/sdmmc_host.h"
 #include "driver/gpio.h"
 #include "sd_test_io.h"
-#if SOC_SDMMC_IO_POWER_EXTERNAL
+#if SOC_SDMMC_IO_POWER_EXTERNAL || SOC_SDMMC_IO_UHS_POWER_EXTERNAL
 #include "sd_pwr_ctrl_by_on_chip_ldo.h"
 #endif
 
@@ -162,6 +162,7 @@ void app_main(void)
     // For setting a specific frequency, use host.max_freq_khz (range 400kHz - 40MHz for SDMMC)
     // Example: for fixed frequency of 10MHz, use host.max_freq_khz = 10000;
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
+    host.unaligned_multi_block_rw_max_chunk_size = 8;
 #if CONFIG_EXAMPLE_SDMMC_SPEED_HS
     host.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
 #elif CONFIG_EXAMPLE_SDMMC_SPEED_UHS_I_SDR50
@@ -175,6 +176,11 @@ void app_main(void)
     host.slot = SDMMC_HOST_SLOT_0;
     host.max_freq_khz = SDMMC_FREQ_SDR104;
     host.flags &= ~SDMMC_HOST_FLAG_DDR;
+#endif
+
+#if SOC_SDMMC_IO_UHS_POWER_EXTERNAL
+    //for uhs-i power
+    host.io_voltage = 1.8f;
 #endif
 
     // For SoCs where the SD power can be supplied both via an internal or external (e.g. on-board LDO) power supply.

@@ -13,8 +13,8 @@ UART logs are time consuming and can significantly slow down the function that c
 
 To run this example, you need a supported target dev board connected to a JTAG adapter, which can come in the following forms:
 
-* [ESP-WROVER-KIT](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html#esp-wrover-kit-v4-1) which integrates an on-board JTAG adapter. Ensure that the [required jumpers to enable JTAG are connected](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/get-started-wrover-kit.html#setup-options) on the WROVER-KIT.
-* ESP32, ESP32-S2 or ESP32-C2 core board (e.g. ESP32-DevKitC, [ESP32-S2-Saola-1](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/hw-reference/esp32s2/user-guide-saola-1-v1.2.html)) can also work as long as you connect it to an external JTAG adapter (e.g. FT2232H, J-LINK).
+* [ESP-WROVER-KIT](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp-wrover-kit/index.html) which integrates an on-board JTAG adapter. Ensure that the [required jumpers to enable JTAG are connected](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/get-started-wrover-kit.html#setup-options) on the WROVER-KIT.
+* ESP32, ESP32-S2 or ESP32-C2 core board (e.g. ESP32-DevKitC, [ESP32-S2-Saola-1](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32s2/esp32-s2-saola-1/index.html)) can also work as long as you connect it to an external JTAG adapter (e.g. FT2232H, J-LINK).
 
 This example will assume that an ESP-WROVER-KIT is used.
 
@@ -68,6 +68,6 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 On ESP32 boards, one likely cause would be an incorrect SPI flash voltage when starting OpenOCD. Suppose a target board/module with a 3.3 V powered SPI flash is being used, but the configuration file (ex. `board/esp32-wrover.cfg` for ESP32) is selected when starting OpenOCD which can set the SPI flash voltage to 1.8 V. In this situation, the SPI flash will not work after OpenOCD connects to the target as OpenOCD has changed the SPI flash voltage. Therefore, you might not be able to flash to the target when OpenOCD is connected.
 
-To work around this issue, users are suggested to use `board/esp32-wrover.cfg` for ESP32 boards/modules operating with an SPI flash voltage of 1.8 V, and `board/esp-wroom-32.cfg` for 3.3 V. Refer to [ESP32 Modules and Boards](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html) and [Set SPI Flash Voltage](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/tips-and-quirks.html#why-to-set-spi-flash-voltage-in-openocd-configuration) for more details.
+To work around this issue, users are suggested to use `board/esp32-wrover.cfg` for ESP32 boards/modules operating with an SPI flash voltage of 1.8 V, and `board/esp-wroom-32.cfg` for 3.3 V. Refer to [ESP32 Dev Kits](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/index.html) and [Set SPI Flash Voltage](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/tips-and-quirks.html#why-to-set-spi-flash-voltage-in-openocd-configuration) for more details.
 
 (For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you as soon as possible.)

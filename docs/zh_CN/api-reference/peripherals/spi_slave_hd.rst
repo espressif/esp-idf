@@ -48,6 +48,8 @@ SPI 从机半双工模式
 
 结构体 :cpp:type:`spi_bus_config_t` 指定了总线的初始化方式，结构体 :cpp:type:`spi_slave_hd_slot_config_t` 指定了 SPI 从机驱动程序的运行方式。
 
+如需使用 3-wire 模式，也称 single I/O (SIO) 模式，请在 :cpp:member:`spi_slave_hd_slot_config_t::flags` 中设置 :c:macro:`SPI_SLAVE_HD_3WIRE_MODE`。该模式下，MOSI 同时用于输入和输出数据，因此 :cpp:member:`spi_bus_config_t::mosi_io_num` 必须设置为支持输出的 GPIO。MISO 信号线不会使用，:cpp:member:`spi_bus_config_t::miso_io_num` 可以设置为 ``-1``。在该模式下，主设备应使用 1-bit SPI Slave HD 命令。带有 DIO/QIO 等 mask 的命令会使硬件选择 2 线或 4 线数据阶段，与 3-wire 模式不兼容，导致数据出错。
+
 启用/禁用从机驱动（可选）
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -62,6 +64,12 @@ SPI 从机半双工模式
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 要通过 DMA 通道向主设备发送数据，应用程序需要先将数据正确地封装在 :cpp:type:`spi_slave_hd_data_t` 描述符结构体中，然后再将数据描述符和通道参数 :cpp:enumerator:`SPI_SLAVE_CHAN_TX` 传递给 :cpp:func:`spi_slave_hd_queue_trans`。数据描述符的指针存储在队列中，一旦接收到主设备的 Rd_DMA 命令，就会按照调用 :cpp:func:`spi_slave_hd_queue_trans` 时数据进入队列的顺序，依次将数据发送给主设备。
+
+.. only:: SOC_PSRAM_DMA_CAPABLE
+
+    驱动程序支持使用 PSRAM 进行传输。直接传入 PSRAM 地址作为 :cpp:member:`spi_slave_hd_data_t::data` 即可。对于 DMA 接收通道，其内存地址和传输长度有对齐要求，使用 :cpp:func:`heap_caps_malloc` 分配内存可以自动处理对齐要求。对于不能控制的内存，也可以使用 :c:macro:`SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO` 标志位，驱动会自动从 PSRAM 重新分配满足要求的内存。
+
+    请注意该功能共享 MSPI 总线带宽（总线频率 * 总线位宽），因此主机对该设备的传输带宽应小于 PSRAM 带宽，否则 **可能会丢失传输数据**，此时获取传输结果会返回 :c:macro:`ESP_ERR_INVALID_STATE` 错误。
 
 应用程序需要检查数据发送的结果。为此，应用程序可以调用 :cpp:func:`spi_slave_hd_get_trans_res`，并将通道参数设置为 :cpp:enumerator:`SPI_SLAVE_CHAN_TX`。该函数将阻塞程序，直到主设备发起的 Rd_DMA 命令事务成功完成或超时。函数中的参数 ``out_trans`` 将输出刚刚完成的数据描述符的指针，从而提供有关已完成的发送操作的信息。
 

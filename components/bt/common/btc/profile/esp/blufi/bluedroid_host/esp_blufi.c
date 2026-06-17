@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,11 +33,136 @@
 #include "esp_err.h"
 #include "esp_blufi.h"
 #include <esp_gap_ble_api.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+#include "soc/soc_caps.h"
 
 #if (BLUFI_INCLUDED == TRUE)
 
+#if !SOC_MPI_SUPPORTED
+#define BLUFI_RX_QUEUE_LEN       8
+#define BLUFI_RX_TASK_STACK_SIZE 4096
+#define BLUFI_RX_TASK_PRIO       (tskIDLE_PRIORITY + 1)
+
+typedef struct {
+    uint8_t *data;
+    uint16_t len;
+} blufi_rx_item_t;
+
+static QueueHandle_t s_blufi_rx_queue;
+static TaskHandle_t s_blufi_rx_task_hdl;
+
+static void blufi_rx_task(void *arg)
+{
+    blufi_rx_item_t item;
+
+    while (xQueueReceive(s_blufi_rx_queue, &item, portMAX_DELAY) == pdTRUE) {
+        if (item.data == NULL) {
+            break;
+        }
+
+        btc_blufi_recv_handler(item.data, item.len);
+        free(item.data);
+    }
+
+    s_blufi_rx_task_hdl = NULL;
+    vTaskDelete(NULL);
+}
+
+static int blufi_rx_worker_start(void)
+{
+    if (s_blufi_rx_queue != NULL && s_blufi_rx_task_hdl != NULL) {
+        return 0;
+    }
+
+    if (s_blufi_rx_queue != NULL && s_blufi_rx_task_hdl == NULL) {
+        blufi_rx_item_t item;
+        while (xQueueReceive(s_blufi_rx_queue, &item, 0) == pdTRUE) {
+            free(item.data);
+        }
+        vQueueDelete(s_blufi_rx_queue);
+        s_blufi_rx_queue = NULL;
+    }
+
+    s_blufi_rx_queue = xQueueCreate(BLUFI_RX_QUEUE_LEN, sizeof(blufi_rx_item_t));
+    if (s_blufi_rx_queue == NULL) {
+        BTC_TRACE_ERROR("failed to create BLUFI RX queue");
+        return -1;
+    }
+
+    BaseType_t ret = xTaskCreate(blufi_rx_task, "blufi_rx", BLUFI_RX_TASK_STACK_SIZE,
+                                 NULL, BLUFI_RX_TASK_PRIO, &s_blufi_rx_task_hdl);
+    if (ret != pdPASS) {
+        BTC_TRACE_ERROR("failed to create BLUFI RX task");
+        vQueueDelete(s_blufi_rx_queue);
+        s_blufi_rx_queue = NULL;
+        return -1;
+    }
+
+    return 0;
+}
+
+static void blufi_rx_worker_stop(void)
+{
+    if (s_blufi_rx_queue == NULL) {
+        return;
+    }
+
+    blufi_rx_item_t stop = { .data = NULL, .len = 0 };
+    if (xQueueSend(s_blufi_rx_queue, &stop, 0) != pdTRUE) {
+        blufi_rx_item_t item;
+        while (xQueueReceive(s_blufi_rx_queue, &item, 0) == pdTRUE) {
+            free(item.data);
+        }
+        (void)xQueueSend(s_blufi_rx_queue, &stop, 0);
+    }
+
+    while (s_blufi_rx_task_hdl != NULL) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+
+    blufi_rx_item_t item;
+    while (xQueueReceive(s_blufi_rx_queue, &item, 0) == pdTRUE) {
+        free(item.data);
+    }
+
+    vQueueDelete(s_blufi_rx_queue);
+    s_blufi_rx_queue = NULL;
+}
+
+static bool blufi_rx_enqueue(const uint8_t *data, uint16_t len)
+{
+    if (len == 0) {
+        return false;
+    }
+
+    if (s_blufi_rx_queue == NULL) {
+        if (blufi_rx_worker_start() != 0) {
+            return false;
+        }
+    }
+
+    uint8_t *copy = malloc(len);
+    if (copy == NULL) {
+        return false;
+    }
+    memcpy(copy, data, len);
+
+    blufi_rx_item_t item = { .data = copy, .len = len };
+    if (xQueueSend(s_blufi_rx_queue, &item, 0) != pdTRUE) {
+        free(copy);
+        return false;
+    }
+    return true;
+}
+#endif /* !SOC_MPI_SUPPORTED */
+
 static uint8_t server_if;
 static uint16_t conn_id;
+
+/* Forward declaration used by the GATTS event handler. */
+esp_err_t esp_blufi_close(esp_gatt_if_t gatts_if, uint16_t conn_id);
 static uint8_t blufi_service_uuid128[32] = {
     /* LSB <--------------------------------------------------------------------------------> MSB */
     //first uuid, 16bit, [12],[13] is the value
@@ -152,6 +277,10 @@ void esp_blufi_gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_pa
     BLUFI_TRACE_DEBUG("GAP_EVT, event %d", event);
     switch (event) {
     case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
+        if (param->adv_data_cmpl.status != ESP_BT_STATUS_SUCCESS) {
+            BTC_TRACE_ERROR("Advertising data set failed, status %x", param->adv_data_cmpl.status);
+            break;
+        }
         esp_ble_gap_start_advertising(&blufi_adv_params);
         break;
     case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
@@ -181,8 +310,15 @@ void esp_blufi_gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_pa
     case ESP_GAP_BLE_NC_REQ_EVT:
         /* The app will receive this evt when the IO has DisplayYesNO capability and the peer device IO also has DisplayYesNo capability.
         show the passkey number to the user to confirm it with the number displayed by peer device. */
-        esp_ble_confirm_reply(param->ble_security.ble_req.bd_addr, true);
-        BLUFI_TRACE_WARNING("Numeric Comparison request, passkey %" PRIu32, param->ble_security.key_notif.passkey);
+        /*
+         * Security note:
+         * Auto-accepting Numeric Comparison would bypass the user confirmation step and
+         * effectively weaken MITM protection. Reject by default; applications that want
+         * MITM protection must implement explicit user confirmation logic.
+         */
+        esp_ble_confirm_reply(param->ble_security.ble_req.bd_addr, false);
+        BLUFI_TRACE_WARNING("Numeric Comparison request rejected by default, passkey %" PRIu32,
+                            param->ble_security.key_notif.passkey);
         break;
     case ESP_GAP_BLE_SEC_REQ_EVT:
         /* send the positive(true) security response to the peer device to accept the security request.
@@ -241,7 +377,6 @@ void blufi_create_service(void)
 
 uint8_t esp_blufi_init(void)
 {
-
     /* register the BLUFI profile to the BTA_GATTS module*/
     BTA_GATTS_AppRegister(&blufi_app_uuid, blufi_profile_cb);
     return GATT_SUCCESS;
@@ -293,7 +428,7 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         break;
     }
     case BTA_GATTS_READ_EVT:
-        memset(&rsp, 0, sizeof(tBTA_GATTS_API_RSP));
+        memset(&rsp, 0, sizeof(rsp));
         rsp.attr_value.handle = p_data->req_data.p_data->read_req.handle;
         rsp.attr_value.len = 1;
         rsp.attr_value.value[0] = 0x00;
@@ -320,7 +455,9 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
                         status = GATT_INVALID_OFFSET;
                         break;
                     }
-                    blufi_env.prepare_buf = osi_malloc(BLUFI_PREPARE_BUF_MAX_SIZE);
+                    /* Use calloc so any unwritten gaps are deterministic (0) if peer sends
+                     * out-of-order/overlapping fragments and later executes the write. */
+                    blufi_env.prepare_buf = osi_calloc(BLUFI_PREPARE_BUF_MAX_SIZE);
                     blufi_env.prepare_len = 0;
                     if (blufi_env.prepare_buf == NULL) {
                         BLUFI_TRACE_ERROR("Blufi prep no mem\n");
@@ -353,7 +490,14 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
             memcpy(blufi_env.prepare_buf + p_data->req_data.p_data->write_req.offset,
                    p_data->req_data.p_data->write_req.value,
                    p_data->req_data.p_data->write_req.len);
-            blufi_env.prepare_len += p_data->req_data.p_data->write_req.len;
+            /* Maintain the maximum written extent rather than summing lengths.
+             * Summation breaks on retransmissions/overlaps and can exceed the actual
+             * written range, causing parsing of unwritten bytes. */
+            const uint16_t end =
+                (uint16_t)(p_data->req_data.p_data->write_req.offset + p_data->req_data.p_data->write_req.len);
+            if (end > blufi_env.prepare_len) {
+                blufi_env.prepare_len = end;
+            }
 
             return;
         } else {
@@ -363,8 +507,15 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         }
 
         if (p_data->req_data.p_data->write_req.handle == blufi_env.handle_char_p2e) {
+#if !SOC_MPI_SUPPORTED
+            if (!blufi_rx_enqueue(&p_data->req_data.p_data->write_req.value[0],
+                                  p_data->req_data.p_data->write_req.len)) {
+                BLUFI_TRACE_ERROR("failed to enqueue BLUFI RX data");
+            }
+#else
             btc_blufi_recv_handler(&p_data->req_data.p_data->write_req.value[0],
                                    p_data->req_data.p_data->write_req.len);
+#endif
         }
         break;
     }
@@ -375,7 +526,13 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
                           GATT_SUCCESS, NULL);
 
         if (blufi_env.prepare_buf && p_data->req_data.p_data->exec_write == GATT_PREP_WRITE_EXEC) {
+#if !SOC_MPI_SUPPORTED
+            if (!blufi_rx_enqueue(blufi_env.prepare_buf, blufi_env.prepare_len)) {
+                BLUFI_TRACE_ERROR("failed to enqueue BLUFI RX exec data");
+            }
+#else
             btc_blufi_recv_handler(blufi_env.prepare_buf, blufi_env.prepare_len);
+#endif
         }
 
         if (blufi_env.prepare_buf) {
@@ -414,7 +571,11 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
             blufi_env.handle_char_p2e = p_data->add_result.attr_id;
 
             BTA_GATTS_AddCharacteristic(blufi_env.handle_srvc, &blufi_char_uuid_e2p,
+                                        #if CONFIG_BT_BLUFI_BLE_SMP_ENABLE
+                                        (GATT_PERM_READ_ENC_MITM),
+                                        #else
                                         (GATT_PERM_READ),
+                                        #endif
                                         (GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY),
                                         NULL, NULL);
             break;
@@ -422,7 +583,11 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
             blufi_env.handle_char_e2p = p_data->add_result.attr_id;
 
             BTA_GATTS_AddCharDescriptor (blufi_env.handle_srvc,
+                                         #if CONFIG_BT_BLUFI_BLE_SMP_ENABLE
+                                         (GATT_PERM_READ_ENC_MITM | GATT_PERM_WRITE_ENC_MITM),
+                                         #else
                                          (GATT_PERM_READ | GATT_PERM_WRITE),
+                                         #endif
                                          &blufi_descr_uuid_e2p,
                                          NULL, NULL);
             break;
@@ -451,6 +616,13 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         btc_msg_t msg;
         esp_blufi_cb_param_t param;
 
+        if (blufi_env.is_connected) {
+            BLUFI_TRACE_WARNING("BLUFI already connected; rejecting new connection from "BT_BD_ADDR_STR", connect_id=%d",
+                                BT_BD_ADDR_HEX(p_data->conn.remote_bda), p_data->conn.conn_id);
+            (void)esp_blufi_close(p_data->conn.server_if, BTC_GATT_GET_CONN_ID(p_data->conn.conn_id));
+            break;
+        }
+
         //set the connection flag to true
         BLUFI_TRACE_API("\ndevice is connected "BT_BD_ADDR_STR", server_if=%d,reason=0x%x,connect_id=%d\n",
                         BT_BD_ADDR_HEX(p_data->conn.remote_bda), p_data->conn.server_if,
@@ -475,6 +647,18 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         btc_msg_t msg;
         esp_blufi_cb_param_t param;
 
+        /* Ignore disconnects that do not belong to the active BLUFI connection.
+         * Even though we reject concurrent connections, the stack may still
+         * deliver disconnect events for transient/previous connections; blindly
+         * resetting the global env would corrupt the active session. */
+        if (!blufi_env.is_connected || blufi_env.conn_id != p_data->conn.conn_id) {
+            BLUFI_TRACE_WARNING("Ignoring BLUFI disconnect for non-active conn_id=%d (active=%d, is_connected=%d) from "
+                                BT_BD_ADDR_STR,
+                                p_data->conn.conn_id, blufi_env.conn_id, blufi_env.is_connected,
+                                BT_BD_ADDR_HEX(p_data->conn.remote_bda));
+            break;
+        }
+
         blufi_env.is_connected = false;
         //set the connection flag to true
         BLUFI_TRACE_API("\ndevice is disconnected "BT_BD_ADDR_STR", server_if=%d,reason=0x%x,connect_id=%d\n",
@@ -490,6 +674,12 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         if (blufi_env.aggr_buf != NULL) {
             osi_free(blufi_env.aggr_buf);
             blufi_env.aggr_buf = NULL;
+        }
+
+        if (blufi_env.prepare_buf) {
+            osi_free(blufi_env.prepare_buf);
+            blufi_env.prepare_buf = NULL;
+            blufi_env.prepare_len = 0;
         }
 
         msg.sig = BTC_SIG_API_CB;
@@ -523,6 +713,21 @@ void esp_blufi_send_notify(void *arg)
 
 void esp_blufi_deinit(void)
 {
+#if !SOC_MPI_SUPPORTED
+    blufi_rx_worker_stop();
+#endif
+    if (blufi_env.prepare_buf) {
+        osi_free(blufi_env.prepare_buf);
+        blufi_env.prepare_buf = NULL;
+        blufi_env.prepare_len = 0;
+    }
+    if (blufi_env.aggr_buf) {
+        osi_free(blufi_env.aggr_buf);
+        blufi_env.aggr_buf = NULL;
+    }
+    blufi_env.offset = 0;
+    blufi_env.total_len = 0;
+
     BTA_GATTS_StopService(blufi_env.handle_srvc);
     BTA_GATTS_DeleteService(blufi_env.handle_srvc);
     /* register the BLUFI profile to the BTA_GATTS module*/
@@ -583,6 +788,8 @@ esp_err_t esp_blufi_close(esp_gatt_if_t gatts_if, uint16_t conn_id)
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
     btc_msg_t msg;
     btc_ble_gatts_args_t arg;
+    memset(&msg, 0, sizeof(msg));
+    memset(&arg, 0, sizeof(arg));
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
     msg.act = BTC_GATTS_ACT_CLOSE;

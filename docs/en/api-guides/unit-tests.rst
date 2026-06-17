@@ -369,3 +369,8 @@ Application Examples
 --------------------
 
 :example:`system/unit_test` demonstrates how to use the Unity library to add unit tests to custom components in an {IDF_TARGET_NAME} development environment, showcasing features such as assertions, test registration, and the use of UNITY_BEGIN() and UNITY_END() macros.
+
+Related Documentation
+---------------------
+
+- `Unit Testing with Unity in VS Code <https://docs.espressif.com/projects/vscode-esp-idf-extension/en/latest/additionalfeatures/unit-testing.html>`__

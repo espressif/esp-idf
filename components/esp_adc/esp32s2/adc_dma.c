@@ -28,7 +28,7 @@ static IRAM_ATTR void adc_dma_intr_handler(void *arg)
     bool conversion_finish = spi_ll_get_intr(ctx->adc_dma.adc_spi_dev, ADC_DMA_INTR_MASK);
     if (conversion_finish) {
         spi_ll_clear_intr(ctx->adc_dma.adc_spi_dev, ADC_DMA_INTR_MASK);
-        intptr_t desc_addr = spi_dma_ll_get_in_suc_eof_desc_addr(ctx->adc_dma.adc_spi_dev, ctx->adc_dma.spi_dma_ctx->rx_dma_chan.chan_id);
+        intptr_t desc_addr = spi_dma_ll_get_in_suc_eof_desc_addr(ctx->adc_dma.adc_spi_dev, ctx->adc_dma.dma_chan_id);
         ctx->rx_eof_desc_addr = desc_addr;
         need_yield = ctx->adc_intr_func(ctx);
     }
@@ -58,10 +58,11 @@ esp_err_t adc_dma_init(adc_dma_t *adc_dma)
     if (spi_success != true) {
         return ESP_FAIL;
     }
-    ret = spicommon_dma_chan_alloc(SPI3_HOST, SPI_DMA_CH_AUTO, &(adc_dma->spi_dma_ctx));
+    ret = spicommon_dma_chan_alloc(ADC_DMA_SPI_HOST, SPI_DMA_CH_AUTO, 0);
     if (ret != ESP_OK) {
         return ret;
     }
+    adc_dma->dma_chan_id = spi_bus_get_dma_ctx(ADC_DMA_SPI_HOST)->rx_dma_chan.chan_id;
     adc_dma->adc_spi_dev = SPI_LL_GET_HW(ADC_DMA_SPI_HOST);
 
     return ESP_OK;
@@ -70,7 +71,7 @@ esp_err_t adc_dma_init(adc_dma_t *adc_dma)
 esp_err_t adc_dma_deinit(adc_dma_t adc_dma)
 {
     esp_intr_free(adc_dma.dma_intr_hdl);
-    spicommon_dma_chan_free(adc_dma.spi_dma_ctx);
+    spicommon_dma_chan_free(ADC_DMA_SPI_HOST);
     spicommon_periph_free(ADC_DMA_SPI_HOST);
     return ESP_OK;
 }
@@ -79,7 +80,7 @@ esp_err_t adc_dma_start(adc_dma_t adc_dma, dma_descriptor_t *addr)
 {
     spi_ll_clear_intr(adc_dma.adc_spi_dev, ADC_DMA_INTR_MASK);
     spi_ll_enable_intr(adc_dma.adc_spi_dev, ADC_DMA_INTR_MASK);
-    spi_dma_ll_rx_start(adc_dma.adc_spi_dev, adc_dma.spi_dma_ctx->rx_dma_chan.chan_id, (lldesc_t *)addr);
+    spi_dma_ll_rx_start(adc_dma.adc_spi_dev, adc_dma.dma_chan_id, (lldesc_t *)addr);
     return ESP_OK;
 }
 
@@ -87,12 +88,12 @@ esp_err_t adc_dma_stop(adc_dma_t adc_dma)
 {
     spi_ll_disable_intr(adc_dma.adc_spi_dev, ADC_DMA_INTR_MASK);
     spi_ll_clear_intr(adc_dma.adc_spi_dev, ADC_DMA_INTR_MASK);
-    spi_dma_ll_rx_stop(adc_dma.adc_spi_dev, adc_dma.spi_dma_ctx->rx_dma_chan.chan_id);
+    spi_dma_ll_rx_stop(adc_dma.adc_spi_dev, adc_dma.dma_chan_id);
     return ESP_OK;
 }
 
 esp_err_t adc_dma_reset(adc_dma_t adc_dma)
 {
-    spi_dma_ll_rx_reset(adc_dma.adc_spi_dev, adc_dma.spi_dma_ctx->rx_dma_chan.chan_id);
+    spi_dma_ll_rx_reset(adc_dma.adc_spi_dev, adc_dma.dma_chan_id);
     return ESP_OK;
 }

@@ -10,8 +10,6 @@
 #include "../ext_mem_layout.h"
 #include "hal/mmu_types.h"
 
-// TODO: Please check this file [ESP32S31] IDF-14669
-
 /**
  * The start addresses in this list should always be sorted from low to high, as MMU driver will need to
  * coalesce adjacent regions
@@ -29,7 +27,7 @@ const mmu_mem_region_t g_mmu_mem_regions[SOC_MMU_LINEAR_ADDRESS_REGION_NUM] = {
         .start = SOC_MMU_PSRAM_LINEAR_ADDRESS_LOW,
         .end = SOC_MMU_PSRAM_LINEAR_ADDRESS_HIGH,
         .size = SOC_BUS_SIZE(SOC_MMU_PSRAM_LINEAR),
-        .bus_id = CACHE_BUS_IBUS1 | CACHE_BUS_DBUS1,
+        .bus_id = CACHE_BUS_IBUS1 | CACHE_BUS_DBUS0,
         .targets = MMU_TARGET_PSRAM0,
         .caps = MMU_MEM_CAP_EXEC | MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_32BIT | MMU_MEM_CAP_8BIT,
     },

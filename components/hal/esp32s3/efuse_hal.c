@@ -14,7 +14,6 @@
 
 #define ESP_EFUSE_BLOCK_ERROR_BITS(error_reg, block) ((error_reg) & (0x0F << (4 * (block))))
 
-
 //The wafer_major and MSB of wafer_minor fields was allocated to other purposes when block version is v1.1.
 //Luckily only chip v0.0 have this kind of block version and efuse usage.
 //This workaround fixes the issue.

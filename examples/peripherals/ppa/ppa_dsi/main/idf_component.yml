@@ -1,6 +1,0 @@
-dependencies:
-  idf:
-    version: ">=5.3.0"
-  dsi_init:
-    path: ${IDF_PATH}/examples/peripherals/camera/common_components/dsi_init
-  esp_jpeg: ">=1.0.2"

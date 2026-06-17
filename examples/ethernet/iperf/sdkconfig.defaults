@@ -24,6 +24,8 @@ CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS=y
 
 # Run FreeRTOS only on the first core
 CONFIG_FREERTOS_UNICORE=y
+# Enable FreeRTOS IRAM optimization
+CONFIG_FREERTOS_IN_IRAM=y
 
 # Disable watch dog
 CONFIG_ESP_INT_WDT=n

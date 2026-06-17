@@ -10,6 +10,7 @@ menu "Example Configuration"
             bool "Light sleep wakeup"
         config EXAMPLE_TOUCH_DEEP_SLEEP_WAKEUP
             bool "Deep sleep wakeup"
+            depends on !IDF_TARGET_ESP32S31  # TODO: DIG-826
     endchoice
 
     config EXAMPLE_TOUCH_DEEP_SLEEP_PD

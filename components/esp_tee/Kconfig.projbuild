@@ -27,6 +27,7 @@ menu "ESP-TEE (Trusted Execution Environment)"
 
         config SECURE_TEE_STACK_SIZE
             hex "Stack size"
+            default 0x1000 if SECURE_BOOT
             default 0xc00
             range 0x800 0x1000
             help

@@ -1,584 +1,567 @@
 /*
- * FreeRTOS Kernel V10.5.1 (ESP-IDF SMP modified)
- * Copyright (C) 2020 Cambridge Consultants Ltd.
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-FileCopyrightText: 2020 Cambridge Consultants Ltd
- *
- * SPDX-License-Identifier: MIT
- *
- * SPDX-FileContributor: 2023-2025 Espressif Systems (Shanghai) CO LTD
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- *
- * https://www.FreeRTOS.org
- * https://github.com/FreeRTOS
- *
+ * SPDX-License-Identifier: Apache-2.0
  */
-
-/*-----------------------------------------------------------
- * Implementation of functions defined in portable.h for the Posix port.
- *
- * Each task has a pthread which eases use of standard debuggers
- * (allowing backtraces of tasks etc). Threads for tasks that are not
- * running are blocked in sigwait().
- *
- * Task switch is done by resuming the thread for the next task by
- * signaling the condition variable and then waiting on a condition variable
- * with the current thread.
- *
- * The timer interrupt uses SIGALRM and care is taken to ensure that
- * the signal handler runs only on the thread for the current task.
- *
- * Use of part of the standard C library requires care as some
- * functions can take pthread mutexes internally which can result in
- * deadlocks as the FreeRTOS kernel can switch tasks while they're
- * holding a pthread mutex.
- *
- * stdio (printf() and friends) should be called from a single task
- * only or serialized with a FreeRTOS primitive such as a binary
- * semaphore or mutex.
- *----------------------------------------------------------*/
-
-#include <errno.h>
-#include <pthread.h>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/time.h>
-#include <sys/times.h>
-#include <time.h>
-
-/* Scheduler includes. */
+#include <stdint.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <sys/queue.h>
+#include "string.h"
 #include "FreeRTOS.h"
 #include "task.h"
-#include "timers.h"
 #include "utils/wait_for_event.h"
-/*-----------------------------------------------------------*/
+#include "esp_private/freertos_linux_coop_syscalls.h"
+#include "utils/linux_port_utils.h"
 
-#define SIG_RESUME SIGUSR1
+#define FREERTOS_SIM_TICK_PERIOD_US (1000000 / CONFIG_FREERTOS_HZ)
 
-typedef struct THREAD
-{
+typedef struct thread {
+    const char *name;
     pthread_t pthread;
     TaskFunction_t pxCode;
     void *pvParams;
-    BaseType_t xDying;
+    bool is_dying;
+    bool yield_needed;
     struct event *ev;
-} Thread_t;
+} thread_t;
 
-/*
- * The additional per-thread data is stored at the beginning of the
- * task's stack.
- */
-static inline Thread_t *prvGetThreadFromTask(TaskHandle_t xTask)
+typedef struct task_thread_node {
+    TaskHandle_t handle;
+    thread_t *thread;
+    SLIST_ENTRY(task_thread_node) next;
+} task_thread_node_t;
+
+
+static SLIST_HEAD(task_thread_node_ll, task_thread_node) s_task_thread_list = SLIST_HEAD_INITIALIZER(task_thread_node);
+static pthread_mutex_t s_thread_map_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static pthread_mutex_t s_port_mutex;
+static pthread_t s_scheduler_thread;
+static bool s_scheduler_started = false;
+static int s_ux_critical_nesting = 0;
+
+/* TLS flag: true only when inside a real FreeRTOS task pthread */
+static __thread bool s_in_freertos_task = false;
+
+bool linux_port_in_freertos_task(void)
 {
-    StackType_t *pxTopOfStack = *(StackType_t **)xTask;
-
-    return (Thread_t *)(pxTopOfStack + 1);
+    return s_in_freertos_task;
 }
 
-/*-----------------------------------------------------------*/
-
-static pthread_once_t hSigSetupThread = PTHREAD_ONCE_INIT;
-static sigset_t xAllSignals;
-static sigset_t xSchedulerOriginalSignalMask;
-static pthread_t hMainThread = ( pthread_t )NULL;
-static volatile BaseType_t uxCriticalNesting;
-/*-----------------------------------------------------------*/
-
-static BaseType_t xSchedulerEnd = pdFALSE;
-/*-----------------------------------------------------------*/
-
-static void prvSetupSignalsAndSchedulerPolicy( void );
-static void prvSetupTimerInterrupt( void );
-static void *prvWaitForStart( void * pvParams );
-static void prvSwitchThread( Thread_t * xThreadToResume,
-                             Thread_t *xThreadToSuspend );
-static void prvSuspendSelf( Thread_t * thread);
-static void prvResumeThread( Thread_t * xThreadId );
-static void vPortSystemTickHandler( int sig );
-static void vPortStartFirstTask( void );
-/*-----------------------------------------------------------*/
-
-static void prvFatalError( const char *pcCall, int iErrno )
+static void linux_port_initialize_mutexes(void)
 {
-    fprintf( stderr, "%s: %s\n", pcCall, strerror( iErrno ) );
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_init(&s_port_mutex, &attr);
+    pthread_mutexattr_destroy(&attr);
+}
+
+static void linux_port_fatal_error(const char *msg, int err)
+{
+    fprintf(stderr, "%s: %s\n", msg, strerror(err));
     abort();
 }
 
-/*
- * See header file for description.
- */
-StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack,
-                                    StackType_t *pxEndOfStack,
-                                    TaskFunction_t pxCode,
-                                    void *pvParameters )
+static void linux_port_register_thread(TaskHandle_t handle, thread_t *thread)
 {
-    Thread_t *thread;
-    pthread_attr_t xThreadAttributes;
-    size_t ulStackSize;
-    int iRet;
-
-    (void)pthread_once( &hSigSetupThread, prvSetupSignalsAndSchedulerPolicy );
-
-    /*
-     * Store the additional thread data at the start of the stack.
-     */
-    thread = (Thread_t *)(pxTopOfStack + 1) - 1;
-    pxTopOfStack = (StackType_t *)thread - 1;
-    ulStackSize = (pxTopOfStack + 1 - pxEndOfStack) * sizeof(*pxTopOfStack);
-
-    thread->pxCode = pxCode;
-    thread->pvParams = pvParameters;
-    thread->xDying = pdFALSE;
-
-    pthread_attr_init( &xThreadAttributes );
-    pthread_attr_setstack( &xThreadAttributes, pxEndOfStack, ulStackSize );
-
-    thread->ev = event_create();
-
-    vPortEnterCritical();
-
-    iRet = pthread_create( &thread->pthread, &xThreadAttributes,
-                           prvWaitForStart, thread );
-    if ( iRet )
-    {
-        prvFatalError( "pthread_create", iRet );
+    if (handle == NULL) {
+        return;
     }
 
-    vPortExitCritical();
-
-    return pxTopOfStack;
-}
-/*-----------------------------------------------------------*/
-
-void vPortStartFirstTask( void )
-{
-    Thread_t *pxFirstThread = prvGetThreadFromTask( xTaskGetCurrentTaskHandle() );
-
-    /* Start the first task. */
-    prvResumeThread( pxFirstThread );
-}
-/*-----------------------------------------------------------*/
-
-/*
- * See header file for description.
- */
-BaseType_t xPortStartScheduler( void )
-{
-    int iSignal;
-    sigset_t xSignals;
-
-    hMainThread = pthread_self();
-
-    /* Start the timer that generates the tick ISR(SIGALRM).
-       Interrupts are disabled here already. */
-    prvSetupTimerInterrupt();
-
-    /* Start the first task. */
-    vPortStartFirstTask();
-
-    /* Wait until signaled by vPortEndScheduler(). */
-    sigemptyset( &xSignals );
-    sigaddset( &xSignals, SIG_RESUME );
-
-    while ( !xSchedulerEnd )
-    {
-        sigwait( &xSignals, &iSignal );
+    task_thread_node_t *node = malloc(sizeof(task_thread_node_t));
+    if (!node) {
+        linux_port_fatal_error("Failed to allocate thread map node", -1);
     }
 
-    /* Cancel the Idle task and free its resources */
-#if ( INCLUDE_xTaskGetIdleTaskHandle == 1 )
-    vPortCancelThread( xTaskGetIdleTaskHandle() );
-#endif
+    node->handle = handle;
+    node->thread = thread;
 
-#if ( configUSE_TIMERS == 1 )
-    /* Cancel the Timer task and free its resources */
-    vPortCancelThread( xTimerGetTimerDaemonTaskHandle() );
-#endif /* configUSE_TIMERS */
-
-    /* Restore original signal mask. */
-    (void)pthread_sigmask( SIG_SETMASK, &xSchedulerOriginalSignalMask,  NULL );
-
-    return 0;
+    pthread_mutex_lock(&s_thread_map_mutex);
+    SLIST_INSERT_HEAD(&s_task_thread_list, node, next);
+    pthread_mutex_unlock(&s_thread_map_mutex);
 }
-/*-----------------------------------------------------------*/
 
-void vPortEndScheduler( void )
+static void linux_port_unregister_thread(TaskHandle_t handle)
 {
-    struct itimerval itimer;
-    struct sigaction sigtick;
-    Thread_t *xCurrentThread;
-
-    /* Stop the timer and ignore any pending SIGALRMs that would end
-     * up running on the main thread when it is resumed. */
-    itimer.it_value.tv_sec = 0;
-    itimer.it_value.tv_usec = 0;
-
-    itimer.it_interval.tv_sec = 0;
-    itimer.it_interval.tv_usec = 0;
-    (void)setitimer( ITIMER_REAL, &itimer, NULL );
-
-    sigtick.sa_flags = 0;
-    sigtick.sa_handler = SIG_IGN;
-    sigemptyset( &sigtick.sa_mask );
-    sigaction( SIGALRM, &sigtick, NULL );
-
-    /* Signal the scheduler to exit its loop. */
-    xSchedulerEnd = pdTRUE;
-    (void)pthread_kill( hMainThread, SIG_RESUME );
-
-    xCurrentThread = prvGetThreadFromTask( xTaskGetCurrentTaskHandle() );
-    prvSuspendSelf(xCurrentThread);
-}
-/*-----------------------------------------------------------*/
-
-void vPortEnterCritical( void )
-{
-    if ( uxCriticalNesting == 0 )
-    {
-        vPortDisableInterrupts();
-    }
-    uxCriticalNesting++;
-}
-/*-----------------------------------------------------------*/
-
-void vPortExitCritical( void )
-{
-    if ( uxCriticalNesting > 0 )
-    {
-        uxCriticalNesting--;
+    if (handle == NULL) {
+        return;
     }
 
-    /* Critical section nesting count must always be >= 0. */
-    configASSERT( uxCriticalNesting >= 0 );
+    pthread_mutex_lock(&s_thread_map_mutex);
 
-    /* If we have reached 0 then re-enable the interrupts. */
-    if( uxCriticalNesting == 0 )
-    {
-        vPortEnableInterrupts();
-    }
-}
-/*-----------------------------------------------------------*/
+    task_thread_node_t *cur_node = SLIST_FIRST(&s_task_thread_list);
+    task_thread_node_t *prev_node = NULL;
 
-void vPortYieldFromISR( void )
-{
-    Thread_t *xThreadToSuspend;
-    Thread_t *xThreadToResume;
+    while (cur_node) {
+        if (cur_node->handle == handle) {
+            if (prev_node) {
+                prev_node->next.sle_next = SLIST_NEXT(cur_node, next);
+            } else {
+                SLIST_REMOVE_HEAD(&s_task_thread_list, next);
+            }
 
-    xThreadToSuspend = prvGetThreadFromTask( xTaskGetCurrentTaskHandle() );
+            free(cur_node);
+            pthread_mutex_unlock(&s_thread_map_mutex);
+            return;
+        }
 
-    vTaskSwitchContext();
-
-    xThreadToResume = prvGetThreadFromTask( xTaskGetCurrentTaskHandle() );
-
-    prvSwitchThread( xThreadToResume, xThreadToSuspend );
-}
-/*-----------------------------------------------------------*/
-
-void vPortYield( void )
-{
-    vPortEnterCritical();
-
-    vPortYieldFromISR();
-
-    vPortExitCritical();
-}
-/*-----------------------------------------------------------*/
-
-void vPortDisableInterrupts( void )
-{
-    pthread_sigmask( SIG_BLOCK, &xAllSignals, NULL );
-}
-/*-----------------------------------------------------------*/
-
-void vPortEnableInterrupts( void )
-{
-    pthread_sigmask( SIG_UNBLOCK, &xAllSignals, NULL );
-}
-/*-----------------------------------------------------------*/
-
-BaseType_t xPortSetInterruptMask( void )
-{
-    /* Interrupts are always disabled inside ISRs (signals
-       handlers). */
-    return pdTRUE;
-}
-/*-----------------------------------------------------------*/
-
-void vPortClearInterruptMask( BaseType_t xMask )
-{
-}
-/*-----------------------------------------------------------*/
-
-static uint64_t prvGetTimeNs(void)
-{
-    struct timespec t;
-
-    clock_gettime(CLOCK_MONOTONIC, &t);
-
-    return t.tv_sec * 1000000000ull + t.tv_nsec;
-}
-
-static uint64_t prvStartTimeNs;
-/* commented as part of the code below in vPortSystemTickHandler,
- * to adjust timing according to full demo requirements */
-/* static uint64_t prvTickCount; */
-
-/*
- * Setup the systick timer to generate the tick interrupts at the required
- * frequency.
- */
-void prvSetupTimerInterrupt( void )
-{
-    struct itimerval itimer;
-    int iRet;
-
-    /* Initialise the structure with the current timer information. */
-    iRet = getitimer( ITIMER_REAL, &itimer );
-    if ( iRet )
-    {
-        prvFatalError( "getitimer", errno );
+        prev_node = cur_node;
+        cur_node = SLIST_NEXT(cur_node, next);
     }
 
-    /* Set the interval between timer events. */
-    itimer.it_interval.tv_sec = 0;
-    itimer.it_interval.tv_usec = portTICK_RATE_MICROSECONDS;
+    pthread_mutex_unlock(&s_thread_map_mutex);
+}
 
-    /* Set the current count-down. */
-    itimer.it_value.tv_sec = 0;
-    itimer.it_value.tv_usec = portTICK_RATE_MICROSECONDS;
-
-    /* Set-up the timer interrupt. */
-    iRet = setitimer( ITIMER_REAL, &itimer, NULL );
-    if ( iRet )
-    {
-        prvFatalError( "setitimer", errno );
+static thread_t *linux_port_get_thread_from_handle(TaskHandle_t handle)
+{
+    if (handle == NULL) {
+        return NULL;
     }
 
-    prvStartTimeNs = prvGetTimeNs();
-}
-/*-----------------------------------------------------------*/
-
-static void vPortSystemTickHandler( int sig )
-{
-    Thread_t *pxThreadToSuspend;
-    Thread_t *pxThreadToResume;
-    /* uint64_t xExpectedTicks; */
-
-    uxCriticalNesting++; /* Signals are blocked in this signal handler. */
-
-#if ( configUSE_PREEMPTION == 1 )
-    pxThreadToSuspend = prvGetThreadFromTask( xTaskGetCurrentTaskHandle() );
-#endif
-
-    /* Tick Increment, accounting for any lost signals or drift in
-     * the timer. */
-/*
- *      Comment code to adjust timing according to full demo requirements
- *      xExpectedTicks = (prvGetTimeNs() - prvStartTimeNs)
- *        / (portTICK_RATE_MICROSECONDS * 1000);
- * do { */
-        xTaskIncrementTick();
-/*        prvTickCount++;
- *    } while (prvTickCount < xExpectedTicks);
-*/
-
-#if ( configUSE_PREEMPTION == 1 )
-    /* Select Next Task. */
-    vTaskSwitchContext();
-
-    pxThreadToResume = prvGetThreadFromTask( xTaskGetCurrentTaskHandle() );
-
-    prvSwitchThread(pxThreadToResume, pxThreadToSuspend);
-#endif
-
-    uxCriticalNesting--;
-}
-/*-----------------------------------------------------------*/
-
-void vPortThreadDying( void *pxTaskToDelete, volatile BaseType_t *pxPendYield )
-{
-    Thread_t *pxThread = prvGetThreadFromTask( pxTaskToDelete );
-
-    pxThread->xDying = pdTRUE;
+    pthread_mutex_lock(&s_thread_map_mutex);
+    task_thread_node_t *node = NULL;
+    SLIST_FOREACH(node, &s_task_thread_list, next) {
+        if (node->handle == (TaskHandle_t)(*(StackType_t **)(handle))) {
+            thread_t *t = node->thread;
+            pthread_mutex_unlock(&s_thread_map_mutex);
+            return t;
+        }
+    }
+    pthread_mutex_unlock(&s_thread_map_mutex);
+    return NULL;
 }
 
-void vPortCancelThread( void *pxTaskToDelete )
+static thread_t *linux_port_get_calling_thread(void)
 {
-    #if ( CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK )
-        /* Call the user defined task pre-deletion hook before canceling the thread */
-        extern void vTaskPreDeletionHook( void * pxTCB );
-        vTaskPreDeletionHook( pxTaskToDelete );
-    #endif /* CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK */
-
-    Thread_t *pxThreadToCancel = prvGetThreadFromTask( pxTaskToDelete );
-
-    /*
-     * The thread has already been suspended so it can be safely cancelled.
-     */
-    pthread_cancel( pxThreadToCancel->pthread );
-    pthread_join( pxThreadToCancel->pthread, NULL );
-    event_delete( pxThreadToCancel->ev );
+    pthread_t self = pthread_self();
+    pthread_mutex_lock(&s_thread_map_mutex);
+    task_thread_node_t *node = NULL;
+    SLIST_FOREACH(node, &s_task_thread_list, next) {
+        if (pthread_equal(node->thread->pthread, self)) {
+            thread_t *thread = node->thread;
+            pthread_mutex_unlock(&s_thread_map_mutex);
+            return thread;
+        }
+    }
+    pthread_mutex_unlock(&s_thread_map_mutex);
+    return NULL;
 }
-/*-----------------------------------------------------------*/
 
-static void *prvWaitForStart( void * pvParams )
+pthread_t linux_port_get_scheduled_task_pthread(void)
 {
-    Thread_t *pxThread = pvParams;
+    thread_t *thread = linux_port_get_thread_from_handle(xTaskGetCurrentTaskHandle());
+    return thread ? thread->pthread : pthread_self();
+}
 
-    prvSuspendSelf(pxThread);
+static void *linux_port_task_runner(void *arg)
+{
+    /* Allow this thread to be cancelled */
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 
-    /* Resumed for the first time, unblocks all signals. */
-    uxCriticalNesting = 0;
-    vPortEnableInterrupts();
+    /* set the flag showing that this is a freertos task */
+    s_in_freertos_task = true;
 
-    /* Call the task's entry point. */
-    pxThread->pxCode( pxThread->pvParams );
+    /* setup the backtrace signal. ONLY triggered before abort so
+     * it will not interfere with the simulation while its running */
+    linux_port_setup_backtrace_signal();
 
-    /* A function that implements a task must not exit or attempt to return to
-    * its caller as there is nothing to return to. If a task wants to exit it
-    * should instead call vTaskDelete( NULL ). Artificially force an assert()
-    * to be triggered if configASSERT() is defined, so application writers can
-        * catch the error. */
-    configASSERT( pdFALSE );
+    thread_t *thread = arg;
+
+    /* Block until scheduler signals first time, then run the task body. */
+    event_wait(thread->ev);
+    thread->pxCode(thread->pvParams);
 
     return NULL;
 }
-/*-----------------------------------------------------------*/
 
-static void prvSwitchThread( Thread_t *pxThreadToResume,
-                             Thread_t *pxThreadToSuspend )
+static void linux_port_unblock_thread(thread_t *thread)
 {
-    BaseType_t uxSavedCriticalNesting;
-
-    if ( pxThreadToSuspend != pxThreadToResume )
-    {
-        /*
-         * Switch tasks.
-         *
-         * The critical section nesting is per-task, so save it on the
-         * stack of the current (suspending thread), restoring it when
-         * we switch back to this task.
-         */
-        uxSavedCriticalNesting = uxCriticalNesting;
-
-        prvResumeThread( pxThreadToResume );
-        if ( pxThreadToSuspend->xDying )
-        {
-            pthread_exit( NULL );
-        }
-        prvSuspendSelf( pxThreadToSuspend );
-
-        uxCriticalNesting = uxSavedCriticalNesting;
-    }
+    event_signal(thread->ev);
 }
-/*-----------------------------------------------------------*/
 
-static void prvSuspendSelf( Thread_t *thread )
+static void linux_port_block_thread(thread_t *thread)
 {
-    /*
-     * Suspend this thread by waiting for a pthread_cond_signal event.
-     *
-     * A suspended thread must not handle signals (interrupts) so
-     * all signals must be blocked by calling this from:
-     *
-     * - Inside a critical section (vPortEnterCritical() /
-     *   vPortExitCritical()).
-     *
-     * - From a signal handler that has all signals masked.
-     *
-     * - A thread with all signals blocked with pthread_sigmask().
-        */
     event_wait(thread->ev);
 }
 
-/*-----------------------------------------------------------*/
-
-static void prvResumeThread( Thread_t *xThreadId )
+static void linux_port_increment_tick(void)
 {
-    if ( pthread_self() != xThreadId->pthread )
-    {
-        event_signal(xThreadId->ev);
-    }
+    (void)xTaskIncrementTick();
 }
-/*-----------------------------------------------------------*/
 
-static void prvSetupSignalsAndSchedulerPolicy( void )
+static void linux_port_switch_context(TaskHandle_t current_task_hdl)
 {
-    struct sigaction sigresume, sigtick;
-    int iRet;
+    pthread_mutex_lock(&s_port_mutex);
 
-    hMainThread = pthread_self();
+    thread_t *current_thread = linux_port_get_thread_from_handle(current_task_hdl);
 
-    /* Initialise common signal masks. */
-    sigfillset( &xAllSignals );
-    /* Don't block SIGINT so this can be used to break into GDB while
-     * in a critical section. */
-    sigdelset( &xAllSignals, SIGINT );
+    /* get the task that should be scheduled next */
+    vTaskSwitchContext();
 
-    /*
-     * Block all signals in this thread so all new threads
-     * inherits this mask.
-     *
-     * When a thread is resumed for the first time, all signals
-     * will be unblocked.
-     */
-    (void)pthread_sigmask( SIG_SETMASK, &xAllSignals,
-                           &xSchedulerOriginalSignalMask );
+    /* get the new task to schedule and the associated thread item */
+    TaskHandle_t next_task_hdl = xTaskGetCurrentTaskHandle();
+    thread_t *next_thread = linux_port_get_thread_from_handle(next_task_hdl);
 
-    /* SIG_RESUME is only used with sigwait() so doesn't need a
-       handler. */
-    sigresume.sa_flags = 0;
-    sigresume.sa_handler = SIG_IGN;
-    sigfillset( &sigresume.sa_mask );
-
-    sigtick.sa_flags = 0;
-    sigtick.sa_handler = vPortSystemTickHandler;
-    sigfillset( &sigtick.sa_mask );
-
-    iRet = sigaction( SIG_RESUME, &sigresume, NULL );
-    if ( iRet )
-    {
-        prvFatalError( "sigaction", errno );
+    /* unblock the newly scheduled task if it is different from
+     * the one already scheduled */
+    if (next_thread) {
+        /* Only unblock the thread if we are actually switching to a
+         * different one. Signaling the already-running thread would
+         * leave a stale event_triggered flag, causing its next
+         * event_wait (e.g. in vPortYield) to return immediately
+         * instead of blocking.
+         *
+         * Exception: on the very first switch, the task is still blocked
+         * in its initial event_wait (linux_port_task_runner), so we must
+         * signal it even though current_thread == next_thread. */
+        if (next_thread != current_thread || !s_scheduler_started) {
+            linux_port_unblock_thread(next_thread);
+        }
     }
 
-    iRet = sigaction( SIGALRM, &sigtick, NULL );
-    if ( iRet )
-    {
-        prvFatalError( "sigaction", errno );
+    if (!s_scheduler_started) {
+        s_scheduler_started = true;
+    }
+
+    /* fill the name of the task in the thread item if not done already. */
+    if (next_thread && next_thread->name == NULL) {
+        /* fill the name of the thread now */
+        next_thread->name = pcTaskGetName(next_task_hdl);
+    }
+
+    /* fill the name of the task in the thread item if not done already. */
+    if (current_thread && current_thread->name == NULL) {
+        /* fill the name of the thread now */
+        current_thread->name = pcTaskGetName(current_task_hdl);
+    }
+
+    pthread_mutex_unlock(&s_port_mutex);
+}
+
+static void *linux_port_scheduler_runner(void *arg)
+{
+    (void)arg;
+
+    while (1) {
+        /* sleep for a period of 1 tick */
+        usleep(FREERTOS_SIM_TICK_PERIOD_US);
+
+        /* get the task that is currently scheduled */
+        TaskHandle_t current_task_hdl = xTaskGetCurrentTaskHandle();
+
+        /* Lock the port mutex. This will block while any task is in a
+         * critical section, ensuring ticks don't preempt critical code. */
+        pthread_mutex_lock(&s_port_mutex);
+
+        /* increment the freertos tick */
+        linux_port_increment_tick();
+
+        /* schedule a new task, and schedule out the currently running one */
+        linux_port_switch_context(current_task_hdl);
+
+        pthread_mutex_unlock(&s_port_mutex);
+    }
+    return NULL;
+}
+
+StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack,
+                                   StackType_t *pxEndOfStack,
+                                   TaskFunction_t pxCode,
+                                   void *pvParameters)
+{
+    pthread_attr_t thread_attr;
+    size_t thread_stack_size;
+
+    /* Store the thread data at the start of the stack. */
+    thread_stack_size = (pxTopOfStack - pxEndOfStack) * sizeof(*pxTopOfStack);
+    pthread_attr_init(&thread_attr);
+    pthread_attr_setstack(&thread_attr, pxEndOfStack, thread_stack_size);
+
+    thread_t *thread = malloc(sizeof(thread_t));
+    if (!thread) {
+        linux_port_fatal_error("Failed to allocate thread metadata", -1);
+    }
+    thread->name = NULL; // this will be filled later when we know about the task name
+    thread->pxCode = pxCode;
+    thread->pvParams = pvParameters;
+    thread->is_dying = false;
+    thread->yield_needed = false;
+    thread->ev = event_create();
+
+    linux_port_register_thread((TaskHandle_t)pxTopOfStack, thread);
+
+    /* create the thread associated with the task being created */
+    const int ret = pthread_create(&thread->pthread, &thread_attr, linux_port_task_runner, thread);
+    if (ret != 0) {
+        linux_port_fatal_error("pthread_create", ret);
+    }
+    return pxTopOfStack;
+}
+
+BaseType_t xPortStartScheduler(void)
+{
+    /* set the port mutex to be recursive. Must be done before
+     * vPortEnableInterrupts() which calls vPortExitCritical(). */
+    linux_port_initialize_mutexes();
+
+    /* enable interrupt that were disabled in vTaskStartScheduler */
+    vPortEnableInterrupts();
+
+    /* init the cooperative syscall layer (sets stdio non-blocking).
+     * Provided by VFS component; weak no-op when VFS is not linked. */
+    freertos_linux_coop_syscalls_init();
+
+    /* Start scheduler thread */
+    int ret = pthread_create(&s_scheduler_thread, NULL, linux_port_scheduler_runner, NULL);
+    if (ret != 0) {
+       linux_port_fatal_error("pthread_create", ret);
+    }
+
+    /* Should never return */
+    pthread_join(s_scheduler_thread, NULL);
+
+    return 0;
+}
+
+void vPortEndScheduler(void)
+{
+    exit(0);
+}
+
+void vPortEnterCritical(void)
+{
+    if (!s_scheduler_started) {
+        return;
+    }
+
+    pthread_mutex_lock(&s_port_mutex);
+
+    /* Non-FreeRTOS thread or recursive enter: just bump the counter.
+     * The mutex is already held (recursive lock succeeds for same thread). */
+    if (!linux_port_in_freertos_task() || s_ux_critical_nesting > 0) {
+        s_ux_critical_nesting++;
+        return;
+    }
+
+    /* First enter from a FreeRTOS task: ensure we're the scheduled task.
+     * If not, release the mutex, block until the scheduler switches to us,
+     * then re-acquire. */
+    thread_t *calling_thread = linux_port_get_calling_thread();
+    thread_t *scheduled_thread = linux_port_get_thread_from_handle(xTaskGetCurrentTaskHandle());
+
+    while (calling_thread && !calling_thread->is_dying && calling_thread != scheduled_thread) {
+        pthread_mutex_unlock(&s_port_mutex);
+        linux_port_block_thread(calling_thread);
+        pthread_mutex_lock(&s_port_mutex);
+        calling_thread = linux_port_get_calling_thread();
+        scheduled_thread = linux_port_get_thread_from_handle(xTaskGetCurrentTaskHandle());
+    }
+
+    if (!calling_thread || calling_thread->is_dying) {
+        linux_port_switch_context(xTaskGetCurrentTaskHandle());
+        pthread_mutex_unlock(&s_port_mutex);
+        return;
+    }
+
+    s_ux_critical_nesting = 1;
+}
+
+void vPortExitCritical(void)
+{
+    if (!s_scheduler_started || s_ux_critical_nesting == 0) {
+        return;
+    }
+
+    s_ux_critical_nesting--;
+
+    /* Check for deferred yield on final exit from a FreeRTOS task */
+    if (s_ux_critical_nesting == 0 && linux_port_in_freertos_task()) {
+        thread_t *calling_thread = linux_port_get_calling_thread();
+        if (calling_thread && calling_thread->yield_needed) {
+            calling_thread->yield_needed = false;
+            pthread_mutex_unlock(&s_port_mutex);
+            vPortYield();
+            return;
+        }
+    }
+
+    pthread_mutex_unlock(&s_port_mutex);
+}
+
+/* Handle the case where the calling pthread is not a registered FreeRTOS task.
+ * If the calling thread has been deleted but is still the scheduled task,
+ * perform a context switch. Otherwise just release the mutex and return.
+ * Returns true if the caller should return early. */
+static bool linux_port_handle_deleted_task(TaskHandle_t scheduled_task_hdl,
+                                           thread_t *calling_thread)
+{
+    if (calling_thread != NULL) {
+        return false;
+    }
+
+    thread_t *scheduled_thread = linux_port_get_thread_from_handle(scheduled_task_hdl);
+    if (scheduled_thread == NULL) {
+        linux_port_switch_context(scheduled_task_hdl);
+    }
+    pthread_mutex_unlock(&s_port_mutex);
+    return true;
+}
+
+void vPortYield(void)
+{
+    pthread_mutex_lock(&s_port_mutex);
+
+    thread_t *calling_thread = linux_port_get_calling_thread();
+    TaskHandle_t scheduled_task_hdl = xTaskGetCurrentTaskHandle();
+
+    if (linux_port_handle_deleted_task(scheduled_task_hdl, calling_thread)) {
+        return;
+    }
+
+    /* If in a critical section, defer the yield until the section exits. */
+    if (s_ux_critical_nesting != 0) {
+        calling_thread->yield_needed = true;
+        pthread_mutex_unlock(&s_port_mutex);
+        return;
+    }
+
+    /* Hand the CPU to the next ready task right now (mimics PendSV on real
+     * hardware). */
+    linux_port_switch_context(scheduled_task_hdl);
+    pthread_mutex_unlock(&s_port_mutex);
+
+    /* If the newly scheduled task is different from the calling thread,
+     * block until the scheduler resumes this task. */
+    TaskHandle_t next_task_hdl = xTaskGetCurrentTaskHandle();
+    thread_t *next_thread = linux_port_get_thread_from_handle(next_task_hdl);
+    if (calling_thread != next_thread) {
+        linux_port_block_thread(calling_thread);
     }
 }
-/*-----------------------------------------------------------*/
 
-unsigned long ulPortGetRunTime( void )
+void vPortYieldWithinApi(void)
 {
-    struct tms xTimes;
-
-    times( &xTimes );
-
-    return ( unsigned long ) xTimes.tms_utime;
+    vPortYield();
 }
-/*-----------------------------------------------------------*/
 
-void vPortSetStackWatchpoint( void *pxStackStart )
+void vPortSuspendScheduler(void)
 {
-    (void) pxStackStart;
+    /* scheduled out task trying to suspend the scheduler should get blocked here */
+    pthread_mutex_lock(&s_port_mutex);
+
+   /* get the metadata of the pthread calling this function */
+    thread_t *calling_thread = linux_port_get_calling_thread();
+
+    /* get the thread metadata from the scheduled task */
+    TaskHandle_t scheduled_task_hdl = xTaskGetCurrentTaskHandle();
+
+    if (linux_port_handle_deleted_task(scheduled_task_hdl, calling_thread)) {
+        return;
+    }
+
+    thread_t *scheduled_thread = linux_port_get_thread_from_handle(scheduled_task_hdl);
+    if (calling_thread != scheduled_thread) {
+        pthread_mutex_unlock(&s_port_mutex);
+        vPortYield();
+        return;
+    }
+    pthread_mutex_unlock(&s_port_mutex);
 }
-/*-----------------------------------------------------------*/
+
+void vPortDisableInterrupts(void)
+{
+    vPortEnterCritical();
+}
+
+void vPortEnableInterrupts(void)
+{
+    vPortExitCritical();
+}
+
+BaseType_t xPortSetInterruptMask(void)
+{
+    vPortEnterCritical();
+    return pdTRUE;
+}
+
+void vPortClearInterruptMask(BaseType_t xMask)
+{
+    vPortExitCritical();
+}
+
+void vPortThreadDying(void *pxTaskToDelete, volatile BaseType_t *pxPendYield)
+{
+    pthread_mutex_lock(&s_port_mutex);
+
+    thread_t *thread = linux_port_get_thread_from_handle((TaskHandle_t)pxTaskToDelete);
+    if (thread == NULL) {
+        pthread_mutex_unlock(&s_port_mutex);
+        return;
+    }
+
+    /* Mark the thread as dying, cancel the thread. the pthread
+     * will be stopped on next cancellation point. Do not remove the
+     * thread item from the list since it will be done in vPortCancelThread */
+    thread->is_dying = true;
+    pthread_cancel(thread->pthread);
+
+    pthread_mutex_unlock(&s_port_mutex);
+}
+
+#if CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
+static void vPortTLSPointersDelCb(void *pxTCB)
+{
+    StaticTask_t *tcb = (StaticTask_t *)pxTCB;
+    TlsDeleteCallbackFunction_t *pvDelCbs = (TlsDeleteCallbackFunction_t *)(&tcb->pvDummy15[configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2]);
+
+    for (int x = 0; x < (configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2); x++) {
+        if (pvDelCbs[x] != NULL) {
+            pvDelCbs[x](x, tcb->pvDummy15[x]);
+        }
+    }
+}
+#endif /* CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
+
+void vPortCancelThread(void *pxTaskToDelete)
+{
+    pthread_mutex_lock(&s_port_mutex);
+
+#if CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
+    vPortTLSPointersDelCb(pxTaskToDelete);
+#endif
+
+    thread_t *thread = linux_port_get_thread_from_handle((TaskHandle_t)pxTaskToDelete);
+    if (!thread) {
+        pthread_mutex_unlock(&s_port_mutex);
+        return;
+    }
+
+    if (thread->is_dying) {
+        /* vPortThreadDying already called */
+    } else {
+        thread->is_dying = true;
+        pthread_cancel(thread->pthread);
+    }
+
+    /* Save fields and unregister while holding the lock. */
+    pthread_t pt = thread->pthread;
+    event_t *ev = thread->ev;
+    linux_port_unregister_thread((TaskHandle_t)pxTaskToDelete);
+
+    /* Release the mutex before joining – the dying thread may need the
+     * scheduler (which also takes s_port_mutex) to reach a cancellation
+     * point. */
+    pthread_mutex_unlock(&s_port_mutex);
+
+    pthread_join(pt, NULL);
+    event_delete(ev);
+    free(thread);
+}
+
+void vPortSetStackWatchpoint(void *pxStackStart)
+{
+}

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +22,9 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/sens_struct.h"
 
-#define RTCIO_LL_PIN_FUNC     0
+#define RTCIO_LL_PIN_FUNC           0
+
+#define RTCIO_LL_GPIO_NUM_OFFSET    0 // rtcio 0-21 correspond to gpio 0-21
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,6 +41,16 @@ typedef enum {
 } rtcio_ll_out_mode_t;
 
 /**
+ * @brief Enable/Disable LP IOMUX clock.
+ *
+ * @param enable true to enable the clock / false to disable the clock
+ */
+static inline void rtcio_ll_enable_io_clock(bool enable)
+{
+    SENS.sar_io_mux_conf.iomux_clk_gate_en = enable;
+}
+
+/**
  * @brief Select a RTC IOMUX function for the RTC IO
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
@@ -47,16 +59,6 @@ typedef enum {
 static inline void rtcio_ll_iomux_func_sel(int rtcio_num, int func)
 {
     SET_PERI_REG_BITS(rtc_io_desc[rtcio_num].reg, 0x3, func, rtc_io_desc[rtcio_num].func);
-}
-
-/**
- * @brief Enable/Disable LP IOMUX clock.
- *
- * @param enable true to enable the clock / false to disable the clock
- */
-static inline void rtcio_ll_enable_io_clock(bool enable)
-{
-    SENS.sar_io_mux_conf.iomux_clk_gate_en = enable;
 }
 
 /**
@@ -71,8 +73,6 @@ static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
     if (func == RTCIO_LL_FUNC_RTC) {
         // 0: GPIO connected to digital GPIO module. 1: GPIO connected to analog RTC module.
         SET_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, (rtc_io_desc[rtcio_num].mux));
-        //0:RTC FUNCTION 1,2,3:Reserved
-        rtcio_ll_iomux_func_sel(rtcio_num, RTCIO_LL_PIN_FUNC);
     } else if (func == RTCIO_LL_FUNC_DIGITAL) {
         CLEAR_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, (rtc_io_desc[rtcio_num].mux));
     }
@@ -334,6 +334,17 @@ static inline void rtcio_ll_wakeup_disable(int rtcio_num)
 }
 
 /**
+ * Enable interrupt function and set interrupt type for RTC IO.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ * @param type  Interrupt type (disable, edge, or level). Matches gpio_int_type_t encoding.
+ */
+static inline void rtcio_ll_intr_enable(int rtcio_num, gpio_int_type_t type)
+{
+    RTCIO.pin[rtcio_num].int_type = type;
+}
+
+/**
  * Enable rtc io output in deep sleep.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
@@ -408,6 +419,36 @@ static inline void rtcio_ll_ext0_set_wakeup_pin(int rtcio_num, int level)
     REG_SET_FIELD(RTC_IO_EXT_WAKEUP0_REG, RTC_IO_EXT_WAKEUP0_SEL, rtcio_num);
     // Set level which will trigger wakeup
     SET_PERI_REG_BITS(RTC_CNTL_EXT_WAKEUP_CONF_REG, 0x1, level, RTC_CNTL_EXT_WAKEUP0_LV_S);
+}
+
+/**
+ * @brief Get the status of whether an IO is used for sleep wake-up.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ * @return True if the pin is enabled to wake up from deep-sleep
+ */
+static inline bool rtcio_ll_wakeup_is_enabled(int rtcio_num)
+{
+    HAL_ASSERT(rtcio_num >= 0 && rtcio_num < SOC_RTCIO_PIN_COUNT && "io does not support deep sleep wake-up function");
+    return RTCIO.pin[rtcio_num].wakeup_enable;
+}
+
+/**
+ * @brief Get the rtc io interrupt status
+ *
+ * @return  bit 0~21 corresponding to 0 ~ SOC_RTCIO_PIN_COUNT.
+ */
+static inline uint32_t rtcio_ll_get_interrupt_status(void)
+{
+    return RTCIO.status.status;
+}
+
+/**
+ * @brief Clear all LP IO pads status
+ */
+static inline void rtcio_ll_clear_interrupt_status(void)
+{
+    RTCIO.status_w1tc.w1tc = 0x3FFFFF; // Clear all 22 RTCIO pins
 }
 
 #ifdef __cplusplus

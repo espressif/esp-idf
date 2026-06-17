@@ -168,6 +168,13 @@ Receiving messages inside the callback:
 
 Similarly, since the driver uses pointers for message passing, you must configure the pointer :cpp:member:`twai_frame_t::buffer` and its memory length :cpp:member:`twai_frame_t::buffer_len` before receiving.
 
+Frame Timestamp
+---------------
+
+The TWAI driver supports creating a 64-bit timestamp for each successfully received frame, enabling this feature by configuring the :cpp:member:`twai_onchip_node_config_t::timestamp_resolution_hz` field when creating the node. The timestamp is stored in the :cpp:member:`twai_frame_t::header::timestamp` field of the received frame.
+
+The node time inherits from the system time, i.e. the time starts from the power-on of the chip, and is not affected by the stop/restart/BUS_OFF state during the node's lifetime.
+
 Stopping and Deleting the Node
 ------------------------------
 
@@ -326,6 +333,15 @@ Power Management
 ----------------
 
 When power management is enabled via :ref:`CONFIG_PM_ENABLE`, the system may adjust or disable clock sources before entering sleep mode, which could cause TWAI to malfunction. To prevent this, the driver manages a power management lock internally. This lock is acquired when calling :cpp:func:`twai_node_enable`, ensuring the system does not enter sleep mode and TWAI remains functional. To allow the system to enter a low-power state, call :cpp:func:`twai_node_disable` to release the lock. During sleep, the TWAI controller will also stop functioning.
+
+.. only:: SOC_TWAI_SUPPORT_SLEEP_RETENTION
+
+    About Sleep Retention
+    ^^^^^^^^^^^^^^^^^^^^^
+
+    {IDF_TARGET_NAME} supports powering down the TWAI controller during **Light Sleep** to further reduce power consumption and automatically restore after waking up. This means the application does not need to reconfigure TWAI after **Light Sleep** wake up.
+
+    Enable the option :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`, and set :cpp:member:`twai_onchip_node_config_t::flags::sleep_allow_pd` to ``true`` when initializing the TWAI node to enable this feature. Otherwise, the TWAI controller will remain powered during **Light Sleep**. This feature helps reduce power consumption during light sleep but requires additional storage to save register configurations.
 
 Cache Safety
 ------------

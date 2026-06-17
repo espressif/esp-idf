@@ -1,5 +1,7 @@
 menu "Example Configuration"
 
+    orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
+
     choice EXAMPLE_UART_WAKEUP_MODE
         prompt "uart wakeup mode"
         default UART_WK_MODE_ACTIVE_THRESH
@@ -29,5 +31,16 @@ menu "Example Configuration"
         default 1 if UART_WK_MODE_FIFO_THRESH
         default 2 if UART_WK_MODE_START_BIT
         default 3 if UART_WK_MODE_CHAR_SEQ
+
+    config EXAMPLE_GPIO_WAKEUP_NUM
+        int "gpio wakeup num"
+        depends on IDF_TARGET_ESP32H4 || IDF_TARGET_ESP32H21
+        default 0
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
+        help
+            GPIO pin number used as the light sleep wakeup source.
+            Avoid console UART, MSPI, USB, and other pins already used by peripherals, as they may interfere
+            with normal system operation.
+
 
 endmenu

@@ -316,7 +316,9 @@ void bta_hf_client_scb_disable(void)
 
     bta_hf_client_scb_init();
 
-    (*bta_hf_client_cb.p_cback)(BTA_HF_CLIENT_DISABLE_EVT, NULL);
+    if (bta_hf_client_cb.p_cback) {
+        (*bta_hf_client_cb.p_cback)(BTA_HF_CLIENT_DISABLE_EVT, NULL);
+    }
 }
 
 /*******************************************************************************
@@ -419,6 +421,19 @@ void bta_hf_client_collision_cback (tBTA_SYS_CONN_STATUS status, UINT8 id,
 *******************************************************************************/
 static void bta_hf_client_api_enable(tBTA_HF_CLIENT_DATA *p_data)
 {
+    if (bta_hf_client_cb.scb.p_disc_db != NULL) {
+        (void)SDP_CancelServiceSearch(bta_hf_client_cb.scb.p_disc_db);
+        bta_hf_client_free_db(NULL);
+    }
+    if (bta_hf_client_cb.scb.p_sco_data != NULL) {
+        osi_free(bta_hf_client_cb.scb.p_sco_data);
+        bta_hf_client_cb.scb.p_sco_data = NULL;
+    }
+    if (bta_hf_client_cb.scb.colli_tmr_on) {
+        bta_sys_stop_timer(&bta_hf_client_cb.scb.colli_timer);
+        bta_hf_client_cb.scb.colli_tmr_on = FALSE;
+    }
+
     /* initialize control block */
     memset(&bta_hf_client_cb, 0, sizeof(tBTA_HF_CLIENT_CB));
 
@@ -501,7 +516,7 @@ BOOLEAN bta_hf_client_hdl_event(BT_HDR *p_msg)
         break;
 #if (BTM_SCO_HCI_INCLUDED == TRUE) && (BTA_HFP_EXT_CODEC == TRUE)
     case BTA_HF_CLIENT_SCO_DATA_SEND_EVT:
-        free_msg = false;
+        free_msg = FALSE;
         /* fall through */
 #endif
     default:

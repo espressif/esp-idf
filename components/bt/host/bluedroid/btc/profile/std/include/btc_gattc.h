@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@ typedef enum {
     BTC_GATTC_ACT_AUX_OPEN,
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
     BTC_GATTC_ACT_CLOSE,
+    BTC_GATTC_ACT_CANCEL_OPEN,
     BTC_GATTC_ACT_CFG_MTU,
     BTC_GATTC_ACT_SEARCH_SERVICE,
     BTC_GATTC_ACT_READ_CHAR,
@@ -70,6 +71,11 @@ typedef union {
     struct close_arg {
         uint16_t conn_id;
     } close;
+    //BTC_GATTC_ACT_CANCEL_OPEN,
+    struct cancel_open_arg {
+        esp_gatt_if_t gattc_if;
+        esp_bd_addr_t remote_bda;
+    } cancel_open;
     //BTC_GATTC_ACT_CFG_MTU,
     struct cfg_mtu_arg {
         uint16_t conn_id;

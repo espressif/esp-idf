@@ -35,10 +35,8 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <sys/lock.h>
-#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "aes/esp_aes.h"
-#include "psa/crypto.h"
+#include "psa/crypto_values.h"
 
 void esp_aes_xts_init( esp_aes_xts_context *ctx )
 {

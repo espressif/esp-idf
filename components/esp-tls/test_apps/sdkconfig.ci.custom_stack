@@ -1,0 +1,2 @@
+# Test configuration for custom TLS stack registration feature
+CONFIG_ESP_TLS_CUSTOM_STACK=y

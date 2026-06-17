@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,10 @@
 #include "test_mipi_dsi_board.h"
 #include "esp_lcd_ek79007.h"
 #include "driver/ppa.h"
+#include "esp_efuse.h"
+
+#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
+#define ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
 
 TEST_CASE("MIPI DSI Pattern Generator (EK79007)", "[mipi_dsi]")
 {
@@ -152,7 +156,7 @@ TEST_CASE("MIPI DSI draw RGB bitmap (EK79007)", "[mipi_dsi]")
         int y_start = rand() % (MIPI_DSI_LCD_V_RES - 100);
         memset(img, color_byte, TEST_IMG_SIZE);
         esp_lcd_panel_draw_bitmap(mipi_dpi_panel, x_start, y_start, x_start + 100, y_start + 100, img);
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 
     TEST_ESP_OK(esp_lcd_panel_del(mipi_dpi_panel));
@@ -172,7 +176,14 @@ TEST_CASE("MIPI DSI use DMA2D (EK79007)", "[mipi_dsi]")
 
     test_bsp_enable_dsi_phy_power();
 
-    uint8_t *img = malloc(TEST_IMG_SIZE);
+    uint8_t *img = NULL;
+    size_t buffer_alignment = 1;
+    // If flash encryption is enabled, the buffer address and size must be aligned to SOC_MEMSPI_ENCRYPTION_ALIGNMENT.
+    if (esp_efuse_is_flash_encryption_enabled()) {
+        buffer_alignment = SOC_MEMSPI_ENCRYPTION_ALIGNMENT;
+    }
+    img = heap_caps_aligned_calloc(buffer_alignment, 1, TEST_IMG_SIZE, MALLOC_CAP_DMA | MALLOC_CAP_SPIRAM);
+
     TEST_ASSERT_NOT_NULL(img);
 
     esp_lcd_dsi_bus_config_t bus_config = {
@@ -234,16 +245,29 @@ TEST_CASE("MIPI DSI use DMA2D (EK79007)", "[mipi_dsi]")
     }
     vTaskDelay(pdMS_TO_TICKS(1000));
 
+    size_t test_block_size = 100;
+    size_t start_alignment = 1;
+    size_t src_x_start = 50;
+    size_t src_y_start = 50;
+    // If flash encryption is enabled, the buffer address and size must be aligned to SOC_MEMSPI_ENCRYPTION_ALIGNMENT.
+    if (esp_efuse_is_flash_encryption_enabled()) {
+        test_block_size = ALIGN_DOWN(test_block_size, SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
+        start_alignment = SOC_MEMSPI_ENCRYPTION_ALIGNMENT;
+        src_x_start = ALIGN_DOWN(src_x_start, SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
+        src_y_start = ALIGN_DOWN(src_y_start, SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
+    }
+
     printf("Add Built-in DMA2D draw bitmap hook\r\n");
     TEST_ESP_OK(esp_lcd_dpi_panel_enable_dma2d(mipi_dpi_panel));
     for (int i = 0; i < 100; i++) {
-        int x_start = rand() % (MIPI_DSI_LCD_H_RES - 100);
-        int y_start = rand() % (MIPI_DSI_LCD_V_RES - 100);
+        int x_start = ALIGN_DOWN(rand() % (MIPI_DSI_LCD_H_RES - test_block_size), start_alignment);
+        int y_start = ALIGN_DOWN(rand() % (MIPI_DSI_LCD_V_RES - test_block_size), start_alignment);
         uint8_t color_byte = rand() & 0xFF;
         memset(img, color_byte, TEST_IMG_SIZE / 2);
         color_byte = rand() & 0xFF;
         memset(img + TEST_IMG_SIZE / 2, color_byte, TEST_IMG_SIZE / 2);
-        esp_lcd_panel_draw_bitmap_2d(mipi_dpi_panel, x_start, y_start, x_start + 100, y_start + 100, img, 200, 200, 50, 50, 150, 150);
+        esp_lcd_panel_draw_bitmap_2d(mipi_dpi_panel, x_start, y_start, x_start + test_block_size, y_start + test_block_size,
+                                     img, 200, 200, src_x_start, src_y_start, src_x_start + test_block_size, src_y_start + test_block_size);
         vTaskDelay(pdMS_TO_TICKS(10));
     }
     TEST_ESP_OK(esp_lcd_dpi_panel_disable_dma2d(mipi_dpi_panel));
@@ -341,6 +365,10 @@ TEST_CASE("MIPI DSI use PPA (EK79007)", "[mipi_dsi]")
     esp_lcd_dsi_bus_handle_t mipi_dsi_bus;
     esp_lcd_panel_io_handle_t mipi_dbi_io;
     esp_lcd_panel_handle_t mipi_dpi_panel;
+
+    if (esp_efuse_is_flash_encryption_enabled()) {
+        TEST_PASS_MESSAGE("PPA SRM is not compatible with encrypted memory, skip this test");
+    }
 
     test_bsp_enable_dsi_phy_power();
 

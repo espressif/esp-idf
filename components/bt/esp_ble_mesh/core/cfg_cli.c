@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -470,8 +470,8 @@ static void hb_pub_status(struct bt_mesh_model *model,
     status.count   = net_buf_simple_pull_u8(buf);
     status.period  = net_buf_simple_pull_u8(buf);
     status.ttl     = net_buf_simple_pull_u8(buf);
-    status.feat    = net_buf_simple_pull_u8(buf);
-    status.net_idx = net_buf_simple_pull_u8(buf);
+    status.feat    = net_buf_simple_pull_le16(buf);
+    status.net_idx = net_buf_simple_pull_le16(buf);
 
     cfg_client_recv_status(model, ctx, &status, sizeof(struct bt_mesh_cfg_hb_sub_status));
 }
@@ -759,6 +759,12 @@ int bt_mesh_cfg_ttl_set(bt_mesh_client_common_param_t *param, uint8_t val)
 {
     BT_DBG("TTLSet, Val 0x%02x", val);
 
+    /* Per BLE Mesh spec, TTL 0x01 is prohibited and 0x80-0xFF are reserved */
+    if (val == 0x01 || val > 0x7F) {
+        BT_ERR("Invalid TTL value 0x%02x", val);
+        return -EINVAL;
+    }
+
     return send_msg_with_u8(param, OP_DEFAULT_TTL_SET, val);
 }
 
@@ -772,6 +778,11 @@ int bt_mesh_cfg_friend_get(bt_mesh_client_common_param_t *param)
 int bt_mesh_cfg_friend_set(bt_mesh_client_common_param_t *param, uint8_t val)
 {
     BT_DBG("FrndSet, Val 0x%02x", val);
+
+    if (val > 0x01) {
+        BT_ERR("InvalidFriendState 0x%02x", val);
+        return -EINVAL;
+    }
 
     return send_msg_with_u8(param, OP_FRIEND_SET, val);
 }

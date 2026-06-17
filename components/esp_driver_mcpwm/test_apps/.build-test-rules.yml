@@ -5,3 +5,6 @@ components/esp_driver_mcpwm/test_apps/mcpwm:
     - if: SOC_MCPWM_SUPPORTED != 1
   depends_components:
     - esp_driver_mcpwm
+    - esp_hal_mcpwm
+    - esp_hw_support
+    - soc

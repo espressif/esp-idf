@@ -14,6 +14,7 @@
 #include "freertos/ringbuf.h"
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
+#include "hal/adc_ll.h"
 //For DMA
 #if SOC_GDMA_SUPPORTED
 #include "esp_private/gdma.h"
@@ -97,7 +98,7 @@ struct adc_continuous_ctx_t {
         uint32_t flush_pool: 1;     //Flush the internal pool when the pool is full. With this flag, the `on_pool_ovf` event will not happen.
     } flags;
 #if SOC_ADC_DIG_IIR_FILTER_SUPPORTED
-    adc_iir_filter_t                *iir_filter[SOC_ADC_DIGI_IIR_FILTER_NUM];  //ADC IIR filter context
+    adc_iir_filter_t                *iir_filter[ADC_LL_DIGI_IIR_FILTER_NUM];  //ADC IIR filter context
 #endif
 #if SOC_ADC_MONITOR_SUPPORTED
     adc_monitor_t                   *adc_monitor[SOC_ADC_DIGI_MONITOR_NUM];    // adc monitor context

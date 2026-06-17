@@ -168,7 +168,7 @@ static void update_flash_config(const esp_image_header_t *bootloader_hdr)
 
     // Set flash chip size
     esp_rom_spiflash_config_param(g_rom_flashchip.device_id, size * 0x100000, 0x10000, 0x1000, 0x100, 0xffff);
-    // TODO: set mode
+    // TODO: IDF-15747 set mode
     // TODO: set frequency
 }
 

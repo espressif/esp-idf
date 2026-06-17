@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,8 +34,12 @@ esp_err_t esp_openthread_task_queue_init(const esp_openthread_platform_config_t 
     ESP_RETURN_ON_FALSE(s_task_queue_event_fd >= 0, ESP_FAIL, OT_PLAT_LOG_TAG,
                         "Failed to create OpenThread task queue event fd");
     s_task_queue = xQueueCreate(config->port_config.task_queue_size, sizeof(task_storage_t));
-    ESP_RETURN_ON_FALSE(s_task_queue != NULL, ESP_ERR_NO_MEM, OT_PLAT_LOG_TAG,
-                        "Failed to create OpenThread task queue");
+    if (s_task_queue == NULL) {
+        close(s_task_queue_event_fd);
+        s_task_queue_event_fd = -1;
+        ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to create OpenThread task queue");
+        return ESP_ERR_NO_MEM;
+    }
     return esp_openthread_platform_workflow_register(&esp_openthread_task_queue_update,
                                                      &esp_openthread_task_queue_process, task_queue_workflow);
 }

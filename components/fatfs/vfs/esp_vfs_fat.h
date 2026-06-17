@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #endif
 #include "ff.h"
 #include "wear_levelling.h"
+#include "esp_blockdev.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,10 +66,12 @@ typedef struct {
  * @param[out] out_fs  pointer to FATFS structure which can be used for FATFS f_mount call is returned via this argument.
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_register was already called
+ *      - ESP_ERR_INVALID_STATE if a filesystem is already registered at this base path.
+ *        If @p out_fs is not NULL, @p *out_fs is set to the existing FATFS object so callers
+ *        can run f_mount (e.g. remount the same path).
  *      - ESP_ERR_NO_MEM if not enough memory or too many VFSes already registered
  */
-esp_err_t esp_vfs_fat_register_cfg(const esp_vfs_fat_conf_t* conf, FATFS** out_fs);
+esp_err_t esp_vfs_fat_register(const esp_vfs_fat_conf_t* conf, FATFS** out_fs);
 
 /**
  * @brief Un-register FATFS from VFS
@@ -404,6 +407,48 @@ esp_err_t esp_vfs_fat_spiflash_mount_ro(const char* base_path,
 esp_err_t esp_vfs_fat_spiflash_unmount_ro(const char* base_path, const char* partition_label);
 
 /**
+ * @brief Convenience function to mount a FatFS volume on a BDL (Block Device Layer) device
+ *
+ * The FatFS logical sector size is derived from BDL geometry as
+ * LCM(FF_MIN_SS, read_size, write_size [, erase_size]).  erase_size is
+ * included when it fits within FF_MAX_SS, making the sector erase-aligned
+ * for NOR-style devices and page-aligned for NAND-style devices (where
+ * the FTL/WL layer handles erase internally).
+ *
+ * The caller is responsible for constructing the BDL stack (e.g. partition BDL ->
+ * WL BDL) before calling this function.  Read-only devices are detected
+ * automatically.
+ *
+ * @param base_path     path where FATFS partition should be mounted (e.g. "/spiflash")
+ * @param bdl_handle    BDL device handle providing the storage
+ * @param mount_config  pointer to structure with extra parameters for mounting FATFS
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if any of the arguments is invalid
+ *      - ESP_ERR_NO_MEM if memory can not be allocated or no free drives
+ *      - ESP_FAIL if partition can not be mounted
+ */
+esp_err_t esp_vfs_fat_bdl_mount(const char *base_path,
+    esp_blockdev_handle_t bdl_handle,
+    const esp_vfs_fat_mount_config_t *mount_config);
+
+/**
+ * @brief Unmount FAT filesystem and release resources acquired using esp_vfs_fat_bdl_mount
+ *
+ * @note This function does NOT release the BDL device handle — the caller owns
+ *       the BDL stack lifecycle.
+ *
+ * @param base_path     path where partition was registered (e.g. "/spiflash")
+ * @param bdl_handle    BDL device handle used during mount
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_bdl_mount hasn't been called
+ */
+esp_err_t esp_vfs_fat_bdl_unmount(const char *base_path, esp_blockdev_handle_t bdl_handle);
+
+/**
  * @brief Get information for FATFS partition
  *
  * @param base_path  Base path of the partition examined (e.g. "/spiflash")
@@ -449,14 +494,13 @@ esp_err_t esp_vfs_fat_create_contiguous_file(const char* base_path, const char* 
  */
 esp_err_t esp_vfs_fat_test_contiguous_file(const char* base_path, const char* full_path, bool* is_contiguous);
 
-#ifndef CONFIG_IDF_TARGET_LINUX
 /** @cond */
 /**
- * @deprecated Please use `esp_vfs_fat_register_cfg` instead
+ * @deprecated Please use `esp_vfs_fat_register` instead
  */
-esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive,
-        size_t max_files, FATFS** out_fs);
+esp_err_t esp_vfs_fat_register_cfg(const esp_vfs_fat_conf_t* conf, FATFS** out_fs);
 
+#ifndef CONFIG_IDF_TARGET_LINUX
 /**
  * @deprecated Please use `esp_vfs_fat_spiflash_mount_rw_wl` instead
  */
@@ -485,9 +529,9 @@ esp_err_t esp_vfs_fat_rawflash_mount(const char* base_path,
  */
 esp_err_t esp_vfs_fat_rawflash_unmount(const char* base_path, const char* partition_label)
     __attribute__((deprecated("esp_vfs_fat_rawflash_unmount is deprecated, please use esp_vfs_fat_spiflash_unmount_ro instead")));
+#endif
 /** @endcond */
 
-#endif
 #ifdef __cplusplus
 }
 #endif

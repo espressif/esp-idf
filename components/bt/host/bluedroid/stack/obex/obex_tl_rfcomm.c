@@ -357,6 +357,8 @@ UINT16 obex_tl_rfcomm_send(UINT16 handle, BT_HDR *p_buf)
 
         if (PORT_Write(p_ccb->rfc_handle, p_buf) == PORT_SUCCESS) {
             ret = OBEX_TL_SUCCESS;
+        } else {
+            osi_free(p_buf);
         }
     } while (0);
     return ret;

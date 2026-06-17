@@ -155,12 +155,12 @@ static esp_err_t esp_vfs_fat_mount_internal(const esp_vfs_fat_mount_config_t *mo
         .fat_drive = drv,
         .max_files = mount_config->max_files,
     };
-    err = esp_vfs_fat_register_cfg(&conf, &fs);
+    err = esp_vfs_fat_register(&conf, &fs);
     *out_fs = fs;
     if (err == ESP_ERR_INVALID_STATE) {
         // it's okay, already registered with VFS
     } else if (err != ESP_OK) {
-        ESP_LOGD(TAG, "esp_vfs_fat_register_cfg failed 0x(%x)", err);
+        ESP_LOGD(TAG, "esp_vfs_fat_register failed 0x(%x)", err);
         goto fail;
     }
 

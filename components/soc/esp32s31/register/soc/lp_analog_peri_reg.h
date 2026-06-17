@@ -5,7 +5,6 @@
  */
 #pragma once
 
-#include <stdint.h>
 #include "soc/soc.h"
 #ifdef __cplusplus
 extern "C" {
@@ -119,6 +118,11 @@ extern "C" {
 #define LP_ANA_ANA_FIB_ENA_M  (LP_ANA_ANA_FIB_ENA_V << LP_ANA_ANA_FIB_ENA_S)
 #define LP_ANA_ANA_FIB_ENA_V  0xFFFFFFFFU
 #define LP_ANA_ANA_FIB_ENA_S  0
+
+#define LP_ANA_ANA_FIB_PWR_GLITCH_ENA    0x0000000FU
+#define LP_ANA_ANA_FIB_PWR_GLITCH_ENA_M  (LP_ANA_ANA_FIB_PWR_GLITCH_ENA_V << LP_ANA_ANA_FIB_PWR_GLITCH_ENA_S)
+#define LP_ANA_ANA_FIB_PWR_GLITCH_ENA_V  0x0000000FU
+#define LP_ANA_ANA_FIB_PWR_GLITCH_ENA_S  2
 
 /** LP_ANA_INT_RAW_REG register
  *  need_des

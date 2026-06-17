@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,8 +23,6 @@
 #include <string.h>
 #include "hal/misc.h"
 
-//TODO: [ESP32H4] IDF-12389 inherited from verification branch, need check
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,7 +31,8 @@ extern "C" {
 #define gpspi_flash_ll_hw_get_id(dev)   ( ((dev) == (void*)&GPSPI2) ? SPI2_HOST : -1 )
 
 typedef typeof(GPSPI2.clock.val) gpspi_flash_ll_clock_reg_t;
-#define GPSPI_FLASH_LL_PERIPHERAL_FREQUENCY_MHZ  (80)
+#define GPSPI_FLASH_LL_SUPPORT_CLK_SRC_PRE_DIV  (1)
+#define GPSPI_FLASH_LL_PERIPH_CLK_DIV_MAX ((SPI_CLKCNT_N + 1) * (SPI_CLKDIV_PRE + 1)) //peripheral internal maxmum clock divider
 
 /*------------------------------------------------------------------------------
  * Control
@@ -45,18 +44,17 @@ typedef typeof(GPSPI2.clock.val) gpspi_flash_ll_clock_reg_t;
  */
 static inline void gpspi_flash_ll_reset(spi_dev_t *dev)
 {
-    // dev->user.val = 0;
-    // dev->ctrl.val = 0;
+    dev->user.val = 0;
+    dev->ctrl.val = 0;
 
-    // dev->clk_gate.clk_en = 1;
-    // dev->clk_gate.mst_clk_active = 1;
-    // dev->clk_gate.mst_clk_sel = 1;
+    dev->clk_gate.clk_en = 1;
+    dev->clk_gate.mst_clk_active = 1;
+    dev->clk_gate.mst_clk_sel = 1;
 
-    // dev->dma_conf.val = 0;
-    // dev->dma_conf.slv_tx_seg_trans_clr_en = 1;
-    // dev->dma_conf.slv_rx_seg_trans_clr_en = 1;
-    // dev->dma_conf.dma_slv_seg_trans_en = 0;
-    abort();
+    dev->dma_conf.val = 0;
+    dev->dma_conf.slv_tx_seg_trans_clr_en = 1;
+    dev->dma_conf.slv_rx_seg_trans_clr_en = 1;
+    dev->dma_conf.dma_slv_seg_trans_en = 0;
 }
 
 /**
@@ -68,8 +66,7 @@ static inline void gpspi_flash_ll_reset(spi_dev_t *dev)
  */
 static inline bool gpspi_flash_ll_cmd_is_done(const spi_dev_t *dev)
 {
-    // return (dev->cmd.usr == 0);
-    abort();
+    return (dev->cmd.usr == 0);
 }
 
 /**
@@ -81,21 +78,20 @@ static inline bool gpspi_flash_ll_cmd_is_done(const spi_dev_t *dev)
  */
 static inline void gpspi_flash_ll_get_buffer_data(spi_dev_t *dev, void *buffer, uint32_t read_len)
 {
-    // if (((intptr_t)buffer % 4 == 0) && (read_len % 4 == 0)) {
-    //     // If everything is word-aligned, do a faster memcpy
-    //     memcpy(buffer, (void *)dev->data_buf, read_len);
-    // } else {
-    //     // Otherwise, slow(er) path copies word by word
-    //     int copy_len = read_len;
-    //     for (int i = 0; i < (read_len + 3) / 4; i++) {
-    //         int word_len = MIN(sizeof(uint32_t), copy_len);
-    //         uint32_t word = dev->data_buf[i].buf;
-    //         memcpy(buffer, &word, word_len);
-    //         buffer = (void *)((intptr_t)buffer + word_len);
-    //         copy_len -= word_len;
-    //     }
-    // }
-    abort();
+    if (((intptr_t)buffer % 4 == 0) && (read_len % 4 == 0)) {
+        // If everything is word-aligned, do a faster memcpy
+        memcpy(buffer, (void *)dev->data_buf, read_len);
+    } else {
+        // Otherwise, slow(er) path copies word by word
+        int copy_len = read_len;
+        for (int i = 0; i < (read_len + 3) / 4; i++) {
+            int word_len = MIN(sizeof(uint32_t), copy_len);
+            uint32_t word = dev->data_buf[i].buf;
+            memcpy(buffer, &word, word_len);
+            buffer = (void *)((intptr_t)buffer + word_len);
+            copy_len -= word_len;
+        }
+    }
 }
 
 /**
@@ -106,8 +102,7 @@ static inline void gpspi_flash_ll_get_buffer_data(spi_dev_t *dev, void *buffer, 
  */
 static inline void gpspi_flash_ll_write_word(spi_dev_t *dev, uint32_t word)
 {
-    // dev->data_buf[0].buf = word;
-    abort();
+    dev->data_buf[0].buf = word;
 }
 
 /**
@@ -119,17 +114,16 @@ static inline void gpspi_flash_ll_write_word(spi_dev_t *dev, uint32_t word)
  */
 static inline void gpspi_flash_ll_set_buffer_data(spi_dev_t *dev, const void *buffer, uint32_t length)
 {
-    // // Load data registers, word at a time
-    // int num_words = (length + 3) / 4;
-    // for (int i = 0; i < num_words; i++) {
-    //     uint32_t word = 0;
-    //     uint32_t word_len = MIN(length, sizeof(word));
-    //     memcpy(&word, buffer, word_len);
-    //     dev->data_buf[i].buf = word;
-    //     length -= word_len;
-    //     buffer = (void *)((intptr_t)buffer + word_len);
-    // }
-    abort();
+    // Load data registers, word at a time
+    int num_words = (length + 3) / 4;
+    for (int i = 0; i < num_words; i++) {
+        uint32_t word = 0;
+        uint32_t word_len = MIN(length, sizeof(word));
+        memcpy(&word, buffer, word_len);
+        dev->data_buf[i].buf = word;
+        length -= word_len;
+        buffer = (void *)((intptr_t)buffer + word_len);
+    }
 }
 
 /**
@@ -141,10 +135,9 @@ static inline void gpspi_flash_ll_set_buffer_data(spi_dev_t *dev, const void *bu
  */
 static inline void gpspi_flash_ll_user_start(spi_dev_t *dev,  bool pe_ops)
 {
-    // dev->cmd.update = 1;
-    // while (dev->cmd.update);
-    // dev->cmd.usr = 1;
-    abort();
+    dev->cmd.update = 1;
+    while (dev->cmd.update);
+    dev->cmd.usr = 1;
 }
 
 /**
@@ -164,8 +157,7 @@ static inline void gpspi_flash_ll_set_pe_bit(spi_dev_t *dev)
  */
 static inline void gpspi_flash_ll_set_hold_pol(spi_dev_t *dev, uint32_t pol_val)
 {
-    // dev->ctrl.hold_pol = pol_val;
-    abort();
+    dev->ctrl.hold_pol = pol_val;
 }
 
 /**
@@ -177,8 +169,7 @@ static inline void gpspi_flash_ll_set_hold_pol(spi_dev_t *dev, uint32_t pol_val)
  */
 static inline bool gpspi_flash_ll_host_idle(const spi_dev_t *dev)
 {
-    // return dev->cmd.usr == 0;
-    abort();
+    return dev->cmd.usr == 0;
 }
 
 /**
@@ -188,14 +179,13 @@ static inline bool gpspi_flash_ll_host_idle(const spi_dev_t *dev)
  */
 static inline void gpspi_flash_ll_read_phase(spi_dev_t *dev)
 {
-    // typeof (dev->user) user = {
-    //     .usr_mosi = 0,
-    //     .usr_miso = 1,
-    //     .usr_addr = 1,
-    //     .usr_command = 1,
-    // };
-    // dev->user.val = user.val;
-    abort();
+    typeof(dev->user) user = {
+        .usr_mosi = 0,
+        .usr_miso = 1,
+        .usr_addr = 1,
+        .usr_command = 1,
+    };
+    dev->user.val = user.val;
 }
 /*------------------------------------------------------------------------------
  * Configs
@@ -208,9 +198,8 @@ static inline void gpspi_flash_ll_read_phase(spi_dev_t *dev)
  */
 static inline void gpspi_flash_ll_set_cs_pin(spi_dev_t *dev, int pin)
 {
-    // dev->misc.cs0_dis = (pin == 0) ? 0 : 1;
-    // dev->misc.cs1_dis = (pin == 1) ? 0 : 1;
-    abort();
+    dev->misc.cs0_dis = (pin == 0) ? 0 : 1;
+    dev->misc.cs1_dis = (pin == 1) ? 0 : 1;
 }
 
 /**
@@ -221,44 +210,43 @@ static inline void gpspi_flash_ll_set_cs_pin(spi_dev_t *dev, int pin)
  */
 static inline void gpspi_flash_ll_set_read_mode(spi_dev_t *dev, esp_flash_io_mode_t read_mode)
 {
-    // typeof (dev->ctrl) ctrl;
-    // ctrl.val = dev->ctrl.val;
-    // typeof (dev->user) user;
-    // user.val = dev->user.val;
+    typeof(dev->ctrl) ctrl;
+    ctrl.val = dev->ctrl.val;
+    typeof(dev->user) user;
+    user.val = dev->user.val;
 
-    // ctrl.val &= ~(SPI_FCMD_QUAD_M | SPI_FADDR_QUAD_M | SPI_FREAD_QUAD_M | SPI_FCMD_DUAL_M | SPI_FADDR_DUAL_M | SPI_FREAD_DUAL_M);
-    // user.val &= ~(SPI_FWRITE_QUAD_M | SPI_FWRITE_DUAL_M);
+    ctrl.val &= ~(SPI_FCMD_QUAD_M | SPI_FADDR_QUAD_M | SPI_FREAD_QUAD_M | SPI_FCMD_DUAL_M | SPI_FADDR_DUAL_M | SPI_FREAD_DUAL_M);
+    user.val &= ~(SPI_FWRITE_QUAD_M | SPI_FWRITE_DUAL_M);
 
-    // switch (read_mode) {
-    // case SPI_FLASH_FASTRD:
-    //     //the default option
-    // case SPI_FLASH_SLOWRD:
-    //     break;
-    // case SPI_FLASH_QIO:
-    //     ctrl.fread_quad = 1;
-    //     ctrl.faddr_quad = 1;
-    //     user.fwrite_quad = 1;
-    //     break;
-    // case SPI_FLASH_QOUT:
-    //     ctrl.fread_quad = 1;
-    //     user.fwrite_quad = 1;
-    //     break;
-    // case SPI_FLASH_DIO:
-    //     ctrl.fread_dual = 1;
-    //     ctrl.faddr_dual = 1;
-    //     user.fwrite_dual = 1;
-    //     break;
-    // case SPI_FLASH_DOUT:
-    //     ctrl.fread_dual = 1;
-    //     user.fwrite_dual = 1;
-    //     break;
-    // default:
-    //     abort();
-    // }
+    switch (read_mode) {
+    case SPI_FLASH_FASTRD:
+    //the default option
+    case SPI_FLASH_SLOWRD:
+        break;
+    case SPI_FLASH_QIO:
+        ctrl.fread_quad = 1;
+        ctrl.faddr_quad = 1;
+        user.fwrite_quad = 1;
+        break;
+    case SPI_FLASH_QOUT:
+        ctrl.fread_quad = 1;
+        user.fwrite_quad = 1;
+        break;
+    case SPI_FLASH_DIO:
+        ctrl.fread_dual = 1;
+        ctrl.faddr_dual = 1;
+        user.fwrite_dual = 1;
+        break;
+    case SPI_FLASH_DOUT:
+        ctrl.fread_dual = 1;
+        user.fwrite_dual = 1;
+        break;
+    default:
+        abort();
+    }
 
-    // dev->ctrl.val = ctrl.val;
-    // dev->user.val = user.val;
-    abort();
+    dev->ctrl.val = ctrl.val;
+    dev->user.val = user.val;
 }
 
 /**
@@ -269,8 +257,7 @@ static inline void gpspi_flash_ll_set_read_mode(spi_dev_t *dev, esp_flash_io_mod
  */
 static inline void gpspi_flash_ll_set_clock(spi_dev_t *dev, gpspi_flash_ll_clock_reg_t *clock_val)
 {
-    // dev->clock.val = *clock_val;
-    abort();
+    dev->clock.val = *clock_val;
 }
 
 /**
@@ -281,11 +268,10 @@ static inline void gpspi_flash_ll_set_clock(spi_dev_t *dev, gpspi_flash_ll_clock
  */
 static inline void gpspi_flash_ll_set_miso_bitlen(spi_dev_t *dev, uint32_t bitlen)
 {
-    // dev->user.usr_miso = bitlen > 0;
-    // if (bitlen) {
-    //     dev->ms_dlen.ms_data_bitlen = bitlen - 1;
-    // }
-    abort();
+    dev->user.usr_miso = bitlen > 0;
+    if (bitlen) {
+        dev->ms_dlen.ms_data_bitlen = bitlen - 1;
+    }
 }
 
 /**
@@ -297,11 +283,10 @@ static inline void gpspi_flash_ll_set_miso_bitlen(spi_dev_t *dev, uint32_t bitle
  */
 static inline void gpspi_flash_ll_set_mosi_bitlen(spi_dev_t *dev, uint32_t bitlen)
 {
-    // dev->user.usr_mosi = bitlen > 0;
-    // if (bitlen) {
-    //     dev->ms_dlen.ms_data_bitlen = bitlen - 1;
-    // }
-    abort();
+    dev->user.usr_mosi = bitlen > 0;
+    if (bitlen) {
+        dev->ms_dlen.ms_data_bitlen = bitlen - 1;
+    }
 }
 
 /**
@@ -313,13 +298,12 @@ static inline void gpspi_flash_ll_set_mosi_bitlen(spi_dev_t *dev, uint32_t bitle
  */
 static inline void gpspi_flash_ll_set_command(spi_dev_t *dev, uint8_t command, uint32_t bitlen)
 {
-    // dev->user.usr_command = 1;
-    // typeof(dev->user2) user2 = {
-    //     .usr_command_value = command,
-    //     .usr_command_bitlen = (bitlen - 1),
-    // };
-    // dev->user2.val = user2.val;
-    abort();
+    dev->user.usr_command = 1;
+    typeof(dev->user2) user2 = {
+        .usr_command_value = command,
+        .usr_command_bitlen = (bitlen - 1),
+    };
+    dev->user2.val = user2.val;
 }
 
 /**
@@ -330,8 +314,7 @@ static inline void gpspi_flash_ll_set_command(spi_dev_t *dev, uint8_t command, u
  */
 static inline int gpspi_flash_ll_get_addr_bitlen(spi_dev_t *dev)
 {
-    // return dev->user.usr_addr ? dev->user1.usr_addr_bitlen + 1 : 0;
-    abort();
+    return dev->user.usr_addr ? dev->user1.usr_addr_bitlen + 1 : 0;
 }
 
 /**
@@ -342,9 +325,8 @@ static inline int gpspi_flash_ll_get_addr_bitlen(spi_dev_t *dev)
  */
 static inline void gpspi_flash_ll_set_addr_bitlen(spi_dev_t *dev, uint32_t bitlen)
 {
-    // dev->user1.usr_addr_bitlen = (bitlen - 1);
-    // dev->user.usr_addr = bitlen ? 1 : 0;
-    abort();
+    dev->user1.usr_addr_bitlen = (bitlen - 1);
+    dev->user.usr_addr = bitlen ? 1 : 0;
 }
 
 /**
@@ -356,9 +338,8 @@ static inline void gpspi_flash_ll_set_addr_bitlen(spi_dev_t *dev, uint32_t bitle
 static inline void gpspi_flash_ll_set_usr_address(spi_dev_t *dev, uint32_t addr, uint32_t bitlen)
 {
     // The blank region should be all ones
-    // uint32_t padding_ones = (bitlen == 32? 0 : UINT32_MAX >> bitlen);
-    // dev->addr.val = (addr << (32 - bitlen)) | padding_ones;
-    abort();
+    uint32_t padding_ones = (bitlen == 32 ? 0 : UINT32_MAX >> bitlen);
+    dev->addr.val = (addr << (32 - bitlen)) | padding_ones;
 }
 
 /**
@@ -369,8 +350,7 @@ static inline void gpspi_flash_ll_set_usr_address(spi_dev_t *dev, uint32_t addr,
  */
 static inline void gpspi_flash_ll_set_address(spi_dev_t *dev, uint32_t addr)
 {
-    // dev->addr.val = addr;
-    abort();
+    dev->addr.val = addr;
 }
 
 /**
@@ -381,9 +361,10 @@ static inline void gpspi_flash_ll_set_address(spi_dev_t *dev, uint32_t addr)
  */
 static inline void gpspi_flash_ll_set_dummy(spi_dev_t *dev, uint32_t dummy_n)
 {
-    // dev->user.usr_dummy = dummy_n ? 1 : 0;
-    // HAL_FORCE_MODIFY_U32_REG_FIELD(dev->user1, usr_dummy_cyclelen, dummy_n - 1);
-    abort();
+    dev->user.usr_dummy = dummy_n ? 1 : 0;
+    if (dummy_n > 0) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(dev->user1, usr_dummy_cyclelen, dummy_n - 1);
+    }
 }
 
 /**
@@ -395,10 +376,9 @@ static inline void gpspi_flash_ll_set_dummy(spi_dev_t *dev, uint32_t dummy_n)
  */
 static inline void gpspi_flash_ll_set_dummy_out(spi_dev_t *dev, uint32_t out_en, uint32_t out_lev)
 {
-    // dev->ctrl.dummy_out = out_en;
-    // dev->ctrl.q_pol = out_lev;
-    // dev->ctrl.d_pol = out_lev;
-    abort();
+    dev->ctrl.dummy_out = out_en;
+    dev->ctrl.q_pol = out_lev;
+    dev->ctrl.d_pol = out_lev;
 }
 
 /**
@@ -409,16 +389,24 @@ static inline void gpspi_flash_ll_set_dummy_out(spi_dev_t *dev, uint32_t out_en,
  */
 static inline void gpspi_flash_ll_set_hold(spi_dev_t *dev, uint32_t hold_n)
 {
-    // dev->user1.cs_hold_time = hold_n - 1;
-    // dev->user.cs_hold = (hold_n > 0? 1: 0);
-    abort();
+    dev->user.cs_hold = (hold_n > 0 ? 1 : 0);
+    if (hold_n > 0) {
+        dev->user1.cs_hold_time = hold_n - 1;
+    }
 }
 
+/**
+ * Set the delay of SPI clocks before the first SPI clock after the CS active edge.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param cs_setup_time Delay of SPI clocks after the CS active edge, 0 to disable the setup phase.
+ */
 static inline void gpspi_flash_ll_set_cs_setup(spi_dev_t *dev, uint32_t cs_setup_time)
 {
-    // dev->user.cs_setup = (cs_setup_time > 0 ? 1 : 0);
-    // dev->user1.cs_setup_time = cs_setup_time - 1;
-    abort();
+    dev->user.cs_setup = (cs_setup_time > 0 ? 1 : 0);
+    if (cs_setup_time > 0) {
+        dev->user1.cs_setup_time = cs_setup_time - 1;
+    }
 }
 
 /**
@@ -430,30 +418,38 @@ static inline void gpspi_flash_ll_set_cs_setup(spi_dev_t *dev, uint32_t cs_setup
  */
 static inline uint32_t gpspi_flash_ll_calculate_clock_reg(uint8_t clkdiv)
 {
-    // uint32_t div_parameter;
-    // // See comments of `clock` in `spi_struct.h`
-    // if (clkdiv == 1) {
-    //     div_parameter = (1 << 31);
-    // } else {
-    //     div_parameter = ((clkdiv - 1) | (((clkdiv/2 - 1) & 0xff) << 6 ) | (((clkdiv - 1) & 0xff) << 12));
-    // }
-    // return div_parameter;
-    abort();
+    uint32_t div_parameter;
+    // See comments of `clock` in `spi_struct.h`
+    if (clkdiv == 1) {
+        div_parameter = (1 << 31);
+    } else {
+        div_parameter = ((clkdiv - 1) | (((clkdiv / 2 - 1) & 0xff) << 6) | (((clkdiv - 1) & 0xff) << 12));
+    }
+    return div_parameter;
 }
 
 __attribute__((always_inline))
 static inline void gpspi_flash_ll_set_clk_source(spi_dev_t *hw, spi_clock_source_t clk_source)
 {
+    int clock_id = 0;
     switch (clk_source) {
     case SPI_CLK_SRC_RC_FAST:
-        PCR.spi2_clkm_conf.spi2_clkm_sel = 2;
+        clock_id = 2;
         break;
     case SPI_CLK_SRC_XTAL:
-        PCR.spi2_clkm_conf.spi2_clkm_sel = 0;
+        clock_id = 0;
         break;
-    default:
-        PCR.spi2_clkm_conf.spi2_clkm_sel = 1;
+    default: // PLL_F48M
+        clock_id = 1;
         break;
+    }
+
+    if (hw == &GPSPI2) {
+        PCR.spi2_clkm_conf.spi2_clkm_sel = clock_id;
+    } else if (hw == &GPSPI3) {
+        PCR.spi3_clkm_conf.spi3_clkm_sel = clock_id;
+    } else {
+        abort();
     }
 }
 
@@ -465,8 +461,31 @@ static inline void gpspi_flash_ll_set_clk_source(spi_dev_t *hw, spi_clock_source
  */
 static inline void gpspi_flash_ll_enable_clock(spi_dev_t *hw, bool enable)
 {
-    (void) hw;
-    PCR.spi2_clkm_conf.spi2_clkm_en = enable;
+    if (hw == &GPSPI2) {
+        PCR.spi2_clkm_conf.spi2_clkm_en = enable;
+    } else if (hw == &GPSPI3) {
+        PCR.spi3_clkm_conf.spi3_clkm_en = enable;
+    } else {
+        abort();
+    }
+}
+
+/**
+* Enable/disable SPI flash module clock
+*
+* @param hw Beginning address of the peripheral registers.
+* @param enable     true to enable, false to disable
+*/
+static inline void gpspi_flash_ll_clk_source_pre_div(spi_dev_t *hw, uint8_t hs_div, uint8_t mst_div)
+{
+    (void) hs_div;
+    if (hw == &GPSPI2) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.spi2_clkm_conf, spi2_clkm_div_num, mst_div - 1);
+    } else if (hw == &GPSPI3) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.spi3_clkm_conf, spi3_clkm_div_num, mst_div - 1);
+    } else {
+        abort();
+    }
 }
 
 #ifdef __cplusplus

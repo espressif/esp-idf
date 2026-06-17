@@ -5,11 +5,15 @@
 .openthread_dependencies: &openthread_dependencies
   depends_components:
     - esp_coex
+    - esp_driver_spi
+    - esp_driver_uart
+    - esp_hal_uart
     - esp_netif
     - esp_phy
     - esp_system
     - ieee802154
     - lwip
+    - mbedtls
     - openthread
   depends_filepatterns:
     - examples/common_components/protocol_examples_common/*
@@ -20,11 +24,14 @@
 .openthread_sleep_dependencies: &openthread_sleep_dependencies
   depends_components:
     - esp_hw_support
+    - soc
 
 examples/openthread/ot_br:
   enable:
     - if: ((SOC_WIFI_SUPPORTED == 1 and IDF_TARGET != "esp32c61") or IDF_TARGET == "esp32p4") and CONFIG_NAME != "native_radio"
     - if: SOC_WIFI_SUPPORTED == 1 and (SOC_IEEE802154_SUPPORTED == 1 and CONFIG_NAME == "native_radio")
+  disable:
+    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3"] and CONFIG_NAME == "br_debug_riscv"
   disable_test:
     - if: IDF_TARGET not in ["esp32s3"]
       reason: only test on esp32s3
@@ -34,8 +41,8 @@ examples/openthread/ot_cli:
   enable:
     - if: SOC_IEEE802154_SUPPORTED == 1
   disable:
-    - if: IDF_TARGET == "esp32h4" and CONFIG_NAME == "ext_coex"
-      reason: ext_coex not supported on esp32h4 yet
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] and CONFIG_NAME == "ext_coex"
+      reason: ext_coex not supported on esp32h4 and esp32h21 yet
   disable_test:
     - if: IDF_TARGET not in ["esp32h2", "esp32c6"]
       reason: only test on esp32h2 and esp32c6
@@ -45,8 +52,8 @@ examples/openthread/ot_rcp:
   enable:
     - if: SOC_IEEE802154_SUPPORTED == 1
   disable:
-    - if: IDF_TARGET == "esp32h4" and CONFIG_NAME == "ext_coex"
-      reason: ext_coex not supported on esp32h4 yet
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] and CONFIG_NAME == "ext_coex"
+      reason: ext_coex not supported on esp32h4 and esp32h21 yet
   disable_test:
     - if: IDF_TARGET not in ["esp32h2", "esp32c6"]
       reason: only test on esp32h2 and esp32c6
@@ -56,7 +63,7 @@ examples/openthread/ot_sleepy_device/deep_sleep:
   enable:
     - if: SOC_IEEE802154_SUPPORTED == 1
   disable:
-    - if: IDF_TARGET in ["esp32c5", "esp32h4"]
+    - if: IDF_TARGET in ["esp32c5", "esp32h4", "esp32s31", "esp32h21"]
       temporary: true
       reason: Not supported yet, TZ-958
   <<: [*openthread_dependencies, *openthread_sleep_dependencies]
@@ -65,7 +72,7 @@ examples/openthread/ot_sleepy_device/light_sleep:
   enable:
     - if: SOC_IEEE802154_SUPPORTED == 1
   disable:
-    - if: IDF_TARGET in ["esp32h4"]
+    - if: IDF_TARGET in ["esp32h4", "esp32s31", "esp32h21"]
       temporary: true
       reason: Not supported yet
   <<: [*openthread_dependencies, *openthread_sleep_dependencies]

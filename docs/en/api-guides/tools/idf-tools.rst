@@ -45,6 +45,8 @@ Inside the ``IDF_TOOLS_PATH`` directory, the tools installation scripts create t
 - ``python_env`` —  not related to the tools; virtual Python environments are installed in the sub-directories. Note that the Python environment directory can be placed elsewhere by setting the ``IDF_PYTHON_ENV_PATH`` environment variable.
 
   - ``idf_version.txt`` — located within each specific Python environment sub-directory under ``python_env``, this file records the ESP-IDF version corresponding to that environment. The version is stored in a format like ``5.3`` to represent ESP-IDF version ``v5.3``.
+
+- ``root_managed_components`` — directory managed by ``idf-component-manager`` for components installed globally.
 - ``espidf.constraints.*.txt`` — one constraint file for each ESP-IDF release containing Python package version requirements.
 
 GitHub Assets Mirror
@@ -58,7 +60,9 @@ To use Espressif's download server, set the environment variable ``IDF_GITHUB_AS
 
 Any mirror server can be used provided the URL matches the ``github.com`` download URL format. For any GitHub asset URL that the install process downloads, it will replace ``https://github.com`` with ``https://${IDF_GITHUB_ASSETS}``.
 
-.. note:: The Espressif download server currently does not mirror everything from GitHub, but only files attached as Assets to some releases, as well as source archives for some releases.
+.. note::
+
+    The Espressif download server currently does not mirror everything from GitHub, but only files attached as Assets to some releases, as well as source archives for some releases.
 
 .. _idf-tools-py:
 

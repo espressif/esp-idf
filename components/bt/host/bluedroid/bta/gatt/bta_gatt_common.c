@@ -16,6 +16,10 @@
 
 void BTA_GATT_SetLocalMTU(uint16_t mtu)
 {
+    if (mtu < GATT_DEF_BLE_MTU_SIZE || mtu > GATT_MAX_MTU_SIZE) {
+        APPL_TRACE_ERROR("%s: invalid mtu=%u", __func__, mtu);
+        return;
+    }
     gatt_set_local_mtu(mtu);
 }
 

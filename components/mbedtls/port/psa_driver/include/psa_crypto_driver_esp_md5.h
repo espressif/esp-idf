@@ -5,13 +5,14 @@
  */
 #pragma once
 
+
+#include "esp_types.h"
+#include "psa/crypto.h"
+#include "esp_rom_md5.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdbool.h>
-#include "psa/crypto.h"
-#include "esp_rom_md5.h"
 
 #ifdef CONFIG_MBEDTLS_ROM_MD5
 #ifndef PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT

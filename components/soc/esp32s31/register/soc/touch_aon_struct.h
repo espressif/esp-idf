@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -334,107 +334,39 @@ typedef union {
     uint32_t val;
 } touch_aon_approach_reg_t;
 
-/** Type of freq0_scan_para register
+/** Type of aon_freq_scan_para register
  *  need_des
  */
 typedef union {
     struct {
-        /** touch_freq0_dcap_lpf : R/W; bitpos: [6:0]; default: 0;
+        /** touch_freq_dcap_lpf : R/W; bitpos: [6:0]; default: 0;
          *  need_des
          */
-        uint32_t touch_freq0_dcap_lpf:7;
-        /** touch_freq0_dres_lpf : R/W; bitpos: [8:7]; default: 0;
+        uint32_t touch_freq_dcap_lpf:7;
+        /** touch_freq_dres_lpf : R/W; bitpos: [8:7]; default: 0;
          *  need_des
          */
-        uint32_t touch_freq0_dres_lpf:2;
-        /** touch_freq0_drv_ls : R/W; bitpos: [12:9]; default: 0;
+        uint32_t touch_freq_dres_lpf:2;
+        /** touch_freq_drv_ls : R/W; bitpos: [12:9]; default: 0;
          *  need_des
          */
-        uint32_t touch_freq0_drv_ls:4;
-        /** touch_freq0_drv_hs : R/W; bitpos: [17:13]; default: 0;
+        uint32_t touch_freq_drv_ls:4;
+        /** touch_freq_drv_hs : R/W; bitpos: [17:13]; default: 0;
          *  need_des
          */
-        uint32_t touch_freq0_drv_hs:5;
-        /** touch_freq0_dbias : R/W; bitpos: [22:18]; default: 0;
+        uint32_t touch_freq_drv_hs:5;
+        /** touch_freq_dbias : R/W; bitpos: [22:18]; default: 0;
          *  need_des
          */
-        uint32_t touch_freq0_dbias:5;
-        /** touch_freq0_buf_sel_en : R/W; bitpos: [23]; default: 1;
+        uint32_t touch_freq_dbias:5;
+        /** touch_freq_buf_sel_en : R/W; bitpos: [23]; default: 1;
          *  need_des
          */
-        uint32_t touch_freq0_buf_sel_en:1;
+        uint32_t touch_freq_buf_sel_en:1;
         uint32_t reserved_24:8;
     };
     uint32_t val;
-} touch_aon_freq0_scan_para_reg_t;
-
-/** Type of freq1_scan_para register
- *  need_des
- */
-typedef union {
-    struct {
-        /** touch_freq1_dcap_lpf : R/W; bitpos: [6:0]; default: 0;
-         *  need_des
-         */
-        uint32_t touch_freq1_dcap_lpf:7;
-        /** touch_freq1_dres_lpf : R/W; bitpos: [8:7]; default: 0;
-         *  need_des
-         */
-        uint32_t touch_freq1_dres_lpf:2;
-        /** touch_freq1_drv_ls : R/W; bitpos: [12:9]; default: 0;
-         *  need_des
-         */
-        uint32_t touch_freq1_drv_ls:4;
-        /** touch_freq1_drv_hs : R/W; bitpos: [17:13]; default: 0;
-         *  need_des
-         */
-        uint32_t touch_freq1_drv_hs:5;
-        /** touch_freq1_dbias : R/W; bitpos: [22:18]; default: 0;
-         *  need_des
-         */
-        uint32_t touch_freq1_dbias:5;
-        /** touch_freq1_buf_sel_en : R/W; bitpos: [23]; default: 1;
-         *  need_des
-         */
-        uint32_t touch_freq1_buf_sel_en:1;
-        uint32_t reserved_24:8;
-    };
-    uint32_t val;
-} touch_aon_freq1_scan_para_reg_t;
-
-/** Type of freq2_scan_para register
- *  need_des
- */
-typedef union {
-    struct {
-        /** touch_freq2_dcap_lpf : R/W; bitpos: [6:0]; default: 0;
-         *  need_des
-         */
-        uint32_t touch_freq2_dcap_lpf:7;
-        /** touch_freq2_dres_lpf : R/W; bitpos: [8:7]; default: 0;
-         *  need_des
-         */
-        uint32_t touch_freq2_dres_lpf:2;
-        /** touch_freq2_drv_ls : R/W; bitpos: [12:9]; default: 0;
-         *  need_des
-         */
-        uint32_t touch_freq2_drv_ls:4;
-        /** touch_freq2_drv_hs : R/W; bitpos: [17:13]; default: 0;
-         *  need_des
-         */
-        uint32_t touch_freq2_drv_hs:5;
-        /** touch_freq2_dbias : R/W; bitpos: [22:18]; default: 0;
-         *  need_des
-         */
-        uint32_t touch_freq2_dbias:5;
-        /** touch_freq2_buf_sel_en : R/W; bitpos: [23]; default: 1;
-         *  need_des
-         */
-        uint32_t touch_freq2_buf_sel_en:1;
-        uint32_t reserved_24:8;
-    };
-    uint32_t val;
-} touch_aon_freq2_scan_para_reg_t;
+} touch_aon_freq_scan_para_reg_t;
 
 /** Type of ana_para register
  *  need_des
@@ -526,635 +458,19 @@ typedef union {
     uint32_t val;
 } touch_aon_mux1_reg_t;
 
-/** Type of pad0_th0 register
+/** Type of threshold register
  *  need_des
  */
 typedef union {
     struct {
         uint32_t reserved_0:16;
-        /** touch_pad0_th0 : R/W; bitpos: [31:16]; default: 0;
+        /** threshold : R/W; bitpos: [31:16]; default: 0;
          *  Reserved
          */
-        uint32_t touch_pad0_th0:16;
+        uint32_t threshold:16;
     };
     uint32_t val;
-} touch_aon_pad0_th0_reg_t;
-
-/** Type of pad0_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad0_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad0_th1:16;
-    };
-    uint32_t val;
-} touch_aon_pad0_th1_reg_t;
-
-/** Type of pad0_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad0_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad0_th2:16;
-    };
-    uint32_t val;
-} touch_aon_pad0_th2_reg_t;
-
-/** Type of pad1_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad1_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad1_th0:16;
-    };
-    uint32_t val;
-} touch_aon_pad1_th0_reg_t;
-
-/** Type of pad1_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad1_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad1_th1:16;
-    };
-    uint32_t val;
-} touch_aon_pad1_th1_reg_t;
-
-/** Type of pad1_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad1_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad1_th2:16;
-    };
-    uint32_t val;
-} touch_aon_pad1_th2_reg_t;
-
-/** Type of pad2_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad2_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad2_th0:16;
-    };
-    uint32_t val;
-} touch_aon_pad2_th0_reg_t;
-
-/** Type of pad2_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad2_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad2_th1:16;
-    };
-    uint32_t val;
-} touch_aon_pad2_th1_reg_t;
-
-/** Type of pad2_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad2_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad2_th2:16;
-    };
-    uint32_t val;
-} touch_aon_pad2_th2_reg_t;
-
-/** Type of pad3_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad3_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad3_th0:16;
-    };
-    uint32_t val;
-} touch_aon_pad3_th0_reg_t;
-
-/** Type of pad3_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad3_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad3_th1:16;
-    };
-    uint32_t val;
-} touch_aon_pad3_th1_reg_t;
-
-/** Type of pad3_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad3_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad3_th2:16;
-    };
-    uint32_t val;
-} touch_aon_pad3_th2_reg_t;
-
-/** Type of pad4_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad4_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad4_th0:16;
-    };
-    uint32_t val;
-} touch_aon_pad4_th0_reg_t;
-
-/** Type of pad4_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad4_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad4_th1:16;
-    };
-    uint32_t val;
-} touch_aon_pad4_th1_reg_t;
-
-/** Type of pad4_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad4_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad4_th2:16;
-    };
-    uint32_t val;
-} touch_aon_pad4_th2_reg_t;
-
-/** Type of pad5_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad5_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad5_th0:16;
-    };
-    uint32_t val;
-} touch_aon_pad5_th0_reg_t;
-
-/** Type of pad5_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad5_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad5_th1:16;
-    };
-    uint32_t val;
-} touch_aon_pad5_th1_reg_t;
-
-/** Type of pad5_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad5_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad5_th2:16;
-    };
-    uint32_t val;
-} touch_aon_pad5_th2_reg_t;
-
-/** Type of pad6_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad6_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad6_th0:16;
-    };
-    uint32_t val;
-} touch_aon_pad6_th0_reg_t;
-
-/** Type of pad6_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad6_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad6_th1:16;
-    };
-    uint32_t val;
-} touch_aon_pad6_th1_reg_t;
-
-/** Type of pad6_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad6_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad6_th2:16;
-    };
-    uint32_t val;
-} touch_aon_pad6_th2_reg_t;
-
-/** Type of pad7_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad7_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad7_th0:16;
-    };
-    uint32_t val;
-} touch_aon_pad7_th0_reg_t;
-
-/** Type of pad7_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad7_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad7_th1:16;
-    };
-    uint32_t val;
-} touch_aon_pad7_th1_reg_t;
-
-/** Type of pad7_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad7_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad7_th2:16;
-    };
-    uint32_t val;
-} touch_aon_pad7_th2_reg_t;
-
-/** Type of pad8_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad8_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad8_th0:16;
-    };
-    uint32_t val;
-} touch_aon_pad8_th0_reg_t;
-
-/** Type of pad8_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad8_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad8_th1:16;
-    };
-    uint32_t val;
-} touch_aon_pad8_th1_reg_t;
-
-/** Type of pad8_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad8_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad8_th2:16;
-    };
-    uint32_t val;
-} touch_aon_pad8_th2_reg_t;
-
-/** Type of pad9_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad9_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad9_th0:16;
-    };
-    uint32_t val;
-} touch_aon_pad9_th0_reg_t;
-
-/** Type of pad9_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad9_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad9_th1:16;
-    };
-    uint32_t val;
-} touch_aon_pad9_th1_reg_t;
-
-/** Type of pad9_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad9_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad9_th2:16;
-    };
-    uint32_t val;
-} touch_aon_pad9_th2_reg_t;
-
-/** Type of pad10_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad10_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad10_th0:16;
-    };
-    uint32_t val;
-} touch_aon_pad10_th0_reg_t;
-
-/** Type of pad10_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad10_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad10_th1:16;
-    };
-    uint32_t val;
-} touch_aon_pad10_th1_reg_t;
-
-/** Type of pad10_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad10_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad10_th2:16;
-    };
-    uint32_t val;
-} touch_aon_pad10_th2_reg_t;
-
-/** Type of pad11_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad11_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad11_th0:16;
-    };
-    uint32_t val;
-} touch_aon_pad11_th0_reg_t;
-
-/** Type of pad11_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad11_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad11_th1:16;
-    };
-    uint32_t val;
-} touch_aon_pad11_th1_reg_t;
-
-/** Type of pad11_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad11_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad11_th2:16;
-    };
-    uint32_t val;
-} touch_aon_pad11_th2_reg_t;
-
-/** Type of pad12_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad12_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad12_th0:16;
-    };
-    uint32_t val;
-} touch_aon_pad12_th0_reg_t;
-
-/** Type of pad12_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad12_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad12_th1:16;
-    };
-    uint32_t val;
-} touch_aon_pad12_th1_reg_t;
-
-/** Type of pad12_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad12_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad12_th2:16;
-    };
-    uint32_t val;
-} touch_aon_pad12_th2_reg_t;
-
-/** Type of pad13_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad13_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad13_th0:16;
-    };
-    uint32_t val;
-} touch_aon_pad13_th0_reg_t;
-
-/** Type of pad13_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad13_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad13_th1:16;
-    };
-    uint32_t val;
-} touch_aon_pad13_th1_reg_t;
-
-/** Type of pad13_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad13_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad13_th2:16;
-    };
-    uint32_t val;
-} touch_aon_pad13_th2_reg_t;
-
-/** Type of pad14_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad14_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad14_th0:16;
-    };
-    uint32_t val;
-} touch_aon_pad14_th0_reg_t;
-
-/** Type of pad14_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad14_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad14_th1:16;
-    };
-    uint32_t val;
-} touch_aon_pad14_th1_reg_t;
-
-/** Type of pad14_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad14_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad14_th2:16;
-    };
-    uint32_t val;
-} touch_aon_pad14_th2_reg_t;
+} touch_aon_threshold_reg_t;
 
 /** Type of date register
  *  need_des
@@ -1173,6 +489,9 @@ typedef union {
     uint32_t val;
 } touch_aon_date_reg_t;
 
+typedef struct {
+    volatile touch_aon_threshold_reg_t thresh[3];
+} touch_aon_pad_thresh_reg_t;
 
 typedef struct {
     volatile touch_aon_approach_work_meas_num_reg_t approach_work_meas_num;
@@ -1187,60 +506,15 @@ typedef struct {
     volatile touch_aon_slp1_reg_t slp1;
     volatile touch_aon_clr_reg_t clr;
     volatile touch_aon_approach_reg_t approach;
-    volatile touch_aon_freq0_scan_para_reg_t freq0_scan_para;
-    volatile touch_aon_freq1_scan_para_reg_t freq1_scan_para;
-    volatile touch_aon_freq2_scan_para_reg_t freq2_scan_para;
+    volatile touch_aon_freq_scan_para_reg_t freq_scan_para[3];
     volatile touch_aon_ana_para_reg_t ana_para;
     volatile touch_aon_mux0_reg_t mux0;
     volatile touch_aon_mux1_reg_t mux1;
-    volatile touch_aon_pad0_th0_reg_t pad0_th0;
-    volatile touch_aon_pad0_th1_reg_t pad0_th1;
-    volatile touch_aon_pad0_th2_reg_t pad0_th2;
-    volatile touch_aon_pad1_th0_reg_t pad1_th0;
-    volatile touch_aon_pad1_th1_reg_t pad1_th1;
-    volatile touch_aon_pad1_th2_reg_t pad1_th2;
-    volatile touch_aon_pad2_th0_reg_t pad2_th0;
-    volatile touch_aon_pad2_th1_reg_t pad2_th1;
-    volatile touch_aon_pad2_th2_reg_t pad2_th2;
-    volatile touch_aon_pad3_th0_reg_t pad3_th0;
-    volatile touch_aon_pad3_th1_reg_t pad3_th1;
-    volatile touch_aon_pad3_th2_reg_t pad3_th2;
-    volatile touch_aon_pad4_th0_reg_t pad4_th0;
-    volatile touch_aon_pad4_th1_reg_t pad4_th1;
-    volatile touch_aon_pad4_th2_reg_t pad4_th2;
-    volatile touch_aon_pad5_th0_reg_t pad5_th0;
-    volatile touch_aon_pad5_th1_reg_t pad5_th1;
-    volatile touch_aon_pad5_th2_reg_t pad5_th2;
-    volatile touch_aon_pad6_th0_reg_t pad6_th0;
-    volatile touch_aon_pad6_th1_reg_t pad6_th1;
-    volatile touch_aon_pad6_th2_reg_t pad6_th2;
-    volatile touch_aon_pad7_th0_reg_t pad7_th0;
-    volatile touch_aon_pad7_th1_reg_t pad7_th1;
-    volatile touch_aon_pad7_th2_reg_t pad7_th2;
-    volatile touch_aon_pad8_th0_reg_t pad8_th0;
-    volatile touch_aon_pad8_th1_reg_t pad8_th1;
-    volatile touch_aon_pad8_th2_reg_t pad8_th2;
-    volatile touch_aon_pad9_th0_reg_t pad9_th0;
-    volatile touch_aon_pad9_th1_reg_t pad9_th1;
-    volatile touch_aon_pad9_th2_reg_t pad9_th2;
-    volatile touch_aon_pad10_th0_reg_t pad10_th0;
-    volatile touch_aon_pad10_th1_reg_t pad10_th1;
-    volatile touch_aon_pad10_th2_reg_t pad10_th2;
-    volatile touch_aon_pad11_th0_reg_t pad11_th0;
-    volatile touch_aon_pad11_th1_reg_t pad11_th1;
-    volatile touch_aon_pad11_th2_reg_t pad11_th2;
-    volatile touch_aon_pad12_th0_reg_t pad12_th0;
-    volatile touch_aon_pad12_th1_reg_t pad12_th1;
-    volatile touch_aon_pad12_th2_reg_t pad12_th2;
-    volatile touch_aon_pad13_th0_reg_t pad13_th0;
-    volatile touch_aon_pad13_th1_reg_t pad13_th1;
-    volatile touch_aon_pad13_th2_reg_t pad13_th2;
-    volatile touch_aon_pad14_th0_reg_t pad14_th0;
-    volatile touch_aon_pad14_th1_reg_t pad14_th1;
-    volatile touch_aon_pad14_th2_reg_t pad14_th2;
+    volatile touch_aon_pad_thresh_reg_t padx_thn[15];
     volatile touch_aon_date_reg_t date;
 } touch_aon_dev_t;
 
+extern touch_aon_dev_t TOUCH_AON;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(touch_aon_dev_t) == 0x100, "Invalid size of touch_aon_dev_t structure");

@@ -11,6 +11,10 @@
 void jpeg_hal_init(jpeg_hal_context_t *hal)
 {
     hal->dev = JPEG_LL_GET_HW();
+#if JPEG_LL_POWERED_BY_PMU
+    jpeg_ll_mem_powered_by_pmu(hal->dev);
+    jpeg_ll_mem_set_low_power_mode(hal->dev, JPEG_LL_MEM_LP_MODE_SHUT_DOWN);
+#endif
 }
 
 void jpeg_hal_deinit(jpeg_hal_context_t *hal)

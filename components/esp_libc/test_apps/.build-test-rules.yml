@@ -4,6 +4,7 @@ components/esp_libc/test_apps/newlib:
   depends_components:
     - esp_libc
     - esp_rom
+
 components/esp_libc/test_apps/no_rvfplib:
   disable:
     - if: ESP_ROM_HAS_RVFPLIB != 1

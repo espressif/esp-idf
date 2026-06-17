@@ -153,6 +153,18 @@ void bta_av_ca_sm_execute(tBTA_AV_RCB *p_rcb, UINT16 event, tBTA_AV_DATA *p_data
 {
     tBTA_AV_CA_ST_TBL   state_table;
     UINT8               action;
+
+    if (p_rcb == NULL ||
+        p_rcb->cover_art_state >= (sizeof(bta_av_ca_st_tbl) / sizeof(bta_av_ca_st_tbl[0]))) {
+        APPL_TRACE_WARNING("ca_sm_exec: EINVAL p_rcb");
+        return;
+    }
+
+    if (event < BTA_AV_CA_FIRST_SM_EVT || event > BTA_AV_CA_LAST_SM_EVT) {
+        APPL_TRACE_WARNING("ca_sm_exec: evt %u OOR", event);
+        return;
+    }
+
     /* look up the state table for the current state */
     state_table = bta_av_ca_st_tbl[p_rcb->cover_art_state];
 

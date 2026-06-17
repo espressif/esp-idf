@@ -55,6 +55,15 @@ LCD 数据面板操作
 * :cpp:func:`esp_lcd_panel_draw_bitmap` 可以将绘制 buffer 刷新到 LCD 屏幕上，其中目标绘制窗口是可配置的。请注意，使用该函数需要确保绘制 buffer 是一维数组，且每行像素数据之间没有跨距。
 * :cpp:func:`esp_lcd_panel_draw_bitmap_2d` 可以绘制部分位图到 LCD 屏幕上，源窗口和目标绘制窗口都是可配置的。请注意，此时绘制 buffer 可以是二维数组，也可以是每行像素数据之间没有跨距的一维数组。
 
+高级帧 Buffer 调试
+------------------
+
+对于高级调试场景，ESP-IDF 可以在 GDB 会话中加载 ``idf-drivers-gdb`` Python 包。该包提供 ``framebuffer_display`` 命令，可以从目标芯片读取 LCD 帧 buffer 内存，并在主机侧渲染。
+
+当屏幕显示不符合预期时，该命令可用于判断帧 buffer 内容本身是否已经异常，或者问题是否更可能来自 LCD 接口时序、GPIO 路由、面板初始化或颜色格式配置。
+
+有关安装方式、支持的像素格式、命令语法、示例和排障建议，请参阅 `idf-drivers-gdb 包文档 <https://pypi.org/project/idf-drivers-gdb/>`__。
+
 .. _steps_add_manufacture_init:
 
 添加特定制造商的初始化设置

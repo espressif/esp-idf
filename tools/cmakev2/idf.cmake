@@ -17,6 +17,11 @@ set(CMAKE_MODULE_PATH
 # for both cmakev1 and cmakev2.
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/version.cmake)
 
+# Suppress CMake warning: "Manually-specified variables were not used by the project: CONFIGDEP_ENABLE"
+# (CONFIGDEP_ENABLE is passed by idf.py but only used in the cmake v1 project() flow in project.cmake)
+# FIXME: When cmakev2 will start supporting configdep, this can be removed.
+set(_idf_ignore_configdep_enable "${CONFIGDEP_ENABLE}")
+
 # The gdbinit.cmake file from cmakev1 contains a single function,
 # __generate_gdbinit, which is used in the generation of
 # project_description.json.
@@ -32,6 +37,10 @@ include(${CMAKE_CURRENT_LIST_DIR}/../cmake/openocd.cmake)
 # idf_build_generate_depgraph function.
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/depgraph.cmake)
 
+# The err_codes.cmake file from cmakev1 provides idf_define_esp_err_codes(),
+# which generates per-component error code tables placed in a link-time array.
+include(${CMAKE_CURRENT_LIST_DIR}/../cmake/err_codes.cmake)
+
 include(component)
 include(build)
 include(kconfig)
@@ -42,6 +51,7 @@ include(ldgen)
 include(dfu)
 include(uf2)
 include(size)
+
 include(GetGitRevisionDescription)
 # For backward compatibility, since externalproject_add is used by
 # project_include.cmake in the bootloader component. The ExternalProject
@@ -94,7 +104,9 @@ function(__init_idf_path)
     endif()
 
     idf_build_set_property(IDF_PATH "${idf_path}")
+    # Components reference either ${IDF_PATH} or ${idf_path}; publish both.
     set(IDF_PATH ${idf_path} PARENT_SCOPE)
+    set(idf_path ${idf_path} PARENT_SCOPE)
     set(ENV{IDF_PATH} ${idf_path})
 endfunction()
 
@@ -266,16 +278,15 @@ endfunction()
 #[[
     __init_toolchain()
 
-    Determine the IDF_TOOLCHAIN value from the IDF_TOOLCHAIN environment
-    variable or the CMake cache variable. If none of these are set, use the
-    default gcc toolchain. Ensure there are no inconsistencies in the
-    IDF_TOOLCHAIN values set in different locations. Also ensure that the
+    Determine the toolchain file, set IDF_TOOLCHAIN_FILE build property and
+    global CMAKE_TOOLCHAIN_FILE CMake variable. Also ensure that the
     CMAKE_TOOLCHAIN_FILE is set to the correct file according to the current
     IDF_TARGET.
 
-    Set the IDF_TOOLCHAIN and IDF_TOOLCHAIN_FILE build properties. Also,
-    configure the IDF_TOOLCHAIN CMake cache variable and set the
-    CMAKE_TOOLCHAIN_FILE global variable.
+    Note: The IDF_TOOLCHAIN build property is set after the toolchain
+    configuration in ``idf_project_init``. The ``tools/cmake/toolchain.cmake``
+    is included in the toolchain file and it sets the IDF_TOOLCHAIN variable in
+    CMake's cache.
 #]]
 function(__init_toolchain)
     set(cache_toolchain $CACHE{IDF_TOOLCHAIN})
@@ -318,9 +329,14 @@ function(__init_toolchain)
         idf_die("Toolchain file ${toolchain_file} not found")
     endif()
 
-    set(IDF_TOOLCHAIN ${toolchain} CACHE STRING "IDF Build Toolchain Type")
+    # IDF_TOOLCHAIN applies to Espressif targets only; on linux (host build)
+    # it must stay empty so Kconfig leaves both CONFIG_IDF_TOOLCHAIN_GCC and
+    # CONFIG_IDF_TOOLCHAIN_CLANG unset.
+    if(NOT "${idf_target}" STREQUAL "linux")
+        set(IDF_TOOLCHAIN "${toolchain}" CACHE STRING "IDF Build Toolchain Type" FORCE)
+    endif()
+
     set(CMAKE_TOOLCHAIN_FILE "${toolchain_file}" PARENT_SCOPE)
-    idf_build_set_property(IDF_TOOLCHAIN "${toolchain}")
     idf_build_set_property(IDF_TOOLCHAIN_FILE "${toolchain_file}")
 endfunction()
 
@@ -365,11 +381,33 @@ endfunction()
     EXTRA_COMPONENT_EXCLUDE_DIRS
         List of paths to exclude from searching the component directories.
 
+    The ``PROJECT_COMPONENTS_SOURCE`` build property controls how the
+    project's own components are categorised -- i.e. those discovered
+    under ``CMAKE_CURRENT_SOURCE_DIR/main``,
+    ``CMAKE_CURRENT_SOURCE_DIR/components``, or the paths listed in
+    ``COMPONENT_DIRS``.  It defaults to ``project_components``
+    (priority 3 -- highest).  Setting it to ``idf_components``
+    (priority 0) makes them overridable by components supplied through
+    ``EXTRA_COMPONENT_DIRS`` (priority 2).  This is useful for
+    sub-projects whose built-in components are provided by ESP-IDF and
+    should be overridable by user-supplied components.
+
     Each component is initialized for every component directory found.
 #]]
 function(__init_components)
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(prefix PREFIX)
+
+    idf_build_get_property(project_components_source PROJECT_COMPONENTS_SOURCE)
+    if(NOT project_components_source)
+        set(project_components_source "project_components")
+    endif()
+
+    set(valid_sources "project_components" "idf_components")
+    if(NOT project_components_source IN_LIST valid_sources)
+        idf_die("Invalid PROJECT_COMPONENTS_SOURCE '${project_components_source}'."
+                " Must be one of: ${valid_sources}")
+    endif()
 
     __get_component_paths(PATHS "${idf_path}/components"
                           OUTPUT idf_components)
@@ -407,7 +445,7 @@ function(__init_components)
     foreach(path IN LISTS project_components)
         __init_component(DIRECTORY "${path}"
                          PREFIX "${prefix}"
-                         SOURCE "project_components")
+                         SOURCE "${project_components_source}")
     endforeach()
 
     foreach(path IN LISTS project_extra_components)
@@ -596,6 +634,9 @@ __init_python()
 
 # Initialize Kconfig system infrastructure.
 __init_kconfig()
+
+# Initialize component manager build properties (IDF_COMPONENT_MANAGER, etc.).
+__init_component_manager()
 
 # Set IDF_TARGET.
 __init_idf_target()

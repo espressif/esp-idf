@@ -10,6 +10,14 @@ include(utilities)
 include(build)
 include(component)
 
+# Minimum esp-idf-kconfig version that ships the esp_menuconfig module name
+# (renamed from menuconfig in the 3.x series).
+set(ESP_MENUCONFIG_MIN_KCONFIG_VERSION "3.1.0")
+
+# Minimum esp-idf-kconfig version required for the --menuconfig kconfgen flag
+# (fused menuconfig + deprecated-options post-processing in a single invocation).
+set(MENUCONFIG_INLINE_MIN_KCONFIG_VERSION "3.9.0")
+
 #[[
     __init_kconfig()
 
@@ -55,7 +63,9 @@ function(__init_kconfig)
     endforeach()
 
     idf_build_set_property(SDKCONFIG "${sdkconfig}")
+    idf_build_set_property(__SDKCONFIG_ORIG "${sdkconfig}")
     idf_build_set_property(SDKCONFIG_DEFAULTS "${sdkconfig_defaults_checked}")
+    idf_build_set_property(GENERATE_SDKCONFIG 1)
 
     # Setup ESP-IDF root Kconfig and sdkconfig.rename files.
     idf_build_set_property(__ROOT_KCONFIG "${idf_path}/Kconfig")
@@ -66,6 +76,42 @@ function(__init_kconfig)
     set(config_dir "${build_dir}/config")
     file(MAKE_DIRECTORY "${config_dir}")
     idf_build_set_property(CONFIG_DIR "${config_dir}")
+endfunction()
+
+#[[
+    __create_sdkconfig_orig_copy()
+
+    Create a copy of the sdkconfig file in the build directory to preserve
+    all original options, including those from managed components that are
+    not yet known to kconfgen. The copy is referenced via __SDKCONFIG_ORIG
+    and used as the --config input for kconfgen, so that unknown options
+    are not dropped during intermediate sdkconfig regeneration rounds.
+
+    After the component manager has fetched all components (and their Kconfig
+    definitions are available), __SDKCONFIG_ORIG is reset to point to the
+    real sdkconfig so that subsequent operations (menuconfig, etc.) read
+    and write the actual file.
+#]]
+function(__create_sdkconfig_orig_copy)
+    # The backup is only needed when the component manager is enabled.
+    # Managed components may introduce Kconfig options unknown to kconfgen
+    # during intermediate sdkconfig regeneration rounds. The backup preserves
+    # those options. When the manager is disabled, __SDKCONFIG_ORIG already
+    # points to the real sdkconfig (set in __init_kconfig).
+    idf_build_get_property(idf_component_manager IDF_COMPONENT_MANAGER)
+    if(NOT idf_component_manager EQUAL 1)
+        return()
+    endif()
+
+    idf_build_get_property(sdkconfig SDKCONFIG)
+    idf_build_get_property(build_dir BUILD_DIR)
+    set(sdkconfig_orig "${build_dir}/sdkconfig.orig")
+    if(EXISTS "${sdkconfig}")
+        file(COPY_FILE "${sdkconfig}" "${sdkconfig_orig}" ONLY_IF_DIFFERENT)
+    else()
+        set(sdkconfig_orig "${sdkconfig}")
+    endif()
+    idf_build_set_property(__SDKCONFIG_ORIG "${sdkconfig_orig}")
 endfunction()
 
 #[[
@@ -407,9 +453,10 @@ function(__create_executable_config_env_file executable)
     foreach(component_interface IN LISTS component_interfaces)
         __idf_component_get_property_unchecked(component_kconfig "${component_interface}" __KCONFIG)
         __idf_component_get_property_unchecked(component_projbuild "${component_interface}" __KCONFIG_PROJBUILD)
+        __idf_component_get_property_unchecked(component_real_target "${component_interface}" COMPONENT_REAL_TARGET)
 
         if(component_kconfig)
-            if("${component_interface}" IN_LIST component_interfaces_linked)
+            if("${component_interface}" IN_LIST component_interfaces_linked AND component_real_target)
                 list(APPEND kconfigs "${component_kconfig}")
             else()
                 list(APPEND kconfigs_excluded "${component_kconfig}")
@@ -417,7 +464,7 @@ function(__create_executable_config_env_file executable)
         endif()
 
         if(component_projbuild)
-            if("${component_interface}" IN_LIST component_interfaces_linked)
+            if("${component_interface}" IN_LIST component_interfaces_linked AND component_real_target)
                 list(APPEND kconfigs_projbuild "${component_projbuild}")
             else()
                 list(APPEND kconfigs_projbuild_excluded "${component_projbuild}")
@@ -605,8 +652,12 @@ function(__generate_kconfig_outputs)
         --output header "${sdkconfig_header}"
         --output cmake "${sdkconfig_cmake}"
         --output json "${sdkconfig_json}"
-        --output config "${sdkconfig}"
     )
+
+    idf_build_get_property(generate_sdkconfig GENERATE_SDKCONFIG)
+    if(generate_sdkconfig)
+        list(APPEND kconfgen_outputs_cmd --output config "${sdkconfig}")
+    endif()
 
     idf_build_set_property(__KCONFGEN_OUTPUTS_CMD "${kconfgen_outputs_cmd}")
 
@@ -629,11 +680,17 @@ function(__generate_kconfig_outputs)
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY
                 ADDITIONAL_CLEAN_FILES "${sdkconfig_header}" "${sdkconfig_cmake}")
 
-    # Store output paths in build properties
+    # Store output paths in build properties (internal)
     idf_build_set_property(__SDKCONFIG_HEADER "${sdkconfig_header}")
     idf_build_set_property(__SDKCONFIG_CMAKE "${sdkconfig_cmake}")
     idf_build_set_property(__SDKCONFIG_JSON "${sdkconfig_json}")
     idf_build_set_property(__SDKCONFIG_JSON_MENUS "${sdkconfig_json_menus}")
+
+    # Public aliases for backward compatibility with components (e.g. ULP)
+    idf_build_set_property(SDKCONFIG_HEADER "${sdkconfig_header}")
+    idf_build_set_property(SDKCONFIG_CMAKE "${sdkconfig_cmake}")
+    idf_build_set_property(SDKCONFIG_JSON "${sdkconfig_json}")
+    idf_build_set_property(SDKCONFIG_JSON_MENUS "${sdkconfig_json_menus}")
 
     idf_msg("Generated Kconfig outputs in ${config_dir}")
 endfunction()
@@ -670,12 +727,16 @@ function(__create_base_kconfgen_command sdkconfig sdkconfig_defaults)
         endforeach()
     endif()
 
+    # Use __SDKCONFIG_ORIG for --config so that unknown options from managed
+    # components are preserved during intermediate kconfgen runs.
+    idf_build_get_property(sdkconfig_orig __SDKCONFIG_ORIG)
+
     # Create base kconfgen command
     set(base_kconfgen_cmd ${python} -m kconfgen
         --list-separator=semicolon
         --kconfig "${root_kconfig}"
         --sdkconfig-rename "${root_sdkconfig_rename}"
-        --config "${sdkconfig}"
+        --config "${sdkconfig_orig}"
         ${defaults_args}
         --env "IDF_BUILD_V2=y")
 
@@ -699,14 +760,45 @@ function(__run_kconfgen)
     set(kconfgen_cmd ${base_kconfgen_cmd} ${kconfgen_outputs_cmd})
 
     idf_dbg("Running kconfgen: ${kconfgen_cmd}")
-    execute_process(
-        COMMAND ${kconfgen_cmd}
-        --env-file "${config_env_path}"
-        RESULT_VARIABLE kconfgen_result
-    )
 
-    if(kconfgen_result)
-        idf_die("Failed to run kconfgen: ${kconfgen_result}")
+    # kconfgen runs once during the bootstrap pass (before the component
+    # manager fetches managed components) and again on every iteration of
+    # the component-manager loop in __fetch_components_from_registry. Every
+    # pass except the converged one operates on an incomplete component
+    # set and can emit spurious "unknown kconfig symbol" warnings for
+    # symbols defined in not-yet-downloaded components, which
+    # idf-build-apps would otherwise treat as build failures. The quiet
+    # path captures stdout/stderr instead of streaming them; the
+    # converged pass flips __KCONFGEN_QUIET to NO and reaches the else
+    # branch, where warnings are emitted normally.
+    idf_build_get_property(quiet __KCONFGEN_QUIET)
+    if(quiet)
+        # Capture stdout/stderr into variables instead of discarding them.
+        # On success the captured output is dropped (so transient warnings
+        # never reach the build log). On non-zero exit we re-emit both
+        # streams so genuine errors (Kconfig parse errors, FatalError, etc.)
+        # remain debuggable.
+        execute_process(
+            COMMAND ${kconfgen_cmd}
+            --env-file "${config_env_path}"
+            RESULT_VARIABLE kconfgen_result
+            OUTPUT_VARIABLE kconfgen_stdout
+            ERROR_VARIABLE kconfgen_stderr
+        )
+        if(kconfgen_result)
+            message("${kconfgen_stdout}")
+            message("${kconfgen_stderr}")
+            idf_die("Failed to run kconfgen: ${kconfgen_result}")
+        endif()
+    else()
+        execute_process(
+            COMMAND ${kconfgen_cmd}
+            --env-file "${config_env_path}"
+            RESULT_VARIABLE kconfgen_result
+        )
+        if(kconfgen_result)
+            idf_die("Failed to run kconfgen: ${kconfgen_result}")
+        endif()
     endif()
 endfunction()
 
@@ -732,6 +824,10 @@ endfunction()
 
     Create a menuconfig target with the name specified by the ``TARGET``
     option for an ``executable``.
+
+    When ``esp-idf-kconfig >= MENUCONFIG_INLINE_MIN_KCONFIG_VERSION``, the
+    target runs a single ``kconfgen --menuconfig`` invocation (fused UI and
+    post-processing).  Older installs fall back to the legacy three-step flow.
 #]]
 function(idf_create_menuconfig executable)
     set(options)
@@ -752,69 +848,101 @@ function(idf_create_menuconfig executable)
     idf_build_get_property(kconfgen_cmd __BASE_KCONFGEN_CMD)
     idf_build_get_property(sdkconfig SDKCONFIG)
     idf_build_get_property(root_kconfig __ROOT_KCONFIG)
-    idf_build_get_property(build_dir BUILD_DIR)
     idf_build_get_property(target IDF_TARGET)
     idf_build_get_property(toolchain IDF_TOOLCHAIN)
     idf_build_get_property(idf_init_version __IDF_INIT_VERSION)
     idf_build_get_property(idf_env_fpga __IDF_ENV_FPGA)
     idf_build_get_property(kconfgen_outputs_cmd __KCONFGEN_OUTPUTS_CMD)
 
-    # Newer versions of esp-idf-kconfig renamed menuconfig to esp_menuconfig
-    # Order matters here, we want to use esp_menuconfig if it is available
-    execute_process(
-        COMMAND "${python}" -c "import esp_menuconfig"
-        RESULT_VARIABLE ESP_MENUCONFIG_AVAILABLE
-        OUTPUT_QUIET ERROR_QUIET
-    )
-    if(ESP_MENUCONFIG_AVAILABLE EQUAL 0)
-        set(MENUCONFIG_CMD "${python}" -m esp_menuconfig)
-    else()
-        set(MENUCONFIG_CMD "${python}" -m menuconfig)
-    endif()
-
     __create_executable_config_env_file("${executable}")
     get_target_property(config_env_dir "${executable}" CONFIG_ENV_DIR)
 
-    add_custom_target("${ARG_TARGET}"
-        # Prepare Kconfig source files
-        COMMAND ${python} "${idf_path}/tools/kconfig_new/prepare_kconfig_files.py"
-        --list-separator=semicolon
-        --env-file "${config_env_dir}/config.env"
-        # Generate config with current settings
-        COMMAND ${kconfgen_cmd}
-        --env "IDF_TARGET=${target}"
-        --env "IDF_TOOLCHAIN=${toolchain}"
-        --env "IDF_ENV_FPGA=${idf_env_fpga}"
-        --env "IDF_INIT_VERSION=${idf_init_version}"
-        --dont-write-deprecated
-        ${kconfgen_outputs_cmd}
-        --env-file "${config_env_dir}/config.env"
-        # Check terminal capabilities
-        COMMAND ${python} "${idf_path}/tools/check_term.py"
-        # Run menuconfig
-        COMMAND ${CMAKE_COMMAND} -E env
-        "COMPONENT_KCONFIGS_SOURCE_FILE=${config_env_dir}/kconfigs.in"
-        "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=${config_env_dir}/kconfigs_projbuild.in"
-        "COMPONENT_KCONFIGS_EXCLUDED_SOURCE_FILE=${config_env_dir}/kconfigs_excluded.in"
-        "COMPONENT_KCONFIGS_PROJBUILD_EXCLUDED_SOURCE_FILE=${config_env_dir}/kconfigs_projbuild_excluded.in"
-        "KCONFIG_CONFIG=${sdkconfig}"
-        "IDF_TARGET=${target}"
-        "IDF_TOOLCHAIN=${toolchain}"
-        "IDF_ENV_FPGA=${idf_env_fpga}"
-        "IDF_INIT_VERSION=${idf_init_version}"
-        "IDF_BUILD_V2=y"
-        ${MENUCONFIG_CMD} "${root_kconfig}"
-        # Post-menuconfig: insert deprecated options for backward compatibility
-        COMMAND ${kconfgen_cmd}
-        --env "IDF_TARGET=${target}"
-        --env "IDF_TOOLCHAIN=${toolchain}"
-        --env "IDF_ENV_FPGA=${idf_env_fpga}"
-        --env "IDF_INIT_VERSION=${idf_init_version}"
-        ${kconfgen_outputs_cmd}
-        --env-file "${config_env_dir}/config.env"
-        USES_TERMINAL
-        COMMENT "Running menuconfig..."
-    )
+    __check_python_package_min_version(
+        ${python} esp-idf-kconfig "${ESP_MENUCONFIG_MIN_KCONFIG_VERSION}" _has_esp_menuconfig)
+    if(_has_esp_menuconfig)
+        set(_menuconfig_module_args -m esp_menuconfig)
+    else()
+        set(_menuconfig_module_args -m menuconfig)
+    endif()
+
+    __check_python_package_min_version(
+        ${python} esp-idf-kconfig "${MENUCONFIG_INLINE_MIN_KCONFIG_VERSION}" _menuconfig_inline_ok)
+
+    set(kconfig_report_verbosity "$ENV{KCONFIG_REPORT_VERBOSITY}")
+    if(NOT kconfig_report_verbosity)
+        set(kconfig_report_verbosity "default")
+    endif()
+
+    if(_menuconfig_inline_ok)
+        add_custom_target("${ARG_TARGET}"
+            COMMAND ${python} "${idf_path}/tools/kconfig_new/prepare_kconfig_files.py"
+            --list-separator=semicolon
+            --env-file "${config_env_dir}/config.env"
+            COMMAND ${python} "${idf_path}/tools/check_term.py"
+            COMMAND ${CMAKE_COMMAND} -E env
+            "COMPONENT_KCONFIGS_SOURCE_FILE=${config_env_dir}/kconfigs.in"
+            "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=${config_env_dir}/kconfigs_projbuild.in"
+            "COMPONENT_KCONFIGS_EXCLUDED_SOURCE_FILE=${config_env_dir}/kconfigs_excluded.in"
+            "COMPONENT_KCONFIGS_PROJBUILD_EXCLUDED_SOURCE_FILE=${config_env_dir}/kconfigs_projbuild_excluded.in"
+            "KCONFIG_CONFIG=${sdkconfig}"
+            "IDF_TARGET=${target}"
+            "IDF_TOOLCHAIN=${toolchain}"
+            "IDF_ENV_FPGA=${idf_env_fpga}"
+            "IDF_INIT_VERSION=${idf_init_version}"
+            "IDF_BUILD_V2=y"
+            "KCONFIG_REPORT_VERBOSITY=${kconfig_report_verbosity}"
+            ${kconfgen_cmd}
+            --env "IDF_TARGET=${target}"
+            --env "IDF_TOOLCHAIN=${toolchain}"
+            --env "IDF_ENV_FPGA=${idf_env_fpga}"
+            --env "IDF_INIT_VERSION=${idf_init_version}"
+            --menuconfig
+            ${kconfgen_outputs_cmd}
+            --env-file "${config_env_dir}/config.env"
+            USES_TERMINAL
+            COMMENT "Running menuconfig..."
+        )
+    else()
+        message(WARNING "esp-idf-kconfig >= ${MENUCONFIG_INLINE_MIN_KCONFIG_VERSION} is required "
+            "for the optimised menuconfig target. Please update your Python packages by re-running the install script.")
+        add_custom_target("${ARG_TARGET}"
+            COMMAND ${python} "${idf_path}/tools/kconfig_new/prepare_kconfig_files.py"
+            --list-separator=semicolon
+            --env-file "${config_env_dir}/config.env"
+            COMMAND ${kconfgen_cmd}
+            --env "IDF_TARGET=${target}"
+            --env "IDF_TOOLCHAIN=${toolchain}"
+            --env "IDF_ENV_FPGA=${idf_env_fpga}"
+            --env "IDF_INIT_VERSION=${idf_init_version}"
+            --env "KCONFIG_REPORT_VERBOSITY=quiet"
+            --dont-write-deprecated
+            --output config "${sdkconfig}"
+            --env-file "${config_env_dir}/config.env"
+            COMMAND ${python} "${idf_path}/tools/check_term.py"
+            COMMAND ${CMAKE_COMMAND} -E env
+            "COMPONENT_KCONFIGS_SOURCE_FILE=${config_env_dir}/kconfigs.in"
+            "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=${config_env_dir}/kconfigs_projbuild.in"
+            "COMPONENT_KCONFIGS_EXCLUDED_SOURCE_FILE=${config_env_dir}/kconfigs_excluded.in"
+            "COMPONENT_KCONFIGS_PROJBUILD_EXCLUDED_SOURCE_FILE=${config_env_dir}/kconfigs_projbuild_excluded.in"
+            "KCONFIG_CONFIG=${sdkconfig}"
+            "IDF_TARGET=${target}"
+            "IDF_TOOLCHAIN=${toolchain}"
+            "IDF_ENV_FPGA=${idf_env_fpga}"
+            "IDF_INIT_VERSION=${idf_init_version}"
+            "IDF_BUILD_V2=y"
+            ${python} ${_menuconfig_module_args} "${root_kconfig}"
+            COMMAND ${kconfgen_cmd}
+            --env "IDF_TARGET=${target}"
+            --env "IDF_TOOLCHAIN=${toolchain}"
+            --env "IDF_ENV_FPGA=${idf_env_fpga}"
+            --env "IDF_INIT_VERSION=${idf_init_version}"
+            ${kconfgen_outputs_cmd}
+            --env "KCONFIG_REPORT_VERBOSITY=${kconfig_report_verbosity}"
+            --env-file "${config_env_dir}/config.env"
+            USES_TERMINAL
+            COMMENT "Running menuconfig..."
+        )
+    endif()
 endfunction()
 
 #[[
@@ -902,5 +1030,80 @@ function(idf_create_save_defconfig)
         USES_TERMINAL
         COMMENT "Saving defconfig..."
         VERBATIM
+    )
+endfunction()
+
+#[[
+.. cmakev2:function:: idf_create_config_report
+
+    .. code-block:: cmake
+
+        idf_create_config_report(<executable>
+                                 TARGET <target>)
+
+    *executable[in]*
+
+    Executable target for which to create the config-report target.
+
+    *TARGET[in]*
+
+        Name of the config-report target to be created.
+
+    Create a config-report target with the name specified by the ``TARGET``
+    option for an ``executable``. This target generates a JSON file with the
+    project configuration report in the build/config directory. The report
+    contains information about the Kconfig parsing, including errors, warnings,
+    and other diagnostic information.
+#]]
+function(idf_create_config_report executable)
+    set(options)
+    set(one_value TARGET)
+    set(multi_value)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    if(NOT DEFINED ARG_TARGET)
+        idf_die("TARGET option is required")
+    endif()
+
+    if(TARGET "${ARG_TARGET}")
+        idf_die("TARGET '${ARG_TARGET}' for config-report already exists")
+    endif()
+
+    idf_build_get_property(python PYTHON)
+    idf_build_get_property(idf_path IDF_PATH)
+    idf_build_get_property(kconfgen_cmd __BASE_KCONFGEN_CMD)
+    idf_build_get_property(config_dir CONFIG_DIR)
+    idf_build_get_property(target IDF_TARGET)
+    idf_build_get_property(toolchain IDF_TOOLCHAIN)
+    idf_build_get_property(idf_init_version __IDF_INIT_VERSION)
+    idf_build_get_property(idf_env_fpga __IDF_ENV_FPGA)
+
+    # Get KCONFIG_REPORT_VERBOSITY from environment or use default
+    set(kconfig_report_verbosity "$ENV{KCONFIG_REPORT_VERBOSITY}")
+    if(NOT kconfig_report_verbosity)
+        set(kconfig_report_verbosity "default")
+        idf_msg("KCONFIG_REPORT_VERBOSITY not set, using default")
+    endif()
+
+    __create_executable_config_env_file("${executable}")
+    get_target_property(config_env_dir "${executable}" CONFIG_ENV_DIR)
+
+    add_custom_target("${ARG_TARGET}"
+        # Prepare Kconfig source files
+        COMMAND ${python} "${idf_path}/tools/kconfig_new/prepare_kconfig_files.py"
+        --list-separator=semicolon
+        --env-file "${config_env_dir}/config.env"
+        # Generate config report
+        COMMAND ${kconfgen_cmd}
+        --env "IDF_TARGET=${target}"
+        --env "IDF_TOOLCHAIN=${toolchain}"
+        --env "IDF_ENV_FPGA=${idf_env_fpga}"
+        --env "IDF_INIT_VERSION=${idf_init_version}"
+        --output report "${config_dir}/kconfig_parse_report.json"
+        --env "KCONFIG_REPORT_VERBOSITY=${kconfig_report_verbosity}"
+        --env-file "${config_env_dir}/config.env"
+        USES_TERMINAL
+        VERBATIM
+        COMMENT "Generating configuration report..."
     )
 endfunction()

@@ -10,10 +10,6 @@
 #include "hal/assert.h"
 #include "hal/log.h"
 
-static const char *CLK_HAL_TAG = "clk_hal";
-
-// TODO: [ESP32S31] IDF-14733
-
 uint32_t clk_hal_soc_root_get_freq_mhz(soc_cpu_clk_src_t cpu_clk_src)
 {
     switch (cpu_clk_src) {
@@ -23,6 +19,8 @@ uint32_t clk_hal_soc_root_get_freq_mhz(soc_cpu_clk_src_t cpu_clk_src)
         return clk_ll_cpll_get_freq_mhz(clk_hal_xtal_get_freq_mhz());
     case SOC_CPU_CLK_SRC_RC_FAST:
         return SOC_CLK_RC_FAST_FREQ_APPROX / MHZ;
+    case SOC_CPU_CLK_SRC_PLL_F240M:
+        return CLK_LL_PLL_240M_FREQ_MHZ;
     default:
         // Unknown CPU_CLK mux input
         HAL_ASSERT(false);
@@ -42,14 +40,9 @@ uint32_t clk_hal_cpu_get_freq_hz(void)
     return clk_hal_soc_root_get_freq_mhz(source) * MHZ * denominator / (integer * denominator + numerator);
 }
 
-static uint32_t clk_hal_mem_get_freq_hz(void)
-{
-    return clk_hal_cpu_get_freq_hz() / clk_ll_mem_get_divider();
-}
-
 uint32_t clk_hal_sys_get_freq_hz(void)
 {
-    return clk_hal_mem_get_freq_hz() / clk_ll_sys_get_divider();
+    return clk_hal_cpu_get_freq_hz() / clk_ll_sys_get_divider();
 }
 
 uint32_t clk_hal_apb_get_freq_hz(void)
@@ -64,8 +57,6 @@ uint32_t clk_hal_lp_slow_get_freq_hz(void)
         return SOC_CLK_RC_SLOW_FREQ_APPROX;
     case SOC_RTC_SLOW_CLK_SRC_XTAL32K:
         return SOC_CLK_XTAL32K_FREQ_APPROX;
-    case SOC_RTC_SLOW_CLK_SRC_RC32K:
-        return SOC_CLK_RC32K_FREQ_APPROX;
     default:
         // Unknown RTC_SLOW_CLK mux input
         HAL_ASSERT(false);
@@ -75,11 +66,8 @@ uint32_t clk_hal_lp_slow_get_freq_hz(void)
 
 IRAM_ATTR uint32_t clk_hal_xtal_get_freq_mhz(void)
 {
-    uint32_t freq = clk_ll_xtal_load_freq_mhz();
-    if (freq == 0) {
-        HAL_LOGW(CLK_HAL_TAG, "invalid RTC_XTAL_FREQ_REG value, assume 40MHz");
-        return (uint32_t)SOC_XTAL_FREQ_40M;
-    }
+    uint32_t freq = clk_ll_xtal_get_freq_mhz();
+    HAL_ASSERT(freq == SOC_XTAL_FREQ_40M);
     return freq;
 }
 
@@ -97,14 +85,14 @@ uint32_t clk_hal_apll_get_freq_hz(void)
     return apll_freq_hz;
 }
 
-// void clk_hal_clock_output_setup(soc_clkout_sig_id_t clk_sig, clock_out_channel_t channel_id)
-// {
-//     clk_ll_bind_output_channel(clk_sig, channel_id);
-//     clk_ll_set_output_channel_divider(channel_id, 1);
-//     clk_ll_enable_output_channel(channel_id, true);
-// }
+void clk_hal_clock_output_setup(soc_clkout_sig_id_t clk_sig, clock_out_channel_t channel_id)
+{
+    clk_ll_bind_output_channel(clk_sig, channel_id);
+    clk_ll_set_output_channel_divider(channel_id, 1);
+    clk_ll_enable_output_channel(channel_id, true);
+}
 
-// void clk_hal_clock_output_teardown(clock_out_channel_t channel_id)
-// {
-//     clk_ll_enable_output_channel(channel_id, false);
-// }
+void clk_hal_clock_output_teardown(clock_out_channel_t channel_id)
+{
+    clk_ll_enable_output_channel(channel_id, false);
+}

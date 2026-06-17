@@ -1,5 +1,0 @@
-menu "component1 configuration"
-    config COMPONENT1_OPTION
-        prompt "component1 option"
-        bool
-endmenu

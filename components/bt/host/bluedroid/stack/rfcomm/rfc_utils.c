@@ -121,6 +121,10 @@ BOOLEAN rfc_check_fcs (UINT16 len, UINT8 *p, UINT8 received_fcs)
     return (fcs == 0xCF);
 }
 
+void osi_free_fun(void *p)
+{
+    osi_free(p);
+}
 
 /*******************************************************************************
 **
@@ -168,7 +172,7 @@ tRFC_MCB *rfc_alloc_multiplexer_channel (BD_ADDR bd_addr, BOOLEAN is_initiator)
         p_mcb = &rfc_cb.port.rfc_mcb[j];
         if (rfc_cb.port.rfc_mcb[j].state == RFC_MX_STATE_IDLE) {
             /* New multiplexer control block */
-            fixed_queue_free(p_mcb->cmd_q, NULL);
+            fixed_queue_free(p_mcb->cmd_q, osi_free_fun);
             rfc_timer_free(p_mcb);
             memset (p_mcb, 0, sizeof (tRFC_MCB));
             memcpy (p_mcb->bd_addr, bd_addr, BD_ADDR_LEN);
@@ -188,15 +192,11 @@ tRFC_MCB *rfc_alloc_multiplexer_channel (BD_ADDR bd_addr, BOOLEAN is_initiator)
     return (NULL);
 }
 
-void osi_free_fun(void *p)
-{
-    osi_free(p);
-}
 /*******************************************************************************
 **
 ** Function         rfc_release_multiplexer_channel
 **
-** Description      This function returns existing or new control block for
+** Description      This function releases existing control block for
 **                  the BD_ADDR.
 **
 *******************************************************************************/
@@ -299,7 +299,7 @@ void rfc_port_timer_stop (tPORT *p_port)
 *******************************************************************************/
 void rfc_port_timer_free (tPORT *p_port)
 {
-    RFCOMM_TRACE_EVENT ("rfc_port_timer_stop");
+    RFCOMM_TRACE_EVENT ("rfc_port_timer_free");
 
     btu_free_timer (&p_port->rfc.tle);
     memset(&p_port->rfc.tle, 0, sizeof(TIMER_LIST_ENT));
@@ -491,18 +491,21 @@ void rfc_check_send_cmd(tRFC_MCB *p_mcb, BT_HDR *p_buf)
             RFCOMM_TRACE_ERROR("%s: empty queue: p_mcb = %p p_mcb->lcid = %u cached p_mcb = %p",
                                __func__, p_mcb, p_mcb->lcid,
                                rfc_find_lcid_mcb(p_mcb->lcid));
+            osi_free(p_buf);
+        } else {
+            fixed_queue_enqueue(p_mcb->cmd_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
         }
-        fixed_queue_enqueue(p_mcb->cmd_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
     }
 
     /* handle queue if L2CAP not congested */
-    while (p_mcb->l2cap_congested == FALSE) {
-        if ((p = (BT_HDR *)fixed_queue_dequeue(p_mcb->cmd_q, 0)) == NULL) {
-            break;
+    if (p_mcb->cmd_q) {
+        while (p_mcb->l2cap_congested == FALSE) {
+            if ((p = (BT_HDR *)fixed_queue_dequeue(p_mcb->cmd_q, 0)) == NULL) {
+                break;
+            }
+
+            L2CA_DataWrite (p_mcb->lcid, p);
         }
-
-
-        L2CA_DataWrite (p_mcb->lcid, p);
     }
 }
 

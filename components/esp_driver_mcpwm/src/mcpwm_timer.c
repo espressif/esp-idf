@@ -94,10 +94,6 @@ esp_err_t mcpwm_new_timer(const mcpwm_timer_config_t *config, mcpwm_timer_handle
     mcpwm_hal_context_t *hal = &group->hal;
     int timer_id = timer->timer_id;
 
-    // if interrupt priority specified before, it cannot be changed until the group is released
-    // check if the new priority specified consistents with the old one
-    ESP_GOTO_ON_ERROR(mcpwm_check_intr_priority(group, config->intr_priority), err, TAG, "set group interrupt priority failed");
-
     // select the clock source
     mcpwm_timer_clock_source_t clk_src = config->clk_src ? config->clk_src : MCPWM_TIMER_CLK_SRC_DEFAULT;
     ESP_GOTO_ON_ERROR(mcpwm_select_periph_clock(group, (soc_module_clk_t)clk_src), err, TAG, "set group clock failed");
@@ -125,6 +121,7 @@ esp_err_t mcpwm_new_timer(const mcpwm_timer_config_t *config, mcpwm_timer_handle
     // fill in other timer specific members
     timer->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     timer->fsm = MCPWM_TIMER_FSM_INIT;
+    timer->intr_priority = config->intr_priority;
     *ret_timer = timer;
 
 #if MCPWM_USE_RETENTION_LINK
@@ -208,11 +205,18 @@ esp_err_t mcpwm_timer_register_event_callbacks(mcpwm_timer_handle_t timer, const
     // lazy install interrupt service
     if (!timer->intr) {
         ESP_RETURN_ON_FALSE(timer->fsm == MCPWM_TIMER_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "timer not in init state");
-        int isr_flags = MCPWM_INTR_ALLOC_FLAG;
-        isr_flags |= mcpwm_get_intr_priority_flag(group);
-        ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(soc_mcpwm_signals[group_id].irq_id, isr_flags,
-                                                      (uint32_t)mcpwm_ll_intr_get_status_reg(hal->dev), MCPWM_LL_EVENT_TIMER_MASK(timer_id),
-                                                      mcpwm_timer_default_isr, timer, &timer->intr), TAG, "install interrupt service for timer failed");
+        int isr_flags = MCPWM_INTR_ALLOC_FLAG |
+                        (timer->intr_priority ? (1 << timer->intr_priority) : MCPWM_ALLOW_INTR_PRIORITY_MASK);
+        esp_intr_alloc_info_t intr_info = {
+            .source = soc_mcpwm_signals[group_id].irq_id,
+            .flags = isr_flags,
+            .intrstatusreg = (uint32_t)mcpwm_ll_intr_get_status_reg(hal->dev),
+            .intrstatusmask = MCPWM_LL_EVENT_TIMER_MASK(timer_id),
+            .handler = mcpwm_timer_default_isr,
+            .arg = timer,
+            .bind_by.name = soc_mcpwm_signals[group_id].module_name,
+        };
+        ESP_RETURN_ON_ERROR(esp_intr_alloc_info(&intr_info, &timer->intr), TAG, "install interrupt service for timer failed");
     }
 
     // enable/disable interrupt events

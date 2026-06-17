@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -235,9 +235,31 @@ void emac_hal_init(emac_hal_context_t *hal);
 
 #define emac_hal_clock_enable_rmii_input(hal) emac_ll_clock_enable_rmii_input((hal)->ext_regs)
 
-#if SOC_IS(ESP32P4)
+#if SOC_EMAC_SUPPORT_1000M
+#define emac_hal_clock_enable_rgmii(hal) emac_ll_clock_enable_rgmii((hal)->ext_regs)
+#endif // SOC_EMAC_SUPPORT_1000M
+
+#define emac_hal_gpio_init(hal, gpio_num) emac_ll_gpio_init((hal)->ext_regs, gpio_num)
+#if SOC_EMAC_DEDICATED_GPIO_CTRL_SUPPORTED
+#define emac_hal_dedicated_pad_ctrl_enable(hal, enable) emac_ll_dedicated_pad_ctrl_enable((hal)->ext_regs, enable)
+#define emac_hal_dedicated_pad_pullup_enable(hal, pad, enable) emac_ll_dedicated_pad_pullup_enable((hal)->ext_regs, pad, enable)
+#define emac_hal_dedicated_pad_pulldown_enable(hal, pad, enable) emac_ll_dedicated_pad_pulldown_enable((hal)->ext_regs, pad, enable)
+#define emac_hal_dedicated_pad_input_enable(hal, pad, enable) emac_ll_dedicated_pad_input_enable((hal)->ext_regs, pad, enable)
+#define emac_hal_dedicated_pad_sleep_pullup_enable(hal, pad, enable) emac_ll_dedicated_pad_sleep_pullup_enable((hal)->ext_regs, pad, enable)
+#define emac_hal_dedicated_pad_sleep_pulldown_enable(hal, pad, enable) emac_ll_dedicated_pad_sleep_pulldown_enable((hal)->ext_regs, pad, enable)
+#define emac_hal_dedicated_pad_sleep_enable(hal, pad, enable) emac_ll_dedicated_pad_sleep_enable((hal)->ext_regs, pad, enable)
+#endif // SOC_EMAC_DEDICATED_GPIO_CTRL_SUPPORTED
+
+#if !SOC_IS(ESP32)
 #define emac_hal_clock_rmii_rx_tx_div(hal, div) emac_ll_clock_rmii_rx_tx_div((hal)->ext_regs, div)
-#endif // SOC_IS(ESP32P4)
+#define emac_hal_enable_phy_ref_clock_output(hal) emac_ll_enable_phy_ref_clock_output((hal)->ext_regs)
+#endif // !SOC_IS(ESP32)
+
+esp_err_t emac_hal_ref_clock_select(emac_hal_context_t *hal, int sel);
+
+esp_err_t emac_hal_ref_clock_enable(emac_hal_context_t *hal, bool enable);
+
+esp_err_t emac_hal_ref_clock_div(emac_hal_context_t *hal, int div);
 
 #define emac_hal_clock_enable_rmii_output(hal) emac_ll_clock_enable_rmii_output((hal)->ext_regs)
 
@@ -325,6 +347,8 @@ void emac_hal_set_rx_tx_desc_addr(emac_hal_context_t *hal, eth_dma_rx_descriptor
 
 #define emac_hal_get_hw_feat(hal) emac_ll_get_hw_feat((hal)->dma_regs)
 
+#define emac_hal_get_gmii_status(hal) emac_ll_get_gmii_status((hal)->mac_regs)
+
 #if SOC_EMAC_IEEE1588V2_SUPPORTED
 #define emac_hal_get_ts_status(hal) emac_ll_get_ts_status((hal)->ptp_regs);
 
@@ -371,6 +395,22 @@ esp_err_t emac_hal_ptp_adj_inc(emac_hal_context_t *hal, int32_t adj_ppb);
  *         - ESP_ERR_INVALID_STATE: on PTP block is busy
  */
 esp_err_t emac_hal_adj_freq_factor(emac_hal_context_t *hal, double ratio);
+
+/**
+ * @brief Adjust PTP addend register relative to its current value by ppb
+ *
+ * Unlike emac_hal_ptp_adj_inc (absolute from base) or emac_hal_adj_freq_factor
+ * (relative by double scale factor), this function adjusts the current addend
+ * by a ppb offset: addend_new = current * (1 + adj_ppb / 10^9).
+ * Calling with adj_ppb=0 is a no-op.
+ *
+ * @param hal EMAC HAL context infostructure
+ * @param adj_ppb relative frequency adjustment in parts per billion
+ * @return
+ *         - ESP_OK: on success
+ *         - ESP_ERR_INVALID_STATE: on PTP block is busy
+ */
+esp_err_t emac_hal_ptp_adj_freq(emac_hal_context_t *hal, int32_t adj_ppb);
 
 /**
  * @brief Adds or subtracts to the PTP system time.
@@ -459,6 +499,8 @@ esp_err_t emac_hal_get_rxdesc_timestamp(emac_hal_context_t *hal, eth_dma_rx_desc
 esp_err_t emac_hal_get_txdesc_timestamp(emac_hal_context_t *hal, eth_dma_tx_descriptor_t *txdesc, uint32_t *seconds, uint32_t *nano_seconds);
 
 esp_err_t emac_hal_set_pps0_out_freq(emac_hal_context_t *hal, uint32_t freq_hz);
+
+uint32_t emac_hal_get_ts_resolution(emac_hal_context_t *hal);
 
 #endif // SOC_EMAC_IEEE1588V2_SUPPORTED
 #endif  // SOC_EMAC_SUPPORTED

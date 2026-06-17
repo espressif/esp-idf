@@ -23,7 +23,7 @@ static uint8_t heart_rate_chr_val[2] = {0};
 static uint16_t heart_rate_chr_val_handle;
 static const ble_uuid16_t heart_rate_chr_uuid = BLE_UUID16_INIT(0x2A37);
 
-static uint16_t heart_rate_chr_conn_handle = 0;
+static uint16_t heart_rate_chr_conn_handle = BLE_HS_CONN_HANDLE_NONE;
 static bool heart_rate_chr_conn_handle_inited = false;
 static bool heart_rate_ind_status = false;
 
@@ -238,6 +238,12 @@ void gatt_svr_subscribe_cb(struct ble_gap_event *event) {
         heart_rate_chr_conn_handle_inited = true;
         heart_rate_ind_status = event->subscribe.cur_indicate;
     }
+}
+
+void gatt_svr_reset_heart_rate_subscription(void) {
+    heart_rate_chr_conn_handle = BLE_HS_CONN_HANDLE_NONE;
+    heart_rate_chr_conn_handle_inited = false;
+    heart_rate_ind_status = false;
 }
 
 /*

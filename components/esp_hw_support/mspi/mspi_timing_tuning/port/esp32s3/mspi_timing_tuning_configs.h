@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,10 @@
 #include "sdkconfig.h"
 #include "esp_assert.h"
 #include "esp_flash_partitions.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define MSPI_TIMING_MSPI1_IS_INVOLVED                1   //This means esp flash driver needs to be notified
 #define MSPI_TIMING_CONFIG_NUM_MAX                   20  //This should be larger than the max available timing config num
@@ -262,3 +266,7 @@ ESP_STATIC_ASSERT(CHECK_POWER_OF_2(MSPI_TIMING_CORE_CLOCK_MHZ / MSPI_TIMING_PSRA
 #define MSPI_TIMING_PLL_FREQ_SCAN_THRESH_MHZ_HIGH                                    520
 #define MSPI_TIMING_PLL_FREQ_SCAN_WIDTH_MHZ                                          160
 #define MSPI_TIMING_PLL_FREQ_SCAN_STEP_MHZ_MODULE_CLK_120M                           8
+
+#ifdef __cplusplus
+}
+#endif

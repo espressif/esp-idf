@@ -79,6 +79,14 @@ SPI 传输事务
 
     主机应在从机设备准备好接收数据之后再进行传输事务。建议使用另外一个 GPIO 管脚作为握手信号来同步设备。更多细节，请参阅 :ref:`transaction_interval`。
 
+.. only:: SOC_PSRAM_DMA_CAPABLE
+
+    使用 PSRAM 的传输
+    ^^^^^^^^^^^^^^^^^^
+
+    SPI Slave 驱动程序支持使用 PSRAM 进行传输。直接传入 PSRAM 地址作为 :cpp:member:`spi_slave_transaction_t::tx_buffer` 或 :cpp:member:`spi_slave_transaction_t::rx_buffer` 即可。对于 rx_buffer ，其地址和传输长度有对齐要求，使用 :cpp:func:`heap_caps_malloc` 分配内存可以自动处理对齐要求。对于不能控制的内存，也可以使用 :c:macro:`SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO` 标志位，驱动会自动从 PSRAM 重新分配满足要求的内存。
+
+    请注意该功能共享 MSPI 总线带宽（总线频率 * 总线位宽），因此主机对该设备的传输带宽应小于 PSRAM 带宽，否则 **可能会丢失传输数据**，此时 ``spi_slave_transmit`` 函数将会返回 :c:macro:`ESP_ERR_INVALID_STATE` 错误。
 
 使用驱动程序
 ------------
@@ -93,7 +101,7 @@ SPI 传输事务
 
     如果传输事务的数据大于 32 字节，需要在主机上设置参数 ``dma_chan`` 以使能 DMA 通道。若数据小于 32 字节，则应将 ``dma_chan`` 设为 ``0``。
 
-- 传输事务开始前，需用要求的事务参数填充一个或多个 :cpp:type:`spi_slave_transaction_t` 结构体。可以通过调用函数 :cpp:func:`spi_slave_queue_trans` 来将所有传输事务排进队列，并在稍后使用函数 :cpp:func:`spi_slave_get_trans_result` 查询结果；也可以将所有请求输入 :cpp:func:`spi_slave_transmit` 中单独处理。主机上的传输事务完成前，后两个函数将被阻塞，以便发送并接收队列中的数据。
+- 传输事务开始前，需用要求的事务参数填充一个或多个 :cpp:type:`spi_slave_transaction_t` 结构体。可以通过调用函数 :cpp:func:`spi_slave_queue_trans` 来将所有传输事务排进队列，并在稍后使用函数 :cpp:func:`spi_slave_get_trans_result` 查询结果；也可以将所有请求输入 :cpp:func:`spi_slave_transmit` 中单独处理。后两个函数将阻塞，直到主机发起并完成传输事务，以便发送并接收队列中的数据，或直到 ``ticks_to_wait`` 超时。
 
 - （可选）启用/禁用驱动程序功能：从机驱动程序支持在程序初始化后通过调用 :cpp:func:`spi_slave_disable` / :cpp:func:`spi_slave_enable` 来禁用/启用驱动程序，以便能够更改时钟或电源配置或休眠以节省电量。默认情况下，驱动程序在初始化后为“启用”状态。
 
@@ -108,6 +116,8 @@ SPI 传输事务
 驱动程序可以读取或写入缓存区的数据量取决于 :cpp:member:`spi_slave_transaction_t::length`，但其并不会定义一次 SPI 传输的实际长度。传输事务的长度由主机的时钟线和 CS 线决定，且只有在传输事务完成后，才能从 :cpp:member:`spi_slave_transaction_t::trans_len` 中读取实际长度。
 
 如果传输长度超过缓存区长度，则只有在 :cpp:member:`spi_slave_transaction_t::length` 中指定的初始比特数会被发送和接收。此时， :cpp:member:`spi_slave_transaction_t::trans_len` 被设置为 :cpp:member:`spi_slave_transaction_t::length` 而非实际传输事务长度。若需满足实际传输事务长度的要求，请将 :cpp:member:`spi_slave_transaction_t::length` 设置为大于 :cpp:member:`spi_slave_transaction_t::trans_len` 预期最大值的值。如果传输长度短于缓存区长度，则只传输与缓存区长度相等的数据。
+
+当需要在一次传输中单独指定不同的 TX/RX 长度时，可以使用 :cpp:member:`spi_slave_transaction_t::tx_length` 和 :cpp:member:`spi_slave_transaction_t::rx_length` 来分别指定 TX 和 RX 的长度。该配置和 :cpp:member:`spi_slave_transaction_t::length` 互斥，不可同时使用。
 
 GPIO 交换矩阵和 IO_MUX
 ----------------------

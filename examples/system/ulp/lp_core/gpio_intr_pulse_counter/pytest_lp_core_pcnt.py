@@ -1,14 +1,21 @@
-# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import logging
 
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['esp32c6', 'esp32p4', 'esp32c5'], indirect=['target'])
+@idf_parametrize(
+    'target',
+    soc_filtered_targets(
+        'SOC_LP_CORE_SUPPORTED == 1 and SOC_ULP_LP_UART_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1'
+    ),
+    indirect=['target'],
+)
 def test_lp_core_pcnt(dut: Dut) -> None:
     res = dut.expect(r'ULP will wake up processor after every (\d+) pulses')
     wakeup_limit = res.group(1).decode('utf-8')

@@ -137,7 +137,6 @@
 //Periheral Clock {{
 #define  APB_CLK_FREQ                                ( 32*1000000 )
 #define  MODEM_REQUIRED_MIN_APB_CLK_FREQ             ( 32*1000000 )
-#define  REF_CLK_FREQ                                ( 1000000 )
 //}}
 
 /* Overall memory map */

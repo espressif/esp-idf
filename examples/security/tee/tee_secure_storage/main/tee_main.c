@@ -25,6 +25,7 @@
 #define SHA256_DIGEST_SZ         (32)
 #define ECDSA_SECP256R1_KEY_LEN  (32)
 #define AES256_GCM_TAG_LEN       (16)
+#define AES256_GCM_IV_LEN        (12)
 #define AES256_GCM_AAD_LEN       (16)
 
 #define SIGN_KEY_STR_ID          (CONFIG_EXAMPLE_TEE_SEC_STG_SIGN_KEY_STR_ID)
@@ -165,6 +166,7 @@ static void example_tee_sec_stg_encrypt_decrypt(void *pvParameter)
     }
 
     uint8_t tag[AES256_GCM_TAG_LEN];
+    uint8_t iv[AES256_GCM_IV_LEN];
     uint8_t aad_buf[AES256_GCM_AAD_LEN];
     memset(aad_buf, 0xA5, sizeof(aad_buf));
 
@@ -202,7 +204,7 @@ static void example_tee_sec_stg_encrypt_decrypt(void *pvParameter)
 
     ctx.input = (const uint8_t *)plaintext;
     ctx.input_len = plaintext_len;
-    err = esp_tee_sec_storage_aead_encrypt(&ctx, tag, sizeof(tag), ciphertext);
+    err = esp_tee_sec_storage_aead_encrypt(&ctx, iv, sizeof(iv), tag, sizeof(tag), ciphertext);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to encrypt data!");
         goto exit;
@@ -212,13 +214,14 @@ static void example_tee_sec_stg_encrypt_decrypt(void *pvParameter)
 
     ctx.input = (const uint8_t *)ciphertext;
     ctx.input_len = plaintext_len;
-    err = esp_tee_sec_storage_aead_decrypt(&ctx, tag, sizeof(tag), ciphertext);
+    err = esp_tee_sec_storage_aead_decrypt(&ctx, iv, sizeof(iv), tag, sizeof(tag), ciphertext);
     if (err != ESP_OK || memcmp(ciphertext, plaintext, plaintext_len) != 0) {
         ESP_LOGE(TAG, "Encryption verification failed!");
         err = ESP_FAIL;
         goto exit;
     }
 
+    ESP_LOG_BUFFER_HEX("IV", iv, sizeof(iv));
     ESP_LOG_BUFFER_HEX("Tag", tag, sizeof(tag));
     ESP_LOGI(TAG, "Done with encryption/decryption!");
 

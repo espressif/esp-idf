@@ -22,8 +22,8 @@ extern const uint8_t lp_core_main_adc_bin_end[]   asm("_binary_lp_core_test_app_
 
 #if CONFIG_IDF_TARGET_ESP32P4
 // Threshold values picked up empirically after manual testing
-#define ADC_TEST_LOW_VAL         2200
-#define ADC_TEST_HIGH_VAL        4090
+#define ADC_TEST_LOW_VAL         1000
+#define ADC_TEST_HIGH_VAL        3200
 #else
 #error "ADC threshold values not defined"
 #endif

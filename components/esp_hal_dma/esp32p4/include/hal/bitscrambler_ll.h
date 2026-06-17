@@ -14,6 +14,7 @@
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/hp_system_struct.h"
 #include "hal/misc.h"
+#include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,6 +23,10 @@ extern "C" {
 #define BITSCRAMBLER_LL_GET_HW(num)      (((num) == 0) ? (&BITSCRAMBLER) : NULL)
 
 #define BITSCRAMBLER_LL_INST_LEN_WORDS   9 //length of one instruction in 32-bit words as defined by HW
+
+typedef enum {
+    BITSCRAMBLER_LL_MEM_LP_MODE_SHUT_DOWN,  // memory will be powered down during low power stage
+} bitscrambler_ll_mem_lp_mode_t;
 
 /**
  * @brief Select peripheral BitScrambler is attached to
@@ -360,6 +365,16 @@ static inline void bitscrambler_ll_mem_force_power_off(void)
 static inline void bitscrambler_ll_mem_power_by_pmu(void)
 {
     // empty
+}
+
+/**
+ * @brief Set low power mode for BitScrambler memory (LUT) block
+ *
+ * @param mode BitScrambler memory low power mode in low power stage
+ */
+static inline void bitscrambler_ll_mem_set_low_power_mode(bitscrambler_ll_mem_lp_mode_t mode)
+{
+    HAL_ASSERT(mode == BITSCRAMBLER_LL_MEM_LP_MODE_SHUT_DOWN);
 }
 
 /**

@@ -15,7 +15,7 @@
 #define MSPI_IOMUX_PIN_NUM_CLK   11
 #define MSPI_IOMUX_PIN_NUM_MOSI  12
 
-#define SPI2_FUNC_NUM           2
+#define SPI2_FUNC_NUM_QUAD      2
 #define SPI2_IOMUX_PIN_NUM_MISO 15
 #define SPI2_IOMUX_PIN_NUM_HD   19
 #define SPI2_IOMUX_PIN_NUM_WP   18

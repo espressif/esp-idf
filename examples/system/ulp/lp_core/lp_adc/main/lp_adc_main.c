@@ -33,7 +33,7 @@ static void lp_uart_init(void)
 
 static void lp_core_init(void)
 {
-    /* Set LP core wakeup source as the HP CPU */
+    /* Set LP core wakeup source as the LP timer */
     ulp_lp_core_cfg_t cfg = {
         .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER,
         .lp_timer_sleep_duration_us = 1000000,

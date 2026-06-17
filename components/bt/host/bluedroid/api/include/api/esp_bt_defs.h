@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -209,13 +210,17 @@ typedef uint8_t esp_link_key[ESP_BT_OCTET16_LEN];      /* Link Key */
 /// Default GATT interface id
 #define ESP_DEFAULT_GATT_IF             0xff
 
-#if BLE_HIGH_DUTY_ADV_INTERVAL
+#if CONFIG_BT_BLE_HIGH_DUTY_ADV_INTERVAL
 #define ESP_BLE_PRIM_ADV_INT_MIN            0x000008     /*!< Minimum advertising interval for undirected and low duty cycle directed advertising */
 #else
 #define ESP_BLE_PRIM_ADV_INT_MIN            0x000020     /*!< Minimum advertising interval for undirected and low duty cycle directed advertising */
 #endif
 #define ESP_BLE_PRIM_ADV_INT_MAX            0xFFFFFF     /*!< Maximum advertising interval for undirected and low duty cycle directed advertising */
-#define ESP_BLE_CONN_INT_MIN                0x0006       /*!< relate to BTM_BLE_CONN_INT_MIN in stack/btm_ble_api.h */
+/* Public API constant pinned to the Bluetooth Core Spec minimum (7.5 ms).
+ * Applications that want a sub-spec connection interval must pass the
+ * desired value as an integer literal; whether it is actually accepted
+ * depends on the controller. */
+#define ESP_BLE_CONN_INT_MIN                0x0006       /*!< Minimum connection interval, 7.5 ms (BLE Core Spec minimum) */
 #define ESP_BLE_CONN_INT_MAX                0x0C80       /*!< relate to BTM_BLE_CONN_INT_MAX in stack/btm_ble_api.h */
 #define ESP_BLE_CONN_LATENCY_MAX            499          /*!< relate to ESP_BLE_CONN_LATENCY_MAX in stack/btm_ble_api.h */
 #define ESP_BLE_CONN_SUP_TOUT_MIN           0x000A       /*!< relate to BTM_BLE_CONN_SUP_TOUT_MIN in stack/btm_ble_api.h */
@@ -232,8 +237,8 @@ typedef uint8_t esp_ble_phy_mask_t;
 typedef struct {
     uint16_t scan_interval;       /*!< Initial scan interval, in units of 0.625ms, the range is 0x0004(2.5ms) to 0xFFFF(10.24s). */
     uint16_t scan_window;         /*!< Initial scan window, in units of 0.625ms, the range is 0x0004(2.5ms) to 0xFFFF(10.24s). */
-    uint16_t interval_min;        /*!< Minimum connection interval, in units of 1.25ms, the range is 0x0006(7.5ms) to 0x0C80(4s). */
-    uint16_t interval_max;        /*!< Maximum connection interval, in units of 1.25ms, the range is 0x0006(7.5ms) to 0x0C80(4s). */
+    uint16_t interval_min;        /*!< Minimum connection interval, in units of 1.25 ms, the range is 0x0006(7.5ms) to 0x0C80(4s). Sub-spec values are accepted only if the controller supports them. */
+    uint16_t interval_max;        /*!< Maximum connection interval, in units of 1.25 ms, the range is 0x0006(7.5ms) to 0x0C80(4s). Same bounds as interval_min. */
     uint16_t latency;             /*!< Connection latency, the range is 0x0000(0) to 0x01F3(499). */
     uint16_t supervision_timeout; /*!< Connection supervision timeout, in units of 10ms, the range is from 0x000A(100ms) to 0x0C80(32s). */
     uint16_t min_ce_len;          /*!< Minimum connection event length, in units of 0.625ms, setting to 0 for no preferred parameters. */

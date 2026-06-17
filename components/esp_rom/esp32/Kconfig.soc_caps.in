@@ -58,3 +58,11 @@ config ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
 config ESP_ROM_HAS_OUTPUT_PUTC_FUNC
     bool
     default y
+
+config ESP_ROM_HAS_REGI2C_IMPL
+    bool
+    default y
+
+config ESP_ROM_BOOTLOADER_OFFSET_FLASH
+    hex
+    default 0x1000

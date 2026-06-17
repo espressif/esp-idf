@@ -8,13 +8,14 @@ set(requires "unity"
              "esp_psram")
 
 set(SRC  "test_app_main.c"
-         "test_backtrace.c"
-         "test_ipc.c"
-         "test_reset_reason.c"
-         "test_shared_stack_printf.c"
-         "test_stack_check.c"
-         "test_system_time.c"
-         "test_task_wdt.c")
+          "test_backtrace.c"
+          "test_ipc.c"
+          "test_panic.c"
+          "test_reset_reason.c"
+          "test_shared_stack_printf.c"
+          "test_stack_check.c"
+          "test_system_time.c"
+          "test_task_wdt.c")
 
 if(CONFIG_SOC_LIGHT_SLEEP_SUPPORTED OR CONFIG_SOC_DEEP_SLEEP_SUPPORTED)
     list(APPEND SRC "test_sleep.c"
@@ -42,3 +43,9 @@ idf_component_register(SRCS ${SRC}
                     PRIV_INCLUDE_DIRS .
                     PRIV_REQUIRES "${requires}"
                     WHOLE_ARCHIVE)
+
+if(CONFIG_SOC_CPU_LOCKUP_DEBUG_SUPPORTED)
+    # Wrap esp_panic_handler so the lockup test can inject a second exception
+    # inside the panic handler. All other panics in the test binary are unaffected.
+    target_link_options(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=esp_panic_handler")
+endif()

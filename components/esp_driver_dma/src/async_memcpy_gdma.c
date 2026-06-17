@@ -207,6 +207,13 @@ esp_err_t esp_async_memcpy_install_gdma_axi(const async_memcpy_config_t *config,
 }
 #endif // SOC_HAS(AXI_GDMA)
 
+#if SOC_HAS(LP_AHB_GDMA)
+esp_err_t esp_async_memcpy_install_gdma_lp_ahb(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp)
+{
+    return esp_async_memcpy_install_gdma_template(config, mcp, gdma_new_lp_ahb_channel, SOC_GDMA_BUS_LP);
+}
+#endif // SOC_HAS(LP_AHB_GDMA)
+
 #if SOC_HAS(AHB_GDMA)
 /// default installation falls back to use the AHB GDMA
 esp_err_t esp_async_memcpy_install(const async_memcpy_config_t *config, async_memcpy_handle_t *asmcp)
@@ -247,7 +254,7 @@ static void try_start_pending_transaction(async_memcpy_gdma_context_t *mcp_gdma)
 {
     async_memcpy_fsm_t expected_fsm = MCP_FSM_IDLE;
     async_memcpy_transaction_t *trans = NULL;
-    if (atomic_compare_exchange_strong(&mcp_gdma->fsm, &expected_fsm, MCP_FSM_RUN_WAIT)) {
+    if (atomic_compare_exchange_strong(&mcp_gdma->fsm, &expected_fsm, MCP_FSM_WAIT)) {
         trans = try_pop_trans_from_ready_queue(mcp_gdma);
         if (trans) {
             atomic_store(&mcp_gdma->fsm, MCP_FSM_RUN);
@@ -320,6 +327,14 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
         dma_link_item_alignment = GDMA_LL_AXI_DESC_ALIGNMENT;
     }
 #endif // SOC_HAS(AXI_GDMA)
+#if SOC_HAS(LP_AHB_GDMA)
+    if (mcp_gdma->gdma_bus_id == SOC_GDMA_BUS_LP) {
+#if !GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE)
+        ESP_RETURN_ON_FALSE(esp_ptr_internal(src) && esp_ptr_internal(dst), ESP_ERR_INVALID_ARG, TAG, "LP AHB GDMA can only access SRAM");
+#endif // !GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE)
+        dma_link_item_alignment = GDMA_LL_AHB_DESC_ALIGNMENT;
+    }
+#endif // SOC_HAS(LP_AHB_GDMA)
     // alignment check
     ESP_RETURN_ON_FALSE(check_buffer_alignment(mcp_gdma, src, dst, n), ESP_ERR_INVALID_ARG, TAG, "address|size not aligned: %p -> %p, sz=%zu", src, dst, n);
 
@@ -437,7 +452,7 @@ static bool mcp_gdma_rx_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_
 
     // switch driver state from RUN to IDLE
     async_memcpy_fsm_t expected_fsm = MCP_FSM_RUN;
-    if (atomic_compare_exchange_strong(&mcp_gdma->fsm, &expected_fsm, MCP_FSM_IDLE_WAIT)) {
+    if (atomic_compare_exchange_strong(&mcp_gdma->fsm, &expected_fsm, MCP_FSM_WAIT)) {
         // merge the cache aligned buffers to the original buffer
         esp_dma_merge_aligned_rx_buffers(rx_buf_array);
 
@@ -454,6 +469,7 @@ static bool mcp_gdma_rx_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_
         esp_os_enter_critical_isr(&mcp_gdma->spin_lock);
         // insert the trans object to the idle queue
         STAILQ_INSERT_TAIL(&mcp_gdma->idle_queue_head, trans, idle_queue_entry);
+        mcp_gdma->current_transaction = NULL;
         esp_os_exit_critical_isr(&mcp_gdma->spin_lock);
 
         atomic_store(&mcp_gdma->fsm, MCP_FSM_IDLE);

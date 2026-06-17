@@ -42,6 +42,10 @@
 #include "ot_led_strip.h"
 #endif
 
+#if CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE
+#include "ext_coex_cmd.h"
+#endif
+
 #define TAG "esp_ot_br"
 
 #if CONFIG_OPENTHREAD_SUPPORT_HW_RESET_RCP
@@ -93,11 +97,15 @@ void app_main(void)
     ESP_ERROR_CHECK(mdns_hostname_set("esp-ot-br"));
 #if CONFIG_OPENTHREAD_SUPPORT_HW_RESET_RCP
     esp_openthread_register_rcp_failure_handler(rcp_failure_hardware_reset_handler);
+    esp_openthread_set_coprocessor_reset_failure_callback(rcp_failure_hardware_reset_handler);
 #endif
 
 #if CONFIG_OPENTHREAD_CLI
     ot_console_start();
     ot_register_external_commands();
+#if CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE
+    register_cmd_extcoex();
+#endif
 #endif
 
 #if CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE
@@ -117,16 +125,13 @@ void app_main(void)
 #if CONFIG_OPENTHREAD_CLI_ESP_EXTENSION
     esp_cli_custom_command_init();
 #endif
-#if CONFIG_OPENTHREAD_BORDER_ROUTER_AUTO_START
+#if CONFIG_OPENTHREAD_STATE_INDICATOR_ENABLE
+    ESP_ERROR_CHECK(esp_openthread_state_indicator_init(esp_openthread_get_instance()));
+#endif
+#if CONFIG_OPENTHREAD_BORDER_ROUTER && CONFIG_OPENTHREAD_NETWORK_AUTO_START
     ESP_ERROR_CHECK(esp_openthread_border_router_start());
 #if CONFIG_ESP_COEX_SW_COEXIST_ENABLE && CONFIG_SOC_IEEE802154_SUPPORTED
     ESP_ERROR_CHECK(esp_coex_wifi_i154_enable());
 #endif
-#endif
-#if CONFIG_OPENTHREAD_STATE_INDICATOR_ENABLE
-    ESP_ERROR_CHECK(esp_openthread_state_indicator_init(esp_openthread_get_instance()));
-#endif
-#if CONFIG_OPENTHREAD_NETWORK_AUTO_START
-    ot_network_auto_start();
 #endif
 }

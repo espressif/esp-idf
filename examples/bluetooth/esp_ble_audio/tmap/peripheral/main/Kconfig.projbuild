@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: 2022 Nordic Semiconductor ASA
+# SPDX-FileContributor: 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Example: TMAP Peripheral (CT & UMR)"
+
+    choice EXAMPLE_TMAP_PER_TYPE_CHOICE
+
+        prompt "Earbuds type"
+        help
+            Select the Earbuds Type to compile.
+
+        config EXAMPLE_TMAP_PER_SINGLE
+            bool "Single ear headset"
+
+        config EXAMPLE_TMAP_PER_DUO
+            bool "Duo headset"
+            select BT_CSIP_SET_MEMBER
+            select BT_CAP_ACCEPTOR_SET_MEMBER
+
+    endchoice
+
+    if EXAMPLE_TMAP_PER_DUO
+        config EXAMPLE_TMAP_PER_SET_RANK
+            int "Device rank in set"
+            range 1 2
+            help
+                Rank of this device in set.
+    endif
+
+    choice EXAMPLE_TMAP_PER_LOCATION
+
+        prompt "Earbud Location"
+        help
+            Select the Earbud location.
+
+        config EXAMPLE_TMAP_PER_LEFT
+            bool "Left Ear"
+
+        config EXAMPLE_TMAP_PER_RIGHT
+            bool "Right Ear"
+
+    endchoice
+
+endmenu

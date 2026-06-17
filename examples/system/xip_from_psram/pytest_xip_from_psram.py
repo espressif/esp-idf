@@ -1,8 +1,9 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded.dut import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
@@ -14,7 +15,7 @@ from pytest_embedded_idf.utils import idf_parametrize
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32s2', 'esp32s3', 'esp32p4', 'esp32c5', 'esp32c61'], indirect=['target'])
+@idf_parametrize('target', soc_filtered_targets('SOC_SPIRAM_XIP_SUPPORTED == 1'), indirect=['target'])
 def test_xip_from_psram_example_generic(dut: Dut) -> None:
     dut.expect_exact('found partition')
 
@@ -67,3 +68,24 @@ def test_xip_from_psram_example_p4_200m(dut: Dut) -> None:
     res = dut.expect(r'callback\(in IRAM\) response time: (\d{1,3}) us')
     response_time = res.group(1).decode('utf8')
     assert float(response_time) <= 10
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'esp32s31_250m',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32s31'], indirect=['target'])
+def test_xip_from_psram_example_s31(dut: Dut) -> None:
+    dut.expect_exact('found partition')
+
+    res = dut.expect(r'callback\(in PSRAM\) response time: (\d{1,3}) us')
+    response_time = res.group(1).decode('utf8')
+    assert float(response_time) <= 5
+
+    res = dut.expect(r'callback\(in IRAM\) response time: (\d{1,3}) us')
+    response_time = res.group(1).decode('utf8')
+    assert float(response_time) <= 5

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 # The current project needs to support environments before Python 3.9,
@@ -38,6 +38,7 @@ from typing import cast
 
 import tree_sitter_c as tsc
 import yaml
+from c_format_parse import FormatToken
 from c_format_parse import parse_format_string
 from inttypes_map import TYPES_MACRO_MAP
 from LogDBManager import LogDBManager
@@ -75,6 +76,8 @@ SOURCE_ENUM_MAP = {
     'BLE_HOST': 0,
     'BLE_MESH': 1,
     'BLE_MESH_LIB': 2,
+    'BLE_ISO': 3,
+    'BLE_AUDIO_LIB': 4,
 }
 
 # Functions that require hex formatting
@@ -283,7 +286,7 @@ class LogCompressor:
         for node in log_nodes:
             try:
                 log_info = self._process_log_node(node, function_boundaries)
-                if log_info:
+                if log_info and log_info['hexify']:
                     logs.append(log_info)
             except Exception as e:
                 LOGGER.error(f'Error processing log node: {e}\n{traceback.format_exc()}')
@@ -327,10 +330,23 @@ class LogCompressor:
         if not fmt_node:
             return None
 
+        nimble_nodes = False
         if fmt_node.type == 'concatenated_string':
             log_fmt = self._process_concatenated_string(fmt_node)
         elif fmt_node.type == 'string_literal':
             log_fmt = fmt_node.text.decode('utf-8')[1:-1]  # Remove quotes
+        elif fmt_node.type == 'identifier':
+            # NimBLE style: BLE_HS_LOG(level, "fmt", ...)
+            nimble_nodes = True
+            fmt_node = valid_arg_childrn[1] if len(valid_arg_childrn) > 1 else None
+            if not fmt_node:
+                return None
+            if fmt_node.type == 'concatenated_string':
+                log_fmt = self._process_concatenated_string(fmt_node)
+            elif fmt_node.type == 'string_literal':
+                log_fmt = fmt_node.text.decode('utf-8')[1:-1]
+            else:
+                return None
         else:
             return None
 
@@ -339,17 +355,31 @@ class LogCompressor:
         # Parse format tokens
         tokens = parse_format_string(f'"{log_fmt}"')
         tokens_tuple_map: list[int] = []
+        need_args = 0
         for idx, tk in enumerate(tokens):
-            if isinstance(tk, tuple):
+            if isinstance(tk, FormatToken):
                 tokens_tuple_map.append(idx)
+                need_args = need_args + 1
+                if tk.width == '*':  # dynamic width
+                    need_args = need_args + 1
+                    log_info['hexify'] = False
+                    return log_info
+                if tk.precision == '*':  # dynamic precision
+                    need_args = need_args + 1
+                    log_info['hexify'] = False
+                    return log_info
 
-        arguments: list[Node] = valid_arg_childrn[1:]
+        arguments: list[Node] = []
+        if nimble_nodes:
+            arguments = valid_arg_childrn[2:]
+        else:
+            arguments = valid_arg_childrn[1:]
 
-        if len(arguments) != len(tokens_tuple_map):
+        if len(arguments) != need_args:
             raise SyntaxError(f'LogSyntaxError:{node.text.decode("utf-8")}')
 
         # Process each argument
-        for i, (token, arg_node) in enumerate(zip([t for t in tokens if isinstance(t, tuple)], arguments)):
+        for i, (token, arg_node) in enumerate(zip([t for t in tokens if isinstance(t, FormatToken)], arguments)):
             arg_text = arg_node.text.decode('utf-8')
             log_info['arguments'].append((arg_text, arg_node.start_byte, arg_node.end_byte))
 
@@ -359,13 +389,9 @@ class LogCompressor:
 
             # Handle special identifiers
             if arg_text in FUNC_MACROS:
-                token_list = list(token)
-                token_list[6] = '@func'  # Modify conversion char to special marker
-                tokens[tokens_tuple_map[i]] = tuple(token_list)
+                tokens[tokens_tuple_map[i]] = token._replace(conv_char='@func')
             elif arg_text in LINE_MACROS:
-                token_list = list(token)
-                token_list[6] = '@line'
-                tokens[tokens_tuple_map[i]] = tuple(token_list)
+                tokens[tokens_tuple_map[i]] = token._replace(conv_char='@line')
 
             # Handle hex functions
             if (
@@ -383,9 +409,7 @@ class LogCompressor:
                         len_node = abs(hex_func_info[2])
                     else:
                         len_node = hex_args.named_children[hex_func_info[2]].text.decode('utf-8')
-                    token_list = list(token)
-                    token_list[6] = f'@hex_func@{buf_node}@{len_node}'
-                    tokens[tokens_tuple_map[i]] = tuple(token_list)
+                    tokens[tokens_tuple_map[i]] = token._replace(conv_char=f'@hex_func@{buf_node}@{len_node}')
 
         log_info['argu_tokens'] = tokens
 
@@ -413,9 +437,9 @@ class LogCompressor:
                 raise ValueError(f'Unsupported node in concatenated string: {child.type}')
         return ''.join(parts)
 
-    def _can_be_hexified(self, token: tuple[int, int, str, str, str, str, str], node: Node) -> bool:
+    def _can_be_hexified(self, token: FormatToken, node: Node) -> bool:
         """Determine if a node can be represented in hex format."""
-        if token[-1] != 's':
+        if token.conv_char != 's':
             return True
 
         if node.type == 'identifier' and node.text.decode('utf-8') in FUNC_MACROS:
@@ -475,7 +499,7 @@ class LogCompressor:
 
         if log_info['hexify']:
             # Count of arguments that are not special (__func__, __LINE__, etc.)
-            arg_tokens = [t for t in log_info['argu_tokens'] if isinstance(t, tuple)]
+            arg_tokens = [t for t in log_info['argu_tokens'] if isinstance(t, FormatToken)]
             arg_count = len(arg_tokens)
             arguments = []
             sizes = []
@@ -488,23 +512,23 @@ class LogCompressor:
                 [a[0] for a in log_info['arguments'][1:]],
             ):
                 # Skip special tokens
-                if token[6] in ('@func', '@line'):
+                if token.conv_char in ('@func', '@line'):
                     arg_count -= 1
                     continue
 
                 # Handle hex function
-                if token[6].startswith('@hex_func'):
+                if token.conv_char.startswith('@hex_func'):
                     if not hex_func:
                         hex_func = []
-                    hex_func.append(token[6])
+                    hex_func.append(token.conv_char)
                     arg_count -= 1
                     continue
 
                 arguments.append(argument)
 
-                if token[6] == 'f' or token[5] == 'll':  # float or long long
+                if token.conv_char == 'f' or token.length == 'll':  # float or long long
                     sizes.append(f'{int(ARG_SIZE_TYPE.U64)}')
-                elif token[6] == 's':
+                elif token.conv_char == 's':
                     sizes.append(f'{int(ARG_SIZE_TYPE.STR)}')
                 else:
                     sizes.append(f'{int(ARG_SIZE_TYPE.U32)}')
@@ -554,6 +578,30 @@ class LogCompressor:
             with open(file_path, 'rb') as f:
                 content = f.read()
 
+            # NimBLE host macros are emitted to nimble_log_index.h (module BLE_HOST when NimBLE is enabled).
+            # Ensure each compressed NimBLE source includes that header.
+            if (
+                module == 'BLE_HOST'
+                and self.module_info[module].get('log_index_file') == 'nimble_log_index.h'
+                and b'#include "nimble_log_index.h"' not in content
+            ):
+                lines = content.splitlines(keepends=True)
+                first_include = None
+                last_include = None
+                for idx, line in enumerate(lines):
+                    if line.lstrip().startswith(b'#include'):
+                        if first_include is None:
+                            first_include = idx
+                        last_include = idx
+                    elif first_include is not None and line.strip() and not line.lstrip().startswith(b'//'):
+                        break
+
+                if last_include is not None:
+                    lines.insert(last_include + 1, b'#include "nimble_log_index.h"\n')
+                    content = b''.join(lines)
+                else:
+                    content = b'#include "nimble_log_index.h"\n' + content
+
             new_content = bytearray(content)
             logs = self.extract_log_calls(content, self.module_info[module]['tags'])
             LOGGER.info(f'Processing {file_path} - found {len(logs)} logs')
@@ -575,16 +623,16 @@ class LogCompressor:
                 simple_fmt_list: list[str] = []
                 hex_buffer_cnt = 0
                 for token in log['argu_tokens']:
-                    if isinstance(token, tuple):
-                        if '@func' in token[6] or '@line' in token[6]:
+                    if isinstance(token, FormatToken):
+                        if '@func' in token.conv_char or '@line' in token.conv_char:
                             continue
-                        if '@hex_func' in token[6]:
+                        if '@hex_func' in token.conv_char:
                             simple_fmt_list.append(f'@hex_buffer{hex_buffer_cnt}')
                             no_buf_fmt += f'@hex_buffer{hex_buffer_cnt}'
                             hex_buffer_cnt += 1
                             continue
-                        simple_fmt_list.append(token[2])
-                        no_buf_fmt += token[2]
+                        simple_fmt_list.append(token.full_spec)
+                        no_buf_fmt += token.full_spec
                     else:
                         no_buf_fmt += token
                 simple_fmt_str = ' '.join(simple_fmt_list) if simple_fmt_list else None
@@ -653,9 +701,15 @@ class LogCompressor:
             compressed_file_cnt = 0
             total_cnt = 0
             for src in srcs:
-                if pattern.match(src):
-                    src_path = self.code_base_path / src
-                    dest_path = self.bt_compressed_srcs_path / src
+                # Convert absolute paths to relative (to code_base_path) for pattern matching
+                src_for_match = src
+                try:
+                    src_for_match = str(Path(src).relative_to(self.code_base_path))
+                except ValueError:
+                    pass  # Not under code_base_path, keep as-is
+                if pattern.match(src_for_match):
+                    src_path = self.code_base_path / src_for_match
+                    dest_path = self.bt_compressed_srcs_path / src_for_match
                     temp_path = f'{dest_path}.tmp'
                     total_cnt += 1
                     # Skip if already processed
@@ -778,6 +832,10 @@ class LogCompressor:
         for module in module_names:
             if module in modules:
                 self.module_info[module] = modules[module]
+                if module == 'BLE_HOST' and modules[module].get('log_index_file') == 'nimble_log_index.h':
+                    # Force a one-time DB/config refresh for NimBLE compression
+                    # when generator behavior changes (e.g. header injection).
+                    self.module_info[module]['generator_rev'] = 'nimble_include_fix_v1'
                 module_script_path = self.module_info[module]['script']
                 spec = self.module_mod[module] = importlib.util.spec_from_file_location(module, module_script_path)
                 if spec and spec.loader:

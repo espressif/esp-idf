@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include "hal/assert.h"
 #include "hal/misc.h"
+#include "hal/etm_types.h"
 #include "soc/soc_etm_struct.h"
 #include "soc/hp_sys_clkrst_struct.h"
 
@@ -49,6 +50,30 @@ static inline void _etm_ll_enable_bus_clock(int group_id, bool enable)
         (void)__DECLARE_RCC_ATOMIC_ENV; \
         _etm_ll_enable_bus_clock(__VA_ARGS__); \
     } while(0)
+
+/**
+ * @brief Enable the clock for ETM function
+ *
+ * @param group_id Group ID
+ * @param enable true to enable, false to disable
+ */
+static inline void etm_ll_enable_function_clock(int group_id, bool enable)
+{
+    (void)group_id;
+    (void)enable;
+}
+
+/**
+ * @brief Set the clock source for ETM
+ *
+ * @param group_id Group ID
+ * @param clk_src Clock source
+ */
+static inline void etm_ll_set_clock_source(int group_id, etm_clock_source_t clk_src)
+{
+    (void)group_id;
+    (void)clk_src;
+}
 
 /**
  * @brief Reset the ETM module

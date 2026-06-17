@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,7 +26,7 @@
 #include "esp_partition.h"
 #include "esp_flash.h"
 #if !CONFIG_IDF_TARGET_LINUX
-#include "esp_flash_encrypt.h"
+#include "esp_efuse.h"
 #endif
 #include "spi_flash_mmap.h"
 #include "esp_log.h"
@@ -80,7 +80,7 @@ static bool is_partition_encrypted(bool encryption_config, esp_partition_type_t 
     return false;
 #else
     bool ret_encrypted = encryption_config;
-    if (!esp_flash_encryption_enabled()) {
+    if (!esp_efuse_is_flash_encryption_enabled()) {
         /* If flash encryption is not turned on, no partitions should be treated as encrypted */
         ret_encrypted = false;
     } else if (type == ESP_PARTITION_TYPE_APP
@@ -477,7 +477,12 @@ esp_err_t esp_partition_register_external(esp_flash_t *flash_chip, size_t offset
     if (flash_chip == NULL) {
         flash_chip = esp_flash_default_chip;
     }
-    if (offset + size > flash_chip->size) {
+    uint32_t flash_size = 0;
+    esp_err_t ret = esp_flash_get_size(flash_chip, &flash_size);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+    if (offset + size > flash_size) {
         return ESP_ERR_INVALID_SIZE;
     }
 #endif // CONFIG_IDF_TARGET_LINUX
@@ -596,34 +601,63 @@ esp_err_t esp_partition_copy(const esp_partition_t* dest_part, uint32_t dest_off
     uint32_t src_current_offset = src_offset;
     uint32_t dest_current_offset = dest_offset;
     size_t remaining_size = size;
-    /* Read the portion that fits in the free MMU pages */
-    uint32_t mmu_free_pages_count = spi_flash_mmap_get_free_pages(SPI_FLASH_MMAP_DATA);
-    int attempts_for_mmap = 0;
-    while (remaining_size > 0) {
-        uint32_t chunk_size = MIN(remaining_size, mmu_free_pages_count * SPI_FLASH_MMU_PAGE_SIZE);
-        esp_partition_mmap_handle_t src_part_map;
-        const void *src_data = NULL;
-        error = esp_partition_mmap(src_part, src_current_offset, chunk_size, ESP_PARTITION_MMAP_DATA, &src_data, &src_part_map);
-        if (error == ESP_OK) {
-            attempts_for_mmap = 0;
+    if (src_part->encrypted) {
+        /* Read the portion that fits in the free MMU pages */
+        uint32_t mmu_free_pages_count = spi_flash_mmap_get_free_pages(SPI_FLASH_MMAP_DATA);
+        int attempts_for_mmap = 0;
+        while (remaining_size > 0) {
+            uint32_t chunk_size = MIN(remaining_size, mmu_free_pages_count * SPI_FLASH_MMU_PAGE_SIZE);
+            esp_partition_mmap_handle_t src_part_map;
+            const void *src_data = NULL;
+            error = esp_partition_mmap(src_part, src_current_offset, chunk_size, ESP_PARTITION_MMAP_DATA, &src_data, &src_part_map);
+            if (error == ESP_OK) {
+                attempts_for_mmap = 0;
+                error = esp_partition_write(dest_part, dest_current_offset, src_data, chunk_size);
+                if (error != ESP_OK) {
+                    ESP_LOGE(TAG, "Writing to destination partition failed (err=0x%x)", error);
+                    esp_partition_munmap(src_part_map);
+                    break;
+                }
+                esp_partition_munmap(src_part_map);
+            } else {
+                mmu_free_pages_count = spi_flash_mmap_get_free_pages(SPI_FLASH_MMAP_DATA);
+                chunk_size = 0;
+                if (++attempts_for_mmap >= 3) {
+                    ESP_LOGE(TAG, "Failed to mmap source partition after a few attempts, mmu_free_pages = %" PRIu32 " (err=0x%x)", mmu_free_pages_count, error);
+                    break;
+                }
+            }
+            src_current_offset += chunk_size;
+            dest_current_offset += chunk_size;
+            remaining_size -= chunk_size;
+        }
+    } else {
+        // In case of unencrypted partition, we can read and write directly
+        while (remaining_size > 0) {
+            uint32_t chunk_size = MIN(remaining_size, SPI_FLASH_SEC_SIZE);
+            void *src_data = malloc(chunk_size);
+            if (src_data == NULL) {
+                ESP_LOGE(TAG, "Failed to allocate memory for chunk (size: %" PRIu32 ")", chunk_size);
+                error = ESP_ERR_NO_MEM;
+                break;
+            }
+            error = esp_partition_read(src_part, src_current_offset, src_data, chunk_size);
+            if (error != ESP_OK) {
+                ESP_LOGE(TAG, "Reading from source partition failed (err=0x%x)", error);
+                free(src_data);
+                break;
+            }
             error = esp_partition_write(dest_part, dest_current_offset, src_data, chunk_size);
             if (error != ESP_OK) {
                 ESP_LOGE(TAG, "Writing to destination partition failed (err=0x%x)", error);
-                esp_partition_munmap(src_part_map);
+                free(src_data);
                 break;
             }
-            esp_partition_munmap(src_part_map);
-        } else {
-            mmu_free_pages_count = spi_flash_mmap_get_free_pages(SPI_FLASH_MMAP_DATA);
-            chunk_size = 0;
-            if (++attempts_for_mmap >= 3) {
-                ESP_LOGE(TAG, "Failed to mmap source partition after a few attempts, mmu_free_pages = %" PRIu32 " (err=0x%x)", mmu_free_pages_count, error);
-                break;
-            }
+            free(src_data);
+            src_current_offset += chunk_size;
+            dest_current_offset += chunk_size;
+            remaining_size -= chunk_size;
         }
-        src_current_offset += chunk_size;
-        dest_current_offset += chunk_size;
-        remaining_size -= chunk_size;
     }
     return error;
 }
@@ -721,29 +755,26 @@ esp_err_t esp_partition_ptr_get_blockdev(const esp_partition_t* partition, esp_b
 
     ESP_BLOCKDEV_FLAGS_INST_CONFIG_DEFAULT(out->device_flags);
 
-    if(partition->readonly) {
-        out->device_flags.read_only = 1;
-        out->geometry.write_size = 0;
-        out->geometry.erase_size = 0;
-        out->geometry.recommended_write_size = 0;
-        out->geometry.recommended_erase_size = 0;
+    out->device_flags.read_only = partition->readonly ? 1 : 0;
+
+    if (partition->encrypted) {
+        out->geometry.write_size = 16;
+        out->geometry.recommended_write_size = 16;
+    } else {
+        out->geometry.write_size = 1;
+        out->geometry.recommended_write_size = 1;
     }
-    else {
-        if (partition->encrypted) {
-            out->geometry.write_size = 16;
-            out->geometry.recommended_write_size = 16;
-        } else {
-            out->geometry.write_size = 1;
-            out->geometry.recommended_write_size = 1;
-        }
-        out->geometry.erase_size = partition->erase_size;
-        out->geometry.recommended_erase_size = partition->erase_size;
-    }
+
+    out->geometry.erase_size = partition->erase_size;
+    out->geometry.recommended_erase_size = partition->erase_size;
+
     out->geometry.read_size = 1;
     out->geometry.recommended_read_size = 1;
+
     out->geometry.disk_size = partition->size;
 
     out->ops = &s_bdl_ops;
+
     *out_bdl_handle_ptr = out;
 
     return ESP_OK;

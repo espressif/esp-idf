@@ -11,14 +11,12 @@ def test_bootloader_support(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.host_test
 @pytest.mark.qemu
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_bootloader_support_qemu_esp32(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.host_test
 @pytest.mark.qemu
 @idf_parametrize('target', ['esp32c3'], indirect=['target'])
 def test_bootloader_support_qemu_esp32c3(dut: Dut) -> None:

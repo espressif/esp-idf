@@ -1,59 +1,22 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdbool.h>
 #include "soc/soc_caps.h"
+#include "soc/interrupts.h"
 #include "hal/assert.h"
 #include "hal/apm_hal.h"
 #include "hal/apm_ll.h"
 #include "hal/log.h"
+#if !SOC_APM_CTRL_FILTER_SUPPORTED
+#include "hal/axi_icm_ll.h"
+#include "hal/lp_sys_ll.h"
+#endif
 
-#if SOC_IS(ESP32P4)
-void apm_hal_hp_peri_access_enable(apm_ll_master_id_t master_id, apm_ll_hp_peri_t hp_peri,
-                                   apm_ll_secure_mode_t sec_mode, bool enable)
-{
-    apm_ll_hp_peri_access_enable(master_id, hp_peri, sec_mode, enable);
-}
-
-void apm_hal_lp_peri_access_enable(apm_ll_lp_peri_t lp_peri, bool enable)
-{
-    apm_ll_lp_peri_access_enable(lp_peri, enable);
-}
-
-void apm_hal_peri_region_config(uint32_t regn_num, uint32_t regn_low_addr, uint32_t regn_high_addr)
-{
-    apm_ll_peri_region_config(regn_num, regn_low_addr, regn_high_addr);
-}
-
-int apm_hal_peri_region_pms(apm_ll_master_id_t master_id, apm_ll_secure_mode_t sec_mode,
-                            uint32_t regn_num, uint32_t regn_pms)
-{
-    return apm_ll_peri_region_pms(master_id, sec_mode, regn_num, regn_pms);
-}
-
-int apm_hal_apm_ctrl_clk_gating_enable(apm_ll_apm_ctrl_t apm_ctrl, bool enable)
-{
-    return apm_ll_apm_ctrl_clk_gating_enable(apm_ctrl, enable);
-}
-
-void apm_hal_dma_region_config(uint32_t regn_num, uint32_t regn_low_addr, uint32_t regn_high_addr)
-{
-    apm_ll_dma_region_set_low_address(regn_num, regn_low_addr);
-    apm_ll_dma_region_set_high_address(regn_num, regn_high_addr);
-}
-
-void apm_hal_dma_region_pms(apm_hal_dma_region_config_data_t *pms_data)
-{
-    HAL_ASSERT(pms_data);
-
-    apm_ll_dma_region_r_pms(pms_data->dma_master, pms_data->pms_r_mask);
-    apm_ll_dma_region_w_pms(pms_data->dma_master, pms_data->pms_w_mask);
-}
-#else
-
+#if SOC_APM_CTRL_FILTER_SUPPORTED
 void apm_hal_set_master_sec_mode(uint32_t master_mask, apm_security_mode_t mode)
 {
     master_mask &= APM_MASTER_MASK_ALL;
@@ -522,5 +485,298 @@ void apm_hal_enable_ctrl_clk_gating(apm_ctrl_module_t ctrl_mod, bool enable)
         break;
     }
 }
+#else
+void apm_hal_dma_pms_set_region_bounds(uint32_t regn_num, uint32_t start_addr, uint32_t end_addr)
+{
+    apm_ll_dma_pms_set_region_start_addr(regn_num, start_addr);
+    apm_ll_dma_pms_set_region_end_addr(regn_num, end_addr);
+}
 
-#endif //SOC_IS(ESP32P4)
+void apm_hal_dma_pms_set_master_region_attr(apm_master_dma_id_t mid, uint32_t regn_rd_mask, uint32_t regn_wr_mask)
+{
+    apm_ll_dma_pms_set_region_attr_r(mid, regn_rd_mask);
+    apm_ll_dma_pms_set_region_attr_w(mid, regn_wr_mask);
+}
+
+void apm_hal_dma_pms_set_region_cfg(uint32_t regn_count, const apm_hal_pms_regn_cfg_t *regn_cfg)
+{
+    HAL_ASSERT(regn_cfg);
+
+    for (uint32_t idx = 0; idx < regn_count; idx++) {
+        const apm_hal_pms_regn_cfg_t *region = &regn_cfg[idx];
+        apm_hal_dma_pms_set_region_bounds(region->regn_num, region->regn_start_addr, region->regn_end_addr);
+    }
+}
+
+void apm_hal_dma_pms_set_master_cfg(uint32_t master_count, const apm_hal_pms_master_cfg_t *master_cfg)
+{
+    HAL_ASSERT(master_cfg);
+
+    for (uint32_t idx = 0; idx < master_count; idx++) {
+        const apm_hal_pms_master_cfg_t *master = &master_cfg[idx];
+        apm_ll_dma_pms_set_region_attr_r(master->dma.id, master->dma.regn_pms_rd);
+        apm_ll_dma_pms_set_region_attr_w(master->dma.id, master->dma.regn_pms_wr);
+    }
+}
+
+void apm_hal_hp2lp_peri_pms_set_hpcpu_access(int core_id, apm_security_mode_t mode, uint32_t enable_mask)
+{
+    HAL_ASSERT(core_id < SOC_CPU_CORES_NUM);
+
+    enable_mask &= APM_SLAVE_LP_PERI_ALL_MASK;
+    for (int sid = 0; sid < APM_SLAVE_LP_PERIPH_MAX; sid++) {
+        apm_ll_hp2lp_peri_pms_enable_hpcpu_access(core_id, mode, (apm_slave_lp_periph_t)sid,
+                                                  (enable_mask >> sid) & 1U);
+    }
+}
+
+void apm_hal_lp_peri_pms_set_lpcpu_access(uint32_t enable_mask)
+{
+    enable_mask &= APM_SLAVE_LP_PERI_ALL_MASK;
+    for (int sid = 0; sid < APM_SLAVE_LP_PERIPH_MAX; sid++) {
+        apm_ll_lp_peri_pms_enable_lpcpu_access((apm_slave_lp_periph_t)sid,
+                                               (enable_mask >> sid) & 1U);
+    }
+}
+
+void apm_hal_hp_peri_pms_set_hpcpu_access(int core_id, apm_security_mode_t mode, const apm_hal_pms_hp_peri_cfg_t *cfg)
+{
+    HAL_ASSERT(core_id < SOC_CPU_CORES_NUM);
+    HAL_ASSERT(cfg);
+
+    const uint32_t cpu_peri = cfg->cpu_peri & APM_SLAVE_CPU_PERI_ALL_MASK;
+    const uint32_t hp_peri0 = cfg->hp_peri0 & APM_SLAVE_HP_PERI0_ALL_MASK;
+    const uint64_t hp_peri1 = cfg->hp_peri1 & APM_SLAVE_HP_PERI1_ALL_MASK;
+
+    /* CPU_PERI */
+    for (int sid = 0; sid < APM_SLAVE_CPU_PERIPH_MAX; sid++) {
+        apm_ll_hp_peri_pms_enable_hpcpu_cpu_peri_access(core_id, mode, (apm_slave_cpu_periph_id_t)sid,
+                                                        (cpu_peri >> sid) & 1U);
+    }
+    /* HP_PERI0 */
+    for (int sid = 0; sid < APM_SLAVE_HP_PERIPH0_MAX; sid++) {
+        apm_ll_hp_peri_pms_enable_hpcpu_hp_peri0_access(core_id, mode, (apm_slave_hp_periph0_id_t)sid,
+                                                        (hp_peri0 >> sid) & 1U);
+    }
+    /* HP_PERI1 */
+    for (int sid = 0; sid < APM_SLAVE_HP_PERIPH1_MAX; sid++) {
+        apm_ll_hp_peri_pms_enable_hpcpu_hp_peri1_access(core_id, mode, (apm_slave_hp_periph1_id_t)sid,
+                                                        (hp_peri1 >> sid) & 1ULL);
+    }
+}
+
+void apm_hal_lp2hp_peri_pms_set_lpcpu_access(const apm_hal_pms_hp_peri_cfg_t *cfg)
+{
+    HAL_ASSERT(cfg);
+
+    const uint32_t cpu_peri = cfg->cpu_peri & APM_SLAVE_CPU_PERI_ALL_MASK;
+    const uint32_t hp_peri0 = cfg->hp_peri0 & APM_SLAVE_HP_PERI0_ALL_MASK;
+    const uint64_t hp_peri1 = cfg->hp_peri1 & APM_SLAVE_HP_PERI1_ALL_MASK;
+
+    /* CPU_PERI */
+    for (int sid = 0; sid < APM_SLAVE_CPU_PERIPH_MAX; sid++) {
+        apm_ll_lp2hp_peri_pms_enable_lpcpu_cpu_peri_access((apm_slave_cpu_periph_id_t)sid,
+                                                           (cpu_peri >> sid) & 1U);
+    }
+    /* HP_PERI0 */
+    for (int sid = 0; sid < APM_SLAVE_HP_PERIPH0_MAX; sid++) {
+        apm_ll_lp2hp_peri_pms_enable_lpcpu_hp_peri0_access((apm_slave_hp_periph0_id_t)sid,
+                                                           (hp_peri0 >> sid) & 1U);
+    }
+    /* HP_PERI1 */
+    for (int sid = 0; sid < APM_SLAVE_HP_PERIPH1_MAX; sid++) {
+        apm_ll_lp2hp_peri_pms_enable_lpcpu_hp_peri1_access((apm_slave_hp_periph1_id_t)sid,
+                                                           (hp_peri1 >> sid) & 1ULL);
+    }
+}
+
+void apm_hal_lp_peri_pms_set_region_bounds(uint32_t regn_num, uint32_t start_addr, uint32_t end_addr)
+{
+    apm_ll_lp_peri_pms_set_region_start_addr(regn_num, start_addr);
+    apm_ll_lp_peri_pms_set_region_end_addr(regn_num, end_addr);
+}
+
+void apm_hal_lp_peri_pms_set_master_region_attr(apm_master_id_t mid, apm_security_mode_t mode, uint32_t regn_pms_mask)
+{
+    switch (mid) {
+    case APM_MASTER_HPCPU0:
+        apm_ll_lp_peri_pms_hpcpu0_set_region_access(mode, regn_pms_mask);
+        break;
+    case APM_MASTER_HPCPU1:
+        apm_ll_lp_peri_pms_hpcpu1_set_region_access(mode, regn_pms_mask);
+        break;
+    case APM_MASTER_LPCPU:
+        apm_ll_lp_peri_pms_lpcpu_set_region_access(regn_pms_mask);
+        break;
+    default:
+        break;
+    }
+}
+
+void apm_hal_lp_peri_pms_set_region_cfg(uint32_t regn_count, const apm_hal_pms_regn_cfg_t *regn_cfg)
+{
+    HAL_ASSERT(regn_cfg);
+
+    for (uint32_t idx = 0; idx < regn_count; idx++) {
+        const apm_hal_pms_regn_cfg_t *region = &regn_cfg[idx];
+        apm_hal_lp_peri_pms_set_region_bounds(region->regn_num, region->regn_start_addr, region->regn_end_addr);
+    }
+}
+
+void apm_hal_lp_peri_pms_set_master_cfg(uint32_t master_count, const apm_hal_pms_master_cfg_t *master_cfg)
+{
+    HAL_ASSERT(master_cfg);
+
+    for (int idx = 0; idx < master_count; idx++) {
+        const apm_hal_pms_master_cfg_t *master = &master_cfg[idx];
+        apm_hal_lp_peri_pms_set_master_region_attr(master->lp_peri.id, master->lp_peri.mode, master->lp_peri.regn_pms);
+    }
+}
+
+void apm_hal_enable_intr(apm_ctrl_module_t ctrl_mod, bool enable)
+{
+    uint32_t mask = 0;
+
+    switch (ctrl_mod) {
+    case APM_CTRL_DMA_PMS:
+    case APM_CTRL_HP_PERI_PMS:
+    case APM_CTRL_LP2HP_PERI_PMS:
+        mask = BIT(AXI_ICM_INTR_SYS_ADDRHOLE) | BIT(AXI_ICM_INTR_CPU_ADDRHOLE);
+        axi_icm_ll_enable_intr(mask, enable);
+        break;
+    case APM_CTRL_LP_PERI_PMS:
+    case APM_CTRL_HP2LP_PERI_PMS:
+        mask = BIT(LP_SYS_INTR_LP_ADDRHOLE) | BIT(LP_SYS_INTR_IDBUS_ADDRHOLE);
+        lp_sys_ll_enable_intr(mask, enable);
+        break;
+    default:
+        (void)mask;
+        break;
+    }
+}
+
+void apm_hal_clear_intr(apm_ctrl_module_t ctrl_mod)
+{
+    uint32_t mask = 0;
+
+    switch (ctrl_mod) {
+    case APM_CTRL_DMA_PMS:
+    case APM_CTRL_HP_PERI_PMS:
+    case APM_CTRL_LP2HP_PERI_PMS:
+        mask = BIT(AXI_ICM_INTR_SYS_ADDRHOLE) | BIT(AXI_ICM_INTR_CPU_ADDRHOLE);
+        axi_icm_ll_clear_intr(mask);
+        break;
+    case APM_CTRL_LP_PERI_PMS:
+    case APM_CTRL_HP2LP_PERI_PMS:
+        mask = BIT(LP_SYS_INTR_LP_ADDRHOLE) | BIT(LP_SYS_INTR_IDBUS_ADDRHOLE);
+        lp_sys_ll_clear_intr(mask);
+        break;
+    default:
+        (void)mask;
+        break;
+    }
+}
+
+uint32_t apm_hal_get_intr_status(void)
+{
+    uint32_t status = 0, mask = 0;
+
+    mask = BIT(AXI_ICM_INTR_SYS_ADDRHOLE) | BIT(AXI_ICM_INTR_CPU_ADDRHOLE);
+    uint32_t hp_intr_st = axi_icm_ll_get_intr_status(mask);
+    if (hp_intr_st & BIT(AXI_ICM_INTR_SYS_ADDRHOLE)) {
+        status |= APM_EXCP_HP_AXI;
+    }
+    if (hp_intr_st & BIT(AXI_ICM_INTR_CPU_ADDRHOLE)) {
+        status |= APM_EXCP_HP_AHB;
+    }
+
+    mask = BIT(LP_SYS_INTR_LP_ADDRHOLE) | BIT(LP_SYS_INTR_IDBUS_ADDRHOLE);
+    uint32_t lp_intr_st = lp_sys_ll_get_intr_status(mask);
+    if (lp_intr_st & BIT(LP_SYS_INTR_LP_ADDRHOLE)) {
+        status |= APM_EXCP_LP_AHB;
+    }
+    if (lp_intr_st & BIT(LP_SYS_INTR_IDBUS_ADDRHOLE)) {
+        status |= APM_EXCP_LP_IDBUS;
+    }
+
+    return status;
+}
+
+void apm_hal_get_exception_info(apm_ctrl_exception_type type, apm_ctrl_exception_info_t *excp_info)
+{
+    HAL_ASSERT(excp_info);
+
+    switch (type) {
+    case APM_EXCP_HP_AXI:
+    case APM_EXCP_HP_AHB: {
+        axi_icm_ll_excp_info_t info = {0};
+        if (type == APM_EXCP_HP_AXI) {
+            axi_icm_ll_get_sys_excp_info(&info);
+            /* NOTE: Master ID = 4-bit CID + 4-bit UID, extracting only CID here */
+            info.id = (info.id >> 0x04U) & 0x0FU;
+        } else {
+            axi_icm_ll_get_cpu_excp_info(&info);
+        }
+        excp_info->addr = info.addr;
+        excp_info->id = info.id;
+        excp_info->is_wr = info.is_wr;
+        excp_info->is_secure = info.is_secure;
+        break;
+    }
+    case APM_EXCP_LP_AHB:
+    case APM_EXCP_LP_IDBUS: {
+        lp_sys_ll_excp_info_t info = {0};
+        if (type == APM_EXCP_LP_AHB) {
+            lp_sys_ll_get_ahb_excp_info(&info);
+        } else {
+            lp_sys_ll_get_idbus_excp_info(&info);
+        }
+        excp_info->addr = info.addr;
+        excp_info->id = info.id;
+        excp_info->is_wr = info.is_wr;
+        excp_info->is_secure = info.is_secure;
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+int apm_hal_get_intr_src_num(apm_ctrl_module_t ctrl_mod)
+{
+    switch (ctrl_mod) {
+    case APM_CTRL_DMA_PMS:
+    case APM_CTRL_HP_PERI_PMS:
+    case APM_CTRL_LP2HP_PERI_PMS:
+        return ETS_SYS_ICM_INTR_SOURCE;
+    case APM_CTRL_LP_PERI_PMS:
+    case APM_CTRL_HP2LP_PERI_PMS:
+        return ETS_LP_SYSREG_INTR_SOURCE;
+    default:
+        return -1;
+    }
+}
+
+void apm_hal_enable_ctrl_clk_gating(apm_ctrl_module_t ctrl_mod, bool enable)
+{
+    switch (ctrl_mod) {
+    case APM_CTRL_DMA_PMS:
+        apm_ll_dma_pms_enable_clk_gating(enable);
+        break;
+    case APM_CTRL_HP_PERI_PMS:
+        apm_ll_hp_peri_pms_enable_clk_gating(enable);
+        break;
+    case APM_CTRL_HP2LP_PERI_PMS:
+        apm_ll_hp2lp_peri_pms_enable_clk_gating(enable);
+        break;
+    case APM_CTRL_LP_PERI_PMS:
+        apm_ll_lp_peri_pms_enable_clk_gating(enable);
+        break;
+    case APM_CTRL_LP2HP_PERI_PMS:
+        apm_ll_lp2hp_peri_pms_enable_clk_gating(enable);
+        break;
+    default:
+        break;
+    }
+}
+#endif // SOC_APM_CTRL_FILTER_SUPPORTED

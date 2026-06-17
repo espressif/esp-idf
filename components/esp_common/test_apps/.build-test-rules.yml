@@ -8,3 +8,9 @@ components/esp_common/test_apps/esp_common:
   depends_components:
     - esp_common
     - esp_system # Defines the section placement for attributes
+
+components/esp_common/test_apps/section_macros:
+  enable:
+    - if: IDF_TARGET == "linux"
+  depends_components:
+    - esp_common

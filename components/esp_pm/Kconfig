@@ -241,6 +241,44 @@ menu "Power Management"
             NOTE: Enabling these callbacks may change sleep duration calculations based on time spent in callback and
             hence it is highly recommended to keep them as short as possible
 
+    config PM_LIGHTSLEEP_TICK_OVERFLOW_PROTECTION
+        bool "Enable light sleep tick overflow protection"
+        depends on FREERTOS_USE_TICKLESS_IDLE
+        default n
+        help
+            Limits tick compensation after light sleep wakeup to prevent vTaskStepTick() assertion
+            failure when actual wakeup overhead exceeds estimation (due to cache misses, CPU
+            frequency changes, or flash latency variations).
+
+            When enabled:
+              - Silently limits slept_ticks to xExpectedIdleTime when oversleep is within tolerance
+                (configured by PM_LIGHTSLEEP_TICK_OVERFLOW_TOLERANCE), preventing assertion failure
+              - Does not limit when oversleep exceeds tolerance (may indicate a bug), assertion failure may occur
+              - May lose ticks in rare cases, causing xTickCount to lag behind esp_timer
+
+            When disabled (default):
+              - Accurate tick compensation, better precision
+              - May trigger assertion failure and system crash if overslept
+
+            Keep disabled by default to maintain RTOS tick accuracy. Enable only when you experience
+            assertion failures related to vTaskStepTick() and can accept slight inaccuracy of RTOS
+            tick time compared to real time.
+
+    config PM_LIGHTSLEEP_TICK_OVERFLOW_TOLERANCE
+        int "Light sleep tick overflow tolerance"
+        depends on PM_LIGHTSLEEP_TICK_OVERFLOW_PROTECTION
+        default 2
+        range 1 10
+        help
+            Maximum number of ticks that can be overslept before triggering.
+            When oversleep is within this tolerance, the system silently limits slept_ticks to
+            prevent assertion failure. When oversleep exceeds this tolerance, assertion failure
+            may occur and system may crash.
+
+            Higher values provide more tolerance for estimation variance but may hide real issues
+            and cause more tick loss, leading to greater RTOS tick time inaccuracy compared to real time.
+            Lower values provide better RTOS tick accuracy but may cause false positives.
+
     config PM_WORKAROUND_FREQ_LIMIT_ENABLED
         bool
         default y if SPI_FLASH_FREQ_LIMIT_C5_240MHZ
@@ -248,5 +286,29 @@ menu "Power Management"
             Workaround for frequency limit during encrypted flash writes.
             Only enabled when SPI_FLASH_FREQ_LIMIT_C5_240MHZ is enabled.
             This is an internal configuration, automatically set based on SPI Flash configuration.
+
+    config PM_SLP_SPIRAM_HALFSLEEP_ENABLED
+        bool "Enable halfsleep mode for PSRAM in light sleep"
+        depends on SPIRAM
+        default y
+        help
+            Enable PSRAM halfsleep mode feature to reduce power consumption during light sleep, if the PSRAM used
+            support halfsleep mode.
+
+            When enabled, the PSRAM chip will be configured to enter halfsleep mode (if applicable) before entering
+            light sleep. This reduces power consumption by:
+            1. Setting refresh rate to 0.5x
+            2. Setting PSRAM to halfsleep mode
+
+            The PSRAM will automatically exit halfsleep mode after waking up from light sleep.
+
+    config PM_SLP_SPIRAM_HALFSLEEP_EXIT_WAIT_DELAY
+        int "The time to wait for PSRAM to be able to access after exiting halfsleep mode (in us)"
+        depends on SPIRAM
+        default 150
+        range 50 250
+        help
+            Configure the delay time between waking up PSRAM halfsleep mode and the first access to PSRAM.
+            Refer to the tXHS parameter in datasheet of the used PSRAM to configure this option.
 
 endmenu # "Power Management"

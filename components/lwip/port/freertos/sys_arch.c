@@ -164,8 +164,12 @@ u32_t
 sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 {
   BaseType_t ret;
-
-  if (!timeout) {
+  /* * Protect against Integer Overflow:
+   * If timeout is 0 (LwIP infinite wait), or if it's so large that adding
+   * portTICK_PERIOD_MS would overflow the 32-bit unsigned integer,
+   * we force it to wait infinitely.
+   */
+  if (!timeout || timeout >= (UINT32_MAX - portTICK_PERIOD_MS)) {
     /* wait infinite */
     ret = xSemaphoreTake((QueueHandle_t)sem, portMAX_DELAY);
     LWIP_ASSERT("taking semaphore failed", ret == pdTRUE);

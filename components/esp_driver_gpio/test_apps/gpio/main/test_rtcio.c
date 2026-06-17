@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -235,7 +235,7 @@ TEST_CASE("RTCIO_output_hold_test", "[rtcio]")
 }
 #endif //SOC_RTCIO_HOLD_SUPPORTED
 
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT > 0)
+#if SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT > 0)
 /*
  * test interrupt functionality
  */
@@ -247,7 +247,7 @@ TEST_CASE("RTCIO_interrupt_test", "[rtcio]")
     TEST_ESP_OK(rtc_gpio_init(test_io));
     TEST_ESP_OK(rtc_gpio_set_direction(test_io, RTC_GPIO_MODE_INPUT_OUTPUT));
     TEST_ESP_OK(rtc_gpio_set_level(test_io, 0));
-    rtcio_ll_intr_enable(test_io, GPIO_INTR_HIGH_LEVEL);
+    rtcio_ll_intr_enable(rtc_io_idx, GPIO_INTR_HIGH_LEVEL);
 
     int cnt = 0;
     while (cnt < TEST_COUNT) {
@@ -260,7 +260,7 @@ TEST_CASE("RTCIO_interrupt_test", "[rtcio]")
     }
 
     TEST_ESP_OK(rtc_gpio_set_level(test_io, 0));
-    rtcio_ll_intr_enable(test_io, GPIO_INTR_POSEDGE);
+    rtcio_ll_intr_enable(rtc_io_idx, GPIO_INTR_POSEDGE);
     cnt = 0;
     while (cnt < TEST_COUNT) {
         TEST_ESP_OK(rtc_gpio_set_level(test_io, 1));
@@ -272,10 +272,10 @@ TEST_CASE("RTCIO_interrupt_test", "[rtcio]")
         vTaskDelay(100 / portTICK_PERIOD_MS);
     }
 
-    rtcio_ll_intr_enable(test_io, GPIO_INTR_DISABLE);
+    rtcio_ll_intr_enable(rtc_io_idx, GPIO_INTR_DISABLE);
     TEST_ESP_OK(rtc_gpio_deinit(test_io));
 }
-#endif //SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT > 0)
+#endif //SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT > 0)
 #endif //SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
 #if SOC_DEEP_SLEEP_SUPPORTED
@@ -290,6 +290,7 @@ static void rtcio_deep_sleep_hold_test_first_stage(void)
 
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(2000000));
 
+    gpio_reset_pin(io_num);
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_INPUT_OUTPUT,

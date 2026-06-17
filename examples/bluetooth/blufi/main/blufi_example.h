@@ -1,11 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
 
 #pragma once
+
+#include "soc/soc_caps.h"
 
 #define BLUFI_EXAMPLE_TAG "BLUFI_EXAMPLE"
 #define BLUFI_INFO(fmt, ...)   ESP_LOGI(BLUFI_EXAMPLE_TAG, fmt, ##__VA_ARGS__)
@@ -18,6 +20,11 @@ uint16_t blufi_crc_checksum(uint8_t iv8, uint8_t *data, int len);
 
 int blufi_security_init(void);
 void blufi_security_deinit(void);
+#if !SOC_MPI_SUPPORTED
+void blufi_dh_pregen_start(void);
+void blufi_dh_pregen_start_with_cb(void (*done_cb)(void));
+void blufi_dh_pregen_wait(void);
+#endif
 int esp_blufi_gap_register_callback(void);
 esp_err_t esp_blufi_host_init(void);
 esp_err_t esp_blufi_host_and_cb_init(esp_blufi_callbacks_t *callbacks);

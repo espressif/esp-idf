@@ -186,6 +186,9 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg) {
         ESP_LOGI(TAG, "disconnected from peer; reason=%d",
                  event->disconnect.reason);
 
+        /* Reset heart rate subscription state */
+        gatt_svr_reset_heart_rate_subscription();
+
         /* Restart advertising */
         start_advertising();
         return rc;

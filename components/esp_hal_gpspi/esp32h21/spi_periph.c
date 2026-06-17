@@ -35,7 +35,7 @@ const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM] = {
         .irq = ETS_GPSPI2_INTR_SOURCE,
         .irq_dma = -1,
         .hw = &GPSPI2,
-        .func = SPI2_FUNC_NUM,
+        .func = SPI2_FUNC_NUM_QUAD,
     }
 };
 

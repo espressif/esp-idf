@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,10 +10,13 @@
 #include "soc/soc.h"
 #include "soc/clk_tree_defs.h"
 #include "soc/pcr_struct.h"
+#include "soc/gpio_ext_reg.h"
 #include "soc/lp_clkrst_struct.h"
+#include "hal/clkout_channel.h"
 #include "soc/pmu_reg.h"
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_bbpll.h"
+#include "modem/i2c_ana_mst_reg.h"
 #include "hal/assert.h"
 #include "hal/log.h"
 #include "esp32h21/rom/rtc.h"
@@ -23,7 +26,7 @@
 #define MHZ                 (1000000)
 
 #define CLK_LL_PLL_48M_FREQ_MHZ   (48)
-// #define CLK_LL_PLL_64M_FREQ_MHZ   (64)
+#define CLK_LL_PLL_64M_FREQ_MHZ   (64)
 #define CLK_LL_PLL_96M_FREQ_MHZ   (96)
 
 #define CLK_LL_XTAL32K_CONFIG_DEFAULT() { \
@@ -53,7 +56,7 @@ typedef enum {
  * @brief XTAL32K_CLK configuration structure
  */
 typedef struct {
-    uint32_t dac : 6;
+    uint32_t dac : 3;
     uint32_t dres : 3;
     uint32_t dgm : 3;
     uint32_t dbuf: 1;
@@ -64,8 +67,7 @@ typedef struct {
  */
 static inline __attribute__((always_inline)) void clk_ll_bbpll_enable(void)
 {
-    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XPD_BB_I2C | PMU_TIE_HIGH_XPD_BBPLL | PMU_TIE_HIGH_XPD_BBPLL_I2C);
-    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_GLOBAL_BBPLL_ICG);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XPD_BBPLL | PMU_TIE_HIGH_XPD_BBPLL_I2C);
 }
 
 /**
@@ -73,32 +75,30 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_enable(void)
  */
 static inline __attribute__((always_inline)) void clk_ll_bbpll_disable(void)
 {
-    CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XPD_BB_I2C | PMU_TIE_HIGH_XPD_BBPLL | PMU_TIE_HIGH_XPD_BBPLL_I2C);
-    CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_GLOBAL_BBPLL_ICG);
-    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_XPD_BBPLL_I2C | PMU_TIE_LOW_XPD_BBPLL | PMU_TIE_LOW_XPD_BBPLL_I2C);
-    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_GLOBAL_BBPLL_ICG);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_GLOBAL_BBPLL_ICG) ;
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_XPD_BBPLL | PMU_TIE_LOW_XPD_BBPLL_I2C);
 }
 
-// /**
-//  * @brief Power up XTAL_X2 circuit
-//  */
-// static inline __attribute__((always_inline)) void clk_ll_xtal_x2_enable(void)
-// {
-//     CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_XPD_XTALX2);
-//     CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_GLOBAL_XTALX2_ICG);
-//     SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XTALX2);
-//     SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_GLOBAL_XTALX2_ICG);
-// }
+/**
+ * @brief Power up XTAL_X2 circuit
+ */
+static inline __attribute__((always_inline)) void clk_ll_xtal_x2_enable(void)
+{
+    CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_XPD_XTALX2);
+    CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_GLOBAL_XTALX2_ICG);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XTALX2);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_GLOBAL_XTALX2_ICG);
+}
 
-// /**
-//  * @brief Power down XTAL_X2 circuit
-//  */
-// static inline __attribute__((always_inline)) void clk_ll_xtal_x2_disable(void)
-// {
-//     CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XTALX2 | PMU_TIE_HIGH_GLOBAL_XTALX2_ICG);
-//     SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_XPD_XTALX2);
-//     SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_GLOBAL_XTALX2_ICG);
-// }
+/**
+ * @brief Power down XTAL_X2 circuit
+ */
+static inline __attribute__((always_inline)) void clk_ll_xtal_x2_disable(void)
+{
+    CLEAR_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XTALX2 | PMU_TIE_HIGH_GLOBAL_XTALX2_ICG);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_XPD_XTALX2);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_LOW_GLOBAL_XTALX2_ICG);
+}
 
 /**
  * @brief Enable the 32kHz crystal oscillator
@@ -277,15 +277,43 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32
     REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DLREF_SEL, oc_dlref_sel);
 }
 
-// /**
-//  * @brief Get XTAL_X2_CLK frequency
-//  *
-//  * @return XTAL_X2 clock frequency, in MHz
-//  */
-// static inline __attribute__((always_inline)) uint32_t clk_ll_xtal_x2_get_freq_mhz(void)
-// {
-//     return SOC_XTAL_FREQ_32M * 2;
-// }
+/**
+ * @brief Start BBPLL self-calibration
+ */
+static inline __attribute__((always_inline)) void clk_ll_bbpll_calibration_start(void)
+{
+    REG_CLR_BIT(I2C_ANA_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_HIGH);
+    REG_SET_BIT(I2C_ANA_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_LOW);
+}
+
+/**
+ * @brief Stop BBPLL self-calibration
+ */
+static inline __attribute__((always_inline)) void clk_ll_bbpll_calibration_stop(void)
+{
+    REG_CLR_BIT(I2C_ANA_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_LOW);
+    REG_SET_BIT(I2C_ANA_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_HIGH);
+}
+
+/**
+ * @brief Check whether BBPLL calibration is done
+ *
+ * @return True if calibration is done; otherwise false
+ */
+static inline __attribute__((always_inline)) bool clk_ll_bbpll_calibration_is_done(void)
+{
+    return REG_GET_BIT(I2C_ANA_MST_ANA_CONF0_REG, I2C_MST_BBPLL_CAL_DONE);
+}
+
+/**
+ * @brief Get XTAL_X2_CLK frequency
+ *
+ * @return XTAL_X2 clock frequency, in MHz
+ */
+static inline __attribute__((always_inline)) uint32_t clk_ll_xtal_x2_get_freq_mhz(void)
+{
+    return SOC_XTAL_FREQ_32M * 2;
+}
 
 /**
  * @brief To enable the change of soc_clk_sel, cpu_div_num, and ahb_div_num
@@ -313,9 +341,9 @@ static inline __attribute__((always_inline)) void clk_ll_cpu_set_src(soc_cpu_clk
     case SOC_CPU_CLK_SRC_RC_FAST:
         PCR.sysclk_conf.soc_clk_sel = 2;
         break;
-    // case SOC_CPU_CLK_SRC_XTAL_X2:
-    //     PCR.sysclk_conf.soc_clk_sel = 3;
-    //     break;
+    case SOC_CPU_CLK_SRC_XTAL_X2:
+        PCR.sysclk_conf.soc_clk_sel = 3;
+        break;
     default:
         // Unsupported CPU_CLK mux input sel
         abort();
@@ -337,8 +365,8 @@ static inline __attribute__((always_inline)) soc_cpu_clk_src_t clk_ll_cpu_get_sr
         return SOC_CPU_CLK_SRC_PLL;
     case 2:
         return SOC_CPU_CLK_SRC_RC_FAST;
-    // case 3:
-    //     return SOC_CPU_CLK_SRC_XTAL_X2;
+    case 3:
+        return SOC_CPU_CLK_SRC_XTAL_X2;
     default:
         // Invalid SOC_CLK_SEL value
         return SOC_CPU_CLK_SRC_INVALID;
@@ -594,6 +622,69 @@ static inline __attribute__((always_inline)) void clk_ll_rtc_slow_store_cal(uint
 static inline __attribute__((always_inline)) uint32_t clk_ll_rtc_slow_load_cal(void)
 {
     return REG_READ(RTC_SLOW_CLK_CAL_REG);
+}
+
+/************************** CLOCK OUTPUT **************************/
+/**
+ * @brief Clock output channel configuration
+ *
+ * @param clk_sig The clock signal source to be mapped to GPIOs
+ * @param channel_id The clock output channel ID
+ */
+static inline __attribute__((always_inline)) void clk_ll_bind_output_channel(soc_clkout_sig_id_t clk_sig, clock_out_channel_t channel_id)
+{
+    SET_PERI_REG_BITS(GPIO_EXT_PIN_CTRL_REG, CLKOUT_CHANNEL_MASK(channel_id), clk_sig, CLKOUT_CHANNEL_SHIFT(channel_id));
+}
+
+/**
+ * @brief Enable the clock output channel
+ *
+ * @param channel_id The clock output channel ID
+ * @param enable Enable or disable the clock output channel
+ */
+static inline __attribute__((always_inline)) void clk_ll_enable_output_channel(clock_out_channel_t channel_id, bool enable)
+{
+    // No such gating on the target
+    (void)channel_id;
+    (void)enable;
+}
+
+/**
+ * @brief Output the mapped clock after frequency division
+ *
+ * @param channel_id The clock output channel ID
+ * @param divider Clock frequency division value
+ */
+static inline __attribute__((always_inline)) void clk_ll_set_output_channel_divider(clock_out_channel_t channel_id, uint32_t divider)
+{
+    // No divider on the target
+    HAL_ASSERT(divider == 1);
+}
+
+/**
+ * @brief Enable/Disable the clock gate for clock output signal source
+ *
+ * @param clk_src The clock output signal source
+ * @param en Enable or disable the clock output signal source
+ */
+static inline void clk_ll_enable_clkout_source(soc_clkout_sig_id_t clk_src, bool en)
+{
+    switch (clk_src) {
+    case CLKOUT_SIG_MODEM_8M:
+        PCR.ctrl_clk_out_en.clk8_oen = en;
+        break;
+    case CLKOUT_SIG_MODEM_16M:
+        PCR.ctrl_clk_out_en.clk16_oen = en;
+        break;
+    case CLKOUT_SIG_MODEM_32M:
+        PCR.ctrl_clk_out_en.clk32_oen = en;
+        break;
+    case CLKOUT_SIG_XTAL:
+        PCR.ctrl_clk_out_en.clk_xtal_oen = en;
+        break;
+    default:
+        break;
+    }
 }
 
 #ifdef __cplusplus

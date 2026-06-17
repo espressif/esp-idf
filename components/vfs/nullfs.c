@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,39 +54,39 @@ static const char* TAG = "nullfs";
 
 static vfs_null_ctx_t g_fds = 0;
 
-static ssize_t vfs_null_write(int fd, const void *data, size_t size);
-static off_t vfs_null_lseek(int fd, off_t offset, int whence);
-static ssize_t vfs_null_read(int fd, void *data, size_t size);
-static ssize_t vfs_null_pread(int fd, void *data, size_t size, off_t offset);
-static ssize_t vfs_null_pwrite(int fd, const void *data, size_t size, off_t offset);
-static int vfs_null_open(const char* path, int flags, int mode);
-static int vfs_null_close(int fd);
-static int vfs_null_fstat(int fd, struct stat *st);
+static ssize_t vfs_null_write(void *ctx, int fd, const void *data, size_t size);
+static off_t vfs_null_lseek(void *ctx, int fd, off_t offset, int whence);
+static ssize_t vfs_null_read(void *ctx, int fd, void *data, size_t size);
+static ssize_t vfs_null_pread(void *ctx, int fd, void *data, size_t size, off_t offset);
+static ssize_t vfs_null_pwrite(void *ctx, int fd, const void *data, size_t size, off_t offset);
+static int vfs_null_open(void *ctx, const char* path, int flags, int mode);
+static int vfs_null_close(void *ctx, int fd);
+static int vfs_null_fstat(void *ctx, int fd, struct stat *st);
 #if CONFIG_VFS_SUPPORT_DIR
-static int vfs_null_stat(const char* path, struct stat *st);
+static int vfs_null_stat(void *ctx, const char* path, struct stat *st);
 #endif // CONFIG_VFS_SUPPORT_DIR
-static int vfs_null_fcntl(int fd, int cmd, int arg);
-static int vfs_null_ioctl(int fd, int cmd, va_list args);
-static int vfs_null_fsync(int fd);
+static int vfs_null_fcntl(void *ctx, int fd, int cmd, int arg);
+static int vfs_null_ioctl(void *ctx, int fd, int cmd, va_list args);
+static int vfs_null_fsync(void *ctx, int fd);
 
 #if CONFIG_VFS_SUPPORT_DIR
 static const esp_vfs_dir_ops_t s_vfs_null_dir = {
-    .stat = &vfs_null_stat,
+    .stat_p = &vfs_null_stat,
 };
 #endif // CONFIG_VFS_SUPPORT_DIR
 
 static const esp_vfs_fs_ops_t s_vfs_null = {
-    .write = &vfs_null_write,
-    .lseek = &vfs_null_lseek,
-    .read = &vfs_null_read,
-    .pread = &vfs_null_pread,
-    .pwrite = &vfs_null_pwrite,
-    .open = &vfs_null_open,
-    .close = &vfs_null_close,
-    .fstat = &vfs_null_fstat,
-    .fcntl = &vfs_null_fcntl,
-    .ioctl = &vfs_null_ioctl,
-    .fsync = &vfs_null_fsync,
+    .write_p = &vfs_null_write,
+    .lseek_p = &vfs_null_lseek,
+    .read_p = &vfs_null_read,
+    .pread_p = &vfs_null_pread,
+    .pwrite_p = &vfs_null_pwrite,
+    .open_p = &vfs_null_open,
+    .close_p = &vfs_null_close,
+    .fstat_p = &vfs_null_fstat,
+    .fcntl_p = &vfs_null_fcntl,
+    .ioctl_p = &vfs_null_ioctl,
+    .fsync_p = &vfs_null_fsync,
 #if CONFIG_VFS_SUPPORT_DIR
     .dir = &s_vfs_null_dir,
 #endif // CONFIG_VFS_SUPPORT_DIR
@@ -99,10 +99,10 @@ const esp_vfs_fs_ops_t *esp_vfs_null_get_vfs(void)
 
 esp_err_t esp_vfs_null_register(void)
 {
-    return esp_vfs_register_fs("/dev/null", &s_vfs_null, ESP_VFS_FLAG_STATIC, NULL);
+    return esp_vfs_register_fs("/dev/null", &s_vfs_null, ESP_VFS_FLAG_STATIC | ESP_VFS_FLAG_CONTEXT_PTR, NULL);
 }
 
-static ssize_t vfs_null_write(int fd, const void *data, size_t size)
+static ssize_t vfs_null_write(__attribute__((unused)) void *ctx, int fd, const void *data, size_t size)
 {
     UNUSED(data);
 
@@ -114,7 +114,7 @@ static ssize_t vfs_null_write(int fd, const void *data, size_t size)
     return -1;
 }
 
-static off_t vfs_null_lseek(int fd, off_t offset, int whence)
+static off_t vfs_null_lseek(__attribute__((unused)) void *ctx, int fd, off_t offset, int whence)
 {
     UNUSED(offset);
 
@@ -134,7 +134,7 @@ static off_t vfs_null_lseek(int fd, off_t offset, int whence)
     }
 }
 
-static ssize_t vfs_null_read(int fd, void *data, size_t size)
+static ssize_t vfs_null_read(__attribute__((unused)) void *ctx, int fd, void *data, size_t size)
 {
     UNUSED(data);
 
@@ -148,7 +148,7 @@ static ssize_t vfs_null_read(int fd, void *data, size_t size)
     return -1;
 }
 
-static int vfs_null_pread(int fd, void *data, size_t size, off_t offset)
+static int vfs_null_pread(__attribute__((unused)) void *ctx, int fd, void *data, size_t size, off_t offset)
 {
     UNUSED(data);
     UNUSED(size);
@@ -165,7 +165,7 @@ static int vfs_null_pread(int fd, void *data, size_t size, off_t offset)
 
 }
 
-static int vfs_null_pwrite(int fd, const void *data, size_t size, off_t offset)
+static int vfs_null_pwrite(__attribute__((unused)) void *ctx, int fd, const void *data, size_t size, off_t offset)
 {
     UNUSED(data);
     UNUSED(offset);
@@ -191,7 +191,7 @@ static int vfs_null_get_empty_fd(void)
     return -1;
 }
 
-static int vfs_null_open(const char* path, int flags, int mode)
+static int vfs_null_open(__attribute__((unused)) void *ctx, const char* path, int flags, int mode)
 {
     UNUSED(mode);
 
@@ -226,7 +226,7 @@ static int vfs_null_open(const char* path, int flags, int mode)
     return fd;
 }
 
-static int vfs_null_close(int fd)
+static int vfs_null_close(__attribute__((unused)) void *ctx, int fd)
 {
     if (!FD_IN_RANGE(fd)) {
         errno = EBADF;
@@ -237,7 +237,7 @@ static int vfs_null_close(int fd)
     return 0;
 }
 
-static int vfs_null_fstat(int fd, struct stat *st)
+static int vfs_null_fstat(__attribute__((unused)) void *ctx, int fd, struct stat *st)
 {
     if (!FD_IN_RANGE(fd)) {
         errno = EBADF;
@@ -256,7 +256,7 @@ static int vfs_null_fstat(int fd, struct stat *st)
 
 #if CONFIG_VFS_SUPPORT_DIR
 
-static int vfs_null_stat(const char* path, struct stat *st)
+static int vfs_null_stat(__attribute__((unused)) void *ctx, const char* path, struct stat *st)
 {
     if (strcmp(path, "/") != 0) {
         errno = ENOENT;
@@ -275,7 +275,7 @@ static int vfs_null_stat(const char* path, struct stat *st)
 
 #endif // CONFIG_VFS_SUPPORT_DIR
 
-static int vfs_null_fcntl(int fd, int cmd, int arg)
+static int vfs_null_fcntl(__attribute__((unused)) void *ctx, int fd, int cmd, int arg)
 {
     UNUSED(arg);
 
@@ -291,7 +291,7 @@ static int vfs_null_fcntl(int fd, int cmd, int arg)
     }
 }
 
-static int vfs_null_ioctl(int fd, int cmd, va_list args)
+static int vfs_null_ioctl(__attribute__((unused)) void *ctx, int fd, int cmd, va_list args)
 {
     UNUSED(args);
 
@@ -307,7 +307,7 @@ static int vfs_null_ioctl(int fd, int cmd, va_list args)
     }
 }
 
-static int vfs_null_fsync(int fd)
+static int vfs_null_fsync(__attribute__((unused)) void *ctx, int fd)
 {
     if (!FD_IN_RANGE(fd)) {
         errno = EBADF;

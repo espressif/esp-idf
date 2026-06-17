@@ -120,10 +120,56 @@ Next is the environment marker. The ``@pytest.mark.generic`` marker indicates th
 
 Finally, we have the test function. With a ``dut`` fixture. In single-dut test cases, the ``dut`` fixture is an instance of ``IdfDut`` class, for multi-dut test cases, it is a tuple of ``IdfDut`` instances. For more details regarding the ``IdfDut`` class, please refer to `pytest-embedded IdfDut API reference <https://docs.espressif.com/projects/pytest-embedded/en/latest/api.html#pytest_embedded_idf.dut.IdfDut>`__.
 
+Running Tests on Linux
+^^^^^^^^^^^^^^^^^^^^^^
+
+To execute a pytest case on the Linux host, set ``target`` to ``linux``.
+
+.. code-block:: python
+
+    @idf_parametrize('target', ['linux'], indirect=['target'])
+    def test_hello_world_linux(dut) -> None:
+        dut.expect('Hello world!')
+
+This is the simplest way to run the same test flow on the Linux host instead of on physical hardware.
+
+For a simple Linux-only test, setting ``target`` to ``linux`` is enough and the ``idf`` embedded services will be selected automatically. The ``pytest.mark.host_test`` marker is not required.
+
+For a mixed environment matrix, specify ``embedded_services`` manually for each case. See :ref:`Same App With Different Running Environments <pytest-same-app-different-running-environments>` for a more complex example.
+
+.. only:: TARGET_SUPPORT_QEMU
+
+    Running Tests in QEMU
+    ^^^^^^^^^^^^^^^^^^^^^
+
+    To execute a pytest case in QEMU, add the ``@pytest.mark.qemu`` marker to the test function.
+
+    .. code-block:: python
+
+        @pytest.mark.qemu
+        @idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
+        def test_hello_world_qemu(dut) -> None:
+            dut.expect('Hello world!')
+
+    This is the simplest way to run the same test flow in QEMU instead of on physical hardware.
+
+    For a simple QEMU-only test, adding ``pytest.mark.qemu`` is enough and the ``idf,qemu`` embedded services will be selected automatically.
+
+    For a mixed environment matrix, specify ``embedded_services`` manually for each case. See the later section in this guide for a more complex example.
+
+    For QEMU installation and setup, refer to page :doc:`/api-guides/tools/qemu`.
+
+Deprecation of ``pytest.mark.host_test``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``pytest.mark.host_test`` is no longer needed and should not be added to new test cases.
+
+For Linux target test cases and QEMU test cases, the required behavior is handled dynamically by the test framework. In particular, the embedded services are selected automatically for simple Linux-only and QEMU-only cases.
+
 Same App With Different sdkconfig Files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For some test cases, you may need to run the same app with different sdkconfig files. For detailed documentation regarding sdkconfig related concepts, please refer to `idf-build-apps Documentation <https://docs.espressif.com/projects/idf-build-apps/en/latest/find_build.html>`__.
+For some test cases, you may need to run the same app with different sdkconfig files. For detailed documentation regarding sdkconfig related concepts, please refer to `idf-build-apps Documentation <https://docs.espressif.com/projects/idf-build-apps/en/latest/explanations/find.html>`__.
 
 Here's a simple example that demonstrates how to run the same app with different sdkconfig files. Assume we have the following folder structure:
 
@@ -202,6 +248,49 @@ Now this test function would be replicated to 2 test cases (represented as test 
 
 * ``esp32.foo.test_foo_bar``
 * ``esp32s2.bar.test_foo_bar``
+
+.. _pytest-same-app-different-running-environments:
+
+Same App With Different Running Environments
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Sometimes the same app should be validated in different running environments, for example on the host with the Linux target, on real hardware, or in QEMU. If a single ``@pytest.mark.qemu`` test is not enough, combine ``target``, ``config``, and ``embedded_services`` in a single ``idf_parametrize`` decorator, and attach the required marker for each case.
+
+The following example is adapted from :idf_file:`components/console/test_apps/console/pytest_console.py`:
+
+.. code-block:: python
+
+    @idf_parametrize(
+        'target,config,embedded_services,markers',
+        [
+            ('linux', 'defaults', 'idf', ()),
+            ('esp32', 'defaults', 'esp,idf', (pytest.mark.generic,)),
+            ('esp32c3', 'defaults', 'esp,idf', (pytest.mark.generic,)),
+            ('esp32', 'defaults', 'idf,qemu', (pytest.mark.qemu,)),
+        ],
+        indirect=['target', 'config', 'embedded_services'],
+    )
+    def test_console_repl(dut) -> None:
+        dut.expect_exact('Press ENTER to see the list of tests')
+
+This creates four test cases for the same app:
+
+* Linux host execution with the ``idf`` service
+* ESP32 hardware execution with the ``esp,idf`` services
+* ESP32-C3 hardware execution with the ``esp,idf`` services
+* ESP32 execution in QEMU with the ``idf,qemu`` services
+
+When running locally, you can select only the environment you want:
+
+.. code-block:: shell
+
+    $ pytest --target linux
+    $ pytest -m qemu
+    $ pytest -m qemu --target esp32
+
+``pytest --target linux`` selects Linux target cases only. ``pytest -m qemu`` selects all QEMU-marked cases. ``pytest -m qemu --target esp32`` further limits the selection to QEMU cases for the ESP32 target.
+
+Use this pattern when the test logic is the same but the execution environment changes.
 
 Testing Serial Output (Expecting)
 ---------------------------------
@@ -435,12 +524,34 @@ For ``build_test_related_apps``, all the built binaries will be uploaded to our 
 
 For ``build_non_test_related_apps``, all the built binaries will be removed after the build job is finished. Only the build log files will be uploaded to our internal MinIO server. You may also find the download link in the build report posted in the internal MR.
 
+Dependency-driven builds
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+To optimize CI build time, we use the dependency-driven build feature from idf-build-apps. It helps us build only the apps that are affected by the changed components.
+
+Dependency-driven build rules are defined in per-folder manifest files (``.build-test-rules.yml``), where each app may define ``depends_components``.
+
+.. code-block:: yaml
+
+    examples/foo/bar:
+      depends_components:
+        - esp_eth
+        - esp_netif
+
+We also have a set of common components (defined as ``common_components`` in :idf_file:`.idf_build_apps.toml`). ``common_components`` is a list of baseline (core) components that are used by many apps. In general, if one of these components changes, you usually want to rebuild and retest the apps that depend on it.
+
+The app maintainer should decide which components are important for their app. If the app should depend on a ``common_components``, add it to ``depends_components``. If not, specify only the important components.
+
+If ``depends_components`` is not specified, we use the calculated components (``project_description.json``) and check whether the app is affected by the changed components.
+
+Deprecated (prefer using ``depends_components`` and ``common_components`` instead): ``deactivate_dependency_driven_build_by_components`` disables the dependency-driven checks if certain components change.
+
 Target Test Jobs
 ----------------
 
 In CI, all generated target test jobs are named according to the pattern "<targets> - <env_markers>". For example, single-dut test job ``esp32 - generic``, or multi-dut test job ``esp32,esp32 - multi_dut_generic``.
 
-The binaries in the target test jobs are downloaded from our internal MinIO servers. For most of the test cases, only the files that are required by flash (like .bin files, flash_args files, etc) would be downloaded. For some test cases, like jtag test cases, .elf files are also downloaded.
+The binaries in the target test jobs are downloaded from our internal MinIO servers. For most of the test cases, only the files that are required by flash (like .bin files, flash_args files, etc) would be downloaded. For some test cases, like JTAG test cases, .elf files are also downloaded.
 
 .. _run_the_tests_locally:
 
@@ -577,7 +688,7 @@ Usually, you may want to write a custom class under these conditions:
 1. Add more reusable functions for a certain number of DUTs.
 2. Add custom setup and teardown functions
 
-This code example is taken from :idf_file:`panic/conftest.py <tools/test_apps/system/panic/conftest.py>`.
+This code example is taken from :idf_file:`panic/panic_base/conftest.py <tools/test_apps/system/panic/panic_base/conftest.py>`.
 
 .. code-block:: python
 
@@ -624,7 +735,7 @@ Sometimes, a test can consistently fail for the following reasons:
 
 Now you may mark this test case with marker `xfail <https://docs.pytest.org/en/latest/how-to/skipping.html#xfail-mark-test-functions-as-expected-to-fail>`__ with a user-friendly readable reason.
 
-This code example is taken from :idf_file:`pytest_panic.py <tools/test_apps/system/panic/pytest_panic.py>`
+This code example is taken from :idf_file:`pytest_panic.py <tools/test_apps/system/panic/panic_base/pytest_panic.py>`
 
 .. code-block:: python
 
@@ -728,5 +839,5 @@ Let us assume the value of ``IDF_PERFORMANCE_MAX_RSA_2048KEY_PUBLIC_OP`` is 1900
 Further Readings
 ================
 
--  `pytest documentation <https://docs.pytest.org/en/latest/contents.html/>`_
+-  `pytest documentation <https://docs.pytest.org/en/stable/>`_
 -  `pytest-embedded documentation <https://docs.espressif.com/projects/pytest-embedded/en/latest/>`_

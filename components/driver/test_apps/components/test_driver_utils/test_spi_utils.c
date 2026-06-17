@@ -224,20 +224,20 @@ void spitest_gpio_input_sel(uint32_t gpio_num, int func, uint32_t signal_idx)
     esp_rom_gpio_connect_in_signal(gpio_num, signal_idx, 0);
 }
 
-void same_pin_func_sel(spi_bus_config_t bus, uint8_t cs_pin, uint8_t cs_dev_id, bool soft_master)
+void same_pin_func_sel(spi_host_device_t master_id, spi_host_device_t slave_id, spi_bus_config_t bus, uint8_t cs_pin)
 {
-    spitest_gpio_output_sel(bus.mosi_io_num, FUNC_GPIO, soft_master ? SIG_GPIO_OUT_IDX : spi_periph_signal[TEST_SPI_HOST].spid_out);
-    spitest_gpio_input_sel(bus.mosi_io_num, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spid_in);
+    spitest_gpio_output_sel(bus.mosi_io_num, FUNC_GPIO, (!master_id) ? SIG_GPIO_OUT_IDX : spi_periph_signal[master_id].spid_out);
+    spitest_gpio_input_sel(bus.mosi_io_num, FUNC_GPIO, (!slave_id) ? SIG_GPIO_OUT_IDX : spi_periph_signal[slave_id].spid_in);
 
-    spitest_gpio_output_sel(bus.miso_io_num, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spiq_out);
-    spitest_gpio_input_sel(bus.miso_io_num, FUNC_GPIO, soft_master ? SIG_GPIO_OUT_IDX : spi_periph_signal[TEST_SPI_HOST].spiq_in);
+    spitest_gpio_input_sel(bus.miso_io_num, FUNC_GPIO, (!master_id) ? SIG_GPIO_OUT_IDX : spi_periph_signal[master_id].spiq_in);
+    spitest_gpio_output_sel(bus.miso_io_num, FUNC_GPIO, (!slave_id) ? SIG_GPIO_OUT_IDX : spi_periph_signal[slave_id].spiq_out);
 
-    gpio_set_level(cs_pin, 1);  //ensure CS is inactive when select to soft_master and before transaction start
-    spitest_gpio_output_sel(cs_pin, FUNC_GPIO, soft_master ? SIG_GPIO_OUT_IDX : spi_periph_signal[TEST_SPI_HOST].spics_out[cs_dev_id]);
-    spitest_gpio_input_sel(cs_pin, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spics_in);
+    gpio_set_level(cs_pin, 1);  //ensure CS is inactive when select 0 for soft_master and before transaction start
+    spitest_gpio_output_sel(cs_pin, FUNC_GPIO, (!master_id) ? SIG_GPIO_OUT_IDX : spi_periph_signal[master_id].spics_out[0]);
+    spitest_gpio_input_sel(cs_pin, FUNC_GPIO, (!slave_id) ? SIG_GPIO_OUT_IDX : spi_periph_signal[slave_id].spics_in);
 
-    spitest_gpio_output_sel(bus.sclk_io_num, FUNC_GPIO, soft_master ? SIG_GPIO_OUT_IDX : spi_periph_signal[TEST_SPI_HOST].spiclk_out);
-    spitest_gpio_input_sel(bus.sclk_io_num, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spiclk_in);
+    spitest_gpio_output_sel(bus.sclk_io_num, FUNC_GPIO, (!master_id) ? SIG_GPIO_OUT_IDX : spi_periph_signal[master_id].spiclk_out);
+    spitest_gpio_input_sel(bus.sclk_io_num, FUNC_GPIO, (!slave_id) ? SIG_GPIO_OUT_IDX : spi_periph_signal[slave_id].spiclk_in);
 }
 
 #define GPIO_MAX_FREQ   500*1000    //max of soft spi clock at delay(0)

@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -38,8 +38,12 @@ typedef union {
         uint32_t l1_icache_shut_ibus3:1;
         uint32_t reserved_4:4;
         /** l1_icache_undef_op : R/W; bitpos: [15:8]; default: 0;
-         *  Reserved
-         *  This field is only for internal debugging purposes. Do not use it in applications.
+         *  Internal debug control field.
+         *  bits[1:0]: Arbitration mode.
+         *    0: Round-robin, hold bus until data fetch completes.
+         *    1: Round-robin, release bus after request is issued.
+         *    2/3: Random arbitration.
+         *  bit[5]: 1: Disable auto clock gating.
          */
         uint32_t l1_icache_undef_op:8;
         uint32_t reserved_16:16;
@@ -79,8 +83,12 @@ typedef union {
         uint32_t l1_dcache_shut_dma:1;
         uint32_t reserved_5:3;
         /** l1_dcache_undef_op : R/W; bitpos: [15:8]; default: 0;
-         *  Reserved
-         *  This field is only for internal debugging purposes. Do not use it in applications.
+         *  Internal debug control field.
+         *  bits[1:0]: Arbitration mode.
+         *    0: Round-robin, hold bus until data fetch completes.
+         *    1: Round-robin, release bus after request is issued.
+         *    2/3: Random arbitration.
+         *  bit[5]: 1: Disable auto clock gating.
          */
         uint32_t l1_dcache_undef_op:8;
         uint32_t reserved_16:16;
@@ -101,8 +109,12 @@ typedef union {
         uint32_t l2_cache_shut_dma:1;
         uint32_t reserved_5:3;
         /** l2_cache_undef_op : HRO; bitpos: [15:8]; default: 0;
-         *  Reserved
-         *  This field is only for internal debugging purposes. Do not use it in applications.
+         *  Internal debug control field.
+         *  bits[1:0]: Arbitration mode.
+         *    0: Round-robin, hold bus until data fetch completes.
+         *    1: Round-robin, release bus after request is issued.
+         *    2/3: Random arbitration.
+         *  bit[5]: 1: Disable auto clock gating.
          */
         uint32_t l2_cache_undef_op:8;
         uint32_t reserved_16:16;

@@ -148,7 +148,11 @@ The same NVS API functions ``nvs_get_*`` or ``nvs_set_*`` can be used for readin
 
 - To enable encryption for the default NVS partition, no additional step is necessary. When :ref:`CONFIG_NVS_ENCRYPTION` is enabled, the :cpp:func:`nvs_flash_init` API function internally performs some additional steps to enable encryption for the default NVS partition depending on the scheme being used (set by :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME`).
 
-- For the flash encryption-based scheme, the first :ref:`nvs_encr_key_partition` found is used to generate the encryption keys while for the HMAC one, keys are generated using the HMAC key burnt in eFuse at :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` (refer to the API documentation for more details).
+- For the flash encryption-based scheme, the first :ref:`nvs_encr_key_partition` found is used to generate the encryption keys.
+
+.. only:: SOC_HMAC_SUPPORTED
+
+    For the HMAC-based scheme, keys are generated using the HMAC key burnt in eFuse at :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` (refer to the API documentation for more details).
 
 Alternatively, :cpp:func:`nvs_flash_secure_init` API function can also be used to enable encryption for the default NVS partition.
 

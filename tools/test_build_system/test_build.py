@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
@@ -17,6 +17,7 @@ from test_build_system_helpers import append_to_file
 from test_build_system_helpers import file_contains
 from test_build_system_helpers import get_idf_build_env
 from test_build_system_helpers import replace_in_file
+from test_build_system_helpers import run_cmake
 from test_build_system_helpers import run_cmake_and_build
 
 
@@ -28,23 +29,22 @@ def assert_built(paths: list[str] | list[Path]) -> None:
 def test_build_alternative_directories(idf_py: IdfPyFunc, func_work_dir: Path, test_app_copy: Path) -> None:
     logging.info('Moving BUILD_DIR_BASE out of tree')
     alt_build_dir = func_work_dir / 'alt_build'
-    try:
-        idf_py('-B', str(alt_build_dir), 'build')
-        assert os.listdir(alt_build_dir) != [], 'No files found in new build directory!'
-        default_build_dir = test_app_copy / 'build'
-        if default_build_dir.exists():
-            assert os.listdir(default_build_dir) == [], (
-                f'Some files were incorrectly put into the default build directory: {default_build_dir}'
-            )
-    except Exception:
-        raise
-    else:
-        shutil.rmtree(alt_build_dir)
+    # Use reconfigure instead of full build - we're testing directory placement, not compilation
+    idf_py('-B', str(alt_build_dir), 'reconfigure')
+    assert os.listdir(alt_build_dir) != [], 'No files found in new build directory!'
+    assert (alt_build_dir / 'CMakeCache.txt').exists(), 'CMakeCache.txt not found in alt build directory!'
+    default_build_dir = test_app_copy / 'build'
+    if default_build_dir.exists():
+        assert os.listdir(default_build_dir) == [], (
+            f'Some files were incorrectly put into the default build directory: {default_build_dir}'
+        )
+    shutil.rmtree(alt_build_dir)
 
     logging.info('BUILD_DIR_BASE inside default build directory')
     build_subdir_inside_build_dir = default_build_dir / 'subdirectory'
-    idf_py('-B', str(build_subdir_inside_build_dir), 'build')
+    idf_py('-B', str(build_subdir_inside_build_dir), 'reconfigure')
     assert os.listdir(build_subdir_inside_build_dir) != [], 'No files found in new build directory!'
+    assert (build_subdir_inside_build_dir / 'CMakeCache.txt').exists(), 'CMakeCache.txt not found in subdirectory!'
 
 
 @pytest.mark.usefixtures('test_app_copy')
@@ -84,30 +84,31 @@ def test_build_with_generator_makefile(idf_py: IdfPyFunc) -> None:
 
 
 def test_build_with_cmake_and_idf_path_unset(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    # This test verifies CMake configuration works with various IDF_PATH setups.
+    # We use run_cmake (configure only) instead of full builds for speed.
     idf_path = Path(os.environ['IDF_PATH'])
     env = get_idf_build_env(idf_path)
     env.pop('IDF_PATH')
+    build_dir = test_app_copy / 'build'
 
-    logging.info('Can build with IDF_PATH set via cmake cache not environment')
+    logging.info('Can configure with IDF_PATH set via cmake cache not environment')
     replace_in_file('CMakeLists.txt', 'ENV{IDF_PATH}', '{IDF_PATH}')
-    run_cmake_and_build('-G', 'Ninja', '..', f'-DIDF_PATH={idf_path}', env=env)
-    assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN)
-    idf_py('fullclean')
+    run_cmake('-G', 'Ninja', '..', f'-DIDF_PATH={idf_path}', env=env)
+    assert (build_dir / 'CMakeCache.txt').exists(), 'CMake configuration failed'
+    shutil.rmtree(build_dir)
 
-    logging.info('Can build with IDF_PATH unset and inferred by cmake when Kconfig needs it to be set')
-    # working with already changed CMakeLists.txt
+    logging.info('Can configure with IDF_PATH unset and inferred by cmake when Kconfig needs it to be set')
     kconfig_file = test_app_copy / 'main' / 'Kconfig.projbuild'
     kconfig_file.write_text('source "$IDF_PATH/examples/wifi/getting_started/station/main/Kconfig.projbuild"')
-    run_cmake_and_build('-G', 'Ninja', '..', f'-DIDF_PATH={idf_path}', env=env)
-    assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN)
-    kconfig_file.unlink()  # remove file to not affect following sub-test
-    idf_py('fullclean')
+    run_cmake('-G', 'Ninja', '..', f'-DIDF_PATH={idf_path}', env=env)
+    assert (build_dir / 'CMakeCache.txt').exists(), 'CMake configuration failed'
+    kconfig_file.unlink()
+    shutil.rmtree(build_dir)
 
-    logging.info('Can build with IDF_PATH unset and inferred by build system')
-    # replacing {IDF_PATH} not ENV{IDF_PATH} since CMakeLists.txt was already changed in this test
+    logging.info('Can configure with IDF_PATH unset and inferred by build system')
     replace_in_file('CMakeLists.txt', '{IDF_PATH}', '{ci_idf_path}')
-    run_cmake_and_build('-G', 'Ninja', '-D', f'ci_idf_path={idf_path}', '..', env=env)
-    assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN)
+    run_cmake('-G', 'Ninja', '-D', f'ci_idf_path={idf_path}', '..', env=env)
+    assert (build_dir / 'CMakeCache.txt').exists(), 'CMake configuration failed'
 
 
 def test_build_skdconfig_phy_init_data(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
@@ -174,11 +175,17 @@ def test_build_fail_on_build_time(idf_py: IdfPyFunc, test_app_copy: Path) -> Non
 
 @pytest.mark.usefixtures('test_app_copy')
 def test_build_dfu(idf_py: IdfPyFunc) -> None:
-    logging.info('DFU build works')
+    logging.info('DFU is rejected for targets without USB DFU support')
+    idf_py('set-target', 'esp32')
     ret = idf_py('dfu', check=False)
-    assert 'command "dfu" is not known to idf.py and is not a Ninja target' in ret.stderr, (
-        'DFU build should fail for default chip target'
+    assert ret.returncode != 0
+    assert 'DFU is not supported for this target: esp32' in ret.stderr
+    assert 'Action "dfu" cannot run in the current project configuration.' in ret.stderr
+    assert 'Adding "dfu"\'s dependency "all"' not in ret.stdout, (
+        'DFU check must fail before the "all" dependency is scheduled'
     )
+
+    logging.info('DFU build works for esp32s2')
     idf_py('set-target', 'esp32s2')
     ret = idf_py('dfu')
     assert 'build/dfu.bin" has been written. You may proceed with DFU flashing.' in ret.stdout, (
@@ -208,11 +215,6 @@ def test_build_uf2(idf_py: IdfPyFunc) -> None:
     assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN + ['build/uf2.bin'])
 
 
-# The bootloader_support component defines its requirements based on the
-# sdkconfig values, specifically the CONFIG_APP_BUILD_TYPE_RAM used in this
-# test. If CONFIG_APP_BUILD_TYPE_RAM is set, bootloader_support declares a
-# dependency on micro-ecc.
-@pytest.mark.buildv2_skip('bootloader_support component CMakeLists.txt is broken')
 def test_build_loadable_elf(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     logging.info('Loadable ELF build works')
     (test_app_copy / 'sdkconfig').write_text(
@@ -262,11 +264,13 @@ def test_build_cmake_executable_suffix(idf_py: IdfPyFunc, test_app_copy: Path) -
     assert 'Project build complete' in ret.stdout, 'Build with CMAKE_EXECUTABLE_SUFFIX set failed'
 
 
+@pytest.mark.test_app_copy('tools/test_build_system/kconfig_test_app')
 def test_build_with_misspelled_kconfig(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     logging.info('idf.py can build with misspelled Kconfig file')
     ret = idf_py('build')
     assert " file should be named 'Kconfig.projbuild'" in ret.stderr, 'Misspelled Kconfig file should be detected'
-    assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN)
+    kconfig_app_bins = ['build/kconfig_test_app.elf', 'build/kconfig_test_app.bin']
+    assert_built(BOOTLOADER_BINS + kconfig_app_bins + PARTITION_BIN)
     with open(test_app_copy / 'sdkconfig') as f:
         sdkconfig = f.read()
         assert 'CONFIG_FROM_MISSPELLED_KCONFIG=y' in sdkconfig, (

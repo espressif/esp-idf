@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,46 +28,9 @@
 
 ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk_init");
 
-/**
- * Initialize the ICG map of some modem clock domains in the PMU_ACTIVE state
- *
- * A pre-initialization interface is used to initialize the ICG map of the
- * MODEM_APB, I2C_MST and LP_APB clock domains in the PMU_ACTIVE state, and
- * disable the clock gating of these clock domains in the PMU_ACTIVE state,
- * because the system clock source (PLL) in the system boot up process needs
- * to use the i2c master peripheral.
- *
- * ICG map of all modem clock domains under different power states (PMU_ACTIVE,
- * PMU_MODEM and PMU_SLEEP) will be initialized in esp_perip_clk_init().
- */
-static void rtc_clk_modem_clock_domain_active_state_icg_map_preinit(void)
-{
-    /* Configure modem ICG code in PMU_ACTIVE state */
-    pmu_ll_hp_set_icg_modem(&PMU, PMU_MODE_HP_ACTIVE, PMU_HP_ICG_MODEM_CODE_ACTIVE);
-
-#if SOC_MODEM_CLOCK_SUPPORTED
-    /* Disable clock gating for MODEM_APB, I2C_MST and LP_APB clock domains in PMU_ACTIVE state */
-    modem_syscon_ll_set_modem_apb_icg_bitmap(&MODEM_SYSCON, BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE));
-    modem_syscon_ll_set_ieee802154_icg_bitmap(&MODEM_SYSCON, BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE));
-    modem_syscon_ll_set_fe_icg_bitmap(&MODEM_SYSCON, BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE));
-    modem_syscon_ll_set_bt_icg_bitmap(&MODEM_SYSCON, BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE));
-
-    modem_lpcon_ll_set_i2c_master_icg_bitmap(&MODEM_LPCON, BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE));
-    modem_lpcon_ll_set_lp_apb_icg_bitmap(&MODEM_LPCON, BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE));
-    modem_lpcon_ll_set_coex_icg_bitmap(&MODEM_LPCON, BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE));
-
-#endif
-
-    /* Software trigger force update modem ICG code and ICG switch */
-    pmu_ll_imm_update_dig_icg_modem_code(&PMU, true);
-    pmu_ll_imm_update_dig_icg_switch(&PMU, true);
-}
-
 void rtc_clk_init(rtc_clk_config_t cfg)
 {
     rtc_cpu_freq_config_t old_config, new_config;
-
-    rtc_clk_modem_clock_domain_active_state_icg_map_preinit();
 
     /* Set tuning parameters for RC_FAST and RC_SLOW clocks.
      * Note: this doesn't attempt to set the clocks to precise frequencies.

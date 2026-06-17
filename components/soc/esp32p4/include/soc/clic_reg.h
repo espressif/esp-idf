@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -17,25 +17,57 @@ extern "C" {
 #define DR_REG_CLIC_BASE      (0x20800000)
 #define DR_REG_CLIC_CTRL_BASE (0x20801000)
 
+/* The following register has different fields between the revisions LESS than v3 and GREATER OR EQUAL to v3,
+ * However, we should NOT include the `sdkconfig.h` file, so we cannot detect the revision at build time.
+ * Let's define both sets of fields. */
 #define CLIC_INT_CONFIG_REG          (DR_REG_CLIC_BASE + 0x0)
-/* CLIC_INT_CONFIG_NMBITS : RO ;bitpos:[6:5] ;default: 2'd0 ; */
+/*This file should not include the `sdkconfig`, as such, we cannot define both fields*/
+
+/* THE FOLLOWING FIELDS ARE ONLY AVAILABLE FOR REVISIONS GREATER OR EQUAL TO V3 */
+/* CLIC_INT_CONFIG_NLBITS : R/W ;bitpos:[27:24] ;default: 4'd0 ; */
+/*description: user mode interrupt priority effective digits, the maximum value is 8..*/
+#define CLIC_INT_CONFIG_UNLBITS    0x0000000F
+#define CLIC_INT_CONFIG_UNLBITS_M  ((CLIC_INT_CONFIG_UNLBITS_V) << (CLIC_INT_CONFIG_UNLBITS_S))
+#define CLIC_INT_CONFIG_UNLBITS_V  0xF
+#define CLIC_INT_CONFIG_UNLBITS_S  24
+/* CLIC_INT_CONFIG_NLBITS : R/W ;bitpos:[19:16] ;default: 4'd0 ; */
+/*description: supervisor mode interrupt priority effective digits, the maximum value is 8..*/
+#define CLIC_INT_CONFIG_SNLBITS    0x0000000F
+#define CLIC_INT_CONFIG_SNLBITS_M  ((CLIC_INT_CONFIG_SNLBITS_V) << (CLIC_INT_CONFIG_SNLBITS_S))
+#define CLIC_INT_CONFIG_SNLBITS_V  0xF
+#define CLIC_INT_CONFIG_SNLBITS_S  16
+/* CLIC_INT_CONFIG_NMBITS : R/W ;bitpos:[5:4] ;default: 2'd0 ; */
 /*description: the effective number of bits in the privileged state.*/
 #define CLIC_INT_CONFIG_NMBITS    0x00000003
 #define CLIC_INT_CONFIG_NMBITS_M  ((CLIC_INT_CONFIG_NMBITS_V) << (CLIC_INT_CONFIG_NMBITS_S))
 #define CLIC_INT_CONFIG_NMBITS_V  0x3
-#define CLIC_INT_CONFIG_NMBITS_S  5
-/* CLIC_INT_CONFIG_NLBITS : R/W ;bitpos:[4:1] ;default: 4'd0 ; */
-/*description: interrupt priority effective digits, the maximum value is 8.*/
+#define CLIC_INT_CONFIG_NMBITS_S  4
+/* CLIC_INT_CONFIG_NLBITS : R/W ;bitpos:[3:0] ;default: 4'd0 ; */
+/*description: machine mode interrupt priority effective digits, the maximum value is 8.*/
 #define CLIC_INT_CONFIG_MNLBITS    0x0000000F
 #define CLIC_INT_CONFIG_MNLBITS_M  ((CLIC_INT_CONFIG_MNLBITS_V) << (CLIC_INT_CONFIG_MNLBITS_S))
 #define CLIC_INT_CONFIG_MNLBITS_V  0xF
-#define CLIC_INT_CONFIG_MNLBITS_S  1
-/* CLIC_INT_CONFIG_NVBITS : RO ;bitpos:[0] ;default: 1'd1 ; */
+#define CLIC_INT_CONFIG_MNLBITS_S  0
+
+/* THE FOLLOWING FIELDS ARE ONLY AVAILABLE FOR REVISIONS LESS THAN V3 */
+/* CLIC_INT_LEGACY_CONFIG_NMBITS : RO ;bitpos:[6:5] ;default: 2'd0 ; */
+/*description: the effective number of bits in the privileged state.*/
+#define CLIC_INT_LEGACY_CONFIG_NMBITS    0x00000003
+#define CLIC_INT_LEGACY_CONFIG_NMBITS_M  ((CLIC_INT_LEGACY_CONFIG_NMBITS_V) << (CLIC_INT_LEGACY_CONFIG_NMBITS_S))
+#define CLIC_INT_LEGACY_CONFIG_NMBITS_V  0x3
+#define CLIC_INT_LEGACY_CONFIG_NMBITS_S  5
+/* CLIC_INT_LEGACY_CONFIG_NLBITS : R/W ;bitpos:[4:1] ;default: 4'd0 ; */
+/*description: interrupt priority effective digits, the maximum value is 8.*/
+#define CLIC_INT_LEGACY_CONFIG_MNLBITS    0x0000000F
+#define CLIC_INT_LEGACY_CONFIG_MNLBITS_M  ((CLIC_INT_LEGACY_CONFIG_MNLBITS_V) << (CLIC_INT_LEGACY_CONFIG_MNLBITS_S))
+#define CLIC_INT_LEGACY_CONFIG_MNLBITS_V  0xF
+#define CLIC_INT_LEGACY_CONFIG_MNLBITS_S  1
+/* CLIC_INT_LEGACY_CONFIG_NVBITS : RO ;bitpos:[0] ;default: 1'd1 ; */
 /*description: hardware vector interrupt implementation flag bit.*/
-#define CLIC_INT_CONFIG_NVBITS    (BIT(0))
-#define CLIC_INT_CONFIG_NVBITS_M  (BIT(0))
-#define CLIC_INT_CONFIG_NVBITS_V  0x1
-#define CLIC_INT_CONFIG_NVBITS_S  0
+#define CLIC_INT_LEGACY_CONFIG_NVBITS    (BIT(0))
+#define CLIC_INT_LEGACY_CONFIG_NVBITS_M  (BIT(0))
+#define CLIC_INT_LEGACY_CONFIG_NVBITS_V  0x1
+#define CLIC_INT_LEGACY_CONFIG_NVBITS_S  0
 
 #define CLIC_INT_INFO_REG          (DR_REG_CLIC_BASE + 0x4)
 /* CLIC_INT_INFO_NUM_INT : RO ;bitpos:[24:21] ;default: 4'd3 ; */
@@ -76,6 +108,7 @@ CLICCFG.nlbits to generate the interrupt priority to the CPU.*/
 #define CLIC_INT_CTL_V  0xFF
 #define CLIC_INT_CTL_S  24
 /* CLIC_INT_ATTR_MODE : RO ;bitpos:[23:22] ;default: 2'b11 ; */
+/* This field is R/W on REV3+, RO on REV2 and less */
 /*description: This field is used to configure the privileged mode of the interrupt.*/
 #define CLIC_INT_ATTR_MODE    0x00000003
 #define CLIC_INT_ATTR_MODE_M  ((CLIC_INT_ATTR_MODE_V) << (CLIC_INT_ATTR_MODE_S))
@@ -145,6 +178,7 @@ case of level interrupt and edge interrupt*/
 #define BYTE_CLIC_INT_ATTR_TRIG_V  0x3
 #define BYTE_CLIC_INT_ATTR_TRIG_S  1
 /* BYTE_CLIC_INT_ATTR_MODE: RO ; bitpos:[7:6] ;default: 2'd0 ; */
+/* This field is R/W on REV3+, RO on REV2 and less */
 /*description: privilege level for interrupt, fixed to 2'b11 */
 #define BYTE_CLIC_INT_ATTR_MODE    0x00000003
 #define BYTE_CLIC_INT_ATTR_MODE_M  ((BYTE_CLIC_INT_ATTR_MODE_V) << (BYTE_CLIC_INT_ATTR_MODE_S))

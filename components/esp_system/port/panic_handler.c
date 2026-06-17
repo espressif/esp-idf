@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,8 +27,10 @@
 #include "esp_private/panic_internal.h"
 #include "esp_private/panic_reason.h"
 
+#if SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED
 #include "hal/wdt_types.h"
 #include "hal/wdt_hal.h"
+#endif
 
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
 #include "esp_private/hw_stack_guard.h"
@@ -137,9 +139,9 @@ static void panic_handler(void *frame, bool pseudo_excause)
      *
      * We do this before we increment the panic handler entry count to ensure that the WDTs are fed.
      */
-#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+#if (SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED) && CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     esp_panic_handler_feed_wdts();
-#endif // CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+#endif // (SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED) && CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
     /* Increment the panic handler entry count */
     esp_panic_handler_increment_entry_count();
@@ -213,18 +215,22 @@ static void panic_handler(void *frame, bool pseudo_excause)
      * TODO: Make the timeout configurable or more intelligent based on the panic reason and the
      * config options.
      */
+#if SOC_RTC_WDT_SUPPORTED
 #if CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS
     esp_panic_handler_enable_rtc_wdt((CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS + 10) * 1000);
 #else
     esp_panic_handler_enable_rtc_wdt(10000);
 #endif /* CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS */
+#endif /* SOC_RTC_WDT_SUPPORTED */
 
+#if SOC_WDT_SUPPORTED
     /* Before we stall the other CPU, we need to disable all WDTs except the RTC WDT.
      * This is because the TIMG WDTs cannot reset the RTC subsystem, which stores the CPU stalling
      * configuration. If the other CPU is stalled and the TIMG WDTs trigger before we can unstall the
      * CPU then we have a chance of locking up the system without rebooting it.
      */
     esp_panic_handler_disable_timg_wdts();
+#endif /* SOC_WDT_SUPPORTED */
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     esp_rom_delay_us(1);

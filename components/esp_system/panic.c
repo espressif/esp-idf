@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,8 +16,10 @@
 #include "esp_cpu.h"
 #include "soc/rtc.h"
 #include "hal/timer_hal.h"
+#if SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED
 #include "hal/wdt_types.h"
 #include "hal/wdt_hal.h"
+#endif
 #include "esp_private/esp_int_wdt.h"
 
 #include "esp_private/panic_internal.h"
@@ -72,7 +74,9 @@
 bool g_panic_abort = false;
 char *g_panic_abort_details = NULL;
 
+#if SOC_RTC_WDT_SUPPORTED
 static wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
+#endif
 
 static uint32_t DRAM_ATTR g_panic_entry_count[CONFIG_FREERTOS_NUMBER_OF_CORES] = {0}; // Number of times panic handler has been entered per core since multiple cores can enter the panic handler simultaneously
 
@@ -177,6 +181,7 @@ static void print_abort_details(const void *f)
 
 /********************** Panic handler watchdog timer functions **********************/
 
+#if SOC_WDT_SUPPORTED
 /* This function disables the Timer Group WDTs */
 void esp_panic_handler_disable_timg_wdts(void)
 {
@@ -192,7 +197,13 @@ void esp_panic_handler_disable_timg_wdts(void)
     wdt_hal_write_protect_enable(&wdt1_context);
 #endif /* TIMG_LL_GET(INST_NUM) >= 2 */
 }
+#else /* SOC_WDT_SUPPORTED */
+void esp_panic_handler_disable_timg_wdts(void)
+{
+}
+#endif /* SOC_WDT_SUPPORTED */
 
+#if SOC_RTC_WDT_SUPPORTED
 /* This function enables the RTC WDT with the given timeout in milliseconds */
 void esp_panic_handler_enable_rtc_wdt(uint32_t timeout_ms)
 {
@@ -204,7 +215,14 @@ void esp_panic_handler_enable_rtc_wdt(uint32_t timeout_ms)
     wdt_hal_enable(&rtc_wdt_ctx);
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 }
+#else /* SOC_RTC_WDT_SUPPORTED */
+void esp_panic_handler_enable_rtc_wdt(uint32_t timeout_ms)
+{
+    (void)timeout_ms;
+}
+#endif /* SOC_RTC_WDT_SUPPORTED */
 
+#if SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED
 /* Feed the watchdogs if they are enabled and if we are not already in the panic handler */
 void esp_panic_handler_feed_wdts(void)
 {
@@ -217,6 +235,7 @@ void esp_panic_handler_feed_wdts(void)
         return;
     }
 
+#if SOC_WDT_SUPPORTED
     // Feed Timer Group 0 WDT
     wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
     if (wdt_hal_is_enabled(&wdt0_context)) {
@@ -234,26 +253,43 @@ void esp_panic_handler_feed_wdts(void)
         wdt_hal_write_protect_enable(&wdt1_context);
     }
 #endif /* TIMG_LL_GET(INST_NUM) >= 2 */
+#endif /* SOC_WDT_SUPPORTED */
 
+#if SOC_RTC_WDT_SUPPORTED
     // Feed RTC WDT
     if (wdt_hal_is_enabled(&rtc_wdt_ctx)) {
         wdt_hal_write_protect_disable(&rtc_wdt_ctx);
         wdt_hal_feed(&rtc_wdt_ctx);
         wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     }
+#endif /* SOC_RTC_WDT_SUPPORTED */
 }
+#else /* SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED */
+void esp_panic_handler_feed_wdts(void)
+{
+}
+#endif /* SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED */
 
+#if SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED
 /* This function disables all the watchdogs */
 static inline void disable_all_wdts(void)
 {
+#if SOC_WDT_SUPPORTED
     //Disable Timer Group WDTs
     esp_panic_handler_disable_timg_wdts();
-
+#endif /* SOC_WDT_SUPPORTED */
+#if SOC_RTC_WDT_SUPPORTED
     //Disable RTC WDT
     wdt_hal_write_protect_disable(&rtc_wdt_ctx);
     wdt_hal_disable(&rtc_wdt_ctx);
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+#endif /* SOC_RTC_WDT_SUPPORTED */
 }
+#else /* SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED */
+static inline void disable_all_wdts(void)
+{
+}
+#endif /* SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED */
 
 /* IRAM-only halt stub: reset modules, then loop */
 void IRAM_ATTR esp_panic_handler_reset_modules_on_exit_and_halt(void)

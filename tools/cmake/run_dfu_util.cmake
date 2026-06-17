@@ -23,6 +23,13 @@ endif()
 message("Command list: ${CMD}")
 execute_process(COMMAND ${CMD} RESULT_VARIABLE result)
 
+# dfu-util may fail on the first attempt while switching from runtime to DFU mode,
+# e.g. with "Lost device after RESET?" on Windows/macOS. Retry once.
+if(${result} AND NOT ${ESP_DFU_LIST})
+    message(WARNING "${TOOL} failed, retrying once...")
+    execute_process(COMMAND ${CMD} RESULT_VARIABLE result)
+endif()
+
 if(${result})
     message(FATAL_ERROR "${TOOL} failed")
 endif()

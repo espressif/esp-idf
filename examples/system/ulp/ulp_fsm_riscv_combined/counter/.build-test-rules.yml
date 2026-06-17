@@ -1,0 +1,7 @@
+examples/system/ulp/ulp_fsm_riscv_combined/counter:
+  enable:
+    - if: SOC_ULP_FSM_SUPPORTED == 1 and SOC_RISCV_COPROC_SUPPORTED == 1 and IDF_TARGET in ["esp32s2", "esp32s3"]
+      temporary: false
+      reason: Only ESP32-S2 and ESP32-S3 support both FSM and RISC-V ULP coprocessors
+  depends_components:
+    - ulp

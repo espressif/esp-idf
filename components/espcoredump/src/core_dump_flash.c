@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,8 +10,8 @@
 #include "esp_log.h"
 #include "esp_core_dump_types.h"
 #include "core_dump_checksum.h"
-#include "esp_flash_internal.h"
-#include "esp_flash_encrypt.h"
+#include "esp_private/esp_flash_internal.h"
+#include "esp_efuse.h"
 #include "esp_rom_crc.h"
 #include "esp_private/spi_flash_os.h"
 #include "spi_flash_mmap.h"
@@ -72,7 +72,7 @@ static esp_err_t esp_core_dump_flash_custom_write(uint32_t address, const void *
 {
     esp_err_t err = ESP_OK;
 
-    if (esp_flash_encryption_enabled() && s_core_flash_config.partition.encrypted) {
+    if (esp_efuse_is_flash_encryption_enabled() && s_core_flash_config.partition.encrypted) {
         err = ESP_COREDUMP_FLASH_WRITE_ENCRYPTED(address, buffer, length);
     } else {
         err = ESP_COREDUMP_FLASH_WRITE(address, buffer, length);
@@ -143,7 +143,7 @@ static void esp_core_dump_partition_init(void)
 
     s_core_flash_config.partition_config_crc = esp_core_dump_calc_flash_config_crc();
 
-    if (esp_flash_encryption_enabled() && !core_part->encrypted) {
+    if (esp_efuse_is_flash_encryption_enabled() && !core_part->encrypted) {
         ESP_COREDUMP_LOGW("core dump partition is plain text, consider enabling `encrypted` flag");
     }
 }

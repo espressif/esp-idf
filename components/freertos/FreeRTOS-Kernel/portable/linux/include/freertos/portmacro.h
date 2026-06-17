@@ -77,8 +77,10 @@ typedef unsigned long TickType_t;
 /*-----------------------------------------------------------*/
 
 /* Scheduler utilities. */
-extern void vPortYield( void );
+extern void vPortYieldWithinApi( void );
+#define portYIELD_WITHIN_API() vPortYieldWithinApi()
 
+extern void vPortYield( void );
 #define portYIELD() vPortYield()
 
 #define portEND_SWITCHING_ISR( xSwitchRequired ) if( (xSwitchRequired) != pdFALSE ) vPortYield()
@@ -106,6 +108,12 @@ void vPortExitCritical( void );
 #define portEXIT_CRITICAL_SAFE(mux)             {(void)mux;  vPortExitCritical();}
 #define portENTER_CRITICAL_ISR(mux)             portENTER_CRITICAL(mux)
 #define portEXIT_CRITICAL_ISR(mux)              portEXIT_CRITICAL(mux)
+
+#define prvENTER_CRITICAL_SMP_ONLY( pxLock )         portENTER_CRITICAL( pxLock )
+#define prvEXIT_CRITICAL_SMP_ONLY( pxLock )          portEXIT_CRITICAL( pxLock )
+
+extern void vPortSuspendScheduler(void);
+#define portSOFTWARE_BARRIER() vPortSuspendScheduler()
 
 /*-----------------------------------------------------------*/
 

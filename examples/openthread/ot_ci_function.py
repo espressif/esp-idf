@@ -1,7 +1,8 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 # !/usr/bin/env python3
 # this file defines some functions for testing cli and br under pytest framework
+import ipaddress
 import logging
 import os
 import re
@@ -86,7 +87,7 @@ class wifi_parameter:
         self.retry_times = retry_times
 
 
-def joinThreadNetwork(dut: IdfDut, thread: thread_parameter) -> None:
+def SetThreadNetworkPara(dut: IdfDut, thread: thread_parameter) -> None:
     if thread.dataset:
         command = 'dataset set active ' + thread.dataset
         execute_command(dut, command)
@@ -124,6 +125,9 @@ def joinThreadNetwork(dut: IdfDut, thread: thread_parameter) -> None:
         dut.expect('Done', timeout=5)
     execute_command(dut, 'dataset commit active')
     dut.expect('Done', timeout=5)
+
+
+def StartThreadNetwork(dut: IdfDut, thread: thread_parameter) -> None:
     if thread.bbr:
         execute_command(dut, 'bbr enable')
         dut.expect('Done', timeout=5)
@@ -154,7 +158,7 @@ def joinWiFiNetwork(dut: IdfDut, wifi: wifi_parameter) -> tuple[str, int]:
     ip_address = ''
     for order in range(1, wifi.retry_times):
         command = 'wifi connect -s ' + str(wifi.ssid) + ' -p ' + str(wifi.psk)
-        tmp = get_ouput_string(dut, command, 10)
+        tmp = get_output_string(dut, command, 10)
         if 'sta ip' in str(tmp):
             ip_address = re.findall(r'sta ip: (\w+.\w+.\w+.\w+),', str(tmp))[0]
         wait(dut, 2)
@@ -179,12 +183,12 @@ def changeDeviceRole(dut: IdfDut, role: str) -> None:
 
 def getDataset(dut: IdfDut) -> str:
     execute_command(dut, 'dataset active -x')
-    dut_data = dut.expect(r'\n(\w+)\r', timeout=5)[1].decode()
+    dut_data = dut.expect(r'\n([0-9A-Fa-f]+)\r', timeout=5)[1].decode()
     return str(dut_data)
 
 
 def init_thread(dut: IdfDut) -> None:
-    dut.expect('OpenThread attached to netif', timeout=10)
+    dut.expect('OpenThread enter mainloop', timeout=10)
     wait(dut, 3)
     reset_thread(dut)
 
@@ -197,16 +201,16 @@ def stop_thread(dut: IdfDut) -> None:
 
 def reset_thread(dut: IdfDut) -> None:
     execute_command(dut, 'factoryreset')
-    dut.expect('OpenThread attached to netif', timeout=20)
+    dut.expect('OpenThread enter mainloop', timeout=20)
     wait(dut, 3)
     clean_buffer(dut)
 
 
 def hardreset_dut(dut: IdfDut) -> None:
     dut.serial.hard_reset()
-    dut.expect('OpenThread attached to netif', timeout=20)
+    dut.expect('OpenThread enter mainloop', timeout=20)
     execute_command(dut, 'factoryreset')
-    dut.expect('OpenThread attached to netif', timeout=20)
+    dut.expect('OpenThread enter mainloop', timeout=20)
 
 
 # get the mleid address of the thread
@@ -360,11 +364,19 @@ def check_if_host_receive_ra(br: IdfDut) -> bool:
     interface_name = get_host_interface_name()
     clean_buffer(br)
     omrprefix = get_omrprefix(br)
-    command = 'ip -6 route | grep ' + str(interface_name)
+    onlinkprefix = get_onlinkprefix(br)
+    command = f'ip -6 route show dev {interface_name}'
     out_str = subprocess.getoutput(command)
-    logging.info(f'br omrprefix: {omrprefix}')
-    logging.info(f'host route table:\n {out_str}')
-    return str(omrprefix) in str(out_str)
+    has_omr_route = str(omrprefix) in str(out_str)
+    has_onlink_gua = host_global_address_has_onlink_prefix(interface_name, onlinkprefix)
+    logging.info(
+        'RA check: omrprefix=%s onlinkprefix=%s has_omr_route=%s has_onlink_gua=%s',
+        omrprefix,
+        onlinkprefix,
+        has_omr_route,
+        has_onlink_gua,
+    )
+    return has_omr_route and has_onlink_gua
 
 
 def host_connect_wifi() -> None:
@@ -377,18 +389,114 @@ def is_joined_wifi_network(br: IdfDut) -> bool:
     return check_if_host_receive_ra(br)
 
 
+def wait_for_host_ra_route(
+    br: IdfDut,
+    *,
+    retries: int = 12,
+    interval_s: int = 5,
+) -> None:
+    interface_name = get_host_interface_name()
+    log_ipv6_addr_route_by_interface(interface_name, title='Wait RA (initial)')
+
+    for attempt in range(1, retries + 1):
+        if is_joined_wifi_network(br):
+            log_ipv6_addr_route_by_interface(interface_name, title='RA Ready!')
+            logging.info(f'Host RA is ready on attempt {attempt}/{retries}.')
+            return
+
+        logging.info(f'Host RA not ready yet, retry {attempt}/{retries}...')
+        log_ipv6_addr_route_by_interface(interface_name, title=f'Wait RA ({attempt}/{retries})')
+        if attempt < retries:
+            time.sleep(interval_s)
+
+    log_ipv6_addr_route_by_interface(interface_name, title='RA check failed')
+    raise AssertionError('Host did not receive valid RA in time (OMR route and onlink GUA both required)')
+
+
+def _list_host_onlink_global_address_entries(interface_name: str, onlinkprefix: str) -> list[tuple[str, bool]]:
+    """Return (address, is_usable) for each global address in the onlink /64."""
+    onlinkprefix = onlinkprefix.strip()
+    if not onlinkprefix:
+        return []
+    base = onlinkprefix.rstrip(':')
+    try:
+        network = ipaddress.IPv6Network(f'{base}::/64', strict=False)
+    except ValueError:
+        logging.warning(f'Invalid onlinkprefix for /64 check: {onlinkprefix}')
+        return []
+
+    entries: dict[str, bool] = {}
+    out = subprocess.getoutput(f'ip -6 addr show dev {interface_name}')
+    for line in out.splitlines():
+        if 'inet6' not in line or 'scope global' not in line:
+            continue
+        m = re.search(r'inet6 ([^\s]+)/\d+', line)
+        if not m:
+            continue
+        addr_s = m.group(1).split('%')[0]
+        try:
+            if ipaddress.IPv6Address(addr_s) not in network:
+                continue
+        except ValueError:
+            continue
+        is_usable = 'tentative' not in line and 'dadfailed' not in line
+        if addr_s in entries:
+            entries[addr_s] = entries[addr_s] and is_usable
+        else:
+            entries[addr_s] = is_usable
+    return list(entries.items())
+
+
+def host_global_address_has_onlink_prefix(interface_name: str, onlinkprefix: str) -> bool:
+    entries = _list_host_onlink_global_address_entries(interface_name, onlinkprefix)
+    if not entries:
+        return False
+    return all(usable for _, usable in entries)
+
+
+def list_host_usable_onlink_global_addresses(interface_name: str, onlinkprefix: str) -> list[str]:
+    entries = _list_host_onlink_global_address_entries(interface_name, onlinkprefix)
+    if not entries or not all(usable for _, usable in entries):
+        return []
+    return [addr for addr, _ in entries]
+
+
+def wait_for_host_onlink_global_address(
+    br: IdfDut,
+    *,
+    retries: int = 12,
+    interval_s: int = 5,
+) -> str:
+    interface_name = get_host_interface_name()
+    onlinkprefix = get_onlinkprefix(br)
+    logging.info(f'Wait for host GUA in BR onlink prefix {onlinkprefix!r} on {interface_name}')
+
+    for attempt in range(1, retries + 1):
+        if host_global_address_has_onlink_prefix(interface_name, onlinkprefix):
+            logging.info(f'Host onlink GUA is ready on attempt {attempt}/{retries}.')
+            return onlinkprefix
+
+        logging.info(f'Host onlink GUA not ready yet, retry {attempt}/{retries}...')
+        if attempt < retries:
+            time.sleep(interval_s)
+
+    log_ipv6_addr_route_by_interface(interface_name, title='Onlink GUA check failed')
+    raise AssertionError(f'Host did not get a global IPv6 address in onlink prefix {onlinkprefix!r} in time')
+
+
 thread_ipv6_group = 'ff04:0:0:0:0:0:0:125'
 
 
 def check_ipmaddr(dut: IdfDut) -> bool:
-    info = get_ouput_string(dut, 'ipmaddr', 2)
+    info = get_output_string(dut, 'ipmaddr', 2)
     if thread_ipv6_group in str(info):
         return True
     return False
 
 
 def thread_is_joined_group(dut: IdfDut) -> bool:
-    command = 'mcast join ' + thread_ipv6_group
+    should_use_mcast = dut.app.sdkconfig.get('OPENTHREAD_PLATFORM_NETIF') is True
+    command = ('mcast join ' if should_use_mcast else 'ipmaddr add ') + thread_ipv6_group
     execute_command(dut, command)
     dut.expect('Done', timeout=5)
     order = 0
@@ -543,35 +651,72 @@ def open_host_interface() -> None:
         assert flag
 
 
+def ensure_avahi_running(restart_if_needed: bool = True) -> bool:
+    out_str = subprocess.getoutput('pgrep -a avahi-daemon 2>/dev/null')
+    if out_str.strip():
+        logging.info(f'avahi process list:\n{out_str}')
+        return True
+
+    logging.warning('avahi-daemon not running')
+    if restart_if_needed:
+        logging.warning('restarting avahi-daemon once...')
+        restart_avahi()
+        out_str = subprocess.getoutput('pgrep -a avahi-daemon 2>/dev/null')
+        if out_str.strip():
+            logging.info(f'avahi process list after restart:\n{out_str}')
+            return True
+
+    logging.error('avahi-daemon is still not running')
+    return False
+
+
 def get_domain() -> str:
     hostname = socket.gethostname()
     logging.info(f'hostname is: {hostname}')
-    command = 'ps -auxww | grep avahi-daemon | grep running'
-    out_str = subprocess.getoutput(command)
-    logging.info(f'avahi status:\n {out_str}')
-    role = re.findall(r'\[([\w\W]+)\.local\]', str(out_str))[0]
-    logging.info(f'active host is: {role}')
-    return str(role)
+    out_str = subprocess.getoutput('pgrep -a avahi-daemon 2>/dev/null')
+    if not out_str.strip():
+        out_str = subprocess.getoutput('ps -C avahi-daemon -o args= --no-headers 2>/dev/null')
+    logging.info(f'avahi status:\n{out_str}')
+    matches = re.findall(r'\[([\w\W]+?)\.local\]', str(out_str))
+    if matches:
+        role = matches[0]
+        logging.info(f'active host is: {role}')
+        return str(role)
+    short = subprocess.getoutput('hostname -s').strip() or hostname.split('.')[0]
+    logging.warning(
+        'Could not parse [.local] from avahi process args; using short hostname %r',
+        short,
+    )
+    return short
 
 
-def flush_ipv6_addr_by_interface() -> None:
-    interface_name = get_host_interface_name()
-    logging.info(f'flush ipv6 addr : {interface_name}')
+def log_ipv6_addr_route_by_interface(interface_name: str, title: str = '') -> tuple[str, str]:
     command_show_addr = f'ip -6 addr show dev {interface_name}'
     command_show_route = f'ip -6 route show dev {interface_name}'
-    addr_before = subprocess.getoutput(command_show_addr)
-    route_before = subprocess.getoutput(command_show_route)
-    logging.info(f'Before flush, IPv6 addresses: \n{addr_before}')
-    logging.info(f'Before flush, IPv6 routes: \n{route_before}')
+    addr = subprocess.getoutput(command_show_addr)
+    route = subprocess.getoutput(command_show_route)
+    prefix = f'{title} ' if title else ''
+    logging.info(f'{prefix}IPv6 addresses on {interface_name}:\n{addr}')
+    logging.info(f'{prefix}IPv6 routes on {interface_name}:\n{route}')
+    return addr, route
+
+
+def flush_ipv6_addr_route_by_interface(interface_name: str, down_up_wait_s: int = 5) -> None:
+    logging.info(f'flush ipv6 addr/route: {interface_name}')
+    log_ipv6_addr_route_by_interface(interface_name, title='Before flush')
+
     subprocess.run(['ip', 'link', 'set', interface_name, 'down'])
     subprocess.run(['ip', '-6', 'addr', 'flush', 'dev', interface_name])
     subprocess.run(['ip', '-6', 'route', 'flush', 'dev', interface_name])
     subprocess.run(['ip', 'link', 'set', interface_name, 'up'])
-    time.sleep(5)
-    addr_after = subprocess.getoutput(command_show_addr)
-    route_after = subprocess.getoutput(command_show_route)
-    logging.info(f'After flush, IPv6 addresses: \n{addr_after}')
-    logging.info(f'After flush, IPv6 routes: \n{route_after}')
+
+    time.sleep(down_up_wait_s)
+    log_ipv6_addr_route_by_interface(interface_name, title='After flush')
+
+
+def flush_ipv6_addr_by_interface() -> None:
+    interface_name = get_host_interface_name()
+    flush_ipv6_addr_route_by_interface(interface_name)
 
 
 class tcp_parameter:
@@ -662,7 +807,7 @@ def execute_command(dut: IdfDut, command: str, prefix: str = 'ot ') -> None:
     dut.write(prefix + command)
 
 
-def get_ouput_string(dut: IdfDut, command: str, wait_time: int) -> str:
+def get_output_string(dut: IdfDut, command: str, wait_time: int) -> str:
     execute_command(dut, command)
     tmp = dut.expect(pexpect.TIMEOUT, timeout=wait_time)
     clean_buffer(dut)

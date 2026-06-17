@@ -7,13 +7,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/param.h> // For MIN/MAX
-#include "spi_flash_chip_generic.h"
-#include "spi_flash_defs.h"
-#include "hal/spi_flash_encrypt_hal.h"
 #include "esp_log.h"
 #include "esp_attr.h"
-#include "esp_private/spi_flash_os.h"
 #include "esp_rom_caps.h"
+
+#include "hal/spi_flash_encrypt_hal.h"
+#include "esp_flash_chips/spi_flash_defs.h"
+#include "esp_flash_chips/spi_flash_chip_generic.h"
+#include "esp_private/spi_flash_os.h"
 
 #define IS_REGION_32BIT(start, len)    ((start) + (len) > (1<<24))
 #define IS_ADDR_32BIT(addr)            (addr >= (1<<24))

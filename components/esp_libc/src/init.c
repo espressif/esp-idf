@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,12 @@ ESP_SYSTEM_INIT_FN(init_libc_stdio, CORE, BIT(0), 120)
 #else
     esp_libc_init_global_stdio();
 #endif
+    return ESP_OK;
+}
+
+ESP_SYSTEM_INIT_FN(init_libc_time, CORE, BIT(0), 106)
+{
+    esp_libc_time_init();
     return ESP_OK;
 }
 

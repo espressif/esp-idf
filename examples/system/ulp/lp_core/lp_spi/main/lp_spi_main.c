@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,11 @@ extern const uint8_t lp_core_main_bin_end[]   asm("_binary_lp_core_main_bin_end"
 
 #define LP_SPI_MOSI_PIN 7
 #define LP_SPI_MISO_PIN 6
+#if CONFIG_IDF_TARGET_ESP32S31
+#define LP_SPI_SCLK_PIN 3
+#else
 #define LP_SPI_SCLK_PIN 8
+#endif
 #define LP_SPI_CS_PIN   4
 
 #define LP_CORE_WAKEUP_PERIOD_US 1*1000*1000
@@ -58,7 +62,7 @@ static void lp_spi_init(void)
     /* Base LP SPI device settings */
     lp_spi_device_config_t device = {
         .cs_io_num = LP_SPI_CS_PIN,
-        .clock_speed_hz = 10 * 1000, // 10 MHz
+        .clock_speed_hz = 10 * 1000, // 10 kHz
         .duty_cycle = 128,  // 50% duty cycle
     };
 
@@ -79,7 +83,7 @@ void app_main(void)
     vTaskDelay(pdMS_TO_TICKS(1000));
 
     uint32_t causes = esp_sleep_get_wakeup_causes();
-    if (esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_ULP)) {
+    if (causes & BIT(ESP_SLEEP_WAKEUP_ULP)) {
         printf("LP core woke up the main CPU\n");
         printf("Temperature %.2f degree celsius, humidity %.2f%%RH\n", ulp_temperature / 100.0, ulp_humidity / 1024.0);
     } else {

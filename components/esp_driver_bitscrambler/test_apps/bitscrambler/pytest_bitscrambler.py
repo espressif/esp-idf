@@ -3,9 +3,10 @@
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['esp32p4', 'esp32c5'], indirect=['target'])
+@idf_parametrize('target', soc_filtered_targets('SOC_BITSCRAMBLER_SUPPORTED == 1'), indirect=['target'])
 def test_bitscrambler(dut: Dut) -> None:
     dut.run_all_single_board_cases()

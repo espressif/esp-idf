@@ -2,6 +2,8 @@
 Start a Project on Windows from Command Line
 ********************************************
 
+:link_to_translation:`zh_CN:[中文]`
+
 This guide helps you to start a new project on the {IDF_TARGET_NAME} and build, flash, and monitor the device output on Windows.
 
 

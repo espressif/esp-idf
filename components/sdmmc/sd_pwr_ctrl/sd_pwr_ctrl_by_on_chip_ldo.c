@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,14 @@
 #include "sd_pwr_ctrl.h"
 #include "sd_pwr_ctrl_by_on_chip_ldo.h"
 #include "sd_pwr_ctrl_interface.h"
+
+#if SOC_SDMMC_IO_UHS_POWER_EXTERNAL
+#define SD_VOLT_MV    1800
+#define SD_VOLT_ADJUST_MODE false
+#else
+#define SD_VOLT_MV    3300
+#define SD_VOLT_ADJUST_MODE true
+#endif
 
 typedef struct {
     esp_ldo_channel_handle_t ldo_chan;
@@ -38,9 +46,9 @@ esp_err_t sd_pwr_ctrl_new_on_chip_ldo(const sd_pwr_ctrl_ldo_config_t *configs, s
     ESP_GOTO_ON_FALSE(ctx, ESP_ERR_NO_MEM, err, TAG, "no mem for on-chip ldo control driver context");
 
     esp_ldo_channel_config_t chan_cfg = {
-        .voltage_mv = 3300,
+        .voltage_mv = SD_VOLT_MV,
         .chan_id = configs->ldo_chan_id,
-        .flags.adjustable = true, // the SDMMC power control driver will adjust the voltage later according to different speed mode
+        .flags.adjustable = SD_VOLT_ADJUST_MODE, // the SDMMC power control driver will adjust the voltage later according to different speed mode
     };
     esp_ldo_channel_handle_t ldo_chan = NULL;
     ESP_GOTO_ON_ERROR(esp_ldo_acquire_channel(&chan_cfg, &ldo_chan), err, TAG, "failed to enable the on-chip LDO unit");
@@ -50,6 +58,8 @@ esp_err_t sd_pwr_ctrl_new_on_chip_ldo(const sd_pwr_ctrl_ldo_config_t *configs, s
     ctx->ldo_chan = ldo_chan;
     ctx->voltage_mv = 0;
     *ret_drv = driver;
+
+    ESP_LOGD(TAG, "on-chip LDO unit %d enabled", configs->ldo_chan_id);
 
     return ESP_OK;
 
@@ -77,6 +87,7 @@ static esp_err_t s_ldo_set_voltage(void *arg, int voltage_mv)
 {
     //API checks done by caller
     sd_pwr_ctrl_ldo_ctx_t *ctx = arg;
+    ESP_LOGD(TAG, "setting LDO unit output voltage to %dmV", voltage_mv);
     ESP_RETURN_ON_ERROR(esp_ldo_channel_adjust_voltage(ctx->ldo_chan, voltage_mv), TAG, "failed to set LDO unit output voltage");
     ctx->voltage_mv = voltage_mv;
     return ESP_OK;

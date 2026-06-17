@@ -114,6 +114,8 @@ Application Examples
 
 - :example:`protocols/icmp_echo` demonstrates how to implement a simple ping command line utility to test if a remote host is reachable on the IP network, using ICMP echo request packets.
 
+- :example:`protocols/icmp/pmtu_probe` demonstrates how to probe path MTU with ICMP echo requests and apply the result to the active interface using :cpp:func:`esp_netif_set_mtu`.
+
 API Reference
 -------------
 

@@ -14,6 +14,7 @@
 #include "hal/efuse_hal.h"
 #include "esp_cache.h"
 #include "esp_private/esp_cache_private.h"
+#include "esp_efuse.h"
 
 TEST_CASE("DW_GDMA channel allocation", "[DW_GDMA]")
 {
@@ -541,7 +542,7 @@ TEST_CASE("DW_GDMA M2M Test: memory set with fixed address", "[DW_GDMA]")
     size_t int_mem_alignment = 0;
     TEST_ESP_OK(esp_cache_get_alignment(MALLOC_CAP_SPIRAM, &ext_mem_alignment));
     TEST_ESP_OK(esp_cache_get_alignment(0, &int_mem_alignment));
-    if (efuse_hal_flash_encryption_enabled()) {
+    if (esp_efuse_is_flash_encryption_enabled()) {
         TEST_PASS_MESSAGE("Flash encryption is enabled, skip this test");
     }
     uint8_t *src_buf = heap_caps_aligned_calloc(ext_mem_alignment, 1, 256, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);

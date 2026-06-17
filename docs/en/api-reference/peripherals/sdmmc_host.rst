@@ -78,6 +78,11 @@ Overview
 
     On {IDF_TARGET_NAME}, SDMMC host requires an external power supply for the IO voltage. Please refer to :ref:`pwr-ctrl` for details.
 
+.. only:: esp32s31
+
+    - Both slots :c:macro:`SDMMC_HOST_SLOT_0` and :c:macro:`SDMMC_HOST_SLOT_1` are dedicated IOs.
+    - :c:macro:`SDMMC_HOST_SLOT_0` supports UHS-I mode.
+
 Supported Speed Modes
 ---------------------
 

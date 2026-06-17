@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -267,6 +267,12 @@ typedef enum {
     ESP_GAP_BLE_CS_CONFIG_CMPL_EVT,                              /*!< When CS has completed the Channel Sounding Configuration procedure, the event comes */
     ESP_GAP_BLE_CS_SUBEVENT_RESULT_EVT,                          /*!< When CS has results to report for a CS subevent during the CS procedure, the event comes */
     ESP_GAP_BLE_CS_SUBEVENT_RESULT_CONTINUE_EVT,                 /*!< When CS has completed a new CS subevent measurement, the event comes */
+    ESP_GAP_BLE_MONITOR_ADV_REPORT_EVT,                          /*!< When LE monitor advertisement report (RSSI threshold etc), the event comes */
+    ESP_GAP_BLE_ADD_MONITOR_ADV_COMPLETE_EVT,                    /*!< When add monitor advertiser complete, the event comes */
+    ESP_GAP_BLE_REMOVE_MONITOR_ADV_COMPLETE_EVT,                 /*!< When remove monitor advertiser complete, the event comes */
+    ESP_GAP_BLE_CLEAR_MONITOR_ADV_COMPLETE_EVT,                  /*!< When clear monitor advertiser list complete, the event comes */
+    ESP_GAP_BLE_READ_MONITOR_ADV_LIST_SIZE_COMPLETE_EVT,         /*!< When read monitor advertiser list size complete, the event comes */
+    ESP_GAP_BLE_ENABLE_MONITOR_ADV_COMPLETE_EVT,                 /*!< When enable/disable monitor advertising complete, the event comes */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
@@ -978,10 +984,25 @@ typedef struct {
     esp_ble_addr_type_t peer_addr_type; /*!< ext adv peer address type */
     esp_bd_addr_t peer_addr;            /*!< ext adv peer address */
     esp_ble_adv_filter_t filter_policy; /*!< ext adv filter policy */
-    int8_t tx_power;                    /*!< ext adv tx power */
+    int8_t tx_power;                    /*!< ext adv tx power.
+                                             For this advertising set, priority is higher than
+                                             `esp_ble_tx_power_set()`, `esp_ble_tx_power_set_enhanced()`,
+                                             and menuconfig default TX power (`CONFIG_BT_CTRL_DFT_TX_POWER_LEVEL`).
+                                             The actual applied TX power may be different from the requested value,
+                                             depending on the Controller TX power granularity/level mechanism.
+                                             (for example ESP32-C3/ESP32-S3 with 3 dBm step), the actual
+                                             applied TX power may be rounded down and be 0 to 2 dBm lower
+                                             than the requested value.) */
     esp_ble_gap_pri_phy_t primary_phy;  /*!< ext adv primary phy */
     uint8_t max_skip;                   /*!< ext adv maximum skip */
-    esp_ble_gap_phy_t secondary_phy;    /*!< ext adv secondary phy */
+    esp_ble_gap_phy_t secondary_phy;    /*!< ext adv secondary phy.
+                                             Note: If the advertiser sends connectable advertising packets on the LE Coded
+                                             PHY, the peer may then establish the ACL connection on the LE Coded PHY, which
+                                             will significantly degrade Wi-Fi performance in Bluetooth/Wi-Fi coexistence
+                                             scenarios because Coded PHY (S=2/S=8) packets occupy the radio for much longer
+                                             than 1M/2M PHY packets. It is recommended to use the LE 2M PHY (or LE 1M PHY)
+                                             first, and only use the LE Coded PHY when the long-range capability is really
+                                             required. */
     uint8_t sid;                        /*!< ext adv sid */
     bool scan_req_notif;                /*!< ext adv scan request event notify */
 #if (CONFIG_BT_BLE_FEAT_ADV_CODING_SELECTION)
@@ -1211,6 +1232,27 @@ typedef struct {
     uint8_t cte_type;                   /*!< periodic advertising sync transfer CET type */
 } esp_ble_gap_past_params_t;
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+/**
+ * @brief Parameters for adding a device to the LE Monitor Advertisers list
+ */
+typedef struct {
+    esp_ble_addr_type_t addr_type;  /*!< Address type of the advertiser */
+    esp_bd_addr_t addr;             /*!< Device address of the advertiser to monitor */
+    int8_t rssi_low;                /*!< Low threshold of RSSI (dBm). Report when RSSI goes at or below this value */
+    int8_t rssi_high;               /*!< High threshold of RSSI (dBm). Report when RSSI goes at or above this value */
+    uint8_t timeout;                /*!< Monitor timeout: 0 = no timeout; 1–0xFF = timeout in seconds */
+} esp_ble_gap_add_monitor_adv_params_t;
+
+/**
+ * @brief Parameters for removing a device from the LE Monitor Advertisers list
+ */
+typedef struct {
+    esp_ble_addr_type_t addr_type;  /*!< Address type of the advertiser */
+    esp_bd_addr_t addr;             /*!< Device address of the advertiser to remove from the monitor list */
+} esp_ble_gap_remove_monitor_adv_params_t;
+#endif // (BLE_FEAT_ADV_MONITOR == TRUE)
 
 typedef enum {
     ESP_BLE_NETWORK_PRIVACY_MODE    = 0X00,    /*!< Network Privacy Mode for peer device (default) */
@@ -2124,6 +2166,47 @@ typedef union {
         esp_ble_addr_type_t scan_addr_type;  /*!< scanner address type */
         esp_bd_addr_t scan_addr;             /*!< scanner address */
     } scan_req_received;                     /*!< Event parameter of ESP_GAP_BLE_SCAN_REQ_RECEIVED_EVT */
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_MONITOR_ADV_REPORT_EVT
+     */
+    struct ble_monitor_adv_report_param {
+        esp_ble_addr_type_t addr_type;       /*!< address type */
+        esp_bd_addr_t addr;                  /*!< advertiser address */
+        uint8_t condition;                   /*!< RSSI threshold condition (e.g. entered/left range) */
+    } monitor_adv_report;                    /*!< Event parameter of ESP_GAP_BLE_MONITOR_ADV_REPORT_EVT */
+    /**
+     * @brief ESP_GAP_BLE_ADD_MONITOR_ADV_COMPLETE_EVT
+     */
+    struct ble_add_monitor_adv_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate add monitor advertiser operation success status */
+    } add_monitor_adv;                       /*!< Event parameter of ESP_GAP_BLE_ADD_MONITOR_ADV_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_REMOVE_MONITOR_ADV_COMPLETE_EVT
+     */
+    struct ble_remove_monitor_adv_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate remove monitor advertiser operation success status */
+    } remove_monitor_adv;                    /*!< Event parameter of ESP_GAP_BLE_REMOVE_MONITOR_ADV_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_CLEAR_MONITOR_ADV_COMPLETE_EVT
+     */
+    struct ble_clear_monitor_adv_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate clear monitor advertiser list operation success status */
+    } clear_monitor_adv;                     /*!< Event parameter of ESP_GAP_BLE_CLEAR_MONITOR_ADV_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_READ_MONITOR_ADV_LIST_SIZE_COMPLETE_EVT
+     */
+    struct ble_read_monitor_adv_list_size_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate read monitor advertiser list size operation success status */
+        uint8_t list_size;                   /*!< Monitor advertiser list capacity */
+    } read_monitor_adv_list_size;            /*!< Event parameter of ESP_GAP_BLE_READ_MONITOR_ADV_LIST_SIZE_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_ENABLE_MONITOR_ADV_COMPLETE_EVT
+     */
+    struct ble_enable_monitor_adv_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate enable/disable monitor advertising operation success status */
+    } enable_monitor_adv;                    /*!< Event parameter of ESP_GAP_BLE_ENABLE_MONITOR_ADV_COMPLETE_EVT */
+#endif
     /**
      * @brief ESP_GAP_BLE_CHANNEL_SELECT_ALGORITHM_EVT
      */
@@ -2448,8 +2531,7 @@ typedef union {
      * @brief ESP_GAP_BLE_CS_READ_LOCAL_SUPP_CAPS_EVT
      */
     struct ble_cs_read_local_supp_caps_evt {
-        uint8_t status;                          /*!< Indicate channel sounding read local supported capabilities command successfully completed */
-        uint16_t conn_handle;                    /*!< Connection Handle */
+        esp_bt_status_t status;                  /*!< Indicate channel sounding read local supported capabilities command successfully completed */
         uint8_t num_config_supported;            /*!< Number of CS configurations supported per connection */
         uint16_t max_consecutive_proc_supported; /*!< 0x0000: Support for both a fixed number of consecutive CS procedures and for an indefinite number of CS procedures until termination
                                                     0x0001 to 0xFFFF: Maximum number of consecutive CS procedures supported */
@@ -2515,7 +2597,7 @@ typedef union {
      * @brief ESP_GAP_BLE_CS_READ_REMOTE_SUPP_CAPS_CMPL_EVT
      */
     struct ble_cs_read_remote_supp_caps {
-        uint8_t status;                          /*!< 0x00: Channel sounding read remote supported capabilities command successfully completed
+        esp_bt_status_t status;                  /*!< 0x00: Channel sounding read remote supported capabilities command successfully completed
                                                       other: Channel sounding read remote supported capabilities command failed */
         uint16_t conn_handle;                    /*!< Connection Handle */
         uint8_t num_config_supported;            /*!< Number of CS configurations supported per connection */
@@ -2578,7 +2660,7 @@ typedef union {
      * @brief ESP_GAP_BLE_CS_WRITE_CACHED_REMOTE_SUPP_CAPS_EVT
      */
     struct ble_cs_write_cached_remote_supp_caps {
-        uint8_t status;         /*!< 0x00: Channel sounding write cached remote FAE table command succeeded
+        esp_bt_status_t status; /*!< 0x00: Channel sounding write cached remote FAE table command succeeded
                                      0x01: Channel sounding write cached remote FAE table command failed */
         uint16_t conn_handle;   /*!< Connection Handle */
     } cs_write_cached_remote_supp_caps; /*!< Event parameter of ESP_GAP_BLE_CS_WRITE_CACHED_REMOTE_SUPP_CAPS_EVT */
@@ -2586,7 +2668,7 @@ typedef union {
      * @brief ESP_GAP_BLE_CS_SECURITY_ENABLE_CMPL_EVT
      */
     struct ble_cs_security_enable {
-        uint8_t status;         /*!< 0x00: Channel sounding security parameters successfully exchanged
+        esp_bt_status_t status; /*!< 0x00: Channel sounding security parameters successfully exchanged
                                                other: Channel sounding CS security parameter exchange failed */
         uint16_t conn_handle;   /*!< Connection Handle */
     } cs_security_enable; /*!< Event parameter of ESP_GAP_BLE_CS_SECURITY_ENABLE_CMPL_EVT */
@@ -2594,7 +2676,7 @@ typedef union {
      * @brief ESP_GAP_BLE_CS_SET_DEFAULT_SETTINGS_EVT
      */
     struct ble_cs_set_default_settings {
-        uint8_t status;                 /*!< 0x00: Channel sounding set default settings command successfully completed
+        esp_bt_status_t status;         /*!< 0x00: Channel sounding set default settings command successfully completed
                                                other: Channel sounding set default settings command failed*/
         uint16_t conn_handle;           /*!< Connection Handle */
     } cs_set_default_settings; /*!< Event parameter of ESP_GAP_BLE_CS_SET_DEFAULT_SETTINGS_EVT */
@@ -2602,7 +2684,7 @@ typedef union {
      * @brief ESP_GAP_BLE_CS_READ_REMOTE_FAE_TABLE_CMPL_EVT
      */
     struct ble_cs_read_remote_fae_tab {
-        uint8_t status;                   /*!< 0x00: Channel sounding read remote FAE Table command successfully completed
+        esp_bt_status_t status;           /*!< 0x00: Channel sounding read remote FAE Table command successfully completed
                                                other: Channel sounding read remote FAE Table command failed*/
         uint16_t conn_handle;             /*!< Connection Handle */
         uint8_t remote_fae_table[72];     /*!< Per-channel mode-0 Frequency Actuation Error table of the remote Controller */
@@ -2611,7 +2693,7 @@ typedef union {
      * @brief ESP_GAP_BLE_CS_WRITE_CACHED_REMOTE_FAE_TABLE_EVT
      */
     struct ble_cs_write_cached_remote_fae_tab {
-        uint8_t status;                  /*!< 0x00: Channel sounding write cached remote FAE table command succeeded
+        esp_bt_status_t status;          /*!< 0x00: Channel sounding write cached remote FAE table command succeeded
                                               other: Channel sounding write cached remote FAE table command failed */
         uint16_t conn_handle;            /*!< Connection Handle */
     } cs_write_cached_remote_fae_tab; /*!< Event parameter of ESP_GAP_BLE_CS_WRITE_CACHED_REMOTE_FAE_TABLE_EVT */
@@ -2619,7 +2701,7 @@ typedef union {
      * @brief ESP_GAP_BLE_CS_CONFIG_CMPL_EVT
      */
     struct ble_cs_config_udpate {
-        uint8_t status;               /*!< 0x00: Channel Sounding Configuration procedure succeeded
+        esp_bt_status_t status;       /*!< 0x00: Channel Sounding Configuration procedure succeeded
                                          other: Channel Sounding Configuration procedure failed */
         uint16_t conn_handle;         /*!< Connection Handle */
         uint8_t config_id;            /*!< CS configuration identifier */
@@ -2680,7 +2762,7 @@ typedef union {
      * @brief ESP_GAP_BLE_CS_SET_PROC_PARAMS_CMPL_EVT
      */
     struct ble_cs_set_proc_params {
-        uint8_t status;         /*!< 0x00: Channel sounding set procedure_Parameters command successful
+        esp_bt_status_t status; /*!< 0x00: Channel sounding set procedure_Parameters command successful
                                      other: Channel sounding set procedure_Parameters command failed */
         uint16_t conn_handle;   /*!< Connection Handle */
     } cs_set_proc_params; /*!< Event parameter of ESP_GAP_BLE_CS_SET_PROC_PARAMS_CMPL_EVT */
@@ -2688,14 +2770,14 @@ typedef union {
      * @brief ESP_GAP_BLE_CS_SET_CHANNEL_CLASS_CMPL_EVT
      */
     struct ble_cs_set_channel_class {
-        uint8_t status;        /*!< 0x00: Channel sounding set channel classification command successful
+        esp_bt_status_t status; /*!< 0x00: Channel sounding set channel classification command successful
                                     other: Channel sounding set channel classification command failed */
     } cs_set_channel_class; /*!< Event parameter of ESP_GAP_BLE_CS_SET_CHANNEL_CLASS_CMPL_EVT */
     /**
      * @brief ESP_GAP_BLE_CS_PROC_ENABLE_CMPL_EVT
      */
     struct ble_cs_proc_enable {
-        uint8_t status;                 /*!< 0x00: Channel sounding procedure enable command successful
+        esp_bt_status_t status;         /*!< 0x00: Channel sounding procedure enable command successful
                                             other: Channel sounding procedure enable command failed */
         uint16_t conn_handle;           /*!< Connection Handle */
         uint8_t config_id;              /*!< CS configuration identifier */
@@ -2827,7 +2909,11 @@ typedef void (* esp_gap_ble_cb_t)(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_p
  *
  * @param[in]       callback: callback function
  *
- * @note            Avoid performing time-consuming operations within the callback functions.
+ * @note            Do NOT perform time-consuming operations in the callback. Time-consuming operations
+ *                  include: taking semaphores that may block for a long time (e.g. xSemaphoreTake with
+ *                  long timeout or portMAX_DELAY), blocking delays (e.g. vTaskDelay), and flash
+ *                  read/write/erase. Such operations may block the Bluetooth stack and lead to
+ *                  instability or deadlock. Defer heavy work to a separate task if needed.
  *
  * @return
  *                  - ESP_OK : success
@@ -3025,6 +3111,11 @@ esp_err_t esp_ble_gap_add_device_to_resolving_list(esp_bd_addr_t peer_addr, uint
 
 /**
  * @brief           This function clears the random address for the application
+ *
+ * @note            This function shall not be used when:
+ *                  - Advertising is enabled,
+ *                  - Scanning is enabled, or
+ *                  - any LE connection exists / a create connection command is pending.
  *
  * @return
  *                  - ESP_OK : success
@@ -3564,6 +3655,12 @@ esp_err_t esp_ble_gap_read_phy(esp_bd_addr_t bd_addr);
 * @param[in]       tx_phy_mask : indicates the transmitter PHYs that the Host prefers the Controller to use
 * @param[in]       rx_phy_mask : indicates the receiver PHYs that the Host prefers the Controller to use
 *
+* @note            Including the LE Coded PHY in tx_phy_mask / rx_phy_mask may cause subsequent ACL connections to run on
+*                  the LE Coded PHY, which will significantly degrade Wi-Fi performance in Bluetooth/Wi-Fi coexistence
+*                  scenarios because Coded PHY (S=2/S=8) packets occupy the radio for much longer than 1M/2M PHY packets.
+*                  It is recommended to use the LE 2M PHY (or LE 1M PHY) first, and only include the LE Coded PHY when the
+*                  long-range capability is really required.
+*
 * @return            - ESP_OK : success
 *                    - other  : failed
 *
@@ -3579,6 +3676,11 @@ esp_err_t esp_ble_gap_set_preferred_default_phy(esp_ble_gap_phy_mask_t tx_phy_ma
 * @param[in]       tx_phy_mask : a bit field that indicates the transmitter PHYs that the Host prefers the Controller to use
 * @param[in]       rx_phy_mask : a bit field that indicates the receiver PHYs that the Host prefers the Controller to use
 * @param[in]       phy_options : a bit field that allows the Host to specify options for PHYs
+*
+* @note            Switching an existing ACL connection to the LE Coded PHY via tx_phy_mask / rx_phy_mask will significantly
+*                  degrade Wi-Fi performance in Bluetooth/Wi-Fi coexistence scenarios, because Coded PHY (S=2/S=8) packets
+*                  occupy the radio for much longer than 1M/2M PHY packets. It is recommended to use the LE 2M PHY (or LE 1M
+*                  PHY) first, and only switch to the LE Coded PHY when the long-range capability is really required.
 *
 * @return            - ESP_OK : success
 *                    - other  : failed
@@ -3892,6 +3994,12 @@ esp_err_t esp_ble_gap_get_periodic_list_size(uint8_t *size);
 * @param[in]       phy_2m_conn_params : Connection parameters for the LE 2M PHY are provided.
 * @param[in]       phy_coded_conn_params : Scan connectable advertisements on the LE Coded PHY. Connection parameters for the LE Coded PHY are provided.
 *
+* @note            Using the LE Coded PHY for the ACL connection will significantly degrade Wi-Fi performance, because
+*                  the on-air transmission time of a Coded PHY packet (S=2 or S=8) is much longer than that of a 1M/2M PHY
+*                  packet, so the Bluetooth controller occupies the radio for a longer time and leaves less airtime for Wi-Fi.
+*                  In Bluetooth/Wi-Fi coexistence scenarios, it is recommended to use the LE 2M PHY or LE 1M PHY first, and
+*                  only fall back to the LE Coded PHY when the long-range capability is really required.
+*
 * @return            - ESP_OK : success
 *                    - other  : failed
 *
@@ -3901,6 +4009,65 @@ esp_err_t esp_ble_gap_prefer_ext_connect_params_set(esp_bd_addr_t addr,
                                                     const esp_ble_gap_conn_params_t *phy_1m_conn_params,
                                                     const esp_ble_gap_conn_params_t *phy_2m_conn_params,
                                                     const esp_ble_gap_conn_params_t *phy_coded_conn_params);
+
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+/**
+* @brief           This function is used to add a single device to the list of Monitored Advertisers in the Controller.
+*                  When the Controller receives advertising that matches the address and meets the RSSI threshold condition,
+*                  it will send an LE Monitor Advertising Report event (ESP_GAP_BLE_MONITOR_ADV_REPORT_EVT).
+*
+* @param[in]       params : Pointer to parameters (addr_type, addr, rssi_low, rssi_high, timeout). Reserved fields allow future extension.
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_add_monitor_adv_list(const esp_ble_gap_add_monitor_adv_params_t *params);
+
+/**
+* @brief           This function is used to remove one device from the list of Monitored Advertisers in the Controller.
+*                  Removals take effect immediately.
+*
+* @param[in]       params : Pointer to parameters (addr_type, addr). Reserved fields allow future extension.
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_remove_monitor_adv_list(const esp_ble_gap_remove_monitor_adv_params_t *params);
+
+/**
+* @brief           This function is used to remove all devices from the list of Monitored Advertisers in the Controller.
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_clear_monitor_adv_list(void);
+
+/**
+* @brief           This function is used to read the capacity of the list of Monitored Advertisers in the Controller.
+*                  The HCI command is sent asynchronously; the list size is reported via command complete if needed.
+*
+* @return            - ESP_OK : success (command sent)
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_read_monitor_adv_list_size(void);
+
+/**
+* @brief           This function is used to enable or disable the reporting of LE Monitor Advertising Report events.
+*                  When enabled, the Controller will generate ESP_GAP_BLE_MONITOR_ADV_REPORT_EVT when advertising
+*                  from devices in the monitor list meets the configured RSSI threshold condition.
+*
+* @param[in]       enable : true to enable monitor advertising reports, false to disable
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_enable_monitor_adv(bool enable);
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 #endif //#if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)

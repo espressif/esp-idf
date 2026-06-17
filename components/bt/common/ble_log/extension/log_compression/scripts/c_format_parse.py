@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 # ruff: noqa: UP007
 """
@@ -8,10 +8,24 @@ Parses C-style format strings and handles argument formatting for log compressio
 """
 
 import struct
+from typing import NamedTuple
 from typing import Union
 
 
-def parse_format_string(format_str: str) -> list[Union[str, tuple[int, int, str, str, str, str, str]]]:
+class FormatToken(NamedTuple):
+    """Parsed C format specifier, e.g. ``%08llx`` -> FormatToken(start, end, '%08llx', '0', '8', '', 'll', 'x')."""
+
+    start: int  # index of '%' in the source string
+    end: int  # index one-past the conversion char
+    full_spec: str  # the raw specifier text, e.g. '%08llx'
+    flags: str  # '-', '+', ' ', '#', '0', or ''
+    width: str  # e.g. '10', '*', or ''
+    precision: str  # e.g. '.2' content (without '.'), '*', or ''
+    length: str  # 'h', 'hh', 'l', 'll', 'j', 'z', 't', or ''
+    conv_char: str  # 'd', 'i', 'u', 'o', 'x', 'X', 'f', 's', etc.
+
+
+def parse_format_string(format_str: str) -> list[Union[str, FormatToken]]:
     """
     Parse a format string into tokens.
 
@@ -19,9 +33,9 @@ def parse_format_string(format_str: str) -> list[Union[str, tuple[int, int, str,
         format_str: C-style format string
 
     Returns:
-        List of tokens (strings or format spec tuples)
+        List of tokens (literal strings or FormatToken named-tuples)
     """
-    tokens: list[Union[str, tuple[int, int, str, str, str, str, str]]] = []
+    tokens: list[Union[str, FormatToken]] = []
     i = 0
     n = len(format_str)
 
@@ -42,36 +56,51 @@ def parse_format_string(format_str: str) -> list[Union[str, tuple[int, int, str,
                 flags += format_str[i]
                 i += 1
 
-            # Parse width
+            # Parse width (including dynamic width '*')
             width = ''
-            while i < n and format_str[i].isdigit():
-                width += format_str[i]
+            if i < n and format_str[i] == '*':
+                width = '*'
                 i += 1
+            else:
+                while i < n and format_str[i].isdigit():
+                    width += format_str[i]
+                    i += 1
 
-            # Parse precision
+            # Parse precision (including dynamic precision '*')
             precision = ''
             if i < n and format_str[i] == '.':
                 i += 1
-                while i < n and format_str[i].isdigit():
-                    precision += format_str[i]
+                if i < n and format_str[i] == '*':
+                    precision = '*'
                     i += 1
+                else:
+                    while i < n and format_str[i].isdigit():
+                        precision += format_str[i]
+                        i += 1
 
-            # Parse length modifier
+            # Parse length modifier (supports h, hh, l, ll, j, z, t)
             length = ''
-            if i < n and format_str[i] in 'zhl':
+            if i < n and format_str[i] in 'jzt':
+                # j, z, t are single-character length modifiers
                 length += format_str[i]
                 i += 1
-                # Handle double length (e.g., ll)
-                if i < n and format_str[i] == 'l' and length == 'l':
-                    length += 'l'
+            elif i < n and format_str[i] in 'hl':
+                length += format_str[i]
+                i += 1
+                # Handle double length (e.g., hh, ll)
+                if i < n and format_str[i] == length[0]:
+                    length += format_str[i]
                     i += 1
 
-            if i < n and format_str[i] in 'diuoxXfcsplL':
+            # Parse conversion character
+            # Supports: d, i, u, o, x, X, f, F, e, E, g, G, a, A, c, s, p, n, L
+            if i < n and format_str[i] in 'diuoxXfFeEgGaAcspnL':
                 conv_char = format_str[i]
                 i += 1
                 full_spec = format_str[start:i]
-                tokens.append((start, i, full_spec, flags, width, length, conv_char))
+                tokens.append(FormatToken(start, i, full_spec, flags, width, precision, length, conv_char))
             else:
+                # Invalid format spec, treat as literal text
                 tokens.append(format_str[start:i])
         else:
             # Regular text
@@ -200,10 +229,8 @@ def parse_compressed_arguments(byte_sequence: bytes, format_str: str) -> str:
     arg_index = 0
 
     for token in tokens:
-        if isinstance(token, tuple):
-            start, end, flags, width, precision, length_mod, conv_char = token
-
-            if conv_char == '%':
+        if isinstance(token, FormatToken):
+            if token.conv_char == '%':
                 output.append('%')
             else:
                 if arg_index >= len(args):
@@ -213,19 +240,19 @@ def parse_compressed_arguments(byte_sequence: bytes, format_str: str) -> str:
                 arg_index += 1
 
                 # Character type
-                if conv_char == 'c':
+                if token.conv_char == 'c':
                     # Pad to 4 bytes for unpacking
                     padded = arg_bytes.ljust(4, b'\x00')
                     char_code = struct.unpack('>I', padded)[0]
                     output.append(chr(char_code))
 
                 # Pointer type
-                elif conv_char == 'p':
+                elif token.conv_char == 'p':
                     ptr_value = int.from_bytes(arg_bytes, 'big', signed=False)
                     output.append(hex(ptr_value))
 
                 # Floating point types
-                elif conv_char in 'fFeEgGaA':
+                elif token.conv_char in 'fFeEgGaA':
                     if len(arg_bytes) == 4:
                         float_value = struct.unpack('>f', arg_bytes)[0]
                     elif len(arg_bytes) == 8:
@@ -235,13 +262,13 @@ def parse_compressed_arguments(byte_sequence: bytes, format_str: str) -> str:
                     output.append(str(float_value))
 
                 # Integer types
-                elif conv_char in 'diuoxX':
-                    signed = conv_char in 'di'
+                elif token.conv_char in 'diuoxX':
+                    signed = token.conv_char in 'di'
 
                     # Determine expected size
-                    if length_mod == 'll':
+                    if token.length == 'll':
                         expected_size = 8
-                    elif length_mod in ('l', 'z', 'j', 't') or conv_char == 'p':
+                    elif token.length in ('l', 'z', 'j', 't') or token.conv_char == 'p':
                         expected_size = 4
                     else:
                         expected_size = len(arg_bytes)
@@ -259,9 +286,9 @@ def parse_compressed_arguments(byte_sequence: bytes, format_str: str) -> str:
 
                     # Convert to integer
                     int_value = int.from_bytes(arg_bytes, 'big', signed=signed)
-                    output.append(format_integer(int_value, conv_char, flags, width, length_mod))
+                    output.append(format_integer(int_value, token.conv_char, token.flags, token.width, token.length))
                 else:
-                    raise ValueError(f'Unsupported conversion: {conv_char}')
+                    raise ValueError(f'Unsupported conversion: {token.conv_char}')
         else:
             output.append(token)
 

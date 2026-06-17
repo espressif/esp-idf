@@ -3,10 +3,12 @@
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32h2'], indirect=['target'])
+@idf_parametrize('target', soc_filtered_targets('SOC_I2S_SUPPORTS_TDM == 1'), indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
 def test_i2s_es7210_tdm_example(dut: Dut) -> None:
     dut.expect_exact('example: Create I2S receive channel')
     dut.expect_exact('example: Configure I2S receive channel to TDM mode')

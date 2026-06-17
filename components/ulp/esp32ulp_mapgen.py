@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2016-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 # esp32ulp_mapgen utility converts a symbol list provided by nm into an export script
@@ -19,8 +19,29 @@ def name_mangling(name: str) -> str:
     return f'_ZN{len(ns)}{ns}{len(n)}{n}E'
 
 
+# On ESP32-P4 the LP CPU accesses HP SRAM via the L2 cache at the same
+# address as the HP CPU cacheable alias. The HP application should access
+# LP Core variables through the non-cacheable alias to avoid coherency
+# issues with the LP CPU. The non-cacheable alias is obtained by adding
+# the offset 0x40000000 to addresses below 0x50000000.
+_P4_NON_CACHEABLE_OFFSET = 0x40000000
+_P4_LP_RAM_BASE = 0x50000000
+
+
+def map_to_hp_cpu_addr(addr: int, target: str | None) -> int:
+    """Translate an LP-CPU VMA to the address the HP CPU should use to access it."""
+    if target == 'esp32p4' and addr < _P4_LP_RAM_BASE:
+        return addr + _P4_NON_CACHEABLE_OFFSET
+    return addr
+
+
 def gen_ld_h_from_sym(
-    f_sym: typing.TextIO, f_ld: typing.TextIO, f_h: typing.TextIO, base_addr: int, prefix: str
+    f_sym: typing.TextIO,
+    f_ld: typing.TextIO,
+    f_h: typing.TextIO,
+    base_addr: int,
+    prefix: str,
+    target: str | None = None,
 ) -> None:
     f_ld.write(
         textwrap.dedent(
@@ -82,7 +103,7 @@ def gen_ld_h_from_sym(
             continue
 
         # Extract the symbol information
-        addr = int(groups.group('address'), 16) + base_addr
+        addr = map_to_hp_cpu_addr(int(groups.group('address'), 16) + base_addr, target)
         size = int(groups.group('size'))
         sym_name = groups.group('name')
 
@@ -128,11 +149,17 @@ def main() -> None:
     )
     parser.add_argument('--base-addr', required=True, help='base address of the ULP memory, to be added to each symbol')
     parser.add_argument('-p', '--prefix', required=False, help='prefix for generated header file', default='ulp_')
+    parser.add_argument(
+        '--target',
+        required=False,
+        help='IDF target chip name (e.g. esp32p4), used for address translation',
+        default=None,
+    )
 
     args = parser.parse_args()
 
     with open(args.outputfile + '.h', 'w') as f_h, open(args.outputfile + '.ld', 'w') as f_ld:
-        gen_ld_h_from_sym(args.symfile, f_ld, f_h, int(args.base_addr, 0), args.prefix)
+        gen_ld_h_from_sym(args.symfile, f_ld, f_h, int(args.base_addr, 0), args.prefix, args.target)
 
 
 if __name__ == '__main__':

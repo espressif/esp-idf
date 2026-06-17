@@ -88,7 +88,6 @@ void btm_init (void)
     btm_dev_init();                     /* Device Manager Structures & HCI_Reset */
 #if BLE_INCLUDED == TRUE
     btm_ble_lock_init();
-    btm_ble_sem_init();
 #if ((SMP_INCLUDED == TRUE) || (BLE_PRIVACY_SPT == TRUE))
     btm_cb.addr_res_en = TRUE;
 #endif // ((SMP_INCLUDED == TRUE) || (BLE_PRIVACY_SPT == TRUE))
@@ -131,7 +130,6 @@ void btm_free(void)
 #endif
 #if BLE_INCLUDED == TRUE
     btm_ble_lock_free();
-    btm_ble_sem_free();
 #endif
 }
 

@@ -39,7 +39,7 @@ static TaskHandle_t s_awb_task_handle = NULL;
 static void s_get_default_awb_config(esp_isp_awb_config_t *config, uint32_t h_res, uint32_t v_res)
 {
     // Set sample point: after CCM by default
-    config->sample_point = ISP_AWB_SAMPLE_POINT_AFTER_CCM;
+    config->sample_point = ISP_AWB_SAMPLE_POINT_1;
 
     // Configure window: middle 80% of image to avoid edge overexposure
     config->window.top_left.x = h_res * 0.2f;

@@ -9,12 +9,14 @@
 
 #include "esp_bt.h"
 
-#ifndef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
+#if !CONFIG_BT_LE_HCI_INTERFACE_USE_UART && !CONFIG_BT_CTRL_HCI_INTERFACE_USE_UART
 #error "Please Enable Uart for HCI"
 #endif
+
 #if (CONFIG_ENABLE_DTM_CONFIGURATION_COMMAND)
 #include "dtm_configuration_command.h"
 #endif // CONFIG_ENABLE_DTM_CONFIGURATION_COMMAND
+
 #define TAG "BLE_HCI"
 
 void

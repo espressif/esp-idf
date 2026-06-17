@@ -22,5 +22,5 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS include
-                       REQUIRES esp_blockdev
-                       PRIV_REQUIRES soc esp_timer esp_mm)
+                       REQUIRES esp_blockdev esp_hal_sd
+                       PRIV_REQUIRES esp_timer esp_mm)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,10 +85,14 @@ static void btc_key_value_to_string(uint8_t *key_value, char *value_str, int key
 
 bool btc_config_init(void)
 {
-    osi_mutex_new(&lock);
+    if (osi_mutex_new(&lock) != 0) {
+        BTC_TRACE_ERROR("%s unable to create lock.\n", __func__);
+        return false;
+    }
+
     config = config_new(CONFIG_FILE_PATH);
     if (!config) {
-        BTC_TRACE_WARNING("%s unable to load config file; starting unconfigured.\n", __func__);
+        BTC_TRACE_WARNING("%s unable to load/parse config; starting unconfigured without overwriting NVS.\n", __func__);
         config = config_new_empty();
         if (!config) {
             BTC_TRACE_ERROR("%s unable to allocate a config object.\n", __func__);
@@ -101,7 +105,7 @@ bool btc_config_init(void)
 
     return true;
 
-error:;
+error:
     config_free(config);
     osi_mutex_free(&lock);
     config = NULL;
@@ -273,6 +277,7 @@ bool btc_config_set_bin(const char *section, const char *key, const uint8_t *val
 
     config_set_string(config, section, key, str, false);
 
+    memset(str, 0, length * 2 + 1);
     osi_free(str);
     return true;
 }
@@ -341,14 +346,17 @@ int btc_config_clear(void)
 {
     assert(config != NULL);
 
-    config_free(config);
+    btc_config_lock();
 
+    config_free(config);
     config = config_new_empty();
     if (config == NULL) {
-        return false;
+        btc_config_unlock();
+        return -1;
     }
-    int ret = config_save(config, CONFIG_FILE_PATH);
-    return ret;
+    bool ret = config_save(config, CONFIG_FILE_PATH);
+    btc_config_unlock();
+    return ret ? 0 : -1;
 }
 
 void btc_config_lock(void)

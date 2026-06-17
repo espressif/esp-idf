@@ -43,10 +43,6 @@ config ESP_ROM_HAS_HAL_SYSTIMER
     bool
     default y
 
-config ESP_ROM_SYSTIMER_INIT_PATCH
-    bool
-    default y
-
 config ESP_ROM_HAS_HEAP_TLSF
     bool
     default y
@@ -68,10 +64,6 @@ config ESP_ROM_HAS_SPI_FLASH
     default y
 
 config ESP_ROM_HAS_SPI_FLASH_MMAP
-    bool
-    default y
-
-config ESP_ROM_HAS_REGI2C_BUG
     bool
     default y
 
@@ -130,3 +122,7 @@ config ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY
 config ESP_ROM_SUPPORT_SECURE_BOOT_FAST_WAKEUP
     bool
     default y
+
+config ESP_ROM_BOOTLOADER_OFFSET_FLASH
+    hex
+    default 0x0

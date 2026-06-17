@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 """This file is used for generating the child pipeline for target test jobs.
 
@@ -55,7 +55,7 @@ def main(output_filepath: str) -> None:
     exclude_runner_tags_matching = []
     for _tag in known_warnings_dict.get('no_runner_tags', []):
         if '*' not in _tag:
-            exclude_runner_tags_set.add(_tag)
+            exclude_runner_tags_set.add(frozenset(_tag.split(',')))
         else:
             if res := _process_match_group(_tag):
                 exclude_runner_tags_matching.append(res)
@@ -66,7 +66,7 @@ def main(output_filepath: str) -> None:
     if exclude_runner_tags := os.getenv('EXCLUDE_RUNNER_TAGS'):
         for _tag in exclude_runner_tags.split(';'):
             if '*' not in _tag:
-                exclude_runner_tags_set.add(_tag)
+                exclude_runner_tags_set.add(frozenset(_tag.split(',')))
             else:
                 if res := _process_match_group(_tag):
                     exclude_runner_tags_matching.append(res)
@@ -75,7 +75,7 @@ def main(output_filepath: str) -> None:
     additional_dict: dict[GroupKey, dict[str, t.Any]] = {}
     for key, grouped_cases in cases.grouped_cases.items():
         # skip test cases with no runner tags
-        if ','.join(sorted(key.runner_tags)) in exclude_runner_tags_set:
+        if frozenset(key.runner_tags) in exclude_runner_tags_set:
             print(f'WARNING: excluding test cases with runner tags: {key.runner_tags}')
             continue
 

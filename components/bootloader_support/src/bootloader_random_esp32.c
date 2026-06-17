@@ -5,6 +5,7 @@
  */
 #include "sdkconfig.h"
 #include "bootloader_random.h"
+#include "hal/rng_ll.h"
 #include "soc/rtc_periph.h"
 #include "soc/sens_reg.h"
 #include "soc/syscon_reg.h"
@@ -74,10 +75,13 @@ void bootloader_random_enable(void)
     SET_PERI_REG_MASK(I2S_CONF2_REG(0), I2S_DATA_ENABLE);
     SET_PERI_REG_MASK(I2S_CONF2_REG(0), I2S_DATA_ENABLE_TEST_EN);
     SET_PERI_REG_MASK(I2S_CONF_REG(0), I2S_RX_START);
+    rng_ll_enable();
 }
 
 void bootloader_random_disable(void)
 {
+    rng_ll_disable();
+
     /* Reset some i2s configuration (possibly redundant as we reset entire
        I2S peripheral further down). */
     CLEAR_PERI_REG_MASK(I2S_CONF_REG(0), I2S_RX_START);

@@ -69,7 +69,7 @@ GPIO **边沿** 事件是最常见的事件类型，任何 GPIO 管脚均可触�
     :SOC_SYSTIMER_SUPPORT_ETM: - 调用 :cpp:func:`esp_systick_new_etm_alarm_event` 可以从 RTOS Systick 获取 ETM 事件句柄，每个 CPU 核心可以获取一个事件句柄。
     :SOC_SYSTIMER_SUPPORT_ETM: - 要了解如何从 esp_timer 获取 ETM 事件句柄，请参阅 :doc:`/api-reference/system/esp_timer`。
     :SOC_TIMER_SUPPORT_ETM: - 要了解如何从 GPTimer 获取 ETM 事件句柄，请参阅 :ref:`gptimer-etm-event-and-task`。
-    :SOC_GDMA_SUPPORT_ETM: - 要了解如何从 async memcpy 获取 ETM 事件句柄，请参阅 :doc:`/api-reference/system/async_memcpy`。
+    :SOC_GDMA_SUPPORT_ETM: - 要了解如何从 async memcpy 获取 ETM 事件句柄，请参阅 :doc:`/api-reference/peripherals/async_memcpy`。
     :SOC_MCPWM_SUPPORT_ETM: - 要了解如何从 MCPWM 中获取 ETM 事件句柄，请参阅 :doc:`/api-reference/peripherals/mcpwm`。
     :SOC_ANA_CMPR_SUPPORT_ETM: - 要了解如何从模拟比较器获取 ETM 事件句柄，请参阅 :doc:`/api-reference/peripherals/ana_cmpr`。
     :SOC_TEMPERATURE_SENSOR_SUPPORT_ETM: - 要了解如何从温度传感器获取 ETM 事件句柄，请参阅 :doc:`/api-reference/peripherals/temp_sensor`。

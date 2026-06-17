@@ -1,3 +1,0 @@
-dependencies:
-  esp_eth_time:
-    path: ${IDF_PATH}/examples/ethernet/ptp/components/esp_eth_time

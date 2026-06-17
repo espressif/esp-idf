@@ -113,6 +113,32 @@ function(__dump_build_properties)
 endfunction()
 
 #[[
+    __idf_build_dispatch_build_event(<event> <target>)
+
+    *event[in]*
+
+        Build event name. Currently only ``POST_ELF`` is supported. Other build
+        events may be extended when required.
+
+    *target[in]*
+
+        Name of the primary CMake target at this event point. Passed as the
+        sole argument to every registered callback so that callbacks can
+        operate on the correct target without querying build properties.
+        For ``POST_ELF`` this is the executable target name.
+
+    Internal dispatcher called by the build system at well-defined lifecycle
+    points. Invokes every CMake function registered for
+    ``event`` via ``idf_component_register_build_event_callback``.
+#]]
+function(__idf_build_dispatch_build_event event target)
+    idf_build_get_property(callbacks "__BUILD_EVENT_CALLBACKS_${event}")
+    foreach(cb IN LISTS callbacks)
+        cmake_language(CALL "${cb}" "${target}")
+    endforeach()
+endfunction()
+
+#[[
     __get_library_interface_or_die(LIBRARY <library>
                                    OUTPUT <variable>)
 
@@ -335,6 +361,12 @@ function(idf_build_library library)
         idf_component_get_property(component_interface "${component_name}" COMPONENT_INTERFACE)
         target_link_libraries("${library}" INTERFACE "${component_interface}")
     endforeach()
+
+    # Process optional requirements in DEFERRED mode only (no-op in IMMEDIATE or when unset).
+    idf_build_get_property(opt_req_mode IDF_COMPONENT_OPTIONAL_REQUIRES_MODE)
+    if("${opt_req_mode}" STREQUAL "DEFERRED")
+        __idf_component_process_optional_requires()
+    endif()
 
     # Get all targets transitively linked to the library interface target.
     __get_target_dependencies(TARGET "${library}" OUTPUT dependencies)
@@ -597,6 +629,8 @@ function(idf_build_executable executable)
     if(ARG_MAPFILE_TARGET AND "${linker_type}" STREQUAL "GNU")
         set(mapfile "${CMAKE_BINARY_DIR}/${ARG_NAME}.map")
         target_link_options(${executable} PRIVATE "LINKER:--Map=${mapfile}")
+        # Add cross-reference table to the map file
+        target_link_options(${executable} PRIVATE "LINKER:--cref")
         add_custom_command(
             OUTPUT "${mapfile}"
             DEPENDS ${executable}
@@ -608,6 +642,9 @@ function(idf_build_executable executable)
     endif()
 
     set_target_properties(${executable} PROPERTIES LIBRARY_INTERFACE ${library})
+
+    # Dispatch POST_ELF event once the executable target exists
+    __idf_build_dispatch_build_event(POST_ELF "${executable}")
 endfunction()
 
 #[[
@@ -715,35 +752,63 @@ endfunction()
 
     .. code-block:: cmake
 
-        idf_build_generate_metadata(<binary>
-                                    [OUTPUT_FILE <file>])
+        idf_build_generate_metadata([BINARY <binary>]
+                                    [EXECUTABLE <executable>]
+                                    [OUTPUT_FILE <file>]
+                                    [HINTS_OUTPUT_FILE <file>])
 
-    *binary[in]*
+    *BINARY[in,opt]*
 
         Binary target for which to generate a metadata file.
+
+    *EXECUTABLE[in,opt]*
+
+        Executable target for which to generate a metadata file.
 
     *OUTPUT_FILE[in,opt]*
 
         Optional output file path for storing the metadata. If not provided,
         the default path ``<build>/project_description.json`` is used.
 
-    Generate metadata for the specified ``binary`` and store it in the
-    specified ``OUTPUT_FILE``. If no ``OUTPUT_FILE`` is provided, the default
-    location ``<build>/project_description.json`` will be used.
+    *HINTS_OUTPUT_FILE[in,opt]*
+
+        Optional output file path for storing the merged hints YAML file. If
+        not provided, hints generation is skipped entirely. This opt-in
+        behaviour prevents hint files from different binaries overwriting each
+        other in multi-binary projects.
+
+    Generate metadata for the specified ``binary`` or ``executable`` target and
+    store it in the specified ``OUTPUT_FILE``. If no ``OUTPUT_FILE`` is
+    provided, the default location ``<build>/project_description.json`` will be
+    used.
 #]]
-function(idf_build_generate_metadata binary)
+function(idf_build_generate_metadata)
     set(options)
-    set(one_value OUTPUT_FILE)
+    set(one_value OUTPUT_FILE BINARY EXECUTABLE HINTS_OUTPUT_FILE)
     set(multi_value)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
 
-    # The EXECUTABLE_TARGET property is set by the idf_build_binary or
-    # the idf_sign_binary function.
-    get_target_property(executable "${binary}" EXECUTABLE_TARGET)
-    if(NOT executable)
-        idf_die("Binary target '${binary}' is missing 'EXECUTABLE_TARGET' property.")
+    if(NOT DEFINED ARG_BINARY AND NOT DEFINED ARG_EXECUTABLE)
+        idf_die("BINARY or EXECUTABLE option is required")
     endif()
-    __get_executable_library_or_die(TARGET "${executable}" OUTPUT library)
+
+    if(DEFINED ARG_BINARY)
+        # The EXECUTABLE_TARGET property is set by the idf_build_binary or
+        # the idf_sign_binary function.
+        get_target_property(ARG_EXECUTABLE "${ARG_BINARY}" EXECUTABLE_TARGET)
+        if(NOT ARG_EXECUTABLE)
+            idf_die("Binary target '${ARG_BINARY}' is missing 'EXECUTABLE_TARGET' property.")
+        endif()
+
+        # The BINARY_PATH property is set by the idf_build_binary or
+        # the idf_sign_binary function.
+        get_target_property(binary_path ${ARG_BINARY} BINARY_PATH)
+        if(NOT binary_path)
+            idf_die("Binary target '${ARG_BINARY}' is missing 'BINARY_PATH' property.")
+        endif()
+        get_filename_component(PROJECT_BIN "${binary_path}" NAME)
+    endif()
+    __get_executable_library_or_die(TARGET "${ARG_EXECUTABLE}" OUTPUT library)
 
     idf_build_get_property(PROJECT_NAME PROJECT_NAME)
     idf_build_get_property(PROJECT_VER PROJECT_VER)
@@ -752,14 +817,7 @@ function(idf_build_generate_metadata binary)
     idf_build_get_property(BUILD_DIR BUILD_DIR)
     idf_build_get_property(SDKCONFIG SDKCONFIG)
     idf_build_get_property(SDKCONFIG_DEFAULTS SDKCONFIG_DEFAULTS)
-    set(PROJECT_EXECUTABLE "$<TARGET_FILE_NAME:${executable}>")
-    # The BINARY_PATH property is set by the idf_build_binary or
-    # the idf_sign_binary function.
-    get_target_property(binary_path ${binary} BINARY_PATH)
-    if(NOT binary_path)
-        idf_die("Binary target '${binary}' is missing 'BINARY_PATH' property.")
-    endif()
-    get_filename_component(PROJECT_BIN "${binary_path}" NAME)
+    set(PROJECT_EXECUTABLE "$<TARGET_FILE_NAME:${ARG_EXECUTABLE}>")
     if(NOT PROJECT_BIN)
         set(PROJECT_BIN "")
     endif()
@@ -815,11 +873,37 @@ function(idf_build_generate_metadata binary)
 
     get_filename_component(ARG_OUTPUT_FILE "${ARG_OUTPUT_FILE}" ABSOLUTE BASE_DIR "${BUILD_DIR}")
 
+    if(DEFINED ARG_HINTS_OUTPUT_FILE)
+        set(HINTS_FILE "${ARG_HINTS_OUTPUT_FILE}")
+    else()
+        set(HINTS_FILE "")
+    endif()
     configure_file("${IDF_PATH}/tools/cmake/project_description.json.in" "${ARG_OUTPUT_FILE}.templ")
     file(READ "${ARG_OUTPUT_FILE}.templ" project_description_json_templ)
     file(REMOVE "${ARG_OUTPUT_FILE}.templ")
     file(GENERATE OUTPUT "${ARG_OUTPUT_FILE}"
          CONTENT "${project_description_json_templ}")
+
+    # Assumption: all hints.yml files are bare YAML lists (no "---" document
+    # separators). Plain string concatenation is safe under this assumption.
+    # Note for consumers: yaml.safe_load() only parses the first YAML document,
+    # so document separators in source files would cause data loss.
+    if(DEFINED ARG_HINTS_OUTPUT_FILE)
+        set(_merged_hints "")
+        set(_global_hints_file "${IDF_PATH}/tools/idf_py_actions/hints.yml")
+        if(EXISTS "${_global_hints_file}")
+            file(READ "${_global_hints_file}" _hints_content)
+            string(APPEND _merged_hints "${_hints_content}\n")
+        endif()
+        foreach(_comp_dir ${build_component_paths})
+            set(_hints_file "${_comp_dir}/hints.yml")
+            if(EXISTS "${_hints_file}")
+                file(READ "${_hints_file}" _hints_content)
+                string(APPEND _merged_hints "${_hints_content}\n")
+            endif()
+        endforeach()
+        file(WRITE "${ARG_HINTS_OUTPUT_FILE}" "${_merged_hints}")
+    endif()
 endfunction()
 
 #[[
@@ -829,7 +913,8 @@ endfunction()
 
         idf_build_binary(<executable>
                          TARGET <target>
-                         OUTPUT_FILE <file>)
+                         OUTPUT_FILE <file>
+                         [ALL])
 
     *executable[in]*
 
@@ -844,6 +929,10 @@ endfunction()
 
         Output file path for storing the binary image file.
 
+    *ALL[in,opt]*
+
+        If specified, the target will be added to the default build target.
+
     Create a binary image for the specified ``executable`` target and save it
     in the file specified with the ``OUTPUT_FILE`` option. A custom target
     named ``TARGET`` will be created for the generated binary image. The path
@@ -852,7 +941,7 @@ endfunction()
     the ``TARGET``.
 #]]
 function(idf_build_binary executable)
-    set(options)
+    set(options ALL)
     set(one_value OUTPUT_FILE TARGET)
     set(multi_value)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
@@ -906,8 +995,13 @@ function(idf_build_binary executable)
         COMMENT "Generating binary image '${binary_name}' from executable '${executable_name}'"
     )
 
-    # Create a custom target to generate the binary file
-    add_custom_target(${ARG_TARGET} DEPENDS "${ARG_OUTPUT_FILE}")
+    # Create a custom target to generate the binary file.
+    # If ALL is specified, include the target in the default build.
+    set(all_arg)
+    if(ARG_ALL)
+        set(all_arg ALL)
+    endif()
+    add_custom_target(${ARG_TARGET} ${all_arg} DEPENDS "${ARG_OUTPUT_FILE}")
 
     # Store the path of the binary file in the BINARY_PATH property of the
     # custom binary target, which is used by the idf_flash_binary.
@@ -926,7 +1020,8 @@ endfunction()
         idf_sign_binary(<binary>
                         TARGET <target>
                         OUTPUT_FILE <file>
-                        [KEYFILE <file>])
+                        [KEYFILE <file>]
+                        [ALL])
 
     *binary[in]*
 
@@ -949,6 +1044,10 @@ endfunction()
         provided, the key file specified by the
         ``CONFIG_SECURE_BOOT_SIGNING_KEY`` configuration option will be used.
 
+    *ALL[in,opt]*
+
+        If specified, the target will be added to the default build target.
+
     Sign binary image specified by ``binary`` target with ``KEYFILE`` and save
     it in the file specified with the  `OUTPUT_FILE` option. A custom target
     named ``TARGET`` will be created for the signed binary image.  The path of
@@ -957,7 +1056,7 @@ endfunction()
     ``TARGET``.
 #]]
 function(idf_sign_binary binary)
-    set(options)
+    set(options ALL)
     set(one_value OUTPUT_FILE TARGET KEYFILE)
     set(multi_value)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
@@ -983,7 +1082,7 @@ function(idf_sign_binary binary)
     endif()
 
     if(ARG_KEYFILE)
-        set(keyfle "${ARG_KEYFILE}")
+        set(keyfile "${ARG_KEYFILE}")
     else()
         idf_build_get_property(project_dir PROJECT_DIR)
         get_filename_component(keyfile "${CONFIG_SECURE_BOOT_SIGNING_KEY}" ABSOLUTE BASE_DIR "${project_dir}")
@@ -1013,7 +1112,13 @@ function(idf_sign_binary binary)
         VERBATIM
         COMMENT "Signing '${binary_name}' with key '${key_name}' into '${signed_binary_name}'"
     )
-    add_custom_target(${ARG_TARGET} DEPENDS "${ARG_OUTPUT_FILE}")
+    # Create a custom target for the signed binary file.
+    # If ALL is specified, include the target in the default build.
+    set(all_arg)
+    if(ARG_ALL)
+        set(all_arg ALL)
+    endif()
+    add_custom_target(${ARG_TARGET} ${all_arg} DEPENDS "${ARG_OUTPUT_FILE}")
 
     # Store the path of the binary file in the BINARY_PATH property of the
     # custom signed binary target, which is used by the idf_flash_binary.
@@ -1140,6 +1245,35 @@ function(idf_check_binary_size binary)
         DEPENDS "${binary_path}"
         BINARY_PATH "${binary_path}"
         PARTITION_TYPE app)
+    add_dependencies("${binary}" "${binary}_check_size")
+endfunction()
+
+#[[
+.. cmakev2:function:: idf_check_bootloader_size
+
+    .. code-block:: cmake
+
+        idf_check_bootloader_size(<binary>)
+
+    *binary[in]*
+
+        Binary image target to which to add a bootloader size check.  The
+        ``binary`` target is created by the :cmakev2:ref:`idf_build_binary` or
+        :cmakev2:ref:`idf_sign_binary` function.
+
+    Ensure that the bootloader binary image does not overlap the partition
+    table. The file path of the binary image should be stored in the
+    ``BINARY_PATH`` property of the ``binary`` target.
+#]]
+function(idf_check_bootloader_size binary)
+    get_target_property(binary_path ${binary} BINARY_PATH)
+    if(NOT binary_path)
+        idf_die("Binary target '${binary}' is missing 'BINARY_PATH' property.")
+    endif()
+
+    partition_table_add_check_bootloader_size_target("${binary}_check_size"
+        DEPENDS "${binary_path}"
+        BOOTLOADER_BINARY_PATH "${binary_path}")
     add_dependencies("${binary}" "${binary}_check_size")
 endfunction()
 

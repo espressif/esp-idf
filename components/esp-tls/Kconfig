@@ -3,15 +3,23 @@ menu "ESP-TLS"
         prompt "Choose SSL/TLS library for ESP-TLS (See help for more Info)"
         default ESP_TLS_USING_MBEDTLS
         help
-            The ESP-TLS APIs support multiple backend TLS libraries. Currently mbedTLS and WolfSSL are
-            supported. Different TLS libraries may support different features and have different resource
-            usage. Consult the ESP-TLS documentation in ESP-IDF Programming guide for more details.
+            The ESP-TLS APIs support multiple backend TLS libraries. mbedTLS is supported by default.
+            Custom TLS stacks can be registered via esp_tls_register_stack() API when
+            CONFIG_ESP_TLS_CUSTOM_STACK is selected. Different TLS libraries may support different
+            features and have different resource usage. Consult the ESP-TLS documentation in ESP-IDF
+            Programming guide for more details.
         config ESP_TLS_USING_MBEDTLS
             bool "mbedTLS"
             select MBEDTLS_TLS_ENABLED
-        config ESP_TLS_USING_WOLFSSL
-            depends on TLS_STACK_WOLFSSL
-            bool "wolfSSL (License info in wolfSSL directory README)"
+        config ESP_TLS_CUSTOM_STACK
+            bool "Custom TLS stack (register via esp_tls_register_stack())"
+            help
+                When selected, allows external components to register their own TLS stack implementation
+                via esp_tls_register_stack() API. The custom stack must be registered before creating
+                any TLS connections, otherwise TLS operations will fail.
+
+                External components can provide any TLS stack implementation by implementing the
+                esp_tls_stack_ops_t interface.
     endchoice
 
     config ESP_TLS_USE_SECURE_ELEMENT
@@ -27,6 +35,7 @@ menu "ESP-TLS"
     config ESP_TLS_USE_DS_PERIPHERAL
         bool "Use Digital Signature (DS) Peripheral with ESP-TLS"
         depends on ESP_TLS_USING_MBEDTLS && SOC_DIG_SIGN_SUPPORTED
+        select MBEDTLS_HARDWARE_RSA_DS_PERIPHERAL
         default y
         help
             Enable use of the Digital Signature Peripheral for ESP-TLS.The DS peripheral
@@ -79,7 +88,7 @@ menu "ESP-TLS"
         select MBEDTLS_KEY_EXCHANGE_ECDHE_PSK if ESP_TLS_USING_MBEDTLS && MBEDTLS_ECDH_C
         help
             Enable support for pre shared key ciphers, supported for both mbedTLS as well as
-            wolfSSL TLS library.
+            custom TLS stacks.
 
     config ESP_TLS_INSECURE
         bool "Allow potentially insecure options"
@@ -100,19 +109,6 @@ menu "ESP-TLS"
             with a server which has a fake identity, provided that the server certificate
             is not provided either through API or other mechanism like ca_store etc.
 
-    config ESP_DEBUG_WOLFSSL
-        bool "Enable debug logs for wolfSSL"
-        depends on ESP_TLS_USING_WOLFSSL
-        help
-            Enable detailed debug prints for wolfSSL SSL library.
-
-    config ESP_TLS_OCSP_CHECKALL
-        bool "Enabled full OCSP checks for ESP-TLS"
-        depends on ESP_TLS_USING_WOLFSSL
-        default y
-        help
-            Enable a fuller set of OCSP checks: checking revocation status of intermediate certificates,
-            optional fallbacks to CRLs, etc.
 
     config ESP_TLS_DYN_BUF_STRATEGY_SUPPORTED
         bool

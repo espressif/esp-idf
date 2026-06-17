@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,7 @@
 #include "soc/lp_gpio_reg.h"
 #include "soc/lpperi_reg.h"
 #include "soc/uart_reg.h"
+#include "soc/usb_dwc_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -290,7 +291,7 @@ static inline void periph_ll_clk_gate_set_default(soc_reset_reason_t rst_reason,
 
         if (config->disable_assist_clk) {
             /* Disable ASSIST Debug module clock if PC recoreding function is not used,
-             * if stack guard function needs it, it will be re-enabled at esp_hw_stack_guard_init */
+             * if stack guard function needs it, it will be re-enabled at esp_hw_debug_assist_init */
             REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL0_REG, HP_SYS_CLKRST_REG_BUSMON_CPU_CLK_EN);
             REG_CLR_BIT(ASSIST_DEBUG_CLOCK_GATE_REG, ASSIST_DEBUG_CLK_EN);
         }
@@ -307,17 +308,23 @@ static inline void periph_ll_clk_gate_set_default(soc_reset_reason_t rst_reason,
                     HP_SYS_CLKRST_REG_CRYPTO_RSA_CLK_EN |
                     HP_SYS_CLKRST_REG_CRYPTO_SHA_CLK_EN);
 
-        // USB1.1
+        /*** USB sys & phy & pad & clock initialization for power saving ***/
+        // Force the USB 2.0 PHY to enter suspend mode before disabling the clock.
+        REG_SET_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_USB_OTG20_SYS_CLK_EN);
+        REG_SET_BIT(LP_CLKRST_HP_USB_CLKRST_CTRL1_REG, LP_CLKRST_USB_OTG20_PHYREF_CLK_EN);
+        USB_DWC_HS.gotgctl_reg.bvalidoven = 1;
+        USB_DWC_HS.pcgcctl_reg.stoppclk = 1;
+        // USB1.1 & USB OTG2.0 sys clock gating
         REG_CLR_BIT(LP_CLKRST_HP_USB_CLKRST_CTRL0_REG, LP_CLKRST_USB_OTG11_BK_SYS_CLK_EN |
                     LP_CLKRST_USB_OTG11_48M_CLK_EN |
                     LP_CLKRST_USB_OTG20_BK_SYS_CLK_EN);
         REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_USB_OTG11_SYS_CLK_EN |
                     HP_SYS_CLKRST_REG_USB_OTG20_SYS_CLK_EN |
                     HP_SYS_CLKRST_REG_UHCI_SYS_CLK_EN);
-        // USB2.0
+        // USB2.0 phy & ULPI clock gating
         REG_CLR_BIT(LP_CLKRST_HP_USB_CLKRST_CTRL1_REG, LP_CLKRST_USB_OTG20_PHYREF_CLK_EN |
                     LP_CLKRST_USB_OTG20_ULPI_CLK_EN);
-        // UHCI
+        // UHCI clock gating
         REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_UHCI_APB_CLK_EN);
 
         if (config->disable_usb_serial_jtag) {
@@ -376,6 +383,8 @@ static inline void periph_ll_clk_gate_set_default(soc_reset_reason_t rst_reason,
                         LP_CLKRST_HP_SDIO_PLL2_CLK_EN |
                         LP_CLKRST_HP_SDIO_PLL1_CLK_EN |
                         LP_CLKRST_HP_SDIO_PLL0_CLK_EN);
+            // now, hp root clock use PMU_HP_ACTIVE/SLEEP_ICG_SYS_CLOCK_EN to control
+            REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_ROOT_CLK_EN);
             if (config->disable_spiram_boot_clk) {
                 REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_MPLL_500M_CLK_EN);
             }

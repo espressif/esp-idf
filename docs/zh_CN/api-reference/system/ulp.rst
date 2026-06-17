@@ -17,6 +17,8 @@ ULP（Ultra Low Power，超低功耗）协处理器可在主 CPU 处于深度睡
     - **ULP RISC-V**：基于 RISC-V 架构的协处理器。提供更强的计算能力和灵活性，适合运行用 C 语言编写的复杂应用。ESP32-S2 和 ESP32-S3 支持此类型。
     - **ULP LP Core**：基于 RISC-V 架构的增强型协处理器，兼具 **ULP RISC-V** 的优势，并新增扩展内存访问、更广泛的外设访问、调试模块和中断控制器等功能。该处理器甚至可在全系统运行时工作。ESP32-C5、ESP32-C6、ESP32-P4 及后续芯片支持此类型。
 
+    注意：ESP32-S2、ESP32-S3 等芯片同时支持 **ULP FSM** 和 **ULP RISC-V**。用户可在编译时在 menuconfig 中同时启用二者，并在运行时选择使用其中一种。
+
     .. toctree::
         :maxdepth: 1
 

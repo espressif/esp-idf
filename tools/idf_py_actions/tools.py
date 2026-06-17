@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import asyncio
 import importlib
@@ -14,8 +14,9 @@ from re import Match
 from types import FunctionType
 from typing import Any
 from typing import TextIO
+from typing import cast
 
-import click
+import rich_click as click
 import yaml
 from esp_idf_monitor import get_ansi_converter
 
@@ -75,7 +76,7 @@ def executable_exists(args: list) -> bool:
         return False
 
 
-def _idf_version_from_cmake() -> str | None:
+def idf_version_from_cmake() -> str | None:
     """Acquires version of ESP-IDF from version.cmake"""
     version_path = os.path.join(os.environ['IDF_PATH'], 'tools/cmake/version.cmake')
     regex = re.compile(r'^\s*set\s*\(\s*IDF_VERSION_([A-Z]{5})\s+(\d+)')
@@ -123,7 +124,7 @@ def idf_version() -> str | None:
     except Exception:
         # if failed, then try to parse cmake.version file
         sys.stderr.write('WARNING: Git version unavailable, reading from source\n')
-        version = _idf_version_from_cmake()
+        version = idf_version_from_cmake()
 
     return version
 
@@ -183,32 +184,98 @@ def debug_print_idf_version() -> None:
     print_warning(f'ESP-IDF {idf_version() or "version unknown"}')
 
 
-def load_hints() -> dict:
-    """Helper function to load hints yml file"""
-    hints: dict = {'yml': [], 'modules': []}
+def _load_hints_from_directory(directory: str) -> list:
+    """Load hints file in the given directory"""
+    hints_file = os.path.join(directory, 'hints.yml')
+    if not os.path.exists(hints_file):
+        return []
 
-    current_module_dir = os.path.dirname(__file__)
-    with open(os.path.join(current_module_dir, 'hints.yml'), encoding='utf-8') as file:
-        hints['yml'] = yaml.safe_load(file)
+    try:
+        with open(hints_file, encoding='utf-8') as file:
+            hints = yaml.safe_load(file)
+            return hints if hints else []
+    except (OSError, yaml.YAMLError):
+        yellow_print(f'HINT WARNING: Failed to load hints from "{hints_file}"')
+        return []
 
-    hint_modules_dir = os.path.join(current_module_dir, 'hint_modules')
-    if not os.path.exists(hint_modules_dir):
-        return hints
 
-    sys.path.append(hint_modules_dir)
-    for _, name, _ in iter_modules([hint_modules_dir]):
-        # Import modules for hint processing and add list of their 'generate_hint' functions into hint dict.
-        # If the module doesn't have the function 'generate_hint', it will raise an exception
-        try:
-            hints['modules'].append(getattr(importlib.import_module(name), 'generate_hint'))
-        except ModuleNotFoundError:
-            red_print(f'Failed to import "{name}" from "{hint_modules_dir}" as a module')
-            raise SystemExit(1)
-        except AttributeError:
-            red_print(f'Module "{name}" does not have function generate_hint.')
-            raise SystemExit(1)
+def _load_hints_from_project_components(proj_desc: dict) -> list:
+    """
+    Load hints from project components
+    Excluding ESP-IDF components to avoid duplicates
+    """
+    hints = []
+    all_component_info = proj_desc.get('all_component_info', {})
+    for comp_name, comp_info in proj_desc.get('build_component_info', {}).items():
+        comp_dir = comp_info.get('dir')
+        if comp_dir and os.path.isdir(comp_dir) and os.path.exists(os.path.join(comp_dir, 'hints.yml')):
+            if comp_name in all_component_info and all_component_info[comp_name].get('source') != 'idf_components':
+                hints.extend(_load_hints_from_directory(comp_dir))
 
     return hints
+
+
+def _load_idf_hints() -> dict:
+    """Load global hints and IDF component hints"""
+    hints: dict[str, list[Any]] = {'yml': [], 'modules': []}
+    current_module_dir = os.path.dirname(__file__)
+    # Load global hints
+    hints['yml'] = _load_hints_from_directory(current_module_dir)
+
+    # Load hint modules
+    hint_modules_dir = os.path.join(current_module_dir, 'hint_modules')
+    if os.path.exists(hint_modules_dir):
+        sys.path.append(hint_modules_dir)
+        for _, name, _ in iter_modules([hint_modules_dir]):
+            # Import modules for hint processing and add list of their 'generate_hint' functions into hint dict.
+            # If the module doesn't have the function 'generate_hint', it will raise an exception
+            try:
+                hints['modules'].append(getattr(importlib.import_module(name), 'generate_hint'))
+            except ModuleNotFoundError:
+                red_print(f'Failed to import "{name}" from "{hint_modules_dir}" as a module')
+                raise SystemExit(1)
+            except AttributeError:
+                red_print(f'Module "{name}" does not have function generate_hint.')
+                raise SystemExit(1)
+
+    # Load ESP-IDF components
+    idf_path = os.environ.get('IDF_PATH')
+    if idf_path:
+        components_dir = os.path.join(os.path.abspath(idf_path), 'components')
+        if os.path.isdir(components_dir):
+            try:
+                for comp_name in os.listdir(components_dir):
+                    comp_dir = os.path.join(components_dir, comp_name)
+                    if os.path.isdir(comp_dir):
+                        hints['yml'].extend(_load_hints_from_directory(comp_dir))
+            except OSError:
+                pass
+
+    return hints
+
+
+def load_hints(cache: dict = {}) -> dict:
+    """
+    Helper function to load hints.yml files from global and component sources
+
+    Uses mutable default argument as cache - same dict (argument 'cache') persists its data across all calls.
+    See: https://docs.python.org/3/reference/compound_stmts.html#function-definitions
+    """
+
+    # Initialize cache structure if first call with IDF hints (global + IDF components)
+    if 'hints' not in cache:
+        cache['hints'] = _load_idf_hints()
+        cache['project_components_loaded'] = False
+
+    # Extend Cached hints with hints from project components if available
+    if not cache.get('project_components_loaded'):
+        proj_desc = get_build_context().get('proj_desc')
+        if proj_desc:
+            project_hints = _load_hints_from_project_components(proj_desc)
+            cache['hints']['yml'].extend(project_hints)
+            cache['project_components_loaded'] = True
+
+    return cast(dict, cache['hints'])
 
 
 def generate_hints_buffer(output: str, hints: dict) -> Generator:
@@ -280,6 +347,21 @@ def fit_text_in_terminal(out: str) -> str:
         # cut out the middle part of the output if it does not fit in the terminal
         return '...'.join([out[:elide_size], out[len(out) - elide_size :]])
     return out
+
+
+# ANSI SGR / CSI sequences and Ninja-style progression lines are 7-bit; keep
+# readline forwarding on bytes so CMake UTF-8 pipe output is not re-encoded
+# through a legacy TextIOWrapper (cp1252) layer on Windows.
+_ANSI_ESCAPE_BYTES = re.compile(rb'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+_PROGRESSION_BYTES = re.compile(rb'^\[\d+/\d+\]|.*\(\d+ \%\)$')
+
+
+def delete_ansi_escape_bytes(data: bytes) -> bytes:
+    return _ANSI_ESCAPE_BYTES.sub(b'', data)
+
+
+def is_progression_bytes(line: bytes) -> bool:
+    return _PROGRESSION_BYTES.match(line) is not None
 
 
 class RunTool:
@@ -413,10 +495,23 @@ class RunTool:
             ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
             return ansi_escape.sub('', text)
 
+        def write_text_maybe_illencoded(stream: TextIO, text: str) -> None:
+            """Write ``text`` to ``stream``; on narrow Windows stdio, fall back so the build does not abort."""
+            try:
+                stream.write(text)
+                stream.flush()
+            except UnicodeEncodeError:
+                enc = getattr(stream, 'encoding', None) or 'ascii'
+                safe = text.encode(enc, errors='backslashreplace').decode(enc)
+                stream.write(safe)
+                stream.flush()
+
         def print_progression(output: str) -> None:
             # Print a new line on top of the previous line
-            print('\r' + fit_text_in_terminal(output.strip('\n\r')) + '\x1b[K', end='', file=output_stream)
-            output_stream.flush()
+            write_text_maybe_illencoded(
+                output_stream,
+                '\r' + fit_text_in_terminal(output.strip('\n\r')) + '\x1b[K',
+            )
 
         def is_progression(output: str) -> bool:
             # try to find possible progression by a pattern match
@@ -424,10 +519,12 @@ class RunTool:
                 return True
             return False
 
-        async def read_stream() -> str | None:
+        async def read_stream_bytes() -> bytes | None:
             try:
                 output_b = await input_stream.readline()
-                return output_b.decode(errors='ignore')
+                if not output_b:
+                    return None
+                return output_b
             except (asyncio.LimitOverrunError, asyncio.IncompleteReadError) as e:
                 print(e, file=sys.stderr)
                 return None
@@ -449,6 +546,23 @@ class RunTool:
                         # and still can not decode it we can just ignore some bytes
                         return buffer.decode(errors='replace')
 
+        def write_stdout_bytes(data: bytes) -> None:
+            """Write raw subprocess bytes to the underlying binary stream (UTF-8 from CMake, no TextIO re-encode)."""
+            binary_buf = getattr(output_stream, 'buffer', None)
+            if binary_buf is not None:
+                binary_buf.write(data)
+                binary_buf.flush()
+            else:
+                write_text_maybe_illencoded(output_stream, data.decode('utf-8', errors='replace'))
+
+        def write_stdout_after_progression_line() -> None:
+            """Emit a newline after a progression ``\\r`` line (binary when possible)."""
+            if not self.convert_output and getattr(output_stream, 'buffer', None) is not None:
+                output_stream.buffer.write(os.linesep.encode('ascii'))
+                output_stream.buffer.flush()
+            else:
+                write_text_maybe_illencoded(output_converter, os.linesep)
+
         # use ANSI color converter for Monitor on Windows
         output_converter = get_ansi_converter(output_stream) if self.convert_output else output_stream
 
@@ -459,47 +573,60 @@ class RunTool:
         is_progression_processing_enabled = self.force_progression and output_stream.isatty() and '-v' not in self.args
 
         try:
-            # The command output from asyncio stream already contains OS specific line ending,
-            # because it's read in as bytes and decoded to string. On Windows "output" already
-            # contains CRLF. Use "newline=''" to prevent python to convert CRLF into CRCRLF.
-            # Please see "newline" description at https://docs.python.org/3/library/functions.html#open
-            with open(output_filename, 'w', encoding='utf8', newline='') as output_file:
-                # Log the command arguments.
-                output_file.write('Command: {}\n'.format(' '.join(self.args)))
+            # Binary log: subprocess lines are written as received (ANSI stripped for the file).
+            with open(output_filename, 'wb') as output_file:
+                output_file.write('Command: {}\n'.format(' '.join(self.args)).encode('utf-8'))
                 while True:
                     if self.interactive:
                         output = await read_interactive_stream()
-                    else:
-                        output = await read_stream()
-                    if not output:
-                        break
+                        if not output:
+                            break
 
-                    output_noescape = delete_ansi_escape(output)
-                    # Always remove escape sequences when writing the build log.
-                    output_file.write(output_noescape)
-                    # If idf.py output is redirected and the output stream is not a TTY,
-                    # strip the escape sequences as well.
-                    # (There shouldn't be any, but just in case.)
-                    if not output_stream.isatty():
-                        output = output_noescape
+                        output_noescape = delete_ansi_escape(output)
+                        output_file.write(output_noescape.encode('utf-8'))
+                        if not output_stream.isatty():
+                            output = output_noescape
 
-                    if is_progression_processing_enabled and is_progression(output):
-                        print_progression(output)
-                        is_progression_last_line = True
-                    else:
-                        if is_progression_last_line:
-                            output_converter.write(os.linesep)
-                            is_progression_last_line = False
-                        output_converter.write(output)
-                        output_converter.flush()
+                        if is_progression_processing_enabled and is_progression(output):
+                            print_progression(output)
+                            is_progression_last_line = True
+                        else:
+                            if is_progression_last_line:
+                                write_stdout_after_progression_line()
+                                is_progression_last_line = False
+                            write_text_maybe_illencoded(output_converter, output)
 
-                        # process hints for last line and print them right away
-                        if self.interactive:
                             last_line += output
                             if last_line[-1] == '\n':
                                 for hint in generate_hints_buffer(last_line, hints):
                                     yellow_print(hint)
                                 last_line = ''
+                    else:
+                        output_b = await read_stream_bytes()
+                        if not output_b:
+                            break
+
+                        output_noescape_b = delete_ansi_escape_bytes(output_b)
+                        output_file.write(output_noescape_b)
+                        if not output_stream.isatty():
+                            forward_b = output_noescape_b
+                        else:
+                            forward_b = output_b
+
+                        if is_progression_processing_enabled and is_progression_bytes(output_b):
+                            print_progression(output_b.decode('utf-8', errors='replace'))
+                            is_progression_last_line = True
+                        else:
+                            if is_progression_last_line:
+                                write_stdout_after_progression_line()
+                                is_progression_last_line = False
+                            if self.convert_output:
+                                write_text_maybe_illencoded(
+                                    output_converter,
+                                    forward_b.decode('utf-8', errors='replace'),
+                                )
+                            else:
+                                write_stdout_bytes(forward_b)
         except (OSError, RuntimeError) as e:
             yellow_print(
                 "WARNING: The exception {} was raised and we can't capture all your {} and "
@@ -525,7 +652,20 @@ def run_target(
     if env is None:
         env = {}
 
-    generator_cmd = GENERATORS[args.generator]['command']
+    generator_cmd = list(GENERATORS[args.generator]['command'])
+
+    if args.generator == 'Ninja':
+        parallel_level = os.environ.get('IDF_PY_BUILD_JOBS')
+        if parallel_level:
+            try:
+                jobs = int(parallel_level)
+            except ValueError as e:
+                raise FatalError('Environment variable IDF_PY_BUILD_JOBS must be a positive integer') from e
+
+            if jobs <= 0:
+                raise FatalError('Environment variable IDF_PY_BUILD_JOBS must be a positive integer')
+
+            generator_cmd += ['-j', str(jobs)]
 
     if args.verbose:
         generator_cmd += [GENERATORS[args.generator]['verbose_flag']]
@@ -648,6 +788,7 @@ def ensure_build_directory(
     cache = _parse_cmakecache(cache_path) if os.path.exists(cache_path) else {}
 
     args.define_cache_entry.append(f'CCACHE_ENABLE={args.ccache}')
+    args.define_cache_entry.append(f'CONFIGDEP_ENABLE={args.configdep}')
 
     cache_cmdl = _parse_cmdl_cmakecache(args.define_cache_entry)
 
@@ -842,17 +983,10 @@ def get_sdkconfig_value(sdkconfig_file: str, key: str) -> str | None:
     pattern = re.compile(rf'^{key}=\"?([^\"]*)\"?$')
     with open(sdkconfig_file, encoding='utf-8') as f:
         for line in f:
-            match = re.match(pattern, line)
+            match = re.match(pattern, line.strip())
             if match:
                 value = match.group(1)
     return value
-
-
-def is_target_supported(project_path: str, supported_targets: list) -> bool:
-    """
-    Returns True if the active target is supported, or False otherwise.
-    """
-    return get_target(project_path) in supported_targets
 
 
 def _check_idf_target(

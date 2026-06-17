@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,6 +58,11 @@ extern "C" {
 typedef uint32_t esp_paddr_t;
 
 /**
+ * @brief Virtual memory type
+ */
+typedef uint32_t esp_vaddr_t;
+
+/**
  * @brief Map a physical memory block to external virtual address block, with given capabilities.
  *
  * @param[in]  paddr_start  Start address of the physical memory block
@@ -65,7 +70,7 @@ typedef uint32_t esp_paddr_t;
  * @param[in]  target       Physical memory target you're going to map to, see `mmu_target_t`
  * @param[in]  caps         Memory capabilities, see `mmu_mem_caps_t`
  * @param[in]  flags        Mmap flags
- * @param[out] out_ptr      Start address of the mapped virtual memory
+ * @param[out] out_ptr      Start address of the mapped virtual memory, must not be NULL
  *
  * @return
  *        - ESP_OK
@@ -82,6 +87,39 @@ typedef uint32_t esp_paddr_t;
  *
  */
 esp_err_t esp_mmu_map(esp_paddr_t paddr_start, size_t size, mmu_target_t target, mmu_mem_caps_t caps, int flags, void **out_ptr);
+
+/**
+ * @brief Map a physical memory block to a given virtual address, with capabilities.
+ *
+ * @param[in] vaddr_start  Start address of the virtual memory block to map to.
+ *                         - Set to 0 to let the driver choose any available virtual address automatically.
+ *                         - Set to a non-zero page-aligned address to request mapping at a specific virtual address.
+ *                           The address must not fall within an already mapped virtual address range and must fit
+ *                           entirely within an available virtual address region.
+ * @param[in] paddr_start  Start address of the physical memory block, must be page-aligned
+ * @param[in] size         Size to be mapped. Size will be rounded up by to the nearest multiple of MMU page size
+ * @param[in] target       Physical memory target to map to, see `mmu_target_t`
+ * @param[in] caps         Memory capabilities, see `mmu_mem_caps_t`
+ * @param[in] flags        Mapping flags
+ * @param[out] out_ptr     Start address of the mapped virtual memory, can be NULL
+ *
+ * @return
+ *        - ESP_OK
+ *        - ESP_ERR_INVALID_ARG:   Invalid argument, see printed logs
+ *        - ESP_ERR_NOT_SUPPORTED: Only on ESP32, PSRAM is not a supported physical memory target
+ *        - ESP_ERR_NOT_FOUND:     No enough size free block to use
+ *        - ESP_ERR_NO_MEM:        Out of memory, this API will allocate some heap memory for internal usage
+ *        - ESP_ERR_INVALID_STATE: Paddr is mapped already. Only occurs when the to-be-mapped paddr block is totally
+ *                                 enclosed by a previously mapped block (identical scenario behaves similarly).
+ *                                 In this case, `out_ptr` (if not NULL) is set to the corresponding address within
+ *                                 the *previously mapped* virtual block, regardless of the `vaddr_start` requested.
+ *                                 new_block_start               new_block_end
+ *                                              |-------- New Block --------|
+ *                                      |--------------- Block ---------------|
+ *                                 block_start                              block_end
+ *
+ */
+esp_err_t esp_mmu_map_virt(esp_vaddr_t vaddr_start, esp_paddr_t paddr_start, size_t size, mmu_target_t target, mmu_mem_caps_t caps, int flags, void **out_ptr);
 
 /**
  * @brief Unmap a previously mapped virtual memory block

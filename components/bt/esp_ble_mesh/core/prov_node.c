@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -124,7 +124,7 @@ static void reset_adv_link(struct bt_mesh_prov_link *link, uint8_t reason)
 {
     ARG_UNUSED(link);
 
-    BT_INFO("ResetAdvLink:%08x", link->link_id);
+    BT_INFO("ResetAdvLink:%08x", prov_link.link_id);
     bt_mesh_prov_clear_tx(&prov_link, true);
 
     if (bt_mesh_prov_get()->link_close) {
@@ -285,6 +285,11 @@ static int prov_auth(uint8_t method, uint8_t action, uint8_t size)
             return -EINVAL;
         }
 
+        if (bt_mesh_prov_get()->static_val == NULL) {
+            BT_ERR("Static OOB value not set");
+            return -EINVAL;
+        }
+
         if (bt_mesh_prov_get()->static_val_len > auth_size) {
             memcpy(prov_link.auth, bt_mesh_prov_get()->static_val, auth_size);
         } else {
@@ -306,7 +311,7 @@ static int prov_auth(uint8_t method, uint8_t action, uint8_t size)
             return -EINVAL;
         }
 
-        if (size > bt_mesh_prov_get()->output_size) {
+        if (size == 0 || size > bt_mesh_prov_get()->output_size) {
             return -EINVAL;
         }
 
@@ -598,7 +603,8 @@ int bt_mesh_input_string(const char *str)
         return -EINVAL;
     }
 
-    (void)memcpy(prov_link.auth, str, bt_mesh_prov_get()->input_size);
+    (void)memset(prov_link.auth, 0, sizeof(prov_link.auth));
+    (void)memcpy(prov_link.auth, str, MIN(strlen(str), bt_mesh_prov_get()->input_size));
 
     send_input_complete();
 
@@ -630,11 +636,13 @@ static void send_pub_key(void)
 
     if (bt_mesh_dh_key_gen(buf.data, dhkey)) {
         BT_ERR("Unable to generate DHKey");
+        (void)memset(dhkey, 0, sizeof(dhkey));
         close_link(PROV_ERR_UNEXP_ERR);
         return;
     }
 
     memcpy(prov_link.dhkey, dhkey, 32);
+    (void)memset(dhkey, 0, sizeof(dhkey));
 
     BT_DBG("DHkey: %s", bt_hex(prov_link.dhkey, 32));
 
@@ -642,6 +650,7 @@ static void send_pub_key(void)
 
     if (bt_mesh_pub_key_copy(pub_key)) {
         BT_ERR("No public key available");
+        (void)memset(pub_key, 0, sizeof(pub_key));
         close_link(PROV_ERR_UNEXP_ERR);
         return;
     }
@@ -653,6 +662,7 @@ static void send_pub_key(void)
     /* Public key is already in big-endian format from bt_mesh_pub_key_copy() */
     memcpy(net_buf_simple_add(&buf, 32), pub_key, 32);
     memcpy(net_buf_simple_add(&buf, 32), &pub_key[32], 32);
+    (void)memset(pub_key, 0, sizeof(pub_key));
 
     memcpy(&prov_link.conf_inputs[81], &buf.data[1], 64);
 
@@ -946,17 +956,17 @@ static void prov_data(const uint8_t *data)
 
     bt_mesh_prov_buf_init(&msg, PROV_COMPLETE);
 
-    if (bt_mesh_prov_send(&prov_link, &msg)) {
-        BT_ERR("Failed to send Provisioning Complete");
-        return;
-    }
-
-    /* Ignore any further PDUs on this link */
-    prov_link.expect = 0U;
-
 #if CONFIG_BLE_MESH_RPR_SRV
     /* For NPPI, no need to perform the following actions */
     if (bt_mesh_atomic_test_bit(prov_link.flags, PB_NPPI)) {
+        if (bt_mesh_prov_send(&prov_link, &msg)) {
+            BT_ERR("NPPI, failed to send Provisioning Complete");
+            return;
+        }
+
+        /* Ignore any further PDUs on this link */
+        prov_link.expect = 0U;
+
         return;
     }
 #endif /* CONFIG_BLE_MESH_RPR_SRV */
@@ -968,11 +978,23 @@ static void prov_data(const uint8_t *data)
         identity_enable = false;
     }
 
-    err = bt_mesh_provision(pdu, net_idx, flags, iv_index, addr, dev_key);
+    err = bt_mesh_pre_provision(pdu, net_idx, flags, iv_index, addr, dev_key);
     if (err) {
         BT_ERR("Failed to provision (err %d)", err);
+        close_link(PROV_ERR_UNEXP_ERR);
         return;
     }
+
+    if (bt_mesh_prov_send(&prov_link, &msg)) {
+        BT_ERR("Failed to send Provisioning Complete");
+        return;
+    }
+
+    /* Ignore any further PDUs on this link */
+    prov_link.expect = 0U;
+
+    /* The device becomes a node and enters the network */
+    bt_mesh_provision();
 
     /* After PB-GATT provisioning we should start advertising
      * using Node Identity.
@@ -1174,7 +1196,7 @@ static void prov_msg_recv(void)
     uint8_t type = 0;
 
     if (bt_mesh_atomic_test_bit(prov_link.flags, LINK_INVALID)) {
-        BT_WARN("Unexpected msg 0x%02x on invalidated link", type);
+        BT_WARN("Unexpected msg on invalidated link");
         close_link(PROV_ERR_UNEXP_PDU);
         return;
     }
@@ -1183,7 +1205,7 @@ static void prov_msg_recv(void)
      * should be ignored.
      */
     if (bt_mesh_atomic_test_bit(prov_link.flags, LINK_CLOSING)) {
-        BT_WARN("Link is closing, unexpected msg 0x%02x", type);
+        BT_WARN("Link is closing, unexpected msg received");
         return;
     }
 
@@ -1670,6 +1692,11 @@ int bt_mesh_rpr_srv_nppi_pdu_recv(uint8_t type, const uint8_t *data)
 {
     if (!bt_mesh_atomic_test_bit(prov_link.flags, PB_NPPI)) {
         BT_ERR("Not a NPPI provisioning link");
+        return -EINVAL;
+    }
+
+    if (type >= ARRAY_SIZE(prov_handlers)) {
+        BT_ERR("NPPI, unknown provisioning PDU type 0x%02x", type);
         return -EINVAL;
     }
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,9 @@ extern "C" {
 #include "esp_err.h"
 #include "hal/uart_types.h"
 #include "hal/gpio_types.h"
+#include "soc/soc_caps.h"
+
+#if SOC_ULP_LP_UART_SUPPORTED
 
 /**
  * Default LP_IO Mux pins for LP UART
@@ -28,6 +31,11 @@ extern "C" {
 #define LP_UART_DEFAULT_RX_GPIO_NUM GPIO_NUM_4
 #define LP_UART_DEFAULT_RTS_GPIO_NUM GPIO_NUM_2
 #define LP_UART_DEFAULT_CTS_GPIO_NUM GPIO_NUM_3
+#elif CONFIG_IDF_TARGET_ESP32S31
+#define LP_UART_DEFAULT_TX_GPIO_NUM GPIO_NUM_6
+#define LP_UART_DEFAULT_RX_GPIO_NUM GPIO_NUM_7
+#define LP_UART_DEFAULT_RTS_GPIO_NUM GPIO_NUM_4
+#define LP_UART_DEFAULT_CTS_GPIO_NUM GPIO_NUM_5
 #else
 #error "LP IO Mux pins undefined for LP UART"
 #endif /* CONFIG_IDF_TARGET_ESP32P4 */
@@ -100,6 +108,8 @@ typedef struct {
  * @return esp_err_t    ESP_OK when successful
  */
 esp_err_t lp_core_uart_init(const lp_core_uart_cfg_t *cfg);
+
+#endif /* SOC_ULP_LP_UART_SUPPORTED */
 
 #ifdef __cplusplus
 }

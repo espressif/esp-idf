@@ -15,6 +15,11 @@ if(NOT IDF_TARGET)
         "in by the parent build process.")
 endif()
 
+if(IDF_BUILD_V2)
+    include(CMakeLists_v2.txt)
+    return()
+endif()
+
 # A number of these components are implemented as config-only when built in the bootloader
 set(COMPONENTS
     bootloader
@@ -69,11 +74,8 @@ idf_build_set_property(__OUTPUT_SDKCONFIG 0)
 # Define a property for the default linker script
 set(LD_DEFAULT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/main/ld/${IDF_TARGET}")
 project(bootloader)
-if(CONFIG_IDF_TARGET_ESP32P4 AND NOT CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
-    target_linker_script("__idf_main" INTERFACE "${LD_DEFAULT_PATH}/bootloader.rev3.ld.in")
-else()
-    target_linker_script("__idf_main" INTERFACE "${LD_DEFAULT_PATH}/bootloader.ld.in")
-endif()
+target_linker_script("__idf_main" INTERFACE "${LD_DEFAULT_PATH}/bootloader.memory.ld.in")
+target_linker_script("__idf_main" INTERFACE "${LD_DEFAULT_PATH}/bootloader.sections.ld.in")
 
 idf_build_set_property(COMPILE_DEFINITIONS "BOOTLOADER_BUILD=1" APPEND)
 idf_build_set_property(COMPILE_DEFINITIONS "NON_OS_BUILD=1" APPEND)

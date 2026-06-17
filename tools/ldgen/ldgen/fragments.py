@@ -1,5 +1,5 @@
 #
-# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 from typing import Any
@@ -475,9 +475,16 @@ def parse_fragment_file(path, sdkconfig):
     fragment = section | scheme | mapping | get_conditional_stmt(section | scheme | mapping)
     parser = ZeroOrMore(fragment).ignore(comment).set_parse_action(parse)
     fragment_file = parser.parse_file(path, parse_all=True)[0]
-    fragment_file.path = path
+    # Normalize to a path string — `path` may be a file-like object when
+    # called via the --fragments CLI path, and file objects are not
+    # picklable. Storing the path as a string keeps the parsed FragmentFile
+    # picklable for the lf cache regardless of how ldgen was invoked. The
+    # file object itself is not needed — .path is only read for error
+    # messages, so a plain string identifier is sufficient.
+    path_str = path.name if hasattr(path, 'name') else path
+    fragment_file.path = path_str
 
     for frag in fragment_file.fragments:
-        frag.path = path
+        frag.path = path_str
 
     return fragment_file

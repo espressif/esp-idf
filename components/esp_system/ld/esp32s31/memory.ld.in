@@ -12,14 +12,16 @@
  * Restrict to simple macros with numeric values, and/or #if/#endif blocks.
  */
 
-/* This file might not accurate, please check [ESP32S31] IDF-14669 */
-
 #include "sdkconfig.h"
 #include "ld.common"
+#include "ld.hp_mem_defs"
 
 #define SRAM_START     0x2F000000
-#define SRAM_END       0x2F07AFC0  /* 2nd stage bootloader iram_loader_seg start address */
-#define SRAM_SIZE      SRAM_END - SRAM_START
+#if CONFIG_ULP_COPROC_RUN_FROM_HP_MEM
+#define SRAM_SIZE      (ULP_HP_MEM_START - SRAM_START)
+#else
+#define SRAM_SIZE      (SRAM_SEG_END - SRAM_START)
+#endif
 
 #define IDROM_SEG_SIZE   (CONFIG_MMU_PAGE_SIZE << 10)
 
@@ -63,9 +65,14 @@ MEMORY
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
   /**
-   * lp ram memory (RWX). Persists over deep sleep. // TODO: IDF-5667
+   * lp ram memory (RWX). Persists over deep sleep.
    */
-   /* TODO: ["ESP32S31"] IDF-14640 */
+#if CONFIG_ULP_COPROC_ENABLED
+  lp_ram_seg(RW)  :                 org = 0x2E000000 + CONFIG_ULP_COPROC_RESERVE_MEM,
+                                    len = 0x8000 - CONFIG_ULP_COPROC_RESERVE_MEM - RESERVE_RTC_MEM
+#else
+  lp_ram_seg(RW)  :                 org = 0x2E000000, len = 0x8000 - RESERVE_RTC_MEM
+#endif // CONFIG_ULP_COPROC_ENABLED
 
   /* We reduced the size of lp_ram_seg by RESERVE_RTC_MEM value.
      It reserves the amount of LP memory that we use for this memory segment.
@@ -73,9 +80,8 @@ MEMORY
        - (lower addr) rtc timer data (s_rtc_timer_retain_mem, see esp_clk.c files).
        - (higher addr) bootloader rtc data (s_bootloader_retain_mem, when a Kconfig option is on).
      The aim of this is to keep data that will not be moved around and have a fixed address.
-     This segment is placed at the beginning of LP RAM, as the end of LP RAM is occupied by LP ROM stack/data
   */
-  /* TODO: ["ESP32S31"] IDF-14640 */
+  lp_reserved_seg(RW) :        org = 0x2E000000 + 0x8000 - RESERVE_RTC_MEM, len = RESERVE_RTC_MEM
 
   /* PSRAM seg */
   extern_ram_seg(RWX) :        org = 0x50000000, len = IDROM_SEG_SIZE
@@ -84,25 +90,27 @@ MEMORY
 /* Heap ends at top of dram0_0_seg */
 _heap_end = 0x40000000;
 
+REGION_ALIAS("iram_text_seg", sram_seg);
+REGION_ALIAS("dram_seg", sram_seg);
 
 /**
  *  The lines below define location alias for .rtc.data section
  *  S31 has no distinguished LP(RTC) fast and slow memory sections, instead, there is a unified LP_RAM section
  *  Thus, the following region segments are not configurable like on other targets
  */
-
-  /* TODO: ["ESP32S31"] IDF-14640 */
-
-#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
-  REGION_ALIAS("text_seg", irom_seg);
-#else
-  REGION_ALIAS("text_seg", sram_seg);
-#endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+REGION_ALIAS("rtc_text_seg", lp_ram_seg);
+REGION_ALIAS("rtc_data_seg", lp_ram_seg);
+REGION_ALIAS("rtc_slow_seg", lp_ram_seg);
+REGION_ALIAS("rtc_force_fast_seg", lp_ram_seg);
+REGION_ALIAS("rtc_force_slow_seg", lp_ram_seg);
+REGION_ALIAS("rtc_reserved_seg", lp_reserved_seg);
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
-  REGION_ALIAS("rodata_seg", drom_seg);
+  REGION_ALIAS("flash_text_seg", irom_seg);
+  REGION_ALIAS("flash_rodata_seg", drom_seg);
 #else
-  REGION_ALIAS("rodata_seg", sram_seg);
+  REGION_ALIAS("flash_text_seg", sram_seg);
+  REGION_ALIAS("flash_rodata_seg", sram_seg);
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
 #if CONFIG_SPIRAM_XIP_FROM_PSRAM
@@ -111,16 +119,9 @@ _heap_end = 0x40000000;
   REGION_ALIAS("ext_ram_seg", extern_ram_seg);
 #endif //#if CONFIG_SPIRAM_XIP_FROM_PSRAM
 
-/**
- *  If rodata default segment is placed in `drom_seg`, then flash's first rodata section must
- *  also be first in the segment.
- */
-#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
-  ASSERT(_flash_rodata_dummy_start == ORIGIN(rodata_seg),
-         ".flash_rodata_dummy section must be placed at the beginning of the rodata segment.")
-#endif
+ALIGN_VECTOR_TABLE = 0x40;
 
-#if CONFIG_ESP_SYSTEM_USE_EH_FRAME
-    ASSERT ((__eh_frame_end > __eh_frame), "Error: eh_frame size is null!");
-    ASSERT ((__eh_frame_hdr_end > __eh_frame_hdr), "Error: eh_frame_hdr size is null!");
+#if CONFIG_ULP_COPROC_RUN_FROM_HP_MEM
+_ulp_hp_mem_resv_start = ULP_HP_MEM_START;
+_ulp_hp_mem_resv_end   = ULP_HP_MEM_END;
 #endif

@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-#define COUNT_EFUSE_REG_PER_BLOCK 8      /* The number of registers per block. */
+#define COUNT_EFUSE_REG_PER_BLOCK 9      /* The maximum number of readable registers per block. */
 
 #define ESP_EFUSE_SECURE_VERSION_NUM_BLOCK EFUSE_BLK0
 

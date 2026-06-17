@@ -47,7 +47,9 @@ void ble_stack_enableVsEvents(bool en)
 #if DEFAULT_BT_LE_ROLE_BROADCASTER
     adv_stack_enableScanReqRxdVsEvent(en);
 #endif // DEFAULT_BT_LE_ROLE_BROADCASTER
+#if DEFAULT_BT_LE_ROLE_CENTROL || DEFAULT_BT_LE_ROLE_PERIPHERAL
     conn_stack_enableChanMapUpdCompVsEvent(en);
+#endif // DEFAULT_BT_LE_ROLE_CENTROL || DEFAULT_BT_LE_ROLE_PERIPHERAL
 #if CONFIG_BT_LE_SLEEP_ENABLE
     sleep_stack_enableWakeupVsEvent(en);
 #endif // CONFIG_BT_LE_SLEEP_ENABLE

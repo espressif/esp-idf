@@ -184,7 +184,8 @@ static int ble_aes_ccm_encrypt(const uint8_t *key, const uint8_t *nonce,
 static int ble_aes_ccm_decrypt(const uint8_t *key, const uint8_t *nonce,
                                 const uint8_t *ciphertext, size_t ciphertext_len,
                                 const uint8_t *aad, size_t aad_len,
-                                uint8_t *plaintext, size_t tag_len)
+                                uint8_t *plaintext, size_t tag_len,
+                                size_t plaintext_capacity)
 {
 #if defined(CONFIG_BT_SMP_CRYPTO_STACK_TINYCRYPT)
     struct tc_aes_key_sched_struct sched;
@@ -206,6 +207,11 @@ static int ble_aes_ccm_decrypt(const uint8_t *key, const uint8_t *nonce,
     }
 
     plaintext_len = ciphertext_len - tag_len;
+
+    if (plaintext_len > plaintext_capacity) {
+        ESP_LOGE(TAG, "plaintext_len (%zu) > plaintext_capacity (%zu)", plaintext_len, plaintext_capacity);
+        return -1;
+    }
 
     /* Set AES encryption key */
     ret = tc_aes128_set_encrypt_key(&sched, key);
@@ -268,6 +274,11 @@ static int ble_aes_ccm_decrypt(const uint8_t *key, const uint8_t *nonce,
     }
 
     plaintext_len = ciphertext_len - tag_len;
+
+    if (plaintext_len > plaintext_capacity) {
+        ESP_LOGE(TAG, "plaintext_len (%zu) > plaintext_capacity (%zu)", plaintext_len, plaintext_capacity);
+        return -1;
+    }
 
     /* Set key attributes */
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DECRYPT);
@@ -362,13 +373,14 @@ int ble_ead_encrypt(const uint8_t session_key[BLE_EAD_KEY_SIZE],
 int ble_ead_decrypt(const uint8_t session_key[BLE_EAD_KEY_SIZE],
                     const uint8_t iv[BLE_EAD_IV_SIZE],
                     const uint8_t *encrypted_payload, size_t encrypted_payload_size,
-                    uint8_t *payload)
+                    uint8_t *payload, size_t payload_capacity)
 {
     int ret;
     uint8_t nonce[BLE_EAD_NONCE_SIZE];
     const uint8_t *randomizer;
     const uint8_t *ciphertext;
     size_t ciphertext_len;
+    size_t expected_plaintext_len;
 
     if (session_key == NULL) {
         ESP_LOGE(TAG, "session_key is NULL");
@@ -395,6 +407,13 @@ int ble_ead_decrypt(const uint8_t session_key[BLE_EAD_KEY_SIZE],
         return -1;
     }
 
+    expected_plaintext_len = BLE_EAD_DECRYPTED_PAYLOAD_SIZE(encrypted_payload_size);
+    if (expected_plaintext_len > payload_capacity) {
+        ESP_LOGE(TAG, "EAD plaintext length %zu exceeds payload buffer %zu",
+                 expected_plaintext_len, payload_capacity);
+        return -1;
+    }
+
     /* Extract randomizer from the start of encrypted payload */
     randomizer = encrypted_payload;
 
@@ -413,7 +432,8 @@ int ble_ead_decrypt(const uint8_t session_key[BLE_EAD_KEY_SIZE],
     ret = ble_aes_ccm_decrypt(session_key, nonce,
                                ciphertext, ciphertext_len,
                                ble_ead_aad, BLE_EAD_AAD_SIZE,
-                               payload, BLE_EAD_MIC_SIZE);
+                               payload, BLE_EAD_MIC_SIZE,
+                               payload_capacity);
 
     return ret;
 }

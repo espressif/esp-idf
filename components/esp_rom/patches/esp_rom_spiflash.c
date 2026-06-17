@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,21 +13,10 @@
 #include "soc/spi_mem_reg.h"
 #endif
 
-#include "esp_rom_spiflash.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/spi_flash.h"
-#include "esp32s3/rom/opi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32P4
-#include "esp32p4/rom/spi_flash.h"
-#include "esp32p4/rom/opi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32C5
-#include "esp32c5/rom/spi_flash.h"
-#include "esp32c5/rom/opi_flash.h"
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+#include "riscv/rv_utils.h"
 #endif
+#include "esp_rom_spiflash.h"
 
 #define SPI_IDX   1
 
@@ -717,7 +706,7 @@ esp_rom_spiflash_result_t esp_rom_spiflash_write_disable(void)
 
 #elif CONFIG_IDF_TARGET_ESP32S3
 extern void esp_rom_spi_set_address_bit_len(int spi, int addr_bits);
-void esp_rom_opiflash_cache_mode_config(esp_rom_spiflash_read_mode_t mode, const esp_rom_opiflash_spi0rd_t *cache)
+void esp_rom_spiflash_cache_mode_config(esp_rom_spiflash_read_mode_t mode, const esp_rom_opiflash_spi0rd_t *cache)
 {
     esp_rom_spi_set_op_mode(0, mode);
     REG_CLR_BIT(SPI_MEM_USER_REG(0), SPI_MEM_USR_MOSI);
@@ -742,7 +731,7 @@ void esp_rom_opiflash_cache_mode_config(esp_rom_spiflash_read_mode_t mode, const
 
 #elif CONFIG_IDF_TARGET_ESP32P4
 extern void esp_rom_spi_set_address_bit_len(int spi, int addr_bits);
-void esp_rom_opiflash_cache_mode_config(esp_rom_spiflash_read_mode_t mode, const esp_rom_opiflash_spi0rd_t *cache)
+void esp_rom_spiflash_cache_mode_config(esp_rom_spiflash_read_mode_t mode, const esp_rom_opiflash_spi0rd_t *cache)
 {
     esp_rom_spi_set_op_mode(0, mode);
 
@@ -768,9 +757,9 @@ void esp_rom_opiflash_cache_mode_config(esp_rom_spiflash_read_mode_t mode, const
         REG_SET_BIT(SPI_MEM_C_CTRL_REG, SPI_MEM_C_Q_POL);
     }
 }
-#elif CONFIG_IDF_TARGET_ESP32C5
+#elif CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61 || CONFIG_IDF_TARGET_ESP32H4
 extern void esp_rom_spi_set_address_bit_len(int spi, int addr_bits);
-void esp_rom_opiflash_cache_mode_config(esp_rom_spiflash_read_mode_t mode, const esp_rom_opiflash_spi0rd_t *cache)
+void esp_rom_spiflash_cache_mode_config(esp_rom_spiflash_read_mode_t mode, const esp_rom_opiflash_spi0rd_t *cache)
 {
     esp_rom_spi_set_op_mode(0, mode);
 
@@ -806,3 +795,24 @@ void esp_rom_opiflash_cache_mode_config(esp_rom_spiflash_read_mode_t mode, const
 }
 
 #endif // IDF_TARGET
+
+#if CONFIG_SPI_FLASH_ROM_IMPL
+extern void rom_spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state);
+void spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state)
+{
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    //branch predictor will start cache request as well
+    rv_utils_dis_branch_predictor();
+#endif
+    rom_spi_flash_disable_cache(cpuid, saved_state);
+}
+
+extern void rom_spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state);
+void spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state)
+{
+    rom_spi_flash_restore_cache(cpuid, saved_state);
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    rv_utils_en_branch_predictor();
+#endif
+}
+#endif

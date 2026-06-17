@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2025-2026 Espressif Systems (Shanghai) CO LTD
  */
 
 #include <string.h>
@@ -211,17 +211,17 @@ static int esp_internal_sha512_parallel_engine_process( esp_sha512_context *ctx,
 {
     bool first_block = false;
 
-    if (ctx->mode == ESP_SHA_MODE_UNUSED) {
+    if (ctx->operation_mode == ESP_SHA_MODE_UNUSED) {
         /* try to use hardware for this digest */
         if (esp_sha_try_lock_engine(sha_type(ctx))) {
-            ctx->mode = ESP_SHA_MODE_HARDWARE;
+            ctx->operation_mode = ESP_SHA_MODE_HARDWARE;
             first_block = true;
         } else {
-            ctx->mode = ESP_SHA_MODE_SOFTWARE;
+            ctx->operation_mode = ESP_SHA_MODE_SOFTWARE;
         }
     }
 
-    if (ctx->mode == ESP_SHA_MODE_HARDWARE) {
+    if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
         esp_sha_block(sha_type(ctx), data, first_block);
         if (read_digest) {
             esp_sha_read_digest_state(sha_type(ctx), ctx->state);

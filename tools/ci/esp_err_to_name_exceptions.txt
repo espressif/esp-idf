@@ -1,0 +1,5 @@
+# Ignore list for gen_esp_err_to_name.py
+# Trailing / means directory
+components/cmock/CMock/test/
+components/spi_flash/sim/
+components/esp_wifi/remote/

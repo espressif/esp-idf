@@ -1,14 +1,6 @@
 comment "NOTE! Support of ESP32-H4 MP is mutually exclusive"
 comment "Read the help text of the option below for explanation"
 
-config ESP32H4_SELECTS_REV_MP
-    bool "Select ESP32-H4 MP version"
-    default y
-    help
-        Enable this option to select ESP32-H4 MP revision.
-        MP revisions have some hardware differences with Beta revision.
-        MP revisions is not compatible with Beta revision.
-
 choice ESP32H4_REV_MIN
     prompt "Minimum Supported ESP32-H4 Revision"
     default ESP32H4_REV_MIN_0

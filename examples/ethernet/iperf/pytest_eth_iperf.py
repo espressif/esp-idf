@@ -154,7 +154,7 @@ def test_esp_eth_iperf_ip101(
     'config, target',
     [
         pytest.param('default_ip101_esp32p4', 'esp32p4', marks=[pytest.mark.eth_ip101]),
-        pytest.param('default_ip101_esp32p4v1', 'esp32p4', marks=[pytest.mark.eth_ip101, pytest.mark.esp32p4_eco4]),
+        pytest.param('default_ip101_esp32p4v1', 'esp32p4', marks=[pytest.mark.eth_ip101, pytest.mark.esp32p4_rev1]),
     ],
     indirect=['target'],
 )

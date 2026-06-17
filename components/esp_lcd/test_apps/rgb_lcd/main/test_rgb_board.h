@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,6 +66,30 @@ extern "C" {
 #define TEST_LCD_DATA13_GPIO   15 // R2
 #define TEST_LCD_DATA14_GPIO   17 // R3
 #define TEST_LCD_DATA15_GPIO   19 // R4
+#define TEST_LCD_DISP_EN_GPIO  -1
+
+#elif CONFIG_IDF_TARGET_ESP32S31
+
+#define TEST_LCD_VSYNC_GPIO    45
+#define TEST_LCD_HSYNC_GPIO    44
+#define TEST_LCD_DE_GPIO       43
+#define TEST_LCD_PCLK_GPIO     40
+#define TEST_LCD_DATA0_GPIO    11 // B3
+#define TEST_LCD_DATA1_GPIO    12 // B4
+#define TEST_LCD_DATA2_GPIO    13 // B5
+#define TEST_LCD_DATA3_GPIO    14 // B6
+#define TEST_LCD_DATA4_GPIO    15 // B7
+#define TEST_LCD_DATA5_GPIO    18 // G2
+#define TEST_LCD_DATA6_GPIO    19 // G3
+#define TEST_LCD_DATA7_GPIO    33 // G4
+#define TEST_LCD_DATA8_GPIO    34 // G5
+#define TEST_LCD_DATA9_GPIO    35 // G6
+#define TEST_LCD_DATA10_GPIO   36 // G7
+#define TEST_LCD_DATA11_GPIO   2  // R3
+#define TEST_LCD_DATA12_GPIO   3  // R4
+#define TEST_LCD_DATA13_GPIO   4  // R5
+#define TEST_LCD_DATA14_GPIO   5  // R6
+#define TEST_LCD_DATA15_GPIO   7  // R7
 #define TEST_LCD_DISP_EN_GPIO  -1
 
 #else

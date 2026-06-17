@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -220,7 +220,7 @@ static esp_err_t prov_complete(int node_idx, const esp_ble_mesh_octet16_t uuid,
         return ESP_FAIL;
     }
 
-    err = example_ble_mesh_store_node_info(uuid, unicast, elem_num, LED_OFF);
+    err = example_ble_mesh_store_node_info(uuid, unicast, elem_num, 0);
     if (err) {
         ESP_LOGE(TAG, "%s: Store node info failed", __func__);
         return ESP_FAIL;
@@ -249,7 +249,6 @@ static esp_err_t prov_complete(int node_idx, const esp_ble_mesh_octet16_t uuid,
 static void prov_link_open(esp_ble_mesh_prov_bearer_t bearer)
 {
     ESP_LOGI(TAG, "%s link open", bearer == ESP_BLE_MESH_PROV_ADV ? "PB-ADV" : "PB-GATT");
-    board_led_operation(LED_OFF, LED_ON, LED_OFF);
 }
 
 static void prov_link_close(esp_ble_mesh_prov_bearer_t bearer, uint8_t reason)
@@ -634,7 +633,6 @@ static void example_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t
                 ESP_LOGI(TAG, "The Remote Provisioning Server have been provisioned, You could click button to start remote provisioning");
                 remote_rpr_srv_addr = addr;
             }
-            board_led_operation(LED_OFF, LED_OFF, LED_OFF);
             break;
         }
         default:
@@ -997,7 +995,6 @@ static void example_ble_mesh_remote_prov_client_callback(esp_ble_mesh_rpr_client
                         if (err) {
                             ESP_LOGE(TAG, "Failed to perform Remote Provisioning Client action: Start Prov");
                         }
-                        board_led_operation(LED_OFF, LED_ON, LED_OFF);
                         break;
                     }
                     default:

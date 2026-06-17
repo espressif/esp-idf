@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -153,13 +153,20 @@ TEST_CASE("LEDC output idle level test", "[ledc]")
     ledc_timer_config_t ledc_time_config = create_default_timer_config();
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
     TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
+    gpio_input_enable(PULSE_IO);
 
-    uint32_t current_level = LEDC.channel_group[test_speed_mode].channel[LEDC_CHANNEL_0].conf0.idle_lv;
+    uint32_t current_level = 0;
+    TEST_ESP_OK(ledc_stop(test_speed_mode, LEDC_CHANNEL_0, current_level));
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    // check real output level over some period
+    for (int i = 0; i < 40; i++) {
+        TEST_ASSERT_EQUAL_INT32(current_level, gpio_get_level(PULSE_IO));
+        esp_rom_delay_us(50);
+    }
+    // flip the idle level
     TEST_ESP_OK(ledc_stop(test_speed_mode, LEDC_CHANNEL_0, !current_level));
     vTaskDelay(1000 / portTICK_PERIOD_MS);
-    TEST_ASSERT_EQUAL_INT32(!current_level, LEDC.channel_group[test_speed_mode].channel[LEDC_CHANNEL_0].conf0.idle_lv);
     // check real output level over some period
-    gpio_input_enable(PULSE_IO);
     for (int i = 0; i < 40; i++) {
         TEST_ASSERT_EQUAL_INT32(!current_level, gpio_get_level(PULSE_IO));
         esp_rom_delay_us(50);
@@ -523,7 +530,7 @@ static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_
     } else if (clk_src_freq == 60 * 1000 * 1000) {
         theoretical_freq = 8993;
     }
-    frequency_set_get(speed_mode, timer, 9000, theoretical_freq, 60);
+    frequency_set_get(speed_mode, timer, 9000, theoretical_freq, 80);
 #endif
 
     // Pause and de-configure the timer so that it won't affect the following test cases

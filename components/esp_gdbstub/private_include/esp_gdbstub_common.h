@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -91,6 +91,13 @@ void gdbstub_handle_uart_int(esp_gdbstub_frame_t *regs_frame);
  * @param dst  pointer to the GDB register file
  */
 void esp_gdbstub_tcb_to_regfile(TaskHandle_t tcb, esp_gdbstub_gdb_regfile_t *dst);
+
+/**
+ * Find the TCB that owns the given exception frame
+ * @param frame  pointer to the exception frame
+ * @return pointer to the TCB, or NULL if not found
+ */
+const StaticTask_t *esp_gdbstub_find_tcb_by_frame(const esp_gdbstub_frame_t *frame);
 #endif // CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 
 
@@ -161,6 +168,15 @@ void esp_gdbstub_stall_other_cpus_end(void);
 void esp_gdbstub_clear_step(void);
 void esp_gdbstub_do_step(esp_gdbstub_frame_t *regs_frame);
 void esp_gdbstub_trigger_cpu(void);
+
+#ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+/**
+ * Check if a watchpoint triggered the current debug exception.
+ * @param[out] addr  Address of the triggered watchpoint (only valid if return is true)
+ * @return true if a watchpoint triggered, false otherwise (breakpoint/step/other)
+ */
+bool esp_gdbstub_get_watchpoint_trigger_addr(uint32_t *addr);
+#endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 
 /**
  * Write a value to register in frame

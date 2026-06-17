@@ -126,7 +126,6 @@
 //Periheral Clock {{
 #define  APB_CLK_FREQ                                ( 32*1000000 )
 #define  MODEM_REQUIRED_MIN_APB_CLK_FREQ             ( 32*1000000 )
-#define  REF_CLK_FREQ                                ( 1000000 )
 //}}
 
 /* Overall memory map */
@@ -150,7 +149,7 @@
 #define SOC_IRAM_HIGH   0x40860000
 #define SOC_DRAM_LOW    0x40810000
 #define SOC_DRAM_HIGH   0x40860000
-#define SOC_RTC_IRAM_LOW  0x50000000 // TODO：[ESP32H4] IDF-12303 inherit from verify code, need remove
+#define SOC_RTC_IRAM_LOW  0x50000000
 #define SOC_RTC_IRAM_HIGH 0x50004000
 #define SOC_RTC_DRAM_LOW  0x50000000
 #define SOC_RTC_DRAM_HIGH 0x50004000

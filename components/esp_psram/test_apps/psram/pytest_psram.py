@@ -90,14 +90,11 @@ def test_psram_esp32p4(dut: Dut) -> None:
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
-    [
-        'esp32c5_release',
-        'esp32c5_advanced',
-    ],
+    ['esp32s31_250m_release', 'esp32s31_xip'],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32c5'], indirect=['target'])
-def test_psram_esp32c5(dut: Dut) -> None:
+@idf_parametrize('target', ['esp32s31'], indirect=['target'])
+def test_psram_esp32s31(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
@@ -105,13 +102,27 @@ def test_psram_esp32c5(dut: Dut) -> None:
 @pytest.mark.parametrize(
     'config',
     [
-        'esp32c61_release',
-        'esp32c61_advanced',
+        'esp32h4_release',
+        'esp32h4_advanced',
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32c61'], indirect=['target'])
-def test_psram_esp32c61(dut: Dut) -> None:
+@idf_parametrize('target', ['esp32h4'], indirect=['target'])
+def test_psram_esp32h4(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'release',
+        'advanced',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c5', 'esp32c61'], indirect=['target'])
+def test_psram_general(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 

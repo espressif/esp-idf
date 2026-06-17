@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -98,6 +98,7 @@ void app_main(void)
             .bus_off_indicator = GPIO_NUM_NC,
         },
         .bit_timing.bitrate = TWAI_BITRATE,
+        .timestamp_resolution_hz = 1000000,
         .flags.enable_listen_only = true,
     };
 
@@ -130,8 +131,10 @@ void app_main(void)
     while (1) {
         if (xSemaphoreTake(twai_listener_ctx.rx_result_semaphore, portMAX_DELAY) == pdTRUE) {
             twai_frame_t *frame = &twai_listener_ctx.rx_pool[twai_listener_ctx.read_idx].frame;
-            ESP_LOGI(TAG, "RX: %x [%d] %x %x %x %x %x %x %x %x", \
-                     frame->header.id, frame->header.dlc, frame->buffer[0], frame->buffer[1], frame->buffer[2], frame->buffer[3], frame->buffer[4], frame->buffer[5], frame->buffer[6], frame->buffer[7]);
+            ESP_LOGI(TAG, "RX: timestamp %llu, %x [%d] %x %x %x %x %x %x %x %x", \
+                     frame->header.timestamp, frame->header.id, frame->header.dlc, \
+                     frame->buffer[0], frame->buffer[1], frame->buffer[2], frame->buffer[3], \
+                     frame->buffer[4], frame->buffer[5], frame->buffer[6], frame->buffer[7]);
             twai_listener_ctx.read_idx = (twai_listener_ctx.read_idx + 1) % POLL_DEPTH;
             xSemaphoreGive(twai_listener_ctx.free_pool_semaphore);
         }

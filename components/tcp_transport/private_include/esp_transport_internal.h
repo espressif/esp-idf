@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -135,6 +135,27 @@ void esp_transport_capture_errno(esp_transport_handle_t t, int sock_errno);
  *
  */
 void esp_transport_set_errors(esp_transport_handle_t t, const esp_tls_error_handle_t error_handle);
+
+/**
+ * @brief      Polls the underlying socket until the connection is closed or the timeout expires.
+ *
+ * This is an internal helper used by higher-level transports (e.g. WebSocket) that need to wait
+ * for a clean TCP connection teardown after completing their own application-level close handshake.
+ * It selects on the read and error sets of the socket and distinguishes between:
+ *   - Clean closure by FIN (recv returns 0 on a readable socket)
+ *   - RST-based closure (ENOTCONN / ECONNRESET / ECONNABORTED on the error set)
+ *   - Unexpected conditions (socket readable with actual data, or unrecognised errno)
+ *
+ * @param[in]  t           A base transport handle (TCP or SSL) whose socket is to be monitored.
+ *                         Must NOT be a WS transport handle; pass ws->parent from the WS layer.
+ * @param[in]  timeout_ms  Timeout in milliseconds (-1 to wait forever).
+ *
+ * @return
+ *   -  1  Connection terminated: either clean FIN or expected RST errno
+ *   -  0  Timeout: no activity within timeout_ms
+ *   - -1  Error: socket unexpectedly readable with data, unrecognised errno, or invalid handle
+ */
+int esp_transport_poll_connection_closed(esp_transport_handle_t t, int timeout_ms);
 
 #ifdef __cplusplus
 }

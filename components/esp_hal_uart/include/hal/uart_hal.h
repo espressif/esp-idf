@@ -489,6 +489,23 @@ uint16_t uart_hal_get_max_rx_timeout_thrd(uart_hal_context_t *hal);
 #define uart_hal_get_rxfifo_len(hal) uart_ll_get_rxfifo_len((hal)->dev)
 
 /**
+ * @brief Set the UART glitch filter threshold. Any high pulse lasting shorter than this value will be ignored when the filter is enabled.
+ *
+ * @param hal Context of the HAL layer
+ * @param glitch_filt_thrd The glitch filter threshold to be set (unit: ns)
+ * @param sclk_freq Frequency of the clock source of UART, in Hz.
+ */
+#define uart_hal_set_glitch_filt_thrd(hal, glitch_filt_thrd, sclk_freq) uart_ll_set_glitch_filt_thrd((hal)->dev, glitch_filt_thrd, sclk_freq)
+
+/**
+ * @brief Enable or disable the UART glitch filter
+ *
+ * @param hal Context of the HAL layer
+ * @param enable True to enable the filter, False to disable the filter
+ */
+#define uart_hal_enable_glitch_filt(hal, enable) uart_ll_enable_glitch_filt((hal)->dev, enable)
+
+/**
  * @brief  Enable or disable the auto baudrate detection
  *
  * @param  hal Context of the HAL layer

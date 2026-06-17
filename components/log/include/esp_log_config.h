@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -110,6 +110,25 @@ extern "C" {
  */
 #ifndef ESP_LOG_FORMATTING_DISABLED
 #define ESP_LOG_FORMATTING_DISABLED              (0)
+#endif
+
+/**
+ * This define controls whether esp_rom_vprintf is used as the fallback print function in constrained
+ * environments (ISR, cache disabled, early startup). When set to 0, esp_rom_vprintf is never referenced,
+ * saving ~1.2 KB of IRAM on chips where it is not a true ROM function.
+ * ESP_DRAM_LOGx and ESP_EARLY_LOGx will use esp_rom_printf directly instead.
+ *
+ * On chips where ets_vprintf is in ROM (ESP32-S2, ESP32-C2), this is always enabled
+ * since there is no IRAM cost.
+ */
+#if BOOTLOADER_BUILD || CONFIG_ESP_ROM_HAS_VPRINTF_FUNC
+#define ESP_LOG_API_CONSTRAINED_ENV_SAFE  (1)
+#else
+#if defined(CONFIG_LOG_API_CONSTRAINED_ENV_SAFE) || defined(CONFIG_LOG_MODE_BINARY_EN)
+#define ESP_LOG_API_CONSTRAINED_ENV_SAFE  (1)
+#else
+#define ESP_LOG_API_CONSTRAINED_ENV_SAFE  (0)
+#endif
 #endif
 /** @endcond */
 

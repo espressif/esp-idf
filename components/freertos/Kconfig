@@ -6,7 +6,8 @@ menu "FreeRTOS"
 
         config FREERTOS_SMP
             bool "Run the Amazon SMP FreeRTOS kernel instead (FEATURE UNDER DEVELOPMENT)"
-            depends on !IDF_TARGET_ESP32P4 && !IDF_TARGET_ESP32H4  #TODO: IDF-8113: Enable P4/H4 support on AMZ SMP
+            # TODO: IDF-8113: Enable support on all targets
+            depends on IDF_TARGET_ESP32
             default  "n"
             help
                 Amazon has released an SMP version of the FreeRTOS Kernel which can be found via the following link:
@@ -23,7 +24,6 @@ menu "FreeRTOS"
         config FREERTOS_UNICORE
             # Todo: Replace with CONFIG_NUMBER_OF_CORES (IDF-9156)
             bool "Run FreeRTOS only on first core"
-            default "y" if IDF_TARGET_ESP32S2 || IDF_TARGET_LINUX
             select ESP_SYSTEM_SINGLE_CORE_MODE
             help
                 This version of FreeRTOS normally takes control of all cores of the CPU. Select this if you only want
@@ -417,14 +417,11 @@ menu "FreeRTOS"
                 hook function in their application.
 
         config FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER
-            # This feature is innately supported in FreeRTOS SMP, and hence not available as a config option when
-            # FreeRTOS SMP is enabled.
+            # TODO(IDF-15523): Remove this hidden compatibility option entirely.
+            # This feature is innately supported in FreeRTOS SMP, and IDF FreeRTOS always enables it.
             depends on !FREERTOS_SMP
-            bool "Check that mutex semaphore is given by owner task"
+            bool
             default y
-            help
-                If enabled, assert that when a mutex semaphore is given, the task giving the semaphore is the task
-                which is currently holding the mutex.
 
         config FREERTOS_ISR_STACKSIZE
             int "ISR stack size"
@@ -595,6 +592,30 @@ menu "FreeRTOS"
                 If you have a task that needs a large amount of stack and does not call on ROM code in any way
                 (no direct calls, but also no Bluetooth/WiFi), you can try enable this to
                 cause xTaskCreateStatic to allow tasks stack in external memory.
+
+        config FREERTOS_PLACE_TASK_STACKS_IN_EXT_RAM
+            bool "Place dynamic task stacks in PSRAM by default"
+            depends on FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
+            default n
+            help
+                When enabled, task stacks allocated by xTaskCreate() / xTaskCreatePinnedToCore() are
+                placed in PSRAM (with internal RAM as fallback). TCBs are still allocated from internal RAM.
+
+                Restrictions that still require user attention:
+
+                - Flash operations cannot be called from tasks a PSRAM stack as they will
+                  run while cache is disabled. This includes all filesystem access and NVS.
+                  The recommended approach here is to use esp-flash-dispatcher,
+
+                  idf.py add-dependency "espressif/esp_flash_dispatcher"
+
+                  which automatically routes all flash API calls to a dedicated task
+                  placed in internal RAM.
+                - Deep-sleep requests issued from a task with a PSRAM stack are rejected at runtime. Auto-light-sleep
+                  is unaffected because it runs from the idle task, whose stack is always in internal RAM.
+                - Components that spawn tasks via xTaskCreate and require cache-disabled-safe stacks
+                  should use xTaskCreateWithCaps(..., MALLOC_CAP_INTERNAL) instead.
+                - xTaskCreateStatic is unaffected; the caller always decides where the stack lives.
 
     endmenu  # Extra
 

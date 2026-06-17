@@ -11,9 +11,14 @@ if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${target}/include")
     list(APPEND includes "${target}/include")
 endif()
 
-# USB-DWC related source files and USB FSLS PHY wrapper
+# USB-DWC related source files
 if(CONFIG_SOC_USB_OTG_SUPPORTED)
-    list(APPEND srcs "usb_dwc_hal.c" "usb_wrap_hal.c" "${target}/usb_dwc_periph.c")
+    list(APPEND srcs "usb_dwc_hal.c" "${target}/usb_dwc_periph.c")
+endif()
+
+# USB FSLS PHY wrapper
+if(CONFIG_SOC_USB_FSLS_PHY_NUM GREATER 0)
+    list(APPEND srcs "usb_wrap_hal.c")
 endif()
 
 # USB UTMI PHY

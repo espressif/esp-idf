@@ -16,6 +16,61 @@ RGB LCD 面板的分配步骤只需一步，即调用函数 :cpp:func:`esp_lcd_n
     - :cpp:member:`esp_lcd_rgb_panel_config_t::num_fbs` 设置由驱动程序分配的 frame buffer 的数量。为了向后兼容，``0`` 表示分配 ``一个`` frame buffer。如果不想分配任何 frame buffer，请设置 :cpp:member:`esp_lcd_rgb_panel_config_t::no_fb`。
     - :cpp:member:`esp_lcd_rgb_panel_config_t::no_fb` 可决定是否分配 frame buffer。设置该字段后将不分配 frame buffer。这也被称为 :ref:`bounce_buffer_only` 模式。
 
+.. note::
+
+    - 当 :cpp:member:`esp_lcd_rgb_panel_config_t::data_width` 为 8 时：
+
+        - 像素时钟 PCLK 频率建议值需小于 80 MHz；
+        - 如果同时通过 :cpp:func:`esp_lcd_rgb_panel_set_yuv_conversion` 配置了 YUV 与 RGB 之间的格式转换，则 PCLK 频率建议值需小于 60 MHz。
+
+    - 当 :cpp:member:`esp_lcd_rgb_panel_config_t::data_width` 为 16 时：
+
+        - PCLK 频率建议值需小于 40 MHz；
+        - 如果同时配置了 YUV 与 RGB 之间的格式转换，则 PCLK 频率建议值需小于 30 MHz。
+
+GPIO 矩阵与 IOMUX 管脚
+----------------------
+
+.. only:: esp32s31
+
+    {IDF_TARGET_NAME} 上，RGB LCD 驱动支持在满足专用管脚条件时自动使用 IOMUX，无需额外配置开关：
+
+    - 当 ``data_gpio_nums``、``hsync_gpio_num``、``vsync_gpio_num``、``pclk_gpio_num`` 和 ``de_gpio_num`` 都配置为 RGB 外设的专用 IOMUX 管脚时，驱动会自动绕过 GPIO 矩阵。
+    - 只要上述任一信号未使用专用 IOMUX 管脚，驱动就会自动回退为 GPIO 矩阵路由。
+
+    在较高像素时钟下，建议优先使用 IOMUX 管脚以获得更稳定的时序表现。
+
+    {IDF_TARGET_NAME} 上 RGB 接口可用的专用 IOMUX 管脚如下：
+
+    - 当 ``data_width = 8`` 时，使用 ``DATA[0:7]``
+    - 当 ``data_width = 16`` 时，使用 ``DATA[0:15]``
+    - 当 ``data_width = 24`` 时，使用 ``DATA[0:23]``
+
+    .. list-table::
+       :widths: 35 65
+       :header-rows: 1
+
+       * - 信号
+         - GPIO
+       * - DATA[0:7]
+         - 8, 9, 10, 11, 12, 13, 14, 15
+       * - DATA[8:15]
+         - 16, 17, 18, 19, 33, 34, 35, 36
+       * - DATA[16:23]
+         - 37, 38, 39, 2, 3, 4, 5, 7
+       * - HSYNC
+         - 44
+       * - VSYNC
+         - 45
+       * - PCLK
+         - 40
+       * - DE
+         - 43
+
+.. only:: not esp32s31
+
+    在 {IDF_TARGET_NAME} 上，RGB 信号通过 GPIO 矩阵路由。
+
 RGB LCD frame buffer 操作模式
 ------------------------------
 

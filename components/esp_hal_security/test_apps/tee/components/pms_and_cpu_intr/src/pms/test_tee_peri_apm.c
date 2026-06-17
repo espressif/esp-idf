@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,14 @@
 #define TEST_VAL              0x0FACADE0
 
 /***************************** PERI_APM *****************************/
+
+typedef struct {
+    apm_master_id_t master_id;
+    apm_tee_ctrl_module_t ctrl_mod;
+    const uint32_t *test_reg;
+    uint32_t test_reg_num;
+    uint64_t test_reg_resv_mask;
+} test_peri_apm_periph_cfg_t;
 
 static const uint32_t test_peri_apm_hp_peri_reg[] = {
     [APM_TEE_HP_PERIPH_UART1]         = UART_DATE_REG(1),
@@ -130,30 +138,35 @@ IRAM_ATTR static void hp_cpu_peri_addr_rw(uint32_t peri_addr, uint32_t attr)
 
 IRAM_ATTR static void lp_cpu_peri_addr_rw(uint32_t peri_addr, uint32_t attr)
 {
-    test_reset_lp_cpu();
+    SEND_MSG(MSG_SLAVE_CLEAR);
+    test_delay_ms(5);
 
     SEND_EXCP(0);
-    SEND_MSG(MSG_SLAVE_WRITE);
     SEND_ADDR(peri_addr);
+    SEND_DATA(TEST_VAL);
+    SEND_MSG(MSG_SLAVE_WRITE);
     test_delay_ms(10);
 
     bool can_write = (attr & APM_PERM_W);
     if (!can_write) {
         TEST_ASSERT(RECV_EXCP() == MCAUSE_STORE_ACCESS_FAULT);
         TEST_ASSERT_EQUAL_HEX32(peri_addr, RECV_ADDR());
-        esp_rom_printf("[PERI_APM] Store access fault at 0x%08x\n", peri_addr);
+        esp_rom_printf("[PERI_ACC] Store access fault at 0x%08x\n", peri_addr);
     }
 
+    SEND_MSG(MSG_SLAVE_CLEAR);
+    test_delay_ms(5);
+
     SEND_EXCP(0);
-    SEND_MSG(MSG_SLAVE_READ);
     SEND_ADDR(peri_addr);
+    SEND_MSG(MSG_SLAVE_READ);
     test_delay_ms(10);
 
     bool can_read = (attr & APM_PERM_R);
     if (!can_read) {
         TEST_ASSERT(RECV_EXCP() == MCAUSE_LOAD_ACCESS_FAULT);
         TEST_ASSERT_EQUAL_HEX32(peri_addr, RECV_ADDR());
-        esp_rom_printf("[PERI_APM] Load access fault at 0x%08x\n", peri_addr);
+        esp_rom_printf("[PERI_ACC] Load access fault at 0x%08x\n", peri_addr);
     }
 
     SEND_EXCP(0);

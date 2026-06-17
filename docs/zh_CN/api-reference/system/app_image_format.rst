@@ -125,6 +125,10 @@
 * ``time`` 和 ``date``：编译时间和日期
 * ``idf_ver``：ESP-IDF 的版本 [#f1]_
 * ``app_elf_sha256``：包含应用程序 ELF 文件的 sha256 哈希
+* ``min_efuse_blk_rev_full``：镜像支持的最小 eFuse 块版本，格式为：major * 100 + minor
+* ``max_efuse_blk_rev_full``：镜像支持的最大 eFuse 块版本，格式为：major * 100 + minor
+* ``mmu_page_size``：MMU 页大小，以 log2 格式表示
+* ``spi_flash_mode``：SPI flash 模式，取自 ``CONFIG_ESPTOOLPY_FLASHMODE_VAL``，用于 OTA 过程中的兼容性检查
 
 .. [#f1] 最大长度为 32 个字符，其中包括 null 终止符。也就是说，如果 ``PROJECT_NAME`` 的长度超过 31 个字符，超出的字符将被忽略。
 

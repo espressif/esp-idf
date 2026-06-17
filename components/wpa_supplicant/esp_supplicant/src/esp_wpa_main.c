@@ -220,7 +220,7 @@ int dpp_connect(uint8_t *bssid, bool pdr_done)
     int res = 0;
     if (!pdr_done) {
         if (esp_wifi_sta_get_prof_authmode_internal() == WPA3_AUTH_DPP) {
-            esp_dpp_start_net_intro_protocol(bssid);
+            res = esp_dpp_start_net_intro_protocol(bssid);
         }
     } else {
         res = wpa_config_bss(bssid);
@@ -389,11 +389,28 @@ static int check_n_add_wps_sta(struct hostapd_data *hapd, struct sta_info *sta_i
 }
 #endif
 
-static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, u8 *rsnxe, u16 rsnxe_len, bool *pmf_enable, int subtype, uint8_t *pairwise_cipher, uint8_t *rsn_selection_ie)
+static bool hostap_sta_join(wpa_station_join_param_t *join)
 {
     struct sta_info *sta_info = NULL;
     struct hostapd_data *hapd = hostapd_get_hapd_data();
     uint8_t reason = WLAN_REASON_PREV_AUTH_NOT_VALID;
+
+    if (!join) {
+        return false;
+    }
+
+    void **sta = join->sm;
+    u8 *bssid = join->bssid;
+    u8 *wpa_ie = join->wpa_ie;
+    u8 *rsnxe = join->rsnxe;
+    bool *pmf_enable = join->pmf_enable;
+    uint8_t *pairwise_cipher = join->pairwise_cipher;
+    uint8_t *rsn_selection_ie = join->rsn_selection_ie;
+    uint8_t *owe_dhie = join->owe_dhie;
+    int subtype = join->subtype;
+    u16 rsnxe_len = join->rsnxe_len;
+    u8 wpa_ie_len = join->wpa_ie_len;
+    u8 owe_dh_len = join->owe_dh_len;
 
     if (!hapd) {
         goto fail;
@@ -451,7 +468,19 @@ process_old_sta:
         goto fail;
     }
 #endif
-    if (hostap_new_assoc_sta(sta_info, bssid, wpa_ie, wpa_ie_len, rsnxe, rsnxe_len, pmf_enable, subtype, pairwise_cipher, &reason, rsn_selection_ie)) {
+
+    struct hostap_assoc_sta_req assoc_req = {
+        .wpa_ie = wpa_ie,
+        .wpa_ie_len = wpa_ie_len,
+        .rsnxe = rsnxe,
+        .rsnxe_len = rsnxe_len,
+        .subtype = subtype,
+        .rsn_selection_ie = rsn_selection_ie,
+        .owe_dh = owe_dhie,
+        .owe_ie_len = owe_dh_len,
+    };
+    if (hostap_new_assoc_sta(sta_info, bssid, &assoc_req, pmf_enable,
+                             pairwise_cipher, &reason)) {
         goto done;
     } else {
         goto fail;
@@ -526,6 +555,11 @@ int esp_supplicant_init(void)
     ret = esp_supplicant_common_init(wpa_cb);
 
     if (ret != 0) {
+        /* esp_wifi_init() propagates this error to wifi_deinit_internal() which calls
+         * esp_supplicant_deinit(); that path runs eloop_destroy() for eloop cleanup.
+         */
+        os_free(wpa_cb);
+        wpa_cb = NULL;
         return ret;
     }
 
@@ -543,6 +577,7 @@ int esp_supplicant_deinit(void)
     esp_supplicant_common_deinit();
     esp_supplicant_unset_all_appie();
     eloop_destroy();
+    /* wpa_cb is freed by esp_wifi_unregister_wpa_cb_internal() */
     wpa_cb = NULL;
 #if CONFIG_ESP_WIFI_WAPI_PSK
     esp_wifi_internal_wapi_deinit();

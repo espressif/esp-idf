@@ -11,7 +11,7 @@
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
-#include "soc/sdmmc_periph.h"
+#include "hal/sdmmc_periph.h"
 #include "esp_private/sd_host_private.h"
 
 esp_err_t sdmmc_host_reset(void);

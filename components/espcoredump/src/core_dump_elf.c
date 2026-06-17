@@ -8,7 +8,7 @@
 #include <string.h>
 #include "esp_attr.h"
 #include "esp_partition.h"
-#include "esp_flash_encrypt.h"
+#include "esp_efuse.h"
 #include "core_dump_checksum.h"
 #include "esp_core_dump_port.h"
 #include "esp_core_dump_common.h"
@@ -901,7 +901,7 @@ static esp_err_t elf_core_dump_image_mmap(esp_partition_mmap_handle_t* core_data
     /* Data read from the mmapped core dump partition will be garbage if flash
      * encryption is enabled in hardware and core dump partition is not encrypted
      */
-    if (esp_flash_encryption_enabled() && !core_part->encrypted) {
+    if (esp_efuse_is_flash_encryption_enabled() && !core_part->encrypted) {
         ESP_COREDUMP_LOGE("Flash encryption enabled in hardware and core dump partition is not encrypted!");
         return ESP_ERR_NOT_SUPPORTED;
     }

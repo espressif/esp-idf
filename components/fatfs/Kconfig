@@ -194,6 +194,16 @@ menu "FAT Filesystem support"
             Disable this option if optimizing for performance. Enable this option if
             optimizing for internal memory size.
 
+    config FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS
+        bool "Prefer aligned, DMA capable RAM when allocating FATFS buffers"
+        default y if SOC_SDMMC_HOST_SUPPORTED
+        default n
+        help
+            Tries to allocate FATFS heap buffers in a way they can be used directly by the SDMMC driver without
+            extra copies when DMA is enabled (for example when using PSRAM on ESP32-P4).
+            Disable this if you need the absolute minimum heap overhead and do not use SDMMC.
+            This option can be combined with CONFIG_FATFS_ALLOC_PREFER_EXTRAM,
+            in which case, the following order is tried: DMA capable RAM, external RAM, internal RAM.
 
     config FATFS_USE_FASTSEEK
         bool "Enable fast seek algorithm when using lseek function through VFS FAT"

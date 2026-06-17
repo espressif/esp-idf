@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,42 +42,134 @@ static void update_regfile_common(esp_gdbstub_gdb_regfile_t *dst)
 #if XCHAL_HAVE_FP
 /** @brief Read FPU registers to memory
 */
-static void gdbstub_read_fpu_regs(void *data)
+static void gdbstub_read_fpu_regs(xtensa_fpu_regs_t *fpu)
 {
-    float *ptr0;
-    void  *ptr1;
+    uint32_t tmp;
 
-    asm volatile ("mov %0, %1" : "=a" (ptr0) : "a" (data));
+    /* Read FPU registers from memory */
+    asm volatile ("ssi f0,  %0, 0" :: "a" (&fpu->f[0]));
+    asm volatile ("ssi f1,  %0, 0" :: "a" (&fpu->f[1]));
+    asm volatile ("ssi f2,  %0, 0" :: "a" (&fpu->f[2]));
+    asm volatile ("ssi f3,  %0, 0" :: "a" (&fpu->f[3]));
+    asm volatile ("ssi f4,  %0, 0" :: "a" (&fpu->f[4]));
+    asm volatile ("ssi f5,  %0, 0" :: "a" (&fpu->f[5]));
+    asm volatile ("ssi f6,  %0, 0" :: "a" (&fpu->f[6]));
+    asm volatile ("ssi f7,  %0, 0" :: "a" (&fpu->f[7]));
+    asm volatile ("ssi f8,  %0, 0" :: "a" (&fpu->f[8]));
+    asm volatile ("ssi f9,  %0, 0" :: "a" (&fpu->f[9]));
+    asm volatile ("ssi f10, %0, 0" :: "a" (&fpu->f[10]));
+    asm volatile ("ssi f11, %0, 0" :: "a" (&fpu->f[11]));
+    asm volatile ("ssi f12, %0, 0" :: "a" (&fpu->f[12]));
+    asm volatile ("ssi f13, %0, 0" :: "a" (&fpu->f[13]));
+    asm volatile ("ssi f14, %0, 0" :: "a" (&fpu->f[14]));
+    asm volatile ("ssi f15, %0, 0" :: "a" (&fpu->f[15]));
 
-    asm volatile ("rur.FCR %0" : "=a" (ptr1));
-    asm volatile ("s32i %0, %1, 64" : "=a" (ptr1) : "a" (ptr0));
-    asm volatile ("rur.FSR %0" : "=a" (ptr1));
-    asm volatile ("s32i %0, %1, 68" : "=a" (ptr1) : "a" (ptr0));
+    /* Read FCR and FSR from CPU registers */
+    asm volatile ("rur.FCR %0" : "=a" (tmp));
+    asm volatile ("s32i %0, %1, 0" : "=a" (tmp) : "a" (&fpu->fcr));
+    asm volatile ("rur.FSR %0" : "=a" (tmp));
+    asm volatile ("s32i %0, %1, 0" : "=a" (tmp) : "a" (&fpu->fsr));
+}
 
-    asm volatile ("ssi f0, %0, 0" :: "a" (ptr0)); //*(ptr0 + 0) = f0;
-    asm volatile ("ssi f1, %0, 4" :: "a" (ptr0)); //*(ptr0 + 4) = f1;
-    asm volatile ("ssi f2, %0, 8" :: "a" (ptr0)); //...
-    asm volatile ("ssi f3, %0, 12" :: "a" (ptr0));
-    asm volatile ("ssi f4, %0, 16" :: "a" (ptr0));
-    asm volatile ("ssi f5, %0, 20" :: "a" (ptr0));
-    asm volatile ("ssi f6, %0, 24" :: "a" (ptr0));
-    asm volatile ("ssi f7, %0, 28" :: "a" (ptr0));
-    asm volatile ("ssi f8, %0, 32" :: "a" (ptr0));
-    asm volatile ("ssi f9, %0, 36" :: "a" (ptr0));
-    asm volatile ("ssi f10, %0, 40" :: "a" (ptr0));
-    asm volatile ("ssi f11, %0, 44" :: "a" (ptr0));
-    asm volatile ("ssi f12, %0, 48" :: "a" (ptr0));
-    asm volatile ("ssi f13, %0, 52" :: "a" (ptr0));
-    asm volatile ("ssi f14, %0, 56" :: "a" (ptr0));
-    asm volatile ("ssi f15, %0, 60" :: "a" (ptr0));
+static void *esp_gdbstub_coproc_saved_area(void *tcb, int coproc)
+{
+    /**
+     * Offset to start of the CPSA area on the stack. See uxInitialiseStackCPSA().
+     */
+    extern const uint32_t offset_cpsa;
+    extern const uint32_t offset_pxEndOfStack;
+    extern uintptr_t _xt_coproc_owner_sa[portNUM_PROCESSORS][XCHAL_CP_MAX];
+    uint32_t core = esp_cpu_get_core_id();
+    uint16_t coproc_bit = 1 << coproc;
+    /*
+     * Calculate CP save area header pointer (same as get_cpsa_from_tcb macro):
+     * 1. Get pxEndOfStack from TCB
+     * 2. Subtract offset_cpsa
+     * 3. Align down to 16 bytes
+     *
+     * For more details refer to comments in uxInitialiseStackCPSA() in port.c.
+     */
+    void *cpsa_header_ptr = *(void **)((char *)tcb + offset_pxEndOfStack);
+    cpsa_header_ptr = (char *)cpsa_header_ptr - offset_cpsa;
+    cpsa_header_ptr = (void *)((uintptr_t)cpsa_header_ptr & ~0xF);
 
+    /* For more details about fields, refer to comments in xtensa_context.h */
+    typedef struct {
+        uint16_t xt_cpenable;
+        uint16_t xt_cpstored;
+        uint16_t xt_cp_cs_st;
+        uint16_t dummy;
+        void *xt_cp_asa;
+    } cpsa_header_t;
+    cpsa_header_t *cpsa_header = (cpsa_header_t *)cpsa_header_ptr;
+
+    /* TODO: IDF-12550. Provide correct read access for coprocessor owned by another CPU.
+    * Accessing registers in stack-frame is not correct in this case.
+    */
+    for (uint32_t i = 0; i < portNUM_PROCESSORS; i++) {
+        if (i == core) {
+            continue;
+        }
+        if (_xt_coproc_owner_sa[i][coproc] == (uintptr_t)cpsa_header) {
+            return cpsa_header->xt_cp_asa;
+        }
+    }
+
+    /* TODO IDF-15054:
+     * - Handle case when coprocessor instructions have not been called yet for this task
+     */
+    if ((cpsa_header->xt_cpstored & coproc_bit) ||
+        (cpsa_header->xt_cp_cs_st & coproc_bit)) {
+        return cpsa_header->xt_cp_asa;
+    }
+
+    return NULL;
+}
+
+static uint32_t enable_coproc(int coproc)
+{
+    bool fpu_enabled = false;
+    uint32_t cp_enabled;
+
+    RSR(XT_REG_CPENABLE, cp_enabled);
+    if (cp_enabled & (1 << coproc)) {
+        fpu_enabled = true;
+    }
+
+    if (!fpu_enabled) {
+        uint32_t new_cp_enabled = cp_enabled | (1 << coproc);
+        WSR(XT_REG_CPENABLE, new_cp_enabled);
+    }
+
+    return cp_enabled;
+}
+
+static void write_fpu_regs_to_regfile(void *tcb, esp_gdbstub_gdb_regfile_t *dst)
+{
+    xtensa_fpu_regs_t *fpu_save_area = esp_gdbstub_coproc_saved_area(tcb, XCHAL_CP_ID_FPU);
+
+    /*
+     * In case of current thread is the owner of FPU, that means FPU registers was not stored to thread TCB.
+     * According to the lazy saving of FPU registers, we have to read from CPU registers.
+     *
+     * NOTE: FPU must be enabled before reading from CPU registers to avoid triggering exception.
+     */
+    if (fpu_save_area == NULL) {
+        /* enable FPU first to avoid triggering exception */
+        uint32_t cp_enabled = enable_coproc(XCHAL_CP_ID_FPU);
+
+        /* Read FPU registers from CPU registers */
+        gdbstub_read_fpu_regs(&dst->fpu);
+
+        /* Restore FPU enabled state */
+        WSR(XT_REG_CPENABLE, cp_enabled);
+    } else {
+        /* FPU registers was stored to thread TCB, copy them to the register file */
+        memcpy (&dst->fpu, fpu_save_area, sizeof(dst->fpu));
+    }
 }
 #endif // XCHAL_HAVE_FP
 
-
-extern const uint32_t offset_pxEndOfStack;
-extern const uint32_t offset_cpsa;  /* Offset to start of the CPSA area on the stack. See uxInitialiseStackCPSA(). */
-extern uint32_t _xt_coproc_owner_sa[2];
 
 void esp_gdbstub_frame_to_regfile(const esp_gdbstub_frame_t *frame, esp_gdbstub_gdb_regfile_t *dst)
 {
@@ -102,34 +194,8 @@ void esp_gdbstub_frame_to_regfile(const esp_gdbstub_frame_t *frame, esp_gdbstub_
     }
 
 #if XCHAL_HAVE_FP
-
-    extern void *pxCurrentTCBs[2];
-    void *current_tcb_ptr = pxCurrentTCBs[0];
-    uint32_t *current_fpu_ptr = NULL;
-
-#if !CONFIG_FREERTOS_UNICORE
-    current_tcb_ptr = pxCurrentTCBs[esp_cpu_get_core_id()];
-#endif
-    uint32_t cp_enabled;
-    RSR(XT_REG_CPENABLE, cp_enabled);
-
-    // Check if the co-processor is enabled
-    if (cp_enabled) {
-        gdbstub_read_fpu_regs(dst->f);
-    } else {
-        current_tcb_ptr += offset_pxEndOfStack;
-        current_tcb_ptr = *(void **)current_tcb_ptr;
-        current_tcb_ptr -= offset_cpsa;
-        // Operation (&~0xf) required in .macro get_cpsa_from_tcb reg_A reg_B
-        current_tcb_ptr = (void*)((uint32_t)current_tcb_ptr&~0xf);
-        current_fpu_ptr = *(uint32_t **)(current_tcb_ptr + XT_CP_ASA);
-
-        dst->fcr = current_fpu_ptr[0];
-        dst->fsr = current_fpu_ptr[1];
-        for (int i = 0; i < 16; i++) {
-            dst->f[i] = current_fpu_ptr[i + 2];
-        }
-    }
+    extern void *pxCurrentTCBs[portNUM_PROCESSORS];
+    write_fpu_regs_to_regfile(pxCurrentTCBs[esp_cpu_get_core_id()], dst);
 #endif //XCHAL_HAVE_FP
 #if XCHAL_HAVE_LOOPS
     dst->lbeg = frame->lbeg;
@@ -175,40 +241,7 @@ void esp_gdbstub_tcb_frame_to_regfile(dummy_tcb_t *tcb, esp_gdbstub_gdb_regfile_
     }
 
 #if XCHAL_HAVE_FP
-    uint32_t *current_xt_coproc_owner_sa = (uint32_t *)_xt_coproc_owner_sa[0];
-
-#if !CONFIG_FREERTOS_UNICORE
-    current_xt_coproc_owner_sa = (uint32_t *)_xt_coproc_owner_sa[esp_cpu_get_core_id()];
-#endif
-
-    uint32_t cp_enabled;
-    RSR(XT_REG_CPENABLE, cp_enabled);
-
-    void *current_tcb_ptr = tcb;
-    uint32_t *current_fpu_ptr = NULL;
-    {
-        current_tcb_ptr += offset_pxEndOfStack;
-        current_tcb_ptr = *(void **)current_tcb_ptr;
-        current_tcb_ptr -= offset_cpsa;
-        // Operation (&~0xf) required in .macro get_cpsa_from_tcb reg_A reg_B
-        current_tcb_ptr = (void*)((uint32_t)current_tcb_ptr&~0xf);
-        current_fpu_ptr = *(uint32_t **)(current_tcb_ptr + XT_CP_ASA);
-
-        bool use_fpu_regs =  ((false == cp_enabled) &&  (current_xt_coproc_owner_sa[0] == 1) && (current_fpu_ptr == (uint32_t*)current_xt_coproc_owner_sa[2]));
-
-        dst->fcr = current_fpu_ptr[0];
-        dst->fsr = current_fpu_ptr[1];
-        for (int i = 0; i < 16; i++) {
-            dst->f[i] = current_fpu_ptr[i + 2];
-        }
-
-        /* We have situation when FPU is in use, but the context not stored
-          to the memory, and we have to read from CPU registers.
-        */
-        if (use_fpu_regs) {
-            gdbstub_read_fpu_regs(dst->f);
-        }
-    }
+    write_fpu_regs_to_regfile(tcb, dst);
 #endif // XCHAL_HAVE_FP
 
 #if XCHAL_HAVE_LOOPS
@@ -273,6 +306,23 @@ int esp_gdbstub_get_signal(const esp_gdbstub_frame_t *frame)
 void esp_gdbstub_init_dports(void)
 {
 }
+
+#ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+bool esp_gdbstub_get_watchpoint_trigger_addr(uint32_t *addr)
+{
+    uint32_t debugcause;
+    RSR(XT_REG_DEBUGCAUSE, debugcause);
+    if (debugcause & XCHAL_DEBUGCAUSE_DBREAK_MASK) {
+        if (debugcause & (1 << 8)) {
+            RSR(XT_REG_DBREAKA_1, *addr);
+        } else {
+            RSR(XT_REG_DBREAKA_0, *addr);
+        }
+        return true;
+    }
+    return false;
+}
+#endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 
 #if CONFIG_IDF_TARGET_ARCH_XTENSA && (!CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE) && CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 static bool stall_started = false;
@@ -344,11 +394,84 @@ void esp_gdbstub_trigger_cpu(void)
 #endif
 }
 
+#if XCHAL_HAVE_FP
+static void gdbstub_set_fpu_register(uint32_t fpu_reg_index, float *value_ptr)
+{
+    if (fpu_reg_index == 0) {
+        asm volatile ("lsi f0, %0, 0" :: "a" (value_ptr));
+    } else if (fpu_reg_index == 1) {
+        asm volatile ("lsi f1, %0, 0" :: "a" (value_ptr));
+    } else if (fpu_reg_index == 2) {
+        asm volatile ("lsi f2, %0, 0" :: "a" (value_ptr));
+    } else if (fpu_reg_index == 3) {
+        asm volatile ("lsi f3, %0, 0" :: "a" (value_ptr));
+    } else if (fpu_reg_index == 4) {
+        asm volatile ("lsi f4, %0, 0" :: "a" (value_ptr));
+    } else if (fpu_reg_index == 5) {
+        asm volatile ("lsi f5, %0, 0" :: "a" (value_ptr));
+    } else if (fpu_reg_index == 6) {
+        asm volatile ("lsi f6, %0, 0" :: "a" (value_ptr));
+    } else if (fpu_reg_index == 7) {
+        asm volatile ("lsi f7, %0, 0" :: "a" (value_ptr));
+    } else if (fpu_reg_index == 8) {
+        asm volatile ("lsi f8, %0, 0" :: "a" (value_ptr));
+    } else if (fpu_reg_index == 9) {
+        asm volatile ("lsi f9, %0, 0" :: "a" (value_ptr));
+    } else if (fpu_reg_index == 10) {
+        asm volatile ("lsi f10, %0, 0" :: "a" (value_ptr));
+    } else if (fpu_reg_index == 11) {
+        asm volatile ("lsi f11, %0, 0" :: "a" (value_ptr));
+    } else if (fpu_reg_index == 12) {
+        asm volatile ("lsi f12, %0, 0" :: "a" (value_ptr));
+    } else if (fpu_reg_index == 13) {
+        asm volatile ("lsi f13, %0, 0" :: "a" (value_ptr));
+    } else if (fpu_reg_index == 14) {
+        asm volatile ("lsi f14, %0, 0" :: "a" (value_ptr));
+    } else if (fpu_reg_index == 15) {
+        asm volatile ("lsi f15, %0, 0" :: "a" (value_ptr));
+    } else if (fpu_reg_index == 16) {
+        asm volatile ("wur.FCR %0" :: "a" (*value_ptr));
+    } else if (fpu_reg_index == 17) {
+        asm volatile ("wur.FSR %0" :: "a" (*value_ptr));
+    }
+}
+
+static void gdbstub_write_fpu_regs(esp_gdbstub_frame_t *frame, uint32_t reg_index, uint32_t *value_ptr)
+{
+#if CONFIG_IDF_TARGET_ESP32
+    const uint32_t fpu_start_register = 87;
+#elif CONFIG_IDF_TARGET_ESP32S3
+    const uint32_t fpu_start_register = 84;
+#else
+#error "Unknown Xtensa chip"
+#endif
+    const StaticTask_t *tcb;
+    uint32_t *fpu_save_area;
+
+    uint32_t fpu_reg_index = reg_index - fpu_start_register;
+    if (fpu_reg_index >= (16 + 2)) {
+        return;
+    }
+
+    tcb = esp_gdbstub_find_tcb_by_frame(frame);
+    fpu_save_area = esp_gdbstub_coproc_saved_area((void *)tcb, XCHAL_CP_ID_FPU);
+
+    if (fpu_save_area == NULL) {
+        uint32_t cp_enabled = enable_coproc(XCHAL_CP_ID_FPU);
+
+        gdbstub_set_fpu_register(fpu_reg_index, (float *)value_ptr);
+
+        WSR(XT_REG_CPENABLE, cp_enabled);
+    } else {
+        fpu_save_area[fpu_reg_index] = *value_ptr;
+    }
+}
+#endif // XCHAL_HAVE_FP
+
 /** @brief GDB set register in frame
  * Set register in frame with address to value
  *
  * */
-
 void esp_gdbstub_set_register(esp_gdbstub_frame_t *frame, uint32_t reg_index, uint32_t *value_ptr)
 {
     uint32_t value = *value_ptr;
@@ -358,65 +481,7 @@ void esp_gdbstub_set_register(esp_gdbstub_frame_t *frame, uint32_t reg_index, ui
     } else if (reg_index > 0 && (reg_index <= 27)) {
         (&frame->a0)[reg_index - 1] = value;
     }
-
 #if XCHAL_HAVE_FP
-    uint32_t cp_enabled;
-    RSR(XT_REG_CPENABLE, cp_enabled);
-    if (cp_enabled != 0) {
-        if (reg_index == 87) {
-            asm volatile ("lsi f0, %0, 0" :: "a" (value_ptr));
-        }
-        if (reg_index == 88) {
-            asm volatile ("lsi f1, %0, 0" :: "a" (value_ptr));
-        }
-        if (reg_index == 89) {
-            asm volatile ("lsi f2, %0, 0" :: "a" (value_ptr));
-        }
-        if (reg_index == 90) {
-            asm volatile ("lsi f3, %0, 0" :: "a" (value_ptr));
-        }
-        if (reg_index == 91) {
-            asm volatile ("lsi f4, %0, 0" :: "a" (value_ptr));
-        }
-        if (reg_index == 92) {
-            asm volatile ("lsi f5, %0, 0" :: "a" (value_ptr));
-        }
-        if (reg_index == 93) {
-            asm volatile ("lsi f6, %0, 0" :: "a" (value_ptr));
-        }
-        if (reg_index == 94) {
-            asm volatile ("lsi f7, %0, 0" :: "a" (value_ptr));
-        }
-        if (reg_index == 95) {
-            asm volatile ("lsi f8, %0, 0" :: "a" (value_ptr));
-        }
-        if (reg_index == 96) {
-            asm volatile ("lsi f9, %0, 0" :: "a" (value_ptr));
-        }
-        if (reg_index == 97) {
-            asm volatile ("lsi f10, %0, 0" :: "a" (value_ptr));
-        }
-        if (reg_index == 98) {
-            asm volatile ("lsi f11, %0, 0" :: "a" (value_ptr));
-        }
-        if (reg_index == 99) {
-            asm volatile ("lsi f12, %0, 0" :: "a" (value_ptr));
-        }
-        if (reg_index == 100) {
-            asm volatile ("lsi f13, %0, 0" :: "a" (value_ptr));
-        }
-        if (reg_index == 101) {
-            asm volatile ("lsi f14, %0, 0" :: "a" (value_ptr));
-        }
-        if (reg_index == 102) {
-            asm volatile ("lsi f15, %0, 0" :: "a" (value_ptr));
-        }
-        if (reg_index == 103) {
-            asm volatile ("wur.FCR %0" : "=a" (value));
-        }
-        if (reg_index == 104) {
-            asm volatile ("wur.FSR %0" : "=a" (value));
-        }
-    }
+    gdbstub_write_fpu_regs(frame, reg_index, value_ptr);
 #endif // XCHAL_HAVE_FP
 }

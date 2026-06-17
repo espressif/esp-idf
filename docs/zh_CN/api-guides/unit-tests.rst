@@ -369,3 +369,8 @@ Mocks
 --------------------
 
 :example:`system/unit_test` 演示了如何在 {IDF_TARGET_NAME} 开发环境中使用 Unity 库为自定义组件添加单元测试，展示了如断言、测试注册等功能，以及如何使用 UNITY_BEGIN() 和 UNITY_END() 宏。
+
+相关文档
+--------
+
+- `在 VS Code 中使用 Unity 框架进行单元测试 <https://docs.espressif.com/projects/vscode-esp-idf-extension/zh_CN/latest/additionalfeatures/unit-testing.html>`__

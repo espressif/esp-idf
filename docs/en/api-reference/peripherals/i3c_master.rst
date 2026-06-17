@@ -1,3 +1,4 @@
+====================
 I3C master interface
 ====================
 
@@ -501,10 +502,12 @@ Thread Safety
 The following functions of the I3C driver are thread-safe and can be called from different RTOS tasks without additional lock protection:
 
 Factory functions:
+
 - :cpp:func:`i3c_new_master_bus`
 - :cpp:func:`i3c_del_master_bus`
 
 I3C master operation functions (thread safety guaranteed through bus operation signals):
+
 - :cpp:func:`i3c_master_bus_add_i3c_static_device`
 - :cpp:func:`i3c_master_bus_rm_i3c_device`
 - :cpp:func:`i3c_master_i3c_device_transmit`

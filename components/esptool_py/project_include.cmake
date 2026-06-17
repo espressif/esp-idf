@@ -197,6 +197,8 @@ function(esptool_py_flash_target target_name main_args sub_args)
         -D "IDF_PATH=${idf_path}"
         -D "SERIAL_TOOL=${esptool_py_cmd}"
         -D "SERIAL_TOOL_ARGS=${main_args};write-flash;@${filename_prefix}_args"
+        -D "SERIAL_TOOL_IS_WRITE_FLASH=1"
+        -D "SERIAL_TOOL_FLASH_ARGS_FILE=${filename_prefix}_args"
         -D "WORKING_DIRECTORY=${build_dir}"
         -P ${esptool_py_dir}/run_serial_tool.cmake
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
@@ -243,6 +245,8 @@ $<JOIN:$<TARGET_PROPERTY:${target_name},IMAGES>,\n>")
             -D "IDF_PATH=${idf_path}"
             -D "SERIAL_TOOL=${esptool_py_cmd}"
             -D "SERIAL_TOOL_ARGS=${main_args};write-flash;@encrypted_${filename_prefix}_args"
+            -D "SERIAL_TOOL_IS_WRITE_FLASH=1"
+            -D "SERIAL_TOOL_FLASH_ARGS_FILE=encrypted_${filename_prefix}_args"
             -D "WORKING_DIRECTORY=${build_dir}"
             -P ${esptool_py_dir}/run_serial_tool.cmake
             WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
@@ -423,12 +427,7 @@ function(__esptool_py_setup_esptool_py_args)
 
         if(NOT BOOTLOADER_BUILD)
             list(APPEND esptool_elf2image_args --elf-sha256-offset 0xb0)
-            # For chips that support configurable MMU page size feature
-            # If page size is configured to values other than the default "64KB" in menuconfig,
-            # then we need to pass the actual size to flash-mmu-page-size arg
-            if(NOT MMU_PAGE_SIZE STREQUAL "64KB")
-                list(APPEND esptool_elf2image_args --flash-mmu-page-size ${MMU_PAGE_SIZE})
-            endif()
+            list(APPEND esptool_elf2image_args --flash-mmu-page-size ${MMU_PAGE_SIZE})
         endif()
 
         if(NOT CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION AND NOT BOOTLOADER_BUILD)

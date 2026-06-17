@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -156,24 +156,6 @@ void mspi_timing_psram_config_set_tuning_regs(bool control_both_mspi);
  * @param[in] control_both_mspi  Control MSPI3 as well
  */
 void mspi_timing_psram_config_clear_tuning_regs(bool control_both_mspi);
-
-/**
- * @brief Set Flash timing tuning settings
- *
- * This is used when the system is going to high speed mode / MSPI needs to be run in high speed
- *
- * @param[in] control_both_mspi  Control MSPI1 as well
- */
-void mspi_timing_flash_config_set_tuning_regs(bool control_both_mspi);
-
-/**
- * @brief Clear Flash timing tuning settings
- *
- * This is used when the system is going into low speed mode / MSPI doesn't need to be run in high speed
- *
- * @param[in] control_both_mspi  Control MSPI1 as well
- */
-void mspi_timing_flash_config_clear_tuning_regs(bool control_both_mspi);
 
 #endif  //#if SOC_MEMSPI_TIMING_TUNING_BY_DQS
 

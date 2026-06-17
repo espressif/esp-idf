@@ -233,6 +233,9 @@ esp_err_t esp_blufi_host_init(void)
     ble_hs_cfg.gatts_register_cb = esp_blufi_gatt_svr_register_cb;
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
+    /* BLUFI uses its own application-layer security (DH + AES), not BLE Security
+     * Manager.  sm_mitm/sm_sc/sm_bonding are opt-in via Kconfig; Just Works
+     * pairing is acceptable because the DH key exchange provides the security. */
     ble_hs_cfg.sm_io_cap = 4;
 #ifdef CONFIG_EXAMPLE_BONDING
     ble_hs_cfg.sm_bonding = 1;
@@ -278,11 +281,13 @@ esp_err_t esp_blufi_host_deinit(void)
 {
     esp_err_t ret = ESP_OK;
 
-    esp_blufi_gatt_svr_deinit();
     ret = nimble_port_stop();
     if (ret != ESP_OK) {
         return ret;
     }
+
+    esp_blufi_gatt_svr_deinit();
+
     if (ret == 0) {
         esp_nimble_deinit();
     }

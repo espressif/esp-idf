@@ -90,7 +90,7 @@ void wifi_init_softap(void)
             .gtk_rekey_interval = EXAMPLE_GTK_REKEY_INTERVAL,
         },
     };
-    if (strlen(EXAMPLE_ESP_WIFI_PASS) == 0) {
+    if (strlen(EXAMPLE_ESP_WIFI_PASS) == 0 && wifi_config.ap.authmode != WIFI_AUTH_OWE) {
         wifi_config.ap.authmode = WIFI_AUTH_OPEN;
     }
 

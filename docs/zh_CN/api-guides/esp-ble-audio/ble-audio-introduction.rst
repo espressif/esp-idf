@@ -1,0 +1,466 @@
+蓝牙 LE Audio 标准
+==================
+
+:link_to_translation:`en:[English]`
+
+本文介绍蓝牙 LE Audio 标准：各规范（Profile）、服务（Service）的定义、它们所包含的角色，以及彼此之间的依赖关系。在使用 :doc:`ESP-BLE-AUDIO API 参考 <../../api-reference/bluetooth/esp-ble-audio>` 进行开发之前，建议先阅读本文，以便选择适合应用场景的规范组合。
+
+.. note::
+
+   本文聚焦 LE Audio **标准** 本身。关于 **ESP-IDF 的实现架构**\ （ESP-BLE-ISO 与 ESP-BLE-AUDIO 组件、任务与锁模型、各主机适配器），参见 :doc:`ESP-IDF 蓝牙 LE Audio 架构 <ble-audio-architecture-overview>`。
+
+
+概述
+----
+
+蓝牙 LE Audio 由蓝牙核心规范 5.2 引入，支持在低功耗蓝牙上传输高质量音频，具备以下核心特性：
+
+- **LE 等时通道（ISO）** — 控制器层的新传输机制，提供时间同步、低延迟的数据流，支持已连接（CIS）和无连接（BIS）两种模式。
+- **LC3 编解码器** — 低复杂度通信编解码器（Low Complexity Communication Codec），与 SBC 相比，在更低比特率下提供更好的音频质量。
+- **通用音频框架（GAF）** — 一套分层的规范和服务，标准化了音频流建立、音量控制、媒体控制、通话控制和设备协调等功能。
+
+蓝牙 LE Audio 支持两种基本音频场景：
+
+- **单播音频（Unicast Audio）** — 通过连接等时流（CIS）在两个已连接设备之间进行双向或单向音频传输。典型应用：TWS 耳机、助听器、耳麦、电话通信。
+- **广播音频（Broadcast Audio，Auracast™）** — 通过广播等时流（BIS），由一个广播源向任意数量的接收端进行单向音频传输。典型应用：公共场所音频、无障碍辅助收听、群组电视收听。
+
+
+标准概览
+--------
+
+蓝牙 LE Audio 标准分为三个层次：
+
+1. **传输层** — LE Audio 底层的蓝牙传输：LE 等时通道（CIS/BIS）承载音频数据，ACL 连接承载 GATT/ATT 规范控制，周期性广播承载广播通告。其中只有等时通道为 LE Audio 新增（详见下文）。
+2. **通用音频框架（GAF）** — 核心规范套件，分为四个功能层：流控制、内容控制、渲染/采集控制和过渡/协调控制。
+3. **特定用例规范** — 更高层的规范（HAP、TMAP、GMAP、PBP），针对特定使用场景选择并配置相应的 GAF 组件。
+
+.. figure:: ../../../_static/ble/ble-audio-gaf-zh.png
+   :align: center
+   :width: 90%
+   :alt: 蓝牙 LE Audio 标准分层图
+
+   蓝牙 LE Audio 协议栈：特定用例规范构建于通用音频框架（GAF）之上。规范的控制经由 GATT/ATT 走 ACL 连接，音频数据走 LE 等时通道（CIS/BIS），广播通告走周期性广播。
+
+GAF 各层仅依赖其下方的层。特定用例规范选择 GAF 层的子集，并在其之上添加角色特定的约束。以下各节将详细介绍每个组件。
+
+
+LE 等时通道
+-----------
+
+LE 等时通道是蓝牙核心规范中定义的控制器层特性，为蓝牙 LE Audio 提供时间同步、低延迟的数据传输。
+
+.. list-table::
+    :header-rows: 1
+    :widths: 20 15 65
+
+    * - 类型
+      - 缩写
+      - 说明
+    * - 连接等时流
+      - CIS
+      - 两个设备之间的双向等时链路，需要先建立 ACL 连接。多个 CIS 实例可组成一个连接等时组（CIG），用于同步播放（例如左右耳机）。
+    * - 广播等时流
+      - BIS
+      - 从广播方向任意数量的同步接收方进行的单向等时流，无需事先建立连接。多个 BIS 实例属于一个广播等时组（BIG）。
+
+ESP-IDF 通过 :doc:`ESP-BLE-ISO API <../../api-reference/bluetooth/esp-ble-iso>` 提供对 CIS 和 BIS 的直接访问。使用蓝牙 LE Audio 规范（BAP 及更高层）时，ISO 层由规范栈自动管理。
+
+
+通用音频框架（GAF）
+-------------------
+
+通用音频框架（GAF）是蓝牙 LE Audio 的核心，定义了四个功能层，下文从下至上依次介绍。
+
+
+流控制层
+^^^^^^^^
+
+流控制层负责发现音频能力、建立音频流（编解码器配置和 QoS）以及管理 CIS 和 BIS 连接的生命周期。
+
+**基本音频规范（BAP）**
+
+BAP 是所有蓝牙 LE Audio 流传输的基础规范，定义了以下角色：
+
+- **单播客户端（Unicast Client）** — 发现远端单播服务器上的 ASE，发起编解码器配置、QoS 协商和流控制（使能、连接、开始、禁用、释放）。
+- **单播服务器（Unicast Server）** — 通过 ASCS 暴露音频端点（ASE），响应客户端发起的流控制流程。
+- **广播源（Broadcast Source）** — 创建 BIG，配置 BIS 流，发送音频数据。
+- **广播接收端（Broadcast Sink）** — 扫描并同步至广播源，接收 BIS 音频数据。
+- **广播助手（Broadcast Assistant）** — 代替低功耗的扫描委托设备扫描广播源，并将结果写入委托设备上的 BASS。
+- **扫描委托设备（Scan Delegator）** — 暴露 BASS，将 BIS 扫描委托给广播助手。
+
+BAP 依赖三个 GATT 服务：
+
+.. list-table::
+    :header-rows: 1
+    :widths: 40 60
+
+    * - 服务
+      - 说明
+    * - 已发布音频能力服务（PACS）
+      - 暴露设备支持的编解码器、编解码器配置和可用音频上下文。存在于单播服务器和广播接收端。
+    * - 音频流控制服务（ASCS）
+      - 暴露一个或多个音频流端点（ASE），每个 ASE 代表一个接收或发送数据路径。仅存在于单播服务器。
+    * - 广播音频扫描服务（BASS）
+      - 由扫描委托设备暴露，用于记录接收状态；由广播助手写入广播源信息。仅存在于扫描委托设备。
+
+
+内容控制层
+^^^^^^^^^^
+
+内容控制层提供对音频流所传输的媒体内容和通话活动的标准化控制。
+
+**媒体控制规范（MCP）与媒体控制服务（MCS）**
+
+MCP 定义了 **媒体控制服务器**\ （通过 MCS 暴露媒体播放器）和 **媒体控制客户端**\ （发现并控制播放器）。MCS 暴露媒体状态（播放中/暂停/停止）、播放位置、曲目元数据以及控制点操作（播放、暂停、下一曲、跳转等）。
+
+MCS 有两种形式：
+
+- **MCS** — 针对拥有多个并发媒体播放器的设备，每个播放器一个实例。
+- **通用 MCS（GMCS）** — 单一必选实例，提供对当前活跃播放器的访问，适用于无需按播放器区分的客户端。
+
+当设备支持媒体对象传输时，MCP 可选依赖 **对象传输规范（OTP）** 和 **对象传输服务（OTS）**，用于传输媒体对象（曲目名称、图标、对象元数据等）。
+
+**通话控制规范（CCP）与电话承载服务（TBS）**
+
+CCP 定义了 **通话控制服务器**\ （通过 TBS 暴露一个或多个电话承载）和 **通话控制客户端**\ （发现并控制通话）。TBS 暴露通话状态、通话 URI 方案、来电/去电控制、信号强度和运营商名称。
+
+TBS 有两种形式：
+
+- **TBS** — 针对拥有多个电话承载（例如多张 SIM 卡或 VoIP 应用）的设备，每个承载一个实例。
+- **通用 TBS（GTBS）** — 单一必选实例，提供所有承载的统一视图。
+
+
+渲染与采集控制层
+^^^^^^^^^^^^^^^^
+
+渲染与采集控制层提供对设备音频输出音量和音频输入增益的标准化控制，独立于所播放的内容。
+
+**音量控制规范（VCP）**
+
+VCP 定义了 **音量渲染器（Volume Renderer）**\ （暴露音量状态，接受远程控制）和 **音量控制器（Volume Controller）**\ （发现并控制渲染器）。VCP 依赖以下 GATT 服务：
+
+.. list-table::
+    :header-rows: 1
+    :widths: 35 15 50
+
+    * - 服务
+      - 是否必选
+      - 说明
+    * - 音量控制服务（VCS）
+      - 必选
+      - 暴露音量设置（0–255）、静音状态以及绝对或相对音量控制点。
+    * - 音量偏移控制服务（VOCS）
+      - 可选
+      - 支持对每路输出进行音量偏移调整（例如左右声道输出分别设置偏移）。一个 VCS 可包含一个或多个 VOCS 实例。
+    * - 音频输入控制服务（AICS）
+      - 可选
+      - 支持对一路音频输入（例如麦克风）的增益和静音状态进行控制。一个 VCS 可包含一个或多个 AICS 实例。
+
+**麦克风控制规范（MICP）**
+
+MICP 定义了 **麦克风设备（Microphone Device）**\ （暴露麦克风状态）和 **麦克风控制器（Microphone Controller）**\ （发现并控制静音/取消静音）。MICP 依赖以下 GATT 服务：
+
+.. list-table::
+    :header-rows: 1
+    :widths: 35 15 50
+
+    * - 服务
+      - 是否必选
+      - 说明
+    * - 麦克风控制服务（MICS）
+      - 必选
+      - 暴露麦克风静音状态和静音控制点，存在于麦克风设备端。
+    * - 音频输入控制服务（AICS）
+      - 可选
+      - 支持对特定输入的音频输入增益进行控制。一个 MICS 可包含一个或多个 AICS 实例。
+
+.. note::
+
+    AICS 是共用服务：VCS（作为 VCP 的一部分）和 MICS（作为 MICP 的一部分）均可包含 AICS，二者各自拥有独立的实例和句柄。
+
+
+过渡与协调控制层
+^^^^^^^^^^^^^^^^
+
+过渡与协调控制层位于 GAF 的最顶层，负责协调作为一个群组运行的多台设备（例如一对 TWS 耳机或一个房间内的多个扬声器）的音频操作。
+
+**通用音频规范（CAP）**
+
+CAP 是最高层规范，定义了单个发起设备如何协调一台或多台目标设备执行音频操作（流建立、音量控制、麦克风控制）。它定义了三个角色：
+
+- **CAP 接受端（CAP Acceptor）** — 接受来自 CAP 发起端或指挥端的音频流和音量/麦克风控制的设备。CAP 接受端须支持 BAP 单播服务器或 BAP 广播接收端（或两者兼具），以及 VCP 音量渲染器。MICP 麦克风设备为可选。
+- **CAP 发起端（CAP Initiator）** — 发现 CAP 接受端，并使用 BAP、VCP 和 MICP 同时对一个或多个接受端发起单播或广播音频流程的设备。
+- **CAP 指挥端（CAP Commander）** — 向一个或多个 CAP 接受端下发协调的音量和麦克风控制指令，但不直接管理音频流的设备。
+
+CAP 依赖 **通用音频服务（CAS）**，这是每个 CAP 接受端上的必选 GATT 服务，用于协调集成员通告，为 CAP 发起端/指挥端提供稳定的发现锚点。
+
+CAP 还使用 **CSIP**\ （见下文）对协调集的成员进行识别和集体寻址。
+
+**协调集标识规范（CSIP）**
+
+CSIP 定义了如何发现并识别一组设备（"协调集"）属于同一整体。典型示例是左右耳机对：每个耳机是一个 **CSIP 集成员（Set Member）**，手机或音源设备是一个 **CSIP 集协调器（Set Coordinator）**。
+
+CSIP 依赖 **协调集标识服务（CSIS）**，该服务暴露：
+
+- **集身份解析密钥（SIRK）** — 用于集协调器匹配属于同一集的设备，即使在重新通告后也有效。
+- **集规模（Set Size）** — 集中的成员数量。
+- **成员排名（Member Rank）** — 该设备在集中的排名（用于有序操作）。
+
+
+特定用例规范
+------------
+
+特定用例规范位于 GAF 之上，每个规范选择一部分 GAF 规范，定义针对特定角色的配置约束（例如编解码器参数、QoS 设置），并可添加自己的小型 GATT 服务用于角色通告。
+
+**助听器访问规范（HAP）**
+
+HAP 面向助听器设备，增加了 **听力预设（Hearing Aid Preset）** 的概念：用户可命名的音频配置（例如"室外"、"餐厅"），可在不同场景间切换。HAP 定义了：
+
+- **助听器（Hearing Aid）** — 实现音频接收、音量控制以及（双耳助听器对）协调集成员所需的全部 GAF 角色。
+- **助听器单播客户端（Hearing Aid Unicast Client）** — 发现助听器、控制预设，并管理单播音频流。
+
+HAP 依赖 **助听器访问服务（HAS）** 进行预设读写操作，同时依赖 GAF 中的 BAP、PACS、VCP、MICP 和 CSIP。
+
+**电话和媒体音频规范（TMAP）**
+
+TMAP 为电话和媒体场景定义互操作配置，包含六个角色：
+
+.. list-table::
+    :header-rows: 1
+    :widths: 20 10 70
+
+    * - 角色
+      - 缩写
+      - 说明
+    * - 通话网关
+      - CG
+      - 使用 CCP/TBS 控制远端 CT 上的通话，通过 CIS 收发双向音频。
+    * - 通话终端
+      - CT
+      - 通过 TBS 暴露通话，通过 CIS 收发双向音频。
+    * - 单播媒体发送方
+      - UMS
+      - 通过 CIS 向一个或多个 UMR 发送单向媒体音频，充当 BAP 单播客户端和 MCP 服务器。
+    * - 单播媒体接收方
+      - UMR
+      - 通过 CIS 接收来自 UMS 的媒体音频，充当 BAP 单播服务器和 VCP 音量渲染器。
+    * - 广播媒体发送方
+      - BMS
+      - 通过 BIS 向任意数量的 BMR 发送媒体音频，充当 BAP 广播源。
+    * - 广播媒体接收方
+      - BMR
+      - 通过 BIS 接收来自 BMS 的媒体音频，充当 BAP 广播接收端。
+
+TMAP 通过 **电话和媒体音频服务（TMAS）** 通告其角色，该服务是一个包含单一 TMAP 角色特征的小型 GATT 服务，允许远端设备在建立连接前发现本地设备支持的 TMAP 角色。TMAP 本身不定义新的音频传输机制，完全委托给 BAP（流建立）、VCP（音量）、MCP/MCS（UMS/UMR 的媒体控制）和 CCP/TBS（CG/CT 的通话控制）。
+
+**游戏音频规范（GMAP）**
+
+GMAP 面向游戏音频产品，采用针对更低传输延迟和更少重传优化的参数。它定义了四个角色：
+
+.. list-table::
+    :header-rows: 1
+    :widths: 22 10 68
+
+    * - 角色
+      - 缩写
+      - 说明
+    * - 单播游戏网关
+      - UGG
+      - 向 UGT 发送游戏音频，可选接收语音音频，充当 BAP 单播客户端。
+    * - 单播游戏终端
+      - UGT
+      - 接收来自 UGG 的游戏音频，可选发送语音音频，充当 BAP 单播服务器。
+    * - 广播游戏发送方
+      - BGS
+      - 通过 BIS 发送游戏音频，充当 BAP 广播源。
+    * - 广播游戏接收方
+      - BGR
+      - 通过 BIS 接收游戏音频，充当 BAP 广播接收端。
+
+GMAP 通过 **游戏音频服务（GMAS）** 通告角色，依赖 BAP 进行流建立，依赖 VCP 进行音量控制。
+
+**公共广播规范（PBP）**
+
+PBP 为公共广播源的元数据格式提供标准化定义，使任何兼容的接收方无需配对即可发现并同步该广播流。它定义了：
+
+- **公共广播源（Public Broadcast Source）** — 通过标准化扩展通告数据（包含 Broadcast Audio Announcement 和 Public Broadcast Announcement）通告 Auracast™ 音频流，委托 BAP 广播源进行 BIS 建立。
+- **公共广播接收端（Public Broadcast Sink）** — 扫描 PBP 源，读取通告元数据以确定音频质量和内容，并同步至 BIG，委托 BAP 广播接收端实现。
+
+PBP 完全依赖 BAP 提供底层广播传输，不定义新的 GATT 服务。
+
+
+规范与服务依赖关系
+------------------
+
+下图将每个缩写展开为全称，并按层次展示依赖关系——实线箭头表示依赖，虚线箭头表示可选包含的子服务。其后的表格给出各规范的精确依赖。
+
+.. mermaid::
+
+   %%{init: {'flowchart': {'nodeSpacing': 35, 'rankSpacing': 65}}}%%
+   flowchart LR
+       HAP["HAP<br/>(Hearing Access Profile)"]
+       TMAP["TMAP<br/>(Telephony and Media Audio Profile)"]
+       GMAP["GMAP<br/>(Gaming Audio Profile)"]
+       PBP["PBP<br/>(Public Broadcast Profile)"]
+       CAP["CAP<br/>(Common Audio Profile)"]
+       VCP["VCP<br/>(Volume Control Profile)"]
+       MICP["MICP<br/>(Microphone Control Profile)"]
+       CSIP["CSIP<br/>(Coordinated Set Identification Profile)"]
+       MCP["MCP<br/>(Media Control Profile)"]
+       CCP["CCP<br/>(Call Control Profile)"]
+       BAP["BAP<br/>(Basic Audio Profile)"]
+       HAS["HAS<br/>(Hearing Access Service)"]
+       TMAS["TMAS<br/>(Telephony and Media Audio Service)"]
+       GMAS["GMAS<br/>(Gaming Audio Service)"]
+       CAS["CAS<br/>(Common Audio Service)"]
+       PACS["PACS<br/>(Published Audio Capabilities Service)"]
+       ASCS["ASCS<br/>(Audio Stream Control Service)"]
+       BASS["BASS<br/>(Broadcast Audio Scan Service)"]
+       CSIS["CSIS<br/>(Coordinated Set Identification Service)"]
+       VCS["VCS<br/>(Volume Control Service)"]
+       MICS["MICS<br/>(Microphone Control Service)"]
+       MCS["MCS / GMCS<br/>(Media Control Service)"]
+       TBS["TBS / GTBS<br/>(Telephone Bearer Service)"]
+       VOCS["VOCS<br/>(Volume Offset Control Service)"]
+       AICS["AICS<br/>(Audio Input Control Service)"]
+       OTS["OTS<br/>(Object Transfer Service)"]
+       HAP --> CAP
+       TMAP --> CAP & MCP & CCP
+       GMAP --> CAP
+       PBP --> BAP
+       CAP --> BAP & VCP & MICP & CSIP
+       CAP --> CAS
+       HAP --> HAS
+       TMAP --> TMAS
+       GMAP --> GMAS
+       BAP --> PACS & ASCS & BASS
+       VCP --> VCS
+       MICP --> MICS
+       CSIP --> CSIS
+       MCP --> MCS
+       CCP --> TBS
+       VCS -.-> VOCS & AICS
+       MICS -.-> AICS
+       MCS -.-> OTS
+       CAP ~~~ MCP
+       CAP ~~~ CCP
+       classDef uc fill:#dbe8ff,stroke:#5b8def,color:#173;
+       classDef coord fill:#ffe6c7,stroke:#e0922f;
+       classDef ctrl fill:#e3f6da,stroke:#5aa84f;
+       classDef svc fill:#efe3ff,stroke:#9a6fd6;
+       classDef opt fill:#f0f0f0,stroke:#9e9e9e,color:#555;
+       class HAP,TMAP,GMAP,PBP uc;
+       class CAP,BAP coord;
+       class VCP,MICP,CSIP,MCP,CCP ctrl;
+       class HAS,TMAS,GMAS,CAS,PACS,ASCS,BASS,CSIS,VCS,MICS,MCS,TBS svc;
+       class VOCS,AICS,OTS opt;
+
+
+规范对服务的依赖
+^^^^^^^^^^^^^^^^
+
+.. list-table::
+    :header-rows: 1
+    :widths: 22 22 56
+
+    * - 规范
+      - 依赖服务
+      - 说明
+    * - BAP
+      - PACS、ASCS、BASS
+      - PACS 存在于单播服务器和广播接收端；ASCS 仅存在于单播服务器；BASS 仅存在于扫描委托设备。
+    * - VCP
+      - VCS（必选）、VOCS（可选）、AICS（可选）
+      - VOCS 和 AICS 是 VCS 的子包含服务，每类可有多个实例。
+    * - MICP
+      - MICS（必选）、AICS（可选）
+      - AICS 是 MICS 的子包含服务。
+    * - CAP
+      - CAS（必选）
+      - CAS 必须存在于每个 CAP 接受端。CAP 还调用 BAP、VCP、MICP 和 CSIP 的流程。
+    * - CSIP
+      - CSIS（必选）
+      - CSIS 位于集成员设备上。
+    * - MCP
+      - MCS / GMCS（必选）、OTS（可选）
+      - GMCS 是唯一必选的通用实例；按播放器的 MCS 实例为可选。OTS 在设备支持媒体对象时使用。
+    * - CCP
+      - TBS / GTBS（必选）
+      - GTBS 是唯一必选的通用实例；按承载的 TBS 实例为可选。
+    * - HAP
+      - HAS（必选）
+      - HAS 用于预设控制。HAP 还要求 GAF 中的 BAP、PACS、VCP、MICP 和 CSIP（双耳设备）。
+    * - TMAP
+      - TMAS（必选）
+      - TMAS 仅包含 TMAP 角色特征。TMAP 将流和控制操作委托给 BAP、VCP、MCP 和 CCP。
+    * - GMAP
+      - GMAS（必选）
+      - GMAS 仅包含 GMAP 角色特征。GMAP 将操作委托给 BAP 和 VCP。
+    * - PBP
+      - 无（无专用服务）
+      - PBP 仅使用 BAP 广播源/接收端和标准化扩展通告元数据。
+
+
+规范对规范的依赖
+^^^^^^^^^^^^^^^^
+
+.. list-table::
+    :header-rows: 1
+    :widths: 25 25 50
+
+    * - 规范
+      - 依赖规范
+      - 说明
+    * - CAP 发起端 / 指挥端
+      - BAP、VCP、MICP、CSIP
+      - 使用 BAP 建立流，使用 VCP 和 MICP 进行渲染/采集控制，使用 CSIP 寻址协调集成员。
+    * - HAP
+      - BAP、VCP、MICP、CSIP、CAP
+      - 助听器设备上 CAP 接受端角色为强制要求；双耳助听器对需要 CSIP。
+    * - TMAP CG / CT
+      - BAP（单播）、VCP、CCP
+      - CG 在部分实现中还充当 MCP 服务器（媒体代理）。
+    * - TMAP UMS / UMR
+      - BAP（单播）、VCP、MCP
+      - —
+    * - TMAP BMS / BMR
+      - BAP（广播）、VCP
+      - —
+    * - GMAP UGG / UGT
+      - BAP（单播）、VCP
+      - —
+    * - GMAP BGS / BGR
+      - BAP（广播）、VCP
+      - —
+    * - PBP 源 / 接收端
+      - BAP（广播）
+      - —
+
+
+典型用例所需规范
+^^^^^^^^^^^^^^^^
+
+下表将常见产品类型映射到所需的规范和角色。
+
+.. list-table::
+    :header-rows: 1
+    :widths: 30 70
+
+    * - 产品类型
+      - 所需规范 / 角色
+    * - TWS 耳机（接收端）
+      - CAP 接受端、BAP 单播服务器、VCP 音量渲染器、CSIP 集成员、MICP 麦克风设备（如有麦克风）
+    * - 手机 / 音源设备
+      - CAP 发起端、BAP 单播客户端、VCP 音量控制器、CSIP 集协调器
+    * - 助听器
+      - HAP 助听器、CAP 接受端、BAP 单播服务器、VCP 音量渲染器、CSIP 集成员（双耳对）
+    * - 电视 / 广播源
+      - BAP 广播源、PBP 公共广播源（Auracast™）
+    * - 听力环路接收端
+      - BAP 广播接收端、PBP 公共广播接收端
+    * - 电话耳麦
+      - TMAP CT + UMR（或网关侧的 CG + UMS）、VCP、CCP
+    * - 游戏耳机
+      - GMAP UGT（接收端）、BAP 单播服务器、VCP 音量渲染器
+    * - 媒体发送端（音响）
+      - TMAP UMS（或广播场景的 BMS）、BAP、MCP/MCS 服务器、VCP

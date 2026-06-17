@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include "driver/uart_wakeup.h"
 #include "hal/uart_hal.h"
 #include "esp_private/esp_sleep_internal.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp_log.h"
 
 #if (SOC_UART_LP_NUM >= 1)
@@ -71,7 +72,9 @@ esp_err_t uart_wakeup_setup(uart_port_t uart_num, const uart_wakeup_cfg_t *cfg)
 
     // This should be mocked at ll level if the selection of the UART wakeup mode is not supported by this SOC.
     uart_ll_set_wakeup_mode(hw, cfg->wakeup_mode);
-
+    PERIPH_RCC_ATOMIC() {
+        uart_ll_enable_pad_sleep_clock(hw, true);
+    }
     // When uarts are utilized, the src clk(hp_uart: main XTAL, lp_uart: RTC_FAST or XTAL_D2) need to be PU and ungate，and for hp uart UARTx & IOMX ICG need to be ungate
     if (cfg->wakeup_mode != UART_WK_MODE_ACTIVE_THRESH) {
         if (uart_num < SOC_UART_HP_NUM) {

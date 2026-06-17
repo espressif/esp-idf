@@ -158,6 +158,7 @@ esp_err_t lp_core_mailbox_init(lp_mailbox_t *mailbox, lp_mailbox_config_t *confi
         return ESP_ERR_INVALID_STATE;
     }
     hal_memset(&s_mailbox, 0, sizeof(s_mailbox));
+    lp_core_mailbox_impl_init();
     s_mailbox.mb_ctx = lp_core_mailbox_impl_get_context();
     if (s_mailbox.mb_ctx == NULL) {
         return ESP_ERR_INVALID_STATE;

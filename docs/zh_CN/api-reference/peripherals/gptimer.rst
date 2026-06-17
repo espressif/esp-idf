@@ -296,7 +296,7 @@ GPTimer 驱动支持在中断回调函数中调用 :cpp:func:`gptimer_set_alarm_
     // 启动定时器
     ESP_ERROR_CHECK(gptimer_start(gptimer));
 
-.. only:: SOC_TIMER_SUPPORT_ETM
+.. only:: SOC_TIMER_SUPPORT_ETM and SOC_ETM_SUPPORTED
 
     .. _gptimer-etm-event-and-task:
 
@@ -393,7 +393,7 @@ GPTimer 驱动支持在中断回调函数中调用 :cpp:func:`gptimer_set_alarm_
 
     - :example:`peripherals/timer_group/gptimer` 演示了如何在 ESP 芯片上使用通用定时器 API 生成周期性警报事件，触发不同的警报动作。
     - :example:`peripherals/timer_group/wiegand_interface` 使用两个定时器（一个在单次警报模式下，另一个在周期警报模式下），触发中断并在警报事件的回调函数中改变 GPIO 的输出状态，从而模拟出了 Wiegand 协议的输出波形。
-    :SOC_TIMER_SUPPORT_ETM: - :example:`peripherals/timer_group/gptimer_capture_hc_sr04` 展示了如何使用通用定时器和事件任务矩阵(ETM)来精确捕获超声波传感器事件的时间戳，并据此换算成距离信息。
+    :SOC_TIMER_SUPPORT_ETM and SOC_ETM_SUPPORTED: - :example:`peripherals/timer_group/gptimer_capture_hc_sr04` 展示了如何使用通用定时器和事件任务矩阵(ETM)来精确捕获超声波传感器事件的时间戳，并据此换算成距离信息。
 
 API 参考
 ========
@@ -413,7 +413,7 @@ GPTimer HAL 类型
 
 .. include-build-file:: inc/timer_types.inc
 
-.. only:: SOC_TIMER_SUPPORT_ETM
+.. only:: SOC_TIMER_SUPPORT_ETM and SOC_ETM_SUPPORTED
 
     GPTimer ETM API
     ---------------

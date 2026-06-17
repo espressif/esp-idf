@@ -1,13 +1,10 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 components/spi_flash/test_apps/esp_flash:
-  disable:
-    - if: IDF_TARGET in ["esp32s31"]
-      temporary: true
-      reason: not support yet # TODO: TODO: [esp32s31] IDF-14777
   depends_filepatterns:
     - components/bootloader_support/bootloader_flash/**/*
   depends_components:
+    - *common_components
     - esp_mm
     - esp_psram
     - spi_flash
@@ -22,44 +19,45 @@ components/spi_flash/test_apps/esp_flash_blockdev:
       temporary: false
       reason: should be sufficient to test on one Xtensa and one RISC-V target
   depends_components:
+    - *common_components
     - spi_flash
 
 components/spi_flash/test_apps/esp_flash_freq_limit:
   enable:
     - if: IDF_TARGET == "esp32c5"
   depends_components:
+    - *common_components
     - spi_flash
     - esp_pm
     - esp_driver_gptimer
     - esp_hw_support
 
 components/spi_flash/test_apps/esp_flash_stress:
-  disable:
-    - if: IDF_TARGET in ["esp32s31"]
-      temporary: true
-      reason: not support yet # TODO: [ESP32S31] IDF-14777
   depends_components:
+    - *common_components
     - esp_mm
     - spi_flash
     - esp_hal_mspi
 
 components/spi_flash/test_apps/flash_encryption:
   disable:
-    - if: IDF_TARGET in ["esp32h4", "esp32s31"]
+    - if: IDF_TARGET in ["esp32s31"]
       temporary: true
-      reason: not support yet # TODO: [ESP32H4] IDF-12261 [ESP32S31] IDF-14628
+      reason: not support yet # TODO: [ESP32S31] IDF-14628
   disable_test:
     - if: IDF_TARGET in ["esp32c2", "esp32s2", "esp32c6", "esp32h2", "esp32p4", "esp32c5", "esp32c61", "esp32h21", "esp32h4"]
       temporary: true
       reason: No runners # IDF-5634
 
   depends_components:
+    - *common_components
     - esp_mm
     - spi_flash
     - esp_hal_mspi
 
 components/spi_flash/test_apps/flash_mmap:
   depends_components:
+    - *common_components
     - esp_mm
     - spi_flash
     - esp_hal_mspi
@@ -72,7 +70,6 @@ components/spi_flash/test_apps/flash_mmap:
     - if: CONFIG_NAME == "xip_psram_with_rom_impl" and SOC_SPIRAM_XIP_SUPPORTED == 1 and IDF_TARGET != "esp32s2"
   disable:
     - if: IDF_TARGET == "esp32c61" and CONFIG_NAME == "xip_psram_with_rom_impl"
-    - if: IDF_TARGET == "esp32s31" # TODO: IDF-14669
       temporary: true
       reason: not supported yet  # TODO: [ESP32C61] IDF-12784
 
@@ -80,10 +77,11 @@ components/spi_flash/test_apps/flash_suspend:
   disable:
     - if: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND != 1
   disable_test:
-    - if: IDF_TARGET != "esp32c3"
+    - if: IDF_TARGET in ["esp32c2", "esp32c6", "esp32h2", "esp32p4", "esp32s3", "esp32h4"]
       temporary: true
-      reason: lack of runners
+      reason: lack of runners, or we don't trust generic runner must support suspend
   depends_components:
+    - *common_components
     - spi_flash
     - esp_driver_gptimer
     - esp_hal_mspi
@@ -95,6 +93,7 @@ components/spi_flash/test_apps/mspi_test:
   depends_filepatterns:
     - components/bootloader_support/bootloader_flash/**/*
   depends_components:
+    - *common_components
     - esp_mm
     - esp_psram
     - spi_flash

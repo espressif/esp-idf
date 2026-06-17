@@ -231,26 +231,26 @@
 	// Custom caller-saved registers not used by default by the compiler:
 	.ifeq (XTHAL_SAS_TIE | XTHAL_SAS_NOCC | XTHAL_SAS_CALR) & ~(\select)
 	xchal_sa_align	\ptr, 0, 948, 4, 4
+	ssi	f0, \ptr, .Lxchal_ofs_+0
+	ssi	f1, \ptr, .Lxchal_ofs_+4
+	ssi	f2, \ptr, .Lxchal_ofs_+8
+	ssi	f3, \ptr, .Lxchal_ofs_+12
+	ssi	f4, \ptr, .Lxchal_ofs_+16
+	ssi	f5, \ptr, .Lxchal_ofs_+20
+	ssi	f6, \ptr, .Lxchal_ofs_+24
+	ssi	f7, \ptr, .Lxchal_ofs_+28
+	ssi	f8, \ptr, .Lxchal_ofs_+32
+	ssi	f9, \ptr, .Lxchal_ofs_+36
+	ssi	f10, \ptr, .Lxchal_ofs_+40
+	ssi	f11, \ptr, .Lxchal_ofs_+44
+	ssi	f12, \ptr, .Lxchal_ofs_+48
+	ssi	f13, \ptr, .Lxchal_ofs_+52
+	ssi	f14, \ptr, .Lxchal_ofs_+56
+	ssi	f15, \ptr, .Lxchal_ofs_+60
 	rur.FCR	\at1		// ureg 232
-	s32i	\at1, \ptr, .Lxchal_ofs_+0
+	s32i	\at1, \ptr, .Lxchal_ofs_+64
 	rur.FSR	\at1		// ureg 233
-	s32i	\at1, \ptr, .Lxchal_ofs_+4
-	ssi	f0, \ptr, .Lxchal_ofs_+8
-	ssi	f1, \ptr, .Lxchal_ofs_+12
-	ssi	f2, \ptr, .Lxchal_ofs_+16
-	ssi	f3, \ptr, .Lxchal_ofs_+20
-	ssi	f4, \ptr, .Lxchal_ofs_+24
-	ssi	f5, \ptr, .Lxchal_ofs_+28
-	ssi	f6, \ptr, .Lxchal_ofs_+32
-	ssi	f7, \ptr, .Lxchal_ofs_+36
-	ssi	f8, \ptr, .Lxchal_ofs_+40
-	ssi	f9, \ptr, .Lxchal_ofs_+44
-	ssi	f10, \ptr, .Lxchal_ofs_+48
-	ssi	f11, \ptr, .Lxchal_ofs_+52
-	ssi	f12, \ptr, .Lxchal_ofs_+56
-	ssi	f13, \ptr, .Lxchal_ofs_+60
-	ssi	f14, \ptr, .Lxchal_ofs_+64
-	ssi	f15, \ptr, .Lxchal_ofs_+68
+	s32i	\at1, \ptr, .Lxchal_ofs_+68
 	.set	.Lxchal_ofs_, .Lxchal_ofs_ + 72
 	.elseif ((XTHAL_SAS_TIE | XTHAL_SAS_NOCC | XTHAL_SAS_CALR) & ~(\alloc)) == 0
 	xchal_sa_align	\ptr, 0, 948, 4, 4
@@ -273,26 +273,26 @@
 	// Custom caller-saved registers not used by default by the compiler:
 	.ifeq (XTHAL_SAS_TIE | XTHAL_SAS_NOCC | XTHAL_SAS_CALR) & ~(\select)
 	xchal_sa_align	\ptr, 0, 948, 4, 4
-	l32i	\at1, \ptr, .Lxchal_ofs_+0
+	lsi	f0, \ptr, .Lxchal_ofs_+0
+	lsi	f1, \ptr, .Lxchal_ofs_+4
+	lsi	f2, \ptr, .Lxchal_ofs_+8
+	lsi	f3, \ptr, .Lxchal_ofs_+12
+	lsi	f4, \ptr, .Lxchal_ofs_+16
+	lsi	f5, \ptr, .Lxchal_ofs_+20
+	lsi	f6, \ptr, .Lxchal_ofs_+24
+	lsi	f7, \ptr, .Lxchal_ofs_+28
+	lsi	f8, \ptr, .Lxchal_ofs_+32
+	lsi	f9, \ptr, .Lxchal_ofs_+36
+	lsi	f10, \ptr, .Lxchal_ofs_+40
+	lsi	f11, \ptr, .Lxchal_ofs_+44
+	lsi	f12, \ptr, .Lxchal_ofs_+48
+	lsi	f13, \ptr, .Lxchal_ofs_+52
+	lsi	f14, \ptr, .Lxchal_ofs_+56
+	lsi	f15, \ptr, .Lxchal_ofs_+60
+	l32i	\at1, \ptr, .Lxchal_ofs_+64
 	wur.FCR	\at1		// ureg 232
-	l32i	\at1, \ptr, .Lxchal_ofs_+4
+	l32i	\at1, \ptr, .Lxchal_ofs_+68
 	wur.FSR	\at1		// ureg 233
-	lsi	f0, \ptr, .Lxchal_ofs_+8
-	lsi	f1, \ptr, .Lxchal_ofs_+12
-	lsi	f2, \ptr, .Lxchal_ofs_+16
-	lsi	f3, \ptr, .Lxchal_ofs_+20
-	lsi	f4, \ptr, .Lxchal_ofs_+24
-	lsi	f5, \ptr, .Lxchal_ofs_+28
-	lsi	f6, \ptr, .Lxchal_ofs_+32
-	lsi	f7, \ptr, .Lxchal_ofs_+36
-	lsi	f8, \ptr, .Lxchal_ofs_+40
-	lsi	f9, \ptr, .Lxchal_ofs_+44
-	lsi	f10, \ptr, .Lxchal_ofs_+48
-	lsi	f11, \ptr, .Lxchal_ofs_+52
-	lsi	f12, \ptr, .Lxchal_ofs_+56
-	lsi	f13, \ptr, .Lxchal_ofs_+60
-	lsi	f14, \ptr, .Lxchal_ofs_+64
-	lsi	f15, \ptr, .Lxchal_ofs_+68
 	.set	.Lxchal_ofs_, .Lxchal_ofs_ + 72
 	.elseif ((XTHAL_SAS_TIE | XTHAL_SAS_NOCC | XTHAL_SAS_CALR) & ~(\alloc)) == 0
 	xchal_sa_align	\ptr, 0, 948, 4, 4

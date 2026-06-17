@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@ extern "C" {
 #include <stdbool.h>
 #include "hal/i2c_types.h"
 #include "esp_err.h"
+#include "hal/i2c_ll.h"
 
 /**
  * @brief Read from I2C device
@@ -98,6 +99,34 @@ esp_err_t lp_core_i2c_master_write_read_device(i2c_port_t lp_i2c_num, uint16_t d
  * @note the LP I2C port number is ignored at the moment.
  */
 void lp_core_i2c_master_set_ack_check_en(i2c_port_t lp_i2c_num, bool ack_check_en);
+
+#if SOC_LP_CORE_SUPPORT_I2C
+/**
+ * @brief Enable LP I2C master-related interrupts at the peripheral
+ *
+ * Enables the same interrupt sources used by the LP I2C master driver (see I2C_LL_MASTER_EVENT_INTR).
+ *
+ * @param lp_i2c_num    Must be the LP I2C port (e.g. LP_I2C_NUM_0), not an HP I2C port.
+ * @param mask          Interrupt mask needs to be enabled
+ */
+static inline void ulp_lp_core_lp_i2c_intr_enable(i2c_port_t lp_i2c_num, uint32_t mask)
+{
+    HAL_ASSERT(lp_i2c_num == LP_I2C_NUM_0);
+    i2c_ll_enable_intr_mask(I2C_LL_GET_HW(lp_i2c_num), mask);
+}
+
+/**
+ * @brief Disable LP I2C master-related interrupts at the peripheral
+ *
+ * @param lp_i2c_num    Must be the LP I2C port (e.g. LP_I2C_NUM_0), not an HP I2C port.
+ * @param mask          Interrupt mask needs to be disabled
+ */
+static inline void ulp_lp_core_lp_i2c_intr_disable(i2c_port_t lp_i2c_num, uint32_t mask)
+{
+    HAL_ASSERT(lp_i2c_num == LP_I2C_NUM_0);
+    i2c_ll_disable_intr_mask(I2C_LL_GET_HW(lp_i2c_num), mask);
+}
+#endif /* SOC_LP_CORE_SUPPORT_I2C */
 
 #ifdef __cplusplus
 }

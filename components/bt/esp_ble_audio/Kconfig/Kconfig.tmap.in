@@ -1,0 +1,38 @@
+# Bluetooth Audio - Telephony and Media Audio Profile (TMAP) options
+#
+# SPDX-FileCopyrightText: 2023 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+config BT_TMAP_CG_SUPPORTED
+    bool # hidden
+    default y if (BT_CAP_INITIATOR && BT_CAP_COMMANDER && BT_BAP_UNICAST_CLIENT && \
+        BT_BAP_UNICAST_CLIENT_ASE_SRC > 0 && BT_BAP_UNICAST_CLIENT_ASE_SNK > 0 && \
+        BT_VCP_VOL_CTLR && BT_TBS)
+
+config BT_TMAP_CT_SUPPORTED
+    bool # hidden
+    default y if BT_CAP_ACCEPTOR && (BT_ASCS_ASE_SNK > 0 || BT_ASCS_ASE_SRC > 0)
+
+config BT_TMAP_UMS_SUPPORTED
+    bool # hidden
+    default y if (BT_CAP_INITIATOR && BT_CAP_COMMANDER && BT_BAP_UNICAST_CLIENT && \
+        BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 && BT_VCP_VOL_CTLR && BT_MCS)
+
+config BT_TMAP_UMR_SUPPORTED
+    bool # hidden
+    default y if BT_CAP_ACCEPTOR && BT_ASCS_ASE_SNK > 0 && BT_VCP_VOL_REND
+
+config BT_TMAP_BMS_SUPPORTED
+    bool # hidden
+    default y if BT_CAP_INITIATOR && BT_BAP_BROADCAST_SOURCE
+
+config BT_TMAP_BMR_SUPPORTED
+    bool # hidden
+    default y if BT_CAP_ACCEPTOR && BT_BAP_BROADCAST_SINK && BT_VCP_VOL_REND
+
+config BT_TMAP
+    bool "Telephony and Media Audio Profile"
+    depends on BT_CAP_ACCEPTOR || BT_CAP_INITIATOR
+    help
+        Enabling this will enable TMAP.

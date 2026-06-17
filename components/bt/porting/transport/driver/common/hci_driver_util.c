@@ -47,6 +47,7 @@ static void
 hci_driver_util_memory_deinit(void)
 {
     if (s_hci_driver_util_env.tx_entry_pool) {
+        os_mempool_unregister(s_hci_driver_util_env.tx_entry_pool);
         free(s_hci_driver_util_env.tx_entry_pool);
         s_hci_driver_util_env.tx_entry_pool = NULL;
     }

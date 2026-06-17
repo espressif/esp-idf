@@ -33,4 +33,13 @@ menu "ESP HTTPS OTA"
             This enables use of range header in esp_https_ota component.
             The firmware image will be downloaded over multiple HTTP requests.
 
+    config ESP_HTTPS_OTA_VERIFY_SPI_MODE
+        bool "Verify SPI flash mode compatibility for application during OTA"
+        default y
+        help
+            When enabled, the OTA process will verify that the SPI flash mode of the new
+            application image is compatible with the currently running firmware. This helps
+            prevent flashing firmware with incompatible SPI mode settings which could
+            cause flash write failures.
+
 endmenu

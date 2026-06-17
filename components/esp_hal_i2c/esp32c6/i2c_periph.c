@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,11 +41,11 @@ const i2c_signal_conn_t i2c_periph_signal[SOC_I2C_NUM] = {
    Include: I2C_SCL_LOW_PERIOD_REG /
             I2C_CTR_REG / I2C_TO_REG / I2C_SLAVE_ADDR_REG / I2C_FIFO_CONF_REG
             I2C_INT_ENA_REG / I2C_SDA_HOLD_REG / I2C_SDA_SAMPLE_REG / I2C_SCL_START_HOLD_REG
-            I2C_SCL_RSTART_SETUP_REG / I2C_SCL_STOP_HOLD_REG / I2C_SCL_STOP_SETUP_REG /I2C_FILTER_CFG_REG / I2C_CLK_CONF_REG / I2C_SCL_ST_TIME_OUT_REG / I2C_SCL_MAIN_ST_TIME_OUT_REG / I2C_SCL_SP_CONF_REG / I2C_SCL_STRETCH_CONF_REG
+            I2C_SCL_RSTART_SETUP_REG / I2C_SCL_STOP_HOLD_REG / I2C_SCL_STOP_SETUP_REG /I2C_FILTER_CFG_REG / I2C_SCL_ST_TIME_OUT_REG / I2C_SCL_MAIN_ST_TIME_OUT_REG / I2C_SCL_SP_CONF_REG / I2C_SCL_STRETCH_CONF_REG
 */
-#define I2C0_RETENTION_REGS_CNT  18
+#define I2C0_RETENTION_REGS_CNT  17
 #define I2C0_RETENTION_MAP_BASE  I2C_SCL_LOW_PERIOD_REG(0)
-static const uint32_t i2c0_regs_map[4] = {0xc03f345b, 0x3, 0, 0};
+static const uint32_t i2c0_regs_map[4] = {0xc01f345b, 0x3, 0, 0};
 static const regdma_entries_config_t i2c0_regs_retention[] = {
     [0] = {
         .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_I2C_LINK(0x00), I2C0_RETENTION_MAP_BASE, I2C0_RETENTION_MAP_BASE, I2C0_RETENTION_REGS_CNT, 0, 0, i2c0_regs_map[0], i2c0_regs_map[1], i2c0_regs_map[2], i2c0_regs_map[3]), \

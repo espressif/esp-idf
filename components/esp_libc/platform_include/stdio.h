@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,6 +40,20 @@ FILE    *funopen(const void *cookie,
 void flockfile(FILE *);
 void funlockfile(FILE *);
 FILE *open_memstream(char **, size_t *);
+
+typedef ssize_t cookie_read_function_t(void *cookie, char *buf, size_t n);
+typedef ssize_t cookie_write_function_t(void *cookie, const char *buf, size_t n);
+typedef int cookie_seek_function_t(void *cookie, __off_t *off, int whence);
+typedef int cookie_close_function_t(void *cookie);
+typedef struct {
+    /* These four struct member names are dictated by Linux; hopefully,
+       they don't conflict with any macros.  */
+    cookie_read_function_t  *read;
+    cookie_write_function_t *write;
+    cookie_seek_function_t  *seek;
+    cookie_close_function_t *close;
+} cookie_io_functions_t;
+FILE *fopencookie(void *cookie, const char *mode, cookie_io_functions_t functions);
 #endif
 
 #ifdef __cplusplus

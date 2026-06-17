@@ -3,7 +3,7 @@
 
 {IDF_TARGET_CIPHER_SCHEME:default="RSA", esp32h2="RSA 或 ECDSA", esp32p4="RSA 或 ECDSA", esp32c5="RSA 或 ECDSA", esp32c61="ECDSA", esp32h21="RSA 或 ECDSA"}
 
-{IDF_TARGET_SIG_PERI:default="DS", esp32h2="DS 或 ECDSA", esp32p4="DS 或 ECDSA", esp32c5="DS 或 ECDSA", esp32c61="ECDSA"}
+{IDF_TARGET_SIG_PERI:default="RSA_DS", esp32h2="RSA_DS 或 ECDSA_DS", esp32p4="RSA_DS 或 ECDSA_DS", esp32c5="RSA_DS 或 ECDSA_DS", esp32c61="ECDSA_DS"}
 
 :link_to_translation:`en:[English]`
 
@@ -85,21 +85,39 @@ flash 加密最佳实践
     设备身份
     ~~~~~~~~~~~~~~~
 
-    在 {IDF_TARGET_NAME} 中，数字签名外设借助硬件加速，通过 HMAC 算法生成 RSA 数字签名。RSA 私钥仅限设备硬件访问，软件无法获取，保证了设备上存储密钥的安全性。
+    在 {IDF_TARGET_NAME} 中，RSA 数字签名外设借助硬件加速，通过 HMAC 算法生成 RSA 数字签名。RSA 私钥仅限设备硬件访问，软件无法获取，保证了设备上存储密钥的安全性。
 
     .. only:: SOC_ECDSA_SUPPORTED
 
-        {IDF_TARGET_NAME} 还支持 ECDSA 外设，用于生成硬件加速的 ECDSA 数字签名。ECDSA 私钥支持直接编程到 eFuse 块中，并在软件中标记为读保护。
+        {IDF_TARGET_NAME} 还支持 ECDSA_DS 外设，用于生成硬件加速的 ECDSA 数字签名。ECDSA 私钥支持直接编程到 eFuse 块中，并在软件中标记为读保护。
 
     {IDF_TARGET_SIG_PERI} 外设可以建立与远程终端之间的 **安全设备身份**，如基于 {IDF_TARGET_CIPHER_SCHEME} 加密算法的 TLS 双向认证。
 
     .. only:: not SOC_ECDSA_SUPPORTED
 
-        详情请参阅 :doc:`../api-reference/peripherals/ds`。
+        详情请参阅 :doc:`RSA 数字签名外设 (RSA_DS) <../api-reference/peripherals/ds>`。
 
     .. only:: SOC_ECDSA_SUPPORTED
 
-        详情请参阅 :doc:`../api-reference/peripherals/ecdsa` 及 :doc:`../api-reference/peripherals/ds`。
+        详情请参阅 :doc:`ECDSA 数字签名外设 (ECDSA_DS) <../api-reference/peripherals/ecdsa>` 及 :doc:`RSA 数字签名外设 (RSA_DS) <../api-reference/peripherals/ds>`。
+
+.. only:: SOC_KEY_MANAGER_SUPPORTED
+
+    密钥管理器
+    ~~~~~~~~~~
+
+    {IDF_TARGET_NAME} 中的密钥管理器外设提供硬件辅助的 **密钥部署和恢复** 功能，适用于加密密钥。密钥通过每块芯片独有的硬件唯一密钥 (HUK) 进行加密绑定，确保密钥内容不会暴露给软件可访问的内存。
+
+    密钥管理器支持以下加密外设的密钥管理：:doc:`ECDSA <../api-reference/peripherals/ecdsa>`、:doc:`HMAC <../api-reference/peripherals/hmac>`、:doc:`数字签名 (DS) <../api-reference/peripherals/ds>` 以及 flash 加密。
+
+    详情请参阅 :doc:`../api-reference/peripherals/key_manager`。
+
+    密钥管理器最佳实践
+    ^^^^^^^^^^^^^^^^^^
+
+    * 防止密钥管理器部署密钥的 ``key_recovery_info`` 遭受未授权修改或丢失。
+    * 在成功部署密钥后，锁定密钥管理器相关的安全 eFuse，防止重新部署同类型密钥。
+    * 除非明确需要，否则在已启用 flash 加密的情况下，避免部署新的 XTS-AES 密钥。
 
 .. only:: SOC_MEMPROT_SUPPORTED or SOC_CPU_IDRAM_SPLIT_USING_PMP
 
@@ -124,7 +142,7 @@ flash 加密最佳实践
         差分功耗分析 (DPA) 保护
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        {IDF_TARGET_NAME} 支持针对 DPA 相关安全攻击的保护机制。DPA 保护通过动态调整加密外设的时钟频率，在其运行期间模糊了功耗轨迹。时钟变化范围会根据配置的 DPA 安全级别改变。更多详情请参阅 *{IDF_TARGET_NAME} 技术参考手册* > [`PDF <{IDF_TARGET_TRM_CN_URL}>`__]。
+        {IDF_TARGET_NAME} 支持针对 DPA 相关安全攻击的保护机制。DPA 保护通过动态调整加密外设的时钟频率，在其运行期间模糊了功耗轨迹。时钟变化范围会根据配置的 DPA 安全级别改变。详情请参阅 **《{IDF_TARGET_NAME} 技术参考手册》** [`PDF <{IDF_TARGET_TRM_CN_URL}>`__]。
 
         通过 :ref:`CONFIG_ESP_CRYPTO_DPA_PROTECTION_LEVEL` 可以调整 DPA 级别。级别越高安全性越强，但也可能会影响性能。默认启用最低级别 DPA 保护，可以根据安全需求修改。
 
@@ -140,7 +158,7 @@ flash 加密最佳实践
         {IDF_TARGET_NAME} 在 AES 外设中集成了伪轮次功能，使该外设能够在原始操作轮次前后随机插入伪轮次，并生成一个伪密钥来执行这些虚拟操作。
         这些操作不会改变原始结果，但能够通过随机化功耗特征，提高实施侧信道分析攻击的复杂性。
 
-        可以使用 :ref:`CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH` 选择伪轮次功能的强度。提高强度会增强该功能所提供的安全性，但会加密/解密操作的速度。
+        可以使用 :ref:`CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH` 选择伪轮次功能的强度。提高强度会增强该功能所提供的安全性，但会减缓加密/解密操作的速度。
 
 
         .. list-table:: 伪轮次功能的不同强度对 AES 操作性能的影响
@@ -157,7 +175,7 @@ flash 加密最佳实践
             * - 高
               - 72.4 %
 
-        .. [#] 上述性能数据通过 mbedtls 测试应用中的 AES 性能测试 :component_file:`test_aes_perf.c <mbedtls/test_apps/main/test_aes_perf.c>` 计算得出。
+        .. [#] 上述性能数据通过 mbedtls 测试应用中的 AES 性能测试 :component_file:`test_psa_aes_perf.c <mbedtls/test_apps/mbedtls_ut/main/test_psa_aes_perf.c>` 计算得出。
 
         考虑到上述性能影响，ESP-IDF 默认关闭伪轮次功能，避免对相关性能造成影响。但如果需要更高的安全性，仍然建议启用。
 

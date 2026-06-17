@@ -26,6 +26,8 @@
 extern const uint8_t image_esp1080_jpg_start[] asm("_binary_esp1080_jpg_start");
 extern const uint8_t image_esp1080_jpg_end[]   asm("_binary_esp1080_jpg_end");
 
+#define JPEG_SLEEP_RETENTION_TIMEOUT_MS 50
+
 #if SOC_LIGHT_SLEEP_SUPPORTED && CONFIG_PM_ENABLE
 static void test_jpeg_sleep_retention(bool allow_pd)
 {
@@ -33,7 +35,7 @@ static void test_jpeg_sleep_retention(bool allow_pd)
 
     jpeg_decode_engine_cfg_t decode_eng_cfg = {
         .intr_priority = 0,
-        .timeout_ms = 40,
+        .timeout_ms = JPEG_SLEEP_RETENTION_TIMEOUT_MS,
         .flags = {
             .allow_pd = allow_pd,
         },

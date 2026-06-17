@@ -18,6 +18,7 @@
 #include "esp_scan_i.h"
 #include "esp_common_i.h"
 #include "common/ieee802_11_common.h"
+#include "esp_dpp_i.h"
 #include "esp_rrm.h"
 #include "esp_wnm.h"
 #include "rsn_supp/wpa_i.h"
@@ -297,6 +298,13 @@ int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
     dl_list_init(&wpa_s->bss_tmp_disallowed);
 #endif /* CONFIG_MBO */
 #endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
+
+#ifdef CONFIG_DPP
+    if (esp_supp_dpp_common_init() != ESP_OK) {
+        ret = -1;
+        goto err;
+    }
+#endif
     return 0;
 err:
     esp_supplicant_common_deinit();

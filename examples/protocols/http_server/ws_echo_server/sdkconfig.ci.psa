@@ -1,7 +1,0 @@
-# WebSocket Echo Server Example with PSA Crypto API
-# This config tests the PSA crypto backend for WebSocket handshake (SHA-1)
-CONFIG_LOG_DEFAULT_LEVEL_DEBUG=y
-CONFIG_EXAMPLE_WIFI_SSID_PWD_FROM_STDIN=y
-# PSA Crypto Configuration
-CONFIG_MBEDTLS_VER_4_X_SUPPORT=y
-CONFIG_HTTPD_SERVER_PSA_CRYPTO_MIGRATE=y

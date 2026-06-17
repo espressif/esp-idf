@@ -149,6 +149,18 @@ You can implement the camera controller driver using one of the following method
     * Full range: 0-255 for both RGB and YUV
     * Limited range: RGB 16-240, YUV Y:16-240, U-V:16-235
 
+    .. note::
+
+        - When :cpp:member:`esp_cam_ctlr_dvp_config_t::cam_data_width` is set to 8:
+
+            - The CAM_PCLK frequency is recommended to be less than 80 MHz.
+            - If YUV-RGB format conversion is also configured via :cpp:func:`esp_cam_ctlr_format_conversion`, the CAM_PCLK frequency is recommended to be less than 60 MHz.
+
+        - When :cpp:member:`esp_cam_ctlr_dvp_config_t::cam_data_width` is set to 16:
+
+            - The CAM_PCLK frequency is recommended to be less than 40 MHz.
+            - If YUV-RGB format conversion is also configured via :cpp:func:`esp_cam_ctlr_format_conversion`, the CAM_PCLK frequency is recommended to be less than 30 MHz.
+
     .. code:: c
 
         #include "esp_err.h"
@@ -184,6 +196,7 @@ You can implement the camera controller driver using one of the following method
                 .h_res = CONFIG_EXAMPLE_CAM_HRES,
                 .v_res = CONFIG_EXAMPLE_CAM_VRES,
                 .input_data_color_type = CAM_CTLR_COLOR_RGB565,
+                .output_data_color_type = CAM_CTLR_COLOR_RGB565,
                 .dma_burst_size = 128,
                 .pin = &pin_cfg,
                 .bk_buffer_dis = 1,
@@ -342,6 +355,7 @@ Application Examples
 
 * :example:`peripherals/camera/mipi_isp_dsi` – Demonstrates how to use the ``esp_driver_cam`` component to capture signals from a MIPI CSI camera sensor via the ISP module and display them on an LCD screen via a DSI interface.
 * :example:`peripherals/camera/dvp_isp_dsi` – Demonstrates how to use the ``esp_driver_cam`` component to capture signals from a DVP camera sensor via the ISP module and display them on an LCD screen via a DSI interface.
+* :example:`peripherals/camera/dvp_dsi` – Demonstrates how to use the ``esp_driver_cam`` component to capture DVP camera sensor data and display it on a MIPI DSI LCD.
 
 API Reference
 -------------

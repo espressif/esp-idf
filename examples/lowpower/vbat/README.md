@@ -14,6 +14,7 @@ This example demonstrates the ESP backup battery power supply solution, which ha
     - Support battery voltage detection, wake up the chip and switch to the main power supply when undervoltage occurs.
     - Support battery charging, automatically stop charging when threshold voltage is reached, and charging current can be configured.
     - Supports selection of chip status when charging the battery, options include keep active, entering lightsleep or entering deepsleep.
+    - Optional main power (ESP_3V3) control via GPIO when in deep sleep on VBAT: turn off main power after switching to VBAT, and turn it on again in advance before wakeup (configurable advance time).
 
 ## How to use example
 
@@ -47,6 +48,44 @@ idf.py menuconfig
 - The charging current limiting resistor can be configured via `Component config → Hardware Settings → Power Supplier → RTC Backup Battery -> vbat charger circuit resistor value (ohms)`.
 - The chip state while waiting for battery charging the battery can be selected by `Example Configuration → Configure the chip state while waiting for battery charging`.
 - The period to check whether the battery has been charged done can be selected by `Battery charging done check period (in seconds)`.
+
+#### Main power control when running on VBAT (ESP32-P4)
+
+When the chip is in deep sleep and powered by VBAT, the main power rail (ESP_3V3) may be turned off to reduce power consumption (for example, when it also supplies other peripherals on the board). ESP32-P4 supports controlling the main power enable via an RTC GPIO so that the rail is disabled after switching to VBAT and re-enabled in advance before wakeup, allowing the supply to stabilize before the chip exits deep sleep and switches back to main supply.
+
+Application scenario — circuit connections:
+
+```
+  ┌──────────────┐       ┌───────────────────────────────────┐
+  │    Button    │ VBAT  │            ESP32-P4               │
+  │   Battery    ├──────>│ VBAT                              │
+  └──────────────┘       │                                   │
+                         │ ESP_3V3                   (RTC IO)│
+                         └───────────────────────────────┬───┘
+                             ^                           │ Enable (power ctrl)
+                 Vout (3.3V) │                           v
+                       ┌─────┴───────────────────────────────┐
+                       │    Main Power            Enable Pin │
+                       └─────────────────────────────────────┘
+                                   │ 3.3V
+                                   v
+                         ┌───────────────────┐
+                         │  Other Circuits   │
+                         └───────────────────┘
+```
+
+- **Button Battery** → ESP32-P4 **VBAT**: backup supply during deep sleep, keeps RTC alive.
+- **Power Module** Vout → ESP32-P4 **ESP_3V3** and **Other Circuits**: main 3.3 V rail.
+- ESP32-P4 **GPIO (RTC IO 0~3)** → Power Module **Enable**: the chip disables main power after entering deep sleep on VBAT, and re-enables it in advance before wakeup.
+
+Configuration (under `Component config → Hardware Settings → Power Supplier → RTC Backup Battery`):
+
+- Enable the feature: **Control main power (ESP_3V3) enable via GPIO when VBAT powers deep sleep**.
+- Select the control pin: **GPIO for main power (ESP_3V3) enable** — RTC GPIO 0~3 (or 2~3 only when the RTC clock source is the external 32 kHz crystal, because GPIO0/1 are then reserved).
+- Set output polarity: **Invert main power control pin output** — enable this if the main power is enabled by a low level (active-low).
+- Set the wakeup advance time: **Main power enable advance time before wakeup (us)** — the time in microseconds by which the main power enable is asserted before the chip starts the wakeup sequence. This value must be at least the main power supply’s startup/settling time (from enable assertion to stable output); otherwise the chip may brown out or boot unstably after wake.
+
+This feature requires a hardware design in which the main power enable is driven by the chosen RTC GPIO (for example, via an external FET or the enable pin of a regulator).
 
 ### Build and Flash
 

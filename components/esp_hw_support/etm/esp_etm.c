@@ -32,13 +32,6 @@
 
 #define ETM_USE_RETENTION_LINK  (SOC_ETM_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
-#if !SOC_RCC_IS_INDEPENDENT
-// Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
-#define ETM_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define ETM_RCC_ATOMIC()
-#endif
-
 ESP_LOG_ATTR_TAG(TAG, "etm");
 
 typedef struct etm_platform_t etm_platform_t;
@@ -95,6 +88,10 @@ static void etm_create_retention_module(etm_group_t *group)
         if (sleep_retention_module_allocate(module) != ESP_OK) {
             // even though the sleep retention module create failed, ETM driver should still work, so just warning here
             ESP_LOGW(TAG, "create retention link failed on ETM Group%d, power domain won't be turned off during sleep", group_id);
+        } else {
+            if (sleep_retention_module_attach(module) != ESP_OK) {
+                ESP_LOGW(TAG, "attach retention link failed on ETM Group%d, power domain won't be turned off during sleep", group_id);
+            }
         }
     }
     _lock_release(&s_platform.mutex);
@@ -117,9 +114,10 @@ static etm_group_t *etm_acquire_group_handle(int group_id)
             group->group_id = group_id;
             group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
             // enable bus clock for the ETM registers
-            ETM_RCC_ATOMIC() {
+            PERIPH_RCC_ATOMIC() {
                 etm_ll_enable_bus_clock(group_id, true);
                 etm_ll_reset_register(group_id);
+                etm_ll_enable_function_clock(group_id, true);
             }
 
 #if ETM_USE_RETENTION_LINK
@@ -131,6 +129,7 @@ static etm_group_t *etm_acquire_group_handle(int group_id)
                         .arg = group,
                     },
                 },
+                .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
                 .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
             };
             // retention module init must be called BEFORE the hal init
@@ -172,12 +171,15 @@ static void etm_release_group_handle(etm_group_t *group)
         s_platform.groups[group_id] = NULL; // deregister from platform
         etm_hal_deinit(&group->hal);
         // disable the bus clock for the ETM registers
-        ETM_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             etm_ll_enable_bus_clock(group_id, false);
         }
 
 #if ETM_USE_RETENTION_LINK
         sleep_retention_module_t module = soc_etm_retention_info[group_id].module;
+        if (sleep_retention_is_module_attached(module)) {
+            sleep_retention_module_detach(module);
+        }
         if (sleep_retention_is_module_created(module)) {
             sleep_retention_module_free(module);
         }
@@ -263,6 +265,15 @@ esp_err_t esp_etm_new_channel(const esp_etm_channel_config_t *config, esp_etm_ch
     etm_group_t *group = chan->group;
     int group_id = group->group_id;
     int chan_id = chan->chan_id;
+
+#if ETM_LL_SUPPORT(CLOCK_SRC)
+    // set the clock source for the ETM group
+    etm_clock_source_t clk_src = config->clk_src;
+    if (clk_src == 0) {
+        clk_src = ETM_CLK_SRC_DEFAULT;
+    }
+    etm_ll_set_clock_source(group_id, clk_src);
+#endif
 
     // set the initial state to INIT
     atomic_init(&chan->fsm, ETM_CHAN_FSM_INIT);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -12,9 +12,9 @@ extern "C" {
 
 #include <stdint.h>
 
-typedef volatile struct ledc_dev_s {
-    struct {
-        struct {
+typedef struct ledc_dev_t {
+    volatile struct {
+        volatile struct {
             union {
                 struct {
                     uint32_t timer_sel:              2;
@@ -62,8 +62,8 @@ typedef volatile struct ledc_dev_s {
             } duty_rd;
         } channel[8];
     } channel_group[1];
-    struct {
-        struct {
+    volatile struct {
+        volatile struct {
             union {
                 struct {
                     uint32_t duty_resolution:   4;
@@ -85,7 +85,7 @@ typedef volatile struct ledc_dev_s {
             } value;
         } timer[4];
     } timer_group[1];
-    union {
+    volatile union {
         struct {
             uint32_t lstimer0_ovf:                1;
             uint32_t lstimer1_ovf:                1;
@@ -111,7 +111,7 @@ typedef volatile struct ledc_dev_s {
         };
         uint32_t val;
     } int_raw;
-    union {
+    volatile union {
         struct {
             uint32_t lstimer0_ovf:               1;
             uint32_t lstimer1_ovf:               1;
@@ -137,7 +137,7 @@ typedef volatile struct ledc_dev_s {
         };
         uint32_t val;
     } int_st;
-    union {
+    volatile union {
         struct {
             uint32_t lstimer0_ovf:                1;
             uint32_t lstimer1_ovf:                1;
@@ -163,7 +163,7 @@ typedef volatile struct ledc_dev_s {
         };
         uint32_t val;
     } int_ena;
-    union {
+    volatile union {
         struct {
             uint32_t lstimer0_ovf:                1;
             uint32_t lstimer1_ovf:                1;
@@ -189,7 +189,7 @@ typedef volatile struct ledc_dev_s {
         };
         uint32_t val;
     } int_clr;
-    union {
+    volatile union {
         struct {
             uint32_t apb_clk_sel: 2;
             uint32_t reserved2:  29;
@@ -207,7 +207,7 @@ typedef volatile struct ledc_dev_s {
     uint32_t reserved_f0;
     uint32_t reserved_f4;
     uint32_t reserved_f8;
-    uint32_t date;                                     /**/
+    volatile uint32_t date;                                     /**/
 } ledc_dev_t;
 
 extern ledc_dev_t LEDC;

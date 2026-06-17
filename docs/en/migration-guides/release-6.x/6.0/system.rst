@@ -107,6 +107,67 @@ Update to:
         handle_timer_wakeup();
     }
 
+.. _gpio_wakeup_api_changes:
+
+GPIO Wakeup API Changes
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following APIs and types have been removed and replaced with new ones that support both Deep Sleep and Light Sleep (when peripheral power domain is powered down):
+
+**Removed APIs:**
+
+- :func:`esp_deep_sleep_enable_gpio_wakeup` - Use :func:`esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown` instead
+- :func:`gpio_deep_sleep_wakeup_enable` - Use :func:`gpio_wakeup_enable_on_hp_periph_powerdown_sleep` instead
+- :func:`gpio_deep_sleep_wakeup_disable` - Use :func:`gpio_wakeup_disable_on_hp_periph_powerdown_sleep` instead
+
+**Removed Types:**
+
+- :cpp:type:`esp_deepsleep_gpio_wake_up_mode_t` - Use :cpp:type:`esp_sleep_gpio_wake_up_mode_t` instead
+
+**Removed Macros:**
+
+- ``GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO()`` - Use ``GPIO_IS_HP_PERIPH_PD_WAKEUP_VALID_IO()`` instead
+
+**Migration Example:**
+
+Old code:
+
+.. code-block:: c
+
+    #include "esp_sleep.h"
+    #include "driver/gpio.h"
+
+    // Enable GPIO wakeup for deep sleep
+    esp_deep_sleep_enable_gpio_wakeup(BIT(GPIO_NUM_0), ESP_GPIO_WAKEUP_GPIO_LOW);
+
+    // Or using GPIO driver API
+    gpio_deep_sleep_wakeup_enable(GPIO_NUM_0, GPIO_INTR_LOW_LEVEL);
+
+    // Check if GPIO is valid for deep sleep wakeup
+    if (GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO(GPIO_NUM_0)) {
+        // ...
+    }
+
+New code:
+
+.. code-block:: c
+
+    #include "esp_sleep.h"
+    #include "driver/gpio.h"
+
+    // Enable GPIO wakeup for deep sleep or light sleep (when peripheral power domain is powered down)
+    esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown(BIT(GPIO_NUM_0), ESP_GPIO_WAKEUP_GPIO_LOW);
+
+    // Or using GPIO driver API
+    gpio_wakeup_enable_on_hp_periph_powerdown_sleep(GPIO_NUM_0, GPIO_INTR_LOW_LEVEL);
+
+    // Check if GPIO is valid for wakeup on peripheral powerdown sleep
+    if (GPIO_IS_HP_PERIPH_PD_WAKEUP_VALID_IO(GPIO_NUM_0)) {
+        // ...
+    }
+
+**Note:** The new APIs work for both Deep Sleep and Light Sleep modes when the peripheral power domain is powered down (``PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`` enabled in menuconfig).
+
 Bootloader
 ----------
 

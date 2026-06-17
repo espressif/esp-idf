@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -89,6 +89,11 @@ static esp_err_t handle_session_command0(session_t *cur_session,
     ESP_LOGD(TAG, "Request to handle setup0_command");
     Sec2Payload *in = (Sec2Payload *) req->sec2;
 
+    if (in->payload_case != SEC2_PAYLOAD__PAYLOAD_SC0 || !in->sc0) {
+        ESP_LOGE(TAG, "Missing or mismatched sc0 payload in session command0");
+        return ESP_ERR_INVALID_ARG;
+    }
+
     if (cur_session->state != SESSION_STATE_CMD0) {
         ESP_LOGW(TAG, "Invalid state of session %d (expected %d). Restarting session.",
                  SESSION_STATE_CMD0, cur_session->state);
@@ -103,8 +108,8 @@ static esp_err_t handle_session_command0(session_t *cur_session,
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (in->sc0->client_username.len <= 0) {
-        ESP_LOGE(TAG, "Invalid username");
+    if (in->sc0->client_username.len == 0 || in->sc0->client_username.len > UINT16_MAX) {
+        ESP_LOGE(TAG, "Invalid username length (%zu)", in->sc0->client_username.len);
         if (esp_event_post(PROTOCOMM_SECURITY_SESSION_EVENT, PROTOCOMM_SECURITY_SESSION_INVALID_SECURITY_PARAMS, NULL, 0, portMAX_DELAY) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to post secure session invalid security params event");
         }
@@ -143,11 +148,13 @@ static esp_err_t handle_session_command0(session_t *cur_session,
                 cur_session->salt_len, cur_session->verifier, cur_session->verifier_len) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set salt and verifier!");
             esp_srp_free(cur_session->srp_hd);
+            cur_session->srp_hd = NULL;
             return ESP_FAIL;
         }
         if (esp_srp_srv_pubkey_from_salt_verifier(cur_session->srp_hd, &device_pubkey, &device_pubkey_len) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to device public key!");
             esp_srp_free(cur_session->srp_hd);
+            cur_session->srp_hd = NULL;
             return ESP_FAIL;
         }
     }
@@ -157,6 +164,7 @@ static esp_err_t handle_session_command0(session_t *cur_session,
                                 &cur_session->session_key, &cur_session->session_key_len) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to generate device session key!");
         esp_srp_free(cur_session->srp_hd);
+        cur_session->srp_hd = NULL;
         return ESP_FAIL;
     }
     hexdump("Session Key", cur_session->session_key, cur_session->session_key_len);
@@ -166,6 +174,7 @@ static esp_err_t handle_session_command0(session_t *cur_session,
     if (!out || !out_resp) {
         ESP_LOGE(TAG, "Error allocating memory for response0");
         esp_srp_free(cur_session->srp_hd);
+        cur_session->srp_hd = NULL;
         free(out);
         free(out_resp);
         return ESP_ERR_NO_MEM;
@@ -191,11 +200,12 @@ static esp_err_t handle_session_command0(session_t *cur_session,
     if (!cur_session->username) {
         ESP_LOGE(TAG, "Failed to allocate memory!");
         esp_srp_free(cur_session->srp_hd);
+        cur_session->srp_hd = NULL;
         free(out);
         free(out_resp);
         return ESP_ERR_NO_MEM;
     }
-    memcpy(cur_session->username, in->sc0->client_username.data, in->sc0->client_username.len);
+    memcpy(cur_session->username, in->sc0->client_username.data, cur_session->username_len);
 
     resp->sec_ver = SEC_SCHEME_VERSION__SecScheme2;
     resp->proto_case = SESSION_DATA__PROTO_SEC2;
@@ -213,6 +223,11 @@ static esp_err_t handle_session_command1(session_t *cur_session,
 {
     ESP_LOGD(TAG, "Request to handle setup1_command");
     Sec2Payload *in = (Sec2Payload *) req->sec2;
+
+    if (in->payload_case != SEC2_PAYLOAD__PAYLOAD_SC1 || !in->sc1) {
+        ESP_LOGE(TAG, "Missing or mismatched sc1 payload in session command1");
+        return ESP_ERR_INVALID_ARG;
+    }
 
     if (cur_session->state != SESSION_STATE_CMD1) {
         ESP_LOGE(TAG, "Invalid state of session %d (expected %d)", SESSION_STATE_CMD1, cur_session->state);
@@ -412,7 +427,7 @@ static esp_err_t sec2_new_session(protocomm_security_handle_t handle, uint32_t s
     if (cur_session->id != -1) {
         /* Only one session is allowed at a time */
         ESP_LOGE(TAG, "Closing old session with id %" PRIu32, cur_session->id);
-        sec2_close_session(cur_session, session_id);
+        sec2_close_session(cur_session, cur_session->id);
     }
 
     cur_session->id = session_id;
@@ -490,12 +505,14 @@ static esp_err_t sec2_encrypt(protocomm_security_handle_t handle,
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "psa_aead_encrypt failed with status=%d", status);
         free(*outbuf);
+        *outbuf = NULL;
         return ESP_FAIL;
     }
 
     if (out_len != *outlen) {
         ESP_LOGE(TAG, "psa_aead_encrypt output length mismatch: expected %zd, got %zu", *outlen, out_len);
         free(*outbuf);
+        *outbuf = NULL;
         return ESP_FAIL;
     }
 
@@ -551,12 +568,14 @@ static esp_err_t sec2_decrypt(protocomm_security_handle_t handle,
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "psa_aead_decrypt failed with status=%d", status);
         free(*outbuf);
+        *outbuf = NULL;
         return ESP_FAIL;
     }
 
     if (out_len != *outlen) {
         ESP_LOGE(TAG, "psa_aead_decrypt output length mismatch: expected %zd, got %zu", *outlen, out_len);
         free(*outbuf);
+        *outbuf = NULL;
         return ESP_FAIL;
     }
 
@@ -595,6 +614,11 @@ static esp_err_t sec2_req_handler(protocomm_security_handle_t handle,
     }
     if (req->sec_ver != protocomm_security2.ver) {
         ESP_LOGE(TAG, "Security version mismatch. Closing connection");
+        session_data__free_unpacked(req, NULL);
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (req->proto_case != SESSION_DATA__PROTO_SEC2) {
+        ESP_LOGE(TAG, "Security scheme mismatch. Closing connection");
         session_data__free_unpacked(req, NULL);
         return ESP_ERR_INVALID_ARG;
     }

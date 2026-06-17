@@ -8,10 +8,12 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "hal/misc.h"
+#include "soc/efuse_defs.h"
+#include "soc/efuse_reg.h"
 #include "soc/efuse_periph.h"
 #include "hal/assert.h"
 #include "rom/efuse.h"
-#include "soc/efuse_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,25 +30,20 @@ typedef enum {
 
 // Always inline these functions even no gcc optimization is applied.
 
-// TODO: [ESP32S31] IDF-14688 This file is inherited from verification branch, need to check all functions.
-
 /******************* eFuse fields *************************/
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_flash_crypt_cnt(void)
 {
-    // TODO: [ESP32S31] IDF-14688
     return EFUSE.rd_repeat_data1.spi_boot_crypt_cnt;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_wdt_delay_sel(void)
 {
-    // TODO: [ESP32S31] IDF-14688
     return EFUSE.rd_repeat_data1.wdt_delay_sel;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_mac0(void)
 {
-    // TODO: [ESP32S31] IDF-14688
     return EFUSE.rd_mac_sys0.mac_0;
 }
 
@@ -63,53 +60,72 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_secure_boot_v2_en
 // use efuse_hal_get_major_chip_version() to get major chip version
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_major(void)
 {
-    return 0;
-    // TODO: [ESP32S31] IDF-14688
+    return EFUSE.rd_mac_sys3.wafer_version_major;
 }
 
 // use efuse_hal_get_minor_chip_version() to get minor chip version
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_minor(void)
 {
-    return 0;
-    // TODO: [ESP32S31] IDF-14688
+    return EFUSE.rd_mac_sys3.wafer_version_minor;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_disable_wafer_version_major(void)
 {
-    return 0;
-    // TODO: [ESP32S31] IDF-14688
+    return EFUSE.rd_mac_sys3.disable_wafer_version_major;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_major(void)
 {
-    return 0;
-    // TODO: [ESP32S31] IDF-14688
+    return EFUSE.rd_mac_sys3.blk_version_major;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_minor(void)
 {
-    return 0;
-    // TODO: [ESP32S31] IDF-14688
+    return EFUSE.rd_mac_sys3.blk_version_minor;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_disable_blk_version_major(void)
 {
-    return 0;
-    // TODO: [ESP32S31] IDF-14688
+    return EFUSE.rd_mac_sys3.disable_blk_version_major;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_ver_pkg(void)
 {
-    return 0;
-    // TODO: [ESP32S31] IDF-14688
+    return EFUSE.rd_mac_sys4.pkg_version;
 }
 
-// TODO: [ESP32S31] IDF-14688
-// __attribute__((always_inline)) static inline void efuse_ll_set_ecdsa_key_blk(ecdsa_curve_t curve, int efuse_blk)
-// {
-//     (void) curve;
-//
-// }
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_recovery_bootloader_sector(void)
+{
+    return EFUSE.rd_repeat_data5.recovery_bootloader_flash_sector;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_coding_error(unsigned index)
+{
+    switch (index) {
+    case 0:
+        return EFUSE.rd_repeat_data_err0.val;
+    case 1:
+        return EFUSE.rd_repeat_data_err1.val;
+    case 2:
+        return EFUSE.rd_repeat_data_err2.val;
+    case 3:
+        return EFUSE.rd_repeat_data_err3.val;
+    case 4:
+        return EFUSE.rd_repeat_data_err4.val;
+    case 5:
+        return EFUSE.rd_repeat_data_err5.val;
+    case 6:
+        return EFUSE.rd_repeat_data_err6.val;
+    case 7:
+        return EFUSE.rd_repeat_data_err7.val;
+    case 8:
+        return EFUSE.rd_rs_data_err0.val;
+    case 9:
+        return EFUSE.rd_rs_data_err1.val;
+    default:
+        return 0;
+    }
+}
 
 /******************* eFuse control functions *************************/
 
@@ -125,38 +141,54 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_pgm_cmd(void)
 
 __attribute__((always_inline)) static inline void efuse_ll_set_read_cmd(void)
 {
-    // TODO: [ESP32S31] IDF-14688
+    EFUSE.cmd.read_cmd = 1;
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_pgm_cmd(uint32_t block)
 {
-    // TODO: [ESP32S31] IDF-14688
+    HAL_ASSERT(block < ETS_EFUSE_BLOCK_MAX);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.cmd, val, ((block << EFUSE_BLK_NUM_S) & EFUSE_BLK_NUM_M) | EFUSE_PGM_CMD);
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_conf_read_op_code(void)
 {
-    // TODO: [ESP32S31] IDF-14688
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.conf, op_code, EFUSE_READ_OP_CODE);
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_conf_write_op_code(void)
 {
-    // TODO: [ESP32S31] IDF-14688
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.conf, op_code, EFUSE_WRITE_OP_CODE);
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_pwr_off_num(uint16_t value)
 {
-    // TODO: [ESP32S31] IDF-14688
+    HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.wr_tim_conf2, pwr_off_num, value);
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_rs_bypass_update(void)
 {
-    // TODO: [ESP32S31] IDF-14688
+    EFUSE.wr_tim_conf0_rs_bypass.update = 1;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_controller_state(void)
 {
-    // TODO: [ESP32S31] IDF-14688
     return EFUSE.status.state;
+}
+
+/**
+ * @brief Flash power select eFuse bit (see VDD_SPI voltage table; not the final rail by itself)
+ */
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_flash_power_sel(void)
+{
+    return EFUSE.rd_repeat_data6.pmu_flash_power_sel;
+}
+
+/**
+ * @brief Flash power select valid eFuse bit (1: `flash_power_sel` is valid, 0: not)
+ */
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_flash_power_sel_en(void)
+{
+    return EFUSE.rd_repeat_data6.pmu_flash_power_sel_en;
 }
 
 /******************* eFuse control functions *************************/

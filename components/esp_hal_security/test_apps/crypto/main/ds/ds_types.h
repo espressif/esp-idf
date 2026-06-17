@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -24,6 +24,11 @@
         + ESP_DS_SIGNATURE_M_PRIME_BIT_LEN   \
         + ESP_DS_SIGNATURE_L_BIT_LEN   \
         + ESP_DS_SIGNATURE_PADDING_BIT_LEN) / 8))
+typedef enum {
+    ESP_DS_KEY_HMAC,
+    ESP_DS_KEY_AES,
+    ESP_DS_KEY_MAX,
+} esp_ds_key_type_t;
 
 typedef enum {
     ESP_DS_RSA_1024 = (1024 / 32) - 1,

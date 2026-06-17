@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,11 @@ extern "C" {
 #define TEE_SECURE_INUM    (31)
 #if SOC_INT_CLIC_SUPPORTED
 #define TEE_PASS_INUM      (30)
+/* CLIC: 3 effective priority bits (NLBITS=3), max priority = 7 */
+#define TEE_SECURE_INUM_PRIO    (7)
+#else
+/* PLIC: 4-bit priority field, max priority = 15 */
+#define TEE_SECURE_INUM_PRIO    (15)
 #endif
 
 #define ESP_TEE_M2U_SWITCH_MAGIC  0xfedef
@@ -27,6 +32,7 @@ extern "C" {
 #define ALIGN_UP_TO_MMU_PAGE_SIZE(addr)      (((addr) + (SOC_MMU_PAGE_SIZE) - 1) & ~((SOC_MMU_PAGE_SIZE) - 1))
 #define ALIGN_DOWN_TO_MMU_PAGE_SIZE(addr)    ((addr) & ~((SOC_MMU_PAGE_SIZE) - 1))
 
+/* Alignment Checks */
 #if ((CONFIG_SECURE_TEE_IRAM_SIZE) & (0xFF))
 #error "CONFIG_SECURE_TEE_IRAM_SIZE must be 256-byte (0x100) aligned"
 #endif
@@ -41,6 +47,14 @@ extern "C" {
 
 #if ((CONFIG_SECURE_TEE_INTR_STACK_SIZE) & 0xF)
 #error "CONFIG_SECURE_TEE_INTR_STACK_SIZE must be 16-byte (0x10) aligned"
+#endif
+
+#if ((CONFIG_SECURE_TEE_IROM_SIZE) % SOC_MMU_PAGE_SIZE)
+#error "CONFIG_SECURE_TEE_IROM_SIZE must be a multiple of SOC_MMU_PAGE_SIZE"
+#endif
+
+#if ((CONFIG_SECURE_TEE_DROM_SIZE) % SOC_MMU_PAGE_SIZE)
+#error "CONFIG_SECURE_TEE_DROM_SIZE must be a multiple of SOC_MMU_PAGE_SIZE"
 #endif
 
 /* TEE Secure Storage partition label and NVS namespace */
@@ -102,6 +116,14 @@ void esp_tee_configure_region_protection(void);
  * @brief Configure APM protection for TEE
  */
 void esp_tee_configure_apm_protection(void);
+
+/**
+ * @brief Reset the crypto peripherals to a clean state.
+ *
+ * Mirrors esp_system_reset_modules_on_exit() in the non-TEE path.
+ * Intended to be called from the TEE panic handler before a software reset.
+ */
+void esp_tee_soc_reset_crypto_peripherals(void);
 
 /**
  * @brief Switch to the REE app after TEE initialization is complete

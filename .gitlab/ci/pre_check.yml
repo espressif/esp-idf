@@ -1,8 +1,32 @@
 .pre_check_template:
   stage: pre_check
   image: $ESP_ENV_IMAGE
-  tags: [build, shiny]
+  tags: [fast_run, shiny]
   dependencies: # set dependencies to null to avoid missing artifacts issue
+
+####################
+# fast_build_check #
+####################
+
+# Build one config per target at earliest stage to catch obvious failures before the full build
+fast_build_check:
+  extends:
+    - .build_template
+    - .rules:build
+  stage: pre_check
+  tags: [fast_run, shiny]
+  artifacts:
+    paths:
+      - "**/build*/build_log.txt"
+      - "**/build*/size*.json"
+    expire_in: 1 week
+    when: always
+  script:
+    - export PATH="$IDF_PATH/tools:$PATH"
+    - idf-build-apps build
+        -p tools/test_apps/system/build_tests/full_build
+        --config-rules "sdkconfig.ci.Og="
+        --default-build-targets esp32 esp32s2 esp32s3 esp32c2 esp32c3 esp32c5 esp32c6 esp32h2 esp32p4 esp32c61 esp32h21 esp32h4 esp32s31
 
 check_version:
   # Don't run this for feature/bugfix branches, so that it is possible to modify
@@ -28,6 +52,20 @@ check_api_usage:
     - ast-grep scan
     - tools/ci/check_api_violation.sh
     - tools/ci/check_examples_extra_component_dirs.sh
+
+check_wifi_remote_api:
+  extends:
+    - .pre_check_template
+    - .rules:build:check
+  script:
+    - cd components/esp_wifi/remote/scripts/
+    - python generate_and_check.py
+    - git diff --exit-code || { echo 'Differences found. Please run generate_and_check.py and commit the changes.'; exit 1; }
+
+check_examples_documented:
+  extends: .pre_check_template
+  script:
+    - python3 tools/ci/check_examples_documented.py
 
 check_blobs:
   extends:
@@ -71,22 +109,18 @@ check_chip_support_components:
     expire_in: 1 week
   script:
     - python tools/ci/check_soc_headers_leak.py
-    - find ${IDF_PATH}/components/soc/**/include/soc/ ${IDF_PATH}/components/soc/**/register/soc/ -name "*_struct.h" -print0 | xargs -0 -n1 ./tools/ci/check_soc_struct_headers.py
+    - find ${IDF_PATH}/components/soc \( -path "*/include/soc/*_struct.h" -o -path "*/register/soc/*_struct.h" -o -path "*/register/*/soc/*_struct.h" \) -print0 | xargs -0 -n1 ./tools/ci/check_soc_struct_headers.py
     - tools/ci/check_esp_memory_utils_headers.sh
 
-check_esp_err_to_name:
+check_esp_err_codes:
   extends:
     - .pre_check_template
     - .rules:build:check
-  artifacts:
-    when: on_failure
-    paths:
-      - components/esp_common/esp_err_to_name.c
-    expire_in: 1 week
   script:
-    - cd ${IDF_PATH}/tools/
-    - ./gen_esp_err_to_name.py
-    - git diff --exit-code -- ../components/esp_common/src/esp_err_to_name.c || { echo 'Differences found. Please run gen_esp_err_to_name.py and commit the changes.'; exit 1; }
+    - cd ${IDF_PATH}
+    - python tools/err_codes_extract.py --search-dirs components/ --output /tmp/err_codes.csv --validate
+    - python tools/err_codes_to_rst.py --csv /tmp/err_codes.csv --output /tmp/esp_err_defs.inc
+    - echo "Extracted $(wc -l < /tmp/err_codes.csv) error codes"
 
 check_esp_system:
   extends:
@@ -115,55 +149,29 @@ check_version_tag:
 check_test_scripts_build_test_rules:
   extends:
     - .pre_check_template
-    - .before_script:build
   script:
     # requires basic pytest dependencies
     - python tools/ci/check_build_test_rules.py check-test-scripts examples/ tools/test_apps components
 
-pipeline_variables:
+
+snapshot_known_failure_cases:
   extends:
     - .pre_check_template
-    - .before_script:fetch:git_diff
-  tags: [fast_run, shiny]
   script:
-    # MODIFIED_FILES is a list of files that changed, could be used everywhere
-    - MODIFIED_FILES=$(echo "$GIT_DIFF_OUTPUT" | xargs)
-    - echo "MODIFIED_FILES=$MODIFIED_FILES" >> pipeline.env
-    # MR_MODIFIED_FILES and MR_MODIFIED_COMPONENTS are semicolon separated lists that is used in MR only
-    # for non MR pipeline, these are empty lists
-    - |
-      if [ -z "$CI_MERGE_REQUEST_IID" ]; then
-        echo "MR_MODIFIED_FILES=\"\"" >> pipeline.env
-        echo "MR_MODIFIED_COMPONENTS=\"\"" >> pipeline.env
-      else
-        MR_MODIFIED_FILES=$(echo "$GIT_DIFF_OUTPUT" | tr '\n' ';')
-        echo "MR_MODIFIED_FILES=\"$MR_MODIFIED_FILES\"" >> pipeline.env
-
-        MR_MODIFIED_COMPONENTS=$(run_cmd python tools/ci/ci_get_mr_info.py components --modified-files $MODIFIED_FILES | tr '\n' ';')
-        echo "MR_MODIFIED_COMPONENTS=\"$MR_MODIFIED_COMPONENTS\"" >> pipeline.env
-      fi
-    - |
-      if [ -n "$PIPELINE_COMMIT_SHA" ]; then
-        echo "PIPELINE_COMMIT_SHA=$PIPELINE_COMMIT_SHA" >> pipeline.env
-      fi
-    - echo "OOCD_DISTRO_URL_ARMHF=$OOCD_DISTRO_URL_ARMHF" >> pipeline.env
-    - echo "OOCD_DISTRO_URL_ARM64=$OOCD_DISTRO_URL_ARM64" >> pipeline.env
-    - run_cmd idf-ci gitlab pipeline-variables >> pipeline.env
-    - cat pipeline.env
-    - run_cmd idf-ci gitlab upload-artifacts --type env
+    - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - mkdir -p artifacts
+    - mv ${KNOWN_FAILURE_CASES_FILE_NAME} artifacts/${KNOWN_FAILURE_CASES_FILE_NAME}.freeze
   artifacts:
-    reports:
-      dotenv: pipeline.env
     paths:
-      - pipeline.env
+      - artifacts/${KNOWN_FAILURE_CASES_FILE_NAME}.freeze
     expire_in: 1 week
     when: always
+
 
 baseline_manifest_sha:
   extends:
     - .pre_check_template
     - .rules:dev-push
-  tags: [fast_run, shiny]
   script:
     - |
       # merged results pipelines, by default
@@ -191,22 +199,10 @@ baseline_manifest_sha:
     expire_in: 1 week
     when: always
 
-gcc_static_analyzer:
-  extends:
-    - .pre_check_template
-    - .rules:build
-  variables:
-    CI_CCACHE_DISABLE: 1
-    ANALYZING_APP: "examples/get-started/hello_world"
-  script:
-    - echo "CONFIG_COMPILER_STATIC_ANALYZER=y" >> ${ANALYZING_APP}/sdkconfig.defaults
-    - idf-build-apps build -p ${ANALYZING_APP}
-
 retry_failed_jobs:
   extends:
     - .pre_check_template
     - .rules:dev-push
-  tags: [shiny, fast_run]
   allow_failure: true
   script:
     - echo "Retrieving and retrying all failed jobs for the pipeline..."

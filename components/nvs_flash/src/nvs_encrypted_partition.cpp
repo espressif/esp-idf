@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include "nvs_encrypted_partition.hpp"
 #include "nvs_types.hpp"
 #include "nvs_constants.h"
+#include "nvs_xts_aes.h"
 
 namespace nvs {
 
@@ -22,14 +23,14 @@ esp_err_t NVSEncryptedPartition::init(nvs_sec_cfg_t* cfg)
 {
     uint8_t* eky = reinterpret_cast<uint8_t*>(cfg);
 
-    mbedtls_aes_xts_init(&mEctxt);
-    mbedtls_aes_xts_init(&mDctxt);
+    XTS_FUNC(xts_init)(&mEctxt);
+    XTS_FUNC(xts_init)(&mDctxt);
 
-    if (mbedtls_aes_xts_setkey_enc(&mEctxt, eky, 2 * NVS_KEY_SIZE * 8) != 0) {
+    if (XTS_FUNC(xts_setkey_enc)(&mEctxt, eky, 2 * NVS_KEY_SIZE * 8) != 0) {
         return ESP_ERR_NVS_XTS_CFG_FAILED;
     }
 
-    if (mbedtls_aes_xts_setkey_dec(&mDctxt, eky, 2 * NVS_KEY_SIZE * 8) != 0) {
+    if (XTS_FUNC(xts_setkey_dec)(&mDctxt, eky, 2 * NVS_KEY_SIZE * 8) != 0) {
         return ESP_ERR_NVS_XTS_CFG_FAILED;
     }
 
@@ -61,7 +62,7 @@ esp_err_t NVSEncryptedPartition::read(size_t src_offset, void* dst, size_t size)
 
     uint8_t *destination = reinterpret_cast<uint8_t*>(dst);
 
-    if (mbedtls_aes_crypt_xts(&mDctxt, MBEDTLS_AES_DECRYPT, size, data_unit, destination, destination) != 0)  {
+    if (XTS_FUNC(crypt_xts)(&mDctxt, XTS_MODE(DECRYPT), size, data_unit, destination, destination) != 0)  {
         return ESP_ERR_NVS_XTS_DECR_FAILED;
     }
 
@@ -97,8 +98,8 @@ esp_err_t NVSEncryptedPartition::write(size_t addr, const void* src, size_t size
         uint32_t *addr_loc = (uint32_t*) &data_unit[0];
 
         *addr_loc = relAddr + offset;
-        if (mbedtls_aes_crypt_xts(&mEctxt,
-                                  MBEDTLS_AES_ENCRYPT,
+        if (XTS_FUNC(crypt_xts)(&mEctxt,
+                                  XTS_MODE(ENCRYPT),
                                   entrySize,
                                   data_unit,
                                   buf + offset,

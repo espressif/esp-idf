@@ -1,13 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "hal/mwdt_periph.h"
 #include "hal/mwdt_ll.h"
+#include "soc/soc_caps.h"
 
-// TODO: ["ESP32S31"] IDF-14656
+#if SOC_PAU_SUPPORTED && SOC_MWDT_SUPPORT_SLEEP_RETENTION
 
 #define N_REGS_TGWDT          6 // TIMG_WDTCONFIG0_REG ... TIMG_WDTCONFIG5_REG & TIMG_INT_ENA_TIMERS_REG
 
@@ -33,3 +34,5 @@ const tg_reg_ctx_link_t tg_wdt_regs_retention[2] = {
     [0] = {tg0_wdt_regs_retention, ARRAY_SIZE(tg0_wdt_regs_retention)},
     [1] = {tg1_wdt_regs_retention, ARRAY_SIZE(tg1_wdt_regs_retention)},
 };
+
+#endif // SOC_PAU_SUPPORTED

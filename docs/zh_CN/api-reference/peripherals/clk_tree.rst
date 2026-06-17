@@ -63,11 +63,11 @@
 
                     ``XTAL32K_CLK`` 的时钟源可以是连接到 ``32K_XP`` 和 ``32K_XN`` 管脚的 32 kHz 晶振，也可以是外部电路生成的 32 kHz 时钟信号。如果使用外部电路生成的时钟信号，该信号必须连接到 ``32K_XN`` 管脚，并且在 ``32K_XP`` 管脚和地之间连接一个 1 nF 的电容。此时，``32K_XP`` 管脚不能用作 GPIO 管脚。
 
-                .. only:: esp32p4
+                .. only:: esp32p4 or esp32s31
 
                     ``XTAL32K_CLK`` 的时钟源是连接到 ``XTAL_32K_P`` 和 ``XTAL_32K_N`` 管脚的 32 kHz 晶振。
 
-                .. only:: not esp32 and not esp32p4
+                .. only:: not esp32 and not esp32p4 and not esp32s31
 
                      ``XTAL32K_CLK`` 的时钟源可以是连接到 ``XTAL_32K_P`` 和 ``XTAL_32K_N`` 管脚的 32 kHz 晶振，也可以是外部电路生成的 32 kHZ 时钟信号。如果使用外部电路生成的时钟信号，该信号必须连接到 ``XTAL_32K_P`` 管脚。
 

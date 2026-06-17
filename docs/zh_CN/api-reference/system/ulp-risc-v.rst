@@ -36,9 +36,9 @@ ULP RISC-V 协处理器代码以 C 语言（或汇编语言）编写，使用基
     set(ulp_sources "ulp/ulp_c_source_file.c" "ulp/ulp_assembly_source_file.S")
     set(ulp_exp_dep_srcs "ulp_c_source_file.c")
 
-    ulp_embed_binary(${ulp_app_name} "${ulp_sources}" "${ulp_exp_dep_srcs}")
+    ulp_embed_binary(${ulp_app_name} "${ulp_sources}" "${ulp_exp_dep_srcs}" TYPE riscv)
 
-``ulp_embed_binary`` 的第一个参数指定生成的 ULP 二进制文件名。该文件名也用于其他生成的文件，如 ELF 文件、映射文件、头文件和链接器导出文件。第二个参数指定 ULP 源文件。第三个参数指定组件源文件列表，其中包括生成的头文件。此列表用以正确构建依赖，并确保在编译这些文件前创建要生成的头文件。有关 ULP 应用程序生成头文件的概念，请参阅本文档后续章节。
+``ulp_embed_binary`` 的第一个参数指定生成的 ULP 二进制文件名。该文件名也用于其他生成的文件，如 ELF 文件、映射文件、头文件和链接器导出文件。第二个参数指定 ULP 源文件。第三个参数指定组件源文件列表，其中包括生成的头文件。此列表用以正确构建依赖，并确保在编译这些文件前创建要生成的头文件。第四个参数 ``TYPE`` 为可选项，但在 menu 选项 ``ULP Coprocessor types`` 中同时勾选 :ref:`CONFIG_ULP_COPROC_TYPE_FSM` 与 :ref:`CONFIG_ULP_COPROC_TYPE_RISCV` 时，必须填写为 ``TYPE riscv`` 才能使用 RISC-V 工具链编译。有关 ULP 应用程序生成头文件的概念，请参阅本文档后续章节。
 
 在这个生成的头文件中，ULP 代码中的变量默认以 ``ulp_`` 作为前缀。
 
@@ -108,7 +108,7 @@ ULP RISC-V 协处理器代码以 C 语言（或汇编语言）编写，使用基
 
 若想编译和构建项目，请执行以下操作：
 
-1. 在 menuconfig 中启用 :ref:`CONFIG_ULP_COPROC_ENABLED` 和 :ref:`CONFIG_ULP_COPROC_TYPE` 选项，并将 :ref:`CONFIG_ULP_COPROC_TYPE` 设置为 ``CONFIG_ULP_COPROC_TYPE_LP_CORE``。:ref:`CONFIG_ULP_COPROC_RESERVE_MEM` 选项为 ULP 保留 RTC 内存，因此必须设置为一个足够大的值，以存储 ULP LP-Core 代码和数据。如果应用程序组件包含多个 ULP 程序，那么 RTC 内存的大小必须足够容纳其中最大的程序。
+1. 在 menuconfig 中启用 :ref:`CONFIG_ULP_COPROC_ENABLED`，并在 ``ULP Coprocessor types`` 菜单中勾选 `CONFIG_ULP_COPROC_TYPE_RISCV`。:ref:`CONFIG_ULP_COPROC_RESERVE_MEM` 选项为 ULP 保留 RTC 内存，因此必须设置为一个足够大的值，以存储 ULP RISC-V 代码和数据。如果应用程序组件包含多个 ULP 程序，那么 RTC 内存的大小必须足够容纳其中最大的程序。
 
 2. 按照常规步骤构建应用程序（例如 ``idf.py app``）。
 
@@ -193,7 +193,7 @@ ULP 中的所有硬件指令都不支持互斥，所以 Lock API 需通过一种
 
 要运行 ULP RISC-V 程序，主程序需要调用 :cpp:func:`ulp_riscv_load_binary` 函数，将 ULP 程序加载到 RTC 内存中，然后调用 :cpp:func:`ulp_riscv_run` 函数，启动 ULP RISC-V 程序。
 
-注意，必须在 menuconfig 中启用 ``CONFIG_ULP_COPROC_ENABLED`` 和 ``CONFIG_ULP_COPROC_TYPE_RISCV`` 选项，以便正常运行 ULP RISC-V 程序。``RTC slow memory reserved for coprocessor`` 选项设置的值必须足够存储 ULP RISC-V 代码和数据。如果应用程序组件包含多个 ULP 程序，RTC 内存必须足以容纳最大的程序。
+注意，必须在 menuconfig 中启用 :ref:`CONFIG_ULP_COPROC_ENABLED` 和 :ref:`CONFIG_ULP_COPROC_TYPE_RISCV` 选项才能使用 ULP RISC-V。 ``RTC slow memory reserved for coprocessor`` 选项设置的值必须足够存储 ULP RISC-V 代码和数据。如果应用程序组件包含多个 ULP 程序，RTC 内存必须足以容纳最大的程序。
 
 每个 ULP RISC-V 程序均以二进制 BLOB 的形式嵌入到 ESP-IDF 应用程序中。应用程序可以引用此 BLOB，并以下面的方式加载此 BLOB（假设 ULP_APP_NAME 已被定义为 ``ulp_app_name``）：
 
@@ -338,6 +338,10 @@ ULP RISC-V 的中断处理尚在开发中，还不支持针对内部中断源的
 * :example:`system/ulp/ulp_riscv/gpio_interrupt` 演示了如何使用 ULP-RISC-V 协处理器以通过 RTC IO 中断从深度睡眠中唤醒，使用 GPIO0 作为输入信号，并配置和运行协处理器，将芯片置于深度睡眠模式，直到唤醒源引脚被拉低。
 
 * :example:`system/ulp/ulp_riscv/touch` 演示了如何使用 ULP RISC-V 协处理器定期扫描和读取触摸传感器，并在触摸传感器被激活时唤醒主 CPU。
+
+.. only:: esp32s2 or esp32s3
+
+    * :example:`system/ulp/ulp_fsm_riscv_combined/counter` 展示了如何在同一个应用程序中依次使用 ULP FSM 和 ULP RISC-V 协处理器：使用 FSM 从 0 计数到 100，再使用 RISC-V 协处理器从 100 计数到 500。期间，HP 内核保持休眠模式，直到计数完成。
 
 API 参考
 -------------

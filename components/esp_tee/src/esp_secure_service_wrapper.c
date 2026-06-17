@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -287,6 +287,18 @@ esp_err_t __wrap_esp_ds_encrypt_params(esp_ds_data_t *data,
     esp_crypto_sha_aes_lock_release();
     return err;
 }
+
+esp_err_t __wrap_esp_ds_encrypt_params_using_key_type(esp_ds_data_t *data,
+                                                      const void *iv,
+                                                      const esp_ds_p_data_t *p_data,
+                                                      const void *key,
+                                                      esp_ds_key_type_t key_type)
+{
+    esp_crypto_sha_aes_lock_acquire();
+    esp_err_t err = esp_tee_service_call(6, SS_ESP_DS_ENCRYPT_PARAMS_USING_KEY_TYPE, data, iv, p_data, key, key_type);
+    esp_crypto_sha_aes_lock_release();
+    return err;
+}
 #endif
 
 /* ---------------------------------------------- MPI ------------------------------------------------- */
@@ -477,6 +489,16 @@ void IRAM_ATTR __wrap_mspi_timing_enter_low_speed_mode(bool control_spi1)
 void IRAM_ATTR __wrap_mspi_timing_enter_high_speed_mode(bool control_spi1)
 {
     esp_tee_service_call(2, SS_MSPI_TIMING_ENTER_HIGH_SPEED_MODE, control_spi1);
+}
+
+void IRAM_ATTR __wrap_mspi_timing_enter_low_speed_early(void)
+{
+    esp_tee_service_call(1, SS_MSPI_TIMING_ENTER_LOW_SPEED_EARLY);
+}
+
+void IRAM_ATTR __wrap_mspi_timing_enter_high_speed_early(void)
+{
+    esp_tee_service_call(1, SS_MSPI_TIMING_ENTER_HIGH_SPEED_EARLY);
 }
 
 void IRAM_ATTR __wrap_mspi_timing_change_speed_mode_cache_safe(bool switch_down)

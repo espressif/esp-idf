@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -257,21 +257,20 @@ int nvs_bootloader_aes_crypt_xts(nvs_bootloader_xts_aes_context *ctx,
 
 #endif /* CONFIG_ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB */
 #else /* BOOTLOADER_BUILD && !CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER */
-#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
-#include "mbedtls/private/aes.h"
+#include "nvs_xts_aes.h"
 
-static mbedtls_aes_xts_context ctx_xts;
+static XTS_CONTEXT ctx_xts;
 
 void nvs_bootloader_xts_aes_init(nvs_bootloader_xts_aes_context *ctx)
 {
     (void) ctx;
-    mbedtls_aes_xts_init(&ctx_xts);
+    XTS_FUNC(xts_init)(&ctx_xts);
 }
 
 void nvs_bootloader_xts_aes_free(nvs_bootloader_xts_aes_context *ctx)
 {
     (void) ctx;
-    mbedtls_aes_xts_free(&ctx_xts);
+    XTS_FUNC(xts_free)(&ctx_xts);
 }
 
 int nvs_bootloader_xts_aes_setkey(nvs_bootloader_xts_aes_context *ctx,
@@ -279,7 +278,7 @@ int nvs_bootloader_xts_aes_setkey(nvs_bootloader_xts_aes_context *ctx,
                                 unsigned int key_bytes)
 {
     (void) ctx;
-    return mbedtls_aes_xts_setkey_dec(&ctx_xts, key, key_bytes * 8);
+    return XTS_FUNC(xts_setkey_dec)(&ctx_xts, key, key_bytes * 8);
 }
 /*
  * XTS-AES buffer encryption/decryption
@@ -292,8 +291,8 @@ int nvs_bootloader_aes_crypt_xts(nvs_bootloader_xts_aes_context *ctx,
                                 unsigned char *output)
 {
     (void) ctx;
-    int mbedtls_aes_mode = mode == AES_ENC ? MBEDTLS_AES_ENCRYPT : MBEDTLS_AES_DECRYPT;
-    return mbedtls_aes_crypt_xts(&ctx_xts, mbedtls_aes_mode, length, data_unit, input, output);
+    int xts_mode = mode == AES_ENC ? XTS_MODE(ENCRYPT) : XTS_MODE(DECRYPT);
+    return XTS_FUNC(crypt_xts)(&ctx_xts, xts_mode, length, data_unit, input, output);
 }
 #endif /* !(BOOTLOADER_BUILD && !CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER) */
 #endif /* !SOC_AES_SUPPORTED */

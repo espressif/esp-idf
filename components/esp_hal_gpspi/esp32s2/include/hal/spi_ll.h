@@ -31,6 +31,7 @@
 extern "C" {
 #endif
 
+#define SPI_LL_GET_HW(ID) ((ID)==SPI2_HOST ? &GPSPI2 : (ID)==SPI3_HOST ? &GPSPI3 : NULL)
 /// Registers to reset during initialization. Don't use in app.
 #define SPI_LL_DMA_FIFO_RST_MASK (SPI_AHBM_RST | SPI_AHBM_FIFO_RST)
 /// Interrupt not used. Don't use in app.
@@ -41,14 +42,16 @@ extern "C" {
 #define SPI_LL_ONE_LINE_USER_MASK (SPI_FWRITE_OCT | SPI_FWRITE_QUAD | SPI_FWRITE_DUAL)
 /// Swap the bit order to its correct place to send
 #define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)(data) << (32 - len))
-#define SPI_LL_GET_HW(ID) (((ID)==1) ? &GPSPI2 : (((ID)==2) ? &GPSPI3 : NULL))
 
+#define SPI_LL_PERIPH_CS_NUM(i)   (((i)==0)? 2: (((i)==1)? 6: 3))
 #define SPI_LL_DMA_CHANNEL_NUM    (3)
 #define SPI_LL_DMA_MAX_BIT_LEN    (1 << 23)    //reg len: 23 bits
 #define SPI_LL_CPU_MAX_BIT_LEN    (18 * 32)    //Fifo len: 18 words
 #define SPI_LL_TX_MINI_EXTRA_BITS 1            //Minimum length of TX non byte aligned data in bits
 #define SPI_LL_RX_MINI_EXTRA_BITS 8            //Minimum length of RX non byte aligned data in bits
 #define SPI_LL_MAX_PRE_DIV_NUM    (8192)
+#define SPI_LL_PERIPH_BITWIDTH(host)    ((host == 2) ? 1 : 8) // Supported line mode: SPI3: 1, SPI1/2: 1, 2, 4, 8
+#define SPI_LL_PERIPH_HAS_SCT(host)  ((host) == SPI2_HOST)  //If peripheral support SCT (DMA Segmented Configured Transaction) mode
 #define SPI_LL_MAX_SCT_CONF_LEN   0x7FFFFD     //23 bit wide reg
 #define SPI_LL_SCT_CONF_BUF_NUM   (1 + 27)     //1-word-bitmap + 27-word-regs according to TRM
 #define SPI_LL_MOSI_FREE_LEVEL    1            //Default level after bus initialized

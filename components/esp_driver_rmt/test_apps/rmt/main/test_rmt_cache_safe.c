@@ -187,6 +187,7 @@ static void test_rmt_rx_cache_safe(size_t mem_block_symbols, bool with_dma, rmt_
     TEST_ESP_OK(rmt_disable(rx_channel));
     printf("delete channels and encoder\r\n");
     TEST_ESP_OK(rmt_del_channel(rx_channel));
+    TEST_ESP_OK(gpio_reset_pin(TEST_RMT_GPIO_NUM_A));
     free(remote_codes);
 }
 

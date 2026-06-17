@@ -18,7 +18,6 @@
 #include "esp_sleep.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/gpio_ll.h"
-#include "hal/regi2c_ctrl_ll.h"
 #include "soc/lp_aon_reg.h"
 #include "esp_private/sleep_event.h"
 #include "esp_private/esp_clk_tree_common.h"
@@ -30,6 +29,12 @@ ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk");
 static int s_cur_pll_freq;
 
 static uint32_t s_bbpll_digi_consumers_ref_count = 0; // Currently, it only tracks whether the 48MHz PHY clock is in-use by USB Serial/JTAG
+
+#if !BOOTLOADER_BUILD
+// Indicate whether the specific cpu clock source is acquired by the hp root clock (i.e. whether ref_cnt in esp_clk_tree.c is incremented by the hp root clock)
+static bool s_is_pll_acquired = (CONFIG_BOOTLOADER_CPU_CLK_FREQ_MHZ == 96 || CONFIG_BOOTLOADER_CPU_CLK_FREQ_MHZ == 48);
+static bool s_is_xtal_x2_acquired = (CONFIG_BOOTLOADER_CPU_CLK_FREQ_MHZ == 64);
+#endif
 
 void rtc_clk_bbpll_add_consumer(void)
 {
@@ -153,13 +158,13 @@ static void rtc_clk_bbpll_configure(soc_xtal_freq_t xtal_freq, int pll_freq)
     /* Analog part */
     ANALOG_CLOCK_ENABLE();
     /* BBPLL CALIBRATION START */
-    regi2c_ctrl_ll_bbpll_calibration_start();
+    clk_ll_bbpll_calibration_start();
     clk_ll_bbpll_set_config(pll_freq, xtal_freq);
     /* WAIT CALIBRATION DONE */
-    while (!regi2c_ctrl_ll_bbpll_calibration_is_done());
+    while (!clk_ll_bbpll_calibration_is_done());
     esp_rom_delay_us(10); // wait for true stop
     /* BBPLL CALIBRATION STOP */
-    regi2c_ctrl_ll_bbpll_calibration_stop();
+    clk_ll_bbpll_calibration_stop();
     ANALOG_CLOCK_DISABLE();
 
     s_cur_pll_freq = pll_freq;
@@ -170,7 +175,7 @@ static void rtc_clk_bbpll_configure(soc_xtal_freq_t xtal_freq, int pll_freq)
  * Must satisfy: cpu_freq = XTAL_FREQ / div.
  * Does not disable the PLL.
  */
-static void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
+FORCE_IRAM_ATTR static void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
 {
     // let f_cpu = f_ahb
     clk_ll_ahb_set_divider(1);
@@ -187,7 +192,7 @@ static void rtc_clk_cpu_freq_to_rc_fast(void)
     clk_ll_cpu_set_divider(1);
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_RC_FAST);
     clk_ll_bus_update();
-    esp_rom_set_cpu_ticks_per_us(8);
+    esp_rom_set_cpu_ticks_per_us(20);
 }
 
 /**
@@ -284,7 +289,10 @@ static void rtc_clk_cpu_src_clk_enable(soc_cpu_clk_src_t new_src, uint32_t new_s
         rtc_clk_bbpll_enable();
         truly_enabled = true;
 #else
-        truly_enabled = esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_BBPLL, true);
+        if (!s_is_pll_acquired) {
+            truly_enabled = esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_BBPLL, true);
+            s_is_pll_acquired = true;
+        }
 #endif
         if (truly_enabled || (s_cur_pll_freq != new_src_freq_mhz)) {
             rtc_clk_bbpll_configure(rtc_clk_xtal_freq_get(), new_src_freq_mhz);
@@ -293,7 +301,10 @@ static void rtc_clk_cpu_src_clk_enable(soc_cpu_clk_src_t new_src, uint32_t new_s
 #if BOOTLOADER_BUILD
         clk_ll_xtal_x2_enable();
 #else
-        esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_XTAL_X2, true);
+        if (!s_is_xtal_x2_acquired) {
+            esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_XTAL_X2, true);
+            s_is_xtal_x2_acquired = true;
+        }
 #endif
     }
 }
@@ -304,7 +315,9 @@ static void rtc_clk_cpu_src_clk_disable(soc_cpu_clk_src_t old_src)
 #if BOOTLOADER_BUILD
         rtc_clk_bbpll_disable();
 #else
+        assert(s_is_pll_acquired);
         bool truly_disabled = esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_BBPLL, false);
+        s_is_pll_acquired = false;
         if (truly_disabled) {
             s_cur_pll_freq = 0;
         }
@@ -313,7 +326,9 @@ static void rtc_clk_cpu_src_clk_disable(soc_cpu_clk_src_t old_src)
 #if BOOTLOADER_BUILD
         clk_ll_xtal_x2_disable();
 #else
+        assert(s_is_xtal_x2_acquired);
         esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_XTAL_X2, false);
+        s_is_xtal_x2_acquired = false;
 #endif
     }
 }
@@ -357,7 +372,7 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config)
         break;
     }
     case SOC_CPU_CLK_SRC_RC_FAST:
-        source_freq_mhz = 8;
+        source_freq_mhz = 20;
         break;
     case SOC_CPU_CLK_SRC_XTAL_X2:
         source_freq_mhz = clk_ll_xtal_x2_get_freq_mhz();
@@ -386,7 +401,10 @@ void rtc_clk_cpu_freq_set_config_fast(const rtc_cpu_freq_config_t *config)
     } else if (config->source == SOC_CPU_CLK_SRC_RC_FAST) {
         rtc_clk_cpu_freq_to_rc_fast();
     } else if (config->source == SOC_CPU_CLK_SRC_XTAL_X2
-                && esp_clk_tree_is_power_on(SOC_ROOT_CIRCUIT_CLK_XTAL_X2)) {
+#if !BOOTLOADER_BUILD
+                && s_is_xtal_x2_acquired
+#endif
+              ) {
         rtc_clk_cpu_freq_to_xtal_x2(config->freq_mhz, config->div);
     } else {
         /* fallback */
@@ -396,12 +414,13 @@ void rtc_clk_cpu_freq_set_config_fast(const rtc_cpu_freq_config_t *config)
 
 void rtc_clk_cpu_freq_set_xtal(void)
 {
-    rtc_clk_cpu_set_to_default_config();
-#if BOOTLOADER_BUILD
-    rtc_clk_bbpll_disable();
-#else
-    esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_BBPLL, false);
-#endif
+    soc_cpu_clk_src_t old_cpu_clk_src = clk_ll_cpu_get_src();
+    int freq_mhz = (int)rtc_clk_xtal_freq_get();
+
+    rtc_clk_cpu_freq_to_xtal(freq_mhz, 1);
+    if (old_cpu_clk_src != SOC_CPU_CLK_SRC_XTAL) {
+        rtc_clk_cpu_src_clk_disable(old_cpu_clk_src);
+    }
 }
 
 FORCE_IRAM_ATTR void rtc_clk_cpu_set_to_default_config(void)
@@ -448,7 +467,7 @@ static uint32_t rtc_clk_ahb_freq_get(void)
         soc_root_freq_mhz = clk_ll_bbpll_get_freq_mhz();
         break;
     case SOC_CPU_CLK_SRC_RC_FAST:
-        soc_root_freq_mhz = 8;
+        soc_root_freq_mhz = 20;
         break;
     case SOC_CPU_CLK_SRC_XTAL_X2:
         soc_root_freq_mhz = clk_ll_xtal_x2_get_freq_mhz();

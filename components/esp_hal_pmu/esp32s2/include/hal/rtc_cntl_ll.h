@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,6 +79,11 @@ FORCE_INLINE_ATTR void rtc_cntl_ll_sleep_enable(void)
 FORCE_INLINE_ATTR uint32_t rtc_cntl_ll_get_wakeup_cause(void)
 {
     return REG_GET_FIELD(RTC_CNTL_SLP_WAKEUP_CAUSE_REG, RTC_CNTL_WAKEUP_CAUSE);
+}
+
+FORCE_INLINE_ATTR uint32_t rtc_cntl_ll_get_wakeup_enable(void)
+{
+    return REG_GET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, RTC_CNTL_WAKEUP_ENA);
 }
 
 #ifdef __cplusplus

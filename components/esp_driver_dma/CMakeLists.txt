@@ -10,13 +10,14 @@ set(srcs "src/esp_dma_utils.c" "src/gdma_link.c")
 if(CONFIG_SOC_GDMA_SUPPORTED)
     list(APPEND srcs "src/gdma.c")
     if(CONFIG_SOC_GDMA_SUPPORT_SLEEP_RETENTION AND CONFIG_SOC_PAU_SUPPORTED)
-        list(APPEND srcs "src/gdma_sleep_retention.c")
+        list(APPEND srcs "src/gdma_sleep.c")
+        list(APPEND srcs "${target}/gdma_retention.c")
     endif()
     if(CONFIG_SOC_GDMA_SUPPORT_ETM)
         list(APPEND srcs "src/gdma_etm.c")
     endif()
     if(CONFIG_SOC_GDMA_SUPPORT_CRC)
-        list(APPEND srcs "src/gdma_crc.c")
+        list(APPEND srcs "src/gdma_crc.c" "src/esp_async_crc.c" "src/async_crc_gdma.c")
     endif()
 endif()
 
@@ -40,8 +41,9 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
+                       PRIV_INCLUDE_DIRS "src"
                        REQUIRES ${requires}
-                       PRIV_REQUIRES esp_mm
+                       PRIV_REQUIRES esp_mm efuse
                        LDFRAGMENTS "linker.lf"
                       )
 

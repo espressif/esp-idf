@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,8 +34,11 @@ typedef enum {
  *
  * Flash encryption is enabled if the FLASH_CRYPT_CNT efuse has an odd number of bits set.
  *
+ * @deprecated This function is deprecated. Use esp_efuse_is_flash_encryption_enabled() instead.
+ *
  * @return true if flash encryption is enabled.
  */
+__attribute__((deprecated("Use esp_efuse_is_flash_encryption_enabled() instead")))
 bool esp_flash_encryption_enabled(void);
 
 /* @brief Update on-device flash encryption

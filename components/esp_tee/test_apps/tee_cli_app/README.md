@@ -112,10 +112,11 @@ tee_sec_stg_encrypt  <key_id> <plaintext>
       <key_id>  TEE Secure storage key ID
    <plaintext>  Plaintext to be encrypted
 
-tee_sec_stg_decrypt  <key_id> <ciphertext> <tag>
+tee_sec_stg_decrypt  <key_id> <ciphertext> <iv> <tag>
   Decrypt data using AES-GCM key with the given ID from secure storage
       <key_id>  TEE Secure storage key ID
   <ciphertext>  Ciphertext to be decrypted
+          <iv>  AES-GCM initialization vector
          <tag>  AES-GCM authentication tag
 
 help  [<string>] [-v <0|1>]
@@ -137,9 +138,9 @@ help  [<string>] [-v <0|1>]
 
 ```log
 esp32c6> tee_att_info
-I (8180) tee_attest: Attestation token - Length: 1587
+I (8180) tee_attest: Attestation token - Length: 1705
 I (8180) tee_attest: Attestation token - Data:
-'{"header":{"magic":"44fef7cc","encr_alg":"","sign_alg":"ecdsa_secp256r1_sha256","key_id":"tee_att_key0"},"eat":{"auth_challenge":"dcb9b53143ad6b081dad1a05c7ebda4e314d388762215799cf24ed52e9387678","client_id":262974944,"device_ver":0,"device_id":"cd9c173cb3675c7adfae243f0cd9841e4bce003237cb5321927a85a86cb4b32e","instance_id":"9616ef0ecf02cdc89a3749f8fc16b3103d5100bd42d9312fcd04593baa7bac64","psa_cert_ref":"0716053550477-10100","device_status":165,"sw_claims":{"tee":{"type":1,"ver":"v0.3.0","idf_ver":"v5.1.4-241-g7ff01fd46f-dirty","secure_ver":0,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"94536998e1dcb2a036477cb2feb01ed4fff67ba6208f30482346c62bca64b280","digest_validated":true,"sign_verified":true}},"app":{"type":2,"ver":"v0.1.0","idf_ver":"v5.1.4-241-g7ff01fd46f-dirty","secure_ver":0,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"3d4c038fcec76852b4d07acb9e94afaf5fca69fc2eb212a32032d09ce5b4f2b3","digest_validated":true,"sign_verified":true,"secure_padding":true}},"bootloader":{"type":0,"ver":"","idf_ver":"","secure_ver":-1,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"1bef421beb1a4642c6fcefb3e37fd4afad60cb4074e538f42605b012c482b946","digest_validated":true,"sign_verified":true}}}},"public_key":{"compressed":"02039c4bfab0762af1aff2fe5596b037f629cf839da8c4a9c0018afedfccf519a6"},"sign":{"r":"915e749f5a780bc21a2b21821cfeb54286dc742e9f12f2387e3de9b8b1a70bc9","s":"1e583236f2630b0fe8e291645ffa35d429f14035182e19868508d4dac0e1a441"}}'
+'{"header":{"magic":"44fef7cc","encr_alg":"","sign_alg":"ecdsa_secp256r1_sha256","key_id":"tee_att_key0"},"eat":{"auth_challenge":"dcb9b53143ad6b081dad1a05c7ebda4e314d388762215799cf24ed52e9387678","client_id":262974944,"chip_id":13,"device_ver":0,"ueid":{"mac":"d885ac67c978","optional_id":"94fa4d7e305682714d48e7bbd710c961"},"device_id":"cd9c173cb3675c7adfae243f0cd9841e4bce003237cb5321927a85a86cb4b32e","instance_id":"9616ef0ecf02cdc89a3749f8fc16b3103d5100bd42d9312fcd04593baa7bac64","psa_cert_ref":"0716053550477-10100","device_status":165,"sw_claims":{"tee":{"type":1,"ver":"v0.3.0","idf_ver":"v5.1.4-241-g7ff01fd46f-dirty","secure_ver":0,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"94536998e1dcb2a036477cb2feb01ed4fff67ba6208f30482346c62bca64b280","digest_validated":true,"sign_verified":true}},"app":{"type":2,"ver":"v0.1.0","idf_ver":"v5.1.4-241-g7ff01fd46f-dirty","secure_ver":0,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"3d4c038fcec76852b4d07acb9e94afaf5fca69fc2eb212a32032d09ce5b4f2b3","digest_validated":true,"sign_verified":true,"secure_padding":true}},"bootloader":{"type":0,"ver":"","idf_ver":"","secure_ver":-1,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"1bef421beb1a4642c6fcefb3e37fd4afad60cb4074e538f42605b012c482b946","digest_validated":true,"sign_verified":true}}}},"public_key":{"compressed":"02039c4bfab0762af1aff2fe5596b037f629cf839da8c4a9c0018afedfccf519a6"},"sign":{"r":"915e749f5a780bc21a2b21821cfeb54286dc742e9f12f2387e3de9b8b1a70bc9","s":"1e583236f2630b0fe8e291645ffa35d429f14035182e19868508d4dac0e1a441"}}'
 ```
 
 </details>
@@ -180,10 +181,12 @@ esp32c6> tee_sec_stg_gen_key aes256_k0 0
 I (2784) tee_sec_stg: Generated AES256 key with ID key0
 esp32c6> tee_sec_stg_encrypt aes256_k0 b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9
 I (3084) tee_sec_stg: Ciphertext -
-58054310a96d48c2dccdf2e34005aa63b40817723d3ec3d597ab362efea084c1
+f72e44dda3b2d0a44ffc8cafd2f28b7933776dce78684c5514f9398daf3dc344
+I (3294) tee_sec_stg: IV -
+ef5c08c05828cf933440f121
 I (3594) tee_sec_stg: Tag -
-caeedb43e08dc3b4e35a58b2412908cc
-esp32c6> tee_sec_stg_decrypt aes256_k0 58054310a96d48c2dccdf2e34005aa63b40817723d3ec3d597ab362efea084c1 caeedb43e08dc3b4e35a58b2412908cc
+826a2e65f0e1d8aede1fb12e78957f0d
+esp32c6> tee_sec_stg_decrypt aes256_k0 f72e44dda3b2d0a44ffc8cafd2f28b7933776dce78684c5514f9398daf3dc344 ef5c08c05828cf933440f121 826a2e65f0e1d8aede1fb12e78957f0d
 I (4314) tee_sec_stg: Decrypted plaintext -
 b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9
 ```

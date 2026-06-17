@@ -35,7 +35,7 @@ int bt_mesh_queue_init(bt_mesh_queue_t *queue, uint16_t queue_size, uint8_t item
 
 int bt_mesh_queue_deinit(bt_mesh_queue_t *queue)
 {
-    __ASSERT(queue, "Invalid queue init parameters");
+    __ASSERT(queue && queue->handle, "Invalid queue deinit parameters");
     vQueueDelete(queue->handle);
     queue->handle = NULL;
 #if CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC

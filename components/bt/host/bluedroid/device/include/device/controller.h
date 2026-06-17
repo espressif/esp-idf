@@ -78,7 +78,7 @@ typedef struct controller_t {
     uint8_t (*get_ble_white_list_size)(void);
 
     uint8_t (*get_ble_resolving_list_max_size)(void);
-    void (*set_ble_resolving_list_max_size)(int resolving_list_max_size);
+    void (*set_ble_resolving_list_max_size)(uint8_t resolving_list_max_size);
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #if (BLE_50_EXTEND_ADV_EN == TRUE)

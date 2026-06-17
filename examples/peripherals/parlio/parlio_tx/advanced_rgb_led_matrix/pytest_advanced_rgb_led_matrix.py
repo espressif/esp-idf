@@ -6,7 +6,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['esp32p4'], indirect=['target'])
+@idf_parametrize('target', ['esp32p4', 'esp32s31'], indirect=['target'])
 def test_advanced_rgb_led_matrix_example(dut: Dut) -> None:
     dut.expect_exact('example: Install parallel IO TX unit')
     dut.expect_exact('example: Initialize LVGL library')

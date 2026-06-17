@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include "esp_partition.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#include "rom/cache.h"
 
 #define ALIGN_UP_TO_64KB(x) (((x) + 0xFFFF) & ~0xFFFF)
 

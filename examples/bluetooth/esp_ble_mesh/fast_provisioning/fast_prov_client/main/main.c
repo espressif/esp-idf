@@ -149,7 +149,7 @@ static void provisioner_prov_complete(int node_index, const uint8_t uuid[16], ui
 
     /* Sets node info */
     err = example_store_node_info(uuid, unicast_addr, elem_num, prov_info.net_idx,
-                                  prov_info.app_idx, LED_OFF);
+                                  prov_info.app_idx, 0);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: Failed to set node info", __func__);
         return;

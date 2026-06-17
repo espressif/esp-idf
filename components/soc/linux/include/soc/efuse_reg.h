@@ -6,5 +6,4 @@
 
 #pragma once
 
-#include <stdint.h>
 #include "soc/soc.h"

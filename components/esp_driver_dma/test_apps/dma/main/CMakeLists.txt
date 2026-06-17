@@ -12,7 +12,7 @@ if(CONFIG_SOC_GDMA_SUPPORTED)
     endif()
 
     if(CONFIG_SOC_GDMA_SUPPORT_CRC)
-        list(APPEND srcs "test_gdma_crc.c")
+        list(APPEND srcs "test_gdma_crc.c" "test_async_crc.c")
     endif()
 endif()
 
@@ -23,9 +23,9 @@ endif()
 # In order for the cases defined by `TEST_CASE` to be linked into the final elf,
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(SRCS ${srcs}
-                       PRIV_REQUIRES unity esp_mm esp_driver_gpio esp_psram esp_driver_dma
+                       PRIV_REQUIRES unity esp_mm esp_driver_gpio esp_psram esp_driver_dma efuse
                        WHOLE_ARCHIVE)
 
-idf_component_get_property(lib_name esp_hal_dma COMPONENT_LIB)
+idf_component_get_property(lib_name esp_driver_dma COMPONENT_LIB)
 # Test GDMA retention correctness with software retention feature
 target_compile_definitions(${lib_name} PRIVATE "CI_TEST_SW_RETENTION=1")

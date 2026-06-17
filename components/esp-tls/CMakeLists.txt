@@ -4,37 +4,33 @@ if(CONFIG_ESP_TLS_USING_MBEDTLS)
         "esp_tls_mbedtls.c")
 endif()
 
-if(CONFIG_ESP_TLS_USING_WOLFSSL)
+if(CONFIG_ESP_TLS_CUSTOM_STACK)
     list(APPEND srcs
-        "esp_tls_wolfssl.c")
+        "esp_tls_custom_stack.c")
 endif()
 
 set(priv_req http_parser esp_timer)
 if(NOT ${IDF_TARGET} STREQUAL "linux")
     list(APPEND priv_req lwip)
+else()
+    # For linux target on Build system v2, add lwip to PRIV_REQUIRES when CONFIG_LWIP_ENABLE is set.
+    if(CONFIG_LWIP_ENABLE AND IDF_BUILD_V2)
+        list(APPEND priv_req lwip)
+    endif()
 endif()
 
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} esp-tls-crypto
                     PRIV_INCLUDE_DIRS "private_include"
-                    # mbedtls is public requirements because esp_tls.h
-                    # includes mbedtls header files.
                     REQUIRES mbedtls
                     PRIV_REQUIRES ${priv_req})
 
-if(CONFIG_ESP_TLS_USING_WOLFSSL)
-    idf_component_get_property(wolfssl esp-wolfssl COMPONENT_LIB)
-    target_link_libraries(${COMPONENT_LIB} PUBLIC ${wolfssl})
-endif()
+idf_define_esp_err_codes(HEADERS esp_tls_errors.h)
 
 if(NOT ${IDF_TARGET} STREQUAL "linux")
-# Increase link multiplicity to get some lwip symbols correctly resolved by the linker
-# due to cyclic dependencies present in IDF for lwip/esp_netif/mbedtls
 idf_component_get_property(lwip lwip COMPONENT_LIB)
-set_property(TARGET ${lwip} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 5)
 else()
-    # Check if LWIP in the build for linux target to adapt esp-tls compatibility layer
-    idf_build_get_property(build_components BUILD_COMPONENTS)
+    # For linux target, define ESP_TLS_WITH_LWIP if LWIP is enabled in the build
     if(CONFIG_LWIP_ENABLE)
         target_compile_definitions(${COMPONENT_LIB} PRIVATE ESP_TLS_WITH_LWIP=1)
     endif()

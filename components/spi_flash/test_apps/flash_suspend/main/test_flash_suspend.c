@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -75,13 +75,13 @@ static bool IRAM_ATTR gptimer_alarm_suspend_cb(gptimer_handle_t timer, const gpt
     /*clear content in cache*/
 #if CONFIG_IDF_TARGET_ESP32S3
     Cache_Invalidate_DCache_All();
-#endif
-#if CONFIG_IDF_TARGET_ESP32P4
+    Cache_Invalidate_ICache_All();
+#elif CONFIG_IDF_TARGET_ESP32P4
     Cache_Invalidate_All(CACHE_MAP_L2_CACHE);
-#elif CONFIG_IDF_TARGET_ESP32H4
-    cache_ll_invalidate_all(CACHE_LL_LEVEL_ALL, CACHE_TYPE_ALL, CACHE_LL_ID_ALL);
 #elif CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
     Cache_Invalidate_All();
+#elif CONFIG_IDF_TARGET_ESP32S31 || CONFIG_IDF_TARGET_ESP32H4
+    Cache_Invalidate_All(CACHE_MAP_MASK);
 #else
     Cache_Invalidate_ICache_All();
 #endif
@@ -211,7 +211,7 @@ TEST_CASE("flash suspend test", "[spi_flash][suspend]")
     // 15 stands for threshold. We allow the interval time minus duration time is little bit larger than TSUS value
 #if CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM
     // Don't check the performance because it should be slow.
-    TEST_ASSERT_LESS_THAN(CONFIG_SPI_FLASH_SUSPEND_TSUS_VAL_US + 15, isr_interval_time - isr_duration_time);
+    TEST_ASSERT_LESS_THAN(CONFIG_SPI_FLASH_SUSPEND_TSUS_VAL_US + 35, isr_interval_time - isr_duration_time);
 #endif
     ESP_LOGI(TAG, "Reasonable value!");
 

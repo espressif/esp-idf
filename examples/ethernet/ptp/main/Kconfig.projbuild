@@ -1,6 +1,34 @@
-menu "Example Configuration"
+menu "PTP Example Configuration"
 
     orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
+
+    config EXAMPLE_PTPD_CLIENT_ONLY
+        bool "Set to client only mode"
+        default n
+        help
+            Act as a PTP client only, synchronizing the clock to a remote master
+            clock.
+
+            When disabled, both server and client are simultaneously enabled.
+            PTPd will then synchronize to a higher priority master clock, or
+            act as a master clock itself if it has the highest priority.
+            Refer to Best Master Clock algorithm in IEEE-1588 for details.
+
+    config EXAMPLE_PTPD_SEND_DELAYREQ
+        bool "PTP client enable delay requests"
+        default n
+        help
+            If enabled, sends delay request messages to measure the network delay
+            to server. If disabled, assumes zero delay.
+
+    config EXAMPLE_PTPD_BMCA
+        bool "Enable Best Master Clock Algorithm (BMCA)"
+        default y
+        help
+            When enabled, PTPd participates in IEEE 1588 best master clock
+            selection (compares remote masters and may become grandmaster when
+            appropriate). When disabled, BMCA-related state transitions are
+            skipped.
 
     choice EXAMPLE_PTP_PULSE_SOURCE
         prompt "Pulse Source"
@@ -49,4 +77,12 @@ menu "Example Configuration"
             function, width accuracy may vary or it may be lost completely when you select
             very short pulse width.
 
+
+    config EXAMPLE_PTPD_STACKSIZE
+        int "PTP daemon stack stack size"
+        default 2048
+
+    config EXAMPLE_PTPD_TASKPRIO
+        int "PTP daemon task priority"
+        default 5
 endmenu

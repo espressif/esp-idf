@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -90,9 +90,9 @@ void adc_hal_digi_deinit()
 ---------------------------------------------------------------*/
 static adc_ll_digi_convert_mode_t get_convert_mode(adc_digi_convert_mode_t convert_mode)
 {
-#if SOC_IS(ESP32) || SOC_ADC_DIGI_CONTROLLER_NUM == 1
+#if SOC_IS(ESP32) || ADC_LL_DIGI_CONTROLLER_NUM == 1
     return ADC_LL_DIGI_CONV_ONLY_ADC1;
-#elif (SOC_ADC_DIGI_CONTROLLER_NUM >= 2)
+#elif (ADC_LL_DIGI_CONTROLLER_NUM >= 2)
     switch (convert_mode) {
     case ADC_CONV_SINGLE_UNIT_1:
         return ADC_LL_DIGI_CONV_ONLY_ADC1;
@@ -117,8 +117,19 @@ static adc_ll_digi_convert_mode_t get_convert_mode(adc_digi_convert_mode_t conve
  */
 static void adc_hal_digi_sample_freq_config(adc_hal_dma_ctx_t *hal, adc_continuous_clk_src_t clk_src, uint32_t clk_src_freq_hz, uint32_t sample_freq_hz)
 {
-#if !SOC_IS(ESP32)
-    uint32_t interval = clk_src_freq_hz / (ADC_LL_CLKM_DIV_NUM_DEFAULT + ADC_LL_CLKM_DIV_A_DEFAULT / ADC_LL_CLKM_DIV_B_DEFAULT + 1) / 2 / sample_freq_hz;
+#if ADC_LL_DIGI_SAMPLE_FREQ_DYNAMIC_CLK_DIV
+    uint64_t max_ctrl_clk_hz = MIN((uint64_t)clk_src_freq_hz, (uint64_t)sample_freq_hz * 2 * 4095);
+    uint32_t ctrl_div = (uint32_t)(((uint64_t)clk_src_freq_hz + max_ctrl_clk_hz - 1) / max_ctrl_clk_hz);
+    ctrl_div = MAX(ctrl_div, 1U);
+    uint32_t interval = (uint32_t)((uint64_t)clk_src_freq_hz / ((uint64_t)ctrl_div * 2 * sample_freq_hz));
+
+    adc_ll_digi_controller_clk_div(ctrl_div - 1, 1, 0);
+    adc_ll_digi_clk_sel(clk_src);
+    adc_ll_digi_set_trigger_interval(interval);
+#elif !SOC_IS(ESP32)
+    uint64_t clkm_div_denom = ((uint64_t)(ADC_LL_CLKM_DIV_NUM_DEFAULT + 1) * ADC_LL_CLKM_DIV_B_DEFAULT) + ADC_LL_CLKM_DIV_A_DEFAULT;
+    uint32_t interval = (uint32_t)(((uint64_t)clk_src_freq_hz * ADC_LL_CLKM_DIV_B_DEFAULT) /
+                                   (clkm_div_denom * 2 * sample_freq_hz));
     //set sample interval
     adc_ll_digi_set_trigger_interval(interval);
     //Here we set the clock divider factor to make the digital clock to 5M Hz
@@ -138,7 +149,7 @@ static void adc_hal_digi_sample_freq_config(adc_hal_dma_ctx_t *hal, adc_continuo
 
 void adc_hal_digi_controller_config(adc_hal_dma_ctx_t *hal, const adc_hal_digi_ctrlr_cfg_t *cfg)
 {
-#if (SOC_ADC_DIGI_CONTROLLER_NUM == 1)
+#if (ADC_LL_DIGI_CONTROLLER_NUM == 1)
     //Only one pattern table, this variable is for readability
     const int pattern_both = 0;
 
@@ -151,7 +162,7 @@ void adc_hal_digi_controller_config(adc_hal_dma_ctx_t *hal, const adc_hal_digi_c
     adc_ll_set_power_manage(0, ADC_LL_POWER_SW_ON);
 #endif
 
-#elif (SOC_ADC_DIGI_CONTROLLER_NUM >= 2)
+#elif (ADC_LL_DIGI_CONTROLLER_NUM >= 2)
     uint32_t adc1_pattern_idx = 0;
     uint32_t adc2_pattern_idx = 0;
 

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import binascii
 import os
@@ -109,66 +109,24 @@ def test_ecdsa_key(
         raise
 
 
-@pytest.mark.generic
-@idf_parametrize('target', ['supported_targets'], indirect=['target'])
-def test_crypto(dut: Dut) -> None:
-    # if the env variable IDF_FPGA_ENV is set, we would need a longer timeout
-    # as tests for efuses burning security peripherals would be run
-    timeout = 600 if os.environ.get('IDF_ENV_FPGA') else 60
-    # only expect key manager result if it is supported for the SoC
-    if dut.app.sdkconfig.get('SOC_KEY_MANAGER_SUPPORTED'):
-        print('Key Manager is supported')
-
-        # Test for ECDH0 deployment XTS-AES-128 key
-        dut.expect('Key Manager ECDH0 deployment: XTS_AES_128 key', timeout=timeout)
-        k2_G = dut.expect(r'K2_G: 0x([0-9a-fA-F]+)', timeout=timeout)[1].decode()
-        plaintext_data = dut.expect(r'Plaintext data: 0x([0-9a-fA-F]+)', timeout=timeout)[1]
-        plaintext_data = binascii.unhexlify(plaintext_data)
-        encrypted_data = dut.expect(r'Encrypted data: 0x([0-9a-fA-F]+)', timeout=timeout)[1].decode()
-        encrypted_data = binascii.unhexlify(encrypted_data)
-        negotiated_key = calculate_key_manager_ecdh0_negotiated_key(k2_G, 'main/key_manager/k1_ecdsa.pem')
-        test_xts_aes_encryption(negotiated_key, plaintext_data, encrypted_data)
-
-        # Test for ECDH0 deployment XTS-AES-256 key
-        dut.expect('Key Manager ECDH0 deployment: XTS_AES_256 key', timeout=timeout)
-        k2_G_0 = dut.expect(r'K2_G_0: 0x([0-9a-fA-F]+)', timeout=timeout)[1].decode()
-        k2_G_1 = dut.expect(r'K2_G_1: 0x([0-9a-fA-F]+)', timeout=timeout)[1].decode()
-        encrypted_data = dut.expect(r'Encrypted data: 0x([0-9a-fA-F]+)', timeout=timeout)[1].decode()
-        encrypted_data = binascii.unhexlify(encrypted_data)
-        negotiated_key_0 = calculate_key_manager_ecdh0_negotiated_key(k2_G_0, 'main/key_manager/k1_ecdsa.pem')
-        negotiated_key_1 = calculate_key_manager_ecdh0_negotiated_key(k2_G_1, 'main/key_manager/k1_ecdsa.pem')
-        negotiated_key = negotiated_key_0 + negotiated_key_1
-        test_xts_aes_encryption(negotiated_key, plaintext_data, encrypted_data)
-        # Test for ECDH0 deployment ECDSA-256 key
-        dut.expect('Key Manager ECDH0 deployment: ECDSA_256 key', timeout=timeout)
-        k2_G = dut.expect(r'K2_G: 0x([0-9a-fA-F]+)', timeout=timeout)[1].decode()
-        digest = dut.expect(r'ECDSA message sha256 digest: 0x([0-9a-fA-F]+)', timeout=timeout)[1].decode()
-        digest = binascii.unhexlify(digest)
-        signature_r_le = dut.expect(r'ECDSA signature r_le: 0x([0-9a-fA-F]+)', timeout=timeout)[1].decode()
-        signature_r_le = binascii.unhexlify(signature_r_le)
-        signature_s_le = dut.expect(r'ECDSA signature s_le: 0x([0-9a-fA-F]+)', timeout=timeout)[1].decode()
-        signature_s_le = binascii.unhexlify(signature_s_le)
-        pub_x = dut.expect(r'ECDSA key pubx: 0x([0-9a-fA-F]+)', timeout=timeout)[1].decode()
-        pub_x = binascii.unhexlify(pub_x)
-        pub_y = dut.expect(r'ECDSA key puby: 0x([0-9a-fA-F]+)', timeout=timeout)[1].decode()
-        pub_y = binascii.unhexlify(pub_y)
-        negotiated_key = calculate_key_manager_ecdh0_negotiated_key(k2_G, 'main/key_manager/k1_ecdsa.pem')
-        test_ecdsa_key(negotiated_key, digest, signature_r_le, signature_s_le, pub_x, pub_y)
-
-    test_numbers = dut.expect(r'(\d+) Tests (\d+) Failures (\d+) Ignored', timeout=timeout)
-    failures = test_numbers.group(2).decode()
-    ignored = test_numbers.group(3).decode()
-    assert failures == '0', f'No of failures must be 0 (is {failures})'
-    assert ignored == '0', f'No of Ignored test must be 0 (is {ignored})'
-    dut.expect('Tests finished', timeout=timeout)
-
-
-@pytest.mark.generic
-@pytest.mark.parametrize('config', ['long_aes_operations'], indirect=True)
-@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_crypto_long_aes_operations(dut: Dut) -> None:
     # if the env variable IDF_FPGA_ENV is set, we would need a longer timeout
     # as tests for efuses burning security peripherals would be run
     timeout = 600 if os.environ.get('IDF_ENV_FPGA') else 60
 
     dut.expect('Tests finished', timeout=timeout)
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize('config', ['long_aes_operations'], indirect=True)
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+def test_crypto_long_aes_operations_generic(dut: Dut) -> None:
+    test_crypto_long_aes_operations(dut)
+
+
+@pytest.mark.generic
+@pytest.mark.esp32p4_rev1
+@pytest.mark.parametrize('config', ['long_aes_operations_esp32p4_rev1'], indirect=True)
+@idf_parametrize('target', ['esp32p4'], indirect=['target'])
+def test_crypto_long_aes_operations_esp32p4_rev1(dut: Dut) -> None:
+    test_crypto_long_aes_operations(dut)

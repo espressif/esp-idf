@@ -44,10 +44,10 @@ FORCE_INLINE_ATTR void cpu_utility_ll_unstall_cpu(uint32_t cpu_no)
 {
     if (cpu_no == 0) {
         HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.cpucore_cfg, aon_cpu_core0_sw_stall, 0xFF);
-        while(REG_GET_BIT(HP_SYSTEM_CORE_DEBUG_RUNSTALL_CONF_REG, HP_SYSTEM_CORE0_RUNSTALLED));
+        while (REG_GET_BIT(HP_SYSTEM_CORE_DEBUG_RUNSTALL_CONF_REG, HP_SYSTEM_CORE0_RUNSTALLED));
     } else {
         HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.cpucore_cfg, aon_cpu_core1_sw_stall, 0xFF);
-        while(REG_GET_BIT(HP_SYSTEM_CORE_DEBUG_RUNSTALL_CONF_REG, HP_SYSTEM_CORE1_RUNSTALLED));
+        while (REG_GET_BIT(HP_SYSTEM_CORE_DEBUG_RUNSTALL_CONF_REG, HP_SYSTEM_CORE1_RUNSTALLED));
     }
 }
 

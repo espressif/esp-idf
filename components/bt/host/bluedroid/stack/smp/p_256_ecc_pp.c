@@ -177,9 +177,16 @@ static void ECC_NAF(uint8_t *naf, uint32_t *NumNAF, DWORD *k, uint32_t keyLength
                 k[0] = k[0] + 1;
                 if (k[0] == 0) { //overflow
                     j = 1;
-                    do {
+                    while (j < keyLength && k[j] == 0xFFFFFFFF) {
+                        k[j] = 0;
+                        j++;
+                    }
+                    if (j < keyLength) {
                         k[j]++;
-                    } while (k[j++] == 0); //overflow
+                    }
+                    // If j >= keyLength, the entire key is 0xFFFFFFFF,
+                    // which should not happen for a valid private key.
+                    // In this case, we stop the propagation to prevent buffer overflow.
                 }
             }
         } else {
@@ -267,7 +274,9 @@ bool ECC_CheckPointIsInElliCur_P256(Point *p)
     /* The function of the elliptic curve is y^2 = x^3 - 3x + b (mod q) ==>
        y^2 = (x^2 - 3)*x + b (mod q),
        so we calculate the x^2 - 3 value here */
-    x_x[0] -= 3;
+    DWORD three[2 * KEY_LENGTH_DWORDS_P256] = {0};
+    three[0] = 3;
+    multiprecision_sub(x_x, x_x, three, 2 * KEY_LENGTH_DWORDS_P256);
     /* Using math relations. (a*b) % q = ((a%q)*(b%q)) % q ==>
       (x^2 - 3)*x = (((x^2 - 3) % q) * x % q) % q */
     multiprecision_fast_mod_P256(x_x_q, x_x);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,14 +20,14 @@ sta_input = 0x40000b3c;
 hal_mac_tx_set_ppdu = 0x40000b74;
 ic_mac_deinit = 0x40000be8;
 ic_mac_init = 0x40000bec;
-lmacTxFrame = 0x40000c40;
+//lmacTxFrame = 0x40000c40;
 lmacDisableTransmit = 0x40000c44;
 pm_check_state = 0x40000cb4;
 pm_set_beacon_filter = 0x40000cd8;
 //pm_is_in_wifi_slice_threshold = 0x40000cdc;
-pm_keep_alive = 0x40000ce4;
+//pm_keep_alive = 0x40000ce4;
 pm_process_tim = 0x40000d14;
-pm_tbtt_process = 0x40000d28;
+//pm_tbtt_process = 0x40000d28;
 pm_tx_data_process = 0x40000d44;
 pm_twt_process = 0x40000d54;
 pm_mac_try_enable_modem_state = 0x40000d68;
@@ -39,7 +39,7 @@ pm_mac_enable_tsf_tbtt_soc_wakeup = 0x40000d84;
 //pm_mac_enable_tsf_tbtt_modem_wakeup = 0x40000d88;
 //pm_mac_modem_params_rt_update = 0x40000d8c;
 pm_coex_pwr_update = 0x40000d9c;
-ppMapTxQueue = 0x40000ddc;
+//ppMapTxQueue = 0x40000ddc;
 ppProcTxSecFrame = 0x40000de0;
 ppProcessTxQ = 0x40000de8;
 ppRxPkt = 0x40000e04;
@@ -52,7 +52,7 @@ pm_beacon_offset_check = 0x40001564;
 pm_beacon_offset_get_average = 0x40001568;
 pm_beacon_offset_get_expect = 0x4000156c;
 pm_beacon_offset_get_params = 0x40001570;
-pm_enable_max_idle_timer = 0x40001578;
+//pm_enable_max_idle_timer = 0x40001578;
 
 phy_get_rc_dout = 0x40001058;
 phy_rc_cal = 0x4000105c;
@@ -89,10 +89,10 @@ phy_reg_init = 0x400010e8;
 phy_xpd_rf = 0x400010ec;
 phy_get_mac_addr = 0x400010f4;
 phy_set_mac_data = 0x400010f8;
-phy_rfcal_data_sub = 0x400010fc;
-phy_rf_cal_data_recovery = 0x40001100;
-phy_rf_cal_data_backup = 0x40001104;
-phy_rfcal_data_check = 0x40001108;
+//phy_rfcal_data_sub = 0x400010fc;
+//phy_rf_cal_data_recovery = 0x40001100;
+//phy_rf_cal_data_backup = 0x40001104;
+//phy_rfcal_data_check = 0x40001108;
 phy_pwdet_reg_init = 0x4000110c;
 phy_pwdet_sar2_init = 0x40001110;
 phy_en_pwdet = 0x40001114;
@@ -143,12 +143,12 @@ phy_rfpll_cap_init_cal = 0x400011c4;
 phy_set_freq = 0x400011c8;
 phy_write_pll_cap = 0x400011cc;
 phy_read_pll_cap = 0x400011d0;
-phy_chip_set_chan_misc = 0x400011d4;
+//phy_chip_set_chan_misc = 0x400011d4;
 phy_freq_set_reg = 0x400011d8;
 phy_rfpll_chgp_cal = 0x400011dc;
 phy_gen_rx_gain_table = 0x400011e0;
 phy_get_rxbb_dc = 0x400011e4;
-phy_wr_rx_gain_mem = 0x400011e8;
+//phy_wr_rx_gain_mem = 0x400011e8;
 phy_rfpll_cap_track = 0x400011ec;
 phy_txpwr_correct = 0x400011f4;
 phy_txpwr_cal_track = 0x400011f8;
@@ -288,7 +288,7 @@ phy_spur_reg_write_one_tone = 0x40001430;
 phy_spur_cal = 0x40001434;
 phy_spur_coef_cfg = 0x40001438;
 phy_bb_gain_index = 0x4000143c;
-phy_rfrx_gain_index = 0x40001440;
+//phy_rfrx_gain_index = 0x40001440;
 phy_set_tsens_power_ = 0x40001444;
 phy_set_tsens_range_ = 0x40001448;
 phy_get_tsens_value_ = 0x4000144c;

@@ -18,7 +18,7 @@
 
 /******************************************************************************
  *
- *  This is the main implementation file for the BTA MCE I/F
+ *  This is the main implementation file for the BTA SDP I/F
  *
  ******************************************************************************/
 

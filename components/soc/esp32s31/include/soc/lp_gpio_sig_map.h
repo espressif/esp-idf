@@ -42,4 +42,4 @@
 #define LP_PROBE_TOP_OUT14_IDX                  28
 #define LP_PROBE_TOP_OUT15_IDX                  29
 // version date 2506050
-#define LP_SIG_GPIO_OUT_IDX                        128
+#define LP_SIG_GPIO_OUT_IDX                     32

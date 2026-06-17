@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,7 +53,12 @@ static void btc_init_bluetooth(void)
 {
     osi_alarm_create_mux();
     osi_alarm_init();
-    bte_main_boot_entry(btc_init_callback);
+    if (bte_main_boot_entry(btc_init_callback) != 0) {
+        osi_alarm_deinit();
+        osi_alarm_delete_mux();
+        future_ready(*btc_main_get_future_p(BTC_MAIN_INIT_FUTURE), FUTURE_FAIL);
+        return;
+    }
 #if (SMP_INCLUDED)
     btc_config_init();
 

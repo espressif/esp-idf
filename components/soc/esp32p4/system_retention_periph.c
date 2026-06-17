@@ -116,11 +116,12 @@ const regdma_entries_config_t iomux_regs_retention[] = {
     [3] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x03), GPIO_PIN0_REG,            GPIO_PIN0_REG,           N_REGS_GPIO_PINx(), 0, 0), .owner = ENTRY(0) },
     /* GPIO_FUNC1_IN_SEL_CFG_REG ~ GPIO_FUNC255_IN_SEL_CFG_REG & GPIO_FUNC0_OUT_SEL_CFG_REG ~ GPIO_FUNC56_OUT_SEL_CFG_REG */
     [4] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x04), GPIO_FUNC1_IN_SEL_CFG_REG, GPIO_FUNC1_IN_SEL_CFG_REG, N_REGS_GPIO_FUNCx(), 0, 0), .owner = ENTRY(0) },
-
     [5] = {
         .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_IOMUX_LINK(0x05), GPIO_RETENTION_REGS_BASE1, GPIO_RETENTION_REGS_BASE1, GPIO_RETENTION_REGS_CNT1, 0, 0, \
                                             gpio_regs_map1[0], gpio_regs_map1[1], gpio_regs_map1[2], gpio_regs_map1[3]), .owner = ENTRY(0)
     },
+    [6] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x06), GPIO_ENABLE_REG,            GPIO_ENABLE_W1TS_REG,       1,   0, 0), .owner = ENTRY(0) },
+    [7] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x07), GPIO_ENABLE1_REG,           GPIO_ENABLE1_W1TS_REG,      1,   0, 0), .owner = ENTRY(0) },
 };
 _Static_assert(ARRAY_SIZE(iomux_regs_retention) == IOMUX_RETENTION_LINK_LEN, "Inconsistent IOMUX retention link length definitions");
 

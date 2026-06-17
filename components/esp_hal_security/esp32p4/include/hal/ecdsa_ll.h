@@ -176,7 +176,7 @@ static inline void ecdsa_ll_clear_intr(ecdsa_ll_intr_type_t type)
     switch (type) {
     case ECDSA_INT_CALC_DONE:
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
-        REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_PREP_DONE_INT_CLR, 1);
+        REG_SET_FIELD(ECDSA_INT_CLR_REG, ECDSA_PREP_DONE_INT_CLR, 1);
 #else
         REG_SET_FIELD(ECDSA_INT_CLR_REG, ECDSA_CALC_DONE_INT_CLR, 1);
 #endif

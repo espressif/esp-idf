@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,14 +27,15 @@ static inline void btc_iso_ble_cb_to_app(esp_ble_iso_cb_event_t event, esp_ble_i
 static void btc_ble_iso_callback(tBTM_BLE_ISO_EVENT event,
                                                 tBTM_BLE_ISO_CB_PARAMS *params)
 {
-    esp_ble_iso_cb_param_t param;
+    esp_ble_iso_cb_param_t param = {0};
     bt_status_t ret;
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_ISO_BLE;
+    msg.act = ESP_BLE_ISO_EVT_MAX;
 
     switch(event) {
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
         case BTA_BLE_ISO_BIG_CREATE_COMPLETE_EVT:
             msg.act = ESP_BLE_ISO_BIG_CREATE_CMPL_EVT;
             param.create_big_cmpl.status = btc_btm_status_to_esp_status(params->btm_big_cmpl.status);
@@ -60,7 +61,7 @@ static void btc_ble_iso_callback(tBTM_BLE_ISO_EVENT event,
             param.term_big_cmpl.big_handle = params->btm_big_term.big_handle;
             param.term_big_cmpl.reason = params->btm_big_term.reason;
             break;
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
         case BTA_BLE_ISO_BIG_SYNC_ESTABLISHED_EVT:
             msg.act = ESP_BLE_ISO_BIG_SYNC_ESTABLISHED_EVT;
@@ -208,6 +209,11 @@ static void btc_ble_iso_callback(tBTM_BLE_ISO_EVENT event,
             break;
     }
 
+    if (msg.act == ESP_BLE_ISO_EVT_MAX) {
+        BTC_TRACE_ERROR("%s unk ISO evt %d", __func__, event);
+        return;
+    }
+
     ret = btc_transfer_context(&msg, &param,
                                sizeof(esp_ble_iso_cb_param_t), NULL, NULL);
 
@@ -244,6 +250,7 @@ void btc_iso_ble_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
                 memcpy(dst->iso_set_data_path_params.codec_cfg, src->iso_set_data_path_params.codec_cfg, src->iso_set_data_path_params.codec_cfg_len);
             } else {
                 BTC_TRACE_ERROR("%s %d no mem\n",__func__, msg->act);
+                dst->iso_set_data_path_params.codec_cfg_len = 0;
             }
         }
         break;
@@ -300,7 +307,7 @@ void btc_iso_ble_call_handler(btc_msg_t *msg)
     BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
 
     switch (msg->act) {
-#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
     case BTC_ISO_ACT_BIG_CREATE:
         BTA_DmBleGapIsoBigCreate((tBTA_DM_BLE_BIG_CREATE_PARAMS *)&arg->iso_big_creat_params);
         break;
@@ -310,7 +317,7 @@ void btc_iso_ble_call_handler(btc_msg_t *msg)
     case BTC_ISO_ACT_BIG_TERMINATE:
         BTA_DmBleGapIsoBigTerminate((tBTA_DM_BLE_BIG_TERMINATE_PARAMS *)&arg->iso_big_terminate_params);
         break;
-#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
     case BTC_ISO_ACT_BIG_SYNC_CREATE:
         BTA_DmBleGapIsoBigSyncCreate((tBTA_DM_BLE_BIG_SYNC_CREATE_PARAMS *)&arg->iso_big_sync_creat_params);
@@ -329,6 +336,7 @@ void btc_iso_ble_call_handler(btc_msg_t *msg)
         BTA_DmBleGapIsoReadTxSync(arg->iso_read_tx_sync_params.iso_handle);
         break;
     case BTC_ISO_ACT_READ_ISO_LINK_QUALITY:
+         BTA_DmBleGapIsoReadLinkQuality(arg->iso_read_link_quality_params.iso_handle);
         break;
 #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
     case BTC_ISO_ACT_SET_CIG_PARAMS: {
@@ -339,13 +347,14 @@ void btc_iso_ble_call_handler(btc_msg_t *msg)
                                 (uint8_t *)&set_cig_params->cis_params[0]);
         break;
     }
-    case BTC_ISO_ACT_SET_CIG_PARAMS_TEST:
+    case BTC_ISO_ACT_SET_CIG_PARAMS_TEST: {
         struct set_cig_params_test_arg *set_cig_params_test = (struct set_cig_params_test_arg *)arg;
         BTA_DmBleIsoSetCigParamsTest(set_cig_params_test->cig_id, set_cig_params_test->sdu_int_c_to_p, set_cig_params_test->sdu_int_p_to_c,
                                 set_cig_params_test->ft_c_to_p, set_cig_params_test->ft_p_to_c, set_cig_params_test->iso_interval,
                                 set_cig_params_test->worse_case_SCA, set_cig_params_test->packing, set_cig_params_test->framing,
                                 set_cig_params_test->cis_cnt, (uint8_t *)&set_cig_params_test->cis_params_test[0]);
         break;
+    }
     case BTC_ISO_ACT_CREATE_CIS: {
         struct creat_cis_arg * create_cis = (struct creat_cis_arg *)arg;
         BTA_DmBleIsoCreateCis(create_cis->cis_count, (uint8_t *)&create_cis->cis_hdls[0]);

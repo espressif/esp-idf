@@ -1,20 +1,23 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
-#include <stdint.h>
-#include "soc/soc.h"
+#include "esp_bit_defs.h"
+#include "soc/reg_base.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#define REG_TWAIFD_BASE(i)  (DR_REG_TWAIFD0_BASE + (i) * 0x1000)      // TWAIFD0 and TWAIFD1
+
 /** TWAIFD_DEVICE_ID_VERSION_REG register
  *  TWAI FD device id status register
  */
-#define TWAIFD_DEVICE_ID_VERSION_REG (DR_REG_TWAIFD_BASE + 0x0)
+#define TWAIFD_DEVICE_ID_VERSION_REG(i) (REG_TWAIFD_BASE(i) + 0x0)
 /** TWAIFD_DEVICE_ID : RO; bitpos: [15:0]; default: 51965;
  *  Represents whether CAN IP function is mapped correctly on its base address.
  */
@@ -40,7 +43,7 @@ extern "C" {
 /** TWAIFD_MODE_SETTINGS_REG register
  *  TWAI FD mode setting register
  */
-#define TWAIFD_MODE_SETTINGS_REG (DR_REG_TWAIFD_BASE + 0x4)
+#define TWAIFD_MODE_SETTINGS_REG(i) (REG_TWAIFD_BASE(i) + 0x4)
 /** TWAIFD_RST : WO; bitpos: [0]; default: 0;
  *  Soft reset. Writing logic 1 resets CTU CAN FD. After writing logic 1, logic 0 does
  *  not need to be written, this bit
@@ -261,7 +264,7 @@ extern "C" {
 /** TWAIFD_STATUS_REG register
  *  TWAI FD status register
  */
-#define TWAIFD_STATUS_REG (DR_REG_TWAIFD_BASE + 0x8)
+#define TWAIFD_STATUS_REG(i) (REG_TWAIFD_BASE(i) + 0x8)
 /** TWAIFD_RXNE : RO; bitpos: [0]; default: 0;
  *  RX buffer not empty. This bit is 1 when least one frame is stored in RX buffer.
  *  0: empty
@@ -397,7 +400,7 @@ extern "C" {
 /** TWAIFD_COMMAND_REG register
  *  TWAI FD command register
  */
-#define TWAIFD_COMMAND_REG (DR_REG_TWAIFD_BASE + 0xc)
+#define TWAIFD_COMMAND_REG(i) (REG_TWAIFD_BASE(i) + 0xc)
 /** TWAIFD_RXRPMV : WO; bitpos: [1]; default: 0;
  *  RX Buffer read pointer move.
  */
@@ -482,7 +485,7 @@ extern "C" {
 /** TWAIFD_INT_STAT_REG register
  *  TWAI FD command register
  */
-#define TWAIFD_INT_STAT_REG (DR_REG_TWAIFD_BASE + 0x10)
+#define TWAIFD_INT_STAT_REG(i) (REG_TWAIFD_BASE(i) + 0x10)
 /** TWAIFD_RXI_INT_ST : R/W1C; bitpos: [0]; default: 0;
  *  The masked interrupt status of TWAIFD_RXI_INT.
  *  Frame received interrupt.
@@ -598,7 +601,7 @@ extern "C" {
 /** TWAIFD_INT_ENA_SET_REG register
  *  TWAI FD interrupt enable register
  */
-#define TWAIFD_INT_ENA_SET_REG (DR_REG_TWAIFD_BASE + 0x14)
+#define TWAIFD_INT_ENA_SET_REG(i) (REG_TWAIFD_BASE(i) + 0x14)
 /** TWAIFD_RXI_INT_ENA_MASK : R/W1S; bitpos: [0]; default: 0;
  *  Write 1 to enable TWAIFD_RXI_INT.
  */
@@ -687,7 +690,7 @@ extern "C" {
 /** TWAIFD_INT_ENA_CLR_REG register
  *  TWAI FD interrupt enable clear register
  */
-#define TWAIFD_INT_ENA_CLR_REG (DR_REG_TWAIFD_BASE + 0x18)
+#define TWAIFD_INT_ENA_CLR_REG(i) (REG_TWAIFD_BASE(i) + 0x18)
 /** TWAIFD_RXI_INT_ENA_CLR : WO; bitpos: [0]; default: 0;
  *  Write 1 to clear TWAIFD_RXI_INT_ENA .
  */
@@ -776,7 +779,7 @@ extern "C" {
 /** TWAIFD_INT_MASK_SET_REG register
  *  TWAI FD interrupt mask register
  */
-#define TWAIFD_INT_MASK_SET_REG (DR_REG_TWAIFD_BASE + 0x1c)
+#define TWAIFD_INT_MASK_SET_REG(i) (REG_TWAIFD_BASE(i) + 0x1c)
 /** TWAIFD_RXI_INT_MASK_SET : R/W1S; bitpos: [0]; default: 0;
  *  Write 1 to mask TWAIFD_RXI_INT.
  */
@@ -865,7 +868,7 @@ extern "C" {
 /** TWAIFD_INT_MASK_CLR_REG register
  *  TWAI FD interrupt mask clear register
  */
-#define TWAIFD_INT_MASK_CLR_REG (DR_REG_TWAIFD_BASE + 0x20)
+#define TWAIFD_INT_MASK_CLR_REG(i) (REG_TWAIFD_BASE(i) + 0x20)
 /** TWAIFD_RXI_INT_MASK_CLR : WO; bitpos: [0]; default: 0;
  *  Write 1 to clear TWAIFD_RXI_INT_MASK_CLR .
  */
@@ -954,7 +957,7 @@ extern "C" {
 /** TWAIFD_BTR_REG register
  *  TWAI FD bit-timing  register
  */
-#define TWAIFD_BTR_REG (DR_REG_TWAIFD_BASE + 0x24)
+#define TWAIFD_BTR_REG(i) (REG_TWAIFD_BASE(i) + 0x24)
 /** TWAIFD_PROP : R/W; bitpos: [6:0]; default: 5;
  *  Configures the propagation segment of nominal bit rate.
  *  Measurement unit: time quanta
@@ -999,7 +1002,7 @@ extern "C" {
 /** TWAIFD_BTR_FD_REG register
  *  TWAI FD bit-timing of FD register
  */
-#define TWAIFD_BTR_FD_REG (DR_REG_TWAIFD_BASE + 0x28)
+#define TWAIFD_BTR_FD_REG(i) (REG_TWAIFD_BASE(i) + 0x28)
 /** TWAIFD_PROP_FD : R/W; bitpos: [5:0]; default: 3;
  *  Configures the propagation segment of data bit rate.
  *  Measurement unit: time quanta
@@ -1044,7 +1047,7 @@ extern "C" {
 /** TWAIFD_EWL_ERP_FAULT_STATE_REG register
  *  TWAI FD error threshold and status register
  */
-#define TWAIFD_EWL_ERP_FAULT_STATE_REG (DR_REG_TWAIFD_BASE + 0x2c)
+#define TWAIFD_EWL_ERP_FAULT_STATE_REG(i) (REG_TWAIFD_BASE(i) + 0x2c)
 /** TWAIFD_EW_LIMIT : R/W; bitpos: [7:0]; default: 96;
  *  Error warning limit. If error warning limit is reached interrupt can be generated.
  *  Error warning limit
@@ -1088,7 +1091,7 @@ extern "C" {
 /** TWAIFD_REC_TEC_REG register
  *  TWAI FD error counters status register
  */
-#define TWAIFD_REC_TEC_REG (DR_REG_TWAIFD_BASE + 0x30)
+#define TWAIFD_REC_TEC_REG(i) (REG_TWAIFD_BASE(i) + 0x30)
 /** TWAIFD_REC_VAL : RO; bitpos: [8:0]; default: 0;
  *  Represents the receiver error counter value.
  */
@@ -1107,7 +1110,7 @@ extern "C" {
 /** TWAIFD_ERR_NORM_ERR_FD_REG register
  *  TWAI FD special error counters status register
  */
-#define TWAIFD_ERR_NORM_ERR_FD_REG (DR_REG_TWAIFD_BASE + 0x34)
+#define TWAIFD_ERR_NORM_ERR_FD_REG(i) (REG_TWAIFD_BASE(i) + 0x34)
 /** TWAIFD_ERR_NORM_VAL : RO; bitpos: [15:0]; default: 0;
  *  Represents the number of error in the nominal bit time.
  */
@@ -1126,7 +1129,7 @@ extern "C" {
 /** TWAIFD_CTR_PRES_REG register
  *  TWAI FD error counters pre-define configuration register
  */
-#define TWAIFD_CTR_PRES_REG (DR_REG_TWAIFD_BASE + 0x38)
+#define TWAIFD_CTR_PRES_REG(i) (REG_TWAIFD_BASE(i) + 0x38)
 /** TWAIFD_CTPV : WO; bitpos: [8:0]; default: 0;
  *  Configures the pre-defined value to set the error counter.
  */
@@ -1176,7 +1179,7 @@ extern "C" {
 /** TWAIFD_FILTER_A_MASK_REG register
  *  TWAI FD filter A mask value register
  */
-#define TWAIFD_FILTER_A_MASK_REG (DR_REG_TWAIFD_BASE + 0x3c)
+#define TWAIFD_FILTER_A_MASK_REG(i) (REG_TWAIFD_BASE(i) + 0x3c)
 /** TWAIFD_BIT_MASK_A_VAL : R/W; bitpos: [28:0]; default: 0;
  *  Filter A mask. The identifier format is the same as in IDENTIFIER_W of TXT buffer
  *  or RX
@@ -1191,7 +1194,7 @@ extern "C" {
 /** TWAIFD_FILTER_A_VAL_REG register
  *  TWAI FD filter A bit value register
  */
-#define TWAIFD_FILTER_A_VAL_REG (DR_REG_TWAIFD_BASE + 0x40)
+#define TWAIFD_FILTER_A_VAL_REG(i) (REG_TWAIFD_BASE(i) + 0x40)
 /** TWAIFD_BIT_VAL_A_VAL : R/W; bitpos: [28:0]; default: 0;
  *  Filter A value. The identifier format is the same as in IDENTIFIER_W of TXT buffer
  *  or RX buffer.
@@ -1206,7 +1209,7 @@ extern "C" {
 /** TWAIFD_FILTER_B_MASK_REG register
  *  TWAI FD filter B mask value register
  */
-#define TWAIFD_FILTER_B_MASK_REG (DR_REG_TWAIFD_BASE + 0x44)
+#define TWAIFD_FILTER_B_MASK_REG(i) (REG_TWAIFD_BASE(i) + 0x44)
 /** TWAIFD_BIT_MASK_B_VAL : R/W; bitpos: [28:0]; default: 0;
  *  Filter B mask. The identifier format is the same as in IDENTIFIER_W of TXT buffer
  *  or RX
@@ -1221,7 +1224,7 @@ extern "C" {
 /** TWAIFD_FILTER_B_VAL_REG register
  *  TWAI FD filter B bit value register
  */
-#define TWAIFD_FILTER_B_VAL_REG (DR_REG_TWAIFD_BASE + 0x48)
+#define TWAIFD_FILTER_B_VAL_REG(i) (REG_TWAIFD_BASE(i) + 0x48)
 /** TWAIFD_BIT_VAL_B_VAL : R/W; bitpos: [28:0]; default: 0;
  *  Filter B value. The identifier format is the same as in IDENTIFIER_W of TXT buffer
  *  or RX buffer.
@@ -1236,7 +1239,7 @@ extern "C" {
 /** TWAIFD_FILTER_C_MASK_REG register
  *  TWAI FD filter C mask value register
  */
-#define TWAIFD_FILTER_C_MASK_REG (DR_REG_TWAIFD_BASE + 0x4c)
+#define TWAIFD_FILTER_C_MASK_REG(i) (REG_TWAIFD_BASE(i) + 0x4c)
 /** TWAIFD_BIT_MASK_C_VAL : R/W; bitpos: [28:0]; default: 0;
  *  Filter C mask. The identifier format is the same as in IDENTIFIER_W of TXT buffer
  *  or RX
@@ -1251,7 +1254,7 @@ extern "C" {
 /** TWAIFD_FILTER_C_VAL_REG register
  *  TWAI FD filter C bit value register
  */
-#define TWAIFD_FILTER_C_VAL_REG (DR_REG_TWAIFD_BASE + 0x50)
+#define TWAIFD_FILTER_C_VAL_REG(i) (REG_TWAIFD_BASE(i) + 0x50)
 /** TWAIFD_BIT_VAL_C_VAL : R/W; bitpos: [28:0]; default: 0;
  *  Filter C value. The identifier format is the same as in IDENTIFIER_W of TXT buffer
  *  or RX buffer.
@@ -1266,7 +1269,7 @@ extern "C" {
 /** TWAIFD_FILTER_RAN_LOW_REG register
  *  TWAI FD filter range low value register
  */
-#define TWAIFD_FILTER_RAN_LOW_REG (DR_REG_TWAIFD_BASE + 0x54)
+#define TWAIFD_FILTER_RAN_LOW_REG(i) (REG_TWAIFD_BASE(i) + 0x54)
 /** TWAIFD_BIT_RAN_LOW_VAL : R/W; bitpos: [28:0]; default: 0;
  *  Filter Range Low threshold. The identifier format is the same as in IDENTIFIER_W of
  *  TXT
@@ -1282,7 +1285,7 @@ extern "C" {
 /** TWAIFD_FILTER_RAN_HIGH_REG register
  *  TWAI FD filter range high value register
  */
-#define TWAIFD_FILTER_RAN_HIGH_REG (DR_REG_TWAIFD_BASE + 0x58)
+#define TWAIFD_FILTER_RAN_HIGH_REG(i) (REG_TWAIFD_BASE(i) + 0x58)
 /** TWAIFD_BIT_RAN_HIGH_VAL : R/W; bitpos: [28:0]; default: 0;
  *  Range filter High threshold. The identifier format is the same as in IDENTIFIER_W
  *  of TXT
@@ -1298,7 +1301,7 @@ extern "C" {
 /** TWAIFD_FILTER_CONTROL_FILTER_STATUS_REG register
  *  TWAI FD filter control register
  */
-#define TWAIFD_FILTER_CONTROL_FILTER_STATUS_REG (DR_REG_TWAIFD_BASE + 0x5c)
+#define TWAIFD_FILTER_CONTROL_FILTER_STATUS_REG(i) (REG_TWAIFD_BASE(i) + 0x5c)
 /** TWAIFD_FANB : R/W; bitpos: [0]; default: 1;
  *  CAN Basic Frame is accepted by filter A.
  */
@@ -1443,7 +1446,7 @@ extern "C" {
 /** TWAIFD_RX_MEM_INFO_REG register
  *  TWAI FD rx memory information register
  */
-#define TWAIFD_RX_MEM_INFO_REG (DR_REG_TWAIFD_BASE + 0x60)
+#define TWAIFD_RX_MEM_INFO_REG(i) (REG_TWAIFD_BASE(i) + 0x60)
 /** TWAIFD_RX_BUFF_SIZE : RO; bitpos: [12:0]; default: 128;
  *  Size of RX buffer in 32-bit words.
  */
@@ -1462,7 +1465,7 @@ extern "C" {
 /** TWAIFD_RX_POINTERS_REG register
  *  TWAI FD rx memory pointer information register
  */
-#define TWAIFD_RX_POINTERS_REG (DR_REG_TWAIFD_BASE + 0x64)
+#define TWAIFD_RX_POINTERS_REG(i) (REG_TWAIFD_BASE(i) + 0x64)
 /** TWAIFD_RX_WPP : RO; bitpos: [11:0]; default: 0;
  *  Write pointer position in RX buffer. Upon store of received frame write pointer is
  *  updated.
@@ -1483,7 +1486,7 @@ extern "C" {
 /** TWAIFD_RX_STATUS_RX_SETTINGS_REG register
  *  TWAI FD rx status & setting register
  */
-#define TWAIFD_RX_STATUS_RX_SETTINGS_REG (DR_REG_TWAIFD_BASE + 0x68)
+#define TWAIFD_RX_STATUS_RX_SETTINGS_REG(i) (REG_TWAIFD_BASE(i) + 0x68)
 /** TWAIFD_RXE : RO; bitpos: [0]; default: 1;
  *  Represents whether or not the RX buffer is empty. RX buffer is empty. There is no
  *  CAN Frame stored in it.
@@ -1536,7 +1539,7 @@ extern "C" {
 /** TWAIFD_RX_DATA_REG register
  *  TWAI FD received data register
  */
-#define TWAIFD_RX_DATA_REG (DR_REG_TWAIFD_BASE + 0x6c)
+#define TWAIFD_RX_DATA_REG(i) (REG_TWAIFD_BASE(i) + 0x6c)
 /** TWAIFD_RX_DATA : RO; bitpos: [31:0]; default: 0;
  *  RX buffer data at read pointer position in FIFO. By reading from this register,
  *  read pointer is auto-
@@ -1552,7 +1555,7 @@ extern "C" {
 /** TWAIFD_TX_STATUS_REG register
  *  TWAI FD TX buffer status register
  */
-#define TWAIFD_TX_STATUS_REG (DR_REG_TWAIFD_BASE + 0x70)
+#define TWAIFD_TX_STATUS_REG(i) (REG_TWAIFD_BASE(i) + 0x70)
 /** TWAIFD_TXTB0_STATE : RO; bitpos: [3:0]; default: 8;
  *  Status of TXT buffer 1.
  *  0b0000 - TXT_NOT_EXIST - TXT buffer does not exist in the core (applies only to TXT
@@ -1625,7 +1628,7 @@ extern "C" {
 /** TWAIFD_TX_COMMAND_TXTB_INFO_REG register
  *  TWAI FD TXT buffer command & information register
  */
-#define TWAIFD_TX_COMMAND_TXTB_INFO_REG (DR_REG_TWAIFD_BASE + 0x74)
+#define TWAIFD_TX_COMMAND_TXTB_INFO_REG(i) (REG_TWAIFD_BASE(i) + 0x74)
 /** TWAIFD_TXCE : WO; bitpos: [0]; default: 0;
  *  Issues "set empty" command.
  */
@@ -1728,7 +1731,7 @@ extern "C" {
 /** TWAIFD_TX_PRIORITY_REG register
  *  TWAI FD TXT buffer command & information register
  */
-#define TWAIFD_TX_PRIORITY_REG (DR_REG_TWAIFD_BASE + 0x78)
+#define TWAIFD_TX_PRIORITY_REG(i) (REG_TWAIFD_BASE(i) + 0x78)
 /** TWAIFD_TXT1P : R/W; bitpos: [2:0]; default: 1;
  *  Priority of TXT buffer 1.
  */
@@ -1796,7 +1799,7 @@ extern "C" {
  *  TWAI FD error capture & retransmit counter & arbitration lost & timestamp
  *  integration information register
  */
-#define TWAIFD_ERR_CAPT_RETR_CTR_ALC_TS_INFO_REG (DR_REG_TWAIFD_BASE + 0x7c)
+#define TWAIFD_ERR_CAPT_RETR_CTR_ALC_TS_INFO_REG(i) (REG_TWAIFD_BASE(i) + 0x7c)
 /** TWAIFD_ERR_POS : RO; bitpos: [4:0]; default: 31;
  *  0b00000 - ERC_POS_SOF - Error in Start of Frame
  *  0b00001 - ERC_POS_ARB - Error in Arbitration Filed
@@ -1871,7 +1874,7 @@ extern "C" {
 /** TWAIFD_TRV_DELAY_SSP_CFG_REG register
  *  TWAI FD transmit delay & secondary sample point configuration register
  */
-#define TWAIFD_TRV_DELAY_SSP_CFG_REG (DR_REG_TWAIFD_BASE + 0x80)
+#define TWAIFD_TRV_DELAY_SSP_CFG_REG(i) (REG_TWAIFD_BASE(i) + 0x80)
 /** TWAIFD_TRV_DELAY_VALUE : RO; bitpos: [6:0]; default: 0;
  *  Measured Transmitter delay in multiple of minimal Time quanta.
  */
@@ -1903,7 +1906,7 @@ extern "C" {
 /** TWAIFD_RX_FR_CTR_REG register
  *  TWAI FD received frame counter register
  */
-#define TWAIFD_RX_FR_CTR_REG (DR_REG_TWAIFD_BASE + 0x84)
+#define TWAIFD_RX_FR_CTR_REG(i) (REG_TWAIFD_BASE(i) + 0x84)
 /** TWAIFD_RX_FR_CTR_VAL : RO; bitpos: [31:0]; default: 0;
  *  Number of received frames by CTU CAN FD.
  */
@@ -1915,7 +1918,7 @@ extern "C" {
 /** TWAIFD_TX_FR_CTR_REG register
  *  TWAI FD transmitted frame counter register
  */
-#define TWAIFD_TX_FR_CTR_REG (DR_REG_TWAIFD_BASE + 0x88)
+#define TWAIFD_TX_FR_CTR_REG(i) (REG_TWAIFD_BASE(i) + 0x88)
 /** TWAIFD_TX_CTR_VAL : RO; bitpos: [31:0]; default: 0;
  *  Number of transmitted frames by CTU CAN FD.
  */
@@ -1927,7 +1930,7 @@ extern "C" {
 /** TWAIFD_DEBUG_REG register
  *  TWAI FD debug register
  */
-#define TWAIFD_DEBUG_REG (DR_REG_TWAIFD_BASE + 0x8c)
+#define TWAIFD_DEBUG_REG(i) (REG_TWAIFD_BASE(i) + 0x8c)
 /** TWAIFD_STUFF_COUNT : RO; bitpos: [2:0]; default: 0;
  *  Actual stuff count modulo 8 as defined in ISO FD protocol. Stuff count is erased
  *  in the beginning
@@ -2054,7 +2057,7 @@ extern "C" {
 /** TWAIFD_YOLO_REG register
  *  TWAI FD transmitted frame counter register
  */
-#define TWAIFD_YOLO_REG (DR_REG_TWAIFD_BASE + 0x90)
+#define TWAIFD_YOLO_REG(i) (REG_TWAIFD_BASE(i) + 0x90)
 /** TWAIFD_YOLO_VAL : RO; bitpos: [31:0]; default: 3735928559;
  *  What else could be in this register??
  */
@@ -2066,7 +2069,7 @@ extern "C" {
 /** TWAIFD_TIMESTAMP_LOW_REG register
  *  TWAI FD transmitted frame counter register
  */
-#define TWAIFD_TIMESTAMP_LOW_REG (DR_REG_TWAIFD_BASE + 0x94)
+#define TWAIFD_TIMESTAMP_LOW_REG(i) (REG_TWAIFD_BASE(i) + 0x94)
 /** TWAIFD_TIMESTAMP_LOW : RO; bitpos: [31:0]; default: 0;
  *  Bits 31:0 of time base.
  */
@@ -2078,7 +2081,7 @@ extern "C" {
 /** TWAIFD_TIMESTAMP_HIGH_REG register
  *  TWAI FD transmitted frame counter register
  */
-#define TWAIFD_TIMESTAMP_HIGH_REG (DR_REG_TWAIFD_BASE + 0x98)
+#define TWAIFD_TIMESTAMP_HIGH_REG(i) (REG_TWAIFD_BASE(i) + 0x98)
 /** TWAIFD_TIMESTAMP_HIGH : RO; bitpos: [31:0]; default: 0;
  *  Bits 63:32 of time base.
  */
@@ -2090,7 +2093,7 @@ extern "C" {
 /** TWAIFD_TIMER_CLK_EN_REG register
  *  TWAIFD timer clock force enable register.
  */
-#define TWAIFD_TIMER_CLK_EN_REG (DR_REG_TWAIFD_BASE + 0xfd4)
+#define TWAIFD_TIMER_CLK_EN_REG(i) (REG_TWAIFD_BASE(i) + 0xfd4)
 /** TWAIFD_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set this bit to force enable TWAIFD register configuration clock signal.
  */
@@ -2109,7 +2112,7 @@ extern "C" {
 /** TWAIFD_TIMER_INT_RAW_REG register
  *  TWAIFD raw interrupt register.
  */
-#define TWAIFD_TIMER_INT_RAW_REG (DR_REG_TWAIFD_BASE + 0xfd8)
+#define TWAIFD_TIMER_INT_RAW_REG(i) (REG_TWAIFD_BASE(i) + 0xfd8)
 /** TWAIFD_TIMER_OVERFLOW_INT_RAW : R/SS/WTC; bitpos: [0]; default: 0;
  *  The raw bit signal for read_done interrupt.
  */
@@ -2121,7 +2124,7 @@ extern "C" {
 /** TWAIFD_TIMER_INT_ST_REG register
  *  TWAIFD interrupt status register.
  */
-#define TWAIFD_TIMER_INT_ST_REG (DR_REG_TWAIFD_BASE + 0xfdc)
+#define TWAIFD_TIMER_INT_ST_REG(i) (REG_TWAIFD_BASE(i) + 0xfdc)
 /** TWAIFD_TIMER_OVERFLOW_INT_ST : RO; bitpos: [0]; default: 0;
  *  The status signal for read_done interrupt.
  */
@@ -2133,7 +2136,7 @@ extern "C" {
 /** TWAIFD_TIMER_INT_ENA_REG register
  *  TWAIFD interrupt enable register.
  */
-#define TWAIFD_TIMER_INT_ENA_REG (DR_REG_TWAIFD_BASE + 0xfe0)
+#define TWAIFD_TIMER_INT_ENA_REG(i) (REG_TWAIFD_BASE(i) + 0xfe0)
 /** TWAIFD_TIMER_OVERFLOW_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  The enable signal for read_done interrupt.
  */
@@ -2145,7 +2148,7 @@ extern "C" {
 /** TWAIFD_TIMER_INT_CLR_REG register
  *  TWAIFD interrupt clear register.
  */
-#define TWAIFD_TIMER_INT_CLR_REG (DR_REG_TWAIFD_BASE + 0xfe4)
+#define TWAIFD_TIMER_INT_CLR_REG(i) (REG_TWAIFD_BASE(i) + 0xfe4)
 /** TWAIFD_TIMER_OVERFLOW_INT_CLR : WT; bitpos: [0]; default: 0;
  *  The clear signal for read_done interrupt.
  */
@@ -2157,7 +2160,7 @@ extern "C" {
 /** TWAIFD_TIMER_CFG_REG register
  *  TWAI FD timer configure register.
  */
-#define TWAIFD_TIMER_CFG_REG (DR_REG_TWAIFD_BASE + 0xfe8)
+#define TWAIFD_TIMER_CFG_REG(i) (REG_TWAIFD_BASE(i) + 0xfe8)
 /** TWAIFD_TIMER_CE : R/W; bitpos: [0]; default: 0;
  *  TWAI FD timer enable register.
  *  1b0: Not enable
@@ -2205,7 +2208,7 @@ extern "C" {
 /** TWAIFD_TIMER_LD_VAL_L_REG register
  *  TWAI FD timer pre-load value low register.
  */
-#define TWAIFD_TIMER_LD_VAL_L_REG (DR_REG_TWAIFD_BASE + 0xfec)
+#define TWAIFD_TIMER_LD_VAL_L_REG(i) (REG_TWAIFD_BASE(i) + 0xfec)
 /** TWAIFD_TIMER_LD_VAL_L : R/W; bitpos: [31:0]; default: 0;
  *  TWAI FD timer count pre-load value register, low part.
  */
@@ -2217,7 +2220,7 @@ extern "C" {
 /** TWAIFD_TIMER_LD_VAL_H_REG register
  *  TWAI FD timer pre-load value high register.
  */
-#define TWAIFD_TIMER_LD_VAL_H_REG (DR_REG_TWAIFD_BASE + 0xff0)
+#define TWAIFD_TIMER_LD_VAL_H_REG(i) (REG_TWAIFD_BASE(i) + 0xff0)
 /** TWAIFD_TIMER_LD_VAL_H : R/W; bitpos: [31:0]; default: 0;
  *  TWAI FD timer pre-load value register, high part.
  *  If timestamp valid bit-width less than 33, this field is ignored.
@@ -2230,7 +2233,7 @@ extern "C" {
 /** TWAIFD_TIMER_CT_VAL_L_REG register
  *  TWAI FD timer count-to value low register.
  */
-#define TWAIFD_TIMER_CT_VAL_L_REG (DR_REG_TWAIFD_BASE + 0xff4)
+#define TWAIFD_TIMER_CT_VAL_L_REG(i) (REG_TWAIFD_BASE(i) + 0xff4)
 /** TWAIFD_TIMER_CT_VAL_L : R/W; bitpos: [31:0]; default: 4294967295;
  *  TWAI FD timer count-to value register, low part.
  */
@@ -2242,7 +2245,7 @@ extern "C" {
 /** TWAIFD_TIMER_CT_VAL_H_REG register
  *  TWAI FD timer count-to value high register.
  */
-#define TWAIFD_TIMER_CT_VAL_H_REG (DR_REG_TWAIFD_BASE + 0xff8)
+#define TWAIFD_TIMER_CT_VAL_H_REG(i) (REG_TWAIFD_BASE(i) + 0xff8)
 /** TWAIFD_TIMER_CT_VAL_H : R/W; bitpos: [31:0]; default: 4294967295;
  *  TWAI FD timer count-to value register, high part.
  *  If timestamp valid bit-width less than 33, this field is ignored.
@@ -2255,7 +2258,7 @@ extern "C" {
 /** TWAIFD_DATE_VER_REG register
  *  TWAI FD date version
  */
-#define TWAIFD_DATE_VER_REG (DR_REG_TWAIFD_BASE + 0xffc)
+#define TWAIFD_DATE_VER_REG(i) (REG_TWAIFD_BASE(i) + 0xffc)
 /** TWAIFD_DATE_VER : R/W; bitpos: [31:0]; default: 37823088;
  *  TWAI FD version
  */

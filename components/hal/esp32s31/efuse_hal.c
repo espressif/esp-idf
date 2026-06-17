@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,8 +9,6 @@
 #include "hal/assert.h"
 #include "hal/efuse_hal.h"
 #include "hal/efuse_ll.h"
-
-// TODO: [ESP32S31] IDF-14688
 
 #define ESP_EFUSE_BLOCK_ERROR_BITS(error_reg, block) ((error_reg) & (0x08 << (4 * (block))))
 #define ESP_EFUSE_BLOCK_ERROR_NUM_BITS(error_reg, block) ((error_reg) & (0x07 << (4 * (block))))
@@ -73,12 +71,12 @@ void efuse_hal_rs_calculate(const void *data, void *rs_values)
 bool efuse_hal_is_coding_error_in_block(unsigned block)
 {
     if (block == 0) {
-        for (unsigned i = 0; i < 5; i++) {
-            if (REG_READ(EFUSE_RD_REPEAT_DATA_ERR0_REG + i * 4)) {
+        for (unsigned i = 0; i < 8; i++) {
+            if (REG_READ(EFUSE_RD_REPEAT_DATA_ERR0_REG + i * 4)) { // DATA_ERR0_REG ... DATA_ERR7_REG
                 return true;
             }
         }
-    } else if (block <= 10) {
+    } else if (block <= 9) {
         block--;
         uint32_t error_reg = REG_READ(EFUSE_RD_RS_DATA_ERR0_REG + (block / 8) * 4);
         return ESP_EFUSE_BLOCK_ERROR_BITS(error_reg, block % 8) != 0;

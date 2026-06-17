@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <errno.h>
 
 #include "ff.h"
 #include "esp_partition.h"
@@ -24,9 +25,12 @@ static BYTE pdrv;
 static wl_handle_t wl_handle;
 static char drv[3];
 
+/** Set after successful `esp_vfs_fat_register` in test_setup (for duplicate-register checks). */
+static FATFS *s_linux_registered_fs = nullptr;
+
 static void test_setup(void)
 {
-    FATFS *fs;
+    FATFS *fs = nullptr;
     esp_err_t ret = ESP_OK;
     FRESULT fr_result;
 
@@ -65,13 +69,14 @@ static void test_setup(void)
         .fat_drive = drv,
         .max_files = 5,
     };
-    ret = esp_vfs_fat_register_cfg(&conf, &fs);
+    ret = esp_vfs_fat_register(&conf, &fs);
     if (ret == ESP_ERR_INVALID_STATE) {
         // it's okay, already registered with VFS
     } else if (ret != ESP_OK) {
-        ESP_LOGD(TAG, "esp_vfs_fat_register_cfg failed 0x(%x)", ret);
+        ESP_LOGD(TAG, "esp_vfs_fat_register failed 0x(%x)", ret);
     }
     REQUIRE(ret == ESP_OK);
+    s_linux_registered_fs = fs;
 
     //Mount the volume
     fr_result = f_mount(fs, "", 0);
@@ -91,6 +96,7 @@ static void test_teardown(void)
     esp_result = wl_unmount(wl_handle);
     esp_vfs_fat_unregister_path("/linux");
     REQUIRE(esp_result == ESP_OK);
+    s_linux_registered_fs = nullptr;
 }
 
 static void test_fatfs_create_file_with_text(const char* name, const char* text)
@@ -209,6 +215,34 @@ TEST_CASE("pwrite() works well", "[fatfs]")
 {
     test_setup();
     test_pwrite();
+    test_teardown();
+}
+
+TEST_CASE("duplicate esp_vfs_fat_register sets out_fs to existing FATFS", "[fatfs]")
+{
+    test_setup();
+    REQUIRE(s_linux_registered_fs != nullptr);
+
+    FATFS *fs2 = nullptr;
+    esp_vfs_fat_conf_t conf = {
+        .base_path = "/linux",
+        .fat_drive = drv,
+        .max_files = 5,
+    };
+    esp_err_t r = esp_vfs_fat_register(&conf, &fs2);
+    REQUIRE(r == ESP_ERR_INVALID_STATE);
+    REQUIRE(fs2 != nullptr);
+    REQUIRE(fs2 == s_linux_registered_fs);
+
+    // Same FATFS object must still back the mounted VFS (no second registration).
+    const char *probe = "/linux/rereg_probe.txt";
+    unlink(probe);
+    int fd = open(probe, O_CREAT | O_RDWR | O_TRUNC, 0666);
+    REQUIRE(fd >= 0);
+    REQUIRE(write(fd, "ok\n", 3) == 3);
+    REQUIRE(close(fd) == 0);
+    unlink(probe);
+
     test_teardown();
 }
 

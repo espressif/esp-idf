@@ -835,31 +835,31 @@ typedef union {
  */
 typedef union {
     struct {
-        /** ahb_apb_sync_clk_en : R/W; bitpos: [4:0]; default: 31;
+        /** HP-AHB-DMA layout: ahb_apb_sync_clk_en : R/W; bitpos: [4:0]; default: 31;
          *  Configures whether to force on ahb_apb_sync 4~0 module clock. For bit n:
          *  0 : Not force on ahb_apb_sync n clock
          *  1 : Force on ahb_apb_sync n clock
          */
         uint32_t ahb_apb_sync_clk_en:5;
-        /** out_dscr_clk_en : R/W; bitpos: [9:5]; default: 31;
+        /** HP-AHB-DMA layout: out_dscr_clk_en : R/W; bitpos: [9:5]; default: 31;
          *  Configures whether to force on out_dscr 4~0 module clock. For bit n:
          *  0 : Not force on out_dscr n clock
          *  1 : Force on out_dscr n clock
          */
         uint32_t out_dscr_clk_en:5;
-        /** out_ctrl_clk_en : R/W; bitpos: [14:10]; default: 31;
+        /** HP-AHB-DMA layout: out_ctrl_clk_en : R/W; bitpos: [14:10]; default: 31;
          *  Configures whether to force on out_ctrl 4~0 module clock. For bit n:
          *  0 : Not force on out_ctrl n clock
          *  1 : Force on out_ctrl n clock
          */
         uint32_t out_ctrl_clk_en:5;
-        /** in_dscr_clk_en : R/W; bitpos: [19:15]; default: 31;
+        /** HP-AHB-DMA layout: in_dscr_clk_en : R/W; bitpos: [19:15]; default: 31;
          *  Configures whether to force on in_dscr 4~0 module clock. For bit n:
          *  0 : Not force on in_dscr n clock
          *  1 : Force on in_dscr n clock
          */
         uint32_t in_dscr_clk_en:5;
-        /** in_ctrl_clk_en : R/W; bitpos: [24:20]; default: 31;
+        /** HP-AHB-DMA layout: in_ctrl_clk_en : R/W; bitpos: [24:20]; default: 31;
          *  Configures whether to force on in_ctrl 4~0 module clock. For bit n:
          *  0 : Not force on in_ctrl n clock
          *  1 : Force on in_ctrl n clock
@@ -879,7 +879,57 @@ typedef union {
          */
         uint32_t ahbinf_clk_en:1;
         uint32_t reserved_29:3;
-    };
+    } hp;
+    struct {
+        /** LP-AHB-DMA layout: ahb_apb_sync_clk_en : R/W; bitpos: [1:0]; default: 3;
+         *  Configures whether to force on ahb_apb_sync 1~0 module clock. For bit n:
+         *  0 : Not force on ahb_apb_sync n clock
+         *  1 : Force on ahb_apb_sync n clock
+         */
+        uint32_t ahb_apb_sync_clk_en:2;
+        uint32_t reserved_2:3;
+        /** LP-AHB-DMA layout: out_dscr_clk_en : R/W; bitpos: [6:5]; default: 3;
+         *  Configures whether to force on out_dscr 1~0 module clock. For bit n:
+         *  0 : Not force on out_dscr n clock
+         *  1 : Force on out_dscr n clock
+         */
+        uint32_t out_dscr_clk_en:2;
+        uint32_t reserved_7:3;
+        /** LP-AHB-DMA layout: out_ctrl_clk_en : R/W; bitpos: [11:10]; default: 3;
+         *  Configures whether to force on out_ctrl 1~0 module clock. For bit n:
+         *  0 : Not force on out_ctrl n clock
+         *  1 : Force on out_ctrl n clock
+         */
+        uint32_t out_ctrl_clk_en:2;
+        uint32_t reserved_12:3;
+        /** LP-AHB-DMA layout: in_dscr_clk_en : R/W; bitpos: [16:15]; default: 3;
+         *  Configures whether to force on in_dscr 1~0 module clock. For bit n:
+         *  0 : Not force on in_dscr n clock
+         *  1 : Force on in_dscr n clock
+         */
+        uint32_t in_dscr_clk_en:2;
+        uint32_t reserved_17:3;
+        /** LP-AHB-DMA layout: in_ctrl_clk_en : R/W; bitpos: [21:20]; default: 3;
+         *  Configures whether to force on in_ctrl 1~0 module clock. For bit n:
+         *  0 : Not force on in_ctrl n clock
+         *  1 : Force on in_ctrl n clock
+         */
+        uint32_t in_ctrl_clk_en:2;
+        uint32_t reserved_22:5;
+        /** cmd_arb_clk_en : R/W; bitpos: [27]; default: 1;
+         *  Configures whether to force on cmd_arb module clock.
+         *  0 : Not force on cmd_arb clock
+         *  1 : Force on cmd_arb clock
+         */
+        uint32_t cmd_arb_clk_en:1;
+        /** ahbinf_clk_en : R/W; bitpos: [28]; default: 1;
+         *  Configures whether to force on ahbinf module clock.
+         *  0 : Not force on ahbinf clock
+         *  1 : Force on ahbinf clock
+         */
+        uint32_t ahbinf_clk_en:1;
+        uint32_t reserved_29:3;
+    } lp;
     uint32_t val;
 } ahb_dma_module_clk_en_reg_t;
 
@@ -1226,17 +1276,33 @@ typedef union {
          *  Represents the AHB response error is write request.
          */
         uint32_t ahbinf_resp_err_wr:1;
-        /** ahbinf_resp_err_id : RO; bitpos: [5:1]; default: 31;
+        /** HP-AHB-DMA layout: ahbinf_resp_err_id : RO; bitpos: [5:1]; default: 31;
          *  Represents the AHB response error request id.
          */
         uint32_t ahbinf_resp_err_id:5;
-        /** ahbinf_resp_err_ch_id : RO; bitpos: [9:6]; default: 0;
+        /** HP-AHB-DMA layout: ahbinf_resp_err_ch_id : RO; bitpos: [9:6]; default: 0;
          *  Represents the AHB response error request channel id.bit[3]=1:TX channel.
          *  bit[3]=0:RX channel.
          */
         uint32_t ahbinf_resp_err_ch_id:4;
         uint32_t reserved_10:22;
-    };
+    } hp;
+    struct {
+        /** ahbinf_resp_err_wr : RO; bitpos: [0]; default: 0;
+         *  Represents the AHB response error is write request.
+         */
+        uint32_t ahbinf_resp_err_wr:1;
+        /** LP-AHB-DMA layout: ahbinf_resp_err_id : RO; bitpos: [5:1]; default: 31;
+         *  Represents the AHB response error request id.
+         */
+        uint32_t ahbinf_resp_err_id:5;
+        /** LP-AHB-DMA layout: ahbinf_resp_err_ch_id : RO; bitpos: [7:6]; default: 0;
+         *  Represents the AHB response error request channel id.bit[1]=1:TX channel.
+         *  bit[1]=0:RX channel.
+         */
+        uint32_t ahbinf_resp_err_ch_id:2;
+        uint32_t reserved_8:24;
+    } lp;
     uint32_t val;
 } ahb_dma_ahbinf_resp_err_status1_reg_t;
 
@@ -1416,6 +1482,7 @@ typedef struct {
 } ahb_dma_dev_t;
 
 extern ahb_dma_dev_t AHB_DMA;
+extern ahb_dma_dev_t LP_AHB_DMA;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(ahb_dma_dev_t) == 0x628, "Invalid size of ahb_dma_dev_t structure");

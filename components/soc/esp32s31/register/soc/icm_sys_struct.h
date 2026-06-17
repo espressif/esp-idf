@@ -122,6 +122,7 @@ typedef struct {
     volatile icm_mst_awqos_reg0_reg_t mst_awqos_reg0;
 } icm_dev_t;
 
+extern icm_dev_t ICM_SYS;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(icm_dev_t) == 0x34, "Invalid size of icm_dev_t structure");

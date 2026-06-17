@@ -2,6 +2,8 @@
 在 Windows 上通过命令行构建项目
 ********************************************
 
+:link_to_translation:`en:[English]`
+
 本指南将介绍如何使用命令行在 Windows 上创建 {IDF_TARGET_NAME} 项目，构建、烧录和监控设备输出。
 
 

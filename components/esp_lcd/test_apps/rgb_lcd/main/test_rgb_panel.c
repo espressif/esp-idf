@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,11 +11,11 @@
 #include "unity.h"
 #include "esp_lcd_panel_rgb.h"
 #include "esp_lcd_panel_ops.h"
-#include "esp_random.h"
 #include "esp_timer.h"
 #include "esp_attr.h"
 #include "test_rgb_board.h"
 #include "esp_private/spi_flash_os.h"
+#include "esp_clk_tree.h"
 
 #if CONFIG_LCD_RGB_ISR_IRAM_SAFE
 #define TEST_LCD_CALLBACK_ATTR IRAM_ATTR
@@ -25,7 +25,7 @@
 
 #define TEST_IMG_SIZE (100 * 100 * sizeof(uint16_t))
 
-static esp_lcd_panel_handle_t test_rgb_panel_initialization(size_t data_width, lcd_color_format_t in_color_format, size_t bb_pixels, bool refresh_on_demand, bool user_fb,
+static esp_lcd_panel_handle_t test_rgb_panel_initialization(size_t data_width, lcd_color_format_t in_color_format, size_t bb_pixels, lcd_clock_source_t clk_src, bool refresh_on_demand, bool user_fb,
                                                             esp_lcd_rgb_panel_vsync_cb_t vsync_cb, void *user_data)
 {
     esp_lcd_panel_handle_t panel_handle = NULL;
@@ -34,7 +34,7 @@ static esp_lcd_panel_handle_t test_rgb_panel_initialization(size_t data_width, l
         .in_color_format = in_color_format,
         .dma_burst_size = 64,
         .bounce_buffer_size_px = bb_pixels,
-        .clk_src = LCD_CLK_SRC_DEFAULT,
+        .clk_src = clk_src,
         .disp_gpio_num = TEST_LCD_DISP_EN_GPIO,
         .pclk_gpio_num = TEST_LCD_PCLK_GPIO,
         .vsync_gpio_num = TEST_LCD_VSYNC_GPIO,
@@ -97,12 +97,12 @@ TEST_CASE("lcd_rgb_panel_stream_mode", "[lcd]")
     TEST_ASSERT_NOT_NULL(img);
 
     printf("initialize RGB panel with stream mode\r\n");
-    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 0, false, false, NULL, NULL);
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 0, LCD_CLK_SRC_DEFAULT, false, false, NULL, NULL);
     printf("flush random color block\r\n");
     for (int i = 0; i < 200; i++) {
-        uint8_t color_byte = esp_random() & 0xFF;
-        int x_start = esp_random() % (TEST_LCD_H_RES - 100);
-        int y_start = esp_random() % (TEST_LCD_V_RES - 100);
+        uint8_t color_byte = rand() & 0xFF;
+        int x_start = rand() % (TEST_LCD_H_RES - 100);
+        int y_start = rand() % (TEST_LCD_V_RES - 100);
         memset(img, color_byte, TEST_IMG_SIZE);
         esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 100, y_start + 100, img);
         vTaskDelay(pdMS_TO_TICKS(10));
@@ -119,11 +119,11 @@ TEST_CASE("lcd_rgb_panel_8bit_interface", "[lcd]")
 
     printf("initialize RGB panel with stream mode\r\n");
     // bpp for RGB888 is 24
-    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(8, LCD_COLOR_FMT_RGB888, 0, false, false, NULL, NULL);
-    uint8_t color_byte = esp_random() & 0xFF;
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(8, LCD_COLOR_FMT_RGB888, 0, LCD_CLK_SRC_DEFAULT, false, false, NULL, NULL);
+    uint8_t color_byte = rand() & 0xFF;
     printf("flush random color block 0x%x\r\n", color_byte);
-    int x_start = esp_random() % (TEST_LCD_H_RES - 100);
-    int y_start = esp_random() % (TEST_LCD_V_RES - 100);
+    int x_start = rand() % (TEST_LCD_H_RES - 100);
+    int y_start = rand() % (TEST_LCD_V_RES - 100);
     memset(img, color_byte, 100 * 100 * 3);
     esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 100, y_start + 100, img);
     vTaskDelay(pdMS_TO_TICKS(2000));
@@ -147,12 +147,12 @@ TEST_CASE("lcd_rgb_panel_refresh_on_demand", "[lcd]")
     TaskHandle_t cur_task = xTaskGetCurrentTaskHandle();
 
     printf("initialize RGB panel with non-stream mode\r\n");
-    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 0, true, false, test_rgb_panel_trans_done, cur_task);
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 0, LCD_CLK_SRC_DEFAULT, true, false, test_rgb_panel_trans_done, cur_task);
     printf("flush random color block\r\n");
     for (int i = 0; i < 200; i++) {
-        uint8_t color_byte = esp_random() & 0xFF;
-        int x_start = esp_random() % (TEST_LCD_H_RES - 100);
-        int y_start = esp_random() % (TEST_LCD_V_RES - 100);
+        uint8_t color_byte = rand() & 0xFF;
+        int x_start = rand() % (TEST_LCD_H_RES - 100);
+        int y_start = rand() % (TEST_LCD_V_RES - 100);
         memset(img, color_byte, TEST_IMG_SIZE);
         esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 100, y_start + 100, img);
         esp_lcd_rgb_panel_refresh(panel_handle);
@@ -172,12 +172,12 @@ TEST_CASE("lcd_rgb_panel_bounce_buffer", "[lcd]")
     TaskHandle_t cur_task = xTaskGetCurrentTaskHandle();
 
     printf("initialize RGB panel with non-stream mode\r\n");
-    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 20 * TEST_LCD_H_RES, false, false, test_rgb_panel_trans_done, cur_task);
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 20 * TEST_LCD_H_RES, LCD_CLK_SRC_DEFAULT, false, false, test_rgb_panel_trans_done, cur_task);
     printf("flush random color block\r\n");
     for (int i = 0; i < 200; i++) {
-        uint8_t color_byte = esp_random() & 0xFF;
-        int x_start = esp_random() % (TEST_LCD_H_RES - 100);
-        int y_start = esp_random() % (TEST_LCD_V_RES - 100);
+        uint8_t color_byte = rand() & 0xFF;
+        int x_start = rand() % (TEST_LCD_H_RES - 100);
+        int y_start = rand() % (TEST_LCD_V_RES - 100);
         memset(img, color_byte, TEST_IMG_SIZE);
         esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 100, y_start + 100, img);
         // wait for flush done
@@ -195,11 +195,11 @@ TEST_CASE("lcd_rgb_panel_update_pclk", "[lcd]")
     TEST_ASSERT_NOT_NULL(img);
 
     printf("initialize RGB panel with stream mode\r\n");
-    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 0, false, false, NULL, NULL);
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 0, LCD_CLK_SRC_DEFAULT, false, false, NULL, NULL);
     printf("flush one clock block to the LCD\r\n");
-    uint8_t color_byte = esp_random() & 0xFF;
-    int x_start = esp_random() % (TEST_LCD_H_RES - 100);
-    int y_start = esp_random() % (TEST_LCD_V_RES - 100);
+    uint8_t color_byte = rand() & 0xFF;
+    int x_start = rand() % (TEST_LCD_H_RES - 100);
+    int y_start = rand() % (TEST_LCD_V_RES - 100);
     memset(img, color_byte, TEST_IMG_SIZE);
     esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 100, y_start + 100, img);
     printf("The LCD driver should keep flushing the color block in the background (as it's in stream mode)\r\n");
@@ -223,11 +223,11 @@ TEST_CASE("lcd_rgb_panel_restart", "[lcd]")
     TEST_ASSERT_NOT_NULL(img);
 
     printf("initialize RGB panel with stream mode\r\n");
-    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 0, false, false, NULL, NULL);
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 0, LCD_CLK_SRC_DEFAULT, false, false, NULL, NULL);
     printf("flush one clock block to the LCD\r\n");
-    uint8_t color_byte = esp_random() & 0xFF;
-    int x_start = esp_random() % (TEST_LCD_H_RES - 100);
-    int y_start = esp_random() % (TEST_LCD_V_RES - 100);
+    uint8_t color_byte = rand() & 0xFF;
+    int x_start = rand() % (TEST_LCD_H_RES - 100);
+    int y_start = rand() % (TEST_LCD_V_RES - 100);
     memset(img, color_byte, TEST_IMG_SIZE);
     esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 100, y_start + 100, img);
     printf("The LCD driver should keep flushing the color block in the background (as it's in stream mode)\r\n");
@@ -249,11 +249,11 @@ TEST_CASE("lcd_rgb_panel_rotate", "[lcd]")
     uint64_t t = 0;
     uint8_t *img = malloc(w * h * sizeof(uint16_t));
     TEST_ASSERT_NOT_NULL(img);
-    uint8_t color_byte = esp_random() & 0xFF;
+    uint8_t color_byte = rand() & 0xFF;
     memset(img, color_byte, w * h * sizeof(uint16_t));
 
     printf("initialize RGB panel with stream mode\r\n");
-    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 0, false, false, NULL, NULL);
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 0, LCD_CLK_SRC_DEFAULT, false, false, NULL, NULL);
 
     printf("Update the rotation of panel\r\n");
     for (size_t i = 0; i < 8; i++) {
@@ -278,12 +278,12 @@ TEST_CASE("lcd_rgb_panel_user_frame_buffer", "[lcd]")
     TEST_ASSERT_NOT_NULL(img);
 
     printf("initialize RGB panel with stream mode\r\n");
-    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 0, false, true, NULL, NULL);
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 0, LCD_CLK_SRC_DEFAULT, false, true, NULL, NULL);
 
     printf("flush one clock block to the LCD\r\n");
-    uint8_t color_byte = esp_random() & 0xFF;
-    int x_start = esp_random() % (TEST_LCD_H_RES - 100);
-    int y_start = esp_random() % (TEST_LCD_V_RES - 100);
+    uint8_t color_byte = rand() & 0xFF;
+    int x_start = rand() % (TEST_LCD_H_RES - 100);
+    int y_start = rand() % (TEST_LCD_V_RES - 100);
     memset(img, color_byte, TEST_IMG_SIZE);
     esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 100, y_start + 100, img);
     printf("The LCD driver should keep flushing the color block in the background (as it's in stream mode)\r\n");
@@ -299,6 +299,34 @@ TEST_CASE("lcd_rgb_panel_user_frame_buffer", "[lcd]")
     free(img);
     free(user_frame_buffer);
 }
+
+#if SOC_CLK_APLL_SUPPORTED
+TEST_CASE("lcd_rgb_panel_use_apll", "[lcd]")
+{
+    uint8_t *img = malloc(TEST_IMG_SIZE);
+    TEST_ASSERT_NOT_NULL(img);
+
+    printf("set APLL frequency\r\n");
+    uint32_t real_freq = 0;
+    TEST_ESP_OK(esp_clk_tree_src_set_freq_hz(SOC_MOD_CLK_APLL, 120 * 1000 * 1000, &real_freq));
+    printf("APLL frequency: %"PRIu32" Hz\r\n", real_freq);
+
+    printf("initialize RGB panel with stream mode\r\n");
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 0, LCD_CLK_SRC_APLL, false, false, NULL, NULL);
+    printf("flush random color block\r\n");
+    for (int i = 0; i < 200; i++) {
+        uint8_t color_byte = rand() & 0xFF;
+        int x_start = rand() % (TEST_LCD_H_RES - 100);
+        int y_start = rand() % (TEST_LCD_V_RES - 100);
+        memset(img, color_byte, TEST_IMG_SIZE);
+        esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 100, y_start + 100, img);
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+    printf("delete RGB panel\r\n");
+    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
+    free(img);
+}
+#endif // SOC_CLK_APLL_SUPPORTED
 
 #if CONFIG_LCD_RGB_ISR_IRAM_SAFE
 TEST_LCD_CALLBACK_ATTR static bool test_rgb_panel_count_in_callback(esp_lcd_panel_handle_t panel, const esp_lcd_rgb_panel_event_data_t *edata, void *user_ctx)
@@ -325,11 +353,11 @@ TEST_CASE("lcd_rgb_panel_iram_safe", "[lcd]")
     uint32_t callback_calls = 0;
 
     printf("initialize RGB panel with stream mode\r\n");
-    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 0, false, false, test_rgb_panel_count_in_callback, &callback_calls);
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 0, LCD_CLK_SRC_DEFAULT, false, false, test_rgb_panel_count_in_callback, &callback_calls);
     printf("flush one clock block to the LCD\r\n");
-    uint8_t color_byte = esp_random() & 0xFF;
-    int x_start = esp_random() % (TEST_LCD_H_RES - 100);
-    int y_start = esp_random() % (TEST_LCD_V_RES - 100);
+    uint8_t color_byte = rand() & 0xFF;
+    int x_start = rand() % (TEST_LCD_H_RES - 100);
+    int y_start = rand() % (TEST_LCD_V_RES - 100);
     memset(img, color_byte, TEST_IMG_SIZE);
     esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 100, y_start + 100, img);
     printf("The LCD driver should keep flushing the color block in the background (as it's in stream mode)\r\n");

@@ -251,7 +251,7 @@ menu "Example Configuration"
     config EXAMPLE_GPIO_WAKEUP
         bool "Enable wakeup from GPIO"
         default y
-        depends on SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+        depends on SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
         help
             This option enables wake up from GPIO. Be aware that if you use low level to trigger wakeup, we strongly
             recommend you to connect external pull-up resistance.
@@ -261,18 +261,52 @@ menu "Example Configuration"
 
         config EXAMPLE_GPIO_WAKEUP_PIN
             int "Enable wakeup from GPIO"
+            default 2 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
             default 0
+            range 0 39 if IDF_TARGET_ESP32
+            range 0 21 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
             range 0 7 if IDF_TARGET_ESP32C6
             range 0 6 if IDF_TARGET_ESP32C61 || IDF_TARGET_ESP32C5
             range 0 15 if IDF_TARGET_ESP32P4
+            range 0 7 if IDF_TARGET_ESP32S31
             range 0 5
-
-        config EXAMPLE_GPIO_WAKEUP_HIGH_LEVEL
-            bool "Enable GPIO high-level wakeup"
-            default y
             help
-                This option set the gpio wake-up trigger signal, In deep sleep, only high or low level wake-up is
-                supported. If this option is enabled, it is a high level wake up, otherwise it is a low level wake up.
+                Only GPIOs which have RTC functionality (pads that powered by VDD3P3_RTC) can be used,
+                You need to ensure that the set IO can be configured as a GPIO wake-up source,
+                refer SOC_GPIO_HP_PERIPH_PD_SLEEP_WAKEABLE_MASK in soc_caps.h.
+
+        choice EXAMPLE_GPIO_WAKEUP_TRIGGER
+            prompt "GPIO wakeup trigger type"
+            default EXAMPLE_GPIO_WAKEUP_TRIGGER_HIGH
+            help
+                Selects esp_sleep_gpio_wake_up_mode_t for
+                esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown.
+                Edge choices require SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED on the target.
+
+            config EXAMPLE_GPIO_WAKEUP_TRIGGER_LOW
+                bool "Low level"
+            config EXAMPLE_GPIO_WAKEUP_TRIGGER_HIGH
+                bool "High level"
+            config EXAMPLE_GPIO_WAKEUP_TRIGGER_POSEDGE
+                bool "Rising edge (posedge)"
+                depends on SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED
+            config EXAMPLE_GPIO_WAKEUP_TRIGGER_NEGEDGE
+                bool "Falling edge (negedge)"
+                depends on SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED
+            config EXAMPLE_GPIO_WAKEUP_TRIGGER_ANYEDGE
+                bool "Any edge"
+                depends on SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED
+        endchoice
+
+        config EXAMPLE_GPIO_WAKEUP_MODE
+            int
+            default 0 if EXAMPLE_GPIO_WAKEUP_TRIGGER_LOW
+            default 1 if EXAMPLE_GPIO_WAKEUP_TRIGGER_HIGH
+            default 2 if EXAMPLE_GPIO_WAKEUP_TRIGGER_POSEDGE
+            default 3 if EXAMPLE_GPIO_WAKEUP_TRIGGER_NEGEDGE
+            default 4 if EXAMPLE_GPIO_WAKEUP_TRIGGER_ANYEDGE
+            help
+                esp_sleep_gpio_wake_up_mode_t index (0=LOW, 1=HIGH, 2=POSEDGE, 3=NEGEDGE, 4=ANYEDGE);
     endmenu
 
 endmenu

@@ -7,7 +7,16 @@
 #include "riscv/rv_utils.h"
 #include "hal/interrupt_clic_ll.h"
 #include "esp_private/interrupt_clic.h"
+#include "esp_attr.h"
 
+#if __riscv_zcmp && SOC_CPU_ZCMP_WORKAROUND
+/* Due to a hardware bug, the interrupt threshold must be saved before disabling the interrupts.
+ * Make sure the array is always accessible. */
+#if CONFIG_IDF_TARGET_ESP32P4
+SPM_DRAM_ATTR
+#endif
+uint32_t g_xintthresh[SOC_CPU_CORES_NUM];
+#endif
 
 void intr_matrix_route(int intr_src, int intr_num)
 {

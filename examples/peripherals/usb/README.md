@@ -25,5 +25,6 @@ ESP BOARD       USB CONNECTOR (type A)
 | ESP32-P4 2.0 | pin 50 | pin 49 |
 | ESP32-P4 1.1 | GPIO27 | GPIO26 |
 | ESP32-H4     | GPIO22 | GPIO21 |
+| ESP32-S31    | pin 44 | pin 45 |
 
-> Note: On the ESP32-P4, the USB 2.0 PHY pins are dedicated to USB-OTG functionality and cannot be used as general-purpose GPIOs.
+> Note: On the ESP32-P4 and ESP32-S31, the USB 2.0 PHY pins are dedicated to USB-OTG functionality and cannot be used as general-purpose GPIOs. ESP32-S31 only supports the USB 2.0 PHY.

@@ -45,11 +45,14 @@ menu "Application Rollback"
         default 32 if IDF_TARGET_ESP32
         range 1 4 if IDF_TARGET_ESP32C2
         default 4 if IDF_TARGET_ESP32C2
+        range 1 9 if IDF_TARGET_ESP32C5
+        default 9 if IDF_TARGET_ESP32C5
         range 1 16
         default 16
         help
             The size of the efuse secure version field.
-            Its length is limited to 32 bits for ESP32 and 16 bits for ESP32-S2.
+            Its length is limited to 32 bits for ESP32, 4 bits for ESP32-C2,
+            9 bits for ESP32-C5, and 16 bits for other targets.
             This determines how many times the security version can be increased.
 
     config BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE

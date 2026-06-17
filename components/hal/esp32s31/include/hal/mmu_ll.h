@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,12 +15,9 @@
 #include "hal/mmu_types.h"
 #include "hal/efuse_ll.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-// TODO: [ESP32S31] IDF-14669
 
 #define MMU_LL_FLASH_MMU_ID      0
 #define MMU_LL_PSRAM_MMU_ID      1
@@ -36,6 +33,7 @@ extern "C" {
  *
  * @return linear address
  */
+__attribute__((always_inline))
 static inline uint32_t mmu_ll_vaddr_to_laddr(uint32_t vaddr)
 {
     return vaddr & SOC_MMU_LINEAR_ADDR_MASK;
@@ -126,8 +124,26 @@ __attribute__((always_inline)) static inline bool mmu_ll_cache_encryption_enable
 __attribute__((always_inline))
 static inline mmu_page_size_t mmu_ll_get_page_size(uint32_t mmu_id)
 {
-    (void)mmu_id;
-    return MMU_PAGE_64KB;
+    uint32_t page_size_code = 0;
+    mmu_page_size_t page_size = MMU_PAGE_64KB;
+
+    if (mmu_id == MMU_LL_FLASH_MMU_ID) {
+        page_size_code = REG_GET_FIELD(SPI_MEM_C_MMU_POWER_CTRL_REG, SPI_MMU_PAGE_SIZE);
+        page_size = (page_size_code == 0) ? MMU_PAGE_256KB : \
+                    (page_size_code == 1) ? MMU_PAGE_128KB : \
+                    (page_size_code == 2) ? MMU_PAGE_64KB : \
+                    MMU_PAGE_32KB;
+    } else if (mmu_id == MMU_LL_PSRAM_MMU_ID) {
+        page_size_code = REG_GET_FIELD(SPI_MEM_S_MMU_POWER_CTRL_REG, SPI_MMU_PAGE_SIZE);
+        page_size = (page_size_code == 0) ? MMU_PAGE_64KB : \
+                    (page_size_code == 1) ? MMU_PAGE_32KB : \
+                    (page_size_code == 2) ? MMU_PAGE_16KB : \
+                    MMU_PAGE_8KB;
+    } else {
+        HAL_ASSERT(false);
+    }
+
+    return page_size;
 }
 
 /**
@@ -138,9 +154,21 @@ static inline mmu_page_size_t mmu_ll_get_page_size(uint32_t mmu_id)
 __attribute__((always_inline))
 static inline void mmu_ll_set_page_size(uint32_t mmu_id, uint32_t size)
 {
-    HAL_ASSERT(size == MMU_PAGE_64KB);
+    uint8_t reg_val = 0;
     if (mmu_id == MMU_LL_FLASH_MMU_ID) {
-        REG_SET_FIELD(SPI_MEM_C_MMU_POWER_CTRL_REG, SPI_MMU_PAGE_SIZE, 2);
+        reg_val = (size == MMU_PAGE_256KB) ? 0 : \
+                  (size == MMU_PAGE_128KB) ? 1 : \
+                  (size == MMU_PAGE_64KB)  ? 2 : \
+                  (size == MMU_PAGE_32KB)  ? 3 : 0;
+        REG_SET_FIELD(SPI_MEM_C_MMU_POWER_CTRL_REG, SPI_MMU_PAGE_SIZE, reg_val);
+    } else if (mmu_id == MMU_LL_PSRAM_MMU_ID) {
+        reg_val = (size == MMU_PAGE_64KB) ? 0 : \
+                  (size == MMU_PAGE_32KB) ? 1 : \
+                  (size == MMU_PAGE_16KB)  ? 2 : \
+                  (size == MMU_PAGE_8KB)  ? 3 : 0;
+        REG_SET_FIELD(SPI_MEM_S_MMU_POWER_CTRL_REG, SPI_MMU_PAGE_SIZE, reg_val);
+    } else {
+        HAL_ASSERT(false);
     }
 }
 
@@ -205,20 +233,26 @@ static inline uint32_t mmu_ll_get_entry_id(uint32_t mmu_id, uint32_t vaddr)
     mmu_page_size_t page_size = mmu_ll_get_page_size(mmu_id);
     uint32_t shift_code = 0;
     switch (page_size) {
-        case MMU_PAGE_64KB:
-            shift_code = 16;
-            break;
-        case MMU_PAGE_32KB:
-            shift_code = 15;
-            break;
-        case MMU_PAGE_16KB:
-            shift_code = 14;
-            break;
-        case MMU_PAGE_8KB:
-            shift_code = 13;
-            break;
-        default:
-            HAL_ASSERT(shift_code);
+    case MMU_PAGE_256KB:
+        shift_code = 18;
+        break;
+    case MMU_PAGE_128KB:
+        shift_code = 17;
+        break;
+    case MMU_PAGE_64KB:
+        shift_code = 16;
+        break;
+    case MMU_PAGE_32KB:
+        shift_code = 15;
+        break;
+    case MMU_PAGE_16KB:
+        shift_code = 14;
+        break;
+    case MMU_PAGE_8KB:
+        shift_code = 13;
+        break;
+    default:
+        HAL_ASSERT(shift_code);
     }
     return ((vaddr & SOC_MMU_VADDR_MASK) >> shift_code);
 }
@@ -240,20 +274,26 @@ static inline uint32_t mmu_ll_format_paddr(uint32_t mmu_id, uint32_t paddr, mmu_
     mmu_page_size_t page_size = mmu_ll_get_page_size(mmu_id);
     uint32_t shift_code = 0;
     switch (page_size) {
-        case MMU_PAGE_64KB:
-            shift_code = 16;
-            break;
-        case MMU_PAGE_32KB:
-            shift_code = 15;
-            break;
-        case MMU_PAGE_16KB:
-            shift_code = 14;
-            break;
-        case MMU_PAGE_8KB:
-            shift_code = 13;
-            break;
-        default:
-            HAL_ASSERT(shift_code);
+    case MMU_PAGE_256KB:
+        shift_code = 18;
+        break;
+    case MMU_PAGE_128KB:
+        shift_code = 17;
+        break;
+    case MMU_PAGE_64KB:
+        shift_code = 16;
+        break;
+    case MMU_PAGE_32KB:
+        shift_code = 15;
+        break;
+    case MMU_PAGE_16KB:
+        shift_code = 14;
+        break;
+    case MMU_PAGE_8KB:
+        shift_code = 13;
+        break;
+    default:
+        HAL_ASSERT(shift_code);
     }
     return paddr >> shift_code;
 }
@@ -444,20 +484,20 @@ static inline uint32_t mmu_ll_entry_id_to_paddr_base(uint32_t mmu_id, uint32_t e
     mmu_page_size_t page_size = mmu_ll_get_page_size(mmu_id);
     uint32_t shift_code = 0;
     switch (page_size) {
-        case MMU_PAGE_64KB:
-            shift_code = 16;
-            break;
-        case MMU_PAGE_32KB:
-            shift_code = 15;
-            break;
-        case MMU_PAGE_16KB:
-            shift_code = 14;
-            break;
-        case MMU_PAGE_8KB:
-            shift_code = 13;
-            break;
-        default:
-            HAL_ASSERT(shift_code);
+    case MMU_PAGE_64KB:
+        shift_code = 16;
+        break;
+    case MMU_PAGE_32KB:
+        shift_code = 15;
+        break;
+    case MMU_PAGE_16KB:
+        shift_code = 14;
+        break;
+    case MMU_PAGE_8KB:
+        shift_code = 13;
+        break;
+    default:
+        HAL_ASSERT(shift_code);
     }
     if (mmu_id == MMU_LL_FLASH_MMU_ID) {
         REG_WRITE(SPI_MEM_C_MMU_ITEM_INDEX_REG, entry_id);
@@ -528,20 +568,20 @@ static inline uint32_t mmu_ll_entry_id_to_vaddr_base(uint32_t mmu_id, uint32_t e
     uint32_t shift_code = 0;
 
     switch (page_size) {
-        case MMU_PAGE_64KB:
-            shift_code = 16;
-            break;
-        case MMU_PAGE_32KB:
-            shift_code = 15;
-            break;
-        case MMU_PAGE_16KB:
-            shift_code = 14;
-            break;
-        case MMU_PAGE_8KB:
-            shift_code = 13;
-            break;
-        default:
-            HAL_ASSERT(shift_code);
+    case MMU_PAGE_64KB:
+        shift_code = 16;
+        break;
+    case MMU_PAGE_32KB:
+        shift_code = 15;
+        break;
+    case MMU_PAGE_16KB:
+        shift_code = 14;
+        break;
+    case MMU_PAGE_8KB:
+        shift_code = 13;
+        break;
+    default:
+        HAL_ASSERT(shift_code);
     }
     uint32_t laddr = entry_id << shift_code;
     return mmu_ll_laddr_to_vaddr(laddr, type, (mmu_id == MMU_LL_FLASH_MMU_ID) ? MMU_TARGET_FLASH0 : MMU_TARGET_PSRAM0);

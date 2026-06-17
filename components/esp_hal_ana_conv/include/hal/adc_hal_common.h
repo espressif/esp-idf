@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,10 @@
 
 #include "hal/adc_types.h"
 #include "hal/adc_types_private.h"
+#include "soc/soc_caps.h"
+#if SOC_ADC_SUPPORTED
+#include "hal/adc_ll.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -90,6 +94,21 @@ void adc_hal_set_calibration_param(adc_unit_t adc_n, uint32_t param);
 uint32_t adc_hal_self_calibration(adc_unit_t adc_n, adc_atten_t atten, bool internal_gnd);
 
 #endif //SOC_ADC_CALIBRATION_V1_SUPPORTED
+
+/*---------------------------------------------------------------
+                    I2C SAR ADC register backup/restore
+---------------------------------------------------------------*/
+#if ADC_LL_ANA_CALI_REG_PD_WORKAROUND
+/**
+ * @brief Backup I2C SAR ADC analog calibration related register values
+ */
+void adc_hal_i2c_saradc_reg_backup(void);
+
+/**
+ * @brief Restore I2C SAR ADC analog calibration related register values
+ */
+void adc_hal_i2c_saradc_reg_restore(void);
+#endif  // ADC_LL_ANA_CALI_REG_PD_WORKAROUND
 
 #ifdef __cplusplus
 }

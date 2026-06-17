@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,8 +37,10 @@ extern "C" {
 #define ESP_ATT_HDR_JSON_MAX_SZ     (128)
 
 #define ESP_ATT_EAT_DEV_ID_SZ       (32)
+#define ESP_ATT_EAT_UEID_MAC_SZ     (6)   /* eFuse MAC */
+#define ESP_ATT_EAT_UEID_OPT_ID_SZ  (16)  /* eFuse OPTIONAL_UNIQUE_ID */
 #define ESP_ATT_CLAIM_JSON_MAX_SZ   (448)
-#define ESP_ATT_EAT_JSON_MAX_SZ     (1344)
+#define ESP_ATT_EAT_JSON_MAX_SZ     (1600)
 
 #define ESP_ATT_PUBKEY_JSON_MAX_SZ  (128)
 #define ESP_ATT_SIGN_JSON_MAX_SZ    (192)
@@ -119,14 +121,17 @@ typedef struct {
  * @brief Structure to hold the Entity Attestation Token initial configuration
  */
 typedef struct {
-    uint8_t *auth_challenge;               /**< Authentication challenge */
-    size_t challenge_size;                 /**< Challenge size */
-    uint32_t client_id;                    /**< Client identifier (Attestation relying party) */
-    uint32_t device_ver;                   /**< Device version */
-    uint8_t device_id[SHA256_DIGEST_SZ];   /**< Device identifier */
-    uint8_t instance_id[SHA256_DIGEST_SZ]; /**< Instance identifier */
-    char psa_cert_ref[32];                 /**< PSA certificate reference */
-    uint8_t device_stat;                   /**< Flags indicating device status */
+    uint8_t *auth_challenge;                         /**< Authentication challenge */
+    size_t challenge_size;                           /**< Challenge size */
+    uint32_t client_id;                              /**< Client identifier (Attestation relying party) */
+    uint32_t chip_id;                                /**< Chip identifier */
+    uint32_t device_ver;                             /**< Device version */
+    uint8_t ueid_mac[ESP_ATT_EAT_UEID_MAC_SZ];       /**< Device UEID: MAC from eFuse*/
+    uint8_t ueid_opt_id[ESP_ATT_EAT_UEID_OPT_ID_SZ]; /**< Device UEID: OPTIONAL_UNIQUE_ID from eFuse*/
+    uint8_t device_id[SHA256_DIGEST_SZ];             /**< Device identifier (SHA-256 of MAC) */
+    uint8_t instance_id[SHA256_DIGEST_SZ];           /**< Instance identifier */
+    char psa_cert_ref[32];                           /**< PSA certificate reference */
+    uint8_t device_stat;                             /**< Flags indicating device status */
 } esp_att_token_cfg_t;
 
 /**

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,15 +7,9 @@
 
 #include "sdkconfig.h"          // For CONFIG_NVS_BDL_STACK
 
-/* NOTE: Using legacy mbedtls XTS API until PSA Crypto adds XTS support
-* With TF-PSA-Crypto 1.0, AES headers moved to mbedtls/private/.
-* Need MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS to access XTS functions.
-*/
-#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
-#include "mbedtls/private/aes.h"
 #include "nvs_flash.h"
 #include "nvs_partition.hpp"
-
+#include "nvs_xts_aes.h"
 namespace nvs {
 
 /**
@@ -73,8 +67,8 @@ public:
     esp_err_t write(size_t dst_offset, const void* src, size_t size) override;
 
 protected:
-    mbedtls_aes_xts_context mEctxt;     // AES context for encryption
-    mbedtls_aes_xts_context mDctxt;     // AES context for decryption
+    XTS_CONTEXT mEctxt;     // AES context for encryption
+    XTS_CONTEXT mDctxt;     // AES context for decryption
 };
 
 } // nvs

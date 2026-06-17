@@ -856,7 +856,6 @@ typedef struct {
     volatile mb_reg_clk_en_reg_t reg_clk_en;
 } mb_dev_t;
 
-
 #ifndef __cplusplus
 _Static_assert(sizeof(mb_dev_t) == 0x64, "Invalid size of mb_dev_t structure");
 #endif

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,7 +31,7 @@ static esp_err_t ledc_del_etm_event(esp_etm_event_t *event)
 
     if (etm_event->en_reg_addr != 0) {
         portENTER_CRITICAL(&s_ledc_etm_spinlock);
-        ledc_ll_etm_enable_evt_task(LEDC_LL_GET_HW(), etm_event->speed_mode, etm_event->en_reg_addr, etm_event->en_bit, false);
+        ledc_ll_etm_enable_evt_task(LEDC_LL_GET_HW(0), etm_event->speed_mode, etm_event->en_reg_addr, etm_event->en_bit, false);
         portEXIT_CRITICAL(&s_ledc_etm_spinlock);
     }
 
@@ -45,7 +45,7 @@ static esp_err_t ledc_del_etm_task(esp_etm_task_t *task)
 
     if (etm_task->en_reg_addr != 0) {
         portENTER_CRITICAL(&s_ledc_etm_spinlock);
-        ledc_ll_etm_enable_evt_task(LEDC_LL_GET_HW(), etm_task->speed_mode, etm_task->en_reg_addr, etm_task->en_bit, false);
+        ledc_ll_etm_enable_evt_task(LEDC_LL_GET_HW(0), etm_task->speed_mode, etm_task->en_reg_addr, etm_task->en_bit, false);
         portEXIT_CRITICAL(&s_ledc_etm_spinlock);
     }
 
@@ -65,7 +65,7 @@ esp_err_t ledc_timer_new_etm_event(ledc_mode_t speed_mode, ledc_timer_t timer_se
     uint32_t en_bit = LEDC_LL_ETM_TIMER_EVENT_EN_BIT(speed_mode, timer_sel, config->event_type);
 
     portENTER_CRITICAL(&s_ledc_etm_spinlock);
-    ledc_ll_etm_enable_evt_task(LEDC_LL_GET_HW(), speed_mode, en_reg, en_bit, true);
+    ledc_ll_etm_enable_evt_task(LEDC_LL_GET_HW(0), speed_mode, en_reg, en_bit, true);
     portEXIT_CRITICAL(&s_ledc_etm_spinlock);
     event->speed_mode = speed_mode;
     event->en_reg_addr = en_reg;
@@ -90,7 +90,7 @@ esp_err_t ledc_channel_new_etm_event(ledc_mode_t speed_mode, ledc_channel_t chan
     uint32_t en_bit = LEDC_LL_ETM_CHANNEL_EVENT_EN_BIT(speed_mode, channel, config->event_type);
 
     portENTER_CRITICAL(&s_ledc_etm_spinlock);
-    ledc_ll_etm_enable_evt_task(LEDC_LL_GET_HW(), speed_mode, en_reg, en_bit, true);
+    ledc_ll_etm_enable_evt_task(LEDC_LL_GET_HW(0), speed_mode, en_reg, en_bit, true);
     portEXIT_CRITICAL(&s_ledc_etm_spinlock);
     event->speed_mode = speed_mode;
     event->en_reg_addr = en_reg;
@@ -115,7 +115,7 @@ esp_err_t ledc_timer_new_etm_task(ledc_mode_t speed_mode, ledc_timer_t timer_sel
     uint32_t en_bit = LEDC_LL_ETM_TIMER_TASK_EN_BIT(speed_mode, timer_sel, config->task_type);
 
     portENTER_CRITICAL(&s_ledc_etm_spinlock);
-    ledc_ll_etm_enable_evt_task(LEDC_LL_GET_HW(), speed_mode, en_reg, en_bit, true);
+    ledc_ll_etm_enable_evt_task(LEDC_LL_GET_HW(0), speed_mode, en_reg, en_bit, true);
     portEXIT_CRITICAL(&s_ledc_etm_spinlock);
     task->speed_mode = speed_mode;
     task->en_reg_addr = en_reg;
@@ -140,7 +140,7 @@ esp_err_t ledc_channel_new_etm_task(ledc_mode_t speed_mode, ledc_channel_t chann
     uint32_t en_bit = LEDC_LL_ETM_CHANNEL_TASK_EN_BIT(speed_mode, channel, config->task_type);
 
     portENTER_CRITICAL(&s_ledc_etm_spinlock);
-    ledc_ll_etm_enable_evt_task(LEDC_LL_GET_HW(), speed_mode, en_reg, en_bit, true);
+    ledc_ll_etm_enable_evt_task(LEDC_LL_GET_HW(0), speed_mode, en_reg, en_bit, true);
     portEXIT_CRITICAL(&s_ledc_etm_spinlock);
     task->speed_mode = speed_mode;
     task->en_reg_addr = en_reg;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -182,12 +182,12 @@ Cache_Sync_Items = 0x400005b8;
 Cache_Op_Addr = 0x400005bc;
 Cache_Invalidate_Addr = 0x400005c0;
 Cache_Clean_Addr = 0x400005c4;
-Cache_WriteBack_Addr = 0x400005c8;
-Cache_WriteBack_Invalidate_Addr = 0x400005cc;
+PROVIDE( Cache_WriteBack_Addr = 0x400005c8 );
+PROVIDE( Cache_WriteBack_Invalidate_Addr = 0x400005cc );
 Cache_Invalidate_All = 0x400005d0;
 Cache_Clean_All = 0x400005d4;
-Cache_WriteBack_All = 0x400005d8;
-Cache_WriteBack_Invalidate_All = 0x400005dc;
+PROVIDE( Cache_WriteBack_All = 0x400005d8 );
+PROVIDE( Cache_WriteBack_Invalidate_All = 0x400005dc );
 Cache_Mask_All = 0x400005e0;
 Cache_UnMask_Dram0 = 0x400005e4;
 Cache_Suspend_Autoload = 0x400005e8;
@@ -385,7 +385,7 @@ esp_rom_recover_key = 0x400007cc;
  ***************************************/
 
 /* Functions */
-ets_ecdsa_verify = 0x400007d0;
+_rom_ets_ecdsa_verify = 0x400007d0;
 ets_secure_boot_verify_bootloader_with_keys = 0x400007d4;
 ets_secure_boot_verify_signature = 0x400007d8;
 ets_secure_boot_read_key_digests = 0x400007dc;

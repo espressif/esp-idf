@@ -353,6 +353,11 @@ esp_hid_report_map_t *esp_hid_parse_report_map(const uint8_t *hid_rm, size_t hid
         }
     }
 
+    temp_hid_report_map_t *map = s_temp_hid_report_map;
+    if (map == NULL) {
+        return NULL;
+    }
+
     esp_hid_report_map_t *out = (esp_hid_report_map_t *)calloc(1, sizeof(esp_hid_report_map_t));
     if (out == NULL) {
         ESP_LOGE(TAG, "hid_report_map malloc failed");
@@ -360,8 +365,6 @@ esp_hid_report_map_t *esp_hid_parse_report_map(const uint8_t *hid_rm, size_t hid
         s_temp_hid_report_map = NULL;
         return NULL;
     }
-
-    temp_hid_report_map_t *map = s_temp_hid_report_map;
 
     esp_hid_report_item_t *reports = (esp_hid_report_item_t *)calloc(1, map->reports_len * sizeof(esp_hid_report_item_t));
     if (reports == NULL) {

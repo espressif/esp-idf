@@ -69,7 +69,7 @@ public:
 
     esp_err_t createOrOpenNamespace(const char* nsName, bool canCreate, uint8_t& nsIndex);
 
-    esp_err_t writeItem(uint8_t nsIndex, ItemType datatype, const char* key, const void* data, size_t dataSize);
+    esp_err_t writeItem(uint8_t nsIndex, ItemType datatype, const char* key, const void* data, size_t dataSize, const bool purgeAfterErase);
 
     esp_err_t readItem(uint8_t nsIndex, ItemType datatype, const char* key, void* data, size_t dataSize);
 
@@ -77,12 +77,12 @@ public:
 
     esp_err_t getItemDataSize(uint8_t nsIndex, ItemType datatype, const char* key, size_t& dataSize);
 
-    esp_err_t eraseItem(uint8_t nsIndex, ItemType datatype, const char* key);
+    esp_err_t eraseItem(uint8_t nsIndex, ItemType datatype, const char* key, const bool purgeAfterErase);
 
     template<typename T>
-    esp_err_t writeItem(uint8_t nsIndex, const char* key, const T& value)
+    esp_err_t writeItem(uint8_t nsIndex, const char* key, const T& value, const bool purgeAfterErase)
     {
-        return writeItem(nsIndex, itemTypeOf(value), key, &value, sizeof(value));
+        return writeItem(nsIndex, itemTypeOf(value), key, &value, sizeof(value), purgeAfterErase);
     }
 
     template<typename T>
@@ -91,12 +91,14 @@ public:
         return readItem(nsIndex, itemTypeOf(value), key, &value, sizeof(value));
     }
 
-    esp_err_t eraseItem(uint8_t nsIndex, const char* key)
+    esp_err_t eraseItem(uint8_t nsIndex, const char* key, const bool purgeAfterErase)
     {
-        return eraseItem(nsIndex, ItemType::ANY, key);
+        return eraseItem(nsIndex, ItemType::ANY, key, purgeAfterErase);
     }
 
-    esp_err_t eraseNamespace(uint8_t nsIndex);
+    esp_err_t eraseNamespace(uint8_t nsIndex, const bool purgeAfterErase);
+
+    esp_err_t purgeNamespace(uint8_t nsIndex);
 
     const Partition *getPart() const
     {
@@ -113,13 +115,13 @@ public:
         return mPageManager.getBaseSector();
     }
 
-    esp_err_t writeMultiPageBlob(uint8_t nsIndex, const char* key, const void* data, size_t dataSize, VerOffset chunkStart);
+    esp_err_t writeMultiPageBlob(uint8_t nsIndex, const char* key, const void* data, size_t dataSize, VerOffset chunkStart, const bool purgeAfterErase);
 
     esp_err_t readMultiPageBlob(uint8_t nsIndex, const char* key, void* data, size_t dataSize);
 
     esp_err_t cmpMultiPageBlob(uint8_t nsIndex, const char* key, const void* data, size_t dataSize);
 
-    esp_err_t eraseMultiPageBlob(uint8_t nsIndex, const char* key, VerOffset chunkStart = VerOffset::VER_ANY);
+    esp_err_t eraseMultiPageBlob(uint8_t nsIndex, const char* key, const bool purgeAfterErase, VerOffset chunkStart = VerOffset::VER_ANY);
 
     void debugDump();
 

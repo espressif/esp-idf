@@ -17,8 +17,10 @@ entries:
         if SPIRAM_MODE_HEX = y:
             esp_psram_impl_ap_hex (noflash)
 
+        if SPIRAM_MODE_OCT = y:
+            esp_psram_impl_ap_oct (noflash)
+
         if SPIRAM_FLASH_LOAD_TO_PSRAM = y:
-            esp_psram_impl_ap_hex (noflash)
             mmu_psram_flash_v2 (noflash)
             esp_psram: esp_psram_chip_init (noflash)
             esp_psram: esp_psram_init (noflash)

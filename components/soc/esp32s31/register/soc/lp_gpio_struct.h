@@ -424,6 +424,8 @@ typedef struct {
     volatile lp_gpio_date_reg_t date;
 } lp_gpio_dev_t;
 
+extern lp_gpio_dev_t LP_GPIO;
+
 
 #ifndef __cplusplus
 _Static_assert(sizeof(lp_gpio_dev_t) == 0x400, "Invalid size of lp_gpio_dev_t structure");

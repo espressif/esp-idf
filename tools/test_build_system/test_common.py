@@ -1,8 +1,9 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import json
 import logging
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -11,6 +12,8 @@ import textwrap
 from pathlib import Path
 
 import pytest
+import yaml
+from test_build_system_helpers import EXT_IDF_PATH
 from test_build_system_helpers import EnvDict
 from test_build_system_helpers import IdfPyFunc
 from test_build_system_helpers import append_to_file
@@ -19,6 +22,45 @@ from test_build_system_helpers import find_python
 from test_build_system_helpers import get_snapshot
 from test_build_system_helpers import replace_in_file
 from test_build_system_helpers import run_idf_py
+
+_tools_dir = str(Path(EXT_IDF_PATH) / 'tools')
+if _tools_dir not in sys.path:
+    sys.path.insert(0, _tools_dir)
+from idf_py_actions.help_custom_targets_skip import CMAKE_CUSTOM_TARGETS_HELP_PANEL_TITLE  # noqa: E402
+
+
+def _parse_idf_py_help_cmake_custom_target_names(stdout: str) -> list[str]:
+    """Parse CMake Custom Targets listed in ``idf.py --help`` in rich-click format.
+    Custom "plain-slim" rich-click theme is used to minimize the formatting impact.
+    Parsing starts from the line containing ``CMAKE_CUSTOM_TARGETS_HELP_PANEL_TITLE``.
+
+    - Piped outputs may use ``| … |`` table rows instead on some architectures (Unix/Windows).
+    - CI may still wrap lines in CSI SGR sequences (``ESC [ … m``).
+    """
+    lines = stdout.splitlines()
+    idx = next((i for i, line in enumerate(lines) if CMAKE_CUSTOM_TARGETS_HELP_PANEL_TITLE in line), None)
+    if idx is None:
+        return []
+
+    _SGR_ESCAPE_RE = re.compile(r'\x1b\[[0-9;:]*m')
+    names: list[str] = []
+    for raw in lines[idx + 1 :]:
+        line = _SGR_ESCAPE_RE.sub('', raw)
+        stripped = line.strip()
+        if not stripped:
+            if names:
+                break
+            continue
+        if stripped.startswith('|'):
+            cells = [c.strip() for c in stripped.split('|') if c.strip()]
+            if cells:
+                names.append(cells[0].split(None, 1)[0])
+            continue
+        if line[:1].isspace():
+            names.append(stripped.split(None, 1)[0])
+            continue
+        break
+    return names
 
 
 def get_subdirs_absolute_paths(path: Path) -> list[str]:
@@ -202,6 +244,96 @@ def test_fallback_to_build_system_target(idf_py: IdfPyFunc, test_app_copy: Path)
     assert msg in ret.stdout, 'Custom target did not produce expected output'
 
 
+@pytest.mark.usefixtures('test_app_copy')
+def test_idf_py_help_without_build_dir_has_no_cmake_custom_targets_section(idf_py: IdfPyFunc) -> None:
+    """With no configured build directory, root help must not advertise CMake custom targets."""
+    ret = idf_py('--help')
+    assert CMAKE_CUSTOM_TARGETS_HELP_PANEL_TITLE not in ret.stdout
+
+
+@pytest.mark.buildv2_skip(
+    'cmakev2 generates per-project phony targets (${PROJECT_NAME}_binary, _check_size, _mapfile, .map, '
+    'ldgen_libraries.in_library_${PROJECT_NAME}) that the static allowlist in '
+    'tools/idf_py_actions/help_custom_targets_skip.py was designed around v1 hard-coded names.'
+)
+@pytest.mark.usefixtures('test_app_copy')
+def test_idf_py_help_after_configure_with_no_custom_targets_has_no_section(idf_py: IdfPyFunc) -> None:
+    """After configure, if the project defines no custom targets, `idf.py --help` must not show the section."""
+    idf_py('reconfigure')
+    ret = idf_py('--help')
+    assert CMAKE_CUSTOM_TARGETS_HELP_PANEL_TITLE not in ret.stdout
+
+
+@pytest.mark.buildv2_skip(
+    'cmakev2 generates per-project phony targets (${PROJECT_NAME}_binary, _check_size, _mapfile, .map, '
+    'ldgen_libraries.in_library_${PROJECT_NAME}) that the static allowlist in '
+    'tools/idf_py_actions/help_custom_targets_skip.py was designed around v1 hard-coded names.'
+)
+@pytest.mark.usefixtures('test_app_copy')
+def test_idf_py_help_lists_cmake_custom_targets_after_configure(
+    idf_py: IdfPyFunc, test_app_copy: Path, default_idf_env: EnvDict
+) -> None:
+    """After configure, project-only phony targets should appear under CMake Custom Targets in idf.py --help."""
+    tgt = 'idf_py_help_visible_custom_tgt'
+    append_to_file(
+        test_app_copy / 'CMakeLists.txt',
+        f'add_custom_target({tgt} COMMAND ${{CMAKE_COMMAND}} -E echo "ok")\n',
+    )
+    idf_py('reconfigure')
+    env = {**default_idf_env, 'RICH_CLICK_THEME': 'plain-slim'}
+    ret = run_idf_py('--help', env=env)
+    assert CMAKE_CUSTOM_TARGETS_HELP_PANEL_TITLE in ret.stdout
+    assert tgt in ret.stdout
+
+    tools_dir = str(Path(EXT_IDF_PATH) / 'tools')
+    if tools_dir not in sys.path:
+        sys.path.insert(0, tools_dir)
+    from idf_py_actions.help_custom_targets_skip import IDF_PY_HELP_SKIP_TARGETS  # noqa: E402
+    from idf_py_actions.help_custom_targets_skip import help_phony_name_passes_shape_policy  # noqa: E402
+
+    names = _parse_idf_py_help_cmake_custom_target_names(ret.stdout)
+    assert tgt in names, f'{tgt} not found in the CMake custom target printed in stdout'
+    for n in names:
+        assert help_phony_name_passes_shape_policy(n), (
+            f'Target {n!r} in CMake Custom Targets violates shape policy (prefix/suffix/substring/path). '
+            'Fix filtering in tools/idf.py or adjust HELP_PHONY_NAME_* / help_phony_name_passes_shape_policy in '
+            'tools/idf_py_actions/help_custom_targets_skip.py.'
+        )
+    unexpected = sorted({n for n in names if n not in IDF_PY_HELP_SKIP_TARGETS and n != tgt})
+    assert not unexpected, (
+        f'Unexpected CMake custom target(s) in idf.py --help: {unexpected!r}.\n'
+        'These are usually internal phony targets. Add each name to IDF_PY_HELP_SKIP_TARGETS in '
+        'tools/idf_py_actions/help_custom_targets_skip.py (keep the set sorted), then re-run this test.\n'
+        'If the leak matches a pattern (prefix, suffix, or substring), adjust HELP_PHONY_NAME_* in that module '
+        'instead of the frozenset.\n'
+        'If a name is intentionally user-visible for this test app only, extend the allowlist in '
+        'test_idf_py_help_lists_cmake_custom_targets_after_configure in tools/test_build_system/test_common.py '
+        f'(expected project target name: {tgt!r}).'
+    )
+
+
+@pytest.mark.usefixtures('test_app_copy')
+def test_idf_py_help_splits_multi_output_ninja_phony_targets(
+    idf_py: IdfPyFunc, test_app_copy: Path, default_idf_env: EnvDict
+) -> None:
+    """Multi-output Ninja `build ...: phony` lines must yield separate target names (not a single whitespace string)."""
+    a = 'idf_py_help_multi_out_a'
+    b = 'idf_py_help_multi_out_b'
+    c = 'idf_py_help_multi_out_c'
+    idf_py('reconfigure')
+
+    # Inject a multi-output phony line directly into build.ninja and verify help parsing splits it.
+    append_to_file(test_app_copy / 'build' / 'build.ninja', f'\nbuild {a} {b} {c}: phony\n')
+    env = {**default_idf_env, 'RICH_CLICK_THEME': 'plain-slim'}
+    ret = run_idf_py('--help', env=env)
+
+    names = _parse_idf_py_help_cmake_custom_target_names(ret.stdout)
+    assert a in names
+    assert b in names
+    assert c in names
+    assert f'{a} {b} {c}' not in names
+
+
 def test_create_component_project(idf_copy: Path) -> None:
     logging.info('Create project and component using idf.py and build it')
     run_idf_py('-C', 'projects', 'create-project', 'temp_test_project', workdir=idf_copy)
@@ -217,6 +349,21 @@ def test_create_component_project(idf_copy: Path) -> None:
         '\n'.join(['#include <stdio.h>', '#include "temp_test_component.h"']),
     )
     run_idf_py('build', workdir=(idf_copy / 'projects' / 'temp_test_project'))
+
+
+def test_create_project_cpp(idf_copy: Path) -> None:
+    logging.info('Create C++ project with idf.py create-project --cpp')
+    proj_dir = idf_copy / 'projects' / 'cpp_test_project'
+    run_idf_py('-C', 'projects', 'create-project', '--cpp', 'cpp_test_project', workdir=idf_copy)
+    main_cpp = proj_dir / 'main' / 'cpp_test_project.cpp'
+    assert main_cpp.is_file()
+    text = main_cpp.read_text(encoding='utf-8')
+    assert 'extern "C" void app_main(void)' in text
+    cmake = (proj_dir / 'main' / 'CMakeLists.txt').read_text(encoding='utf-8')
+    assert 'cpp_test_project.cpp' in cmake
+    # Avoid `assert 'cpp_test_project.c' not in cmake`: that string is a substring of `cpp_test_project.cpp`.
+    assert 'SRCS "cpp_test_project.c"' not in cmake
+    run_idf_py('build', workdir=str(proj_dir))
 
 
 # In this test function, there are actually two logical tests in one test function.
@@ -339,3 +486,110 @@ def test_merge_bin_cmd(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     assert (test_app_copy / 'build' / 'merged-binary-2.bin').is_file()
     idf_py('merge-bin', '--format', 'hex')
     assert (test_app_copy / 'build' / 'merged-binary.hex').is_file()
+
+
+def test_hints_components_loading(
+    idf_copy: Path, test_app_copy: Path, idf_py: IdfPyFunc, request: pytest.FixtureRequest
+) -> None:
+    logging.info('Testing component hint loading mechanism')
+    logging.debug('Creating test IDF component')
+
+    # Create a test IDF component with hints
+    idf_test_component_dir = idf_copy / 'components' / 'test_idf_comp'
+    idf_test_component_dir.mkdir(parents=True, exist_ok=True)
+    idf_component_hints = textwrap.dedent("""
+        -
+            re: "test_idf_component_error"
+            hint: "HINT FROM IDF COMPONENT: This is a test hint from ESP-IDF component"
+        """)
+    (idf_test_component_dir / 'hints.yml').write_text(idf_component_hints)
+    (idf_test_component_dir / 'CMakeLists.txt').write_text(
+        'idf_component_register(SRCS "test_comp.c" INCLUDE_DIRS ".")'
+    )
+    (idf_test_component_dir / 'test_comp.c').touch()
+
+    logging.debug('Creating test project component')
+    # Create a test project component with hints
+    project_component_dir = test_app_copy / 'components' / 'test_project_comp'
+    project_component_dir.mkdir(parents=True, exist_ok=True)
+    project_component_hints = textwrap.dedent("""
+        -
+            re: "test_project_component_error"
+            hint: "HINT FROM PROJECT COMPONENT: This is a test hint from project component"
+        """)
+    (project_component_dir / 'hints.yml').write_text(project_component_hints)
+    (project_component_dir / 'CMakeLists.txt').write_text('idf_component_register(SRCS "test_comp.c" INCLUDE_DIRS ".")')
+    (project_component_dir / 'test_comp.c').touch()
+
+    error_code = """
+    test_idf_component_error();
+    test_project_component_error();
+    """
+    replace_in_file(test_app_copy / 'main' / 'build_test_app.c', '// placeholder_inside_main', error_code)
+
+    # The default test app in buildv2 only includes the 'main' component. Hence, the IDF component
+    # and project components must be explicitly added as dependencies for them to be included in the build.
+    # Consequently, the hints from the IDF and project components will not be displayed in the build output
+    # unless they are explicitly required. In contrast, buildv1 automatically includes all discovered components
+    # unless MINIMAL_BUILD is set. Hence, add the components to the main component's REQUIRES list.
+    if request.config.getoption('buildv2', False):
+        replace_in_file(
+            test_app_copy / 'main' / 'CMakeLists.txt',
+            '# placeholder_inside_idf_component_register',
+            'REQUIRES test_idf_comp test_project_comp',
+        )
+
+    ret = idf_py('build', check=False)
+    assert 'HINT FROM IDF COMPONENT' in ret.stderr, 'Hint from IDF component should be displayed in build output'
+    assert 'HINT FROM PROJECT COMPONENT' in ret.stderr, (
+        'Hint from project component should be displayed in build output'
+    )
+
+
+def test_merged_hints_artifact_in_build_dir(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    """Check that hints.yml is generated in the build directory and that hints from all components are merged"""
+    # Create a local component with a uniquely identifiable hint entry so we
+    # can verify it ends up in the merged output.
+    test_comp_dir = test_app_copy / 'components' / 'test_hint_comp'
+    test_comp_dir.mkdir(parents=True, exist_ok=True)
+    (test_comp_dir / 'CMakeLists.txt').write_text('idf_component_register()\n')
+    (test_comp_dir / 'hints.yml').write_text(
+        '- re: "UNIQUE_TEST_HINT_MARKER_12345"\n  hint: "This is a test hint for merge verification"\n'
+    )
+    # In buildv2, only components in the REQUIRES chain are included in
+    # build_component_paths. Add test_hint_comp so its hints are merged.
+    # This call is harmless in v1 (all components are auto-discovered).
+    replace_in_file(
+        test_app_copy / 'main' / 'CMakeLists.txt',
+        '# placeholder_inside_idf_component_register',
+        'REQUIRES test_hint_comp',
+    )
+
+    idf_py('reconfigure')
+    hints_file = test_app_copy / 'build' / 'hints.yml'
+    assert hints_file.is_file(), 'hints.yml should exist in the build directory after reconfigure'
+    content = hints_file.read_text(encoding='utf-8')
+    parsed = yaml.safe_load(content)
+    assert isinstance(parsed, list), 'hints.yml should be a valid YAML list'
+    assert len(parsed) > 0, 'hints.yml should be non-empty'
+
+    # Verify hints from the custom component are actually merged in
+    hint_patterns = [entry.get('re', '') for entry in parsed if isinstance(entry, dict)]
+    assert any('UNIQUE_TEST_HINT_MARKER_12345' in p for p in hint_patterns), (
+        'Custom component hint should be present in merged hints.yml'
+    )
+
+
+@pytest.mark.buildv2_skip('hello_world uses cmake/project.cmake (v1 only)')
+def test_merged_hints_artifact_real_project(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    """Check that hints.yml is generated in a custom build directory (-B flag)"""
+    # Verify the build dir is dynamic, not hardcoded
+    idf_py('-B', 'custom_build', 'reconfigure')
+    custom_hints_file = test_app_copy / 'custom_build' / 'hints.yml'
+    assert custom_hints_file.is_file(), 'hints.yml should exist in a custom build directory'
+
+
+def test_sbom_create_cmd(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    logging.info('Test if sbom-create command works correctly')
+    idf_py('sbom-create', '--spdx-file', 'test_app.spdx')
+    assert (test_app_copy / 'test_app.spdx').is_file()

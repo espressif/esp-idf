@@ -1,6 +1,7 @@
 idf_component_register(SRCS "test_bt_main.c"
                             "test_bt_common.c"
                             "test_smp.c"
+                            "test_tinycrypt_ecc.c"
                        INCLUDE_DIRS "."
                        PRIV_REQUIRES unity bt
                        WHOLE_ARCHIVE)
@@ -11,3 +12,4 @@ target_include_directories(${COMPONENT_LIB} PRIVATE ${bt_dir}/host/bluedroid/sta
 target_include_directories(${COMPONENT_LIB} PRIVATE ${bt_dir}/host/bluedroid/common/include)
 target_include_directories(${COMPONENT_LIB} PRIVATE ${bt_dir}/host/bluedroid/stack/include)
 target_include_directories(${COMPONENT_LIB} PRIVATE ${bt_dir}/common/include)
+target_include_directories(${COMPONENT_LIB} PRIVATE ${bt_dir}/common/tinycrypt/include)

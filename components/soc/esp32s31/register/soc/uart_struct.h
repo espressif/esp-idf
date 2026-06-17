@@ -1346,7 +1346,6 @@ extern uart_dev_t UART0;
 extern uart_dev_t UART1;
 extern uart_dev_t UART2;
 extern uart_dev_t UART3;
-extern uart_dev_t UART4;
 extern uart_dev_t LP_UART;
 
 #ifndef __cplusplus

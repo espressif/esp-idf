@@ -336,6 +336,13 @@ class PublicHeaderChecker:
     # Get compilation data from an example to list all public header files
     def list_public_headers(self, ignore_dirs: list, ignore_files: list | set, only_dir: str | None = None) -> None:
         idf_path = self.idf_path
+        # idf_path = os.getenv('IDF_PATH')
+        if idf_path is None:
+            raise RuntimeError("Environment variable 'IDF_PATH' wasn't set.")
+
+        idf_tools_path = os.getenv('IDF_TOOLS_PATH') or os.path.expanduser(os.path.join('~', '.espressif'))
+        idf_root_dep_path = os.path.join(idf_tools_path, 'root_managed_components')
+
         project_dir = os.path.join(idf_path, 'examples', 'get-started', 'blink')
         sdkconfig = os.path.join(self.build_dir, 'sdkconfig')
         if self.libc_type == 'newlib':
@@ -398,7 +405,11 @@ class PublicHeaderChecker:
             if os.path.relpath(d, idf_path).startswith(tuple(ignore_dirs)):
                 self.log(f'{d} - directory ignored')
                 continue
-            for root, dirnames, filenames in os.walk(d):
+            for root, _, filenames in os.walk(d):
+                if root.startswith(idf_root_dep_path):
+                    self.log(f'{root} - directory ignored (inside IDF_TOOLS_PATH/root_managed_components)')
+                    continue
+
                 for filename in fnmatch.filter(filenames, '*.h'):
                     all_include_files.append(os.path.join(root, filename))
         self.main_c = main_c

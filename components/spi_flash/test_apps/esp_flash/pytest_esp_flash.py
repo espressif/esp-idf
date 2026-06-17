@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import pytest
 from pytest_embedded import Dut
@@ -61,4 +61,52 @@ def test_esp_flash_multi(dut: Dut) -> None:
 )
 @idf_parametrize('target', ['esp32c2'], indirect=['target'])
 def test_esp_flash_26mhz_c2(dut: Dut) -> None:
+    dut.run_all_single_board_cases(group='esp_flash')
+
+
+@pytest.mark.flash_32m
+@pytest.mark.parametrize(
+    'config',
+    [
+        'c5_32m_120m_qio_map',
+        'c5_32m_120m_dio_map',
+        'c5_32m_120m_qio',
+        'c5_32m_120m_dio',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c5'], indirect=['target'])
+def test_esp_flash_32m_c5(dut: Dut) -> None:
+    dut.run_all_single_board_cases(group='esp_flash')
+
+
+@pytest.mark.flash_32m
+@pytest.mark.parametrize(
+    'config',
+    [
+        'c61_32m_120m_qio_map',
+        'c61_32m_120m_dio_map',
+        'c61_32m_120m_qio',
+        'c61_32m_120m_dio',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c61'], indirect=['target'])
+def test_esp_flash_32m_c61(dut: Dut) -> None:
+    dut.run_all_single_board_cases(group='esp_flash')
+
+
+@pytest.mark.flash_32m
+@pytest.mark.parametrize(
+    'config',
+    [
+        'p4_32m_120m_qio_map',
+        'p4_32m_120m_dio_map',
+        'p4_32m_120m_qio',
+        'p4_32m_120m_dio',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32p4'], indirect=['target'])
+def test_esp_flash_32m_p4(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='esp_flash')

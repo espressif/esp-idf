@@ -47,7 +47,7 @@ static void MSPI_ISR_ATTR mspi_isr_handler(void *arg)
 
 #if MSPI_LL_ECC_INT_SUPPORTED
     if (intr_events & MSPI_LL_EVENT_ECC_ERR) {
-        ESP_DRAM_LOGD(TAG, "ecc error");
+        ESP_DRAM_LOGE(TAG, "ecc error");
         is_ecc_error = true;
     }
 #endif
@@ -58,7 +58,7 @@ static void MSPI_ISR_ATTR mspi_isr_handler(void *arg)
 #endif
 #if MSPI_LL_ADDR_INT_SUPPORTED
     if (intr_events & MSPI_LL_EVENT_AXI_RADDR_ERR) {
-        ESP_DRAM_LOGE(TAG, "read addr error");
+        ESP_DRAM_LOGE(TAG, "read address invalid or misaligned");
     }
     if (intr_events & MSPI_LL_EVENT_AXI_WADDR_ERR) {
         ESP_DRAM_LOGE(TAG, "write addr error");

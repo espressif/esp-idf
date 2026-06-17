@@ -8,7 +8,7 @@ This example demonstrates how the ULP-RISC-V coprocessor can register and handle
 - RTC IO triggered interrupts
 
 The example keeps a count of the software interrupts triggered on the ULP RISC-V core and wakes up the main processor from deep sleep after a certain threshold.
-Additionaly, it wakes up the main processor from deep sleep when a button is pressed and the GPIO interrupt is triggered.
+Additionally, it wakes up the main processor from deep sleep when a button is pressed and the GPIO interrupt is triggered.
 
 ## How to use example
 

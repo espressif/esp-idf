@@ -4,13 +4,20 @@ examples/system/app_trace_basic:
   disable_test:
     - if: IDF_TARGET == "esp32h21"
       temporary: true
-      reason: not supported yet #TODO: OCD-1081
+      reason: lack of runners
     - if: IDF_TARGET == "esp32h4"
       temporary: true
       reason: not supported yet #TODO: OCD-1137
+    - if: IDF_TARGET == "esp32s31"
+      temporary: true
+      reason: not support yet   #TODO: OCD-1290
+  depends_components:
+    - esp_trace
+    - app_trace
 
 examples/system/base_mac_address:
   depends_components:
+    - *common_components
     - esp_hw_support
 
 examples/system/deep_sleep:
@@ -36,10 +43,11 @@ examples/system/efuse:
       reason: Security features are not yet supported for Linux.
     - if: SOC_ECDSA_SUPPORT_CURVE_P384 != 1 and (CONFIG_NAME == "virt_secure_boot_v2_ecdsa_p384" or CONFIG_NAME == "virt_sb_v2_ecdsa_p384_and_fe")
       reason: Secure Boot V2 with ECDSA P384 is not supported.
-    - if: IDF_TARGET in ["esp32s31"]
+    - if: IDF_TARGET in ["esp32s31", "esp32h4"]
       temporary: true
-      reason: not support yet # TODO: [ESP32S31] IDF-14688
+      reason: not support yet # TODO: [ESP32S31] IDF-14442 [ESP32H4] IDF-12262
   depends_components:
+    - *common_components
     - efuse
     - bootloader_support
 
@@ -55,9 +63,27 @@ examples/system/esp_timer:
   depends_components:
     - esp_timer
 
+examples/system/esp_trace:
+  disable:
+    - if: SOC_USB_SERIAL_JTAG_SUPPORTED != 1
+      reason: example transport is USB Serial JTAG
+  disable_test:
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runners
+    - if: IDF_TARGET == "esp32h4"
+      temporary: true
+      reason: lack of runners
+    - if: IDF_TARGET == "esp32s31"
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - esp_trace
+    - freertos
+
 examples/system/eventfd:
   disable:
-    - if: SOC_GPTIMER_SUPPORTED != 1 and (IDF_TARGET != "esp32" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")) or IDF_TARGET in ["esp32s31"] # TODO: [ESP32S31] IDF-14932
+    - if: SOC_GPTIMER_SUPPORTED != 1 and (IDF_TARGET != "esp32" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux"))
       reason: no target specific functionality, testing on a single target is sufficient
   depends_components:
     - vfs
@@ -73,10 +99,16 @@ examples/system/gcov:
   disable_test:
     - if: IDF_TARGET == "esp32h21"
       temporary: true
-      reason: not supported yet #TODO: OCD-1079
+      reason: lack of runners
     - if: IDF_TARGET == "esp32h4"
       temporary: true
       reason: not supported yet #TODO: OCD-1138
+    - if: IDF_TARGET == "esp32s31"
+      temporary: true
+      reason: not support yet   #TODO: OCD-1291
+  depends_components:
+    - esp_trace
+    - app_trace
 
 examples/system/heap_task_tracking:
   disable:
@@ -112,6 +144,9 @@ examples/system/nmi_isr:
   enable:
     - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3"]
       reason: test NMI for Xtensa targets only
+  depends_components:
+    - esp_system
+    - xtensa
 
 examples/system/ota/advanced_https_ota:
   disable:
@@ -221,6 +256,7 @@ examples/system/perfmon:
       reason: testing on a single target is sufficient
   depends_components:
     - perfmon
+    - xtensa
 
 examples/system/pthread:
   disable:
@@ -241,6 +277,7 @@ examples/system/select:
     - if: IDF_TARGET != "esp32c3" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")
       reason: no target specific functionality, testing on a single target is sufficient
   depends_components:
+    - *common_components
     - vfs
 
 examples/system/sysview_tracing:
@@ -249,10 +286,13 @@ examples/system/sysview_tracing:
   disable_test:
     - if: IDF_TARGET == "esp32h21"
       temporary: true
-      reason: not supported yet #TODO: OCD-1082
-    - if: IDF_TARGET == "esp32h4"
+      reason: lack of runners
+    - if: IDF_TARGET == "esp32s31"
       temporary: true
-      reason: not supported yet #TODO: OCD-1136
+      reason: not support yet   #TODO: OCD-1289
+  depends_components:
+    - esp_trace
+    - app_trace
 
 examples/system/sysview_tracing_heap_log:
   disable:
@@ -260,10 +300,16 @@ examples/system/sysview_tracing_heap_log:
   disable_test:
     - if: IDF_TARGET == "esp32h21"
       temporary: true
-      reason: not supported yet #TODO: OCD-1082
+      reason: lack of runners
     - if: IDF_TARGET == "esp32h4"
       temporary: true
       reason: not supported yet #TODO: OCD-1136
+    - if: IDF_TARGET == "esp32s31"
+      temporary: true
+      reason: not support yet   #TODO: OCD-1289
+  depends_components:
+    - esp_trace
+    - app_trace
 
 examples/system/task_watchdog:
   disable:

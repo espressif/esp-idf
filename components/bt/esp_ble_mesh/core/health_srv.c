@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -418,6 +418,7 @@ static int health_pub_update(struct bt_mesh_model *model)
 int bt_mesh_fault_update(struct bt_mesh_elem *elem)
 {
     struct bt_mesh_model *model = NULL;
+    int err = 0;
 
     BT_DBG("FaultUpdate");
 
@@ -439,7 +440,10 @@ int bt_mesh_fault_update(struct bt_mesh_elem *elem)
         return 0;
     }
 
-    health_pub_update(model);
+    err = health_pub_update(model);
+    if (err) {
+        return err;
+    }
 
     return bt_mesh_model_publish(model);
 }
@@ -449,10 +453,6 @@ static void attention_off(struct k_work *work)
     struct bt_mesh_health_srv *srv = CONTAINER_OF(work,
                                      struct bt_mesh_health_srv,
                                      attn_timer.work);
-    if (!srv) {
-        BT_ERR("No Health Server context provided");
-        return;
-    }
 
     BT_DBG("AttentionOff");
 
@@ -532,6 +532,7 @@ static int health_srv_deinit(struct bt_mesh_model *model)
     model->pub->update = NULL;
 
     k_delayed_work_free(&srv->attn_timer);
+    srv->attn_timer_start = false;
 
     if (bt_mesh_model_in_primary(model)) {
         health_srv = NULL;

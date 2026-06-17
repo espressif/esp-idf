@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -143,6 +143,15 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, uint32_t gpio_num);
   * @param gpio_num GPIO number
   */
 #define gpio_hal_input_enable(hal, gpio_num) gpio_ll_input_enable((hal)->dev, gpio_num)
+
+/**
+  * @brief Check if input mode is enabled on GPIO.
+  *
+  * @param hal Context of the HAL layer
+  * @param gpio_num GPIO number
+  * @return true if input mode is enabled, false otherwise
+  */
+#define gpio_hal_input_is_enabled(hal, gpio_num) gpio_ll_input_is_enabled((hal)->dev, gpio_num)
 
 /**
   * @brief Disable output mode on GPIO.
@@ -403,6 +412,16 @@ void gpio_hal_matrix_in(gpio_hal_context_t *hal, uint32_t gpio_num, uint32_t sig
  */
 void gpio_hal_matrix_out(gpio_hal_context_t *hal, uint32_t gpio_num, uint32_t signal_idx, bool out_inv, bool oen_inv);
 
+/**
+ * @brief Connect two GPIOs through the GPIO matrix by a signal.
+ *
+ * @param hal Context of the HAL layer
+ * @param sig_src_pin Source GPIO number
+ * @param sig_dst_pin Destination GPIO number
+ * @param signal_idx Peripheral signal index (tagged as input attribute). One of the ``SIG_IN_FUNC`` signals in ``soc/gpio_sig_map.h``.
+ */
+void gpio_hal_matrix_interconnect(gpio_hal_context_t *hal, uint32_t sig_src_pin, uint32_t sig_dst_pin, uint32_t signal_idx);
+
 #if SOC_GPIO_SUPPORT_FORCE_HOLD
 /**
   * @brief Force hold all digital gpio pads (including those powered by VDD3P3_RTC power domain).
@@ -497,34 +516,34 @@ void gpio_hal_matrix_out(gpio_hal_context_t *hal, uint32_t gpio_num, uint32_t si
   */
 #define gpio_hal_sleep_output_enable(hal, gpio_num) gpio_ll_sleep_output_enable((hal)->dev, gpio_num)
 
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT == 0) && SOC_DEEP_SLEEP_SUPPORTED
+#if SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT == 0)
 /**
- * @brief Enable GPIO deep-sleep wake-up function.
+ * @brief Enable GPIO HP periph powerdown sleep wake-up function.
  *
  * @param hal Context of the HAL layer
  * @param gpio_num GPIO number.
  * @param intr_type GPIO wake-up type. Only GPIO_INTR_LOW_LEVEL or GPIO_INTR_HIGH_LEVEL can be used.
  */
-#define gpio_hal_deepsleep_wakeup_enable(hal, gpio_num, intr_type) gpio_ll_deepsleep_wakeup_enable((hal)->dev, gpio_num, intr_type)
+#define gpio_hal_wakeup_enable_on_hp_periph_powerdown_sleep(hal, gpio_num, intr_type) gpio_ll_wakeup_enable_on_hp_periph_powerdown_sleep((hal)->dev, gpio_num, intr_type)
 
 /**
- * @brief Disable GPIO deep-sleep wake-up function.
+ * @brief Disable GPIO HP periph powerdown sleep wake-up function.
  *
  * @param hal Context of the HAL layer
  * @param gpio_num GPIO number
  */
-#define gpio_hal_deepsleep_wakeup_disable(hal, gpio_num) gpio_ll_deepsleep_wakeup_disable((hal)->dev, gpio_num)
+#define gpio_hal_wakeup_disable_on_hp_periph_powerdown_sleep(hal, gpio_num) gpio_ll_wakeup_disable_on_hp_periph_powerdown_sleep((hal)->dev, gpio_num)
 
 /**
- * @brief Get the status of whether an IO is used for deep-sleep wake-up.
+ * @brief Get the status of whether an IO is used for HP periph powerdown sleep wake-up.
  *
  * @param hal Context of the HAL layer
  * @param gpio_num GPIO number
  *
- * @return True if the pin is enabled to wake up from deep-sleep
+ * @return True if the pin is enabled to wake up from HP periph powerdown sleep
  */
-#define gpio_hal_deepsleep_wakeup_is_enabled(hal, gpio_num) gpio_ll_deepsleep_wakeup_is_enabled((hal)->dev, gpio_num)
-#endif //SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT == 0) && SOC_DEEP_SLEEP_SUPPORTED
+#define gpio_hal_wakeup_is_enabled_on_hp_periph_powerdown_sleep(hal, gpio_num) gpio_ll_hp_periph_powerdown_sleep_wakeup_is_enabled((hal)->dev, gpio_num)
+#endif //SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT == 0)
 
 #if SOC_GPIO_SUPPORT_PIN_HYS_FILTER
 /**

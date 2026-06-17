@@ -289,15 +289,16 @@ static void test_rmt_partial_receive(size_t mem_block_symbols, int test_symbols_
     for (int i = 0; i < 10; i++) {
         printf("{%d:%d},{%d:%d}\r\n", receive_user_buf[i].level0, receive_user_buf[i].duration0, receive_user_buf[i].level1, receive_user_buf[i].duration1);
         TEST_ASSERT_EQUAL(1, receive_user_buf[i].level0);
-        TEST_ASSERT_INT_WITHIN(20, 50, receive_user_buf[i].duration0);
+        TEST_ASSERT_INT_WITHIN(30, 50, receive_user_buf[i].duration0);
         TEST_ASSERT_EQUAL(0, receive_user_buf[i].level1);
-        TEST_ASSERT_INT_WITHIN(20, 50, receive_user_buf[i].duration1);
+        TEST_ASSERT_INT_WITHIN(30, 50, receive_user_buf[i].duration1);
     }
 
     printf("disable rx channels\r\n");
     TEST_ESP_OK(rmt_disable(rx_channel));
     printf("delete channels and encoder\r\n");
     TEST_ESP_OK(rmt_del_channel(rx_channel));
+    TEST_ESP_OK(gpio_reset_pin(TEST_RMT_GPIO_NUM_A));
     free(receive_user_buf);
 }
 

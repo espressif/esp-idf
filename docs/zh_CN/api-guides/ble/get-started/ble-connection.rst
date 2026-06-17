@@ -319,14 +319,14 @@ MTU 可以设定为更大的值，例如 140 字节。在蓝牙核心规范 4.2 
         ...
     }
 
-其次，我们希望设备是可连接的，所以需要将广播模式从不可连接修改为可连接；另外，在扫描响应中设定的广播间隔参数仅仅起到告知扫其他设备的作用，不影响实际的广播间隔，该参数必须设定到广播参数结构中才能真正生效，这里我们将广播间隔的最小值与最大值分别设为 500 ms 和 510 ms ；最后，我们希望用回调函数 `gap_event_handler` 处理 GAP 事件，所以将该回调函数传入对应于开始广播的 API `ble_gap_adv_start` 中。相关代码如下
+其次，我们希望设备是可连接的，所以需要将广播模式从不可连接修改为可连接；另外，在扫描响应中设定的广播间隔参数仅仅起到告知其他设备的作用，不影响实际的广播间隔，该参数必须设定到广播参数结构中才能真正生效，这里我们将广播间隔的最小值与最大值分别设为 500 ms 和 510 ms ；最后，我们希望用回调函数 `gap_event_handler` 处理 GAP 事件，所以将该回调函数传入对应于开始广播的 API `ble_gap_adv_start` 中。相关代码如下
 
 .. code-block:: C
 
     static void start_advertising(void) {
         ...
 
-        /* Set non-connetable and general discoverable mode to be a beacon */
+        /* Undirected connectable and general discoverable advertising */
         adv_params.conn_mode = BLE_GAP_CONN_MODE_UND;
         adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
 

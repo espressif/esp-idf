@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -100,6 +100,28 @@ extern "C" {
 #define TEST_LCD_DATA13_GPIO   (25)
 #define TEST_LCD_DATA14_GPIO   (16)
 #define TEST_LCD_DATA15_GPIO   (17)
+#elif CONFIG_IDF_TARGET_ESP32S31
+#define TEST_LCD_BK_LIGHT_GPIO (1)
+#define TEST_LCD_RST_GPIO      (56)
+#define TEST_LCD_CS_GPIO       (2)
+#define TEST_LCD_DC_GPIO       (54)
+#define TEST_LCD_PCLK_GPIO     (5)
+#define TEST_LCD_DATA0_GPIO    (11)
+#define TEST_LCD_DATA1_GPIO    (52)
+#define TEST_LCD_DATA2_GPIO    (8)
+#define TEST_LCD_DATA3_GPIO    (50)
+#define TEST_LCD_DATA4_GPIO    (6)
+#define TEST_LCD_DATA5_GPIO    (48)
+#define TEST_LCD_DATA6_GPIO    (13)
+#define TEST_LCD_DATA7_GPIO    (46)
+#define TEST_LCD_DATA8_GPIO    (16)
+#define TEST_LCD_DATA9_GPIO    (9)
+#define TEST_LCD_DATA10_GPIO   (10)
+#define TEST_LCD_DATA11_GPIO   (17)
+#define TEST_LCD_DATA12_GPIO   (12)
+#define TEST_LCD_DATA13_GPIO   (18)
+#define TEST_LCD_DATA14_GPIO   (14)
+#define TEST_LCD_DATA15_GPIO   (15)
 #endif
 
 #ifdef __cplusplus

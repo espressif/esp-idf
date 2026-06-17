@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,13 +25,6 @@
 
 ESP_LOG_ATTR_TAG(TAG, "pau_regdma");
 
-#if !SOC_RCC_IS_INDEPENDENT
-// Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
-#define PAU_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define PAU_RCC_ATOMIC()
-#endif
-
 typedef struct {
     pau_hal_context_t *hal;
 } pau_context_t;
@@ -46,7 +39,7 @@ pau_context_t * __attribute__((weak)) IRAM_ATTR PAU_instance(void)
 
     if (pau_hal.dev == NULL) {
         pau_hal.dev = &PAU;
-        PAU_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             pau_hal_enable_bus_clock(true);
         }
         pau_hal_set_regdma_wait_timeout(&pau_hal, PAU_REGDMA_LINK_WAIT_RETRY_COUNT, PAU_REGDMA_LINK_WAIT_READ_INTERNAL);
@@ -87,6 +80,20 @@ void IRAM_ATTR pau_regdma_trigger_modem_link_restore(void)
     pau_hal_start_regdma_modem_link(PAU_instance()->hal, false);
     pau_hal_stop_regdma_modem_link(PAU_instance()->hal);
 }
+
+#if SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
+void IRAM_ATTR pau_regdma_trigger_wifimac_link_backup(void)
+{
+    pau_hal_start_regdma_wifimac_link(PAU_instance()->hal, true);
+    pau_hal_stop_regdma_wifimac_link(PAU_instance()->hal);
+}
+
+void IRAM_ATTR pau_regdma_trigger_wifimac_link_restore(void)
+{
+    pau_hal_start_regdma_wifimac_link(PAU_instance()->hal, false);
+    pau_hal_stop_regdma_wifimac_link(PAU_instance()->hal);
+}
+#endif
 #endif
 
 #if SOC_PM_RETENTION_SW_TRIGGER_REGDMA

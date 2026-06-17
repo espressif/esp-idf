@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include "esp_log.h"
 #include <string.h>
+#include <strings.h>
 #include <esp_log.h>
 #include <esp_console.h>
 #include "esp_vfs_dev.h"
@@ -22,9 +23,23 @@
 #define YES_NO_PARAM   (5000 / portTICK_PERIOD_MS)
 
 static QueueHandle_t cli_handle;
-static int key[3];
-static int conn_param[10];
-static int mtu;
+
+#define CLI_CONN_PARAM_COUNT 6
+
+#define CLI_MSG_TYPE_CONN_PARAM 1
+#define CLI_MSG_TYPE_MTU        2
+#define CLI_MSG_TYPE_THROUGHPUT 3
+#define CLI_MSG_TYPE_YESNO      4
+
+struct cli_msg {
+    int type;
+    union {
+        int conn_param[CLI_CONN_PARAM_COUNT];
+        int mtu;
+        int key[3];
+        bool yes;
+    } data;
+};
 
 #define CONSOLE_PROMPT_LEN_MAX (32)
 
@@ -41,56 +56,77 @@ static int conn_param_handler(int argc, char *argv[])
         return -1;
     }
 
-    sscanf(argv[1], "%d", &conn_param[0]);
-    sscanf(argv[2], "%d", &conn_param[1]);
-    sscanf(argv[3], "%d", &conn_param[2]);
-    sscanf(argv[4], "%d", &conn_param[3]);
-    sscanf(argv[5], "%d", &conn_param[4]);
-    sscanf(argv[6], "%d", &conn_param[5]);
+    struct cli_msg msg = {
+        .type = CLI_MSG_TYPE_CONN_PARAM,
+    };
 
-    ESP_LOGI("You entered", "%s %d %d %d %d %d %d", argv[0], conn_param[0], conn_param[1],
-             conn_param[2], conn_param[3], conn_param[4], conn_param[5]);
-    xQueueSend(cli_handle, &conn_param[0], 500 / portTICK_PERIOD_MS);
+    sscanf(argv[1], "%d", &msg.data.conn_param[0]);
+    sscanf(argv[2], "%d", &msg.data.conn_param[1]);
+    sscanf(argv[3], "%d", &msg.data.conn_param[2]);
+    sscanf(argv[4], "%d", &msg.data.conn_param[3]);
+    sscanf(argv[5], "%d", &msg.data.conn_param[4]);
+    sscanf(argv[6], "%d", &msg.data.conn_param[5]);
+
+    ESP_LOGI("You entered", "%s %d %d %d %d %d %d", argv[0], msg.data.conn_param[0], msg.data.conn_param[1],
+             msg.data.conn_param[2], msg.data.conn_param[3], msg.data.conn_param[4], msg.data.conn_param[5]);
+    if (cli_handle == NULL) {
+        ESP_LOGE("CLI", "Queue not initialized");
+        return -1;
+    }
+    xQueueSend(cli_handle, &msg, 500 / portTICK_PERIOD_MS);
     return 0;
 }
 
 static int conn_mtu_handler(int argc, char *argv[])
 {
+    int ret;
+    int mtu;
     ESP_LOGI("MTU Arguments entered", "%d", argc);
     if (argc != 2) {
         return -1;
     }
 
-    sscanf(argv[1], "%d", &mtu);
-    ESP_LOGI("You entered", "%s %d", argv[0], mtu);
-    xQueueSend(cli_handle, &mtu, 500 / portTICK_PERIOD_MS);
+    ret = sscanf(argv[1], "%d", &mtu);
+    if (ret != 1) {
+        return -1;
+    }
+    struct cli_msg msg = {
+        .type = CLI_MSG_TYPE_MTU,
+        .data.mtu = mtu,
+    };
+    if (cli_handle) {
+        xQueueSend(cli_handle, &msg, 500 / portTICK_PERIOD_MS);
+    }
     return 0;
 }
 
 static int throughput_demo_handler(int argc, char *argv[])
 {
     char pkey[8];
+    struct cli_msg msg = {
+        .type = CLI_MSG_TYPE_THROUGHPUT,
+    };
 
     if (argc != 4) {
         return -1;
     }
 
-    sscanf(argv[1], "%s", pkey);
+    sscanf(argv[1], "%7s", pkey);
 
     if (strcmp(pkey, "read") == 0) {
-        key[0] = 1;
+        msg.data.key[0] = 1;
     } else if (strcmp(pkey, "write") == 0) {
-        key[0] = 2;
+        msg.data.key[0] = 2;
     } else if (strcmp(pkey, "notify") == 0) {
-        key[0] = 3;
+        msg.data.key[0] = 3;
     } else {
-        key[0] = 0;
+        msg.data.key[0] = 0;
     }
 
-    sscanf(argv[2], "%d", &key[1]);
-    sscanf(argv[3], "%d", &key[2]);
-    ESP_LOGI("Throughput demo handler", "%s %s %d %d", argv[0], argv[1], key[1], key[2]);
-    xQueueSend(cli_handle, &key[0], 500 / portTICK_PERIOD_MS);
+    sscanf(argv[2], "%d", &msg.data.key[1]);
+    sscanf(argv[3], "%d", &msg.data.key[2]);
+    ESP_LOGI("Throughput demo handler", "%s %s %d %d", argv[0], argv[1], msg.data.key[1], msg.data.key[2]);
+    xQueueSend(cli_handle, &msg, 500 / portTICK_PERIOD_MS);
 
     return 0;
 }
@@ -104,32 +140,80 @@ static int yesno_handler(int argc, char *argv[])
         return -1;
     }
 
-    sscanf(argv[1], "%s", yesno);
+    sscanf(argv[1], "%3s", yesno);
 
-    if (strcmp(yesno, "Yes") || strcmp (yesno, "YES") || strcmp(yesno, "yes")) {
+    if (strcmp(yesno, "Yes") == 0 || strcmp(yesno, "YES") == 0 || strcmp(yesno, "yes") == 0) {
         yes = 1;
-    } else {
+    } else if (strcmp(yesno, "No") == 0 || strcmp(yesno, "NO") == 0 || strcmp(yesno, "no") == 0) {
         yes = 0;
+    } else {
+        yes = 0;  /* invalid input */
     }
 
     ESP_LOGI("User entered", "%s %s", argv[0], yesno);
-    xQueueSend(cli_handle, &yes, 500 / portTICK_PERIOD_MS);
+    /* Send as 24-byte buffer to match queue item size */
+    uint8_t yesno_buf[24] = {0};
+    yesno_buf[0] = (uint8_t)yes;
+    if (cli_handle) {
+        xQueueSend(cli_handle, yesno_buf, 500 / portTICK_PERIOD_MS);
+    }
     return 0;
 }
 
 int scli_receive_yesno(bool *console_key)
 {
-    return xQueueReceive(cli_handle, console_key, YES_NO_PARAM);
+    /* Receive into temporary 24-byte buffer to match queue item size,
+     * then extract bool value to prevent buffer overflow */
+    uint8_t temp_buf[24];
+    int ret = xQueueReceive(cli_handle, temp_buf, YES_NO_PARAM);
+    if (ret == pdPASS) {
+        *console_key = (bool)temp_buf[0];  /* Extract first byte as bool */
+    }
+    return ret;
 }
 
-int scli_receive_key(int *console_key)
+int scli_receive_key(int console_key[6])
 {
-    return xQueueReceive(cli_handle, console_key, BLE_RX_PARAM);
+    struct cli_msg msg;
+    if (xQueueReceive(cli_handle, &msg, BLE_RX_PARAM) != pdTRUE) {
+        return 0;
+    }
+
+    switch (msg.type) {
+    case CLI_MSG_TYPE_MTU:
+        console_key[0] = msg.data.mtu;
+        return 1;
+    case CLI_MSG_TYPE_CONN_PARAM:
+        memcpy(console_key, msg.data.conn_param,
+               sizeof(msg.data.conn_param));
+        return 1;
+    case CLI_MSG_TYPE_THROUGHPUT:
+        memcpy(console_key, msg.data.key, sizeof(msg.data.key));
+        return 1;
+    default:
+        return 0;
+    }
 }
 
-int cli_receive_key(int *console_key)
+int cli_receive_key(int console_key[6])
 {
-    return xQueueReceive(cli_handle, console_key, BLE_RX_TIMEOUT);
+    struct cli_msg msg;
+    if (xQueueReceive(cli_handle, &msg, BLE_RX_TIMEOUT) != pdTRUE) {
+        return 0;
+    }
+    switch (msg.type) {
+    case CLI_MSG_TYPE_CONN_PARAM:
+        memcpy(console_key, msg.data.conn_param, sizeof(msg.data.conn_param));
+        return 1;
+    case CLI_MSG_TYPE_THROUGHPUT:
+        memcpy(console_key, msg.data.key, sizeof(msg.data.key));
+        return 1;
+    case CLI_MSG_TYPE_MTU:
+        console_key[0] = msg.data.mtu;
+        return 1;
+    default:
+        return 0;
+    }
 }
 
 void scli_reset_queue(void)
@@ -169,7 +253,7 @@ void ble_register_cli(void)
         esp_console_cmd_register(&cmds[i]);
     }
 
-    cli_handle = xQueueCreate( 1, sizeof(int) * 6);
+    cli_handle = xQueueCreate(1, sizeof(struct cli_msg));
     if (cli_handle == NULL) {
         return;
     }

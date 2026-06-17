@@ -5,11 +5,11 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2, esp32c61="ECDSA", esp32c6, esp32h2, esp32p4, esp32c5, esp32h21="RSA-PSS 或 ECDSA"}
+{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2, esp32c61, esp32h4="ECDSA", esp32c6, esp32h2, esp32p4, esp32c5="RSA-PSS 或 ECDSA", esp32h21="RSA-PSS"}
 
-{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2, esp32c61="ECDSA-256 或 ECDSA-192", esp32c6, esp32h2, esp32p4, esp32h21="RSA-3072、ECDSA-256 或 ECDSA-192", esp32c5="RSA-3072、ECDSA-384、ECDSA-256 或 ECDSA-192"}
+{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2, esp32c61="ECDSA-256", esp32c6, esp32h2, esp32p4="RSA-3072、ECDSA-256", esp32h21="RSA-3072", esp32h4="ECDSA-384、ECDSA-256", esp32c5="RSA-3072、ECDSA-384、ECDSA-256"}
 
-{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6, esp32h2, esp32p4, esp32h21="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。", esp32c5="推荐使用 ECDSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。"}
+{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6, esp32h2, esp32p4="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。", esp32c5="推荐使用 ECDSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。"}
 
 {IDF_TARGET_SBV2_SCHEME_RECOMMENDATION:default="如果需要快速启动，推荐使用 RSA；如果需要较短的密钥长度，建议使用 ECDSA。", esp32c5="如果需要快速启动且需要较短的密钥长度，建议使用 ECDSA。"}
 
@@ -25,7 +25,7 @@
 
 {IDF_TARGET_CPU_FREQ:default="", esp32c5="240 MHz", esp32c6="160 MHz", esp32h2="96 MHz", esp32p4="360 MHz"}
 
-{IDF_TARGET_SBV2_DEFAULT_SCHEME:default="RSA", esp32c2, esp32c61, esp32c5="ECDSA (v2)"}
+{IDF_TARGET_SBV2_DEFAULT_SCHEME:default="RSA", esp32c2, esp32c61, esp32c5, esp32h4="ECDSA (v2)"}
 
 {IDF_TARGET_EFUSE_WR_DIS_RD_DIS:default="ESP_EFUSE_WR_DIS_RD_DIS", esp32="ESP_EFUSE_WR_DIS_EFUSE_RD_DISABLE"}
 
@@ -52,6 +52,18 @@
 
     在本指南中，最常用的命令形式为 ``idf.py secure-<command>``，这是对应 ``espsecure <command>`` 的封装。基于 ``idf.py`` 的命令能提供更好的用户体验，但与基于 ``espsecure`` 的命令相比，可能会损失一部分高级功能。
 
+.. only:: CONFIG_SECURE_BOOT_V2_ECDSA_INSECURE and SOC_SECURE_BOOT_V2_RSA
+
+    .. warning::
+
+        在 {IDF_TARGET_NAME} 上，基于 ECDSA 的 Secure Boot V2 方案在某些输入向量下无法正常工作，因此**不推荐使用**。请改用基于 RSA 的 Secure Boot V2 方案。如果仍需使用基于 ECDSA 的方案，请启用 :ref:`CONFIG_SECURE_BOOT_INSECURE` 和 :ref:`CONFIG_SECURE_BOOT_V2_FORCE_ENABLE_ECDSA`。该问题将在未来的硬件 ECO 版本中修复，详情请参阅硬件勘误文档。
+
+.. only:: CONFIG_SECURE_BOOT_V2_ECDSA_INSECURE and not SOC_SECURE_BOOT_V2_RSA
+
+    .. warning::
+
+        在 {IDF_TARGET_NAME} 上，基于 ECDSA 的 Secure Boot V2 方案在某些输入向量下存在漏洞，因此**不推荐用于量产**。如果仍需使用基于 ECDSA 的 Secure Boot V2 方案，请启用 :ref:`CONFIG_SECURE_BOOT_INSECURE` 和 :ref:`CONFIG_SECURE_BOOT_V2_FORCE_ENABLE_ECDSA`。该问题将在未来的硬件 ECO 版本中修复，详情请参阅硬件勘误文档。
+
 背景
 ----
 
@@ -75,9 +87,6 @@
 
 2. 二级引导加载程序加载特定应用程序镜像，并验证应用程序的 {IDF_TARGET_SBV2_SCHEME} 签名。若验证通过，则执行应用程序镜像。
 
-.. only:: SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
-
-    默认情况下，{IDF_TARGET_NAME} 禁用 ECDSA-P192 曲线。如果提供的安全启动签名密钥使用的是 ECDSA-P192 曲线，为配置安全启动，系统将尝试启用 ECDSA-P192 曲线模式。然而，如果该曲线模式已被锁定，则无法启用 ECDSA-P192。在这种情况下，无法使用 ECDSA-P192 密钥配置安全启动。用户必须改为提供基于 ECDSA-P256 曲线或基于 RSA 的签名密钥。
 
 优势
 ----
@@ -254,7 +263,7 @@
 
 .. only:: SOC_SECURE_BOOT_V2_ECC
 
-    .. list-table:: ECDSA-256 / ECDSA-192 签名块的内容
+    .. list-table:: ECDSA-256 签名块的内容
         :widths: 10 10 40
         :header-rows: 1
 
@@ -275,7 +284,7 @@
           - 仅针对镜像内容的 SHA-256 哈希值，不包括签名块。
         * - 36
           - 1
-          - 曲线 ID。1 代表 NIST192p 曲线，2 代表 NIST256p 曲线。
+          - 曲线 ID。2 表示 NIST256p 曲线。
         * - 37
           - 64
           - ECDSA 公钥：32 字节的 X 坐标，后跟 32 字节的 Y 坐标。
@@ -408,6 +417,16 @@
     3. 使用公钥，采用 RSA-PSS（RFC8017 的第 8.1.2 节）算法或 ECDSA（RFC6090 的第 5.3.3 节）算法，验证引导加载程序镜像的签名，并与步骤 (2) 中计算的镜像摘要比较。
 
 
+验证数据分区
+------------
+
+Secure Boot v2 签名验证也可以在 OTA 更新期间验证数据分区镜像。启用 :ref:`CONFIG_SECURE_SIGNED_DATA_PARTITION` 以验证子类型为 ``ESP_PARTITION_SUBTYPE_DATA_UNDEFINED`` 的数据分区。
+
+数据分区镜像必须使用相同的签名密钥，通过 ``idf.py secure-sign-data`` 进行签名，并采用与应用镜像相同的格式。验证使用存储在 eFuse 中的一个或多个公钥摘要，并遵循 :ref:`verify_image` 中所述的流程。
+
+关于包括 OTA 流程和分区配置在内的详细信息，请参见 :ref:`secure-signed-data-partition`。
+
+
 引导加载程序的大小
 ------------------
 
@@ -509,6 +528,7 @@
 
 11. 在后续启动过程中，安全启动硬件会验证二级引导加载程序是否更改，二级引导加载程序会使用其附加的签名块中经验证的公钥部分，验证已签名的应用程序镜像。
 
+关于同时启用安全启动 v2 及其他安全功能（如 flash 加密和 NVS 加密）的完整示例，请参阅 :example:`security/security_features_app`。
 
 启用安全启动后的限制
 --------------------
@@ -519,9 +539,6 @@
 
 - 一旦启用安全启动，就无法再对 eFuse 密钥进行读保护，这可以避免攻击者对存储公共密钥摘要的 eFuse 块进行读保护，进而导致系统无法验证和处理签名，系统服务无法正常运行。有关读保护密钥的更多信息，请参阅下方详细说明。
 
-.. only:: SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
-
-    启用安全启动后，ECDSA 曲线模式将锁定为写保护状态。因此，如果启用前未将曲线模式设置为使用 ECDSA-P192 密钥，那么之后将无法再配置或使用 ECDSA 外设中的 ECDSA-P192 曲线。
 
 烧录读保护密钥
 ~~~~~~~~~~~~~~
@@ -570,11 +587,11 @@
 
   .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
 
-    传递 ``--version 2 --scheme ecdsa384``、 ``--version 2 --scheme ecdsa256`` 或 ``--version 2 --scheme ecdsa192`` 选择 ECDSA 方案，生成相应的 ECDSA 私钥。
+    传递 ``--version 2 --scheme ecdsa384`` 或 ``--version 2 --scheme ecdsa256`` 选择 ECDSA 方案，生成相应的 ECDSA 私钥。
 
   .. only:: not SOC_ECDSA_SUPPORT_CURVE_P384
 
-    传递 ``--version 2 --scheme ecdsa256`` 或 ``--version 2 --scheme ecdsa192`` 选择 ECDSA 方案，生成相应的 ECDSA 私钥。
+    传递 ``--version 2 --scheme ecdsa256`` 选择 ECDSA 方案，生成相应的 ECDSA 私钥。
 
 签名密钥的强度取决于 (a) 系统的随机数源和 (b) 所用算法的正确性。对于生产设备，建议从具有高质量熵源的系统生成签名密钥，并使用最佳的可用 {IDF_TARGET_SBV2_SCHEME} 密钥生成工具。
 
@@ -589,12 +606,6 @@
       openssl genrsa -out my_secure_boot_signing_key.pem 3072
 
 .. only:: SOC_SECURE_BOOT_V2_ECC
-
-    生成 ECC NIST192p 曲线密钥
-
-    .. code-block::
-
-        openssl ecparam -name prime192v1 -genkey -noout -out my_secure_boot_signing_key.pem
 
     生成 ECC NIST256p 曲线密钥
 
@@ -611,7 +622,6 @@
             openssl ecparam -name secp384r1 -genkey -noout -out my_secure_boot_signing_key.pem
 
 注意，安全启动系统的强度取决于能否保持签名密钥的私密性。
-
 
 .. _remote-sign-v2-image:
 
@@ -717,7 +727,7 @@
 
       .. note::
 
-        如果 Secure Boot v2 配置为使用 ECDSA P-384 签名方案，则所有用于签名的密钥必须为 ECDSA-P384 密钥。不支持与 P-384 同时使用其他椭圆曲线（例如 P-192 或 P-256）密钥，否则在启动过程中会导致签名验证失败。
+        如果 Secure Boot v2 配置为使用 ECDSA P-384 签名方案，则所有用于签名的密钥必须为 ECDSA-P384 密钥。不支持与 P-384 同时使用其他椭圆曲线（例如 P-256）密钥，否则在启动过程中会导致签名验证失败。
 
     .. _secure-boot-v2-key-revocation:
 
@@ -731,9 +741,7 @@
 
     .. note::
 
-        请注意，启用配置 :ref:`CONFIG_SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS` 只能确保 **应用程序** 不会撤销未使用的摘要槽。
-        若想在设备首次启动时启用安全启动，那么即使启用了上述配置，引导加载程序也会在启用安全启动时撤销未使用的摘要槽，因为保留未使用的密钥槽会构成安全隐患。
-        如果在开发流程中需要保留未使用摘要槽，则应从外部启用安全启动 (:ref:`enable-secure-boot-v2-externally`)，而不是在启动设备时启用安全启动，这样引导加载程序就无需启用安全启动，从而避免安全隐患。
+        启用配置 :ref:`CONFIG_SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS` 后，未使用的摘要槽在两种情况下都将保持未撤销状态：在 **应用程序** 运行时，以及在设备首次启动时由 **引导加载程序** 启用安全启动时。请注意，除非调试接口和下载接口已完全禁用，且远程接口已针对安全风险进行全面审计，否则保留未使用的密钥槽可能构成安全风险。
 
     保守方法
     ~~~~~~~~

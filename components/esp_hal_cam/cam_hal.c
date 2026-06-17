@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
 #include "hal/cam_ll.h"
 #include "hal/cam_hal.h"
 #include "hal/color_types.h"
@@ -158,25 +159,8 @@ void cam_hal_color_format_convert(cam_hal_context_t *hal,
 
     cam_ll_enable_rgb_yuv_convert(hal->hw, false);
 
-    // Extract color space from source and destination formats
-    color_space_t src_space = COLOR_SPACE_TYPE(cfg->src_format);
-    color_space_t dst_space = COLOR_SPACE_TYPE(cfg->dst_format);
-
-    // Configure conversion based on color space types
-    if (src_space == COLOR_SPACE_YUV && dst_space == COLOR_SPACE_RGB) {
-        // YUV to RGB conversion
-        color_pixel_yuv_format_t yuv_format = COLOR_PIXEL_FORMAT(cfg->src_format);
-        cam_ll_set_convert_mode_yuv_to_rgb(hal->hw, yuv_format);
-    } else if (src_space == COLOR_SPACE_RGB && dst_space == COLOR_SPACE_YUV) {
-        // RGB to YUV conversion
-        color_pixel_yuv_format_t yuv_format = COLOR_PIXEL_FORMAT(cfg->dst_format);
-        cam_ll_set_convert_mode_rgb_to_yuv(hal->hw, yuv_format);
-    } else if (src_space == COLOR_SPACE_YUV && dst_space == COLOR_SPACE_YUV) {
-        // YUV to YUV conversion
-        color_pixel_yuv_format_t src_yuv_format = COLOR_PIXEL_FORMAT(cfg->src_format);
-        color_pixel_yuv_format_t dst_yuv_format = COLOR_PIXEL_FORMAT(cfg->dst_format);
-        cam_ll_set_convert_mode_yuv_to_yuv(hal->hw, src_yuv_format, dst_yuv_format);
-    }
+    // Configure conversion mode based on source and destination formats
+    cam_ll_set_convert_mode(hal->hw, cfg->src_format, cfg->dst_format);
 
     // Common configuration for all conversion types
     cam_ll_set_yuv_convert_std(hal->hw, cfg->conv_std);

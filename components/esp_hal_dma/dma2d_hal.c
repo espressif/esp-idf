@@ -10,6 +10,8 @@
 void dma2d_hal_init(dma2d_hal_context_t *hal, int group_id)
 {
     hal->dev = DMA2D_LL_GET_HW(group_id);
+    dma2d_ll_mem_power_by_pmu(hal->dev);
+    dma2d_ll_mem_set_low_power_mode(hal->dev, DMA2D_LL_MEM_LP_MODE_SHUT_DOWN);
 }
 
 void dma2d_hal_tx_reset_channel(dma2d_hal_context_t *hal, uint32_t channel)

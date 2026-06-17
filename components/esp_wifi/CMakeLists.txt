@@ -1,7 +1,9 @@
 idf_build_get_property(idf_target IDF_TARGET)
 
 if(${idf_target} STREQUAL "linux")
-    return() # This component is not supported by the POSIX/Linux simulator
+    idf_component_register()    # Register empty component for first CMake pass for potential *Remote* functionality
+    add_subdirectory(remote)    # wifi-remote on linux host
+    return() # *Local* esp-wifi component is not supported by the POSIX/Linux simulator
 endif()
 
 if( NOT CONFIG_ESP_WIFI_ENABLED
@@ -13,10 +15,20 @@ if( NOT CONFIG_ESP_WIFI_ENABLED
             "src/wifi_netif.c"
             "src/wifi_default_ap.c")
 
+    # Public headers (notably esp_wifi_default.h) include esp_event.h,
+    # esp_netif.h and esp_phy.h. Declare these in REQUIRES so the headers
+    # are visible to consumers — same interface as the WiFi-enabled
+    # registration at the bottom of this file.
+    set(reqs "esp_event" "esp_netif" "esp_phy")
+    set(priv_reqs "wpa_supplicant")
+
     # This component provides "esp_wifi" "wifi_apps/nan_app" headers if WiFi not enabled
     # (implementation supported optionally in a managed component esp_wifi_remote)
     idf_component_register(SRCS "${srcs}"
-                    INCLUDE_DIRS "include" "wifi_apps/nan_app/include")
+                    INCLUDE_DIRS "include" "wifi_apps/nan_app/include"
+                    REQUIRES ${reqs}
+                    PRIV_REQUIRES ${priv_reqs})
+    add_subdirectory(remote)    # wifi-remote on esp32p4/h2 (no wifi)
     return()
 endif()
 
@@ -38,6 +50,7 @@ if(CONFIG_ESP_WIFI_ENABLED OR CONFIG_ESP_HOST_WIFI_ENABLED)
         "src/wifi_default.c"
         "src/wifi_netif.c"
         "src/wifi_default_ap.c"
+        "src/ftm_load_calibration.c"
         "${idf_target}/esp_adapter.c")
 
 
@@ -50,6 +63,12 @@ if(CONFIG_ESP_WIFI_ENABLED OR CONFIG_ESP_HOST_WIFI_ENABLED)
 
     if(CONFIG_ESP_WIFI_NAN_SYNC_ENABLE OR CONFIG_ESP_WIFI_NAN_USD_ENABLE)
         list(APPEND srcs "wifi_apps/nan_app/src/nan_app.c")
+        if(CONFIG_ESP_WIFI_NAN_SECURITY)
+            list(APPEND srcs "wifi_apps/nan_app/src/nan_security.c")
+        endif()
+        if(CONFIG_ESP_WIFI_NAN_PAIRING)
+            list(APPEND srcs "wifi_apps/nan_app/src/nan_pairing.c")
+        endif()
     endif()
     if(CONFIG_ESP_WIFI_ENABLE_ROAMING_APP)
         list(APPEND srcs "wifi_apps/roaming_app/src/roaming_app.c")
@@ -60,11 +79,13 @@ idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "include" "include/local" "wifi_apps/include" "wifi_apps/nan_app/include"
 
                     REQUIRES esp_event esp_phy esp_netif
-                    PRIV_REQUIRES esp_pm esp_timer nvs_flash
+                    PRIV_REQUIRES esp_pm esp_timer nvs_flash efuse
                                   wpa_supplicant hal lwip esp_coex
                     PRIV_INCLUDE_DIRS ../wpa_supplicant/src/ ../wpa_supplicant/esp_supplicant/src/
                                   wifi_apps/roaming_app/include wifi_apps/roaming_app/src
                     LDFRAGMENTS "${ldfragments}")
+
+idf_define_esp_err_codes(HEADERS include/esp_wifi.h include/esp_now.h include/esp_mesh.h)
 
 if(CONFIG_ESP_WIFI_ENABLED OR CONFIG_ESP_HOST_WIFI_ENABLED)
     idf_build_get_property(build_dir BUILD_DIR)
@@ -103,13 +124,13 @@ if(CONFIG_ESP_WIFI_ENABLED OR CONFIG_ESP_HOST_WIFI_ENABLED)
         endforeach()
     endif()
     # TODO IDF-13365: remove the following lines
-    if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-        set_source_files_properties(regulatory/esp_wifi_regulatory.c
-                                    PROPERTIES COMPILE_FLAGS
-                                    -Wno-unterminated-string-initialization)
-    endif()
+    set_source_files_properties(regulatory/esp_wifi_regulatory.c
+                                PROPERTIES COMPILE_FLAGS
+                                -Wno-unterminated-string-initialization)
 endif()
 
 if(CONFIG_SPIRAM)
     idf_component_optional_requires(PRIVATE esp_psram)
 endif()
+
+add_subdirectory(remote)    # wifi-remote as a secondary wifi interface (on wifi targets)

@@ -5,11 +5,12 @@
  */
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_attr.h"
 
 #include "soc/soc_caps.h"
-#include "soc/i2c_ana_mst_reg.h"
 #include "soc/pmu_reg.h"
 
+#include "modem/i2c_ana_mst_reg.h"
 #include "modem/modem_syscon_reg.h"
 #include "modem/modem_lpcon_reg.h"
 
@@ -37,6 +38,13 @@
 ESP_LOG_ATTR_TAG(TAG, "sleep");
 
 #if SOC_PM_PAU_REGDMA_LINK_IDX_WIFIMAC
+
+typedef struct {
+#define DESC_IDX_I2C_MST_ENA (0)
+#define DESC_IDX_I2C_MST_DIS (1)
+    void *regdma_desc[DESC_IDX_I2C_MST_DIS + 1];
+} sleep_modem_state_phy_link_context_t;
+
 static esp_err_t sleep_modem_state_phy_wifi_init(void *arg)
 {
     #define WIFIMAC_ENTRY() (BIT(SOC_PM_PAU_REGDMA_LINK_IDX_WIFIMAC))
@@ -98,11 +106,39 @@ esp_err_t sleep_modem_state_phy_link_init(void **link_head)
     if (err == ESP_OK) {
         err = sleep_retention_module_allocate(SLEEP_RETENTION_MODULE_MODEM_PHY);
         if (err == ESP_OK) {
-            *link_head = sleep_retention_find_link_by_id(REGDMA_PHY_LINK(0x00));
+            const int id_array[] = { REGDMA_PHY_LINK(0x00), REGDMA_PHY_LINK(0x14) };
+            static DRAM_ATTR sleep_modem_state_phy_link_context_t phy_link_context;
+
+            for (int i = 0; (err == ESP_OK) && (i < ARRAY_SIZE(phy_link_context.regdma_desc)); i++) {
+                void *desc = sleep_retention_find_link_by_id(id_array[i]);
+                if (desc) {
+                    phy_link_context.regdma_desc[i] = desc;
+                } else {
+                    err = ESP_ERR_NOT_FOUND;
+                }
+            }
+            if (err == ESP_OK) {
+                *link_head = (void *)&phy_link_context;
+            }
         }
     }
 #endif
     return err;
+}
+
+void IRAM_ATTR sleep_modem_state_phy_link_config(void *link_context, uint32_t flags)
+{
+#if SOC_PM_PAU_REGDMA_LINK_IDX_WIFIMAC
+    sleep_modem_state_phy_link_context_t *phy_link_context = (sleep_modem_state_phy_link_context_t *)link_context;
+
+    if (flags & BIT(0)) {
+        regdma_link_set_skip_flag(phy_link_context->regdma_desc[DESC_IDX_I2C_MST_ENA], true, true);
+        regdma_link_set_skip_flag(phy_link_context->regdma_desc[DESC_IDX_I2C_MST_DIS], true, true);
+    } else {
+        regdma_link_set_skip_flag(phy_link_context->regdma_desc[DESC_IDX_I2C_MST_ENA], true, false);
+        regdma_link_set_skip_flag(phy_link_context->regdma_desc[DESC_IDX_I2C_MST_DIS], false, true);
+    }
+#endif
 }
 
 esp_err_t sleep_modem_state_phy_link_deinit(void *link_head)

@@ -38,6 +38,7 @@ static void btc_ble_mesh_ble_copy_req_data(btc_msg_t *msg, void *p_dst, void *p_
                        p_src_data->scan_ble_adv_pkt.length);
             } else {
                 BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                p_dst_data->scan_ble_adv_pkt.length = 0;
             }
         }
         break;

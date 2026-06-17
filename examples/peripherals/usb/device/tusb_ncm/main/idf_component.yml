@@ -1,4 +1,8 @@
 ## IDF Component Manager Manifest File
 dependencies:
   espressif/esp_tinyusb:
-    version: "^2.0.0"
+    version: "^2.0.1~1"
+  espressif/esp_wifi_remote:
+    version: "~1.6.0"
+    rules:
+      - if: "$CONFIG{ESP_USB_NCM_USE_WIFI_REMOTE} == 1"

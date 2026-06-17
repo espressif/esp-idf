@@ -96,7 +96,10 @@ static int socket_send(const char *tag, const int sock, const char * data, const
     int to_write = len;
     while (to_write > 0) {
         int written = send(sock, data + (len - to_write), to_write, 0);
-        if (written < 0 && errno != EINPROGRESS && errno != EAGAIN && errno != EWOULDBLOCK) {
+        if (written < 0) {
+            if (errno == EINPROGRESS || errno == EAGAIN || errno == EWOULDBLOCK) {
+                continue;
+            }
             log_socket_error(tag, sock, errno, "Error occurred during sending");
             return -1;
         }

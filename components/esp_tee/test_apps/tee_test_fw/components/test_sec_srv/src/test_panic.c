@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@ extern int _tee_vec_end;
 extern int _tee_iram_start;
 extern int _tee_iram_end;
 extern int _tee_dram_start;
+extern int _tee_intr_stack;
 
 typedef void (*func_ptr)(void);
 
@@ -64,13 +65,13 @@ static void do_stack_smash(bool underflow, int depth, volatile uint8_t *sink)
 
     /* Underflow path */
     asm volatile(
-        "li   t0, 2048\n"
-        "add  sp, sp, t0\n"
+        "mv sp, %0\n" :: "r"(&_tee_intr_stack)
     );
 
-    volatile uint8_t a = 1;
-    volatile uint8_t b = a;
-    (void)b;
+    /* The blocking delay ensures that the stack protection fault interrupt is
+     * captured and handled by the CPU before the current function returns.
+     */
+    esp_rom_delay_us(10);
 }
 
 void _ss_esp_tee_test_stack_overflow(void)

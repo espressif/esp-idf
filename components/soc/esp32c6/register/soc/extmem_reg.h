@@ -1,11 +1,10 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
-#include <stdint.h>
 #include "soc/soc.h"
 #ifdef __cplusplus
 extern "C" {
@@ -24,6 +23,14 @@ extern "C" {
 #define EXTMEM_L1_CACHE_SHUT_IBUS_M  (BIT(0))
 #define EXTMEM_L1_CACHE_SHUT_IBUS_V  0x1
 #define EXTMEM_L1_CACHE_SHUT_IBUS_S  0
+/* EXTMEM_L1_CACHE_UNDEF_OP : R/W ;bitpos:[11:8] ;default: 4'h0 ; */
+/*description: Internal debug control field. bits[1:0]: Arbitration mode. 0: Round-robin, hold bus
+ until data fetch completes. 1: Round-robin, release bus after request is issued. 2/3: Random
+ arbitration..*/
+#define EXTMEM_L1_CACHE_UNDEF_OP    0x0000000F
+#define EXTMEM_L1_CACHE_UNDEF_OP_M  ((EXTMEM_L1_CACHE_UNDEF_OP_V)<<(EXTMEM_L1_CACHE_UNDEF_OP_S))
+#define EXTMEM_L1_CACHE_UNDEF_OP_V  0xF
+#define EXTMEM_L1_CACHE_UNDEF_OP_S  8
 
 #define EXTMEM_L1_CACHE_WRAP_AROUND_CTRL_REG          (DR_REG_EXTMEM_BASE + 0x20)
 /* EXTMEM_L1_CACHE_WRAP : R/W ;bitpos:[4] ;default: 1'h0 ; */

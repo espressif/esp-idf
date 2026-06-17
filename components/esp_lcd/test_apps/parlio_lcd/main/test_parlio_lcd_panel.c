@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -9,7 +9,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
-#include "esp_random.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_panel_ops.h"
@@ -25,7 +24,7 @@
 #define TEST_IMG_SIZE (100 * 100 * sizeof(uint16_t))
 static void lcd_parlio_panel_with_st7789_interface(esp_lcd_panel_io_handle_t io_handle)
 {
-    uint8_t *img = heap_caps_malloc(TEST_IMG_SIZE, MALLOC_CAP_DMA);
+    uint8_t *img = heap_caps_calloc(1, TEST_IMG_SIZE, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     TEST_ASSERT_NOT_NULL(img);
 
     gpio_config_t bk_gpio_config = {
@@ -55,9 +54,9 @@ static void lcd_parlio_panel_with_st7789_interface(esp_lcd_panel_io_handle_t io_
     gpio_set_level(TEST_LCD_BK_LIGHT_GPIO, 1);
 
     for (int i = 0; i < 200; i++) {
-        uint8_t color_byte = esp_random() & 0xFF;
-        int x_start = esp_random() % (TEST_LCD_H_RES - 100);
-        int y_start = esp_random() % (TEST_LCD_V_RES - 100);
+        uint8_t color_byte = rand() & 0xFF;
+        int x_start = rand() % (TEST_LCD_H_RES - 100);
+        int y_start = rand() % (TEST_LCD_V_RES - 100);
         memset(img, color_byte, TEST_IMG_SIZE);
         esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 100, y_start + 100, img);
     }
@@ -148,9 +147,9 @@ static void lcd_parlio_send_colors_to_fixed_region(size_t data_width)
     int x_end = 200;
     int y_end = 200;
     size_t color_size = (x_end - x_start) * (y_end - y_start) * 2;
-    void *color_data = malloc(color_size);
+    void *color_data = heap_caps_calloc(1, color_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     TEST_ASSERT_NOT_NULL(color_data);
-    uint8_t color_byte = esp_random() & 0xFF;
+    uint8_t color_byte = rand() & 0xFF;
     memset(color_data, color_byte, color_size);
     uint32_t isr_counter = 0;
     esp_lcd_panel_io_handle_t io_handle = NULL;
@@ -238,7 +237,7 @@ static void lcd_parlio_send_colors_to_fixed_region(size_t data_width)
     vTaskDelay(pdMS_TO_TICKS(1000));
     TEST_ASSERT_EQUAL(steps, isr_counter);
     // change to another color
-    color_byte = esp_random() & 0xFF;
+    color_byte = rand() & 0xFF;
     memset(color_data, color_byte, color_size);
     for (int i = 0; i < steps; i++) {
         TEST_ESP_OK(esp_lcd_panel_io_tx_color(io_handle, -1, color_data + i * color_size_per_step, color_size_per_step));

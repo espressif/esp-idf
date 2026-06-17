@@ -158,12 +158,10 @@ UINT8           conn_addr_type;         /* local device address type for this co
 BD_ADDR         active_remote_addr;     /* remote address used on this connection */
 UINT8           active_remote_addr_type;         /* local device address type for this connection */
 BD_FEATURES     peer_le_features;       /* Peer LE Used features mask for the device */
-tBTM_SET_PKT_DATA_LENGTH_CBACK *p_set_pkt_data_cback;
 tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS data_length_params;
 BOOLEAN   data_len_updating;
 // data len update cmd cache
 BOOLEAN   data_len_waiting;
-tBTM_SET_PKT_DATA_LENGTH_CBACK *p_set_data_len_cback_waiting;
 UINT16 tx_len_waiting;
 #endif
 tBTM_PM_MCB     *p_pm_mode_db;          /* Pointer to PM mode control block per ACL link */
@@ -199,8 +197,49 @@ tBTM_CMPL_CB        *p_rln_cmpl_cb;     /* Callback function to be called when  
 TIMER_LIST_ENT       rssi_timer;
 tBTM_CMPL_CB        *p_rssi_cmpl_cb;    /* Callback function to be called when  */
 /* read rssi function completes         */
+
+#if (ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC == TRUE)
+TIMER_LIST_ENT       acl_real_rssi_timer;
+tBTM_CMPL_CB        *p_acl_real_rssi_cmpl_cb;    /* Callback function to be called when  */
+/* read acl real rssi function completes         */
+
+TIMER_LIST_ENT       read_new_conn_tx_pwr_lvl_timer;
+tBTM_CMPL_CB        *p_read_new_conn_tx_pwr_lvl_cmpl_cb;    /* Callback function to be called when  */
+/* read new connection transmit power level function completes         */
+
+TIMER_LIST_ENT       write_new_conn_tx_pwr_lvl_timer;
+tBTM_CMPL_CB        *p_write_new_conn_tx_pwr_lvl_cmpl_cb;    /* Callback function to be called when  */
+/* write new connection transmit power level function completes         */
+#endif // #if (ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC == TRUE)
+
+#if (CLASSIC_BT_INCLUDED == TRUE)
+TIMER_LIST_ENT       read_page_tx_pwr_lvl_timer;
+tBTM_CMPL_CB        *p_read_page_tx_pwr_lvl_cmpl_cb;    /* Callback function to be called when  */
+/* read page transmit power level function completes         */
+
+TIMER_LIST_ENT       write_page_tx_pwr_lvl_timer;
+tBTM_CMPL_CB        *p_write_page_tx_pwr_lvl_cmpl_cb;    /* Callback function to be called when  */
+/* write page transmit power level function completes         */
+
+TIMER_LIST_ENT       read_pscan_tx_pwr_lvl_timer;
+tBTM_CMPL_CB        *p_read_pscan_tx_pwr_lvl_cmpl_cb;    /* Callback function to be called when  */
+/* read page scan transmit power level function completes         */
+
+TIMER_LIST_ENT       write_pscan_tx_pwr_lvl_timer;
+tBTM_CMPL_CB        *p_write_pscan_tx_pwr_lvl_cmpl_cb;    /* Callback function to be called when  */
+/* write page scan transmit power level function completes         */
+
+TIMER_LIST_ENT       read_inq_tx_pwr_lvl_timer;
+tBTM_CMPL_CB        *p_read_inq_tx_pwr_lvl_cmpl_cb;    /* Callback function to be called when  */
+/* read inquiry transmit power level function completes         */
+
+TIMER_LIST_ENT       write_iscan_tx_pwr_lvl_timer;
+tBTM_CMPL_CB        *p_write_iscan_tx_pwr_lvl_cmpl_cb;    /* Callback function to be called when  */
+/* write inquiry scan transmit power level function completes         */
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
+
 #if BLE_INCLUDED == TRUE
-tBTM_CMPL_CB        *p_ble_ch_map_cmpl_cb; /* Callback function to be called when */
+BOOLEAN        is_ch_map_cb;
 #endif // #if BLE_INCLUDED == TRUE
 /* read channel map function completes */
 #if (CLASSIC_BT_INCLUDED == TRUE)
@@ -210,11 +249,15 @@ tBTM_CMPL_CB        *p_lnk_qual_cmpl_cb;/* Callback function to be called when  
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
 /* read link quality function completes */
-TIMER_LIST_ENT       txpwer_timer;
-tBTM_CMPL_CB        *p_txpwer_cmpl_cb;    /* Callback function to be called when  */
+TIMER_LIST_ENT       read_iscan_txpwer_timer;
+tBTM_CMPL_CB        *p_read_iscan_txpwer_cmpl_cb;    /* Callback function to be called when  */
+/* read inq scan tx power function completes  */
+
+TIMER_LIST_ENT       write_inq_txpwer_timer;
+tBTM_CMPL_CB        *p_write_inq_txpwer_cmpl_cb;    /* Callback function to be called when  */
+/* write inq tx power function completes  */
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
-/* read inq tx power function completes  */
 #if (CLASSIC_BT_INCLUDED == TRUE)
 TIMER_LIST_ENT       qossu_timer;
 tBTM_CMPL_CB        *p_qossu_cmpl_cb;   /* Callback function to be called when  */
@@ -247,18 +290,9 @@ DEV_CLASS            dev_class;         /* Local device class                   
 #if BLE_INCLUDED == TRUE
 
 TIMER_LIST_ENT       ble_channels_timer;
-tBTM_CMPL_CB        *p_ble_channels_cmpl_cb; /* Callback function to be called  When
-                                                ble set host channels is completed   */
 
-tBTM_SET_RPA_TIMEOUT_CMPL_CBACK  *p_ble_set_rpa_timeout_cmpl_cb; /* Callback function to be called  When
-                                                ble set rpa timeout is completed   */
-
-tBTM_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK *p_add_dev_to_resolving_list_cmpl_cb;
-
-tBTM_SET_PRIVACY_MODE_CMPL_CBACK *p_set_privacy_mode_cmpl_cb;
-
-tBTM_CMPL_CB        *p_le_test_cmd_cmpl_cb;   /* Callback function to be called when
-                                                  LE test mode command has been sent successfully */
+tBTM_DTM_CMD_CMPL_CBACK *p_le_test_cmd_cmpl_cb; /* Callback function to be called when
+                                                   LE test mode command has been sent successfully */
 
 BD_ADDR                 read_tx_pwr_addr;   /* read TX power target address     */
 
@@ -1008,14 +1042,6 @@ typedef struct {
 #endif
 } tBTM_CB;
 
-typedef struct{
-  //connection parameters update callback
-  tBTM_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb;
-  // setting packet data length callback
-  tBTM_SET_PKT_DATA_LENGTH_CBACK *set_pkt_data_length_cb;
-}tBTM_CallbackFunc;
-
-extern tBTM_CallbackFunc conn_callback_func;
 /* security action for L2CAP COC channels */
 #define BTM_SEC_OK                1
 #define BTM_SEC_ENCRYPT           2    /* encrypt the link with current key */
@@ -1082,6 +1108,18 @@ BOOLEAN      btm_inq_find_bdaddr (BD_ADDR p_bda);
 
 BOOLEAN btm_lookup_eir(BD_ADDR_PTR p_rem_addr);
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
+void btm_read_iscan_tx_power_complete (UINT8 *p);
+void btm_write_inq_tx_power_complete (UINT8 *p);
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
+
+/* Internal functions provided by btm_bredr_pwr_ctrl.c
+*******************************************
+*/
+#if (CLASSIC_BT_INCLUDED == TRUE)
+void btm_bredr_pwr_ctrl_timeout(TIMER_LIST_ENT *p_tle);
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
+
 /* Internal functions provided by btm_acl.c
 ********************************************
 */
@@ -1135,7 +1173,7 @@ void btm_pm_proc_ssr_evt (UINT8 *p, UINT16 evt_len);
 void btm_sco_chk_pend_unpark (UINT8 hci_status, UINT16 hci_handle);
 #if (BTM_SCO_HCI_INCLUDED == TRUE )
 void btm_sco_process_num_bufs (UINT16 num_lm_sco_bufs);
-void btm_sco_process_num_completed_pkts (UINT8 *p);
+void btm_sco_process_num_completed_pkts (UINT8 *p, UINT8 evt_len);
 #endif /* (BTM_SCO_HCI_INCLUDED == TRUE ) */
 #else
 #define btm_sco_chk_pend_unpark(hci_status, hci_handle)
@@ -1253,7 +1291,6 @@ tBTM_STATUS  btm_sec_mx_access_request (BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_
                                         tBTM_SEC_CALLBACK *p_callback, void *p_ref_data);
 void  btm_sec_conn_req (UINT8 *bda, UINT8 *dc);
 void btm_create_conn_cancel_complete (UINT8 *p, UINT16 evt_len);
-void btm_read_linq_tx_power_complete (UINT8 *p);
 
 void  btm_sec_init (UINT8 sec_mode);
 void  btm_sec_dev_reset (void);
@@ -1281,7 +1318,6 @@ void btm_sec_set_peer_sec_caps (tACL_CONN *p_acl_cb, tBTM_SEC_DEV_REC *p_dev_rec
 
 #if BLE_INCLUDED == TRUE
 void  btm_sec_clear_ble_keys (tBTM_SEC_DEV_REC  *p_dev_rec);
-BOOLEAN btm_sec_find_bonded_dev (UINT8 start_idx, UINT16 *p_found_handle, tBTM_SEC_DEV_REC **p_rec);
 BOOLEAN btm_sec_is_a_bonded_dev (BD_ADDR bda);
 void btm_consolidate_dev(tBTM_SEC_DEV_REC *p_target_rec);
 BOOLEAN btm_sec_is_le_capable_dev (BD_ADDR bda);
@@ -1309,10 +1345,6 @@ UINT8 btm_sec_clr_service_by_psm (UINT16 psm);
 void  btm_sec_clr_temp_auth_service (BD_ADDR bda);
 
 void btm_ble_lock_init(void);
-
-void btm_ble_sem_init(void);
-
-void btm_ble_sem_free(void);
 
 void btm_ble_lock_free(void);
 

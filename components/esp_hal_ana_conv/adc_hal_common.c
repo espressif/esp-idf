@@ -1,14 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <sys/param.h>
-#include "soc/soc_caps.h"
 #include "hal/adc_hal_common.h"
-#include "hal/adc_ll.h"
 #include "hal/assert.h"
+#include "hal/regi2c_ctrl.h"
+#include "esp_attr.h"
 
 /*---------------------------------------------------------------
                     Controller Setting
@@ -197,3 +197,32 @@ uint32_t adc_hal_self_calibration(adc_unit_t adc_n, adc_atten_t atten, bool inte
 }
 #endif  //#if SOC_ADC_SELF_HW_CALI_SUPPORTED
 #endif //SOC_ADC_CALIBRATION_V1_SUPPORTED
+
+/*---------------------------------------------------------------
+                    I2C SAR ADC register backup/restore
+---------------------------------------------------------------*/
+#if ADC_LL_ANA_CALI_REG_PD_WORKAROUND
+static DRAM_ATTR uint8_t s_adc_i2c_reg_val[ADC_LL_ANA_CALI_REG_BYTE_NUM];
+
+void IRAM_ATTR adc_hal_i2c_saradc_reg_backup(void)
+{
+    REGI2C_CLOCK_ENABLE();
+    REGI2C_ENTER_CRITICAL();
+    for (int i = 0; i < ADC_LL_ANA_CALI_REG_BYTE_NUM; i++) {
+        s_adc_i2c_reg_val[i] = regi2c_impl_read(I2C_SAR_ADC, I2C_SAR_ADC_HOSTID, i);
+    }
+    REGI2C_EXIT_CRITICAL();
+    REGI2C_CLOCK_DISABLE();
+}
+
+void IRAM_ATTR adc_hal_i2c_saradc_reg_restore(void)
+{
+    REGI2C_CLOCK_ENABLE();
+    REGI2C_ENTER_CRITICAL();
+    for (int i = 0; i < ADC_LL_ANA_CALI_REG_BYTE_NUM; i++) {
+        regi2c_impl_write(I2C_SAR_ADC, I2C_SAR_ADC_HOSTID, i, s_adc_i2c_reg_val[i]);
+    }
+    REGI2C_EXIT_CRITICAL();
+    REGI2C_CLOCK_DISABLE();
+}
+#endif  // ADC_LL_ANA_CALI_REG_PD_WORKAROUND

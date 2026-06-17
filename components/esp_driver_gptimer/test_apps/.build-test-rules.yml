@@ -6,3 +6,5 @@ components/esp_driver_gptimer/test_apps/gptimer:
   depends_components:
     - esp_driver_gptimer
     - esp_hal_timg
+    - esp_hw_support
+    - soc

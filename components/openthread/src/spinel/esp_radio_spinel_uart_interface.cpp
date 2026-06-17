@@ -1,32 +1,65 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "esp_radio_spinel_uart_interface.hpp"
 #include <errno.h>
+#include <fcntl.h>
 #include <sys/unistd.h>
 #include "esp_check.h"
 #include "esp_openthread_common_macro.h"
 #include "openthread/platform/time.h"
 #include "hdlc.hpp"
 #include "common/code_utils.hpp"
+#include "esp_vfs_dev.h"
+#include "driver/uart.h"
+#include "driver/uart_vfs.h"
+#if CONFIG_OPENTHREAD_RADIO_SPINEL_UART
+#include "esp_openthread_types.h"
+#endif
 
 namespace esp {
 namespace radio_spinel {
+
+static esp_err_t RadioSpinelUartInitPort(const esp_radio_spinel_uart_config_t *config)
+{
+    char uart_path[16];
+    snprintf(uart_path, sizeof(uart_path), "/dev/uart/%d", config->port);
+    bool is_uart_registered = (access(uart_path, F_OK) == 0);
+    if (!is_uart_registered) {
+        // Register UART VFS devices before opening /dev/uart/x if not already present.
+        uart_vfs_dev_register();
+    }
+
+    ESP_RETURN_ON_ERROR(uart_param_config(config->port, &config->uart_config), ESP_SPINEL_LOG_TAG,
+                        "uart_param_config failed");
+    ESP_RETURN_ON_ERROR(
+        uart_set_pin(config->port, config->tx_pin, config->rx_pin, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE),
+        ESP_SPINEL_LOG_TAG, "uart_set_pin failed");
+    ESP_RETURN_ON_ERROR(uart_driver_install(config->port, CONFIG_OPENTHREAD_SPINEL_UART_DRIVER_BUFFER_SIZE, 0, 0, NULL, 0),
+                        ESP_SPINEL_LOG_TAG, "uart_driver_install failed");
+    uart_vfs_dev_use_driver(config->port);
+    return ESP_OK;
+}
 
 UartSpinelInterface::UartSpinelInterface(void)
     : m_receiver_frame_callback(nullptr)
     , m_receiver_frame_context(nullptr)
     , m_receive_frame_buffer(nullptr)
+    , m_uart_rx_buffer(nullptr)
     , m_uart_fd(-1)
     , mRcpFailureHandler(nullptr)
+    , mUartInitHandler(nullptr)
+    , mUartDeinitHandler(nullptr)
 {
 }
 
 UartSpinelInterface::~UartSpinelInterface(void)
 {
+    // Ensure UART resources are released even if caller forgets Disable().
+    Disable();
     Deinit();
 }
 
@@ -52,6 +85,11 @@ void UartSpinelInterface::Deinit(void)
 esp_err_t UartSpinelInterface::Enable(const esp_radio_spinel_uart_config_t &radio_uart_config)
 {
     esp_err_t error = ESP_OK;
+
+    if (m_uart_fd != -1 || m_uart_rx_buffer != NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
     m_uart_rx_buffer = static_cast<uint8_t *>(heap_caps_malloc(kMaxFrameSize, MALLOC_CAP_8BIT));
     if (m_uart_rx_buffer == NULL) {
         return ESP_ERR_NO_MEM;
@@ -60,9 +98,26 @@ esp_err_t UartSpinelInterface::Enable(const esp_radio_spinel_uart_config_t &radi
     error = InitUart(radio_uart_config);
     if (error == ESP_OK) {
         ESP_LOGI(ESP_SPINEL_LOG_TAG, "spinel UART interface initialization completed");
+    } else {
+        heap_caps_free(m_uart_rx_buffer);
+        m_uart_rx_buffer = NULL;
     }
     return error;
 }
+
+#if CONFIG_OPENTHREAD_RADIO_SPINEL_UART
+// NOTE: This overload bridges config types; keep field-wise copy and avoid storing references/pointers to the input to prevent potential lifetime-related memory risks.
+esp_err_t UartSpinelInterface::Enable(const esp_openthread_uart_config_t &radio_uart_config)
+{
+    esp_radio_spinel_uart_config_t spinel_uart_config = {
+        .port = radio_uart_config.port,
+        .uart_config = radio_uart_config.uart_config,
+        .rx_pin = radio_uart_config.rx_pin,
+        .tx_pin = radio_uart_config.tx_pin,
+    };
+    return Enable(spinel_uart_config);
+}
+#endif
 
 esp_err_t UartSpinelInterface::Disable(void)
 {
@@ -70,6 +125,10 @@ esp_err_t UartSpinelInterface::Disable(void)
         heap_caps_free(m_uart_rx_buffer);
     }
     m_uart_rx_buffer = NULL;
+
+    if (m_uart_fd == -1) {
+        return ESP_OK;
+    }
 
     return DeinitUart();
 }
@@ -108,8 +167,9 @@ int UartSpinelInterface::TryReadAndDecode(void)
 {
     uint8_t buffer[UART_HW_FIFO_LEN(m_uart_config.port)];
     ssize_t rval;
+
     do {
-            rval = read(m_uart_fd, buffer, sizeof(buffer));
+        rval = read(m_uart_fd, buffer, sizeof(buffer));
         if (rval > 0) {
             m_hdlc_decoder.Decode(buffer, static_cast<uint16_t>(rval));
         }
@@ -252,8 +312,25 @@ esp_err_t UartSpinelInterface::InitUart(const esp_radio_spinel_uart_config_t &ra
         m_uart_config = radio_uart_config;
         return mUartInitHandler(&m_uart_config, &m_uart_fd);
     } else {
-        ESP_LOGE(ESP_SPINEL_LOG_TAG, "None mUartInitHandler");
-        return ESP_FAIL;
+        char uart_path[16];
+        esp_err_t err = ESP_OK;
+
+        m_uart_config = radio_uart_config;
+        ESP_RETURN_ON_ERROR(RadioSpinelUartInitPort(&radio_uart_config), ESP_SPINEL_LOG_TAG,
+                            "RadioSpinelUartInitPort failed");
+        // We have a driver now installed so set up the read/write functions to use driver also.
+        uart_vfs_dev_port_set_tx_line_endings(m_uart_config.port, ESP_LINE_ENDINGS_LF);
+        uart_vfs_dev_port_set_rx_line_endings(m_uart_config.port, ESP_LINE_ENDINGS_LF);
+
+        snprintf(uart_path, sizeof(uart_path), "/dev/uart/%d", radio_uart_config.port);
+        m_uart_fd = open(uart_path, O_RDWR | O_NONBLOCK);
+
+        if (m_uart_fd < 0) {
+            err = uart_driver_delete(m_uart_config.port);
+            ESP_RETURN_ON_ERROR(err, ESP_SPINEL_LOG_TAG, "uart_driver_delete failed after open");
+            return ESP_FAIL;
+        }
+        return ESP_OK;
     }
 }
 
@@ -262,8 +339,13 @@ esp_err_t UartSpinelInterface::DeinitUart(void)
     if (mUartDeinitHandler) {
         return mUartDeinitHandler(&m_uart_config, &m_uart_fd);
     } else {
-        ESP_LOGE(ESP_SPINEL_LOG_TAG, "None mUartDeinitHandler");
-        return ESP_FAIL;
+        if (m_uart_fd != -1) {
+            close(m_uart_fd);
+            m_uart_fd = -1;
+            return uart_driver_delete(m_uart_config.port);
+        } else {
+            return ESP_ERR_INVALID_STATE;
+        }
     }
 }
 

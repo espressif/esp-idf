@@ -2,12 +2,17 @@ set(srcs "test_app_main.c"
           "test_dport.c"
           "test_fp.c"
           "test_dport_xt_highint5.S"
-          "test_random.c"
           "test_intr_alloc.c"
           "test_rtc_wdt.c"
            )
 
-if(CONFIG_SOC_GP_LDO_SUPPORTED)
+if(CONFIG_SOC_RNG_SUPPORTED)
+    list(APPEND srcs "test_random.c")
+endif()
+
+if(CONFIG_SOC_GP_LDO_SUPPORTED AND NOT CONFIG_IDF_TARGET_ESP32S31)
+    # on s31 ldo is general purpose (and also for psram), but runners all have psram
+    # so we don't run ldo test on s31 to avoid breaking psram
     list(APPEND srcs "test_ldo.c")
 endif()
 

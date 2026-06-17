@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,7 +79,7 @@ TEST_CASE("Digital Signature Parameter Encryption data NULL", "[hw_crypto] [ds]"
     esp_ds_p_data_t p_data = {0};
     const char key [32] = {0};
 
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ds_encrypt_params(NULL, iv, &p_data, key));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ds_encrypt_params_using_key_type(NULL, iv, &p_data, key, ESP_DS_KEY_HMAC));
 }
 
 TEST_CASE("Digital Signature Parameter Encryption iv NULL", "[hw_crypto] [ds]")
@@ -88,7 +88,7 @@ TEST_CASE("Digital Signature Parameter Encryption iv NULL", "[hw_crypto] [ds]")
     esp_ds_p_data_t p_data = {0};
     const char key [32] = {0};
 
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ds_encrypt_params(&data, NULL, &p_data, key));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ds_encrypt_params_using_key_type(&data, NULL, &p_data, key, ESP_DS_KEY_HMAC));
 }
 
 TEST_CASE("Digital Signature Parameter Encryption p_data NULL", "[hw_crypto] [ds]")
@@ -97,7 +97,7 @@ TEST_CASE("Digital Signature Parameter Encryption p_data NULL", "[hw_crypto] [ds
     const char iv [32] = {0};
     const char key [32] = {0};
 
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ds_encrypt_params(&data, iv, NULL, key));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ds_encrypt_params_using_key_type(&data, iv, NULL, key, ESP_DS_KEY_HMAC));
 }
 
 TEST_CASE("Digital Signature Parameter Encryption key NULL", "[hw_crypto] [ds]")
@@ -106,7 +106,7 @@ TEST_CASE("Digital Signature Parameter Encryption key NULL", "[hw_crypto] [ds]")
     const char iv [32] = {0};
     esp_ds_p_data_t p_data = {0};
 
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ds_encrypt_params(&data, iv, &p_data, NULL));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ds_encrypt_params_using_key_type(&data, iv, &p_data, NULL, ESP_DS_KEY_HMAC));
 }
 
 TEST_CASE("Digital Signature Parameter Encryption", "[hw_crypto] [ds]")
@@ -123,8 +123,8 @@ TEST_CASE("Digital Signature Parameter Encryption", "[hw_crypto] [ds]")
         p_data.M_prime = t->p_data.M_prime;
         p_data.length = t->p_data.length;
 
-        esp_err_t r = esp_ds_encrypt_params(&result, t->iv, &p_data,
-                                            test_hmac_keys[t->hmac_key_idx]);
+        esp_err_t r = esp_ds_encrypt_params_using_key_type(&result, t->iv, &p_data,
+                                                           test_hmac_keys[t->hmac_key_idx], ESP_DS_KEY_HMAC);
         printf("Encrypting test case %d done\n", i);
         TEST_ASSERT_EQUAL(ESP_OK, r);
         TEST_ASSERT_EQUAL(t->p_data.length, result.rsa_length);

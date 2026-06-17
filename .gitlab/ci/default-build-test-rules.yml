@@ -11,8 +11,6 @@
 
 bypass_check_test_targets:
   - esp32h21
-  - esp32h4
-  - esp32s31
 
 #
 # These lines would

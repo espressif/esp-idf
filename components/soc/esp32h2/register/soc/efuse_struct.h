@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -537,10 +537,14 @@ typedef union {
          *  Stores the sign bit of dbias_vol_gap.
          */
         uint32_t dbias_vol_gap_sign:1;
-        /** mac_reserved_2 : RO; bitpos: [17:4]; default: 0;
-         *  Reserved.
+        /** lslp_hp_dbias : R; bitpos: [6:4]; default: 0;
+         *  LSLP_HP_DBIAS (available on Wafer v1.2 and BLK_VERSION >= 0.4)
          */
-        uint32_t mac_reserved_2:14;
+        uint32_t lslp_hp_dbias:3;
+        /** reserved_1_103 : R; bitpos: [17:7]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_1_103:11;
         /** wafer_version_minor : RO; bitpos: [20:18]; default: 0;
          *  Stores the wafer version minor.
          */

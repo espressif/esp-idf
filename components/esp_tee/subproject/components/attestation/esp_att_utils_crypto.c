@@ -222,7 +222,7 @@ esp_err_t esp_att_utils_ecdsa_get_pubkey_digest(const esp_att_ecdsa_keypair_t *k
         return ESP_FAIL;
     }
     size_t pubkey_digest_len = 0;
-    status = psa_hash_finish(&hash_op, pubkey_digest, len, &pubkey_digest_len);
+    status = psa_hash_finish(&hash_op, pubkey_digest, sizeof(pubkey_digest), &pubkey_digest_len);
     if (status != PSA_SUCCESS) {
         return ESP_FAIL;
     }

@@ -56,6 +56,11 @@ public:
     // Load the partition from a file
     static esp_err_t load_from_file(const char *part_name, const char *file_name);
 
+    // Check if a specific marker (byte pattern) exists in the partition
+    // Returns ESP_OK if marker is found, ESP_ERR_NOT_FOUND if marker not found,
+    // or other error codes for technical failures
+    static esp_err_t check_marker(const char *part_name, const uint8_t *marker, size_t marker_len);
+
     // Set of functions to access partition statistics
     // At the moment these functions are global, it means that they do not distinguish between
     // different partitions

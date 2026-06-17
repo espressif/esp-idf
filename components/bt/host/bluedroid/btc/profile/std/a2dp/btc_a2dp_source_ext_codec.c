@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -135,10 +135,15 @@ void btc_a2dp_source_set_tx_flush(BOOLEAN enable)
 void btc_a2dp_source_on_suspended(tBTA_AV_SUSPEND *p_av)
 {
     /* check for status failures */
+    if (p_av == NULL) {
+        return;
+    }
+
     if (p_av->status != BTA_AV_SUCCESS) {
         if (p_av->initiator == TRUE) {
             btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_FAILURE);
         }
+        return;
     }
 
     /* stop tx, ack to cmd, flush tx queue */
@@ -202,6 +207,8 @@ bool btc_a2dp_source_startup(void)
 error_exit:;
     APPL_TRACE_ERROR("%s A2DP source start up failed", __func__);
 
+    btc_a2dp_source_state = BTC_A2DP_SOURCE_STATE_OFF;
+
 #if A2D_DYNAMIC_MEMORY == TRUE
     osi_free(a2dp_source_local_param_ptr);
     a2dp_source_local_param_ptr = NULL;
@@ -230,6 +237,20 @@ void btc_a2dp_source_shutdown(void)
     osi_free(a2dp_source_local_param_ptr);
     a2dp_source_local_param_ptr = NULL;
 #endif
+}
+
+/*******************************************************************************
+ **
+ ** Function         btc_a2dp_source_set_pref_mcc
+ **
+ ** Description
+ **
+ ** Returns          TRUE if the preferred config is supported, FALSE otherwise
+ **
+ *******************************************************************************/
+BOOLEAN btc_a2dp_source_set_pref_mcc(tBTA_AV_HNDL hndl, tBTC_AV_CODEC_INFO *pref_mcc)
+{
+    return bta_av_co_audio_set_pref_mcc(hndl, pref_mcc);
 }
 
 #endif /* (BTC_AV_SRC_INCLUDED == TRUE) && (BTC_AV_EXT_CODEC == TRUE) */

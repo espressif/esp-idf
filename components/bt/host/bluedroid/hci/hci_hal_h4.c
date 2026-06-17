@@ -34,7 +34,7 @@
 #include "esp_bt.h"
 #endif
 #include "esp_bluedroid_hci.h"
-#include "stack/hcimsgs.h"
+#include "bt_common.h"
 
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
 #include "l2c_int.h"
@@ -241,23 +241,6 @@ typedef void ble_host_rx_iso_data_fn(uint8_t *data, uint16_t len);
 
 static ble_host_rx_iso_data_fn *ble_host_iso_rx_cb = NULL;
 
-void ble_host_register_rx_iso_data_cb(void *cb)
-{
-    /* If the iso rx cb is already registered, we will give
-     * a warning log here, and the cb will still be updated.
-     */
-    if (ble_host_iso_rx_cb) {
-        HCI_TRACE_WARNING("iso rx cb %p already registered\n", ble_host_iso_rx_cb);
-    }
-
-    ble_host_iso_rx_cb = cb;
-}
-
-void ble_hci_register_rx_iso_data_cb(void *cb)
-{
-    ble_host_register_rx_iso_data_cb(cb);
-}
-
 #endif // #if (BLE_FEAT_ISO_EN == TRUE)
 
 // Internal functions
@@ -319,9 +302,12 @@ static void hci_packet_complete(BT_HDR *packet){
 }
 #endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
 
-bool host_recv_adv_packet(uint8_t *packet)
+bool host_recv_adv_packet(uint8_t *packet, uint16_t len)
 {
     assert(packet);
+    if (len < 4) {
+        return false;
+    }
     if(packet[0] == DATA_TYPE_EVENT && packet[1] == HCI_BLE_EVENT) {
         if(packet[3] ==  HCI_BLE_ADV_PKT_RPT_EVT || packet[3] == HCI_BLE_DIRECT_ADV_EVT
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
@@ -357,7 +343,8 @@ int hci_adv_credits_prep_to_release(uint16_t num)
 
     osi_mutex_lock(&hci_hal_env.adv_flow_lock, OSI_MUTEX_MAX_TIMEOUT);
     int credits_to_release = hci_hal_env.adv_credits_to_release + num;
-    assert(hci_hal_env.adv_credits_to_release <= BLE_ADV_REPORT_FLOW_CONTROL_NUM);
+    assert(num <= BLE_ADV_REPORT_FLOW_CONTROL_NUM);
+    assert(credits_to_release >= 0 && credits_to_release <= BLE_ADV_REPORT_FLOW_CONTROL_NUM);
     hci_hal_env.adv_credits_to_release = credits_to_release;
     osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
 
@@ -542,7 +529,7 @@ static void hci_hal_h4_hdl_rx_adv_rpt(pkt_linked_item_t *linked_pkt)
     BT_HDR* packet = (BT_HDR *)linked_pkt->data;
     stream = packet->data + packet->offset;
 
-    assert(host_recv_adv_packet(stream) == true);
+    assert(host_recv_adv_packet(stream, packet->len) == true);
 
     STREAM_TO_UINT8(type, stream);
     packet->offset++;
@@ -587,7 +574,10 @@ static void host_send_pkt_available_cb(void)
 void bt_record_hci_data(uint8_t *data, uint16_t len)
 {
 #if (BT_HCI_LOG_INCLUDED == TRUE)
-    if ((data[0] == DATA_TYPE_EVENT) && (data[1] == HCI_BLE_EVENT) && ((data[3] ==  HCI_BLE_ADV_PKT_RPT_EVT) || (data[3] == HCI_BLE_DIRECT_ADV_EVT)
+    if (len < 2) {
+        return;
+    }
+    if ((len >= 4) && (data[0] == DATA_TYPE_EVENT) && (data[1] == HCI_BLE_EVENT) && ((data[3] ==  HCI_BLE_ADV_PKT_RPT_EVT) || (data[3] == HCI_BLE_DIRECT_ADV_EVT)
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
         || (data[3] ==  HCI_BLE_ADV_DISCARD_REPORT_EVT)
 #endif // (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
@@ -596,14 +586,20 @@ void bt_record_hci_data(uint8_t *data, uint16_t len)
 #endif // (BLE_50_FEATURE_SUPPORT == TRUE)
     )) {
         bt_hci_log_record_hci_adv(HCI_LOG_DATA_TYPE_ADV, &data[2], len - 2);
+#if BT_HCI_INSIGHTS_INCLUDED
+        bt_hci_log_record_insights(HCI_LOG_DATA_TYPE_ADV, &data[2], len - 2);
+#endif
     } else {
         uint8_t data_type;
-        if (data[0] == HCI_LOG_DATA_TYPE_ISO_DATA) {
+        if (data[0] == DATA_TYPE_ISO) {
             data_type = HCI_LOG_DATA_TYPE_ISO_DATA;
         } else {
             data_type = ((data[0] == 2) ? HCI_LOG_DATA_TYPE_C2H_ACL : data[0]);
         }
         bt_hci_log_record_hci_data(data_type, &data[1], len - 1);
+#if BT_HCI_INSIGHTS_INCLUDED
+        bt_hci_log_record_insights(data_type, &data[1], len - 1);
+#endif
     }
 #endif // (BT_HCI_LOG_INCLUDED == TRUE)
 }
@@ -614,7 +610,7 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
     ble_log_spi_out_hci_write(BLE_LOG_SPI_OUT_SOURCE_HCI_UPSTREAM, data, len);
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
 #if CONFIG_BLE_LOG_HOST_SIDE_HCI_LOG_ENABLED
-    ble_log_write_hex(BLE_LOG_SRC_HCI, data, len);
+    ble_log_write_hci(BLE_LOG_HCI_UPSTREAM, data, len);
 #endif /* CONFIG_BLE_LOG_HOST_SIDE_HCI_LOG_ENABLED */
     //Target has packet to host, malloc new buffer for packet
     BT_HDR *pkt = NULL;
@@ -640,7 +636,7 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
     }
 #endif // #if (BLE_FEAT_ISO_EN == TRUE)
 
-    bool is_adv_rpt = host_recv_adv_packet(data);
+    bool is_adv_rpt = host_recv_adv_packet(data, len);
 
     if (!is_adv_rpt) {
         pkt_size = BT_HDR_SIZE + len;
@@ -699,7 +695,7 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
 
     hci_upstream_data_post(OSI_THREAD_MAX_TIMEOUT);
 
-    BTTRC_DUMP_BUFFER("Recv Pkt", pkt->data, len);
+    BTTRC_DUMP_BUFFER("Recv Pkt", data, len);
 
     return 0;
 }

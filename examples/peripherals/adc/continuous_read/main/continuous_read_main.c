@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "sdkconfig.h"
+#include "soc/soc_caps.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -15,7 +16,11 @@
 
 #define EXAMPLE_ADC_UNIT                    ADC_UNIT_1
 #define EXAMPLE_ADC_CONV_MODE               ADC_CONV_SINGLE_UNIT_1
+#if SOC_ADC_ATTEN_NUM <= 1
+#define EXAMPLE_ADC_ATTEN                   ADC_ATTEN_DB_0
+#else
 #define EXAMPLE_ADC_ATTEN                   ADC_ATTEN_DB_12
+#endif
 #define EXAMPLE_ADC_BIT_WIDTH               SOC_ADC_DIGI_MAX_BITWIDTH
 
 #define EXAMPLE_READ_LEN                    256

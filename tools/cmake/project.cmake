@@ -61,7 +61,7 @@ if(NOT "$ENV{IDF_COMPONENT_MANAGER}" EQUAL "0")
     idf_build_set_property(IDF_COMPONENT_MANAGER 1)
 endif()
 # Set component manager interface version
-idf_build_set_property(__COMPONENT_MANAGER_INTERFACE_VERSION 4)
+idf_build_set_property(__COMPONENT_MANAGER_INTERFACE_VERSION 5)
 
 #
 # Parse and store the VERSION argument provided to the project() command.
@@ -77,22 +77,22 @@ function(__parse_and_store_version_arg)
     cmake_parse_arguments(PROJECT "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     # If the VERSION keyword exists but no version string is provided then raise a warning
-    if((NOT PROJECT_VERSION
-        OR PROJECT_VERSION STREQUAL "NOTFOUND")
-        AND NOT PROJECT_VERSION STREQUAL "0")
+    if(("${PROJECT_VERSION}" STREQUAL ""
+        OR "${PROJECT_VERSION}" STREQUAL "NOTFOUND")
+        AND NOT "${PROJECT_VERSION}" STREQUAL "0")
         message(STATUS "VERSION keyword not followed by a value or was followed by a value that expanded to nothing.")
         # Default the version to 1 in this case
         set(project_ver 1)
     else()
         # Check if version is valid. cmake allows the version to be in the format <major>[.<minor>[.<patch>[.<tweak>]]]]
-        string(REGEX MATCH "^([0-9]+(\\.[0-9]+(\\.[0-9]+(\\.[0-9]+)?)?)?)?$" version_valid ${PROJECT_VERSION})
-        if(NOT version_valid AND NOT PROJECT_VERSION STREQUAL "0")
+        string(REGEX MATCH "^([0-9]+(\\.[0-9]+(\\.[0-9]+(\\.[0-9]+)?)?)?)?$" version_valid "${PROJECT_VERSION}")
+        if(NOT version_valid AND NOT "${PROJECT_VERSION}" STREQUAL "0")
             message(SEND_ERROR "Version \"${PROJECT_VERSION}\" format invalid.")
             return()
         endif()
 
         # Split the version string into major, minor, patch, and tweak components
-        string(REPLACE "." ";" version_components ${PROJECT_VERSION})
+        string(REPLACE "." ";" version_components "${PROJECT_VERSION}")
         list(GET version_components 0 PROJECT_VERSION_MAJOR)
         list(LENGTH version_components version_length)
         if(version_length GREATER 1)
@@ -382,6 +382,7 @@ function(__project_info test_components)
     # file with cmake's variables substituted and unprocessed generator expressions. The second
     # step, with file(GENERATE), processes the temporary file and substitute generator expression
     # into the final project_description.json file.
+    set(HINTS_FILE "${build_dir}/hints.yml")
     configure_file("${idf_path}/tools/cmake/project_description.json.in"
         "${build_dir}/project_description.json.templ")
     file(READ "${build_dir}/project_description.json.templ" project_description_json_templ)
@@ -391,6 +392,25 @@ function(__project_info test_components)
 
     # Generate component dependency graph
     depgraph_generate("${build_dir}/component_deps.dot")
+
+    # Assumption: all hints.yml files are bare YAML lists (no "---" document
+    # separators). Plain string concatenation is safe under this assumption.
+    # Note for consumers: yaml.safe_load() only parses the first YAML document,
+    # so document separators in source files would cause data loss.
+    set(_merged_hints "")
+    set(_global_hints_file "${idf_path}/tools/idf_py_actions/hints.yml")
+    if(EXISTS "${_global_hints_file}")
+        file(READ "${_global_hints_file}" _hints_content)
+        string(APPEND _merged_hints "${_hints_content}\n")
+    endif()
+    foreach(_comp_dir ${build_component_paths} ${test_component_paths})
+        set(_hints_file "${_comp_dir}/hints.yml")
+        if(EXISTS "${_hints_file}")
+            file(READ "${_hints_file}" _hints_content)
+            string(APPEND _merged_hints "${_hints_content}\n")
+        endif()
+    endforeach()
+    file(WRITE "${build_dir}/hints.yml" "${_merged_hints}")
 
     # We now have the following component-related variables:
     #
@@ -506,6 +526,17 @@ function(__project_init components_var test_components_var)
             set(minimal_build OFF)
             idf_build_set_property(MINIMAL_BUILD OFF)
         else()
+            # The minimal build feature is enabled; check whether the 'main'
+            # component target exists, ensuring that the component is
+            # recognized by the build system.
+            idf_build_get_property(prefix __PREFIX)
+            set(main_component_target ___${prefix}_main)
+            if(NOT TARGET ${main_component_target})
+                message(FATAL_ERROR "MINIMAL_BUILD is enabled but component main was not found. "
+                    "Please ensure the main component exists (in '${CMAKE_CURRENT_LIST_DIR}/main' "
+                    "or disable MINIMAL_BUILD, or explicitly set the COMPONENTS variable.")
+            endif()
+
             set(COMPONENTS main ${TEST_COMPONENTS})
             set(minimal_build ON)
         endif()
@@ -577,14 +608,50 @@ macro(project project_name)
 
     __target_set_toolchain()
 
+    # Build compiler launcher chain
+    set(compiler_launcher_chain "")
+    # Add custom wrapper if enabled (FIRST in chain)
+    if(CONFIGDEP_ENABLE)
+        # Check that esp-idf-kconfig >= CONFIGDEP_MIN_KCONFIG_VERSION is installed
+        # (required for cdep_tree / configdep support; version is defined in kconfig.cmake)
+        __check_python_package_min_version(${PYTHON} esp-idf-kconfig
+            "${CONFIGDEP_MIN_KCONFIG_VERSION}" _kconfig_version_ok)
+        if(_kconfig_version_ok)
+            find_program(CONFIGDEP_FOUND esp-idf-configdep)
+            if(CONFIGDEP_FOUND)
+                message(STATUS "esp-idf-configdep will be used for faster recompilation")
+                list(APPEND compiler_launcher_chain "esp-idf-configdep")
+            else()
+                message(WARNING "esp-idf-configdep enabled but not found. Re-run install and export scripts.")
+            endif()
+        else()
+            message(WARNING "esp-idf-configdep not supported by esp-idf-kconfig "
+                "(>= ${CONFIGDEP_MIN_KCONFIG_VERSION} required). Re-run install and export scripts.")
+        endif()
+    endif()
+
+    # Add ccache if enabled (SECOND in chain)
     if(CCACHE_ENABLE)
         find_program(CCACHE_FOUND ccache)
         if(CCACHE_FOUND)
             message(STATUS "ccache will be used for faster recompilation")
-            set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+            list(APPEND compiler_launcher_chain "ccache")
         else()
             message(WARNING "enabled ccache in build but ccache program not found")
         endif()
+    endif()
+
+    # Apply the launcher chain - CMake automatically creates semicolon-separated list
+    if(compiler_launcher_chain)
+        set(CMAKE_C_COMPILER_LAUNCHER ${compiler_launcher_chain})
+        set(CMAKE_CXX_COMPILER_LAUNCHER ${compiler_launcher_chain})
+        set(CMAKE_ASM_COMPILER_LAUNCHER ${compiler_launcher_chain})
+
+        # Debug: show what the launcher chain looks like
+        string(REPLACE ";" " -> " launcher_display "${compiler_launcher_chain}")
+        message(STATUS "Compiler launcher chain: ${launcher_display}")
+    else()
+        message(STATUS "No compiler launcher chain will be used.")
     endif()
 
     # The actual call to project()
@@ -702,7 +769,7 @@ macro(project project_name)
             # Check if version information was passed to project() via the VERSION argument
             set(version_keyword_present FALSE)
             foreach(arg ${ARGN})
-                if(${arg} STREQUAL "VERSION")
+                if("${arg}" STREQUAL "VERSION")
                     set(version_keyword_present TRUE)
                 endif()
             endforeach()
@@ -752,10 +819,12 @@ macro(project project_name)
         if(result EQUAL 0)
             break()
         elseif(result EQUAL 10 AND retried EQUAL 0)
-            message(WARNING "Missing kconfig option. Re-run the build process...")
             set(retried 1)
         elseif(result EQUAL 10 AND retried EQUAL 1)
-            message(FATAL_ERROR "Missing required kconfig option after retry.")
+            message(WARNING "Missing required kconfig option after retry. Re-running the build process.")
+            set(retried 2)
+        elseif(result EQUAL 10 AND retried EQUAL 2)
+            message(FATAL_ERROR "Missing required kconfig option after last retry. Terminating build.")
         else()
             message(FATAL_ERROR "idf_build_process failed with exit code ${result}")
         endif()
@@ -798,12 +867,28 @@ macro(project project_name)
         COMMAND ${CMAKE_COMMAND} -E touch ${project_elf_src}
         VERBATIM)
     add_custom_target(_project_elf_src DEPENDS "${project_elf_src}")
+
+    # On the Linux (host) target the standard GNU ld processes static archives
+    # in a single left-to-right pass, which fails when component libraries (or
+    # their transitive dependencies such as the mbedtls sub-libraries) have
+    # circular symbol references.  Wrap all archives in --start-group /
+    # --end-group so the linker re-scans until every symbol is resolved.
+    if(CONFIG_IDF_TARGET_LINUX AND NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+        string(CONCAT _link_exe_template
+            "<CMAKE_C_COMPILER> <FLAGS> <CMAKE_C_LINK_FLAGS> <LINK_FLAGS>"
+            " <OBJECTS> -o <TARGET>"
+            " -Wl,--start-group <LINK_LIBRARIES> -Wl,--end-group")
+        set(CMAKE_C_LINK_EXECUTABLE "${_link_exe_template}")
+        string(REPLACE "<CMAKE_C_COMPILER>" "<CMAKE_CXX_COMPILER>"
+            _link_exe_template "${_link_exe_template}")
+        string(REPLACE "<CMAKE_C_LINK_FLAGS>" "<CMAKE_CXX_LINK_FLAGS>"
+            _link_exe_template "${_link_exe_template}")
+        set(CMAKE_CXX_LINK_EXECUTABLE "${_link_exe_template}")
+        unset(_link_exe_template)
+    endif()
+
     add_executable(${project_elf} "${project_elf_src}")
     add_dependencies(${project_elf} _project_elf_src)
-
-    if(__PROJECT_GROUP_LINK_COMPONENTS)
-        target_link_libraries(${project_elf} PRIVATE "-Wl,--start-group")
-    endif()
 
     if(CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
         # Compiling for the host, and the host is macOS, so the linker is Darwin LD.
@@ -812,6 +897,10 @@ macro(project project_name)
         set(linker_type "Darwin")
     else()
         set(linker_type "GNU")
+    endif()
+
+    if(__PROJECT_GROUP_LINK_COMPONENTS)
+        target_link_libraries(${project_elf} PRIVATE "-Wl,--start-group")
     endif()
 
     if(test_components)

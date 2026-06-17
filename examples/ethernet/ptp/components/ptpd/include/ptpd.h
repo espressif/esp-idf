@@ -3,11 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2024-2026 Espressif Systems (Shanghai) CO LTD
  */
 
 /****************************************************************************
  * apps/include/netutils/ptpd.h
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -29,15 +31,23 @@
 #ifndef __APPS_INCLUDE_NETUTILS_PTPD_H
 #define __APPS_INCLUDE_NETUTILS_PTPD_H
 
-// ESP_PTP
-#include <time.h>
-#ifndef FAR
-#define FAR
-#endif
+#define ESP_PTP 1
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+
+#ifdef ESP_PTP
+#include <stdbool.h>
+#include <stdint.h>
+#include <time.h>
+#include <sys/socket.h>
+#ifndef FAR
+#define FAR
+#endif
+#else
+#include <sys/types.h>
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -46,6 +56,17 @@
 /****************************************************************************
  * Public Types
  ****************************************************************************/
+
+struct ptpd_config_s
+{
+  FAR const char *interface;
+  FAR const char *clock;
+  bool client_only;
+  bool hardware_ts;
+  bool delay_e2e;
+  bool bmca;
+  sa_family_t af;
+};
 
 /* PTPD status information structure */
 
@@ -130,7 +151,8 @@ extern "C"
  *   Start the PTP daemon and bind it to specified interface.
  *
  * Input Parameters:
- *   interface - Name of the network interface to bind to, e.g. "eth0"
+ *   ESP_PTP:  interface - Name of the network interface to bind to
+ *   NuttX:    config    - The configs of PTP daemon
  *
  * Returned Value:
  *   On success, the non-negative task ID of the PTP daemon is returned;
@@ -138,7 +160,7 @@ extern "C"
  *
  ****************************************************************************/
 
-int ptpd_start(FAR const char *interface);
+int ptpd_start(FAR const struct ptpd_config_s *config);
 
 /****************************************************************************
  * Name: ptpd_status

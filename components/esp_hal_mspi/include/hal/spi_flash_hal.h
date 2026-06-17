@@ -86,7 +86,7 @@ typedef struct {
     bool iomux;             ///< Whether the IOMUX is used, used for timing compensation.
     int input_delay_ns;     ///< Input delay on the MISO pin after the launch clock, used for timing compensation.
     spi_host_device_t host_id;            ///< SPI peripheral ID.
-    int cs_num;             ///< Which cs pin is used, 0-(SOC_SPI_PERIPH_CS_NUM-1).
+    int cs_num;             ///< Which cs pin is used, 0-(SPI_LL_PERIPH_CS_NUM-1).
     bool auto_sus_en;       ///< Auto suspend feature enable bit 1: enable, 0: disable.
     bool octal_mode_en;     ///< Octal spi flash mode enable bit 1: enable, 0: disable.
     bool using_timing_tuning;               ///< System exist SPI0/1 timing tuning, using value from system directly if set to 1.

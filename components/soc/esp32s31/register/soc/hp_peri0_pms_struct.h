@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -1065,67 +1065,67 @@ typedef union {
     uint32_t val;
 } hp_peri0_pms_hp_rmt_ctrl_reg_t;
 
-/** Type of hp_bitsrambler_ctrl register
- *  hp_bitsrambler read/write control register
+/** Type of hp_bitscrambler_ctrl register
+ *  hp_bitscrambler read/write control register
  */
 typedef union {
     struct {
-        /** read_tee_hp_bitsrambler : R/W; bitpos: [0]; default: 1;
-         *  Configures hp_bitsrambler registers read permission in tee mode.
+        /** read_tee_hp_bitscrambler : R/W; bitpos: [0]; default: 1;
+         *  Configures hp_bitscrambler registers read permission in tee mode.
          *  0: can not be read
          *  1: can be read
          */
-        uint32_t read_tee_hp_bitsrambler:1;
-        /** read_ree0_hp_bitsrambler : R/W; bitpos: [1]; default: 0;
-         *  Configures hp_bitsrambler registers read permission in ree0 mode.
+        uint32_t read_tee_hp_bitscrambler:1;
+        /** read_ree0_hp_bitscrambler : R/W; bitpos: [1]; default: 0;
+         *  Configures hp_bitscrambler registers read permission in ree0 mode.
          *  0: can not be read
          *  1: can be read
          */
-        uint32_t read_ree0_hp_bitsrambler:1;
-        /** read_ree1_hp_bitsrambler : R/W; bitpos: [2]; default: 0;
-         *  Configures hp_bitsrambler registers read permission in ree1 mode.
+        uint32_t read_ree0_hp_bitscrambler:1;
+        /** read_ree1_hp_bitscrambler : R/W; bitpos: [2]; default: 0;
+         *  Configures hp_bitscrambler registers read permission in ree1 mode.
          *  0: can not be read
          *  1: can be read
          */
-        uint32_t read_ree1_hp_bitsrambler:1;
-        /** read_ree2_hp_bitsrambler : R/W; bitpos: [3]; default: 0;
-         *  Configures hp_bitsrambler registers read permission in ree2 mode.
+        uint32_t read_ree1_hp_bitscrambler:1;
+        /** read_ree2_hp_bitscrambler : R/W; bitpos: [3]; default: 0;
+         *  Configures hp_bitscrambler registers read permission in ree2 mode.
          *  0: can not be read
          *  1: can be read
          */
-        uint32_t read_ree2_hp_bitsrambler:1;
-        /** write_tee_hp_bitsrambler : R/W; bitpos: [4]; default: 1;
-         *  Configures hp_bitsrambler registers write permission in tee mode.
+        uint32_t read_ree2_hp_bitscrambler:1;
+        /** write_tee_hp_bitscrambler : R/W; bitpos: [4]; default: 1;
+         *  Configures hp_bitscrambler registers write permission in tee mode.
          *  0: can not be write
          *  1: can be write
          */
-        uint32_t write_tee_hp_bitsrambler:1;
-        /** write_ree0_hp_bitsrambler : R/W; bitpos: [5]; default: 0;
-         *  Configures hp_bitsrambler registers write permission in ree0 mode.
+        uint32_t write_tee_hp_bitscrambler:1;
+        /** write_ree0_hp_bitscrambler : R/W; bitpos: [5]; default: 0;
+         *  Configures hp_bitscrambler registers write permission in ree0 mode.
          *  0: can not be write
          *  1: can be write
          */
-        uint32_t write_ree0_hp_bitsrambler:1;
-        /** write_ree1_hp_bitsrambler : R/W; bitpos: [6]; default: 0;
-         *  Configures hp_bitsrambler registers write permission in ree1 mode.
+        uint32_t write_ree0_hp_bitscrambler:1;
+        /** write_ree1_hp_bitscrambler : R/W; bitpos: [6]; default: 0;
+         *  Configures hp_bitscrambler registers write permission in ree1 mode.
          *  0: can not be write
          *  1: can be write
          */
-        uint32_t write_ree1_hp_bitsrambler:1;
-        /** write_ree2_hp_bitsrambler : R/W; bitpos: [7]; default: 0;
-         *  Configures hp_bitsrambler registers write permission in ree2 mode.
+        uint32_t write_ree1_hp_bitscrambler:1;
+        /** write_ree2_hp_bitscrambler : R/W; bitpos: [7]; default: 0;
+         *  Configures hp_bitscrambler registers write permission in ree2 mode.
          *  0: can not be write
          *  1: can be write
          */
-        uint32_t write_ree2_hp_bitsrambler:1;
-        /** hp_bitsrambler_lock : R/W; bitpos: [8]; default: 0;
-         *  Set 1 to lock hp_bitsrambler peri_apm configuration
+        uint32_t write_ree2_hp_bitscrambler:1;
+        /** hp_bitscrambler_lock : R/W; bitpos: [8]; default: 0;
+         *  Set 1 to lock hp_bitscrambler peri_apm configuration
          */
-        uint32_t hp_bitsrambler_lock:1;
+        uint32_t hp_bitscrambler_lock:1;
         uint32_t reserved_9:23;
     };
     uint32_t val;
-} hp_peri0_pms_hp_bitsrambler_ctrl_reg_t;
+} hp_peri0_pms_hp_bitscrambler_ctrl_reg_t;
 
 /** Type of hp_asrc_ctrl register
  *  hp_asrc read/write control register
@@ -2175,7 +2175,7 @@ typedef struct {
     volatile hp_peri0_pms_hp_gmac_ctrl_reg_t hp_gmac_ctrl;
     volatile hp_peri0_pms_hp_pvt0_ctrl_reg_t hp_pvt0_ctrl;
     volatile hp_peri0_pms_hp_rmt_ctrl_reg_t hp_rmt_ctrl;
-    volatile hp_peri0_pms_hp_bitsrambler_ctrl_reg_t hp_bitsrambler_ctrl;
+    volatile hp_peri0_pms_hp_bitscrambler_ctrl_reg_t hp_bitscrambler_ctrl;
     volatile hp_peri0_pms_hp_asrc_ctrl_reg_t hp_asrc_ctrl;
     volatile hp_peri0_pms_cnnt_sys_reg_ctrl_reg_t cnnt_sys_reg_ctrl;
     volatile hp_peri0_pms_hp_flash_ctrl_reg_t hp_flash_ctrl;

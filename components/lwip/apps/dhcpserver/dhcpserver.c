@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <assert.h>
 #include "lwip/dhcp.h"
 #include "lwip/err.h"
@@ -48,7 +49,9 @@
 #define DHCPACK       5
 #define DHCPNAK       6
 #define DHCPRELEASE   7
+#define DHCPINFORM    8
 
+#define DHCP_OPTION_PAD           0
 #define DHCP_OPTION_SUBNET_MASK   1
 #define DHCP_OPTION_HOST_NAME    12
 #define DHCP_OPTION_ROUTER        3
@@ -103,6 +106,7 @@
 #define DHCPS_STATE_NAK 4
 #define DHCPS_STATE_IDLE 5
 #define DHCPS_STATE_RELEASE 6
+#define DHCPS_STATE_INFORM_ACK 7
 
 typedef enum {
     DHCPS_HANDLE_CREATED = 0,
@@ -435,7 +439,7 @@ static u8_t *add_msg_type(u8_t *optptr, u8_t type)
  * Parameters   : optptr -- the addr of DHCP message option
  * Returns      : the addr of DHCP message option
 *******************************************************************************/
-static u8_t *add_offer_options(dhcps_t *dhcps, u8_t *optptr)
+static u8_t *add_offer_options(dhcps_t *dhcps, u8_t *optptr, bool include_lease_time)
 {
     u32_t i;
     ip4_addr_t ipadd;
@@ -446,12 +450,14 @@ static u8_t *add_offer_options(dhcps_t *dhcps, u8_t *optptr)
     *optptr++ = 4;
     optptr = dhcps_option_ip(optptr, &dhcps->dhcps_mask);
 
-    *optptr++ = DHCP_OPTION_LEASE_TIME;
-    *optptr++ = 4;
-    *optptr++ = ((dhcps->dhcps_lease_time * DHCPS_LEASE_UNIT) >> 24) & 0xFF;
-    *optptr++ = ((dhcps->dhcps_lease_time * DHCPS_LEASE_UNIT) >> 16) & 0xFF;
-    *optptr++ = ((dhcps->dhcps_lease_time * DHCPS_LEASE_UNIT) >> 8) & 0xFF;
-    *optptr++ = ((dhcps->dhcps_lease_time * DHCPS_LEASE_UNIT) >> 0) & 0xFF;
+    if (include_lease_time) {
+        *optptr++ = DHCP_OPTION_LEASE_TIME;
+        *optptr++ = 4;
+        *optptr++ = ((dhcps->dhcps_lease_time * DHCPS_LEASE_UNIT) >> 24) & 0xFF;
+        *optptr++ = ((dhcps->dhcps_lease_time * DHCPS_LEASE_UNIT) >> 16) & 0xFF;
+        *optptr++ = ((dhcps->dhcps_lease_time * DHCPS_LEASE_UNIT) >> 8) & 0xFF;
+        *optptr++ = ((dhcps->dhcps_lease_time * DHCPS_LEASE_UNIT) >> 0) & 0xFF;
+    }
 
     *optptr++ = DHCP_OPTION_SERVER_ID;
     *optptr++ = 4;
@@ -547,6 +553,44 @@ static u8_t *add_end(u8_t *optptr)
     return optptr;
 }
 
+/**
+ * Read DHCP message type (option 53) from the variable-length option area
+ * (starts after the magic cookie at options[4]).
+ */
+static u8_t dhcps_get_option_msg_type(u8_t *optptr, u16_t len)
+{
+    u8_t *end;
+
+    if (len <= 0) {
+        return 0;
+    }
+    end = optptr + len;
+
+    while (optptr < end) {
+        u8_t code = *optptr;
+        if (code == DHCP_OPTION_END) {
+            break;
+        }
+        if (code == 0) {
+            /* Pad */
+            optptr++;
+            continue;
+        }
+        if (optptr + 1 >= end) {
+            break;
+        }
+        u8_t optlen = optptr[1];
+        if ((optptr + 2 + optlen) > end) {
+            break;
+        }
+        if (code == DHCP_OPTION_MSG_TYPE && optlen >= 1) {
+            return optptr[2];
+        }
+        optptr += (u16_t)optlen + 2;
+    }
+    return 0;
+}
+
 /******************************************************************************
  * FunctionName : create_msg
  * Description  : create response message
@@ -604,7 +648,11 @@ static void dhcps_response_ip_set(dhcps_t *dhcps, struct dhcps_msg *m, ip4_addr_
             /* If the 'giaddr' field is zero and the 'ciaddr' is nonzero,
              * the server unicasts DHCPOFFER and DHCPACK message to the address in 'ciaddr'*/
             ip4_addr_set(ip4_out, &ip4_ciaddr);
-            etharp_add_static_entry(&ip4_ciaddr, &chaddr);
+            /* when 'yiaddr' is zero, means DHCPACK INFO, no need to add static entry */
+            if (!ip4_addr_isany_val(ip4_yiaddr)) {
+                /* add the IP<->MAC as static entry into the arp table. */
+                etharp_add_static_entry(&ip4_ciaddr, &chaddr);
+            }
         } else if (!BROADCAST_BIT_IS_SET(htons(m->flags))) {
             /* If the 'giaddr' is zero and 'ciaddr' is zero, and the broadcast bit is not set,
              * the server unicasts DHCPOFFER and DHCPACK message to the client's hardware address and
@@ -655,7 +703,7 @@ static void send_offer(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
     create_msg(dhcps, m);
 
     end = add_msg_type(&m->options[4], DHCPOFFER);
-    end = add_offer_options(dhcps, end);
+    end = add_offer_options(dhcps, end, true);
     LWIP_HOOK_DHCPS_POST_APPEND_OPTS(dhcps->dhcps_netif, dhcps, DHCPOFFER, &end)
     end = add_end(end);
 
@@ -838,7 +886,7 @@ static void send_ack(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
     create_msg(dhcps, m);
 
     end = add_msg_type(&m->options[4], DHCPACK);
-    end = add_offer_options(dhcps, end);
+    end = add_offer_options(dhcps, end, true);
     LWIP_HOOK_DHCPS_POST_APPEND_OPTS(dhcps->dhcps_netif, dhcps, DHCPACK, &end)
     end = add_end(end);
 
@@ -908,6 +956,50 @@ static void send_ack(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
 }
 
 /******************************************************************************
+ * FunctionName : send_ack_inform
+ * Description  : DHCPACK response to DHCPINFORM (RFC 2131: yiaddr = 0, no lease time)
+ * Parameters   : m -- DHCP message info
+ * Returns      : none
+*******************************************************************************/
+static void send_ack_inform(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
+{
+    u8_t *end;
+    struct pbuf *p, *q;
+    u8_t *data;
+    u16_t cnt = 0;
+    u16_t i;
+    create_msg(dhcps, m);
+    memset(m->yiaddr, 0, sizeof(m->yiaddr));
+
+    end = add_msg_type(&m->options[4], DHCPACK);
+    end = add_offer_options(dhcps, end, false);
+    LWIP_HOOK_DHCPS_POST_APPEND_OPTS(dhcps->dhcps_netif, dhcps, DHCPACK, &end)
+    end = add_end(end);
+
+    p = dhcps_pbuf_alloc(len);
+    if (p == NULL) {
+        return;
+    }
+
+    q = p;
+    while (q != NULL) {
+        data = (u8_t *)q->payload;
+        for (i = 0; i < q->len; i++) {
+            data[i] = ((u8_t *) m)[cnt++];
+        }
+        q = q->next;
+    }
+
+    ip_addr_t ip_temp = IPADDR4_INIT(0x0);
+    dhcps_response_ip_set(dhcps, m, ip_2_ip4(&ip_temp));
+    udp_sendto(dhcps->dhcps_pcb, p, &ip_temp, DHCPS_CLIENT_PORT);
+
+    if (p->ref != 0) {
+        pbuf_free(p);
+    }
+}
+
+/******************************************************************************
  * FunctionName : parse_options
  * Description  : parse DHCP message options
  * Parameters   : optptr -- DHCP message option info
@@ -917,7 +1009,6 @@ static void send_ack(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
 static u8_t parse_options(dhcps_t *dhcps, u8_t *optptr, s16_t len)
 {
     ip4_addr_t client;
-    bool is_dhcp_parse_end = false;
     struct dhcps_state s;
 
     client.addr = *((uint32_t *) &dhcps->client_address);
@@ -932,10 +1023,31 @@ static u8_t parse_options(dhcps_t *dhcps, u8_t *optptr, s16_t len)
         DHCPS_LOG("dhcps: (s16_t)*optptr = %d\n", (s16_t)*optptr);
 #endif
 
+        if (*optptr == DHCP_OPTION_PAD) {
+            optptr++;
+            continue;
+        }
+
+        if (*optptr == DHCP_OPTION_END) {
+            break;
+        }
+
+        if (optptr + 1 >= end) {
+            break;
+        }
+
+        u8_t opt_len = optptr[1];
+
+        if (optptr + 2 + opt_len > end) {
+            break;
+        }
+
         switch ((s16_t) *optptr) {
 
             case DHCP_OPTION_MSG_TYPE:	//53
-                type = *(optptr + 2);
+                if (opt_len >= 1) {
+                    type = optptr[2];
+                }
                 break;
 
 #if CONFIG_LWIP_DHCPS_REPORT_CLIENT_HOSTNAME
@@ -966,31 +1078,24 @@ static u8_t parse_options(dhcps_t *dhcps, u8_t *optptr, s16_t len)
 #endif
 
             case DHCP_OPTION_REQ_IPADDR://50
-                if (memcmp((char *) &client.addr, (char *) optptr + 2, 4) == 0) {
+                if (opt_len >= 4) {
+                    if (memcmp((char *) &client.addr, (char *) optptr + 2, 4) == 0) {
 #if DHCPS_DEBUG
-                    DHCPS_LOG("dhcps: DHCP_OPTION_REQ_IPADDR = 0 ok\n");
+                        DHCPS_LOG("dhcps: DHCP_OPTION_REQ_IPADDR = 0 ok\n");
 #endif
-                    s.state = DHCPS_STATE_ACK;
-                } else {
+                        s.state = DHCPS_STATE_ACK;
+                    } else {
 #if DHCPS_DEBUG
-                    DHCPS_LOG("dhcps: DHCP_OPTION_REQ_IPADDR != 0 err\n");
+                        DHCPS_LOG("dhcps: DHCP_OPTION_REQ_IPADDR != 0 err\n");
 #endif
-                    s.state = DHCPS_STATE_NAK;
+                        s.state = DHCPS_STATE_NAK;
+                    }
                 }
 
                 break;
-
-            case DHCP_OPTION_END: {
-                is_dhcp_parse_end = true;
-            }
-            break;
         }
 
-        if (is_dhcp_parse_end) {
-            break;
-        }
-
-        optptr += optptr[1] + 2;
+        optptr += opt_len + 2;
     }
 
     switch (type) {
@@ -1053,6 +1158,23 @@ static s16_t parse_msg(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
 #if DHCPS_DEBUG
         DHCPS_LOG("dhcps: len = %d\n", len);
 #endif
+        {
+            u8_t msg_type = dhcps_get_option_msg_type(&m->options[4], (s16_t)len);
+            if (msg_type == DHCPINFORM) {
+                ip4_addr_t ciaddr;
+                memcpy(&ciaddr.addr, m->ciaddr, sizeof(ciaddr.addr));
+                if (ip4_addr_isany(&ciaddr)) {
+                    /* RFC 2131: client MUST set ciaddr to its configured address */
+                    return 0;
+                }
+                if (!ip4_addr_netcmp(&ciaddr, &dhcps->server_address, &dhcps->dhcps_mask)) {
+                    /* No configuration for this client */
+                    return 0;
+                }
+                return DHCPS_STATE_INFORM_ACK;
+            }
+        }
+
         ip4_addr_t addr_tmp;
 
         struct dhcps_pool *pdhcps_pool = NULL;
@@ -1216,11 +1338,8 @@ static void handle_dhcp(void *arg,
 {
     struct dhcps_t *dhcps = arg;
     struct dhcps_msg *pmsg_dhcps = NULL;
-    s16_t tlen, malloc_len;
-    u16_t i;
-    u16_t dhcps_msg_cnt = 0;
+    u16_t tlen, malloc_len;
     u8_t *p_dhcps_msg = NULL;
-    u8_t *data;
     s16_t state;
 
 #if DHCPS_DEBUG
@@ -1228,6 +1347,11 @@ static void handle_dhcp(void *arg,
 #endif
 
     if (p == NULL) {
+        return;
+    }
+
+    if (p->tot_len > 1500) {
+        pbuf_free(p);
         return;
     }
 
@@ -1247,52 +1371,23 @@ static void handle_dhcp(void *arg,
 
     p_dhcps_msg = (u8_t *)pmsg_dhcps;
     tlen = p->tot_len;
-    data = p->payload;
 
 #if DHCPS_DEBUG
     DHCPS_LOG("dhcps: handle_dhcp-> p->tot_len = %d\n", tlen);
     DHCPS_LOG("dhcps: handle_dhcp-> p->len = %d\n", p->len);
 #endif
 
-    for (i = 0; i < p->len; i++) {
-        p_dhcps_msg[dhcps_msg_cnt++] = data[i];
-#if DHCPS_DEBUG
-        DHCPS_LOG("%02x ", data[i]);
-
-        if ((i + 1) % 16 == 0) {
-            DHCPS_LOG("\n");
-        }
-
-#endif
-    }
-
-    if (p->next != NULL) {
-#if DHCPS_DEBUG
-        DHCPS_LOG("dhcps: handle_dhcp-> p->next != NULL\n");
-        DHCPS_LOG("dhcps: handle_dhcp-> p->next->tot_len = %d\n", p->next->tot_len);
-        DHCPS_LOG("dhcps: handle_dhcp-> p->next->len = %d\n", p->next->len);
-#endif
-
-        data = p->next->payload;
-
-        for (i = 0; i < p->next->len; i++) {
-            p_dhcps_msg[dhcps_msg_cnt++] = data[i];
-#if DHCPS_DEBUG
-            DHCPS_LOG("%02x ", data[i]);
-
-            if ((i + 1) % 16 == 0) {
-                DHCPS_LOG("\n");
-            }
-
-#endif
-        }
+    if (tlen == 0 || pbuf_copy_partial(p, p_dhcps_msg, tlen, 0) != tlen) {
+        pbuf_free(p);
+        mem_free(pmsg_dhcps);
+        return;
     }
 
 #if DHCPS_DEBUG
     DHCPS_LOG("dhcps: handle_dhcp-> parse_msg(p)\n");
 #endif
 
-    state = parse_msg(dhcps, pmsg_dhcps, tlen - 240);
+    state = parse_msg(dhcps, pmsg_dhcps, tlen >= 240 ? (u16_t)(tlen - 240) : 0);
 #ifdef LWIP_HOOK_DHCPS_POST_STATE
     state = LWIP_HOOK_DHCPS_POST_STATE(pmsg_dhcps, malloc_len, state);
 #endif /* LWIP_HOOK_DHCPS_POST_STATE */
@@ -1317,6 +1412,13 @@ static void handle_dhcp(void *arg,
             DHCPS_LOG("dhcps: handle_dhcp-> DHCPD_STATE_NAK\n");
 #endif
             send_nak(dhcps, pmsg_dhcps, malloc_len);
+            break;
+
+        case DHCPS_STATE_INFORM_ACK://7
+#if DHCPS_DEBUG
+            DHCPS_LOG("dhcps: handle_dhcp-> DHCPD_STATE_INFORM_ACK\n");
+#endif
+            send_ack_inform(dhcps, pmsg_dhcps, malloc_len);
             break;
 
         default :
@@ -1712,4 +1814,18 @@ bool dhcps_get_hostname_on_mac(dhcps_t *dhcps, const u8_t *mac, char *out, size_
     return false;
 }
 #endif
+#if LWIP_DHCPS_TEST_PARSE_OPTIONS == 1
+u8_t dhcps_test_parse_options(u8_t *optptr, s16_t len)
+{
+    dhcps_t *dhcps = dhcps_new();
+    if (dhcps == NULL) {
+        return 0;
+    }
+    IP4_ADDR(&dhcps->client_address, 192, 168, 4, 2);
+    u8_t result = parse_options(dhcps, optptr, len);
+    mem_free(dhcps);
+    return result;
+}
+#endif /* LWIP_DHCPS_TEST_PARSE_OPTIONS == 1 */
+
 #endif // ESP_DHCPS

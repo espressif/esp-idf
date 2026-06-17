@@ -1,0 +1,5 @@
+# sdkconfig replacement configurations for deprecated options formatted as
+# CONFIG_DEPRECATED_OPTION CONFIG_NEW_OPTION
+## For ESP32-S31 BR/EDR controller, use prefix "BT_CTRL_" instead of "BTDM_CTRL_"
+CONFIG_BTDM_CTRL_BR_EDR_MAX_ACL_CONN                        CONFIG_BT_CTRL_BR_EDR_MAX_ACL_CONN
+CONFIG_BTDM_CTRL_BR_EDR_MAX_SYNC_CONN                       CONFIG_BT_CTRL_BR_EDR_MAX_SYNC_CONN

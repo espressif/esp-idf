@@ -13,7 +13,7 @@ set(srcs "heap_caps_base.c"
          "multi_heap.c")
 
 # the root dir of TLSF submodule contains headers with static inline
-# functions used in the esp_rom component for TLSF patches. Therefore,
+# functions used in the heap ROM patches. Therefore,
 # the tlsf/ dir must be included in the list of public includes.
 set(includes "include"
              "tlsf")
@@ -49,6 +49,21 @@ endif()
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "port/memory_layout_utils.c")
     list(APPEND srcs "port/${target}/memory_layout.c")
+
+    if(CONFIG_HEAP_TLSF_USE_ROM_IMPL)
+        list(APPEND includes "rom_patches/include"
+                             "rom_patches/${target}")
+
+        if(CONFIG_ESP_ROM_TLSF_CHECK_PATCH)
+            # This file shall be included in the build if TLSF in ROM is activated
+            list(APPEND srcs "rom_patches/rom_patch_tlsf.c")
+        endif()
+
+        if(CONFIG_ESP_ROM_MULTI_HEAP_WALK_PATCH)
+            # This file shall be included in the build if TLSF in ROM is activated
+            list(APPEND srcs "rom_patches/rom_patch_multi_heap.c")
+        endif()
+    endif()
 endif()
 
 idf_component_register(SRCS "${srcs}"
@@ -56,6 +71,22 @@ idf_component_register(SRCS "${srcs}"
                     PRIV_INCLUDE_DIRS ${priv_includes}
                     LDFRAGMENTS linker.lf
                     PRIV_REQUIRES soc)
+
+if(CONFIG_HEAP_TLSF_USE_ROM_IMPL AND NOT BOOTLOADER_BUILD)
+    # After registering the component, set the tlsf_set_rom_patches symbol as undefined
+    # to force the linker to integrate the whole rom_patch_tlsf.c object file inside the
+    # final binary. This is necessary because tlsf_set_rom_patches is a constructor, thus,
+    # there is no explicit reference/call to it in IDF.
+    if(CONFIG_ESP_ROM_TLSF_CHECK_PATCH)
+        target_link_libraries(${COMPONENT_LIB} PRIVATE "-u tlsf_set_rom_patches")
+    endif()
+
+    if(CONFIG_ESP_ROM_MULTI_HEAP_WALK_PATCH)
+        target_link_libraries(${COMPONENT_LIB} PRIVATE "-u esp_rom_include_multi_heap_patch")
+    endif()
+
+    target_linker_script(${COMPONENT_LIB} INTERFACE "port/${target}/ld/${target}.rom.heap.ld")
+endif()
 
 if(CONFIG_HEAP_TRACING)
     set(WRAP_FUNCTIONS

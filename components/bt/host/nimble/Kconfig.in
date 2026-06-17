@@ -160,10 +160,11 @@ menu "Security (SMP)"
             default 0
             help
                 LE Security Mode 1 Levels:
-                1. No Security
-                2. Unauthenticated pairing with encryption
-                3. Authenticated pairing with encryption
-                4. Authenticated LE Secure Connections pairing with encryption using a 128-bit strength encryption key.
+                1(0). No Security
+                2(1). Unauthenticated pairing with encryption
+                3(2). Authenticated pairing with encryption
+                4(3). Authenticated LE Secure Connections pairing with encryption using a
+                128-bit strength encryption key.
 
         config BT_NIMBLE_SM_SC_ONLY
             int "Enable Secure Connections Only Mode"
@@ -290,13 +291,13 @@ menu "GAP"
     config BT_NIMBLE_MAX_CCCDS
         int "Maximum number of CCC descriptors to save across reboots"
         default 8
-        depends on BT_NIMBLE_ENABLED && BT_NIMBLE_NVS_PERSIST
+        depends on BT_NIMBLE_ENABLED
         help
             Defines maximum number of CCC descriptors to save
 
     config BT_NIMBLE_CRYPTO_STACK_MBEDTLS
         bool "Override TinyCrypt with mbedTLS for crypto computations"
-        default y
+        default n if CONFIG_BT_SMP_CRYPTO_STACK_TINYCRYPT
         depends on BT_NIMBLE_ENABLED
         select MBEDTLS_CMAC_C
         help
@@ -568,7 +569,7 @@ menu "Memory Settings"
 
     config BT_NIMBLE_MEMPOOL_RUNTIME_ALLOC
         bool "Support on-demand runtime memory allocation for mempool"
-        depends on BT_NIMBLE_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER
+        depends on BT_NIMBLE_ENABLED && BT_NIMBLE_STATIC_TO_DYNAMIC && !BT_DUAL_MODE_ARCH
         default n
         help
             When this option is enabled, mempool does not require pre-allocating memory.
@@ -682,7 +683,7 @@ menu "BLE 5.x Features"
         config BT_NIMBLE_EXT_SCAN
             bool "Enable extended scanning"
             depends on BT_NIMBLE_50_FEATURE_SUPPORT
-            default y
+            default y if BT_NIMBLE_EXT_ADV
             help
                 Enable this option to do extended scanning.
 
@@ -767,15 +768,15 @@ menu "BLE 5.x Features"
 
             config BT_NIMBLE_ISO_BIS
                 int "Maximum number of BIS"
-                range 1 3
+                range 1 6
                 default 2
                 help
                     Maximum number of BIS.
 
             config BT_NIMBLE_ISO_BIS_PER_BIG
                 int "Maximum number of BIS per BIG"
-                range 1 3
-                default 2
+                range 1 BT_NIMBLE_ISO_BIS
+                default BT_NIMBLE_ISO_BIS
                 help
                     Maximum number of BIS per BIG.
 
@@ -788,15 +789,15 @@ menu "BLE 5.x Features"
 
             config BT_NIMBLE_ISO_CIS
                 int "Maximum number of CIS"
-                range 1 3
+                range 1 6
                 default 2
                 help
                     Maximum number of CIS.
 
             config BT_NIMBLE_ISO_CIS_PER_CIG
                 int "Maximum number of CIS per CIG"
-                range 1 3
-                default 2
+                range 1 BT_NIMBLE_ISO_CIS
+                default BT_NIMBLE_ISO_CIS
                 help
                     Maximum number of CIS per CIG.
 
@@ -820,7 +821,7 @@ menu "BLE 6.x Features"
 
     if BT_NIMBLE_60_FEATURE_SUPPORT
         config BT_NIMBLE_CHANNEL_SOUNDING
-            bool "ble channel souding feature"
+            bool "ble channel sounding feature"
             default n
             help
                 Used to enable/disable the channel sounding feature
@@ -915,6 +916,14 @@ menu "Services"
         default 3
         help
             Defines maximum number of report characteristics per service instance
+
+    config BT_NIMBLE_RAS_SERVICE
+        depends on BT_NIMBLE_CHANNEL_SOUNDING
+        bool "RAS service"
+        default y
+        help
+            Enable RAS Service
+
 
     menuconfig BT_NIMBLE_BAS_SERVICE
         bool "Battery service"
@@ -1216,6 +1225,15 @@ menu "Extra Features"
         bool "Encrypted Advertising Data"
         help
             This option is used to enable encrypted advertising data.
+
+    config BT_NIMBLE_ADV_UUID_CONCAT
+        bool "concatenate uuids while parsing advertising data"
+        default n
+        depends on BT_NIMBLE_ENABLED
+        help
+            Enables concatenation of multiple UUIDs of the same type while parsing
+            advertising data on the central device. When disabled, only the last
+            parsed UUID of a given type is retained.
 
     config BT_NIMBLE_MAX_EADS
         int "Maximum number of EAD devices to save across reboots"

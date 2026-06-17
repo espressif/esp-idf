@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -80,6 +80,8 @@ TEST_CASE("LP I2C initialize with wrong IO", "[i2c]")
 
 #endif
 
+#if !CONFIG_IDF_TARGET_ESP32S31 // LP_I2C has the same clock source as HP_I2C on ESP32S31
+
 TEST_CASE("LP I2C initialize with wrong clock source", "[i2c]")
 {
     i2c_master_bus_config_t i2c_mst_config = {};
@@ -93,6 +95,8 @@ TEST_CASE("LP I2C initialize with wrong clock source", "[i2c]")
 
     TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, i2c_new_master_bus(&i2c_mst_config, &bus_handle));
 }
+
+#endif
 
 static void lp_i2c_master_write_test(void)
 {

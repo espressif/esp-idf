@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -80,7 +80,7 @@ static void heart_rate_task(void *param) {
 
 void app_main(void) {
     /* Local variables */
-    int rc = 0;
+    BaseType_t rc = 0;
     esp_err_t ret;
 
     /* LED initialization */
@@ -129,7 +129,17 @@ void app_main(void) {
     nimble_host_config_init();
 
     /* Start NimBLE host task thread and return */
-    xTaskCreate(nimble_host_task, "NimBLE Host", 4*1024, NULL, 5, NULL);
-    xTaskCreate(heart_rate_task, "Heart Rate", 4*1024, NULL, 5, NULL);
+    rc = xTaskCreate(nimble_host_task, "NimBLE Host", 4 * 1024, NULL,
+                                5, NULL);
+    if (rc != pdPASS) {
+        ESP_LOGE(TAG, "failed to create NimBLE host task");
+        return;
+    }
+
+    rc = xTaskCreate(heart_rate_task, "Heart Rate", 4 * 1024, NULL, 5, NULL);
+    if (rc != pdPASS) {
+        ESP_LOGE(TAG, "failed to create heart rate task");
+        return;
+    }
     return;
 }

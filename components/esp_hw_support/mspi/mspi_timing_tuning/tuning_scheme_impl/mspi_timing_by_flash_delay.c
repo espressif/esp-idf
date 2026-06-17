@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,7 @@
 #include "esp_private/mspi_timing_config.h"
 #include "hal/mspi_ll.h"
 #include "rom/spi_flash.h"
+#include "esp_private/spi_flash_os.h"
 
 ESP_LOG_ATTR_TAG(TAG, "Flash Delay");
 
@@ -152,6 +153,50 @@ void mspi_timing_flash_config_clear_tuning_regs(bool control_both_mspi)
     }
 }
 
+#if MSPI_TIMING_FLASH_NEEDS_TUNING && CONFIG_SPI_FLASH_HPM_ON
+static uint32_t spi_timing_config_get_dummy(void)
+{
+    mspi_timing_ll_flash_mode_t mode = mspi_timing_ll_get_flash_mode(0);
+
+    if (spi_flash_hpm_dummy_adjust()) { // HPM-DC is enabled
+        const spi_flash_hpm_dummy_conf_t *hpm_dummy = spi_flash_hpm_get_dummy();
+        switch (mode) {
+            case MSPI_TIMING_LL_FLASH_QIO_MODE:
+                return hpm_dummy->qio_dummy - 1;
+            case MSPI_TIMING_LL_FLASH_QUAD_MODE:
+                return hpm_dummy->qout_dummy - 1;
+            case MSPI_TIMING_LL_FLASH_DIO_MODE:
+                return hpm_dummy->dio_dummy - 1;
+            case MSPI_TIMING_LL_FLASH_DUAL_MODE:
+                return hpm_dummy->dout_dummy - 1;
+            case MSPI_TIMING_LL_FLASH_FAST_MODE:
+                return hpm_dummy->fastrd_dummy - 1;
+            case MSPI_TIMING_LL_FLASH_SLOW_MODE:
+                return 0;
+            default:
+                abort();
+        }
+    } else { // HPM-DC is not enabled
+        switch (mode) {
+            case MSPI_TIMING_LL_FLASH_QIO_MODE:
+                return SPI1_R_QIO_DUMMY_CYCLELEN;
+            case MSPI_TIMING_LL_FLASH_QUAD_MODE:
+                return SPI1_R_FAST_DUMMY_CYCLELEN;
+            case MSPI_TIMING_LL_FLASH_DIO_MODE:
+                return SPI1_R_DIO_DUMMY_CYCLELEN;
+            case MSPI_TIMING_LL_FLASH_DUAL_MODE:
+                return SPI1_R_FAST_DUMMY_CYCLELEN;
+            case MSPI_TIMING_LL_FLASH_FAST_MODE:
+                return SPI1_R_FAST_DUMMY_CYCLELEN;
+            case MSPI_TIMING_LL_FLASH_SLOW_MODE:
+                return 0;
+            default:
+                abort();
+        }
+    }
+}
+#endif // MSPI_TIMING_FLASH_NEEDS_TUNING && CONFIG_SPI_FLASH_HPM_ON
+
 void mspi_timing_flash_config_set_tuning_regs(bool control_both_mspi)
 {
     //SPI0 and SPI1 share the registers for flash din mode and num setting, so we only set SPI0's reg
@@ -164,8 +209,17 @@ void mspi_timing_flash_config_set_tuning_regs(bool control_both_mspi)
         //Won't touch SPI1 registers
     }
 
-#if MSPI_TIMING_FLASH_NEEDS_TUNING && CONFIG_ESPTOOLPY_FLASHMODE_QIO && CONFIG_SPI_FLASH_HPM_ON
-    mspi_timing_ll_set_flash_user_dummy(MSPI_TIMING_LL_MSPI_ID_0, 7);
+#if MSPI_TIMING_FLASH_NEEDS_TUNING && CONFIG_SPI_FLASH_HPM_ON
+    uint32_t dummy_len = spi_timing_config_get_dummy();
+#if CONFIG_ESPTOOLPY_FLASHMODE_QIO && !CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH
+    // In the ROM configuration, when esp_rom_spi_set_rd_cmd_bit_len issues the read command in QIO mode, it automatically inserts two dummy cycles.
+    // Therefore, when validating the dummy cycles at 120 MHz, the effective value should be 10 − 2, i.e. 8 dummy cycles.
+    // However, when the 32 MHz cache access configuration is enabled, the corresponding register will be overwritten,
+    // so the extra two dummy cycles no longer exist. In that case, the dummy cycle setting should simply be 10.
+    mspi_timing_ll_set_flash_user_dummy(MSPI_TIMING_LL_MSPI_ID_0, dummy_len - 2);
+#else
+    mspi_timing_ll_set_flash_user_dummy(MSPI_TIMING_LL_MSPI_ID_0, dummy_len);
+#endif // CONFIG_ESPTOOLPY_FLASHMODE_QIO && !CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH
 #endif
 
     int spi1_usr_dummy = 0;

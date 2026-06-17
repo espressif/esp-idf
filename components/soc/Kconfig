@@ -3,35 +3,15 @@ menu "SoC Settings"
     visible if 0
 
     menu "MMU Config"
-        # This Config is used for configure the MMU.
-        # Be configured based on flash size selection.
-        # Invisible to users.
-
-        config MMU_PAGE_SIZE_8KB
-            bool
-            depends on SOC_MMU_PAGE_SIZE_8KB_SUPPORTED
-            default n
-
-        config MMU_PAGE_SIZE_16KB
-            bool
-            default y if SOC_MMU_PAGE_SIZE_CONFIGURABLE && ESPTOOLPY_FLASHSIZE_1MB
-            default n
-
-        config MMU_PAGE_SIZE_32KB
-            bool
-            default y if SOC_MMU_PAGE_SIZE_CONFIGURABLE && ESPTOOLPY_FLASHSIZE_2MB
-            default n
-
-        config MMU_PAGE_SIZE_64KB
-            bool
-            default y if !MMU_PAGE_SIZE_32KB && !MMU_PAGE_SIZE_16KB
-            default n
+        orsource "$IDF_TARGET/Kconfig.mmu"
 
         config MMU_PAGE_MODE
             string
             default "8KB" if MMU_PAGE_SIZE_8KB
             default "16KB" if MMU_PAGE_SIZE_16KB
             default "32KB" if MMU_PAGE_SIZE_32KB
+            default "128KB" if MMU_PAGE_SIZE_128KB
+            default "256KB" if MMU_PAGE_SIZE_256KB
             default "64KB" if MMU_PAGE_SIZE_64KB
 
         config MMU_PAGE_SIZE
@@ -45,6 +25,8 @@ menu "SoC Settings"
             default 0x4000 if MMU_PAGE_SIZE_16KB
             default 0x8000 if MMU_PAGE_SIZE_32KB
             default 0x10000 if MMU_PAGE_SIZE_64KB
+            default 0x20000 if MMU_PAGE_SIZE_128KB
+            default 0x40000 if MMU_PAGE_SIZE_256KB
     endmenu
 
 endmenu

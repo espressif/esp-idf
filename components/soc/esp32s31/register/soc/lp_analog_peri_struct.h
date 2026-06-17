@@ -257,6 +257,7 @@ typedef struct {
     volatile lp_ana_date_reg_t date;
 } lp_ana_dev_t;
 
+extern lp_ana_dev_t LP_ANA_PERI;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(lp_ana_dev_t) == 0x400, "Invalid size of lp_ana_dev_t structure");
