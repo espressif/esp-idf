@@ -174,6 +174,11 @@ static inline pmu_sleep_param_config_t * pmu_sleep_param_config_default(
     param->hp_sys.isolate_wait_cycle              = rtc_time_us_to_fastclk(mc->hp.isolate_wait_time_us, fastclk_period);
     param->hp_sys.reset_wait_cycle                = rtc_time_us_to_fastclk(mc->hp.reset_wait_time_us, fastclk_period);
 
+    const int hw_wait_time_us = pmu_sleep_calculate_hw_wait_time(sleep_flags, slowclk_src, slowclk_period, fastclk_period);
+    const int modem_state_skip_time_us = mc->hp.regdma_m2a_work_time_us + mc->hp.system_dfs_up_work_time_us + mc->lp.min_slp_time_us;
+    const int modem_wakeup_wait_time_us = adjustment - hw_wait_time_us + modem_state_skip_time_us + mc->hp.regdma_rf_on_work_time_us;
+    param->hp_sys.modem_wakeup_wait_cycle         = rtc_time_us_to_fastclk(modem_wakeup_wait_time_us, fastclk_period);
+
     param->lp_sys.min_slp_slow_clk_cycle          = rtc_time_us_to_slowclk(mc->lp.min_slp_time_us, slowclk_period_fixed);
     param->lp_sys.analog_wait_target_cycle        = rtc_time_us_to_slowclk(mc->lp.analog_wait_time_us, slowclk_period);
     param->lp_sys.digital_power_supply_wait_cycle = rtc_time_us_to_fastclk(mc->lp.power_supply_wait_time_us, fastclk_period);
@@ -326,6 +331,7 @@ static void pmu_sleep_param_init(pmu_context_t *ctx, const pmu_sleep_param_confi
     pmu_hal_hp_set_control_ready_wait_cycle(ctx->hal, param->hp_sys.isolate_wait_cycle, param->hp_sys.reset_wait_cycle);
     pmu_hal_lp_set_control_ready_wait_cycle(ctx->hal, param->lp_sys.isolate_wait_cycle, param->lp_sys.reset_wait_cycle);
 
+    pmu_ll_set_modem_wait_target_cycle(ctx->hal->dev, param->hp_sys.modem_wakeup_wait_cycle);
     pmu_ll_set_xtal_stable_wait_cycle(ctx->hal->dev, param->hp_lp.xtal_stable_wait_slow_clk_cycle);
     pmu_ll_set_pll_stable_wait_cycle(ctx->hal->dev, param->hp_sys.pll_stable_wait_cycle);
 }
