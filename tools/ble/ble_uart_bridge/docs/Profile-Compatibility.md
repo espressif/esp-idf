@@ -1,16 +1,16 @@
 <!-- SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD -->
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-# BLE UART Profile Compatibility
+# ESP-BLE-UART Profile Compatibility
 
-BLE UART Bridge works with BLE GATT profiles that provide a UART-like data path:
+ESP-BLE-UART Bridge works with BLE GATT profiles that provide a UART-like data path:
 
 - one characteristic that the host writes to
 - one characteristic that the device uses to notify data back to the host
 
 The default profile matches the widely used BLE UART-over-GATT UUID set (service `6E400001-…`, RX/TX characteristics), but that layout is not the only possible BLE UART-style profile.
 
-## Default BLE-UART-compatible profile
+## Default BLE UART-compatible profile
 
 The built-in default profile uses these UUIDs:
 
@@ -33,7 +33,7 @@ ESP-IDF includes BLE SPP examples that implement Espressif BLE UART-like vendor-
 
 BLE SPP over BLE is not a Bluetooth SIG standard profile. It is a vendor-specific GATT design that emulates a serial link, similar in purpose to the default BLE UART layout above.
 
-ESP-IDF BLE SPP examples may define more characteristics than BLE UART Bridge needs, such as data, command, and status characteristics. To use BLE UART Bridge with such a profile, map only the UART-like data path into `BLEUARTProfile`.
+ESP-IDF BLE SPP examples may define more characteristics than ESP-BLE-UART Bridge needs, such as data, command, and status characteristics. To use ESP-BLE-UART Bridge with such a profile, map only the UART-like data path into `BLEUARTProfile`.
 
 ## Mapping an ESP-IDF BLE SPP profile
 
@@ -63,22 +63,22 @@ bridge = BLEUARTBridge("AA:BB:CC:DD:EE:FF", profile=profile)
 
 Replace the UUIDs with the actual UUIDs used by the device firmware.
 
-## What BLE UART Bridge does not map
+## What ESP-BLE-UART Bridge does not map
 
-BLE UART Bridge is intentionally focused on the data path. It does not automatically map extra control-plane characteristics that a profile may expose, such as:
+ESP-BLE-UART Bridge is intentionally focused on the data path. It does not automatically map extra control-plane characteristics that a profile may expose, such as:
 
 - command characteristics
 - status characteristics
 - custom configuration characteristics
 - profile-specific flow-control semantics
 
-If an application needs those characteristics, implement that logic in a custom script on top of `bleak`, or extend BLE UART Bridge for that specific profile.
+If an application needs those characteristics, implement that logic in a custom script on top of `bleak`, or extend ESP-BLE-UART Bridge for that specific profile.
 
 ## Classic Bluetooth SPP is different
 
 Classic Bluetooth SPP examples, such as `examples/bluetooth/bluedroid/classic_bt/bt_spp_*`, are not BLE GATT profiles.
 
-They use Classic Bluetooth SPP rather than BLE GATT characteristics, so they are not compatible with BLE UART Bridge.
+They use Classic Bluetooth SPP rather than BLE GATT characteristics, so they are not compatible with ESP-BLE-UART Bridge.
 
 ## Related docs
 
