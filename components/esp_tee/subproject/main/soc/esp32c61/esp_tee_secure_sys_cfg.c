@@ -10,9 +10,6 @@
 #include "riscv/encoding.h"
 
 #include "hal/apm_hal.h"
-#include "hal/sha_ll.h"
-#include "hal/ecc_ll.h"
-#include "hal/ecdsa_ll.h"
 
 #include "soc/clic_reg.h"
 #include "soc/interrupts.h"
@@ -104,10 +101,8 @@ void esp_tee_soc_secure_sys_init(void)
     esp_tee_protect_intr_src(ETS_ECC_INTR_SOURCE);          // ECC
     esp_tee_protect_intr_src(ETS_ECDSA_INTR_SOURCE);        // ECDSA
 
-    /* Disable protected crypto peripheral clocks; they will be toggled as needed when the peripheral is in use */
-    sha_ll_enable_bus_clock(false);
-    ecc_ll_enable_bus_clock(false);
-    ecdsa_ll_enable_bus_clock(false);
+    /* Reset the protected crypto peripherals and leave their clocks disabled */
+    esp_tee_soc_reset_crypto_peripherals();
 }
 
 IRAM_ATTR inline void esp_tee_switch_to_ree(uint32_t ns_entry_addr)
