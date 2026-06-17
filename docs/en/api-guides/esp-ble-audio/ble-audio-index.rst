@@ -1,5 +1,5 @@
-ESP-IDF Bluetooth LE Audio
-==========================
+Bluetooth\ :sup:`®` LE Audio
+============================
 
 :link_to_translation:`zh_CN:[中文]`
 

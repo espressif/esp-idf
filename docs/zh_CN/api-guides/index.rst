@@ -11,6 +11,7 @@ API 指南
    :SOC_BT_CLASSIC_SUPPORTED: classic-bt/index
    :SOC_BLE_SUPPORTED: ble/index
    :SOC_BLE_MESH_SUPPORTED: esp-ble-mesh/ble-mesh-index
+   :SOC_BLE_AUDIO_SUPPORTED: esp-ble-audio/ble-audio-index
    bootloader
    build-system
    build-system-v2
