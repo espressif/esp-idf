@@ -118,6 +118,7 @@ typedef struct {
 #define SPI_TRANS_MULTILINE_ADDR      SPI_TRANS_MODE_DIOQIO_ADDR ///< The data lines used at address phase is the same as data phase (otherwise, only one data line is used at address phase)
 #define SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL   (1<<11) ///< By default driver will automatically re-alloc dma buffer if it doesn't meet hardware alignment or dma_capable requirements, this flag is for you to disable this feature, you will need to take care of the alignment otherwise driver will return you error ESP_ERR_INVALID_ARG
 #define SPI_TRANS_DMA_USE_PSRAM       (1<<12) ///< Use PSRAM for DMA buffer directly, has speed limit, but no temp buffer and save memory
+#define SPI_TRANS_DDRCLK              (1<<13) ///< Use DDRCLK (double clock edge) for current transaction.
 
 // Output flags
 #define SPI_TRANS_DMA_RX_FAIL         (1<<30) ///< RX transaction data lose flag, indicate DMA RX overflow

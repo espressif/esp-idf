@@ -1065,6 +1065,17 @@ static inline void spi_ll_set_addr_bitlen(spi_dev_t *hw, int bitlen)
 }
 
 /**
+ * Set the DDR mode for the SPI.
+ *
+ * @param hw     Beginning address of the peripheral registers.
+ * @param enable True to enable DDR mode, false to disable.
+ */
+static inline void spi_ll_enable_ddr_mode(spi_dev_t *hw, bool enable)
+{
+    hw->misc.clk_data_dtr_en = enable;
+}
+
+/**
  * Set the address value in an intuitive way.
  *
  * The length and lsbfirst is required to shift and swap the address to the right place.

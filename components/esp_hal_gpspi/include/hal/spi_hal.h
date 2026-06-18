@@ -53,6 +53,7 @@ typedef struct {
                                          *   Left 0 if not known.
                                          */
     bool use_gpio;                      ///< True if the GPIO matrix is used, otherwise false
+    bool use_ddr_clk;                   ///< Whether to use DDR mode for clock
 } spi_hal_timing_param_t;
 
 /**
@@ -70,6 +71,7 @@ typedef struct {
     int timing_dummy;                   ///< Extra dummy needed to compensate the timing
     int timing_miso_delay;              ///< Extra miso delay clocks to compensate the timing
     spi_sampling_point_t rx_sample_point;///< Sample data follow standard SPI timing in master mode
+    bool use_ddr_clk;                   ///< Whether to use DDR mode for clock
 } spi_hal_timing_conf_t;
 
 /**

@@ -262,6 +262,7 @@
 #define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
 #define SOC_SPI_HD_BOTH_INOUT_SUPPORTED     1   //Support enabling MOSI and MISO phases together under Halfduplex mode
 #define SOC_SPI_SUPPORT_OCT                 1
+#define SOC_SPI_SUPPORT_DDR_CLOCK           1
 
 // Peripheral supports output given level during its "dummy phase"
 // Only SPI1 supports this feature

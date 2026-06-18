@@ -264,6 +264,13 @@ Supported line modes for {IDF_TARGET_NAME} are listed as follows, to make use of
            SPI_TRANS_MULTILINE_CMD
          - SPICOMMON_BUSFLAG_OCTAL
 
+.. only:: SOC_SPI_SUPPORT_DDR_CLOCK
+
+    DDR Clock
+    ^^^^^^^^^
+
+    Set :c:macro:`SPI_TRANS_DDRCLK` in :cpp:member:`spi_transaction_t::flags` to use double data rate mode for the current transaction. In this mode, the command, address, and data phases are sent/sampled on both the rising and falling edges of the clock. If this flag is not set, the transaction uses the traditional single data rate mode. DDRCLK mode is supported in 2/4/8 line modes as well.
+
 Command and Address Phases
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
