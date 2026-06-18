@@ -108,16 +108,7 @@ KNOWN_MISSING = {
     # TODO IDF-15385: add :example: references for build_system examples
     'build_system/cmake/import_prebuilt/prebuilt',
     'build_system/cmakev2/features/component_manager',
-    'build_system/cmakev2/features/conditional_component',
-    'build_system/cmakev2/features/idf_as_lib',
-    'build_system/cmakev2/features/import_lib',
-    'build_system/cmakev2/features/import_lib_direct',
-    'build_system/cmakev2/features/import_prebuilt',
     'build_system/cmakev2/features/import_prebuilt/prebuilt',
-    'build_system/cmakev2/features/multi_binary',
-    'build_system/cmakev2/features/multi_config',
-    'build_system/cmakev2/features/plugins',
-    'build_system/cmakev2/get-started/hello_world',
     # TODO IDF-15381: add :example: references for system and custom_bootloader examples
     'custom_bootloader/bootloader_multiboot',
     'system/gcov',
