@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 Esposif Systems (Shanghai) CO LTD
+// SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 // SPDX-License-Identifier: Apache-2.0
 
 import type { OpenCodePermissionClient } from "./types"

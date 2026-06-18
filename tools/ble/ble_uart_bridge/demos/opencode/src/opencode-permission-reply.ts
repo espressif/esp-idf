@@ -96,18 +96,22 @@ export async function replyToOpenCodePermission(
   }
 
   if (serverUrl !== undefined && directory !== undefined) {
-    const response = await fetch(new URL(`/permission/${encodeURIComponent(requestID)}/reply`, serverUrl), {
-      method: "POST",
-      headers: opencodeRequestHeaders(directory),
-      body: JSON.stringify({
-        reply: decision,
-        message,
-      }),
-    })
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} ${await response.text()}`)
+    try {
+      const response = await fetch(new URL(`/permission/${encodeURIComponent(requestID)}/reply`, serverUrl), {
+        method: "POST",
+        headers: opencodeRequestHeaders(directory),
+        body: JSON.stringify({
+          reply: decision,
+          message,
+        }),
+      })
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} ${await response.text()}`)
+      }
+      return
+    } catch {
+      // fall through to v1 / deprecated v2 probes
     }
-    return
   }
 
   if (typeof client.postSessionIdPermissionsPermissionId === "function") {
