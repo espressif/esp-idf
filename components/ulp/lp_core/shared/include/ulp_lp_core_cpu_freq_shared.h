@@ -25,9 +25,9 @@
 #define LP_CORE_CYCLES_PER_US_DENOM 1U
 #endif
 #else  // Default value in chip without rtc fast clock sel option
-#define LP_CORE_CPU_FREQUENCY_HZ 16000000U
-#define LP_CORE_CYCLES_PER_US_NUM 16U
-#define LP_CORE_CYCLES_PER_US_DENOM 1U
+#define LP_CORE_CPU_FREQUENCY_HZ SOC_CLK_RC_FAST_FREQ_APPROX
+#define LP_CORE_CYCLES_PER_US_NUM (SOC_CLK_RC_FAST_FREQ_APPROX / 500000U)
+#define LP_CORE_CYCLES_PER_US_DENOM 2U
 #endif
 
 /**
@@ -39,4 +39,4 @@
  *
  * @note Value is calibration-specific and may vary with compiler optimization.
  */
-#define ULP_LP_CORE_DELAY_CALL_OVERHEAD_IN_CYCLES 11U
+#define ULP_LP_CORE_DELAY_CALL_OVERHEAD_IN_CYCLES 14U
