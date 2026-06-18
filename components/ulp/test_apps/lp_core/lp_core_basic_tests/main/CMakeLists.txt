@@ -76,46 +76,83 @@ idf_component_register(SRCS ${app_sources}
 
 set(lp_core_exp_dep_srcs ${app_sources})
 
+function(lp_core_test_app_checks)
+    idf_build_get_property(python PYTHON)
+
+    foreach(app_name ${ARGN})
+        set(symbol_file ${CMAKE_CURRENT_BINARY_DIR}/${app_name}/${app_name}.sym)
+        set(check_output ${CMAKE_CURRENT_BINARY_DIR}/${app_name}/${app_name}.no_soft_float)
+        add_custom_command(OUTPUT ${check_output}
+                           COMMAND ${python} ${CMAKE_CURRENT_LIST_DIR}/../check_lp_core_no_soft_float.py ${symbol_file}
+                           COMMAND ${CMAKE_COMMAND} -E touch ${check_output}
+                           DEPENDS ${symbol_file} ${CMAKE_CURRENT_LIST_DIR}/../check_lp_core_no_soft_float.py
+                           VERBATIM)
+        add_custom_target(${app_name}_no_soft_float DEPENDS ${check_output})
+        add_dependencies(${COMPONENT_LIB} ${app_name}_no_soft_float)
+    endforeach()
+endfunction()
+
+set(lp_core_test_apps "")
+
 ulp_embed_binary(lp_core_test_app "${lp_core_sources}" "${lp_core_exp_dep_srcs}")
+list(APPEND lp_core_test_apps lp_core_test_app)
 ulp_embed_binary(lp_core_test_app_counter "${lp_core_sources_counter}" "${lp_core_exp_dep_srcs}")
+list(APPEND lp_core_test_apps lp_core_test_app_counter)
 ulp_embed_binary(lp_core_test_app_wake_stub "${lp_core_sources_wake_stub}" "${lp_core_exp_dep_srcs}")
+list(APPEND lp_core_test_apps lp_core_test_app_wake_stub)
 ulp_embed_binary(lp_core_test_app_isr "lp_core/test_main_isr.c"  "${lp_core_exp_dep_srcs}")
+list(APPEND lp_core_test_apps lp_core_test_app_isr)
 
 if(CONFIG_SOC_RTC_TIMER_SUPPORTED)
     ulp_embed_binary(lp_core_test_app_set_timer_wakeup "${lp_core_sources_set_timer_wakeup}" "${lp_core_exp_dep_srcs}")
+    list(APPEND lp_core_test_apps lp_core_test_app_set_timer_wakeup)
 endif()
 
 ulp_embed_binary(lp_core_test_app_gpio "${lp_core_sources_gpio}" "${lp_core_exp_dep_srcs}")
+list(APPEND lp_core_test_apps lp_core_test_app_gpio)
 
 if(CONFIG_SOC_LP_CORE_SUPPORT_I2C)
     ulp_embed_binary(lp_core_test_app_i2c "${lp_core_sources_i2c}" "${lp_core_exp_dep_srcs}")
+    list(APPEND lp_core_test_apps lp_core_test_app_i2c)
 endif()
 
 if(CONFIG_SOC_ULP_LP_UART_SUPPORTED)
     ulp_embed_binary(lp_core_test_app_uart "${lp_core_sources_uart}" "${lp_core_exp_dep_srcs}")
+    list(APPEND lp_core_test_apps lp_core_test_app_uart)
     if(CONFIG_SOC_DEEP_SLEEP_SUPPORTED)
         ulp_embed_binary(lp_core_test_app_uart_wakeup "${lp_core_sources_uart_wakeup}" "${lp_core_exp_dep_srcs}")
+        list(APPEND lp_core_test_apps lp_core_test_app_uart_wakeup)
     endif()
 endif()
 
 if(CONFIG_SOC_LP_SPI_SUPPORTED)
     ulp_embed_binary(lp_core_test_app_spi_master "${lp_core_sources_spi_master}" "${lp_core_exp_dep_srcs}")
+    list(APPEND lp_core_test_apps lp_core_test_app_spi_master)
     ulp_embed_binary(lp_core_test_app_spi_slave "${lp_core_sources_spi_slave}" "${lp_core_exp_dep_srcs}")
+    list(APPEND lp_core_test_apps lp_core_test_app_spi_slave)
 endif()
 
 if(CONFIG_SOC_LP_ADC_SUPPORTED)
     ulp_embed_binary(lp_core_test_app_adc "${lp_core_sources_adc}" "${lp_core_exp_dep_srcs}")
+    list(APPEND lp_core_test_apps lp_core_test_app_adc)
 endif()
 
 if(CONFIG_SOC_LP_VAD_SUPPORTED)
     ulp_embed_binary(lp_core_test_app_vad "${lp_core_sources_vad}" "${lp_core_exp_dep_srcs}")
+    list(APPEND lp_core_test_apps lp_core_test_app_vad)
 endif()
 
 ulp_embed_binary(lp_core_test_app_prefix1 "lp_core/test_main_prefix1.c"  "${lp_core_exp_dep_srcs}" PREFIX "ulp1_")
+list(APPEND lp_core_test_apps lp_core_test_app_prefix1)
 ulp_embed_binary(lp_core_test_app_prefix2 "lp_core/test_main_prefix2.c"  "${lp_core_exp_dep_srcs}" PREFIX "ulp2_")
+list(APPEND lp_core_test_apps lp_core_test_app_prefix2)
 
 ulp_embed_binary(lp_core_test_app_exception "lp_core/test_main_exception.c" "${lp_core_exp_dep_srcs}")
+list(APPEND lp_core_test_apps lp_core_test_app_exception)
 
 if(CONFIG_SOC_LP_CORE_HW_AUTO_CLRWAKEUPCAUSE)
     ulp_embed_binary(lp_core_test_app_halt "lp_core/test_main_halt.c" "${lp_core_exp_dep_srcs}")
+    list(APPEND lp_core_test_apps lp_core_test_app_halt)
 endif()
+
+lp_core_test_app_checks(${lp_core_test_apps})
