@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 from test_build_system_helpers import IdfPyFunc
+from test_build_system_helpers import replace_in_file
 
 COMP_A_DEFS_NO_OVERLAP = """\
 #include "esp_blockdev.h"
@@ -48,12 +49,21 @@ def _add_component(app_path: Path, name: str, defs_content: str) -> None:
     (comp_dir / 'CMakeLists.txt').write_text(COMPONENT_CMAKELISTS.format(filename=filename))
 
 
+def _wire_components(app_path: Path) -> None:
+    replace_in_file(
+        app_path / 'main' / 'CMakeLists.txt',
+        '# placeholder_inside_idf_component_register',
+        'REQUIRES esp_blockdev comp_a comp_b\n    # placeholder_inside_idf_component_register',
+    )
+
+
 @pytest.mark.usefixtures('test_app_copy')
 def test_ioctl_overlap_checker_passes_clean_build(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     """Build succeeds when registered ioctl ranges do not overlap."""
     logging.info('Testing ioctl overlap checker with non-overlapping ranges')
     _add_component(test_app_copy, 'comp_a', COMP_A_DEFS_NO_OVERLAP)
     _add_component(test_app_copy, 'comp_b', COMP_B_DEFS_NO_OVERLAP)
+    _wire_components(test_app_copy)
 
     ret = idf_py('build')
     assert ret.returncode == 0
@@ -65,6 +75,7 @@ def test_ioctl_overlap_checker_fails_on_overlap(idf_py: IdfPyFunc, test_app_copy
     logging.info('Testing ioctl overlap checker detects overlapping ranges')
     _add_component(test_app_copy, 'comp_a', COMP_A_DEFS_NO_OVERLAP)
     _add_component(test_app_copy, 'comp_b', COMP_B_DEFS_OVERLAP)
+    _wire_components(test_app_copy)
 
     ret = idf_py('build', check=False)
     assert ret.returncode != 0
