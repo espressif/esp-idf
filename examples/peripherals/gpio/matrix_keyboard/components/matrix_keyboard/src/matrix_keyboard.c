@@ -11,7 +11,6 @@
 #include "esp_check.h"
 #include "driver/dedic_gpio.h"
 #include "driver/gpio.h"
-#include "esp_private/gpio.h"
 #include "matrix_keyboard.h"
 
 static const char *TAG = "mkbd";

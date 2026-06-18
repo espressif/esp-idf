@@ -1,0 +1,40 @@
+# Refer to https://ast-grep.github.io/guide/rule-config.html for Rule Essentials
+id: no-esp-private-header-in-c-examples
+message: Don't include esp_private headers in the examples
+severity: error # error, warning, info, hint
+note: esp_private headers are internal to ESP-IDF and are not guaranteed to be stable across versions.
+language: C
+files:
+  - "examples/**/*"
+ignores:
+  - "examples/network/eth2ap/main/ethernet_example_main.c"
+  - "examples/network/sta2eth/main/sta2eth_main.c"
+  - "examples/openthread/ot_sleepy_device/light_sleep/main/esp_ot_sleepy_device.c"
+  - "examples/peripherals/usb/device/tusb_ncm/main/tusb_ncm_main.c"
+  - "examples/wifi/itwt/main/wifi_stats_cmd.c"
+  - "examples/wifi/wifi_aware/nan_console/main/nan_main.c"
+  - "examples/peripherals/usb/device/tusb_cdc_acm_wakeup/main/tusb_cdc_acm_wakeup_main.c"
+rule:
+  kind: preproc_include
+  has:
+    field: path
+    regex: "esp_private/.*h"
+    pattern: $N
+fix: ''
+
+---
+
+id: no-esp-private-header-in-cpp-examples
+message: Don't include esp_private headers in the examples
+severity: error # error, warning, info, hint
+note: esp_private headers are internal to ESP-IDF and are not guaranteed to be stable across versions.
+language: Cpp
+files:
+  - "examples/**/*"
+rule:
+  kind: preproc_include
+  has:
+    field: path
+    regex: "esp_private/.*h"
+    pattern: $N
+fix: ''
