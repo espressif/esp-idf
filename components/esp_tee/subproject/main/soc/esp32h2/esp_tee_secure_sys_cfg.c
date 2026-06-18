@@ -68,18 +68,10 @@ void esp_tee_soc_secure_sys_init(void)
         esp_rom_route_intr_matrix(core_id, i, ETS_INVALID_INUM);
     }
 
-    /* TODO: IDF-8958
-     * The values for the secure interrupt number and priority and
-     * the interrupt priority threshold (for both M and U mode) need
-     * to be investigated further
-     */
-#ifdef SOC_CPU_HAS_FLEXIBLE_INTC
-    /* TODO: Currently, we do not allow interrupts to be set up with a priority greater than 7, see intr_alloc.c */
-    esprv_int_set_priority(TEE_SECURE_INUM, 7);
+    esprv_int_set_priority(TEE_SECURE_INUM, TEE_SECURE_INUM_PRIO);
     esprv_int_set_type(TEE_SECURE_INUM, ESP_CPU_INTR_TYPE_LEVEL);
     esprv_int_set_threshold(RVHAL_INTR_ENABLE_THRESH);
     esprv_int_enable(BIT(TEE_SECURE_INUM));
-#endif
 
     ESP_LOGD(TAG, "Initial interrupt config -");
     ESP_LOGD(TAG, "mideleg: 0x%08x", RV_READ_CSR(mideleg));
