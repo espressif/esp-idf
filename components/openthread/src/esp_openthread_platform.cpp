@@ -38,7 +38,7 @@ esp_err_t esp_openthread_platform_workflow_register(esp_openthread_update_func u
     esp_openthread_platform_workflow_t *current_workflow = s_workflow_list;
     esp_openthread_platform_workflow_t *before_workflow = NULL;
     esp_openthread_platform_workflow_t *add_workflow =
-        static_cast<esp_openthread_platform_workflow_t *>(malloc(sizeof(esp_openthread_platform_workflow_t)));
+        static_cast<esp_openthread_platform_workflow_t *>(calloc(1, sizeof(esp_openthread_platform_workflow_t)));
     ESP_RETURN_ON_FALSE(add_workflow != NULL, ESP_ERR_NO_MEM, OT_PLAT_LOG_TAG,
                         "Failed to alloc memory for esp_openthread_workflow");
     strncpy(add_workflow->name, name, name_len);

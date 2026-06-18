@@ -86,7 +86,7 @@ static void trel_browse_notifier(mdns_result_t *result)
                 result = result->next;
                 continue;
             }
-            trel_txt = malloc(trel_txt_len);
+            trel_txt = calloc(1, trel_txt_len);
             ESP_RETURN_ON_FALSE(trel_txt != NULL, , OT_PLAT_LOG_TAG, "Failed to malloc buffer for TREL TXT");
 
             size_t offset = 0;
@@ -123,10 +123,9 @@ static void handle_trel_udp_recv(void *ctx, struct udp_pcb *pcb, struct pbuf *p,
     uint64_t event_trel_rx = 1;
     ESP_LOGD(OT_PLAT_LOG_TAG, "Receive from %s:%d", ip6addr_ntoa(&(addr->u_addr.ip6)), port);
     ESP_GOTO_ON_FALSE(atomic_load(&s_recv_queue.used) < CONFIG_OPENTHREAD_TREL_BUFFER_SIZE, ESP_ERR_NO_MEM, exit, OT_PLAT_LOG_TAG, "trel receive buffer full!");
-    source_addr = (otSockAddr *)malloc(sizeof(otSockAddr));
+    source_addr = (otSockAddr *)calloc(1, sizeof(otSockAddr));
     ESP_GOTO_ON_FALSE(source_addr, ESP_ERR_NO_MEM, exit, OT_PLAT_LOG_TAG, "Failed to allocate buf for Thread TREL");
 
-    memset(source_addr, 0, sizeof(otSockAddr));
     source_addr->mPort = port;
     memcpy(&source_addr->mAddress.mFields.m32, addr->u_addr.ip6.addr, sizeof(addr->u_addr.ip6.addr));
     s_trel_receive_buffer[s_recv_queue.tail].source_addr = source_addr;
@@ -180,7 +179,7 @@ esp_err_t esp_openthread_trel_process(otInstance *aInstance, const esp_openthrea
             source_addr = s_trel_receive_buffer[s_recv_queue.head].source_addr;
 
             if (recv_buf->next != NULL) {
-                data_buf = (uint8_t *)malloc(recv_buf->tot_len);
+                data_buf = (uint8_t *)calloc(1, recv_buf->tot_len);
                 if (data_buf) {
                     pbuf_copy_partial(recv_buf, data_buf, recv_buf->tot_len, 0);
                 } else {

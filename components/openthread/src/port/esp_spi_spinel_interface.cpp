@@ -85,7 +85,7 @@ esp_err_t SpiSpinelInterface::Enable(const esp_openthread_spi_host_config_t &spi
 
     ESP_RETURN_ON_FALSE(m_event_fd >= 0, ESP_FAIL, OT_PLAT_LOG_TAG, "fail to get event fd");
 
-    m_rx_dma_buf = (uint8_t *)heap_caps_malloc(kSPIFrameSize, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    m_rx_dma_buf = (uint8_t *)heap_caps_calloc(1, kSPIFrameSize, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     ESP_RETURN_ON_FALSE(m_rx_dma_buf != nullptr, ESP_ERR_NO_MEM, OT_PLAT_LOG_TAG, "fail to alloc SPI RX DMA buffer");
 
     ESP_LOGI(OT_PLAT_LOG_TAG, "spinel SPI interface initialization completed");
