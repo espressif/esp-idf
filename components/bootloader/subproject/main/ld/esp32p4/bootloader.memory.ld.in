@@ -31,7 +31,7 @@
 #endif
 bootloader_stack_overhead = 0x2000; /* For safety margin between bootloader data section and startup stacks */
 bootloader_dram_seg_len = 0x5000;
-bootloader_iram_loader_seg_len = 0x7000;
+bootloader_iram_loader_seg_len = 0x8000;
 bootloader_iram_seg_len = 0x2D00;
 
 /* Start of the lower region is determined by region size and the end of the higher region */
@@ -54,9 +54,9 @@ MEMORY
  * 3. Update SRAM_DRAM_END in components/esp_system/ld/esp32p4/memory.ld.in to the same value.
  */
 #if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
-#define BOOTLOADER_IRAM_LOADER_SEG_START_EXPECTED 0x4FFAEFC0
+#define BOOTLOADER_IRAM_LOADER_SEG_START_EXPECTED 0x4FFADFC0
 #else
-#define BOOTLOADER_IRAM_LOADER_SEG_START_EXPECTED 0x4FF2CBD0
+#define BOOTLOADER_IRAM_LOADER_SEG_START_EXPECTED 0x4FF2BBD0
 #endif
 ASSERT(bootloader_iram_loader_seg_start == BOOTLOADER_IRAM_LOADER_SEG_START_EXPECTED,
        "bootloader_iram_loader_seg_start inconsistent with SRAM_DRAM_END");

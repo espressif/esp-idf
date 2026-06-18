@@ -21,7 +21,7 @@
 #if CONFIG_ULP_COPROC_RUN_FROM_HP_MEM
 #define SRAM_END         ULP_HP_MEM_START
 #else
-#define SRAM_END         0x4FFAEFC0  /* 2nd stage bootloader iram_loader_seg start address */
+#define SRAM_END         0x4FFADFC0  /* 2nd stage bootloader iram_loader_seg start address */
 #endif
 #define SRAM_SIZE        SRAM_END - SRAM_START
 #else
@@ -29,7 +29,7 @@
 #if CONFIG_ULP_COPROC_RUN_FROM_HP_MEM
 #define SRAM_LOW_END       ULP_HP_MEM_START
 #else
-#define SRAM_LOW_END       0x4FF2CBD0  /* 2nd stage bootloader iram_loader_seg start address */
+#define SRAM_LOW_END       0x4FF2BBD0  /* 2nd stage bootloader iram_loader_seg start address */
 #endif
 #define SRAM_LOW_SIZE      SRAM_LOW_END - SRAM_LOW_START
 

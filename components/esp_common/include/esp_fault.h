@@ -1,12 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#pragma once
+
+#include <stdbool.h>
 #include "sdkconfig.h"
 #include "esp_rom_sys.h"
-
-#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,6 +20,10 @@ extern "C" {
  * - Expands CONDITION multiple times (condition must have no side effects)
  * - Compiler is told all registers are invalid before evaluating CONDITION each time, to avoid a fault
  *   causing a misread of a register used in all three evaluations of CONDITION.
+ * - The result of each evaluation is stored into a volatile variable and re-read before the branch.
+ *   This prevents the compiler from constant-folding CONDITION and deleting the whole check when it
+ *   has already proven the value - e.g. when this macro follows a normal "if (!cond) { ... }" check
+ *   of the same value, which would otherwise silently remove the fault-injection protection.
  * - If CONDITION is ever false, a system reset is triggered.
  *
  * @note Place this macro after a "normal" check of CONDITION that will fail with a normal error
@@ -40,13 +45,20 @@ extern "C" {
  * @param CONDITION A condition which will evaluate true unless an attacker used fault injection to skip or corrupt some other critical system calculation.
  *
  */
-#define ESP_FAULT_ASSERT(CONDITION) do {                \
-        asm volatile ("" ::: "memory");                 \
-        if(!(CONDITION)) _ESP_FAULT_RESET();            \
-        asm volatile ("" ::: "memory");                 \
-        if(!(CONDITION)) _ESP_FAULT_RESET();            \
-        asm volatile ("" ::: "memory");                 \
-        if(!(CONDITION)) _ESP_FAULT_RESET();            \
+#define ESP_FAULT_ASSERT(CONDITION) do {                       \
+        bool esp_fault_assert_chk;                             \
+        asm volatile ("" ::: "memory");                        \
+        esp_fault_assert_chk = (CONDITION);                    \
+        asm volatile ("" : "+r"(esp_fault_assert_chk));        \
+        if(!esp_fault_assert_chk) _ESP_FAULT_RESET();          \
+        asm volatile ("" ::: "memory");                        \
+        esp_fault_assert_chk = (CONDITION);                    \
+        asm volatile ("" : "+r"(esp_fault_assert_chk));        \
+        if(!esp_fault_assert_chk) _ESP_FAULT_RESET();          \
+        asm volatile ("" ::: "memory");                        \
+        esp_fault_assert_chk = (CONDITION);                    \
+        asm volatile ("" : "+r"(esp_fault_assert_chk));        \
+        if(!esp_fault_assert_chk) _ESP_FAULT_RESET();          \
 } while(0)
 
 #if CONFIG_IDF_TARGET_ARCH_XTENSA
