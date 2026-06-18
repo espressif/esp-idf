@@ -1,0 +1,2 @@
+# The Wi-Fi task otherwise runs on core 0, which reserves CPU0 interrupt 0 for WMAC, so the "test_esp_intr_dump_expected_output" case no longer finds "Used: RTC_CORE" on interrupt 0 and fails. Pin the Wi-Fi task to core 1 to keep interrupt 0 free.
+CONFIG_ESP_WIFI_TASK_PINNED_TO_CORE_1=y

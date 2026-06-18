@@ -1,3 +1,5 @@
 CONFIG_FREERTOS_HZ=1000
 CONFIG_ESP_TASK_WDT_EN=n
 CONFIG_IDF_EXPERIMENTAL_FEATURES=y
+# CONFIG_VFS_SUPPORT_IO resolves to its default (y) in this test's Kconfig closure; the resulting console I/O reduces the internal DMA heap and fails the 200 KB allocation in the "GDMA M2M Weighted Arbitration Test SRAM->SRAM" case. Disable it to free that heap.
+CONFIG_VFS_SUPPORT_IO=n
