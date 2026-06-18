@@ -40,7 +40,7 @@ bool IRAM_ATTR esp_coex_common_env_is_chip_wrapper(void)
 void *esp_coex_common_spin_lock_create_wrapper(void)
 {
     portMUX_TYPE tmp = portMUX_INITIALIZER_UNLOCKED;
-    void *mux = malloc(sizeof(portMUX_TYPE));
+    void *mux = heap_caps_malloc(sizeof(portMUX_TYPE), MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
 
     if (mux) {
         memcpy(mux, &tmp, sizeof(portMUX_TYPE));
