@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
+import os
 import os.path
 import subprocess
 from typing import Tuple
@@ -9,23 +10,23 @@ from can import Bus
 from can import Message
 from pytest_embedded_idf import IdfDut
 
+can_env = os.getenv('CAN_PORT', 'can0')
+print(f'CAN_PORT={can_env}')
+
 
 # Socket CAN fixture
 @pytest.fixture(name='socket_can')
 def fixture_create_socket_can() -> Bus:
-    start_command = 'sudo ip link set can0 up type can bitrate 1000000'
-    stop_command = 'sudo ip link set can0 down'
-    try:
-        subprocess.run(start_command, shell=True, capture_output=True, text=True)
-    except Exception as e:
-        print(f'Open bus Error: {e}')
-    bus = Bus(interface='socketcan', channel='can0', bitrate=1000000)
+    start_command = f'sudo ip link set {can_env} up type can bitrate 1000000'
+    stop_command = f'sudo ip link set {can_env} down'
+    subprocess.run(start_command, shell=True, capture_output=True, text=True)
+    bus = Bus(interface='socketcan', channel=f'{can_env}', bitrate=1000000)
     yield bus  # test invoked here
     bus.shutdown()
     subprocess.run(stop_command, shell=True, capture_output=True, text=True)
 
 
-@pytest.mark.twai_std
+@pytest.mark.twai_adapter
 @pytest.mark.parametrize('count', [2], indirect=True)
 @pytest.mark.timeout(120)
 @pytest.mark.parametrize(
