@@ -1008,7 +1008,7 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
 
         // 3. keep related module integrated clock gating on during sleep
 #if SOC_PM_SUPPORT_PMU_CLK_ICG
-        esp_sleep_clock_config(ESP_SLEEP_CLOCK_LEDC, ESP_SLEEP_CLOCK_OPTION_UNGATE);
+        esp_sleep_clock_config(ESP_SLEEP_CLOCK_LEDC0, ESP_SLEEP_CLOCK_OPTION_UNGATE);
         esp_sleep_clock_config(ESP_SLEEP_CLOCK_IOMUX, ESP_SLEEP_CLOCK_OPTION_UNGATE);
 #endif
     }

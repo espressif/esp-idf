@@ -21,5 +21,5 @@
 #define PMU_ICG_FUNC_ENA_UART2                  8
 #define PMU_ICG_FUNC_ENA_UART3                  9
 #define PMU_ICG_FUNC_ENA_UART4                  10
-#define PMU_ICG_FUNC_ENA_LEDC                   27
+#define PMU_ICG_FUNC_ENA_LEDC0                  27
 #define PMU_ICG_FUNC_ENA_IOMUX                  28

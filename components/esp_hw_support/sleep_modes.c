@@ -155,10 +155,6 @@
 #include "hal/mspi_ll.h"
 #endif
 
-#if SOC_PM_SUPPORT_PMU_CLK_ICG
-#include "soc/pmu_icg_mapping.h"
-#endif
-
 #include "hal/rtc_timer_hal.h"
 
 #if SOC_VBAT_SUPPORTED
@@ -287,6 +283,7 @@ typedef struct {
     } domain[ESP_PD_DOMAIN_MAX];
 #if SOC_PM_SUPPORT_PMU_CLK_ICG
     int16_t clock_icg_refs[ESP_SLEEP_CLOCK_MAX];
+    pmu_sleep_clk_icg_flags_t sleep_clk_icg_flags;
 #endif
     portMUX_TYPE lock;
     uint64_t sleep_duration;
@@ -339,6 +336,7 @@ static sleep_config_t s_config = {
     },
 #if SOC_PM_SUPPORT_PMU_CLK_ICG
     .clock_icg_refs[0 ... ESP_SLEEP_CLOCK_MAX - 1] = 0,
+    .sleep_clk_icg_flags = 0,
 #endif
     .lock = portMUX_INITIALIZER_UNLOCKED,
     .ccount_ticks_record = 0,
@@ -371,7 +369,9 @@ void esp_sleep_overhead_out_time_refresh(void)
 
 static uint32_t get_power_down_flags(void);
 static uint32_t get_sleep_flags(uint32_t pd_flags, bool deepsleep);
-static uint32_t get_sleep_clock_icg_flags(void);
+#if SOC_PM_SUPPORT_PMU_CLK_ICG
+static void sleep_update_clk_icg_flags(void);
+#endif
 #if CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP && SOC_RTC_WDT_SUPPORTED
 static uint32_t get_sleep_rtc_wdt_timeout(uint64_t sleep_duration);
 static uint32_t calc_sleep_slow_clk_required_cycles(uint32_t timeout, uint32_t rtc_slow_clk_cal_period);
@@ -1000,7 +1000,7 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
     return result;
 }
 
-static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, uint32_t clk_flags, esp_sleep_mode_t mode, bool allow_sleep_rejection)
+static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, esp_sleep_mode_t mode, bool allow_sleep_rejection)
 {
     // Stop UART output so that output is not lost due to APB frequency change.
     // For light sleep, suspend UART output — it will resume after wakeup.
@@ -1142,6 +1142,7 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, uint32_t cl
 #endif
 
     pmu_sleep_config_t config;
+    pmu_sleep_clk_icg_flags_t clk_flags = deep_sleep ? 0 : s_config.sleep_clk_icg_flags;
     pmu_sleep_init(pmu_sleep_config_default(&config, sleep_flags, clk_flags, s_config.sleep_time_adjustment,
             rtc_clk_slow_src_get(), s_config.rtc_clk_cal_period, s_config.fast_clk_cal_period,
             deep_sleep), deep_sleep);
@@ -1324,7 +1325,7 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     uint32_t sleep_flags = get_sleep_flags(force_pd_flags | pd_flags, true);
     // Enter sleep
     esp_err_t err = ESP_OK;
-    if (esp_sleep_start(sleep_flags, 0, ESP_SLEEP_MODE_DEEP_SLEEP, allow_sleep_rejection) == ESP_ERR_SLEEP_REJECT) {
+    if (esp_sleep_start(sleep_flags, ESP_SLEEP_MODE_DEEP_SLEEP, allow_sleep_rejection) == ESP_ERR_SLEEP_REJECT) {
         err = ESP_ERR_SLEEP_REJECT;
 #if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION
         /* Cache Resume 2: if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION is enabled, cache has been suspended in esp_sleep_start */
@@ -1374,10 +1375,10 @@ esp_err_t FORCE_IRAM_ATTR esp_deep_sleep_try_to_start(void)
  * Helper function which handles entry to and exit from light sleep
  * Placed into IRAM as flash may need some time to be powered on.
  */
-static esp_err_t esp_light_sleep_inner(uint32_t sleep_flags, uint32_t clk_flags,
+static esp_err_t esp_light_sleep_inner(uint32_t sleep_flags,
                                        uint32_t flash_enable_time_us) __attribute__((noinline));
 
-static SLEEP_FN_ATTR esp_err_t esp_light_sleep_inner(uint32_t sleep_flags, uint32_t clk_flags,
+static SLEEP_FN_ATTR esp_err_t esp_light_sleep_inner(uint32_t sleep_flags,
                                        uint32_t flash_enable_time_us)
 {
 #if SOC_CONFIGURABLE_VDDSDIO_SUPPORTED
@@ -1385,7 +1386,7 @@ static SLEEP_FN_ATTR esp_err_t esp_light_sleep_inner(uint32_t sleep_flags, uint3
 #endif
 
     // Enter sleep
-    esp_err_t reject = esp_sleep_start(sleep_flags, clk_flags, ESP_SLEEP_MODE_LIGHT_SLEEP, true);
+    esp_err_t reject = esp_sleep_start(sleep_flags, ESP_SLEEP_MODE_LIGHT_SLEEP, true);
 
 #if SOC_CONFIGURABLE_VDDSDIO_SUPPORTED
     // If VDDSDIO regulator was controlled by RTC registers before sleep,
@@ -1543,8 +1544,10 @@ esp_err_t esp_light_sleep_start(void)
     uint32_t pd_flags = get_power_down_flags();
     // Append flags to indicate the sleep sub-mode and modify the pd_flags according to sub-mode attributes.
     uint32_t sleep_flags = get_sleep_flags(pd_flags, false);
-    // Decide whicn clock can be ungate during sleep
-    uint32_t clk_flags = get_sleep_clock_icg_flags();
+    // Decide which clock can be ungate during sleep
+#if SOC_PM_SUPPORT_PMU_CLK_ICG
+    sleep_update_clk_icg_flags();
+#endif
 
     // Re-calibrate the RTC clock
     sleep_low_power_clock_calibration(false);
@@ -1695,7 +1698,7 @@ esp_err_t esp_light_sleep_start(void)
 #endif
     else {
         // Enter sleep, then wait for flash to be ready on wakeup
-        err = esp_light_sleep_inner(sleep_flags, clk_flags, flash_enable_time_us);
+        err = esp_light_sleep_inner(sleep_flags, flash_enable_time_us);
     }
 
     // light sleep wakeup flag only makes sense after a successful light sleep
@@ -3122,26 +3125,36 @@ static SLEEP_FN_ATTR uint32_t get_sleep_flags(uint32_t sleep_flags, bool deepsle
     return sleep_flags;
 }
 
-static SLEEP_FN_ATTR uint32_t get_sleep_clock_icg_flags(void)
-{
-    uint32_t clk_flags = 0;
-
 #if SOC_PM_SUPPORT_PMU_CLK_ICG
+SLEEP_FN_ATTR static void sleep_update_clk_icg_flags(void)
+{
+    pmu_sleep_clk_icg_flags_t clk_flags = 0;
+
     if (s_config.clock_icg_refs[ESP_SLEEP_CLOCK_IOMUX] > 0) {
-        clk_flags |= BIT(PMU_ICG_FUNC_ENA_IOMUX);
+        clk_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_IOMUX);
     }
-    if (s_config.clock_icg_refs[ESP_SLEEP_CLOCK_LEDC]  > 0) {
-        clk_flags |= BIT(PMU_ICG_FUNC_ENA_LEDC);
+    if (s_config.clock_icg_refs[ESP_SLEEP_CLOCK_LEDC0]  > 0) {
+        clk_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_LEDC0);
     }
     if (s_config.clock_icg_refs[ESP_SLEEP_CLOCK_UART0] > 0) {
-        clk_flags |= BIT(PMU_ICG_FUNC_ENA_UART0);
+        clk_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_UART0);
     }
     if (s_config.clock_icg_refs[ESP_SLEEP_CLOCK_UART1] > 0) {
-        clk_flags |= BIT(PMU_ICG_FUNC_ENA_UART1);
+        clk_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_UART1);
     }
 #if SOC_UART_HP_NUM > 2
     if (s_config.clock_icg_refs[ESP_SLEEP_CLOCK_UART2] > 0) {
-        clk_flags |= BIT(PMU_ICG_FUNC_ENA_UART2);
+        clk_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_UART2);
+    }
+#endif
+#if SOC_UART_HP_NUM > 3
+    if (s_config.clock_icg_refs[ESP_SLEEP_CLOCK_UART3] > 0) {
+        clk_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_UART3);
+    }
+#endif
+#if SOC_UART_HP_NUM > 4
+    if (s_config.clock_icg_refs[ESP_SLEEP_CLOCK_UART4] > 0) {
+        clk_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_UART4);
     }
 #endif
 #if SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
@@ -3150,12 +3163,12 @@ static SLEEP_FN_ATTR uint32_t get_sleep_clock_icg_flags(void)
      * As all 32 bits of ICG_FUNC are occupied, the ESP_SLEEP_CLOCK_BT_USE_WIFI_PWR_CLK
      * has been remapped to PMU_ICG_FUNC_ENA_RETENTION.*/
     if (s_config.clock_icg_refs[ESP_SLEEP_CLOCK_BT_USE_WIFI_PWR_CLK] > 0) {
-        clk_flags |= BIT(PMU_ICG_FUNC_ENA_RETENTION);
+        clk_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_RETENTION);
     }
 #endif
-#endif /* SOC_PM_SUPPORT_PMU_CLK_ICG */
-    return clk_flags;
+    s_config.sleep_clk_icg_flags = clk_flags;
 }
+#endif /* SOC_PM_SUPPORT_PMU_CLK_ICG */
 
 #if CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP && SOC_RTC_WDT_SUPPORTED
 /* TODO: PM-609 */

@@ -554,6 +554,8 @@
 
 #define SOC_PM_SUPPORT_MODEM_CLOCK_DOMAIN_ICG      (1)
 
+#define SOC_PM_SUPPORT_PMU_CLK_ICG                 (1)
+
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 
 #define SOC_PM_CPU_RETENTION_BY_SW          (1)

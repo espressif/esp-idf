@@ -197,7 +197,7 @@ static inline pmu_sleep_param_config_t * pmu_sleep_param_config_default(
 const pmu_sleep_config_t* pmu_sleep_config_default(
         pmu_sleep_config_t *config,
         uint32_t sleep_flags,
-        uint32_t clk_flags,
+        pmu_sleep_clk_icg_flags_t clk_flags,
         uint32_t adjustment,
         soc_rtc_slow_clk_src_t slowclk_src,
         uint32_t slowclk_period,
@@ -217,7 +217,7 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         config->analog = analog_default;
     } else {
         // Get light sleep digital_default
-        pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags);
+        pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags, clk_flags);
         config->digital = digital_default;
 
         // Get light sleep analog default
@@ -286,6 +286,10 @@ static void pmu_sleep_power_init(pmu_context_t *ctx, const pmu_sleep_power_confi
 
 static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_config_t *dig)
 {
+    const bool icg_func_enabled = (dig->icg_func.clock[0] != 0) || (dig->icg_func.clock[1] != 0);
+    pmu_ll_hp_set_icg_sysclk_enable(ctx->hal->dev, HP(SLEEP), icg_func_enabled);
+    pmu_ll_hp_set_icg_func(ctx->hal->dev, HP(SLEEP), dig->icg_func.clock[0], dig->icg_func.clock[1]);
+    pmu_ll_hp_set_icg_apb(ctx->hal->dev, HP(SLEEP), dig->icg_apb.clock[0], dig->icg_apb.clock[1]);
     pmu_ll_hp_set_dig_pad_slp_sel   (ctx->hal->dev, HP(SLEEP), dig->syscntl.dig_pad_slp_sel);
     pmu_ll_hp_set_hold_all_hp_pad   (ctx->hal->dev, HP(SLEEP), dig->syscntl.hp_pad_hold_all);
     pmu_ll_hp_set_hold_all_lp_pad   (ctx->hal->dev, HP(SLEEP), dig->syscntl.lp_pad_hold_all);
