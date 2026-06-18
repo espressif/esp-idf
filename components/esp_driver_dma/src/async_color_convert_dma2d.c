@@ -164,9 +164,24 @@ static esp_err_t sync_if_cacheable(void *addr, size_t size, int flags)
     return esp_cache_get_line_size_by_addr(addr) > 0 ? esp_cache_msync(addr, size, flags) : ESP_OK;
 }
 
-static size_t get_picture_size_bytes(uint32_t stride, uint32_t height, uint32_t bit_depth)
+static void get_picture_window_bytes(uint32_t stride,
+                                     uint32_t x,
+                                     uint32_t y,
+                                     uint32_t window_width,
+                                     uint32_t window_height,
+                                     uint32_t bit_depth,
+                                     size_t *out_offset,
+                                     size_t *out_size)
 {
-    return (((size_t)stride * height * bit_depth) + 7) / 8;
+    size_t start_bit = ((size_t)y * stride + x) * bit_depth;
+    size_t end_bit = (((size_t)(y + window_height - 1) * stride + x + window_width) * bit_depth);
+    // Floor-divide start so the range begins at the first byte that contains start_bit.
+    // Ceil-divide end ((end_bit + 7) / 8) so any partial trailing byte is included.
+    size_t start_byte = start_bit / 8;
+    size_t end_byte = (end_bit + 7) / 8;
+
+    *out_offset = start_byte;
+    *out_size = end_byte - start_byte;
 }
 
 static esp_err_t validate_request(const async_color_convert_request_t *request)
@@ -371,14 +386,28 @@ static esp_err_t async_color_convert_dma2d_convert(async_color_convert_context_t
     uint32_t src_bpp = color_hal_pixel_format_fourcc_get_bit_depth(src_fourcc);
     uint32_t dst_bpp = color_hal_pixel_format_fourcc_get_bit_depth(dst_fourcc);
 
-    size_t src_total_size = get_picture_size_bytes(request->src_stride, request->src_height, src_bpp);
-    size_t dst_total_size = get_picture_size_bytes(request->dst_stride, request->dst_height, dst_bpp);
+    size_t src_window_offset = 0;
+    size_t src_window_size = 0;
+    get_picture_window_bytes(request->src_stride, request->src_x, request->src_y,
+                             request->copy_width, request->copy_height, src_bpp,
+                             &src_window_offset, &src_window_size);
 
-    ESP_GOTO_ON_ERROR(sync_if_cacheable((void *)request->src_buffer, src_total_size,
+    size_t dst_window_offset = 0;
+    size_t dst_window_size = 0;
+    get_picture_window_bytes(request->dst_stride, request->dst_x, request->dst_y,
+                             request->copy_width, request->copy_height, dst_bpp,
+                             &dst_window_offset, &dst_window_size);
+
+    uint8_t *src_window_addr = (uint8_t *)request->src_buffer + src_window_offset;
+    uint8_t *dst_window_addr = (uint8_t *)request->dst_buffer + dst_window_offset;
+
+    ESP_GOTO_ON_ERROR(sync_if_cacheable(src_window_addr, src_window_size,
                                         ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED),
                       recycle_and_out, TAG, "source cache sync failed");
 
-    ESP_GOTO_ON_ERROR(sync_if_cacheable(request->dst_buffer, dst_total_size,
+    // UNALIGNED is safe here because C2M writes back partial cache lines before invalidating them
+    // Callers must not access the destination buffer until the async operation completes.
+    ESP_GOTO_ON_ERROR(sync_if_cacheable(dst_window_addr, dst_window_size,
                                         ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE | ESP_CACHE_MSYNC_FLAG_UNALIGNED),
                       recycle_and_out, TAG, "destination cache sync failed");
 
