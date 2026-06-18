@@ -6,6 +6,7 @@
 
 #include "btm_int.h"
 #include "stack/hcimsgs.h"
+#include "stack/hcidefs.h"
 #include "osi/allocator.h"
 #include "device/controller.h"
 #include <string.h>
@@ -63,7 +64,15 @@ void btm_ble_extendadvcb_init(void)
 #if (BLE_50_EXTEND_ADV_EN == TRUE)
 void btm_ble_advrecod_init(void)
 {
-    memset(&adv_record[0], 0, sizeof(tBTM_EXT_ADV_RECORD)*MAX_BLE_ADV_INSTANCE);
+    for (uint8_t i = 0; i < MAX_BLE_ADV_INSTANCE; i++) {
+        adv_record[i].ter_con_handle = INVALID_VALUE_16BIT;
+        adv_record[i].invalid = false;
+        adv_record[i].enabled = false;
+        adv_record[i].instance = INVALID_VALUE_8BIT;
+        adv_record[i].duration = INVALID_VALUE_32BIT;
+        adv_record[i].max_events = INVALID_VALUE_32BIT;
+        adv_record[i].retry_count = 0;
+    }
 }
 #endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 
@@ -197,6 +206,8 @@ tBTM_STATUS BTM_BleSetExtendedAdvRandaddr(UINT8 instance, BD_ADDR rand_addr)
                         __func__, err);
         status = BTM_HCI_ERROR | err;
     } else {
+        memcpy(extend_adv_cb.inst[instance].rand_addr, rand_addr, BD_ADDR_LEN);
+        extend_adv_cb.inst[instance].rand_addr_set = TRUE;
         // set random address success, update address info
         if(extend_adv_cb.inst[instance].configured && extend_adv_cb.inst[instance].connetable) {
             BTM_BleSetStaticAddr(rand_addr);
@@ -286,6 +297,8 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
 #endif // (BT_BLE_FEAT_ADV_CODING_SELECTION == TRUE)
 
     extend_adv_cb.inst[instance].configured = true;
+    /* Record the post-fallback on-air address type for per-set conn_addr fixup. */
+    extend_adv_cb.inst[instance].own_addr_type = params->own_addr_type;
 
 end:
     if(use_rpa_addr) {
@@ -296,6 +309,7 @@ end:
         } else {
             // set addr success, update address info
             BTM_UpdateAddrInfor(BLE_ADDR_RANDOM, rand_addr);
+            extend_adv_cb.inst[instance].rand_addr_set = FALSE;
         }
     }
     cb_params.set_params.status = status;
@@ -441,6 +455,7 @@ end:
 
             for (uint8_t i = 0; i < MAX_BLE_ADV_INSTANCE; i++)
             {
+                adv_record[i].ter_con_handle = INVALID_VALUE_16BIT;
                 adv_record[i].invalid = false;
                 adv_record[i].enabled = false;
                 adv_record[i].instance = INVALID_VALUE_8BIT;
@@ -455,6 +470,7 @@ end:
                 if (index >= MAX_BLE_ADV_INSTANCE) {
                     continue;
                 }
+                adv_record[index].ter_con_handle = INVALID_VALUE_16BIT;
                 adv_record[index].invalid = false;
                 adv_record[index].enabled = false;
                 adv_record[index].instance = INVALID_VALUE_8BIT;
@@ -472,6 +488,7 @@ end:
             if (index >= MAX_BLE_ADV_INSTANCE) {
                 continue;
             }
+            adv_record[index].ter_con_handle = INVALID_VALUE_16BIT;
             adv_record[index].invalid = true;
             adv_record[index].enabled = true;
             adv_record[index].instance = ext_adv[i].instance;
@@ -520,6 +537,54 @@ tBTM_STATUS BTM_BleStartExtAdvRestart(uint16_t con_handle)
     return BTM_BleStartExtAdv(true, 1, &ext_adv);
 }
 
+/*******************************************************************************
+**
+** Function         BTM_BleGetExtAdvInstByConHandle
+**
+** Description      Map an LE connection handle to the ext-adv instance
+**                  whose adv-set-terminated event reported it.
+**
+** Returns          instance index on success, 0xFF if no match.
+**
+*******************************************************************************/
+UINT8 BTM_BleGetExtAdvInstByConHandle(UINT16 con_handle)
+{
+    if (con_handle == INVALID_VALUE_16BIT) {
+        return 0xFF;
+    }
+    for (UINT8 i = 0; i < MAX_BLE_ADV_INSTANCE; i++) {
+        /* configured + connetable guard prevents an all-zero slot from
+         * spuriously matching a real conn_handle == 0. */
+        if (adv_record[i].ter_con_handle == con_handle &&
+            extend_adv_cb.inst[i].configured &&
+            extend_adv_cb.inst[i].connetable) {
+            return i;
+        }
+    }
+    return 0xFF;
+}
+
+/*******************************************************************************
+**
+** Function         btm_ble_clear_ext_adv_ter_con_handle
+**
+** Description      Clear stale ter_con_handle entries when an ACL link goes
+**                  down so a reused connection handle cannot map to the
+**                  wrong ext-adv instance.
+**
+** Returns          void
+**
+*******************************************************************************/
+void btm_ble_clear_ext_adv_ter_con_handle(UINT16 con_handle)
+{
+    con_handle = HCID_GET_HANDLE(con_handle);
+    for (UINT8 i = 0; i < MAX_BLE_ADV_INSTANCE; i++) {
+        if (adv_record[i].ter_con_handle == con_handle) {
+            adv_record[i].ter_con_handle = INVALID_VALUE_16BIT;
+        }
+    }
+}
+
 tBTM_STATUS BTM_BleExtAdvSetRemove(UINT8 instance)
 {
     tBTM_STATUS status = BTM_SUCCESS;
@@ -541,6 +606,10 @@ tBTM_STATUS BTM_BleExtAdvSetRemove(UINT8 instance)
         extend_adv_cb.inst[instance].directed = false;
         extend_adv_cb.inst[instance].scannable = false;
         extend_adv_cb.inst[instance].connetable = false;
+        extend_adv_cb.inst[instance].own_addr_type = BLE_ADDR_PUBLIC;
+        extend_adv_cb.inst[instance].rand_addr_set = FALSE;
+        memset(extend_adv_cb.inst[instance].rand_addr, 0, BD_ADDR_LEN);
+        adv_record[instance].ter_con_handle = INVALID_VALUE_16BIT;
     }
 
 end:
@@ -570,6 +639,10 @@ tBTM_STATUS BTM_BleExtAdvSetClear(void)
             extend_adv_cb.inst[i].directed = false;
             extend_adv_cb.inst[i].scannable = false;
             extend_adv_cb.inst[i].connetable = false;
+            extend_adv_cb.inst[i].own_addr_type = BLE_ADDR_PUBLIC;
+            extend_adv_cb.inst[i].rand_addr_set = FALSE;
+            memset(extend_adv_cb.inst[i].rand_addr, 0, BD_ADDR_LEN);
+            adv_record[i].ter_con_handle = INVALID_VALUE_16BIT;
         }
     }
 
@@ -1177,7 +1250,13 @@ void btm_ble_adv_set_terminated_evt(tBTM_BLE_ADV_TERMINAT *params)
 
     // adv terminated due to connection, save the adv handle and connection handle
     if(params->status == 0x00) {
-        adv_record[params->adv_handle].ter_con_handle = params->conn_handle;
+        /* Store the masked handle to match what btm_ble_conn_complete() looks up. */
+        adv_record[params->adv_handle].ter_con_handle = HCID_GET_HANDLE(params->conn_handle);
+        /* Re-run the per-set conn_addr fixup in case this event arrives
+         * after LE (Enhanced) Connection Complete. */
+#if (CONTROLLER_RPA_LIST_ENABLE == TRUE)
+        btm_ble_adjust_conn_addr_for_ext_adv(adv_record[params->adv_handle].ter_con_handle);
+#endif
     } else {
         adv_record[params->adv_handle].ter_con_handle = INVALID_VALUE_16BIT;
         adv_record[params->adv_handle].invalid = false;
