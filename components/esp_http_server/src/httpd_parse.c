@@ -1150,12 +1150,13 @@ esp_err_t httpd_req_get_hdr_value_str(httpd_req_t *r, const char *field, char *v
     }
 
     /* Get the NULL terminated value and copy it to the caller's buffer.
-     * Note `strlcpy()` will always return the size of the source string
-     * including terminating null. */
+     * strlcpy() returns strlen() of the source string (the terminating
+     * null is NOT counted), so only val_size - 1 characters fit. */
     size_t full_size = strlcpy(val, val_ptr, val_size);
 
-    /* If buffer length is smaller than needed, return truncation error */
-    if (val_size < full_size) {
+    /* If the value did not fit in the buffer it was truncated, i.e. its
+     * length reached or exceeded val_size. Return truncation error. */
+    if (val_size <= full_size) {
         return ESP_ERR_HTTPD_RESULT_TRUNC;
     }
     return ESP_OK;
