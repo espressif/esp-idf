@@ -53,10 +53,10 @@ static inline bool ieee802154_is_valid_channel(uint8_t channel)
 #define IEEE802154_RECORD_EVENT(a) do { \
             g_ieee802154_probe.event[g_ieee802154_probe.event_index].event = a; \
             g_ieee802154_probe.event[g_ieee802154_probe.event_index].state = ieee802154_get_state(); \
-            if (a == IEEE802154_EVENT_RX_ABORT) { \
+            if (a & IEEE802154_EVENT_RX_ABORT) { \
                 g_ieee802154_probe.event[g_ieee802154_probe.event_index].abort_reason.rx \
                     = ieee802154_ll_get_rx_abort_reason(); \
-            } else if (a == IEEE802154_EVENT_TX_ABORT) { \
+            } else if (a & IEEE802154_EVENT_TX_ABORT) { \
                 g_ieee802154_probe.event[g_ieee802154_probe.event_index].abort_reason.tx \
                     = ieee802154_ll_get_tx_abort_reason(); \
             } \
@@ -128,14 +128,14 @@ typedef struct {
 #if CONFIG_IEEE802154_RECORD_ABORT
 #define IEEE802154_ASSERT_RECORD_ABORT_SIZE CONFIG_IEEE802154_RECORD_ABORT_SIZE
 #define IEEE802154_RECORD_ABORT(a) do { \
-            if (a == IEEE802154_EVENT_RX_ABORT) { \
+            if (a & IEEE802154_EVENT_RX_ABORT) { \
                 g_ieee802154_probe.abort[g_ieee802154_probe.abort_index].abort_reason.rx \
                     = ieee802154_ll_get_rx_abort_reason(); \
                 g_ieee802154_probe.abort[g_ieee802154_probe.abort_index].is_tx_abort = 0; \
                 g_ieee802154_probe.abort[g_ieee802154_probe.abort_index++].timestamp = esp_timer_get_time(); \
                 g_ieee802154_probe.abort_index = (g_ieee802154_probe.abort_index == IEEE802154_ASSERT_RECORD_ABORT_SIZE) ? \
                     0 : g_ieee802154_probe.abort_index; \
-            } else if (a == IEEE802154_EVENT_TX_ABORT) { \
+            } else if (a & IEEE802154_EVENT_TX_ABORT) { \
                 g_ieee802154_probe.abort[g_ieee802154_probe.abort_index].abort_reason.tx \
                     = ieee802154_ll_get_tx_abort_reason();\
                 g_ieee802154_probe.abort[g_ieee802154_probe.abort_index].is_tx_abort = 1; \
