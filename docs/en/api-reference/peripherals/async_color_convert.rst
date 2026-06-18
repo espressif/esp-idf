@@ -148,7 +148,7 @@ Both the source window and destination window must stay within the bounds of the
 Supported Conversions
 ---------------------
 
-The following format pairs are supported by this driver:
+The following format pairs are currently supported by this driver:
 
 .. list-table::
     :header-rows: 1
@@ -156,31 +156,53 @@ The following format pairs are supported by this driver:
     * - Source format
       - Destination format
       - Conversion standard
-    * - same as destination (skip conversion)
-      - same as source (skip conversion)
+    * - ``ESP_COLOR_FOURCC_RGB16``
+      - ``ESP_COLOR_FOURCC_RGB16``
       - N/A
-    * - RGB565
-      - RGB888
+    * - ``ESP_COLOR_FOURCC_BGR24``
+      - ``ESP_COLOR_FOURCC_BGR24``
       - N/A
-    * - RGB888
-      - RGB565
+    * - ``ESP_COLOR_FOURCC_RGB24``
+      - ``ESP_COLOR_FOURCC_RGB24``
       - N/A
-    * - RGB888
-      - UYVY422
+    * - ``ESP_COLOR_FOURCC_UYVY``
+      - ``ESP_COLOR_FOURCC_UYVY``
+      - N/A
+    * - ``ESP_COLOR_FOURCC_BGR24``
+      - ``ESP_COLOR_FOURCC_RGB24``
+      - N/A
+    * - ``ESP_COLOR_FOURCC_RGB24``
+      - ``ESP_COLOR_FOURCC_BGR24``
+      - N/A
+    * - ``ESP_COLOR_FOURCC_RGB16``
+      - ``ESP_COLOR_FOURCC_BGR24``
+      - N/A
+    * - ``ESP_COLOR_FOURCC_BGR24``
+      - ``ESP_COLOR_FOURCC_RGB16``
+      - N/A
+    * - ``ESP_COLOR_FOURCC_RGB24``
+      - ``ESP_COLOR_FOURCC_RGB16``
+      - N/A
+    * - ``ESP_COLOR_FOURCC_BGR24``
+      - ``ESP_COLOR_FOURCC_UYVY``
       - BT.601
-    * - RGB888
-      - UYVY422
+    * - ``ESP_COLOR_FOURCC_BGR24``
+      - ``ESP_COLOR_FOURCC_UYVY``
       - BT.709
-    * - UYVY422
-      - RGB888
+    * - ``ESP_COLOR_FOURCC_RGB24``
+      - ``ESP_COLOR_FOURCC_UYVY``
       - BT.601
-    * - UYVY422
-      - RGB888
+    * - ``ESP_COLOR_FOURCC_RGB24``
+      - ``ESP_COLOR_FOURCC_UYVY``
+      - BT.709
+    * - ``ESP_COLOR_FOURCC_UYVY``
+      - ``ESP_COLOR_FOURCC_BGR24``
+      - BT.601
+    * - ``ESP_COLOR_FOURCC_UYVY``
+      - ``ESP_COLOR_FOURCC_BGR24``
       - BT.709
 
 .. note::
-
-    In this driver, RGB888 uses ``ESP_COLOR_FOURCC_BGR24`` and UYVY422 uses ``ESP_COLOR_FOURCC_UYVY``.
 
     Always set :cpp:member:`async_color_convert_request_t::src_color_format` and
     :cpp:member:`async_color_convert_request_t::dst_color_format`.
