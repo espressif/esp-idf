@@ -1031,7 +1031,7 @@ static inline void dma2d_ll_tx_configure_color_space_conv(dma2d_dev_t *dev, uint
         input_sel = 7;
         break;
     case DMA2D_CSC_TX_SCRAMBLE:
-        input_sel = 2; // Or 3
+        input_sel = 3; // Other 3-byte/pixel input path
         proc_en = false;
         output_sel = 2;
         break;

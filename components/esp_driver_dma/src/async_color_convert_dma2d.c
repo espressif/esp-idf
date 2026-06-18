@@ -35,7 +35,8 @@ struct async_color_convert_transaction {
     dma2d_trans_config_t dma2d_trans_config;  // Per-request DMA2D transaction configuration
 
     async_color_convert_request_t request;    // Cached user request used to build DMA2D transaction
-    dma2d_csc_config_t tx_csc;                // Cached DMA2D CSC configuration resolved in task context
+    dma2d_csc_config_t tx_csc;                // Cached DMA2D TX CSC configuration resolved in task context
+    dma2d_csc_config_t rx_csc;                // Cached DMA2D RX CSC configuration resolved in task context
     async_color_convert_isr_cb_t cb_isr;      // User ISR callback for this request
     void *cb_args;                            // User callback argument
     async_color_convert_dma2d_context_t *ctx; // Back pointer to parent context
@@ -62,34 +63,65 @@ static esp_err_t async_color_convert_dma2d_convert(async_color_convert_context_t
                                                    async_color_convert_isr_cb_t cb_isr,
                                                    void *cb_args);
 
-static bool try_convert_request_to_dma2d_csc(const async_color_convert_request_t *request,
-                                             dma2d_csc_config_t *out_tx_csc)
+static bool is_rgb24_or_bgr24_fourcc(esp_color_fourcc_t fourcc)
+{
+    return fourcc == ESP_COLOR_FOURCC_BGR24 || fourcc == ESP_COLOR_FOURCC_RGB24;
+}
+
+static dma2d_csc_config_t default_tx_csc_config(void)
+{
+    return (dma2d_csc_config_t) {
+        .tx_csc_option = DMA2D_CSC_TX_NONE,
+        .pre_scramble = DMA2D_SCRAMBLE_ORDER_BYTE2_1_0,
+        .post_scramble = DMA2D_SCRAMBLE_ORDER_BYTE2_1_0,
+    };
+}
+
+static dma2d_csc_config_t default_rx_csc_config(void)
+{
+    return (dma2d_csc_config_t) {
+        .rx_csc_option = DMA2D_CSC_RX_NONE,
+        .pre_scramble = DMA2D_SCRAMBLE_ORDER_BYTE2_1_0,
+        .post_scramble = DMA2D_SCRAMBLE_ORDER_BYTE2_1_0,
+    };
+}
+
+static bool resolve_dma2d_csc_configs(const async_color_convert_request_t *request,
+                                      dma2d_csc_config_t *out_tx_csc,
+                                      dma2d_csc_config_t *out_rx_csc)
 {
     esp_color_fourcc_t src_fourcc = request->src_color_format;
     esp_color_fourcc_t dst_fourcc = request->dst_color_format;
+    bool src_is_rgb24_or_bgr24 = is_rgb24_or_bgr24_fourcc(src_fourcc);
+    bool dst_is_rgb24_or_bgr24 = is_rgb24_or_bgr24_fourcc(dst_fourcc);
+
+    *out_tx_csc = default_tx_csc_config();
+    *out_rx_csc = default_rx_csc_config();
 
     if (src_fourcc == dst_fourcc) {
-        out_tx_csc->tx_csc_option = DMA2D_CSC_TX_NONE;
-        out_tx_csc->pre_scramble = DMA2D_SCRAMBLE_ORDER_BYTE2_1_0;
-        out_tx_csc->post_scramble = DMA2D_SCRAMBLE_ORDER_BYTE2_1_0;
+        return true;
+    }
+
+    if (src_is_rgb24_or_bgr24 && dst_is_rgb24_or_bgr24) {
+        out_tx_csc->tx_csc_option = DMA2D_CSC_TX_SCRAMBLE; // RGB<->BGR conversion is just a scramble operation
+        out_tx_csc->pre_scramble = DMA2D_SCRAMBLE_ORDER_BYTE0_1_2;
         return true;
     }
 
     if (src_fourcc == ESP_COLOR_FOURCC_RGB16 && dst_fourcc == ESP_COLOR_FOURCC_BGR24) {
         out_tx_csc->tx_csc_option = DMA2D_CSC_TX_RGB565_TO_RGB888;
-        out_tx_csc->pre_scramble = DMA2D_SCRAMBLE_ORDER_BYTE2_1_0;
-        out_tx_csc->post_scramble = DMA2D_SCRAMBLE_ORDER_BYTE2_1_0;
         return true;
     }
 
-    if (src_fourcc == ESP_COLOR_FOURCC_BGR24 && dst_fourcc == ESP_COLOR_FOURCC_RGB16) {
+    if (src_is_rgb24_or_bgr24 && dst_fourcc == ESP_COLOR_FOURCC_RGB16) {
         out_tx_csc->tx_csc_option = DMA2D_CSC_TX_RGB888_TO_RGB565;
-        out_tx_csc->pre_scramble = DMA2D_SCRAMBLE_ORDER_BYTE2_1_0;
-        out_tx_csc->post_scramble = DMA2D_SCRAMBLE_ORDER_BYTE2_1_0;
+        if (src_fourcc == ESP_COLOR_FOURCC_RGB24) {
+            out_tx_csc->pre_scramble = DMA2D_SCRAMBLE_ORDER_BYTE0_1_2;
+        }
         return true;
     }
 
-    if (src_fourcc == ESP_COLOR_FOURCC_BGR24 && dst_fourcc == ESP_COLOR_FOURCC_UYVY) {
+    if (src_is_rgb24_or_bgr24 && dst_fourcc == ESP_COLOR_FOURCC_UYVY) {
         if (request->color_conv_std == COLOR_CONV_STD_RGB_YUV_BT601) {
             out_tx_csc->tx_csc_option = DMA2D_CSC_TX_RGB888_TO_YUV422_601;
         } else if (request->color_conv_std == COLOR_CONV_STD_RGB_YUV_BT709) {
@@ -97,8 +129,9 @@ static bool try_convert_request_to_dma2d_csc(const async_color_convert_request_t
         } else {
             return false;
         }
-        out_tx_csc->pre_scramble = DMA2D_SCRAMBLE_ORDER_BYTE2_1_0;
-        out_tx_csc->post_scramble = DMA2D_SCRAMBLE_ORDER_BYTE2_1_0;
+        if (src_fourcc == ESP_COLOR_FOURCC_RGB24) {
+            out_tx_csc->pre_scramble = DMA2D_SCRAMBLE_ORDER_BYTE0_1_2;
+        }
         return true;
     }
 
@@ -110,8 +143,6 @@ static bool try_convert_request_to_dma2d_csc(const async_color_convert_request_t
         } else {
             return false;
         }
-        out_tx_csc->pre_scramble = DMA2D_SCRAMBLE_ORDER_BYTE2_1_0;
-        out_tx_csc->post_scramble = DMA2D_SCRAMBLE_ORDER_BYTE2_1_0;
         return true;
     }
 
@@ -121,6 +152,11 @@ static bool try_convert_request_to_dma2d_csc(const async_color_convert_request_t
 static inline bool needs_tx_csc(const dma2d_csc_config_t *tx_csc)
 {
     return tx_csc->tx_csc_option != DMA2D_CSC_TX_NONE;
+}
+
+static inline bool needs_rx_csc(const dma2d_csc_config_t *rx_csc)
+{
+    return rx_csc->rx_csc_option != DMA2D_CSC_RX_NONE;
 }
 
 static esp_err_t sync_if_cacheable(void *addr, size_t size, int flags)
@@ -239,9 +275,8 @@ static bool async_color_convert_on_job_picked(uint32_t channel_num,
     dma2d_set_transfer_ability(tx_chan, &transfer_ability);
     dma2d_set_transfer_ability(rx_chan, &transfer_ability);
 
-    if (needs_tx_csc(&trans->tx_csc)) {
-        dma2d_configure_color_space_conversion(tx_chan, &trans->tx_csc);
-    }
+    dma2d_configure_color_space_conversion(tx_chan, &trans->tx_csc);
+    dma2d_configure_color_space_conversion(rx_chan, &trans->rx_csc);
 
     dma2d_rx_event_callbacks_t cbs = {
         .on_recv_eof = async_color_convert_done_cb,
@@ -301,16 +336,18 @@ static esp_err_t async_color_convert_dma2d_convert(async_color_convert_context_t
 
     esp_color_fourcc_t src_fourcc = request->src_color_format;
     esp_color_fourcc_t dst_fourcc = request->dst_color_format;
-    trans->tx_csc = (dma2d_csc_config_t) {};
-    ESP_GOTO_ON_FALSE(try_convert_request_to_dma2d_csc(request, &trans->tx_csc),
+    trans->tx_csc = default_tx_csc_config();
+    trans->rx_csc = default_rx_csc_config();
+    ESP_GOTO_ON_FALSE(resolve_dma2d_csc_configs(request, &trans->tx_csc, &trans->rx_csc),
                       ESP_ERR_INVALID_ARG, recycle_and_out, TAG, "unsupported color conversion mode");
 
+    trans->dma2d_trans_config.channel_flags = DMA2D_CHANNEL_FUNCTION_FLAG_SIBLING;
     if (needs_tx_csc(&trans->tx_csc)) {
-        trans->dma2d_trans_config.channel_flags = DMA2D_CHANNEL_FUNCTION_FLAG_SIBLING | DMA2D_CHANNEL_FUNCTION_FLAG_TX_CSC;
-    } else {
-        trans->dma2d_trans_config.channel_flags = DMA2D_CHANNEL_FUNCTION_FLAG_SIBLING;
+        trans->dma2d_trans_config.channel_flags |= DMA2D_CHANNEL_FUNCTION_FLAG_TX_CSC;
     }
-
+    if (needs_rx_csc(&trans->rx_csc)) {
+        trans->dma2d_trans_config.channel_flags |= DMA2D_CHANNEL_FUNCTION_FLAG_RX_CSC;
+    }
     setup_desc(trans->tx_desc,
                (void *)request->src_buffer,
                request->src_stride,
@@ -342,7 +379,7 @@ static esp_err_t async_color_convert_dma2d_convert(async_color_convert_context_t
                       recycle_and_out, TAG, "source cache sync failed");
 
     ESP_GOTO_ON_ERROR(sync_if_cacheable(request->dst_buffer, dst_total_size,
-                                        ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE),
+                                        ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE | ESP_CACHE_MSYNC_FLAG_UNALIGNED),
                       recycle_and_out, TAG, "destination cache sync failed");
 
     ESP_GOTO_ON_ERROR(sync_if_cacheable(trans->tx_desc, color_ctx->desc_alloc_size,
