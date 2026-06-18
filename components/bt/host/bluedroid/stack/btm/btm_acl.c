@@ -571,6 +571,12 @@ void btm_acl_removed (BD_ADDR bda, tBT_TRANSPORT transport)
                          btm_cb.ble_ctr_cb.inq_var.connectable_mode,
                          p->link_role);
 
+        if (p->transport == BT_TRANSPORT_LE) {
+#if (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE)
+            btm_ble_clear_ext_adv_ter_con_handle(p->hci_handle);
+#endif
+        }
+
         p_dev_rec = btm_find_dev(bda);
         if ( p_dev_rec) {
             BTM_TRACE_DEBUG("before update p_dev_rec->sec_flags=0x%x\n", p_dev_rec->sec_flags);

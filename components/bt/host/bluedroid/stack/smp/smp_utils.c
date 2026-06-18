@@ -582,37 +582,89 @@ static BT_HDR *smp_build_identity_info_cmd(UINT8 cmd_code, tSMP_CB *p_cb)
 **
 ** Function         smp_build_id_addr_cmd
 **
-** Description      Build identity address information command.
+** Description      Build SMP Identity Address Information command
+**                  (opcode 0x09). The address distributed here is the
+**                  local device's permanent identity; an on-air RPA must
+**                  never be sent.
+**
+**                  In BLE 5.0 multi-ADV, each set has its own
+**                  own_addr_type / Static Random and the global
+**                  addr_mgnt_cb may reflect a different set, so we look
+**                  up the ext-adv instance that produced this connection
+**                  and use ITS per-set state. Fall back to addr_mgnt_cb
+**                  for initiator / legacy advertising paths.
 **
 *******************************************************************************/
 static BT_HDR *smp_build_id_addr_cmd(UINT8 cmd_code, tSMP_CB *p_cb)
 {
-    BT_HDR *p_buf = NULL;
-    UINT8 *p;
+    BT_HDR        *p_buf = NULL;
+    UINT8         *p;
+    tBLE_ADDR_TYPE id_type = BLE_ADDR_PUBLIC;
+    BD_ADDR        id_addr = {0};
 
     UNUSED(cmd_code);
     UNUSED(p_cb);
     SMP_TRACE_EVENT("smp_build_id_addr_cmd\n");
+
+
+    {
+#if (BLE_INCLUDED == TRUE)
+        tBLE_ADDR_TYPE policy_type = btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type;
+        const UINT8   *policy_rand = NULL;
+        BOOLEAN        policy_resolved = FALSE;
+        const BD_ADDR zero = {0};
+#if (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == TRUE)
+        {
+            tACL_CONN *p_acl = btm_bda_to_acl(p_cb->pairing_bda, BT_TRANSPORT_LE);
+            if (p_acl != NULL) {
+                UINT8 inst = BTM_BleGetExtAdvInstByConHandle(p_acl->hci_handle);
+                if (inst < MAX_BLE_ADV_INSTANCE) {
+                    policy_type = extend_adv_cb.inst[inst].own_addr_type;
+                    /* Only a host-set Static Random may be sent as identity;
+                     * a stack-generated RPA stored in rand_addr must not. */
+                    if (extend_adv_cb.inst[inst].rand_addr_set) {
+                        policy_rand = extend_adv_cb.inst[inst].rand_addr;
+                    }
+                    policy_resolved = TRUE;
+                }
+            }
+        }
+#endif /* (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == TRUE) */
+
+        if (!policy_resolved) {
+            if (memcmp(btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr,
+                       zero, BD_ADDR_LEN) != 0) {
+                policy_rand = btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr;
+            }
+        }
+
+        /* LSB(own_addr_type) selects Public (0) vs Static Random (1).
+         * If Random is required but unavailable, emit Public rather than
+         * leak an RPA or send all-zero. */
+        if ((policy_type & 0x01) && (policy_rand != NULL) && memcmp(policy_rand, zero, BD_ADDR_LEN) != 0) {
+            id_type = BLE_ADDR_RANDOM;
+            memcpy(id_addr, policy_rand, BD_ADDR_LEN);
+        } else if (policy_type & 0x01) {
+            SMP_TRACE_WARNING("%s: no static rand, fallback public (type=%u)",
+                              __func__, policy_type);
+        }
+#endif  ///BLE_INCLUDED == TRUE
+        if (id_type == BLE_ADDR_PUBLIC) {
+            memcpy(id_addr,
+                   controller_get_interface()->get_address()->address,
+                   BD_ADDR_LEN);
+        }
+    }
+
     if ((p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR) + SMP_ID_ADDR_SIZE + L2CAP_MIN_OFFSET)) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
-        UINT8_TO_STREAM (p, SMP_OPCODE_ID_ADDR);
-        /* Identity Address Information is used in the Transport Specific Key Distribution phase to distribute
-        its public device address or static random address. if slave using static random address is encrypted,
-        it should distribute its static random address */
-#if (BLE_INCLUDED == TRUE)
-        if(btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type == BLE_ADDR_RANDOM && memcmp(btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr, btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr,6) == 0) {
-            UINT8_TO_STREAM (p, 0x01);
-            BDADDR_TO_STREAM (p, btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr);
-        } else
-#endif  ///BLE_INCLUDED == TRUE
-        {
-            UINT8_TO_STREAM (p, 0);
-            BDADDR_TO_STREAM (p, controller_get_interface()->get_address()->address);
-        }
+        UINT8_TO_STREAM(p, SMP_OPCODE_ID_ADDR);
+        UINT8_TO_STREAM(p, id_type);
+        BDADDR_TO_STREAM(p, id_addr);
 
         p_buf->offset = L2CAP_MIN_OFFSET;
-        p_buf->len = SMP_ID_ADDR_SIZE;
+        p_buf->len    = SMP_ID_ADDR_SIZE;
     }
 
     return p_buf;
