@@ -39,4 +39,4 @@
  *
  * @note Value is calibration-specific and may vary with compiler optimization.
  */
-#define ULP_LP_CORE_DELAY_CALL_OVERHEAD_IN_CYCLES 11U
+#define ULP_LP_CORE_DELAY_CALL_OVERHEAD_IN_CYCLES 14U
