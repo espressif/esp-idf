@@ -461,6 +461,10 @@ esp_err_t esp_psram_chip_init(void)
 
 esp_err_t esp_psram_init(void)
 {
+    if (s_psram_ctx.is_initialised) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
     esp_err_t ret = ESP_FAIL;
 
     if (!s_psram_ctx.is_chip_initialised) {
