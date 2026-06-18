@@ -178,7 +178,7 @@ revert:
  *
  * Passing a NULL `expected` never claims (there is nothing to tear down).
  */
-static inline bool claim_rx_transaction(dma2d_group_t *group, dma2d_rx_channel_t *rx_chan, dma2d_trans_t *expected)
+FORCE_INLINE_ATTR bool claim_rx_transaction(dma2d_group_t *group, dma2d_rx_channel_t *rx_chan, dma2d_trans_t *expected)
 {
     bool claimed = false;
     esp_os_enter_critical_safe(&group->spinlock);
