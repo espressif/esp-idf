@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { BLE_DAEMON_URL } from "./config"
-import { debugLog } from "./logging"
 import { isPermissionDecision } from "./opencode-permission-reply"
 import type { BridgeResponse, DaemonResponse, DaemonStatus } from "./types"
 
@@ -38,8 +37,6 @@ export async function getDaemonStatus(): Promise<DaemonStatus> {
  * from leaking into the permission queue code.
  */
 function parseBridgeResponse(body: DaemonResponse): BridgeResponse {
-  debugLog("daemon raw response", body)
-
   // Try nested data/response fields first (daemon envelope)
   const payload = body.data ?? body.response
   if (payload !== undefined) {

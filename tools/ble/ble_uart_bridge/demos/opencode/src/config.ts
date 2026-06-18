@@ -28,9 +28,6 @@ export const DEFAULT_REJECT_MESSAGE = "Rejected from BLE device"
  */
 export const METADATA_DISPLAY_KEYS = ["command", "path", "url"] as const
 
-/** Enables verbose local console logging when OPENCODE_BLE_DEBUG=1. */
-export const DEBUG = process.env.OPENCODE_BLE_DEBUG === "1"
-
 /** HTTP base URL of the local ESP-BLE-UART Daemon that bridges OpenCode to the BLE device. */
 export const BLE_DAEMON_URL = process.env.OPENCODE_BLE_DAEMON_URL ?? "http://127.0.0.1:8888"
 

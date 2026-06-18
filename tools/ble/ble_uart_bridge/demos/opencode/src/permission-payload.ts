@@ -7,7 +7,49 @@ import {
   MAX_METADATA_VALUE_CHARS,
   METADATA_DISPLAY_KEYS,
 } from "./config"
-import type { PermissionEventProperties } from "./types"
+import type { PermissionEventProperties, RawPermissionEvent } from "./types"
+
+/**
+ * Normalize raw permission event properties from either the internal OpenCode
+ * event system (type="permission.asked") or the SDK event system
+ * (type="permission.updated") into the PermissionEventProperties shape that
+ * this plugin's payload builders and permission queue expect.
+ *
+ * The two event systems use different field names for similar concepts:
+ * - Internal `permission` ↔ SDK `type`
+ * - Internal `patterns` (string[]) ↔ SDK `pattern` (string | string[])
+ * - Internal has `tool_name`/`tool_input`; SDK has `messageID`/`callID`/`time`
+ */
+export function normalizePermissionEvent(raw: RawPermissionEvent): PermissionEventProperties {
+  // Normalize patterns: SDK Permission uses `pattern` (string | string[]),
+  // internal events use `patterns` (string[]).
+  let patterns: string[] | undefined
+  if (Array.isArray(raw.patterns)) {
+    patterns = raw.patterns as string[]
+  } else if (Array.isArray(raw.pattern)) {
+    patterns = raw.pattern as string[]
+  } else if (typeof raw.pattern === "string") {
+    patterns = [raw.pattern]
+  }
+
+  return {
+    id: raw.id,
+    requestID: raw.requestID ?? raw.id,
+    permissionID: raw.permissionID ?? raw.id,
+    sessionID: raw.sessionID ?? "",
+    permission: raw.permission ?? raw.type,
+    type: raw.type ?? raw.permission,
+    title: raw.title ?? DEFAULT_PERMISSION_TITLE,
+    metadata: typeof raw.metadata === "object" && raw.metadata !== null
+      ? (raw.metadata as Record<string, unknown>)
+      : undefined,
+    patterns,
+    tool_name: raw.tool_name,
+    tool_input: typeof raw.tool_input === "object" && raw.tool_input !== null
+      ? (raw.tool_input as Record<string, unknown>)
+      : undefined,
+  }
+}
 
 /** Create a unique event ID for messages sent to the ESP-BLE-UART Daemon. */
 function eventID() {

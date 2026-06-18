@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 // SPDX-License-Identifier: Apache-2.0
 
-import { debugLog } from "./logging"
 import { permissionRequestID } from "./permission-payload"
 import type { OpenCodePermissionClient, PermissionDecision, PermissionEventProperties } from "./types"
 
@@ -62,21 +61,8 @@ export async function replyToOpenCodePermission(
   // - raw HTTP fallback: fetch(serverUrl /permission/:id/reply)
   // - v1 SDK helper: postSessionIdPermissionsPermissionId()
   // - deprecated v2 SDK: client.permission.respond()
-  debugLog("replying to OpenCode permission", {
-    requestID,
-    sessionID: permission.sessionID,
-    decision,
-    message,
-    hasServerUrl: serverUrl !== undefined,
-    hasDirectory: directory !== undefined,
-    hasInternalPost: typeof client._client?.post === "function",
-    hasV2Reply: typeof client.permission?.reply === "function",
-    hasV2Respond: typeof client.permission?.respond === "function",
-    hasV1Respond: typeof client.postSessionIdPermissionsPermissionId === "function",
-  })
 
   if (typeof client.permission?.reply === "function") {
-    debugLog("using OpenCode v2 permission.reply API")
     const result = await client.permission.reply({
       requestID,
       reply: decision,
@@ -86,7 +72,6 @@ export async function replyToOpenCodePermission(
     if (error !== undefined) {
       throw new Error(`OpenCode permission response failed: ${String(error)}`)
     }
-    debugLog("OpenCode permission response completed", result)
     return
   }
 
@@ -95,7 +80,6 @@ export async function replyToOpenCodePermission(
     // fetch(serverUrl) may fail or hit the wrong OpenCode instance. The
     // injected HeyAPI client uses OpenCode's in-process app.fetch() binding,
     // so this is the reliable fallback when the public reply helper is absent.
-    debugLog("using OpenCode internal raw v2 permission.reply endpoint")
     const result = await client._client.post({
       url: `/permission/${encodeURIComponent(requestID)}/reply`,
       body: {
@@ -108,12 +92,10 @@ export async function replyToOpenCodePermission(
     if (error !== undefined) {
       throw new Error(`OpenCode permission response failed: ${String(error)}`)
     }
-    debugLog("OpenCode permission response completed", result)
     return
   }
 
   if (serverUrl !== undefined && directory !== undefined) {
-    debugLog("using OpenCode raw v2 permission.reply endpoint")
     try {
       const response = await fetch(new URL(`/permission/${encodeURIComponent(requestID)}/reply`, serverUrl), {
         method: "POST",
@@ -126,19 +108,13 @@ export async function replyToOpenCodePermission(
       if (!response.ok) {
         throw new Error(`HTTP ${response.status} ${await response.text()}`)
       }
-      try {
-        debugLog("OpenCode permission response completed", await response.json())
-      } catch {
-        debugLog("OpenCode permission response completed (non-JSON body)")
-      }
       return
-    } catch (error) {
-      debugLog("OpenCode raw v2 permission.reply failed, trying fallback", { error: String(error) })
+    } catch {
+      // fall through to v1 / deprecated v2 probes
     }
   }
 
   if (typeof client.postSessionIdPermissionsPermissionId === "function") {
-    debugLog("using OpenCode v1 permission respond API")
     const result = await client.postSessionIdPermissionsPermissionId({
       path: {
         id: permission.sessionID,
@@ -152,12 +128,10 @@ export async function replyToOpenCodePermission(
     if (error !== undefined) {
       throw new Error(`OpenCode permission response failed: ${String(error)}`)
     }
-    debugLog("OpenCode permission response completed", result)
     return
   }
 
   if (typeof client.permission?.respond === "function") {
-    debugLog("using OpenCode v2 deprecated permission.respond API")
     const result = await client.permission.respond({
       sessionID: permission.sessionID,
       permissionID: requestID,
@@ -167,7 +141,6 @@ export async function replyToOpenCodePermission(
     if (error !== undefined) {
       throw new Error(`OpenCode permission response failed: ${String(error)}`)
     }
-    debugLog("OpenCode permission response completed", result)
     return
   }
 
