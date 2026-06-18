@@ -230,6 +230,7 @@ void vPortEnterCritical(void);
  */
 void vPortExitCritical(void);
 
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
 /**
  * @brief Claim thread-safe region start
  *        If claimed, vPortEnterCritical/vPortExitCritical on the current core are no-ops.
@@ -245,6 +246,7 @@ void xPortThreadSafeClaim(void);
  * @note !!! Caller must guarantee thread safety between Claim and Disclaim !!!
  */
 void xPortThreadSafeDisclaim(void);
+#endif /* CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM */
 
 #if (configNUM_CORES > 1)
 /**

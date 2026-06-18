@@ -1254,7 +1254,9 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     /* Another core is stalled and interrupts are disabled, so we can safely claim the thread-safe
        critical section to avoid deadlocks and fastup the sleep process.
     */
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
     xPortThreadSafeClaim();
+#endif
 
 #if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
     // The other core will be stalled by high-priority interrupt and spins on variables in internal RAM,
@@ -1350,7 +1352,9 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
 #endif
 
     /* Restore port critical before unstalling other CPU */
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
     xPortThreadSafeDisclaim();
+#endif
     esp_ipc_isr_stall_resume();
     esp_ipc_isr_release_other_cpu();
     esp_os_exit_critical(&s_config.lock);
@@ -1514,7 +1518,9 @@ esp_err_t esp_light_sleep_start(void)
     /* Another core is stalled and interrupts are disabled, so we can safely claim the thread-safe
        critical section to avoid deadlocks and fastup the sleep process.
     */
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
     xPortThreadSafeClaim();
+#endif
 
 #if CONFIG_ESP_TASK_WDT_USE_ESP_TIMER
     /* If a task watchdog timer is running, we have to stop it. */
@@ -1739,7 +1745,9 @@ esp_err_t esp_light_sleep_start(void)
 #endif
 
     /* Restore port critical before unstalling other CPU */
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
     xPortThreadSafeDisclaim();
+#endif
 #if !CONFIG_FREERTOS_UNICORE
     sleep_smp_cpu_wakeup_prepare();
 #endif
