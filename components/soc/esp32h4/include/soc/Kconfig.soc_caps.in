@@ -985,7 +985,7 @@ config SOC_EFUSE_DIS_DIRECT_BOOT
 
 config SOC_EFUSE_SOFT_DIS_JTAG
     bool
-    default n
+    default y
 
 config SOC_EFUSE_DIS_ICACHE
     bool
