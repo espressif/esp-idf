@@ -252,6 +252,12 @@ static void btc_a2dp_sink_handle_inc_media(BT_HDR *p_msg)
         return;
     }
 
+    if (p_msg->offset < sizeof(UINT32)) {
+        APPL_TRACE_WARNING("%s: invalid offset %u for timestamp", __func__, p_msg->offset);
+        osi_free(p_msg);
+        return;
+    }
+
     if (p_msg->layer_specific != a2dp_sink_local_param.media_pkt_seq_num.expected_seq_num) {
         /* Because the sequence number of some devices is not recounted */
         if (!a2dp_sink_local_param.media_pkt_seq_num.seq_num_recount ||
