@@ -3,6 +3,7 @@
 # SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
+import ctypes
 import errno
 import hashlib
 import json
@@ -17,7 +18,6 @@ from io import StringIO
 import rich_click as click
 from esp_pylib.cli_options import MutuallyExclusiveOption
 from esp_pylib.cli_options import OptionEatAll
-import ctypes
 
 def get_short_path_name(long_name):
     if os.name != 'nt':
