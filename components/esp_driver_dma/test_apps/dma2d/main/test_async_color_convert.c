@@ -48,10 +48,10 @@ TEST_CASE("async color convert basic callback", "[async_color_convert]")
 
     uint16_t *src565 = heap_caps_aligned_calloc(64, pixel_num, sizeof(uint16_t),
                                                 MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
-    uint8_t *dst888 = heap_caps_aligned_calloc(64, pixel_num, 3,
-                                               MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
+    uint8_t *dst_bgr24 = heap_caps_aligned_calloc(64, pixel_num, 3,
+                                                  MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
     TEST_ASSERT_NOT_NULL(src565);
-    TEST_ASSERT_NOT_NULL(dst888);
+    TEST_ASSERT_NOT_NULL(dst_bgr24);
 
     for (uint32_t i = 0; i < pixel_num; i++) {
         src565[i] = (uint16_t)((i * 13) ^ 0x5AA5);
@@ -71,7 +71,7 @@ TEST_CASE("async color convert basic callback", "[async_color_convert]")
         .src_height = height,
         .src_x = 0,
         .src_y = 0,
-        .dst_buffer = dst888,
+        .dst_buffer = dst_bgr24,
         .dst_stride = width,
         .dst_height = height,
         .dst_x = 0,
@@ -96,10 +96,10 @@ TEST_CASE("async color convert basic callback", "[async_color_convert]")
     TEST_ESP_OK(esp_async_color_convert_uninstall(conv_hdl));
 
     free(src565);
-    free(dst888);
+    free(dst_bgr24);
 }
 
-TEST_CASE("async color convert roundtrip: RGB565<->RGB888", "[async_color_convert]")
+TEST_CASE("async color convert roundtrip: RGB16<->BGR24", "[async_color_convert]")
 {
     const uint32_t width = 32;
     const uint32_t height = 20;
@@ -107,12 +107,12 @@ TEST_CASE("async color convert roundtrip: RGB565<->RGB888", "[async_color_conver
 
     uint16_t *src565 = heap_caps_aligned_calloc(64, pixel_num, sizeof(uint16_t),
                                                 MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
-    uint8_t *mid888 = heap_caps_aligned_calloc(64, pixel_num, 3,
-                                               MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
+    uint8_t *mid_bgr24 = heap_caps_aligned_calloc(64, pixel_num, 3,
+                                                  MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
     uint16_t *dst565 = heap_caps_aligned_calloc(64, pixel_num, sizeof(uint16_t),
                                                 MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
     TEST_ASSERT_NOT_NULL(src565);
-    TEST_ASSERT_NOT_NULL(mid888);
+    TEST_ASSERT_NOT_NULL(mid_bgr24);
     TEST_ASSERT_NOT_NULL(dst565);
 
     for (uint32_t i = 0; i < pixel_num; i++) {
@@ -127,13 +127,13 @@ TEST_CASE("async color convert roundtrip: RGB565<->RGB888", "[async_color_conver
     async_color_convert_handle_t conv_hdl = NULL;
     TEST_ESP_OK(esp_async_color_convert_install_dma2d(&config, &conv_hdl));
 
-    async_color_convert_request_t req_565_to_888 = {
+    async_color_convert_request_t req_565_to_bgr24 = {
         .src_buffer = src565,
         .src_stride = width,
         .src_height = height,
         .src_x = 0,
         .src_y = 0,
-        .dst_buffer = mid888,
+        .dst_buffer = mid_bgr24,
         .dst_stride = width,
         .dst_height = height,
         .dst_x = 0,
@@ -144,8 +144,8 @@ TEST_CASE("async color convert roundtrip: RGB565<->RGB888", "[async_color_conver
         .dst_color_format = ESP_COLOR_FOURCC_BGR24,
     };
 
-    async_color_convert_request_t req_888_to_565 = {
-        .src_buffer = mid888,
+    async_color_convert_request_t req_bgr24_to_565 = {
+        .src_buffer = mid_bgr24,
         .src_stride = width,
         .src_height = height,
         .src_x = 0,
@@ -161,8 +161,8 @@ TEST_CASE("async color convert roundtrip: RGB565<->RGB888", "[async_color_conver
         .dst_color_format = ESP_COLOR_FOURCC_RGB16,
     };
 
-    TEST_ESP_OK(esp_color_convert_blocking(conv_hdl, &req_565_to_888, -1));
-    TEST_ESP_OK(esp_color_convert_blocking(conv_hdl, &req_888_to_565, -1));
+    TEST_ESP_OK(esp_color_convert_blocking(conv_hdl, &req_565_to_bgr24, -1));
+    TEST_ESP_OK(esp_color_convert_blocking(conv_hdl, &req_bgr24_to_565, -1));
 
     // The final dst565 should be the same as the original src565 after round-trip conversion
     TEST_ASSERT_EQUAL_MEMORY(src565, dst565, pixel_num * sizeof(uint16_t));
@@ -170,7 +170,7 @@ TEST_CASE("async color convert roundtrip: RGB565<->RGB888", "[async_color_conver
     TEST_ESP_OK(esp_async_color_convert_uninstall(conv_hdl));
 
     free(src565);
-    free(mid888);
+    free(mid_bgr24);
     free(dst565);
 }
 
@@ -305,7 +305,189 @@ static void uyvy_to_bgr24_reference_image(const uint8_t *src_uyvy, uint8_t *dst_
     }
 }
 
-TEST_CASE("async color convert UYVY->RGB888 matches reference", "[async_color_convert]")
+TEST_CASE("async color convert swaps RGB24 and BGR24 byte order", "[async_color_convert]")
+{
+    const uint32_t width = 4;
+    const uint32_t height = 2;
+    const size_t pixel_count = width * height;
+    const size_t buf_size = pixel_count * 3;
+    static const uint8_t src_rgb24[] = {
+        0x10, 0x20, 0x30,  0x7F, 0x80, 0x81,  0xAA, 0x55, 0xFE,  0x01, 0xC0, 0x99,
+        0xDE, 0xAD, 0xBE,  0x00, 0x11, 0x22,  0x44, 0x88, 0xCC,  0xF0, 0x0D, 0x42,
+    };
+    static const uint8_t src_bgr24[] = {
+        0x30, 0x20, 0x10,  0x81, 0x80, 0x7F,  0xFE, 0x55, 0xAA,  0x99, 0xC0, 0x01,
+        0xBE, 0xAD, 0xDE,  0x22, 0x11, 0x00,  0xCC, 0x88, 0x44,  0x42, 0x0D, 0xF0,
+    };
+
+    TEST_ASSERT_EQUAL(sizeof(src_rgb24), buf_size);
+    TEST_ASSERT_EQUAL(sizeof(src_bgr24), buf_size);
+
+    uint8_t *rgb24 = heap_caps_aligned_calloc(64, 1, buf_size,
+                                              MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
+    uint8_t *bgr24 = heap_caps_aligned_calloc(64, 1, buf_size,
+                                              MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
+    uint8_t *dst_bgr24 = heap_caps_aligned_calloc(64, 1, buf_size,
+                                                  MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
+    uint8_t *dst_rgb24 = heap_caps_aligned_calloc(64, 1, buf_size,
+                                                  MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(rgb24);
+    TEST_ASSERT_NOT_NULL(bgr24);
+    TEST_ASSERT_NOT_NULL(dst_bgr24);
+    TEST_ASSERT_NOT_NULL(dst_rgb24);
+    memcpy(rgb24, src_rgb24, buf_size);
+    memcpy(bgr24, src_bgr24, buf_size);
+    memset(dst_bgr24, 0xA5, buf_size);
+    memset(dst_rgb24, 0x5A, buf_size);
+
+    async_color_convert_config_t config = {
+        .backlog = 1,
+        .intr_priority = 0,
+        .dma_burst_size = 16,
+    };
+    async_color_convert_handle_t conv_hdl = NULL;
+    TEST_ESP_OK(esp_async_color_convert_install_dma2d(&config, &conv_hdl));
+
+    async_color_convert_request_t req_rgb_to_bgr = {
+        .src_buffer = rgb24,
+        .src_stride = width,
+        .src_height = height,
+        .src_x = 0,
+        .src_y = 0,
+        .dst_buffer = dst_bgr24,
+        .dst_stride = width,
+        .dst_height = height,
+        .dst_x = 0,
+        .dst_y = 0,
+        .copy_width = width,
+        .copy_height = height,
+        .src_color_format = ESP_COLOR_FOURCC_RGB24,
+        .dst_color_format = ESP_COLOR_FOURCC_BGR24,
+    };
+    async_color_convert_request_t req_bgr_to_rgb = {
+        .src_buffer = bgr24,
+        .src_stride = width,
+        .src_height = height,
+        .src_x = 0,
+        .src_y = 0,
+        .dst_buffer = dst_rgb24,
+        .dst_stride = width,
+        .dst_height = height,
+        .dst_x = 0,
+        .dst_y = 0,
+        .copy_width = width,
+        .copy_height = height,
+        .src_color_format = ESP_COLOR_FOURCC_BGR24,
+        .dst_color_format = ESP_COLOR_FOURCC_RGB24,
+    };
+
+    TEST_ESP_OK(esp_color_convert_blocking(conv_hdl, &req_rgb_to_bgr, -1));
+    TEST_ASSERT_EQUAL_MEMORY(src_bgr24, dst_bgr24, buf_size);
+
+    TEST_ESP_OK(esp_color_convert_blocking(conv_hdl, &req_bgr_to_rgb, -1));
+    TEST_ASSERT_EQUAL_MEMORY(src_rgb24, dst_rgb24, buf_size);
+
+    TEST_ESP_OK(esp_async_color_convert_uninstall(conv_hdl));
+    free(rgb24);
+    free(bgr24);
+    free(dst_bgr24);
+    free(dst_rgb24);
+}
+
+// Verifies the scramble route and BGR24/RGB24->UYVY conversion compose correctly.
+TEST_CASE("async color convert RGB24 and BGR24 inputs produce identical UYVY output", "[async_color_convert]")
+{
+    const uint32_t width = 4;
+    const uint32_t height = 2;
+    const size_t pixel_count = width * height;
+    const size_t rgb_size = pixel_count * 3;
+    const size_t uyvy_size = pixel_count * 2;
+    static const uint8_t src_rgb24[] = {
+        0x10, 0x20, 0x30,  0x7F, 0x80, 0x81,  0xAA, 0x55, 0xFE,  0x01, 0xC0, 0x99,
+        0xDE, 0xAD, 0xBE,  0x00, 0x11, 0x22,  0x44, 0x88, 0xCC,  0xF0, 0x0D, 0x42,
+    };
+    static const uint8_t src_bgr24[] = {
+        0x30, 0x20, 0x10,  0x81, 0x80, 0x7F,  0xFE, 0x55, 0xAA,  0x99, 0xC0, 0x01,
+        0xBE, 0xAD, 0xDE,  0x22, 0x11, 0x00,  0xCC, 0x88, 0x44,  0x42, 0x0D, 0xF0,
+    };
+    const color_conv_std_rgb_yuv_t conv_std = COLOR_CONV_STD_RGB_YUV_BT601;
+
+    TEST_ASSERT_EQUAL(sizeof(src_rgb24), rgb_size);
+    TEST_ASSERT_EQUAL(sizeof(src_bgr24), rgb_size);
+
+    uint8_t *rgb24 = heap_caps_aligned_calloc(64, 1, rgb_size,
+                                              MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
+    uint8_t *bgr24 = heap_caps_aligned_calloc(64, 1, rgb_size,
+                                              MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
+    uint8_t *dst_from_rgb24 = heap_caps_aligned_calloc(64, 1, uyvy_size,
+                                                       MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
+    uint8_t *dst_from_bgr24 = heap_caps_aligned_calloc(64, 1, uyvy_size,
+                                                       MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(rgb24);
+    TEST_ASSERT_NOT_NULL(bgr24);
+    TEST_ASSERT_NOT_NULL(dst_from_rgb24);
+    TEST_ASSERT_NOT_NULL(dst_from_bgr24);
+    memcpy(rgb24, src_rgb24, rgb_size);
+    memcpy(bgr24, src_bgr24, rgb_size);
+
+    async_color_convert_config_t config = {
+        .backlog = 2,
+        .intr_priority = 0,
+        .dma_burst_size = 16,
+    };
+    async_color_convert_handle_t conv_hdl = NULL;
+    TEST_ESP_OK(esp_async_color_convert_install_dma2d(&config, &conv_hdl));
+
+    memset(dst_from_rgb24, 0xA5, uyvy_size);
+    memset(dst_from_bgr24, 0x5A, uyvy_size);
+
+    async_color_convert_request_t req_rgb24_to_uyvy = {
+        .src_buffer = rgb24,
+        .src_stride = width,
+        .src_height = height,
+        .src_x = 0,
+        .src_y = 0,
+        .dst_buffer = dst_from_rgb24,
+        .dst_stride = width,
+        .dst_height = height,
+        .dst_x = 0,
+        .dst_y = 0,
+        .copy_width = width,
+        .copy_height = height,
+        .src_color_format = ESP_COLOR_FOURCC_RGB24,
+        .dst_color_format = ESP_COLOR_FOURCC_UYVY,
+        .color_conv_std = conv_std,
+    };
+    async_color_convert_request_t req_bgr24_to_uyvy = {
+        .src_buffer = bgr24,
+        .src_stride = width,
+        .src_height = height,
+        .src_x = 0,
+        .src_y = 0,
+        .dst_buffer = dst_from_bgr24,
+        .dst_stride = width,
+        .dst_height = height,
+        .dst_x = 0,
+        .dst_y = 0,
+        .copy_width = width,
+        .copy_height = height,
+        .src_color_format = ESP_COLOR_FOURCC_BGR24,
+        .dst_color_format = ESP_COLOR_FOURCC_UYVY,
+        .color_conv_std = conv_std,
+    };
+
+    TEST_ESP_OK(esp_color_convert_blocking(conv_hdl, &req_rgb24_to_uyvy, -1));
+    TEST_ESP_OK(esp_color_convert_blocking(conv_hdl, &req_bgr24_to_uyvy, -1));
+    TEST_ASSERT_EQUAL_MEMORY(dst_from_bgr24, dst_from_rgb24, uyvy_size);
+
+    TEST_ESP_OK(esp_async_color_convert_uninstall(conv_hdl));
+    free(rgb24);
+    free(bgr24);
+    free(dst_from_rgb24);
+    free(dst_from_bgr24);
+}
+
+TEST_CASE("async color convert UYVY->BGR24 matches reference", "[async_color_convert]")
 {
     const uint32_t src_stride = 32;
     const uint32_t dst_stride = 64;

@@ -519,7 +519,9 @@ esp_err_t esp_lcd_dpi_panel_enable_dma2d(esp_lcd_panel_handle_t panel)
 
     // Initialize the async color convert backend used by the built-in DMA2D copy hook.
     // Use its default backlog to queue multiple frame buffer copy requests.
-    async_color_convert_config_t fbcpy_config = {};
+    async_color_convert_config_t fbcpy_config = {
+        .dma_burst_size = 128, // for better performance
+    };
     ESP_RETURN_ON_ERROR(esp_async_color_convert_install_dma2d(&fbcpy_config, &dpi_panel->fbcpy_handle), TAG, "install async frame buffer copy backend failed");
 
     // Register the DMA2D draw bitmap hook

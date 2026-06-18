@@ -148,7 +148,7 @@
 支持的转换格式
 --------------
 
-本驱动支持以下格式组合：
+本驱动当前支持以下格式组合：
 
 .. list-table::
     :header-rows: 1
@@ -156,31 +156,53 @@
     * - 源格式
       - 目标格式
       - 转换标准
-    * - 与目标格式相同（跳过转换）
-      - 与源格式相同（跳过转换）
+    * - ``ESP_COLOR_FOURCC_RGB16``
+      - ``ESP_COLOR_FOURCC_RGB16``
       - 不适用
-    * - RGB565
-      - RGB888
+    * - ``ESP_COLOR_FOURCC_BGR24``
+      - ``ESP_COLOR_FOURCC_BGR24``
       - 不适用
-    * - RGB888
-      - RGB565
+    * - ``ESP_COLOR_FOURCC_RGB24``
+      - ``ESP_COLOR_FOURCC_RGB24``
       - 不适用
-    * - RGB888
-      - UYVY422
+    * - ``ESP_COLOR_FOURCC_UYVY``
+      - ``ESP_COLOR_FOURCC_UYVY``
+      - 不适用
+    * - ``ESP_COLOR_FOURCC_BGR24``
+      - ``ESP_COLOR_FOURCC_RGB24``
+      - 不适用
+    * - ``ESP_COLOR_FOURCC_RGB24``
+      - ``ESP_COLOR_FOURCC_BGR24``
+      - 不适用
+    * - ``ESP_COLOR_FOURCC_RGB16``
+      - ``ESP_COLOR_FOURCC_BGR24``
+      - 不适用
+    * - ``ESP_COLOR_FOURCC_BGR24``
+      - ``ESP_COLOR_FOURCC_RGB16``
+      - 不适用
+    * - ``ESP_COLOR_FOURCC_RGB24``
+      - ``ESP_COLOR_FOURCC_RGB16``
+      - 不适用
+    * - ``ESP_COLOR_FOURCC_BGR24``
+      - ``ESP_COLOR_FOURCC_UYVY``
       - BT.601
-    * - RGB888
-      - UYVY422
+    * - ``ESP_COLOR_FOURCC_BGR24``
+      - ``ESP_COLOR_FOURCC_UYVY``
       - BT.709
-    * - UYVY422
-      - RGB888
+    * - ``ESP_COLOR_FOURCC_RGB24``
+      - ``ESP_COLOR_FOURCC_UYVY``
       - BT.601
-    * - UYVY422
-      - RGB888
+    * - ``ESP_COLOR_FOURCC_RGB24``
+      - ``ESP_COLOR_FOURCC_UYVY``
+      - BT.709
+    * - ``ESP_COLOR_FOURCC_UYVY``
+      - ``ESP_COLOR_FOURCC_BGR24``
+      - BT.601
+    * - ``ESP_COLOR_FOURCC_UYVY``
+      - ``ESP_COLOR_FOURCC_BGR24``
       - BT.709
 
 .. note::
-
-    在本驱动中，RGB888 使用 ``ESP_COLOR_FOURCC_BGR24``，UYVY422 使用 ``ESP_COLOR_FOURCC_UYVY``。
 
     所有请求都需要设置 :cpp:member:`async_color_convert_request_t::src_color_format` 和
     :cpp:member:`async_color_convert_request_t::dst_color_format`。
