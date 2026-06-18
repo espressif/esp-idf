@@ -51,6 +51,16 @@ examples/security/nvs_encryption_hmac:
   depends_filepatterns:
     - examples/security/nvs_encryption_hmac/**/*
 
+examples/security/psa_its_custom_backend:
+  disable:
+    - if: IDF_TARGET not in ["esp32"]
+      reason: example is target-agnostic, one chip is enough for CI
+  depends_components:
+    - mbedtls
+    - nvs_flash
+  depends_filepatterns:
+    - examples/security/psa_its_custom_backend/**/*
+
 examples/security/security_features_app:
   disable:
     - if: IDF_TARGET not in ["esp32c3", "esp32s3"]
