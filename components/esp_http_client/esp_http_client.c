@@ -969,6 +969,10 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
             esp_transport_ssl_set_client_key_data_der(ssl, config->client_key_pem, config->client_key_len);
         }
     }
+
+    if (config->client_key_psa_id != 0) {
+        esp_transport_ssl_set_client_key_psa_id(ssl, config->client_key_psa_id);
+    }
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
     if (config->use_ecdsa_peripheral) {
 #if SOC_ECDSA_SUPPORT_CURVE_P384

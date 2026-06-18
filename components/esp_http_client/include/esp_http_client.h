@@ -200,6 +200,8 @@ typedef struct {
                                                      DER Certificate - Length of the buffer pointed to by client_cert_der. Should be the length of the certificate. */
     const char                  *client_key_pem;     /*!< SSL client key, PEM format as string, if the server requires to verify client */
     size_t                      client_key_len;      /*!< Length of the buffer pointed to by client_key_pem. May be 0 for null-terminated pem */
+    uint32_t                    client_key_psa_id;   /*!< PSA key ID for the client private key. When non-zero, takes precedence over client_key_pem.
+                                                          The key must have been created with PSA_KEY_USAGE_SIGN_HASH. */
     const char                  *client_key_password;      /*!< Client key decryption password string */
     size_t                      client_key_password_len;   /*!< String length of the password pointed to by client_key_password */
     esp_http_client_proto_ver_t tls_version;         /*!< TLS protocol version of the connection, e.g., TLS 1.2, TLS 1.3 (default - no preference) */
