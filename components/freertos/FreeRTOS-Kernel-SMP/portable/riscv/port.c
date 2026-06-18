@@ -1,11 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "sdkconfig.h"
+#include <stdbool.h>
 #include <string.h>
+#include "esp_compiler.h"
 #include "soc/soc_caps.h"
 #include "soc/periph_defs.h"
 #include "soc/system_reg.h"
@@ -75,6 +77,7 @@ StackType_t *xIsrStackTop = &xIsrStack[0] + (configISR_STACK_SIZE & (~((portPOIN
 // Variables used for IDF style critical sections. These are orthogonal to FreeRTOS critical sections
 static UBaseType_t port_uxCriticalNestingIDF = 0;
 static UBaseType_t port_uxCriticalOldInterruptStateIDF = 0;
+volatile bool port_xThreadSafeClaimed = false;
 
 /* ------------------------------------------------ IDF Compatibility --------------------------------------------------
  * - These need to be defined for IDF to compile
@@ -82,8 +85,25 @@ static UBaseType_t port_uxCriticalOldInterruptStateIDF = 0;
 
 // ------------------ Critical Sections --------------------
 
+void xPortThreadSafeClaim(void)
+{
+    configASSERT(!xPortCanYield());
+    configASSERT(!port_xThreadSafeClaimed);
+    port_xThreadSafeClaimed = true;
+}
+
+void xPortThreadSafeDisclaim(void)
+{
+    configASSERT(!xPortCanYield());
+    configASSERT(port_xThreadSafeClaimed);
+    port_xThreadSafeClaimed = false;
+}
+
 void vPortEnterCritical(void)
 {
+    if (unlikely(port_xThreadSafeClaimed)) {
+        return;
+    }
     // Save current interrupt threshold and disable interrupts
     UBaseType_t old_thresh = ulPortSetInterruptMask();
     // Update the IDF critical nesting count
@@ -96,6 +116,9 @@ void vPortEnterCritical(void)
 
 void vPortExitCritical(void)
 {
+    if (unlikely(port_xThreadSafeClaimed)) {
+        return;
+    }
 
     /* Critical section nesting coung must never be negative */
     configASSERT( port_uxCriticalNestingIDF > 0 );
@@ -293,6 +316,7 @@ BaseType_t xPortStartScheduler(void)
 {
     uxInterruptNesting = 0;
     port_uxCriticalNestingIDF = 0;
+    port_xThreadSafeClaimed = false;
     uxSchedulerRunning = 0;
 #if configNUM_CORES > 1
     port_uxCoreStartupDone[xPortGetCoreID()] = 0;

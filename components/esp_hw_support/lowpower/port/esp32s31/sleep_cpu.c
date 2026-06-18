@@ -41,7 +41,7 @@
 
 
 #if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
-static DRAM_ATTR smp_retention_state_t s_smp_retention_state[portNUM_PROCESSORS];
+static DRAM_ATTR _Atomic(smp_retention_state_t) s_smp_retention_state[portNUM_PROCESSORS];
 #endif
 
 static bool s_fpu_saved[portNUM_PROCESSORS];
@@ -418,16 +418,11 @@ esp_err_t sleep_cpu_configure(bool light_sleep_enable)
 
 #if !CONFIG_FREERTOS_UNICORE
 #if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
-static IRAM_ATTR void smp_core_do_retention(void)
+IRAM_ATTR void sleep_cpu_retention_execute(void* arg)
 {
+    (void) arg;
     esp_cpu_branch_prediction_disable();
     uint8_t core_id = esp_cpu_get_core_id();
-
-    if (core_id == 0) {
-        WRITE_PERI_REG(HP_SYSTEM_CPU_INT_FROM_CPU_2_REG, 0);
-    } else {
-        WRITE_PERI_REG(HP_SYSTEM_CPU_INT_FROM_CPU_3_REG, 0);
-    }
 
     // Wait another core start to do retention
     ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-infinite-loop")
@@ -496,19 +491,16 @@ IRAM_ATTR void esp_sleep_cpu_skip_retention(void) {
 }
 #endif
 
-void sleep_smp_cpu_sleep_prepare(void)
+void sleep_cpu_retention_start(void)
 {
 #if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     while (atomic_load(&s_smp_retention_state[!esp_cpu_get_core_id()]) != SMP_IDLE) {
         ;
     }
-    esp_ipc_isr_call((esp_ipc_isr_func_t)smp_core_do_retention, NULL);
-#else
-    esp_ipc_isr_stall_other_cpu();
 #endif
 }
 
-void sleep_smp_cpu_wakeup_prepare(void)
+void sleep_cpu_retention_finish(void)
 {
 #if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
     uint8_t core_id = esp_cpu_get_core_id();
@@ -520,8 +512,6 @@ void sleep_smp_cpu_wakeup_prepare(void)
         ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-infinite-loop")
     }
     atomic_store(&s_smp_retention_state[core_id], SMP_IDLE);
-#else
-    esp_ipc_isr_release_other_cpu();
 #endif
 }
 #endif //!CONFIG_FREERTOS_UNICORE
