@@ -77,7 +77,9 @@ StackType_t *xIsrStackTop = &xIsrStack[0] + (configISR_STACK_SIZE & (~((portPOIN
 // Variables used for IDF style critical sections. These are orthogonal to FreeRTOS critical sections
 static UBaseType_t port_uxCriticalNestingIDF = 0;
 static UBaseType_t port_uxCriticalOldInterruptStateIDF = 0;
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
 volatile bool port_xThreadSafeClaimed = false;
+#endif
 
 /* ------------------------------------------------ IDF Compatibility --------------------------------------------------
  * - These need to be defined for IDF to compile
@@ -85,6 +87,7 @@ volatile bool port_xThreadSafeClaimed = false;
 
 // ------------------ Critical Sections --------------------
 
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
 void xPortThreadSafeClaim(void)
 {
     configASSERT(!xPortCanYield());
@@ -98,12 +101,15 @@ void xPortThreadSafeDisclaim(void)
     configASSERT(port_xThreadSafeClaimed);
     port_xThreadSafeClaimed = false;
 }
+#endif /* CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM */
 
 void vPortEnterCritical(void)
 {
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
     if (unlikely(port_xThreadSafeClaimed)) {
         return;
     }
+#endif
     // Save current interrupt threshold and disable interrupts
     UBaseType_t old_thresh = ulPortSetInterruptMask();
     // Update the IDF critical nesting count
@@ -116,9 +122,11 @@ void vPortEnterCritical(void)
 
 void vPortExitCritical(void)
 {
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
     if (unlikely(port_xThreadSafeClaimed)) {
         return;
     }
+#endif
 
     /* Critical section nesting coung must never be negative */
     configASSERT( port_uxCriticalNestingIDF > 0 );
@@ -316,7 +324,9 @@ BaseType_t xPortStartScheduler(void)
 {
     uxInterruptNesting = 0;
     port_uxCriticalNestingIDF = 0;
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
     port_xThreadSafeClaimed = false;
+#endif
     uxSchedulerRunning = 0;
 #if configNUM_CORES > 1
     port_uxCoreStartupDone[xPortGetCoreID()] = 0;

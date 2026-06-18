@@ -229,6 +229,7 @@ static inline void __attribute__((always_inline)) vPortEnterCritical(portMUX_TYP
  */
 void vPortExitCritical(portMUX_TYPE *mux);
 
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
 /**
  * @brief Claim thread-safe region start
  *        If claimed, vPortEnterCritical/vPortExitCritical on the current core are no-ops.
@@ -244,6 +245,7 @@ void xPortThreadSafeClaim(void);
  * @note !!! Caller must guarantee thread safety between Claim and Disclaim !!!
  */
 void xPortThreadSafeDisclaim(void);
+#endif /* CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM */
 
 /**
  * @brief FreeRTOS Compliant version of xPortEnterCriticalTimeout()
