@@ -155,6 +155,76 @@ Validation
 
 Implementations should include tests that cover alignment checks, flag-driven behaviour (read-only, erase-before-write, NAND-style writes), and correct propagation of errors through stacked devices. Middleware that wraps lower handles must also verify that handle lifetime management remains consistent across the stack.
 
+.. _blockdev-ioctl-management:
+
+Ioctl Command Management
+------------------------
+
+The ioctl command space (``0x00``–``0xFF``) is shared across all components in an ESP-IDF project. To prevent silent collisions at integration time, the Block Device Layer provides a build-time overlap checker that validates command reservations across the entire component tree.
+
+Command Ranges
+^^^^^^^^^^^^^^
+
+=============  ====================================  ==============================
+Range          Base macro                              Purpose
+=============  ====================================  ==============================
+``0x00–0x7F``  ``ESP_BLOCKDEV_CMD_SYSTEM_BASE``       ESP-IDF system commands
+``0x80–0xFF``  ``ESP_BLOCKDEV_CMD_USER_BASE``         User / component extensions
+=============  ====================================  ==============================
+
+Reservation Macros
+^^^^^^^^^^^^^^^^^^
+
+Components declare their ioctl command allocations using the following macros (defined in ``esp_blockdev.h``):
+
+.. code-block:: c
+
+   // Reserve an inclusive range of command values
+   ESP_BLOCKDEV_RESERVE_CMD_RANGE(component, start, end);
+
+   // Reserve exactly one command value (shorthand for start == end)
+   ESP_BLOCKDEV_RESERVE_CMD(component, start);
+
+Both ``start`` and ``end`` are inclusive and must satisfy:
+
+* ``0 <= start <= end <= 255``
+
+Example
+"""""""
+
+.. code-block:: c
+
+   #include "esp_blockdev.h"
+
+   /* Reserve system commands 0x0A..0x14 for nand_flash */
+   ESP_BLOCKDEV_RESERVE_CMD_RANGE(nand_flash,
+       ESP_BLOCKDEV_CMD_SYSTEM_BASE + 10,
+       ESP_BLOCKDEV_CMD_SYSTEM_BASE + 20);
+
+   /* Reserve a single user command for sdcard */
+   ESP_BLOCKDEV_RESERVE_CMD(sdcard, ESP_BLOCKDEV_CMD_USER_BASE + 1);
+
+Registering Definition Files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Each component that owns ioctl definitions must register the file(s) containing reservation macros with the build system. This is done in the component's ``CMakeLists.txt``:
+
+.. code-block:: cmake
+
+   idf_build_set_property(
+       ESP_BLOCKDEV_IOCTL_DEF_FILES
+       "${CMAKE_CURRENT_LIST_DIR}/include/my_ioctl_defs.h"
+       APPEND
+   )
+
+The ``esp_blockdev`` component itself registers its own header, so core commands (``ESP_BLOCKDEV_CMD_MARK_DELETED``, ``ESP_BLOCKDEV_CMD_ERASE_CONTENTS``) are always checked.
+
+When an overlap or invalid range is detected, the build fails with a diagnostic showing the conflicting component names, hex ranges, and source file paths.
+
+.. note::
+
+   Adjacent ranges are valid. For example ``0x10..0x1F`` and ``0x20..0x2F`` do **not** overlap.
+
 .. _blockdev-apis:
 
 API Reference

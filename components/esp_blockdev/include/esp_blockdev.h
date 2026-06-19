@@ -26,6 +26,55 @@ extern "C" {
  */
 
 /**
+ * @brief Register a reserved ioctl command value or inclusive range for overlap checking
+ *
+ * These macros are machine-readable markers for the build-time checker. They do not affect
+ * normal builds unless @c ESP_BLOCKDEV_CHECK_CMD_OVERLAP is defined.
+ *
+ * Register reservation declarations in headers or other files that are appended to
+ * @c ESP_BLOCKDEV_IOCTL_DEF_FILES.
+ *
+ * @code{c}
+ * ESP_BLOCKDEV_RESERVE_CMD_RANGE(nand_flash, ESP_BLOCKDEV_CMD_SYSTEM_BASE + 10, ESP_BLOCKDEV_CMD_SYSTEM_BASE + 20);
+ * ESP_BLOCKDEV_RESERVE_CMD(sdcard, ESP_BLOCKDEV_CMD_USER_BASE + 1);
+ * @endcode
+ */
+/** @cond */
+#ifdef ESP_BLOCKDEV_CHECK_CMD_OVERLAP
+
+#define ESP_BLOCKDEV_RESERVE_CMD_RANGE(component, start, end) \
+    ESP_BLOCKDEV_RESERVE_MARKER(component, (start), (end))
+
+#define ESP_BLOCKDEV_RESERVE_CMD(component, start) \
+    ESP_BLOCKDEV_RESERVE_CMD_RANGE(component, start, start)
+
+#else
+/** @endcond */
+
+/**
+ * @brief Reserve an inclusive range of ioctl command values for build-time overlap checking
+ *
+ * @param component  Unquoted identifier naming the owning component
+ * @param start      First command value in the range (0x00–0xFF)
+ * @param end        Last command value in the range (0x00–0xFF, >= start)
+ */
+#define ESP_BLOCKDEV_RESERVE_CMD_RANGE(component, start, end)
+
+/**
+ * @brief Reserve a single ioctl command value for build-time overlap checking
+ *
+ * Equivalent to ``ESP_BLOCKDEV_RESERVE_CMD_RANGE(component, start, start)``.
+ *
+ * @param component  Unquoted identifier naming the owning component
+ * @param start      The command value to reserve (0x00–0xFF)
+ */
+#define ESP_BLOCKDEV_RESERVE_CMD(component, start)
+
+/** @cond */
+#endif
+/** @endcond */
+
+/**
  * @defgroup esp_blockdev_ioctl_cmds Block device ioctl commands
  *
  * Commands fall into two ranges: system (internal device management, not for typical application use; values 0-127)
@@ -33,6 +82,8 @@ extern "C" {
  *
  * @{
  */
+
+/* --- ESP_BLOCKDEV_CMD_ reservation section begin --- */
 
 #define ESP_BLOCKDEV_CMD_SYSTEM_BASE                0x00                                /*!< System commands base value */
 #define ESP_BLOCKDEV_CMD_USER_BASE                  0x80                                /*!< User commands base value */
@@ -75,6 +126,13 @@ extern "C" {
  * @endcode
  */
 #define ESP_BLOCKDEV_CMD_ERASE_CONTENTS             (ESP_BLOCKDEV_CMD_SYSTEM_BASE + 1)
+
+/** @cond */
+/** Reserve the core esp_blockdev commands for overlap checking */
+ESP_BLOCKDEV_RESERVE_CMD_RANGE(esp_blockdev, ESP_BLOCKDEV_CMD_SYSTEM_BASE, ESP_BLOCKDEV_CMD_SYSTEM_BASE + 1);
+/** @endcond */
+
+/* --- ESP_BLOCKDEV_CMD_ reservation section end --- */
 
 /** @} */
 
