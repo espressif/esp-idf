@@ -1286,6 +1286,64 @@ TEST_CASE("httpd_req_get_hdr_value_str_ptr validates NULL args", "[HTTP SERVER][
                       httpd_req_get_hdr_value_str_ptr(&req, "X-Custom", &val, NULL));
 }
 
+/* Work queued after the shutdown message must still run on shutdown (freeing
+ * what its argument owns) rather than being dropped when the thread exits. */
+
+static SemaphoreHandle_t blocker_started;
+static SemaphoreHandle_t blocker_release;
+static SemaphoreHandle_t trailing_done;
+
+static void blocker_work_fn(void *arg)
+{
+    xSemaphoreGive(blocker_started);
+    xSemaphoreTake(blocker_release, portMAX_DELAY);
+}
+
+static void trailing_work_fn(void *arg)
+{
+    free(arg);
+    xSemaphoreGive(trailing_done);
+}
+
+static void stop_task(void *arg)
+{
+    httpd_stop((httpd_handle_t)arg);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("Queued work runs on shutdown", "[HTTP SERVER]")
+{
+    test_case_uses_tcpip();
+
+    blocker_started = xSemaphoreCreateBinary();
+    blocker_release = xSemaphoreCreateBinary();
+    trailing_done   = xSemaphoreCreateBinary();
+    TEST_ASSERT(blocker_started && blocker_release && trailing_done);
+
+    httpd_handle_t hd = test_httpd_start(0);
+
+    /* Occupy the server thread so it cannot drain the control socket. */
+    TEST_ASSERT(httpd_queue_work(hd, blocker_work_fn, NULL) == ESP_OK);
+    TEST_ASSERT(xSemaphoreTake(blocker_started, pdMS_TO_TICKS(1000)) == pdTRUE);
+
+    /* Request shutdown (enqueues the shutdown message) while the thread is
+     * blocked, then queue work behind it. */
+    TEST_ASSERT(xTaskCreate(stop_task, "httpd_stop", 4096, hd, 5, NULL) == pdPASS);
+    vTaskDelay(pdMS_TO_TICKS(100));
+    void *resource = malloc(1);
+    TEST_ASSERT(resource);
+    TEST_ASSERT(httpd_queue_work(hd, trailing_work_fn, resource) == ESP_OK);
+
+    /* Let the thread resume: it processes the shutdown message and must still
+     * run the trailing work before exiting. */
+    xSemaphoreGive(blocker_release);
+    TEST_ASSERT(xSemaphoreTake(trailing_done, pdMS_TO_TICKS(1000)) == pdTRUE);
+
+    vSemaphoreDelete(blocker_started);
+    vSemaphoreDelete(blocker_release);
+    vSemaphoreDelete(trailing_done);
+}
+
 void app_main(void)
 {
     unity_run_menu();
