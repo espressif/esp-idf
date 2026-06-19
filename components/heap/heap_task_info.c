@@ -343,6 +343,7 @@ HEAP_IRAM_ATTR void heap_caps_update_per_task_info_realloc(heap_t *heap, void *o
 
                     /* remove the alloc from the list. The updated alloc stats are added later
                      * in the function */
+                    alloc_stat = NULL;
                     STAILQ_FOREACH(alloc_stat, &heap_stats->allocs_stats, next_alloc_stat) {
                         if (alloc_stat->alloc_stat.address == old_ptr) {
                             STAILQ_REMOVE(&heap_stats->allocs_stats, alloc_stat, alloc_stats, next_alloc_stat);
