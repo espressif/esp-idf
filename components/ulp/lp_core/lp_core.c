@@ -115,7 +115,11 @@ esp_err_t ulp_lp_core_run(ulp_lp_core_cfg_t* cfg)
     /* Enable reset CPU when going to sleep */
     /* Avoid resetting chip in sleep mode when debugger is attached,
        otherwise configured HW breakpoints and dcsr.ebreak* bits will be missed */
-    lp_core_ll_rst_at_sleep_enable(!(CONFIG_ULP_NORESET_UNDER_DEBUG && esp_cpu_dbgr_is_attached()));
+#if CONFIG_ULP_NORESET_UNDER_DEBUG
+    lp_core_ll_rst_at_sleep_enable(!esp_cpu_dbgr_is_attached());
+#else
+    lp_core_ll_rst_at_sleep_enable(true);
+#endif
 
     /* Set wake-up sources */
     lp_core_ll_set_wakeup_source(lp_core_get_wakeup_source_hw_flags(cfg->wakeup_source));
@@ -183,7 +187,11 @@ void ulp_lp_core_stop(void)
         lp_core_ll_stall_at_sleep_request(true);
         /* Avoid resetting chip in sleep mode when debugger is attached,
         otherwise configured HW breakpoints and dcsr.ebreak* bits will be missed */
-        lp_core_ll_rst_at_sleep_enable(!CONFIG_ULP_NORESET_UNDER_DEBUG);
+#if CONFIG_ULP_NORESET_UNDER_DEBUG
+        lp_core_ll_rst_at_sleep_enable(false);
+#else
+        lp_core_ll_rst_at_sleep_enable(true);
+#endif
         lp_core_ll_debug_module_enable(true);
     }
     /* Disable wake-up source and put lp core to sleep */
