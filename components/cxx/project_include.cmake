@@ -1,0 +1,7 @@
+if(NOT CONFIG_IDF_TARGET_LINUX)
+    if(CONFIG_COMPILER_CXX_ATOMIC_LOCK_POLICY)
+        idf_toolchain_add_flags(CXX_COMPILE_OPTIONS "-D_GLIBCXX_HAVE_ATOMIC_LOCK_POLICY=1")
+    else()
+        idf_toolchain_remove_flags(CXX_COMPILE_OPTIONS "-D_GLIBCXX_HAVE_ATOMIC_LOCK_POLICY=1")
+    endif()
+endif()

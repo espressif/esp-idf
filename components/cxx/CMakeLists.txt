@@ -94,3 +94,36 @@ target_link_libraries(${COMPONENT_LIB} PUBLIC libgcc_cxx)
 if(NOT CONFIG_COMPILER_CXX_EXCEPTIONS)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u __cxx_fatal_exception")
 endif()
+
+# When the lock-free atomic policy is forced, verify the final executable does
+# not end up with mixed __gnu_cxx::_Lock_policy instantiations (which can happen
+# when linking prebuilt libraries built with a different setting).
+if(CONFIG_COMPILER_CXX_ATOMIC_LOCK_POLICY)
+    if(IDF_BUILD_V2)
+        function(cxx_check_atomic_policy target)
+            add_custom_command(TARGET ${target} POST_BUILD
+                COMMAND ${CMAKE_COMMAND}
+                    -DELF_FILE=$<TARGET_FILE:${target}>
+                    -DCMAKE_OBJDUMP=${CMAKE_OBJDUMP}
+                    -P "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/check_cxx_atomic_policy.cmake"
+                COMMENT "Checking C++ atomic lock policy in linked executable"
+                VERBATIM)
+        endfunction()
+        idf_component_register_build_event_callback(EVENT POST_ELF CALLBACK cxx_check_atomic_policy)
+    else()
+        idf_build_get_property(build_dir BUILD_DIR)
+        idf_build_get_property(elf_target EXECUTABLE GENERATOR_EXPRESSION)
+        set(_cxx_atomic_policy_check_marker "${build_dir}/.cxx_atomic_policy_checked")
+        add_custom_command(OUTPUT "${_cxx_atomic_policy_check_marker}"
+            COMMAND ${CMAKE_COMMAND}
+                -DELF_FILE=$<TARGET_FILE:$<GENEX_EVAL:${elf_target}>>
+                -DCMAKE_OBJDUMP=${CMAKE_OBJDUMP}
+                -P "${CMAKE_CURRENT_LIST_DIR}/check_cxx_atomic_policy.cmake"
+            COMMAND ${CMAKE_COMMAND} -E touch "${_cxx_atomic_policy_check_marker}"
+            DEPENDS "$<TARGET_FILE:$<GENEX_EVAL:${elf_target}>>"
+            COMMENT "Checking C++ atomic lock policy in linked executable"
+            VERBATIM)
+        add_custom_target(cxx_check_atomic_policy DEPENDS "${_cxx_atomic_policy_check_marker}")
+        idf_build_add_post_elf_dependency("${CMAKE_PROJECT_NAME}.elf" cxx_check_atomic_policy)
+    endif()
+endif()

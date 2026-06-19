@@ -160,6 +160,7 @@ ESP-IDF 包含一系列堆 API，可以在运行时测量空闲堆内存，请�
    :esp32: - 仅在单核模式下，启用 :ref:`CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY`，可以将 IRAM 作为可按字节访问的内存添加到常规堆内存中使用。注意，此选项会影响性能，并存在由可执行数据引发安全问题的风险。若启用此选项，可以通过设置 :ref:`CONFIG_MBEDTLS_MEM_ALLOC_MODE` 和 :ref:`CONFIG_BT_NIMBLE_MEM_ALLOC_MODE` 选项，优先从内存中分配某些缓冲区。
    :esp32: - 若使用 Bluetooth LE，请优化 :ref:`CONFIG_BTDM_CTRL_BLE_MAX_CONN`。
    :esp32: - 若使用经典蓝牙，请优化 :ref:`CONFIG_BTDM_CTRL_BR_EDR_MAX_ACL_CONN`。
+   :CONFIG_IDF_TARGET_ARCH_RISCV and not esp32c2 and not esp32c3: - 启用 :ref:`CONFIG_COMPILER_CXX_ATOMIC_LOCK_POLICY` 可强制 libstdc++ 对 ``std::shared_ptr`` 引用计数使用无锁实现，而非基于互斥锁的实现，从而避免在每个控制块中嵌入互斥锁，每个 ``shared_ptr`` 约可节省 88 字节堆内存。所有 C++ 目标文件及链接的库必须使用相同设置；有关 ABI 详情，请参阅该配置项的帮助说明。
 
 .. note::
 

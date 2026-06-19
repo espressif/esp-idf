@@ -160,6 +160,7 @@ There are some ESP-IDF configuration options that can reduce heap usage at runti
    :esp32: - In single-core mode only, it is possible to use IRAM as byte-accessible memory added to the regular heap by enabling :ref:`CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY`. Note that this option carries a performance penalty, and the risk of security issues caused by executable data. If this option is enabled, then it is possible to set other options to prefer certain buffers allocated from this memory: :ref:`CONFIG_MBEDTLS_MEM_ALLOC_MODE`, :ref:`NimBLE <CONFIG_BT_NIMBLE_MEM_ALLOC_MODE>`.
    :esp32: - Reduce :ref:`CONFIG_BTDM_CTRL_BLE_MAX_CONN` if using Bluetooth LE.
    :esp32: - Reduce :ref:`CONFIG_BTDM_CTRL_BR_EDR_MAX_ACL_CONN` if using Bluetooth Classic.
+   :CONFIG_IDF_TARGET_ARCH_RISCV and not esp32c2 and not esp32c3: - Enabling :ref:`CONFIG_COMPILER_CXX_ATOMIC_LOCK_POLICY` forces libstdc++ lock-free ``std::shared_ptr`` reference counting instead of a mutex-based implementation, avoiding an embedded mutex in each control block and saving about 88 bytes of heap per ``shared_ptr``. All C++ object files and linked libraries must use the same setting; see the config help for ABI details.
 
 .. note::
 
