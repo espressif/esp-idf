@@ -307,7 +307,7 @@ examples/peripherals/jpeg/jpeg_decode:
 
 examples/peripherals/jpeg/jpeg_encode:
   disable:
-    - if: SOC_JPEG_ENCODE_SUPPORTED != 1 or SOC_SDMMC_HOST_SUPPORTED != 1
+    - if: SOC_JPEG_ENCODE_SUPPORTED != 1
   depends_components:
     - esp_driver_dma
     - esp_hal_jpeg
