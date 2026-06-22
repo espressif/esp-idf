@@ -29,6 +29,8 @@ JTAG 调试
     如果你不熟悉 GDB，请查看此小节以获取 :ref:`Eclipse 集成开发环境 <jtag-debugging-examples-eclipse>` 以及 :ref:`命令行终端 <jtag-debugging-examples-command-line>` 提供的调试示例。
 :ref:`jtag-debugging-building-openocd`
     OpenOCD 源码构建流程参考。
+:ref:`jtag-debugging-semihosting`
+    介绍 semihosting 功能。
 :ref:`jtag-debugging-tips-and-quirks`
     介绍使用 OpenOCD 和 GDB 通过 JTAG 接口调试 {IDF_TARGET_NAME} 时的注意事项和补充内容。
 
@@ -315,6 +317,18 @@ OpenOCD 烧录命令 ``program_esp_bins`` 格式如下：
 
 如需根据特定需求从源码构建 OpenOCD，请参考 `OpenOCD 构建工作流程 <https://github.com/espressif/openocd-esp32/blob/master/.github/workflows/build_openocd.yml>`_。该工作流演示了如何在不同平台 (Windows, Linux, macOS) 上构建 OpenOCD。
 
+.. _jtag-debugging-semihosting:
+
+semihosting
+-----------
+
+借助 semihosting 机制，运行在 {IDF_TARGET_NAME} 上的代码能够通过调试器与主机 PC 进行通信，例如打印调试信息或读写文件等。
+
+.. toctree::
+    :maxdepth: 1
+
+    semihosting
+
 .. _jtag-debugging-tips-and-quirks:
 
 注意事项和补充内容
@@ -338,11 +352,13 @@ OpenOCD 烧录命令 ``program_esp_bins`` 格式如下：
 
     using-debugger
     debugging-examples
+    semihosting
     tips-and-quirks
     ../app_trace
 
 - :doc:`using-debugger`
 - :doc:`debugging-examples`
+- :doc:`semihosting`
 - :doc:`tips-and-quirks`
 - :doc:`../app_trace`
 - `ESP-Prog 调试板介绍 <https://docs.espressif.com/projects/espressif-esp-iot-solution/zh_CN/latest/hw-reference/ESP-Prog_guide.html>`__
