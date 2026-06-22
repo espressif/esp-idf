@@ -31,8 +31,7 @@
 #define SPP_PROFILE_NUM             1
 #define SPP_PROFILE_APP_IDX         0
 #define ESP_SPP_APP_ID              0x56
-#define SAMPLE_DEVICE_NAME          "ESP_SPP_SERVER"    //The Device Name Characteristics in GAP
-#define SPP_SVC_INST_ID	            0
+#define SPP_SVC_INST_ID             0
 
 /// SPP Service
 static const uint16_t spp_service_uuid = 0xABF0;
@@ -50,7 +49,8 @@ static const uint16_t spp_service_uuid = 0xABF0;
 
 #define BLUETOOTH_TASK_PINNED_TO_CORE              (0)
 
-static const uint8_t spp_adv_data[23] = {
+static const char *device_name = "ESP_SPP_SERVER";
+static uint8_t spp_adv_data[23] = {
     /* Flags */
     0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
     /* Complete List of 16-bit Service Class UUIDs */
@@ -58,6 +58,7 @@ static const uint8_t spp_adv_data[23] = {
     /* Complete Local Name in advertising */
     0x0F, ESP_BLE_AD_TYPE_NAME_CMPL, 'E', 'S', 'P', '_', 'S', 'P', 'P', '_', 'S', 'E', 'R','V', 'E', 'R'
 };
+static uint8_t spp_adv_data_len = sizeof(spp_adv_data);
 
 static uint16_t spp_mtu_size = 23;
 static uint16_t spp_conn_id = 0xffff;
@@ -441,7 +442,7 @@ void uart_task(void *pvParameters)
 static void spp_uart_init(void)
 {
     uart_config_t uart_config = {
-        .baud_rate = 115200,
+        .baud_rate = CONFIG_ESP_CONSOLE_UART_BAUDRATE,
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
@@ -563,8 +564,8 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
     switch (event) {
     	case ESP_GATTS_REG_EVT:
     	    ESP_LOGI(GATTS_TABLE_TAG, "GATT server register, status %d, app_id %d, gatts_if %d", param->reg.status, param->reg.app_id, gatts_if);
-        	esp_ble_gap_set_device_name(SAMPLE_DEVICE_NAME);
-        	esp_ble_gap_config_adv_data_raw((uint8_t *)spp_adv_data, sizeof(spp_adv_data));
+        	esp_ble_gap_set_device_name(device_name);
+        	esp_ble_gap_config_adv_data_raw((uint8_t *)spp_adv_data, spp_adv_data_len);
         	esp_ble_gatts_create_attr_tab(spp_gatt_db, gatts_if, SPP_IDX_NB, SPP_SVC_INST_ID);
        	break;
     	case ESP_GATTS_READ_EVT:
@@ -761,6 +762,19 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK( ret );
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    /* The CI test only needs adv data containing device_name. */
+    device_name = esp_bluedroid_get_example_name();
+    uint8_t name_len = strlen(device_name);
+    memset(spp_adv_data, 0, spp_adv_data_len);
+    spp_adv_data[0] = name_len + 1;
+    spp_adv_data[1] = ESP_BLE_AD_TYPE_NAME_CMPL;
+    memcpy(&spp_adv_data[2], device_name, name_len);
+    spp_adv_data_len = 2 + name_len;
+    ESP_LOGI(GATTS_TABLE_TAG, "DeviceName:%s, CIID:%02X, PipelineID:%05X, ChipID:%02X",
+        device_name, CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID, CONFIG_IDF_FIRMWARE_CHIP_ID);
+#endif
 
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 

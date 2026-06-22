@@ -95,7 +95,7 @@ static esp_ble_scan_params_t ble_scan_params = {
     .scan_duplicate         = BLE_SCAN_DUPLICATE_DISABLE
 };
 
-static const char device_name[] = "ESP_SPP_SERVER";
+static char *device_name = "ESP_SPP_SERVER";
 static bool is_connect = false;
 static uint16_t spp_conn_id = 0;
 static uint16_t spp_mtu_size = 23;
@@ -286,15 +286,16 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
             adv_name = esp_ble_resolve_adv_data_by_type(scan_result->scan_rst.ble_adv,
                             scan_result->scan_rst.adv_data_len + scan_result->scan_rst.scan_rsp_len,
                             ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
-            ESP_LOGI(GATTC_TAG, "Scan result, device "ESP_BD_ADDR_STR", name len %u", ESP_BD_ADDR_HEX(scan_result->scan_rst.bda), adv_name_len);
-            ESP_LOG_BUFFER_CHAR(GATTC_TAG, adv_name, adv_name_len);
+            // ESP_LOGI(GATTC_TAG, "Scan result, device "ESP_BD_ADDR_STR", name len %u", ESP_BD_ADDR_HEX(scan_result->scan_rst.bda), adv_name_len);
+            // ESP_LOG_BUFFER_CHAR(GATTC_TAG, adv_name, adv_name_len);
             /* Full-name match (strncmp(adv_name, device_name, adv_name_len) would also accept prefixes). */
-            if (adv_name != NULL && adv_name_len == (sizeof(device_name) - 1) &&
+            if (adv_name != NULL && adv_name_len == strlen(device_name) &&
                 memcmp(adv_name, device_name, adv_name_len) == 0) {
                 if (connect == false) {
                     connect = true;
                     esp_ble_gap_stop_scanning();
-                    ESP_LOGI(GATTC_TAG, "Connect to the remote device.");
+                    ESP_LOGI(GATTC_TAG, "Connect to the remote device, name is %s, address is "ESP_BD_ADDR_STR".",
+                        device_name, ESP_BD_ADDR_HEX(scan_result->scan_rst.bda));
                     esp_ble_conn_params_t phy_1m_conn_params = {0};
                     phy_1m_conn_params.interval_max = 32;
                     phy_1m_conn_params.interval_min = 32;
@@ -699,7 +700,7 @@ void uart_task(void *pvParameters)
 static void spp_uart_init(void)
 {
     uart_config_t uart_config = {
-        .baud_rate = 115200,
+        .baud_rate = CONFIG_ESP_CONSOLE_UART_BAUDRATE,
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
@@ -754,6 +755,15 @@ void app_main(void)
         ESP_LOGE(GATTC_TAG, "%s enable bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    device_name = esp_bluedroid_get_example_name();
+    ESP_LOGI(GATTC_TAG, "DeviceName:%s, CIID:%02X, PipelineID:%05X, ChipID:%02X",
+        device_name, CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID, CONFIG_IDF_FIRMWARE_CHIP_ID);
+    ble_scan_params.scan_interval = ESP_BLE_GAP_SCAN_ITVL_MS(50);
+    ble_scan_params.scan_window = ESP_BLE_GAP_SCAN_WIN_MS(50);
+    ble_scan_params.scan_duplicate = BLE_SCAN_DUPLICATE_ENABLE;
+#endif
 
     ble_client_appRegister();
 }

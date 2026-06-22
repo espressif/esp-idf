@@ -457,3 +457,78 @@ def test_c2_26mhz_bluedroid_host_init_deinit(dut: Dut) -> None:
 
     # the heapsize after host deinit is same
     assert len(list(set(all_hp))) == 1
+
+
+def _run_ble_spp_func(dut: tuple[IdfDut, IdfDut]) -> None:
+    spp_server = dut[0]
+    spp_client = dut[1]
+
+    spp_client_addr = (
+        spp_client.expect(r'Bluetooth MAC: (([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})', timeout=30).group(1).decode('utf8')
+    )
+
+    spp_client.expect_exact('GATT client register, status 0', timeout=30)
+    spp_server.expect_exact('GATT server register, status 0', timeout=30)
+    spp_server.expect_exact('Advertising start successfully', timeout=30)
+    spp_client.expect_exact('Scanning start successfully', timeout=30)
+    spp_client.expect_exact('Connect to the remote device,', timeout=60)
+    spp_client.expect_exact('Connected, conn_id 0, remote ', timeout=30)
+    spp_server.expect_exact(f'Connected, conn_id 0, remote {spp_client_addr}', timeout=30)
+    spp_client.expect_exact('Service search result, start_handle', timeout=30)
+    spp_client.expect_exact('Service search complete', timeout=30)
+    spp_client.expect_exact('MTU exchange, status 0, MTU', timeout=30)
+    spp_server.expect_exact('MTU exchange, MTU', timeout=30)
+    spp_client.expect_exact('Notification register, index 2, status 0', timeout=30)
+    spp_client.expect_exact('Descriptor write, status 0', timeout=30)
+    spp_server.expect(r'SPP data (notification|indication) enable', timeout=30)
+    spp_client_output = spp_client.expect(pexpect.TIMEOUT, timeout=10)
+    spp_server_output = spp_server.expect(pexpect.TIMEOUT, timeout=10)
+    assert 'rst:' not in str(spp_client_output) and 'boot:' not in str(spp_client_output)
+    assert 'rst:' not in str(spp_server_output) and 'boot:' not in str(spp_server_output)
+    assert 'Disconnected' not in str(spp_client_output)
+    assert 'Disconnected' not in str(spp_server_output)
+
+
+# Case 10: ble spp client and ble spp server test
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
+@pytest.mark.two_duts
+@pytest.mark.parametrize(
+    'count, app_path, config, erase_nvs',
+    [
+        (
+            2,
+            f'{str(CUR_DIR / "ble_spp_server")}|{str(CUR_DIR / "ble_spp_client")}',
+            'name',
+            'y',
+        ),
+    ],
+    indirect=True,
+)
+@idf_parametrize(
+    'target',
+    ['esp32', 'esp32c3', 'esp32s3', 'esp32c6', 'esp32h2', 'esp32c61', 'esp32c5', 'esp32s31', 'esp32h4'],
+    indirect=['target'],
+)
+def test_ble_spp_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
+    _run_ble_spp_func(dut)
+
+
+# Case 11: ble spp client and ble spp server test for ESP32C2 26mhz xtal
+@pytest.mark.two_duts
+@pytest.mark.xtal_26mhz
+@pytest.mark.parametrize(
+    'count, target, baud, app_path, config, erase_nvs',
+    [
+        (
+            2,
+            'esp32c2|esp32c2',
+            '74880',
+            f'{str(CUR_DIR / "ble_spp_server")}|{str(CUR_DIR / "ble_spp_client")}',
+            'esp32c2_xtal26m',
+            'y',
+        ),
+    ],
+    indirect=True,
+)
+def test_c2_26mhz_xtal_ble_spp_func(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
+    _run_ble_spp_func(dut)

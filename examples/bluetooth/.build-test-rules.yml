@@ -70,7 +70,7 @@ examples/bluetooth/bluedroid/ble/ble_throughput:
     - esp_driver_i2s
     - esp_driver_uart
   depends_filepatterns:
-    - examples/bluetooth/bluedroid/ble_50/pytest_ble_throughput_test.py
+    - examples/bluetooth/bluedroid/ble/ble_throughput/pytest_ble_throughput_test.py
 
 examples/bluetooth/bluedroid/ble_50:
   <<: *bt_default_depends
@@ -87,61 +87,162 @@ examples/bluetooth/bluedroid/ble_50:
     - esp_driver_uart
   depends_filepatterns:
     - examples/bluetooth/bluedroid/ble_50/pytest_ble50_test.py
+    - examples/bluetooth/bluedroid/ble_50/ble50_throughput/pytest_ble50_throughput_test.py
+
+examples/bluetooth/bluedroid/ble_50/ble50_throughput:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_50_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/bluedroid/ble_50/ble50_throughput/pytest_ble50_throughput_test.py
 
 examples/bluetooth/bluedroid/ble_50/ble_conn_subrating_central:
   <<: *bt_default_depends
   enable:
     - if: SOC_BLE_SUBRATE_SUPPORTED == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32s31" # TODO: BLEQABR25-2377
+      temporary: true
+      reason: ble bug
+  depends_filepatterns:
+    - examples/bluetooth/bluedroid/ble_50/pytest_ble50_test.py
 
 examples/bluetooth/bluedroid/ble_50/ble_conn_subrating_peripheral:
   <<: *bt_default_depends
   enable:
     - if: SOC_BLE_SUBRATE_SUPPORTED == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32s31" # TODO: BLEQABR25-2377
+      temporary: true
+      reason: ble bug
+  depends_filepatterns:
+    - examples/bluetooth/bluedroid/ble_50/pytest_ble50_test.py
 
 examples/bluetooth/bluedroid/ble_50/ble_connection_central_with_cte:
   <<: *bt_default_depends
   enable:
     - if: SOC_BLE_CTE_SUPPORTED == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/bluedroid/ble_50/pytest_ble50_test.py
 
 examples/bluetooth/bluedroid/ble_50/ble_connection_peripheral_with_cte:
   <<: *bt_default_depends
   enable:
     - if: SOC_BLE_CTE_SUPPORTED == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/bluedroid/ble_50/pytest_ble50_test.py
 
 examples/bluetooth/bluedroid/ble_50/ble_pawr_advertiser:
   <<: *bt_default_depends
   enable:
     - if: SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/bluedroid/ble_50/pytest_ble50_test.py
 
 examples/bluetooth/bluedroid/ble_50/ble_pawr_advertiser_conn:
   <<: *bt_default_depends
   enable:
     - if: SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
+  # disable_test:
+  #   - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+  #     temporary: true
+  #     reason: lack of runner
+  # depends_filepatterns:
+  #   - examples/bluetooth/bluedroid/ble_50/pytest_ble50_test.py
 
 examples/bluetooth/bluedroid/ble_50/ble_pawr_synchronizer:
   <<: *bt_default_depends
   enable:
     - if: SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/bluedroid/ble_50/pytest_ble50_test.py
 
 examples/bluetooth/bluedroid/ble_50/ble_periodic_adv_with_cte:
   <<: *bt_default_depends
   enable:
     - if: SOC_BLE_CTE_SUPPORTED == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/bluedroid/ble_50/pytest_ble50_test.py
 
 examples/bluetooth/bluedroid/ble_50/ble_periodic_sync_with_cte:
   <<: *bt_default_depends
   enable:
     - if: SOC_BLE_CTE_SUPPORTED == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/bluedroid/ble_50/pytest_ble50_test.py
 
 examples/bluetooth/bluedroid/ble_50/ble_power_control_central:
   <<: *bt_default_depends
   enable:
     - if: SOC_BLE_POWER_CONTROL_SUPPORTED == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32s31" # TODO: BLEQABR25-2374
+      temporary: true
+      reason: ble bug
+  depends_filepatterns:
+    - examples/bluetooth/bluedroid/ble_50/pytest_ble50_test.py
 
 examples/bluetooth/bluedroid/ble_50/ble_power_control_peripheral:
   <<: *bt_default_depends
   enable:
     - if: SOC_BLE_POWER_CONTROL_SUPPORTED == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+    - if: IDF_TARGET == "esp32s31" # TODO: BLEQABR25-2374
+      temporary: true
+      reason: ble bug
+  depends_filepatterns:
+    - examples/bluetooth/bluedroid/ble_50/pytest_ble50_test.py
+
+examples/bluetooth/bluedroid/ble_50/multi-adv:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_50_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_filepatterns:
+    - examples/bluetooth/bluedroid/ble_50/pytest_ble50_test.py
 
 examples/bluetooth/bluedroid/classic_bt:
   <<: *bt_default_depends

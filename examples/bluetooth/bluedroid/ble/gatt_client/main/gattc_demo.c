@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -470,9 +470,12 @@ void app_main(void)
     }
     ESP_ERROR_CHECK( ret );
 
-    #if CONFIG_EXAMPLE_CI_PIPELINE_ID
+#if CONFIG_EXAMPLE_CI_PIPELINE_ID
     memcpy(remote_device_name, esp_bluedroid_get_example_name(), sizeof(remote_device_name));
-    #endif
+    ble_scan_params.scan_interval = ESP_BLE_GAP_SCAN_ITVL_MS(50);
+    ble_scan_params.scan_window = ESP_BLE_GAP_SCAN_WIN_MS(50);
+    ble_scan_params.scan_duplicate = BLE_SCAN_DUPLICATE_ENABLE;
+#endif
 
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 

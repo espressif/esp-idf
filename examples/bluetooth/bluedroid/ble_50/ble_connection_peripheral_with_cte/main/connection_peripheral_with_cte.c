@@ -49,6 +49,7 @@ static uint8_t ext_adv_raw_data[] = {
         0x02, 0x0a, 0xeb, 0x03, 0x03, 0xab, 0xcd,
         0x11, 0X09, 'E', 'S', 'P', '_', 'C', 'O', 'N', '_', 'C', 'T', 'E', '_', 'T', 'E', 'S', 'T',
 };
+static uint8_t ext_adv_raw_data_len = sizeof(ext_adv_raw_data);
 
 static esp_ble_gap_ext_adv_t ext_adv[1] = {
     [0] = {EXT_ADV_HANDLE, EXT_ADV_DURATION, EXT_ADV_MAX_EVENTS},
@@ -255,7 +256,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
     switch (event) {
     case ESP_GAP_BLE_EXT_ADV_SET_PARAMS_COMPLETE_EVT:
         ESP_LOGI(LOG_TAG,"Extended advertising params set, status %d",  param->ext_adv_set_params.status);
-        esp_ble_gap_config_ext_adv_data_raw(EXT_ADV_HANDLE,  sizeof(ext_adv_raw_data), &ext_adv_raw_data[0]);
+        esp_ble_gap_config_ext_adv_data_raw(EXT_ADV_HANDLE, ext_adv_raw_data_len, &ext_adv_raw_data[0]);
         break;
     case ESP_GAP_BLE_EXT_ADV_DATA_SET_COMPLETE_EVT:
         ESP_LOGI(LOG_TAG,"Extended advertising data set, status %d",  param->ext_adv_data_set.status);
@@ -529,6 +530,19 @@ void app_main(void)
         ESP_LOGE(LOG_TAG, "%s enable bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    /* The CI test only needs adv data containing device_name. */
+    const char *device_name = esp_bluedroid_get_example_name();
+    uint8_t name_len = strlen(device_name);
+    memset(ext_adv_raw_data, 0, ext_adv_raw_data_len);
+    ext_adv_raw_data[0] = name_len + 1;
+    ext_adv_raw_data[1] = ESP_BLE_AD_TYPE_NAME_CMPL;
+    memcpy(&ext_adv_raw_data[2], device_name, name_len);
+    ext_adv_raw_data_len = 2 + name_len;
+    ESP_LOGI(LOG_TAG, "DeviceName:%s, CIID:%02X, PipelineID:%05X, ChipID:%02X",
+             device_name, CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID, CONFIG_IDF_FIRMWARE_CHIP_ID);
+#endif
 
     ret = esp_ble_cte_register_callback(cte_event_handler);
     if (ret){

@@ -75,7 +75,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
 #define GATTS_DESCR_UUID_TEST_B     0x2222
 #define GATTS_NUM_HANDLE_TEST_B     4
 
-#define TEST_DEVICE_NAME            "THROUGHPUT_PHY_DEMO"
+static const char *device_name = "THROUGHPUT_PHY_DEMO";
 #define TEST_MANUFACTURER_DATA_LEN  17
 
 #define GATTS_DEMO_CHAR_VAL_LEN_MAX 0x40
@@ -105,6 +105,7 @@ static uint8_t ext_adv_raw_data[] = {
         0x11, ESP_BLE_AD_TYPE_128SRV_CMPL, 0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80, 0x00, 0x10, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00,
         0x14, ESP_BLE_AD_TYPE_NAME_CMPL, 'T', 'H', 'R', 'O', 'U', 'G', 'H', 'P', 'U', 'T', '_', 'P', 'H', 'Y', '_', 'D', 'E', 'M', 'O',
 };
+static uint8_t ext_adv_raw_data_len = sizeof(ext_adv_raw_data);
 
 static esp_ble_gap_ext_adv_t ext_adv[1] = {
     [0] = {EXT_ADV_HANDLE, EXT_ADV_DURATION, EXT_ADV_MAX_EVENTS},
@@ -208,7 +209,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
     switch (event) {
     case ESP_GAP_BLE_EXT_ADV_SET_PARAMS_COMPLETE_EVT:
         ESP_LOGI(GATTS_TAG,"Extended advertising params set, status %d",  param->ext_adv_set_params.status);
-        esp_ble_gap_config_ext_adv_data_raw(EXT_ADV_HANDLE,  sizeof(ext_adv_raw_data), &ext_adv_raw_data[0]);
+        esp_ble_gap_config_ext_adv_data_raw(EXT_ADV_HANDLE, ext_adv_raw_data_len, &ext_adv_raw_data[0]);
         break;
     case ESP_GAP_BLE_EXT_ADV_DATA_SET_COMPLETE_EVT:
          ESP_LOGI(GATTS_TAG,"Extended advertising data set, status %d",  param->ext_adv_data_set.status);
@@ -310,7 +311,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         gl_profile_tab[PROFILE_A_APP_ID].service_id.id.uuid.len = ESP_UUID_LEN_16;
         gl_profile_tab[PROFILE_A_APP_ID].service_id.id.uuid.uuid.uuid16 = GATTS_SERVICE_UUID_TEST_A;
         gl_profile_tab[PROFILE_A_APP_ID].gatts_if = gatts_if;
-        esp_err_t set_dev_name_ret = esp_ble_gap_set_device_name(TEST_DEVICE_NAME);
+        esp_err_t set_dev_name_ret = esp_ble_gap_set_device_name(device_name);
         if (set_dev_name_ret){
             ESP_LOGE(GATTS_TAG, "set device name failed, error code = %x", set_dev_name_ret);
         }
@@ -634,6 +635,19 @@ void app_main(void)
         ESP_LOGE(GATTS_TAG, "%s enable bluetooth failed", __func__);
         return;
     }
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    /* The CI test only needs adv data containing device_name. */
+    device_name = esp_bluedroid_get_example_name();
+    uint8_t name_len = strlen(device_name);
+    memset(ext_adv_raw_data, 0, ext_adv_raw_data_len);
+    ext_adv_raw_data[0] = name_len + 1;
+    ext_adv_raw_data[1] = ESP_BLE_AD_TYPE_NAME_CMPL;
+    memcpy(&ext_adv_raw_data[2], device_name, name_len);
+    ext_adv_raw_data_len = 2 + name_len;
+    ESP_LOGI(GATTS_TAG, "DeviceName:%s, CIID:%02X, PipelineID:%05X, ChipID:%02X",
+             device_name, CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID, CONFIG_IDF_FIRMWARE_CHIP_ID);
+#endif
 
     #if (CONFIG_EXAMPLE_THROUGHPUT_CODED_PHY_S2)
     // Should be invoked after the Controller and Host inited and enabled
