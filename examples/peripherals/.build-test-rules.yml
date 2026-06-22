@@ -519,6 +519,16 @@ examples/peripherals/pcnt:
     - esp_driver_pcnt
     - soc
 
+examples/peripherals/ppa/ppa_color_key:
+  disable:
+    - if: SOC_PPA_SUPPORTED != 1
+  depends_components:
+    - esp_driver_dma
+    - esp_driver_ppa
+    - esp_hal_ppa
+    - mbedtls
+    - soc
+
 examples/peripherals/ppa/ppa_transform:
   disable:
     - if: SOC_PPA_SUPPORTED != 1
