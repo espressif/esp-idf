@@ -27,7 +27,9 @@ typedef struct {
     ///< If buffer_size is too large, the space larger than the transaction length is left blank but still counts a buffer, and the buffers are easily run out.
     ///< Should be set according to length of data really transferred.
     ///< All data that do not fully fill a buffer is still counted as one buffer. E.g. 10 bytes data costs 2 buffers if the size is 8 bytes per buffer.
-    ///< Buffer size of the slave pre-defined between host and slave before communication. All receive buffer given to the driver should be larger than this.
+    ///< Buffer size of the slave pre-defined between host and slave before communication. It must not exceed the
+    ///< maximum size supported by a single SDIO slave DMA descriptor on the current chip,
+    ///< and all receive buffer given to the driver should be larger than this.
     sdio_event_cb_t     event_cb;           ///< when the host interrupts slave, this callback will be called with interrupt number (0-7).
     uint32_t            flags; ///< Features to be enabled for the slave, combinations of ``SDIO_SLAVE_FLAG_*``.
 #define SDIO_SLAVE_FLAG_DAT2_DISABLED       BIT(0)      /**< It is required by the SD specification that all 4 data
@@ -194,7 +196,7 @@ uint8_t* sdio_slave_recv_get_buf(sdio_slave_buf_handle_t handle, size_t *len_o);
  *  ``sdio_slave_send_get_finished`` after the transaction is finished.
  *
  * @param addr Address for data to be sent. The buffer should be DMA capable and 32-bit aligned.
- * @param len Length of the data, should not be longer than 4092 bytes (may support longer in the future).
+ * @param len Length of the data, should not exceed the maximum size supported by a single SDIO slave DMA descriptor on the current chip.
  * @param arg Argument to returned in ``sdio_slave_send_get_finished``. The argument can be used to indicate which transaction is done,
  *            or as a parameter for a callback. Set to NULL if not needed.
  * @param wait Time to wait if the buffer is full.

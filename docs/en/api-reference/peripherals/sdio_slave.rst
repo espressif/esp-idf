@@ -223,7 +223,7 @@ Each time the slave has data to send, it raises an interrupt, and the host reque
 
   To avoid overhead from copying data, the driver itself does not have any buffer inside. Namely, the DMA takes data directly from the buffer provided by the application. The application should not touch the buffer until the sending is finished, so as to ensure that the data is transferred correctly.
 
-The sending mode can be set in the ``sending_mode`` member of ``sdio_slave_config_t``, and the buffer numbers can be set in the ``send_queue_size``. All the buffers are restricted to be no larger than 4092 bytes. Though in the stream mode, several buffers can be sent in one transfer, each buffer is still counted as one in the queue.
+The sending mode can be set in the ``sending_mode`` member of ``sdio_slave_config_t``, and the buffer numbers can be set in the ``send_queue_size``. Each buffer is restricted by the maximum size supported by a single SDIO slave DMA descriptor, which is chip-dependent. Though in the stream mode, several buffers can be sent in one transfer, each buffer is still counted as one in the queue.
 
 The application can call ``sdio_slave_transmit`` to send packets. In this case, the function returns when the transfer is successfully done, so the queue is not fully used. When higher efficiency is required, the application can use the following functions instead:
 
