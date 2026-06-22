@@ -1,3 +1,12 @@
+# NOTE: This sdkconfig is intended solely for CI build purposes - to verify ESP-TEE
+# builds across various configurations - and is not intended for production use.
+
+# Increasing TEE I/DRAM sizes
+# 38KB
+CONFIG_SECURE_TEE_IRAM_SIZE=0x9800
+# 18KB
+CONFIG_SECURE_TEE_DRAM_SIZE=0x4800
+
 # Security features - build-only configuration
 CONFIG_PARTITION_TABLE_OFFSET=0xf000
 
@@ -13,9 +22,3 @@ CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE=y
 # TEE Secure Storage: Release mode
 CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE=y
 CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID=5
-
-# Increasing TEE I/DRAM size
-# 34KB
-CONFIG_SECURE_TEE_IRAM_SIZE=0x8800
-# 18KB
-CONFIG_SECURE_TEE_DRAM_SIZE=0x4800
