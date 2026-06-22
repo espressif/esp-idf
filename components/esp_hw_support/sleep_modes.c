@@ -333,10 +333,6 @@ static sleep_config_t s_config = {
    expected when determining wakeup cause. */
 static bool s_light_sleep_wakeup = false;
 
-/* Updating RTC_MEMORY_CRC_REG register via set_rtc_memory_crc()
-   is not thread-safe, so we need to disable interrupts before going to deep sleep. */
-static portMUX_TYPE __attribute__((unused)) spinlock_rtc_deep_sleep = portMUX_INITIALIZER_UNLOCKED;
-
 ESP_LOG_ATTR_TAG(TAG, "sleep");
 
 /* APP core of esp32 can't access to RTC FAST MEMORY, do not define it with RTC_IRAM_ATTR,
@@ -503,28 +499,28 @@ esp_err_t esp_deep_sleep_try(uint64_t time_in_us)
 
 static esp_err_t s_sleep_hook_register(esp_deep_sleep_cb_t new_cb, esp_deep_sleep_cb_t s_cb_array[MAX_DSLP_HOOKS])
 {
-    esp_os_enter_critical(&spinlock_rtc_deep_sleep);
+    esp_os_enter_critical(&s_config.lock);
     for (int n = 0; n < MAX_DSLP_HOOKS; n++) {
         if (s_cb_array[n]==NULL || s_cb_array[n]==new_cb) {
             s_cb_array[n]=new_cb;
-            esp_os_exit_critical(&spinlock_rtc_deep_sleep);
+            esp_os_exit_critical(&s_config.lock);
             return ESP_OK;
         }
     }
-    esp_os_exit_critical(&spinlock_rtc_deep_sleep);
+    esp_os_exit_critical(&s_config.lock);
     ESP_LOGE(TAG, "Registered deepsleep callbacks exceeds MAX_DSLP_HOOKS");
     return ESP_ERR_NO_MEM;
 }
 
 static void s_sleep_hook_deregister(esp_deep_sleep_cb_t old_cb, esp_deep_sleep_cb_t s_cb_array[MAX_DSLP_HOOKS])
 {
-    esp_os_enter_critical(&spinlock_rtc_deep_sleep);
+    esp_os_enter_critical(&s_config.lock);
     for (int n = 0; n < MAX_DSLP_HOOKS; n++) {
         if(s_cb_array[n] == old_cb) {
             s_cb_array[n] = NULL;
         }
     }
-    esp_os_exit_critical(&spinlock_rtc_deep_sleep);
+    esp_os_exit_critical(&s_config.lock);
 }
 
 esp_err_t esp_deep_sleep_register_hook(esp_deep_sleep_cb_t new_dslp_cb)
@@ -1169,7 +1165,7 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
 
     // Must acquire all spinlocks which may be acquired during sleep process before stalling other core,
     // otherwise deadlock may occur.
-    esp_os_enter_critical(&spinlock_rtc_deep_sleep);
+    esp_os_enter_critical(&s_config.lock);
 #if !CONFIG_FREERTOS_UNICORE
     extern portMUX_TYPE rtc_spinlock;
     esp_os_enter_critical_safe(&rtc_spinlock); // Maybe acquired from temp_sensor_get_raw_value by phy_close_rf callback
@@ -1262,7 +1258,7 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     esp_clk_private_unlock();
     esp_os_exit_critical_safe(&rtc_spinlock);
 #endif
-    esp_os_exit_critical(&spinlock_rtc_deep_sleep);
+    esp_os_exit_critical(&s_config.lock);
     return err;
 }
 
