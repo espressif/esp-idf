@@ -455,10 +455,16 @@ const char * wpa_cipher_txt(int cipher);
 
 int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 			 struct wpa_ie_data *data);
+int wpa_parse_wpa_ie_rsn_scan_only(const u8 *rsn_ie, size_t rsn_ie_len,
+				   struct wpa_ie_data *data);
 int wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len,
 		     struct wpa_ie_data *data);
+int wpa_parse_wpa_ie_scan_only(const u8 *wpa_ie, size_t wpa_ie_len,
+			       struct wpa_ie_data *data);
 int wpa_parse_wpa_ie_rsnxe(const u8 *rsnxe_ie, size_t rsnxe_ie_len,
 			    struct wpa_ie_data *data);
+int wpa_parse_wpa_ie_rsnxe_scan_only(const u8 *rsnxe_ie, size_t rsnxe_ie_len,
+				     struct wpa_ie_data *data);
 u32 wpa_akm_to_suite(int akm);
 int wpa_compare_rsn_ie(int ft_initial_assoc,
 		       const u8 *ie1, size_t ie1len,

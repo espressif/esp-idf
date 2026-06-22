@@ -373,6 +373,72 @@ static int rsn_key_mgmt_to_bitfield(const u8 *s)
 	return 0;
 }
 
+static int rsn_selector_to_bitfield_scan_only(const u8 *s)
+{
+	u32 sel = RSN_SELECTOR_GET(s);
+
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 0))
+		return WPA_CIPHER_NONE;
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 1))
+		return WPA_CIPHER_WEP40;
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 2))
+		return WPA_CIPHER_TKIP;
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 4))
+		return WPA_CIPHER_CCMP;
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 5))
+		return WPA_CIPHER_WEP104;
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 6))
+		return WPA_CIPHER_AES_128_CMAC;
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 7))
+		return WPA_CIPHER_GTK_NOT_USED;
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 8))
+		return WPA_CIPHER_GCMP;
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 9))
+		return WPA_CIPHER_GCMP_256;
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 11))
+		return WPA_CIPHER_BIP_GMAC_128;
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 12))
+		return WPA_CIPHER_BIP_GMAC_256;
+
+	return 0;
+}
+
+static int rsn_key_mgmt_to_bitfield_scan_only(const u8 *s)
+{
+	u32 sel = RSN_SELECTOR_GET(s);
+
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 1))
+		return WPA_KEY_MGMT_IEEE8021X;
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 2))
+		return WPA_KEY_MGMT_PSK;
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 3))
+		return WPA_KEY_MGMT_FT_IEEE8021X;
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 4))
+		return WPA_KEY_MGMT_FT_PSK;
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 5))
+		return WPA_KEY_MGMT_IEEE8021X_SHA256;
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 6))
+		return WPA_KEY_MGMT_PSK_SHA256;
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 8))
+		return WPA_KEY_MGMT_SAE;
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 9))
+		return WPA_KEY_MGMT_FT_SAE;
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 11))
+		return WPA_KEY_MGMT_IEEE8021X_SUITE_B;
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 12))
+		return WPA_KEY_MGMT_IEEE8021X_SUITE_B_192;
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 13))
+		return WPA_KEY_MGMT_FT_IEEE8021X_SHA384;
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 18))
+		return WPA_KEY_MGMT_OWE;
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 24))
+		return WPA_KEY_MGMT_SAE_EXT_KEY;
+	if (sel == RSN_SELECTOR(0x50, 0x6f, 0x9a, 0x02))
+		return WPA_KEY_MGMT_DPP;
+
+	return 0;
+}
+
 static int wpa_selector_to_bitfield(const u8 *s)
 {
 	if (RSN_SELECTOR_GET(s) == WPA_CIPHER_SUITE_NONE)
@@ -431,15 +497,31 @@ int wpa_parse_wpa_ie_rsnxe(const u8 *rsnxe_ie, size_t rsnxe_ie_len,
 	return 0;
 }
 
-/**
- * wpa_parse_wpa_ie_rsn - Parse RSN IE
- * @rsn_ie: Buffer containing RSN IE
- * @rsn_ie_len: RSN IE buffer length (including IE number and length octets)
- * @data: Pointer to structure that will be filled in with parsed data
- * Returns: 0 on success, <0 on failure
- */
-int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
-			 struct wpa_ie_data *data)
+int wpa_parse_wpa_ie_rsnxe_scan_only(const u8 *rsnxe_ie, size_t rsnxe_ie_len,
+				     struct wpa_ie_data *data)
+{
+	uint8_t rsnxe_capa = 0;
+
+	memset(data, 0, sizeof(*data));
+
+	if (rsnxe_ie_len < 3 || !rsnxe_ie) {
+		return -1;
+	}
+	if (rsnxe_ie[0] == WLAN_EID_VENDOR_SPECIFIC &&
+	    rsnxe_ie[1] >= 1 + 4) {
+		rsnxe_capa = rsnxe_ie[2 + 4];
+	} else {
+		rsnxe_capa = rsnxe_ie[2];
+	}
+	data->rsnxe_capa = rsnxe_capa;
+	return 0;
+}
+
+static int wpa_parse_wpa_ie_rsn_common(const u8 *rsn_ie, size_t rsn_ie_len,
+				       struct wpa_ie_data *data,
+				       int (*selector_to_bitfield)(const u8 *),
+				       int (*key_mgmt_to_bitfield)(const u8 *),
+				       bool validate_mgmt_group)
 {
 	const u8 *pos;
 	int left;
@@ -468,9 +550,9 @@ int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 	}
 
 	if (rsn_ie_len >= 2 + 4 + 2 && rsn_ie[1] >= 4 + 2 &&
-		   rsn_ie[1] == rsn_ie_len - 2 &&
-		   (WPA_GET_BE32(&rsn_ie[2]) == RSNE_OVERRIDE_IE_VENDOR_TYPE) &&
-		   WPA_GET_LE16(&rsn_ie[2 + 4]) == RSN_VERSION) {
+	    rsn_ie[1] == rsn_ie_len - 2 &&
+	    (WPA_GET_BE32(&rsn_ie[2]) == RSNE_OVERRIDE_IE_VENDOR_TYPE) &&
+	    WPA_GET_LE16(&rsn_ie[2 + 4]) == RSN_VERSION) {
 		pos = rsn_ie + 2 + 4 + 2;
 		left = rsn_ie_len - 2 - 4 - 2;
 	} else {
@@ -491,7 +573,7 @@ int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 	}
 
 	if (left >= RSN_SELECTOR_LEN) {
-		data->group_cipher = rsn_selector_to_bitfield(pos);
+		data->group_cipher = selector_to_bitfield(pos);
 		data->has_group = 1;
 		pos += RSN_SELECTOR_LEN;
 		left -= RSN_SELECTOR_LEN;
@@ -514,7 +596,7 @@ int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 		if (count)
 			data->has_pairwise = 1;
 		for (i = 0; i < count; i++) {
-			data->pairwise_cipher |= rsn_selector_to_bitfield(pos);
+			data->pairwise_cipher |= selector_to_bitfield(pos);
 			pos += RSN_SELECTOR_LEN;
 			left -= RSN_SELECTOR_LEN;
 		}
@@ -535,7 +617,7 @@ int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 			return -6;
 		}
 		for (i = 0; i < count; i++) {
-			data->key_mgmt |= rsn_key_mgmt_to_bitfield(pos);
+			data->key_mgmt |= key_mgmt_to_bitfield(pos);
 			pos += RSN_SELECTOR_LEN;
 			left -= RSN_SELECTOR_LEN;
 		}
@@ -570,8 +652,9 @@ int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 	}
 
 	if (left >= 4) {
-		data->mgmt_group_cipher = rsn_selector_to_bitfield(pos);
-		if (!wpa_cipher_valid_mgmt_group(data->mgmt_group_cipher)) {
+		data->mgmt_group_cipher = selector_to_bitfield(pos);
+		if (validate_mgmt_group &&
+		    !wpa_cipher_valid_mgmt_group(data->mgmt_group_cipher)) {
 			wpa_printf(MSG_DEBUG,
 				   "%s: Unsupported management group cipher 0x%x (%08x)",
 				   __func__, data->mgmt_group_cipher,
@@ -588,6 +671,30 @@ int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 	}
 
 	return 0;
+}
+
+/**
+ * wpa_parse_wpa_ie_rsn - Parse RSN IE
+ * @rsn_ie: Buffer containing RSN IE
+ * @rsn_ie_len: RSN IE buffer length (including IE number and length octets)
+ * @data: Pointer to structure that will be filled in with parsed data
+ * Returns: 0 on success, <0 on failure
+ */
+int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
+			 struct wpa_ie_data *data)
+{
+	return wpa_parse_wpa_ie_rsn_common(rsn_ie, rsn_ie_len, data,
+					   rsn_selector_to_bitfield,
+					   rsn_key_mgmt_to_bitfield, true);
+}
+
+int wpa_parse_wpa_ie_rsn_scan_only(const u8 *rsn_ie, size_t rsn_ie_len,
+				   struct wpa_ie_data *data)
+{
+	return wpa_parse_wpa_ie_rsn_common(rsn_ie, rsn_ie_len, data,
+					   rsn_selector_to_bitfield_scan_only,
+					   rsn_key_mgmt_to_bitfield_scan_only,
+					   false);
 }
 
 int wpa_parse_wpa_ie_wpa(const u8 *wpa_ie, size_t wpa_ie_len,
