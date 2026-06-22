@@ -144,7 +144,7 @@ static int adv_send(struct net_buf *buf)
         struct bt_mesh_ble_adv_data data = {0};
         struct bt_mesh_ble_adv_tx *tx = cb_data;
 
-        if (tx == NULL) {
+        if (tx == NULL || tx->buf == NULL) {
             BT_ERR("Invalid adv user data");
             net_buf_unref(buf);
             return -EINVAL;
@@ -217,7 +217,7 @@ static QueueHandle_t relay_adv_handle_get(void)
 
     adv_type = bt_mesh_adv_types_mgmt_get(BLE_MESH_ADV_RELAY_DATA);
 
-    if (adv_type->adv_q == NULL) {
+    if (adv_type == NULL || adv_type->adv_q == NULL) {
         BT_DBG("HandleNotFound");
         return NULL;
     }

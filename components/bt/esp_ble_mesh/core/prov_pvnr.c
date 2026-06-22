@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -655,7 +655,7 @@ start:
 #endif /* CONFIG_BLE_MESH_PB_GATT */
 
     /* Shall not reach here. */
-    return 0;
+    return -EINVAL;
 }
 
 int bt_mesh_provisioner_prov_device_with_addr(const uint8_t uuid[16], const uint8_t addr[6],
@@ -754,7 +754,7 @@ int bt_mesh_provisioner_prov_device_with_addr(const uint8_t uuid[16], const uint
 #endif /* CONFIG_BLE_MESH_PB_GATT */
 
     /* Shall not reach here. */
-    return 0;
+    return -EINVAL;
 }
 
 int bt_mesh_provisioner_delete_device(struct bt_mesh_device_delete *del_dev)
@@ -2487,7 +2487,7 @@ static void prov_msg_recv(struct bt_mesh_prov_link *link)
      * should be ignored.
      */
     if (bt_mesh_atomic_test_bit(link->flags, LINK_CLOSING)) {
-        BT_WARN("Link is closing, unexpected msg 0x%02x", type);
+        BT_WARN("Link is closing, ignoring received PDU");
         return;
     }
 
@@ -3165,7 +3165,7 @@ int bt_mesh_rpr_cli_pdu_recv(struct bt_mesh_prov_link *link, uint8_t type,
         return -EINVAL;
     }
 
-    if (type != link->expect) {
+    if (type != PROV_FAILED && type != link->expect) {
         BT_ERR("PB-Remote, unexpected msg 0x%02x != 0x%02x", type, link->expect);
         return -EINVAL;
     }
@@ -3188,7 +3188,8 @@ int bt_mesh_rpr_cli_pdu_send(struct bt_mesh_prov_link *link, uint8_t type)
         send_confirm(link);
         break;
     default:
-        break;
+        BT_WARN("Unsupported RPR CLI PDU type 0x%02x", type);
+        return -EINVAL;
     }
 
     return 0;

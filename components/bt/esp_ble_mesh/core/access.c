@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -141,6 +141,11 @@ static int32_t next_period(struct bt_mesh_model *mod)
         return 0;
     }
 
+    if (pub->period_start == 0) {
+        BT_ERR("PubFailed,TryPubInNxtPeriod");
+        return period;
+    }
+
     elapsed = k_uptime_get_32() - pub->period_start;
 
     BT_INFO("Elapsed %u Period %u", elapsed, period);
@@ -244,6 +249,13 @@ static int publish_retransmit(struct bt_mesh_model *mod)
         /* Tag with send-segmented */
         ctx.send_tag |= BLE_MESH_TAG_SEND_SEGMENTED;
     }
+#if CONFIG_BLE_MESH_LONG_PACKET
+    if ((pub->msg->len <= MIN(BLE_MESH_EXT_TX_SDU_MAX, BLE_MESH_EXT_SDU_MAX_LEN) - BLE_MESH_MIC_SHORT) &&
+        (pub->msg->len > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SDU_MAX_LEN) - BLE_MESH_MIC_SHORT)) {
+        ctx.enh.long_pkt_cfg_used = true;
+        ctx.enh.long_pkt_cfg = BLE_MESH_LONG_PACKET_PREFER;
+    }
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
 
     BT_DBG("NetIdx 0x%04x AppIdx 0x%04x Dst 0x%04x",
            ctx.net_idx, ctx.app_idx, ctx.addr);
@@ -316,13 +328,16 @@ static void mod_publish(struct k_work *work)
      * In the event, users can update the context of the publish message
      * which will be published in the next period.
      */
-    if (pub->update && pub->update(pub->mod)) {
-        /* Cancel this publish attempt. */
-        BT_ERR("Update failed, skipping publish (err %d)", err);
+    if (pub->update) {
+        err = pub->update(pub->mod);
+        if (err) {
+            /* Cancel this publish attempt. */
+            BT_ERR("Update failed, skipping publish (err %d)", err);
 
-        pub->period_start = k_uptime_get_32();
-        publish_retransmit_end(err, pub);
-        return;
+            pub->period_start = k_uptime_get_32();
+            publish_retransmit_end(err, pub);
+            return;
+        }
     }
 
     err = bt_mesh_model_publish(pub->mod);
@@ -334,6 +349,16 @@ static void mod_publish(struct k_work *work)
 struct bt_mesh_elem *bt_mesh_model_elem(const struct bt_mesh_model *mod)
 {
     BT_DBG("ModelElem, ElemIdx %u", mod->elem_idx);
+
+    if (!comp_0) {
+        BT_ERR("comp_0 not initialized");
+        return NULL;
+    }
+
+    if (mod->elem_idx >= comp_0->elem_count) {
+        BT_ERR("Invalid element index %u", mod->elem_idx);
+        return NULL;
+    }
 
     return &comp_0->elem[mod->elem_idx];
 }
@@ -428,7 +453,7 @@ int bt_mesh_comp_register(const struct bt_mesh_comp *comp)
     BT_DBG("CompRegister, ElemCount %u", comp->elem_count);
 
     /* There must be at least one element */
-    if (!comp->elem_count) {
+    if (!comp->elem_count || comp->elem_count > BLE_MESH_MODEL_MAX_ELEM_COUNT) {
         return -EINVAL;
     }
 
@@ -503,6 +528,20 @@ int bt_mesh_comp_deregister(void)
 void bt_mesh_comp_provision(uint16_t addr)
 {
     int i;
+
+    if (!comp_0) {
+        BT_ERR("comp_0 not initialized");
+        return;
+    }
+
+    /* Validate unicast address range: addr must be valid (0x0001-0x7FFF) and
+     * addr + elem_count - 1 must not exceed 0x7FFF (unicast address upper bound).
+     */
+    if (!BLE_MESH_ADDR_IS_UNICAST(addr) ||
+        (uint32_t)addr + comp_0->elem_count - 1 > 0x7FFF) {
+        BT_ERR("Address range overflow: addr 0x%04x, elem_count %u", addr, comp_0->elem_count);
+        return;
+    }
 
     dev_primary_addr = addr;
 
@@ -585,6 +624,11 @@ struct bt_mesh_elem *bt_mesh_elem_find(uint16_t addr)
 
     BT_DBG("ElemFind, Addr 0x%04x", addr);
 
+    if (!comp_0) {
+        BT_ERR("comp_0 not initialized");
+        return NULL;
+    }
+
     if (BLE_MESH_ADDR_IS_UNICAST(addr)) {
         index = (addr - comp_0->elem[0].addr);
         if (index < comp_0->elem_count) {
@@ -609,6 +653,11 @@ bool bt_mesh_has_addr(uint16_t addr)
 {
     uint16_t index;
 
+    if (!comp_0) {
+        BT_ERR("comp_0 not initialized");
+        return false;
+    }
+
     if (BLE_MESH_ADDR_IS_UNICAST(addr)) {
         return bt_mesh_elem_find(addr) != NULL;
     }
@@ -626,6 +675,11 @@ bool bt_mesh_has_addr(uint16_t addr)
 
 uint8_t bt_mesh_elem_count(void)
 {
+    if (!comp_0) {
+        BT_ERR("comp_0 not initialized");
+        return 0;
+    }
+
     BT_DBG("ElemCount %u", comp_0->elem_count);
 
     return comp_0->elem_count;
@@ -797,6 +851,11 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
             rx->ctx.app_idx, rx->ctx.addr, rx->ctx.recv_dst);
     BT_INFO("Len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
+    if (!comp_0) {
+        BT_ERR("comp_0 not initialized");
+        return;
+    }
+
     if (get_opcode(buf, &opcode, true) < 0) {
         BT_WARN("Unable to decode OpCode");
         return;
@@ -911,7 +970,7 @@ static bool ready_to_send(uint16_t dst)
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en()) {
         if (bt_mesh_provisioner_check_msg_dst(dst) == false &&
-            bt_mesh_elem_find(dst) == false) {
+            bt_mesh_elem_find(dst) == NULL) {
             BT_ERR("Failed to find Dst 0x%04x", dst);
             return false;
         }
@@ -1205,10 +1264,22 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
         return -EADDRNOTAVAIL;
     }
 
+#if CONFIG_BLE_MESH_LONG_PACKET
+    if (pub->msg->len + BLE_MESH_MIC_SHORT > MIN(BLE_MESH_EXT_TX_SDU_MAX, BLE_MESH_EXT_SDU_MAX_LEN)) {
+        BT_ERR("Message does not fit extended maximum SDU size");
+        return -EMSGSIZE;
+    }
+    if ((pub->msg->len <= MIN(BLE_MESH_EXT_TX_SDU_MAX, BLE_MESH_EXT_SDU_MAX_LEN) - BLE_MESH_MIC_SHORT) &&
+        (pub->msg->len > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SDU_MAX_LEN) - BLE_MESH_MIC_SHORT)) {
+        tx.ctx->enh.long_pkt_cfg_used = true;
+        tx.ctx->enh.long_pkt_cfg = BLE_MESH_LONG_PACKET_PREFER;
+    }
+#else
     if (pub->msg->len + BLE_MESH_MIC_SHORT > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SDU_MAX_LEN)) {
         BT_ERR("Message does not fit maximum SDU size");
         return -EMSGSIZE;
     }
+#endif
 
     if (pub->count) {
         BT_WARN("Clearing publish retransmit timer");
@@ -1245,6 +1316,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
     bt_mesh_model_pub_use_directed(&tx, pub->directed_pub_policy);
 #endif /* CONFIG_BLE_MESH_DF_SRV */
 
+    pub->period_start = 0;
     pub->count = BLE_MESH_PUB_TRANSMIT_COUNT(pub->retransmit);
 
     BT_INFO("PubCount %u PubInterval %u",

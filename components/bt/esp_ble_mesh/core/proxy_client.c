@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -80,7 +80,7 @@ static void proxy_sar_timeout(struct k_work *work)
     BT_WARN("ProxySARTimeout");
 
     server = CONTAINER_OF(work, struct bt_mesh_proxy_server, sar_timer.work);
-    if (!server || !server->conn) {
+    if (!server->conn) {
         BT_ERR("InvalidProxyServerParam");
         return;
     }
@@ -429,6 +429,10 @@ int bt_mesh_proxy_client_segment_send(struct bt_mesh_conn *conn, uint8_t type,
 
     net_buf_simple_push_u8(msg, BLE_MESH_PROXY_PDU_HDR(BLE_MESH_PROXY_SAR_FIRST, type));
     err = proxy_send(conn, msg->data, mtu);
+    /* Note:
+     * Even if proxy_send() failed, do not return early here in order to
+     * keep the msg in a consistent final state.
+     */
     net_buf_simple_pull(msg, mtu);
 
     while (msg->len) {
@@ -440,6 +444,10 @@ int bt_mesh_proxy_client_segment_send(struct bt_mesh_conn *conn, uint8_t type,
 
         net_buf_simple_push_u8(msg, BLE_MESH_PROXY_PDU_HDR(BLE_MESH_PROXY_SAR_CONT, type));
         err = proxy_send(conn, msg->data, mtu);
+        /* Note:
+         * Even if proxy_send() failed, do not return early here in order to
+         * keep the msg in a consistent final state.
+         */
         net_buf_simple_pull(msg, mtu);
     }
 
@@ -449,10 +457,16 @@ int bt_mesh_proxy_client_segment_send(struct bt_mesh_conn *conn, uint8_t type,
 int bt_mesh_proxy_client_send(struct bt_mesh_conn *conn, uint8_t type,
                               struct net_buf_simple *msg)
 {
-    struct bt_mesh_proxy_server *server = find_server(conn);
+    struct bt_mesh_proxy_server *server = NULL;
+
+    if (conn == NULL) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
 
     BT_DBG("ProxyClientSend, ConnHandle 0x%04x Type %u", conn->handle, type);
 
+    server = find_server(conn);
     if (!server) {
         BT_ERR("No Proxy Server object found");
         return -ENOTCONN;
@@ -645,8 +659,8 @@ int bt_mesh_proxy_client_prov_disable(void)
         struct bt_mesh_proxy_server *server = &servers[i];
 
         if (server->conn && server->conn_type == CLI_PROV) {
-            bt_mesh_gattc_disconnect(server->conn);
             server->conn_type = CLI_NONE;
+            bt_mesh_gattc_disconnect(server->conn);
         }
     }
 
@@ -728,7 +742,7 @@ int bt_mesh_proxy_client_gatt_enable(void)
     BT_DBG("ProxyClientGattEnable");
 
     for (i = 0; i < ARRAY_SIZE(servers); i++) {
-        if (servers[i].conn) {
+        if (servers[i].conn && servers[i].conn_type == CLI_NONE) {
             servers[i].conn_type = CLI_PROXY;
         }
     }
@@ -758,8 +772,8 @@ int bt_mesh_proxy_client_gatt_disable(void)
         struct bt_mesh_proxy_server *server = &servers[i];
 
         if (server->conn && server->conn_type == CLI_PROXY) {
-            bt_mesh_gattc_disconnect(server->conn);
             server->conn_type = CLI_NONE;
+            bt_mesh_gattc_disconnect(server->conn);
         }
     }
 
@@ -1127,13 +1141,13 @@ static int send_proxy_cfg(struct bt_mesh_conn *conn, uint16_t net_idx, struct bt
 
     case BLE_MESH_PROXY_CFG_FILTER_ADD:
         for (uint16_t i = 0U; i < cfg->add.addr_num; i++) {
-            net_buf_simple_add_le16(buf, cfg->add.addr[i]);
+            net_buf_simple_add_be16(buf, cfg->add.addr[i]);
         }
         break;
 
     case BLE_MESH_PROXY_CFG_FILTER_REMOVE:
         for (uint16_t i = 0U; i < cfg->remove.addr_num; i++) {
-            net_buf_simple_add_le16(buf, cfg->remove.addr[i]);
+            net_buf_simple_add_be16(buf, cfg->remove.addr[i]);
         }
         break;
 
