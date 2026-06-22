@@ -3,10 +3,12 @@
 import os
 import os.path
 import subprocess
+import time
 
 import pytest
 from can import Bus
 from can import Message
+from pytest_embedded import Dut
 from pytest_embedded_idf import IdfDut
 
 can_env = os.getenv('CAN_PORT', 'can0')
@@ -23,6 +25,16 @@ def fixture_create_socket_can() -> Bus:
     yield bus  # test invoked here
     bus.shutdown()
     subprocess.run(stop_command, shell=True, capture_output=True, text=True)
+
+
+def esp_enter_flash_mode(dut: Dut) -> None:
+    ser = dut.serial.proc
+    ser.setRTS(True)  # EN Low
+    time.sleep(0.5)
+    ser.setDTR(True)  # GPIO0 Low
+    ser.setRTS(False)  # EN High
+    dut.expect('waiting for download', timeout=2)
+    ser.setDTR(False)  # Back RTS/DTR to 1/1 to avoid affect to esptool
 
 
 @pytest.mark.twai_adapter
@@ -56,45 +68,50 @@ def test_twai_network_multi(dut: tuple[IdfDut, IdfDut], socket_can: Bus) -> None
     - dut[1]: twai_sender
     """
 
-    # Print chip information for debugging
-    print(f'===> Pytest testing with chips: {dut[0].app.target} (listener), {dut[1].app.target} (sender)')
+    try:
+        # Print chip information for debugging
+        print(f'===> Pytest testing with chips: {dut[0].app.target} (listener), {dut[1].app.target} (sender)')
 
-    # Initialize listener node first
-    dut[0].expect('===================TWAI Listen Only Example Starting...===================')
-    dut[0].expect('TWAI start listening...')
+        # Initialize listener node first
+        dut[0].expect('===================TWAI Listen Only Example Starting...===================')
+        dut[0].expect('TWAI start listening...')
 
-    # Initialize sender node and start communication
-    dut[1].expect('===================TWAI Sender Example Starting...===================')
-    dut[1].expect('TWAI Sender started successfully')
+        # Initialize sender node and start communication
+        dut[1].expect('===================TWAI Sender Example Starting...===================')
+        dut[1].expect('TWAI Sender started successfully')
 
-    # Verify communication is working
-    # Wait for sender to send messages
-    dut[1].expect('Sending heartbeat message:', timeout=10)
+        # Verify communication is working
+        # Wait for sender to send messages
+        dut[1].expect('Sending heartbeat message:', timeout=10)
 
-    # Check that listener is receiving data
-    dut[0].expect('RX:', timeout=15)  # Listener should see filtered messages
+        # Check that listener is receiving data
+        dut[0].expect('RX:', timeout=15)  # Listener should see filtered messages
 
-    # Check if socket receive any messages
-    socket_rcv_cnt = 0
-    for i in range(100):
-        msg = socket_can.recv(timeout=1)
-        if msg is not None:
-            socket_rcv_cnt += 1
-    print(f'Socket receive {socket_rcv_cnt} messages')
-    assert socket_rcv_cnt > 50, 'Socket NO messages'
+        # Check if socket receive any messages
+        socket_rcv_cnt = 0
+        for i in range(100):
+            msg = socket_can.recv(timeout=1)
+            if msg is not None:
+                socket_rcv_cnt += 1
+        print(f'Socket receive {socket_rcv_cnt} messages')
+        assert socket_rcv_cnt > 50, 'Socket NO messages'
 
-    # Wait a bit more to ensure stable communication
-    dut[1].expect('Sending packet of', timeout=10)
-    dut[0].expect('RX:', timeout=10)
+        # Wait a bit more to ensure stable communication
+        dut[1].expect('Sending packet of', timeout=10)
+        dut[0].expect('RX:', timeout=10)
 
-    # Check if esp32 receive messages from usb can
-    message = Message(
-        arbitration_id=0x10A,
-        is_extended_id=False,
-        data=b'Hi ESP32',
-    )
-    print('USB CAN Send:', message)
-    socket_can.send(message, timeout=0.2)
-    dut[0].expect_exact('10a [8] 48 69 20 45 53 50 33 32', timeout=10)  # ASCII: Hi ESP32
+        # Check if esp32 receive messages from usb can
+        message = Message(
+            arbitration_id=0x10A,
+            is_extended_id=False,
+            data=b'Hi ESP32',
+        )
+        print('USB CAN Send:', message)
+        socket_can.send(message, timeout=0.2)
+        dut[0].expect_exact('10a [8] 48 69 20 45 53 50 33 32', timeout=10)  # ASCII: Hi ESP32
 
-    print('===> TWAI network communication test completed successfully')
+        print('===> TWAI network communication test completed successfully')
+
+    finally:
+        esp_enter_flash_mode(dut[0])
+        esp_enter_flash_mode(dut[1])
