@@ -277,8 +277,10 @@ TEST_CASE("I2S_lazy_duplex_constitution_boundary_test", "[i2s]")
     TEST_ESP_OK(i2s_channel_init_tdm_mode(tx_handle, &tdm_64bit));
     TEST_ESP_OK(i2s_channel_get_info(tx_handle, &chan_info));
     TEST_ASSERT(chan_info.pair_chan == rx_handle);
+    TEST_ASSERT_EQUAL(I2S_ROLE_SLAVE, chan_info.role);
     TEST_ESP_OK(i2s_channel_get_info(rx_handle, &chan_info));
     TEST_ASSERT(chan_info.pair_chan == tx_handle);
+    TEST_ASSERT_EQUAL(I2S_ROLE_MASTER, chan_info.role);
     TEST_ESP_OK(i2s_del_channel(tx_handle));
     TEST_ESP_OK(i2s_del_channel(rx_handle));
 
