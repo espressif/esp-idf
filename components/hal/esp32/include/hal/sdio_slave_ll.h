@@ -67,6 +67,9 @@ typedef struct sdio_slave_ll_desc_s {
     };
 } sdio_slave_ll_desc_t;
 
+/* Maximum buffer size that a single SDIO slave DMA descriptor can point to. */
+#define SDIO_SLAVE_LL_DMA_DESC_MAX_BUF_SIZE ((1 << 12) - 1)
+
 /// Mask of general purpose interrupts sending from the host.
 typedef enum {
     SDIO_SLAVE_LL_SLVINT_0 = BIT(0),    ///< General purpose interrupt bit 0.
