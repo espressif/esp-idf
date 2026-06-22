@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,8 @@
 #include "hal/ecc_types.h"
 #include "soc/ecc_mult_reg.h"
 #include "soc/hp_sys_clkrst_struct.h"
+#include "soc/hp_system_reg.h"
+#include "esp_fault_internal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,8 +58,25 @@ static inline void ecc_ll_reset_register(void)
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
 #define ecc_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; ecc_ll_reset_register(__VA_ARGS__)
 
-static inline void ecc_ll_power_up(void) {}
-static inline void ecc_ll_power_down(void) {}
+static inline void ecc_ll_power_up(void)
+{
+    /* Power up the ECC peripheral (default state is power-up) */
+    REG_CLR_BIT(HP_SYSTEM_ECC_PD_CTRL_REG, HP_SYSTEM_ECC_MEM_PD);
+    REG_CLR_BIT(HP_SYSTEM_ECC_PD_CTRL_REG, HP_SYSTEM_ECC_MEM_FORCE_PD);
+    ESP_FAULT_ASSERT(REG_GET_BIT(HP_SYSTEM_ECC_PD_CTRL_REG, HP_SYSTEM_ECC_MEM_FORCE_PD) == 0);
+}
+
+static inline bool ecc_ll_mem_force_pd_is_clear(void)
+{
+    return REG_GET_BIT(HP_SYSTEM_ECC_PD_CTRL_REG, HP_SYSTEM_ECC_MEM_FORCE_PD) == 0;
+}
+
+static inline void ecc_ll_power_down(void)
+{
+    /* Power down the ECC peripheral */
+    REG_CLR_BIT(HP_SYSTEM_ECC_PD_CTRL_REG, HP_SYSTEM_ECC_MEM_FORCE_PU);
+    REG_SET_BIT(HP_SYSTEM_ECC_PD_CTRL_REG, HP_SYSTEM_ECC_MEM_PD);
+}
 
 static inline void ecc_ll_enable_interrupt(void)
 {

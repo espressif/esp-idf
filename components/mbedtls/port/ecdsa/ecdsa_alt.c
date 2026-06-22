@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include "hal/ecdsa_hal.h"
 #include "hal/mpi_ll.h"
 #include "esp_crypto_lock.h"
+#include "esp_fault.h"
 #include "esp_efuse.h"
 #include "esp_private/esp_crypto_lock_internal.h"
 #include "mbedtls/error.h"
@@ -679,11 +680,22 @@ static int esp_ecdsa_verify(mbedtls_ecp_group *grp,
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
 
-    if (mbedtls_mpi_cmp_int(r, 1) < 0 || mbedtls_mpi_cmp_mpi(r, &grp->N) >= 0 ||
-       mbedtls_mpi_cmp_int(s, 1) < 0 || mbedtls_mpi_cmp_mpi(s, &grp->N) >= 0 )
-    {
+    /* 1 <= scalar <= n-1: that is, scalar > 0 and scalar < n. */
+    #define RANGE_OK   0x6A6A6A6AU
+    #define RANGE_FAIL 0x95959595U
+    volatile uint32_t verdict = RANGE_FAIL;
+    if (mbedtls_mpi_cmp_int(r, 0) > 0 &&
+        mbedtls_mpi_cmp_mpi(r, &grp->N) < 0 &&
+        mbedtls_mpi_cmp_int(s, 0) > 0 &&
+        mbedtls_mpi_cmp_mpi(s, &grp->N) < 0) {
+        verdict = RANGE_OK;
+    }
+    if (verdict != RANGE_OK) {
         return MBEDTLS_ERR_ECP_VERIFY_FAILED;
     }
+    ESP_FAULT_ASSERT(verdict == RANGE_OK);
+    #undef RANGE_OK
+    #undef RANGE_FAIL
 
     ecdsa_be_to_le(buf, sha_le, len);
 

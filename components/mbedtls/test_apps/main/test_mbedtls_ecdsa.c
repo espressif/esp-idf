@@ -1,6 +1,6 @@
 /* mbedTLS Elliptic Curve Digital Signature performance tests
  *
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,8 @@
 #include <mbedtls/ecdh.h>
 #include <mbedtls/ecdsa.h>
 #include <mbedtls/error.h>
+#include <mbedtls/ecp.h>
+#include <mbedtls/bignum.h>
 
 #include "soc/soc_caps.h"
 #include "test_utils.h"
@@ -108,8 +110,18 @@ const uint8_t ecdsa192_pub_y[] = {
     0x7e, 0x4b, 0x23, 0xad, 0x46, 0x5c, 0x87, 0xc2
 };
 
+/* Curve order N in big-endian, taken from mbedtls instead of a hard-coded table. */
+static void ecdsa_get_curve_order_be(mbedtls_ecp_group_id id, uint8_t *n_be, size_t len)
+{
+    mbedtls_ecp_group grp;
+    mbedtls_ecp_group_init(&grp);
+    TEST_ASSERT_EQUAL(0, mbedtls_ecp_group_load(&grp, id));
+    TEST_ASSERT_EQUAL(0, mbedtls_mpi_write_binary(&grp.N, n_be, len));
+    mbedtls_ecp_group_free(&grp);
+}
+
 void test_ecdsa_verify(mbedtls_ecp_group_id id, const uint8_t *hash, const uint8_t *r_comp, const uint8_t *s_comp,
-                       const uint8_t *pub_x, const uint8_t *pub_y)
+                       const uint8_t *pub_x, const uint8_t *pub_y, int expected_ret)
 {
     int64_t elapsed_time;
     mbedtls_mpi r, s;
@@ -132,7 +144,8 @@ void test_ecdsa_verify(mbedtls_ecp_group_id id, const uint8_t *hash, const uint8
     TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_lset(&ecdsa_context.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Z), 1));
 
     ccomp_timer_start();
-    TEST_ASSERT_MBEDTLS_OK(mbedtls_ecdsa_verify(&ecdsa_context.MBEDTLS_PRIVATE(grp), hash, 32, &ecdsa_context.MBEDTLS_PRIVATE(Q), &r, &s));
+    int actual_ret = mbedtls_ecdsa_verify(&ecdsa_context.MBEDTLS_PRIVATE(grp), hash, 32, &ecdsa_context.MBEDTLS_PRIVATE(Q), &r, &s);
+    TEST_ASSERT_EQUAL(expected_ret, actual_ret);
     elapsed_time = ccomp_timer_stop();
 
     if (id == MBEDTLS_ECP_DP_SECP192R1) {
@@ -149,15 +162,29 @@ void test_ecdsa_verify(mbedtls_ecp_group_id id, const uint8_t *hash, const uint8
 TEST_CASE("mbedtls ECDSA signature verification performance on SECP192R1", "[mbedtls]")
 {
     test_ecdsa_verify(MBEDTLS_ECP_DP_SECP192R1, sha, ecdsa192_r, ecdsa192_s,
-                 ecdsa192_pub_x, ecdsa192_pub_y);
+                ecdsa192_pub_x, ecdsa192_pub_y, 0);
 }
 
 TEST_CASE("mbedtls ECDSA signature verification performance on SECP256R1", "[mbedtls]")
 {
     test_ecdsa_verify(MBEDTLS_ECP_DP_SECP256R1, sha, ecdsa256_r, ecdsa256_s,
-                 ecdsa256_pub_x, ecdsa256_pub_y);
+                 ecdsa256_pub_x, ecdsa256_pub_y, 0);
 }
 
+TEST_CASE("mbedtls ECDSA signature verification rejects out-of-range r, s on SECP256R1", "[mbedtls]")
+{
+    static const uint8_t zero32[32] = { 0 };
+    uint8_t p256_n_be[32];
+    ecdsa_get_curve_order_be(MBEDTLS_ECP_DP_SECP256R1, p256_n_be, sizeof(p256_n_be));
+
+    test_ecdsa_verify(MBEDTLS_ECP_DP_SECP256R1, sha, zero32, zero32,       ecdsa256_pub_x, ecdsa256_pub_y, MBEDTLS_ERR_ECP_VERIFY_FAILED); /* r=0, s=0 */
+    test_ecdsa_verify(MBEDTLS_ECP_DP_SECP256R1, sha, zero32, p256_n_be,    ecdsa256_pub_x, ecdsa256_pub_y, MBEDTLS_ERR_ECP_VERIFY_FAILED); /* r=0, s=N */
+    test_ecdsa_verify(MBEDTLS_ECP_DP_SECP256R1, sha, p256_n_be, zero32,    ecdsa256_pub_x, ecdsa256_pub_y, MBEDTLS_ERR_ECP_VERIFY_FAILED); /* r=N, s=0 */
+    test_ecdsa_verify(MBEDTLS_ECP_DP_SECP256R1, sha, p256_n_be, p256_n_be, ecdsa256_pub_x, ecdsa256_pub_y, MBEDTLS_ERR_ECP_VERIFY_FAILED); /* r=N, s=N */
+    test_ecdsa_verify(MBEDTLS_ECP_DP_SECP256R1, sha, ecdsa256_r, zero32,    ecdsa256_pub_x, ecdsa256_pub_y, MBEDTLS_ERR_ECP_VERIFY_FAILED); /* r=valid, s=0 */
+    test_ecdsa_verify(MBEDTLS_ECP_DP_SECP256R1, sha, ecdsa256_r, p256_n_be, ecdsa256_pub_x, ecdsa256_pub_y, MBEDTLS_ERR_ECP_VERIFY_FAILED); /* r=valid, s=N */
+    test_ecdsa_verify(MBEDTLS_ECP_DP_SECP256R1, sha, p256_n_be, ecdsa256_s, ecdsa256_pub_x, ecdsa256_pub_y, MBEDTLS_ERR_ECP_VERIFY_FAILED); /* r=N, s=valid */
+}
 #endif /* CONFIG_MBEDTLS_HARDWARE_ECC */
 
 #if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
@@ -250,9 +277,9 @@ void test_ecdsa_sign(mbedtls_ecp_group_id id, const uint8_t *hash, const uint8_t
 
     if (id == MBEDTLS_ECP_DP_SECP192R1) {
         // Skip the initial zeroes
-        test_ecdsa_verify(id, sha, &r_be[8], &s_be[8], pub_x, pub_y);
+        test_ecdsa_verify(id, sha, &r_be[8], &s_be[8], pub_x, pub_y, 0);
     } else if (id == MBEDTLS_ECP_DP_SECP256R1) {
-        test_ecdsa_verify(id, sha, r_be, s_be, pub_x, pub_y);
+        test_ecdsa_verify(id, sha, r_be, s_be, pub_x, pub_y, 0);
     }
 
     mbedtls_mpi_free(&r);
