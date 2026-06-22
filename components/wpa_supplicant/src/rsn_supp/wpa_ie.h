@@ -19,5 +19,7 @@ int wpa_gen_wpa_ie(struct wpa_sm *sm, u8 *wpa_ie, size_t wpa_ie_len);
 int wpa_gen_rsnxe(struct wpa_sm *sm, u8 *rsnxe, size_t rsnxe_len);
 int wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len,
              struct wpa_ie_data *data);
+int wpa_parse_wpa_ie_scan_only(const u8 *wpa_ie, size_t wpa_ie_len,
+			       struct wpa_ie_data *data);
 
 #endif /* WPA_IE_H */
