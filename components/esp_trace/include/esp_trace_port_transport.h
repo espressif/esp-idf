@@ -35,7 +35,7 @@ typedef enum {
  * Defines the interface for trace transports.
  *
  * @warning Runtime callbacks (read, write, flush_nolock, panic_handler) must
- *          not call FreeRTOS / IDF APIs that themselves emit trace hooks
+ *          not call FreeRTOS / IDF APIs that themselves trigger trace hooks
  *          (e.g. vTaskDelay, xQueue*, xSemaphore*) — they are invoked from
  *          inside the encoder's lock and from ISR context, so re-entering
  *          the tracing path can deadlock or assert.

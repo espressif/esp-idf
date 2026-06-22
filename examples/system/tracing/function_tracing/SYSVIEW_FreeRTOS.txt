@@ -1,0 +1,2 @@
+512       function_enter      func=%p call_site=%p
+513       function_exit       func=%p call_site=%p
