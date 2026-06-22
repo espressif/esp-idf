@@ -471,6 +471,28 @@ TEST_CASE("ULP ADC can init-deinit-init", "[ulp]")
     TEST_ASSERT_EQUAL(ESP_OK, ulp_adc_deinit());
 }
 
+TEST_CASE("ULP ADC can init multiple channels", "[ulp]")
+{
+    /* Initialize the ADC unit and configure the first channel */
+    ulp_adc_cfg_t riscv_adc_cfg = {
+        .adc_n    = ADC_UNIT,
+        .channel  = ADC_CHANNEL_5,
+        .width    = WIDTH,
+        .atten    = ADC_ATTEN_DB_2_5,
+        .ulp_mode = ADC_ULP_MODE_FSM,
+    };
+    TEST_ASSERT_EQUAL(ESP_OK, ulp_adc_init(&riscv_adc_cfg));
+
+    /* Configure an additional channel on the same ADC unit */
+    ulp_adc_chan_cfg_t chan_cfg = {
+        .atten    = ADC_ATTEN_DB_12,
+        .bitwidth = WIDTH,
+    };
+    TEST_ASSERT_EQUAL(ESP_OK, ulp_adc_config_channel(ADC_UNIT, ADC_CHANNEL_6, &chan_cfg));
+
+    TEST_ASSERT_EQUAL(ESP_OK, ulp_adc_deinit());
+}
+
 TEST_CASE("Test ULP RISCV delay", "[ulp]")
 {
     int64_t start, diff;
