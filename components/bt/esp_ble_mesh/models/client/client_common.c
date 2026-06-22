@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,17 +20,14 @@
 
 #define HCI_TIME_FOR_START_ADV  K_MSEC(5)   /* Three adv related hci commands may take 4 ~ 5ms */
 
-static bt_mesh_client_node_t *client_pick_node(sys_slist_t *list, uint16_t tx_dst)
+static bt_mesh_client_node_t *client_pick_node_unsafe(sys_slist_t *list, uint16_t tx_dst)
 {
     bt_mesh_client_node_t *node = NULL;
     sys_snode_t *cur = NULL;
 
     BT_DBG("ClientPickNode, Dst 0x%04x", tx_dst);
 
-    bt_mesh_list_lock();
-
     if (sys_slist_is_empty(list)) {
-        bt_mesh_list_unlock();
         BT_DBG("ListEmpty");
         return NULL;
     }
@@ -39,16 +36,24 @@ static bt_mesh_client_node_t *client_pick_node(sys_slist_t *list, uint16_t tx_ds
          cur != NULL; cur = sys_slist_peek_next(cur)) {
         node = (bt_mesh_client_node_t *)cur;
         if (node->ctx.addr == tx_dst) {
-            bt_mesh_list_unlock();
             BT_DBG("ListNodeFound");
             return node;
         }
     }
 
-    bt_mesh_list_unlock();
-
     BT_DBG("ListNodeNotFound");
     return NULL;
+}
+
+static bt_mesh_client_node_t *client_pick_node(sys_slist_t *list, uint16_t tx_dst)
+{
+    bt_mesh_client_node_t *node = NULL;
+
+    bt_mesh_list_lock();
+    node = client_pick_node_unsafe(list, tx_dst);
+    bt_mesh_list_unlock();
+
+    return node;
 }
 
 bt_mesh_client_node_t *bt_mesh_is_client_recv_publish_msg(struct bt_mesh_model *model,
@@ -99,7 +104,11 @@ bt_mesh_client_node_t *bt_mesh_is_client_recv_publish_msg(struct bt_mesh_model *
         return NULL;
     }
 
-    if ((node = client_pick_node(&data->queue, ctx->addr)) == NULL) {
+    bt_mesh_list_lock();
+
+    node = client_pick_node_unsafe(&data->queue, ctx->addr);
+    if (node == NULL) {
+        bt_mesh_list_unlock();
         BT_DBG("MsgFromUnknownSrc");
         if (cli->publish_status && need_pub) {
             cli->publish_status(ctx->recv_op, model, ctx, buf);
@@ -108,6 +117,7 @@ bt_mesh_client_node_t *bt_mesh_is_client_recv_publish_msg(struct bt_mesh_model *
     }
 
     if (node->op_pending != ctx->recv_op) {
+        bt_mesh_list_unlock();
         BT_DBG("MsgWithUnknownOp");
         if (cli->publish_status && need_pub) {
             cli->publish_status(ctx->recv_op, model, ctx, buf);
@@ -116,12 +126,15 @@ bt_mesh_client_node_t *bt_mesh_is_client_recv_publish_msg(struct bt_mesh_model *
     }
 
     if (k_delayed_work_remaining_get(&node->timer) == 0) {
+        bt_mesh_list_unlock();
         BT_DBG("MsgWithTimerExpired");
         if (cli->publish_status && need_pub) {
             cli->publish_status(ctx->recv_op, model, ctx, buf);
         }
         return NULL;
     }
+
+    bt_mesh_list_unlock();
 
     return node;
 }
@@ -152,7 +165,8 @@ static uint32_t client_get_status_op(const bt_mesh_client_op_pair_t *op_pair,
 
 static int32_t client_get_adv_duration(struct bt_mesh_msg_ctx *ctx)
 {
-    uint16_t duration = 0, adv_int = 0;
+    int32_t duration = 0;
+    uint16_t adv_int = 0;
     uint8_t xmit = 0;
 
     /* Initialize with network transmission */
@@ -172,9 +186,9 @@ static int32_t client_get_adv_duration(struct bt_mesh_msg_ctx *ctx)
     adv_int = BLE_MESH_TRANSMIT_INT(xmit);
     duration = (BLE_MESH_TRANSMIT_COUNT(xmit) + 1) * (adv_int + 10);
 
-    BT_DBG("Duration %ld", (int32_t)duration);
+    BT_DBG("Duration %ld", duration);
 
-    return (int32_t)duration;
+    return duration;
 }
 
 static int32_t client_calc_timeout(struct bt_mesh_msg_ctx *ctx,

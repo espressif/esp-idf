@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2023 Nordic Semiconductor ASA
- * SPDX-FileContributor: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -292,6 +292,7 @@ int bt_mesh_pub_key_gen(void)
     uint8_t private_key[PRIV_KEY_SIZE];
     size_t key_len;
     int err;
+    int ret = 0;
 
     /* Destroy any existing key */
     if (dh_pair.priv_key_id != PSA_KEY_ID_NULL) {
@@ -300,15 +301,26 @@ int bt_mesh_pub_key_gen(void)
     }
     dh_pair.is_ready = false;
 
-    /* Generate a random private key (in little-endian format for storage) */
+    /* Generate a random private key and let PSA validate the range.
+     * For NIST P-256, the private key scalar d must satisfy: 1 <= d < n.
+     * PSA will return PSA_ERROR_INVALID_ARGUMENT if the key is out of range.
+     */
+    #define MAX_KEY_GEN_RETRIES 10
+    int retries = 0;
     do {
         err = bt_mesh_rand(private_key, sizeof(private_key));
         if (err) {
             BT_ERR("Failed to generate random private key");
-            return err;
+            ret = err;
+            goto cleanup;
         }
-        /* Ensure the private key is valid (non-zero first bytes in BE) */
-    } while (private_key[0] == 0 && private_key[1] == 0);
+        if (++retries > MAX_KEY_GEN_RETRIES) {
+            BT_ERR("Exceeded maximum key generation retries");
+            ret = -EIO;
+            goto cleanup;
+        }
+        /* Minimal check for obviously invalid keys (all zeros in MSB region) */
+    } while (private_key[0] == 0 && private_key[1] == 0 && private_key[2] == 0 && private_key[3] == 0);
 
     /* Configure key attributes for ECDH with P-256 */
     psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_DERIVE);
@@ -323,7 +335,8 @@ int bt_mesh_pub_key_gen(void)
     if (status != PSA_SUCCESS) {
         BT_ERR("PSA import private key failed: %d", status);
         psa_reset_key_attributes(&key_attributes);
-        return -EIO;
+        ret = -EIO;
+        goto cleanup;
     }
 
     /* Export public key (PSA computes it from the private key) */
@@ -334,13 +347,20 @@ int bt_mesh_pub_key_gen(void)
         psa_destroy_key(dh_pair.priv_key_id);
         dh_pair.priv_key_id = PSA_KEY_ID_NULL;
         psa_reset_key_attributes(&key_attributes);
-        return -EIO;
+        ret = -EIO;
+        goto cleanup;
     }
 
     dh_pair.is_ready = true;
     psa_reset_key_attributes(&key_attributes);
 
-    return 0;
+cleanup:
+    /* Securely clear private key from stack to prevent key leakage */
+    memset(private_key, 0, sizeof(private_key));
+    /* Memory barrier to prevent compiler from optimizing out the memset */
+    __asm__ __volatile__("" : : "r"(private_key) : "memory");
+
+    return ret;
 }
 
 const uint8_t *bt_mesh_pub_key_get_raw(void)
@@ -359,6 +379,8 @@ void bt_mesh_set_private_key_raw(const uint8_t pri_key[32])
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_status_t status;
     size_t key_len;
+
+    BT_DBG("Privkey:%s", bt_hex(pri_key, PRIV_KEY_SIZE));
 
     /* Destroy any existing key */
     if (dh_pair.priv_key_id != PSA_KEY_ID_NULL) {
@@ -393,7 +415,6 @@ void bt_mesh_set_private_key_raw(const uint8_t pri_key[32])
     }
 
     BT_DBG("Pubkey:%s", bt_hex(&dh_pair.public_key[1], PUB_KEY_SIZE));
-    BT_DBG("Privkey:%s", bt_hex(pri_key, PRIV_KEY_SIZE));
     dh_pair.is_ready = true;
     psa_reset_key_attributes(&attributes);
 }
@@ -407,7 +428,7 @@ bool bt_mesh_check_public_key_raw(const uint8_t key[64])
 
     /* PSA requires 0x04 prefix for uncompressed point */
     pub_be[0] = 0x04;
-    /* Convert from little-endian to big-endian */
+    /* Copy X and Y coordinates (already in big-endian format) */
     memcpy(&pub_be[1], key, 32);
     memcpy(&pub_be[33], key + 32, 32);
 
@@ -587,15 +608,16 @@ void bt_mesh_key_assign(struct bt_mesh_key *dst, const struct bt_mesh_key *src)
 int bt_mesh_key_destroy(const struct bt_mesh_key *key)
 {
     psa_status_t status;
+    psa_key_id_t key_id = key->key;
 
-    status = psa_destroy_key(key->key);
+    status = psa_destroy_key(key_id);
     if (status != PSA_SUCCESS) {
         BT_ERR("PSA destroy key failed: %d", status);
         return -EIO;
     }
 
 #if CONFIG_BT_SETTINGS
-    return keyid_free(key->key);
+    return keyid_free(key_id);
 #else
     return 0;
 #endif

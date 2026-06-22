@@ -994,7 +994,7 @@ int bt_mesh_friend_clear_cfm(struct bt_mesh_net_rx *rx,
 
     frnd = find_clear(rx->ctx.addr);
     if (!frnd) {
-        BT_WARN("No pending clear procedure for 0x%02x", rx->ctx.addr);
+        BT_WARN("No pending clear procedure for 0x%04x", rx->ctx.addr);
         return 0;
     }
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -176,6 +176,7 @@ static void btc_ble_mesh_lighting_client_copy_req_data(btc_msg_t *msg, void *p_d
                 break;
             }
         }
+        __attribute__((fallthrough));
     case ESP_BLE_MESH_LIGHT_CLIENT_TIMEOUT_EVT:
         break;
     default:
@@ -209,6 +210,7 @@ static void btc_ble_mesh_lighting_client_free_req_data(btc_msg_t *msg)
                 break;
             }
         }
+        __attribute__((fallthrough));
     case ESP_BLE_MESH_LIGHT_CLIENT_TIMEOUT_EVT:
         if (arg->params) {
             bt_mesh_free(arg->params);
@@ -458,13 +460,13 @@ static void btc_ble_mesh_lighting_server_free_req_data(btc_msg_t *msg)
     switch (msg->act) {
     case ESP_BLE_MESH_LIGHTING_SERVER_STATE_CHANGE_EVT:
         if (arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET ||
-            arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET_UNACK) {
+                arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET_UNACK) {
             bt_mesh_free_buf(arg->value.state_change.lc_property_set.property_value);
         }
         break;
     case ESP_BLE_MESH_LIGHTING_SERVER_RECV_SET_MSG_EVT:
         if (arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET ||
-            arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET_UNACK) {
+                arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET_UNACK) {
             bt_mesh_free_buf(arg->value.set.lc_property.property_value);
         }
         break;

@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2018 Intel Corporation
- * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -244,7 +244,7 @@ static int net_set(const char *name)
         BT_ERR("Failed to load node net info");
         memset(bt_mesh.dev_key, 0, sizeof(bt_mesh.dev_key));
         bt_mesh_comp_unprovision();
-        return 0;
+        return err;
     }
 
     if (exist == false) {
@@ -2353,6 +2353,7 @@ static struct key_update *key_update_find(bool app_key, uint16_t key_idx,
 
         if (update->key_idx == key_idx) {
             match = update;
+            break;
         }
     }
 
@@ -2949,12 +2950,12 @@ int bt_mesh_model_data_store(const struct bt_mesh_model *mod, bool vnd,
 
     char path[30] = {'\0'};
     uint16_t model_key = 0U;
+    int len = 0;
 
     model_key = BLE_MESH_GET_MODEL_KEY(mod->elem_idx, mod->model_idx);
-    sprintf(path, "mesh/%s/%04x/d", vnd ? "v" : "s", model_key);
-    if (name) {
-        strcat(path, "/");
-        strncat(path, name, SETTINGS_MAX_DIR_DEPTH);
+    len = snprintf(path, sizeof(path), "mesh/%s/%04x/d", vnd ? "v" : "s", model_key);
+    if (name && len > 0 && len < sizeof(path)) {
+        snprintf(path + len, sizeof(path) - len, "/%.*s", SETTINGS_MAX_DIR_DEPTH, name);
     }
 
     if (data_len) {

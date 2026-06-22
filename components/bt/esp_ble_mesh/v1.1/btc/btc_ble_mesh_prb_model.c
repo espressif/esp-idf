@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -222,8 +222,8 @@ void btc_ble_mesh_prb_client_recv_pub_cb(uint32_t opcode,
     }
 
     bt_mesh_prb_client_cb_evt_to_btc(opcode,
-        BTC_BLE_MESH_EVT_PRB_CLIENT_RECV_PUB,
-        model, ctx, buf->data, buf->len);
+                                     BTC_BLE_MESH_EVT_PRB_CLIENT_RECV_PUB,
+                                     model, ctx, buf->data, buf->len);
 }
 
 static int btc_ble_mesh_prb_client_send(esp_ble_mesh_client_common_param_t *params,
@@ -264,7 +264,7 @@ static int btc_ble_mesh_prb_client_send(esp_ble_mesh_client_common_param_t *para
     case ESP_BLE_MESH_MODEL_OP_PRIV_NODE_IDENTITY_GET:
         return bt_mesh_private_node_identity_get(&param, msg->priv_node_id_get.net_idx);
     case ESP_BLE_MESH_MODEL_OP_PRIV_NODE_IDENTITY_SET:
-        return bt_mesh_private_node_identity_set(&param, msg->priv_node_id_set.net_idx , msg->priv_node_id_set.private_node_id);
+        return bt_mesh_private_node_identity_set(&param, msg->priv_node_id_set.net_idx, msg->priv_node_id_set.private_node_id);
     default:
         BT_ERR("Invalid Private Beacon opcode 0x%04x", param.opcode);
         return -EINVAL;
@@ -289,7 +289,7 @@ void btc_ble_mesh_prb_client_call_handler(btc_msg_t *msg)
         cb.send.err_code = btc_ble_mesh_prb_client_send(arg->prb_send.params,
                                                         arg->prb_send.msg);
         btc_ble_mesh_prb_client_cb(&cb,
-            ESP_BLE_MESH_PRB_CLIENT_SEND_COMP_EVT);
+                                   ESP_BLE_MESH_PRB_CLIENT_SEND_COMP_EVT);
         break;
     default:
         break;
@@ -333,7 +333,7 @@ static inline void btc_ble_mesh_prb_server_cb_to_app(esp_ble_mesh_prb_server_cb_
 }
 
 static void btc_ble_mesh_prb_server_cb(
-                esp_ble_mesh_prb_server_cb_param_t *cb_params, uint8_t act)
+    esp_ble_mesh_prb_server_cb_param_t *cb_params, uint8_t act)
 {
     btc_msg_t msg = {0};
 

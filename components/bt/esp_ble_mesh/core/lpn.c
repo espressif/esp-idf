@@ -283,7 +283,7 @@ static void clear_friendship(bool force, bool disable)
      */
     lpn->groups_changed = 1U;
 
-    if (cfg->hb_pub.feat & BLE_MESH_FEAT_LOW_POWER) {
+    if (cfg && (cfg->hb_pub.feat & BLE_MESH_FEAT_LOW_POWER)) {
         bt_mesh_heartbeat_send();
     }
 
@@ -335,6 +335,11 @@ static const struct bt_mesh_send_cb friend_req_sent_cb = {
 static int send_friend_req(struct bt_mesh_lpn *lpn)
 {
     const struct bt_mesh_comp *comp = bt_mesh_comp_get();
+    if (!comp) {
+        BT_ERR("Invalid composition data");
+        return -EINVAL;
+    }
+
     struct bt_mesh_msg_ctx ctx = {
         .net_idx   = bt_mesh.sub[0].net_idx,
         .app_idx   = BLE_MESH_KEY_UNUSED,
@@ -710,6 +715,8 @@ static inline int group_popcount(bt_mesh_atomic_t *target)
     for (i = 0; i < ARRAY_SIZE(bt_mesh.lpn.added); i++) {
         count += popcount(bt_mesh_atomic_get(&target[i]));
     }
+
+    return count;
 #else /* CONFIG_BLE_MESH_LPN_GROUPS > 32 */
     return popcount(bt_mesh_atomic_get(target));
 #endif /* CONFIG_BLE_MESH_LPN_GROUPS > 32 */
@@ -1086,7 +1093,7 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
 
         BT_INFO("Friendship established with 0x%04x", lpn->frnd);
 
-        if (cfg->hb_pub.feat & BLE_MESH_FEAT_LOW_POWER) {
+        if (cfg && (cfg->hb_pub.feat & BLE_MESH_FEAT_LOW_POWER)) {
             bt_mesh_heartbeat_send();
         }
 
@@ -1122,10 +1129,10 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
     bt_mesh_net_iv_update(iv_index, BLE_MESH_IV_UPDATE(msg->flags));
 
     if (lpn->groups_changed) {
-        sub_update(TRANS_CTL_OP_FRIEND_SUB_ADD);
-        sub_update(TRANS_CTL_OP_FRIEND_SUB_REM);
+        bool sent = sub_update(TRANS_CTL_OP_FRIEND_SUB_ADD);
+        sent = (sent || sub_update(TRANS_CTL_OP_FRIEND_SUB_REM));
 
-        if (!lpn->sent_req) {
+        if (!lpn->sent_req && !sent) {
             lpn->groups_changed = 0U;
         }
     }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -157,6 +157,7 @@ static void btc_ble_mesh_lcd_client_copy_req_data(btc_msg_t *msg, void *p_dest, 
                 break;
             }
         }
+        __attribute__((fallthrough));
     case ESP_BLE_MESH_LCD_CLIENT_SEND_COMP_EVT:
     case ESP_BLE_MESH_LCD_CLIENT_SEND_TIMEOUT_EVT:
         break;
@@ -193,6 +194,7 @@ static void btc_ble_mesh_lcd_client_free_req_data(btc_msg_t *msg)
                 break;
             }
         }
+        __attribute__((fallthrough));
     case ESP_BLE_MESH_LCD_CLIENT_SEND_COMP_EVT:
     case ESP_BLE_MESH_LCD_CLIENT_SEND_TIMEOUT_EVT:
         if (arg->params) {
@@ -282,8 +284,8 @@ void btc_ble_mesh_lcd_client_recv_pub_cb(uint32_t opcode,
     }
 
     bt_mesh_lcd_client_cb_evt_to_btc(opcode,
-        BTC_BLE_MESH_EVT_LCD_CLIENT_RECV_PUB,
-        model, ctx, buf->data, buf->len);
+                                     BTC_BLE_MESH_EVT_LCD_CLIENT_RECV_PUB,
+                                     model, ctx, buf->data, buf->len);
 }
 
 static int btc_ble_mesh_lcd_client_send(esp_ble_mesh_client_common_param_t *params,
@@ -374,7 +376,7 @@ static inline void btc_ble_mesh_lcd_server_cb_to_app(esp_ble_mesh_lcd_server_cb_
 }
 
 static void btc_ble_mesh_lcd_server_cb(
-                esp_ble_mesh_lcd_server_cb_param_t *cb_params, uint8_t act)
+    esp_ble_mesh_lcd_server_cb_param_t *cb_params, uint8_t act)
 {
     btc_msg_t msg = {0};
 
