@@ -1,5 +1,9 @@
 $(document).ready(function() {
 
+    if (DOCUMENTATION_OPTIONS.LANGUAGE === 'zh-CN') {
+        DOCUMENTATION_OPTIONS.LANGUAGE = 'zh_CN';
+    }
+
     let version = DOCUMENTATION_OPTIONS.VERSION;
     let language = DOCUMENTATION_OPTIONS.LANGUAGE;
     let idf_target = DOCUMENTATION_OPTIONS.IDF_TARGET;
