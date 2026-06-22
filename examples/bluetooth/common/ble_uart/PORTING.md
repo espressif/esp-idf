@@ -1,4 +1,6 @@
-# BLE UART Porting & API Guide
+# ESP-BLE-UART Porting & API Guide
+
+> **Naming convention:** Use **ESP-BLE-UART** for Espressif-owned product names (Bridge, Console, Daemon, Echo Server, the `ble_uart` component, and the `ble_uart_service` example). Use **BLE UART** for the generic GATT service convention, transport layer, and compatible third-party devices. This follows the same pattern as ESP-BLE-MESH.
 
 This document lives in **`examples/bluetooth/common/ble_uart/`** next to the
 `ble_uart` component sources (`ble_uart.h`, backend `.c` files).
@@ -60,7 +62,7 @@ is entirely up to you**.
 Canonical sources live under **`$IDF_PATH/examples/bluetooth/common/ble_uart/`**
 (component name `ble_uart`): `ble_uart.h`, `ble_uart_nimble.c`,
 `ble_uart_bluedroid.c`, `CMakeLists.txt`, and `Kconfig` (prefix + RX scratch;
-`menuconfig → Component configuration → BLE UART library`). When reusing
+`menuconfig → Component configuration → ESP-BLE-UART library`). When reusing
 outside this tree, copy the whole `common/ble_uart/` directory or at least
 merge `Kconfig` into your component so the same `CONFIG_BLE_UART_*` symbols
 exist.
@@ -73,7 +75,7 @@ then use `REQUIRES ble_uart` from `main/CMakeLists.txt` (see
 `ble_uart` target exists when CMake expands `main`'s requirements.
 
 Kconfig options appear under
-`menuconfig → Component configuration → BLE UART library`.
+`menuconfig → Component configuration → ESP-BLE-UART library`.
 
 > A `main/idf_component.yml` path dependency alone is **not** sufficient if
 > `main/CMakeLists.txt` lists `REQUIRES ble_uart`: the early requirement scan
@@ -212,7 +214,7 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(err);
 
-    /* 2. Bring up BLE UART */
+    /* 2. Bring up ESP-BLE-UART */
     ESP_ERROR_CHECK(ble_uart_install(&(ble_uart_config_t){
         .encrypted      = true,
         .device_name    = "MyDevice",
@@ -489,7 +491,7 @@ ble_uart_open();
 ### 6.4 Configuring the device-name prefix via Kconfig
 
 If you use the shared `ble_uart` component, options are already in
-`menuconfig → Component configuration → BLE UART library`. If you copied only
+`menuconfig → Component configuration → ESP-BLE-UART library`. If you copied only
 the `.c` / `.h` files into `main/`, copy `Kconfig` from `common/ble_uart/` as
 well (or merge its symbols into your own `Kconfig.projbuild`), then:
 
@@ -505,7 +507,7 @@ ble_uart_install(&(ble_uart_config_t){
 });
 ```
 
-Edit the default through `menuconfig → Component configuration → BLE UART
+Edit the default through `menuconfig → Component configuration → ESP-BLE-UART
 library → BLE device name prefix`.
 
 ### 6.5 Pushing data proactively
