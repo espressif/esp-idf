@@ -27,6 +27,16 @@ def test_twai_self(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='twai-loop-back')
 
 
+def esp_enter_flash_mode(dut: Dut) -> None:
+    ser = dut.serial.proc
+    ser.setRTS(True)  # EN Low
+    time.sleep(0.5)
+    ser.setDTR(True)  # GPIO0 Low
+    ser.setRTS(False)  # EN High
+    dut.expect('waiting for download', timeout=2)
+    ser.setDTR(False)  # Back RTS/DTR to 1/1 to avoid affect to esptool
+
+
 can_env = os.getenv('CAN_PORT', 'can0')
 print(f'CAN_PORT={can_env}')
 
@@ -55,21 +65,24 @@ def fixture_create_socket_can() -> Bus:
     'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3', 'esp32p4'], indirect=['target']
 )
 def test_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
+    try:
+        dut.expect_exact('Press ENTER to see the list of tests')
 
-    # TEST_CASE("twai_listen_only", "[twai]")
-    dut.write('"twai_listen_only"')
+        # TEST_CASE("twai_listen_only", "[twai]")
+        dut.write('"twai_listen_only"')
 
-    # wait the DUT to block at the receive API
-    time.sleep(0.03)
+        # wait the DUT to block at the receive API
+        time.sleep(0.1)
 
-    message = Message(
-        arbitration_id=0x123,
-        is_extended_id=False,
-        data=[0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88],
-    )
-    socket_can.send(message, timeout=0.2)
-    dut.expect_unity_test_output()
+        message = Message(
+            arbitration_id=0x123,
+            is_extended_id=False,
+            data=[0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88],
+        )
+        socket_can.send(message, timeout=0.2)
+        dut.expect_unity_test_output()
+    finally:
+        esp_enter_flash_mode(dut)
 
 
 @pytest.mark.twai_adapter
@@ -83,30 +96,32 @@ def test_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
 @idf_parametrize(
     'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3', 'esp32p4'], indirect=['target']
 )
-def test_twai_remote_request(dut: Dut, socket_can: Bus) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
+def test_legacy_twai_remote_request(dut: Dut, socket_can: Bus) -> None:
+    try:
+        dut.expect_exact('Press ENTER to see the list of tests')
 
-    # TEST_CASE("twai_remote_request", "[twai]")
-    dut.write('"twai_remote_request"')
+        # TEST_CASE("twai_remote_request", "[twai]")
+        dut.write('"twai_remote_request"')
 
-    deadline = time.time() + 2.0
-    req = None
-    while time.time() < deadline:
-        req = socket_can.recv(timeout=0.2)
-        # wait for the remote request frame
-        if req is not None and req.is_remote_frame:
-            break
-    if req is None:
-        raise Exception('Remote frame not received')
+        deadline = time.time() + 2.0
+        req = None
+        while time.time() < deadline:
+            req = socket_can.recv(timeout=0.2)
+            if req is not None and req.is_remote_frame:
+                break
 
-    logging.info(f'Received message: {req}')
+        if req is None:
+            raise Exception('Remote frame not received')
+        logging.info(f'Received message: {req}')
 
-    reply = Message(
-        arbitration_id=req.arbitration_id,
-        is_extended_id=req.is_extended_id,
-        data=[0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80],
-    )
-    socket_can.send(reply, timeout=0.2)
-    print('send', reply)
+        reply = Message(
+            arbitration_id=req.arbitration_id,
+            is_extended_id=req.is_extended_id,
+            data=[0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80],
+        )
+        socket_can.send(reply, timeout=0.2)
+        print('send', reply)
 
-    dut.expect_unity_test_output()
+        dut.expect_unity_test_output()
+    finally:
+        esp_enter_flash_mode(dut)
