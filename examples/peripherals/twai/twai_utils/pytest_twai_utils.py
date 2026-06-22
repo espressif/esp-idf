@@ -627,34 +627,34 @@ def test_twai_utils_external_communication(twai: TwaiTestHelper, usb_can: CanBus
             bitrate=DEFAULT_BITRATE,
             start_dump=False,
         ):
-            # --- ESP -> PC Test ---
-            for frame_str, frame_id, expected_data, is_extended in test_frames:
-                assert twai.send(frame_str), f'ESP->PC send failed: {frame_str}'
-                deadline = time.time() + 2.0
-                got = None
-                while time.time() < deadline:
-                    try:
-                        msg = can_bus.recv(timeout=0.1)
-                        if msg and msg.arbitration_id == frame_id:
-                            got = msg
-                            break
-                    except Exception:
-                        continue
-                assert got is not None, f'ESP->PC receive timeout for ID=0x{frame_id:X}'
-                assert bool(got.is_extended_id) == is_extended, (
-                    f'ESP->PC extended flag mismatch for 0x{frame_id:X}: '
-                    f'expected {is_extended}, got {got.is_extended_id}'
-                )
-                assert bytes(got.data) == expected_data, (
-                    f'ESP->PC data mismatch for 0x{frame_id:X}: '
-                    f'expected {expected_data.hex()}, got {bytes(got.data).hex()}'
-                )
-
-            # --- PC -> ESP ---
-            assert twai.dump_start(), 'Failed to start twai_dump'
-            assert twai.info(), 'Failed to get twai_info'
-
             try:
+                # --- ESP -> PC Test ---
+                for frame_str, frame_id, expected_data, is_extended in test_frames:
+                    assert twai.send(frame_str), f'ESP->PC send failed: {frame_str}'
+                    deadline = time.time() + 2.0
+                    got = None
+                    while time.time() < deadline:
+                        try:
+                            msg = can_bus.recv(timeout=0.1)
+                            if msg and msg.arbitration_id == frame_id:
+                                got = msg
+                                break
+                        except Exception:
+                            continue
+                    assert got is not None, f'ESP->PC receive timeout for ID=0x{frame_id:X}'
+                    assert bool(got.is_extended_id) == is_extended, (
+                        f'ESP->PC extended flag mismatch for 0x{frame_id:X}: '
+                        f'expected {is_extended}, got {got.is_extended_id}'
+                    )
+                    assert bytes(got.data) == expected_data, (
+                        f'ESP->PC data mismatch for 0x{frame_id:X}: '
+                        f'expected {expected_data.hex()}, got {bytes(got.data).hex()}'
+                    )
+
+                # --- PC -> ESP ---
+                assert twai.dump_start(), 'Failed to start twai_dump'
+                assert twai.info(), 'Failed to get twai_info'
+
                 for frame_str, frame_id, expected_data, is_extended in test_frames:
                     msg = can.Message(arbitration_id=frame_id, data=expected_data, is_extended_id=is_extended)
                     print(f'\nPC->ESP sending frame: {msg}, Return: {can_bus.send(msg)}')

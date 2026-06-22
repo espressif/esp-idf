@@ -85,20 +85,22 @@ def fixture_create_socket_can() -> Bus:
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
 @pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='no runner')  # TODO: IDFCI-11110
 def test_driver_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('"twai_listen_only"')
+    try:
+        dut.expect_exact('Press ENTER to see the list of tests')
+        dut.write('"twai_listen_only"')
 
-    # wait the DUT to finish initialize
-    time.sleep(0.1)
+        # wait the DUT to finish initialize
+        time.sleep(0.1)
 
-    message = Message(
-        arbitration_id=0x6688,
-        is_extended_id=True,
-        data=[0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88],
-    )
-    print('USB Socket CAN Send:', message, 'Return:', socket_can.send(message))
-    dut.expect_unity_test_output(timeout=10)
-    esp_enter_flash_mode(dut)
+        message = Message(
+            arbitration_id=0x6688,
+            is_extended_id=True,
+            data=[0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88],
+        )
+        print('USB Socket CAN Send:', message, 'Return:', socket_can.send(message))
+        dut.expect_unity_test_output(timeout=10)
+    finally:
+        esp_enter_flash_mode(dut)
 
 
 @pytest.mark.twai_adapter
@@ -107,29 +109,30 @@ def test_driver_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
 @idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
 @pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='no runner')  # TODO: IDFCI-11110
 def test_driver_twai_remote_request(dut: Dut, socket_can: Bus) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('"twai_remote_request"')
+    try:
+        dut.expect_exact('Press ENTER to see the list of tests')
+        dut.write('"twai_remote_request"')
 
-    print('Waiting remote frame ...')
-    deadline = time.time() + 5.0
-    req = None
-    while time.time() < deadline:
-        req = socket_can.recv(timeout=0.2)
-        if req is not None and req.is_remote_frame:
-            break
+        print('Waiting remote frame ...')
+        deadline = time.time() + 5.0
+        req = None
+        while time.time() < deadline:
+            req = socket_can.recv(timeout=0.2)
+            if req is not None and req.is_remote_frame:
+                break
 
-    if req is None:
-        raise Exception('Remote frame not received')
+        if req is None:
+            raise Exception('Remote frame not received')
+        print(f'USB Socket CAN Received: {req}')
 
-    print(f'USB Socket CAN Received: {req}')
+        reply = Message(
+            arbitration_id=req.arbitration_id,
+            is_extended_id=req.is_extended_id,
+            data=[0x80, 0x70, 0x60, 0x50, 0x40, 0x30, 0x20, 0x10],
+        )
+        socket_can.send(reply, timeout=0.2)
+        print('USB Socket CAN Replied:', reply)
 
-    reply = Message(
-        arbitration_id=req.arbitration_id,
-        is_extended_id=req.is_extended_id,
-        data=[0x80, 0x70, 0x60, 0x50, 0x40, 0x30, 0x20, 0x10],
-    )
-    socket_can.send(reply, timeout=0.2)
-    print('USB Socket CAN Replied:', reply)
-
-    dut.expect_unity_test_output(timeout=10)
-    esp_enter_flash_mode(dut)
+        dut.expect_unity_test_output(timeout=10)
+    finally:
+        esp_enter_flash_mode(dut)
