@@ -1,0 +1,134 @@
+# Documentation auto-translation (orchestrated in tools/ci/doc_auto_translate.py).
+# Trigger: MR scoped labels — see .gitlab/ci/README_auto_translate.md
+
+# Skip bot commits (titles like "auto translation update files") to prevent re-trigger loops.
+# Primary loop prevention: translate jobs remove trigger labels via --guard-labels before committing.
+.if-skip-auto-translate-bot-commit: &if-skip-auto-translate-bot-commit
+  if: '$CI_COMMIT_TITLE =~ /^auto translation /i'
+  when: never
+
+.if-label-auto-translate-full: &if-label-auto-translate-full
+  if: '$CI_MERGE_REQUEST_LABELS =~ /(?:^|[,\n\r])auto-translate::full(?:[,\n\r]|$)/i'
+
+.if-label-auto-translate-incremental: &if-label-auto-translate-incremental
+  if: '$CI_MERGE_REQUEST_LABELS =~ /(?:^|[,\n\r])auto-translate::incremental(?:[,\n\r]|$)/i'
+
+.if-any-auto-translate-label: &if-any-auto-translate-label
+  if: '$CI_MERGE_REQUEST_LABELS =~ /auto-translate::(full|incremental)/i'
+
+.auto_translate_setup: &auto_translate_setup
+  - git clone $AUTO_TRANSLATE_REPO
+  - pip3 install -r ./auto-translate/requirements.txt pyyaml
+
+.if-merge-request-pipeline: &if-merge-request-pipeline
+  if: '$CI_MERGE_REQUEST_IID'
+
+# Fail if the MR branch has more than one auto-translation bot commit.
+# Runs on every MR pipeline (including bot commits); does not require auto-translate labels.
+check_auto_translate_commit_history:
+  stage: auto_translate
+  image: python:3.11
+  tags: [fast_run, shiny]
+  rules:
+    - <<: *if-merge-request-pipeline
+      when: on_success
+    - when: never
+  variables:
+    GIT_DEPTH: 0
+  before_script: []
+  cache: []
+  script:
+    - |
+      BASE="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-}"
+      if [ -z "$BASE" ]; then
+        echo "No MR diff base SHA; skipping commit history check."
+        exit 0
+      fi
+      COUNT=$(git log --format=%s "${BASE}..HEAD" | grep -ciE '^auto translation ' || true)
+      if [ "$COUNT" -gt 1 ]; then
+        echo "ERROR: Found ${COUNT} auto-translation bot commits on this MR branch."
+        echo "Please squash or rebase to at most one bot commit before re-running translation."
+        git log --oneline "${BASE}..HEAD" | grep -i 'auto translation' || true
+        exit 1
+      fi
+      echo "Auto-translate commit history OK (${COUNT} bot commit(s))."
+
+# Automatic when any auto-translate label is present — validates incremental docs only.
+check_line_num:
+  stage: auto_translate
+  image: python:3.11
+  tags: [fast_run, shiny]
+  rules:
+    - <<: *if-skip-auto-translate-bot-commit
+    - <<: *if-any-auto-translate-label
+      when: on_success
+    - when: never
+  needs:
+    - check_auto_translate_commit_history
+  variables:
+    GIT_DEPTH: 0
+  before_script: []
+  cache: []
+  script:
+    - *auto_translate_setup
+    - python3 tools/ci/doc_auto_translate.py check-line-num --repo-root "$CI_PROJECT_DIR"
+
+# Label: auto-translate::full — line check + incremental + entire (include-only zh_CN) per classification.
+translate:
+  stage: auto_translate
+  image: python:3.11
+  tags: [fast_run, shiny]
+  rules:
+    - <<: *if-skip-auto-translate-bot-commit
+    - <<: *if-label-auto-translate-full
+      when: on_success
+    - when: never
+  needs:
+    - check_auto_translate_commit_history
+    - check_line_num
+  variables:
+    GIT_DEPTH: 0
+  before_script: []
+  cache: []
+  script:
+    - *auto_translate_setup
+    - git checkout $CI_COMMIT_REF_NAME
+    - |
+      if [ -n "$TRANS_FILE" ]; then
+        echo "TRANS_FILE override: incremental translate only for listed paths"
+        python3 tools/ci/doc_auto_translate.py run --repo-root "$CI_PROJECT_DIR" \
+          --mode incremental-only --trans-file "$TRANS_FILE" --guard-labels auto-translate::full
+      else
+        python3 tools/ci/doc_auto_translate.py run --repo-root "$CI_PROJECT_DIR" \
+          --mode all --guard-labels auto-translate::full
+      fi
+
+# Label: auto-translate::incremental — line check + incremental translate only (no entire/full bucket).
+translate_incremental:
+  stage: auto_translate
+  image: python:3.11
+  tags: [fast_run, shiny]
+  rules:
+    - <<: *if-skip-auto-translate-bot-commit
+    - <<: *if-label-auto-translate-incremental
+      when: on_success
+    - when: never
+  needs:
+    - check_auto_translate_commit_history
+    - check_line_num
+  variables:
+    GIT_DEPTH: 0
+  before_script: []
+  cache: []
+  script:
+    - *auto_translate_setup
+    - git checkout $CI_COMMIT_REF_NAME
+    - |
+      if [ -n "$TRANS_FILE" ]; then
+        echo "TRANS_FILE override: incremental translate only for listed paths"
+        python3 tools/ci/doc_auto_translate.py run --repo-root "$CI_PROJECT_DIR" \
+          --mode incremental-only --trans-file "$TRANS_FILE" --guard-labels auto-translate::incremental
+      else
+        python3 tools/ci/doc_auto_translate.py run --repo-root "$CI_PROJECT_DIR" \
+          --mode incremental-only --guard-labels auto-translate::incremental
+      fi

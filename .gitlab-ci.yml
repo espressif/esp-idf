@@ -20,6 +20,7 @@ include:
         - DOCLANG: "zh_CN"
           DOCTGT: "esp32p4"
   - ".gitlab/ci/danger.yml"
+  - ".gitlab/ci/auto_trans.yml"
   - ".gitlab/ci/common.yml"
   - ".gitlab/ci/rules.yml"
   - ".gitlab/ci/manual_gate.yml"
