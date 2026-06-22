@@ -113,11 +113,6 @@ static void device_event_handler(tinyusb_event_t *event, void *arg)
     }
 }
 
-void tud_reset_cb(void)
-{
-    ESP_LOGI(TAG, "USB reset");
-}
-
 void app_main(void)
 {
     // Create FreeRTOS primitives
