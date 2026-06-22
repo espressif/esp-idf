@@ -15,6 +15,7 @@ config BLE_COMPRESSED_LOG_ENABLE
         for installation instructions.
 
 if BLE_COMPRESSED_LOG_ENABLE
-    source "$IDF_PATH/components/bt/common/ble_log/extension/log_compression/Kconfig.mesh.in"
-    source "$IDF_PATH/components/bt/common/ble_log/extension/log_compression/Kconfig.host.in"
+    source "$IDF_PATH/components/bt/common/ble_log/extension/log_compression/profile/mesh/Kconfig.mesh.in"
+    source "$IDF_PATH/components/bt/common/ble_log/extension/log_compression/iso/audio/Kconfig.iso.in"
+    source "$IDF_PATH/components/bt/common/ble_log/extension/log_compression/host/Kconfig.host.in"
 endif

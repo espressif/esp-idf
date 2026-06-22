@@ -25,4 +25,4 @@ config BLE_MESH_COMPRESSED_LOG_BUFFER_LEN
     help
             Maximum output length for a single log
 
-source "$IDF_PATH/components/bt/common/ble_log/extension/log_compression/Kconfig.mesh.tags.in"
+source "$IDF_PATH/components/bt/common/ble_log/extension/log_compression/profile/mesh/Kconfig.mesh.tags.in"

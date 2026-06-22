@@ -1,0 +1,62 @@
+if BLE_ISO_COMPRESSED_LOG_ENABLE
+    menu "Select the Audio/ISO stack log tag to be compressed"
+        config BLE_ISO_STACK_ERR_LOG_COMPRESSION
+            bool "Compress ERROR log of BLE Audio/ISO"
+            default y
+            help
+                    The error log in the BLE Audio/ISO component will be compressed
+        config BLE_ISO_STACK_ERR_LOG_PRESERVE
+            bool "Keep the original error log statement"
+            depends on BLE_ISO_STACK_ERR_LOG_COMPRESSION
+            default y
+            help
+                    When this option is enabled, the log data will be output
+                    through both the compressed log interface and the original
+                    UART interface at the same time, meaning that the log
+                    statements will appear on both paths. However, please note
+                    that this dual-output approach introduces additional code
+                    and string constants, which will increase the size of the
+                    firmware binary file. When this option is disabled, the
+                    logs will no longer be printed through the original UART
+                    output path; instead, they will only be output through the
+                    compressed log interface. As the code and strings related
+                    to the original UART output are omitted, the size of the
+                    firmware binary file can be effectively reduced.
+
+        config BLE_ISO_STACK_WARN_LOG_COMPRESSION
+            bool "Compress WARN log of BLE Audio/ISO"
+            default y
+            help
+                    The warn log in the BLE Audio/ISO component will be compressed
+        config BLE_ISO_STACK_WARN_LOG_PRESERVE
+            bool "Keep the original warn log statement"
+            depends on BLE_ISO_STACK_WARN_LOG_COMPRESSION
+            default y
+            help
+                    Please refer to the help information in BLE_ISO_STACK_ERR_LOG_PRESERVE
+
+        config BLE_ISO_STACK_INFO_LOG_COMPRESSION
+            bool "Compress INFO log of BLE Audio/ISO"
+            default y
+            help
+                    The info log in the BLE Audio/ISO component will be compressed
+        config BLE_ISO_STACK_INFO_LOG_PRESERVE
+            bool "Keep the original info log statement"
+            depends on BLE_ISO_STACK_INFO_LOG_COMPRESSION
+            default n
+            help
+                    Please refer to the help information in BLE_ISO_STACK_ERR_LOG_PRESERVE
+
+        config BLE_ISO_STACK_DEBUG_LOG_COMPRESSION
+            bool "Compress DEBUG log of BLE Audio/ISO"
+            default y
+            help
+                    The debug log in the BLE Audio/ISO component will be compressed
+        config BLE_ISO_STACK_DEBUG_LOG_PRESERVE
+            bool "Keep the original debug log statement"
+            depends on BLE_ISO_STACK_DEBUG_LOG_COMPRESSION
+            default n
+            help
+                    Please refer to the help information in BLE_ISO_STACK_ERR_LOG_PRESERVE
+    endmenu
+endif
