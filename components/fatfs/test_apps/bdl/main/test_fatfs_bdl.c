@@ -75,9 +75,14 @@ TEST_CASE("(BDL) diskio register, format, write and read on partition", "[fatfs]
     TEST_ASSERT_EQUAL(RES_OK, ff_disk_ioctl(pdrv, GET_SECTOR_COUNT, &sec_count));
     ESP_LOGI(TAG, "Sector count: %lu", (unsigned long)sec_count);
 
-    BYTE work_area[FF_MAX_SS];
+    /* f_mkfs needs up to 4096 B; avoid a stack buffer here (main task stack is 3584 B). */
+    const size_t workbuf_size = 4096;
+    void *workbuf = ff_memalloc(workbuf_size);
+    TEST_ASSERT_NOT_NULL(workbuf);
+
     const MKFS_PARM opt = {(BYTE)(FM_ANY | FM_SFD), 2, 0, 0, sec_size};
-    TEST_ASSERT_EQUAL(FR_OK, f_mkfs(drv, &opt, work_area, sizeof(work_area)));
+    TEST_ASSERT_EQUAL(FR_OK, f_mkfs(drv, &opt, workbuf, workbuf_size));
+    ff_memfree(workbuf);
 
     FATFS fs;
 #if FF_USE_DYN_BUFFER
