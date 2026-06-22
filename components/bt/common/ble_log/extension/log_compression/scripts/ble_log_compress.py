@@ -290,7 +290,7 @@ class LogCompressor:
                     logs.append(log_info)
             except Exception as e:
                 LOGGER.error(f'Error processing log node: {e}\n{traceback.format_exc()}')
-                raise
+                continue
 
         return logs
 
