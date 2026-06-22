@@ -13,9 +13,13 @@ from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 from pytest_embedded_idf.utils import soc_filtered_targets
 
-JPEG_META_PATTERN = r'JPEG_META width=(\d+) height=(\d+) format=(\w+) encoding=(\w+) size=(\d+)'
-JPEG_META_RE = re.compile(rf'^{JPEG_META_PATTERN}$')
-JPEG_CHUNK_RE = re.compile(r'^JPEG_BASE64 ([A-Za-z0-9+/=]+)$')
+JPEG_META_PATTERN = (
+    r'JPEG_META width=(?P<width>\d+) height=(?P<height>\d+) '
+    r'format=(?P<format>\w+) encoding=(?P<encoding>\w+) size=(?P<size>\d+)'
+)
+JPEG_META_RE = re.compile(JPEG_META_PATTERN)
+JPEG_CHUNK_PATTERN = r'JPEG_BASE64 (?P<payload>[A-Za-z0-9+/=]+)'
+JPEG_CHUNK_RE = re.compile(JPEG_CHUNK_PATTERN)
 JPEG_OUTPUT_NAME = 'jpeg_encode_result.jpeg'
 GOLDEN_IMAGE_NAME = 'golden_output.jpeg'
 GOLDEN_IMAGE_PATH = Path(__file__).with_name(GOLDEN_IMAGE_NAME)
@@ -35,39 +39,45 @@ class JpegMetadata:
 
 
 def parse_jpeg_metadata(meta_line: str) -> JpegMetadata:
-    match = JPEG_META_RE.match(meta_line)
+    match = JPEG_META_RE.fullmatch(meta_line)
     if not match:
         raise ValueError(f'Invalid JPEG metadata line: {meta_line}')
 
     return JpegMetadata(
-        width=int(match.group(1)),
-        height=int(match.group(2)),
-        image_format=match.group(3),
-        encoding=match.group(4),
-        size=int(match.group(5)),
+        width=int(match.group('width')),
+        height=int(match.group('height')),
+        image_format=match.group('format'),
+        encoding=match.group('encoding'),
+        size=int(match.group('size')),
     )
 
 
 def collect_base64_payload(dut: Dut) -> list[str]:
     payload_chunks: list[str] = []
     while True:
-        match = dut.expect(r'(JPEG_BASE64_END|JPEG_BASE64 [A-Za-z0-9+/=]+\r?\n)')
-        line = match.group(1).decode('utf-8').strip()
+        match = dut.expect(rf'(?P<line>JPEG_BASE64_END|{JPEG_CHUNK_PATTERN}\r?\n)')
+        line = match.group('line').decode('utf-8').strip()
         if line == 'JPEG_BASE64_END':
             return payload_chunks
 
-        chunk_match = JPEG_CHUNK_RE.match(line)
+        chunk_match = JPEG_CHUNK_RE.fullmatch(line)
         assert chunk_match is not None
-        payload_chunks.append(chunk_match.group(1))
+        payload_chunks.append(chunk_match.group('payload'))
 
 
-def decode_jpeg_base64_payload(metadata: JpegMetadata, payload_lines: list[str]) -> bytes:
+def validate_jpeg_metadata(metadata: JpegMetadata) -> None:
     if metadata.image_format != EXPECTED_FORMAT:
         raise ValueError(f'Unsupported image format: {metadata.image_format}')
     if metadata.encoding != EXPECTED_ENCODING:
         raise ValueError(f'Unsupported payload encoding: {metadata.encoding}')
+    if metadata.width != EXPECTED_WIDTH or metadata.height != EXPECTED_HEIGHT:
+        raise ValueError(f'Expected {EXPECTED_WIDTH}x{EXPECTED_HEIGHT} JPEG, got {metadata.width}x{metadata.height}')
 
-    jpeg_bytes = base64.b64decode(''.join(payload_lines), validate=True)
+
+def decode_jpeg_base64_payload(metadata: JpegMetadata, base64_chunks: list[str]) -> bytes:
+    validate_jpeg_metadata(metadata)
+
+    jpeg_bytes = base64.b64decode(''.join(base64_chunks), validate=True)
     if len(jpeg_bytes) != metadata.size:
         raise ValueError(f'Expected {metadata.size} JPEG bytes, got {len(jpeg_bytes)}')
 
@@ -110,14 +120,13 @@ def test_jpeg_encode_example(dut: Dut) -> None:
     dut.expect_exact('Encoding BGR24(raw) -> JPEG...')
     dut.expect(r'Encoded JPEG size: \d+ bytes')
 
-    metadata = parse_jpeg_metadata(dut.expect(JPEG_META_PATTERN).group(0).decode('utf-8'))
-    assert metadata.width == EXPECTED_WIDTH
-    assert metadata.height == EXPECTED_HEIGHT
+    metadata_line = dut.expect(JPEG_META_PATTERN).group(0).decode('utf-8')
+    metadata = parse_jpeg_metadata(metadata_line)
 
     dut.expect_exact('JPEG_BASE64_BEGIN')
-    payload_lines = collect_base64_payload(dut)
+    base64_chunks = collect_base64_payload(dut)
 
-    jpeg_bytes = decode_jpeg_base64_payload(metadata, payload_lines)
+    jpeg_bytes = decode_jpeg_base64_payload(metadata, base64_chunks)
     output_path = Path(dut.logdir) / JPEG_OUTPUT_NAME
     save_jpeg_artifact(jpeg_bytes, output_path)
     assert_jpeg_matches_golden(jpeg_bytes, GOLDEN_IMAGE_PATH)

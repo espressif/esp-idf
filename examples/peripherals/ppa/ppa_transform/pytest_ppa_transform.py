@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import base64
 import hashlib
 import logging
@@ -14,16 +13,16 @@ from pytest_embedded_idf.utils import idf_parametrize
 from pytest_embedded_idf.utils import soc_filtered_targets
 
 IMAGE_META_PATTERN = (
-    r'IMAGE_META width=(?P<width>\d+) height=(?P<height>\d+) '
-    r'format=(?P<format>\w+) encoding=(?P<encoding>\w+)'
+    r'IMAGE_META width=(?P<width>\d+) height=(?P<height>\d+) format=(?P<format>\w+) encoding=(?P<encoding>\w+)'
 )
 IMAGE_META_RE = re.compile(IMAGE_META_PATTERN)
 IMAGE_CHUNK_PATTERN = r'IMAGE_BASE64 (?P<payload>[A-Za-z0-9+/=]+)'
 IMAGE_CHUNK_RE = re.compile(IMAGE_CHUNK_PATTERN)
-IMAGE_OUTPUT_NAME = 'async_color_convert_result.ppm'
+IMAGE_OUTPUT_NAME = 'ppa_transform_result.ppm'
 GOLDEN_IMAGE_NAME = 'golden_result.ppm'
-EXPECTED_PIXEL_FORMAT = 'BGR24'
+EXPECTED_PIXEL_FORMAT = 'RGB565'
 EXPECTED_ENCODING = 'base64'
+RGB565_BYTES_PER_PIXEL = 2
 RGB888_BYTES_PER_PIXEL = 3
 PPM_MAGIC = b'P6'
 PPM_MAX_VALUE = b'255'
@@ -38,8 +37,8 @@ class ImageMetadata:
     encoding: str
 
     @property
-    def bgr24_size(self) -> int:
-        return self.width * self.height * RGB888_BYTES_PER_PIXEL
+    def rgb565_size(self) -> int:
+        return self.width * self.height * RGB565_BYTES_PER_PIXEL
 
 
 @dataclass(frozen=True)
@@ -68,23 +67,32 @@ def parse_image_metadata(meta_line: str) -> ImageMetadata:
 
 
 def collect_base64_payload(dut: Dut) -> list[str]:
-    payload_chunks: list[str] = []
+    payload_lines: list[str] = []
     while True:
         match = dut.expect(rf'(?P<line>IMAGE_BASE64_END|{IMAGE_CHUNK_PATTERN}\r?\n)')
         line = match.group('line').decode('utf-8').strip()
         if line == 'IMAGE_BASE64_END':
-            return payload_chunks
+            return payload_lines
 
         chunk_match = IMAGE_CHUNK_RE.fullmatch(line)
         assert chunk_match is not None
-        payload_chunks.append(chunk_match.group('payload'))
+        payload_lines.append(chunk_match.group('payload'))
 
 
-def _bgr24_to_rgb888(raw_bytes: bytes) -> bytes:
-    rgb_bytes = bytearray(len(raw_bytes))
-    for offset in range(0, len(raw_bytes), 3):
-        blue, green, red = raw_bytes[offset : offset + 3]
-        rgb_bytes[offset : offset + 3] = (red, green, blue)
+def _rgb565_to_rgb888(raw_bytes: bytes) -> bytes:
+    # PPM stores 8-bit RGB triplets, so expand each RGB565 pixel before writing the artifact.
+    rgb_bytes = bytearray(len(raw_bytes) // 2 * 3)
+    for pixel_index, offset in enumerate(range(0, len(raw_bytes), 2)):
+        pixel = raw_bytes[offset] | (raw_bytes[offset + 1] << 8)
+        red = (pixel >> 11) & 0x1F
+        green = (pixel >> 5) & 0x3F
+        blue = pixel & 0x1F
+        rgb_offset = pixel_index * 3
+        rgb_bytes[rgb_offset : rgb_offset + 3] = (
+            (red << 3) | (red >> 2),
+            (green << 2) | (green >> 4),
+            (blue << 3) | (blue >> 2),
+        )
     return bytes(rgb_bytes)
 
 
@@ -115,17 +123,17 @@ def _load_ppm(path: Path) -> RgbImage:
     return RgbImage(width=width, height=height, pixels_rgb888=pixel_data)
 
 
-def decode_bgr24_base64_image(metadata: ImageMetadata, base64_chunks: list[str]) -> RgbImage:
+def decode_rgb565_base64_image(metadata: ImageMetadata, payload_lines: list[str]) -> RgbImage:
     if metadata.pixel_format != EXPECTED_PIXEL_FORMAT:
         raise ValueError(f'Unsupported pixel format: {metadata.pixel_format}')
     if metadata.encoding != EXPECTED_ENCODING:
         raise ValueError(f'Unsupported payload encoding: {metadata.encoding}')
 
-    raw_bytes = base64.b64decode(''.join(base64_chunks), validate=True)
-    if len(raw_bytes) != metadata.bgr24_size:
-        raise ValueError(f'Expected {metadata.bgr24_size} decoded bytes, got {len(raw_bytes)}')
+    raw_bytes = base64.b64decode(''.join(payload_lines), validate=True)
+    if len(raw_bytes) != metadata.rgb565_size:
+        raise ValueError(f'Expected {metadata.rgb565_size} decoded bytes, got {len(raw_bytes)}')
 
-    return RgbImage(width=metadata.width, height=metadata.height, pixels_rgb888=_bgr24_to_rgb888(raw_bytes))
+    return RgbImage(width=metadata.width, height=metadata.height, pixels_rgb888=_rgb565_to_rgb888(raw_bytes))
 
 
 def save_ppm_artifact(image: RgbImage, output_path: Path) -> None:
@@ -133,10 +141,10 @@ def save_ppm_artifact(image: RgbImage, output_path: Path) -> None:
     try:
         output_path.write_bytes(_encode_ppm(image))
     except OSError:
-        logging.exception('Failed to save async color convert artifact to %s', output_path)
+        logging.exception('Failed to save PPA artifact to %s', output_path)
         return
 
-    logging.info('Saved async color convert artifact to %s', output_path)
+    logging.info('Saved PPA artifact to %s', output_path)
 
 
 def image_digest(image: RgbImage) -> str:
@@ -157,12 +165,13 @@ def assert_image_matches_golden(result_image: RgbImage, golden_path: Path) -> No
 
 
 @pytest.mark.generic
-@idf_parametrize('target', soc_filtered_targets('SOC_DMA2D_SUPPORTED == 1'), indirect=['target'])
-def test_async_color_convert_example(dut: Dut) -> None:
-    dut.expect_exact('Loading embedded UYVY image from flash...')
-    dut.expect(r'Embedded image size: \d+ bytes')
-    dut.expect_exact('Converting UYVY422 -> RGB888...')
-    dut.expect(r'Converted image size: \d+ bytes')
+@idf_parametrize('target', soc_filtered_targets('SOC_PPA_SUPPORTED == 1'), indirect=['target'])
+def test_ppa_transform(dut: Dut) -> None:
+    dut.expect_exact('Loading embedded RGB565 image from flash...')
+    dut.expect(r'Embedded raw image size: \d+ bytes')
+    dut.expect_exact('Transforming image with PPA SRM...')
+    dut.expect_exact('Blending highlight with PPA blend...')
+    dut.expect_exact('Drawing border with PPA fill...')
 
     metadata_line = dut.expect(IMAGE_META_PATTERN).group(0).decode('utf-8')
     metadata = parse_image_metadata(metadata_line)
@@ -170,9 +179,9 @@ def test_async_color_convert_example(dut: Dut) -> None:
     dut.expect_exact('IMAGE_BASE64_BEGIN')
     base64_chunks = collect_base64_payload(dut)
 
-    result_image = decode_bgr24_base64_image(metadata, base64_chunks)
+    result_image = decode_rgb565_base64_image(metadata, base64_chunks)
     output_path = Path(dut.logdir) / IMAGE_OUTPUT_NAME
     save_ppm_artifact(result_image, output_path)
     assert_image_matches_golden(result_image, Path(__file__).with_name(GOLDEN_IMAGE_NAME))
 
-    dut.expect_exact('Async color convert visual demo done.')
+    dut.expect_exact('PPA image processing demo done.')
