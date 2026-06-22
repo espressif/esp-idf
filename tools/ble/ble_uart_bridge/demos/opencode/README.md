@@ -1,4 +1,4 @@
-# BLE UART Bridge Demo - OpenCode Integration
+# ESP-BLE-UART Bridge Demo - OpenCode Integration
 
 This demo sketches how to bridge OpenCode events to a BLE device through
 `tools/ble/ble_uart_bridge`.
@@ -12,7 +12,7 @@ device decisions, and daemon-side protocol handling for their own products.
 
 - [Goal](#goal)
 - [Quick Start](#quick-start)
-- [How it relates to BLE UART Bridge](#how-it-relates-to-ble-uart-bridge)
+- [How it relates to ESP-BLE-UART Bridge](#how-it-relates-to-esp-ble-uart-bridge)
   - [Daemon JSONL protocol summary](#daemon-jsonl-protocol-summary)
 - [Files](#files)
 - [Demo and customization notes](#demo-and-customization-notes)
@@ -40,7 +40,7 @@ Use an OpenCode plugin to:
 flowchart LR
     OC[OpenCode] -->|session.status| Plugin[OpenCode BLE plugin]
     OC -->|permission.asked| Plugin
-    Plugin -->|POST /notify| Daemon[ble_uart_bridge daemon]
+    Plugin -->|POST /notify| Daemon[ESP-BLE-UART Daemon]
     Plugin -->|POST /request| Daemon
     Daemon -->|BLE UART JSONL| Device[BLE device UI]
     Device -->|once / reject| Daemon
@@ -52,10 +52,13 @@ flowchart LR
 
 1. Prepare a BLE device firmware example.
 
-   The intended firmware companion is an `esp-vocat` example for the MiaoBan
-   (喵伴) device, planned for the `esp-iot-solution` repository. Until that
-   example is available, use any device that implements the default BLE UART-over-GATT UUIDs and
-   the JSONL request/response envelope described in
+   The intended firmware companion is the `esp-vocat` example for the MiaoBan
+   (喵伴) device, available in the
+   [esp-iot-solution](https://github.com/espressif/esp-iot-solution) repository
+   at `examples/bluetooth/ble_uart_service`. See the example README for
+   supported boards, dependency versions, and build instructions. Alternatively,
+   use any device that implements the default BLE UART-over-GATT UUIDs and the
+   JSONL request/response envelope described in
    [Firmware protocol reference](#firmware-protocol-reference).
 
 2. Install the bridge dependencies:
@@ -64,7 +67,7 @@ flowchart LR
    python -m pip install -r tools/ble/ble_uart_bridge/requirements.txt
    ```
 
-3. Start the BLE UART daemon:
+3. Start the ESP-BLE-UART Daemon:
 
    ```bash
    python tools/ble/ble_uart_bridge/main.py list-devices
@@ -152,14 +155,15 @@ flowchart LR
    should receive a `permission.request` JSONL message and return `once` or
    `reject`.
 
-After the `esp-vocat` example is published in `esp-iot-solution`, this section
-should be updated with the exact example path, build/flash commands, and any
-MiaoBan-specific button or display behavior.
+The `esp-vocat` example is available in the
+[esp-iot-solution](https://github.com/espressif/esp-iot-solution) repository at
+`examples/bluetooth/ble_uart_service`. See the example README for build/flash
+commands, dependency versions, and MiaoBan-specific button and display behavior.
 
-## How it relates to BLE UART Bridge
+## How it relates to ESP-BLE-UART Bridge
 
 The OpenCode plugin does not talk to BLE directly. It sends local HTTP requests
-to the BLE UART Bridge daemon, and the daemon keeps the BLE connection open for
+to the ESP-BLE-UART Daemon, and the Daemon keeps the BLE connection open for
 the plugin:
 
 - `POST /notify` sends fire-and-forget events, such as session status updates.
@@ -170,8 +174,8 @@ the plugin:
 
 For the daemon itself, see:
 
-- [BLE UART Bridge README](../../README.md)
-- [BLE UART Daemon Quick Start](../../docs/Quick-Start-BLE-UART-Daemon.md)
+- [ESP-BLE-UART Bridge README](../../README.md)
+- [ESP-BLE-UART Daemon Quick Start](../../docs/Quick-Start-BLE-UART-Daemon.md)
 
 ### Daemon JSONL protocol summary
 
@@ -201,7 +205,7 @@ are documented below in [Firmware protocol reference](#firmware-protocol-referen
 ## Files
 
 - `src/opencode-ble-uart-bridge.ts` — OpenCode plugin entry point using `/notify` for status and `/request` for permission decisions.
-- `src/*.ts` helper modules — typed, commented demo code for payloads, BLE daemon transport, OpenCode replies, and permission queue handling.
+- `src/*.ts` helper modules — typed, commented demo code for payloads, ESP-BLE-UART Daemon transport, OpenCode replies, and permission queue handling.
 - `opencode.json.example` — example OpenCode config to load the plugin and ask for permissions.
 
 ## Demo and customization notes
@@ -224,7 +228,7 @@ permission requests can be approved once with `once` or denied with `reject`.
 
 ## Environment variables
 
-- `OPENCODE_BLE_DAEMON_URL`: BLE daemon base URL. Defaults to
+- `OPENCODE_BLE_DAEMON_URL`: ESP-BLE-UART Daemon base URL. Defaults to
   `http://127.0.0.1:8888`.
 - `OPENCODE_BLE_DECISION_TIMEOUT_SECONDS`: permission decision timeout in
   seconds. Defaults to `60`; set it to a positive number.
@@ -232,9 +236,9 @@ permission requests can be approved once with `once` or denied with `reject`.
 
 ## Current assumptions
 
-- The BLE daemon endpoint is configured by `OPENCODE_BLE_DAEMON_URL`, defaulting
+- The ESP-BLE-UART Daemon endpoint is configured by `OPENCODE_BLE_DAEMON_URL`, defaulting
   to `http://127.0.0.1:8888`.
-- The BLE daemon supports both `POST /notify` and `POST /request`.
+- The ESP-BLE-UART Daemon supports both `POST /notify` and `POST /request`.
 - The BLE device implements the default BLE UART-over-GATT UUID layout.
 - The BLE device understands JSON messages described in
   [Firmware protocol reference](#firmware-protocol-reference).
@@ -247,7 +251,7 @@ permission requests can be approved once with `once` or denied with `reject`.
 - The plugin checks daemon `/status` to maintain a connected, degraded, or
   disabled BLE forwarding state. State changes are reported with OpenCode TUI
   notifications when `client.tui.showToast` is available.
-- If BLE forwarding is disabled or the BLE daemon cannot return a permission
+- If BLE forwarding is disabled or the ESP-BLE-UART Daemon cannot return a permission
   decision, the plugin replies `reject`.
 
 ## Message routing
@@ -259,7 +263,7 @@ permission requests can be approved once with `once` or denied with `reject`.
 
 ## Firmware protocol reference
 
-The BLE UART Bridge daemon wraps plugin messages into JSONL over BLE UART. For
+The ESP-BLE-UART Daemon wraps plugin messages into JSONL over BLE UART. For
 request/response RPC, `POST /request` sends a non-empty bridge request ID:
 
 ```json
@@ -410,4 +414,4 @@ and truncated before crossing BLE.
 
 ## Open items
 
-- Add an integration test with a mocked BLE daemon.
+- Add an integration test with a mocked ESP-BLE-UART Daemon.

@@ -1,9 +1,9 @@
 <!-- SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD -->
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-# Porting BLE UART Bridge to Custom Scripts
+# Porting ESP-BLE-UART Bridge to Custom Scripts
 
-This guide explains how to reuse BLE UART Bridge in your own Python scripts.
+This guide explains how to reuse ESP-BLE-UART Bridge in your own Python scripts.
 
 Use the Core API when the Console and Daemon are not the right abstraction for your application. For example, use Core directly when you want to implement custom framing, a test harness, a device provisioning flow, or a domain-specific automation script.
 
@@ -18,7 +18,7 @@ Use the Core API when the Console and Daemon are not the right abstraction for y
 
 ## Install dependencies
 
-You can reuse the ESP-IDF Python environment, or use your own Python virtual environment. If you reuse the ESP-IDF environment, export it first and then install the extra dependencies required by BLE UART Bridge:
+You can reuse the ESP-IDF Python environment, or use your own Python virtual environment. If you reuse the ESP-IDF environment, export it first and then install the extra dependencies required by ESP-BLE-UART Bridge:
 
 ```bash
 cd $IDF_PATH
