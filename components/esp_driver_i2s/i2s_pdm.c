@@ -301,11 +301,12 @@ esp_err_t i2s_channel_reconfig_pdm_tx_slot(i2s_chan_handle_t handle, const i2s_p
     i2s_pdm_tx_config_t *pdm_tx_cfg = (i2s_pdm_tx_config_t *)handle->mode_info;
     ESP_GOTO_ON_FALSE(pdm_tx_cfg, ESP_ERR_INVALID_STATE, err, TAG, "initialization not complete");
 
+    uint32_t old_slot_bit_width = pdm_tx_cfg->slot_cfg.slot_bit_width;
+
     ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_slot(handle, slot_cfg), err, TAG, "set i2s standard slot failed");
 
     /* If the slot bit width changed, then need to update the clock */
-    uint32_t slot_bits = slot_cfg->slot_bit_width == I2S_SLOT_BIT_WIDTH_AUTO ? slot_cfg->data_bit_width : slot_cfg->slot_bit_width;
-    if (pdm_tx_cfg->slot_cfg.slot_bit_width != slot_bits) {
+    if (pdm_tx_cfg->slot_cfg.slot_bit_width != old_slot_bit_width) {
         ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_clock(handle, &pdm_tx_cfg->clk_cfg), err, TAG, "update clock failed");
     }
 
@@ -612,11 +613,12 @@ esp_err_t i2s_channel_reconfig_pdm_rx_slot(i2s_chan_handle_t handle, const i2s_p
     i2s_pdm_rx_config_t *pdm_rx_cfg = (i2s_pdm_rx_config_t *)handle->mode_info;
     ESP_GOTO_ON_FALSE(pdm_rx_cfg, ESP_ERR_INVALID_STATE, err, TAG, "initialization not complete");
 
+    uint32_t old_slot_bit_width = pdm_rx_cfg->slot_cfg.slot_bit_width;
+
     ESP_GOTO_ON_ERROR(i2s_pdm_rx_set_slot(handle, slot_cfg), err, TAG, "set i2s standard slot failed");
 
     /* If the slot bit width changed, then need to update the clock */
-    uint32_t slot_bits = slot_cfg->slot_bit_width == I2S_SLOT_BIT_WIDTH_AUTO ? slot_cfg->data_bit_width : slot_cfg->slot_bit_width;
-    if (pdm_rx_cfg->slot_cfg.slot_bit_width != slot_bits) {
+    if (pdm_rx_cfg->slot_cfg.slot_bit_width != old_slot_bit_width) {
         ESP_GOTO_ON_ERROR(i2s_pdm_rx_set_clock(handle, &pdm_rx_cfg->clk_cfg), err, TAG, "update clock failed");
     }
 
