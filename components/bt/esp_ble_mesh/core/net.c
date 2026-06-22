@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -641,13 +641,12 @@ bool bt_mesh_kr_update(struct bt_mesh_subnet *sub, uint8_t new_kr, bool new_key)
                 /* Ignore */
                 break;
             }
-        /* Upon receiving a Secure Network beacon with the KR flag set
-         * to 0 using the new NetKey in Phase 1, the node shall
-         * immediately transition to Phase 3, which effectively skips
-         * Phase 2.
-         *
-         * Intentional fall-through.
-         */
+            /* Upon receiving a Secure Network beacon with the KR flag set
+             * to 0 using the new NetKey in Phase 1, the node shall
+             * immediately transition to Phase 3, which effectively skips
+             * Phase 2.
+             */
+            __attribute__((fallthrough));
         case BLE_MESH_KR_PHASE_2:
             BT_INFO("KrPhase 0x%02x -> Normal", sub->kr_phase);
 

@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -225,13 +225,14 @@ static int secure_beacon_send(void)
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_ADV)
 static int unprovisioned_beacon_send(void)
 {
+    const struct bt_mesh_prov *prov = bt_mesh_prov_get();
     uint8_t uri_hash[16] = {0};
     struct net_buf *buf = NULL;
     uint16_t oob_info = 0U;
 
     BT_DBG("UnprovisionedBeaconSend");
 
-    if (bt_mesh_prov_get() == NULL) {
+    if (prov == NULL) {
         BT_ERR("No provisioning context provided");
         return -EINVAL;
     }
@@ -243,13 +244,13 @@ static int unprovisioned_beacon_send(void)
     }
 
     net_buf_add_u8(buf, BEACON_TYPE_UNPROVISIONED);
-    net_buf_add_mem(buf, bt_mesh_prov_get()->uuid, 16);
+    net_buf_add_mem(buf, prov->uuid, 16);
 
-    if (bt_mesh_prov_get()->uri &&
-        bt_mesh_s1(bt_mesh_prov_get()->uri, uri_hash) == 0) {
-        oob_info = bt_mesh_prov_get()->oob_info | BLE_MESH_PROV_OOB_URI;
+    if (prov->uri &&
+        bt_mesh_s1(prov->uri, uri_hash) == 0) {
+        oob_info = prov->oob_info | BLE_MESH_PROV_OOB_URI;
     } else {
-        oob_info = bt_mesh_prov_get()->oob_info;
+        oob_info = prov->oob_info;
     }
 
     net_buf_add_be16(buf, oob_info);
@@ -258,7 +259,7 @@ static int unprovisioned_beacon_send(void)
     bt_mesh_adv_send(buf, UNPROV_XMIT, NULL, NULL);
     net_buf_unref(buf);
 
-    if (bt_mesh_prov_get()->uri) {
+    if (prov->uri) {
         size_t len = 0;
 
         buf = bt_mesh_adv_create(BLE_MESH_ADV_URI, K_NO_WAIT);
@@ -267,14 +268,14 @@ static int unprovisioned_beacon_send(void)
             return -ENOBUFS;
         }
 
-        len = strlen(bt_mesh_prov_get()->uri);
+        len = strlen(prov->uri);
 
-        BT_DBG("URI %u: %s", len, bt_mesh_prov_get()->uri);
+        BT_DBG("URI %u: %s", len, prov->uri);
 
         if (net_buf_tailroom(buf) < len) {
             BT_WARN("Too long URI to fit advertising data");
         } else {
-            net_buf_add_mem(buf, bt_mesh_prov_get()->uri, len);
+            net_buf_add_mem(buf, prov->uri, len);
             bt_mesh_adv_send(buf, UNPROV_XMIT, NULL, NULL);
         }
 
@@ -561,6 +562,7 @@ void bt_mesh_beacon_init(void)
     /* private beacon init */
     if (bt_mesh_private_beacon_timer_init()) {
         BT_ERR("Failed to create a mpb_timer");
+        k_delayed_work_free(&snb_timer);
         return;
     }
 #endif /* CONFIG_BLE_MESH_PRB_SRV */

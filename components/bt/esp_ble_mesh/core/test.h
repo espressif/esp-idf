@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,9 @@
 extern "C" {
 #endif
 
+#if CONFIG_BLE_MESH_SELF_TEST
+
+#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_TEST_AUTO_ENTER_NETWORK
 struct bt_mesh_device_network_info {
     uint8_t  net_key[16];
     uint16_t net_idx;
@@ -31,7 +34,9 @@ struct bt_mesh_device_network_info {
 };
 
 int bt_mesh_device_auto_enter_network(struct bt_mesh_device_network_info *info);
+#endif /* CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_TEST_AUTO_ENTER_NETWORK */
 
+#if CONFIG_BLE_MESH_TEST_USE_WHITE_LIST
 /* Before trying to update the white list, users need to make sure that
  * one of the following conditions is satisfied:
  * 1. BLE scanning is disabled;
@@ -44,6 +49,7 @@ int bt_mesh_test_update_white_list(struct bt_mesh_white_list *wl);
 int bt_mesh_test_start_scanning(bool wl_en);
 
 int bt_mesh_test_stop_scanning(void);
+#endif /* CONFIG_BLE_MESH_TEST_USE_WHITE_LIST */
 
 typedef void (* bt_mesh_test_net_pdu_cb_t)(const uint8_t *data, uint16_t length);
 
@@ -52,6 +58,8 @@ extern bt_mesh_test_net_pdu_cb_t net_pdu_test_cb;
 void bt_mesh_test_register_net_pdu_cb(bt_mesh_test_net_pdu_cb_t cb);
 
 void bt_mesh_test_set_seq(uint32_t seq);
+
+#endif /* CONFIG_BLE_MESH_SELF_TEST */
 
 #ifdef __cplusplus
 }

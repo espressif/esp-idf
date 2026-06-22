@@ -235,7 +235,7 @@ static int btc_ble_mesh_sar_client_send(esp_ble_mesh_client_common_param_t *para
     }
 
     if ((params->opcode == ESP_BLE_MESH_MODEL_OP_SAR_TRANSMITTER_SET ||
-         params->opcode == ESP_BLE_MESH_MODEL_OP_SAR_RECEIVER_SET) && msg == NULL) {
+            params->opcode == ESP_BLE_MESH_MODEL_OP_SAR_RECEIVER_SET) && msg == NULL) {
         BT_ERR("Invalid SAR Config message, opcode 0x%04x", params->opcode);
         return -EINVAL;
     }
