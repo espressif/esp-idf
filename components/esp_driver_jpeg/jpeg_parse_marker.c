@@ -152,16 +152,20 @@ esp_err_t jpeg_parse_sof_marker(jpeg_dec_header_info_t *header_info)
     // Reject zero dimensions to avoid division-by-zero / degenerate buffers downstream
     ESP_RETURN_ON_FALSE(width != 0 && height != 0, ESP_ERR_INVALID_ARG, TAG, "Invalid picture size %ux%u", (unsigned)width, (unsigned)height);
 
+    // The 2D-DMA address fields are 14-bit, so each dimension must fit in JPEG_DMA2D_MAX_SIZE.
+    // This also bounds process_h * process_v and prevents the output-size integer overflow downstream.
+    ESP_RETURN_ON_FALSE(width <= JPEG_DMA2D_MAX_SIZE && height <= JPEG_DMA2D_MAX_SIZE, ESP_ERR_INVALID_ARG, TAG, "Picture length or height size %ux%u exceeds max %u", (unsigned)width, (unsigned)height, JPEG_DMA2D_MAX_SIZE);
+
     if ((width * height % 8) != 0) {
         ESP_LOGE(TAG, "Picture sizes not divisible by 8 are not supported");
-        return ESP_ERR_INVALID_STATE;
+        return ESP_ERR_NOT_SUPPORTED;
     }
 
     uint8_t nf = jpeg_get_bytes(header_info, 1);
     // Hardware supports 1..3 components (gray / YUV). nf must fit JPEG_COMPONENT_NUMBER_MAX-sized arrays.
     if (nf == 0 || nf >= JPEG_COMPONENT_NUMBER_MAX) {
         ESP_LOGE(TAG, "Only frame less than %d (and non-zero) is supported, got %u", JPEG_COMPONENT_NUMBER_MAX, nf);
-        return ESP_ERR_INVALID_STATE;
+        return ESP_ERR_NOT_SUPPORTED;
     }
 
     ESP_RETURN_ON_FALSE(lf >= 8 + 3 * nf, ESP_ERR_INVALID_ARG, TAG, "SOF length %"PRIu16" too small for %u components", lf, nf);
@@ -192,6 +196,10 @@ esp_err_t jpeg_parse_sof_marker(jpeg_dec_header_info_t *header_info)
     if (header_info->origin_h % header_info->mcux != 0) {
         header_info->process_h = ((header_info->origin_h / header_info->mcux) + 1) * header_info->mcux;
     }
+
+    // process_h/process_v are written into the 14-bit 2D-DMA descriptor fields, so the
+    // MCU-rounded values (which may exceed the raw dimensions) must also fit the limit.
+    ESP_RETURN_ON_FALSE(header_info->process_h <= JPEG_DMA2D_MAX_SIZE && header_info->process_v <= JPEG_DMA2D_MAX_SIZE, ESP_ERR_INVALID_ARG, TAG, "MCU-aligned size %"PRIu32"x%"PRIu32" exceeds max %u", header_info->process_h, header_info->process_v, JPEG_DMA2D_MAX_SIZE);
 
     return ESP_OK;
 }
