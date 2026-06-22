@@ -327,6 +327,7 @@ and vPortExitCritical() from precompiled libraries (.a) thereby failing linking.
 void vPortEnterCritical(void);
 void vPortExitCritical(void);
 
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
 /**
  * @brief Claim thread-safe region start
  *        If claimed, vPortEnterCritical/vPortExitCritical on the current core are no-ops.
@@ -344,6 +345,7 @@ void xPortThreadSafeClaim(void);
 void xPortThreadSafeDisclaim(void);
 
 extern volatile bool port_xThreadSafeClaimed;
+#endif /* CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM */
 
 //IDF task critical sections
 #define portTRY_ENTER_CRITICAL(lock, timeout)       ({(void) lock; (void) timeout; vPortEnterCritical(); pdPASS;})

@@ -99,7 +99,9 @@ _Static_assert(offsetof( StaticTask_t, pxDummy8 ) == PORT_OFFSET_PX_END_OF_STACK
 volatile UBaseType_t port_xSchedulerRunning[portNUM_PROCESSORS] = {0}; // Indicates whether scheduler is running on a per-core basis
 volatile UBaseType_t port_uxInterruptNesting[portNUM_PROCESSORS] = {0};  // Interrupt nesting level. Increased/decreased in portasm.c
 volatile UBaseType_t port_uxCriticalNesting[portNUM_PROCESSORS] = {0};
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
 volatile bool port_xThreadSafeClaimed = false;
+#endif
 volatile UBaseType_t port_uxOldInterruptState[portNUM_PROCESSORS] = {0};
 volatile UBaseType_t xPortSwitchFlag[portNUM_PROCESSORS] = {0};
 volatile UBaseType_t port_uxCoreStartupDone[portNUM_PROCESSORS] = {0};  // Indicates whether the core has completed its startup sequence
@@ -159,7 +161,9 @@ BaseType_t xPortStartScheduler(void)
     BaseType_t coreID = xPortGetCoreID();
     port_uxInterruptNesting[coreID] = 0;
     port_uxCriticalNesting[coreID] = 0;
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
     port_xThreadSafeClaimed = false;
+#endif
     port_xSchedulerRunning[coreID] = 0;
     port_uxCoreStartupDone[coreID] = 0;
 
@@ -529,9 +533,11 @@ void vPortClearInterruptMaskFromISR(UBaseType_t prev_int_level)
 #if (configNUM_CORES > 1)
 BaseType_t __attribute__((optimize("-O3"))) xPortEnterCriticalTimeout(portMUX_TYPE *mux, BaseType_t timeout)
 {
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
     if (unlikely(port_xThreadSafeClaimed)) {
         return pdPASS;
     }
+#endif
     /* Interrupts may already be disabled (if this function is called in nested
      * manner). However, there's no atomic operation that will allow us to check,
      * thus we have to disable interrupts again anyways.
@@ -559,9 +565,11 @@ BaseType_t __attribute__((optimize("-O3"))) xPortEnterCriticalTimeout(portMUX_TY
 
 void __attribute__((optimize("-O3"))) vPortExitCriticalMultiCore(portMUX_TYPE *mux)
 {
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
     if (unlikely(port_xThreadSafeClaimed)) {
         return;
     }
+#endif
     /* This function may be called in a nested manner. Therefore, we only need
      * to re-enable interrupts if this is the last call to exit the critical. We
      * can use the nesting count to determine whether this is the last exit call.
@@ -609,6 +617,7 @@ void vPortExitCriticalCompliance(portMUX_TYPE *mux)
 }
 #endif /* (configNUM_CORES > 1) */
 
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
 void xPortThreadSafeClaim(void)
 {
     configASSERT(!xPortCanYield());
@@ -622,6 +631,7 @@ void xPortThreadSafeDisclaim(void)
     configASSERT(port_xThreadSafeClaimed);
     port_xThreadSafeClaimed = false;
 }
+#endif /* CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM */
 
 void vPortEnterCritical(void)
 {
@@ -629,9 +639,11 @@ void vPortEnterCritical(void)
         esp_rom_printf("vPortEnterCritical(void) is not supported on multi-core targets. Please use vPortEnterCriticalMultiCore(portMUX_TYPE *mux) instead.\n");
         abort();
 #endif /* (configNUM_CORES > 1) */
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
     if (unlikely(port_xThreadSafeClaimed)) {
         return;
     }
+#endif
     BaseType_t state = portSET_INTERRUPT_MASK_FROM_ISR();
     port_uxCriticalNesting[0]++;
 
@@ -646,9 +658,11 @@ void vPortExitCritical(void)
         esp_rom_printf("vPortExitCritical(void) is not supported on multi-core targets. Please use vPortExitCriticalMultiCore(portMUX_TYPE *mux) instead.\n");
         abort();
 #endif /* (configNUM_CORES > 1) */
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
     if (unlikely(port_xThreadSafeClaimed)) {
         return;
     }
+#endif
 
     /* Critical section nesting count must never be negative */
     configASSERT( port_uxCriticalNesting[0] > 0 );

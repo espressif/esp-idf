@@ -44,6 +44,9 @@
 #include "task.h"
 #include "timers.h"
 #include "stack_macros.h"
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
+#include "esp_compiler.h"
+#endif
 
 /* The default definitions are only available for non-MPU ports. The
  * reason is that the stack alignment requirements vary for different
@@ -6968,10 +6971,12 @@ static void prvResetNextTaskUnblockTime( void )
 
     void vTaskEnterCritical( void )
     {
-        if( port_xThreadSafeClaimed )
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
+        if( unlikely( port_xThreadSafeClaimed ) )
         {
             return;
         }
+#endif
 
         traceENTER_vTaskEnterCritical();
 
@@ -7100,10 +7105,12 @@ static void prvResetNextTaskUnblockTime( void )
 
     void vTaskExitCritical( void )
     {
-        if( port_xThreadSafeClaimed )
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
+        if( unlikely( port_xThreadSafeClaimed ) )
         {
             return;
         }
+#endif
 
         traceENTER_vTaskExitCritical();
 
