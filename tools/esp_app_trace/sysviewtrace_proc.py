@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 # This is python script to process various types trace data streams in SystemView format.
@@ -125,7 +125,7 @@ def main():
         '-i',
         help='Events types to be included into report.',
         type=str,
-        choices=['heap', 'log', 'all'],
+        choices=['heap', 'log', 'func', 'all'],
         default='all',
     )
     parser.add_argument('--toolchain', '-t', help='Toolchain prefix.', type=str, default='xtensa-esp32-elf-')
@@ -152,7 +152,7 @@ def main():
 
     signal.signal(signal.SIGINT, sig_int_handler)
 
-    include_events = {'heap': False, 'log': False}
+    include_events = {'heap': False, 'log': False, 'func': False}
     if args.include_events == 'all':
         for k in include_events:
             include_events[k] = True
@@ -160,6 +160,8 @@ def main():
         include_events['heap'] = True
     elif args.include_events == 'log':
         include_events['log'] = True
+    elif args.include_events == 'func':
+        include_events['func'] = True
 
     logging.basicConfig(level=verbosity_levels[args.verbose], format='[%(levelname)s] %(message)s')
 
@@ -189,6 +191,11 @@ def main():
                 parser.add_stream_parser(
                     sysview.SysViewTraceDataParser.STREAMID_LOG,
                     sysview.SysViewLogTraceDataParser(print_events=False, core_id=i),
+                )
+            if include_events['func']:
+                parser.add_stream_parser(
+                    sysview.SysViewTraceDataParser.STREAMID_FUNC,
+                    sysview.SysViewFunctionTraceDataParser(print_events=False, core_id=i),
                 )
             parsers.append(parser)
         except Exception as e:
@@ -230,6 +237,13 @@ def main():
             proc.add_stream_processor(
                 sysview.SysViewTraceDataParser.STREAMID_LOG,
                 sysview.SysViewLogTraceDataProcessor(root_proc=proc, print_log_events=args.print_events),
+            )
+        if include_events['func']:
+            proc.add_stream_processor(
+                sysview.SysViewTraceDataParser.STREAMID_FUNC,
+                sysview.SysViewFunctionTraceDataProcessor(
+                    args.toolchain, args.elf_file, root_proc=proc, print_func_events=args.print_events
+                ),
             )
     except Exception as e:
         logging.error('Failed to create data processor (%s)!', e)

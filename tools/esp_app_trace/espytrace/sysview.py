@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import copy
 import json
@@ -175,7 +175,7 @@ def _read_init_seq(reader):
     SysViewTraceParseError
         If sync sequence is broken.
     """
-    SYNC_SEQ_FMT = '<%dB' % SYSVIEW_SYNC_LEN
+    SYNC_SEQ_FMT = f'<{SYSVIEW_SYNC_LEN}B'
     sync_bytes = struct.unpack(SYNC_SEQ_FMT, reader.read(struct.calcsize(SYNC_SEQ_FMT)))
     for b in sync_bytes:
         if b != 0:
@@ -266,7 +266,7 @@ def _decode_str(reader):
     if sz == 0xFF:
         buf = struct.unpack('<2B', reader.read(2))
         sz = (buf[0] << 8) | buf[1]
-    (val,) = struct.unpack('<%ds' % sz, reader.read(sz))
+    (val,) = struct.unpack(f'<{sz}s', reader.read(sz))
     val = val.decode('utf-8')
     if sz < 0xFF:
         return (sz + 1, val)  # one extra byte for length
@@ -353,7 +353,7 @@ class SysViewEvent(apptrace.TraceEvent):
             if event has unknown or invalid format.
         """
         if self.id not in events_fmt_map:
-            raise SysViewTraceParseError('Unknown event ID %d!' % self.id)
+            raise SysViewTraceParseError(f'Unknown event ID {self.id}!')
         self.name = events_fmt_map[self.id][0]
         evt_params_templates = events_fmt_map[self.id][1]
         params_len = 0
@@ -364,9 +364,7 @@ class SysViewEvent(apptrace.TraceEvent):
                 sz, param_val = event_param.decode(reader, self.plen - params_len)
             except Exception as e:
                 raise SysViewTraceParseError(
-                    'Failed to decode event {}({:d}) {:d} param @ 0x{:x}! {}'.format(
-                        self.name, self.id, self.plen, cur_pos, e
-                    )
+                    f'Failed to decode event {self.name}({self.id:d}) {self.plen:d} param @ 0x{cur_pos:x}! {e}'
                 )
             event_param.idx = i
             event_param.value = param_val
@@ -374,20 +372,16 @@ class SysViewEvent(apptrace.TraceEvent):
             params_len += sz
         if self.id >= SYSVIEW_EVENT_ID_PREDEF_LEN_MAX and self.plen != params_len:
             raise SysViewTraceParseError(
-                'Invalid event {}({:d}) payload len {:d}! Must be {:d}.'.format(
-                    self.name, self.id, self.plen, params_len
-                )
+                f'Invalid event {self.name}({self.id:d}) payload len {self.plen:d}! Must be {params_len:d}.'
             )
 
     def __str__(self):
         params = ''
         for param in sorted(self.params.values(), key=lambda x: x.idx):
-            params += '{}, '.format(param)
+            params += f'{param}, '
         if len(params):
             params = params[:-2]  # remove trailing ', '
-        return '{:.9f} - core[{:d}].{}({:d}), plen {:d}: [{}]'.format(
-            self.ts, self.core_id, self.name, self.id, self.plen, params
-        )
+        return f'{self.ts:.9f} - core[{self.core_id:d}].{self.name}({self.id:d}), plen {self.plen:d}: [{params}]'
 
 
 class SysViewEventParam:
@@ -431,7 +425,7 @@ class SysViewEventParam:
         pass
 
     def __str__(self):
-        return '{}: {}'.format(self.name, self.value)
+        return f'{self.name}: {self.value}'
 
     def to_jsonable(self):
         return {self.name: self.value}
@@ -634,6 +628,49 @@ class SysViewHeapEvent(SysViewEvent):
         # self.name = 'SysViewHeapEvent'
 
 
+class SysViewFunctionEvent(SysViewEvent):
+    """
+    Function tracing related SystemView events class.
+
+    Attributes
+    ----------
+    events_fmt : dict
+        see return value of _read_events_map()
+    """
+
+    events_fmt = {
+        0: (
+            'esp_sysview_function_enter',
+            [SysViewEventParamSimple('func', _decode_u32), SysViewEventParamSimple('call_site', _decode_u32)],
+        ),
+        1: (
+            'esp_sysview_function_exit',
+            [SysViewEventParamSimple('func', _decode_u32), SysViewEventParamSimple('call_site', _decode_u32)],
+        ),
+    }
+
+    def __init__(self, evt_id, core_id, events_off, reader):
+        """
+        Constructor. Reads and optionally decodes event.
+
+        Parameters
+        ----------
+        evt_id : int
+            see SysViewEvent.__init__()
+        events_off : int
+            Offset for function events IDs. Greater or equal to SYSVIEW_MODULE_EVENT_OFFSET.
+        reader : apptrace.Reader
+            see SysViewEvent.__init__()
+        core_id : int
+            see SysViewEvent.__init__()
+        """
+        cur_events_map = {}
+        for _id in self.events_fmt:
+            cur_events_map[events_off + _id] = self.events_fmt[_id]
+        SysViewEvent.__init__(self, evt_id, core_id, reader, cur_events_map)
+        # self.name = 'SysViewFunctionEvent'
+
+
 class SysViewTraceDataParser(apptrace.TraceDataProcessor):
     """
     Base SystemView trace data parser class.
@@ -646,11 +683,14 @@ class SysViewTraceDataParser(apptrace.TraceDataProcessor):
         log events stream ID.
     STREAMID_HEAP : int
         heap events stream ID.
+    STREAMID_FUNC : int
+        function tracing events stream ID.
     """
 
     STREAMID_SYS = -1
     STREAMID_LOG = 0
     STREAMID_HEAP = 1
+    STREAMID_FUNC = 2
 
     def __init__(self, print_events=False, core_id=0):
         """
@@ -984,7 +1024,7 @@ class SysViewTraceDataProcessor(apptrace.TraceDataProcessor):
         if len(self.root_proc.ctx_stack[core_id]):
             return self.root_proc.ctx_stack[core_id][-1]
         if self._get_prev_context(core_id):
-            return SysViewEventContext(None, False, 'IDLE%d' % core_id)
+            return SysViewEventContext(None, False, f'IDLE{core_id}')
         return None
 
     def _get_prev_context(self, core_id):
@@ -1059,18 +1099,18 @@ class SysViewTraceDataProcessor(apptrace.TraceDataProcessor):
             if SYSVIEW_EVTID_TASK_START_EXEC or SYSVIEW_EVTID_TASK_STOP_READY is received for unknown task.
         """
         if event.core_id not in self.traces:
-            raise SysViewTraceParseError('Event for unknown core %d' % event.core_id)
+            raise SysViewTraceParseError(f'Event for unknown core {event.core_id}')
         else:
             trace = self.traces[event.core_id]
         if event.id == SYSVIEW_EVTID_ISR_ENTER:
             if event.params['irq_num'].value not in trace.irqs_info:
-                raise SysViewTraceParseError('Enter unknown ISR %d' % event.params['irq_num'].value)
+                raise SysViewTraceParseError(f'Enter unknown ISR {event.params["irq_num"].value}')
             if len(self.ctx_stack[event.core_id]):
                 self.prev_ctx[event.core_id] = self.ctx_stack[event.core_id][-1]
             else:
                 # the 1st context switching event after trace start is SYSVIEW_EVTID_ISR_ENTER,
                 # so we have been in IDLE context
-                self.prev_ctx[event.core_id] = SysViewEventContext(None, False, 'IDLE%d' % event.core_id)
+                self.prev_ctx[event.core_id] = SysViewEventContext(None, False, f'IDLE{event.core_id}')
             # put new ISR context on top of the stack (the last in the list)
             self.ctx_stack[event.core_id].append(
                 SysViewEventContext(event.params['irq_num'].value, True, trace.irqs_info[event.params['irq_num'].value])
@@ -1083,17 +1123,17 @@ class SysViewTraceDataProcessor(apptrace.TraceDataProcessor):
                 # the 1st context switching event after trace start is SYSVIEW_EVTID_ISR_EXIT,
                 # so we have been in ISR context,
                 # but we do not know which one because SYSVIEW_EVTID_ISR_EXIT do not include the IRQ number
-                self.prev_ctx[event.core_id] = SysViewEventContext(None, True, 'IRQ_oncore%d' % event.core_id)
+                self.prev_ctx[event.core_id] = SysViewEventContext(None, True, f'IRQ_oncore{event.core_id}')
         elif event.id == SYSVIEW_EVTID_TASK_START_EXEC:
             if event.params['tid'].value not in trace.tasks_info:
-                raise SysViewTraceParseError('Start exec unknown task 0x%x' % event.params['tid'].value)
+                raise SysViewTraceParseError(f'Start exec unknown task 0x{event.params["tid"].value:x}')
             if len(self.ctx_stack[event.core_id]):
                 # return to the previous context (the last in the list)
                 self.prev_ctx[event.core_id] = self.ctx_stack[event.core_id][-1]
             else:
                 # the 1st context switching event after trace start is SYSVIEW_EVTID_TASK_START_EXEC,
                 # so we have been in IDLE context
-                self.prev_ctx[event.core_id] = SysViewEventContext(None, False, 'IDLE%d' % event.core_id)
+                self.prev_ctx[event.core_id] = SysViewEventContext(None, False, f'IDLE{event.core_id}')
             # only one task at a time in context stack (can be interrupted by a bunch of ISRs)
             self.ctx_stack[event.core_id] = [
                 SysViewEventContext(event.params['tid'].value, False, trace.tasks_info[event.params['tid'].value])
@@ -1109,7 +1149,7 @@ class SysViewTraceDataProcessor(apptrace.TraceDataProcessor):
                     break
         elif event.id == SYSVIEW_EVTID_TASK_STOP_READY:
             if event.params['tid'].value not in trace.tasks_info:
-                raise SysViewTraceParseError('Stop ready unknown task 0x%x' % event.params['tid'].value)
+                raise SysViewTraceParseError(f'Stop ready unknown task 0x{event.params["tid"].value:x}')
             if len(self.ctx_stack[event.core_id]):
                 if (
                     not self.ctx_stack[event.core_id][-1].irq
@@ -1282,7 +1322,7 @@ class SysViewTraceDataJsonEncoder(json.JSONEncoder):
             blk_addr = '0x{:x}'.format(obj.params['addr'].value)
             callers = []
             for addr in obj.params['callers'].value:
-                callers.append('0x{:x}'.format(addr))
+                callers.append(f'0x{addr:x}')
             return {
                 'ctx_name': obj.ctx_name,
                 'in_irq': obj.in_irq,
@@ -1355,6 +1395,43 @@ class SysViewHeapTraceDataParser(SysViewTraceDataExtEventParser):
             self.events_off = event.params['evt_off'].value
 
 
+class SysViewFunctionTraceDataParser(SysViewTraceDataExtEventParser):
+    """
+    SystemView trace data parser supporting function tracing events.
+    """
+
+    def __init__(self, print_events=False, core_id=0):
+        """
+        SystemView trace data parser supporting multiple event streams.
+        see SysViewTraceDataExtEventParser.__init__()
+        """
+        SysViewTraceDataExtEventParser.__init__(
+            self, events_num=len(SysViewFunctionEvent.events_fmt.keys()), core_id=core_id, print_events=print_events
+        )
+
+    def read_extension_event(self, evt_id, core_id, reader):
+        """
+        Reads function tracing event.
+        see SysViewTraceDataParser.read_extension_event()
+        """
+        if (
+            self.events_off >= SYSVIEW_MODULE_EVENT_OFFSET
+            and evt_id >= self.events_off
+            and evt_id < self.events_off + self.events_num
+        ):
+            return SysViewFunctionEvent(evt_id, core_id, self.events_off, reader)
+        return SysViewTraceDataParser.read_extension_event(self, evt_id, core_id, reader)
+
+    def on_new_event(self, event):
+        """
+        Keeps track of function tracing module descriptions, when present.
+        """
+        if self.root_proc == self:
+            SysViewTraceDataParser.on_new_event(self, event)
+        if event.id == SYSVIEW_EVTID_MODULEDESC and event.params['desc'].value.startswith('M=ESP_FunctionTrace'):
+            self.events_off = event.params['evt_off'].value
+
+
 class SysViewHeapTraceDataProcessor(SysViewTraceDataProcessor, apptrace.BaseHeapTraceDataProcessorImpl):
     """
     SystemView trace data processor supporting heap events.
@@ -1398,6 +1475,120 @@ class SysViewHeapTraceDataProcessor(SysViewTraceDataProcessor, apptrace.BaseHeap
         apptrace.BaseHeapTraceDataProcessorImpl.print_report(self)
 
 
+class SysViewFunctionTraceEvent:
+    """
+    Function tracing event (enter or exit).
+    """
+
+    def __init__(self, trace_event, enter, toolchain='', elf_path=''):
+        """
+        Constructor.
+
+        Parameters
+        ----------
+        trace_event : SysViewEvent
+            trace event object related to this function event
+        enter : bool
+            True for function enter event, otherwise False
+        toolchain : string
+            toolchain prefix to resolve addresses to source line locations
+        elf_path : string
+            path to ELF file to resolve addresses
+        """
+        self.trace_event = trace_event
+        self.enter = enter
+        self.toolchain = toolchain
+        self.elf_path = elf_path
+
+    @property
+    def func(self):
+        return self.trace_event.params['func'].value
+
+    @property
+    def call_site(self):
+        return self.trace_event.params['call_site'].value
+
+    def __repr__(self):
+        if len(self.toolchain) and len(self.elf_path):
+            name, location = apptrace.addr2symbol(self.toolchain, self.elf_path, self.func)
+            func = f'{name} ({location})' if name else f'0x{self.func:x}'
+            call_site = apptrace.addr2line(self.toolchain, self.elf_path, self.call_site).strip()
+        else:
+            func = f'0x{self.func:x}'
+            call_site = f'0x{self.call_site:x}'
+        return '[{:.9f}] FUNC: {} {} from {} on core {:d} (called at {})'.format(
+            self.trace_event.ts,
+            'enter' if self.enter else 'exit',
+            func,
+            self.trace_event.ctx_desc,
+            self.trace_event.core_id,
+            call_site,
+        )
+
+
+class SysViewFunctionTraceDataProcessor(SysViewTraceDataProcessor):
+    """
+    SystemView trace data processor supporting function tracing events.
+    """
+
+    def __init__(
+        self, toolchain_pref, elf_path, root_proc=None, traces=[], print_events=False, print_func_events=False
+    ):
+        """
+        Constructor.
+        see SysViewTraceDataProcessor.__init__()
+        """
+        SysViewTraceDataProcessor.__init__(self, traces, root_proc=root_proc, print_events=print_events)
+        self.toolchain = toolchain_pref
+        self.elf_path = elf_path
+        self.name = 'func'
+        self.print_func_events = print_func_events
+        self.func_events_count = 0
+        # per-function [enter, exit] counts keyed by function address
+        self.func_stats = {}
+        stream = self.root_proc.get_trace_stream(0, SysViewTraceDataParser.STREAMID_FUNC)
+        self.event_ids = {'enter': stream.events_off, 'exit': stream.events_off + 1}
+
+    def event_supported(self, event):
+        func_stream = self.root_proc.get_trace_stream(event.core_id, SysViewTraceDataParser.STREAMID_FUNC)
+        return func_stream.event_supported(event)
+
+    def handle_event(self, event):
+        func_stream = self.root_proc.get_trace_stream(event.core_id, SysViewTraceDataParser.STREAMID_FUNC)
+        enter = (event.id - func_stream.events_off) == 0
+        func_event = SysViewFunctionTraceEvent(event, enter, toolchain=self.toolchain, elf_path=self.elf_path)
+        self.func_events_count += 1
+        if self.print_func_events:
+            print(func_event)
+        stats = self.func_stats.setdefault(func_event.func, [0, 0])
+        stats[0 if enter else 1] += 1
+
+    def print_report(self):
+        """
+        see apptrace.TraceDataProcessor.print_report()
+        """
+        if self.root_proc == self:
+            SysViewTraceDataProcessor.print_report(self)
+        print('=============== FUNCTION TRACE REPORT ===============')
+        print(f'Processed {self.func_events_count:d} function trace events.')
+        # sort by enter count to show the most frequently called functions first
+        rows = []
+        for func in sorted(self.func_stats, key=lambda a: self.func_stats[a][0], reverse=True):
+            enter_cnt, exit_cnt = self.func_stats[func]
+            if len(self.toolchain) and len(self.elf_path):
+                name, location = apptrace.addr2symbol(self.toolchain, self.elf_path, func)
+            else:
+                name, location = '', ''
+            rows.append((name, func, enter_cnt, exit_cnt, location))
+        name_w = max((len(r[0]) for r in rows), default=0)
+        for name, func, enter_cnt, exit_cnt, location in rows:
+            print(
+                '{:<{nw}}  0x{:08x}  enter={:<6d} exit={:<6d}  {}'.format(
+                    name, func, enter_cnt, exit_cnt, location, nw=name_w
+                )
+            )
+
+
 class SysViewLogTraceEvent(apptrace.LogTraceEvent):
     """
     SystemView log event.
@@ -1424,7 +1615,7 @@ class SysViewLogTraceEvent(apptrace.LogTraceEvent):
         string
             formatted log message
         """
-        return '[{:.9f}] LOG: {}'.format(self.ts, self.msg)
+        return f'[{self.ts:.9f}] LOG: {self.msg}'
 
 
 class SysViewLogTraceDataParser(SysViewTraceDataParser):

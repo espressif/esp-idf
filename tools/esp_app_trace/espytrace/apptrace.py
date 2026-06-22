@@ -1,9 +1,7 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import print_function
 
 import os
-import sys
 
 try:
     from urlparse import urlparse
@@ -22,156 +20,190 @@ import elftools.elf.elffile as elffile
 
 
 def clock():
-    if sys.version_info >= (3, 3):
-        return time.process_time()
-    else:
-        return time.clock()
+    return time.process_time()
 
 
 def addr2line(toolchain, elf_path, addr):
     """
-        Creates trace reader.
+    Creates trace reader.
 
-        Parameters
-        ----------
-        toolchain : string
-            toolchain prefix to retrieve source line locations using addresses
-        elf_path : string
-            path to ELF file to use
-        addr : int
-            address to retrieve source line location
+    Parameters
+    ----------
+    toolchain : string
+        toolchain prefix to retrieve source line locations using addresses
+    elf_path : string
+        path to ELF file to use
+    addr : int
+        address to retrieve source line location
 
-        Returns
-        -------
-        string
-            source line location string
+    Returns
+    -------
+    string
+        source line location string
     """
     try:
-        return subprocess.check_output(['%saddr2line' % toolchain, '-e', elf_path, '0x%x' % addr]).decode('utf-8')
+        return subprocess.check_output([f'{toolchain}addr2line', '-e', elf_path, f'0x{addr:x}']).decode('utf-8')
     except subprocess.CalledProcessError:
         return ''
 
 
+def addr2symbol(toolchain, elf_path, addr):
+    """
+    Resolves an address to its function name and source line location.
+
+    Parameters
+    ----------
+    toolchain : string
+        toolchain prefix to retrieve symbol info using addresses
+    elf_path : string
+        path to ELF file to use
+    addr : int
+        address to resolve
+
+    Returns
+    -------
+    tuple
+        (function name, source line location) strings, empty on failure
+    """
+    try:
+        out = (
+            subprocess.check_output([f'{toolchain}addr2line', '-f', '-e', elf_path, f'0x{addr:x}'])
+            .decode('utf-8')
+            .splitlines()
+        )
+    except subprocess.CalledProcessError:
+        return '', ''
+    func = out[0].strip() if len(out) > 0 else ''
+    line = out[1].strip() if len(out) > 1 else ''
+    return func, line
+
+
 class ParseError(RuntimeError):
     """
-        Parse error exception
+    Parse error exception
     """
+
     def __init__(self, message):
         RuntimeError.__init__(self, message)
 
 
 class ReaderError(RuntimeError):
     """
-        Trace reader error exception
+    Trace reader error exception
     """
+
     def __init__(self, message):
         RuntimeError.__init__(self, message)
 
 
 class ReaderTimeoutError(ReaderError):
     """
-        Trace reader timeout error
+    Trace reader timeout error
     """
+
     def __init__(self, tmo, sz):
-        ReaderError.__init__(self, 'Timeout %f sec while reading %d bytes!' % (tmo, sz))
+        ReaderError.__init__(self, f'Timeout {tmo:f} sec while reading {sz:d} bytes!')
 
 
 class ReaderShutdownRequest(ReaderError):
     """
-        Trace reader shutdown request error
-        Raised when user presses CTRL+C (SIGINT).
+    Trace reader shutdown request error
+    Raised when user presses CTRL+C (SIGINT).
     """
+
     def __init__(self):
         ReaderError.__init__(self, 'Shutdown request!')
 
 
 class Reader:
     """
-        Base abstract reader class
+    Base abstract reader class
     """
+
     def __init__(self, tmo):
         """
-            Constructor
+        Constructor
 
-            Parameters
-            ----------
-            tmo : int
-                read timeout
+        Parameters
+        ----------
+        tmo : int
+            read timeout
         """
         self.timeout = tmo
         self.need_stop = False
 
     def read(self, sz):
         """
-            Reads a number of bytes
+        Reads a number of bytes
 
-            Parameters
-            ----------
-            sz : int
-                number of bytes to read
+        Parameters
+        ----------
+        sz : int
+            number of bytes to read
 
-            Returns
-            -------
-            bytes object
-                read bytes
+        Returns
+        -------
+        bytes object
+            read bytes
 
-            Returns
-            -------
-            ReaderTimeoutError
-                if timeout expires
-            ReaderShutdownRequest
-                if SIGINT was received during reading
+        Returns
+        -------
+        ReaderTimeoutError
+            if timeout expires
+        ReaderShutdownRequest
+            if SIGINT was received during reading
         """
         pass
 
     def readline(self):
         """
-            Reads line
+        Reads line
 
-            Parameters
-            ----------
-            sz : int
-                number of bytes to read
+        Parameters
+        ----------
+        sz : int
+            number of bytes to read
 
-            Returns
-            -------
-            string
-                read line
+        Returns
+        -------
+        string
+            read line
         """
         pass
 
     def forward(self, sz):
         """
-            Moves read pointer to a number of bytes
+        Moves read pointer to a number of bytes
 
-            Parameters
-            ----------
-            sz : int
-                number of bytes to read
+        Parameters
+        ----------
+        sz : int
+            number of bytes to read
         """
         pass
 
     def cleanup(self):
         """
-            Cleans up reader
+        Cleans up reader
         """
         self.need_stop = True
 
 
 class FileReader(Reader):
     """
-        File reader class
+    File reader class
     """
+
     def __init__(self, path, tmo):
         """
-            Constructor
+        Constructor
 
-            Parameters
-            ----------
-            path : string
-                path to file to read
-            tmo : int
-                see Reader.__init__()
+        Parameters
+        ----------
+        path : string
+            path to file to read
+        tmo : int
+            see Reader.__init__()
         """
         Reader.__init__(self, tmo)
         self.trace_file_path = path
@@ -179,7 +211,7 @@ class FileReader(Reader):
 
     def read(self, sz):
         """
-            see Reader.read()
+        see Reader.read()
         """
         data = b''
         start_tm = clock()
@@ -195,18 +227,18 @@ class FileReader(Reader):
 
     def get_pos(self):
         """
-            Retrieves current file read position
+        Retrieves current file read position
 
-            Returns
-            -------
-            int
-                read position
+        Returns
+        -------
+        int
+            read position
         """
         return self.trace_file.tell()
 
     def readline(self, linesep=os.linesep):
         """
-            see Reader.read()
+        see Reader.read()
         """
         line = ''
         start_tm = clock()
@@ -222,7 +254,7 @@ class FileReader(Reader):
 
     def forward(self, sz):
         """
-            see Reader.read()
+        see Reader.read()
         """
         cur_pos = self.trace_file.tell()
         start_tm = clock()
@@ -239,8 +271,9 @@ class FileReader(Reader):
 
 class NetRequestHandler:
     """
-        Handler for incoming network requests (connections, datagrams)
+    Handler for incoming network requests (connections, datagrams)
     """
+
     def handle(self):
         while not self.server.need_stop:
             data = self.rfile.read(1024)
@@ -252,13 +285,14 @@ class NetRequestHandler:
 
 class NetReader(FileReader):
     """
-        Base netwoek socket reader class
+    Base netwoek socket reader class
     """
+
     def __init__(self, tmo):
         """
-            see Reader.__init__()
+        see Reader.__init__()
         """
-        fhnd,fname = tempfile.mkstemp()
+        fhnd, fname = tempfile.mkstemp()
         FileReader.__init__(self, fname, tmo)
         self.wtrace = os.fdopen(fhnd, 'wb')
         self.server_thread = threading.Thread(target=self.serve_forever)
@@ -266,7 +300,7 @@ class NetReader(FileReader):
 
     def cleanup(self):
         """
-            see Reader.cleanup()
+        see Reader.cleanup()
         """
         FileReader.cleanup(self)
         self.shutdown()
@@ -279,27 +313,29 @@ class NetReader(FileReader):
 
 class TCPRequestHandler(NetRequestHandler, SocketServer.StreamRequestHandler):
     """
-        Handler for incoming TCP connections
+    Handler for incoming TCP connections
     """
+
     pass
 
 
 class TCPReader(NetReader, SocketServer.TCPServer):
     """
-        TCP socket reader class
+    TCP socket reader class
     """
+
     def __init__(self, host, port, tmo, handler=TCPRequestHandler):
         """
-            Constructor
+        Constructor
 
-            Parameters
-            ----------
-            host : string
-                see SocketServer.BaseServer.__init__()
-            port : int
-                see SocketServer.BaseServer.__init__()
-            tmo : int
-                see Reader.__init__()
+        Parameters
+        ----------
+        host : string
+            see SocketServer.BaseServer.__init__()
+        port : int
+            see SocketServer.BaseServer.__init__()
+        tmo : int
+            see Reader.__init__()
         """
         SocketServer.TCPServer.__init__(self, (host, port), handler)
         NetReader.__init__(self, tmo)
@@ -307,27 +343,29 @@ class TCPReader(NetReader, SocketServer.TCPServer):
 
 class UDPRequestHandler(NetRequestHandler, SocketServer.DatagramRequestHandler):
     """
-        Handler for incoming UDP datagrams
+    Handler for incoming UDP datagrams
     """
+
     pass
 
 
 class UDPReader(NetReader, SocketServer.UDPServer):
     """
-        UDP socket reader class
+    UDP socket reader class
     """
+
     def __init__(self, host, port, tmo, handler=UDPRequestHandler):
         """
-            Constructor
+        Constructor
 
-            Parameters
-            ----------
-            host : string
-                see SocketServer.BaseServer.__init__()
-            port : int
-                see SocketServer.BaseServer.__init__()
-            tmo : int
-                see Reader.__init__()
+        Parameters
+        ----------
+        host : string
+            see SocketServer.BaseServer.__init__()
+        port : int
+            see SocketServer.BaseServer.__init__()
+        tmo : int
+            see Reader.__init__()
         """
         SocketServer.UDPServer.__init__(self, (host, port), handler)
         NetReader.__init__(self, tmo)
@@ -335,19 +373,19 @@ class UDPReader(NetReader, SocketServer.UDPServer):
 
 def reader_create(trc_src, tmo, handler=None):
     """
-        Creates trace reader.
+    Creates trace reader.
 
-        Parameters
-        ----------
-        trc_src : string
-            trace source URL. Supports 'file:///path/to/file' or (tcp|udp)://host:port
-        tmo : int
-            read timeout
+    Parameters
+    ----------
+    trc_src : string
+        trace source URL. Supports 'file:///path/to/file' or (tcp|udp)://host:port
+    tmo : int
+        read timeout
 
-        Returns
-        -------
-        Reader
-            reader object or None if URL scheme is not supported
+    Returns
+    -------
+    Reader
+        reader object or None if URL scheme is not supported
     """
     url = urlparse(trc_src)
     if len(url.scheme) == 0 or url.scheme == 'file':
@@ -369,8 +407,9 @@ def reader_create(trc_src, tmo, handler=None):
 
 class TraceEvent:
     """
-        Base class for all trace events.
+    Base class for all trace events.
     """
+
     def __init__(self, name, core_id, evt_id):
         self.name = name
         self.ctx_name = 'None'
@@ -383,8 +422,8 @@ class TraceEvent:
     @property
     def ctx_desc(self):
         if self.in_irq:
-            return 'IRQ "%s"' % self.ctx_name
-        return 'task "%s"' % self.ctx_name
+            return f'IRQ "{self.ctx_name}"'
+        return f'task "{self.ctx_name}"'
 
     def to_jsonable(self):
         res = self.__dict__
@@ -397,54 +436,55 @@ class TraceEvent:
 
 class TraceDataProcessor:
     """
-        Base abstract class for all trace data processors.
+    Base abstract class for all trace data processors.
     """
+
     def __init__(self, print_events, keep_all_events=False):
         """
-            Constructor.
+        Constructor.
 
-            Parameters
-            ----------
-            print_events : bool
-                if True every event will be printed as they arrive
-            keep_all_events : bool
-                if True all events will be kept in self.events in the order they arrive
+        Parameters
+        ----------
+        print_events : bool
+            if True every event will be printed as they arrive
+        keep_all_events : bool
+            if True all events will be kept in self.events in the order they arrive
         """
         self.print_events = print_events
         self.keep_all_events = keep_all_events
         self.total_events = 0
         self.events = []
-        # This can be changed by the root procesor that includes several sub-processors.
+        # This can be changed by the root processor that includes several sub-processors.
         # It is used access some method of root processor which can contain methods/data common for all sub-processors.
         # Common info could be current execution context, info about running tasks, available IRQs etc.
         self.root_proc = self
 
     def _print_event(self, event):
         """
-            Base method to print an event.
+        Base method to print an event.
 
-            Parameters
-            ----------
-            event : object
-                Event object
+        Parameters
+        ----------
+        event : object
+            Event object
         """
-        print('EVENT[{:d}]: {}'.format(self.total_events, event))
+        print(f'EVENT[{self.total_events:d}]: {event}')
 
     def print_report(self):
         """
-            Base method to print report.
+        Base method to print report.
         """
-        print('Processed {:d} events'.format(self.total_events))
+        print(f'Processed {self.total_events:d} events')
 
     def cleanup(self):
         """
-            Base method to make cleanups.
+        Base method to make cleanups.
         """
         pass
 
     def on_new_event(self, event):
         """
-            Base method to process event.
+        Base method to process event.
         """
         if self.print_events:
             self._print_event(event)
@@ -455,26 +495,27 @@ class TraceDataProcessor:
 
 class LogTraceParseError(ParseError):
     """
-        Log trace parse error exception.
+    Log trace parse error exception.
     """
+
     pass
 
 
 def get_str_from_elf(felf, str_addr):
     """
-        Retrieves string from ELF file.
+    Retrieves string from ELF file.
 
-        Parameters
-        ----------
-        felf : elffile.ELFFile
-            open ELF file handle to retrive format string from
-        str_addr : int
-            address of the string
+    Parameters
+    ----------
+    felf : elffile.ELFFile
+        open ELF file handle to retrieve format string from
+    str_addr : int
+        address of the string
 
-        Returns
-        -------
-        string
-            string or None if it was not found
+    Returns
+    -------
+    string
+        string or None if it was not found
     """
     tgt_str = ''
     for sect in felf.iter_sections():
@@ -498,44 +539,45 @@ def get_str_from_elf(felf, str_addr):
 
 class LogTraceEvent:
     """
-        Log trace event.
+    Log trace event.
     """
+
     def __init__(self, fmt_addr, log_args):
         """
-            Constructor.
+        Constructor.
 
-            Parameters
-            ----------
-            fmt_addr : int
-                address of the format string
-            log_args : list
-                list of log message arguments
+        Parameters
+        ----------
+        fmt_addr : int
+            address of the format string
+        log_args : list
+            list of log message arguments
         """
         self.fmt_addr = fmt_addr
         self.args = log_args
 
     def get_message(self, felf):
         """
-            Retrieves log message.
+        Retrieves log message.
 
-            Parameters
-            ----------
-            felf : elffile.ELFFile
-                open ELF file handle to retrive format string from
+        Parameters
+        ----------
+        felf : elffile.ELFFile
+            open ELF file handle to retrieve format string from
 
-            Returns
-            -------
-            string
-                formatted log message
+        Returns
+        -------
+        string
+            formatted log message
 
-            Raises
-            ------
-            LogTraceParseError
-                if format string has not been found in ELF file
+        Raises
+        ------
+        LogTraceParseError
+            if format string has not been found in ELF file
         """
         fmt_str = get_str_from_elf(felf, self.fmt_addr)
         if not fmt_str:
-            raise LogTraceParseError('Failed to find format string for 0x%x' % self.fmt_addr)
+            raise LogTraceParseError(f'Failed to find format string for 0x{self.fmt_addr:x}')
         prcnt_idx = 0
         for i, arg in enumerate(self.args):
             prcnt_idx = fmt_str.find('%', prcnt_idx, -2)  # TODO: check str ending with %
@@ -555,18 +597,19 @@ class LogTraceEvent:
 
 class BaseLogTraceDataProcessorImpl:
     """
-        Base implementation for log data processors.
+    Base implementation for log data processors.
     """
+
     def __init__(self, print_log_events=False, elf_path=''):
         """
-            Constructor.
+        Constructor.
 
-            Parameters
-            ----------
-            print_log_events : bool
-                if True every log event will be printed as they arrive
-            elf_path : string
-                path to ELF file to retrieve format strings for log messages
+        Parameters
+        ----------
+        print_log_events : bool
+            if True every log event will be printed as they arrive
+        elf_path : string
+            path to ELF file to retrieve format strings for log messages
         """
         if len(elf_path):
             self.felf = elffile.ELFFile(open(elf_path, 'rb'))
@@ -577,26 +620,26 @@ class BaseLogTraceDataProcessorImpl:
 
     def cleanup(self):
         """
-            Cleanup
+        Cleanup
         """
         if self.felf:
             self.felf.stream.close()
 
     def print_report(self):
         """
-            Prints log report
+        Prints log report
         """
         print('=============== LOG TRACE REPORT ===============')
-        print('Processed {:d} log messages.'.format(len(self.messages)))
+        print(f'Processed {len(self.messages):d} log messages.')
 
     def on_new_event(self, event):
         """
-            Processes log events.
+        Processes log events.
 
-            Parameters
-            ----------
-            event : LogTraceEvent
-                Event object.
+        Parameters
+        ----------
+        event : LogTraceEvent
+            Event object.
         """
         msg = event.get_message(self.felf)
         self.messages.append(msg)
@@ -606,51 +649,57 @@ class BaseLogTraceDataProcessorImpl:
 
 class HeapTraceParseError(ParseError):
     """
-        Heap trace parse error exception.
+    Heap trace parse error exception.
     """
+
     pass
 
 
 class HeapTraceDuplicateAllocError(HeapTraceParseError):
     """
-        Heap trace duplicate allocation error exception.
+    Heap trace duplicate allocation error exception.
     """
+
     def __init__(self, addr, new_size, prev_size):
         """
-            Constructor.
+        Constructor.
 
-            Parameters
-            ----------
-            addr : int
-                memory block address
-            new_size : int
-                size of the new allocation
-            prev_size : int
-                size of the previous allocation
+        Parameters
+        ----------
+        addr : int
+            memory block address
+        new_size : int
+            size of the new allocation
+        prev_size : int
+            size of the previous allocation
         """
-        HeapTraceParseError.__init__(self, """Duplicate alloc @ 0x{:x}!
-                                              New alloc is {:d} bytes,
-                                              previous is {:d} bytes.""".format(addr, new_size, prev_size))
+        HeapTraceParseError.__init__(
+            self,
+            f"""Duplicate alloc @ 0x{addr:x}!
+                                              New alloc is {new_size:d} bytes,
+                                              previous is {prev_size:d} bytes.""",
+        )
 
 
 class HeapTraceEvent:
     """
-        Heap trace event.
+    Heap trace event.
     """
+
     def __init__(self, trace_event, alloc, toolchain='', elf_path=''):
         """
-            Constructor.
+        Constructor.
 
-            Parameters
-            ----------
-            sys_view_event : TraceEvent
-                trace event object related to this heap event
-            alloc : bool
-                True for allocation event, otherwise False
-            toolchain_pref : string
-                toolchain prefix to retrieve source line locations using addresses
-            elf_path : string
-                path to ELF file to retrieve format strings for log messages
+        Parameters
+        ----------
+        sys_view_event : TraceEvent
+            trace event object related to this heap event
+        alloc : bool
+            True for allocation event, otherwise False
+        toolchain_pref : string
+            toolchain prefix to retrieve source line locations using addresses
+        elf_path : string
+            path to ELF file to retrieve format strings for log messages
         """
         self.trace_event = trace_event
         self.alloc = alloc
@@ -675,7 +724,7 @@ class HeapTraceEvent:
             for addr in self.trace_event.params['callers'].value:
                 if addr == 0:
                     break
-                callers += '{}'.format(addr2line(self.toolchain, self.elf_path, addr))
+                callers += f'{addr2line(self.toolchain, self.elf_path, addr)}'
         else:
             callers = ''
             for addr in self.trace_event.params['callers'].value:
@@ -683,31 +732,32 @@ class HeapTraceEvent:
                     break
                 if len(callers):
                     callers += ':'
-                callers += '0x{:x}'.format(addr)
+                callers += f'0x{addr:x}'
         if self.alloc:
-            return '[{:.9f}] HEAP: Allocated {:d} bytes @ 0x{:x} from {} on core {:d} by: {}'.format(self.trace_event.ts,
-                                                                                                     self.size, self.addr,
-                                                                                                     self.trace_event.ctx_desc,
-                                                                                                     self.trace_event.core_id,
-                                                                                                     callers)
+            return (
+                f'[{self.trace_event.ts:.9f}] HEAP: Allocated {self.size:d} bytes @ 0x{self.addr:x} '
+                f'from {self.trace_event.ctx_desc} on core {self.trace_event.core_id:d} by: {callers}'
+            )
         else:
-            return '[{:.9f}] HEAP: Freed bytes @ 0x{:x} from {} on core {:d} by: {}'.format(self.trace_event.ts,
-                                                                                            self.addr, self.trace_event.ctx_desc,
-                                                                                            self.trace_event.core_id, callers)
+            return (
+                f'[{self.trace_event.ts:.9f}] HEAP: Freed bytes @ 0x{self.addr:x} '
+                f'from {self.trace_event.ctx_desc} on core {self.trace_event.core_id:d} by: {callers}'
+            )
 
 
 class BaseHeapTraceDataProcessorImpl:
     """
-        Base implementation for heap data processors.
+    Base implementation for heap data processors.
     """
+
     def __init__(self, print_heap_events=False):
         """
-            Constructor.
+        Constructor.
 
-            Parameters
-            ----------
-            print_heap_events : bool
-                if True every heap event will be printed as they arrive
+        Parameters
+        ----------
+        print_heap_events : bool
+            if True every heap event will be printed as they arrive
         """
         self._alloc_addrs = {}
         self.allocs = []
@@ -717,12 +767,12 @@ class BaseHeapTraceDataProcessorImpl:
 
     def on_new_event(self, event):
         """
-            Processes heap events. Keeps track of active allocations list.
+        Processes heap events. Keeps track of active allocations list.
 
-            Parameters
-            ----------
-            event : HeapTraceEvent
-                Event object.
+        Parameters
+        ----------
+        event : HeapTraceEvent
+            Event object.
         """
         self.heap_events_count += 1
         if self.print_heap_events:
@@ -733,7 +783,8 @@ class BaseHeapTraceDataProcessorImpl:
             self.allocs.append(event)
             self._alloc_addrs[event.addr] = event
         else:
-            # do not treat free on unknown addresses as errors, because these blocks coould be allocated when tracing was disabled
+            # do not treat free on unknown addresses as errors, because these blocks
+            # coould be allocated when tracing was disabled
             if event.addr in self._alloc_addrs:
                 event.size = self._alloc_addrs[event.addr].size
                 self.allocs.remove(self._alloc_addrs[event.addr])
@@ -743,10 +794,10 @@ class BaseHeapTraceDataProcessorImpl:
 
     def print_report(self):
         """
-            Prints heap report
+        Prints heap report
         """
         print('=============== HEAP TRACE REPORT ===============')
-        print('Processed {:d} heap events.'.format(self.heap_events_count))
+        print(f'Processed {self.heap_events_count:d} heap events.')
         if len(self.allocs) == 0:
             print('OK - Heap errors was not found.')
             return
@@ -758,4 +809,4 @@ class BaseHeapTraceDataProcessorImpl:
                 if free.addr > alloc.addr and free.addr <= alloc.addr + alloc.size:
                     print('Possible wrong free operation found')
                     print(free)
-        print('Found {:d} leaked bytes in {:d} blocks.'.format(leaked_bytes, len(self.allocs)))
+        print(f'Found {leaked_bytes:d} leaked bytes in {len(self.allocs):d} blocks.')
