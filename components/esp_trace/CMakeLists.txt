@@ -19,6 +19,10 @@ if(CONFIG_ESP_TRACE_ENABLE)
     if(CONFIG_ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG)
         list(APPEND srcs "adapters/transport/adapter_transport_usb_serial_jtag.c")
     endif()
+
+    if(CONFIG_ESP_TRACE_FUNCTION_TRACE)
+        list(APPEND srcs "src/function_trace.c")
+    endif()
 endif()
 
 set(includes
@@ -32,7 +36,7 @@ set(priv_requires
     "esp_timer"
     "esp_system"
 )
-set(priv_includes "")
+set(priv_includes "private_include")
 set(requires "app_trace")
 
 idf_component_register(SRCS ${srcs}
