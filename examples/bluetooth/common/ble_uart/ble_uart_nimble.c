@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  *
- * BLE UART — NimBLE backend. Implements the lifecycle declared in
+ * ESP-BLE-UART — NimBLE backend. Implements the lifecycle declared in
  * ble_uart.h on top of the NimBLE host. Active when
  * CONFIG_BT_NIMBLE_ENABLED=y; otherwise ble_uart_bluedroid.c is used.
  */
@@ -80,7 +80,7 @@ static const ble_uuid128_t s_chr_tx_uuid = BLE_UUID128_INIT(NUS_TX_BYTES);
 
 /* ===== State =========================================================== */
 
-/* RX scratch capacity. Tunable via menuconfig (Component config → BLE UART
+/* RX scratch capacity. Tunable via menuconfig (Component config → ESP-BLE-UART
  * library); fall
  * back to 1024 if CONFIG_BLE_UART_RX_SCRATCH_SIZE is absent. */
 #ifndef CONFIG_BLE_UART_RX_SCRATCH_SIZE

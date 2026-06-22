@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  *
- * BLE UART — turnkey serial-over-BLE peripheral.
+ * ESP-BLE-UART — turnkey serial-over-BLE peripheral.
  *
  * Implements the de-facto BLE UART-over-GATT layout (RX write, TX notify;
  * fixed 128-bit UUIDs below) on top of either NimBLE or Bluedroid; the
@@ -101,7 +101,7 @@ int  ble_uart_install(const ble_uart_config_t *cfg);
  *  Bluedroid: triggers adv-data + scan-response config; advertising
  *  begins once the stack acknowledges both.
  *
- *  Returns immediately; the BLE UART then runs autonomously
+ *  Returns immediately; the ESP-BLE-UART then runs autonomously
  *  (connect, pairing, passkey display, RX delivery all via internal
  *  callbacks). Single-shot. */
 int  ble_uart_open(void);
