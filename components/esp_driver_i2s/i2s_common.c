@@ -113,13 +113,11 @@ static esp_err_t s_i2s_extract_duplex_candidate(i2s_chan_handle_t handle, i2s_du
     i2s_std_clk_config_t *clk_cfg = NULL;
     i2s_std_gpio_config_t *gpio_cfg = NULL;
     uint32_t slot_bits = 0;
-    uint32_t data_bits = 0;
     if (handle->mode == I2S_COMM_MODE_STD) {
         i2s_std_config_t *cfg = (i2s_std_config_t *)handle->mode_info;
         clk_cfg = &cfg->clk_cfg;
         gpio_cfg = &cfg->gpio_cfg;
         slot_bits = cfg->slot_cfg.slot_bit_width;
-        data_bits = cfg->slot_cfg.data_bit_width;
     }
 #if SOC_I2S_SUPPORTS_TDM
     else {
@@ -127,13 +125,8 @@ static esp_err_t s_i2s_extract_duplex_candidate(i2s_chan_handle_t handle, i2s_du
         clk_cfg = (i2s_std_clk_config_t *)&cfg->clk_cfg;
         gpio_cfg = (i2s_std_gpio_config_t *)&cfg->gpio_cfg;
         slot_bits = cfg->slot_cfg.slot_bit_width;
-        data_bits = cfg->slot_cfg.data_bit_width;
     }
 #endif
-
-    if (slot_bits == I2S_SLOT_BIT_WIDTH_AUTO || (int)slot_bits < (int)data_bits) {
-        slot_bits = data_bits;
-    }
 
     out->ws_pin = gpio_cfg->ws;
     out->bclk_pin = gpio_cfg->bclk;
@@ -201,6 +194,8 @@ void i2s_channel_try_to_constitute_duplex(i2s_chan_handle_t handle, const i2s_du
             another_handle->role == I2S_ROLE_MASTER) {
         handle->role = I2S_ROLE_SLAVE;
         handle->full_duplex_slave = true;
+        ESP_LOGW(TAG, "the %s channel on I2S%d is switched from master to slave for full-duplex mode",
+                 handle->dir == I2S_DIR_TX ? "tx" : "rx", handle->controller->id);
     }
 }
 

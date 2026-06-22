@@ -912,6 +912,10 @@ Full-duplex mode registers TX and RX channel in an I2S port at the same time, an
 
 Note that one handle can only stand for one channel. Therefore, it is still necessary to configure the slot and clock for both TX and RX channels one by one.
 
+.. note::
+
+    In full-duplex mode, only one channel can work as the master that generates BCLK and WS. If both paired handles are configured as ``I2S_ROLE_MASTER``, the handle initialized later is automatically switched to ``I2S_ROLE_SLAVE``.
+
 There are two methods to allocate a pair of full-duplex channels:
 
 1. Allocate both TX and RX handles in a single call of :cpp:func:`i2s_new_channel`.

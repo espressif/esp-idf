@@ -30,10 +30,7 @@ static esp_err_t i2s_std_calculate_clock(i2s_chan_handle_t handle, const i2s_std
 {
     uint32_t rate = clk_cfg->sample_rate_hz;
     i2s_std_slot_config_t *slot_cfg = &((i2s_std_config_t *)(handle->mode_info))->slot_cfg;
-    uint32_t slot_bits = (slot_cfg->slot_bit_width == I2S_SLOT_BIT_WIDTH_AUTO) ||
-                         ((int)slot_cfg->slot_bit_width < (int)slot_cfg->data_bit_width) ?
-                         slot_cfg->data_bit_width : slot_cfg->slot_bit_width;
-    slot_cfg->slot_bit_width = slot_bits;
+    uint32_t slot_bits = slot_cfg->slot_bit_width;
     /* Calculate multiple
      * Fmclk = bck_div*fbck = fsclk/(mclk_div+b/a) */
     if (handle->role == I2S_ROLE_MASTER || handle->full_duplex_slave) {
@@ -85,8 +82,7 @@ static esp_err_t i2s_std_set_clock(i2s_chan_handle_t handle, const i2s_std_clk_c
 {
     esp_err_t ret = ESP_OK;
     i2s_std_config_t *std_cfg = (i2s_std_config_t *)(handle->mode_info);
-    i2s_data_bit_width_t real_slot_bit = (int)std_cfg->slot_cfg.slot_bit_width < (int)std_cfg->slot_cfg.data_bit_width ?
-                                         std_cfg->slot_cfg.data_bit_width : std_cfg->slot_cfg.slot_bit_width;
+    i2s_data_bit_width_t real_slot_bit = std_cfg->slot_cfg.slot_bit_width;
     ESP_RETURN_ON_FALSE(real_slot_bit != I2S_DATA_BIT_WIDTH_24BIT ||
                         (clk_cfg->mclk_multiple % 3 == 0), ESP_ERR_INVALID_ARG, TAG,
                         "The 'mclk_multiple' should be the multiple of 3 while using 24-bit data width");
@@ -167,7 +163,7 @@ static esp_err_t i2s_std_set_slot(i2s_chan_handle_t handle, const i2s_std_slot_c
 
     /* Update the mode info: slot configuration */
     i2s_std_config_t *std_cfg = (i2s_std_config_t *)(handle->mode_info);
-    memcpy(&(std_cfg->slot_cfg), slot_cfg, sizeof(i2s_std_slot_config_t));
+    memcpy(&(std_cfg->slot_cfg), &norm_slot_cfg, sizeof(i2s_std_slot_config_t));
 
     return ESP_OK;
 }
@@ -438,11 +434,12 @@ esp_err_t i2s_channel_reconfig_std_slot(i2s_chan_handle_t handle, const i2s_std_
     i2s_std_config_t *std_cfg = (i2s_std_config_t *)handle->mode_info;
     ESP_GOTO_ON_FALSE(std_cfg, ESP_ERR_INVALID_STATE, err, TAG, "initialization not complete");
 
+    uint32_t old_slot_bit_width = std_cfg->slot_cfg.slot_bit_width;
+
     ESP_GOTO_ON_ERROR(i2s_std_set_slot(handle, slot_cfg), err, TAG, "set i2s standard slot failed");
 
     /* If the slot bit width changed, then need to update the clock */
-    uint32_t slot_bits = slot_cfg->slot_bit_width == I2S_SLOT_BIT_WIDTH_AUTO ? slot_cfg->data_bit_width : slot_cfg->slot_bit_width;
-    if (std_cfg->slot_cfg.slot_bit_width != slot_bits) {
+    if (std_cfg->slot_cfg.slot_bit_width != old_slot_bit_width) {
         ESP_GOTO_ON_ERROR(i2s_std_set_clock(handle, &std_cfg->clk_cfg), err, TAG, "update clock failed");
     }
 
