@@ -163,6 +163,7 @@ struct wpa_funcs {
     int (*owe_process_assoc_resp)(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_ie, size_t dh_len);
     void (*wpa_sta_clear_curr_pmksa)(void);
     void (*wpa_config_reload)(void);
+    int (*wpa_parse_wpa_ie_scan_only)(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t *data);
 };
 
 struct wpa2_funcs {

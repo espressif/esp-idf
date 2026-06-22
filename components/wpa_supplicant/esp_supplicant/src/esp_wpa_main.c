@@ -277,12 +277,15 @@ void wpa_config_done(void)
     esp_set_scan_ie();
 }
 
-int wpa_parse_wpa_ie_wrapper(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t *data)
+static int wpa_parse_wpa_ie_to_public(const u8 *wpa_ie, size_t wpa_ie_len,
+                                      wifi_wpa_ie_t *data,
+                                      int (*parse_fn)(const u8 *, size_t,
+                                                      struct wpa_ie_data *))
 {
-    struct wpa_ie_data ie;
-    int ret = 0;
+    struct wpa_ie_data ie = {0};
+    int ret;
 
-    ret = wpa_parse_wpa_ie(wpa_ie, wpa_ie_len, &ie);
+    ret = parse_fn(wpa_ie, wpa_ie_len, &ie);
     data->proto = ie.proto;
     data->pairwise_cipher = cipher_type_map_supp_to_public(ie.pairwise_cipher);
     data->group_cipher = cipher_type_map_supp_to_public(ie.group_cipher);
@@ -293,6 +296,18 @@ int wpa_parse_wpa_ie_wrapper(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t 
     data->rsnxe_capa = ie.rsnxe_capa;
 
     return ret;
+}
+
+int wpa_parse_wpa_ie_wrapper(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t *data)
+{
+    return wpa_parse_wpa_ie_to_public(wpa_ie, wpa_ie_len, data, wpa_parse_wpa_ie);
+}
+
+int wpa_parse_wpa_ie_scan_only_wrapper(const u8 *wpa_ie, size_t wpa_ie_len,
+                                       wifi_wpa_ie_t *data)
+{
+    return wpa_parse_wpa_ie_to_public(wpa_ie, wpa_ie_len, data,
+                                      wpa_parse_wpa_ie_scan_only);
 }
 
 static void wpa_sta_connected_cb(uint8_t *bssid)
@@ -539,6 +554,7 @@ int esp_supplicant_init(void)
 
     wpa_cb->wpa_config_parse_string  = wpa_config_parse_string;
     wpa_cb->wpa_parse_wpa_ie  = wpa_parse_wpa_ie_wrapper;
+    wpa_cb->wpa_parse_wpa_ie_scan_only = wpa_parse_wpa_ie_scan_only_wrapper;
     wpa_cb->wpa_config_bss = NULL;//wpa_config_bss;
     wpa_cb->wpa_michael_mic_failure = wpa_michael_mic_failure;
     wpa_cb->wpa_config_done = wpa_config_done;
