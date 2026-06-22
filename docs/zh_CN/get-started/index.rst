@@ -224,6 +224,24 @@
     :alt: Development of applications for {IDF_TARGET_NAME}
     :figclass: align-center
 
+
+工作流程概览
+============
+
+ESP-IDF 的入门流程分为两个主要阶段：
+
+1. **搭建环境** —— 安装前置依赖和 ESP-IDF（参见 `安装`_）
+2. **开发** —— 创建、配置、编译、烧录项目并监视输出（参见 `构建首个项目`_）
+
+如果不确定从哪里开始，请参见 :doc:`workflow-overview`，查看完整工作流程图示。
+
+.. toctree::
+    :maxdepth: 1
+    :hidden:
+
+    workflow-overview
+
+
 .. _get-started-step-by-step:
 .. _get-started-how-to-get-esp-idf:
 .. _get-started-set-up-tools:
@@ -289,43 +307,10 @@ EIM 提供两种安装方式：
 
 如需卸载通过 EIM 安装的 ESP-IDF 及相关工具，可使用图形用户界面 (GUI) 或命令行界面 (CLI) 两种方式。
 
-使用 EIM GUI 卸载
-~~~~~~~~~~~~~~~~~
+.. toctree::
+    :maxdepth: 1
 
-启动 ESP-IDF 安装管理器。在 ``管理安装`` 下，点击 ``打开仪表板``。
-
-.. figure:: ../../_static/get-started-eim-gui-zh.png
-    :align: center
-    :alt: EIM 打开仪表板
-    :figclass: align-center
-
-    EIM 打开仪表板
-
-如需删除特定 ESP-IDF 版本，请在该版本下点击 ``移除`` 按键。
-
-如果删除所有 ESP-IDF 版本，请点击页面底部的 ``清除所有`` 按键。
-
-.. figure:: ../../_static/get-started-eim-gui-uninstall-zh.png
-    :align: center
-    :alt: EIM 卸载 ESP-IDF
-    :figclass: align-center
-
-    EIM 卸载 ESP-IDF
-
-使用 EIM CLI 卸载
-~~~~~~~~~~~~~~~~~
-
-如需删除特定 ESP-IDF 版本，例如 v5.4.2，请在终端中运行以下命令：
-
-.. code-block:: bash
-
-    eim remove v5.4.2
-
-如需删除所有 ESP-IDF 版本，请在终端中运行以下命令：
-
-.. code-block:: bash
-
-    eim purge
+    uninstall
 
 
 相关文档
