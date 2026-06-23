@@ -809,9 +809,25 @@ def execute_command(dut: IdfDut, command: str, prefix: str = 'ot ') -> None:
 
 def get_output_string(dut: IdfDut, command: str, wait_time: int) -> str:
     execute_command(dut, command)
-    tmp = dut.expect(pexpect.TIMEOUT, timeout=wait_time)
+    output = dut.expect(pexpect.TIMEOUT, timeout=wait_time)
     clean_buffer(dut)
-    return str(tmp)
+    if isinstance(output, bytes):
+        return output.decode('utf-8', errors='replace')
+    return str(output)
+
+
+def escape_ot_cli_arg(value: str) -> str:
+    return value.replace('\\', '\\\\').replace(' ', '\\ ')
+
+
+def parse_dns_browse_instance(browse_output: str, port: str = '12347') -> str:
+    normalized = re.sub(r'\r\n?', '\n', browse_output)
+    match = re.search(
+        r'DNS browse response for [^\n]+\n+([^\n]+)\n+\s+Port:' + re.escape(port),
+        normalized,
+    )
+    assert match, f'no service instance with Port:{port} in browse output: {browse_output}'
+    return match.group(1).strip()
 
 
 def wait_for_host_network(host: str = '8.8.8.8', retries: int = 6, interval: int = 10) -> None:
