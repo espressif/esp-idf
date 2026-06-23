@@ -5,7 +5,7 @@ from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.adc
+@pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
     [
@@ -22,7 +22,7 @@ def test_legacy_adc(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.adc
+@pytest.mark.generic
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'config, baud',
