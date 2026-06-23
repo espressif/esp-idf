@@ -2333,7 +2333,7 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
 {
     int res = 0;
     struct wpa_sm *sm = &gWpaSm;
-    bool use_pmk_cache = !esp_wifi_skip_supp_pmkcaching();
+    bool use_pmk_cache = esp_wifi_use_supp_pmk_cache();
     u8 assoc_rsnxe[20];
     size_t assoc_rsnxe_len = sizeof(assoc_rsnxe);
 
