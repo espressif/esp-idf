@@ -342,7 +342,7 @@ esp_err_t esp_memprot_get_fault_reg(mem_type_prot_t mem_type, uint32_t *fault_re
 
 esp_err_t esp_memprot_get_fault_status(mem_type_prot_t mem_type, uint32_t **faulting_address, uint32_t *op_type, uint32_t *op_subtype)
 {
-    if (*faulting_address == NULL || op_type == NULL || op_subtype == NULL) {
+    if (faulting_address == NULL || op_type == NULL || op_subtype == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
