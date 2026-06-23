@@ -31,4 +31,9 @@ menu "LDO Regulator Configurations"
     config ESP_LDO_VOLTAGE_PSRAM_DOMAIN
         int
         default 1800 if ESP_LDO_VOLTAGE_PSRAM_1800_MV
+
+    config ESP_LDO_VOLTAGE_STABLE_DELAY_US
+        int
+        depends on ESP_LDO_RESERVE_PSRAM
+        default 1000
 endmenu
