@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import os
@@ -22,6 +22,10 @@ except ImportError:
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import requires as _requires
 from importlib.metadata import version as _version
+
+from esp_pylib.excepthook import install_exception_reporting
+from esp_pylib.logger import log
+from rich.markup import escape
 
 PYTHON_PACKAGE_RE = re.compile(r'[^<>=~]+')
 
@@ -69,6 +73,7 @@ def get_requires(name: str) -> list | None:
 
 
 if __name__ == '__main__':
+    install_exception_reporting()
     parser = argparse.ArgumentParser(description='ESP-IDF Python package dependency checker')
     parser.add_argument(
         '--requirements',
@@ -104,14 +109,12 @@ if __name__ == '__main__':
                 elif con.startswith('-e') and '#egg=' in con:
                     con_m = re.search(r'#egg=([^\s]+)', con)
                     if not con_m:
-                        print(f'Malformed input. Cannot find name in {con}')
-                        sys.exit(1)
+                        log.die(escape(f'Malformed input. Cannot find name in {con}'))
                     con = con_m[1]
 
                 name_m = PYTHON_PACKAGE_RE.search(con)
                 if not name_m:
-                    print(f'Malformed input. Cannot find name in {con}')
-                    sys.exit(1)
+                    log.die(escape(f'Malformed input. Cannot find name in {con}'))
                 constr_dict[name_m[0]] = con.partition(' #')[0]  # remove comments
 
     not_satisfied = []  # in string form which will be printed
@@ -178,26 +181,30 @@ if __name__ == '__main__':
                 )
 
     if len(not_satisfied) > 0:
-        print('The following Python requirements are not satisfied:')
-        print(os.linesep.join(not_satisfied))
+        # Header first (same order as before pylib), then details. Escape Rich markup so
+        # requirement extras like package[extra] print literally. Keep on stdout to match
+        # pre-migration stream (callers may capture stdout only).
+        log.print('The following Python requirements are not satisfied:')
+        log.print(escape(os.linesep.join(not_satisfied)))
         if 'IDF_PYTHON_ENV_PATH' in os.environ:
             # We are running inside a private virtual environment under IDF_TOOLS_PATH,
             # ask the user to run install.bat again.
             install_script = 'install.bat' if sys.platform == 'win32' else 'install.sh'
-            print(f'To install the missing packages, please run "{install_script}"')
+            log.print(f'To install the missing packages, please run "{install_script}"')
         else:
-            print(
+            log.print(
                 'Please follow the instructions found in the "Set up the tools" section of '
                 'ESP-IDF Getting Started Guide.'
             )
 
-        print('Diagnostic information:')
+        log.print('Diagnostic information:')
         idf_python_env_path = os.environ.get('IDF_PYTHON_ENV_PATH')
-        print('    IDF_PYTHON_ENV_PATH: {}'.format(idf_python_env_path or '(not set)'))
-        print(f'    Python interpreter used: {sys.executable}')
+        log.print(escape(f'    IDF_PYTHON_ENV_PATH: {idf_python_env_path or "(not set)"}'))
+        log.print(escape(f'    Python interpreter used: {sys.executable}'))
         if not idf_python_env_path or idf_python_env_path not in sys.executable:
-            print('    Warning: python interpreter not running from IDF_PYTHON_ENV_PATH')
-            print('    PATH: {}'.format(os.getenv('PATH')))
+            # Keep on stdout with the rest of the diagnostic block (pre-pylib stream).
+            log.print('    Warning: python interpreter not running from IDF_PYTHON_ENV_PATH')
+            log.print(escape(f'    PATH: {os.getenv("PATH")}'))
         sys.exit(1)
 
-    print('Python requirements are satisfied.')
+    log.print('Python requirements are satisfied.')

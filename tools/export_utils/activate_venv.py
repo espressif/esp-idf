@@ -1,51 +1,20 @@
-# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-import argparse
 import os
 import sys
+from types import SimpleNamespace
 from typing import Any
-from typing import Dict
 
-from console_output import CONSOLE_STDERR
-from console_output import CONSOLE_STDOUT
-from console_output import debug
-from console_output import die
-from console_output import eprint
-from console_output import oprint
+import rich_click as click
+from console_output import configure_output
 from console_output import status_message
-from console_output import warn
+from esp_pylib.excepthook import install_exception_reporting
+from esp_pylib.logger import log
+from rich.markup import escape
 from shell_types import SHELL_CLASSES
 from shell_types import SUPPORTED_SHELLS
 from utils import conf
 from utils import run_cmd
-
-
-def parse_arguments() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        prog='activate',
-        description='Activate ESP-IDF environment',
-        epilog='On Windows, run `python activate.py` to execute this script in the current terminal window.',
-    )
-    parser.add_argument(
-        '-s',
-        '--shell',
-        metavar='SHELL',
-        default=os.environ.get('ESP_IDF_SHELL', 'detect'),
-        help='Explicitly specify shell to start. For example bash, zsh, powershell.exe, cmd.exe',
-    )
-    parser.add_argument('-l', '--list', action='store_true', help=('List supported shells.'))
-    parser.add_argument('-e', '--export', action='store_true', help=('Generate commands to run in the terminal.'))
-    parser.add_argument('-n', '--no-color', action='store_true', help=('Disable ANSI color escape sequences.'))
-    parser.add_argument(
-        '-d',
-        '--debug',
-        action='store_true',
-        default=bool(os.environ.get('ESP_IDF_EXPORT_DEBUG')),
-        help=('Enable debug information.'),
-    )
-    parser.add_argument('-q', '--quiet', action='store_true', help=('Suppress all output.'))
-
-    return parser.parse_args()
 
 
 @status_message('Checking python version', rv_on_ok=True)
@@ -72,7 +41,7 @@ def get_deactivate_cmd() -> str:
 
 
 @status_message('Establishing a new ESP-IDF environment')
-def get_idf_env() -> Dict[str, str]:
+def get_idf_env() -> dict[str, str]:
     # Get ESP-IDF system environment variables
     extra_paths_list = [
         os.path.join('components', 'espcoredump'),
@@ -84,7 +53,7 @@ def get_idf_env() -> Dict[str, str]:
     stdout = run_cmd(cmd)
 
     # idf_tools.py might not export certain environment variables if they are already set
-    idf_env: Dict[str, Any] = {
+    idf_env: dict[str, Any] = {
         'IDF_PATH': os.environ['IDF_PATH'],
         'ESP_IDF_VERSION': os.environ['ESP_IDF_VERSION'],
         'IDF_PYTHON_ENV_PATH': os.environ['IDF_PYTHON_ENV_PATH'],
@@ -95,7 +64,7 @@ def get_idf_env() -> Dict[str, str]:
             var, val = line.split('=')
             idf_env[var] = val
     except ValueError as e:
-        debug('\n'.join(['Output from `./tools/idf_tools.py export --format key-value`:', f'{stdout}']))
+        log.debug('\n'.join(['Output from `./tools/idf_tools.py export --format key-value`:', f'{stdout}']))
         raise ValueError(
             '\n'.join(
                 [
@@ -117,7 +86,7 @@ def detect_shell(args: Any) -> str:
     import psutil
 
     if args.shell != 'detect':
-        debug(f'Shell explicitly stated: "{args.shell}"')
+        log.debug(f'Shell explicitly stated: "{args.shell}"')
         return str(args.shell)
 
     current_pid = os.getpid()
@@ -128,9 +97,9 @@ def detect_shell(args: Any) -> str:
         parent_cmdline = parent.cmdline()
         parent_exe = parent_cmdline[0].lstrip('-')
         parent_name = os.path.basename(parent_exe)
-        debug(f'Parent: pid: {parent_pid}, cmdline: {parent_cmdline}, exe: {parent_exe}, name: {parent_name}')
+        log.debug(f'Parent: pid: {parent_pid}, cmdline: {parent_cmdline}, exe: {parent_exe}, name: {parent_name}')
         if not parent_name.lower().startswith('python'):
-            detected_shell_name = parent_name
+            detected_shell_name = str(parent_name)
             break
         current_pid = parent_pid
 
@@ -155,29 +124,56 @@ def print_uninstall_msg() -> Any:
     return msg
 
 
-def main() -> None:
-    args = parse_arguments()
+@click.command(
+    context_settings={'help_option_names': ['-h', '--help']},
+    epilog='On Windows, run `python activate.py` to execute this script in the current terminal window.',
+)
+@click.option(
+    '-s',
+    '--shell',
+    metavar='SHELL',
+    default=os.environ.get('ESP_IDF_SHELL', 'detect'),
+    show_default=True,
+    help='Explicitly specify shell to start. For example bash, zsh, powershell.exe, cmd.exe',
+)
+@click.option('-l', '--list', 'list_shells', is_flag=True, help='List supported shells.')
+@click.option('-e', '--export', is_flag=True, help='Generate commands to run in the terminal.')
+@click.option('-n', '--no-color', is_flag=True, help='Disable ANSI color escape sequences.')
+@click.option(
+    '-d',
+    '--debug',
+    'debug_flag',
+    is_flag=True,
+    default=bool(os.environ.get('ESP_IDF_EXPORT_DEBUG')),
+    help='Enable debug information.',
+)
+@click.option('-q', '--quiet', is_flag=True, help='Suppress all output.')
+def main(shell: str, list_shells: bool, export: bool, no_color: bool, debug_flag: bool, quiet: bool) -> None:
+    install_exception_reporting()
 
-    # Setup parsed arguments
-    CONSOLE_STDERR.no_color = args.no_color
-    CONSOLE_STDOUT.no_color = args.no_color
-    CONSOLE_STDERR.quiet = args.quiet
-    CONSOLE_STDOUT.quiet = args.quiet
-    # Fill config global holder
-    conf.ARGS = args
+    # Fill config global holder before configure_output
+    conf.ARGS = SimpleNamespace(
+        shell=shell,
+        list=list_shells,
+        export=export,
+        no_color=no_color,
+        debug=debug_flag,
+        quiet=quiet,
+    )
+    configure_output(no_color=no_color, quiet=quiet, debug=debug_flag)
 
-    debug(f'command line: {sys.argv}')
+    log.debug(f'command line: {sys.argv}')
     if conf.ARGS.list:
-        oprint(SUPPORTED_SHELLS)
+        log.print(SUPPORTED_SHELLS)
         sys.exit()
 
-    eprint(f'[dark_orange]Activating ESP-IDF {conf.IDF_VERSION}')
+    log.print(f'[dark_orange]Activating ESP-IDF {conf.IDF_VERSION}', file=sys.stderr)
     if conf.IDF_PATH_OLD and conf.IDF_PATH != conf.IDF_PATH_OLD:
-        warn(f"IDF_PATH is changed from '{conf.IDF_PATH_OLD}' to '{conf.IDF_PATH}'.")
+        log.warn(f"IDF_PATH is changed from '{escape(conf.IDF_PATH_OLD)}' to '{escape(conf.IDF_PATH)}'.")
     else:
-        eprint(f"Setting IDF_PATH to '{conf.IDF_PATH}'.")
+        log.print(f"Setting IDF_PATH to '{escape(conf.IDF_PATH)}'.", file=sys.stderr)
 
-    debug(f'IDF_PYTHON_ENV_PATH {conf.IDF_PYTHON_ENV_PATH}')
+    log.debug(f'IDF_PYTHON_ENV_PATH {conf.IDF_PYTHON_ENV_PATH}')
 
     check_python_version()
     check_python_dependencies()
@@ -188,19 +184,21 @@ def main() -> None:
     print_uninstall_msg()
 
     if detected_shell not in SHELL_CLASSES:
-        die(f'"{detected_shell}" shell is not among the supported options: "{SUPPORTED_SHELLS}"')
+        log.die(f'"{escape(str(detected_shell))}" shell is not among the supported options: "{SUPPORTED_SHELLS}"')
 
-    shell = SHELL_CLASSES[detected_shell](detected_shell, deactivate_cmd, new_esp_idf_env)
+    shell_obj = SHELL_CLASSES[detected_shell](detected_shell, deactivate_cmd, new_esp_idf_env)
 
     if conf.ARGS.export:
-        shell.export()
+        shell_obj.export()
         sys.exit()
 
-    eprint(
-        f'[dark_orange]Starting new \'{shell.shell}\' shell with ESP-IDF environment... (use "exit" command to quit)'
+    log.print(
+        f"[dark_orange]Starting new '{escape(str(shell_obj.shell))}' shell with ESP-IDF environment..."
+        ' (use "exit" command to quit)',
+        file=sys.stderr,
     )
-    shell.spawn()
-    eprint('[dark_orange]ESP-IDF environment exited.')
+    shell_obj.spawn()
+    log.print('[dark_orange]ESP-IDF environment exited.', file=sys.stderr)
 
 
 if __name__ == '__main__':

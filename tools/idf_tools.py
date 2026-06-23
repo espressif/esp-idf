@@ -505,8 +505,10 @@ def get_file_size_sha256(filename: str, block_size: int = 65536) -> tuple[int, s
 
 def report_progress(count: int, block_size: int, total_size: int) -> None:
     """
-    Prints progress (count * block_size * 100 / total_size) to stdout.
+    Prints download progress to stdout.
     """
+    if g.quiet or total_size <= 0:
+        return
     percent = int(count * block_size * 100 / total_size)
     percent = min(100, percent)
     sys.stdout.write(f'\r{percent}%')

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 # This program creates archives compatible with ESP32-S* ROM DFU implementation.
@@ -23,6 +23,11 @@ try:
 except ImportError:
     # Only used for type annotations
     pass
+
+from esp_pylib.constants import ESPRESSIF_VID
+from esp_pylib.excepthook import install_exception_reporting
+from esp_pylib.logger import log
+from rich.markup import escape
 
 try:
     from itertools import izip as zip  # type: ignore  # noqa: A004
@@ -90,7 +95,6 @@ DFUINFO_FILE = 'dfuinfo0.dat'
 # Structure which gets added at the end of the entire DFU file
 DFUSUFFIX_STRUCT = b'<H H H H 3s B'
 DFUSuffix = namedtuple('DFUSuffix', ['bcd_device', 'pid', 'vid', 'bcd_dfu', 'sig', 'len'])
-ESPRESSIF_VID = 12346
 # This CRC32 gets added after DFUSUFFIX_STRUCT
 DFUCRC_STRUCT = b'<I'
 
@@ -235,18 +239,19 @@ class EspDfuWriter:
 
 def action_write(args):  # type: (typing.Mapping[str, typing.Any]) -> None
     writer = EspDfuWriter(args['output_file'], args['pid'], args['part_size'])
-    print('Adding flash chip parameters file with flash_size = {}'.format(args['flash_size']))
+    log.note(f'Adding flash chip parameters file with flash_size = {args["flash_size"]}')
     writer.add_flash_params_file(args['flash_size'])
     for addr, f in args['files']:
-        print(f'Adding {f} at {addr:#x}')
+        log.note(f'Adding {escape(str(f))} at {addr:#x}')
         writer.add_file(addr, f)
     writer.finish()
-    print('"{}" has been written. You may proceed with DFU flashing.'.format(args['output_file'].name))
+    log.note(f'"{escape(args["output_file"].name)}" has been written. You may proceed with DFU flashing.')
     if args['part_size'] % (4 * 1024) != 0:
-        print('WARNING: Partition size of DFU is not multiple of 4k (4096). You might get unexpected behavior.')
+        log.warn('Partition size of DFU is not multiple of 4k (4096). You might get unexpected behavior.')
 
 
 def main():  # type: () -> None
+    install_exception_reporting()
     parser = argparse.ArgumentParser()
 
     # Provision to add "info" command

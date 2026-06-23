@@ -14,11 +14,23 @@ import re
 import sys
 from datetime import datetime
 
+from esp_pylib.errors import FatalError
+from esp_pylib.excepthook import install_exception_reporting
+from esp_pylib.logger import Verbosity
+from esp_pylib.logger import log
+from rich.markup import escape
+
 __version__ = '1.0'
 
-quiet = False
 max_blk_len = 256
 idf_target = 'esp32'
+quiet = False
+
+
+def status(msg: str) -> None:
+    """Print non-critical status to stderr (suppressed by --quiet)."""
+    if not quiet:
+        log.print(msg, file=sys.stderr)
 
 
 def get_copyright():
@@ -29,18 +41,6 @@ def get_copyright():
  */
 """
     return copyright_str % datetime.today().year
-
-
-def status(msg):
-    """Print status message to stderr"""
-    if not quiet:
-        critical(msg)
-
-
-def critical(msg):
-    """Print critical message to stderr"""
-    sys.stderr.write(msg)
-    sys.stderr.write('\n')
 
 
 class FuseTable(list):
@@ -69,7 +69,7 @@ class FuseTable(list):
             except InputError as e:
                 raise InputError(f'Error at line {line_no + 1}: {e}')
             except Exception:
-                critical(f'Unexpected error parsing line {line_no + 1}: {line}')
+                log.err(f'Unexpected error parsing line {line_no + 1}: {line}')
                 raise
 
         # fix up missing bit_start
@@ -126,7 +126,7 @@ class FuseTable(list):
                 field_name = p.field_name + p.group
                 if field_name != '' and len(duplicates.intersection([field_name])) != 0:
                     fl_error = True
-                    print(
+                    log.err(
                         f'Field at {p.field_name}, {p.efuse_block}, {p.bit_start}, {p.bit_count} '
                         'have duplicate field_name'
                     )
@@ -477,7 +477,7 @@ class FuseDefinition:
 
 
 def process_input_file(file, type_table):
-    status('Parsing efuse CSV input file ' + file.name + ' ...')
+    status('Parsing efuse CSV input file ' + escape(file.name) + ' ...')
     input_contents = file.read()
     table = FuseTable.from_csv(input_contents)
     status('Verifying efuse table...')
@@ -509,27 +509,28 @@ def create_output_files(name, output_table, debug):
 
     # src files are the same
     if ckeck_md5_in_file(output_table.md5_digest_table, file_c_path) is False:
-        status('Creating efuse *.h file ' + file_h_path + ' ...')
+        status('Creating efuse *.h file ' + escape(file_h_path) + ' ...')
         output = output_table.to_header(file_name)
         with open(file_h_path, 'w', encoding='utf-8') as f:
             f.write(output)
 
-        status('Creating efuse *.c file ' + file_c_path + ' ...')
+        status('Creating efuse *.c file ' + escape(file_c_path) + ' ...')
         output = output_table.to_c_file(file_name, debug)
         with open(file_c_path, 'w', encoding='utf-8') as f:
             f.write(output)
     else:
+        # Always visible (same as pre-pylib plain print), even under --quiet.
         print('Source files do not require updating correspond to csv file.')
 
 
 def main():
-    global quiet
     global max_blk_len
     global idf_target
+    global quiet
 
     parser = argparse.ArgumentParser(description='ESP32 eFuse Manager')
     parser.add_argument('--idf_target', '-t', help='Target chip type', default='esp32')
-    parser.add_argument('--quiet', '-q', help="Don't print non-critical status messages to stderr", action='store_true')
+    parser.add_argument('--quiet', '-q', help="Don't print non-critical status messages", action='store_true')
     parser.add_argument('--debug', help='Create header file with debug info', default=False, action='store_false')
     parser.add_argument('--info', help='Print info about range of used bits', default=False, action='store_true')
     parser.add_argument('--max_blk_len', help='Max number of bits in BLOCKs', type=int, default=256)
@@ -543,11 +544,14 @@ def main():
     idf_target = args.idf_target
 
     max_blk_len = args.max_blk_len
+    # Always print Max bits before applying --quiet (pre-pylib behavior).
     print(f'Max number of bits in BLK {max_blk_len:d}')
     if max_blk_len not in [256, 192, 128]:
         raise InputError(f'Unsupported block length = {max_blk_len:d}')
 
     quiet = args.quiet
+    if quiet:
+        log.set_verbosity(Verbosity.SILENT)
     debug = args.debug
     info = args.info
 
@@ -569,7 +573,7 @@ def main():
     return 0
 
 
-class InputError(RuntimeError):
+class InputError(FatalError):
     def __init__(self, e):
         super().__init__(e)
 
@@ -580,8 +584,8 @@ class ValidationError(InputError):
 
 
 if __name__ == '__main__':
+    install_exception_reporting()
     try:
         main()
     except InputError as e:
-        print(e, file=sys.stderr)
-        sys.exit(2)
+        log.die(str(e), exit_code=2)

@@ -1,13 +1,9 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-import argparse
 import os
-from subprocess import run
 from subprocess import SubprocessError
+from subprocess import run
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
 
 
 class Config:
@@ -15,6 +11,7 @@ class Config:
     Config serves as global hodler for variables used across modules
     It holds also arguments from command line
     """
+
     def __init__(self) -> None:
         self.IDF_PATH = os.environ['IDF_PATH']
         self.IDF_PATH_OLD = os.environ['IDF_PATH_OLD']
@@ -22,14 +19,14 @@ class Config:
         self.IDF_PYTHON_ENV_PATH = os.environ['IDF_PYTHON_ENV_PATH']
         self.IDF_TOOLS_PY = os.path.join(self.IDF_PATH, 'tools', 'idf_tools.py')
         self.IDF_PY = os.path.join(self.IDF_PATH, 'tools', 'idf.py')
-        self.ARGS: Optional[argparse.Namespace] = None
+        self.ARGS: Any | None = None
 
 
 # Global variable instance
 conf = Config()
 
 
-def run_cmd(cmd: List[str], env: Optional[Dict[str, Any]]=None) -> str:
+def run_cmd(cmd: list[str], env: dict[str, Any] | None = None) -> str:
     new_env = os.environ.copy()
     if env is not None:
         new_env.update(env)
