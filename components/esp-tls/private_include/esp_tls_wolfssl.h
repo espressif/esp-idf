@@ -7,11 +7,22 @@
 #pragma once
 #include "esp_tls.h"
 #include "esp_tls_private.h"
+#ifdef CONFIG_ESP_TLS_USING_WOLFSSL
+
+/* wolfssl_ssl_config is ESP-IDF specific helper for Certificate Bundles */
+#include "wolfssl/wolfcrypt/settings.h"
+#include "wolfssl/ssl.h"
+#include "wolfssl/openssl/x509.h"
+
 
 /**
  * Internal Callback for creating ssl handle for wolfssl
  */
-int esp_create_wolfssl_handle(const char *hostname, size_t hostlen, const void *cfg, esp_tls_t *tls, void *server_params);
+#if defined(ESP_IDF_VERSION) && (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0))
+    int esp_create_wolfssl_handle(const char *hostname, size_t hostlen, const void *cfg, esp_tls_t *tls, void *server_params);
+#else
+    int esp_create_wolfssl_handle(const char *hostname, size_t hostlen, const void *cfg, esp_tls_t *tls);
+#endif
 
 /**
  * Internal Callback for wolfssl_handshake
@@ -72,10 +83,7 @@ void *esp_wolfssl_get_ssl_context(esp_tls_t *tls);
 /**
  * wolfSSL function for Initializing socket wrappers (no-operation for wolfSSL)
  */
-static inline void esp_wolfssl_net_init(esp_tls_t *tls)
-{
-}
-
+void esp_wolfssl_net_init(esp_tls_t *tls);
 
 /**
  * Function to Create ESP-TLS Server session with wolfssl Stack
@@ -85,4 +93,7 @@ int esp_wolfssl_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp
 /*
  * Delete Server Session
  */
-void esp_wolfssl_server_session_delete(esp_tls_t *tls);
+int esp_wolfssl_server_session_delete(esp_tls_t *tls);
+
+
+#endif /* CONFIG_ESP_TLS_USING_WOLFSSL */
