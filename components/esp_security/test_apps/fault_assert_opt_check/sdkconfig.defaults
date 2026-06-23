@@ -1,0 +1,4 @@
+# The clang-built esp32 (Xtensa) bootloader is slightly larger than the GCC one and
+# overflows the default 0x7000 limit; move the partition table offset to give it room.
+# Harmless for GCC builds.
+CONFIG_PARTITION_TABLE_OFFSET=0x9000

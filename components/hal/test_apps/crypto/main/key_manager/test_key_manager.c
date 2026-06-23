@@ -140,7 +140,7 @@ void test_ecdsa_key_aes_mode(test_data_aes_mode_t *ecdsa_test_data, ecdsa_sign_t
 
 extern void test_ecdsa_sign(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* s_le, bool use_km_key, ecdsa_sign_type_t k_type);
 
-extern int test_ecdsa_verify(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* s_le, uint8_t *pub_x, uint8_t *pub_y);
+extern int test_ecdsa_verify(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* s_le, uint8_t *pub_x, uint8_t *pub_y, int expected_ret);
 
 void key_mgr_test_ecdsa_key(bool is_p256, ecdsa_sign_type_t k_type)
 {
@@ -161,7 +161,7 @@ void key_mgr_test_ecdsa_key(bool is_p256, ecdsa_sign_type_t k_type)
 
     print_data_in_hex(pub_x, pubkey_len, "ECDSA key pubx");
     print_data_in_hex(pub_y, pubkey_len, "ECDSA key puby");
-    TEST_ASSERT_EQUAL(0, test_ecdsa_verify(is_p256, sha256_digest, r_le, s_le, pub_x, pub_y));
+    TEST_ASSERT_EQUAL(0, test_ecdsa_verify(is_p256, sha256_digest, r_le, s_le, pub_x, pub_y, 0));
 
 }
 
