@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include <esp_system.h>
 #include <esp_http_server.h>
 #include <esp_heap_caps.h>
@@ -20,6 +21,7 @@
 
 #include "unity.h"
 #include "test_utils.h"
+#include "mock_http_server_client.h"
 
 int pre_start_mem, post_stop_mem, post_stop_min_mem;
 bool basic_sanity = true;
@@ -30,6 +32,30 @@ esp_err_t null_func(httpd_req_t *req)
 {
     return ESP_OK;
 }
+
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+static httpd_handle_t start_test_ws_server(uint16_t server_port, uint16_t ctrl_port)
+{
+    httpd_handle_t hd = NULL;
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    config.server_port = server_port;
+    config.ctrl_port = ctrl_port;
+
+    httpd_uri_t ws_uri = {
+        .uri = "/ws",
+        .method = HTTP_GET,
+        .handler = null_func,
+        .user_ctx = NULL,
+        .is_websocket = true,
+        .handle_ws_control_frames = false,
+        .supported_subprotocol = NULL,
+    };
+
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_start(&hd, &config));
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_register_uri_handler(hd, &ws_uri));
+    return hd;
+}
+#endif /* CONFIG_HTTPD_WS_SUPPORT */
 
 httpd_uri_t handler_limit_uri (char* path)
 {
@@ -519,6 +545,129 @@ TEST_CASE("WS recv failure marks close without dispatching handler", "[HTTP SERV
 
     free(hd.hd_req_aux.resp_hdrs);
 }
+
+#if CONFIG_HTTPD_WS_STRICTER_RFC6455
+TEST_CASE("WS HTTP/1.0 upgrade request returns 400", "[HTTP SERVER][websocket]")
+{
+    test_case_uses_tcpip();
+    httpd_handle_t hd = start_test_ws_server(8091, ESP_HTTPD_DEF_CTRL_PORT + 10);
+    mock_server_request_t req = {
+        .data = "GET /ws HTTP/1.0\r\n"
+                "Host: localhost\r\n"
+                "Upgrade: websocket\r\n"
+                "Connection: Upgrade\r\n"
+                "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
+                "Sec-WebSocket-Version: 13\r\n\r\n",
+    };
+    mock_server_response_t *resp = mock_server_send_request(8091, &req);
+    TEST_ASSERT_NOT_NULL(resp);
+
+    mock_server_assert_status(resp, 400);
+    mock_server_response_free(resp);
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_stop(hd));
+}
+#endif /* CONFIG_HTTPD_WS_STRICTER_RFC6455 */
+
+/* Regression test: enabling CONFIG_HTTPD_WS_SUPPORT must not reject HTTP/1.0
+ * traffic on non-WS endpoints. The HTTP/1.1 requirement only applies once
+ * an "Upgrade: websocket" header confirms the request is a WS handshake. */
+TEST_CASE("Non-WS HTTP/1.0 request is not rejected by WS version check", "[HTTP SERVER][websocket]")
+{
+    test_case_uses_tcpip();
+    httpd_handle_t hd = start_test_ws_server(8097, ESP_HTTPD_DEF_CTRL_PORT + 16);
+    mock_server_request_t req = {
+        .data = "GET /non-ws HTTP/1.0\r\n"
+                "Host: localhost\r\n\r\n",
+    };
+    mock_server_response_t *resp = mock_server_send_request(8097, &req);
+    TEST_ASSERT_NOT_NULL(resp);
+    /* No handler is registered for /non-ws, so the server returns 404.
+     * The crucial assertion is that it is NOT 400 from the WS version check —
+     * i.e., HTTP/1.0 was accepted at the parser level. */
+    mock_server_assert_status(resp, 404);
+    mock_server_response_free(resp);
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_stop(hd));
+}
+
+#if CONFIG_HTTPD_WS_STRICTER_RFC6455
+TEST_CASE("WS handshake missing Host returns 400", "[HTTP SERVER][websocket]")
+{
+    test_case_uses_tcpip();
+    httpd_handle_t hd = start_test_ws_server(8090, ESP_HTTPD_DEF_CTRL_PORT + 9);
+    mock_server_request_t req = {
+        .data = "GET /ws HTTP/1.1\r\n"
+                "Upgrade: websocket\r\n"
+                "Connection: Upgrade\r\n"
+                "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
+                "Sec-WebSocket-Version: 13\r\n\r\n",
+    };
+    mock_server_response_t *resp = mock_server_send_request(8090, &req);
+    TEST_ASSERT_NOT_NULL(resp);
+    mock_server_assert_status(resp, 400);
+    mock_server_response_free(resp);
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_stop(hd));
+}
+#endif /* CONFIG_HTTPD_WS_STRICTER_RFC6455 */
+
+TEST_CASE("WS handshake missing Sec-WebSocket-Version returns 400", "[HTTP SERVER][websocket]")
+{
+    test_case_uses_tcpip();
+    httpd_handle_t hd = start_test_ws_server(8094, ESP_HTTPD_DEF_CTRL_PORT + 13);
+    mock_server_request_t req = {
+        .data = "GET /ws HTTP/1.1\r\n"
+                "Host: localhost\r\n"
+                "Upgrade: websocket\r\n"
+                "Connection: Upgrade\r\n"
+                "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n\r\n",
+    };
+    mock_server_response_t *resp = mock_server_send_request(8094, &req);
+    TEST_ASSERT_NOT_NULL(resp);
+    mock_server_assert_status(resp, 400);
+    mock_server_response_free(resp);
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_stop(hd));
+}
+
+TEST_CASE("WS handshake unsupported version returns 426 with Sec-WebSocket-Version header", "[HTTP SERVER][websocket]")
+{
+    test_case_uses_tcpip();
+    httpd_handle_t hd = start_test_ws_server(8093, ESP_HTTPD_DEF_CTRL_PORT + 12);
+    mock_server_request_t req = {
+        .data = "GET /ws HTTP/1.1\r\n"
+                "Host: localhost\r\n"
+                "Upgrade: websocket\r\n"
+                "Connection: Upgrade\r\n"
+                "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
+                "Sec-WebSocket-Version: 12\r\n\r\n",
+    };
+    mock_server_response_t *resp = mock_server_send_request(8093, &req);
+    TEST_ASSERT_NOT_NULL(resp);
+    mock_server_assert_status(resp, 426);
+    TEST_ASSERT_NOT_NULL(strstr(resp->data, "Sec-WebSocket-Version: 13"));
+    mock_server_response_free(resp);
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_stop(hd));
+}
+
+#if CONFIG_HTTPD_WS_STRICTER_RFC6455
+TEST_CASE("WS handshake invalid Sec-WebSocket-Key returns 400", "[HTTP SERVER][websocket]")
+{
+    test_case_uses_tcpip();
+    httpd_handle_t hd = start_test_ws_server(8092, ESP_HTTPD_DEF_CTRL_PORT + 11);
+    mock_server_request_t req = {
+        .data = "GET /ws HTTP/1.1\r\n"
+                "Host: localhost\r\n"
+                "Upgrade: websocket\r\n"
+                "Connection: Upgrade\r\n"
+                "Sec-WebSocket-Key: AQID\r\n"
+                "Sec-WebSocket-Version: 13\r\n\r\n",
+    };
+    mock_server_response_t *resp = mock_server_send_request(8092, &req);
+    TEST_ASSERT_NOT_NULL(resp);
+    mock_server_assert_status(resp, 400);
+    mock_server_response_free(resp);
+    TEST_ASSERT_EQUAL(ESP_OK, httpd_stop(hd));
+}
+#endif /* CONFIG_HTTPD_WS_STRICTER_RFC6455 */
+
 #endif /* CONFIG_HTTPD_WS_SUPPORT */
 
 void app_main(void)

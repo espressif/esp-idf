@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -86,7 +86,11 @@ static esp_err_t verify_url (http_parser *parser)
     ((char *)r->uri)[length] = '\0';
     ESP_LOGD(TAG, LOG_FMT("received URI = %s"), r->uri);
 
-    /* Make sure version is HTTP/1.1 or HTTP/1.0 (legacy compliance purpose) */
+    /* Make sure version is HTTP/1.1 or HTTP/1.0 (legacy compliance purpose).
+     * The stricter HTTP/1.1 requirement for WebSocket handshakes is enforced
+     * later in cb_headers_complete(), once the Upgrade header confirms that
+     * the request is actually a WS handshake. Enforcing it here would also
+     * reject HTTP/1.0 clients on regular (non-WS) endpoints. */
     if (!((parser->http_major == 1) && ((parser->http_minor == 0) || (parser->http_minor == 1)))) {
         ESP_LOGW(TAG, LOG_FMT("unsupported HTTP version = %d.%d"),
                  parser->http_major, parser->http_minor);
@@ -395,6 +399,20 @@ static esp_err_t cb_headers_complete(http_parser *parser)
             parser_data->status = PARSING_FAILED;
             return ESP_FAIL;
         }
+
+#if CONFIG_HTTPD_WS_STRICTER_RFC6455
+        /* RFC 6455 §4.2.1: the WebSocket opening handshake MUST use HTTP/1.1.
+         * This check is intentionally scoped to confirmed WS handshakes so
+         * regular HTTP/1.0 traffic on non-WS endpoints keeps working. */
+        if (!(parser->http_major == 1 && parser->http_minor == 1)) {
+            ESP_LOGW(TAG, LOG_FMT("WebSocket handshake requires HTTP/1.1, got %d.%d"),
+                     parser->http_major, parser->http_minor);
+
+            parser_data->error = HTTPD_400_BAD_REQUEST;
+            parser_data->status = PARSING_FAILED;
+            return ESP_FAIL;
+        }
+#endif
 
         /* Now set handshake flag to true */
         ra->ws_handshake_detect = true;

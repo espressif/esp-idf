@@ -520,17 +520,23 @@ int httpd_default_recv(httpd_handle_t hd, int sockfd, char *buf, size_t buf_len,
 
 
 /**
- * @brief   This function is for responding a WebSocket handshake
+ * @brief   Respond to a WebSocket opening handshake.
+ *
+ * On any RFC 6455 §4.2.1 handshake validation failure (missing Host,
+ * malformed Sec-WebSocket-Key, unsupported Sec-WebSocket-Version, etc.),
+ * this function sends the appropriate HTTP error response (400 Bad Request
+ * or 426 Upgrade Required) to the client itself and returns ESP_FAIL.
+ * Callers MUST NOT attempt to send another response on the ESP_FAIL path.
  *
  * @param[in] req                       Pointer to handshake request that will be handled
  * @param[in] supported_subprotocol     Pointer to the subprotocol supported by this URI
  * @return
- *  - ESP_OK                        : When handshake is successful
- *  - ESP_ERR_NOT_FOUND             : When some headers (Sec-WebSocket-*) are not found
- *  - ESP_ERR_INVALID_VERSION       : The WebSocket version is not "13"
- *  - ESP_ERR_INVALID_STATE         : Handshake was done beforehand
- *  - ESP_ERR_INVALID_ARG           : Argument is invalid (null or non-WebSocket)
- *  - ESP_FAIL                      : Socket failures
+ *  - ESP_OK                        : Handshake successful; 101 Switching Protocols sent
+ *  - ESP_ERR_INVALID_ARG           : @p req or its aux pointer is NULL
+ *  - ESP_ERR_INVALID_STATE         : Handshake was already performed on this session
+ *  - ESP_FAIL                      : Handshake-validation failure (HTTP error already sent),
+ *                                    memory allocation failure, hash/encode failure,
+ *                                    or socket send failure
  */
 esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *supported_subprotocol);
 

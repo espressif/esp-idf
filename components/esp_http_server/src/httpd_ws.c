@@ -22,8 +22,12 @@
 
 #ifdef CONFIG_HTTPD_WS_SUPPORT
 
-#define WS_SEND_OK      (1 << 0)
-#define WS_SEND_FAILED  (1 << 1)
+#define WS_SEND_OK                      (1 << 0)
+#define WS_SEND_FAILED                  (1 << 1)
+
+#define SEC_WEBSOCKET_VERSION_HDR_MAX_LEN 255
+#define SEC_WEBSOCKET_KEY_HDR_MAX_LEN     255
+#define SEC_WEBSOCKET_VERSION             "13"
 
 typedef struct {
     httpd_ws_frame_t frame;
@@ -99,6 +103,23 @@ static bool httpd_ws_get_response_subprotocol(const char *supported_subprotocol,
 
 }
 
+/* Send an HTTP error response for a rejected WS handshake.
+ * Optionally adds a Sec-WebSocket-Version header (RFC 6455 §4.4).
+ * Returns ESP_FAIL so callers can write: return httpd_ws_send_handshake_error(...).
+ */
+static esp_err_t httpd_ws_send_handshake_error(httpd_req_t *req, const char *status,
+        const char *message, const char *supported_version)
+{
+    if (supported_version != NULL) {
+        if (httpd_resp_set_hdr(req, "Sec-WebSocket-Version", supported_version) != ESP_OK) {
+            ESP_LOGE(TAG, LOG_FMT("Failed to set Sec-WebSocket-Version header"));
+            return ESP_FAIL;
+        }
+    }
+    esp_err_t ret = httpd_resp_send_custom_err(req, status, message);
+    return (ret == ESP_OK) ? ESP_FAIL : ret;
+}
+
 esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *supported_subprotocol)
 {
     /* Probe if input parameters are valid or not */
@@ -114,32 +135,96 @@ esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *suppor
         return ESP_ERR_INVALID_STATE;
     }
 
-    /* Detect WS version existence */
-    char version_val[3] = { '\0' };
-    if (httpd_req_get_hdr_value_str(req, "Sec-WebSocket-Version", version_val, sizeof(version_val)) != ESP_OK) {
+#if CONFIG_HTTPD_WS_STRICTER_RFC6455
+    /* RFC 6455 §4.2.1: Host header MUST be present */
+    size_t host_hdr_len = httpd_req_get_hdr_value_len(req, "Host");
+    if (host_hdr_len == 0) {
+        ESP_LOGW(TAG, LOG_FMT("\"Host\" is not found"));
+        return httpd_ws_send_handshake_error(req, "400 Bad Request", "Missing Host header", NULL);
+    }
+#endif
+
+    /* RFC 6455 §4.2.1: Sec-WebSocket-Version must be present and equal "13" */
+    size_t version_hdr_len = httpd_req_get_hdr_value_len(req, "Sec-WebSocket-Version");
+    if (version_hdr_len == 0) {
         ESP_LOGW(TAG, LOG_FMT("\"Sec-WebSocket-Version\" is not found"));
-        return ESP_ERR_NOT_FOUND;
+        return httpd_ws_send_handshake_error(req, "400 Bad Request",
+                                             "Missing Sec-WebSocket-Version header", NULL);
     }
-
-    /* Detect if WS version is "13" or not.
-     * WS version must be 13 for now. Please refer to RFC6455 Section 4.1, Page 18 for more details. */
-    if (strcasecmp(version_val, "13") != 0) {
+#if CONFIG_HTTPD_WS_STRICTER_RFC6455
+    if (version_hdr_len > SEC_WEBSOCKET_VERSION_HDR_MAX_LEN) {
+        ESP_LOGW(TAG, LOG_FMT("\"Sec-WebSocket-Version\" is too long"));
+        return httpd_ws_send_handshake_error(req, "400 Bad Request",
+                                             "Invalid Sec-WebSocket-Version header", NULL);
+    }
+#endif
+    char *version_val = calloc(1, version_hdr_len + 1);
+    if (version_val == NULL) {
+        ESP_LOGE(TAG, "Failed to allocate version header buffer");
+        return ESP_FAIL;
+    }
+    if (httpd_req_get_hdr_value_str(req, "Sec-WebSocket-Version", version_val, version_hdr_len + 1) != ESP_OK) {
+        free(version_val);
+        return httpd_ws_send_handshake_error(req, "400 Bad Request",
+                                             "Invalid Sec-WebSocket-Version header", NULL);
+    }
+    /* WS version must be 13. Please refer to RFC6455 Section 4.1, Page 18 for more details. */
+    if (strcasecmp(version_val, SEC_WEBSOCKET_VERSION) != 0) {
         ESP_LOGW(TAG, LOG_FMT("\"Sec-WebSocket-Version\" is not \"13\", it is: %s"), version_val);
-        return ESP_ERR_INVALID_VERSION;
+        free(version_val);
+        return httpd_ws_send_handshake_error(req, "426 Upgrade Required",
+                                             "WebSocket version not supported", "13");
     }
+    free(version_val);
 
-    /* Grab Sec-WebSocket-Key (client key) from the header */
-    /* Size of base64 coded string is equal '((input_size * 4) / 3) + (input_size / 96) + 6' including Z-term */
-    char sec_key_encoded[28] = { '\0' };
-    if (httpd_req_get_hdr_value_str(req, "Sec-WebSocket-Key", sec_key_encoded, sizeof(sec_key_encoded)) != ESP_OK) {
+    /* RFC 6455 §4.2.1 / §4.3: Sec-WebSocket-Key must be present (strict mode
+     * additionally validates that it base64-decodes to a 16-byte nonce). */
+    size_t sec_key_hdr_len = httpd_req_get_hdr_value_len(req, "Sec-WebSocket-Key");
+    if (sec_key_hdr_len == 0) {
         ESP_LOGW(TAG, LOG_FMT("Cannot find client key"));
-        return ESP_ERR_NOT_FOUND;
+        return httpd_ws_send_handshake_error(req, "400 Bad Request",
+                                             "Missing Sec-WebSocket-Key header", NULL);
     }
+#if CONFIG_HTTPD_WS_STRICTER_RFC6455
+    if (sec_key_hdr_len > SEC_WEBSOCKET_KEY_HDR_MAX_LEN) {
+        ESP_LOGW(TAG, LOG_FMT("Sec-WebSocket-Key header is too long"));
+        return httpd_ws_send_handshake_error(req, "400 Bad Request",
+                                             "Invalid Sec-WebSocket-Key header", NULL);
+    }
+#endif
+    char *sec_key_encoded = calloc(1, sec_key_hdr_len + 1);
+    if (sec_key_encoded == NULL) {
+        ESP_LOGE(TAG, "Failed to allocate Sec-WebSocket-Key buffer");
+        return ESP_FAIL;
+    }
+    if (httpd_req_get_hdr_value_str(req, "Sec-WebSocket-Key", sec_key_encoded, sec_key_hdr_len + 1) != ESP_OK) {
+        free(sec_key_encoded);
+        return httpd_ws_send_handshake_error(req, "400 Bad Request",
+                                             "Invalid Sec-WebSocket-Key header", NULL);
+    }
+#if CONFIG_HTTPD_WS_STRICTER_RFC6455
+    uint8_t decoded_key[16] = { 0 };
+    size_t decoded_key_len = 0;
+    if (mbedtls_base64_decode(decoded_key, sizeof(decoded_key), &decoded_key_len,
+                              (const unsigned char *)sec_key_encoded, strlen(sec_key_encoded)) != 0 ||
+        decoded_key_len != sizeof(decoded_key)) {
+        free(sec_key_encoded);
+        ESP_LOGW(TAG, LOG_FMT("Sec-WebSocket-Key is not a valid base64-encoded 16-byte nonce"));
+        return httpd_ws_send_handshake_error(req, "400 Bad Request",
+                                             "Invalid Sec-WebSocket-Key header", NULL);
+    }
+#endif
 
     /* Prepare server key (Sec-WebSocket-Accept), concat the string */
     char server_key_encoded[33] = { '\0' };
     uint8_t server_key_hash[20] = { 0 };
-    char server_raw_text[sizeof(sec_key_encoded) + sizeof(ws_magic_uuid) + 1] = { '\0' };
+    size_t server_raw_text_len = strlen(sec_key_encoded) + strlen(ws_magic_uuid) + 1;
+    char *server_raw_text = calloc(1, server_raw_text_len);
+    if (server_raw_text == NULL) {
+        free(sec_key_encoded);
+        ESP_LOGE(TAG, "Failed to allocate handshake hash input buffer");
+        return ESP_FAIL;
+    }
 
     strcpy(server_raw_text, sec_key_encoded);
     strcat(server_raw_text, ws_magic_uuid);
@@ -150,12 +235,16 @@ esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *suppor
     psa_hash_operation_t sha1_operation = PSA_HASH_OPERATION_INIT;
     psa_status_t status = psa_hash_setup(&sha1_operation, PSA_ALG_SHA_1);
     if (status != PSA_SUCCESS) {
+        free(server_raw_text);
+        free(sec_key_encoded);
         ESP_LOGE(TAG, "Failed to setup SHA-1 operation");
         return ESP_FAIL;
     }
 
     status = psa_hash_update(&sha1_operation, (uint8_t *)server_raw_text, strlen(server_raw_text));
     if (status != PSA_SUCCESS) {
+        free(server_raw_text);
+        free(sec_key_encoded);
         ESP_LOGE(TAG, "Failed to update SHA-1 hash");
         psa_hash_abort(&sha1_operation);
         return ESP_FAIL;
@@ -163,7 +252,9 @@ esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *suppor
 
     size_t hash_length;
     status = psa_hash_finish(&sha1_operation, server_key_hash, sizeof(server_key_hash), &hash_length);
+    free(server_raw_text);
     if (status != PSA_SUCCESS || hash_length != sizeof(server_key_hash)) {
+        free(sec_key_encoded);
         ESP_LOGE(TAG, "Failed to finish SHA-1 hash");
         return ESP_FAIL;
     }
@@ -172,6 +263,8 @@ esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *suppor
     size_t encoded_len = 0;
     mbedtls_base64_encode((uint8_t *)server_key_encoded, sizeof(server_key_encoded), &encoded_len,
                           server_key_hash, sizeof(server_key_hash));
+
+    free(sec_key_encoded);
 
     ESP_LOGD(TAG, LOG_FMT("Generated server key: %s"), server_key_encoded);
 
