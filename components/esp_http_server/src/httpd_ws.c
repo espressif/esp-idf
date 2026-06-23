@@ -266,6 +266,17 @@ static esp_err_t httpd_ws_unmask_payload(uint8_t *payload, size_t len, const uin
     return ESP_OK;
 }
 
+static esp_err_t httpd_ws_fail_and_mark_close(httpd_req_t *req, esp_err_t err)
+{
+    struct httpd_req_aux *aux = req->aux;
+
+    if (aux != NULL && aux->sd != NULL) {
+        aux->sd->ws_close = true;
+    }
+
+    return err;
+}
+
 static esp_err_t httpd_ws_recv_frame_internal(httpd_req_t *req, httpd_ws_frame_t *frame, size_t max_len, bool partial)
 {
     esp_err_t ret = httpd_ws_check_req(req);
@@ -294,7 +305,7 @@ static esp_err_t httpd_ws_recv_frame_internal(httpd_req_t *req, httpd_ws_frame_t
         int recv_ret = httpd_recv_with_opt(req, (char *)&second_byte, sizeof(second_byte), HTTPD_RECV_OPT_BLOCKING);
         if (recv_ret != (int)sizeof(second_byte)) {
             ESP_LOGW(TAG, LOG_FMT("Failed to receive the second byte"));
-            return ESP_FAIL;
+            return httpd_ws_fail_and_mark_close(req, ESP_FAIL);
         }
 
         /* Parse the second byte */
@@ -312,7 +323,7 @@ static esp_err_t httpd_ws_recv_frame_internal(httpd_req_t *req, httpd_ws_frame_t
             recv_ret = httpd_recv_with_opt(req, (char *)length_bytes, sizeof(length_bytes), HTTPD_RECV_OPT_BLOCKING);
             if (recv_ret != (int)sizeof(length_bytes)) {
                 ESP_LOGW(TAG, LOG_FMT("Failed to receive 2 bytes length"));
-                return ESP_FAIL;
+                return httpd_ws_fail_and_mark_close(req, ESP_FAIL);
             }
 
             frame->len = ((uint32_t)(length_bytes[0] << 8U) | (length_bytes[1]));
@@ -322,7 +333,7 @@ static esp_err_t httpd_ws_recv_frame_internal(httpd_req_t *req, httpd_ws_frame_t
             recv_ret = httpd_recv_with_opt(req, (char *)length_bytes, sizeof(length_bytes), HTTPD_RECV_OPT_BLOCKING);
             if (recv_ret != (int)sizeof(length_bytes)) {
                 ESP_LOGW(TAG, LOG_FMT("Failed to receive 8 bytes length"));
-                return ESP_FAIL;
+                return httpd_ws_fail_and_mark_close(req, ESP_FAIL);
             }
 
             frame->len = (((uint64_t)length_bytes[0] << 56U) |
@@ -341,13 +352,13 @@ static esp_err_t httpd_ws_recv_frame_internal(httpd_req_t *req, httpd_ws_frame_t
             recv_ret = httpd_recv_with_opt(req, (char *)aux->mask_key, sizeof(aux->mask_key), HTTPD_RECV_OPT_BLOCKING);
             if (recv_ret != (int)sizeof(aux->mask_key)) {
                 ESP_LOGW(TAG, LOG_FMT("Failed to receive mask key"));
-                return ESP_FAIL;
+                return httpd_ws_fail_and_mark_close(req, ESP_FAIL);
             }
         } else {
             /* If the WS frame from client to server is not masked, it should be rejected.
              * Please refer to RFC6455 Section 5.2 for more details. */
             ESP_LOGW(TAG, LOG_FMT("WS frame is not properly masked."));
-            return ESP_ERR_INVALID_STATE;
+            return httpd_ws_fail_and_mark_close(req, ESP_ERR_INVALID_STATE);
         }
     }
     /* If max_len is 0, regard it OK for userspace to get frame len */
@@ -382,7 +393,7 @@ static esp_err_t httpd_ws_recv_frame_internal(httpd_req_t *req, httpd_ws_frame_t
         int read_len = httpd_recv_with_opt(req, (char *)frame->payload + offset, left_len, HTTPD_RECV_OPT_NONE);
         if (read_len <= 0) {
             ESP_LOGW(TAG, LOG_FMT("Failed to receive payload"));
-            return ESP_FAIL;
+            return httpd_ws_fail_and_mark_close(req, ESP_FAIL);
         }
         offset += read_len;
         left_len -= read_len;
