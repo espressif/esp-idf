@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,11 +12,12 @@
 
 static void mcpwm_timer_default_isr(void *args);
 
-static esp_err_t mcpwm_timer_register_to_group(mcpwm_timer_t *timer, int group_id)
+static esp_err_t mcpwm_timer_register_to_group(mcpwm_timer_t *timer, int group_id, soc_module_clk_t clk_src)
 {
-    mcpwm_group_t *group = mcpwm_acquire_group_handle(group_id);
-    ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no mem for group (%d)", group_id);
+    mcpwm_group_t *group = NULL;
+    esp_err_t ret = ESP_OK;
 
+    ESP_GOTO_ON_ERROR(mcpwm_acquire_group_handle(group_id, clk_src, &group), err, TAG, "acquire group failed");
     int timer_id = -1;
     portENTER_CRITICAL(&group->spinlock);
     for (int i = 0; i < MCPWM_LL_GET(TIMERS_PER_GROUP); i++) {
@@ -27,15 +28,17 @@ static esp_err_t mcpwm_timer_register_to_group(mcpwm_timer_t *timer, int group_i
         }
     }
     portEXIT_CRITICAL(&group->spinlock);
-    if (timer_id < 0) {
-        mcpwm_release_group_handle(group);
-        group = NULL;
-    } else {
-        timer->group = group;
-        timer->timer_id = timer_id;
-    }
-    ESP_RETURN_ON_FALSE(timer_id >= 0, ESP_ERR_NOT_FOUND, TAG, "no free timer in group (%d)", group_id);
+    ESP_GOTO_ON_FALSE(timer_id >= 0, ESP_ERR_NOT_FOUND, err, TAG, "no free timer in group (%d)", group_id);
+
+    timer->group = group;
+    timer->timer_id = timer_id;
     return ESP_OK;
+
+err:
+    if (group) {
+        mcpwm_release_group_handle(group);
+    }
+    return ret;
 }
 
 static void mcpwm_timer_unregister_from_group(mcpwm_timer_t *timer)
@@ -85,18 +88,19 @@ esp_err_t mcpwm_new_timer(const mcpwm_timer_config_t *config, mcpwm_timer_handle
     ESP_RETURN_ON_FALSE(config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "register back up is not supported");
 #endif // SOC_MCPWM_SUPPORT_SLEEP_RETENTION
 
+    // select the clock source before group HAL initialization if this timer creates the group
+    mcpwm_timer_clock_source_t clk_src = config->clk_src ? config->clk_src : MCPWM_TIMER_CLK_SRC_DEFAULT;
+
     timer = heap_caps_calloc(1, sizeof(mcpwm_timer_t), MCPWM_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(timer, ESP_ERR_NO_MEM, err, TAG, "no mem for timer");
 
-    ESP_GOTO_ON_ERROR(mcpwm_timer_register_to_group(timer, config->group_id), err, TAG, "register timer failed");
+    ESP_GOTO_ON_ERROR(mcpwm_timer_register_to_group(timer, config->group_id, (soc_module_clk_t)clk_src), err, TAG, "register timer failed");
     mcpwm_group_t *group = timer->group;
     int group_id = group->group_id;
     mcpwm_hal_context_t *hal = &group->hal;
     int timer_id = timer->timer_id;
 
-    // select the clock source
-    mcpwm_timer_clock_source_t clk_src = config->clk_src ? config->clk_src : MCPWM_TIMER_CLK_SRC_DEFAULT;
-    ESP_GOTO_ON_ERROR(mcpwm_select_periph_clock(group, (soc_module_clk_t)clk_src), err, TAG, "set group clock failed");
+    // group clock source has already been committed in mcpwm_acquire_group_handle()
     // reset the timer to a determined state
     mcpwm_hal_timer_reset(hal, timer_id);
     // set timer resolution
