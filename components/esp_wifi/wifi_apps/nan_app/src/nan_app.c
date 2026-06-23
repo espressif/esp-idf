@@ -751,7 +751,7 @@ void nan_app_post_event(int32_t event_id, void* event_data, size_t event_data_si
 }
 
 static void nan_app_service_match_cb(uint8_t sub_id, struct nan_cb_peer_info *peer_info,
-                              struct nan_cb_npba_t *npba)
+                                     struct nan_cb_npba_t *npba)
 {
     if (!peer_info) {
         return;

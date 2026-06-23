@@ -85,7 +85,6 @@ typedef int (*esp_aes_128_decrypt_t)(const unsigned char *key, const unsigned ch
   * @param n  Length of the plaintext key in 64-bit units;
   * @param plain  Plaintext key to be wrapped, n * 64 bits
   * @param cipher  Wrapped key, (n + 1) * 64 bits
-  * Returns: 0 on success, -1 on failure
   */
 typedef int (*esp_aes_wrap_t)(const unsigned char *kek, size_t kek_len, int n, const unsigned char *plain, unsigned char *cipher);
 
@@ -97,7 +96,6 @@ typedef int (*esp_aes_wrap_t)(const unsigned char *kek, size_t kek_len, int n, c
   * @param n  Length of the plaintext key in 64-bit units;
   * @param cipher  Wrapped key to be unwrapped, (n + 1) * 64 bits
   * @param plain  Plaintext key, n * 64 bits
-  * Returns: 0 on success, -1 on failure
   */
 typedef int (*esp_aes_unwrap_t)(const unsigned char *kek, size_t kek_len, int n, const unsigned char *cipher, unsigned char *plain);
 
