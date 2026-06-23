@@ -21,6 +21,7 @@
 #include "esp_app_desc.h"
 #include "bootloader_memory_utils.h"
 #include "soc/soc_caps.h"
+#include "hal/mmu_types.h"
 #include "hal/cache_ll.h"
 #include "spi_flash_mmap.h"
 #include "hal/efuse_hal.h"
@@ -813,6 +814,10 @@ static esp_err_t process_segment_data(const process_segment_data_t *segment_data
         ESP_LOGD(TAG, "additional anti-rollback check 0x%"PRIx32, segment_data->data_addr);
         size_t len = process_esp_app_desc_data(src, segment_data->sha_handle,
                                                segment_data->checksum, segment_data->metadata);
+        if (len > data_len) {
+            bootloader_munmap(data);
+            return ESP_ERR_IMAGE_INVALID;
+        }
         data_len -= len;
         src += len / 4;
         // In BOOTLOADER_BUILD, for DROM (segment #0) we do not load it into dest (only map it), do_load = false.
@@ -866,15 +871,19 @@ static esp_err_t verify_segment_header(int index, const esp_image_segment_header
     uint32_t load_addr = segment->load_addr;
     bool map_segment = should_map(load_addr);
 
-#if SOC_MMU_PAGE_SIZE_CONFIGURABLE
-    esp_err_t err = ESP_FAIL;
-
-    /* ESP APP descriptor is present in the DROM segment #0 */
+    // Validate minimum length for segment #0
     if (index == 0 && !is_bootloader(metadata->start_addr)) {
         if (segment->data_len < sizeof(esp_app_desc_t)) {
             ESP_LOGE(TAG, "Segment %d: length 0x%"PRIx32" is too short for app description", index, segment->data_len);
             return ESP_ERR_IMAGE_INVALID;
         }
+    }
+
+#if SOC_MMU_PAGE_SIZE_CONFIGURABLE
+    esp_err_t err = ESP_FAIL;
+
+    /* ESP APP descriptor is present in the DROM segment #0 */
+    if (index == 0 && !is_bootloader(metadata->start_addr)) {
         uint32_t mmu_page_size = 0, magic_word = 0;
         const uint32_t mmu_page_size_offset = segment_data_offs + offsetof(esp_app_desc_t, mmu_page_size);
         CHECK_ERR(bootloader_flash_read(segment_data_offs, &magic_word, sizeof(uint32_t), true));
@@ -888,7 +897,15 @@ static esp_err_t verify_segment_header(int index, const esp_image_segment_header
         }
 
         // Convert from log base 2 number to actual size while handling legacy image case (value 0)
-        metadata->mmu_page_size = (mmu_page_size > 0) ? (1UL << mmu_page_size) : SPI_FLASH_MMU_PAGE_SIZE;
+        const uint32_t min_mmu_page_size = __builtin_ctz(MMU_PAGE_SIZE_MIN);
+        const uint32_t max_mmu_page_size = __builtin_ctz(MMU_PAGE_SIZE_MAX);
+        if (mmu_page_size >= min_mmu_page_size && mmu_page_size <= max_mmu_page_size) {
+            metadata->mmu_page_size = (1UL << mmu_page_size);
+        } else {
+            // Fall back to default MMU page size
+            metadata->mmu_page_size = SPI_FLASH_MMU_PAGE_SIZE;
+        }
+
         if (metadata->mmu_page_size != SPI_FLASH_MMU_PAGE_SIZE) {
             ESP_LOGI(TAG, "MMU page size mismatch, configured: 0x%x, found: 0x%"PRIx32, SPI_FLASH_MMU_PAGE_SIZE, metadata->mmu_page_size);
         }
