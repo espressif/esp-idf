@@ -7,6 +7,10 @@
 # used by toolchain CMake files.
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/deduplicate_flags.cmake)
 
+# __compiler_query is shared with cmakev1. The esp_common and xtensa
+# project_include.cmake files that call it are used by both build systems.
+include(${CMAKE_CURRENT_LIST_DIR}/../cmake/compiler_query.cmake)
+
 # Note: CMake does not support nested lists. The functions idf_die, idf_warn,
 # idf_msg, and idf_dbg use ARGV# values because this is the only way to prevent
 # arguments from being altered by CMake. ARGV and ARGN contain a flattened list
