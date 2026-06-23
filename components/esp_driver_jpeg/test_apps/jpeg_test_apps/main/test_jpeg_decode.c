@@ -195,3 +195,56 @@ TEST_CASE("JPEG decode rejects malformed DQT index without crashing", "[jpeg]")
     free(tx_buf);
     TEST_ESP_OK(jpeg_del_decoder_engine(jpgd_handle));
 }
+
+// Avoiding picture size is so large that exceeds the jpeg&dma limit.
+static const uint8_t s_malformed_sof_mcu_round_jpg[] = {
+    0xFF, 0xD8,             // SOI
+    0xFF, 0xC0,             // SOF0
+    0x00, 0x0B,             // Lf = 11
+    0x08,                   // P = 8
+    0x00, 0x10,             // Y (height) = 16
+    0x3F, 0xFF,             // X (width)  = 16383
+    0x01,                   // Nf = 1
+    0x01, 0x22, 0x00,       // component 1: Ci=1, H=2 V=2, Tq=0
+};
+
+TEST_CASE("JPEG decode rejects MCU-rounded dimensions exceeding DMA limit", "[jpeg]")
+{
+    jpeg_decoder_handle_t jpgd_handle;
+
+    jpeg_decode_engine_cfg_t decode_eng_cfg = {
+        .intr_priority = 0,
+        .timeout_ms = TIMEOUT_MS,
+    };
+
+    jpeg_decode_cfg_t decode_cfg = {
+        .output_format = JPEG_DECODE_OUT_FORMAT_RGB565,
+    };
+
+    jpeg_decode_memory_alloc_cfg_t rx_mem_cfg = {
+        .buffer_direction = JPEG_DEC_ALLOC_OUTPUT_BUFFER,
+    };
+
+    jpeg_decode_memory_alloc_cfg_t tx_mem_cfg = {
+        .buffer_direction = JPEG_DEC_ALLOC_INPUT_BUFFER,
+    };
+
+    size_t rx_buffer_size;
+    uint8_t *rx_buf = (uint8_t*)jpeg_alloc_decoder_mem(128, &rx_mem_cfg, &rx_buffer_size);
+
+    size_t tx_buffer_size;
+    uint8_t *tx_buf = (uint8_t*)jpeg_alloc_decoder_mem(sizeof(s_malformed_sof_mcu_round_jpg), &tx_mem_cfg, &tx_buffer_size);
+    memcpy(tx_buf, s_malformed_sof_mcu_round_jpg, sizeof(s_malformed_sof_mcu_round_jpg));
+
+    TEST_ESP_OK(jpeg_new_decoder_engine(&decode_eng_cfg, &jpgd_handle));
+
+    uint32_t out_size = 0;
+    esp_err_t ret = jpeg_decoder_process(jpgd_handle, &decode_cfg, tx_buf,
+                                         sizeof(s_malformed_sof_mcu_round_jpg), rx_buf,
+                                         rx_buffer_size, &out_size);
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, ret);
+
+    free(rx_buf);
+    free(tx_buf);
+    TEST_ESP_OK(jpeg_del_decoder_engine(jpgd_handle));
+}
