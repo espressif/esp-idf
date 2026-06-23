@@ -14,10 +14,12 @@ if(CONFIG_IDF_TOOLCHAIN_GCC)
            CONFIG_IDF_TARGET_ESP32H2 OR
            CONFIG_IDF_TARGET_ESP32H21)
         set(_march "rv32imac_zicsr_zifencei_zaamo_zalrsc")
-    elseif(CONFIG_IDF_TARGET_ESP32H4)
-        set(_march "rv32imafcb_zicsr_zifencei_zaamo_zalrsc")
-    elseif(CONFIG_IDF_TARGET_ESP32P4 OR CONFIG_IDF_TARGET_ESP32S31)
+    elseif(CONFIG_IDF_TARGET_ESP32P4 AND CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
         set(_march "rv32imafc_zicsr_zifencei_zaamo_zalrsc")
+    elseif(CONFIG_IDF_TARGET_ESP32H4 OR
+           CONFIG_IDF_TARGET_ESP32P4 OR
+           CONFIG_IDF_TARGET_ESP32S31)
+        set(_march "rv32imafcb_zicsr_zifencei_zaamo_zalrsc")
     elseif(NOT(CONFIG_IDF_TARGET_ESP32S2 OR CONFIG_IDF_TARGET_ESP32S3))
         message(FATAL_ERROR "Unknown Espressif target: ${CONFIG_IDF_TARGET}")
     endif()
