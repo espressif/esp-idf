@@ -545,14 +545,17 @@ menu "mbedTLS"
 
         config MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY
             bool "Support cross-signed certificate verification in certificate bundle"
-            default n
+            default y
             depends on MBEDTLS_CERTIFICATE_BUNDLE
             select MBEDTLS_X509_TRUSTED_CERT_CALLBACK
             help
                 Enable support for cross-signed certificate verification in the certificate bundle.
                 This feature uses an internal callback to verify the cross-signed certificates.
-                This feature is kept disabled by default as enabling this feature increases
-                heap usage by approximately 700 bytes.
+
+                Enabling this feature increases peak heap usage during the TLS handshake by
+                approximately 1 KB. This is a transient allocation (a candidate CA certificate
+                built during certificate verification) that is freed once the handshake completes,
+                and the exact amount scales with the maximum supported RSA key size.
     endmenu
 
     config MBEDTLS_TLS_ENABLED
