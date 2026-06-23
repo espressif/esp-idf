@@ -172,7 +172,7 @@ esp_err_t esp_mprot_get_split_addr(const esp_mprot_mem_t mem_type, const esp_mpr
         if (line_type == MEMPROT_SPLIT_ADDR_MAIN) { /* so far only WORLD_0 is supported */
             esp_err_t err;
             ESP_MEMPROT_ERR_CHECK(err, esp_mprot_cpuid_valid(core))
-            ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_get_rtcfast_split_line(core, MEMP_HAL_WORLD_0, *line_addr)))
+            ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_get_rtcfast_split_line(core, MEMP_HAL_WORLD_0, line_addr)))
         } else {
             return ESP_ERR_MEMPROT_SPLIT_ADDR_INVALID;
         }
@@ -633,6 +633,7 @@ esp_err_t esp_mprot_is_conf_locked_any(bool *locked)
         return ESP_ERR_INVALID_ARG;
     }
 
+    *locked = false;
     bool lock_on = false;
     esp_err_t err;
 
@@ -702,6 +703,7 @@ esp_err_t esp_mprot_is_intr_ena_any(bool *enabled)
         return ESP_ERR_INVALID_ARG;
     }
 
+    *enabled = false;
     bool ena_on = false;
     esp_err_t err;
 
@@ -997,7 +999,7 @@ esp_err_t esp_mprot_set_prot(const esp_memp_config_t *memp_config)
         }
     }
 
-    //reenable the protection
+    //re-enable the protection
     if (use_iram0) {
         for (size_t x = 0; x < core_count; x++) {
             ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_monitor_clear_intr(MEMPROT_TYPE_IRAM0_SRAM, memp_config->target_cpu[x]))
