@@ -64,21 +64,6 @@ extern "C" {
 #define PSRAM_CTRLR_LL_DEDICATED_LDO             1
 
 /**
- * @brief Enable PSRAM power
- *
- * @param en           enable / disable
- */
-__attribute__((always_inline))
-static inline void psram_ctrlr_ll_enable_power(bool en)
-{
-    if (en) {
-        REG_SET_BIT(PMU_PSRAM_CFG_REG, PMU_PSRAM_XPD);
-    } else {
-        REG_CLR_BIT(PMU_PSRAM_CFG_REG, PMU_PSRAM_XPD);
-    }
-}
-
-/**
  * @brief Set PSRAM write cmd
  *
  * @param mspi_id     mspi_id

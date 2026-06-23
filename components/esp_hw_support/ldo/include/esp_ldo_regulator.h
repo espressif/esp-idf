@@ -25,6 +25,7 @@ typedef struct ldo_regulator_channel_t *esp_ldo_channel_handle_t;
 typedef struct {
     int chan_id;      /*!< You must set the LDO channel ID according to the datasheet, e.g., set it to 1 for LDO_VO1 */
     int voltage_mv;   /*!< The voltage value to be set to the LDO channel */
+    uint32_t voltage_stable_delay_us; /*!< Delay in microseconds after LDO enable, wait for output voltage to stabilize. Set to 0 to skip */
 
     /// Extra flags of a LDO channel
     struct ldo_extra_flags {

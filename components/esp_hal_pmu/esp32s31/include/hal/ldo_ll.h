@@ -151,6 +151,10 @@ static inline void ldo_ll_enable(int ldo_unit, bool enable)
     //for compatibility
     //PMU.hp_sys[PMU_MODE_HP_ACTIVE].regulator0.xpd is for chip internal LDO for chip power
     //this will not be controlled by this general purpose LDO file
+    if (ldo_unit == 0) {
+        // Enable MPLL PHY with power enable.
+        PMU.psram_cfg.psram_xpd = enable;
+    }
 }
 
 /**
