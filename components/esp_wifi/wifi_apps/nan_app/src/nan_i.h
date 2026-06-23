@@ -329,37 +329,6 @@ struct ndl_info *nan_find_ndl(uint8_t ndp_id, uint8_t peer_nmi[]);
 struct ndl_info *nan_find_ndl_by_pub_id_and_peer(uint8_t pub_id, const uint8_t *peer_nmi);
 bool nan_compute_service_id(const char *service_name, uint8_t service_id[6]);
 
-/* === nan_secure_dp_funcs initializer targets === */
-
-/* Always-present (defined in nan_app.c) */
-void     esp_nan_ndp_tx_done_cb(uint8_t ndp_id, const uint8_t *peer_nmi,
-                                uint8_t msg_type, bool tx_status);
-
-#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
-#include "freertos/FreeRTOS.h"
-#include "freertos/event_groups.h"
-
-void nan_app_post_event(int32_t event_id, void *event_data, size_t event_data_size);
-struct peer_svc_info *nan_find_peer_svc(uint8_t own_svc_id, uint8_t peer_svc_id, uint8_t peer_nmi[]);
-EventGroupHandle_t nan_pairing_get_event_group(void);
-uint32_t *nan_pairing_get_fup_context(void);
-const uint8_t *nan_pairing_get_null_mac(void);
-
-bool nan_pairing_validate_publish_bootstrapping(uint16_t bootstrapping_methods);
-bool nan_pairing_validate_subscribe_bootstrapping(uint16_t bootstrapping_methods);
-
-uint16_t nan_app_parse_npba_from_publish(const struct nan_cb_npba_t *npba);
-
-void nan_app_bootstrap_indication(uint8_t peer_svc_id, uint8_t pub_id,
-                                  uint8_t peer_nmi[6], uint16_t selected_method);
-void nan_app_bootstrap_completed(uint8_t status, uint8_t peer_svc_id, uint8_t sub_id,
-                                 uint8_t peer_nmi[6], uint16_t matched_method,
-                                 uint8_t reason_code);
-bool nan_app_parse_npba_from_receive(uint8_t own_svc_id, uint8_t peer_svc_id,
-                                     uint8_t peer_nmi[6], const struct nan_cb_npba_t *npba);
-void nan_pairing_cancel_svc_pending(struct own_svc_info *own);
-#endif /* CONFIG_ESP_WIFI_NAN_PAIRING */
-
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
 /* Security-gated (defined in nan_security.c) */
 uint32_t esp_nan_get_csia_len(uint16_t own_csid_bitmap, uint16_t peer_csid_bitmap);
@@ -465,13 +434,33 @@ bool nan_security_service_match(const struct own_svc_info *own_svc,
                                 const wifi_nan_peer_sdf_security_t *peer_sec);
 #endif /* CONFIG_ESP_WIFI_NAN_SECURITY */
 #if CONFIG_ESP_WIFI_NAN_PAIRING
+#include "freertos/FreeRTOS.h"
+#include "freertos/event_groups.h"
+
+void nan_app_post_event(int32_t event_id, void *event_data, size_t event_data_size);
+struct peer_svc_info *nan_find_peer_svc(uint8_t own_svc_id, uint8_t peer_svc_id, uint8_t peer_nmi[]);
+EventGroupHandle_t nan_pairing_get_event_group(void);
+uint32_t *nan_pairing_get_fup_context(void);
+const uint8_t *nan_pairing_get_null_mac(void);
+
+bool nan_pairing_validate_publish_bootstrapping(uint16_t bootstrapping_methods);
+bool nan_pairing_validate_subscribe_bootstrapping(uint16_t bootstrapping_methods);
+
+uint16_t nan_app_parse_npba_from_publish(const struct nan_cb_npba_t *npba);
+
+void nan_app_bootstrap_indication(uint8_t peer_svc_id, uint8_t pub_id,
+                                  uint8_t peer_nmi[6], uint16_t selected_method);
+void nan_app_bootstrap_completed(uint8_t status, uint8_t peer_svc_id, uint8_t sub_id,
+                                 uint8_t peer_nmi[6], uint16_t matched_method,
+                                 uint8_t reason_code);
+bool nan_app_parse_npba_from_receive(uint8_t own_svc_id, uint8_t peer_svc_id,
+                                     uint8_t peer_nmi[6], const struct nan_cb_npba_t *npba);
+void nan_pairing_cancel_svc_pending(struct own_svc_info *own);
+
 void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
                                       const uint8_t *peer_mac,
                                       const uint8_t *shared_key_attr,
                                       size_t shared_key_attr_buf_len);
-#endif
-
-#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
 /*
  * Paired-peer cache API. Called from nan_pairing.c after the PASN install
  * callback fires; consumed by the NDP security layer to source ND-PMK + cipher
@@ -491,7 +480,7 @@ const struct nan_paired_peer *nan_app_find_paired_peer(const uint8_t *peer_nmi);
 void nan_app_remove_paired_peer(const uint8_t *peer_nmi);
 void nan_app_clear_paired_peers(void);
 
-#endif /* CONFIG_ESP_WIFI_NAN_SECURITY */
+#endif /* CONFIG_ESP_WIFI_NAN_PAIRING */
 
 #ifdef __cplusplus
 }
