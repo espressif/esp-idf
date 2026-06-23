@@ -356,6 +356,10 @@ I2S 驱动例程请参考 :example:`peripherals/i2s` 目录。以下为每种模
 - :c:macro:`I2S_STD_PCM_SLOT_DEFAULT_CONFIG`
 - :c:macro:`I2S_STD_MSB_SLOT_DEFAULT_CONFIG`
 
+.. note::
+
+    标准模式的声道辅助宏会根据 ``bits_per_sample`` 参数设置 :cpp:member:`i2s_std_slot_config_t::ws_width`。如果使用辅助宏后手动修改 :cpp:member:`i2s_std_slot_config_t::slot_bit_width`，请根据需要同步更新 :cpp:member:`i2s_std_slot_config_t::ws_width`。对于 Philips 和 MSB 格式，应将 ``ws_width`` 设置为声道位宽，以保持 WS 占空比为 50%。对于 PCM 短帧同步格式，``ws_width`` 应保持为 1 个 BCLK。
+
 时钟配置的辅助宏为：
 
 - :c:macro:`I2S_STD_CLK_DEFAULT_CONFIG`。
@@ -805,6 +809,10 @@ STD RX 模式
     - :c:macro:`I2S_TDM_MSB_SLOT_DEFAULT_CONFIG`
     - :c:macro:`I2S_TDM_PCM_SHORT_SLOT_DEFAULT_CONFIG`
     - :c:macro:`I2S_TDM_PCM_LONG_SLOT_DEFAULT_CONFIG`
+
+    .. note::
+
+        TDM Philips 和 MSB 声道辅助宏默认使用 ``I2S_TDM_AUTO_WS_WIDTH``，该配置会将 WS 宽度设置为帧宽的一半。如果手动修改 :cpp:member:`i2s_tdm_slot_config_t::ws_width`，请确保配置的 WS 宽度符合所选格式的预期时序。
 
     时钟配置的辅助宏为：
 
