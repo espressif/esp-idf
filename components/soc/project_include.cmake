@@ -14,15 +14,14 @@ if(CONFIG_IDF_TOOLCHAIN_GCC)
            CONFIG_IDF_TARGET_ESP32H2 OR
            CONFIG_IDF_TARGET_ESP32H21)
         set(_march "rv32imac")
-    elseif(CONFIG_IDF_TARGET_ESP32H4)
+    elseif(CONFIG_IDF_TARGET_ESP32H4 OR
+           (CONFIG_IDF_TARGET_ESP32P4 AND NOT CONFIG_ESP32P4_SELECTS_REV_LESS_V3))
         set(_march "rv32imafcb")
     elseif(CONFIG_IDF_TARGET_ESP32P4 OR CONFIG_IDF_TARGET_ESP32S31)
         set(_march "rv32imafc")
     elseif(NOT(CONFIG_IDF_TARGET_ESP32S2 OR CONFIG_IDF_TARGET_ESP32S3))
         message(FATAL_ERROR "Unknown Espressif target: ${CONFIG_IDF_TARGET}")
     endif()
-
-    set(_march "${_march}_zicsr_zifencei")
 
     # Architecture-specific flags
     if(CONFIG_IDF_TARGET_ARCH_XTENSA)
@@ -41,9 +40,7 @@ if(CONFIG_IDF_TOOLCHAIN_GCC)
                                                    "-mno-cm-push-reverse"
                                                    "-mno-cm-popret")
 
-        if(CONFIG_SOC_CPU_HAS_ZB_EXTENSIONS)
-            set(_march "${_march}_zba_zbb_zbs")
-        endif()
+        set(_march "${_march}_zicsr_zifencei")
 
         if((CONFIG_SOC_CPU_HAS_ZC_EXTENSIONS AND NOT CONFIG_SOC_CPU_ZCMP_WORKAROUND) OR
            CONFIG_COMPILER_ENABLE_RISCV_ZCMP)
