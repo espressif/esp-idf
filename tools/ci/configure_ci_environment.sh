@@ -21,7 +21,7 @@ if [ "$IDF_TOOLCHAIN" != "clang" ]; then
     export PEDANTIC_CFLAGS="${PEDANTIC_FLAGS} -Wstrict-prototypes"
     # TODO IDF-15784
     case "$CI_JOB_NAME" in
-        test_pytest_linux|test_sockets_on_host|test_transport_on_host|test_pytest_macos)
+        test_pytest_linux|test_sockets_on_host|test_transport_on_host|test_vfs_on_host|test_pytest_macos)
         export PEDANTIC_CFLAGS="${PEDANTIC_CFLAGS} -Werror=unused-but-set-variable"
         ;;
     *)
