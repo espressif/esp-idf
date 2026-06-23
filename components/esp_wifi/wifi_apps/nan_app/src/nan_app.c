@@ -24,30 +24,6 @@
 #include "esp_private/esp_nan_usd.h"
 #endif /* CONFIG_ESP_WIFI_NAN_USD_ENABLE */
 
-bool esp_nan_ndp_info_present(void)
-{
-    return true;
-}
-
-uint32_t esp_nan_ndp_get_info_len(void)
-{
-    return 12;
-}
-
-int esp_nan_construct_ndp_info(uint8_t *frm)
-{
-    static const uint8_t ndp_info_attr[] = {
-        0x01, 0x09, 0x00, 0x50, 0x6f, 0x9a, 0x02, 0x00, 0x02, 0x00, 0x05, 0x0d
-    };
-
-    if (!frm) {
-        return 0;
-    }
-
-    memcpy(frm, ndp_info_attr, sizeof(ndp_info_attr));
-    return sizeof(ndp_info_attr);
-}
-
 #if !CONFIG_ESP_WIFI_NAN_PAIRING
 uint32_t esp_nan_get_nira_len(void)
 {
@@ -774,7 +750,7 @@ void nan_app_post_event(int32_t event_id, void* event_data, size_t event_data_si
     g_wifi_osi_funcs._event_post(WIFI_EVENT, event_id, event_data, event_data_size, OSI_FUNCS_TIME_BLOCKING);
 }
 
-void nan_app_service_match_cb(uint8_t sub_id, struct nan_cb_peer_info *peer_info,
+static void nan_app_service_match_cb(uint8_t sub_id, struct nan_cb_peer_info *peer_info,
                               struct nan_cb_npba_t *npba)
 {
     if (!peer_info) {
@@ -886,7 +862,7 @@ void nan_app_service_match_cb(uint8_t sub_id, struct nan_cb_peer_info *peer_info
     os_free(evt);
 }
 
-void nan_app_replied_cb(uint8_t pub_id, struct nan_cb_peer_info *peer_info)
+static void nan_app_replied_cb(uint8_t pub_id, struct nan_cb_peer_info *peer_info)
 {
     if (!peer_info) {
         return;
@@ -925,7 +901,7 @@ void nan_app_replied_cb(uint8_t pub_id, struct nan_cb_peer_info *peer_info)
     os_free(evt);
 }
 
-void nan_app_receive_cb(uint8_t svc_id, struct nan_cb_peer_info *peer_info,
+static void nan_app_receive_cb(uint8_t svc_id, struct nan_cb_peer_info *peer_info,
                         uint8_t *shared_key_attr, uint16_t shared_key_attr_buf_len,
                         struct nan_cb_npba_t *npba)
 {
@@ -978,7 +954,7 @@ void nan_app_receive_cb(uint8_t svc_id, struct nan_cb_peer_info *peer_info,
     os_free(evt);
 }
 
-void nan_app_ndp_indication_cb(uint8_t pub_id, struct ndp_cb_peer_info *peer_info, uint32_t device_caps)
+static void nan_app_ndp_indication_cb(uint8_t pub_id, struct ndp_cb_peer_info *peer_info, uint32_t device_caps)
 {
     /*
      * Responder-side NDP indication. Security parsers (CSIA/SCIA/
@@ -1109,7 +1085,7 @@ void nan_app_ndp_indication_cb(uint8_t pub_id, struct ndp_cb_peer_info *peer_inf
     os_free(evt);
 }
 
-void nan_app_ndp_response_indication_cb(struct ndp_cb_peer_info *peer_info)
+static void nan_app_ndp_response_indication_cb(struct ndp_cb_peer_info *peer_info)
 {
     if (!peer_info) {
         return;
@@ -1159,7 +1135,7 @@ static void nan_ndp_confirm_teardown(const uint8_t peer_nmi[6], uint8_t ndp_id)
     os_event_group_set_bits(nan_event_group, NDP_REJECTED);
 }
 
-void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer_info,
+static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer_info,
                             uint8_t own_ndi[6], uint8_t ipv6_identifier[8])
 {
     if (!peer_info) {
@@ -1296,7 +1272,7 @@ done:
     return;
 }
 
-void nan_app_ndp_terminated_cb(uint8_t reason, uint8_t ndp_id, uint8_t init_ndi[6])
+static void nan_app_ndp_terminated_cb(uint8_t reason, uint8_t ndp_id, uint8_t init_ndi[6])
 {
     NAN_DATA_LOCK();
     if (s_nan_ctx.nan_netif && !nan_is_datapath_active()) {
@@ -1322,7 +1298,7 @@ void nan_app_ndp_terminated_cb(uint8_t reason, uint8_t ndp_id, uint8_t init_ndi[
     os_event_group_set_bits(nan_event_group, NDP_TERMINATED);
 }
 
-void nan_action_txdone_cb(uint32_t context, bool tx_status)
+static void nan_action_txdone_cb(uint32_t context, bool tx_status)
 {
     if (nan_event_group && s_fup_context == context) {
         if (tx_status) {
@@ -1333,7 +1309,7 @@ void nan_action_txdone_cb(uint32_t context, bool tx_status)
     }
 }
 
-void esp_nan_ndp_tx_done_cb(uint8_t ndp_id, const uint8_t *peer_nmi, uint8_t msg_type, bool tx_status)
+static void esp_nan_ndp_tx_done_cb(uint8_t ndp_id, const uint8_t *peer_nmi, uint8_t msg_type, bool tx_status)
 {
     NAN_DATA_LOCK();
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -23,10 +23,8 @@
 #include "utils/common.h"
 #include "utils/eloop.h"
 
-#if defined(CONFIG_ESP_WIFI_PASN_SUPPORT)
 #include "esp_private/esp_supp_nan.h"
 #include "apps_private/wifi_apps_private.h"
-#endif
 
 static const char *TAG = "nan_pairing";
 
@@ -35,7 +33,6 @@ static const char *TAG = "nan_pairing";
  * Shared Key Descriptor (Wi-Fi Aware v4.0 §7.6.4.2). */
 #define NAN_PAIRING_DEFAULT_NIK_LIFETIME_SEC 86400U
 
-#if defined(CONFIG_ESP_WIFI_PASN_SUPPORT)
 struct nan_pasn_data *esp_nan_app_get_pasn_data(void)
 {
     return s_nan_ctx.nan_pasn_data;
@@ -52,7 +49,6 @@ static void nan_pairing_key_installed_cb(const uint8_t *peer_nmi,
                                          const uint8_t *nd_pmk,
                                          size_t nd_pmk_len,
                                          uint32_t nik_lifetime_sec);
-#endif
 
 bool nan_pairing_validate_publish_bootstrapping(uint16_t bootstrapping_methods)
 {
@@ -254,7 +250,6 @@ esp_err_t esp_wifi_nan_pairing_start(wifi_nan_pairing_config_t *cfg)
         return ESP_ERR_INVALID_ARG;
     }
 
-#if defined(CONFIG_ESP_WIFI_PASN_SUPPORT)
     if (cfg->cred.pincode != UINT32_MAX &&
             cfg->cred.pincode > NAN_PAIRING_PINCODE_MAX) {
         ESP_LOGE(TAG, "Invalid pincode %u (valid range %u..%u or UINT32_MAX for default)",
@@ -288,10 +283,6 @@ esp_err_t esp_wifi_nan_pairing_start(wifi_nan_pairing_config_t *cfg)
         return ESP_ERR_INVALID_ARG;
     }
     return ESP_OK;
-#else
-    ESP_LOGE(TAG, "NAN PASN support not enabled");
-    return ESP_ERR_NOT_SUPPORTED;
-#endif
 }
 
 /* NIRA: ID(1) + Len(2) + CipherVersion(1) + Nonce(8) + Tag(8) = 20 */
@@ -407,10 +398,6 @@ int esp_nan_construct_nira(uint8_t *frm)
     return (int)(p - frm);
 }
 
-#if defined(CONFIG_ESP_WIFI_NAN_PAIRING) && defined(CONFIG_ESP_WIFI_PASN_SUPPORT) && defined(CONFIG_ESP_WIFI_NAN_SECURITY)
-
-#include "crypto/sha256.h"
-#include "crypto/aes_wrap.h"
 #include "common/ieee802_11_defs.h"
 #include "common/wpa_common.h"
 
@@ -507,9 +494,7 @@ static void nan_pairing_nik_fup_timeout_cb(void *eloop_data, void *user_ctx)
     evt.status = WIFI_NAN_PAIRING_STATUS_ACCEPTED;
     evt.reason_code = WIFI_NAN_PAIRING_REASON_NIK_FUP_TIMEOUT;
     MACADDR_COPY(evt.peer_nmi, own->nik_fup_pending_peer_nmi);
-#if defined(CONFIG_ESP_WIFI_NAN_SECURITY)
     nan_app_remove_paired_peer(own->nik_fup_pending_peer_nmi);
-#endif
     struct peer_svc_info *peer = nan_find_peer_svc(own->svc_id, 0,
                                                    own->nik_fup_pending_peer_nmi);
     esp_nan_complete_pairing(own->svc_id, peer ? peer->svc_id : 0);
@@ -689,7 +674,11 @@ static esp_err_t nan_app_send_pairing_followup(uint8_t svc_id, uint8_t peer_svc_
         return ESP_ERR_INVALID_SIZE;
     }
     wrapped_len = plain_len + 8;
-    if (aes_wrap(saved->kek, saved->kek_len, plain_len / 8, plain, wrapped) != 0) {
+    if (!g_wifi_default_wpa_crypto_funcs.aes_wrap) {
+        ESP_LOGE(TAG, "Pairing follow-up: aes_wrap not registered");
+        return ESP_FAIL;
+    }
+    if (g_wifi_default_wpa_crypto_funcs.aes_wrap(saved->kek, saved->kek_len, plain_len / 8, plain, wrapped) != 0) {
         return ESP_FAIL;
     }
 
@@ -778,7 +767,6 @@ static void nan_pairing_key_installed_cb(const uint8_t *peer_nmi,
         return;
     }
 
-#if defined(CONFIG_ESP_WIFI_NAN_SECURITY)
     uint32_t lifetime_sec = nik_lifetime_sec ?
                             nik_lifetime_sec : NAN_PAIRING_DEFAULT_NIK_LIFETIME_SEC;
 
@@ -793,12 +781,6 @@ static void nan_pairing_key_installed_cb(const uint8_t *peer_nmi,
                  "paired-peer cache not updated",
                  MAC2STR(peer_nmi), ndp_csid, (unsigned)nd_pmk_len);
     }
-#else
-    (void)ndp_csid;
-    (void)nd_pmk;
-    (void)nd_pmk_len;
-    (void)nik_lifetime_sec;
-#endif
 
     struct peer_svc_info *peer = nan_find_peer_svc(0, 0, (uint8_t *)peer_nmi);
     struct own_svc_info *own = NULL;
@@ -1080,7 +1062,5 @@ bool esp_nan_verify_nira(uint8_t *peer_mac, uint8_t *nira_attr, uint16_t nira_at
     }
     return match;
 }
-
-#endif /* CONFIG_ESP_WIFI_NAN_PAIRING && CONFIG_ESP_WIFI_PASN_SUPPORT && CONFIG_ESP_WIFI_NAN_SECURITY */
 
 #endif /* CONFIG_ESP_WIFI_NAN_PAIRING */
