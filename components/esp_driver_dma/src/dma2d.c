@@ -215,6 +215,7 @@ static bool free_up_channels(dma2d_group_t *group, dma2d_rx_channel_t *rx_chan)
     // 2. Check if next pending transaction in the tailq can start
     bool channels_found = false;
     const dma2d_trans_config_t *next_trans = NULL;
+    uint32_t total_channel_num = 0;
     dma2d_trans_channel_info_t channel_handle_array[DMA2D_MAX_CHANNEL_NUM_PER_TRANSACTION];
 
     esp_os_enter_critical_safe(&group->spinlock);
@@ -234,14 +235,9 @@ static bool free_up_channels(dma2d_group_t *group, dma2d_rx_channel_t *rx_chan)
 
     if (channels_found) {
         TAILQ_REMOVE(&group->pending_trans_tailq, next_trans_elm, entry);
-    }
-    esp_os_exit_critical_safe(&group->spinlock);
-
-    if (channels_found) {
-        // If the transaction can be processed, let consumer handle the transaction
-        uint32_t total_channel_num = next_trans->tx_channel_num + next_trans->rx_channel_num;
         // Store the acquired rx_chan into trans_elm (dma2d_trans_t) in case upper driver later need it to call `dma2d_force_end`
         // Upper driver controls the life cycle of trans_elm
+        total_channel_num = next_trans->tx_channel_num + next_trans->rx_channel_num;
         for (int i = 0; i < total_channel_num; i++) {
             if (channel_handle_array[i].dir == DMA2D_CHANNEL_DIRECTION_RX) {
                 next_trans_elm->rx_chan = channel_handle_array[i].chan;
@@ -249,6 +245,11 @@ static bool free_up_channels(dma2d_group_t *group, dma2d_rx_channel_t *rx_chan)
             // Also save the transaction pointer
             channel_handle_array[i].chan->status.transaction = next_trans_elm;
         }
+    }
+    esp_os_exit_critical_safe(&group->spinlock);
+
+    if (channels_found) {
+        // If the transaction can be processed, let consumer handle the transaction
         need_yield |= next_trans->on_job_picked(total_channel_num, channel_handle_array, next_trans->user_config);
     }
     return need_yield;
@@ -1033,6 +1034,32 @@ esp_err_t dma2d_enqueue(dma2d_pool_handle_t dma2d_pool, const dma2d_trans_config
 
 err:
     return ret;
+}
+
+esp_err_t dma2d_dequeue(dma2d_pool_handle_t dma2d_pool, dma2d_trans_t *trans)
+{
+    ESP_RETURN_ON_FALSE(dma2d_pool && trans, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    dma2d_group_t *dma2d_group = dma2d_pool;
+
+    bool found = false;
+    esp_os_enter_critical(&dma2d_group->spinlock);
+    // The given transaction may have already been picked up (and thus removed from the queue) or may never
+    // have been enqueued. Removing such an element directly would corrupt the queue, so search the queue
+    // first and only remove it if it is genuinely still pending.
+    dma2d_trans_t *trans_elm;
+    TAILQ_FOREACH(trans_elm, &dma2d_group->pending_trans_tailq, entry) {
+        if (trans_elm == trans) {
+            // Safe to remove inside the loop because we break out immediately and never dereference the invalidated link pointer afterwards
+            TAILQ_REMOVE(&dma2d_group->pending_trans_tailq, trans, entry);
+            found = true;
+            break;
+        }
+    }
+    esp_os_exit_critical(&dma2d_group->spinlock);
+
+    // ESP_ERR_NOT_FOUND indicates the transaction is no longer (or was never) pending
+    // i.e. it has already been picked up for processing or it does not exist in this pool's queue
+    return found ? ESP_OK : ESP_ERR_NOT_FOUND;
 }
 
 esp_err_t dma2d_force_end(dma2d_trans_t *trans, bool *need_yield)
