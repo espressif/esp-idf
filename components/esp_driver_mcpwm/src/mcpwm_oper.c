@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,9 +12,10 @@ static void mcpwm_operator_default_isr(void *args);
 
 static esp_err_t mcpwm_operator_register_to_group(mcpwm_oper_t *oper, int group_id)
 {
-    mcpwm_group_t *group = mcpwm_acquire_group_handle(group_id);
-    ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no mem for group (%d)", group_id);
+    mcpwm_group_t *group = NULL;
+    esp_err_t ret = ESP_OK;
 
+    ESP_GOTO_ON_ERROR(mcpwm_acquire_group_handle(group_id, 0, &group), err, TAG, "acquire group failed");
     int oper_id = -1;
     portENTER_CRITICAL(&group->spinlock);
     for (int i = 0; i < MCPWM_LL_GET(OPERATORS_PER_GROUP); i++) {
@@ -25,15 +26,17 @@ static esp_err_t mcpwm_operator_register_to_group(mcpwm_oper_t *oper, int group_
         }
     }
     portEXIT_CRITICAL(&group->spinlock);
-    if (oper_id < 0) {
-        mcpwm_release_group_handle(group);
-        group = NULL;
-    } else {
-        oper->group = group;
-        oper->oper_id = oper_id;
-    }
-    ESP_RETURN_ON_FALSE(oper_id >= 0, ESP_ERR_NOT_FOUND, TAG, "no free operators in group (%d)", group_id);
+    ESP_GOTO_ON_FALSE(oper_id >= 0, ESP_ERR_NOT_FOUND, err, TAG, "no free operators in group (%d)", group_id);
+
+    oper->group = group;
+    oper->oper_id = oper_id;
     return ESP_OK;
+
+err:
+    if (group) {
+        mcpwm_release_group_handle(group);
+    }
+    return ret;
 }
 
 static void mcpwm_operator_unregister_from_group(mcpwm_oper_t *oper)
