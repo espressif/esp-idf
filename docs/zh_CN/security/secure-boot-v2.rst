@@ -46,6 +46,18 @@
 
     在本指南中，最常用的命令形式为 ``idf.py secure-<command>``，这是对应 ``espsecure.py <command>`` 的封装。基于 ``idf.py`` 的命令能提供更好的用户体验，但与基于 ``espsecure.py`` 的命令相比，可能会损失一部分高级功能。
 
+.. only:: CONFIG_SECURE_BOOT_V2_ECDSA_INSECURE and SOC_SECURE_BOOT_V2_RSA
+
+    .. warning::
+
+        在 {IDF_TARGET_NAME} 上，基于 ECDSA 的 Secure Boot V2 方案在某些输入向量下无法正常工作，因此**不推荐使用**。请改用基于 RSA 的 Secure Boot V2 方案。如果仍需使用基于 ECDSA 的方案，请启用 :ref:`CONFIG_SECURE_BOOT_INSECURE` 和 :ref:`CONFIG_SECURE_BOOT_V2_FORCE_ENABLE_ECDSA`。该问题将在未来的硬件 ECO 版本中修复，详情请参阅硬件勘误文档。
+
+.. only:: CONFIG_SECURE_BOOT_V2_ECDSA_INSECURE and not SOC_SECURE_BOOT_V2_RSA
+
+    .. warning::
+
+        在 {IDF_TARGET_NAME} 上，基于 ECDSA 的 Secure Boot V2 方案在某些输入向量下存在漏洞，因此**不推荐用于量产**。如果仍需使用基于 ECDSA 的 Secure Boot V2 方案，请启用 :ref:`CONFIG_SECURE_BOOT_INSECURE` 和 :ref:`CONFIG_SECURE_BOOT_V2_FORCE_ENABLE_ECDSA`。该问题将在未来的硬件 ECO 版本中修复，详情请参阅硬件勘误文档。
+
 背景
 ----------
 
