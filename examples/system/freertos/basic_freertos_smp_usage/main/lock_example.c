@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 #include <stdatomic.h>
+#include <stdint.h>
 #include "freertos/FreeRTOS.h"
 #include "esp_log.h"
 #include "esp_timer.h"
@@ -78,7 +79,7 @@ static void inc_num_atomic_iter(void *arg)
 
 static void inc_num_mutex(void *arg)
 {
-    int task_index = (int)arg;
+    int task_index = (intptr_t)arg;
     ESP_LOGI(TAG, "mutex task %d created", task_index);
 
     while (!timed_out) {
@@ -122,7 +123,7 @@ and in turn accessed by multiple tasks. */
 int comp_lock_entry_func(int argc, char **argv)
 {
     s_global_num = 0;
-    int thread_id;
+    intptr_t thread_id;
     int core_id;
 
     timed_out = false;

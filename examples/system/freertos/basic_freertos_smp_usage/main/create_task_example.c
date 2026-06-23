@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
+#include <stdint.h>
 #include "freertos/FreeRTOS.h"
 #include "esp_log.h"
 #include "basic_freertos_smp_usage.h"
@@ -27,7 +28,7 @@ static void spin_iteration(int spin_iter_num)
 static void spin_task(void *arg)
 {
     // convert arg pointer from void type to int type then dereference it
-    int task_id = (int)arg;
+    int task_id = (intptr_t)arg;
     ESP_LOGI(TAG, "created task#%d", task_id);
     while (!timed_out) {
         int core_id = esp_cpu_get_core_id();
@@ -46,7 +47,7 @@ int comp_creating_task_entry_func(int argc, char **argv)
     timed_out = false;
     // pin 2 tasks on same core and observe in-turn execution,
     // and pin another task on the other core to observe "simultaneous" execution
-    int task_id0 = 0, task_id1 = 1, task_id2 = 2, task_id3 = 3;
+    intptr_t task_id0 = 0, task_id1 = 1, task_id2 = 2, task_id3 = 3;
     xTaskCreatePinnedToCore(spin_task, "pinned_task0_core0", 4096, (void*)task_id0, TASK_PRIO_3, NULL, CORE0);
     xTaskCreatePinnedToCore(spin_task, "pinned_task1_core0", 4096, (void*)task_id1, TASK_PRIO_3, NULL, CORE0);
     xTaskCreatePinnedToCore(spin_task, "pinned_task2_core1", 4096, (void*)task_id2, TASK_PRIO_3, NULL, CORE1);
