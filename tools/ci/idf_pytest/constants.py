@@ -70,7 +70,6 @@ ENV_MARKERS = {
     'flash_multi': 'Multiple flash chips tests',
     'psram': 'Chip has 4-line psram',
     'ir_transceiver': 'runners with a pair of IR transmitter and receiver',
-    'twai_transceiver': 'runners with a TWAI PHY transceiver',
     'flash_encryption_wifi_high_traffic': 'Flash Encryption runners with wifi high traffic support',
     'ethernet': 'ethernet runner',
     'ethernet_flash_8m': 'ethernet runner with 8mb flash',
@@ -120,7 +119,7 @@ ENV_MARKERS = {
     'sdio_master_slave': 'Test sdio multi board, esp32+esp32',
     'sdio_multidev_32_c6': 'Test sdio multi board, esp32+esp32c6',
     'usj_device': 'Test usb_serial_jtag and usb_serial_jtag is used as serial only (not console)',
-    'twai_std': 'twai runner with all twai supported targets connect to usb-can adapter',
+    'twai_adapter': 'runner with multiple twai_std',
     'esp32c3eco7': 'esp32c3 major version(v1.1) chips',
     'esp32c2eco4': 'esp32c2 major version(v2.0) chips',
 }

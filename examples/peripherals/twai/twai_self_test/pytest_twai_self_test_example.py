@@ -5,7 +5,7 @@ from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.twai_transceiver
+@pytest.mark.twai_adapter
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_twai_self_test_example(dut: Dut) -> None:
     dut.expect_exact('TWAI Self Test: Driver installed')
