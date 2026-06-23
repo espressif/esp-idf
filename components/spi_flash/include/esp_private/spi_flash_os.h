@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -178,13 +178,15 @@ uint32_t spi_flash_dpd_get_exit_duration(void);
 /**
  * @brief Enable or disable SPI flash deep power-down mode.
  *
- * @param bool status. True: flash enable deep power-down mode. False: flash disable deep power-down mode.
+ * @param enable True to enter deep power-down mode, false to exit.
+ * @param wait_delay If true, wait tDP (enter) or tRES1 (exit) after the command.
+ *                   If false, skip the delay; the caller must ensure timing is met elsewhere
  *
  * @note If using self-provided flash (not the chip’s factory-default flash), consult its datasheet to use this API safely.
  *
  * @return ESP_OK if success.
  */
-esp_err_t spi_flash_enable_deep_power_down_mode(bool enable);
+esp_err_t spi_flash_enable_deep_power_down_mode(bool enable, bool wait_delay);
 #endif
 
 #if SOC_SPI_MEM_SUPPORT_WRAP

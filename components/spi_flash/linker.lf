@@ -96,3 +96,7 @@ entries:
 
         if SOC_GPSPI_SUPPORTED = y && IDF_TARGET_ESP32 = n:
             spi_flash_hal_gpspi (noflash)
+    if SPI_FLASH_ROM_IMPL = n && APP_BUILD_TYPE_PURE_RAM_APP = n:
+        spi_flash_hal_iram: spi_flash_hal_enter_dpd_mode (noflash)
+        spi_flash_hal_iram: spi_flash_hal_exit_dpd_mode (noflash)
+        spi_flash_hal_iram: spi_flash_hal_poll_cmd_done (noflash)
