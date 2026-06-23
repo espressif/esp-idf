@@ -7,8 +7,9 @@ document.addEventListener("DOMContentLoaded", function () {
     script.setAttribute("data-mcp-server-url", "https://mcp.espressif.com/docs");
     script.setAttribute("data-mcp-dropdown-description", "更多关于乐鑫文档 MCP 服务器的信息请参阅[这篇文章](https://blog.csdn.net/espressif/article/details/159958703?spm=1001.2014.3001.5501)。");
     script.setAttribute("data-mcp-button-text", "MCP 服务器");
-    script.setAttribute("data-modal-title", "ESP-IDF 编程指南文档 AI 助手");
-    script.setAttribute("data-project-name", "ESP-IDF 编程指南");
+    script.setAttribute("data-modal-title", "乐鑫文档 AI 助手");
+    script.setAttribute("data-project-name", "esp-cn");
+    script.setAttribute("data-modal-ask-ai-input-placeholder", "向乐鑫文档 AI 助手提问...");
     script.setAttribute("data-project-color", "#C62817");
     script.setAttribute("data-project-logo", "https://dl.espressif.com/public/logo.png");
     script.setAttribute("data-button-image", "https://dl.espressif.com/chatbot/Chatbot.png");
