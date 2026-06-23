@@ -1004,7 +1004,25 @@ class IDFTool(object):
                 f'non-zero exit code ({e.returncode}) with message: {e.stderr.decode("utf-8", errors="ignore")}'
             )  # type: ignore
 
-        return self.parse_tool_version(version_cmd_result.decode('utf-8'))
+        version_str = version_cmd_result.decode('utf-8')
+        if not version_str.strip():
+            # The tool ran and exited successfully, but produced no output when its
+            # output was captured. On some Windows systems, antivirus, endpoint-security
+            # or DLP/encryption software intercepts short-lived toolchain processes and
+            # strips their stdout when it is captured through a pipe, while the same
+            # command works when run directly in a terminal. Surface an actionable hint
+            # instead of silently reporting the version as 'unknown', which otherwise
+            # sends users into a fruitless reinstall loop.
+            # See https://github.com/espressif/esp-idf/issues/18727
+            warn(
+                f'tool {self.name} ran but returned no version output. This is usually caused by '
+                'antivirus, endpoint-security or DLP/encryption software stripping the output of '
+                'toolchain processes; the same command often works when run directly in a terminal. '
+                'Add an exclusion for the ESP-IDF tools directory in that software. If the problem '
+                'persists, run the tool manually to check for a missing DLL.'
+            )
+            return UNKNOWN_VERSION
+        return self.parse_tool_version(version_str)
 
     def get_version_from_file(self, version: str) -> str:
         """

@@ -393,3 +393,9 @@ function(remove_duplicated_flags FLAGS UNIQFLAGS)
     # Return that string to the caller
     set(${UNIQFLAGS} "${FLAGS_LIST}" PARENT_SCOPE)
 endfunction()
+
+
+# __compiler_query is defined in a standalone module, included here so it is
+# available to the esp_common and xtensa project_include.cmake files that call
+# it.
+include(${CMAKE_CURRENT_LIST_DIR}/compiler_query.cmake)
