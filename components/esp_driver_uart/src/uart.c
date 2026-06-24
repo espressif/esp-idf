@@ -2219,9 +2219,7 @@ esp_err_t uart_set_rx_full_threshold(uart_port_t uart_num, int threshold)
         return ESP_ERR_INVALID_STATE;
     }
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-    if (uart_hal_get_intr_ena_status(&(uart_context[uart_num].hal)) & UART_INTR_RXFIFO_FULL) {
-        uart_hal_set_rxfifo_full_thr(&(uart_context[uart_num].hal), threshold);
-    }
+    uart_hal_set_rxfifo_full_thr(&(uart_context[uart_num].hal), threshold);
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     return ESP_OK;
 }
@@ -2236,9 +2234,7 @@ esp_err_t uart_set_tx_empty_threshold(uart_port_t uart_num, int threshold)
         return ESP_ERR_INVALID_STATE;
     }
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-    if (uart_hal_get_intr_ena_status(&(uart_context[uart_num].hal)) & UART_INTR_TXFIFO_EMPTY) {
-        uart_hal_set_txfifo_empty_thr(&(uart_context[uart_num].hal), threshold);
-    }
+    uart_hal_set_txfifo_empty_thr(&(uart_context[uart_num].hal), threshold);
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     return ESP_OK;
 }
