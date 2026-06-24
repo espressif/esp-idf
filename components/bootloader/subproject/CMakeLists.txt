@@ -14,6 +14,7 @@ if(NOT IDF_TARGET)
     message(FATAL_ERROR "Bootloader subproject expects the IDF_TARGET variable to be passed "
         "in by the parent build process.")
 endif()
+set(ENV{IDF_TARGET} "${IDF_TARGET}")
 
 if(IDF_BUILD_V2)
     include(CMakeLists_v2.txt)
