@@ -2019,6 +2019,43 @@ esp_err_t esp_ble_gap_set_decision_instructions(const esp_ble_gap_set_decision_i
 }
 #endif // #if (BLE_FEAT_DBAF == TRUE)
 
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+esp_err_t esp_ble_gap_frame_space_update(const esp_ble_gap_frame_space_update_params_t *params)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+    memset(&arg, 0, sizeof(arg));
+
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    if (params == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (params->frame_space_min > ESP_BLE_GAP_FRAME_SPACE_MAX_US ||
+        params->frame_space_max > ESP_BLE_GAP_FRAME_SPACE_MAX_US ||
+        params->frame_space_min > params->frame_space_max) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if ((params->phys & ~ESP_BLE_GAP_FRAME_SPACE_PHY_MASK) != 0 || params->phys == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if ((params->spacing_types & ~ESP_BLE_GAP_FRAME_SPACE_SPACING_MASK) != 0 ||
+        params->spacing_types == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_FRAME_SPACE_UPDATE;
+    arg.frame_space_update.conn_handle = params->conn_handle;
+    arg.frame_space_update.frame_space_min = params->frame_space_min;
+    arg.frame_space_update.frame_space_max = params->frame_space_max;
+    arg.frame_space_update.phys = params->phys;
+    arg.frame_space_update.spacing_types = params->spacing_types;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), NULL, NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
 
 
