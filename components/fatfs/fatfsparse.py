@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 # SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-import argparse
 import os
+from typing import Any
 
 import construct
+from esp_pylib.cli_options import MutuallyExclusiveOption
+from esp_pylib.logger import log
 from fatfs_utils.boot_sector import BootSector
 from fatfs_utils.entry import Entry
 from fatfs_utils.fat import FAT
@@ -24,14 +26,20 @@ def build_file_name(name1: bytes, name2: bytes, name3: bytes) -> str:
     return full_name_.rstrip(FULL_BYTE).decode(LONG_NAMES_ENCODING).rstrip('\x00')
 
 
-def get_obj_name(obj_: dict, directory_bytes_: bytes, entry_position_: int, lfn_checksum_: int) -> str:
+def get_obj_name(
+    obj_: dict,
+    directory_bytes_: bytes,
+    entry_position_: int,
+    lfn_checksum_: int,
+    long_name_support: bool,
+) -> str:
     obj_ext_ = obj_['DIR_Name_ext'].rstrip(chr(PAD_CHAR))
     ext_ = f'.{obj_ext_}' if len(obj_ext_) > 0 else ''
     obj_name_: str = obj_['DIR_Name'].rstrip(chr(PAD_CHAR)) + ext_  # short entry name
 
     # if LFN was detected, the record is considered as single SFN record only if DIR_NTRes == 0x18 (LDIR_DIR_NTRES)
     # if LFN was not detected, the record cannot be part of the LFN, no matter the value of DIR_NTRes
-    if not args.long_name_support or obj_['DIR_NTRes'] == Entry.LDIR_DIR_NTRES:
+    if not long_name_support or obj_['DIR_NTRes'] == Entry.LDIR_DIR_NTRES:
         return obj_name_
 
     full_name = {}
@@ -48,12 +56,18 @@ def get_obj_name(obj_: dict, directory_bytes_: bytes, entry_position_: int, lfn_
 
 
 def traverse_folder_tree(
-    directory_bytes_: bytes, name: str, state_: BootSectorState, fat_: FAT, binary_array_: bytes
-) -> None:
+    directory_bytes_: bytes,
+    name: str,
+    state_: BootSectorState,
+    fat_: FAT,
+    binary_array_: bytes,
+    long_name_support: bool,
+) -> bool:
     os.makedirs(name)
 
     assert len(directory_bytes_) % FATDefaults.ENTRY_SIZE == 0
     entries_count_: int = len(directory_bytes_) // FATDefaults.ENTRY_SIZE
+    enable_long_names = long_name_support
 
     for i in range(entries_count_):
         obj_address_: int = FATDefaults.ENTRY_SIZE * i
@@ -62,7 +76,7 @@ def traverse_folder_tree(
                 directory_bytes_[obj_address_ : obj_address_ + FATDefaults.ENTRY_SIZE]
             )
         except (construct.core.ConstError, UnicodeDecodeError, construct.core.StringError):
-            args.long_name_support = True
+            enable_long_names = True
             continue
 
         if obj_['DIR_Attr'] == 0:  # empty entry
@@ -73,6 +87,7 @@ def traverse_folder_tree(
             directory_bytes_,
             entry_position_=i,
             lfn_checksum_=lfn_checksum(obj_['DIR_Name'] + obj_['DIR_Name_ext']),
+            long_name_support=enable_long_names,
         )
         if obj_['DIR_Attr'] == Entry.ATTR_ARCHIVE:
             content_ = b''
@@ -85,13 +100,16 @@ def traverse_folder_tree(
             if obj_name_ in ('.', '..'):
                 continue
             child_directory_bytes_ = fat_.get_chained_content(cluster_id_=obj_['DIR_FstClusLO'])
-            traverse_folder_tree(
+            enable_long_names = traverse_folder_tree(
                 directory_bytes_=child_directory_bytes_,
                 name=os.path.join(name, obj_name_),
                 state_=state_,
                 fat_=fat_,
                 binary_array_=binary_array_,
+                long_name_support=enable_long_names,
             )
+
+    return enable_long_names
 
 
 def remove_wear_levelling_if_exists(fs_: bytes) -> bytes:
@@ -113,57 +131,24 @@ def remove_wear_levelling_if_exists(fs_: bytes) -> bytes:
     return plain_fs
 
 
-if __name__ == '__main__':
-    desc = 'Tool for parsing fatfs image and extracting directory structure on host.'
-    argument_parser: argparse.ArgumentParser = argparse.ArgumentParser(description=desc)
-    argument_parser.add_argument('input_image', help='Path to the image that will be parsed and extracted.')
-    argument_parser.add_argument('--long-name-support', action='store_true', help=argparse.SUPPRESS)
+def _parse_fatfs_image(
+    input_image: str,
+    long_name_support: bool,
+    wl_layer: str,
+    verbose: bool,
+) -> None:
+    fs = read_filesystem(input_image)
 
-    # ensures backward compatibility
-    argument_parser.add_argument('--wear-leveling', action='store_true', help=argparse.SUPPRESS)
-    argument_parser.add_argument(
-        '--wl-layer',
-        choices=['detect', 'enabled', 'disabled'],
-        default=None,
-        help="If detection doesn't work correctly, you can force analyzer to or not to assume WL.",
-    )
-    argument_parser.add_argument('--verbose', action='store_true', help='Prints details about FAT image.')
-
-    args = argument_parser.parse_args()
-
-    # if wear levelling is detected or user explicitly sets the parameter `--wl_layer enabled`
-    # the partition with wear levelling is transformed to partition without WL for convenient parsing
-    # in some cases the partitions with and without wear levelling can be 100% equivalent
-    # and only user can break this tie by explicitly setting
-    # the parameter --wl-layer to enabled, respectively disabled
-    if args.wear_leveling and args.wl_layer:
-        raise NotImplementedError('Argument --wear-leveling cannot be combined with --wl-layer!')
-    if args.wear_leveling:
-        args.wl_layer = 'enabled'
-    args.wl_layer = args.wl_layer or 'detect'
-
-    fs = read_filesystem(args.input_image)
-
-    # An algorithm for removing wear levelling:
-    # 1. find an remove dummy sector:
-    #    a) dummy sector is at the position defined by the number of records in the state sector
-    #    b) dummy may not be placed in state nor cfg sectors
-    #    c) first (boot) sector position (boot_s_pos) is calculated using value of move count
-    #    boot_s_pos = - mc
-    # 2. remove state sectors (trivial)
-    # 3. remove cfg sector (trivial)
-    # 4. valid fs is then old_fs[-mc:] + old_fs[:-mc]
-    if args.wl_layer == 'enabled':
+    if wl_layer == 'enabled':
         fs = remove_wl(fs)
-    elif args.wl_layer != 'disabled':
-        # wear levelling is removed to enable parsing using common algorithm
+    elif wl_layer != 'disabled':
         fs = remove_wear_levelling_if_exists(fs)
 
     boot_sector_ = BootSector()
     boot_sector_.parse_boot_sector(fs)
 
-    if args.verbose:
-        print(str(boot_sector_))
+    if verbose:
+        log.print(str(boot_sector_))
 
     fat = FAT(boot_sector_.boot_sector_state, init_=False)
 
@@ -176,4 +161,55 @@ if __name__ == '__main__':
         boot_sector_.boot_sector_state,
         fat,
         fs,
+        long_name_support=long_name_support,
     )
+
+
+def _build_cli() -> Any:
+    import rich_click as click
+
+    desc = 'Tool for parsing fatfs image and extracting directory structure on host.'
+
+    @click.command(
+        context_settings={'help_option_names': ['-h', '--help']},
+        help=desc,
+    )
+    @click.argument('input_image', type=click.Path(exists=False, dir_okay=False))
+    @click.option('--long-name-support', is_flag=True, default=False, hidden=True)
+    @click.option(
+        '--wear-leveling',
+        is_flag=True,
+        default=False,
+        hidden=True,
+        cls=MutuallyExclusiveOption,
+        exclusive_with=['wl_layer'],
+    )
+    @click.option(
+        '--wl-layer',
+        type=click.Choice(['detect', 'enabled', 'disabled'], case_sensitive=False),
+        default=None,
+        help="If detection doesn't work correctly, you can force analyzer to or not to assume WL.",
+        cls=MutuallyExclusiveOption,
+        exclusive_with=['wear_leveling'],
+    )
+    @click.option('--verbose', is_flag=True, default=False, help='Prints details about FAT image.')
+    def cli(input_image, long_name_support, wear_leveling, wl_layer, verbose):  # type: ignore[no-untyped-def]
+        if wear_leveling and wl_layer is not None:
+            log.die('Argument --wear-leveling cannot be combined with --wl-layer!')
+        if wear_leveling:
+            wl_layer = 'enabled'
+        wl_layer = wl_layer or 'detect'
+        _parse_fatfs_image(input_image, long_name_support, wl_layer, verbose)
+
+    return cli
+
+
+def main() -> None:
+    _build_cli()()
+
+
+if __name__ == '__main__':
+    from esp_pylib.excepthook import install_exception_reporting
+
+    install_exception_reporting()
+    main()
