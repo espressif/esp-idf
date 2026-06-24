@@ -578,6 +578,7 @@ int uart_write_bytes_with_break(uart_port_t uart_num, const void* src, size_t si
 
 /**
  * @brief UART read bytes from UART buffer
+ * Blocks until the buffer to fill is filled completely or timeout is expired
  *
  * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param buf     pointer to the buffer.
@@ -589,6 +590,21 @@ int uart_write_bytes_with_break(uart_port_t uart_num, const void* src, size_t si
  *     - OTHERS (>=0) The number of bytes read from UART buffer
  */
 int uart_read_bytes(uart_port_t uart_num, void* buf, uint32_t length, uint32_t ticks_to_wait);
+
+/**
+ * @brief UART read bytes from UART buffer
+ * Blocks until there is at least something to read (might be smaller than length!) or timeout is expired
+ *
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ * @param buf     pointer to the buffer.
+ * @param length  data length
+ * @param ticks_to_wait sTimeout, count in RTOS ticks
+ *
+ * @return
+ *     - (-1) Error
+ *     - OTHERS (>=0) The number of bytes read from UART buffer
+ */
+int uart_read_some_bytes(uart_port_t uart_num, void* buf, uint32_t length, TickType_t ticks_to_wait);
 
 /**
  * @brief Alias of uart_flush_input.
