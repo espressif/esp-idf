@@ -2523,3 +2523,39 @@ void btm_ble_cs_subevt_continue_result_evt(tBTM_BLE_CS_SUBEVT_RESULT_CONTINUE_EV
 }
 
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+/* Host does not validate conn_handle range or CS_Security_Requirements reserved bits; Controller checks. */
+void BTM_BleGapCsSetSecurityRequirements(UINT16 conn_handle, UINT64 cs_security_requirements)
+{
+    tBTM_STATUS status = BTM_SUCCESS;
+    tHCI_STATUS err = HCI_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_cs_set_security_requirements(conn_handle, cs_security_requirements)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("cs set security requirements, cmd err=0x%x", err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.cs_set_security_requirements.status = status;
+    cb_params.cs_set_security_requirements.conn_handle = conn_handle;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_CS_SET_SECURITY_REQUIREMENTS_CMPL_EVT, &cb_params);
+}
+
+/* Host does not validate CS_Security_Requirements reserved bits; Controller checks. */
+void BTM_BleGapCsSetDefaultSecurityRequirements(UINT64 cs_security_requirements)
+{
+    tBTM_STATUS status = BTM_SUCCESS;
+    tHCI_STATUS err = HCI_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_cs_set_default_security_requirements(cs_security_requirements)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("cs set default security requirements, cmd err=0x%x", err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.cs_set_default_security_requirements.status = status;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_CMPL_EVT, &cb_params);
+}
+
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
