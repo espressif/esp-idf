@@ -1,81 +1,65 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import binascii
 import json
 import sys
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Union
 
-from nvs_parser import nvs_const
+from esp_pylib.logger import log
 from nvs_parser import NVS_Entry
 from nvs_parser import NVS_Partition
+from nvs_parser import nvs_const
 
 
 class NVS_Logger:
-    ansi = {
-        'red': '\033[31m',
-        'green': '\033[32m',
-        'yellow': '\033[33m',
-        'blue': '\033[34m',
-        'cyan': '\033[36m',
-        'bold': '\033[1m',
-        'clear': '\033[0m',
-    }
+    """Rich-based logger for NVS partition dump and integrity-check output."""
 
     def __init__(self, *, color: str = 'auto', out_format: str = 'text'):
-        self.color = color == 'always' or (color == 'auto' and sys.stdout.isatty())
         self.output_format = out_format
+        self.set_color(color)
 
     def set_color(self, color: str) -> None:
-        self.color = color == 'always' or (color == 'auto' and sys.stdout.isatty())
+        no_color = color == 'never' or (color == 'auto' and not sys.stdout.isatty())
+        self._color_enabled = not no_color
 
     def set_format(self, out_format: str) -> None:
         self.output_format = out_format
 
-    def info(self, *args, **kwargs) -> None:  # type: ignore
-        kwargs['file'] = kwargs.get(
-            'file', sys.stdout
-        )  # Set default output to be stdout, but can be overwritten
-        print(*args, **kwargs)
+    def info(self, *args: Any, **kwargs: Any) -> None:
+        log.print(*args, **kwargs)
 
-    def error(self, *args, **kwargs) -> None:  # type: ignore
-        kwargs['file'] = kwargs.get(
-            'file', sys.stderr
-        )  # Set default output to be stderr, but can be overwritten
-        print(*args, **kwargs)
+    def error(self, *args: Any, **kwargs: Any) -> None:
+        log.err(*args)
+
+    def warn(self, message: str) -> None:
+        log.warn(message)
+
+    def err(self, message: str) -> None:
+        log.err(message)
+
+    def _style(self, text: str, style: str) -> str:
+        if self._color_enabled:
+            return f'[{style}]{text}[/{style}]'
+        return text
 
     def red(self, text: str) -> str:
-        if self.color:
-            return NVS_Logger.ansi['red'] + text + NVS_Logger.ansi['clear']
-        return text
+        return self._style(text, 'red')
 
     def green(self, text: str) -> str:
-        if self.color:
-            return NVS_Logger.ansi['green'] + text + NVS_Logger.ansi['clear']
-        return text
+        return self._style(text, 'green')
 
     def yellow(self, text: str) -> str:
-        if self.color:
-            return NVS_Logger.ansi['yellow'] + text + NVS_Logger.ansi['clear']
-        return text
+        return self._style(text, 'yellow')
 
     def blue(self, text: str) -> str:
-        if self.color:
-            return NVS_Logger.ansi['blue'] + text + NVS_Logger.ansi['clear']
-        return text
+        return self._style(text, 'blue')
 
     def cyan(self, text: str) -> str:
-        if self.color:
-            return NVS_Logger.ansi['cyan'] + text + NVS_Logger.ansi['clear']
-        return text
+        return self._style(text, 'cyan')
 
     def bold(self, text: str) -> str:
-        if self.color:
-            return NVS_Logger.ansi['bold'] + text + NVS_Logger.ansi['clear']
-        return text
+        return self._style(text, 'bold')
 
 
 nvs_log = NVS_Logger()
@@ -135,13 +119,9 @@ def dump_everything(nvs_partition: NVS_Partition, written_only: bool = False) ->
     for page in nvs_partition.pages:
         # Print page header
         if page.is_empty:
-            nvs_log.info(
-                nvs_log.bold(f'Page Empty, Page address: 0x{page.start_address:x}')
-            )
+            nvs_log.info(nvs_log.bold(f'Page Empty, Page address: 0x{page.start_address:x}'))
         else:
-            if (
-                page.header['crc']['original'] == page.header['crc']['computed']
-            ):  # Color CRC32
+            if page.header['crc']['original'] == page.header['crc']['computed']:  # Color CRC32
                 crc = nvs_log.green(f'{page.header["crc"]["original"]: >8x}')
             else:
                 crc = nvs_log.red(f'{page.header["crc"]["original"]: >8x}')
@@ -168,21 +148,15 @@ def dump_everything(nvs_partition: NVS_Partition, written_only: bool = False) ->
                 continue
 
             # Compress all empty entries
-            if (
-                entry.state == 'Empty' and entry.is_empty
-            ):  # Gather all subsequent empty entries
+            if entry.state == 'Empty' and entry.is_empty:  # Gather all subsequent empty entries
                 empty_entries.append(entry)
                 continue
             else:
                 # Print the empty entries
                 if len(empty_entries) >= 3:  # There is enough entries to compress
-                    nvs_log.info(
-                        nvs_log.bold(f' {empty_entries[0].index:03d}.'), 'Empty'
-                    )
+                    nvs_log.info(nvs_log.bold(f' {empty_entries[0].index:03d}.'), 'Empty')
                     nvs_log.info(nvs_log.bold(' ...'))
-                    nvs_log.info(
-                        nvs_log.bold(f' {empty_entries[-1].index:03d}.'), 'Empty'
-                    )
+                    nvs_log.info(nvs_log.bold(f' {empty_entries[-1].index:03d}.'), 'Empty')
                 else:  # No need for compression
                     for e in empty_entries:
                         nvs_log.info(nvs_log.bold(f' {e.index:03d}.'), 'Empty')
@@ -196,9 +170,7 @@ def dump_everything(nvs_partition: NVS_Partition, written_only: bool = False) ->
                 status = nvs_log.red(f'{status: <7}')
 
             crc = ''
-            if (
-                entry.metadata['crc']['original'] == entry.metadata['crc']['computed']
-            ):  # Color CRC32
+            if entry.metadata['crc']['original'] == entry.metadata['crc']['computed']:  # Color CRC32
                 crc = nvs_log.green(f'{entry.metadata["crc"]["original"]: >8x}')
             else:
                 crc = nvs_log.red(f'{entry.metadata["crc"]["original"]: >8x}')
@@ -234,13 +206,8 @@ def dump_everything(nvs_partition: NVS_Partition, written_only: bool = False) ->
                         + f', ChunkStart={entry.data["chunk_start"]}'
                     )
                 else:
-                    if (
-                        entry.metadata['crc']['data_original']
-                        == entry.metadata['crc']['data_computed']
-                    ):  # Color CRC32
-                        crc = nvs_log.green(
-                            f'{entry.metadata["crc"]["data_original"]:x}'
-                        )
+                    if entry.metadata['crc']['data_original'] == entry.metadata['crc']['data_computed']:  # Color CRC32
+                        crc = nvs_log.green(f'{entry.metadata["crc"]["data_original"]:x}')
                     else:
                         crc = nvs_log.red(f'{entry.metadata["crc"]["data_original"]:x}')
                     nvs_log.info(f'Size={entry.data["size"]}, CRC32={crc}')
@@ -248,9 +215,7 @@ def dump_everything(nvs_partition: NVS_Partition, written_only: bool = False) ->
             # Dump all children entries
             if entry.metadata['span'] != 1:
                 for i, data in enumerate(entry.children):
-                    nvs_log.info(
-                        f'{"": >6}0x{(i * nvs_const.entry_size):03x}  {data.dump_raw()}'
-                    )
+                    nvs_log.info(f'{"": >6}0x{(i * nvs_const.entry_size):03x}  {data.dump_raw()}')
 
         # Dump trailing empty entries
         if len(empty_entries) >= 3:
@@ -277,7 +242,7 @@ def list_namespaces(nvs_partition: NVS_Partition) -> None:
                 ns[entry.data['value']] = entry.key
 
     # Print found namespaces
-    nvs_log.info(nvs_log.bold(f'Index: Namespace'))
+    nvs_log.info(nvs_log.bold('Index: Namespace'))
     for ns_index in sorted(ns):
         nvs_log.info(f' {ns_index:03d}:', nvs_log.cyan(ns[ns_index]))
 
@@ -296,18 +261,11 @@ def dump_key_value_pairs(nvs_partition: NVS_Partition) -> None:
         if page.is_empty:
             nvs_log.info(nvs_log.bold('Page Empty'))
         else:
-            nvs_log.info(
-                nvs_log.bold(
-                    f'Page no. {page.header["page_index"]}'
-                    + f', Status: {page.header["status"]}'
-                )
-            )
+            nvs_log.info(nvs_log.bold(f'Page no. {page.header["page_index"]}' + f', Status: {page.header["status"]}'))
 
         # Print entries
         for entry in page.entries:
-            if (
-                entry.state == 'Written' and entry.metadata['namespace'] != 0
-            ):  # Ignore non-written entries
+            if entry.state == 'Written' and entry.metadata['namespace'] != 0:  # Ignore non-written entries
                 chunk_index = ''
                 data = ''
                 if entry.metadata['type'] not in [
@@ -348,9 +306,9 @@ def dump_key_value_pairs(nvs_partition: NVS_Partition) -> None:
 
 
 def dump_written_blobs(nvs_partition: NVS_Partition) -> None:
-    blobs: Dict = {}
-    strings: List[NVS_Entry] = []
-    legacy_blobs: List[NVS_Entry] = []
+    blobs: dict = {}
+    strings: list[NVS_Entry] = []
+    legacy_blobs: list[NVS_Entry] = []
     ns = {}
     empty_entry = NVS_Entry(-1, bytearray(32), 'Erased')
 
@@ -359,9 +317,9 @@ def dump_written_blobs(nvs_partition: NVS_Partition) -> None:
         for entry in page.entries:
             if entry.state == 'Written':
                 if entry.metadata['type'] == 'blob_index':
-                    blobs[f'{entry.metadata["namespace"]:03d}{entry.key}'] = [entry] + [
-                        empty_entry
-                    ] * entry.data['chunk_count']
+                    blobs[f'{entry.metadata["namespace"]:03d}{entry.key}'] = [entry] + [empty_entry] * entry.data[
+                        'chunk_count'
+                    ]
                 elif entry.metadata['type'] == 'blob':
                     legacy_blobs.append(entry)
                 elif entry.metadata['type'] == 'string':
@@ -377,30 +335,21 @@ def dump_written_blobs(nvs_partition: NVS_Partition) -> None:
                 if (
                     entry.state == 'Written'
                     and entry.metadata['type'] != 'blob_index'
-                    and entry.metadata['namespace']
-                    == blobs[key][0].metadata['namespace']
+                    and entry.metadata['namespace'] == blobs[key][0].metadata['namespace']
                     and entry.key == blobs[key][0].key
                 ):
-                    blobs[key][
-                        1
-                        + entry.metadata['chunk_index']
-                        - blobs[key][0].data['chunk_start']
-                    ] = entry
+                    blobs[key][1 + entry.metadata['chunk_index'] - blobs[key][0].data['chunk_start']] = entry
 
         blob_index = blobs[key][0]
         blob_chunks = blobs[key][1:]
 
         # Print blob info
         nvs_log.info(
-            nvs_log.cyan(
-                ns.get(
-                    blob_index.metadata['namespace'], blob_index.metadata['namespace']
-                )
-            )
+            nvs_log.cyan(ns.get(blob_index.metadata['namespace'], blob_index.metadata['namespace']))
             + ':'
             + nvs_log.yellow(blob_index.key)
             + ' - '
-            + f'Type: Blob (Version 2), '
+            + 'Type: Blob (Version 2), '
             + f'Size: {blob_index.data["size"]}'
         )
 
@@ -416,17 +365,13 @@ def dump_written_blobs(nvs_partition: NVS_Partition) -> None:
             if entry is empty_entry:
                 nvs_log.info(nvs_log.yellow(f'  {"":->63} Missing data {"":-<64}'))
             else:
-                nvs_log.info(
-                    f'  0x{(i * nvs_const.entry_size):05x}  {entry.dump_raw()}'
-                )
+                nvs_log.info(f'  0x{(i * nvs_const.entry_size):05x}  {entry.dump_raw()}')
         nvs_log.info()
 
     # Dump strings
     for string in strings:
         nvs_log.info(
-            nvs_log.cyan(
-                ns.get(string.metadata['namespace'], string.metadata['namespace'])
-            )
+            nvs_log.cyan(ns.get(string.metadata['namespace'], string.metadata['namespace']))
             + ':'
             + nvs_log.yellow(string.key)
             + ' - '
@@ -454,15 +399,14 @@ def dump_written_blobs(nvs_partition: NVS_Partition) -> None:
 
 def print_json(nvs: NVS_Partition) -> None:
     class NVSEncoder(json.JSONEncoder):
-        def default(self, obj: Any) -> Union[Any, Dict[str, Any], str]:
+        def default(self, obj: Any) -> Any | dict[str, Any] | str:
             if hasattr(obj, 'toJSON'):
                 return obj.toJSON()
             if isinstance(obj, bytearray):
-                return binascii.b2a_base64(obj, newline=False).decode(
-                    'ascii'
-                )  # Binary to Base64 ASCII representation
+                return binascii.b2a_base64(obj, newline=False).decode('ascii')  # Binary to Base64 ASCII representation
             return json.JSONEncoder.default(self, obj)
 
+    # Machine-readable JSON on stdout (not via Rich Console — pytest/capture-friendly).
     print(json.dumps(nvs.toJSON(), cls=NVSEncoder, indent=2))
 
 
@@ -501,12 +445,14 @@ def print_minimal_json(nvs_partition: NVS_Partition) -> None:
                         data = binascii.b2a_base64(tmp, newline=False).decode('ascii')
 
                 if entry.metadata['namespace'] in ns:
-                    key_value_pairs.append({
-                        'namespace': ns[entry.metadata['namespace']],
-                        'key': entry.key,
-                        'encoding': entry_type,  # Add type of data
-                        'data': data,  # Ensure data ends with a newline
-                        'state': entry.state,
-                        'is_empty': entry.is_empty if hasattr(entry, 'is_empty') else None,
-                    })
-    nvs_log.info(json.dumps(key_value_pairs, indent=4))
+                    key_value_pairs.append(
+                        {
+                            'namespace': ns[entry.metadata['namespace']],
+                            'key': entry.key,
+                            'encoding': entry_type,  # Add type of data
+                            'data': data,  # Ensure data ends with a newline
+                            'state': entry.state,
+                            'is_empty': entry.is_empty if hasattr(entry, 'is_empty') else None,
+                        }
+                    )
+    print(json.dumps(key_value_pairs, indent=4))

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import base64
 import json
@@ -15,7 +15,6 @@ import esp_idf_nvs_partition_gen.nvs_partition_gen as nvs_partition_gen
 import nvs_check as nvs_check
 import pytest
 from esp_idf_nvs_partition_gen.nvs_partition_gen import NVS
-from nvs_logger import NVS_Logger
 from nvs_logger import nvs_log
 from nvs_logger import print_minimal_json
 from nvs_parser import NVS_Entry
@@ -34,16 +33,7 @@ def before() -> None:
         pytest.skip('pass')
 
 
-class SilentLogger(NVS_Logger):
-    def __init__(self) -> None:
-        super().__init__()
-        self.color = False
-
-    def info(self, *args, **kwargs) -> None:  # type: ignore
-        pass
-
-
-logger = nvs_log  # SilentLogger()
+logger = nvs_log
 
 LOREM_STRING = """Lorem ipsum dolor sit amet, consectetur adipiscing elit.
 Nullam eget orci fringilla, cursus nisi sit amet, hendrerit tortor.
