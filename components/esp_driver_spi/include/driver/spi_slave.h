@@ -67,7 +67,9 @@ typedef struct {
  */
 struct spi_slave_transaction_t {
     uint32_t flags;                 ///< Bitwise OR of SPI_SLAVE_TRANS_* flags
-    size_t length;                  ///< Total data length, in bits
+    size_t length;                  ///< Total data length, in bits. It both for TX and RX, do NOT use together with independent length
+    size_t tx_length;               ///< Independent Tx data length, in bits, using with tx_buffer. do NOT use together with `length`
+    size_t rx_length;               ///< Independent Rx data length, in bits, using with rx_buffer. do NOT use together with `length`
     size_t trans_len;               ///< Transaction data length, in bits
     const void *tx_buffer;          ///< Pointer to transmit buffer, or NULL for no MOSI phase
     void *rx_buffer;                /**< Pointer to receive buffer, or NULL for no MISO phase.

@@ -117,6 +117,8 @@ SPI 传输事务
 
 如果传输长度超过缓存区长度，则只有在 :cpp:member:`spi_slave_transaction_t::length` 中指定的初始比特数会被发送和接收。此时， :cpp:member:`spi_slave_transaction_t::trans_len` 被设置为 :cpp:member:`spi_slave_transaction_t::length` 而非实际传输事务长度。若需满足实际传输事务长度的要求，请将 :cpp:member:`spi_slave_transaction_t::length` 设置为大于 :cpp:member:`spi_slave_transaction_t::trans_len` 预期最大值的值。如果传输长度短于缓存区长度，则只传输与缓存区长度相等的数据。
 
+当需要在一次传输中单独指定不同的 TX/RX 长度时，可以使用 :cpp:member:`spi_slave_transaction_t::tx_length` 和 :cpp:member:`spi_slave_transaction_t::rx_length` 来分别指定 TX 和 RX 的长度。该配置和 :cpp:member:`spi_slave_transaction_t::length` 互斥，不可同时使用。
+
 GPIO 交换矩阵和 IO_MUX
 ----------------------
 
