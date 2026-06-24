@@ -13,6 +13,7 @@
 /* ---------------- */
 /*     Includes     */
 /* ---------------- */
+#include "ble_log.h"
 #include "ble_log_prph.h"
 
 #include "freertos/FreeRTOS.h"
@@ -174,6 +175,25 @@ typedef struct {
     uint32_t lost_bytes_cnt;
 } __attribute__((packed)) ble_log_enh_stat_t;
 
+/* -------------------------------- */
+/*     Final Statistics Defines     */
+/* -------------------------------- */
+typedef struct {
+    uint8_t src_code;
+    uint32_t written_frame_cnt;
+    uint32_t lost_frame_cnt;
+    uint32_t written_bytes_cnt;
+    uint32_t lost_bytes_cnt;
+} __attribute__((packed)) ble_log_final_stat_entry_t;
+
+typedef struct {
+    uint8_t int_src_code;
+    uint8_t src_cnt;
+    ble_log_final_stat_entry_t entries[BLE_LOG_SRC_MAX];
+} __attribute__((packed)) ble_log_final_stat_t;
+
+#define BLE_LOG_FINAL_STAT_LEN                 sizeof(ble_log_final_stat_t)
+
 /* -------------------------------------- */
 /*     Log Statistics Manager Context     */
 /* -------------------------------------- */
@@ -220,6 +240,8 @@ _Static_assert(CONFIG_BLE_LOG_LBM_LL_TRANS_BUF_SIZE % BLE_LOG_TRANS_BUF_CNT == 0
 #endif
 _Static_assert(CONFIG_BLE_LOG_LBM_TRANS_BUF_SIZE / BLE_LOG_TRANS_BUF_CNT >= BLE_LOG_FRAME_OVERHEAD,
                "Common LBM per-buffer size too small for a single frame");
+_Static_assert(BLE_LOG_TRANS_SIZE >= BLE_LOG_FINAL_STAT_LEN + sizeof(uint32_t) + BLE_LOG_FRAME_OVERHEAD,
+               "Common LBM per-buffer size too small for final statistics frame");
 _Static_assert((BLE_LOG_TRANS_BUF_CNT & (BLE_LOG_TRANS_BUF_CNT - 1)) == 0,
                "BLE_LOG_TRANS_BUF_CNT must be a power of 2");
 _Static_assert(1 + BLE_LOG_LBM_ATOMIC_TASK_CNT <= 16,
@@ -235,6 +257,8 @@ _Static_assert(BLE_LOG_TRANS_BUF_CNT <= 255,
 bool ble_log_lbm_init(void);
 void ble_log_lbm_deinit(void);
 void ble_log_lbm_enable(bool enable);
+bool ble_log_write_internal(const uint8_t *addr, size_t len);
+void ble_log_write_final_stat(void);
 void ble_log_write_enh_stat(void);
 void ble_log_write_buf_util(void);
 #if BLE_LOG_UART_REDIR_ENABLED
