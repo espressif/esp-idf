@@ -190,7 +190,7 @@ esp_err_t dma2d_dequeue(dma2d_pool_handle_t dma2d_pool, dma2d_trans_t *trans);
  * @param[in] trans Pointer to the 2D-DMA transaction context
  * @param[out] need_yield Pointer to a status flag to record whether a task switch is needed if this API is being called in an ISR
  * @return
- *      - ESP_OK: Force end an in-flight transaction successfully
+ *      - ESP_OK: The transaction has been ended (either force-ended by this call, or it had already completed)
  *      - ESP_ERR_INVALID_ARG: Force end failed because of invalid argument
  *      - ESP_ERR_INVALID_STATE: Force end failed because the transaction is not yet in-flight
  */
