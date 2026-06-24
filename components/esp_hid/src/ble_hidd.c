@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -134,6 +134,15 @@ typedef struct {
     uint16_t                    hid_protocol_handle;
 } hidd_dev_map_t;
 
+// Connection info for tracking multiple connections
+#define ESP_HIDD_MAX_CONNECTIONS CONFIG_BT_ACL_CONNECTIONS
+typedef struct {
+    bool                        connected;
+    uint16_t                    conn_id;
+    esp_bd_addr_t               remote_bda;
+    hidd_le_ccc_value_t         bat_ccc;
+} hidd_connection_t;
+
 struct esp_ble_hidd_dev_s {
     esp_hidd_dev_t             *dev;
     SemaphoreHandle_t            sem;
@@ -141,11 +150,12 @@ struct esp_ble_hidd_dev_s {
     esp_hid_device_config_t     config;
     uint16_t                    appearance;
 
-    bool                        connected;
-    uint16_t                    conn_id;
-    esp_bd_addr_t               remote_bda;
+    // Multi-connection support
+    SemaphoreHandle_t            conn_mutex;        // Mutex for protecting connection state
+    hidd_connection_t           connections[ESP_HIDD_MAX_CONNECTIONS];
+    uint8_t                     active_conn_index;  // Index to active connection (0xFF = broadcast mode)
+    bool                        broadcast_mode;     // When true, send to all connections
 
-    hidd_le_ccc_value_t         bat_ccc;
     uint8_t                     bat_level;  // 0 - 100 - battery percentage
     uint8_t                     control;    // 0x00 suspend, 0x01 suspend off
     uint8_t                     protocol;   // 0x00 boot, 0x01 report
@@ -173,6 +183,8 @@ static const uint8_t hidInfo[4] = {
 
 #define WAIT_CB(d) xSemaphoreTake(d->sem, portMAX_DELAY)
 #define SEND_CB(d) xSemaphoreGive(d->sem)
+#define LOCK_CONN(d) xSemaphoreTake(d->conn_mutex, portMAX_DELAY)
+#define UNLOCK_CONN(d) xSemaphoreGive(d->conn_mutex)
 
 static const char *gatts_evt_names[25] = { "REG", "READ", "WRITE", "EXEC_WRITE", "MTU", "CONF", "UNREG", "CREATE", "ADD_INCL_SRVC", "ADD_CHAR", "ADD_CHAR_DESCR", "DELETE", "START", "STOP", "CONNECT", "DISCONNECT", "OPEN", "CANCEL_OPEN", "CLOSE", "LISTEN", "CONGEST", "RESPONSE", "CREAT_ATTR_TAB", "SET_ATTR_VAL", "SEND_SERVICE_CHANGE"};
 
@@ -182,6 +194,103 @@ static const char *gatts_evt_str(uint8_t event)
         return "UNKNOWN";
     }
     return gatts_evt_names[event];
+}
+
+/*
+ * Connection Management Helper Functions
+ */
+
+// Find connection by conn_id
+// NOTE: Caller must hold conn_mutex
+static int find_connection_by_id_with_lock(esp_ble_hidd_dev_t *dev, uint16_t conn_id)
+{
+    for (int i = 0; i < ESP_HIDD_MAX_CONNECTIONS; i++) {
+        if (dev->connections[i].connected && dev->connections[i].conn_id == conn_id) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+// Find first free connection slot
+// NOTE: Caller must hold conn_mutex
+static int find_free_connection_slot_with_lock(esp_ble_hidd_dev_t *dev)
+{
+    for (int i = 0; i < ESP_HIDD_MAX_CONNECTIONS; i++) {
+        if (!dev->connections[i].connected) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+// Add a new connection
+// NOTE: Caller must hold conn_mutex
+static int add_connection_with_lock(esp_ble_hidd_dev_t *dev, uint16_t conn_id, esp_bd_addr_t remote_bda)
+{
+    int idx = find_free_connection_slot_with_lock(dev);
+    if (idx < 0) {
+        ESP_LOGE(TAG, "No free connection slots available");
+        return -1;
+    }
+
+    dev->connections[idx].connected = true;
+    dev->connections[idx].conn_id = conn_id;
+    memcpy(dev->connections[idx].remote_bda, remote_bda, ESP_BD_ADDR_LEN);
+    dev->connections[idx].bat_ccc.value = 0;
+
+    // Set as active if no active connection
+    if (dev->active_conn_index == 0xFF && !dev->broadcast_mode) {
+        dev->active_conn_index = idx;
+    }
+
+    ESP_LOGI(TAG, "Added connection at index %d, conn_id=%d", idx, conn_id);
+    return idx;
+}
+
+// Remove a connection
+// NOTE: Caller must hold conn_mutex
+static void remove_connection_with_lock(esp_ble_hidd_dev_t *dev, uint16_t conn_id)
+{
+    int idx = find_connection_by_id_with_lock(dev, conn_id);
+    if (idx < 0) {
+        ESP_LOGW(TAG, "Connection not found for removal: conn_id=%d", conn_id);
+        return;
+    }
+
+    dev->connections[idx].connected = false;
+    ESP_LOGI(TAG, "Removed connection at index %d, conn_id=%d", idx, conn_id);
+
+    // Update active connection if removed
+    if (dev->active_conn_index == idx) {
+        // Find another active connection
+        dev->active_conn_index = 0xFF;
+        for (int i = 0; i < ESP_HIDD_MAX_CONNECTIONS; i++) {
+            if (dev->connections[i].connected) {
+                dev->active_conn_index = i;
+                break;
+            }
+        }
+    }
+}
+
+// Count active connections
+// NOTE: Caller must hold conn_mutex
+static int count_active_connections_with_lock(esp_ble_hidd_dev_t *dev)
+{
+    int count = 0;
+    for (int i = 0; i < ESP_HIDD_MAX_CONNECTIONS; i++) {
+        if (dev->connections[i].connected) {
+            count++;
+        }
+    }
+    return count;
+}
+
+// NOTE: Caller must hold conn_mutex
+static bool is_broadcast_enabled_with_lock(const esp_ble_hidd_dev_t *dev)
+{
+    return dev->active_conn_index == 0xFF && dev->broadcast_mode;
 }
 
 static void add_db_record(esp_gatts_attr_db_t *db, size_t index, uint8_t *uuid, uint8_t perm, uint16_t max_length, uint16_t length, uint8_t *value)
@@ -401,8 +510,17 @@ static void bat_event_handler(esp_ble_hidd_dev_t *dev, esp_gatts_cb_event_t even
         break;
     case ESP_GATTS_WRITE_EVT: {
         if (param->write.handle == dev->bat_ccc_handle) {
-            dev->bat_ccc.value = param->write.value[0];
-            ESP_LOGV(TAG, "Battery CCC: Notify: %s, Indicate: %s", dev->bat_ccc.notify_enable ? "On" : "Off", dev->bat_ccc.indicate_enable ? "On" : "Off");
+            // Update per-connection battery CCC
+            LOCK_CONN(dev);
+            int conn_idx = find_connection_by_id_with_lock(dev, param->write.conn_id);
+            if (conn_idx >= 0) {
+                dev->connections[conn_idx].bat_ccc.value = param->write.value[0];
+                ESP_LOGV(TAG, "Battery CCC conn[%d]: Notify: %s, Indicate: %s",
+                         conn_idx,
+                         dev->connections[conn_idx].bat_ccc.notify_enable ? "On" : "Off",
+                         dev->connections[conn_idx].bat_ccc.indicate_enable ? "On" : "Off");
+            }
+            UNLOCK_CONN(dev);
         }
         break;
     }
@@ -471,28 +589,46 @@ static void hid_event_handler(esp_ble_hidd_dev_t *dev, int device_index, esp_gat
     }
     case ESP_GATTS_CONNECT_EVT: {
         ESP_LOGD(TAG, "HID CONNECT[%d] conn_id = %x", device_index, param->connect.conn_id);
-        if (!dev->connected && device_index == (dev->devices_len - 1)) {
-            dev->connected = true;
-            dev->conn_id   = param->connect.conn_id;
-            memcpy(dev->remote_bda, param->connect.remote_bda, ESP_BD_ADDR_LEN);
+        // Only process connection on the last device interface to avoid duplicates
+        if (device_index == (dev->devices_len - 1)) {
+            LOCK_CONN(dev);
+            // Check if connection already exists
+            if (find_connection_by_id_with_lock(dev, param->connect.conn_id) < 0) {
+                int conn_idx = add_connection_with_lock(dev, param->connect.conn_id, param->connect.remote_bda);
+                UNLOCK_CONN(dev);
+                if (conn_idx >= 0) {
+                    esp_ble_set_encryption(param->connect.remote_bda, ESP_BLE_SEC_ENCRYPT_NO_MITM);
 
-            esp_ble_set_encryption(param->connect.remote_bda, ESP_BLE_SEC_ENCRYPT_NO_MITM);
-
-            esp_hidd_event_data_t cb_param = {
-                .connect.dev = dev->dev,
-            };
-            esp_event_post_to(dev->event_loop_handle, ESP_HIDD_EVENTS, ESP_HIDD_CONNECT_EVENT, &cb_param, sizeof(esp_hidd_event_data_t), portMAX_DELAY);
+                    esp_hidd_event_data_t cb_param = {
+                        .connect.dev = dev->dev,
+                    };
+                    esp_event_post_to(dev->event_loop_handle, ESP_HIDD_EVENTS, ESP_HIDD_CONNECT_EVENT, &cb_param, sizeof(esp_hidd_event_data_t), portMAX_DELAY);
+                } else {
+                    ESP_LOGE(TAG, "Failed to add connection, max connections reached");
+                }
+            } else {
+                UNLOCK_CONN(dev);
+            }
         }
         break;
     }
     case ESP_GATTS_DISCONNECT_EVT: {
         ESP_LOGD(TAG, "HID DISCONNECT[%d] 0x%x", device_index, param->disconnect.reason);
-        if (dev->connected) {
-            dev->connected = false;
-            esp_hidd_event_data_t cb_param = {0};
-            cb_param.disconnect.dev = dev->dev;
-            cb_param.disconnect.reason = param->disconnect.reason;
-            esp_event_post_to(dev->event_loop_handle, ESP_HIDD_EVENTS, ESP_HIDD_DISCONNECT_EVENT, &cb_param, sizeof(esp_hidd_event_data_t), portMAX_DELAY);
+        // Only process disconnect on the last device interface to avoid duplicates
+        if (device_index == (dev->devices_len - 1)) {
+            LOCK_CONN(dev);
+            int conn_idx = find_connection_by_id_with_lock(dev, param->disconnect.conn_id);
+            if (conn_idx >= 0) {
+                remove_connection_with_lock(dev, param->disconnect.conn_id);
+                UNLOCK_CONN(dev);
+
+                esp_hidd_event_data_t cb_param = {0};
+                cb_param.disconnect.dev = dev->dev;
+                cb_param.disconnect.reason = param->disconnect.reason;
+                esp_event_post_to(dev->event_loop_handle, ESP_HIDD_EVENTS, ESP_HIDD_DISCONNECT_EVENT, &cb_param, sizeof(esp_hidd_event_data_t), portMAX_DELAY);
+            } else {
+                UNLOCK_CONN(dev);
+            }
         }
         break;
     }
@@ -730,6 +866,9 @@ static esp_err_t ble_hid_free_config(esp_ble_hidd_dev_t *dev)
     if (dev->sem != NULL) {
         vSemaphoreDelete(dev->sem);
     }
+    if (dev->conn_mutex != NULL) {
+        vSemaphoreDelete(dev->conn_mutex);
+    }
     if (dev->event_loop_handle != NULL) {
         esp_event_loop_delete(dev->event_loop_handle);
     }
@@ -810,30 +949,65 @@ static esp_err_t esp_ble_hidd_dev_deinit(void *devp)
 static bool esp_ble_hidd_dev_connected(void *devp)
 {
     esp_ble_hidd_dev_t *dev = (esp_ble_hidd_dev_t *)devp;
-    return (dev != NULL && s_dev == dev && dev->connected);
+    if (dev == NULL || s_dev != dev) {
+        return false;
+    }
+    LOCK_CONN(dev);
+    int count = count_active_connections_with_lock(dev);
+    UNLOCK_CONN(dev);
+    return count > 0;
 }
 
 static esp_err_t esp_ble_hidd_dev_battery_set(void *devp, uint8_t level)
 {
-    esp_err_t ret;
+    esp_err_t ret = ESP_OK;
     esp_ble_hidd_dev_t *dev = (esp_ble_hidd_dev_t *)devp;
     if (!dev || s_dev != dev) {
         return ESP_FAIL;
     }
     dev->bat_level = level;
 
-    if (!dev->connected || dev->bat_ccc.value == 0) {
+    LOCK_CONN(dev);
+    // Check if we have any connections
+    if (count_active_connections_with_lock(dev) == 0) {
         //if we are not yet connected, that is not an error
+        UNLOCK_CONN(dev);
         return ESP_OK;
     }
+    // Broadcast mode: send to all connections
+    if (is_broadcast_enabled_with_lock(dev)) {
+        bool any_sent = false;
+        for (int i = 0; i < ESP_HIDD_MAX_CONNECTIONS; i++) {
+            if (dev->connections[i].connected && dev->connections[i].bat_ccc.notify_enable) {
+                ret = esp_ble_gatts_send_indicate(dev->bat_svc.gatt_if, dev->connections[i].conn_id,
+                                                  dev->bat_level_handle, 1, &dev->bat_level, false);
+                if (ret != ESP_OK) {
+                    ESP_LOGE(TAG, "esp_ble_gatts_send_notify failed for conn[%d]: %d", i, ret);
+                } else {
+                    any_sent = true;
+                }
+            }
+        }
+        UNLOCK_CONN(dev);
+        return any_sent ? ESP_OK : ESP_FAIL;
+    }
 
-    if (dev->bat_ccc.notify_enable) {
-        ret = esp_ble_gatts_send_indicate(dev->bat_svc.gatt_if, dev->conn_id, dev->bat_level_handle, 1, &dev->bat_level, false);
-        if (ret) {
-            ESP_LOGE(TAG, "esp_ble_gatts_send_notify failed: %d", ret);
-            return ESP_FAIL;
+    // Unicast mode: send to active connection only
+    uint8_t active_conn_index = dev->active_conn_index;
+    if (active_conn_index < ESP_HIDD_MAX_CONNECTIONS &&
+            dev->connections[active_conn_index].connected) {
+        if (dev->connections[active_conn_index].bat_ccc.notify_enable) {
+            ret = esp_ble_gatts_send_indicate(dev->bat_svc.gatt_if,
+                                              dev->connections[active_conn_index].conn_id,
+                                              dev->bat_level_handle, 1, &dev->bat_level, false);
+            if (ret != ESP_OK) {
+                ESP_LOGE(TAG, "esp_ble_gatts_send_notify failed: %d", ret);
+                UNLOCK_CONN(dev);
+                return ESP_FAIL;
+            }
         }
     }
+    UNLOCK_CONN(dev);
 
     return ESP_OK;
 }
@@ -846,10 +1020,13 @@ static esp_err_t esp_ble_hidd_dev_input_set(void *devp, size_t index, size_t id,
         return ESP_FAIL;
     }
 
-    if (!dev->connected) {
+    LOCK_CONN(dev);
+    if (count_active_connections_with_lock(dev) == 0) {
+        UNLOCK_CONN(dev);
         ESP_LOGE(TAG, "%s Device Not Connected", __func__);
         return ESP_FAIL;
     }
+    UNLOCK_CONN(dev);
 
     if (index >= dev->devices_len) {
         ESP_LOGE(TAG, "%s index out of range[0-%d]", __func__, dev->devices_len - 1);
@@ -857,12 +1034,51 @@ static esp_err_t esp_ble_hidd_dev_input_set(void *devp, size_t index, size_t id,
     }
 
     if ((p_rpt = get_report_by_id_and_type(dev, id, ESP_HID_REPORT_TYPE_INPUT)) != NULL && p_rpt->ccc.value) {
-        esp_err_t err = esp_ble_gatts_send_indicate(dev->devices[index].hid_svc.gatt_if, dev->conn_id, p_rpt->handle, length, data, p_rpt->ccc.indicate_enable);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "Send Input Indicate Failed: %d", err);
+        esp_err_t err = ESP_OK;
+
+        LOCK_CONN(dev);
+        // Broadcast mode: send to all connections
+        if (is_broadcast_enabled_with_lock(dev)) {
+            bool any_sent = false;
+            for (int i = 0; i < ESP_HIDD_MAX_CONNECTIONS; i++) {
+                if (dev->connections[i].connected && p_rpt->ccc.value) {
+                    err = esp_ble_gatts_send_indicate(dev->devices[index].hid_svc.gatt_if,
+                                                      dev->connections[i].conn_id,
+                                                      p_rpt->handle, length, data,
+                                                      p_rpt->ccc.indicate_enable);
+                    if (err == ESP_OK) {
+                        UNLOCK_CONN(dev);
+                        WAIT_CB(dev);
+                        LOCK_CONN(dev);
+                        any_sent = true;
+                    } else {
+                        ESP_LOGE(TAG, "Send Input Indicate Failed for conn[%d]: %d", i, err);
+                    }
+                }
+            }
+            UNLOCK_CONN(dev);
+            return any_sent ? ESP_OK : ESP_FAIL;
+        }
+
+        // Unicast mode: send to active connection only
+        if (dev->active_conn_index < ESP_HIDD_MAX_CONNECTIONS &&
+                dev->connections[dev->active_conn_index].connected) {
+            err = esp_ble_gatts_send_indicate(dev->devices[index].hid_svc.gatt_if,
+                                              dev->connections[dev->active_conn_index].conn_id,
+                                              p_rpt->handle, length, data,
+                                              p_rpt->ccc.indicate_enable);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "Send Input Indicate Failed: %d", err);
+                UNLOCK_CONN(dev);
+                return ESP_FAIL;
+            }
+            UNLOCK_CONN(dev);
+            WAIT_CB(dev);
+        } else {
+            ESP_LOGE(TAG, "No active connection");
+            UNLOCK_CONN(dev);
             return ESP_FAIL;
         }
-        WAIT_CB(dev);
     } else {
         ESP_LOGE(TAG, "Indicate Not Enabled: %d", 0);
         return ESP_FAIL;
@@ -878,10 +1094,13 @@ static esp_err_t esp_ble_hidd_dev_feature_set(void *devp, size_t index, size_t i
         return ESP_FAIL;
     }
 
-    if (!dev->connected) {
+    LOCK_CONN(dev);
+    if (count_active_connections_with_lock(dev) == 0) {
+        UNLOCK_CONN(dev);
         ESP_LOGE(TAG, "%s Device Not Connected", __func__);
         return ESP_FAIL;
     }
+    UNLOCK_CONN(dev);
 
     if (index >= dev->devices_len) {
         ESP_LOGE(TAG, "%s index out of range[0-%d]", __func__, dev->devices_len - 1);
@@ -896,13 +1115,49 @@ static esp_err_t esp_ble_hidd_dev_feature_set(void *devp, size_t index, size_t i
             return ESP_FAIL;
         }
         WAIT_CB(dev);
-        if (dev->connected && p_rpt->ccc.value) {
-            ret = esp_ble_gatts_send_indicate(dev->devices[index].hid_svc.gatt_if, dev->conn_id, p_rpt->handle, length, data, p_rpt->ccc.indicate_enable);
-            if (ret != ESP_OK) {
-                ESP_LOGE(TAG, "Send Feature Indicate Failed: %d", ret);
-                return ESP_FAIL;
+        LOCK_CONN(dev);
+        // Send feature report to connections if any are active and have CCC enabled
+        if (count_active_connections_with_lock(dev) > 0 && p_rpt->ccc.value) {
+            // Send to active connection or broadcast based on mode
+            if (is_broadcast_enabled_with_lock(dev)) {
+                // Broadcast to all connections
+                for (int i = 0; i < ESP_HIDD_MAX_CONNECTIONS; i++) {
+                    if (dev->connections[i].connected && p_rpt->ccc.value) {
+                        ret = esp_ble_gatts_send_indicate(dev->devices[index].hid_svc.gatt_if,
+                                                          dev->connections[i].conn_id,
+                                                          p_rpt->handle, length, data,
+                                                          p_rpt->ccc.indicate_enable);
+                        if (ret != ESP_OK) {
+                            ESP_LOGE(TAG, "Send Feature Indicate Failed for conn[%d]: %d", i, ret);
+                        } else {
+                            UNLOCK_CONN(dev);
+                            WAIT_CB(dev);
+                            LOCK_CONN(dev);
+                        }
+                    }
+                }
+                /* After broadcasting to all connections the mutex is held here; release it */
+                UNLOCK_CONN(dev);
+            } else if (dev->active_conn_index < ESP_HIDD_MAX_CONNECTIONS &&
+                       dev->connections[dev->active_conn_index].connected) {
+                // Send to active connection only
+                ret = esp_ble_gatts_send_indicate(dev->devices[index].hid_svc.gatt_if,
+                                                  dev->connections[dev->active_conn_index].conn_id,
+                                                  p_rpt->handle, length, data,
+                                                  p_rpt->ccc.indicate_enable);
+                if (ret != ESP_OK) {
+                    ESP_LOGE(TAG, "Send Feature Indicate Failed: %d", ret);
+                    UNLOCK_CONN(dev);
+                    return ESP_FAIL;
+                }
+                UNLOCK_CONN(dev);
+                WAIT_CB(dev);
+            } else {
+                UNLOCK_CONN(dev);
             }
-            WAIT_CB(dev);
+        } else {
+            /* No active connections or indication not enabled: unlock and continue */
+            UNLOCK_CONN(dev);
         }
     } else {
         ESP_LOGE(TAG, "FEATURE %d not found", id);
@@ -955,11 +1210,27 @@ esp_err_t esp_ble_hidd_dev_init(esp_hidd_dev_t *dev_p, const esp_hid_device_conf
 
     // Reset the hid device target environment
     s_dev->bat_level = 100;
-    s_dev->bat_ccc.value = 0;
     s_dev->control = ESP_HID_CONTROL_EXIT_SUSPEND;
     s_dev->protocol = ESP_HID_PROTOCOL_MODE_REPORT;
     s_dev->event_loop_handle = NULL;
     s_dev->dev = dev_p;
+
+    // Initialize multi-connection fields
+    for (int i = 0; i < ESP_HIDD_MAX_CONNECTIONS; i++) {
+        s_dev->connections[i].connected = false;
+        s_dev->connections[i].conn_id = 0;
+        s_dev->connections[i].bat_ccc.value = 0;
+    }
+    s_dev->active_conn_index = 0xFF;  // No active connection initially
+    s_dev->broadcast_mode = false;     // Default to unicast mode
+
+    s_dev->conn_mutex = xSemaphoreCreateMutex();
+    if (s_dev->conn_mutex == NULL) {
+        ESP_LOGE(TAG, "HID device connection mutex could not be allocated");
+        ble_hidd_dev_free();
+        return ESP_FAIL;
+    }
+
     s_dev->sem = xSemaphoreCreateBinary();
     if (s_dev->sem == NULL) {
         ESP_LOGE(TAG, "HID device semaphore could not be allocated");
@@ -1017,6 +1288,124 @@ esp_err_t esp_ble_hidd_dev_init(esp_hidd_dev_t *dev_p, const esp_hid_device_conf
     }
 
     return ret;
+}
+
+/*
+ * Multi-Connection Management API Functions
+ */
+
+esp_err_t esp_ble_hidd_dev_set_active_conn(void *devp, uint16_t conn_id)
+{
+    esp_ble_hidd_dev_t *dev = (esp_ble_hidd_dev_t *)devp;
+    if (!dev || s_dev != dev) {
+        return ESP_FAIL;
+    }
+
+    LOCK_CONN(dev);
+    int idx = find_connection_by_id_with_lock(dev, conn_id);
+    if (idx < 0) {
+        ESP_LOGE(TAG, "Connection not found: conn_id=%d", conn_id);
+        UNLOCK_CONN(dev);
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    dev->active_conn_index = idx;
+    dev->broadcast_mode = false;  // Disable broadcast when setting active connection
+    ESP_LOGI(TAG, "Set active connection to index %d, conn_id=%d", idx, conn_id);
+    UNLOCK_CONN(dev);
+    return ESP_OK;
+}
+
+esp_err_t esp_ble_hidd_dev_get_connections(void *devp, esp_hidd_conn_info_t *conn_list,
+                                           size_t max_count, size_t *count)
+{
+    esp_ble_hidd_dev_t *dev = (esp_ble_hidd_dev_t *)devp;
+    if (!dev || s_dev != dev) {
+        return ESP_FAIL;
+    }
+
+    if (!conn_list || !count) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    LOCK_CONN(dev);
+    *count = 0;
+    for (int i = 0; i < ESP_HIDD_MAX_CONNECTIONS && *count < max_count; i++) {
+        if (dev->connections[i].connected) {
+            conn_list[*count].conn_id = dev->connections[i].conn_id;
+            memcpy(conn_list[*count].remote_bda, dev->connections[i].remote_bda, ESP_BD_ADDR_LEN);
+            (*count)++;
+        }
+    }
+    UNLOCK_CONN(dev);
+
+    return ESP_OK;
+}
+
+esp_err_t esp_ble_hidd_dev_set_broadcast_mode(void *devp, bool enable)
+{
+    esp_ble_hidd_dev_t *dev = (esp_ble_hidd_dev_t *)devp;
+    if (!dev || s_dev != dev) {
+        return ESP_FAIL;
+    }
+
+    LOCK_CONN(dev);
+    if (enable) {
+        dev->active_conn_index = 0xFF;
+        dev->broadcast_mode = true;
+    } else {
+        dev->active_conn_index = 0xFF;
+        dev->broadcast_mode = false;
+        for (int i = 0; i < ESP_HIDD_MAX_CONNECTIONS; i++) {
+            if (dev->connections[i].connected) {
+                dev->active_conn_index = i;
+                break;
+            }
+        }
+    }
+
+    UNLOCK_CONN(dev);
+    ESP_LOGI(TAG, "Broadcast mode %s", enable ? "enabled" : "disabled");
+    return ESP_OK;
+}
+
+esp_err_t esp_ble_hidd_dev_get_active_conn(void *devp, uint16_t *conn_id)
+{
+    esp_ble_hidd_dev_t *dev = (esp_ble_hidd_dev_t *)devp;
+    if (!dev || s_dev != dev) {
+        return ESP_FAIL;
+    }
+
+    if (!conn_id) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    LOCK_CONN(dev);
+    if (dev->active_conn_index < ESP_HIDD_MAX_CONNECTIONS && dev->connections[dev->active_conn_index].connected) {
+        *conn_id = dev->connections[dev->active_conn_index].conn_id;
+        UNLOCK_CONN(dev);
+        return ESP_OK;
+    }
+    UNLOCK_CONN(dev);
+    return ESP_ERR_NOT_FOUND;
+}
+
+esp_err_t esp_ble_hidd_dev_is_broadcast_mode(void *devp, bool *enabled)
+{
+    esp_ble_hidd_dev_t *dev = (esp_ble_hidd_dev_t *)devp;
+    if (!dev || s_dev != dev) {
+        return ESP_FAIL;
+    }
+
+    if (!enabled) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    LOCK_CONN(dev);
+    *enabled = is_broadcast_enabled_with_lock(dev);
+    UNLOCK_CONN(dev);
+
+    return ESP_OK;
 }
 
 #endif /* CONFIG_GATTS_ENABLE */
