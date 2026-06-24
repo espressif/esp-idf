@@ -5,7 +5,7 @@ from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.adc
+@pytest.mark.generic
 @pytest.mark.parametrize('config', ['iram_safe', 'release', 'pm_enable'], indirect=True)
 @idf_parametrize(
     'target',
@@ -17,7 +17,7 @@ def test_adc(dut: Dut) -> None:
 
 
 # No PM test, as C2 doesn't support ADC continuous mode
-@pytest.mark.adc
+@pytest.mark.generic
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'config, baud',

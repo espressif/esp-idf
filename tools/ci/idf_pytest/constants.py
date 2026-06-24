@@ -95,7 +95,6 @@ ENV_MARKERS = {
     'MSPI_F4R4': 'runner with Quad Flash and Quad PSRAM',
     'jtag': 'runner where the chip is accessible through JTAG as well',
     'usb_serial_jtag': 'runner where the chip is accessible through builtin JTAG as well',
-    'adc': 'ADC related tests should run on adc runners',
     'xtal32k': 'Runner with external 32k crystal connected',
     'no32kXtal': 'Runner with no external 32k crystal connected',
     'psramv0': 'Runner with PSRAM version 0',

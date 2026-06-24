@@ -14,7 +14,6 @@ no_runner_tags:
   - esp32c2,jtag,xtal_40mhz
   - esp32c3,flash_multi
   - esp32c3,sdcard_sdmode
-  - esp32c5,adc
   - esp32c5,generic
   - esp32c5,jtag
   - esp32c5,ram_app
@@ -28,7 +27,6 @@ no_runner_tags:
   - esp32c61,generic
   - esp32c61,jtag
   - esp32h2,jtag
-  - esp32p4,adc,esp32p4_eco4
   - esp32p4,esp32p4_eco4,flash_encryption
   - esp32p4,esp32p4_eco4,lp_i2s
   - esp32p4,esp32p4_eco4,ram_app
