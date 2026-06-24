@@ -978,6 +978,10 @@ typedef void (tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK) (tBTM_STATUS st
 #define    BTM_BLE_5_GAP_READ_MONITOR_ADV_LIST_SIZE_COMPLETE_EVT   74
 #define    BTM_BLE_5_GAP_ENABLE_MONITOR_ADV_COMPLETE_EVT           75
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#define    BTM_BLE_5_GAP_READ_ALL_LOCAL_SUPP_FEAT_COMPLETE_EVT       76
+#define    BTM_BLE_5_GAP_READ_ALL_REMOTE_FEAT_COMPLETE_EVT         77
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 #define    BTM_BLE_5_GAP_FRAME_SPACE_UPDATE_COMPLETE_EVT           78
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
@@ -1235,6 +1239,25 @@ typedef struct {
 } tBTM_BLE_MONITOR_ADV_LIST_SIZE;
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#ifndef BLE_LL_EXT_FEAT_DATA_LEN
+#define BLE_LL_EXT_FEAT_DATA_LEN                         248
+#endif
+
+typedef struct {
+    tBTM_STATUS status;
+    UINT8 max_page;
+    UINT8 *le_features;
+} tBTM_BLE_READ_ALL_LOCAL_SUPP_FEAT;
+
+typedef struct {
+    tBTM_STATUS status;
+    UINT16 conn_handle;
+    UINT8 max_remote_page;
+    UINT8 max_valid_page;
+    UINT8 *le_features;
+} tBTM_BLE_READ_ALL_REMOTE_FEAT;
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
 #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 typedef struct {
@@ -1959,6 +1982,10 @@ typedef union {
     tBTM_BLE_MONITOR_ADV_REPORT                 monitor_adv_report;
     tBTM_BLE_MONITOR_ADV_LIST_SIZE              monitor_adv_list_size;
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+    tBTM_BLE_READ_ALL_LOCAL_SUPP_FEAT           read_all_local_supp_feat;
+    tBTM_BLE_READ_ALL_REMOTE_FEAT               read_all_remote_feat;
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
     tBTM_BLE_FRAME_SPACE_UPDATE                 frame_space_update;
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
@@ -3121,6 +3148,10 @@ tBTM_STATUS BTM_BleFrameSpaceUpdate(UINT16 conn_handle, UINT16 frame_space_min,
                                     UINT16 frame_space_max, UINT8 phys, UINT16 spacing_types);
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+tBTM_STATUS BTM_BleReadAllLocalSuppFeatures(void);
+tBTM_STATUS BTM_BleReadAllRemoteFeatures(UINT16 conn_handle, UINT8 page_requested);
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
 
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
