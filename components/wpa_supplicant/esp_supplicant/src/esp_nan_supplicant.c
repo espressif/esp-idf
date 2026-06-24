@@ -1254,7 +1254,8 @@ static int nan_handle_pasn_auth(struct nan_pasn_data *nan,
             nan->pairing_key_installed_cb(pasn->peer_addr,
                                           (uint8_t)nan->dev_role,
                                           nan_pasn_pasn_cipher_to_ndp_csid(pasn->cipher),
-                                          nd_pmk, nd_pmk_len);
+                                          nd_pmk, nd_pmk_len,
+                                          nan->nik_lifetime_sec);
         }
         forced_memzero(pasn_get_ptk(pasn), sizeof(pasn->ptk));
         nan_pasn_data_deinit(nan);
@@ -1311,7 +1312,8 @@ int nan_pasn_auth_rx(struct nan_pasn_data *nan, const struct ieee80211_auth *mgm
                 nan->pairing_key_installed_cb(pasn->peer_addr,
                                               (uint8_t)nan->dev_role,
                                               nan_pasn_pasn_cipher_to_ndp_csid(pasn->cipher),
-                                              nd_pmk, nd_pmk_len);
+                                              nd_pmk, nd_pmk_len,
+                                              nan->nik_lifetime_sec);
             }
         }
 #ifdef CONFIG_TESTING_OPTIONS
@@ -1550,6 +1552,7 @@ int nan_pasn_auth_initiate(struct nan_pasn_data *pd, const uint8_t *peer_addr, i
 struct nan_pasn_eloop_ctx {
     uint8_t peer_addr[ETH_ALEN];
     uint32_t pincode;
+    uint32_t nik_lifetime_sec;
     esp_nan_pairing_key_installed_cb_t pairing_key_installed_cb;
 };
 
@@ -1580,10 +1583,11 @@ static void nan_pasn_auth_eloop_cb(void *eloop_ctx, void *user_data)
 
     esp_nan_app_set_pasn_data(pd);
     pd->pairing_key_installed_cb = ctx->pairing_key_installed_cb;
+    pd->nik_lifetime_sec = ctx->nik_lifetime_sec;
 
     if (ctx->pincode != UINT32_MAX) {
         n = os_snprintf(pin_digits, sizeof(pin_digits), "%06u",
-                        (unsigned)(ctx->pincode % 1000000U));
+                        (unsigned)ctx->pincode);
         if (os_snprintf_error(sizeof(pin_digits), n)) {
             nan_pasn_data_deinit(pd);
             os_free(ctx);
@@ -1610,6 +1614,7 @@ static void nan_pasn_auth_eloop_cb(void *eloop_ctx, void *user_data)
 }
 
 int esp_nan_supp_pasn_initiator_auth(const uint8_t *peer_nmi, uint32_t pincode,
+                                     uint32_t nik_lifetime_sec,
                                      esp_nan_pairing_key_installed_cb_t pairing_key_installed_cb)
 {
     struct nan_pasn_eloop_ctx *ctx;
@@ -1621,6 +1626,7 @@ int esp_nan_supp_pasn_initiator_auth(const uint8_t *peer_nmi, uint32_t pincode,
 
     os_memcpy(ctx->peer_addr, peer_nmi, ETH_ALEN);
     ctx->pincode = pincode;
+    ctx->nik_lifetime_sec = nik_lifetime_sec;
     ctx->pairing_key_installed_cb = pairing_key_installed_cb;
 
     if (eloop_register_timeout(0, 0, nan_pasn_auth_eloop_cb, NULL, ctx) != 0) {
@@ -1740,7 +1746,7 @@ int pasn_responder_init(const uint8_t *peer_addr, uint32_t pincode)
 
     if (pincode != UINT32_MAX) {
         n = os_snprintf(pin_digits, sizeof(pin_digits), "%06u",
-                        (unsigned)(pincode % 1000000U));
+                        (unsigned)pincode);
         if (os_snprintf_error(sizeof(pin_digits), n)) {
             goto fail;
         }
@@ -1773,6 +1779,7 @@ fail:
 struct pasn_responder_eloop_ctx {
     uint8_t peer_addr[ETH_ALEN];
     uint32_t pincode;
+    uint32_t nik_lifetime_sec;
     esp_nan_pairing_key_installed_cb_t pairing_key_installed_cb;
 };
 
@@ -1789,12 +1796,14 @@ static void pasn_responder_init_eloop_cb(void *eloop_ctx, void *user_data)
         pd = esp_nan_app_get_pasn_data();
         if (pd) {
             pd->pairing_key_installed_cb = ctx->pairing_key_installed_cb;
+            pd->nik_lifetime_sec = ctx->nik_lifetime_sec;
         }
     }
     os_free(ctx);
 }
 
 int esp_nan_supp_pasn_responder_init(const uint8_t *peer_nmi, uint32_t pincode,
+                                     uint32_t nik_lifetime_sec,
                                      esp_nan_pairing_key_installed_cb_t pairing_key_installed_cb)
 {
     struct pasn_responder_eloop_ctx *ctx;
@@ -1805,6 +1814,7 @@ int esp_nan_supp_pasn_responder_init(const uint8_t *peer_nmi, uint32_t pincode,
     }
 
     ctx->pincode = pincode;
+    ctx->nik_lifetime_sec = nik_lifetime_sec;
     os_memcpy(ctx->peer_addr, peer_nmi, ETH_ALEN);
     ctx->pairing_key_installed_cb = pairing_key_installed_cb;
 

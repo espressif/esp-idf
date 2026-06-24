@@ -28,7 +28,10 @@
 #define OWE_DH_GRP19 19
 #endif
 
-#ifdef CONFIG_SAE
+/* AP-side SAE authentication. Requires SoftAP: CONFIG_SAE may also be enabled
+ * for PASN (SoftAP disabled), but this block calls SoftAP-only primitives
+ * (e.g. esp_send_sae_auth_reply), so gate it on CONFIG_ESP_WIFI_SOFTAP_SUPPORT. */
+#if defined(CONFIG_SAE) && defined(CONFIG_ESP_WIFI_SOFTAP_SUPPORT)
 
 static void sae_set_state(struct sta_info *sta, enum sae_state state,
                           const char *reason)
@@ -778,7 +781,7 @@ queued:
 
 }
 
-#endif /* CONFIG_SAE */
+#endif /* CONFIG_SAE && CONFIG_ESP_WIFI_SOFTAP_SUPPORT */
 
 u16 wpa_res_to_status_code(enum wpa_validate_result res)
 {

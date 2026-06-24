@@ -54,7 +54,7 @@ void pasn_initiator_pmksa_cache_remove(struct rsn_pmksa_cache *pmksa,
 {
 	struct rsn_pmksa_cache_entry *entry;
 
-	entry = pmksa_cache_get(pmksa, bssid, NULL, NULL);
+	entry = pmksa_cache_get(pmksa, bssid, NULL, NULL, NULL);
 	if (!entry)
 		return;
 
@@ -68,7 +68,7 @@ int pasn_initiator_pmksa_cache_get(struct rsn_pmksa_cache *pmksa,
 {
 	struct rsn_pmksa_cache_entry *entry;
 
-	entry = pmksa_cache_get(pmksa, bssid, NULL, NULL);
+	entry = pmksa_cache_get(pmksa, bssid, NULL, NULL, NULL);
 	if (entry) {
 		os_memcpy(pmkid, entry->pmkid, PMKID_LEN);
 		os_memcpy(pmk, entry->pmk, entry->pmk_len);
@@ -627,7 +627,8 @@ static struct wpabuf * wpas_pasn_build_auth_1(struct pasn_data *pasn,
 	} else if (wrapped_data != WPA_PASN_WRAPPED_DATA_NO) {
 		struct rsn_pmksa_cache_entry *pmksa;
 
-		pmksa = pmksa_cache_get(pasn->pmksa, pasn->peer_addr, NULL, NULL);
+		pmksa = pmksa_cache_get(pasn->pmksa, pasn->peer_addr, pasn->own_addr,
+					NULL, NULL);
 		if (pmksa && pasn->custom_pmkid_valid)
 			pmkid = pasn->custom_pmkid;
 		else if (pmksa)
@@ -900,7 +901,7 @@ static int wpas_pasn_set_pmk(struct pasn_data *pasn,
 			pmkid = rsn_data->pmkid;
 		}
 
-		pmksa = pmksa_cache_get(pasn->pmksa, pasn->peer_addr,
+		pmksa = pmksa_cache_get(pasn->pmksa, pasn->peer_addr, pasn->own_addr,
 					pmkid, NULL);
 		if (pmksa) {
 			wpa_printf(MSG_DEBUG, "PASN: Using PMKSA");

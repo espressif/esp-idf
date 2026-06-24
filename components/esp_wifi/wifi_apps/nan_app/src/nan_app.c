@@ -24,30 +24,6 @@
 #include "esp_private/esp_nan_usd.h"
 #endif /* CONFIG_ESP_WIFI_NAN_USD_ENABLE */
 
-bool esp_nan_ndp_info_present(void)
-{
-    return true;
-}
-
-uint32_t esp_nan_ndp_get_info_len(void)
-{
-    return 12;
-}
-
-int esp_nan_construct_ndp_info(uint8_t *frm)
-{
-    static const uint8_t ndp_info_attr[] = {
-        0x01, 0x09, 0x00, 0x50, 0x6f, 0x9a, 0x02, 0x00, 0x02, 0x00, 0x05, 0x0d
-    };
-
-    if (!frm) {
-        return 0;
-    }
-
-    memcpy(frm, ndp_info_attr, sizeof(ndp_info_attr));
-    return sizeof(ndp_info_attr);
-}
-
 #if !CONFIG_ESP_WIFI_NAN_PAIRING
 uint32_t esp_nan_get_nira_len(void)
 {
@@ -58,6 +34,14 @@ int esp_nan_construct_nira(uint8_t *frm)
 {
     (void)frm;
     return 0;
+}
+
+bool esp_nan_verify_nira(uint8_t *peer_mac, uint8_t *nira_attr, uint16_t nira_attr_len)
+{
+    (void)peer_mac;
+    (void)nira_attr;
+    (void)nira_attr_len;
+    return false;
 }
 #endif
 
@@ -406,6 +390,9 @@ static void nan_reset_service(uint8_t svc_id, bool reset_all)
     while (idx < ESP_WIFI_NAN_MAX_SVC_SUPPORTED) {
         p_own_svc = &s_nan_ctx.own_svc[idx++];
         if (reset_all || (svc_id && p_own_svc->svc_id == svc_id)) {
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+            nan_pairing_cancel_svc_pending(p_own_svc);
+#endif
             SLIST_FOREACH_SAFE(p_peer_svc, &(p_own_svc->peer_list), next, temp) {
                 SLIST_REMOVE(&(p_own_svc->peer_list), p_peer_svc, peer_svc_info, next);
                 os_free(p_peer_svc);
@@ -442,6 +429,36 @@ static bool nan_services_limit_reached(void)
     return true;
 }
 
+/*
+ * Service ID = first 6 bytes of SHA256(lowercase(service_name))
+ * per Wi-Fi Aware v4.0 §5.1.5 (Service Name and Service ID).
+ */
+bool nan_compute_service_id(const char *service_name, uint8_t service_id[6])
+{
+    if (!service_name || !g_wifi_default_wpa_crypto_funcs.sha256_vector) {
+        return false;
+    }
+    size_t name_len = strlen(service_name);
+    char *lower = os_malloc(name_len + 1);
+    if (!lower) {
+        return false;
+    }
+    strlcpy(lower, service_name, name_len + 1);
+    for (char *p = lower; *p; p++) {
+        *p = tolower((unsigned char) * p);
+    }
+    uint8_t hash[32];
+    const uint8_t *addr[1] = {(const uint8_t *)lower};
+    size_t len[1] = {name_len};
+    int ret = g_wifi_default_wpa_crypto_funcs.sha256_vector(1, addr, len, hash);
+    os_free(lower);
+    if (ret != 0) {
+        return false;
+    }
+    memcpy(service_id, hash, 6);
+    return true;
+}
+
 /* Pre-claim a slot for an upcoming publish/subscribe service. The slot is
  * marked with a pending sentinel svc_id (0xFF) so nan_find_own_svc_by_name()
  * can find it from the derive callback running on the WiFi task — that's how
@@ -451,7 +468,7 @@ static bool nan_services_limit_reached(void)
 #define NAN_SVC_ID_PENDING  0xFF
 
 static struct own_svc_info *nan_claim_own_svc_slot(uint8_t type, const char svc_name[],
-                                                   const wifi_nan_discovery_security_params_t *security_cfg)
+                                                   const wifi_nan_discovery_security_params_t *security_cfg, wifi_nan_pairing_cfg_t *pairing)
 {
     struct own_svc_info *p_svc = NULL;
     for (int i = 0; i < ESP_WIFI_NAN_MAX_SVC_SUPPORTED; i++) {
@@ -468,12 +485,18 @@ static struct own_svc_info *nan_claim_own_svc_slot(uint8_t type, const char svc_
     p_svc->type = type;
     strlcpy(p_svc->svc_name, svc_name, ESP_WIFI_MAX_SVC_NAME_LEN);
     SLIST_INIT(&p_svc->peer_list);
+
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
     forced_memzero(&p_svc->user_cfg, sizeof(p_svc->user_cfg));
     forced_memzero(&p_svc->derived_security, sizeof(p_svc->derived_security));
     if (security_cfg) {
         memcpy(&p_svc->user_cfg, security_cfg, sizeof(*security_cfg));
     }
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+    if (pairing) {
+        memcpy(&p_svc->pairing, pairing, sizeof(*pairing));
+    }
+#endif
 #else
     (void)security_cfg;
 #endif
@@ -483,13 +506,14 @@ static struct own_svc_info *nan_claim_own_svc_slot(uint8_t type, const char svc_
 /* Stamp the real svc_id and per-publish flags after the blob accepts the
  * service. Looked up by name since the WiFi-task derive callback may have
  * already populated derived_security[] before this runs. */
-static void nan_finalize_own_svc(const char *svc_name, uint8_t id, bool ndp_resp_needed)
+static void nan_finalize_own_svc(const char *svc_name, uint8_t id, bool ndp_resp_needed, uint8_t service_hash[6])
 {
     struct own_svc_info *p_svc = nan_find_own_svc_by_name(svc_name);
     if (!p_svc) {
         return;
     }
     p_svc->svc_id = id;
+    memcpy(p_svc->svc_hash, service_hash, 6);
     if (p_svc->type == ESP_NAN_PUBLISH) {
         p_svc->ndp_resp_needed = ndp_resp_needed;
     }
@@ -726,8 +750,8 @@ void nan_app_post_event(int32_t event_id, void* event_data, size_t event_data_si
     g_wifi_osi_funcs._event_post(WIFI_EVENT, event_id, event_data, event_data_size, OSI_FUNCS_TIME_BLOCKING);
 }
 
-void nan_app_service_match_cb(uint8_t sub_id, struct nan_cb_peer_info *peer_info,
-                              struct nan_cb_npba_t *npba)
+static void nan_app_service_match_cb(uint8_t sub_id, struct nan_cb_peer_info *peer_info,
+                                     struct nan_cb_npba_t *npba)
 {
     if (!peer_info) {
         return;
@@ -838,7 +862,7 @@ void nan_app_service_match_cb(uint8_t sub_id, struct nan_cb_peer_info *peer_info
     os_free(evt);
 }
 
-void nan_app_replied_cb(uint8_t pub_id, struct nan_cb_peer_info *peer_info)
+static void nan_app_replied_cb(uint8_t pub_id, struct nan_cb_peer_info *peer_info)
 {
     if (!peer_info) {
         return;
@@ -877,7 +901,7 @@ void nan_app_replied_cb(uint8_t pub_id, struct nan_cb_peer_info *peer_info)
     os_free(evt);
 }
 
-void nan_app_receive_cb(uint8_t svc_id, struct nan_cb_peer_info *peer_info,
+static void nan_app_receive_cb(uint8_t svc_id, struct nan_cb_peer_info *peer_info,
                         uint8_t *shared_key_attr, uint16_t shared_key_attr_buf_len,
                         struct nan_cb_npba_t *npba)
 {
@@ -930,7 +954,7 @@ void nan_app_receive_cb(uint8_t svc_id, struct nan_cb_peer_info *peer_info,
     os_free(evt);
 }
 
-void nan_app_ndp_indication_cb(uint8_t pub_id, struct ndp_cb_peer_info *peer_info, uint32_t device_caps)
+static void nan_app_ndp_indication_cb(uint8_t pub_id, struct ndp_cb_peer_info *peer_info, uint32_t device_caps)
 {
     /*
      * Responder-side NDP indication. Security parsers (CSIA/SCIA/
@@ -1061,7 +1085,7 @@ void nan_app_ndp_indication_cb(uint8_t pub_id, struct ndp_cb_peer_info *peer_inf
     os_free(evt);
 }
 
-void nan_app_ndp_response_indication_cb(struct ndp_cb_peer_info *peer_info)
+static void nan_app_ndp_response_indication_cb(struct ndp_cb_peer_info *peer_info)
 {
     if (!peer_info) {
         return;
@@ -1111,7 +1135,7 @@ static void nan_ndp_confirm_teardown(const uint8_t peer_nmi[6], uint8_t ndp_id)
     os_event_group_set_bits(nan_event_group, NDP_REJECTED);
 }
 
-void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer_info,
+static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer_info,
                             uint8_t own_ndi[6], uint8_t ipv6_identifier[8])
 {
     if (!peer_info) {
@@ -1248,7 +1272,7 @@ done:
     return;
 }
 
-void nan_app_ndp_terminated_cb(uint8_t reason, uint8_t ndp_id, uint8_t init_ndi[6])
+static void nan_app_ndp_terminated_cb(uint8_t reason, uint8_t ndp_id, uint8_t init_ndi[6])
 {
     NAN_DATA_LOCK();
     if (s_nan_ctx.nan_netif && !nan_is_datapath_active()) {
@@ -1274,7 +1298,7 @@ void nan_app_ndp_terminated_cb(uint8_t reason, uint8_t ndp_id, uint8_t init_ndi[
     os_event_group_set_bits(nan_event_group, NDP_TERMINATED);
 }
 
-void nan_action_txdone_cb(uint32_t context, bool tx_status)
+static void nan_action_txdone_cb(uint32_t context, bool tx_status)
 {
     if (nan_event_group && s_fup_context == context) {
         if (tx_status) {
@@ -1285,7 +1309,7 @@ void nan_action_txdone_cb(uint32_t context, bool tx_status)
     }
 }
 
-void esp_nan_ndp_tx_done_cb(uint8_t ndp_id, const uint8_t *peer_nmi, uint8_t msg_type, bool tx_status)
+static void esp_nan_ndp_tx_done_cb(uint8_t ndp_id, const uint8_t *peer_nmi, uint8_t msg_type, bool tx_status)
 {
     NAN_DATA_LOCK();
 
@@ -1327,6 +1351,8 @@ static struct nan_secure_dp_funcs s_nan_secure_dp_funcs = {
     .get_scia_len                              = esp_nan_get_scia_len,
     .get_shared_key_desc_attr_len              = esp_nan_get_shared_key_desc_attr_len,
     .ndp_security_install_get_shared_desc_len  = esp_nan_ndp_security_install_get_shared_desc_len,
+    .get_ndp_resp_num_pmkids                   = esp_nan_get_ndp_resp_num_pmkids,
+    .get_ndp_resp_shared_key_desc_len          = esp_nan_get_ndp_resp_shared_key_desc_len,
 
     /* CSIA / SCIA construction */
     .construct_csia                            = esp_nan_construct_csia,
@@ -1435,6 +1461,7 @@ void esp_nan_action_start(esp_netif_t *nan_netif)
 #ifdef CONFIG_ESP_WIFI_NAN_PAIRING
         .get_nira_len = esp_nan_get_nira_len,
         .construct_nira = esp_nan_construct_nira,
+        .verify_nira = esp_nan_verify_nira,
         .receive_pasn = handle_auth_pasn,
 #endif
     };
@@ -1505,17 +1532,36 @@ esp_err_t esp_wifi_nan_sync_start(const wifi_nan_sync_config_t *nan_cfg)
         return ESP_OK;
     }
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
-    if (nan_cfg->nik_valid) {
-        memcpy(s_nan_ctx.own_nik, nan_cfg->nik, ESP_WIFI_NAN_NIK_LEN);
-        s_nan_ctx.own_nik_valid = true;
-    } else {
+    s_nan_ctx.own_nik_valid = false;
+    s_nan_ctx.num_peer_creds = 0;
+    memset(s_nan_ctx.peer_creds, 0, sizeof(s_nan_ctx.peer_creds));
+    s_nan_ctx.use_nvs_for_caching = nan_cfg->use_nvs_for_caching;
+
+    if (nan_cfg->reset_current_nvs_creds) {
+        /* Start from a clean slate: drop every credential persisted in NVS. */
+        esp_wifi_nan_erase_all_creds();
+    } else if (esp_wifi_nan_load_saved_creds(s_nan_ctx.own_nik, &s_nan_ctx.own_nik_valid,
+                                             s_nan_ctx.peer_creds, &s_nan_ctx.num_peer_creds) != ESP_OK) {
+        ESP_LOGW(TAG, "Failed to load saved NAN credentials");
+        s_nan_ctx.own_nik_valid = false;
+        s_nan_ctx.num_peer_creds = 0;
+    }
+
+    if (!s_nan_ctx.own_nik_valid) {
         if (os_get_random(s_nan_ctx.own_nik, ESP_WIFI_NAN_NIK_LEN) != 0) {
             NAN_DATA_UNLOCK();
             ESP_LOGE(TAG, "Failed to generate NAN NIK");
             return ESP_FAIL;
         }
         s_nan_ctx.own_nik_valid = true;
+        /* Persist the freshly generated NIK only when NVS caching is enabled;
+         * otherwise the identity stays ephemeral for this session. */
+        if (s_nan_ctx.use_nvs_for_caching) {
+            esp_wifi_nan_save_own_nik(s_nan_ctx.own_nik);
+        }
     }
+    /* Drop the cached NIRA tag; it was derived from the previous NIK. */
+    s_nan_ctx.nira_cached = false;
 #endif
     NAN_DATA_UNLOCK();
 
@@ -1588,9 +1634,23 @@ esp_err_t esp_wifi_nan_sync_stop(void)
 }
 #endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
 
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+static bool nan_check_paired_service_hash(uint8_t service_hash[6])
+{
+    for (uint8_t i = 0; i < s_nan_ctx.num_peer_creds; i++) {
+        if (s_nan_ctx.peer_creds[i].is_valid &&
+                os_memcmp(s_nan_ctx.peer_creds[i].service_hash, service_hash, 6) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+#endif
+
 uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
 {
     int pub_id = 0;
+    uint8_t service_id[6] = {0};
 
     if (publish_cfg->usd_discovery_flag && !s_usd_in_progress) {
         ESP_LOGE(TAG, "Can not start Publish function with USD Discovery "
@@ -1722,11 +1782,27 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
      * into p_svc->derived_security[]. Doing the derive on WiFi task (not the
      * app/main task) keeps PBKDF2's hardware-SHA polling off IDLE0 and avoids
      * tripping the task watchdog when num_credentials > 1. */
+    if (!nan_compute_service_id(publish_cfg->service_name, service_id)) {
+        ESP_LOGE(TAG, "Failed to compute Service ID for %s", publish_cfg->service_name);
+        goto fail;
+    }
+
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+    if (nan_check_paired_service_hash(service_id)) {
+        cfg->pairing->pairing_setup = false;
+    }
+#endif
+
     if (!nan_claim_own_svc_slot(ESP_NAN_PUBLISH, publish_cfg->service_name,
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
-                                cfg->security_cfg
+                                cfg->security_cfg,
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+                                cfg->pairing
 #else
                                 NULL
+#endif
+#else
+                                NULL, NULL
 #endif
                                )) {
         ESP_LOGE(TAG, "No free service slot");
@@ -1740,7 +1816,7 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
     }
 
     ESP_LOGI(TAG, "Started Publishing %s [Service ID - %u]", publish_cfg->service_name, pub_id);
-    nan_finalize_own_svc(publish_cfg->service_name, pub_id, publish_cfg->ndp_resp_needed);
+    nan_finalize_own_svc(publish_cfg->service_name, pub_id, publish_cfg->ndp_resp_needed, service_id);
     if (cfg->pairing) {
         os_free(cfg->pairing);
     }
@@ -1764,6 +1840,7 @@ fail:
 uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe_cfg)
 {
     int sub_id = 0;
+    uint8_t service_id[6] = {0};
 
     if (subscribe_cfg->usd_discovery_flag && !s_usd_in_progress) {
         ESP_LOGE(TAG, "Can not start Subscribe function with USD Discovery "
@@ -1864,8 +1941,20 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
 
     /* Pre-claim host slot BEFORE the blob's subscribe call; see comment on
      * the publish path for the watchdog rationale. */
+
+    if (!nan_compute_service_id(subscribe_cfg->service_name, service_id)) {
+        ESP_LOGE(TAG, "Failed to compute Service ID for %s", subscribe_cfg->service_name);
+        goto fail;
+    }
+
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+    if (nan_check_paired_service_hash(service_id)) {
+        subscribe_cfg->pairing->pairing_setup = false;
+    }
+#endif
+
     if (!nan_claim_own_svc_slot(ESP_NAN_SUBSCRIBE, subscribe_cfg->service_name,
-                                subscribe_cfg->security_cfg)) {
+                                subscribe_cfg->security_cfg, subscribe_cfg->pairing)) {
         ESP_LOGE(TAG, "No free service slot");
         goto fail;
     }
@@ -1877,7 +1966,7 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
     }
 
     ESP_LOGI(TAG, "Started Subscribing to %s [Service ID - %u]", subscribe_cfg->service_name, sub_id);
-    nan_finalize_own_svc(subscribe_cfg->service_name, (uint8_t) sub_id, false);
+    nan_finalize_own_svc(subscribe_cfg->service_name, (uint8_t) sub_id, false, service_id);
     NAN_DATA_UNLOCK();
 
     return sub_id;
