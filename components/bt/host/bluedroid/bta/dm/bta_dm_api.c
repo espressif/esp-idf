@@ -3356,7 +3356,77 @@ void BTA_DmBleGapReadAllRemoteFeatures(UINT16 conn_handle, UINT8 page_requested)
 }
 #endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+void BTA_DmBleGapConnectionRateRequest(UINT16 conn_handle, UINT16 conn_interval_min,
+                                       UINT16 conn_interval_max, UINT16 subrate_min,
+                                       UINT16 subrate_max, UINT16 max_latency,
+                                       UINT16 continuation_number, UINT16 supervision_timeout,
+                                       UINT16 min_ce_len, UINT16 max_ce_len)
+{
+    tBTA_DM_API_BLE_CONNECTION_RATE_REQUEST *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_BLE_CONNECTION_RATE_REQUEST *)
+         osi_malloc(sizeof(tBTA_DM_API_BLE_CONNECTION_RATE_REQUEST))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_CONNECTION_RATE_REQUEST));
+        p_msg->hdr.event = BTA_DM_API_CONNECTION_RATE_REQUEST_EVT;
+        p_msg->conn_handle = conn_handle;
+        p_msg->conn_interval_min = conn_interval_min;
+        p_msg->conn_interval_max = conn_interval_max;
+        p_msg->subrate_min = subrate_min;
+        p_msg->subrate_max = subrate_max;
+        p_msg->max_latency = max_latency;
+        p_msg->continuation_number = continuation_number;
+        p_msg->supervision_timeout = supervision_timeout;
+        p_msg->min_ce_len = min_ce_len;
+        p_msg->max_ce_len = max_ce_len;
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+void BTA_DmBleGapSetDefaultRateParameters(UINT16 conn_interval_min, UINT16 conn_interval_max,
+                                          UINT16 subrate_min, UINT16 subrate_max, UINT16 max_latency,
+                                          UINT16 continuation_number, UINT16 supervision_timeout,
+                                          UINT16 min_ce_len, UINT16 max_ce_len)
+{
+    tBTA_DM_API_BLE_SET_DEFAULT_RATE_PARAMETERS *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_BLE_SET_DEFAULT_RATE_PARAMETERS *)
+         osi_malloc(sizeof(tBTA_DM_API_BLE_SET_DEFAULT_RATE_PARAMETERS))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_SET_DEFAULT_RATE_PARAMETERS));
+        p_msg->hdr.event = BTA_DM_API_SET_DEFAULT_RATE_PARAMETERS_EVT;
+        p_msg->conn_interval_min = conn_interval_min;
+        p_msg->conn_interval_max = conn_interval_max;
+        p_msg->subrate_min = subrate_min;
+        p_msg->subrate_max = subrate_max;
+        p_msg->max_latency = max_latency;
+        p_msg->continuation_number = continuation_number;
+        p_msg->supervision_timeout = supervision_timeout;
+        p_msg->min_ce_len = min_ce_len;
+        p_msg->max_ce_len = max_ce_len;
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapReadMinSuppConnInterval(void)
+{
+    tBTA_DM_API_BLE_READ_MIN_SUPP_CONN_INTERVAL *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_BLE_READ_MIN_SUPP_CONN_INTERVAL *)
+         osi_malloc(sizeof(tBTA_DM_API_BLE_READ_MIN_SUPP_CONN_INTERVAL))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_READ_MIN_SUPP_CONN_INTERVAL));
+        p_msg->hdr.event = BTA_DM_API_READ_MIN_SUPP_CONN_INTERVAL_EVT;
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
 
 #if (BLE_FEAT_ISO_EN == TRUE)
