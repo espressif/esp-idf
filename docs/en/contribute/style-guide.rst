@@ -487,6 +487,28 @@ CMake Code Style
 - For globally scoped variables, use uppercase (``WITH_UNDERSCORES``).
 - Otherwise follow the defaults of the cmake-lint_ project.
 
+.. _python-code-style:
+
+Python Code Style
+-----------------
+
+Most of ESP-IDF's tooling — ``idf.py`` and its actions, the build system helpers, and the scripts under :idf:`tools` — is written in Python. To keep contributions portable, new Python code should run on every Python version ESP-IDF supports: from the minimum supported version stated in the :doc:`Get Started guide </get-started/start-project>` up to the latest released Python version. Avoid relying on syntax or standard-library features that are not available across this whole range.
+
+Linting and Formatting
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Python code is linted and formatted by `Ruff <https://docs.astral.sh/ruff/>`_ and type-checked by `mypy <https://www.mypy-lang.org/>`_, configured in :project_file:`ruff.toml` and :project_file:`.mypy.ini`. You do not need to memorize the individual rules: install the :doc:`pre-commit hook <install-pre-commit-hook>` before committing, and these tools run automatically on every commit, keeping your changes consistent with the rest of the codebase.
+
+Dependencies
+^^^^^^^^^^^^
+
+Python dependencies are declared in the requirement files under :idf:`tools/requirements`. List the package name only — do not pin versions there. Version constraints are maintained separately in constraint files that live outside the ESP-IDF repository, so hard-coding a version in a requirements file is usually a mistake.
+
+Reusing Shared Code (esp-pylib)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ESP-IDF ships `esp-pylib <https://github.com/espressif/esp-pylib>`_ as a core requirement. It collects utilities that are shared across Espressif's Python tools so that they behave consistently. When adding or modifying Python tooling, prefer these helpers over rolling your own — for example, emit output through its shared logger instead of calling ``print()`` yourself, and reuse its common error-handling and command-line building blocks rather than re-implementing them. Refer to the `esp-pylib README <https://github.com/espressif/esp-pylib>`_ for what is available and how to use it.
+
 Configuring the Code Style for a Project Using EditorConfig
 -----------------------------------------------------------
 

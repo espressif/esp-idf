@@ -19,6 +19,8 @@ Before sending us a Pull Request, please consider this list of points:
 
 * Does any new code conform to the ESP-IDF :doc:`Style Guide <style-guide>`?
 
+* If your contribution adds or changes Python tooling, does it follow the :ref:`Python Code Style <python-code-style>` and reuse shared helpers from ``esp-pylib`` where applicable?
+
 * Have you installed the :doc:`pre-commit hook <install-pre-commit-hook>` for ESP-IDF project?
 
 * Does the code documentation follow requirements in :doc:`documenting-code`?

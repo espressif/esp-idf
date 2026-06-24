@@ -19,6 +19,8 @@
 
 * 要提交的代码是否符合 ESP-IDF :doc:`style-guide`？
 
+* 如果贡献内容新增或修改了 Python 工具，是否遵循 :ref:`Python 代码风格 <python-code-style>`，并在适用时复用 ``esp-pylib`` 提供的共享辅助代码？
+
 * 是否安装了 ESP-IDF :doc:`pre-commit 钩子 <install-pre-commit-hook>`？
 
 * 代码文档是否符合 :doc:`documenting-code` 的要求？

@@ -487,6 +487,28 @@ CMake 代码风格
 - 对于全局变量，使用大写 (``WITH_UNDERSCORES``)。
 - 其他方面遵循 cmake-lint_ 项目的默认设置。
 
+.. _python-code-style:
+
+Python 代码风格
+---------------
+
+ESP-IDF 的大部分工具——``idf.py`` 及其子命令、构建系统辅助脚本，以及 :idf:`tools` 目录下的脚本——均使用 Python 编写。为保证贡献内容的可移植性，新增的 Python 代码应能在 ESP-IDF 支持的所有 Python 版本上运行：从 :doc:`快速入门 </get-started/start-project>` 中所述的最低支持版本，到最新发布的 Python 版本。请避免使用在该版本范围内并非普遍可用的语法或标准库特性。
+
+代码检查与格式化
+^^^^^^^^^^^^^^^^
+
+Python 代码由 `Ruff <https://docs.astral.sh/ruff/>`_ 进行检查和格式化，并由 `mypy <https://www.mypy-lang.org/>`_ 进行类型检查，相关配置位于 :project_file:`ruff.toml` 和 :project_file:`.mypy.ini`。你无需记住每一条具体规则：只需在提交前安装 :doc:`pre-commit 钩子 <install-pre-commit-hook>`，这些工具便会在每次提交时自动运行，使你的改动与代码库的其余部分保持一致。
+
+依赖项
+^^^^^^^^
+
+Python 依赖项在 :idf:`tools/requirements` 目录下的 requirements 文件中声明。其中只需列出软件包名称——请勿在这些文件中固定版本号。版本约束由位于 ESP-IDF 仓库之外的独立约束 (constraint) 文件单独维护，因此在 requirements 文件中写死版本通常是错误的做法。
+
+复用共享代码 (esp-pylib)
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+ESP-IDF 将 `esp-pylib <https://github.com/espressif/esp-pylib>`_ 作为核心依赖项一同提供。它汇集了在乐鑫各 Python 工具间共享的实用工具，使这些工具的行为保持一致。在新增或修改 Python 工具时，应优先使用这些辅助代码，而非自行实现——例如，应通过其共享的日志记录器输出信息，而不要自己调用 ``print()``，并复用其通用的错误处理与命令行构建模块，而非重新实现。关于可用功能及其用法，请参阅 `esp-pylib README <https://github.com/espressif/esp-pylib>`_。
+
 使用 EditorConfig 配置项目代码风格
 ----------------------------------
 
