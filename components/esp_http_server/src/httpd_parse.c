@@ -1032,6 +1032,36 @@ esp_err_t httpd_req_get_url_query_str(httpd_req_t *r, char *buf, size_t buf_len)
     return ESP_ERR_NOT_FOUND;
 }
 
+esp_err_t httpd_req_get_url_query_str_ptr(httpd_req_t *r, const char **buf, size_t *buf_len)
+{
+    if (r == NULL || buf == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (!httpd_valid_req(r)) {
+        return ESP_ERR_HTTPD_INVALID_REQ;
+    }
+
+    if (r->uri[0] == '\0') {
+        ESP_LOGD(TAG, "uri is empty");
+        return ESP_FAIL;
+    }
+
+    struct httpd_req_aux   *ra  = r->aux;
+    struct http_parser_url *res = &ra->url_parse_res;
+
+    /* Check if query field is present in the URL */
+    if (res->field_set & (1 << UF_QUERY)) {
+        *buf = r->uri + res->field_data[UF_QUERY].off;
+
+        /* Query data length does not include terminating null */
+        *buf_len = res->field_data[UF_QUERY].len;
+
+        return ESP_OK;
+    }
+    return ESP_ERR_NOT_FOUND;
+}
+
 /* Get the length of the value string of a header request field */
 size_t httpd_req_get_hdr_value_len(httpd_req_t *r, const char *field)
 {
