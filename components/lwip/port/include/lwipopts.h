@@ -1243,6 +1243,19 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #endif
 
 /**
+ * LWIP_ND6_SUPPORT_STATIC_ENTRIES==1: enable nd6_add_static_neighbor() and
+ * nd6_remove_static_neighbor() to manage permanent IPv6->MAC neighbor cache
+ * entries that bypass Neighbor Discovery (no NS/NA). Applied per-(netif,address)
+ * and does not affect NDP on other interfaces. IPv6 counterpart of
+ * ETHARP_SUPPORT_STATIC_ENTRIES.
+ */
+#ifdef CONFIG_LWIP_ND6_SUPPORT_STATIC_ENTRIES
+#define LWIP_ND6_SUPPORT_STATIC_ENTRIES 1
+#else
+#define LWIP_ND6_SUPPORT_STATIC_ENTRIES 0
+#endif
+
+/**
  * LWIP_FORCE_ROUTER_FORWARDING==1: the router flag in NA packet will always set to 1,
  * otherwise, never set router flag for NA packets.
  */

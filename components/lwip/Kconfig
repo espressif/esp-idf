@@ -116,6 +116,15 @@ menu "LWIP"
             This option is used to disable the Network Discovery Protocol (NDP) if it is not required.
             Please use this option with caution, as the NDP is essential for IPv6 functionality within a local network.
 
+    config LWIP_ND6_SUPPORT_STATIC_ENTRIES
+        bool "Enable API for static IPv6 neighbor cache entries"
+        default n
+        depends on LWIP_ND6
+        help
+            Enable APIs to add/remove permanent IPv6->MAC neighbor cache entries
+            that bypass Neighbor Discovery (no NS/NA). IPv6 counterpart of
+            ETHARP_SUPPORT_STATIC_ENTRIES.
+
     config LWIP_FORCE_ROUTER_FORWARDING
         bool "LWIP Force Router Forwarding Enable/Disable"
         default n
