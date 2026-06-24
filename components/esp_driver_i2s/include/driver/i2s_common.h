@@ -235,7 +235,10 @@ esp_err_t i2s_channel_read(i2s_chan_handle_t handle, void *dest, size_t size, si
 /**
  * @brief Set event callbacks for I2S channel
  *
- * @note Only allowed to be called when the channel state is REGISTERED / READY, (i.e., before channel starts)
+ * @note DMA event callbacks can only be registered or deregistered before the channel is enabled.
+ * @note The TX FIFO sync callback can be registered, updated, or deregistered while the channel is running.
+ * @note Registering the TX FIFO sync callback only updates the handler; the TX sync interrupt is controlled by
+ *       i2s_channel_enable_tx_fifo_sync().
  * @note User can deregister a previously registered callback by calling this function and setting the callback member in the `callbacks` structure to NULL.
  * @note When CONFIG_I2S_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  *       The variables used in the function should be in the SRAM as well. The `user_data` should also reside in SRAM or internal RAM as well.
@@ -246,7 +249,7 @@ esp_err_t i2s_channel_read(i2s_chan_handle_t handle, void *dest, size_t size, si
  * @return
  *      - ESP_OK                Set event callbacks successfully
  *      - ESP_ERR_INVALID_ARG   Set event callbacks failed because of invalid argument
- *      - ESP_ERR_INVALID_STATE Set event callbacks failed because the current channel state is not REGISTERED or READY
+ *      - ESP_ERR_INVALID_STATE Set event callbacks failed because DMA event callbacks are changed while the channel is running
  *      - ESP_ERR_NOT_SUPPORTED Set event callbacks failed because the requested event is not supported by this channel
  */
 esp_err_t i2s_channel_register_event_callback(i2s_chan_handle_t handle, const i2s_event_callbacks_t *callbacks, void *user_data);
@@ -342,14 +345,14 @@ typedef struct {
  *
  * @note  `auto_suppl_thresh` must be smaller than `manual_suppl_thresh`.
  * @note  Use i2s_channel_enable_tx_fifo_sync() to activate/deactivate after configuration.
- * @note  Only allowed when channel state is REGISTERED or READY (before channel starts).
+ * @note  Can be called while the channel is running, but only when TX FIFO synchronization is disabled.
  *
  * @param[in] tx_handle     I2S TX channel handle
  * @param[in] config        TX FIFO synchronization configuration
  * @return
  *      - ESP_OK              Success
  *      - ESP_ERR_INVALID_ARG Invalid handle, channel is not TX, or invalid configuration
- *      - ESP_ERR_INVALID_STATE Channel is already running
+ *      - ESP_ERR_INVALID_STATE TX FIFO synchronization is enabled
  */
 esp_err_t i2s_channel_config_tx_fifo_sync(i2s_chan_handle_t tx_handle, const i2s_tx_fifo_sync_config_t *config);
 
@@ -365,7 +368,7 @@ esp_err_t i2s_channel_config_tx_fifo_sync(i2s_chan_handle_t tx_handle, const i2s
  * @return
  *      - ESP_OK              Success
  *      - ESP_ERR_INVALID_ARG Invalid handle or channel is not TX
- *      - ESP_ERR_INVALID_STATE FIFO sync not configured
+ *      - ESP_ERR_INVALID_STATE FIFO sync not configured, or TX channel is not initialized
  */
 esp_err_t i2s_channel_enable_tx_fifo_sync(i2s_chan_handle_t tx_handle, bool enable);
 

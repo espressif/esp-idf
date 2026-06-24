@@ -187,6 +187,8 @@ struct i2s_channel_obj_t {
     i2s_tx_fifo_sync_callback_t     on_tx_sync;        /*!< TX FIFO sync manual supplement threshold callback */
     void                    *sync_user_data; /*!< User data for TX FIFO sync callback */
     intr_handle_t           i2s_intr;       /*!< I2S peripheral interrupt handle */
+    bool                    tx_fifo_sync_configured; /*!< Whether TX FIFO sync has been configured */
+    bool                    tx_fifo_sync_enabled; /*!< Whether TX FIFO sync is enabled */
 #endif
     void (*start)(i2s_chan_handle_t);       /*!< start tx/rx channel */
     void (*stop)(i2s_chan_handle_t);        /*!< stop tx/rx channel */

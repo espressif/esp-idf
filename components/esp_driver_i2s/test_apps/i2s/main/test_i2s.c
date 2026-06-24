@@ -1306,6 +1306,41 @@ static IRAM_ATTR bool i2s_tx_sync_test_callback(i2s_chan_handle_t handle, const 
     return need_yield == pdTRUE;
 }
 
+TEST_CASE("I2S TX sync callback can be registered while running", "[i2s]")
+{
+    i2s_chan_handle_t tx_handle = NULL;
+
+    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
+    i2s_std_config_t std_cfg = {
+        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(48000),
+        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
+        .gpio_cfg = I2S_TEST_MASTER_DEFAULT_PIN,
+    };
+    std_cfg.gpio_cfg.mclk = -1;
+#if CONFIG_IDF_TARGET_ESP32S31
+    std_cfg.clk_cfg.clk_src = I2S_CLK_SRC_APLL;
+#endif
+
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
+    TEST_ESP_OK(i2s_channel_init_std_mode(tx_handle, &std_cfg));
+    TEST_ESP_OK(i2s_channel_enable(tx_handle));
+
+    i2s_event_callbacks_t dma_cbs = {
+        .on_sent = i2s_tx_on_sent_callback,
+    };
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, i2s_channel_register_event_callback(tx_handle, &dma_cbs, NULL));
+
+    i2s_event_callbacks_t sync_cbs = {
+        .on_tx_sync_evt = i2s_tx_sync_test_callback,
+    };
+    TEST_ESP_OK(i2s_channel_register_event_callback(tx_handle, &sync_cbs, NULL));
+    sync_cbs.on_tx_sync_evt = NULL;
+    TEST_ESP_OK(i2s_channel_register_event_callback(tx_handle, &sync_cbs, NULL));
+
+    TEST_ESP_OK(i2s_channel_disable(tx_handle));
+    TEST_ESP_OK(i2s_del_channel(tx_handle));
+}
+
 TEST_CASE("I2S TX sync callback is triggered by GPTimer ETM alarm", "[i2s][etm]")
 {
     i2s_chan_handle_t tx_handle = NULL;
@@ -1351,9 +1386,7 @@ TEST_CASE("I2S TX sync callback is triggered by GPTimer ETM alarm", "[i2s][etm]"
     i2s_event_callbacks_t cbs = {
         .on_tx_sync_evt = i2s_tx_sync_test_callback,
     };
-    TEST_ESP_OK(i2s_channel_config_tx_fifo_sync(tx_handle, &sync_cfg));
     TEST_ESP_OK(i2s_channel_register_event_callback(tx_handle, &cbs, &cb_ctx));
-    TEST_ESP_OK(i2s_channel_enable_tx_fifo_sync(tx_handle, true));
 
     i2s_sync_count_t sync_count = {};
     TEST_ESP_OK(i2s_channel_get_sync_count(tx_handle, &sync_count, true));
@@ -1385,11 +1418,14 @@ TEST_CASE("I2S TX sync callback is triggered by GPTimer ETM alarm", "[i2s][etm]"
     esp_etm_channel_config_t etm_cfg = {};
     TEST_ESP_OK(esp_etm_new_channel(&etm_cfg, &etm_channel));
     TEST_ESP_OK(esp_etm_channel_connect(etm_channel, timer_event, i2s_sync_task));
-    TEST_ESP_OK(esp_etm_channel_enable(etm_channel));
 
+    TEST_ESP_OK(i2s_channel_enable(tx_handle));
+    // TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, i2s_channel_enable_tx_fifo_sync(tx_handle, true));
+    TEST_ESP_OK(i2s_channel_config_tx_fifo_sync(tx_handle, &sync_cfg));
+    TEST_ESP_OK(i2s_channel_enable_tx_fifo_sync(tx_handle, true));
+    TEST_ESP_OK(esp_etm_channel_enable(etm_channel));
     TEST_ESP_OK(gptimer_enable(timer));
     TEST_ESP_OK(gptimer_start(timer));
-    TEST_ESP_OK(i2s_channel_enable(tx_handle));
 
     bool callback_triggered = xSemaphoreTake(cb_ctx.sem, pdMS_TO_TICKS(100)) == pdTRUE;
     printf("TX sync callback: triggered=%d, diff=%"PRId32"\n", callback_triggered, cb_ctx.diff_count);
@@ -1458,7 +1494,14 @@ TEST_CASE("i2s_destination_test", "[i2s]")
     chan_cfg.tx_destination = I2S_DESTINATION_BT;
     TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx, NULL));
     TEST_ESP_OK(i2s_channel_init_std_mode(tx, &std_cfg));
-    TEST_ASSERT_EQUAL(ESP_ERR_NOT_SUPPORTED, i2s_channel_register_event_callback(tx, &cbs, NULL));
+    // DMA event callbacks rely on the DMA data path and are not available on the Bluetooth path.
+    i2s_event_callbacks_t tx_dma_cbs = { .on_sent = i2s_tx_on_sent_callback };
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_SUPPORTED, i2s_channel_register_event_callback(tx, &tx_dma_cbs, NULL));
+#if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
+    // TX FIFO sync callback is a peripheral interrupt event and is available regardless of the data path.
+    i2s_event_callbacks_t tx_sync_cbs = { .on_tx_sync_evt = i2s_tx_sync_test_callback };
+    TEST_ESP_OK(i2s_channel_register_event_callback(tx, &tx_sync_cbs, NULL));
+#endif
     TEST_ASSERT_EQUAL(ESP_ERR_NOT_SUPPORTED, i2s_channel_preload_data(tx, buf, sizeof(buf), &loaded));
     TEST_ASSERT_EQUAL(ESP_ERR_NOT_SUPPORTED, i2s_channel_write(tx, buf, sizeof(buf), &written, 0));
     TEST_ESP_OK(i2s_del_channel(tx));
@@ -1469,7 +1512,9 @@ TEST_CASE("i2s_destination_test", "[i2s]")
     chan_cfg.rx_destination = I2S_DESTINATION_BT;
     TEST_ESP_OK(i2s_new_channel(&chan_cfg, NULL, &rx));
     TEST_ESP_OK(i2s_channel_init_std_mode(rx, &std_cfg));
-    TEST_ASSERT_EQUAL(ESP_ERR_NOT_SUPPORTED, i2s_channel_register_event_callback(rx, &cbs, NULL));
+    // DMA event callbacks rely on the DMA data path and are not available on the Bluetooth path.
+    i2s_event_callbacks_t rx_dma_cbs = { .on_recv = i2s_rx_on_recv_callback };
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_SUPPORTED, i2s_channel_register_event_callback(rx, &rx_dma_cbs, NULL));
     TEST_ASSERT_EQUAL(ESP_ERR_NOT_SUPPORTED, i2s_channel_read(rx, buf, sizeof(buf), &read_bytes, 0));
     TEST_ESP_OK(i2s_del_channel(rx));
     rx = NULL;
