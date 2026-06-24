@@ -284,6 +284,21 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
 
     :cpp:func:`esp_sleep_enable_ulp_wakeup` function can be used to enable this wakeup source.
 
+.. only:: SOC_PM_SUPPORT_USB_WAKEUP
+
+    USB Wakeup (Light-sleep Only)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    {IDF_TARGET_NAME} can wake up from Light-sleep when activity is detected on the USB 2.0 High-Speed OTG bus. This wakeup source is intended for USB device applications that enter Light-sleep while the USB host has suspended the bus, and wake up when the host resumes the bus.
+
+    This wakeup source is available only on USB-OTG capable targets with High-Speed USB support. It is not supported by USB Serial/JTAG peripherals.
+
+    The power domain for the high-speed connectivity peripherals (``ESP_PD_DOMAIN_CNNT``) must remain powered on during sleep. Use :cpp:func:`esp_sleep_pd_config` to configure this::
+
+        esp_sleep_pd_config(ESP_PD_DOMAIN_CNNT, ESP_PD_OPTION_ON);
+
+    :cpp:func:`esp_sleep_enable_usb_wakeup` function can be used to enable this wakeup source.
+
 .. only:: SOC_RTCIO_WAKE_SUPPORTED
 
     GPIO Wakeup from Light-sleep
