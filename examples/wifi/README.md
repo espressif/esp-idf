@@ -18,6 +18,7 @@ The examples are grouped into sub-directories by category. Each category directo
 * `ftm` is a how to use FTM (Fine Timing Measurement) feature to calculate distance between devices.
 * `getting_started` contains the basic examples for using Wi-Fi in STA and AP mode.
 * `iperf` shows the common performance measurements for two ESP running this example.
+* `itwt` contains a how to use Wi-Fi Individual Target Wake Time.
 * `power_save` contains a how to use power save mode of Wi-Fi.
 * `roaming` contains 2 examples that demonstrate roaming capabilities.
 * `scan` shows how to scan for all the available APs.
