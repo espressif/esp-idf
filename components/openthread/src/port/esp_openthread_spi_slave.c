@@ -86,7 +86,7 @@ esp_err_t esp_openthread_host_rcp_spi_init(const esp_openthread_platform_config_
 {
     esp_err_t ret = ESP_OK;
 
-    s_spi_config = heap_caps_malloc(sizeof(esp_openthread_spi_slave_config_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    s_spi_config = heap_caps_calloc(1, sizeof(esp_openthread_spi_slave_config_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(s_spi_config != NULL, ESP_ERR_NO_MEM, err, OT_PLAT_LOG_TAG,
                       "failed to allocate memory for SPI transaction on internal heap");
     memcpy(s_spi_config, &(config->host_config.spi_slave_config), sizeof(esp_openthread_spi_slave_config_t));
@@ -104,11 +104,11 @@ esp_err_t esp_openthread_host_rcp_spi_init(const esp_openthread_platform_config_
     gpio_set_pull_mode(s_spi_config->bus_config.sclk_io_num, GPIO_PULLUP_ONLY);
     gpio_set_pull_mode(s_spi_config->slave_config.spics_io_num, GPIO_PULLUP_ONLY);
 
-    s_spi_transaction = heap_caps_malloc(sizeof(spi_slave_transaction_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    s_spi_transaction = heap_caps_calloc(1, sizeof(spi_slave_transaction_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(s_spi_transaction != NULL, ESP_ERR_NO_MEM, err, OT_PLAT_LOG_TAG, "failed to allocate memory for SPI transaction on internal heap");
-    s_pending_transaction = heap_caps_malloc(sizeof(pending_transaction_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    s_pending_transaction = heap_caps_calloc(1, sizeof(pending_transaction_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(s_pending_transaction != NULL, ESP_ERR_NO_MEM, err, OT_PLAT_LOG_TAG, "failed to allocate memory for pending transaction on internal heap");
-    s_rx_dma_buf = heap_caps_malloc(SPI_SLAVE_RX_DMA_BUF_SIZE, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    s_rx_dma_buf = heap_caps_calloc(1, SPI_SLAVE_RX_DMA_BUF_SIZE, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     ESP_GOTO_ON_FALSE(s_rx_dma_buf != NULL, ESP_ERR_NO_MEM, err, OT_PLAT_LOG_TAG, "failed to allocate memory for RX DMA buffer on internal heap");
 
     s_spi_transaction->user = (void *)s_pending_transaction;
