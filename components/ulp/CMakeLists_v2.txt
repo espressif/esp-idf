@@ -320,6 +320,16 @@ elseif(ULP_TYPE STREQUAL "lp_core")
     # via FLAGS.
     idf_component_get_property(esp_system_dir esp_system COMPONENT_DIR)
     set(lp_core_ld_flags "${ulp_ld_flags} -I\"${esp_system_dir}/ld\" -I\"${esp_system_dir}/ld/${target}\"")
+    # A user-supplied LINKER layout replaces the default one composed into
+    # lp_core_riscv.ld.in. It reaches this child project as LP_CORE_LINKER_SCRIPT
+    # (passed by __setup_ulp_project, same as the CMake v1 path). Hand it to the
+    # wrapper as the LP_CORE_LINKER_INCLUDE macro it #includes. The escaped quotes
+    # survive separate_arguments() in the linker-script preprocessor so the macro
+    # expands to a quoted header-name token ("/abs/path.ld").
+    if(LP_CORE_LINKER_SCRIPT)
+        message(STATUS "Using custom LP-core linker layout: ${LP_CORE_LINKER_SCRIPT}")
+        string(APPEND lp_core_ld_flags " -DLP_CORE_LINKER_INCLUDE=\\\"${LP_CORE_LINKER_SCRIPT}\\\"")
+    endif()
     target_linker_script(${COMPONENT_LIB} INTERFACE "ld/lp_core_riscv.ld.in" MEMORY
                          FLAGS "${lp_core_ld_flags}")
 

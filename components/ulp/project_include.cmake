@@ -7,7 +7,7 @@ endif()
 # Create ULP binary and embed into the application.
 
 function(__setup_ulp_project app_name project_path prefix prefix_append_bin_name type binary_names
-                             s_sources exp_dep_srcs)
+                             s_sources exp_dep_srcs linker_script)
 
     if(NOT CMAKE_BUILD_EARLY_EXPANSION)
         set(ulp_cmake_dir "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/cmake")
@@ -189,6 +189,9 @@ function(__setup_ulp_project app_name project_path prefix prefix_append_bin_name
                         -DADD_PICOLIBC_SPECS=${CONFIG_LIBC_PICOLIBC}
                         -DULP_VAR_PREFIX=${prefix}
                         -DULP_TYPE=${type}
+                        # Read by the LP-core child to swap in a custom layout;
+                        # empty and ignored otherwise.
+                        -DLP_CORE_LINKER_SCRIPT=${linker_script}
                         ${ulp_project_args}
                         -DIDF_TARGET=${idf_target}
                         -DIDF_PATH=${idf_path}
@@ -276,26 +279,52 @@ function(__ulp_resolve_type out_var type)
     set(${out_var} "${resolved_type}" PARENT_SCOPE)
 endfunction()
 
+# Resolve a user-supplied LINKER_LAYOUT for a ULP of the given (already resolved)
+# type: reject it for non-LP-core types, since only the LP-core linker script has
+# a swappable layout part, then resolve the layout to an absolute path and verify
+# it exists. The result is written back to the variable named by out_var. A
+# relative path is resolved against CMAKE_CURRENT_LIST_DIR, the same base used for
+# relative ULP source files in __setup_ulp_project, so that sources and the linker
+# layout in one call are resolved consistently. Enforcing this here, at the public
+# API, gives a single check that covers every ULP child build style.
+function(__resolve_lp_core_linker linker type out_var)
+    if(linker)
+        if(NOT type STREQUAL "lp_core")
+            message(FATAL_ERROR "A custom LINKER_LAYOUT script is only supported for the LP-core ULP type.")
+        endif()
+        get_filename_component(linker "${linker}" ABSOLUTE BASE_DIR ${CMAKE_CURRENT_LIST_DIR})
+        if(NOT EXISTS "${linker}")
+            message(FATAL_ERROR "LINKER_LAYOUT linker script not found: ${linker}")
+        endif()
+    endif()
+    set(${out_var} "${linker}" PARENT_SCOPE)
+endfunction()
+
 function(ulp_embed_binary app_name s_sources exp_dep_srcs)
-    cmake_parse_arguments(ULP "" "PREFIX;TYPE" "" ${ARGN})
+    cmake_parse_arguments(ULP "" "PREFIX;TYPE;LINKER_LAYOUT" "" ${ARGN})
     if(NOT ULP_PREFIX)
         set(ULP_PREFIX "ulp_")
     endif()
 
     validate_ulp_type("${ULP_TYPE}")
+    # Resolve the effective ULP type (from TYPE or the project config) so the
+    # LINKER_LAYOUT guard is applied uniformly; the full-subproject child also
+    # consumes the resolved type.
+    __ulp_resolve_type(ulp_resolved_type "${ULP_TYPE}")
     if(IDF_BUILD_V2)
-        __ulp_resolve_type(ULP_TYPE "${ULP_TYPE}")
+        set(ULP_TYPE "${ulp_resolved_type}")
     endif()
+    __resolve_lp_core_linker("${ULP_LINKER_LAYOUT}" "${ulp_resolved_type}" LP_CORE_LINKER)
     set(ulp_cmake_dir "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/cmake")
 
     __setup_ulp_project("${app_name}" "${ulp_cmake_dir}"
                         "${ULP_PREFIX}" FALSE "${ULP_TYPE}"
                         "${app_name}"
-                        "${s_sources}" "${exp_dep_srcs}")
+                        "${s_sources}" "${exp_dep_srcs}" "${LP_CORE_LINKER}")
 endfunction()
 
 function(ulp_add_project app_name project_path)
-    cmake_parse_arguments(ULP "" "PREFIX;TYPE" "BINARIES" ${ARGN})
+    cmake_parse_arguments(ULP "" "PREFIX;TYPE;LINKER_LAYOUT" "BINARIES" ${ARGN})
     if(NOT ULP_BINARIES)
         set(ULP_BINARIES "${app_name}")
     endif()
@@ -311,10 +340,15 @@ function(ulp_add_project app_name project_path)
     endif()
 
     validate_ulp_type("${ULP_TYPE}")
+    # Resolve the effective ULP type (from TYPE or the project config) so the
+    # LINKER_LAYOUT guard is applied uniformly; the full-subproject child also
+    # consumes the resolved type.
+    __ulp_resolve_type(ulp_resolved_type "${ULP_TYPE}")
     if(IDF_BUILD_V2)
-        __ulp_resolve_type(ULP_TYPE "${ULP_TYPE}")
+        set(ULP_TYPE "${ulp_resolved_type}")
     endif()
+    __resolve_lp_core_linker("${ULP_LINKER_LAYOUT}" "${ulp_resolved_type}" LP_CORE_LINKER)
 
     __setup_ulp_project("${app_name}" "${project_path}" "${ULP_PREFIX}"
-                        "${ULP_PREFIX_APPEND_BIN_NAME}" "${ULP_TYPE}" "${ULP_BINARIES}" "" "")
+                        "${ULP_PREFIX_APPEND_BIN_NAME}" "${ULP_TYPE}" "${ULP_BINARIES}" "" "" "${LP_CORE_LINKER}")
 endfunction()
