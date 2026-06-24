@@ -133,6 +133,7 @@ typedef enum {
  * @brief Enumeration of 2D-DMA pixel bytes scamble order in color space conversion
  *
  * Assuming the original pixel byte order (from MSB to LSB) is 2-1-0 .
+ * This scramble only fits 3 bytes/pixel format. For non-3 bytes/pixel format, the pixels will be messed up if scrambling is used.
  */
 typedef enum {
     DMA2D_SCRAMBLE_ORDER_BYTE2_1_0,     /*!< 2D-DMA pixel data scrambled as BYTE2-1-0 (no scramble) */
