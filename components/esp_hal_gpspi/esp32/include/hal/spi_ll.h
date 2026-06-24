@@ -374,8 +374,12 @@ static inline void spi_ll_write_buffer(spi_dev_t *hw, const uint8_t *buffer_to_s
 {
     for (size_t x = 0; x < bitlen; x += 32) {
         //Use memcpy to get around alignment issues for txdata
-        uint32_t word;
-        memcpy(&word, &buffer_to_send[x / 8], 4);
+        uint32_t word = 0;
+        int len = bitlen - x;
+        if (len > 32) {
+            len = 32;
+        }
+        memcpy(&word, &buffer_to_send[x / 8], (len + 7) / 8);
         hw->data_buf[(x / 32)] = word;
     }
 }
