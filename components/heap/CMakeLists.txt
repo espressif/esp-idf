@@ -66,11 +66,13 @@ if(NOT BOOTLOADER_BUILD)
     endif()
 endif()
 
+set(ldfragments linker.lf)
+
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${includes}
                     PRIV_INCLUDE_DIRS ${priv_includes}
-                    LDFRAGMENTS linker.lf
-                    PRIV_REQUIRES soc)
+                    LDFRAGMENTS ${ldfragments}
+                    PRIV_REQUIRES soc esp_system)
 
 if(CONFIG_HEAP_TLSF_USE_ROM_IMPL AND NOT BOOTLOADER_BUILD)
     # After registering the component, set the tlsf_set_rom_patches symbol as undefined
@@ -109,4 +111,39 @@ else()
             target_compile_options(${COMPONENT_TARGET} PRIVATE "-DMULTI_HEAP_FREERTOS")
         endif()
     endif()
+endif()
+
+# KASAN heap integration: hook into alloc/free to maintain shadow memory.
+# heap_kasan.c holds the implementation (compiled without KASAN instrumentation).
+# heap_kasan_hooks.c provides strong (non-weak) overrides of the hook stubs;
+# it intentionally avoids including esp_heap_caps.h to prevent GCC from
+# inheriting the 'weak' attribute from the declarations in that header.
+if(CONFIG_COMPILER_KASAN AND CONFIG_HEAP_USE_HOOKS)
+    target_sources(${COMPONENT_LIB} PRIVATE
+        "heap_kasan.c"
+        "heap_kasan_hooks.c"
+    )
+    # Sources excluded from KASAN instrumentation:
+    #   heap_kasan.c / heap_kasan_hooks.c implement the sanitizer hooks themselves
+    #     (instrumenting them would cause infinite recursion).
+    #   heap_caps_init.c runs while heap metadata is being brought up: the first
+    #     allocations happen before the shadow is fully initialised, and the
+    #     memcpy of the registered-heaps array touches DRAM regions whose
+    #     shadow state is still being populated.
+    set_source_files_properties(
+        "heap_caps_init.c"
+        "heap_kasan.c"
+        "heap_kasan_hooks.c"
+        PROPERTIES COMPILE_OPTIONS "-fno-sanitize=kernel-address"
+    )
+    idf_component_get_property(esp_system_lib esp_system COMPONENT_LIB)
+    target_link_libraries(${COMPONENT_LIB} PRIVATE ${esp_system_lib})
+    # Force the linker to include our strong hook definitions.  Without this,
+    # --gc-sections would silently discard them because the call site in
+    # heap_caps_base.c uses a weak-symbol pointer (if (hook != NULL) ...) which
+    # doesn't create a strong reference that the linker follows.
+    target_link_libraries(${COMPONENT_LIB} INTERFACE
+        "-u esp_heap_trace_alloc_hook"
+        "-u esp_heap_trace_free_hook"
+    )
 endif()

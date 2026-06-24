@@ -13,6 +13,7 @@
 #include "multi_heap.h"
 #include "esp_log.h"
 #include "heap_private.h"
+#include "heap_kasan_layout.h"
 #include "esp_system.h"
 
 /*
@@ -480,13 +481,22 @@ void heap_caps_dump_all(void)
 
 size_t heap_caps_get_allocated_size( void *ptr )
 {
+    /* The heap layout is:
+     * [block-owner][left redzone][user][right redzone]
+     * so undo the KASAN shift before removing the block-owner word.
+     */
+    ptr = KASAN_USER_TO_PTR(ptr);
     // add the block owner bytes back to ptr before handing over
     // to multi heap layer.
     ptr = MULTI_HEAP_REMOVE_BLOCK_OWNER_OFFSET(ptr);
     heap_t *heap = find_containing_heap(ptr);
     assert(heap);
     size_t size = multi_heap_get_allocated_size(heap->heap, ptr);
-    return MULTI_HEAP_REMOVE_BLOCK_OWNER_SIZE(size);
+    size = MULTI_HEAP_REMOVE_BLOCK_OWNER_SIZE(size);
+    if (size > 2 * KASAN_RZ) {
+        size -= 2 * KASAN_RZ;
+    }
+    return size;
 }
 
 size_t heap_caps_get_containing_block_size(void *ptr)

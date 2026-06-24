@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include "multi_heap.h"
 #include "esp_log.h"
 #include "heap_private.h"
+#include "heap_kasan_layout.h"
 #if CONFIG_HEAP_TASK_TRACKING
 #include "esp_heap_task_info.h"
 #include "esp_heap_task_info_internal.h"
@@ -28,8 +29,27 @@
 #define CALL_HOOK(hook, ...) {}
 #endif
 
+/*
+ * KASAN redzone support: inflate allocations by 2*KASAN_RZ bytes and shift
+ * the user pointer past the left redzone.  heap_kasan.c poisons the redzones.
+ *
+ * Final allocation layout (with CONFIG_HEAP_TASK_TRACKING=y):
+ *
+ *   [ block-owner word ][ left redzone ][ user bytes ][ right redzone ]
+ *
+ * The ordering is intentional: user underflows must hit the left redzone
+ * before they can reach the task-tracking block-owner word.
+ *
+ * Pointer arithmetic macros live in heap_kasan_layout.h.
+ */
+
 //This is normally provided by the heap-memalign-hw component.
 extern void esp_heap_adjust_alignment_to_hw(size_t *p_alignment, size_t *p_size, uint32_t *p_caps);
+
+#if CONFIG_COMPILER_KASAN && CONFIG_HEAP_USE_HOOKS
+bool kasan_heap_should_defer_free(void);
+void kasan_heap_clear_deferred_free(void);
+#endif
 
 //Default alignment the multiheap allocator / tlsf will align 'unaligned' memory to, in bytes
 #define UNALIGNED_MEM_ALIGNMENT_BYTES 4
@@ -67,6 +87,17 @@ HEAP_IRAM_ATTR void heap_caps_free( void *ptr)
         return;
     }
 
+    /*
+     * KASAN free hook must see the same pointer that the alloc hook saw, i.e.
+     * the user-visible (IRAM) pointer with the redzone shift applied.  Call
+     * it before any DIRAM -> DRAM translation; otherwise the shadow update
+     * would touch the wrong address range and use-after-free detection on
+     * IRAM-aliased blocks would be incorrect.
+     */
+#if CONFIG_COMPILER_KASAN && CONFIG_HEAP_USE_HOOKS
+    CALL_HOOK(esp_heap_trace_free_hook, ptr);
+#endif
+
     if ((!esp_dram_match_iram() && esp_ptr_in_diram_iram(ptr)) ||
         (!esp_rtc_dram_match_rtc_iram() && esp_ptr_in_rtc_iram_fast(ptr))) {
         //Memory allocated here is actually allocated in the DRAM alias region and
@@ -75,17 +106,29 @@ HEAP_IRAM_ATTR void heap_caps_free( void *ptr)
         uint32_t *dramAddrPtr = (uint32_t *)ptr;
         ptr = (void *)dramAddrPtr[-1];
     }
-    void *block_owner_ptr = MULTI_HEAP_REMOVE_BLOCK_OWNER_OFFSET(ptr);
+
+    /* Reverse the pointer transforms in the opposite order used on alloc:
+     * user -> left redzone start -> block-owner word.
+     */
+    void *raw_ptr = KASAN_USER_TO_PTR(ptr);
+    void *block_owner_ptr = MULTI_HEAP_REMOVE_BLOCK_OWNER_OFFSET(raw_ptr);
     heap_t *heap = find_containing_heap(block_owner_ptr);
     assert(heap != NULL && "free() target pointer is outside heap areas");
 
 #if CONFIG_HEAP_TASK_TRACKING
-    heap_caps_update_per_task_info_free(heap, ptr);
+    heap_caps_update_per_task_info_free(heap, raw_ptr);
 #endif
 
+#if CONFIG_COMPILER_KASAN && CONFIG_HEAP_USE_HOOKS
+    if (kasan_heap_should_defer_free()) {
+        kasan_heap_clear_deferred_free();
+        return;
+    }
     multi_heap_free(heap->heap, block_owner_ptr);
-
+#else
+    multi_heap_free(heap->heap, block_owner_ptr);
     CALL_HOOK(esp_heap_trace_free_hook, ptr);
+#endif
 }
 
 HEAP_IRAM_ATTR static inline void *aligned_or_unaligned_alloc(multi_heap_handle_t heap, size_t size, size_t alignment, size_t offset) {
@@ -139,6 +182,8 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_aligned_alloc_base(size_t alignment
         size = (size + 3) & (~3); // int overflow checked above
     }
 
+    const size_t alloc_size = KASAN_ADD_RZ(size);
+
     for (int prio = 0; prio < SOC_MEMORY_TYPE_NO_PRIOS; prio++) {
         //Iterate over heaps and check capabilities at this priority
         heap_t *heap;
@@ -159,7 +204,7 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_aligned_alloc_base(size_t alignment
                         //This is special, insofar that what we're going to get back is a DRAM address. If so,
                         //we need to 'invert' it (lowest address in DRAM == highest address in IRAM and vice-versa) and
                         //add a pointer to the DRAM equivalent before the address we're going to return.
-                        ret = aligned_or_unaligned_alloc(heap->heap, MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(size) + 4,
+                        ret = aligned_or_unaligned_alloc(heap->heap, MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(alloc_size) + 4,
                                                         alignment, MULTI_HEAP_BLOCK_OWNER_SIZE());  // int overflow checked above
                         if (ret != NULL) {
 #if CONFIG_HEAP_TASK_TRACKING
@@ -171,13 +216,14 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_aligned_alloc_base(size_t alignment
 
                             MULTI_HEAP_SET_BLOCK_OWNER(ret);
                             ret = MULTI_HEAP_ADD_BLOCK_OWNER_OFFSET(ret);
+                            ret = KASAN_PTR_TO_USER(ret);
                             uint32_t *iptr = dram_alloc_to_iram_addr(ret, size + 4);  // int overflow checked above
                             CALL_HOOK(esp_heap_trace_alloc_hook, iptr, size, caps);
                             return iptr;
                         }
                     } else {
                         //Just try to alloc, nothing special.
-                        ret = aligned_or_unaligned_alloc(heap->heap, MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(size),
+                        ret = aligned_or_unaligned_alloc(heap->heap, MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(alloc_size),
                                                         alignment, MULTI_HEAP_BLOCK_OWNER_SIZE());
                         if (ret != NULL) {
 #if CONFIG_HEAP_TASK_TRACKING
@@ -189,6 +235,7 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_aligned_alloc_base(size_t alignment
 
                             MULTI_HEAP_SET_BLOCK_OWNER(ret);
                             ret = MULTI_HEAP_ADD_BLOCK_OWNER_OFFSET(ret);
+                            ret = KASAN_PTR_TO_USER(ret);
                             CALL_HOOK(esp_heap_trace_alloc_hook, ret, size, caps);
                             return ret;
                         }
@@ -236,31 +283,43 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_realloc_base( void *ptr, size_t siz
         return NULL;
     }
 
-    //The pointer to memory may be aliased, we need to
-    //recover the corresponding address before to manage a new allocation:
-    if(esp_ptr_in_diram_iram((void *)ptr)) {
-        uint32_t *dram_addr = (uint32_t *)ptr;
-        dram_ptr  = (void *)dram_addr[-1];
+    /*
+     * DIRAM aliasing detection must happen on the original user pointer:
+     * dram_alloc_to_iram_addr stores the underlying DRAM address one word
+     * before the IRAM pointer, so the KASAN redzone shift (which moves the
+     * pointer by KASAN_RZ on the IRAM side) would land us in the wrong place
+     * if we applied it first.
+     */
+    void *raw_ptr;
+    if (esp_ptr_in_diram_iram(ptr)) {
+        uint32_t *iram_addr = (uint32_t *)ptr;
+        dram_ptr = (void *)iram_addr[-1];
+        /* On the DRAM side the layout is [block-owner][left redzone][user]
+         * so undo redzone first, then block-owner, matching alloc order. */
+        dram_ptr = KASAN_USER_TO_PTR(dram_ptr);
         dram_ptr = MULTI_HEAP_REMOVE_BLOCK_OWNER_OFFSET(dram_ptr);
 
         heap = find_containing_heap(dram_ptr);
         assert(heap != NULL && "realloc() pointer is outside heap areas");
 
-        //with pointers that reside on diram space, we avoid using
-        //the realloc implementation due to address translation issues,
-        //instead force a malloc/copy/free
+        /* with pointers that reside on diram space, we avoid using
+         * the realloc implementation due to address translation issues,
+         * instead force a malloc/copy/free */
         ptr_in_diram_case = true;
-
+        raw_ptr = NULL; /* not used in the diram path */
     } else {
-        heap = find_containing_heap(ptr);
+        /* Reverse the alloc-time layout transform in the same order as free():
+         * user -> left redzone start -> block-owner word.  Doing the
+         * block-owner removal *before* find_containing_heap() matches the
+         * free() path and the DIRAM branch above. */
+        raw_ptr = KASAN_USER_TO_PTR(ptr);
+        raw_ptr = MULTI_HEAP_REMOVE_BLOCK_OWNER_OFFSET(raw_ptr);
+
+        heap = find_containing_heap(raw_ptr);
         assert(heap != NULL && "realloc() pointer is outside heap areas");
     }
 
-    // shift ptr by block owner offset. Since the ptr returned to the user
-    // does not include the block owner bytes (that are located at the
-    // beginning of the allocated memory) we have to add them back before
-    // processing the realloc.
-    ptr = MULTI_HEAP_REMOVE_BLOCK_OWNER_OFFSET(ptr);
+    const size_t alloc_size = KASAN_ADD_RZ(size);
 
     // are the existing heap's capabilities compatible with the
     // requested ones?
@@ -273,17 +332,17 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_realloc_base( void *ptr, size_t siz
         // (which will resize the block if it can)
 
 #if CONFIG_HEAP_TASK_TRACKING
-        size_t old_size = multi_heap_get_full_block_size(heap->heap, ptr);
-        TaskHandle_t old_task = MULTI_HEAP_GET_BLOCK_OWNER(ptr);
+        size_t old_size = multi_heap_get_full_block_size(heap->heap, raw_ptr);
+        TaskHandle_t old_task = MULTI_HEAP_GET_BLOCK_OWNER(raw_ptr);
 #endif
 
-        void *r = multi_heap_realloc(heap->heap, ptr, MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(size));
+        void *r = multi_heap_realloc(heap->heap, raw_ptr, MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(alloc_size));
         if (r != NULL) {
             MULTI_HEAP_SET_BLOCK_OWNER(r);
 
 #if CONFIG_HEAP_TASK_TRACKING
             heap_caps_update_per_task_info_realloc(heap,
-                                                   MULTI_HEAP_ADD_BLOCK_OWNER_OFFSET(ptr),
+                                                   MULTI_HEAP_ADD_BLOCK_OWNER_OFFSET(raw_ptr),
                                                    MULTI_HEAP_ADD_BLOCK_OWNER_OFFSET(r),
                                                    old_size, old_task,
                                                    multi_heap_get_full_block_size(heap->heap, r),
@@ -291,6 +350,19 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_realloc_base( void *ptr, size_t siz
 #endif
 
             r = MULTI_HEAP_ADD_BLOCK_OWNER_OFFSET(r);
+            r = KASAN_PTR_TO_USER(r);
+#if CONFIG_COMPILER_KASAN && CONFIG_HEAP_USE_HOOKS
+            /*
+             * If multi_heap_realloc() relocated the block (r != ptr), the
+             * old user range needs its shadow re-poisoned as use-after-free
+             * so that lingering references hit a KASAN violation.  When the
+             * block was resized in place, alloc hook below will simply
+             * refresh the shadow over the new range.
+             */
+            if (r != ptr) {
+                CALL_HOOK(esp_heap_trace_free_hook, ptr);
+            }
+#endif
             CALL_HOOK(esp_heap_trace_alloc_hook, r, size, caps);
             return r;
         }
@@ -307,14 +379,17 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_realloc_base( void *ptr, size_t siz
         if(ptr_in_diram_case) {
             old_size = multi_heap_get_allocated_size(heap->heap, dram_ptr);
         } else {
-            old_size = multi_heap_get_allocated_size(heap->heap, ptr);
+            old_size = multi_heap_get_allocated_size(heap->heap, raw_ptr);
         }
 
         assert(old_size > 0);
-        // do not copy the block owner bytes
-        memcpy(new_p, MULTI_HEAP_ADD_BLOCK_OWNER_OFFSET(ptr), MIN(size, old_size));
-        // add the block owner bytes to ptr since they are removed in heap_caps_free
-        heap_caps_free(MULTI_HEAP_ADD_BLOCK_OWNER_OFFSET(ptr));
+        old_size = MULTI_HEAP_REMOVE_BLOCK_OWNER_SIZE(old_size);
+        /* Subtract KASAN redzone overhead to get the actual user-data size. */
+        if (old_size > 2 * KASAN_RZ) {
+            old_size -= 2 * KASAN_RZ;
+        }
+        memcpy(new_p, ptr, MIN(size, old_size));
+        heap_caps_free(ptr);
         return new_p;
     }
 

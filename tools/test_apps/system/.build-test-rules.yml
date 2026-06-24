@@ -105,6 +105,12 @@ tools/test_apps/system/init_array:
   depends_filepatterns:
     - tools/tools.json
 
+tools/test_apps/system/kasan_test:
+  depends_components:
+    - *common_components
+    - esp_system
+    - heap
+
 tools/test_apps/system/log:
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
