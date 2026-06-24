@@ -1613,7 +1613,6 @@ config BT_BLE_FEAT_CHANNEL_SOUNDING
     default n
     help
         Enable BLE channel sounding
-
 config BT_BLE_FEAT_ADV_MONITOR
     bool "Enable BLE Advertising Monitor (LE Monitor Advertisement)"
     depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_ADV_MONITOR_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
@@ -1622,6 +1621,14 @@ config BT_BLE_FEAT_ADV_MONITOR
         Enable LE Monitor Advertisement feature (Bluetooth Core 6.0).
         Allows the host to add devices to a monitor list and receive reports when
         the controller detects advertising from those devices (e.g. RSSI threshold).
+
+config BT_BLE_FEAT_DBAF
+    bool "Enable BLE Decision-Based Advertising Filtering (DBAF)"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_DBAF_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable Decision-Based Advertising Filtering (Bluetooth Core 6.0).
+        Supports LE Set Decision Data and LE Set Decision Instructions HCI commands.
 
 menuconfig BT_BLE_42_FEATURES_SUPPORTED
     bool "Enable BLE 4.2 features(please disable BLE 5.0 if enable BLE 4.2)"

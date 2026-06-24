@@ -978,7 +978,11 @@ typedef void (tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK) (tBTM_STATUS st
 #define    BTM_BLE_5_GAP_READ_MONITOR_ADV_LIST_SIZE_COMPLETE_EVT   74
 #define    BTM_BLE_5_GAP_ENABLE_MONITOR_ADV_COMPLETE_EVT           75
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
-#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               76
+#if (BLE_FEAT_DBAF == TRUE)
+#define    BTM_BLE_5_GAP_SET_DECISION_DATA_COMPLETE_EVT            79
+#define    BTM_BLE_5_GAP_SET_DECISION_INSTRUCTIONS_COMPLETE_EVT    80
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               91
 typedef UINT8 tBTM_BLE_5_GAP_EVENT;
 
 #if (BLE_FEAT_ISO_EN == TRUE)
@@ -1228,6 +1232,10 @@ typedef struct {
 } tBTM_BLE_MONITOR_ADV_LIST_SIZE;
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 
+
+
+
+
 typedef struct {
     UINT16 sync_handle;
     UINT8 tx_power;
@@ -1450,6 +1458,7 @@ typedef struct {
     UINT8 status;
     UINT16 conn_handle;
 } tBTM_BLE_CS_SEC_ENABLE_CMPL_EVT;
+
 
 typedef struct {
     UINT8 status;
@@ -3083,6 +3092,18 @@ tBTM_STATUS BTM_BleClearMonitorAdvList(void);
 tBTM_STATUS BTM_BleReadMonitorAdvListSize(void);
 tBTM_STATUS BTM_BleEnableMonitorAdv(UINT8 enable);
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+
+#if (BLE_FEAT_DBAF == TRUE)
+tBTM_STATUS BTM_BleSetDecisionData(UINT8 adv_handle, UINT8 decision_type_flags,
+                                   UINT8 data_len, const UINT8 *p_data);
+tBTM_STATUS BTM_BleSetDecisionInstructions(UINT8 num_tests, const UINT8 *test_flags,
+                                           const UINT8 *test_fields, UINT8 test_params_len,
+                                           const UINT8 *test_params);
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+
+
+
+
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 #if (BLE_50_DTM_TEST_EN == TRUE)
